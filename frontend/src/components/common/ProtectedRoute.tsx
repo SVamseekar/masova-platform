@@ -1,7 +1,7 @@
-// src/components/ProtectedRoute.tsx
+// src/components/common/ProtectedRoute.tsx
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useAppSelector } from '../../store/hooks';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -14,7 +14,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   allowedRoles = [],
   requireAuth = true,
 }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user } = useAppSelector(state => state.auth);
   const location = useLocation();
 
   if (requireAuth && !isAuthenticated) {
@@ -22,7 +22,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (allowedRoles.length > 0 && user && !allowedRoles.includes(user.type)) {
-    return <Navigate to="/unauthorized" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;

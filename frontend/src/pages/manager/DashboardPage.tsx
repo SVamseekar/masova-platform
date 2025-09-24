@@ -1,342 +1,473 @@
-import React, { useState } from 'react';
-import type { WorkingSession } from '../../services/api/types';
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Container,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  Paper,
+  Tabs,
+  Tab,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  Avatar,
+  Button,
+  IconButton,
+  AppBar,
+  Toolbar,
+  LinearProgress,
+  Alert,
+} from '@mui/material';
+import {
+  Dashboard as DashboardIcon,
+  People as PeopleIcon,
+  Analytics as AnalyticsIcon,
+  TrendingUp as TrendingUpIcon,
+  Schedule as ScheduleIcon,
+  CheckCircle as CheckIcon,
+  Cancel as CancelIcon,
+  Refresh as RefreshIcon,
+} from '@mui/icons-material';
+import { useAppSelector, useAppDispatch } from '../../store/hooks';
+import { useGetActiveStoreSessionsQuery, useApproveSessionMutation } from '../../store/api/sessionApi';
+import { useGetSalesAnalyticsQuery } from '../../store/api/analyticsApi';
+import { formatINR } from '../../utils/currency';
+import { formatTime, getElapsedTime } from '../../utils/dateTime';
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel({ children, value, index, ...other }: TabPanelProps) {
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`manager-tabpanel-${index}`}
+      aria-labelledby={`manager-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+    </div>
+  );
+}
 
 const ManagerDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [currentDate] = useState(new Date().toLocaleDateString('en-IN'));
+  const [tabValue, setTabValue] = useState(0);
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector(state => state.auth);
+  
+  // RTK Query hooks for data fetching
+  const { 
+    data: activeSessions = [], 
+    isLoading: sessionsLoading,
+    refetch: refetchSessions 
+  } = useGetActiveStoreSessionsQuery(user?.storeId || '');
+  
+  const { 
+    data: salesData,
+    isLoading: salesLoading 
+  } = useGetSalesAnalyticsQuery({ storeId: user?.storeId || '', period: 'today' });
 
-  const salesData = {
-    today: 45000,
-    lastYear: 38000,
-    percentageChange: 18.4,
-    yesterday: 42000,
-    weeklyTotal: 280000
+  const [approveSession] = useApproveSessionMutation();
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
   };
 
-  const workingSessions: WorkingSession[] = [
-    {
-      id: 'WS001',
-      employeeId: 'EMP001',
-      name: 'Rajesh Kumar',
-      role: 'Staff',
-      date: '2025-09-24',
-      loginTime: '09:15 AM',
-      currentWorkingDuration: '6h 45m',
-      isActive: true,
-      breakDurationMinutes: 30,
-      status: 'ACTIVE',
-      storeId: 'ST001'
-    },
-    {
-      id: 'WS002',
-      employeeId: 'EMP002',
-      name: 'Priya Sharma',
-      role: 'Driver',
-      date: '2025-09-24',
-      loginTime: '10:30 AM',
-      currentWorkingDuration: '5h 30m',
-      isActive: true,
-      breakDurationMinutes: 15,
-      status: 'ACTIVE',
-      storeId: 'ST001'
-    },
-    {
-      id: 'WS003',
-      employeeId: 'EMP003',
-      name: 'Amit Singh',
-      role: 'Staff',
-      date: '2025-09-24',
-      loginTime: '08:00 AM',
-      logoutTime: '04:00 PM',
-      totalHours: 7.5,
-      isActive: false,
-      breakDurationMinutes: 45,
-      status: 'COMPLETED',
-      storeId: 'ST001'
-    },
-    {
-      id: 'WS004',
-      employeeId: 'EMP004',
-      name: 'Sneha Patel',
-      role: 'Staff',
-      date: '2025-09-24',
-      loginTime: '07:30 AM',
-      logoutTime: '03:45 PM',
-      totalHours: 7.8,
-      isActive: false,
-      breakDurationMinutes: 35,
-      status: 'PENDING_APPROVAL',
-      storeId: 'ST001'
+  const handleApproveSession = async (sessionId: string) => {
+    try {
+      await approveSession(sessionId).unwrap();
+      refetchSessions();
+    } catch (error) {
+      console.error('Failed to approve session:', error);
     }
-  ];
-
-  const orderQueue = [
-    { id: 'ORD001', status: 'PREPARING', items: 'Margherita Large, Garlic Bread', time: '15 mins', customer: 'John Doe', priority: 'normal' },
-    { id: 'ORD002', status: 'OVEN', items: 'Pepperoni Medium, Coke', time: '8 mins', customer: 'Sarah Wilson', priority: 'urgent' },
-    { id: 'ORD003', status: 'READY', items: 'Veggie Supreme Large', time: 'Ready', customer: 'Mike Johnson', priority: 'normal' }
-  ];
-
-  const handleApproveSession = (sessionId: string) => {
-    console.log(`Approving session: ${sessionId}`);
   };
 
-  const handleRejectSession = (sessionId: string) => {
-    console.log(`Rejecting session: ${sessionId}`);
-  };
+  const OverviewTab = () => (
+    <Grid container spacing={3}>
+      {/* Sales Statistics Cards */}
+      <Grid item xs={12} md={3}>
+        <Card sx={{ 
+          background: 'linear-gradient(135deg, #e53e3e 0%, #ff6b6b 100%)',
+          color: 'white',
+          height: '140px'
+        }}>
+          <CardContent>
+            <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Box>
+                <Typography variant="h6" gutterBottom>Today's Sales</Typography>
+                <Typography variant="h4" fontWeight="bold">
+                  {salesData ? formatINR(salesData.todaySales) : formatINR(45000)}
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  +{salesData?.percentageChange || 18.4}% vs Last Year
+                </Typography>
+              </Box>
+              <TrendingUpIcon sx={{ fontSize: 48, opacity: 0.8 }} />
+            </Box>
+          </CardContent>
+        </Card>
+      </Grid>
+
+      <Grid item xs={12} md={3}>
+        <Card>
+          <CardContent>
+            <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Box>
+                <Typography color="text.secondary" gutterBottom>Yesterday's Sales</Typography>
+                <Typography variant="h4" fontWeight="bold">
+                  {salesData ? formatINR(salesData.yesterdaySales) : formatINR(42000)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Previous day performance
+                </Typography>
+              </Box>
+              <AnalyticsIcon color="primary" sx={{ fontSize: 48 }} />
+            </Box>
+          </CardContent>
+        </Card>
+      </Grid>
+
+      <Grid item xs={12} md={3}>
+        <Card>
+          <CardContent>
+            <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Box>
+                <Typography color="text.secondary" gutterBottom>Weekly Total</Typography>
+                <Typography variant="h4" fontWeight="bold">
+                  {salesData ? formatINR(salesData.weeklySales) : formatINR(280000)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Last 7 days
+                </Typography>
+              </Box>
+              <DashboardIcon color="primary" sx={{ fontSize: 48 }} />
+            </Box>
+          </CardContent>
+        </Card>
+      </Grid>
+
+      <Grid item xs={12} md={3}>
+        <Card>
+          <CardContent>
+            <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Box>
+                <Typography color="text.secondary" gutterBottom>Active Staff</Typography>
+                <Typography variant="h4" fontWeight="bold">
+                  {activeSessions.filter(s => s.status === 'ACTIVE').length}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Currently working
+                </Typography>
+              </Box>
+              <PeopleIcon color="primary" sx={{ fontSize: 48 }} />
+            </Box>
+          </CardContent>
+        </Card>
+      </Grid>
+
+      {/* Active Sessions Overview */}
+      <Grid item xs={12}>
+        <Paper sx={{ p: 3 }}>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+            <Typography variant="h6" fontWeight="bold">
+              Active Staff Sessions
+            </Typography>
+            <IconButton onClick={() => refetchSessions()} color="primary">
+              <RefreshIcon />
+            </IconButton>
+          </Box>
+          
+          {sessionsLoading ? (
+            <LinearProgress />
+          ) : (
+            <Grid container spacing={2}>
+              {activeSessions
+                .filter(session => session.status === 'ACTIVE')
+                .map(session => (
+                <Grid item xs={12} md={6} lg={4} key={session.id}>
+                  <Card variant="outlined">
+                    <CardContent>
+                      <Box display="flex" alignItems="center" mb={2}>
+                        <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
+                          {session.name?.charAt(0) || 'U'}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="subtitle1" fontWeight="bold">
+                            {session.name}
+                          </Typography>
+                          <Chip 
+                            label={session.role} 
+                            size="small" 
+                            color="primary" 
+                            variant="outlined"
+                          />
+                        </Box>
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" color="text.secondary">
+                          Started: {formatTime(session.loginTime)}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Duration: {session.currentDuration}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Break Time: {session.breakTime}min
+                        </Typography>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Paper>
+      </Grid>
+    </Grid>
+  );
+
+  const StaffTab = () => (
+    <Grid container spacing={3}>
+      <Grid item xs={12}>
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
+            Staff Working Hours - {new Date().toLocaleDateString('en-IN')}
+          </Typography>
+          
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Employee</TableCell>
+                  <TableCell>Role</TableCell>
+                  <TableCell>Login Time</TableCell>
+                  <TableCell>Duration</TableCell>
+                  <TableCell>Break Time</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {activeSessions.map((session) => (
+                  <TableRow key={session.id}>
+                    <TableCell>
+                      <Box display="flex" alignItems="center">
+                        <Avatar sx={{ mr: 2, bgcolor: 'primary.main' }}>
+                          {session.name?.charAt(0) || 'U'}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="subtitle2" fontWeight="bold">
+                            {session.name}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {session.employeeId}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Chip 
+                        label={session.role} 
+                        size="small" 
+                        color="primary" 
+                        variant="outlined"
+                      />
+                    </TableCell>
+                    <TableCell>{formatTime(session.loginTime)}</TableCell>
+                    <TableCell>
+                      {session.isActive ? session.currentDuration : `${session.totalHours}h`}
+                    </TableCell>
+                    <TableCell>{session.breakTime}m</TableCell>
+                    <TableCell>
+                      <Chip 
+                        label={session.status.replace('_', ' ')}
+                        size="small"
+                        color={
+                          session.status === 'ACTIVE' ? 'success' :
+                          session.status === 'PENDING_APPROVAL' ? 'warning' : 'default'
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {session.status === 'PENDING_APPROVAL' && (
+                        <Box display="flex" gap={1}>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="success"
+                            startIcon={<CheckIcon />}
+                            onClick={() => handleApproveSession(session.id)}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="error"
+                            startIcon={<CancelIcon />}
+                          >
+                            Reject
+                          </Button>
+                        </Box>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      </Grid>
+    </Grid>
+  );
+
+  const AnalyticsTab = () => (
+    <Grid container spacing={3}>
+      <Grid item xs={12} md={8}>
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
+            Weekly Sales Performance (INR)
+          </Typography>
+          <Box sx={{ height: 300, display: 'flex', alignItems: 'end', gap: 2, mt: 2 }}>
+            {[
+              { day: 'Mon', value: 60, amount: 28000 },
+              { day: 'Tue', value: 80, amount: 35000 },
+              { day: 'Wed', value: 45, amount: 22000 },
+              { day: 'Thu', value: 90, amount: 42000 },
+              { day: 'Fri', value: 75, amount: 38000 },
+              { day: 'Sat', value: 95, amount: 45000 },
+              { day: 'Sun', value: 70, amount: 33000 }
+            ].map((item) => (
+              <Box key={item.day} sx={{ flex: 1, textAlign: 'center' }}>
+                <Box
+                  sx={{
+                    height: `${item.value * 2}px`,
+                    background: 'linear-gradient(to top, #e53e3e, #ff6b6b)',
+                    borderRadius: '4px 4px 0 0',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'center',
+                    pt: 1,
+                    color: 'white',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      transform: 'scale(1.05)',
+                      transition: 'transform 0.2s ease'
+                    }
+                  }}
+                >
+                  {formatINR(item.amount)}
+                </Box>
+                <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
+                  {item.day}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </Paper>
+      </Grid>
+
+      <Grid item xs={12} md={4}>
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
+            Key Performance Indicators
+          </Typography>
+          <Grid container spacing={2}>
+            {[
+              { label: 'Avg Order Value', value: formatINR(485), change: '+12%', color: 'success' },
+              { label: 'Orders Today', value: '127', change: '+8%', color: 'success' },
+              { label: 'Avg Prep Time', value: '18 mins', change: '-2 mins', color: 'success' },
+              { label: 'Kitchen Efficiency', value: '94%', change: '+3%', color: 'success' },
+              { label: 'Staff Productivity', value: '8.2 orders/hr', change: '+0.5', color: 'success' },
+              { label: 'Customer Rating', value: '4.8/5', change: '+0.2', color: 'success' }
+            ].map((kpi, index) => (
+              <Grid item xs={12} key={index}>
+                <Card variant="outlined" sx={{ p: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {kpi.label}
+                  </Typography>
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Typography variant="h6" fontWeight="bold">
+                      {kpi.value}
+                    </Typography>
+                    <Chip 
+                      label={kpi.change} 
+                      size="small" 
+                      color={kpi.color as any}
+                      variant="outlined"
+                    />
+                  </Box>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Paper>
+      </Grid>
+    </Grid>
+  );
 
   return (
-    <div style={{ padding: '20px', background: '#f5f5f5', minHeight: '100vh' }}>
-      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-        <h1 style={{ color: '#e74c3c', fontSize: '2.5rem', marginBottom: '10px', textAlign: 'center' }}>
-          Manager Dashboard
-        </h1>
-        <p style={{ textAlign: 'center', color: '#666', marginBottom: '30px', fontSize: '1.1rem' }}>
-          Store Operations Control Center - {currentDate}
-        </p>
+    <Box sx={{ flexGrow: 1 }}>
+      <AppBar position="static" color="default" elevation={0}>
+        <Toolbar>
+          <DashboardIcon sx={{ mr: 2, color: 'primary.main' }} />
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
+            Manager Dashboard
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {new Date().toLocaleDateString('en-IN')}
+          </Typography>
+        </Toolbar>
+      </AppBar>
 
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '30px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          {['overview', 'staff', 'orders', 'analytics'].map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              style={{
-                background: activeTab === tab ? '#e74c3c' : 'white',
-                color: activeTab === tab ? 'white' : '#333',
-                border: '2px solid #e74c3c',
-                padding: '12px 30px',
-                borderRadius: '25px',
-                cursor: 'pointer',
-                fontSize: '1rem',
-                fontWeight: '600',
-                textTransform: 'capitalize',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+      <Container maxWidth="xl" sx={{ mt: 2 }}>
+        <Paper sx={{ width: '100%', mb: 2 }}>
+          <Tabs 
+            value={tabValue} 
+            onChange={handleTabChange}
+            variant="fullWidth"
+            sx={{ borderBottom: 1, borderColor: 'divider' }}
+          >
+            <Tab 
+              icon={<DashboardIcon />} 
+              label="Overview" 
+              iconPosition="start"
+            />
+            <Tab 
+              icon={<PeopleIcon />} 
+              label="Staff Sessions" 
+              iconPosition="start"
+            />
+            <Tab 
+              icon={<AnalyticsIcon />} 
+              label="Analytics" 
+              iconPosition="start"
+            />
+          </Tabs>
+        </Paper>
 
-        {activeTab === 'overview' && (
-          <div style={{ display: 'grid', gap: '20px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-              <div style={{ background: 'white', borderRadius: '15px', padding: '25px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
-                <h3 style={{ color: '#e74c3c', marginBottom: '15px', fontSize: '1.3rem' }}>Today's Sales</h3>
-                <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#27ae60', marginBottom: '10px' }}>
-                  ₹{salesData.today.toLocaleString()}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ color: salesData.percentageChange > 0 ? '#27ae60' : '#e74c3c', fontSize: '1.1rem', fontWeight: '600' }}>
-                    {salesData.percentageChange > 0 ? '↑' : '↓'} {Math.abs(salesData.percentageChange)}%
-                  </span>
-                  <span style={{ color: '#666', fontSize: '0.9rem' }}>vs last year same day</span>
-                </div>
-              </div>
-
-              <div style={{ background: 'white', borderRadius: '15px', padding: '25px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
-                <h3 style={{ color: '#e74c3c', marginBottom: '15px', fontSize: '1.3rem' }}>Yesterday's Sales</h3>
-                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#3498db', marginBottom: '10px' }}>
-                  ₹{salesData.yesterday.toLocaleString()}
-                </div>
-                <p style={{ color: '#666', fontSize: '0.9rem', margin: 0 }}>Previous day performance</p>
-              </div>
-
-              <div style={{ background: 'white', borderRadius: '15px', padding: '25px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
-                <h3 style={{ color: '#e74c3c', marginBottom: '15px', fontSize: '1.3rem' }}>Weekly Total</h3>
-                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#9b59b6', marginBottom: '10px' }}>
-                  ₹{salesData.weeklyTotal.toLocaleString()}
-                </div>
-                <p style={{ color: '#666', fontSize: '0.9rem', margin: 0 }}>Last 7 days combined</p>
-              </div>
-            </div>
-
-            <div style={{ background: 'white', borderRadius: '15px', padding: '25px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
-              <h3 style={{ color: '#e74c3c', marginBottom: '20px', fontSize: '1.3rem' }}>Active Staff ({workingSessions.filter(s => s.isActive).length})</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '15px' }}>
-                {workingSessions.filter(session => session.isActive).map(session => (
-                  <div key={session.id} style={{
-                    background: '#f8f9fa',
-                    padding: '15px',
-                    borderRadius: '10px',
-                    border: '1px solid #e9ecef'
-                  }}>
-                    <div style={{ fontWeight: 'bold', color: '#333', marginBottom: '8px' }}>{session.name}</div>
-                    <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '5px' }}>{session.role}</div>
-                    <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                      Working: {session.currentWorkingDuration} | Break: {session.breakDurationMinutes}m
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'staff' && (
-          <div style={{ background: 'white', borderRadius: '15px', padding: '25px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
-            <h3 style={{ color: '#e74c3c', marginBottom: '25px', fontSize: '1.5rem' }}>Staff Working Sessions</h3>
-            
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                <thead>
-                  <tr style={{ background: '#f8f9fa' }}>
-                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6', color: '#495057' }}>Employee</th>
-                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6', color: '#495057' }}>Role</th>
-                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6', color: '#495057' }}>Login Time</th>
-                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6', color: '#495057' }}>Duration</th>
-                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6', color: '#495057' }}>Break (mins)</th>
-                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6', color: '#495057' }}>Status</th>
-                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6', color: '#495057' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {workingSessions.map(session => (
-                    <tr key={session.id} style={{ borderBottom: '1px solid #dee2e6' }}>
-                      <td style={{ padding: '12px', fontWeight: '600', color: '#333' }}>{session.name}</td>
-                      <td style={{ padding: '12px', color: '#666' }}>{session.role}</td>
-                      <td style={{ padding: '12px', color: '#666' }}>{session.loginTime}</td>
-                      <td style={{ padding: '12px', color: '#666' }}>
-                        {session.isActive ? session.currentWorkingDuration : `${session.totalHours}h`}
-                      </td>
-                      <td style={{ padding: '12px', color: '#666' }}>{session.breakDurationMinutes}</td>
-                      <td style={{ padding: '12px' }}>
-                        <span style={{
-                          background: session.status === 'ACTIVE' ? '#d4edda' :
-                                    session.status === 'COMPLETED' ? '#cce5ff' : '#fff3cd',
-                          color: session.status === 'ACTIVE' ? '#155724' :
-                                session.status === 'COMPLETED' ? '#004085' : '#856404',
-                          padding: '4px 8px',
-                          borderRadius: '12px',
-                          fontSize: '0.8rem',
-                          fontWeight: '500'
-                        }}>
-                          {session.status}
-                        </span>
-                      </td>
-                      <td style={{ padding: '12px' }}>
-                        {session.status === 'PENDING_APPROVAL' && (
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <button
-                              onClick={() => handleApproveSession(session.id)}
-                              style={{
-                                background: '#28a745',
-                                color: 'white',
-                                border: 'none',
-                                padding: '6px 12px',
-                                borderRadius: '15px',
-                                fontSize: '0.8rem',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => handleRejectSession(session.id)}
-                              style={{
-                                background: '#dc3545',
-                                color: 'white',
-                                border: 'none',
-                                padding: '6px 12px',
-                                borderRadius: '15px',
-                                fontSize: '0.8rem',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'orders' && (
-          <div style={{ background: 'white', borderRadius: '15px', padding: '25px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
-            <h3 style={{ color: '#e74c3c', marginBottom: '25px', fontSize: '1.5rem' }}>Order Management</h3>
-            <div style={{ display: 'grid', gap: '15px' }}>
-              {orderQueue.map(order => (
-                <div key={order.id} style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '20px',
-                  background: '#f8f9fa',
-                  borderRadius: '12px',
-                  border: '1px solid #dee2e6'
-                }}>
-                  <div>
-                    <h4 style={{ margin: '0 0 8px 0', color: '#333' }}>{order.id}</h4>
-                    <div style={{ color: '#666', marginBottom: '5px' }}>Customer: {order.customer}</div>
-                    <div style={{ color: '#666', fontSize: '0.9rem' }}>{order.items}</div>
-                  </div>
-                  <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <div>
-                      <div style={{
-                        background: order.status === 'READY' ? '#28a745' :
-                                  order.status === 'OVEN' ? '#fd7e14' : '#007bff',
-                        color: 'white',
-                        padding: '8px 16px',
-                        borderRadius: '20px',
-                        fontSize: '0.9rem',
-                        fontWeight: '600',
-                        marginBottom: '5px'
-                      }}>
-                        {order.status}
-                      </div>
-                      <div style={{ fontSize: '0.9rem', color: '#666' }}>{order.time}</div>
-                    </div>
-                    {order.priority === 'urgent' && (
-                      <div style={{
-                        background: '#dc3545',
-                        color: 'white',
-                        padding: '6px 12px',
-                        borderRadius: '15px',
-                        fontSize: '0.8rem',
-                        fontWeight: '600'
-                      }}>
-                        URGENT
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'analytics' && (
-          <div style={{ display: 'grid', gap: '20px' }}>
-            <div style={{ background: 'white', borderRadius: '15px', padding: '25px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
-              <h3 style={{ color: '#e74c3c', marginBottom: '20px', fontSize: '1.5rem' }}>Performance Analytics</h3>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' }}>
-                <div style={{ textAlign: 'center', padding: '20px', background: '#f8f9fa', borderRadius: '10px' }}>
-                  <div style={{ fontSize: '2rem', color: '#e74c3c', marginBottom: '10px' }}>85%</div>
-                  <div style={{ color: '#666', fontSize: '0.9rem' }}>Kitchen Efficiency</div>
-                </div>
-                <div style={{ textAlign: 'center', padding: '20px', background: '#f8f9fa', borderRadius: '10px' }}>
-                  <div style={{ fontSize: '2rem', color: '#28a745', marginBottom: '10px' }}>12 min</div>
-                  <div style={{ color: '#666', fontSize: '0.9rem' }}>Avg. Preparation Time</div>
-                </div>
-                <div style={{ textAlign: 'center', padding: '20px', background: '#f8f9fa', borderRadius: '10px' }}>
-                  <div style={{ fontSize: '2rem', color: '#007bff', marginBottom: '10px' }}>4.7★</div>
-                  <div style={{ color: '#666', fontSize: '0.9rem' }}>Customer Rating</div>
-                </div>
-                <div style={{ textAlign: 'center', padding: '20px', background: '#f8f9fa', borderRadius: '10px' }}>
-                  <div style={{ fontSize: '2rem', color: '#fd7e14', marginBottom: '10px' }}>₹524</div>
-                  <div style={{ color: '#666', fontSize: '0.9rem' }}>Avg. Order Value</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+        <TabPanel value={tabValue} index={0}>
+          <OverviewTab />
+        </TabPanel>
+        <TabPanel value={tabValue} index={1}>
+          <StaffTab />
+        </TabPanel>
+        <TabPanel value={tabValue} index={2}>
+          <AnalyticsTab />
+        </TabPanel>
+      </Container>
+    </Box>
   );
 };
 
