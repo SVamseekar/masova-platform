@@ -1,6 +1,5 @@
 package com.dominos.user.controller;
 
-import com.dominos.shared.entity.User;
 import com.dominos.shared.enums.UserType;
 import com.dominos.user.dto.*;
 import com.dominos.user.service.UserService;
@@ -110,46 +109,26 @@ public class UserController {
         return ResponseEntity.ok(managers);
     }
     
-    // FIX 4: Completely rewritten permission check method
+    // FIXED: Parameter binding issue
     @GetMapping("/{userId}/can-take-orders")
     @Operation(summary = "Check if user can take orders")
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<Map<String, Object>> canTakeOrders(@PathVariable("userId") String userId) {
         try {
-            // Use the service method that doesn't use problematic caching
             boolean canTakeOrders = userService.canUserTakeOrders(userId);
-            
-            // Get user data for additional context (avoid cache if needed)
             User user = userService.getUserById(userId);
             
-            Map<String, Object> response = Map.of(
+            return ResponseEntity.ok(Map.of(
                 "canTakeOrders", canTakeOrders,
                 "userType", user.getType().toString(),
                 "isEmployee", user.isEmployee(),
-                "isActive", user.isActive(),
-                "userId", userId,
-                "storeId", user.isEmployee() && user.getEmployeeDetails() != null ? 
-                          user.getEmployeeDetails().getStoreId() : null,
-                "role", user.isEmployee() && user.getEmployeeDetails() != null ? 
-                        user.getEmployeeDetails().getRole() : null
-            );
-            
-            return ResponseEntity.ok(response);
-            
+                "isActive", user.isActive()
+            ));
         } catch (Exception e) {
-            // Comprehensive error handling
-            Map<String, Object> errorResponse = Map.of(
+            return ResponseEntity.ok(Map.of(
                 "canTakeOrders", false,
-                "error", e.getMessage(),
-                "errorType", e.getClass().getSimpleName(),
-                "userId", userId
-            );
-            
-            // Log the full error for debugging
-            System.err.println("Permission check failed for user " + userId + ": " + e.getMessage());
-            e.printStackTrace();
-            
-            return ResponseEntity.ok(errorResponse);
+                "error", e.getMessage()
+            ));
         }
     }
     

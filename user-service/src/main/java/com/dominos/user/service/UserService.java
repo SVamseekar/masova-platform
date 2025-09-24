@@ -140,7 +140,8 @@ public class UserService {
         }
     }
     
-    @Cacheable(value = "users", key = "#userId")
+    // FIX 1: Proper cache key specification using SpEL
+    @Cacheable(value = "users", key = "'user:' + #p0")
     public User getUserById(String userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -169,7 +170,8 @@ public class UserService {
                 .toList();
     }
     
-    @CacheEvict(value = "users", key = "#userId")
+    // FIX 2: Proper cache eviction with explicit key
+    @CacheEvict(value = "users", key = "'user:' + #p0")
     public UserResponse updateUser(String userId, UserCreateRequest request) {
         User user = getUserById(userId);
         
@@ -192,7 +194,7 @@ public class UserService {
         return mapToUserResponse(updatedUser);
     }
     
-    @CacheEvict(value = "users", key = "#userId")
+    @CacheEvict(value = "users", key = "'user:' + #p0")
     public void deactivateUser(String userId) {
         User user = getUserById(userId);
         user.setActive(false);
@@ -209,9 +211,36 @@ public class UserService {
         }
     }
     
+    // FIX 3: Robust permission checking method
     public boolean canUserTakeOrders(String userId) {
-        User user = getUserById(userId);
-        return user.canTakeOrders();
+        try {
+            User user = getUserById(userId);
+            
+            // Check if user is active
+            if (!user.isActive()) {
+                return false;
+            }
+            
+            // Check user type permissions
+            UserType userType = user.getType();
+            boolean hasRolePermission = (userType == UserType.MANAGER || userType == UserType.ASSISTANT_MANAGER);
+            
+            // Additional validation: If employee, must be assigned to a store
+            if (user.isEmployee()) {
+                if (user.getEmployeeDetails() == null || 
+                    user.getEmployeeDetails().getStoreId() == null || 
+                    user.getEmployeeDetails().getStoreId().trim().isEmpty()) {
+                    return false;
+                }
+            }
+            
+            return hasRolePermission;
+            
+        } catch (Exception e) {
+            // Log error and return false for safety
+            System.err.println("Error checking order permissions for user " + userId + ": " + e.getMessage());
+            return false;
+        }
     }
     
     public String refreshAccessToken(String refreshToken) {
@@ -225,6 +254,7 @@ public class UserService {
         return jwtService.generateAccessToken(userId, user.getType().name(), storeId);
     }
     
+    @CacheEvict(value = "users", key = "'user:' + #p0")
     public void changePassword(String userId, String currentPassword, String newPassword) {
         User user = getUserById(userId);
         
@@ -285,7 +315,7 @@ public class UserService {
             throw new RuntimeException("Phone number already exists");
         }
         
-        // Relaxed validation for employee types - allow if store is provided
+        // Validation for employee types
         if (request.getType() != UserType.CUSTOMER && 
             (request.getStoreId() == null || request.getStoreId().trim().isEmpty())) {
             throw new RuntimeException("Store ID required for employees");
@@ -301,7 +331,6 @@ public class UserService {
             throw new RuntimeException("Phone number already exists");
         }
         
-        // Relaxed store validation - allow employee creation with any valid store ID
         if (request.getStoreId() == null || request.getStoreId().trim().isEmpty()) {
             throw new RuntimeException("Store ID is required for employees");
         }

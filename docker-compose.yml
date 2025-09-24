@@ -5,20 +5,11 @@ services:
     restart: unless-stopped
     ports:
       - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password123
-      MONGO_INITDB_DATABASE: dominos
     volumes:
       - mongodb_data:/data/db
-      - ./infrastructure/mongodb/init.js:/docker-entrypoint-initdb.d/init.js:ro
+      - ./infrastructure/mongodb/init-simple.js:/docker-entrypoint-initdb.d/init.js:ro
     networks:
       - dominos-network
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   redis:
     image: redis:7.2-alpine
@@ -26,41 +17,11 @@ services:
     restart: unless-stopped
     ports:
       - "6379:6379"
-    command: redis-server --appendonly yes --requirepass redispassword123
+    command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
     networks:
       - dominos-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  user-service:
-    build: ./user-service
-    container_name: dominos-user-service
-    restart: unless-stopped
-    ports:
-      - "8081:8081"
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      MONGODB_URI: mongodb://admin:password123@mongodb:27017/dominos?authSource=admin
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: redispassword123
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - dominos-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
 volumes:
   mongodb_data:

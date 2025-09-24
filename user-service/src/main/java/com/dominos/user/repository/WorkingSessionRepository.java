@@ -3,6 +3,7 @@ package com.dominos.user.repository;
 import com.dominos.shared.entity.WorkingSession;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
+import com.dominos.shared.enums.WorkingSessionStatus;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -61,4 +62,27 @@ public interface WorkingSessionRepository extends MongoRepository<WorkingSession
     @Query("{'employeeId': ?0, 'violations': {$exists: true, $ne: []}}")
     List<WorkingSession> findSessionsWithViolations(String employeeId);
     
+    
+    // FIXED: Complete the missing methods
+    @Query("{'employeeId': ?0, 'date': ?1, 'logoutTime': {$ne: null}}")
+    Optional<WorkingSession> findLastCompletedSessionByEmployeeAndDate(String employeeId, LocalDate date);
+    
+    @Query("{'employeeId': ?0, 'loginTime': {$gte: ?1, $lt: ?2}}")
+    List<WorkingSession> findSessionsByEmployeeAndDateRange(String employeeId, LocalDateTime startTime, LocalDateTime endTime);
+    
+    List<WorkingSession> findByStatus(WorkingSessionStatus status);
+    
+    @Query("{'storeId': ?0, 'status': ?1}")
+    List<WorkingSession> findByStoreIdAndStatus(String storeId, WorkingSessionStatus status);
+    
+    @Query("{'employeeId': ?0, 'status': ?1}")
+    List<WorkingSession> findByEmployeeIdAndStatus(String employeeId, WorkingSessionStatus status);
+    
+    long countByEmployeeIdAndDateBetween(String employeeId, LocalDate startDate, LocalDate endDate);
+    
+    long countByStoreIdAndDateBetween(String storeId, LocalDate startDate, LocalDate endDate);
+    
+    @Query(value = "{'employeeId': ?0, 'status': ?1}", count = true)
+    long countByEmployeeIdAndStatus(String employeeId, WorkingSessionStatus status);
 }
+

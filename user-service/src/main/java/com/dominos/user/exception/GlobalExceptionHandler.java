@@ -1,5 +1,8 @@
 package com.dominos.user.exception;
 
+import com.dominos.user.exception.StoreOperationException;
+import com.dominos.user.exception.ShiftViolationException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -63,7 +66,45 @@ public class GlobalExceptionHandler {
         );
         
         return ResponseEntity.badRequest().body(error);
+    }    
+    @ExceptionHandler(StoreOperationException.class)
+    public ResponseEntity<ErrorResponse> handleStoreOperationException(StoreOperationException ex) {
+        logger.error("Store operation failed - Store: {}, Operation: {}", ex.getStoreId(), ex.getOperationType(), ex);
+        
+        Map<String, String> details = new HashMap<>();
+        if (ex.getStoreId() != null) {
+            details.put("storeId", ex.getStoreId());
+        }
+        if (ex.getOperationType() != null) {
+            details.put("operationType", ex.getOperationType());
+        }
+        if (ex.getErrorCode() != null) {
+            details.put("errorCode", ex.getErrorCode());
+        }
+        
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.BAD_REQUEST.value(),
+            ex.getMessage(),
+            LocalDateTime.now(),
+            details
+        );
+        
+        return ResponseEntity.badRequest().body(error);
     }
+    
+    @ExceptionHandler(ShiftViolationException.class)
+    public ResponseEntity<ErrorResponse> handleShiftViolationException(ShiftViolationException ex) {
+        logger.warn("Shift violation detected", ex);
+        
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.CONFLICT.value(),
+            "Shift violation: " + ex.getMessage(),
+            LocalDateTime.now()
+        );
+        
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
     
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
