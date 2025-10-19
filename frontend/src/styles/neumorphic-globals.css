@@ -1,0 +1,311 @@
+/**
+ * Global Neumorphic Styles
+ * Essential CSS for the neumorphic design system
+ */
+
+/* CSS Custom Properties (CSS Variables) for design tokens */
+:root {
+  /* Colors */
+  --color-surface-primary: #f0f0f0;
+  --color-surface-secondary: #e8e8e8;
+  --color-surface-tertiary: #d0d0d0;
+  --color-surface-background: #f1f5f9;
+  
+  --color-brand-primary: #e53e3e;
+  --color-brand-primary-light: #ff6b6b;
+  --color-brand-primary-dark: #c0392b;
+  --color-brand-secondary: #0066cc;
+  --color-brand-secondary-light: #3399ff;
+  --color-brand-secondary-dark: #004499;
+  
+  --color-text-primary: #1f2937;
+  --color-text-secondary: #6b7280;
+  --color-text-tertiary: #9ca3af;
+  --color-text-inverse: #ffffff;
+  
+  --color-shadow-light: rgba(255, 255, 255, 0.8);
+  --color-shadow-dark: rgba(163, 163, 163, 0.3);
+  --color-shadow-brand: rgba(229, 62, 62, 0.3);
+  
+  /* Typography */
+  --font-family-primary: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  
+  /* Spacing */
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-10: 2.5rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+  
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-base: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+  
+  /* Shadows */
+  --shadow-raised-sm: 4px 4px 8px var(--color-shadow-dark), -4px -4px 8px var(--color-shadow-light);
+  --shadow-raised-base: 6px 6px 12px var(--color-shadow-dark), -6px -6px 12px var(--color-shadow-light);
+  --shadow-raised-md: 8px 8px 16px var(--color-shadow-dark), -8px -8px 16px var(--color-shadow-light);
+  --shadow-raised-lg: 12px 12px 24px var(--color-shadow-dark), -12px -12px 24px var(--color-shadow-light);
+  --shadow-raised-xl: 20px 20px 40px rgba(163, 163, 163, 0.4), -20px -20px 40px var(--color-shadow-light);
+  
+  --shadow-inset-sm: inset 3px 3px 6px var(--color-shadow-dark), inset -3px -3px 6px var(--color-shadow-light);
+  --shadow-inset-base: inset 4px 4px 8px var(--color-shadow-dark), inset -4px -4px 8px var(--color-shadow-light);
+  --shadow-inset-md: inset 6px 6px 12px var(--color-shadow-dark), inset -6px -6px 12px var(--color-shadow-light);
+  --shadow-inset-lg: inset 8px 8px 16px var(--color-shadow-dark), inset -8px -8px 16px var(--color-shadow-light);
+  
+  /* Transitions */
+  --transition-fast: 150ms;
+  --transition-normal: 250ms;
+  --transition-slow: 350ms;
+}
+
+/* Reset and base styles */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-family-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-surface-background);
+  color: var(--color-text-primary);
+  line-height: 1.5;
+}
+
+/* Focus management for accessibility */
+*:focus {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 2px;
+}
+
+/* Remove focus outline for mouse users */
+.js-focus-visible *:focus:not(.focus-visible) {
+  outline: none;
+}
+
+/* Neumorphic utility classes */
+.neumorphic-surface {
+  background-color: var(--color-surface-primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-raised-base);
+  border: none;
+  outline: none;
+}
+
+.neumorphic-inset {
+  background-color: var(--color-surface-primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-inset-base);
+  border: none;
+  outline: none;
+}
+
+.neumorphic-raised {
+  background-color: var(--color-surface-primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-raised-base);
+  border: none;
+  outline: none;
+}
+
+/* Interactive states */
+.neumorphic-interactive {
+  cursor: pointer;
+  transition: all var(--transition-normal) cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.neumorphic-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-raised-md);
+}
+
+.neumorphic-interactive:active {
+  transform: scale(0.98);
+  box-shadow: var(--shadow-inset-base);
+}
+
+.neumorphic-interactive:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: var(--shadow-raised-sm);
+}
+
+/* Typography utilities */
+.text-primary { color: var(--color-text-primary); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-tertiary { color: var(--color-text-tertiary); }
+.text-inverse { color: var(--color-text-inverse); }
+
+.text-sm { font-size: var(--font-size-sm); }
+.text-base { font-size: var(--font-size-base); }
+.text-lg { font-size: var(--font-size-lg); }
+.text-xl { font-size: var(--font-size-xl); }
+.text-2xl { font-size: var(--font-size-2xl); }
+.text-3xl { font-size: var(--font-size-3xl); }
+.text-4xl { font-size: var(--font-size-4xl); }
+
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+.font-extrabold { font-weight: 800; }
+
+/* Spacing utilities */
+.m-0 { margin: 0; }
+.m-1 { margin: var(--spacing-1); }
+.m-2 { margin: var(--spacing-2); }
+.m-3 { margin: var(--spacing-3); }
+.m-4 { margin: var(--spacing-4); }
+.m-5 { margin: var(--spacing-5); }
+.m-6 { margin: var(--spacing-6); }
+.m-8 { margin: var(--spacing-8); }
+
+.p-0 { padding: 0; }
+.p-1 { padding: var(--spacing-1); }
+.p-2 { padding: var(--spacing-2); }
+.p-3 { padding: var(--spacing-3); }
+.p-4 { padding: var(--spacing-4); }
+.p-5 { padding: var(--spacing-5); }
+.p-6 { padding: var(--spacing-6); }
+.p-8 { padding: var(--spacing-8); }
+
+/* Animation keyframes */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes skeleton-loading {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Animation utilities */
+.animate-spin { animation: spin 1s linear infinite; }
+.animate-pulse { animation: pulse 2s infinite; }
+.animate-slideIn { animation: slideIn 0.4s ease; }
+.animate-fadeIn { animation: fadeIn 0.3s ease; }
+
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus visible polyfill support */
+.js-focus-visible :focus:not(.focus-visible) {
+  outline: none;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --color-shadow-dark: rgba(0, 0, 0, 0.8);
+    --color-shadow-light: rgba(255, 255, 255, 1);
+  }
+  
+  .neumorphic-surface,
+  .neumorphic-inset,
+  .neumorphic-raised {
+    border: 1px solid var(--color-text-primary);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Dark mode support (future enhancement) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface-primary: #2a2a2a;
+    --color-surface-secondary: #1f1f1f;
+    --color-surface-background: #1a1a1a;
+    --color-text-primary: #f9fafb;
+    --color-text-secondary: #d1d5db;
+    --color-text-tertiary: #9ca3af;
+    --color-shadow-light: rgba(255, 255, 255, 0.1);
+    --color-shadow-dark: rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* Responsive breakpoints */
+@media (max-width: 640px) {
+  :root {
+    --font-size-3xl: 1.5rem;
+    --font-size-4xl: 1.875rem;
+    --spacing-16: 3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --font-size-2xl: 1.25rem;
+    --font-size-3xl: 1.375rem;
+    --font-size-4xl: 1.5rem;
+    --spacing-10: 2rem;
+    --spacing-16: 2.5rem;
+  }
+}
