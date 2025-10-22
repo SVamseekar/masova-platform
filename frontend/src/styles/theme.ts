@@ -1,10 +1,10 @@
 import { createTheme, ThemeOptions } from '@mui/material/styles';
 
-// Domino's brand colors and design system
-const dominosThemeOptions: ThemeOptions = {
+// MaSoVa brand colors and design system
+const MaSoVaThemeOptions: ThemeOptions = {
   palette: {
     primary: {
-      main: '#e53e3e', // Domino's red
+      main: '#e53e3e', // MaSoVa red
       light: '#ff6b6b',
       dark: '#c0392b',
       contrastText: '#ffffff',
@@ -227,4 +227,4 @@ const dominosThemeOptions: ThemeOptions = {
   },
 };
 
-export const dominosTheme = createTheme(dominosThemeOptions);
+export const MaSoVaTheme = createTheme(MaSoVaThemeOptions);

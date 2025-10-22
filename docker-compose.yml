@@ -1,7 +1,7 @@
 services:
   mongodb:
     image: mongo:7.0
-    container_name: dominos-mongodb
+    container_name: masova-mongodb
     restart: unless-stopped
     ports:
       - "27017:27017"
@@ -9,11 +9,11 @@ services:
       - mongodb_data:/data/db
       - ./infrastructure/mongodb/init-simple.js:/docker-entrypoint-initdb.d/init.js:ro
     networks:
-      - dominos-network
+      - masova-network
 
   redis:
     image: redis:7.2-alpine
-    container_name: dominos-redis
+    container_name: masova-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
@@ -21,12 +21,12 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - dominos-network
+      - masova-network
 
 volumes:
   mongodb_data:
   redis_data:
 
 networks:
-  dominos-network:
+  masova-network:
     driver: bridge

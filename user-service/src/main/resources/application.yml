@@ -1,5 +1,5 @@
 # ========================================
-# DOMINO'S USER SERVICE - WORKING CONFIGURATION
+# MaSoVa USER SERVICE - WORKING CONFIGURATION
 # Fixed property access while minimizing warnings
 # ========================================
 
@@ -20,7 +20,7 @@ spring:
   # DATABASE CONFIGURATION
   data:
     mongodb:
-      uri: mongodb://localhost:27017/dominos
+      uri: mongodb://localhost:27017/MaSoVa
       auto-index-creation: true
       repositories:
         type: auto
@@ -52,7 +52,7 @@ spring:
       time-to-live: 3600000
       cache-null-values: false
       use-key-prefix: true
-      key-prefix: "dominos:"
+      key-prefix: "MaSoVa:"
       enable-statistics: true
     cache-names:
       - users
@@ -72,17 +72,17 @@ spring:
 
 # JWT CONFIGURATION - MUST NOT BE ESCAPED (needed for @Value injection)
 jwt:
-  secret: ${JWT_SECRET:dominos-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-256-bits-for-production-security}
+  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-256-bits-for-production-security}
   access-token-expiration: ${JWT_ACCESS_EXPIRATION:3600000}
   refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
-  issuer: dominos-restaurant-system
-  audience: dominos-users
+  issuer: MaSoVa-restaurant-system
+  audience: MaSoVa-users
 
 # LOGGING CONFIGURATION
 logging:
   level:
-    com.dominos.user: DEBUG
-    com.dominos.shared: DEBUG
+    com.MaSoVa.user: DEBUG
+    com.MaSoVa.shared: DEBUG
     org.springframework.cache: DEBUG
     org.springframework.data.redis: INFO
     org.springframework.security: INFO
@@ -167,7 +167,7 @@ springdoc:
   default-produces-media-type: application/json
 
 # CUSTOM BUSINESS CONFIGURATION
-dominos:
+MaSoVa:
   business:
     store:
       operating-hours:
@@ -203,14 +203,14 @@ spring:
       on-profile: dev
   data:
     mongodb:
-      uri: mongodb://localhost:27017/dominos
+      uri: mongodb://localhost:27017/MaSoVa
     redis:
       host: localhost
       port: 6379
       password: ""
 logging:
   level:
-    com.dominos: DEBUG
+    com.MaSoVa: DEBUG
     root: INFO
 
 ---
@@ -220,7 +220,7 @@ spring:
       on-profile: docker
   data:
     mongodb:
-      uri: ${MONGODB_URI:mongodb://admin:password123@mongodb:27017/dominos?authSource=admin}
+      uri: ${MONGODB_URI:mongodb://admin:password123@mongodb:27017/MaSoVa?authSource=admin}
     redis:
       host: ${REDIS_HOST:redis}
       port: ${REDIS_PORT:6379}
@@ -229,7 +229,7 @@ server:
   port: 8081
 logging:
   level:
-    com.dominos: INFO
+    com.MaSoVa: INFO
     root: WARN
 
 ---
@@ -239,7 +239,7 @@ spring:
       on-profile: test
   data:
     mongodb:
-      uri: mongodb://localhost:27017/dominos_test
+      uri: mongodb://localhost:27017/MaSoVa_test
     redis:
       host: localhost
       port: 6379
@@ -251,7 +251,7 @@ jwt:
   refresh-token-expiration: 600000
 logging:
   level:
-    com.dominos: DEBUG
+    com.MaSoVa: DEBUG
     org.springframework.cache: DEBUG
     root: WARN
 
@@ -277,7 +277,7 @@ server:
   port: ${SERVER_PORT:8081}
 logging:
   level:
-    com.dominos: INFO
+    com.MaSoVa: INFO
     root: WARN
   file:
     name: /app/logs/user-service.log

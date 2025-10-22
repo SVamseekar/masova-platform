@@ -9,7 +9,7 @@ spring:
   
   data:
     mongodb:
-      uri: mongodb://localhost:27017/dominos
+      uri: mongodb://localhost:27017/MaSoVa
       auto-index-creation: true
     redis:
       host: localhost
@@ -22,13 +22,13 @@ spring:
       cache-null-values: false
 
 jwt:
-  secret: dominos-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-256-bits
+  secret: MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-256-bits
   access-token-expiration: 3600000
   refresh-token-expiration: 604800000
 
 logging:
   level:
-    com.dominos.user: DEBUG
+    com.MaSoVa.user: DEBUG
     root: INFO
 
 management:

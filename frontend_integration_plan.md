@@ -1,4 +1,4 @@
-# Domino's Restaurant Management System
+# MaSoVa Restaurant Management System
 ## Complete Frontend Integration Plan
 
 *Comprehensive UI/UX implementation to complement the backend microservices architecture*
@@ -70,7 +70,7 @@ The frontend will consist of multiple specialized applications, each tailored fo
 ## Phase F1: Foundation & Shared Infrastructure
 
 ### Design System Development
-Create comprehensive design system reflecting Domino's brand identity with Indian market considerations including color schemes, typography, spacing, and component variants suitable for diverse user interfaces.
+Create comprehensive design system reflecting MaSoVa brand identity with Indian market considerations including color schemes, typography, spacing, and component variants suitable for diverse user interfaces.
 
 ### Authentication & Security Frontend
 Implement JWT token management, automatic token refresh, role-based route protection, secure storage mechanisms, and logout handling with proper cleanup of sensitive data.
@@ -299,7 +299,7 @@ Create comprehensive documentation including user guides, technical documentatio
 - **Device Compatibility**: Support for diverse device capabilities and screen sizes
 
 ### Brand Integration
-- **Visual Identity**: Consistent Domino's branding across all interfaces
+- **Visual Identity**: Consistent MaSoVa branding across all interfaces
 - **Color Scheme**: Brand colors with high contrast for accessibility
 - **Typography**: Readable fonts optimized for digital displays
 - **Imagery**: High-quality food photography and promotional materials
@@ -388,4 +388,4 @@ This comprehensive frontend integration plan provides a structured approach to b
 
 The phased approach allows for systematic development with clear milestones, ensuring each application meets the specific needs of its target users while maintaining consistency across the entire ecosystem. The emphasis on modern web technologies, responsive design, and comprehensive testing ensures the frontend applications will be production-ready and capable of supporting the complex business operations of a modern restaurant management system.
 
-By following this plan, the complete Domino's Restaurant Management System will provide a seamless, efficient, and enjoyable experience for customers, staff, and management, ultimately contributing to operational excellence and business success in the competitive restaurant industry.
+By following this plan, the complete MaSoVa Restaurant Management System will provide a seamless, efficient, and enjoyable experience for customers, staff, and management, ultimately contributing to operational excellence and business success in the competitive restaurant industry.

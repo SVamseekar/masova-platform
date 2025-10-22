@@ -3,13 +3,14 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider, CssBaseline, CircularProgress, Box } from '@mui/material';
 import { Provider } from 'react-redux';
 import { store } from './store/store';
-import { dominosTheme } from './styles/theme';
+import { MaSoVaTheme } from './styles/theme';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { NotificationSystem } from './components/common/NotificationSystem';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 
 // Lazy load components
 const LoginPage = React.lazy(() => import('./pages/auth/LoginPage'));
+const PublicMenuPage = React.lazy(() => import('./pages/PublicMenuPage'));
 const CustomerApp = React.lazy(() => import('./pages/customer/CustomerApp'));
 const ManagerDashboard = React.lazy(() => import('./pages/manager/DashboardPage'));
 const KitchenDisplayPage = React.lazy(() => import('./pages/kitchen/KitchenDisplayPage'));
@@ -32,7 +33,7 @@ const AppLoader = () => (
 const App: React.FC = () => {
   return (
     <Provider store={store}>
-      <ThemeProvider theme={dominosTheme}>
+      <ThemeProvider theme={MaSoVaTheme}>
         <CssBaseline />
         <ErrorBoundary>
           <Router>
@@ -40,13 +41,14 @@ const App: React.FC = () => {
               <Suspense fallback={<AppLoader />}>
                 <Routes>
                   <Route path="/login" element={<LoginPage />} />
-                  <Route 
-                    path="/customer/*" 
+                  <Route path="/menu" element={<PublicMenuPage />} />
+                  <Route
+                    path="/customer/*"
                     element={
                       <ProtectedRoute allowedRoles={['CUSTOMER']}>
                         <CustomerApp />
                       </ProtectedRoute>
-                    } 
+                    }
                   />
                   <Route 
                     path="/manager/*" 

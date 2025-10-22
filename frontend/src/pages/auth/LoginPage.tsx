@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { Button, Card, Input } from '../../components/ui/neumorphic';
 import { colors, spacing, typography, shadows, borderRadius, breakpoints } from '../../styles/design-tokens';
 import { createNeumorphicSurface, createResponsive } from '../../styles/neumorphic-utils';
+import { useLoginMutation } from '../../store/api/authApi';
+import { useAppSelector } from '../../store/hooks';
 
 interface DemoAccount {
   type: string;
@@ -17,13 +19,30 @@ interface DemoAccount {
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [loading, setLoading] = useState<boolean>(false);
+  const [login, { isLoading, error: apiError }] = useLoginMutation();
+  const { isAuthenticated, user } = useAppSelector(state => state.auth);
   const [error, setError] = useState<string>('');
   const [activeDemo, setActiveDemo] = useState<string>('');
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const userType = user.type?.toLowerCase();
+      if (userType?.includes('manager')) {
+        navigate('/manager');
+      } else if (userType?.includes('staff')) {
+        navigate('/kitchen');
+      } else if (userType?.includes('driver')) {
+        navigate('/driver');
+      } else {
+        navigate('/customer');
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const demoAccounts: DemoAccount[] = [
     { 
@@ -71,47 +90,18 @@ const LoginPage: React.FC = () => {
 
   const handleLogin = async (email: string, password: string) => {
     try {
-      setLoading(true);
       setError('');
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockUser = {
-        id: '1',
-        type: email.includes('manager') ? 'MANAGER' : 
-              email.includes('staff') ? 'STAFF' :
-              email.includes('driver') ? 'DRIVER' : 'CUSTOMER',
-        name: email.split('@')[0],
-        email: email,
-        phone: '+91 9876543210',
-        storeId: 'store-1',
-        createdAt: new Date().toISOString(),
-        isActive: true,
-      };
 
-      dispatch({
-        type: 'auth/loginSuccess',
-        payload: {
-          accessToken: 'mock-access-token',
-          refreshToken: 'mock-refresh-token',
-          user: mockUser,
-        }
-      });
+      // Call the actual API
+      const result = await login({ email, password }).unwrap();
 
-      if (email.includes('manager')) {
-        navigate('/manager');
-      } else if (email.includes('staff')) {
-        navigate('/kitchen');
-      } else if (email.includes('driver')) {
-        navigate('/driver');
-      } else {
-        navigate('/customer');
-      }
-    } catch (error: any) {
-      console.error('Login error:', error);
-      setError('Login failed. Please try again.');
-    } finally {
-      setLoading(false);
+      // Redux will handle token storage via extraReducers in authSlice
+      // Navigation will happen via useEffect when isAuthenticated changes
+
+    } catch (err: any) {
+      console.error('Login error:', err);
+      const errorMessage = err?.data?.message || err?.message || 'Login failed. Please check your credentials.';
+      setError(errorMessage);
     }
   };
 
@@ -260,13 +250,13 @@ const LoginPage: React.FC = () => {
     backgroundColor: isActive ? 'rgba(227, 24, 55, 0.2)' : 'rgba(255, 255, 255, 0.15)',
     border: `2px solid ${isActive ? colors.brand.primary : 'rgba(255, 255, 255, 0.2)'}`,
     padding: spacing[4],
-    cursor: loading ? 'not-allowed' : 'pointer',
+    cursor: isLoading ? 'not-allowed' : 'pointer',
     transition: 'all 250ms ease',
     textAlign: 'center',
     backdropFilter: 'blur(10px)',
     position: 'relative',
     overflow: 'hidden',
-    opacity: loading && !isActive ? 0.6 : 1,
+    opacity: isLoading && !isActive ? 0.6 : 1,
   });
 
   const formHeaderStyles: React.CSSProperties = {
@@ -323,7 +313,7 @@ const LoginPage: React.FC = () => {
                     key={index}
                     style={getDemoCardStyles(activeDemo === account.type)}
                     onClick={() => handleDemoLogin(account)}
-                    disabled={loading}
+                    disabled={isLoading}
                   >
                     <span style={{ fontSize: '28px', marginBottom: spacing[2], display: 'block' }}>
                       {account.icon}
@@ -406,7 +396,7 @@ const LoginPage: React.FC = () => {
                 placeholder="Enter your work email"
                 value={formData.email}
                 onChange={handleInputChange}
-                disabled={loading}
+                disabled={isLoading}
                 size="lg"
                 state={error && !formData.email ? 'error' : 'default'}
                 leftIcon="📧"
@@ -419,7 +409,7 @@ const LoginPage: React.FC = () => {
                 placeholder="Enter your password"
                 value={formData.password}
                 onChange={handleInputChange}
-                disabled={loading}
+                disabled={isLoading}
                 size="lg"
                 state={error && formData.password.length < 6 ? 'error' : 'default'}
                 showPasswordToggle
@@ -430,12 +420,12 @@ const LoginPage: React.FC = () => {
                 type="submit"
                 variant="primary"
                 size="xl"
-                isLoading={loading}
-                disabled={loading}
+                isLoading={isLoading}
+                disabled={isLoading}
                 fullWidth
                 rightIcon="→"
               >
-                {loading ? 'Signing In...' : 'Sign In to Store'}
+                {isLoading ? 'Signing In...' : 'Sign In to Store'}
               </Button>
             </form>
 

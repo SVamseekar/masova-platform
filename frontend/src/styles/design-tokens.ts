@@ -15,7 +15,7 @@ export const colors = {
   
   // Brand colors
   brand: {
-    primary: '#e53e3e', // Domino's red
+    primary: '#e53e3e', // MaSoVa red
     primaryLight: '#ff6b6b',
     primaryDark: '#c0392b',
     secondary: '#0066cc', // Blue accent  

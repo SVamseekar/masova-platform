@@ -1,5 +1,5 @@
 // Enhanced MongoDB initialization with 11 AM - 11 PM operating hours
-db = db.getSiblingDB('dominos');
+db = db.getSiblingDB('masova');
 
 // Create collections
 db.createCollection('users');
@@ -28,8 +28,8 @@ print('Database and indexes created successfully');
 // Insert sample stores with 11 AM - 11 PM hours
 db.stores.insertMany([
     {
-        name: "Domino's Banjara Hills",
-        code: "DOM001",
+        name: "MaSoVa Banjara Hills",
+        code: "MSV001",
         address: {
             street: "Road No. 12, Banjara Hills",
             city: "Hyderabad",

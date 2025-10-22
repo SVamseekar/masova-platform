@@ -1,8 +1,8 @@
-package com.dominos.user.controller;
+package com.MaSoVa.user.controller;
 
-import com.dominos.shared.enums.UserType;
-import com.dominos.user.dto.*;
-import com.dominos.user.service.UserService;
+import com.MaSoVa.shared.enums.UserType;
+import com.MaSoVa.user.dto.*;
+import com.MaSoVa.user.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;

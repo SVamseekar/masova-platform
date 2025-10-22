@@ -1,6 +1,6 @@
-# Domino's Restaurant Management System
+# MaSoVa Restaurant Management System
 
-A comprehensive, enterprise-grade restaurant management platform built with Java 21, Spring Boot 3.2, MongoDB, and Redis. This system replicates sophisticated Domino's operations with modern microservices architecture.
+A comprehensive, enterprise-grade restaurant management platform built with Java 21, Spring Boot 3.2, MongoDB, and Redis. This system replicates sophisticated MaSoVa operations with modern microservices architecture.
 
 ## 🎯 Project Overview
 
@@ -46,8 +46,8 @@ This system combines firsthand restaurant management experience with cutting-edg
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/dominos-restaurant-management-system.git
-   cd dominos-restaurant-management-system
+   git clone https://github.com/YOUR_USERNAME/MaSoVa-restaurant-management-system.git
+   cd MaSoVa-restaurant-management-system
    ```
 
 2. **Start infrastructure services:**
@@ -107,7 +107,7 @@ Invoke-RestMethod -Uri "http://localhost:8081/api/users/login" -Method POST -Bod
 ## 📊 Project Structure
 
 ```
-dominos-management-system/
+MaSoVa-management-system/
 ├── shared-models/           # Common entities and DTOs
 ├── api-gateway/            # API Gateway service
 ├── user-service/           # User management service

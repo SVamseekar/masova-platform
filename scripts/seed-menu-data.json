@@ -1,0 +1,82 @@
+{
+  "menuItems": [
+    {
+      "name": "Masala Dosa",
+      "description": "Crispy rice crepe filled with spiced potato masala",
+      "cuisine": "SOUTH_INDIAN",
+      "category": "DOSA",
+      "basePrice": 12000,
+      "variants": [
+        {"name": "Regular", "priceModifier": 0, "isAvailable": true},
+        {"name": "Ghee Roast", "priceModifier": 2000, "isAvailable": true}
+      ],
+      "dietaryInfo": ["VEGETARIAN", "VEGAN"],
+      "spiceLevel": "MEDIUM",
+      "preparationTime": 15,
+      "servingSize": "1 dosa",
+      "isAvailable": true,
+      "tags": ["popular", "traditional"]
+    },
+    {
+      "name": "Ghee Dosa",
+      "description": "Crispy dosa roasted in pure ghee",
+      "cuisine": "SOUTH_INDIAN",
+      "category": "DOSA",
+      "basePrice": 14000,
+      "dietaryInfo": ["VEGETARIAN"],
+      "spiceLevel": "MILD",
+      "preparationTime": 15,
+      "servingSize": "1 dosa",
+      "isAvailable": true,
+      "tags": ["traditional"]
+    },
+    {
+      "name": "Medu Vada",
+      "description": "Crispy lentil fritters",
+      "cuisine": "SOUTH_INDIAN",
+      "category": "IDLY_VADA",
+      "basePrice": 8000,
+      "variants": [
+        {"name": "2 pieces", "priceModifier": 0, "isAvailable": true},
+        {"name": "4 pieces", "priceModifier": 6000, "isAvailable": true}
+      ],
+      "dietaryInfo": ["VEGETARIAN", "VEGAN"],
+      "spiceLevel": "MILD",
+      "preparationTime": 10,
+      "servingSize": "2 pieces",
+      "isAvailable": true,
+      "tags": ["popular"]
+    },
+    {
+      "name": "Hot Idly",
+      "description": "Steamed rice cakes",
+      "cuisine": "SOUTH_INDIAN",
+      "category": "IDLY_VADA",
+      "basePrice": 7000,
+      "variants": [
+        {"name": "2 pieces", "priceModifier": 0, "isAvailable": true},
+        {"name": "4 pieces", "priceModifier": 5000, "isAvailable": true}
+      ],
+      "dietaryInfo": ["VEGETARIAN", "VEGAN"],
+      "spiceLevel": "NONE",
+      "preparationTime": 10,
+      "servingSize": "2 pieces",
+      "isAvailable": true,
+      "tags": ["healthy"]
+    },
+    {
+      "name": "South Indian Thali Meal",
+      "description": "Complete meal with rice, sambar, rasam, vegetables, and accompaniments",
+      "cuisine": "SOUTH_INDIAN",
+      "category": "SOUTH_INDIAN_MEALS",
+      "basePrice": 25000,
+      "dietaryInfo": ["VEGETARIAN"],
+      "spiceLevel": "MEDIUM",
+      "preparationTime": 25,
+      "servingSize": "1 thali",
+      "isAvailable": true,
+      "tags": ["popular", "complete-meal"],
+      "isRecommended": true
+    }
+  ]
+}
