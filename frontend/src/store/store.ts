@@ -8,6 +8,8 @@ import { userApi } from './api/userApi';
 import { sessionApi } from './api/sessionApi';
 import { analyticsApi } from './api/analyticsApi';
 import { menuApi } from './api/menuApi';
+import { storeApi } from './api/storeApi';
+import { shiftApi } from './api/shiftApi';
 
 // Slice reducers
 import authReducer from './slices/authSlice';
@@ -30,6 +32,8 @@ export const store = configureStore({
     [sessionApi.reducerPath]: sessionApi.reducer,
     [analyticsApi.reducerPath]: analyticsApi.reducer,
     [menuApi.reducerPath]: menuApi.reducer,
+    [storeApi.reducerPath]: storeApi.reducer,
+    [shiftApi.reducerPath]: shiftApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -44,7 +48,9 @@ export const store = configureStore({
       userApi.middleware,
       sessionApi.middleware,
       analyticsApi.middleware,
-      menuApi.middleware
+      menuApi.middleware,
+      storeApi.middleware,
+      shiftApi.middleware
     ),
   devTools: process.env.NODE_ENV !== 'production',
 });
