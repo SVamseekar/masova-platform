@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import AppHeader from '../../components/common/AppHeader';
+import { useAppSelector } from '../../store/hooks';
+import { selectCurrentUser } from '../../store/slices/authSlice';
+import {
+  useGetKitchenQueueQuery,
+  useUpdateOrderStatusMutation,
+  Order as ApiOrder
+} from '../../store/api/orderApi';
 
 // TypeScript interfaces
 interface OrderItem {
   name: string;
   size: string | null;
   toppings: string[];
+  quantity: number;
 }
 
 interface Order {
@@ -16,8 +24,8 @@ interface Order {
   receivedAt: Date;
   estimatedPrepTime: number;
   customer: string;
-  orderType: 'DELIVERY' | 'COLLECTION';
-  priority: 'normal' | 'urgent';
+  orderType: 'DELIVERY' | 'COLLECTION' | 'DINE_IN';
+  priority: 'NORMAL' | 'URGENT';
   ovenStartTime?: Date;
   ovenEndTime?: Date;
 }
@@ -31,66 +39,34 @@ interface StatusColumn {
 
 const KitchenDisplayPage: React.FC = () => {
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
-  const [orders, setOrders] = useState<Order[]>([
-    {
-      id: 'ORD001',
-      orderNumber: '1245',
-      status: 'PREPARING',
-      items: [
-        { name: 'Margherita Pizza', size: 'Large', toppings: ['Extra Cheese'] },
-        { name: 'Garlic Bread', size: null, toppings: [] }
-      ],
-      receivedAt: new Date(Date.now() - 8 * 60000),
-      estimatedPrepTime: 15,
-      customer: 'John Doe',
-      orderType: 'DELIVERY',
-      priority: 'normal'
-    },
-    {
-      id: 'ORD002',
-      orderNumber: '1246',
-      status: 'OVEN',
-      items: [
-        { name: 'Pepperoni Pizza', size: 'Medium', toppings: ['Pepperoni', 'Mushrooms'] }
-      ],
-      receivedAt: new Date(Date.now() - 12 * 60000),
-      estimatedPrepTime: 18,
-      ovenStartTime: new Date(Date.now() - 3 * 60000),
-      customer: 'Sarah Wilson',
-      orderType: 'COLLECTION',
-      priority: 'urgent'
-    },
-    {
-      id: 'ORD003',
-      orderNumber: '1247',
-      status: 'BAKED',
-      items: [
-        { name: 'Veggie Supreme', size: 'Large', toppings: ['Bell Peppers', 'Onions', 'Olives'] },
-        { name: 'Coke 330ml', size: null, toppings: [] }
-      ],
-      receivedAt: new Date(Date.now() - 20 * 60000),
-      estimatedPrepTime: 20,
-      ovenStartTime: new Date(Date.now() - 8 * 60000),
-      ovenEndTime: new Date(Date.now() - 1 * 60000),
-      customer: 'Mike Johnson',
-      orderType: 'DELIVERY',
-      priority: 'normal'
-    },
-    {
-      id: 'ORD004',
-      orderNumber: '1248',
-      status: 'RECEIVED',
-      items: [
-        { name: 'Chicken Tikka Pizza', size: 'Large', toppings: ['Chicken Tikka', 'Onions'] },
-        { name: 'Cheesy Dip', size: null, toppings: [] }
-      ],
-      receivedAt: new Date(Date.now() - 2 * 60000),
-      estimatedPrepTime: 22,
-      customer: 'Lisa Brown',
-      orderType: 'DELIVERY',
-      priority: 'urgent'
-    }
-  ]);
+  const currentUser = useAppSelector(selectCurrentUser);
+  const storeId = currentUser?.storeId || '';
+
+  // API Hooks - Poll every 5 seconds for real-time updates
+  const { data: apiOrders = [], isLoading, error } = useGetKitchenQueueQuery(storeId, {
+    skip: !storeId,
+    pollingInterval: 5000, // Poll every 5 seconds
+  });
+
+  const [updateOrderStatus, { isLoading: isUpdating }] = useUpdateOrderStatusMutation();
+
+  // Transform API orders to local format
+  const orders: Order[] = apiOrders.map(order => ({
+    id: order.id,
+    orderNumber: order.orderNumber,
+    status: order.status as Order['status'],
+    items: order.items.map(item => ({
+      name: item.name,
+      size: item.variant || null,
+      toppings: item.customizations || [],
+      quantity: item.quantity
+    })),
+    receivedAt: new Date(order.createdAt),
+    estimatedPrepTime: order.preparationTime || 15,
+    customer: order.customerName,
+    orderType: order.orderType === 'TAKEAWAY' ? 'COLLECTION' : (order.orderType === 'DINE_IN' ? 'DINE_IN' : 'DELIVERY'),
+    priority: order.priority,
+  }));
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -111,37 +87,29 @@ const KitchenDisplayPage: React.FC = () => {
     return remaining > 0 ? `${remaining}m left` : 'Ready!';
   };
 
-  const moveOrderToNext = (orderId: string): void => {
-    setOrders(orders.map(order => {
-      if (order.id === orderId) {
-        const statusFlow: Order['status'][] = ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED', 'DISPATCHED'];
-        const currentIndex = statusFlow.indexOf(order.status);
-        const nextStatus = statusFlow[currentIndex + 1];
-        
-        if (!nextStatus) return order;
-        
-        const updatedOrder = { ...order, status: nextStatus };
-        
-        if (nextStatus === 'OVEN') {
-          updatedOrder.ovenStartTime = new Date();
-        } else if (nextStatus === 'BAKED') {
-          updatedOrder.ovenEndTime = new Date();
-        }
-        
-        return updatedOrder;
-      }
-      return order;
-    }));
+  const moveOrderToNext = async (orderId: string, currentStatus: Order['status']): Promise<void> => {
+    const statusFlow: Order['status'][] = ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED', 'DISPATCHED'];
+    const currentIndex = statusFlow.indexOf(currentStatus);
+    const nextStatus = statusFlow[currentIndex + 1];
+
+    if (!nextStatus) return;
+
+    try {
+      await updateOrderStatus({ orderId, status: nextStatus }).unwrap();
+    } catch (error) {
+      console.error('Failed to update order status:', error);
+      alert('Failed to update order status. Please try again.');
+    }
   };
 
   const OrderCard: React.FC<{ order: Order }> = ({ order }) => (
-    <div className={`order-card status-${order.status.toLowerCase()} ${order.priority === 'urgent' ? 'urgent' : ''}`}>
+    <div className={`order-card status-${order.status.toLowerCase()} ${order.priority === 'URGENT' ? 'urgent' : ''}`}>
       {/* Order Header */}
       <div className="order-header">
         <div className="order-number">#{order.orderNumber}</div>
         <div className="order-meta">
           <span className={`order-type ${order.orderType.toLowerCase()}`}>
-            {order.orderType === 'DELIVERY' ? '🚚' : '🏪'} {order.orderType}
+            {order.orderType === 'DELIVERY' ? '🚚' : order.orderType === 'COLLECTION' ? '🏪' : '🍽️'} {order.orderType}
           </span>
           <span className="elapsed-time">{getElapsedTime(order.receivedAt)}</span>
         </div>
@@ -150,7 +118,7 @@ const KitchenDisplayPage: React.FC = () => {
       {/* Customer Section */}
       <div className="customer-section">
         <div className="customer-name">{order.customer}</div>
-        {order.priority === 'urgent' && (
+        {order.priority === 'URGENT' && (
           <div className="priority-badge">
             <span className="priority-icon">⚡</span>
             URGENT
@@ -163,6 +131,7 @@ const KitchenDisplayPage: React.FC = () => {
         {order.items.map((item: OrderItem, index: number) => (
           <div key={index} className="order-item">
             <div className="item-main">
+              <span className="item-quantity">{item.quantity}x</span>
               <span className="item-name">{item.name}</span>
               {item.size && <span className="item-size">{item.size}</span>}
             </div>
@@ -191,8 +160,12 @@ const KitchenDisplayPage: React.FC = () => {
           <span>{order.status.replace('_', ' ')}</span>
         </div>
         {order.status !== 'DISPATCHED' && (
-          <button className="next-btn" onClick={() => moveOrderToNext(order.id)}>
-            <span>Next Stage</span>
+          <button
+            className="next-btn"
+            onClick={() => moveOrderToNext(order.id, order.status)}
+            disabled={isUpdating}
+          >
+            <span>{isUpdating ? 'Updating...' : 'Next Stage'}</span>
             <span className="next-icon">→</span>
           </button>
         )}
@@ -212,8 +185,8 @@ const KitchenDisplayPage: React.FC = () => {
     return orders.filter(order => order.status === status)
       .sort((a, b) => {
         // Sort urgent orders first, then by time
-        if (a.priority === 'urgent' && b.priority !== 'urgent') return -1;
-        if (b.priority === 'urgent' && a.priority !== 'urgent') return 1;
+        if (a.priority === 'URGENT' && b.priority !== 'URGENT') return -1;
+        if (b.priority === 'URGENT' && a.priority !== 'URGENT') return 1;
         return a.receivedAt.getTime() - b.receivedAt.getTime();
       });
   };
@@ -237,7 +210,7 @@ const KitchenDisplayPage: React.FC = () => {
         .kitchen-header {
           background: #f0f0f0;
           padding: 20px 24px;
-          box-shadow: 
+          box-shadow:
             inset 8px 8px 16px rgba(163, 163, 163, 0.2),
             inset -8px -8px 16px rgba(255, 255, 255, 0.8);
           position: sticky;
@@ -278,7 +251,7 @@ const KitchenDisplayPage: React.FC = () => {
           background: #f0f0f0;
           padding: 12px 16px;
           border-radius: 16px;
-          box-shadow: 
+          box-shadow:
             8px 8px 16px rgba(163, 163, 163, 0.3),
             -8px -8px 16px rgba(255, 255, 255, 0.8);
         }
@@ -304,7 +277,7 @@ const KitchenDisplayPage: React.FC = () => {
           background: #f0f0f0;
           padding: 16px 24px;
           border-radius: 20px;
-          box-shadow: 
+          box-shadow:
             12px 12px 24px rgba(163, 163, 163, 0.3),
             -12px -12px 24px rgba(255, 255, 255, 0.8);
         }
@@ -324,7 +297,7 @@ const KitchenDisplayPage: React.FC = () => {
           background: #f0f0f0;
           border-radius: 20px;
           padding: 20px;
-          box-shadow: 
+          box-shadow:
             12px 12px 24px rgba(163, 163, 163, 0.3),
             -12px -12px 24px rgba(255, 255, 255, 0.8);
           position: relative;
@@ -389,7 +362,7 @@ const KitchenDisplayPage: React.FC = () => {
           border-radius: 16px;
           padding: 16px;
           transition: all 0.3s ease;
-          box-shadow: 
+          box-shadow:
             8px 8px 16px rgba(163, 163, 163, 0.3),
             -8px -8px 16px rgba(255, 255, 255, 0.8);
           border-left: 4px solid transparent;
@@ -406,12 +379,12 @@ const KitchenDisplayPage: React.FC = () => {
 
         @keyframes urgentPulse {
           0%, 100% {
-            box-shadow: 
+            box-shadow:
               8px 8px 16px rgba(163, 163, 163, 0.3),
               -8px -8px 16px rgba(255, 255, 255, 0.8);
           }
           50% {
-            box-shadow: 
+            box-shadow:
               8px 8px 16px rgba(163, 163, 163, 0.3),
               -8px -8px 16px rgba(255, 255, 255, 0.8),
               0 0 20px rgba(239, 68, 68, 0.4);
@@ -452,7 +425,7 @@ const KitchenDisplayPage: React.FC = () => {
           color: #2563eb;
         }
 
-        .order-type.collection {
+        .order-type.collection, .order-type.dine_in {
           background: rgba(16, 185, 129, 0.1);
           color: #059669;
         }
@@ -520,6 +493,17 @@ const KitchenDisplayPage: React.FC = () => {
           margin-bottom: 4px;
         }
 
+        .item-quantity {
+          background: #e53e3e;
+          color: white;
+          padding: 2px 6px;
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 700;
+          min-width: 24px;
+          text-align: center;
+        }
+
         .item-name {
           font-weight: 600;
           color: #333;
@@ -539,7 +523,7 @@ const KitchenDisplayPage: React.FC = () => {
           color: #666;
           font-size: 12px;
           font-style: italic;
-          margin-left: 4px;
+          margin-left: 32px;
         }
 
         .oven-timer {
@@ -642,14 +626,19 @@ const KitchenDisplayPage: React.FC = () => {
           display: flex;
           align-items: center;
           gap: 4px;
-          box-shadow: 
+          box-shadow:
             4px 4px 8px rgba(163, 163, 163, 0.3),
             -4px -4px 8px rgba(255, 255, 255, 0.8);
         }
 
-        .next-btn:active {
+        .next-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .next-btn:active:not(:disabled) {
           transform: scale(0.95);
-          box-shadow: 
+          box-shadow:
             inset 3px 3px 6px rgba(163, 163, 163, 0.3),
             inset -3px -3px 6px rgba(255, 255, 255, 0.8);
         }
@@ -680,21 +669,39 @@ const KitchenDisplayPage: React.FC = () => {
           font-size: 14px;
         }
 
+        .loading-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 60px 20px;
+          color: #666;
+        }
+
+        .error-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 60px 20px;
+          color: #ef4444;
+        }
+
         /* Responsive Design */
         @media (max-width: 1400px) {
           .kitchen-board {
             grid-template-columns: repeat(3, 1fr);
             gap: 16px;
           }
-          
+
           .header-stats {
             gap: 16px;
           }
-          
+
           .stat-item {
             padding: 10px 12px;
           }
-          
+
           .stat-number {
             font-size: 20px;
           }
@@ -706,27 +713,27 @@ const KitchenDisplayPage: React.FC = () => {
             gap: 12px;
             padding: 16px;
           }
-          
+
           .kitchen-header {
             padding: 16px;
           }
-          
+
           .header-content {
             flex-direction: column;
             gap: 16px;
             text-align: center;
           }
-          
+
           .header-stats {
             justify-content: center;
             flex-wrap: wrap;
             gap: 12px;
           }
-          
+
           .kitchen-title {
             font-size: 28px;
           }
-          
+
           .kitchen-time {
             font-size: 24px;
             padding: 12px 20px;
@@ -739,41 +746,41 @@ const KitchenDisplayPage: React.FC = () => {
             gap: 12px;
             padding: 12px;
           }
-          
+
           .kitchen-header {
             padding: 12px;
           }
-          
+
           .status-column {
             padding: 16px;
           }
-          
+
           .order-card {
             padding: 12px;
           }
-          
+
           .order-header {
             flex-direction: column;
             gap: 8px;
           }
-          
+
           .order-meta {
             align-items: flex-start;
             width: 100%;
           }
-          
+
           .customer-section {
             flex-direction: column;
             gap: 8px;
             align-items: flex-start;
           }
-          
+
           .order-footer {
             flex-direction: column;
             gap: 8px;
             align-items: stretch;
           }
-          
+
           .next-btn {
             width: 100%;
             justify-content: center;
@@ -781,38 +788,50 @@ const KitchenDisplayPage: React.FC = () => {
         }
       `}</style>
 
-      <AppHeader title="Kitchen Display" showBackButton={true} backRoute="/" />
+      <AppHeader title="Kitchen Display" />
 
       {/* Main Board */}
       <main className="kitchen-board">
-        {statusColumns.map(column => {
-          const columnOrders = getOrdersByStatus(column.status);
-          
-          return (
-            <div key={column.status} className="status-column">
-              <div className="column-header">
-                <div className="column-title-section">
-                  <span className="column-icon">{column.icon}</span>
-                  <h3 className="column-title">{column.title}</h3>
-                </div>
-                <div className="column-count">{columnOrders.length}</div>
-              </div>
-              
-              <div className="orders-list">
-                {columnOrders.length === 0 ? (
-                  <div className="empty-column">
-                    <div className="empty-icon">📭</div>
-                    <div className="empty-text">No orders</div>
+        {isLoading ? (
+          <div className="loading-state" style={{ gridColumn: '1 / -1' }}>
+            <div className="empty-icon">⏳</div>
+            <div className="empty-text">Loading orders...</div>
+          </div>
+        ) : error ? (
+          <div className="error-state" style={{ gridColumn: '1 / -1' }}>
+            <div className="empty-icon">⚠️</div>
+            <div className="empty-text">Error loading orders. Please check if Order Service is running.</div>
+          </div>
+        ) : (
+          statusColumns.map(column => {
+            const columnOrders = getOrdersByStatus(column.status);
+
+            return (
+              <div key={column.status} className="status-column">
+                <div className="column-header">
+                  <div className="column-title-section">
+                    <span className="column-icon">{column.icon}</span>
+                    <h3 className="column-title">{column.title}</h3>
                   </div>
-                ) : (
-                  columnOrders.map(order => (
-                    <OrderCard key={order.id} order={order} />
-                  ))
-                )}
+                  <div className="column-count">{columnOrders.length}</div>
+                </div>
+
+                <div className="orders-list">
+                  {columnOrders.length === 0 ? (
+                    <div className="empty-column">
+                      <div className="empty-icon">📭</div>
+                      <div className="empty-text">No orders</div>
+                    </div>
+                  ) : (
+                    columnOrders.map(order => (
+                      <OrderCard key={order.id} order={order} />
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </main>
     </div>
   );
