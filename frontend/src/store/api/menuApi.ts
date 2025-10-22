@@ -154,7 +154,7 @@ export interface MenuStats {
 export const menuApi = createApi({
   reducerPath: 'menuApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: API_CONFIG.BASE_URL,
+    baseUrl: 'http://localhost:8082', // Menu service runs on port 8082
     prepareHeaders: (headers, { getState }) => {
       const token = (getState() as RootState).auth.accessToken;
       if (token) {

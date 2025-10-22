@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AppHeader from '../../components/common/AppHeader';
 
 // TypeScript interfaces
 interface OrderItem {
@@ -780,39 +781,7 @@ const KitchenDisplayPage: React.FC = () => {
         }
       `}</style>
 
-      {/* Header */}
-      <header className="kitchen-header">
-        <div className="header-content">
-          <div className="header-left">
-            <h1 className="kitchen-title">
-              <span>🍕</span>
-              Kitchen Display
-            </h1>
-            <div className="header-stats">
-              <div className="stat-item">
-                <span className="stat-number">{orders.filter(o => o.status !== 'DISPATCHED').length}</span>
-                <span className="stat-label">Active</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-number">{orders.filter(o => o.status === 'OVEN').length}</span>
-                <span className="stat-label">In Oven</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-number">{orders.filter(o => o.priority === 'urgent').length}</span>
-                <span className="stat-label">Urgent</span>
-              </div>
-            </div>
-          </div>
-          <div className="kitchen-time">
-            {currentTime.toLocaleTimeString('en-IN', { 
-              hour12: true, 
-              hour: '2-digit', 
-              minute: '2-digit', 
-              second: '2-digit' 
-            })}
-          </div>
-        </div>
-      </header>
+      <AppHeader title="Kitchen Display" showBackButton={true} backRoute="/" />
 
       {/* Main Board */}
       <main className="kitchen-board">

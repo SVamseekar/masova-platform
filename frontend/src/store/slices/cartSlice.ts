@@ -5,9 +5,10 @@ interface CartItem {
   name: string;
   price: number;
   quantity: number;
-  category: 'PIZZA' | 'SIDES' | 'DRINKS';
+  category?: string;
   toppings?: string[];
   size?: string;
+  imageUrl?: string;
 }
 
 interface CartState {

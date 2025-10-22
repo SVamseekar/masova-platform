@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AppHeader from '../../components/common/AppHeader';
 
 // TypeScript interfaces
 interface SalesData {
@@ -521,57 +522,7 @@ const DashboardPage: React.FC = () => {
       backgroundColor: '#f1f5f9',
       fontFamily: '"Helvetica Neue", Arial, sans-serif'
     }}>
-      {/* Header */}
-      <div style={{
-        background: 'linear-gradient(135deg, #0066CC 0%, #004499 100%)',
-        padding: '20px 32px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        boxShadow: '0 4px 20px rgba(0, 102, 204, 0.3)',
-        color: 'white'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ fontSize: '36px' }}>🔥</span>
-          <div>
-            <h1 style={{ fontSize: '28px', fontWeight: '700', margin: '0' }}>
-              MaSoVa Manager Dashboard
-            </h1>
-            <p style={{ fontSize: '16px', margin: '4px 0 0 0', opacity: 0.9 }}>
-              Restaurant Management System
-            </p>
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ textAlign: 'right' }}>
-            <p style={{ margin: '0', fontSize: '14px', opacity: 0.9 }}>Today</p>
-            <p style={{ margin: '0', fontSize: '16px', fontWeight: '600' }}>{currentDate}</p>
-          </div>
-          <button
-            onClick={handleLogout}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              color: 'white',
-              border: '2px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '600',
-              backdropFilter: 'blur(10px)',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-            }}
-          >
-            🚪 Logout
-          </button>
-        </div>
-      </div>
+      <AppHeader title="Manager Dashboard" showBackButton={true} backRoute="/" />
 
       {/* Navigation Tabs */}
       <div style={{
