@@ -27,6 +27,7 @@
         <module>api-gateway</module>
         <module>user-service</module>
         <module>menu-service</module>
+        <module>order-service</module>
     </modules>
     
     <dependencyManagement>
