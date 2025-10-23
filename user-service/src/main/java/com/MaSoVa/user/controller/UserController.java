@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,7 +24,9 @@ import java.util.Map;
 @RequestMapping("/api/users")
 @Tag(name = "User Management", description = "User registration, authentication, and management")
 public class UserController {
-    
+
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+
     @Autowired
     private UserService userService;
     
@@ -146,9 +150,8 @@ public class UserController {
             );
             
             // Log the full error for debugging
-            System.err.println("Permission check failed for user " + userId + ": " + e.getMessage());
-            e.printStackTrace();
-            
+            logger.error("Permission check failed for user {}: {}", userId, e.getMessage(), e);
+
             return ResponseEntity.ok(errorResponse);
         }
     }
@@ -205,5 +208,15 @@ public class UserController {
     public ResponseEntity<Map<String, Object>> getUserStats() {
         Map<String, Object> stats = userService.getUserStatistics();
         return ResponseEntity.ok(stats);
+    }
+
+    // Analytics endpoints
+    @GetMapping("/drivers/store/{storeId}")
+    @Operation(summary = "Get drivers by store")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<List<UserResponse>> getDriversByStore(@PathVariable String storeId) {
+        logger.info("Fetching drivers for store: {}", storeId);
+        List<UserResponse> drivers = userService.getDriversByStore(storeId);
+        return ResponseEntity.ok(drivers);
     }
 }

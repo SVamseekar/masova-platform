@@ -102,6 +102,232 @@
 - WebSocket implementation
 - Kitchen workflow integration
 
+## Phase 4.5: System Refactoring & POS Foundation (Week 5 - Between Phase 4 & 5)
+
+**Priority:** CRITICAL - Must complete before Phase 5 (Payment Integration)
+**Duration:** 10-14 days
+**Status:** ✅ Days 1-9 COMPLETED (75% done) | Core Applications Complete!
+
+### 4.5.1 Critical Backend Infrastructure ✅ COMPLETE
+- **API Gateway Implementation**:
+  - ✅ Complete routing configuration (public + protected routes)
+  - ✅ JWT authentication filter at gateway level
+  - ✅ Rate limiting (100 requests/min per user)
+  - ✅ CORS configuration for React frontend
+  - ✅ Health checks and fallback handling
+
+- **Configuration & Secrets Management**:
+  - ✅ Created comprehensive .env.example (80+ variables)
+  - ✅ JWT secrets aligned across all services
+  - ✅ Environment variable configuration standardized
+
+- **Logging & Error Handling**:
+  - ✅ Replaced all System.err.println with SLF4J logger
+  - ✅ Proper structured logging with context
+  - ✅ Exception handling standardized
+
+### 4.5.2 Frontend Cleanup & Configuration ✅ COMPLETE
+- **Remove Duplicate Code**:
+  - ✅ Deleted legacy Axios-based API services
+  - ✅ All components now use RTK Query exclusively
+
+- **Business Configuration Centralization**:
+  - ✅ Created business-config.ts (200+ lines)
+  - ✅ Pricing rules (delivery fee: ₹40, tax: 5%)
+  - ✅ Order management settings
+  - ✅ Driver settings (max radius: 10km)
+  - ✅ Payment settings
+  - ✅ Helper functions (calculations, validation)
+
+### 4.5.3 Point of Sale (POS) System Frontend ✅ COMPLETE
+**Location:** `frontend/src/apps/POSSystem/`
+
+**Core Components Built:**
+- **POSDashboard.tsx**: Main 3-column layout with keyboard shortcuts (F1-F3, ESC, Ctrl+Enter ✅)
+- **MenuPanel.tsx**: Menu browsing with search, category filters, quick-add popular items
+- **OrderPanel.tsx**: Real-time order builder with quantity controls, special instructions
+- **CustomerPanel.tsx**: Customer info capture, payment method selection, form validation, imperative ref for shortcuts ✅
+- **MetricsTiles.tsx**: Real-time sales metrics dashboard with live backend data ✅
+- **OrderHistory.tsx**: Today's orders table with search functionality
+- **Reports.tsx**: Manager-only analytics page (basic structure)
+
+**Features Implemented:**
+- ✅ Take walk-in, pickup, and delivery orders
+- ✅ Menu item selection with search and filtering
+- ✅ Real-time order total calculation (subtotal + tax + delivery fee)
+- ✅ Customer information capture with validation
+- ✅ Payment method selection (Cash, Card, UPI, Wallet)
+- ✅ All keyboard shortcuts functional (F1-F3, ESC, Ctrl+Enter) ✅
+- ✅ Role-based access (STAFF + MANAGER)
+- ✅ Mobile-responsive design
+- ✅ Integration with orderApi, menuApi, and analyticsApi (RTK Query) ✅
+
+### 4.5.4 Analytics Service & POS Metrics Integration ✅ COMPLETE (Days 5-6)
+
+**New Analytics Microservice Created:**
+**Location:** `analytics-service/` (Port 8085)
+
+**Backend Components:**
+- ✅ **AnalyticsServiceApplication.java** - Spring Boot app with Redis caching, scheduled jobs
+- ✅ **application.yml** - Complete configuration with cache TTLs, external service URLs
+- ✅ **pom.xml** - Maven dependencies (Spring Boot, MongoDB, Redis, JWT)
+
+**DTOs (Data Transfer Objects):**
+- ✅ **SalesMetricsResponse.java** - Today vs yesterday vs last year comparison
+- ✅ **AverageOrderValueResponse.java** - AOV with trend analysis
+- ✅ **DriverStatusResponse.java** - Driver availability aggregation
+- ✅ **StaffPerformanceResponse.java** - Individual staff performance
+
+**Service Clients:**
+- ✅ **OrderServiceClient.java** - Fetches order data with date ranges
+- ✅ **UserServiceClient.java** - Fetches staff and driver information
+
+**Core Service:**
+- ✅ **AnalyticsService.java** - Business logic:
+  - Sales comparison with percentage changes
+  - Trend determination (UP/DOWN/STABLE)
+  - Driver status aggregation
+  - Staff performance calculation
+
+**REST Controller:**
+- ✅ **AnalyticsController.java** - 4 RESTful endpoints:
+  - `GET /api/analytics/store/{storeId}/sales/today`
+  - `GET /api/analytics/store/{storeId}/avgOrderValue/today`
+  - `GET /api/analytics/drivers/status/{storeId}`
+  - `GET /api/analytics/staff/{staffId}/performance/today`
+
+**Configuration:**
+- ✅ **RestTemplateConfig.java** - HTTP client with timeouts
+- ✅ **RedisConfig.java** - Multi-level cache (5min sales, 10min staff, 2min drivers)
+- ✅ **SecurityConfig.java** - CORS and security
+
+**Extended Existing Services:**
+- ✅ **Order Service** - 4 new analytics endpoints (date queries, active deliveries)
+  - `OrderRepository.java` - Added date range and staff queries
+  - `OrderService.java` - Analytics methods (getOrdersByDate, etc.)
+  - `OrderController.java` - REST endpoints for analytics
+- ✅ **User Service** - Driver endpoints
+  - `UserController.java` - GET /api/users/drivers/store/{storeId}
+  - `UserService.java` - getDriversByStore method
+- ✅ **API Gateway** - Analytics routing to port 8085
+
+**Frontend Integration:**
+- ✅ **analyticsApi.ts** - Complete RTK Query API with TypeScript interfaces
+- ✅ **MetricsTiles.tsx** - Real-time data with 30-60s polling, trend indicators
+- ✅ **POSDashboard.tsx** - Ctrl+Enter shortcut implemented with useRef
+- ✅ **CustomerPanel.tsx** - useImperativeHandle for external submit trigger
+
+**Files Created:** 15+ new Java files, 37 total new files
+**Files Modified:** 15 files across services and frontend
+
+### 4.5.5 Application Segregation ✅ COMPLETE (Days 7-9)
+
+**Day 7: Public Website Restructure ✅ COMPLETE**
+**Location:** `frontend/src/apps/PublicWebsite/` (5 new files)
+
+**Created Components:**
+- ✅ **HomePage.tsx** - Modern landing page with hero section, featured promotions, "Why Choose Us" features
+- ✅ **PromotionsPage.tsx** - Complete offers page with category filtering (Pizza, Biryani, Combos, Desserts)
+- ✅ **PublicMenuPage.tsx** - Menu browsing with navigation bar (no login required)
+- ✅ **HeroSection.tsx** - Reusable hero component with gradient background, floating animations
+- ✅ **PromotionCard.tsx** - Reusable promotion card with category chips
+
+**Routing Updates (App.tsx):**
+- ✅ `/` → HomePage (landing page with hero) - **FIXED** (was menu before)
+- ✅ `/menu` → PublicMenuPage (browse menu without login)
+- ✅ `/promotions` → PromotionsPage (all offers with filters)
+- ✅ Staff Login link in footer for clear separation
+
+**Features:**
+- ✅ Clear customer journey: Home (hero & CTAs) → Menu (browse) → Order Now (redirects to /customer/menu)
+- ✅ Mobile-responsive design
+- ✅ Quick stats display (100+ items, 30min delivery, 10K+ customers)
+
+**Day 8-9: Driver Application ✅ COMPLETE**
+**Location:** `frontend/src/apps/DriverApp/` (7 new files)
+
+**Main Dashboard:**
+- ✅ **DriverDashboard.tsx** - Main app with bottom navigation (Home, Active, History, Profile)
+- ✅ Mobile-first design with status bar and badge counters
+
+**Core Pages:**
+- ✅ **DeliveryHomePage.tsx** - GPS-based clock in/out with real-time session tracking
+  - Online/offline toggle with `navigator.geolocation` API
+  - Session duration timer (HH:MM:SS format)
+  - Today's stats cards (deliveries, earnings, distance, avg time)
+  - Location permission error handling
+  - Calls `startWorkingSession` / `endWorkingSession` APIs with GPS coordinates
+
+- ✅ **ActiveDeliveryPage.tsx** - Delivery management
+  - Real-time assigned orders (filters by driver ID)
+  - Order cards with customer info, address, items
+  - Navigate button (opens Google Maps)
+  - Call/SMS customer functionality
+  - Mark as delivered button
+  - Polls every 30 seconds for updates
+
+- ✅ **DeliveryHistoryPage.tsx** - Past deliveries
+  - Time filters (Today, Week, Month, All)
+  - Search by order # or customer name
+  - Stats cards (total deliveries, earnings, distance, avg time)
+  - Delivery cards with timestamps and earnings (20% commission)
+
+- ✅ **DriverProfilePage.tsx** - Performance metrics
+  - Profile header with avatar, rating, status chip
+  - Personal information (name, email, phone, ID, address)
+  - Performance stats (total deliveries, rating, on-time %, avg time, distance)
+  - Earnings summary (today, week, month)
+
+**Components:**
+- ✅ **CustomerContact.tsx** - Dialog for calling/SMS customer with pre-filled message template
+- ✅ **NavigationMap.tsx** - Placeholder for Google Maps API integration
+
+**Integration:**
+- ✅ RTK Query APIs: `useStartWorkingSessionMutation`, `useEndWorkingSessionMutation`
+- ✅ Order queries: `useGetOrdersByStatusQuery`, `useUpdateOrderStatusMutation`
+- ✅ Mobile-optimized with touch-friendly buttons
+
+**Day 10: Kitchen Display (Already Functional)**
+**Location:** `frontend/src/pages/kitchen/KitchenDisplayPage.tsx`
+
+**Existing Features (from Phase 4):**
+- ✅ Kanban board with 5 status columns (RECEIVED, PREPARING, OVEN, BAKED, DISPATCHED)
+- ✅ Real-time polling (every 5 seconds)
+- ✅ Order cards with elapsed time timers
+- ✅ Oven timer functionality (7-minute countdown)
+- ✅ Urgent order indicators (⚡ icon, priority sorting)
+- ✅ Move orders between stages
+- ✅ Neumorphic design system
+
+**Optional Enhancements (Not Critical):**
+- ⏸️ WebSocket subscription (polling works fine)
+- ⏸️ Sound alerts for new orders
+- ⏸️ Kiosk mode (auto-login, fullscreen)
+
+**Note:** Kitchen Display is production-ready with polling. WebSocket/sound enhancements are nice-to-have.
+
+**Complete Deliverables:**
+- ✅ Functional API Gateway (routing, JWT, rate limiting)
+- ✅ Clean codebase (no duplicate services, centralized config)
+- ✅ Professional logging (SLF4J throughout)
+- ✅ Complete POS Frontend (order entry, live metrics, reports, keyboard shortcuts)
+- ✅ Complete Analytics Service (microservice with 4 REST endpoints, Redis caching)
+- ✅ Real-time metrics integration (auto-refresh every 30-60 seconds)
+- ✅ Public website restructure with landing page (Day 7)
+- ✅ Driver application with GPS tracking (Days 8-9)
+- ✅ Kitchen Display functional (existing implementation)
+
+**Remaining:** Days 11-12 (Testing & Documentation)
+
+**Why Phase 4.5?**
+After completing Phase 4, we discovered critical technical debt and missing infrastructure:
+1. Non-functional API Gateway (only had health check)
+2. Missing application segregation (POS, Driver, Public website)
+3. Code duplication and hardcoded values
+4. Poor logging practices
+
+Phase 4.5 addresses these issues before moving to payment integration, ensuring a solid foundation for future phases.
+
 ## Phase 5: Payment Integration (Week 8)
 
 ### 5.1 Razorpay Integration
@@ -195,25 +421,75 @@
 - Auto dispatch algorithm
 - Customer delivery tracking
 
-## Phase 9: Point of Sale (POS) System (Week 14)
+## Phase 9: POS Analytics & Advanced Reporting (Week 14)
 
-### 9.1 POS Core Features
-- **Sales Dashboard**: Today vs last year comparison (INR)
-- **Daily Reports**: Yesterday's sales summary
-- **Weekly Analytics**: Sales trends and patterns
-- **Staff Performance**: Individual sales metrics
+**Note:** POS Frontend UI and Core Analytics Service were completed early in Phase 4.5 (Days 1-6). This phase focuses on advanced analytics features and reporting.
 
-### 9.2 Advanced POS Features
-- **Real-time Queue**: Live order display with status
-- **Manager Access Control**: Order taking permissions
-- **Staff Integration**: Working hours in POS system
-- **Payment Processing**: Integration with all payment methods
+### 9.1 Analytics Backend APIs
+- **Sales Analytics Service**:
+  - ✅ Today vs yesterday vs last year comparison APIs (INR) - **COMPLETED in Phase 4.5**
+  - ✅ Average order value with trends - **COMPLETED in Phase 4.5**
+  - Weekly and monthly sales trends
+  - Revenue breakdown by order type (dine-in, pickup, delivery)
+  - Peak hours and sales patterns analysis
+- **Staff Performance APIs**:
+  - ✅ Individual staff sales metrics - **COMPLETED in Phase 4.5**
+  - ✅ Orders processed per staff member - **COMPLETED in Phase 4.5**
+  - Staff leaderboard (daily, weekly, monthly)
+  - Average order value per staff
+- **Driver Analytics**:
+  - ✅ Driver availability by store - **COMPLETED in Phase 4.5**
+  - ✅ Active delivery count - **COMPLETED in Phase 4.5**
+  - Driver performance metrics (completion time, ratings)
+- **Product Analytics**:
+  - Top selling items (by quantity and revenue)
+  - Trending items analysis
+  - Category performance metrics
+  - Low-performing items identification
+
+### 9.2 Advanced POS Features (Backend)
+- **Enhanced Reporting Engine**:
+  - Custom date range reports
+  - Comparative analysis (YoY, MoM, WoW)
+  - Export reports (PDF, Excel)
+- **Manager Controls Backend**:
+  - Staff order-taking permission management
+  - Audit logging (who took which order, when)
+  - Order modification tracking
+- **Real-time Data Streaming**:
+  - WebSocket endpoints for live metrics updates
+  - Server-sent events for dashboard updates
+- **Payment Analytics**:
+  - Payment method breakdown
+  - Cash vs digital payment trends
+  - Payment success/failure rates
+
+### 9.3 POS Frontend Enhancements
+- **Connect existing UI to new APIs**:
+  - ✅ MetricsTiles component → Real analytics data - **COMPLETED in Phase 4.5**
+  - ✅ Real-time polling (30-60 second refresh) - **COMPLETED in Phase 4.5**
+  - Reports page → Comprehensive backend data (additional reports needed)
+  - Staff performance dashboard → API integration (leaderboard view)
+- **Advanced visualizations**:
+  - Sales trend charts (Chart.js/Recharts)
+  - Staff performance graphs
+  - Revenue heatmaps by time/day
 
 **Deliverables:**
-- Complete POS System
-- Sales analytics and reporting
-- Staff performance tracking
-- Manager access controls
+- ✅ Complete POS Frontend (already built in Phase 4.5)
+- ✅ Core Analytics Service (microservice on port 8085) - **COMPLETED in Phase 4.5**
+- ✅ Basic sales reporting APIs (today/yesterday/last year) - **COMPLETED in Phase 4.5**
+- ✅ Staff performance tracking (individual metrics) - **COMPLETED in Phase 4.5**
+- ✅ Driver status APIs - **COMPLETED in Phase 4.5**
+- Advanced manager controls backend
+- Audit logging system
+- Real-time data streaming endpoints (WebSocket for live updates)
+- Extended reporting (weekly/monthly trends, product analytics)
+
+**Integration with Phase 4.5:**
+- Phase 4.5 built the complete POS UI AND core analytics backend
+- Phase 9 adds advanced analytics features (leaderboards, trends, product analytics)
+- Total Phase 9 effort reduced from 1 week to 3-4 days (60% already complete)
 
 ## Phase 10: Customer Review System (Week 15)
 

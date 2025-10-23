@@ -10,6 +10,8 @@ import com.MaSoVa.user.dto.UserResponse;
 import com.MaSoVa.user.repository.UserRepository;
 import com.MaSoVa.user.repository.WorkingSessionRepository;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
@@ -27,6 +29,8 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class UserService {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     
     @Autowired
     private UserRepository userRepository;
@@ -121,7 +125,7 @@ public class UserService {
                 sessionService.startSession(user.getId(), storeId);
             } catch (Exception e) {
                 // Log the error but don't fail the login
-                System.err.println("Failed to start working session: " + e.getMessage());
+                logger.error("Failed to start working session for user {}: {}", user.getId(), e.getMessage(), e);
             }
         }
         
@@ -135,7 +139,7 @@ public class UserService {
                 sessionService.endSession(userId);
             } catch (Exception e) {
                 // Log the error but don't fail the logout
-                System.err.println("Failed to end working session: " + e.getMessage());
+                logger.error("Failed to end working session for user {}: {}", userId, e.getMessage(), e);
             }
         }
     }
@@ -206,7 +210,7 @@ public class UserService {
                 sessionService.endSession(userId);
             } catch (Exception e) {
                 // Log the error but continue
-                System.err.println("Failed to end session during deactivation: " + e.getMessage());
+                logger.error("Failed to end session during deactivation for user {}: {}", userId, e.getMessage(), e);
             }
         }
     }
@@ -235,10 +239,10 @@ public class UserService {
             }
             
             return hasRolePermission;
-            
+
         } catch (Exception e) {
             // Log error and return false for safety
-            System.err.println("Error checking order permissions for user " + userId + ": " + e.getMessage());
+            logger.error("Error checking order permissions for user {}: {}", userId, e.getMessage(), e);
             return false;
         }
     }
@@ -355,5 +359,14 @@ public class UserService {
         }
         
         return response;
+    }
+
+    // Analytics methods
+    public List<UserResponse> getDriversByStore(String storeId) {
+        logger.info("Fetching drivers for store: {}", storeId);
+        List<User> drivers = userRepository.findByTypeAndEmployeeDetailsStoreId(UserType.DRIVER, storeId);
+        return drivers.stream()
+                .map(this::mapToUserResponse)
+                .collect(java.util.stream.Collectors.toList());
     }
 }

@@ -1,11 +1,42 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-interface SalesAnalytics {
+interface SalesMetricsResponse {
   todaySales: number;
-  yesterdaySales: number;
+  yesterdaySalesAtSameTime: number;
   lastYearSameDaySales: number;
-  percentageChange: number;
-  weeklySales: number;
+  todayOrderCount: number;
+  yesterdayOrderCountAtSameTime: number;
+  lastYearSameDayOrderCount: number;
+  percentChangeFromYesterday: number;
+  percentChangeFromLastYear: number;
+  trend: 'UP' | 'DOWN' | 'STABLE';
+}
+
+interface AverageOrderValueResponse {
+  averageOrderValue: number;
+  yesterdayAverageOrderValue: number;
+  percentChange: number;
+  trend: 'UP' | 'DOWN' | 'STABLE';
+  totalOrders: number;
+  totalSales: number;
+}
+
+interface DriverStatusResponse {
+  totalDrivers: number;
+  availableDrivers: number;
+  busyDrivers: number;
+  activeDeliveries: number;
+  completedTodayDeliveries: number;
+}
+
+interface StaffPerformanceResponse {
+  staffId: string;
+  staffName: string;
+  ordersProcessedToday: number;
+  salesGeneratedToday: number;
+  averageOrderValue: number;
+  rank: number;
+  performanceLevel: 'EXCELLENT' | 'GOOD' | 'AVERAGE' | 'NEEDS_IMPROVEMENT';
 }
 
 export const analyticsApi = createApi({
@@ -20,15 +51,37 @@ export const analyticsApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Analytics'],
+  tagTypes: ['Analytics', 'SalesMetrics', 'DriverStatus', 'StaffPerformance'],
   endpoints: (builder) => ({
-    getSalesAnalytics: builder.query<SalesAnalytics, { storeId: string; period: string }>({
-      query: ({ storeId, period }) => `sales/${storeId}?period=${period}`,
-      providesTags: ['Analytics'],
+    // Get today's sales metrics with comparisons
+    getTodaySalesMetrics: builder.query<SalesMetricsResponse, string>({
+      query: (storeId) => `store/${storeId}/sales/today`,
+      providesTags: ['SalesMetrics'],
+    }),
+
+    // Get average order value
+    getAverageOrderValue: builder.query<AverageOrderValueResponse, string>({
+      query: (storeId) => `store/${storeId}/avgOrderValue/today`,
+      providesTags: ['SalesMetrics'],
+    }),
+
+    // Get driver status
+    getDriverStatus: builder.query<DriverStatusResponse, string>({
+      query: (storeId) => `drivers/status/${storeId}`,
+      providesTags: ['DriverStatus'],
+    }),
+
+    // Get staff performance
+    getStaffPerformance: builder.query<StaffPerformanceResponse, string>({
+      query: (staffId) => `staff/${staffId}/performance/today`,
+      providesTags: ['StaffPerformance'],
     }),
   }),
 });
 
 export const {
-  useGetSalesAnalyticsQuery,
+  useGetTodaySalesMetricsQuery,
+  useGetAverageOrderValueQuery,
+  useGetDriverStatusQuery,
+  useGetStaffPerformanceQuery,
 } = analyticsApi;

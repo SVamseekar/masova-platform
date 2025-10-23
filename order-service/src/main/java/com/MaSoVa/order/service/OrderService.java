@@ -409,4 +409,25 @@ public class OrderService {
 
         log.info("Order items validated successfully");
     }
+
+    // Analytics methods
+    public List<Order> getOrdersByDate(java.time.LocalDate date) {
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.atTime(23, 59, 59);
+        return orderRepository.findByCreatedAtBetween(startOfDay, endOfDay);
+    }
+
+    public List<Order> getOrdersByDateRange(LocalDateTime start, LocalDateTime end) {
+        return orderRepository.findByCreatedAtBetween(start, end);
+    }
+
+    public List<Order> getOrdersByStaffAndDate(String staffId, java.time.LocalDate date) {
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.atTime(23, 59, 59);
+        return orderRepository.findByCreatedByAndCreatedAtBetween(staffId, startOfDay, endOfDay);
+    }
+
+    public Integer getActiveDeliveryCount() {
+        return orderRepository.findActiveDeliveries().size();
+    }
 }

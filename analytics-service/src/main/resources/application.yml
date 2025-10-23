@@ -1,0 +1,66 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: analytics-service
+
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/masova_analytics}
+      auto-index-creation: true
+
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: Asia/Kolkata
+
+jwt:
+  secret: ${JWT_SECRET:your-secret-key-change-this-in-production-min-256-bits-required-for-hs256-algorithm}
+  expiration: ${JWT_EXPIRATION:3600000}
+
+# Analytics configuration
+analytics:
+  cache:
+    ttl:
+      sales: 300 # 5 minutes for sales data
+      staff: 600 # 10 minutes for staff data
+      inventory: 900 # 15 minutes for inventory data
+
+  aggregation:
+    batch-size: 1000 # Batch size for analytics aggregation
+
+  external-services:
+    order-service:
+      url: ${ORDER_SERVICE_URL:http://localhost:8083}
+    user-service:
+      url: ${USER_SERVICE_URL:http://localhost:8081}
+    menu-service:
+      url: ${MENU_SERVICE_URL:http://localhost:8082}
+
+logging:
+  level:
+    com.MaSoVa.analytics: DEBUG
+    org.springframework.data.mongodb: INFO
+    org.springframework.security: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always

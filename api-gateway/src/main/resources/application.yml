@@ -6,17 +6,45 @@ spring:
     name: api-gateway
   profiles:
     active: dev
+  cloud:
+    gateway:
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+
+# JWT Configuration (must match User Service)
+jwt:
+  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key}
+
+# Rate Limiting
+rate-limit:
+  requests-per-minute: 100
+
+# Service URLs
+services:
+  user-service:
+    url: ${USER_SERVICE_URL:http://localhost:8081}
+  menu-service:
+    url: ${MENU_SERVICE_URL:http://localhost:8082}
+  order-service:
+    url: ${ORDER_SERVICE_URL:http://localhost:8083}
 
 logging:
   level:
     org.springframework.cloud.gateway: INFO
+    com.MaSoVa.gateway: DEBUG
     root: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
 
 management:
   endpoints:
     web:
       exposure:
-        include: "health,info,gateway"
+        include: "health,info,gateway,routes"
   endpoint:
     health:
       show-details: always
+    gateway:
+      enabled: true

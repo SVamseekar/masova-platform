@@ -9,14 +9,15 @@ import { NotificationSystem } from './components/common/NotificationSystem';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 
 // Lazy load components
-const HomePage = React.lazy(() => import('./pages/HomePage'));
+const HomePage = React.lazy(() => import('./apps/PublicWebsite/HomePage'));
+const PromotionsPage = React.lazy(() => import('./apps/PublicWebsite/PromotionsPage'));
+const PublicMenuPage = React.lazy(() => import('./apps/PublicWebsite/PublicMenuPage'));
 const LoginPage = React.lazy(() => import('./pages/auth/LoginPage'));
-const PublicMenuPage = React.lazy(() => import('./pages/PublicMenuPage'));
 const CustomerApp = React.lazy(() => import('./pages/customer/CustomerApp'));
 const ManagerDashboard = React.lazy(() => import('./pages/manager/DashboardPage'));
 const KitchenDisplayPage = React.lazy(() => import('./pages/kitchen/KitchenDisplayPage'));
 const DriverDashboard = React.lazy(() => import('./pages/driver/DriverDashboard'));
-const POSSystem = React.lazy(() => import('./pages/pos/POSSystem'));
+const POSSystem = React.lazy(() => import('./apps/POSSystem/POSSystem'));
 
 // Loading component
 const AppLoader = () => (
@@ -42,8 +43,9 @@ const App: React.FC = () => {
               <Suspense fallback={<AppLoader />}>
                 <Routes>
                   {/* Public Routes - No Login Required */}
-                  <Route path="/" element={<PublicMenuPage />} />
-                  <Route path="/about" element={<HomePage />} />
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/menu" element={<PublicMenuPage />} />
+                  <Route path="/promotions" element={<PromotionsPage />} />
 
                   {/* Staff Login */}
                   <Route path="/login" element={<LoginPage />} />
@@ -86,7 +88,7 @@ const App: React.FC = () => {
                   <Route
                     path="/pos/*"
                     element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                      <ProtectedRoute allowedRoles={['STAFF', 'MANAGER', 'ASSISTANT_MANAGER']}>
                         <POSSystem />
                       </ProtectedRoute>
                     }

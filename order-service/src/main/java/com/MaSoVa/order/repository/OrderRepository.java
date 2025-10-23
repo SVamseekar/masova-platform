@@ -34,4 +34,14 @@ public interface OrderRepository extends MongoRepository<Order, String> {
     List<Order> findActiveOrdersByStore(String storeId, List<String> statuses);
 
     boolean existsByOrderNumber(String orderNumber);
+
+    // Analytics queries
+    @Query("{ 'createdAt': { $gte: ?0, $lte: ?1 } }")
+    List<Order> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
+
+    @Query("{ 'createdBy': ?0, 'createdAt': { $gte: ?1, $lte: ?2 } }")
+    List<Order> findByCreatedByAndCreatedAtBetween(String createdBy, LocalDateTime start, LocalDateTime end);
+
+    @Query("{ 'orderType': 'DELIVERY', 'status': { $in: ['PREPARING', 'OVEN', 'BAKED', 'DISPATCHED'] } }")
+    List<Order> findActiveDeliveries();
 }

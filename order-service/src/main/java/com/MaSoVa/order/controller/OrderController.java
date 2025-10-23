@@ -130,6 +130,42 @@ public class OrderController {
         return ResponseEntity.ok(order);
     }
 
+    // Analytics endpoints
+    @GetMapping("/date/{date}")
+    public ResponseEntity<List<Order>> getOrdersByDate(@PathVariable String date) {
+        log.info("Fetching orders for date: {}", date);
+        List<Order> orders = orderService.getOrdersByDate(java.time.LocalDate.parse(date));
+        return ResponseEntity.ok(orders);
+    }
+
+    @GetMapping("/range")
+    public ResponseEntity<List<Order>> getOrdersByDateRange(
+            @RequestParam String start,
+            @RequestParam String end) {
+        log.info("Fetching orders between {} and {}", start, end);
+        List<Order> orders = orderService.getOrdersByDateRange(
+            java.time.LocalDateTime.parse(start),
+            java.time.LocalDateTime.parse(end)
+        );
+        return ResponseEntity.ok(orders);
+    }
+
+    @GetMapping("/staff/{staffId}/date/{date}")
+    public ResponseEntity<List<Order>> getOrdersByStaffAndDate(
+            @PathVariable String staffId,
+            @PathVariable String date) {
+        log.info("Fetching orders for staff: {} on date: {}", staffId, date);
+        List<Order> orders = orderService.getOrdersByStaffAndDate(staffId, java.time.LocalDate.parse(date));
+        return ResponseEntity.ok(orders);
+    }
+
+    @GetMapping("/active-deliveries/count")
+    public ResponseEntity<Integer> getActiveDeliveryCount() {
+        log.info("Fetching active delivery count");
+        Integer count = orderService.getActiveDeliveryCount();
+        return ResponseEntity.ok(count);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
         log.error("Error processing order request", ex);
