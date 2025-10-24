@@ -1,16 +1,16 @@
 import React from 'react';
 import {
-  Card,
+  Card as MuiCard,
   CardContent,
   CardMedia,
   Typography,
-  Button,
   Chip,
   Stack,
   Box
 } from '@mui/material';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import { Button } from '../../../components/ui/neumorphic';
 
 interface Promotion {
   id: number;
@@ -29,7 +29,7 @@ interface PromotionCardProps {
 
 const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, onOrderNow }) => {
   return (
-    <Card
+    <MuiCard
       sx={{
         height: '100%',
         display: 'flex',
@@ -90,16 +90,17 @@ const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, onOrderNow }) 
         </Stack>
 
         <Button
-          variant="contained"
+          variant="primary"
+          size="lg"
           fullWidth
-          startIcon={<LocalOfferIcon />}
           onClick={onOrderNow}
-          sx={{ mt: 'auto' }}
+          leftIcon={<LocalOfferIcon />}
+          style={{ marginTop: 'auto' }}
         >
           Order Now
         </Button>
       </CardContent>
-    </Card>
+    </MuiCard>
   );
 };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AppHeader from '../../components/common/AppHeader';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
@@ -10,6 +10,7 @@ import {
   WorkingSession
 } from '../../store/api/sessionApi';
 import { useGetStoreMetricsQuery } from '../../store/api/storeApi';
+import { useGetStoreOrdersQuery } from '../../store/api/orderApi';
 
 // TypeScript interfaces
 interface SalesData {
@@ -31,13 +32,27 @@ interface Order {
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('overview');
+  const location = useLocation();
   const [currentDate] = useState(new Date().toLocaleDateString('en-IN', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   }));
+
+  // Determine active tab from URL
+  const getTabFromPath = () => {
+    if (location.pathname.includes('/staff')) return 'staff';
+    if (location.pathname.includes('/analytics')) return 'analytics';
+    return 'overview';
+  };
+
+  const [activeTab, setActiveTab] = useState(getTabFromPath());
+
+  // Update tab when URL changes
+  useEffect(() => {
+    setActiveTab(getTabFromPath());
+  }, [location.pathname]);
 
   const currentUser = useAppSelector(selectCurrentUser);
   const storeId = currentUser?.storeId || '';
@@ -53,6 +68,11 @@ const DashboardPage: React.FC = () => {
     pollingInterval: 60000, // Poll every minute
   });
 
+  const { data: liveOrders = [], isLoading: loadingOrders } = useGetStoreOrdersQuery(storeId, {
+    skip: !storeId,
+    pollingInterval: 10000, // Poll every 10 seconds for live updates
+  });
+
   const [approveSession, { isLoading: approvingSession }] = useApproveSessionMutation();
   const [rejectSession, { isLoading: rejectingSession }] = useRejectSessionMutation();
 
@@ -65,13 +85,17 @@ const DashboardPage: React.FC = () => {
     weeklyTotal: (storeMetrics?.totalRevenue || 0) * 6.2 // Estimate
   };
 
-  // Mock order queue (will be replaced with order API in Phase 4)
-  const orderQueue: Order[] = [
-    { id: 'ORD001', status: 'PREPARING', items: 2, time: '15:30', customer: 'John Doe', priority: 'normal' },
-    { id: 'ORD002', status: 'OVEN', items: 1, time: '15:25', customer: 'Sarah Wilson', priority: 'urgent' },
-    { id: 'ORD003', status: 'BAKED', items: 3, time: '15:20', customer: 'Mike Johnson', priority: 'normal' },
-    { id: 'ORD004', status: 'DISPATCHED', items: 1, time: '15:15', customer: 'Emily Davis', priority: 'normal' }
-  ];
+  // Get active orders from API
+  const orderQueue: Order[] = liveOrders
+    .filter(order => !['DELIVERED', 'CANCELLED'].includes(order.status))
+    .map(order => ({
+      id: order.orderNumber,
+      status: order.status as Order['status'],
+      items: order.items.length,
+      time: new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+      customer: order.customerName,
+      priority: order.priority.toLowerCase() as Order['priority']
+    }));
 
   const handleApproveSession = async (sessionId: string): Promise<void> => {
     try {
@@ -562,7 +586,10 @@ const DashboardPage: React.FC = () => {
           ].map(tab => (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => {
+                setActiveTab(tab.key);
+                navigate(`/manager/${tab.key === 'overview' ? '' : tab.key}`);
+              }}
               style={{
                 padding: '20px 0',
                 background: 'none',

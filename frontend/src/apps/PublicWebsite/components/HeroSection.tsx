@@ -1,9 +1,11 @@
 import React from 'react';
-import { Box, Container, Typography, Button, Stack, Grid } from '@mui/material';
+import { Box, Container, Typography, Stack, Grid } from '@mui/material';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import LocalPizzaIcon from '@mui/icons-material/LocalPizza';
 import RamenDiningIcon from '@mui/icons-material/RamenDining';
 import IcecreamIcon from '@mui/icons-material/Icecream';
+import { Button } from '../../../components/ui/neumorphic';
+import { colors, spacing, typography } from '../../../styles/design-tokens';
 
 interface HeroSectionProps {
   onOrderNow: () => void;
@@ -84,44 +86,35 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onOrderNow, onBrowseMenu }) =
                 to your doorstep in 30 minutes or less!
               </Typography>
 
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <div style={{ display: 'flex', flexDirection: 'row', gap: spacing[3], flexWrap: 'wrap' }}>
                 <Button
-                  variant="contained"
-                  size="large"
-                  startIcon={<RestaurantIcon />}
+                  variant="primary"
+                  size="xl"
                   onClick={onOrderNow}
-                  sx={{
-                    bgcolor: 'white',
-                    color: 'primary.main',
-                    '&:hover': { bgcolor: 'grey.100' },
-                    px: 4,
-                    py: 1.5,
-                    fontSize: '1.1rem',
-                    fontWeight: 'bold',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                  leftIcon={<RestaurantIcon />}
+                  style={{
+                    minWidth: '200px',
+                    boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.25)',
                   }}
                 >
                   Order Now
                 </Button>
                 <Button
-                  variant="outlined"
-                  size="large"
+                  variant="ghost"
+                  size="xl"
                   onClick={onBrowseMenu}
-                  sx={{
-                    borderColor: 'white',
-                    color: 'white',
-                    '&:hover': {
-                      borderColor: 'white',
-                      bgcolor: 'rgba(255,255,255,0.1)'
-                    },
-                    px: 4,
-                    py: 1.5,
-                    fontSize: '1.1rem'
+                  style={{
+                    minWidth: '200px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                    color: colors.text.inverse,
+                    backdropFilter: 'blur(10px)',
+                    boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.15)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
                   }}
                 >
                   Browse Menu
                 </Button>
-              </Stack>
+              </div>
 
               {/* Quick stats */}
               <Stack

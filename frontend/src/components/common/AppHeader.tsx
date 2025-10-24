@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { logout, selectCurrentUser } from '../../store/slices/authSlice';
+import { selectCartItemCount } from '../../store/slices/cartSlice';
 import { colors, spacing, typography, shadows, borderRadius } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 
@@ -9,16 +10,23 @@ interface AppHeaderProps {
   title?: string;
   showBackButton?: boolean;
   backRoute?: string;
+  hideStaffLogin?: boolean;  // Hide staff login button for public pages
+  showPublicNav?: boolean; // Show Home, Offers, Cart buttons
+  onCartClick?: () => void; // Handler for cart button
 }
 
 const AppHeader: React.FC<AppHeaderProps> = ({
   title,
   showBackButton = false,
-  backRoute = '/'
+  backRoute = '/',
+  hideStaffLogin = false,
+  showPublicNav = false,
+  onCartClick
 }) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const currentUser = useAppSelector(selectCurrentUser);
+  const cartItemCount = useAppSelector(selectCartItemCount);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -148,47 +156,120 @@ const AppHeader: React.FC<AppHeaderProps> = ({
       </div>
 
       <div style={rightSectionStyles}>
-        {currentUser && (
-          <div style={userInfoStyles}>
-            <span style={userNameStyles}>{currentUser.name}</span>
-            <span style={userRoleStyles}>{currentUser.userType}</span>
-          </div>
-        )}
-
-        {currentUser ? (
-          <button
-            style={logoutButtonStyles}
-            onClick={handleLogout}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = shadows.raised.lg;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = shadows.raised.base;
-            }}
-          >
-            Logout →
-          </button>
+        {showPublicNav ? (
+          <>
+            <button
+              style={buttonStyles}
+              onClick={() => navigate('/')}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = shadows.raised.md;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = shadows.raised.sm;
+              }}
+            >
+              🏠 Home
+            </button>
+            <button
+              style={buttonStyles}
+              onClick={() => navigate('/promotions')}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = shadows.raised.md;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = shadows.raised.sm;
+              }}
+            >
+              🎁 Offers
+            </button>
+            <button
+              style={{
+                ...buttonStyles,
+                background: cartItemCount > 0
+                  ? `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.primaryLight} 100%)`
+                  : buttonStyles.background,
+                color: cartItemCount > 0 ? colors.text.inverse : colors.text.primary,
+                position: 'relative',
+              }}
+              onClick={onCartClick}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = shadows.raised.lg;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = cartItemCount > 0 ? shadows.raised.base : shadows.raised.sm;
+              }}
+            >
+              🛒 Cart
+              {cartItemCount > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: '-8px',
+                  right: '-8px',
+                  background: colors.semantic.error,
+                  color: colors.text.inverse,
+                  borderRadius: borderRadius.full,
+                  padding: `${spacing[1]} ${spacing[2]}`,
+                  fontSize: typography.fontSize.xs,
+                  fontWeight: typography.fontWeight.bold,
+                  minWidth: '20px',
+                  textAlign: 'center',
+                }}>
+                  {cartItemCount}
+                </span>
+              )}
+            </button>
+          </>
         ) : (
-          <button
-            style={{
-              ...buttonStyles,
-              background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.primaryLight} 100%)`,
-              color: colors.text.inverse,
-            }}
-            onClick={() => navigate('/login')}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = shadows.raised.lg;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = shadows.raised.base;
-            }}
-          >
-            Staff Login →
-          </button>
+          <>
+            {currentUser && (
+              <div style={userInfoStyles}>
+                <span style={userNameStyles}>{currentUser.name}</span>
+                <span style={userRoleStyles}>{currentUser.userType}</span>
+              </div>
+            )}
+
+            {currentUser ? (
+              <button
+                style={logoutButtonStyles}
+                onClick={handleLogout}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = shadows.raised.lg;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = shadows.raised.base;
+                }}
+              >
+                Logout →
+              </button>
+            ) : !hideStaffLogin && (
+              <button
+                style={{
+                  ...buttonStyles,
+                  background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.primaryLight} 100%)`,
+                  color: colors.text.inverse,
+                }}
+                onClick={() => navigate('/login')}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = shadows.raised.lg;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = shadows.raised.base;
+                }}
+              >
+                Staff Login →
+              </button>
+            )}
+          </>
         )}
       </div>
     </header>

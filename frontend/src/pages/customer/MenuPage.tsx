@@ -13,8 +13,19 @@ import {
 import { useAppDispatch } from '../../store/hooks';
 import { addToCart } from '../../store/slices/cartSlice';
 import AppHeader from '../../components/common/AppHeader';
+import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
 
-const MenuPage: React.FC = () => {
+interface MenuPageProps {
+  hideStaffLogin?: boolean;  // Pass through to AppHeader for public pages
+  showPublicNav?: boolean;   // Show Home, Offers, Cart buttons in header
+  onCartClick?: () => void;  // Handler for cart button click
+}
+
+const MenuPage: React.FC<MenuPageProps> = ({
+  hideStaffLogin = false,
+  showPublicNav = false,
+  onCartClick
+}) => {
   const [selectedCuisine, setSelectedCuisine] = useState<Cuisine>(Cuisine.SOUTH_INDIAN);
   const [selectedCategory, setSelectedCategory] = useState<MenuCategory | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -93,8 +104,8 @@ const MenuPage: React.FC = () => {
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-    if (value.trim().length > 2) {
-      searchMenu(value);
+    if (value.trim().length >= 2) {
+      searchMenu(value.trim());
     }
   };
 
@@ -168,9 +179,10 @@ const MenuPage: React.FC = () => {
   // Styles
   const containerStyles: React.CSSProperties = {
     fontFamily: typography.fontFamily.primary,
-    backgroundColor: colors.surface.background,
+    position: 'relative',
     minHeight: '100vh',
     padding: spacing[8],
+    zIndex: 1,
   };
 
   const headerStyles: React.CSSProperties = {
@@ -420,8 +432,17 @@ const MenuPage: React.FC = () => {
   };
 
   return (
-    <div style={containerStyles}>
-      <AppHeader title="Browse Our Menu" />
+    <>
+      {/* Animated Background */}
+      <AnimatedBackground variant="default" />
+
+      <div style={containerStyles}>
+        <AppHeader
+          title="Browse Our Menu"
+          hideStaffLogin={hideStaffLogin}
+          showPublicNav={showPublicNav}
+          onCartClick={onCartClick}
+        />
 
       {/* Search Bar */}
       <div style={searchContainerStyles}>
@@ -620,9 +641,10 @@ const MenuPage: React.FC = () => {
               </div>
             </div>
           ))}
-        </div>
-      )}
-    </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 

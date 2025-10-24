@@ -6,19 +6,31 @@ import {
   Grid,
   Tabs,
   Tab,
-  AppBar,
-  Toolbar,
-  Button,
-  IconButton
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import HomeIcon from '@mui/icons-material/Home';
 import PromotionCard from './components/PromotionCard';
+import AppHeader from '../../components/common/AppHeader';
+import CartDrawer from '../../components/cart/CartDrawer';
+import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
+import { Button } from '../../components/ui/neumorphic';
+import { colors, spacing } from '../../styles/design-tokens';
 
 const PromotionsPage: React.FC = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
+
+  const handleOpenCart = () => {
+    setCartDrawerOpen(true);
+  };
+
+  const handleCloseCart = () => {
+    setCartDrawerOpen(false);
+  };
+
+  const handleCheckout = () => {
+    navigate('/checkout');
+  };
 
   // All promotions
   const allPromotions = [
@@ -110,30 +122,22 @@ const PromotionsPage: React.FC = () => {
     : allPromotions.filter(promo => promo.category === selectedCategory);
 
   return (
-    <Box sx={{ bgcolor: 'background.default', minHeight: '100vh' }}>
-      {/* App Bar */}
-      <AppBar position="static" elevation={0} sx={{ bgcolor: 'primary.main' }}>
-        <Toolbar>
-          <IconButton
-            edge="start"
-            color="inherit"
-            onClick={() => navigate(-1)}
-            sx={{ mr: 2 }}
-          >
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
-            Special Offers & Promotions
-          </Typography>
-          <Button
-            color="inherit"
-            startIcon={<HomeIcon />}
-            onClick={() => navigate('/')}
-          >
-            Home
-          </Button>
-        </Toolbar>
-      </AppBar>
+    <>
+      {/* Animated Background */}
+      <AnimatedBackground variant="default" />
+
+      <Box sx={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>
+        {/* Navigation Header */}
+        <Box sx={{ px: 4, pt: 4 }}>
+          <AppHeader
+            title="Special Offers & Promotions"
+            showBackButton={true}
+            backRoute="/"
+            hideStaffLogin={true}
+            showPublicNav={true}
+            onCartClick={handleOpenCart}
+          />
+        </Box>
 
       {/* Hero Banner */}
       <Box
@@ -198,7 +202,7 @@ const PromotionsPage: React.FC = () => {
                 <Grid item xs={12} sm={6} md={4} key={promo.id}>
                   <PromotionCard
                     promotion={promo}
-                    onOrderNow={() => navigate('/customer/menu')}
+                    onOrderNow={() => navigate('/menu')}
                   />
                 </Grid>
               ))}
@@ -217,16 +221,20 @@ const PromotionsPage: React.FC = () => {
             Browse our complete menu and place your order now!
           </Typography>
           <Button
-            variant="contained"
-            size="large"
-            onClick={() => navigate('/customer/menu')}
-            sx={{ px: 4, py: 1.5, fontSize: '1.1rem' }}
+            variant="primary"
+            size="xl"
+            onClick={() => navigate('/menu')}
+            style={{ minWidth: '200px' }}
           >
             View Full Menu
           </Button>
         </Container>
       </Box>
-    </Box>
+
+        {/* Cart Drawer */}
+        <CartDrawer open={cartDrawerOpen} onClose={handleCloseCart} onCheckout={handleCheckout} />
+      </Box>
+    </>
   );
 };
 

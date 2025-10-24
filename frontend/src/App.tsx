@@ -13,7 +13,10 @@ const HomePage = React.lazy(() => import('./apps/PublicWebsite/HomePage'));
 const PromotionsPage = React.lazy(() => import('./apps/PublicWebsite/PromotionsPage'));
 const PublicMenuPage = React.lazy(() => import('./apps/PublicWebsite/PublicMenuPage'));
 const LoginPage = React.lazy(() => import('./pages/auth/LoginPage'));
-const CustomerApp = React.lazy(() => import('./pages/customer/CustomerApp'));
+const RegisterPage = React.lazy(() => import('./pages/auth/RegisterPage'));
+const CheckoutPage = React.lazy(() => import('./pages/checkout/CheckoutPage'));
+const GuestCheckoutPage = React.lazy(() => import('./pages/checkout/GuestCheckoutPage'));
+const CustomerDashboard = React.lazy(() => import('./pages/customer/CustomerDashboard'));
 const ManagerDashboard = React.lazy(() => import('./pages/manager/DashboardPage'));
 const KitchenDisplayPage = React.lazy(() => import('./pages/kitchen/KitchenDisplayPage'));
 const DriverDashboard = React.lazy(() => import('./pages/driver/DriverDashboard'));
@@ -47,15 +50,18 @@ const App: React.FC = () => {
                   <Route path="/menu" element={<PublicMenuPage />} />
                   <Route path="/promotions" element={<PromotionsPage />} />
 
-                  {/* Staff Login */}
+                  {/* Authentication & Checkout Routes - Public */}
                   <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/checkout" element={<CheckoutPage />} />
+                  <Route path="/guest-checkout" element={<GuestCheckoutPage />} />
 
-                  {/* Customer Routes - Login required only for checkout/orders */}
+                  {/* Customer Routes - Login required for ordering */}
                   <Route
                     path="/customer/*"
                     element={
-                      <ProtectedRoute allowedRoles={['CUSTOMER']}>
-                        <CustomerApp />
+                      <ProtectedRoute allowedRoles={['CUSTOMER']} requireAuth={true}>
+                        <CustomerDashboard />
                       </ProtectedRoute>
                     }
                   />

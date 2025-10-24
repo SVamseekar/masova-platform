@@ -38,8 +38,11 @@ const LoginPage: React.FC = () => {
         navigate('/kitchen');
       } else if (userType?.includes('driver')) {
         navigate('/driver');
+      } else if (userType?.includes('customer')) {
+        navigate('/customer/menu');
       } else {
-        navigate('/customer');
+        // Fallback to customer menu for unknown types
+        navigate('/customer/menu');
       }
     }
   }, [isAuthenticated, user, navigate]);
@@ -61,13 +64,13 @@ const LoginPage: React.FC = () => {
       description: 'Kitchen Display System',
       route: '/kitchen'
     },
-    { 
-      type: 'Customer', 
-      email: 'test@example.com', 
+    {
+      type: 'Customer',
+      email: 'test@example.com',
       password: 'password123',
       icon: '👤',
       description: 'Order Pizza Online',
-      route: '/customer'
+      route: '/customer/menu'
     },
     { 
       type: 'Driver', 

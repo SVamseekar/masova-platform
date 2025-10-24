@@ -1,26 +1,29 @@
-import React from 'react';
-import {
-  Box,
-  Container,
-  Typography,
-  Button,
-  Grid,
-  Card,
-  CardContent,
-  CardMedia,
-  Chip,
-  Stack
-} from '@mui/material';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
-import LocalOfferIcon from '@mui/icons-material/LocalOffer';
-import DeliveryDiningIcon from '@mui/icons-material/DeliveryDining';
-import StoreIcon from '@mui/icons-material/Store';
 import HeroSection from './components/HeroSection';
 import PromotionCard from './components/PromotionCard';
+import AppHeader from '../../components/common/AppHeader';
+import CartDrawer from '../../components/cart/CartDrawer';
+import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
+import { Button, Card } from '../../components/ui/neumorphic';
+import { colors, spacing, typography, shadows, borderRadius } from '../../styles/design-tokens';
+import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
+
+  const handleOpenCart = () => {
+    setCartDrawerOpen(true);
+  };
+
+  const handleCloseCart = () => {
+    setCartDrawerOpen(false);
+  };
+
+  const handleCheckout = () => {
+    navigate('/checkout');
+  };
 
   // Featured promotions (top 3 for homepage)
   const featuredPromotions = [
@@ -56,217 +59,321 @@ const HomePage: React.FC = () => {
   // Why choose us features
   const features = [
     {
-      icon: <RestaurantMenuIcon sx={{ fontSize: 48, color: 'primary.main' }} />,
+      icon: '🍽️',
       title: 'Multi-Cuisine Menu',
       description: 'Pizzas, Biryani, Chinese, and more - something for everyone'
     },
     {
-      icon: <DeliveryDiningIcon sx={{ fontSize: 48, color: 'primary.main' }} />,
+      icon: '🚀',
       title: 'Fast Delivery',
       description: 'Hot food delivered to your doorstep in 30 minutes or less'
     },
     {
-      icon: <LocalOfferIcon sx={{ fontSize: 48, color: 'primary.main' }} />,
+      icon: '🎁',
       title: 'Great Offers',
       description: 'Weekly deals and combo offers to save you money'
     },
     {
-      icon: <StoreIcon sx={{ fontSize: 48, color: 'primary.main' }} />,
+      icon: '🏪',
       title: 'Dine-In & Takeaway',
       description: 'Multiple ordering options - choose what works for you'
     }
   ];
 
+  // Styles
+  const containerStyles: React.CSSProperties = {
+    position: 'relative',
+    minHeight: '100vh',
+    fontFamily: typography.fontFamily.primary,
+    zIndex: 1,
+  };
+
+  const sectionStyles: React.CSSProperties = {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    padding: `${spacing[8]} ${spacing[6]}`,
+  };
+
+  const sectionHeaderStyles: React.CSSProperties = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing[8],
+    flexWrap: 'wrap',
+    gap: spacing[4],
+  };
+
+  const titleStyles: React.CSSProperties = {
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.extrabold,
+    color: colors.text.primary,
+    marginBottom: spacing[2],
+  };
+
+  const subtitleStyles: React.CSSProperties = {
+    fontSize: typography.fontSize.lg,
+    color: colors.text.secondary,
+    fontWeight: typography.fontWeight.medium,
+  };
+
+  const promotionsGridStyles: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gap: spacing[6],
+  };
+
+  const featuresGridStyles: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gap: spacing[6],
+    marginTop: spacing[8],
+  };
+
+  const featureCardContentStyles: React.CSSProperties = {
+    textAlign: 'center',
+    padding: spacing[6],
+  };
+
+  const featureIconStyles: React.CSSProperties = {
+    fontSize: '60px',
+    marginBottom: spacing[4],
+  };
+
+  const featureTitleStyles: React.CSSProperties = {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing[3],
+  };
+
+  const featureDescriptionStyles: React.CSSProperties = {
+    fontSize: typography.fontSize.base,
+    color: colors.text.secondary,
+    lineHeight: typography.lineHeight.relaxed,
+  };
+
+  const ctaSectionStyles: React.CSSProperties = {
+    ...createNeumorphicSurface('raised', 'lg', '2xl'),
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    padding: spacing[10],
+    textAlign: 'center',
+    color: colors.text.inverse,
+  };
+
+  const ctaTitleStyles: React.CSSProperties = {
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.extrabold,
+    marginBottom: spacing[4],
+  };
+
+  const ctaSubtitleStyles: React.CSSProperties = {
+    fontSize: typography.fontSize.xl,
+    marginBottom: spacing[6],
+    opacity: 0.95,
+  };
+
+  const ctaButtonContainerStyles: React.CSSProperties = {
+    display: 'flex',
+    gap: spacing[4],
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+  };
+
+  const footerStyles: React.CSSProperties = {
+    ...createNeumorphicSurface('inset', 'sm', 'none'),
+    padding: `${spacing[8]} ${spacing[6]}`,
+    marginTop: spacing[10],
+  };
+
+  const footerGridStyles: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gap: spacing[8],
+    maxWidth: '1200px',
+    margin: '0 auto',
+  };
+
+  const footerTitleStyles: React.CSSProperties = {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing[4],
+  };
+
+  const footerTextStyles: React.CSSProperties = {
+    fontSize: typography.fontSize.base,
+    color: colors.text.secondary,
+    lineHeight: typography.lineHeight.relaxed,
+    marginBottom: spacing[2],
+  };
+
+  const footerLinkStyles: React.CSSProperties = {
+    fontSize: typography.fontSize.base,
+    color: colors.brand.primary,
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    cursor: 'pointer',
+    textAlign: 'left',
+    marginBottom: spacing[2],
+    fontFamily: typography.fontFamily.primary,
+    transition: 'color 0.2s ease',
+  };
+
+  const footerBottomStyles: React.CSSProperties = {
+    textAlign: 'center',
+    marginTop: spacing[8],
+    paddingTop: spacing[6],
+    borderTop: `2px solid ${colors.surface.tertiary}`,
+    color: colors.text.tertiary,
+    fontSize: typography.fontSize.sm,
+  };
+
   return (
-    <Box sx={{ bgcolor: 'background.default', minHeight: '100vh' }}>
+    <>
+      {/* Animated Background */}
+      <AnimatedBackground variant="default" />
+
+      <div style={containerStyles}>
+        {/* Navigation Header */}
+        <div style={{ padding: spacing[6] }}>
+          <AppHeader
+            hideStaffLogin={true}
+            showPublicNav={true}
+            onCartClick={handleOpenCart}
+          />
+        </div>
+
       {/* Hero Section */}
       <HeroSection
-        onOrderNow={() => navigate('/customer/menu')}
+        onOrderNow={() => navigate('/menu')}
         onBrowseMenu={() => navigate('/menu')}
       />
 
       {/* Featured Promotions Section */}
-      <Container maxWidth="lg" sx={{ py: 8 }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" mb={4}>
-          <Box>
-            <Typography variant="h3" fontWeight="bold" gutterBottom>
-              Today's Special Offers
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Don't miss out on our amazing deals!
-            </Typography>
-          </Box>
+      <div style={sectionStyles}>
+        <div style={sectionHeaderStyles}>
+          <div>
+            <h2 style={titleStyles}>Today's Special Offers</h2>
+            <p style={subtitleStyles}>Don't miss out on our amazing deals!</p>
+          </div>
           <Button
-            variant="outlined"
-            size="large"
+            variant="secondary"
+            size="lg"
             onClick={() => navigate('/promotions')}
           >
             View All Offers
           </Button>
-        </Stack>
+        </div>
 
-        <Grid container spacing={3}>
+        <div style={promotionsGridStyles}>
           {featuredPromotions.map((promo) => (
-            <Grid item xs={12} md={4} key={promo.id}>
-              <PromotionCard
-                promotion={promo}
-                onOrderNow={() => navigate('/customer/menu')}
-              />
-            </Grid>
+            <PromotionCard
+              key={promo.id}
+              promotion={promo}
+              onOrderNow={() => navigate('/menu')}
+            />
           ))}
-        </Grid>
-      </Container>
+        </div>
+      </div>
 
       {/* Why Choose Us Section */}
-      <Box sx={{ bgcolor: 'background.paper', py: 8 }}>
-        <Container maxWidth="lg">
-          <Typography variant="h3" fontWeight="bold" align="center" gutterBottom>
-            Why Choose MaSoVa?
-          </Typography>
-          <Typography variant="body1" color="text.secondary" align="center" mb={6}>
-            We're committed to serving you the best food experience
-          </Typography>
+      <div style={sectionStyles}>
+        <div style={{ textAlign: 'center', marginBottom: spacing[8] }}>
+          <h2 style={titleStyles}>Why Choose MaSoVa?</h2>
+          <p style={subtitleStyles}>We're committed to serving you the best food experience</p>
+        </div>
 
-          <Grid container spacing={4}>
-            {features.map((feature, index) => (
-              <Grid item xs={12} sm={6} md={3} key={index}>
-                <Card
-                  elevation={0}
-                  sx={{
-                    height: '100%',
-                    textAlign: 'center',
-                    p: 3,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    transition: 'transform 0.2s',
-                    '&:hover': {
-                      transform: 'translateY(-8px)',
-                      boxShadow: 3
-                    }
-                  }}
-                >
-                  <CardContent>
-                    <Box mb={2}>
-                      {feature.icon}
-                    </Box>
-                    <Typography variant="h6" fontWeight="bold" gutterBottom>
-                      {feature.title}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {feature.description}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </Container>
-      </Box>
+        <div style={featuresGridStyles}>
+          {features.map((feature, index) => (
+            <Card key={index} elevation="md" padding="lg" interactive>
+              <div style={featureCardContentStyles}>
+                <div style={featureIconStyles}>{feature.icon}</div>
+                <h3 style={featureTitleStyles}>{feature.title}</h3>
+                <p style={featureDescriptionStyles}>{feature.description}</p>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
 
       {/* Call to Action Section */}
-      <Container maxWidth="lg" sx={{ py: 8 }}>
-        <Card
-          sx={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white',
-            p: 6,
-            textAlign: 'center'
-          }}
-        >
-          <Typography variant="h3" fontWeight="bold" gutterBottom>
-            Hungry? Let's Order!
-          </Typography>
-          <Typography variant="h6" sx={{ mb: 4, opacity: 0.9 }}>
+      <div style={sectionStyles}>
+        <div style={ctaSectionStyles}>
+          <h2 style={ctaTitleStyles}>Hungry? Let's Order!</h2>
+          <p style={ctaSubtitleStyles}>
             Browse our menu and get your favorite food delivered in minutes
-          </Typography>
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={2}
-            justifyContent="center"
-          >
+          </p>
+          <div style={ctaButtonContainerStyles}>
             <Button
-              variant="contained"
-              size="large"
-              sx={{
-                bgcolor: 'white',
-                color: 'primary.main',
-                '&:hover': { bgcolor: 'grey.100' },
-                px: 4,
-                py: 1.5
+              variant="primary"
+              size="xl"
+              onClick={() => navigate('/menu')}
+              style={{
+                minWidth: '200px',
+                boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.25)',
               }}
-              onClick={() => navigate('/customer/menu')}
             >
               Order Now
             </Button>
             <Button
-              variant="outlined"
-              size="large"
-              sx={{
-                borderColor: 'white',
-                color: 'white',
-                '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.1)' },
-                px: 4,
-                py: 1.5
-              }}
+              variant="ghost"
+              size="xl"
               onClick={() => navigate('/menu')}
+              style={{
+                minWidth: '200px',
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                color: colors.text.inverse,
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.15)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+              }}
             >
               Browse Menu
             </Button>
-          </Stack>
-        </Card>
-      </Container>
+          </div>
+        </div>
+      </div>
 
       {/* Footer */}
-      <Box sx={{ bgcolor: 'background.paper', py: 4, borderTop: '1px solid', borderColor: 'divider' }}>
-        <Container maxWidth="lg">
-          <Grid container spacing={4}>
-            <Grid item xs={12} md={4}>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>
-                MaSoVa Restaurant
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Your favorite multi-cuisine restaurant serving delicious food since 2020
-              </Typography>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Quick Links
-              </Typography>
-              <Stack spacing={1}>
-                <Button sx={{ justifyContent: 'flex-start' }} onClick={() => navigate('/menu')}>
-                  Browse Menu
-                </Button>
-                <Button sx={{ justifyContent: 'flex-start' }} onClick={() => navigate('/promotions')}>
-                  Promotions
-                </Button>
-                <Button sx={{ justifyContent: 'flex-start' }} onClick={() => navigate('/login')}>
-                  Staff Login
-                </Button>
-              </Stack>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Contact
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Phone: +91 9876543210
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Email: info@masova.com
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Address: Hyderabad, India
-              </Typography>
-            </Grid>
-          </Grid>
-          <Box sx={{ mt: 4, pt: 4, borderTop: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              © 2025 MaSoVa Restaurant Management System. All rights reserved.
-            </Typography>
-          </Box>
-        </Container>
-      </Box>
-    </Box>
+      <footer style={footerStyles}>
+        <div style={footerGridStyles}>
+          <div>
+            <h3 style={footerTitleStyles}>MaSoVa Restaurant</h3>
+            <p style={footerTextStyles}>
+              Your favorite multi-cuisine restaurant serving delicious food since 2020
+            </p>
+          </div>
+          <div>
+            <h3 style={footerTitleStyles}>Quick Links</h3>
+            <button style={footerLinkStyles} onClick={() => navigate('/menu')}>
+              Browse Menu
+            </button>
+            <br />
+            <button style={footerLinkStyles} onClick={() => navigate('/promotions')}>
+              Promotions
+            </button>
+            <br />
+            <button style={footerLinkStyles} onClick={() => navigate('/login')}>
+              Staff Login
+            </button>
+          </div>
+          <div>
+            <h3 style={footerTitleStyles}>Contact</h3>
+            <p style={footerTextStyles}>Phone: +91 9876543210</p>
+            <p style={footerTextStyles}>Email: info@masova.com</p>
+            <p style={footerTextStyles}>Address: Hyderabad, India</p>
+          </div>
+        </div>
+        <div style={footerBottomStyles}>
+          © 2025 MaSoVa Restaurant Management System. All rights reserved.
+        </div>
+      </footer>
+
+        {/* Cart Drawer */}
+        <CartDrawer open={cartDrawerOpen} onClose={handleCloseCart} onCheckout={handleCheckout} />
+      </div>
+    </>
   );
 };
 
