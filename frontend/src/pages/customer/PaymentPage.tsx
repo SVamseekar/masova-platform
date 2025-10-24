@@ -1,42 +1,64 @@
-import React, { useState } from 'react';
-import { Container, Typography, Box, Button, Card, CardContent, Grid, Radio, RadioGroup, FormControlLabel, FormControl, TextField, Divider, Alert } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { useCreateOrderMutation } from '../../store/api/orderApi';
-import { clearCart } from '../../store/slices/cartSlice';
+import { clearCart, selectCartItems, selectCartTotal } from '../../store/slices/cartSlice';
+import { selectCurrentUser } from '../../store/slices/authSlice';
+import { Button, Card, Input } from '../../components/ui/neumorphic';
+import AppHeader from '../../components/common/AppHeader';
+import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
+import { colors, spacing, typography, shadows, borderRadius } from '../../styles/design-tokens';
+import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 
-interface PaymentPageProps {
-  onBack: () => void;
-  onComplete: () => void;
+interface GuestInfo {
+  email: string;
+  phone: string;
+  name: string;
+  street: string;
+  city: string;
+  state: string;
+  pincode: string;
+  deliveryInstructions?: string;
 }
 
-const PaymentPage: React.FC<PaymentPageProps> = ({ onBack, onComplete }) => {
+const PaymentPage: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useAppDispatch();
-  const cartItems = useAppSelector(state => state.cart.items);
-  const currentUser = useAppSelector(state => state.auth.user);
 
-  const [paymentMethod, setPaymentMethod] = useState('CASH');
-  const [orderType, setOrderType] = useState<'DINE_IN' | 'TAKEAWAY' | 'DELIVERY'>('DELIVERY');
-  const [customerName, setCustomerName] = useState(currentUser?.name || '');
-  const [customerPhone, setCustomerPhone] = useState('');
-  const [address, setAddress] = useState({
-    street: '',
-    city: '',
-    pincode: ''
-  });
+  const cartItems = useAppSelector(selectCartItems);
+  const cartTotal = useAppSelector(selectCartTotal);
+  const currentUser = useAppSelector(selectCurrentUser);
 
+  // Get guest info from navigation state (passed from GuestCheckoutPage)
+  const guestInfo = location.state?.guestInfo as GuestInfo | undefined;
+
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'UPI'>('CASH');
+  const [orderType, setOrderType] = useState<'DELIVERY' | 'TAKEAWAY' | 'DINE_IN'>('DELIVERY');
   const [createOrder, { isLoading, error }] = useCreateOrderMutation();
 
-  const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
-  const deliveryFee = orderType === 'DELIVERY' ? 29 : 0;
-  const tax = subtotal * 0.05;
-  const total = subtotal + deliveryFee + tax;
+  // Redirect if cart is empty
+  useEffect(() => {
+    if (cartItems.length === 0) {
+      navigate('/menu');
+    }
+  }, [cartItems, navigate]);
+
+  // Calculate totals
+  const subtotal = cartTotal;
+  const deliveryFee = orderType === 'DELIVERY' ? 40 : 0;
+  const gst = subtotal * 0.05; // 5% GST
+  const packagingCharges = orderType === 'TAKEAWAY' ? 10 : 0;
+  const total = subtotal + deliveryFee + gst + packagingCharges;
 
   const handlePlaceOrder = async () => {
     try {
-      await createOrder({
-        storeId: 'store-1', // Default store
-        customerName,
-        customerPhone,
+      // Prepare order data
+      const orderData = {
+        storeId: 'store-1', // Default store ID
+        customerName: currentUser?.name || guestInfo?.name || 'Guest',
+        customerPhone: guestInfo?.phone || currentUser?.phone || '',
+        customerEmail: guestInfo?.email || currentUser?.email,
         customerId: currentUser?.userId,
         items: cartItems.map(item => ({
           menuItemId: item.id,
@@ -44,129 +66,405 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ onBack, onComplete }) => {
           quantity: item.quantity,
           price: Math.round(item.price * 100), // Convert to paise
           variant: item.variant,
-          customizations: item.customizations
+          customizations: item.customizations,
         })),
         orderType,
-        paymentMethod: paymentMethod as any,
-        deliveryAddress: orderType === 'DELIVERY' ? address : undefined,
-      }).unwrap();
+        paymentMethod,
+        deliveryAddress: orderType === 'DELIVERY' && guestInfo ? {
+          street: guestInfo.street,
+          city: guestInfo.city,
+          state: guestInfo.state,
+          pincode: guestInfo.pincode,
+          instructions: guestInfo.deliveryInstructions,
+        } : undefined,
+        notes: guestInfo?.deliveryInstructions,
+      };
 
+      const result = await createOrder(orderData).unwrap();
+
+      // Clear cart after successful order
       dispatch(clearCart());
-      onComplete();
+
+      // Navigate to tracking page with order ID
+      navigate(`/tracking/${result.orderId}`, {
+        state: { orderData: result }
+      });
     } catch (err) {
       console.error('Failed to create order:', err);
     }
   };
 
+  // Styles
+  const containerStyles: React.CSSProperties = {
+    position: 'relative',
+    minHeight: '100vh',
+    fontFamily: typography.fontFamily.primary,
+    padding: spacing[6],
+    zIndex: 1,
+  };
+
+  const contentStyles: React.CSSProperties = {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    display: 'grid',
+    gridTemplateColumns: '1fr 400px',
+    gap: spacing[8],
+    marginTop: spacing[6],
+  };
+
+  const titleStyles: React.CSSProperties = {
+    fontSize: typography.fontSize['3xl'],
+    fontWeight: typography.fontWeight.extrabold,
+    color: colors.text.primary,
+    marginBottom: spacing[6],
+  };
+
+  const sectionTitleStyles: React.CSSProperties = {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing[4],
+  };
+
+  const paymentOptionStyles = (isSelected: boolean): React.CSSProperties => ({
+    ...createNeumorphicSurface(isSelected ? 'inset' : 'raised', 'base', 'lg'),
+    padding: spacing[4],
+    marginBottom: spacing[3],
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    backgroundColor: isSelected ? colors.brand.primaryLight + '20' : colors.surface.primary,
+    border: isSelected ? `2px solid ${colors.brand.primary}` : 'none',
+  });
+
+  const orderTypeOptionStyles = (isSelected: boolean): React.CSSProperties => ({
+    ...createNeumorphicSurface(isSelected ? 'inset' : 'raised', 'base', 'lg'),
+    padding: spacing[4],
+    marginBottom: spacing[3],
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    backgroundColor: isSelected ? colors.brand.primaryLight + '20' : colors.surface.primary,
+    border: isSelected ? `2px solid ${colors.brand.primary}` : 'none',
+    textAlign: 'center',
+  });
+
+  const optionLabelStyles: React.CSSProperties = {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+    display: 'flex',
+    alignItems: 'center',
+    gap: spacing[3],
+  };
+
+  const optionIconStyles: React.CSSProperties = {
+    fontSize: '32px',
+  };
+
+  const summaryRowStyles: React.CSSProperties = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginBottom: spacing[3],
+  };
+
+  const summaryLabelStyles: React.CSSProperties = {
+    fontSize: typography.fontSize.base,
+    color: colors.text.secondary,
+  };
+
+  const summaryValueStyles: React.CSSProperties = {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+  };
+
+  const totalRowStyles: React.CSSProperties = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    paddingTop: spacing[4],
+    borderTop: `2px solid ${colors.surface.tertiary}`,
+    marginBottom: spacing[6],
+  };
+
+  const totalLabelStyles: React.CSSProperties = {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.extrabold,
+    color: colors.text.primary,
+  };
+
+  const totalValueStyles: React.CSSProperties = {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.extrabold,
+    background: `linear-gradient(135deg, ${colors.brand.primary}, ${colors.brand.secondary})`,
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+  };
+
+  const errorStyles: React.CSSProperties = {
+    ...createNeumorphicSurface('inset', 'base', 'lg'),
+    padding: spacing[4],
+    marginTop: spacing[4],
+    backgroundColor: colors.semantic.errorLight + '40',
+    color: colors.semantic.error,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+  };
+
+  const customerInfoStyles: React.CSSProperties = {
+    ...createNeumorphicSurface('inset', 'sm', 'lg'),
+    padding: spacing[4],
+    marginBottom: spacing[4],
+    backgroundColor: colors.surface.secondary,
+  };
+
+  const infoRowStyles: React.CSSProperties = {
+    marginBottom: spacing[2],
+    fontSize: typography.fontSize.base,
+    color: colors.text.secondary,
+  };
+
+  const infoLabelStyles: React.CSSProperties = {
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+  };
+
+  const itemStyles: React.CSSProperties = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginBottom: spacing[3],
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+  };
+
+  const responsiveStyles: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+    gap: spacing[3],
+  };
+
   return (
-    <Container maxWidth="lg" sx={{ py: 6 }}>
-      <Typography variant="h3" fontWeight="bold" gutterBottom>Payment & Checkout</Typography>
+    <>
+      <AnimatedBackground variant="minimal" />
 
-      <Grid container spacing={4}>
-        <Grid item xs={12} md={8}>
-          {/* Customer Details */}
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>Customer Details</Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <TextField fullWidth label="Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField fullWidth label="Phone" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} required />
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
+      <div style={containerStyles}>
+        <AppHeader
+          title="Payment & Checkout"
+          showBackButton
+          backRoute="/checkout"
+          hideStaffLogin
+        />
 
-          {/* Order Type */}
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>Order Type</Typography>
-              <FormControl component="fieldset">
-                <RadioGroup value={orderType} onChange={(e) => setOrderType(e.target.value as any)}>
-                  <FormControlLabel value="DELIVERY" control={<Radio />} label="Delivery" />
-                  <FormControlLabel value="TAKEAWAY" control={<Radio />} label="Takeaway" />
-                  <FormControlLabel value="DINE_IN" control={<Radio />} label="Dine In" />
-                </RadioGroup>
-              </FormControl>
-            </CardContent>
-          </Card>
+        <h1 style={titleStyles}>Complete Your Order</h1>
 
-          {/* Delivery Address */}
-          {orderType === 'DELIVERY' && (
-            <Card sx={{ mb: 3 }}>
-              <CardContent>
-                <Typography variant="h6" fontWeight="bold" gutterBottom>Delivery Address</Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <TextField fullWidth label="Street Address" value={address.street} onChange={(e) => setAddress({...address, street: e.target.value})} required />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField fullWidth label="City" value={address.city} onChange={(e) => setAddress({...address, city: e.target.value})} required />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField fullWidth label="Pincode" value={address.pincode} onChange={(e) => setAddress({...address, pincode: e.target.value})} required />
-                  </Grid>
-                </Grid>
-              </CardContent>
+        <div style={contentStyles}>
+          {/* Left Column: Payment Options */}
+          <div>
+            {/* Customer Info */}
+            {guestInfo && (
+              <Card elevation="md" padding="lg" style={{ marginBottom: spacing[6] }}>
+                <h2 style={sectionTitleStyles}>Delivery Information</h2>
+                <div style={customerInfoStyles}>
+                  <div style={infoRowStyles}>
+                    <span style={infoLabelStyles}>Name:</span> {guestInfo.name}
+                  </div>
+                  <div style={infoRowStyles}>
+                    <span style={infoLabelStyles}>Email:</span> {guestInfo.email}
+                  </div>
+                  <div style={infoRowStyles}>
+                    <span style={infoLabelStyles}>Phone:</span> {guestInfo.phone}
+                  </div>
+                  <div style={infoRowStyles}>
+                    <span style={infoLabelStyles}>Address:</span> {guestInfo.street}, {guestInfo.city}, {guestInfo.state} - {guestInfo.pincode}
+                  </div>
+                  {guestInfo.deliveryInstructions && (
+                    <div style={infoRowStyles}>
+                      <span style={infoLabelStyles}>Instructions:</span> {guestInfo.deliveryInstructions}
+                    </div>
+                  )}
+                </div>
+              </Card>
+            )}
+
+            {/* Order Type Selection */}
+            <Card elevation="md" padding="lg" style={{ marginBottom: spacing[6] }}>
+              <h2 style={sectionTitleStyles}>Order Type</h2>
+              <div style={responsiveStyles}>
+                <div
+                  style={orderTypeOptionStyles(orderType === 'DELIVERY')}
+                  onClick={() => setOrderType('DELIVERY')}
+                >
+                  <div style={optionIconStyles}>🚚</div>
+                  <div style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.semibold, marginTop: spacing[2] }}>
+                    Delivery
+                  </div>
+                  <div style={{ fontSize: typography.fontSize.xs, color: colors.text.tertiary, marginTop: spacing[1] }}>
+                    +₹{deliveryFee}
+                  </div>
+                </div>
+
+                <div
+                  style={orderTypeOptionStyles(orderType === 'TAKEAWAY')}
+                  onClick={() => setOrderType('TAKEAWAY')}
+                >
+                  <div style={optionIconStyles}>🛍️</div>
+                  <div style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.semibold, marginTop: spacing[2] }}>
+                    Takeaway
+                  </div>
+                  <div style={{ fontSize: typography.fontSize.xs, color: colors.text.tertiary, marginTop: spacing[1] }}>
+                    +₹{packagingCharges}
+                  </div>
+                </div>
+
+                <div
+                  style={orderTypeOptionStyles(orderType === 'DINE_IN')}
+                  onClick={() => setOrderType('DINE_IN')}
+                >
+                  <div style={optionIconStyles}>🍽️</div>
+                  <div style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.semibold, marginTop: spacing[2] }}>
+                    Dine In
+                  </div>
+                  <div style={{ fontSize: typography.fontSize.xs, color: colors.text.tertiary, marginTop: spacing[1] }}>
+                    No extra charge
+                  </div>
+                </div>
+              </div>
             </Card>
-          )}
 
-          {/* Payment Method */}
-          <Card>
-            <CardContent>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>Payment Method</Typography>
-              <FormControl component="fieldset">
-                <RadioGroup value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
-                  <FormControlLabel value="CASH" control={<Radio />} label="Cash on Delivery" />
-                  <FormControlLabel value="CARD" control={<Radio />} label="Credit/Debit Card" />
-                  <FormControlLabel value="UPI" control={<Radio />} label="UPI" />
-                </RadioGroup>
-              </FormControl>
-            </CardContent>
-          </Card>
+            {/* Payment Method Selection */}
+            <Card elevation="md" padding="lg">
+              <h2 style={sectionTitleStyles}>Payment Method</h2>
 
-          {error && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              Failed to place order. Please try again.
-            </Alert>
-          )}
-        </Grid>
+              <div
+                style={paymentOptionStyles(paymentMethod === 'CASH')}
+                onClick={() => setPaymentMethod('CASH')}
+              >
+                <div style={optionLabelStyles}>
+                  <span style={optionIconStyles}>💵</span>
+                  <div>
+                    <div>Cash on Delivery</div>
+                    <div style={{ fontSize: typography.fontSize.sm, color: colors.text.tertiary }}>
+                      Pay with cash when your order arrives
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-        <Grid item xs={12} md={4}>
-          <Card elevation={3} sx={{ position: 'sticky', top: 80 }}>
-            <CardContent>
-              <Typography variant="h5" fontWeight="bold" gutterBottom>Order Summary</Typography>
-              <Divider sx={{ my: 2 }} />
-              <Box sx={{ mb: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography>Subtotal ({cartItems.length} items)</Typography>
-                  <Typography>₹{subtotal.toFixed(2)}</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography>Delivery Fee</Typography>
-                  <Typography>₹{deliveryFee.toFixed(2)}</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography>Tax (5%)</Typography>
-                  <Typography>₹{tax.toFixed(2)}</Typography>
-                </Box>
-              </Box>
-              <Divider sx={{ my: 2 }} />
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-                <Typography variant="h6" fontWeight="bold">Total</Typography>
-                <Typography variant="h6" fontWeight="bold" color="primary">₹{total.toFixed(2)}</Typography>
-              </Box>
-              <Button variant="contained" fullWidth size="large" onClick={handlePlaceOrder} disabled={isLoading || !customerName || !customerPhone} sx={{ mb: 2 }}>
-                {isLoading ? 'Placing Order...' : 'Place Order'}
+              <div
+                style={paymentOptionStyles(paymentMethod === 'CARD')}
+                onClick={() => setPaymentMethod('CARD')}
+              >
+                <div style={optionLabelStyles}>
+                  <span style={optionIconStyles}>💳</span>
+                  <div>
+                    <div>Credit/Debit Card</div>
+                    <div style={{ fontSize: typography.fontSize.sm, color: colors.text.tertiary }}>
+                      Pay securely with your card
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={paymentOptionStyles(paymentMethod === 'UPI')}
+                onClick={() => setPaymentMethod('UPI')}
+              >
+                <div style={optionLabelStyles}>
+                  <span style={optionIconStyles}>📱</span>
+                  <div>
+                    <div>UPI Payment</div>
+                    <div style={{ fontSize: typography.fontSize.sm, color: colors.text.tertiary }}>
+                      Pay using Google Pay, PhonePe, Paytm, etc.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {error && (
+              <div style={errorStyles}>
+                ⚠️ Failed to place order. Please try again or contact support.
+              </div>
+            )}
+          </div>
+
+          {/* Right Column: Order Summary */}
+          <div style={{ position: 'sticky', top: spacing[6], height: 'fit-content' }}>
+            <Card elevation="lg" padding="lg">
+              <h2 style={sectionTitleStyles}>Order Summary</h2>
+
+              {/* Cart Items */}
+              <div style={{ marginBottom: spacing[4] }}>
+                {cartItems.map((item) => (
+                  <div key={item.id} style={itemStyles}>
+                    <span>
+                      {item.quantity}x {item.name}
+                    </span>
+                    <span style={{ fontWeight: typography.fontWeight.semibold }}>
+                      ₹{(item.price * item.quantity).toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Breakdown */}
+              <div style={{ marginBottom: spacing[4] }}>
+                <div style={summaryRowStyles}>
+                  <span style={summaryLabelStyles}>Subtotal ({cartItems.length} items)</span>
+                  <span style={summaryValueStyles}>₹{subtotal.toFixed(2)}</span>
+                </div>
+
+                {orderType === 'DELIVERY' && (
+                  <div style={summaryRowStyles}>
+                    <span style={summaryLabelStyles}>Delivery Fee</span>
+                    <span style={summaryValueStyles}>₹{deliveryFee.toFixed(2)}</span>
+                  </div>
+                )}
+
+                {orderType === 'TAKEAWAY' && (
+                  <div style={summaryRowStyles}>
+                    <span style={summaryLabelStyles}>Packaging Charges</span>
+                    <span style={summaryValueStyles}>₹{packagingCharges.toFixed(2)}</span>
+                  </div>
+                )}
+
+                <div style={summaryRowStyles}>
+                  <span style={summaryLabelStyles}>GST (5%)</span>
+                  <span style={summaryValueStyles}>₹{gst.toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* Total */}
+              <div style={totalRowStyles}>
+                <span style={totalLabelStyles}>Total</span>
+                <span style={totalValueStyles}>₹{total.toFixed(2)}</span>
+              </div>
+
+              {/* Action Buttons */}
+              <Button
+                variant="primary"
+                size="lg"
+                fullWidth
+                onClick={handlePlaceOrder}
+                disabled={isLoading}
+                style={{ marginBottom: spacing[3] }}
+              >
+                {isLoading ? 'Placing Order...' : `Pay ₹${total.toFixed(2)}`}
               </Button>
-              <Button variant="outlined" fullWidth onClick={onBack}>Back to Cart</Button>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-    </Container>
+
+              <Button
+                variant="secondary"
+                size="md"
+                fullWidth
+                onClick={() => navigate('/checkout')}
+                disabled={isLoading}
+              >
+                Back to Checkout
+              </Button>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </>
   );
 };
 

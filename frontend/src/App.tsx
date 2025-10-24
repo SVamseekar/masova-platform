@@ -16,6 +16,8 @@ const LoginPage = React.lazy(() => import('./pages/auth/LoginPage'));
 const RegisterPage = React.lazy(() => import('./pages/auth/RegisterPage'));
 const CheckoutPage = React.lazy(() => import('./pages/checkout/CheckoutPage'));
 const GuestCheckoutPage = React.lazy(() => import('./pages/checkout/GuestCheckoutPage'));
+const PaymentPage = React.lazy(() => import('./pages/customer/PaymentPage'));
+const TrackingPage = React.lazy(() => import('./pages/customer/TrackingPage'));
 const CustomerDashboard = React.lazy(() => import('./pages/customer/CustomerDashboard'));
 const ManagerDashboard = React.lazy(() => import('./pages/manager/DashboardPage'));
 const KitchenDisplayPage = React.lazy(() => import('./pages/kitchen/KitchenDisplayPage'));
@@ -55,10 +57,12 @@ const App: React.FC = () => {
                   <Route path="/register" element={<RegisterPage />} />
                   <Route path="/checkout" element={<CheckoutPage />} />
                   <Route path="/guest-checkout" element={<GuestCheckoutPage />} />
+                  <Route path="/payment" element={<PaymentPage />} />
+                  <Route path="/tracking/:orderId" element={<TrackingPage />} />
 
-                  {/* Customer Routes - Login required for ordering */}
+                  {/* Customer Dashboard - Login required */}
                   <Route
-                    path="/customer/*"
+                    path="/customer-dashboard"
                     element={
                       <ProtectedRoute allowedRoles={['CUSTOMER']} requireAuth={true}>
                         <CustomerDashboard />

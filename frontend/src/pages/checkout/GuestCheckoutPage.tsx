@@ -101,14 +101,22 @@ const GuestCheckoutPage: React.FC = () => {
     setLoading(true);
 
     try {
-      sessionStorage.setItem('guestInfo', JSON.stringify({
-        ...formData,
-        orderType: 'DELIVERY',
-        total: total,
-        items: cartItems,
-      }));
+      // Prepare guest info to pass to PaymentPage
+      const guestInfo = {
+        name: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        phone: formData.phone,
+        street: `${formData.addressLine1}${formData.addressLine2 ? ', ' + formData.addressLine2 : ''}`,
+        city: formData.city,
+        state: formData.state,
+        pincode: formData.zipCode,
+        deliveryInstructions: formData.specialInstructions,
+      };
 
-      navigate('/guest-payment');
+      // Navigate to PaymentPage with guest info
+      navigate('/payment', {
+        state: { guestInfo }
+      });
     } catch (err: any) {
       console.error('Guest checkout error:', err);
       setError('An error occurred. Please try again.');
