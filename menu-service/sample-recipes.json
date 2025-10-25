@@ -1,0 +1,273 @@
+[
+  {
+    "itemName": "Masala Dosa",
+    "ingredients": [
+      "1 cup dosa batter",
+      "2 medium potatoes, boiled and mashed",
+      "1 onion, finely chopped",
+      "2 green chilies, chopped",
+      "1/2 tsp mustard seeds",
+      "1/2 tsp turmeric powder",
+      "Curry leaves",
+      "2 tbsp oil",
+      "Salt to taste"
+    ],
+    "preparationInstructions": [
+      "Heat oil in a pan and add mustard seeds. Let them splutter.",
+      "Add curry leaves, green chilies, and chopped onions. Sauté until onions turn translucent.",
+      "Add turmeric powder and mix well.",
+      "Add the boiled and mashed potatoes. Mix well and cook for 2-3 minutes. Season with salt.",
+      "Heat a griddle and spread a thin layer of dosa batter in a circular motion.",
+      "Drizzle oil around the edges and let it cook until the bottom turns golden brown.",
+      "Place the potato masala filling in the center of the dosa.",
+      "Fold the dosa from both sides and serve hot with coconut chutney and sambar."
+    ]
+  },
+  {
+    "itemName": "Chicken Biryani",
+    "ingredients": [
+      "500g basmati rice",
+      "750g chicken, cut into pieces",
+      "2 large onions, sliced",
+      "1 cup yogurt",
+      "4 tomatoes, chopped",
+      "2 tbsp ginger-garlic paste",
+      "Whole spices (bay leaves, cinnamon, cardamom, cloves)",
+      "Biryani masala powder",
+      "Saffron strands soaked in milk",
+      "Fresh mint and coriander leaves",
+      "Ghee and oil",
+      "Salt to taste"
+    ],
+    "preparationInstructions": [
+      "Marinate chicken with yogurt, ginger-garlic paste, biryani masala, salt, and half of the mint-coriander leaves. Let it rest for 30 minutes.",
+      "Wash and soak basmati rice for 30 minutes. Boil rice until 70% cooked. Drain and set aside.",
+      "Heat ghee and oil in a heavy-bottomed pan. Fry sliced onions until golden brown. Remove half for garnishing.",
+      "Add whole spices to the remaining onions and sauté for a minute.",
+      "Add marinated chicken and cook on high heat for 5 minutes.",
+      "Add chopped tomatoes and cook until chicken is 80% done.",
+      "Layer the partially cooked rice over the chicken. Sprinkle saffron milk, fried onions, and remaining herbs.",
+      "Cover tightly with foil and lid. Cook on low heat (dum) for 25-30 minutes.",
+      "Turn off heat and let it rest for 10 minutes before opening.",
+      "Gently mix and serve hot with raita and pickle."
+    ]
+  },
+  {
+    "itemName": "Margherita Pizza",
+    "ingredients": [
+      "1 pizza dough base",
+      "1/2 cup tomato sauce",
+      "200g mozzarella cheese, shredded",
+      "Fresh basil leaves",
+      "2 tbsp olive oil",
+      "2 cloves garlic, minced",
+      "Salt and black pepper to taste",
+      "Dried oregano"
+    ],
+    "preparationInstructions": [
+      "Preheat oven to 230°C (450°F). If using a pizza stone, place it in the oven while preheating.",
+      "Roll out pizza dough into a 12-inch circle on a lightly floured surface.",
+      "Mix tomato sauce with minced garlic, salt, and black pepper.",
+      "Spread the tomato sauce evenly over the pizza base, leaving a 1-inch border for the crust.",
+      "Sprinkle shredded mozzarella cheese evenly over the sauce.",
+      "Drizzle olive oil over the top.",
+      "Transfer pizza to a baking sheet or pizza peel if using a stone.",
+      "Bake for 12-15 minutes until the crust is golden and cheese is bubbling and slightly browned.",
+      "Remove from oven and immediately top with fresh basil leaves.",
+      "Sprinkle with dried oregano, slice, and serve hot."
+    ]
+  },
+  {
+    "itemName": "Paneer Butter Masala",
+    "ingredients": [
+      "250g paneer, cubed",
+      "2 large tomatoes, pureed",
+      "1 onion, finely chopped",
+      "2 tbsp butter",
+      "1/2 cup fresh cream",
+      "1 tbsp ginger-garlic paste",
+      "1 tsp red chili powder",
+      "1 tsp garam masala",
+      "1/2 tsp turmeric powder",
+      "1 tbsp kasuri methi (dried fenugreek leaves)",
+      "Fresh coriander for garnish",
+      "Salt to taste"
+    ],
+    "preparationInstructions": [
+      "Heat butter in a pan and sauté chopped onions until golden brown.",
+      "Add ginger-garlic paste and sauté for a minute until the raw smell disappears.",
+      "Add tomato puree and cook for 8-10 minutes until oil separates from the mixture.",
+      "Add red chili powder, turmeric powder, and salt. Mix well.",
+      "Add half a cup of water and bring to a boil.",
+      "Lower the heat and add fresh cream. Stir continuously.",
+      "Add paneer cubes and mix gently to coat them with the gravy.",
+      "Crush kasuri methi between your palms and add to the curry.",
+      "Add garam masala and cook for another 2-3 minutes.",
+      "Garnish with fresh coriander and serve hot with naan or rice."
+    ]
+  },
+  {
+    "itemName": "Hakka Noodles",
+    "ingredients": [
+      "200g hakka noodles",
+      "1 cup mixed vegetables (carrots, cabbage, bell peppers, beans)",
+      "2 tbsp soy sauce",
+      "1 tbsp vinegar",
+      "1 tbsp chili sauce",
+      "1 tsp black pepper powder",
+      "2 cloves garlic, minced",
+      "1-inch ginger, julienned",
+      "2 spring onions, chopped",
+      "3 tbsp oil",
+      "Salt to taste"
+    ],
+    "preparationInstructions": [
+      "Boil water in a large pot. Add noodles and cook according to package instructions until al dente.",
+      "Drain noodles and rinse with cold water. Toss with 1 tbsp oil to prevent sticking. Set aside.",
+      "Heat oil in a wok or large pan over high heat.",
+      "Add minced garlic and ginger. Stir-fry for 30 seconds until fragrant.",
+      "Add all the vegetables and stir-fry on high heat for 2-3 minutes until they are crisp-tender.",
+      "Add soy sauce, vinegar, chili sauce, and black pepper. Mix well.",
+      "Add the cooked noodles to the wok. Toss everything together for 2-3 minutes.",
+      "Add chopped spring onions and give it a final toss.",
+      "Adjust seasoning with salt if needed.",
+      "Serve hot as a main dish or side."
+    ]
+  },
+  {
+    "itemName": "Filter Coffee",
+    "ingredients": [
+      "2 tbsp freshly ground coffee powder",
+      "3/4 cup hot water",
+      "1 cup milk",
+      "Sugar to taste"
+    ],
+    "preparationInstructions": [
+      "Place the coffee powder in the upper compartment of a South Indian coffee filter.",
+      "Press down gently with the presser.",
+      "Pour hot (not boiling) water slowly over the coffee powder.",
+      "Cover with the lid and let it brew for 10-15 minutes. The decoction will collect in the lower container.",
+      "Heat milk in a saucepan until it comes to a boil.",
+      "In a traditional tumbler, add 2-3 tbsp of coffee decoction (adjust to taste).",
+      "Add sugar to taste.",
+      "Pour hot milk over the decoction.",
+      "Pour the coffee back and forth between the tumbler and davara (small bowl) from a height to create froth.",
+      "Serve hot in the traditional steel tumbler and davara set."
+    ]
+  },
+  {
+    "itemName": "Veg Manchurian",
+    "ingredients": [
+      "2 cups mixed vegetables (cabbage, carrots, beans), finely chopped",
+      "1/2 cup all-purpose flour",
+      "2 tbsp cornstarch",
+      "3 tbsp soy sauce",
+      "2 tbsp tomato ketchup",
+      "1 tbsp chili sauce",
+      "4 cloves garlic, minced",
+      "1-inch ginger, minced",
+      "2 green chilies, chopped",
+      "1 onion, chopped",
+      "1 bell pepper, cubed",
+      "Oil for deep frying",
+      "Spring onions for garnish",
+      "Salt and pepper to taste"
+    ],
+    "preparationInstructions": [
+      "Mix finely chopped vegetables with flour, 1 tbsp cornstarch, salt, and pepper. Add a little water to form a thick mixture.",
+      "Heat oil in a deep pan for frying.",
+      "Shape the vegetable mixture into small balls and deep fry until golden brown. Drain on paper towels.",
+      "In another pan, heat 2 tbsp oil. Add minced garlic, ginger, and green chilies. Sauté for a minute.",
+      "Add chopped onions and bell peppers. Stir-fry for 2 minutes.",
+      "Add soy sauce, tomato ketchup, and chili sauce. Mix well.",
+      "Mix 1 tbsp cornstarch with 1/2 cup water and add to the pan to thicken the sauce.",
+      "Add the fried vegetable balls and toss gently to coat with the sauce.",
+      "Cook for 2-3 minutes until the sauce thickens and coats the manchurian balls.",
+      "Garnish with chopped spring onions and serve hot as an appetizer or with fried rice."
+    ]
+  },
+  {
+    "itemName": "Idli",
+    "ingredients": [
+      "2 cups idli rice",
+      "1 cup urad dal (split black gram)",
+      "1/2 tsp fenugreek seeds",
+      "Salt to taste",
+      "Oil for greasing"
+    ],
+    "preparationInstructions": [
+      "Wash and soak idli rice and fenugreek seeds together for 4-6 hours.",
+      "Wash and soak urad dal separately for 4-6 hours.",
+      "Grind urad dal with minimal water until you get a fluffy, light batter. Transfer to a large bowl.",
+      "Grind the rice with fenugreek seeds to a slightly coarse batter. Add to the urad dal batter.",
+      "Mix both batters well. Add salt and mix again.",
+      "Cover the bowl and let the batter ferment for 8-12 hours in a warm place until it doubles in volume.",
+      "After fermentation, gently mix the batter without deflating it too much.",
+      "Grease idli moulds with oil.",
+      "Pour batter into each mould, filling them 3/4th full.",
+      "Steam the idlis in an idli steamer for 10-12 minutes.",
+      "Let them cool for a minute, then remove with a wet spoon.",
+      "Serve hot with coconut chutney and sambar."
+    ]
+  },
+  {
+    "itemName": "Gulab Jamun",
+    "ingredients": [
+      "1 cup milk powder",
+      "1/4 cup all-purpose flour",
+      "1/4 tsp baking soda",
+      "2 tbsp ghee",
+      "Milk as needed to knead",
+      "Oil for deep frying",
+      "For sugar syrup:",
+      "2 cups sugar",
+      "2 cups water",
+      "4-5 cardamom pods",
+      "Few saffron strands",
+      "1 tsp rose water"
+    ],
+    "preparationInstructions": [
+      "Prepare sugar syrup: Boil sugar and water with cardamom and saffron until you get a one-string consistency. Add rose water and keep warm.",
+      "In a bowl, mix milk powder, flour, and baking soda.",
+      "Add ghee and mix until it resembles breadcrumbs.",
+      "Gradually add milk and knead into a soft, smooth dough. Do not over-knead.",
+      "Cover and let it rest for 10 minutes.",
+      "Divide the dough into small portions and roll into smooth, crack-free balls.",
+      "Heat oil in a pan on low-medium heat. The oil should not be too hot.",
+      "Gently slide the balls into the oil and fry, stirring continuously for even browning.",
+      "Fry until they turn dark golden brown. This should take 8-10 minutes on low heat.",
+      "Remove from oil and immediately transfer to the warm sugar syrup.",
+      "Let them soak for at least 2 hours before serving.",
+      "Serve warm or at room temperature."
+    ]
+  },
+  {
+    "itemName": "Butter Naan",
+    "ingredients": [
+      "2 cups all-purpose flour (maida)",
+      "1/2 cup yogurt",
+      "1 tsp sugar",
+      "1/2 tsp salt",
+      "1/2 tsp baking powder",
+      "1/4 tsp baking soda",
+      "2 tbsp oil",
+      "Warm water as needed",
+      "Butter for brushing",
+      "Nigella seeds (kalonji) for topping"
+    ],
+    "preparationInstructions": [
+      "In a large bowl, mix flour, sugar, salt, baking powder, and baking soda.",
+      "Add yogurt and oil. Mix well.",
+      "Gradually add warm water and knead into a soft, smooth dough.",
+      "Cover with a damp cloth and let it rest for 2-3 hours.",
+      "After resting, divide the dough into equal portions.",
+      "Roll each portion into an oval or tear-drop shape, about 1/4 inch thick.",
+      "Brush one side with water and sprinkle nigella seeds.",
+      "Heat a tawa or griddle over medium-high heat.",
+      "Place the naan on the tawa with the wet side down. Cook until bubbles appear.",
+      "Flip and cook the other side. You can also finish it directly over the flame for charred spots.",
+      "Brush generously with butter while hot.",
+      "Serve warm with your favorite curry."
+    ]
+  }
+]

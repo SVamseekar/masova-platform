@@ -728,27 +728,31 @@ frontend/
 
 ## Phase 6: Kitchen Operations Management (Week 9)
 
-**Overall Status:** ⚠️ **PARTIAL** (~20% - Oven timer from early work)
+**Overall Status:** ⚠️ **PARTIAL** (~75% - Recipe management fully complete, advanced workflow features pending)
 
-### BACKEND Implementation ❌
+### BACKEND Implementation ⚠️
 
-**6.1 Kitchen Service (New Microservice - Port 8087)**
-- ❌ Create Kitchen Service
-- ❌ Recipe management
+**6.1 Recipe Management in Menu Service**
+- ✅ Added preparationInstructions field to MenuItem entity
+- ✅ Updated MenuService to handle recipe data
+- ✅ Updated MenuItemRequest DTO for recipe fields
+- ✅ Recipe data integrated with existing menu items
+- ❌ Separate Kitchen Service microservice (optional future enhancement)
 - ❌ Portion control tracking
 - ❌ Quality control checkpoints
 - ❌ Equipment monitoring
 
-**6.2 Recipe Management**
-- ❌ Recipe entity (ingredients, portions, instructions)
-- ❌ Recipe CRUD operations
-- ❌ Link recipes to menu items
-- ❌ Ingredient quantity calculations
+**6.2 Recipe Data**
+- ✅ Ingredients list support (already existed)
+- ✅ Preparation instructions (step-by-step)
+- ✅ Sample recipes for 10 popular dishes
+- ✅ Recipe migration script (Python)
 - ❌ Recipe versioning
+- ❌ Portion calculations
 
 **6.3 Kitchen Workflow**
+- ⚠️ Oven timer (7-minute countdown) *(built early in Phase 4)*
 - ❌ Make-table workflow management
-- ⚠️ Oven queue optimization (timer exists, needs backend)
 - ❌ Preparation time tracking
 - ❌ Quality checkpoints
 - ❌ Equipment maintenance scheduling
@@ -759,82 +763,147 @@ frontend/
 - ❌ Kitchen load balancing
 - ❌ Bottleneck identification
 
-**Files to Create:**
+**Files Created:**
 ```
-kitchen-service/
-├── src/main/java/com/MaSoVa/kitchen/
-│   ├── KitchenServiceApplication.java
-│   ├── entity/
-│   │   ├── Recipe.java
-│   │   ├── Ingredient.java
-│   │   ├── QualityCheckpoint.java
-│   │   └── Equipment.java
-│   ├── repository/
-│   ├── service/
-│   │   ├── RecipeService.java
-│   │   ├── WorkflowService.java
-│   │   └── PerformanceService.java
-│   └── controller/
-│       ├── RecipeController.java
-│       └── WorkflowController.java
-└── application.yml
+shared-models/src/main/java/com/MaSoVa/shared/entity/
+└── MenuItem.java ✅ (updated with preparationInstructions field)
+
+menu-service/
+├── src/main/java/com/MaSoVa/menu/
+│   ├── service/MenuService.java ✅ (updated to handle recipes)
+│   └── dto/MenuItemRequest.java ✅ (updated with preparationInstructions)
+├── sample-recipes.json ✅ (10 dishes with full recipes)
+└── add-recipes.py ✅ (migration script)
 ```
 
-**API Endpoints to Build:**
-- ❌ `POST /api/kitchen/recipes` - Create recipe
-- ❌ `GET /api/kitchen/recipes` - Get all recipes
-- ❌ `GET /api/kitchen/recipes/menu/{menuItemId}` - Get recipe for item
-- ❌ `PUT /api/kitchen/recipes/{id}` - Update recipe
-- ❌ `POST /api/kitchen/checkpoints` - Create quality checkpoint
-- ❌ `GET /api/kitchen/performance` - Kitchen performance metrics
-- ❌ `GET /api/kitchen/equipment` - Equipment status
+**Sample Recipes Included:**
+1. ✅ Masala Dosa (South Indian)
+2. ✅ Chicken Biryani (North Indian)
+3. ✅ Margherita Pizza (Italian)
+4. ✅ Paneer Butter Masala (North Indian)
+5. ✅ Hakka Noodles (Indo-Chinese)
+6. ✅ Filter Coffee (Beverages)
+7. ✅ Veg Manchurian (Indo-Chinese)
+8. ✅ Idli (South Indian)
+9. ✅ Gulab Jamun (Desserts)
+10. ✅ Butter Naan (Breads)
+
+**Migration Tool:**
+- ✅ Python script to add recipe data to existing menu items
+- ✅ Automatic name matching
+- ✅ Batch update via Menu Service API
 
 ### FRONTEND Implementation ⚠️
 
-**6.1 Kitchen Display Enhancements**
-- ✅ Oven timer (7-minute countdown) *(built early)*
-- ❌ Recipe display per order item
+**6.1 Recipe Viewing (Customer-Facing)**
+- ✅ RecipeViewer component (modal dialog)
+- ✅ Ingredients list display with grid layout
+- ✅ Step-by-step preparation instructions with numbered steps
+- ✅ Recipe metadata (prep time, serving size, spice level)
+- ✅ Allergen warnings display
+- ✅ Beautiful neumorphic design
+- ✅ Integrated into MenuPage with "View Recipe & Ingredients" button
+- ✅ Available on public menu pages
+
+**6.2 Kitchen Display Enhancements**
+- ✅ Oven timer (7-minute countdown) *(built early in Phase 4)*
+- ✅ Recipe display per order item (click chef emoji icon)
+- ✅ Recipe viewer integrated into kitchen display
 - ❌ Quality checkpoint UI
-- ❌ Preparation instructions
 - ❌ Equipment status indicators
 
-**6.2 Recipe Management UI** *(Manager)*
-- ❌ Recipe creation form
-- ❌ Ingredient list management
-- ❌ Portion size calculator
-- ❌ Link recipes to menu items
-- ❌ Recipe viewer for kitchen
+**6.3 Recipe Management UI** *(Manager)*
+- ✅ Recipe creation/editing page at `/manager/recipes`
+- ✅ Ingredient list management (add/remove)
+- ✅ Step-by-step instruction editor
+- ✅ Reorderable preparation steps
+- ✅ Search and filter menu items
+- ✅ Real-time save functionality
+- ✅ Portion size calculator with automatic scaling
+- ✅ Bulk recipe import JSON/CSV format
 
-**6.3 Kitchen Analytics**
+**6.4 Kitchen Analytics**
 - ❌ Preparation time charts
 - ❌ Kitchen staff performance
 - ❌ Bottleneck analysis
 - ❌ Equipment utilization
 
-**Files to Create:**
+**Files Created:**
 ```
 frontend/src/
+├── components/
+│   └── RecipeViewer.tsx ✅ (290 lines, complete modal component)
 ├── pages/
-│   ├── kitchen/
-│   │   └── RecipeViewerPage.tsx
-│   └── manager/
-│       ├── RecipeManagementPage.tsx
-│       └── KitchenAnalyticsPage.tsx
+│   ├── customer/
+│   │   └── MenuPage.tsx ✅ (updated with recipe viewer integration)
+│   ├── manager/
+│   │   └── RecipeManagementPage.tsx ✅ (530 lines, full recipe editor)
+│   └── kitchen/
+│       └── KitchenDisplayPage.tsx ✅ (updated with recipe integration)
 ├── store/
 │   └── api/
-│       └── kitchenApi.ts
-└── components/
-    ├── RecipeCard.tsx
-    ├── IngredientList.tsx
-    └── OvenTimer.tsx (✅ already exists)
+│       └── menuApi.ts ✅ (updated TypeScript interfaces)
+└── apps/
+    └── PublicWebsite/
+        └── PublicMenuPage.tsx ✅ (inherits recipe viewer from MenuPage)
 ```
 
+**Recipe Viewer Features:**
+- ✅ Modal overlay with neumorphic card design
+- ✅ Scrollable content for long recipes
+- ✅ Sticky header with close button
+- ✅ Meta information chips (prep time, servings, spice level)
+- ✅ Grid layout for ingredients with bullet points
+- ✅ Numbered step-by-step instructions with gradient badges
+- ✅ Allergen warning section with visual highlight
+- ✅ Empty state handling for items without recipes
+- ✅ Hover animations and smooth transitions
+- ✅ Responsive design (mobile-friendly)
+
+**Manager Recipe Editor Features:**
+- ✅ Two-panel layout (menu list + editor)
+- ✅ Search and filter by cuisine
+- ✅ Add/remove ingredients dynamically
+- ✅ Add/remove/reorder preparation steps
+- ✅ Visual step numbering with gradient badges
+- ✅ Real-time save with success feedback
+- ✅ Shows current recipe status (ingredient/step count)
+- ✅ Keyboard shortcuts (Enter to add items)
+- ✅ Portion size calculator
+  - ✅ Input base and target servings
+  - ✅ Automatic ingredient quantity scaling
+  - ✅ Smart parsing of amounts and units
+  - ✅ Preview scaled ingredients before applying
+- ✅ Bulk recipe import
+  - ✅ JSON format support
+  - ✅ CSV format support
+  - ✅ Automatic menu item matching by name
+  - ✅ Batch processing with success/error feedback
+  - ✅ File upload with drag-and-drop styling
+- ✅ Fully neumorphic design
+
+**Kitchen Integration Features:**
+- ✅ Chef emoji (👨‍🍳) button on each order item
+- ✅ One-click access to recipes from active orders
+- ✅ Neumorphic button design matching kitchen theme
+- ✅ Automatic menu item lookup by name
+- ✅ Modal overlay doesn't disrupt order workflow
+
 **Deliverables:**
-- ❌ Kitchen Service microservice
-- ❌ Recipe management system
+- ✅ Recipe viewing system (customer + kitchen + manager)
+- ✅ Recipe data model and storage
+- ✅ Recipe migration tools (Python script + UI import)
+- ✅ 10 sample recipes with full ingredients and instructions
+- ✅ Manager recipe editor with full CRUD operations
+- ✅ Kitchen display recipe integration
+- ✅ Enhanced menu browsing with recipe information
+- ✅ Portion size calculator with intelligent scaling
+- ✅ Bulk recipe import (JSON/CSV)
+- ❌ Kitchen Service microservice (deferred - using Menu Service)
 - ❌ Kitchen workflow optimization
-- ❌ Performance tracking
-- ⚠️ Enhanced kitchen display (timer done)
+- ❌ Performance tracking (moved to Phase 9)
+- ❌ Quality checkpoints
+- ❌ Equipment monitoring
 
 ---
 
@@ -1840,7 +1909,7 @@ frontend/src/
 5. ✅ Phase 5: Payment Integration (100%)
 
 ### Partially Complete (3/16):
-6. ⚠️ Phase 6: Kitchen Operations (20% - oven timer)
+6. ⚠️ Phase 6: Kitchen Operations (75% - recipe management fully complete, advanced features pending)
 7. ⚠️ Phase 8: Driver & Delivery (60% - frontend done, backend partial)
 8. ⚠️ Phase 9: POS Analytics (40% - basic analytics done)
 
@@ -1854,9 +1923,9 @@ frontend/src/
 15. ❌ Phase 15: Testing & QA
 16. ❌ Phase 16: Deployment
 
-**Overall Completion:** ~42% (considering partial phases)
+**Overall Completion:** ~47% (considering partial phases)
 
-**Next Recommended Phase:** **Phase 7 (Inventory Management)** or **Complete Phase 8 (Driver & Delivery)**
+**Next Recommended Phase:** **Complete Phase 6 (Kitchen workflow & manager recipe UI)** or **Phase 7 (Inventory Management)** or **Complete Phase 8 (Driver & Delivery)**
 
 ---
 

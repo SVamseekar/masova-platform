@@ -14,6 +14,7 @@ import { useAppDispatch } from '../../store/hooks';
 import { addToCart } from '../../store/slices/cartSlice';
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
+import RecipeViewer from '../../components/RecipeViewer';
 
 interface MenuPageProps {
   hideStaffLogin?: boolean;  // Pass through to AppHeader for public pages
@@ -31,6 +32,7 @@ const MenuPage: React.FC<MenuPageProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDietary, setSelectedDietary] = useState<DietaryType | null>(null);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [selectedRecipeItem, setSelectedRecipeItem] = useState<MenuItem | null>(null);
 
   // Category mappings based on cuisine
   const getCategoriesForCuisine = (cuisine: Cuisine): MenuCategory[] => {
@@ -410,6 +412,25 @@ const MenuPage: React.FC<MenuPageProps> = ({
     transition: 'all 0.3s ease',
   };
 
+  const recipeButtonStyles: React.CSSProperties = {
+    ...createNeumorphicSurface('raised', 'sm', 'lg'),
+    padding: `${spacing[2]} ${spacing[4]}`,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.brand.secondary,
+    backgroundColor: colors.surface.primary,
+    border: 'none',
+    cursor: 'pointer',
+    fontFamily: typography.fontFamily.primary,
+    transition: 'all 0.2s ease',
+    marginBottom: spacing[3],
+    display: 'flex',
+    alignItems: 'center',
+    gap: spacing[2],
+    width: '100%',
+    justifyContent: 'center',
+  };
+
   const variantsNoteStyles: React.CSSProperties = {
     fontSize: typography.fontSize.xs,
     color: colors.text.tertiary,
@@ -574,6 +595,23 @@ const MenuPage: React.FC<MenuPageProps> = ({
                   <div style={prepTimeStyles}>⏱️ {item.preparationTime} mins</div>
                 )}
 
+                {/* View Recipe Button */}
+                <button
+                  style={recipeButtonStyles}
+                  onClick={() => setSelectedRecipeItem(item)}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = shadows.raised.md;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = shadows.raised.sm;
+                  }}
+                >
+                  <span>👨‍🍳</span>
+                  <span>View Recipe & Ingredients</span>
+                </button>
+
                 {item.variants && item.variants.length > 0 && (
                   <div style={variantsNoteStyles}>
                     + {item.variants.length} size options available
@@ -642,6 +680,14 @@ const MenuPage: React.FC<MenuPageProps> = ({
             </div>
           ))}
           </div>
+        )}
+
+        {/* Recipe Viewer Modal */}
+        {selectedRecipeItem && (
+          <RecipeViewer
+            menuItem={selectedRecipeItem}
+            onClose={() => setSelectedRecipeItem(null)}
+          />
         )}
       </div>
     </>

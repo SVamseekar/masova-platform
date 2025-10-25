@@ -108,6 +108,7 @@ export interface MenuItem {
   servingSize?: string;
   ingredients?: string[];
   allergens?: string[];
+  preparationInstructions?: string[];
   storeId?: string;
   displayOrder: number;
   tags?: string[];
@@ -134,6 +135,7 @@ export interface MenuItemRequest {
   servingSize?: string;
   ingredients?: string[];
   allergens?: string[];
+  preparationInstructions?: string[];
   storeId?: string;
   displayOrder?: number;
   tags?: string[];

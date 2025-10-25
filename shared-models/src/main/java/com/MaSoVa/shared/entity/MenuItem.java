@@ -88,6 +88,9 @@ public class MenuItem {
     @Field("allergens")
     private List<String> allergens = new ArrayList<>();
 
+    @Field("preparationInstructions")
+    private List<String> preparationInstructions = new ArrayList<>();  // Step-by-step recipe instructions
+
     @Field("storeId")
     @Indexed
     private String storeId;
@@ -174,6 +177,9 @@ public class MenuItem {
 
     public List<String> getAllergens() { return allergens; }
     public void setAllergens(List<String> allergens) { this.allergens = allergens; }
+
+    public List<String> getPreparationInstructions() { return preparationInstructions; }
+    public void setPreparationInstructions(List<String> preparationInstructions) { this.preparationInstructions = preparationInstructions; }
 
     public String getStoreId() { return storeId; }
     public void setStoreId(String storeId) { this.storeId = storeId; }

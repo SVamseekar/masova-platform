@@ -42,6 +42,7 @@ public class MenuItemRequest {
     private String servingSize;
     private List<String> ingredients;
     private List<String> allergens;
+    private List<String> preparationInstructions;
     private String storeId;
     private Integer displayOrder = 0;
     private List<String> tags;
@@ -98,6 +99,9 @@ public class MenuItemRequest {
 
     public List<String> getAllergens() { return allergens; }
     public void setAllergens(List<String> allergens) { this.allergens = allergens; }
+
+    public List<String> getPreparationInstructions() { return preparationInstructions; }
+    public void setPreparationInstructions(List<String> preparationInstructions) { this.preparationInstructions = preparationInstructions; }
 
     public String getStoreId() { return storeId; }
     public void setStoreId(String storeId) { this.storeId = storeId; }

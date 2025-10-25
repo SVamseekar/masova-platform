@@ -23,6 +23,7 @@ const TrackingPage = React.lazy(() => import('./pages/customer/TrackingPage'));
 const CustomerDashboard = React.lazy(() => import('./pages/customer/CustomerDashboard'));
 const PaymentDashboardPage = React.lazy(() => import('./pages/manager/PaymentDashboardPage'));
 const RefundManagementPage = React.lazy(() => import('./pages/manager/RefundManagementPage'));
+const RecipeManagementPage = React.lazy(() => import('./pages/manager/RecipeManagementPage'));
 const ManagerDashboard = React.lazy(() => import('./pages/manager/DashboardPage'));
 const KitchenDisplayPage = React.lazy(() => import('./pages/kitchen/KitchenDisplayPage'));
 const DriverDashboard = React.lazy(() => import('./pages/driver/DriverDashboard'));
@@ -98,6 +99,14 @@ const App: React.FC = () => {
                     element={
                       <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
                         <RefundManagementPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/recipes"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <RecipeManagementPage />
                       </ProtectedRoute>
                     }
                   />

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AppHeader from '../../components/common/AppHeader';
+import RecipeViewer from '../../components/RecipeViewer';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import {
@@ -7,6 +8,7 @@ import {
   useUpdateOrderStatusMutation,
   Order as ApiOrder
 } from '../../store/api/orderApi';
+import { useGetAllMenuItemsQuery, MenuItem } from '../../store/api/menuApi';
 
 // TypeScript interfaces
 interface OrderItem {
@@ -39,6 +41,7 @@ interface StatusColumn {
 
 const KitchenDisplayPage: React.FC = () => {
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [selectedRecipeItem, setSelectedRecipeItem] = useState<MenuItem | null>(null);
   const currentUser = useAppSelector(selectCurrentUser);
   const storeId = currentUser?.storeId || '';
 
@@ -48,7 +51,14 @@ const KitchenDisplayPage: React.FC = () => {
     pollingInterval: 5000, // Poll every 5 seconds
   });
 
+  const { data: menuItems = [] } = useGetAllMenuItemsQuery();
   const [updateOrderStatus, { isLoading: isUpdating }] = useUpdateOrderStatusMutation();
+
+  const findMenuItemByName = (itemName: string): MenuItem | null => {
+    return menuItems.find(menuItem =>
+      menuItem.name.toLowerCase() === itemName.toLowerCase()
+    ) || null;
+  };
 
   // Transform API orders to local format
   const orders: Order[] = apiOrders.map(order => ({
@@ -134,6 +144,16 @@ const KitchenDisplayPage: React.FC = () => {
               <span className="item-quantity">{item.quantity}x</span>
               <span className="item-name">{item.name}</span>
               {item.size && <span className="item-size">{item.size}</span>}
+              <button
+                className="recipe-btn"
+                onClick={() => {
+                  const menuItem = findMenuItemByName(item.name);
+                  if (menuItem) setSelectedRecipeItem(menuItem);
+                }}
+                title="View Recipe"
+              >
+                👨‍🍳
+              </button>
             </div>
             {item.toppings.length > 0 && (
               <div className="item-toppings">{item.toppings.join(', ')}</div>
@@ -526,6 +546,34 @@ const KitchenDisplayPage: React.FC = () => {
           margin-left: 32px;
         }
 
+        .recipe-btn {
+          margin-left: auto;
+          background: #f0f0f0;
+          border: none;
+          padding: 6px 10px;
+          border-radius: 10px;
+          cursor: pointer;
+          font-size: 16px;
+          transition: all 0.2s ease;
+          box-shadow:
+            4px 4px 8px rgba(163, 163, 163, 0.3),
+            -4px -4px 8px rgba(255, 255, 255, 0.8);
+        }
+
+        .recipe-btn:hover {
+          transform: translateY(-2px);
+          box-shadow:
+            6px 6px 12px rgba(163, 163, 163, 0.4),
+            -6px -6px 12px rgba(255, 255, 255, 0.9);
+        }
+
+        .recipe-btn:active {
+          transform: translateY(0);
+          box-shadow:
+            inset 3px 3px 6px rgba(163, 163, 163, 0.3),
+            inset -3px -3px 6px rgba(255, 255, 255, 0.8);
+        }
+
         .oven-timer {
           background: linear-gradient(135deg, #e53e3e, #ff6b6b);
           color: white;
@@ -833,6 +881,14 @@ const KitchenDisplayPage: React.FC = () => {
           })
         )}
       </main>
+
+      {/* Recipe Viewer Modal */}
+      {selectedRecipeItem && (
+        <RecipeViewer
+          menuItem={selectedRecipeItem}
+          onClose={() => setSelectedRecipeItem(null)}
+        />
+      )}
     </div>
   );
 };

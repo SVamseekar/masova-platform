@@ -115,6 +115,7 @@ public class MenuService {
                 existingItem.setServingSize(updatedMenuItem.getServingSize());
                 existingItem.setIngredients(updatedMenuItem.getIngredients());
                 existingItem.setAllergens(updatedMenuItem.getAllergens());
+                existingItem.setPreparationInstructions(updatedMenuItem.getPreparationInstructions());
                 existingItem.setStoreId(updatedMenuItem.getStoreId());
                 existingItem.setDisplayOrder(updatedMenuItem.getDisplayOrder());
                 existingItem.setTags(updatedMenuItem.getTags());
