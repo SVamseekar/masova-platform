@@ -91,6 +91,9 @@ public class OrderService {
             );
         }
 
+        // Initialize quality checkpoints for the order
+        initializeQualityCheckpoints(order);
+
         Order savedOrder = orderRepository.save(order);
         log.info("Order created successfully: {}", savedOrder.getOrderNumber());
 
@@ -156,6 +159,11 @@ public class OrderService {
         order.setStatus(newStatus);
         updateStatusTimestamps(order, newStatus);
 
+        // Calculate preparation times when order reaches BAKED or later stages
+        if (newStatus == OrderStatus.BAKED || newStatus == OrderStatus.DISPATCHED || newStatus == OrderStatus.DELIVERED) {
+            calculateAndUpdatePreparationTimes(order);
+        }
+
         Order updatedOrder = orderRepository.save(order);
         log.info("Order status updated successfully: {}", updatedOrder.getOrderNumber());
 
@@ -184,6 +192,11 @@ public class OrderService {
 
         order.setStatus(nextStatus);
         updateStatusTimestamps(order, nextStatus);
+
+        // Calculate preparation times when order reaches BAKED or later stages
+        if (nextStatus == OrderStatus.BAKED || nextStatus == OrderStatus.DISPATCHED || nextStatus == OrderStatus.DELIVERED) {
+            calculateAndUpdatePreparationTimes(order);
+        }
 
         if (nextStatus == OrderStatus.DELIVERED) {
             order.setCompletedAt(LocalDateTime.now());
@@ -429,5 +442,264 @@ public class OrderService {
 
     public Integer getActiveDeliveryCount() {
         return orderRepository.findActiveDeliveries().size();
+    }
+
+    // Quality Checkpoint methods
+    @Transactional
+    public Order addQualityCheckpoint(String orderId, com.MaSoVa.order.entity.QualityCheckpoint checkpoint) {
+        Order order = getOrderById(orderId);
+
+        if (order.getQualityCheckpoints() == null) {
+            order.setQualityCheckpoints(new java.util.ArrayList<>());
+        }
+
+        checkpoint.setCheckedAt(LocalDateTime.now());
+        order.getQualityCheckpoints().add(checkpoint);
+
+        Order savedOrder = orderRepository.save(order);
+        log.info("Added quality checkpoint {} to order {}", checkpoint.getType(), orderId);
+
+        // Broadcast update
+        webSocketController.sendKitchenQueueUpdate(savedOrder.getStoreId(), savedOrder);
+
+        return savedOrder;
+    }
+
+    @Transactional
+    public Order updateQualityCheckpoint(String orderId, String checkpointName,
+                                         com.MaSoVa.order.entity.QualityCheckpoint.CheckpointStatus status,
+                                         String notes) {
+        Order order = getOrderById(orderId);
+
+        if (order.getQualityCheckpoints() == null) {
+            throw new RuntimeException("No checkpoints found for order: " + orderId);
+        }
+
+        com.MaSoVa.order.entity.QualityCheckpoint checkpoint = order.getQualityCheckpoints().stream()
+                .filter(cp -> cp.getCheckpointName().equals(checkpointName))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Checkpoint not found: " + checkpointName));
+
+        checkpoint.setStatus(status);
+        checkpoint.setNotes(notes);
+        checkpoint.setCheckedAt(LocalDateTime.now());
+
+        Order savedOrder = orderRepository.save(order);
+        log.info("Updated checkpoint {} status to {} for order {}", checkpointName, status, orderId);
+
+        // Broadcast update
+        webSocketController.sendKitchenQueueUpdate(savedOrder.getStoreId(), savedOrder);
+
+        return savedOrder;
+    }
+
+    public List<com.MaSoVa.order.entity.QualityCheckpoint> getQualityCheckpoints(String orderId) {
+        Order order = getOrderById(orderId);
+        return order.getQualityCheckpoints() != null ? order.getQualityCheckpoints() : new java.util.ArrayList<>();
+    }
+
+    // Preparation time tracking methods
+    private void calculateAndUpdatePreparationTimes(Order order) {
+        if (order.getReceivedAt() != null && order.getBakedAt() != null) {
+            long totalMinutes = java.time.Duration.between(
+                    order.getReceivedAt(),
+                    order.getBakedAt()
+            ).toMinutes();
+            order.setActualPreparationTime((int) totalMinutes);
+        }
+
+        if (order.getOvenStartedAt() != null && order.getBakedAt() != null) {
+            long ovenMinutes = java.time.Duration.between(
+                    order.getOvenStartedAt(),
+                    order.getBakedAt()
+            ).toMinutes();
+            order.setActualOvenTime((int) ovenMinutes);
+        }
+    }
+
+    // Initialize default quality checkpoints for new orders
+    private void initializeQualityCheckpoints(Order order) {
+        java.util.List<com.MaSoVa.order.entity.QualityCheckpoint> checkpoints = new java.util.ArrayList<>();
+
+        checkpoints.add(com.MaSoVa.order.entity.QualityCheckpoint.builder()
+                .checkpointName("Ingredient Quality Check")
+                .type(com.MaSoVa.order.entity.QualityCheckpoint.CheckpointType.INGREDIENT_QUALITY)
+                .status(com.MaSoVa.order.entity.QualityCheckpoint.CheckpointStatus.PENDING)
+                .build());
+
+        checkpoints.add(com.MaSoVa.order.entity.QualityCheckpoint.builder()
+                .checkpointName("Portion Size Check")
+                .type(com.MaSoVa.order.entity.QualityCheckpoint.CheckpointType.PORTION_SIZE)
+                .status(com.MaSoVa.order.entity.QualityCheckpoint.CheckpointStatus.PENDING)
+                .build());
+
+        checkpoints.add(com.MaSoVa.order.entity.QualityCheckpoint.builder()
+                .checkpointName("Temperature Check")
+                .type(com.MaSoVa.order.entity.QualityCheckpoint.CheckpointType.TEMPERATURE)
+                .status(com.MaSoVa.order.entity.QualityCheckpoint.CheckpointStatus.PENDING)
+                .build());
+
+        checkpoints.add(com.MaSoVa.order.entity.QualityCheckpoint.builder()
+                .checkpointName("Final Inspection")
+                .type(com.MaSoVa.order.entity.QualityCheckpoint.CheckpointType.FINAL_INSPECTION)
+                .status(com.MaSoVa.order.entity.QualityCheckpoint.CheckpointStatus.PENDING)
+                .build());
+
+        order.setQualityCheckpoints(checkpoints);
+    }
+
+    // Get orders with failed quality checks
+    public List<Order> getOrdersWithFailedQualityChecks(String storeId) {
+        List<Order> storeOrders = getOrdersByStore(storeId);
+
+        return storeOrders.stream()
+                .filter(order -> order.getQualityCheckpoints() != null &&
+                        order.getQualityCheckpoints().stream()
+                                .anyMatch(cp -> cp.getStatus() == com.MaSoVa.order.entity.QualityCheckpoint.CheckpointStatus.FAILED))
+                .collect(Collectors.toList());
+    }
+
+    // Get average preparation time for a store
+    public Double getAveragePreparationTime(String storeId, java.time.LocalDate date) {
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.atTime(23, 59, 59);
+
+        List<Order> orders = orderRepository.findByStoreIdAndCreatedAtBetween(storeId, startOfDay, endOfDay);
+
+        return orders.stream()
+                .filter(order -> order.getActualPreparationTime() != null && order.getActualPreparationTime() > 0)
+                .mapToInt(Order::getActualPreparationTime)
+                .average()
+                .orElse(0.0);
+    }
+
+    // Make-table workflow methods
+    @Transactional
+    public Order assignToMakeTable(String orderId, String station, String staffId, String staffName) {
+        Order order = getOrderById(orderId);
+
+        order.setAssignedMakeTableStation(station);
+        order.setAssignedKitchenStaffId(staffId);
+        order.setAssignedKitchenStaffName(staffName);
+        order.setAssignedToKitchenAt(LocalDateTime.now());
+
+        Order savedOrder = orderRepository.save(order);
+        log.info("Assigned order {} to make-table station {} by staff {}", orderId, station, staffName);
+
+        // Broadcast update
+        webSocketController.sendKitchenQueueUpdate(savedOrder.getStoreId(), savedOrder);
+
+        return savedOrder;
+    }
+
+    public List<Order> getOrdersByMakeTableStation(String storeId, String station) {
+        return getKitchenQueue(storeId).stream()
+                .filter(order -> station.equals(order.getAssignedMakeTableStation()))
+                .collect(Collectors.toList());
+    }
+
+    // Kitchen analytics methods
+    public java.util.Map<String, Double> getAveragePreparationTimeByMenuItem(String storeId, java.time.LocalDate date) {
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.atTime(23, 59, 59);
+
+        List<Order> orders = orderRepository.findByStoreIdAndCreatedAtBetween(storeId, startOfDay, endOfDay);
+
+        java.util.Map<String, java.util.List<Integer>> prepTimesByItem = new java.util.HashMap<>();
+
+        for (Order order : orders) {
+            if (order.getActualPreparationTime() != null && order.getActualPreparationTime() > 0) {
+                for (OrderItem item : order.getItems()) {
+                    prepTimesByItem.computeIfAbsent(item.getName(), k -> new java.util.ArrayList<>())
+                            .add(order.getActualPreparationTime() / order.getItems().size());
+                }
+            }
+        }
+
+        java.util.Map<String, Double> averages = new java.util.HashMap<>();
+        for (java.util.Map.Entry<String, java.util.List<Integer>> entry : prepTimesByItem.entrySet()) {
+            double avg = entry.getValue().stream().mapToInt(Integer::intValue).average().orElse(0.0);
+            averages.put(entry.getKey(), avg);
+        }
+
+        return averages;
+    }
+
+    public java.util.Map<String, Object> getKitchenStaffPerformance(String staffId, java.time.LocalDate date) {
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.atTime(23, 59, 59);
+
+        List<Order> assignedOrders = orderRepository.findAll().stream()
+                .filter(order -> staffId.equals(order.getAssignedKitchenStaffId()))
+                .filter(order -> order.getCreatedAt().isAfter(startOfDay) && order.getCreatedAt().isBefore(endOfDay))
+                .toList();
+
+        int totalOrders = assignedOrders.size();
+        int completedOrders = (int) assignedOrders.stream()
+                .filter(order -> order.getStatus() == OrderStatus.DELIVERED || order.getStatus() == OrderStatus.DISPATCHED)
+                .count();
+
+        double avgPrepTime = assignedOrders.stream()
+                .filter(order -> order.getActualPreparationTime() != null)
+                .mapToInt(Order::getActualPreparationTime)
+                .average()
+                .orElse(0.0);
+
+        int failedQualityChecks = (int) assignedOrders.stream()
+                .filter(order -> order.getQualityCheckpoints() != null &&
+                        order.getQualityCheckpoints().stream()
+                                .anyMatch(cp -> cp.getStatus() == QualityCheckpoint.CheckpointStatus.FAILED))
+                .count();
+
+        java.util.Map<String, Object> performance = new java.util.HashMap<>();
+        performance.put("staffId", staffId);
+        performance.put("totalOrders", totalOrders);
+        performance.put("completedOrders", completedOrders);
+        performance.put("averagePreparationTime", avgPrepTime);
+        performance.put("failedQualityChecks", failedQualityChecks);
+        performance.put("completionRate", totalOrders > 0 ? (completedOrders * 100.0 / totalOrders) : 0.0);
+
+        return performance;
+    }
+
+    // Get prep time distribution for bottleneck analysis
+    public java.util.Map<String, Object> getPreparationTimeDistribution(String storeId, java.time.LocalDate date) {
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.atTime(23, 59, 59);
+
+        List<Order> orders = orderRepository.findByStoreIdAndCreatedAtBetween(storeId, startOfDay, endOfDay);
+
+        List<Integer> prepTimes = orders.stream()
+                .filter(order -> order.getActualPreparationTime() != null && order.getActualPreparationTime() > 0)
+                .map(Order::getActualPreparationTime)
+                .sorted()
+                .toList();
+
+        if (prepTimes.isEmpty()) {
+            return java.util.Map.of(
+                    "min", 0,
+                    "max", 0,
+                    "average", 0.0,
+                    "median", 0.0,
+                    "p90", 0.0,
+                    "p95", 0.0
+            );
+        }
+
+        int size = prepTimes.size();
+        double avg = prepTimes.stream().mapToInt(Integer::intValue).average().orElse(0.0);
+        int median = prepTimes.get(size / 2);
+        int p90 = prepTimes.get((int) (size * 0.9));
+        int p95 = prepTimes.get((int) (size * 0.95));
+
+        return java.util.Map.of(
+                "min", prepTimes.get(0),
+                "max", prepTimes.get(size - 1),
+                "average", avg,
+                "median", median,
+                "p90", p90,
+                "p95", p95,
+                "totalOrders", size
+        );
     }
 }

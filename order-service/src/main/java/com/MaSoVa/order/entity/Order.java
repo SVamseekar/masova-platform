@@ -79,6 +79,19 @@ public class Order {
     private LocalDateTime dispatchedAt;
     private LocalDateTime deliveredAt;
 
+    // Quality checkpoints
+    private List<QualityCheckpoint> qualityCheckpoints;
+
+    // Actual preparation time tracking (in minutes)
+    private Integer actualPreparationTime; // Total time from RECEIVED to BAKED
+    private Integer actualOvenTime; // Time spent in oven stage
+
+    // Make-table workflow
+    private String assignedMakeTableStation; // PIZZA, SANDWICH, GRILL, FRY, DESSERT
+    private String assignedKitchenStaffId;
+    private String assignedKitchenStaffName;
+    private LocalDateTime assignedToKitchenAt;
+
     // Enums
     public enum OrderStatus {
         RECEIVED,

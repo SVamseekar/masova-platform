@@ -12,6 +12,16 @@ export interface OrderItem {
   customizations?: string[];
 }
 
+export interface QualityCheckpoint {
+  checkpointName: string;
+  type: 'INGREDIENT_QUALITY' | 'PORTION_SIZE' | 'TEMPERATURE' | 'PRESENTATION' | 'TASTE_TEST' | 'PACKAGING' | 'FINAL_INSPECTION';
+  status: 'PENDING' | 'PASSED' | 'FAILED' | 'SKIPPED';
+  checkedByStaffId?: string;
+  checkedByStaffName?: string;
+  checkedAt?: string;
+  notes?: string;
+}
+
 export interface Order {
   id: string;
   orderNumber: string;
@@ -34,6 +44,13 @@ export interface Order {
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
+  qualityCheckpoints?: QualityCheckpoint[];
+  actualPreparationTime?: number;
+  actualOvenTime?: number;
+  assignedMakeTableStation?: string;
+  assignedKitchenStaffId?: string;
+  assignedKitchenStaffName?: string;
+  assignedToKitchenAt?: string;
 }
 
 export interface CreateOrderRequest {
@@ -255,6 +272,91 @@ export const orderApi = createApi({
           ? [...result.map(({ id }) => ({ type: 'Order' as const, id })), { type: 'Orders', id: 'LIST' }]
           : [{ type: 'Orders', id: 'LIST' }],
     }),
+
+    // Quality Checkpoint endpoints
+    addQualityCheckpoint: builder.mutation<Order, { orderId: string; checkpoint: QualityCheckpoint }>({
+      query: ({ orderId, checkpoint }) => ({
+        url: `/api/orders/${orderId}/quality-checkpoint`,
+        method: 'POST',
+        body: checkpoint,
+      }),
+      invalidatesTags: (result, error, { orderId }) => [
+        { type: 'Order', id: orderId },
+        'KitchenQueue',
+      ],
+    }),
+
+    updateQualityCheckpoint: builder.mutation<Order, { orderId: string; checkpointName: string; status: QualityCheckpoint['status']; notes?: string }>({
+      query: ({ orderId, checkpointName, status, notes }) => ({
+        url: `/api/orders/${orderId}/quality-checkpoint/${encodeURIComponent(checkpointName)}`,
+        method: 'PATCH',
+        body: { status, notes },
+      }),
+      invalidatesTags: (result, error, { orderId }) => [
+        { type: 'Order', id: orderId },
+        'KitchenQueue',
+      ],
+    }),
+
+    getQualityCheckpoints: builder.query<QualityCheckpoint[], string>({
+      query: (orderId) => `/api/orders/${orderId}/quality-checkpoints`,
+      providesTags: (result, error, orderId) => [{ type: 'Order', id: orderId }],
+    }),
+
+    getOrdersWithFailedQualityChecks: builder.query<Order[], string>({
+      query: (storeId) => `/api/orders/store/${storeId}/failed-quality-checks`,
+      providesTags: ['Orders'],
+    }),
+
+    getAveragePreparationTime: builder.query<number, { storeId: string; date: string }>({
+      query: ({ storeId, date }) => `/api/orders/store/${storeId}/avg-prep-time?date=${date}`,
+    }),
+
+    // Make-table workflow endpoints
+    assignToMakeTable: builder.mutation<Order, { orderId: string; station: string; staffId: string; staffName: string }>({
+      query: ({ orderId, station, staffId, staffName }) => ({
+        url: `/api/orders/${orderId}/assign-make-table`,
+        method: 'PATCH',
+        body: { station, staffId, staffName },
+      }),
+      invalidatesTags: (result, error, { orderId }) => [
+        { type: 'Order', id: orderId },
+        'KitchenQueue',
+      ],
+    }),
+
+    getOrdersByMakeTableStation: builder.query<Order[], { storeId: string; station: string }>({
+      query: ({ storeId, station }) => `/api/orders/store/${storeId}/make-table/${station}`,
+      providesTags: ['KitchenQueue'],
+    }),
+
+    // Kitchen analytics endpoints
+    getAveragePreparationTimeByItem: builder.query<{ [itemName: string]: number }, { storeId: string; date: string }>({
+      query: ({ storeId, date }) => `/api/orders/store/${storeId}/analytics/prep-time-by-item?date=${date}`,
+    }),
+
+    getKitchenStaffPerformance: builder.query<{
+      staffId: string;
+      totalOrders: number;
+      completedOrders: number;
+      averagePreparationTime: number;
+      failedQualityChecks: number;
+      completionRate: number;
+    }, { staffId: string; date: string }>({
+      query: ({ staffId, date }) => `/api/orders/analytics/kitchen-staff/${staffId}/performance?date=${date}`,
+    }),
+
+    getPreparationTimeDistribution: builder.query<{
+      min: number;
+      max: number;
+      average: number;
+      median: number;
+      p90: number;
+      p95: number;
+      totalOrders: number;
+    }, { storeId: string; date: string }>({
+      query: ({ storeId, date }) => `/api/orders/store/${storeId}/analytics/prep-time-distribution?date=${date}`,
+    }),
   }),
 });
 
@@ -275,4 +377,14 @@ export const {
   useUpdateOrderPriorityMutation,
   useSearchOrdersQuery,
   useLazySearchOrdersQuery,
+  useAddQualityCheckpointMutation,
+  useUpdateQualityCheckpointMutation,
+  useGetQualityCheckpointsQuery,
+  useGetOrdersWithFailedQualityChecksQuery,
+  useGetAveragePreparationTimeQuery,
+  useAssignToMakeTableMutation,
+  useGetOrdersByMakeTableStationQuery,
+  useGetAveragePreparationTimeByItemQuery,
+  useGetKitchenStaffPerformanceQuery,
+  useGetPreparationTimeDistributionQuery,
 } = orderApi;

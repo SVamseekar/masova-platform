@@ -166,6 +166,108 @@ public class OrderController {
         return ResponseEntity.ok(count);
     }
 
+    // Quality Checkpoint endpoints
+    @PostMapping("/{orderId}/quality-checkpoint")
+    public ResponseEntity<Order> addQualityCheckpoint(
+            @PathVariable String orderId,
+            @RequestBody com.MaSoVa.order.entity.QualityCheckpoint checkpoint) {
+        log.info("Adding quality checkpoint to order: {}", orderId);
+        Order order = orderService.addQualityCheckpoint(orderId, checkpoint);
+        return ResponseEntity.ok(order);
+    }
+
+    @PatchMapping("/{orderId}/quality-checkpoint/{checkpointName}")
+    public ResponseEntity<Order> updateQualityCheckpoint(
+            @PathVariable String orderId,
+            @PathVariable String checkpointName,
+            @RequestBody Map<String, String> payload) {
+        log.info("Updating quality checkpoint {} for order: {}", checkpointName, orderId);
+
+        com.MaSoVa.order.entity.QualityCheckpoint.CheckpointStatus status =
+                com.MaSoVa.order.entity.QualityCheckpoint.CheckpointStatus.valueOf(payload.get("status"));
+        String notes = payload.get("notes");
+
+        Order order = orderService.updateQualityCheckpoint(orderId, checkpointName, status, notes);
+        return ResponseEntity.ok(order);
+    }
+
+    @GetMapping("/{orderId}/quality-checkpoints")
+    public ResponseEntity<List<com.MaSoVa.order.entity.QualityCheckpoint>> getQualityCheckpoints(
+            @PathVariable String orderId) {
+        log.info("Fetching quality checkpoints for order: {}", orderId);
+        List<com.MaSoVa.order.entity.QualityCheckpoint> checkpoints = orderService.getQualityCheckpoints(orderId);
+        return ResponseEntity.ok(checkpoints);
+    }
+
+    @GetMapping("/store/{storeId}/failed-quality-checks")
+    public ResponseEntity<List<Order>> getOrdersWithFailedQualityChecks(@PathVariable String storeId) {
+        log.info("Fetching orders with failed quality checks for store: {}", storeId);
+        List<Order> orders = orderService.getOrdersWithFailedQualityChecks(storeId);
+        return ResponseEntity.ok(orders);
+    }
+
+    @GetMapping("/store/{storeId}/avg-prep-time")
+    public ResponseEntity<Double> getAveragePreparationTime(
+            @PathVariable String storeId,
+            @RequestParam String date) {
+        log.info("Fetching average preparation time for store: {} on date: {}", storeId, date);
+        Double avgPrepTime = orderService.getAveragePreparationTime(storeId, java.time.LocalDate.parse(date));
+        return ResponseEntity.ok(avgPrepTime);
+    }
+
+    // Make-table workflow endpoints
+    @PatchMapping("/{orderId}/assign-make-table")
+    public ResponseEntity<Order> assignToMakeTable(
+            @PathVariable String orderId,
+            @RequestBody Map<String, String> payload) {
+        log.info("Assigning order {} to make-table", orderId);
+        String station = payload.get("station");
+        String staffId = payload.get("staffId");
+        String staffName = payload.get("staffName");
+        Order order = orderService.assignToMakeTable(orderId, station, staffId, staffName);
+        return ResponseEntity.ok(order);
+    }
+
+    @GetMapping("/store/{storeId}/make-table/{station}")
+    public ResponseEntity<List<Order>> getOrdersByMakeTableStation(
+            @PathVariable String storeId,
+            @PathVariable String station) {
+        log.info("Fetching orders for make-table station: {} in store: {}", station, storeId);
+        List<Order> orders = orderService.getOrdersByMakeTableStation(storeId, station);
+        return ResponseEntity.ok(orders);
+    }
+
+    // Kitchen analytics endpoints
+    @GetMapping("/store/{storeId}/analytics/prep-time-by-item")
+    public ResponseEntity<Map<String, Double>> getAveragePreparationTimeByItem(
+            @PathVariable String storeId,
+            @RequestParam String date) {
+        log.info("Fetching average prep time by menu item for store: {} on date: {}", storeId, date);
+        Map<String, Double> prepTimes = orderService.getAveragePreparationTimeByMenuItem(
+                storeId, java.time.LocalDate.parse(date));
+        return ResponseEntity.ok(prepTimes);
+    }
+
+    @GetMapping("/analytics/kitchen-staff/{staffId}/performance")
+    public ResponseEntity<Map<String, Object>> getKitchenStaffPerformance(
+            @PathVariable String staffId,
+            @RequestParam String date) {
+        log.info("Fetching kitchen staff performance for: {} on date: {}", staffId, date);
+        Map<String, Object> performance = orderService.getKitchenStaffPerformance(
+                staffId, java.time.LocalDate.parse(date));
+        return ResponseEntity.ok(performance);
+    }
+
+    @GetMapping("/store/{storeId}/analytics/prep-time-distribution")
+    public ResponseEntity<Map<String, Object>> getPreparationTimeDistribution(
+            @PathVariable String storeId,
+            @RequestParam String date) {
+        log.info("Fetching prep time distribution for store: {} on date: {}", storeId, date);
+        Map<String, Object> distribution = orderService.getPreparationTimeDistribution(
+                storeId, java.time.LocalDate.parse(date));
+        return ResponseEntity.ok(distribution);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
         log.error("Error processing order request", ex);

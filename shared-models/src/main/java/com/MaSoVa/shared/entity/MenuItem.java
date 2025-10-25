@@ -82,6 +82,16 @@ public class MenuItem {
     @Field("servingSize")
     private String servingSize;
 
+    // Portion control tracking
+    @Field("standardPortionSize")
+    private Double standardPortionSize;  // e.g., 250.0 (for 250g)
+
+    @Field("portionUnit")
+    private String portionUnit;  // e.g., "g", "ml", "pieces", "servings"
+
+    @Field("yieldPerRecipe")
+    private Integer yieldPerRecipe;  // How many portions one recipe makes
+
     @Field("ingredients")
     private List<String> ingredients = new ArrayList<>();
 
@@ -171,6 +181,15 @@ public class MenuItem {
 
     public String getServingSize() { return servingSize; }
     public void setServingSize(String servingSize) { this.servingSize = servingSize; }
+
+    public Double getStandardPortionSize() { return standardPortionSize; }
+    public void setStandardPortionSize(Double standardPortionSize) { this.standardPortionSize = standardPortionSize; }
+
+    public String getPortionUnit() { return portionUnit; }
+    public void setPortionUnit(String portionUnit) { this.portionUnit = portionUnit; }
+
+    public Integer getYieldPerRecipe() { return yieldPerRecipe; }
+    public void setYieldPerRecipe(Integer yieldPerRecipe) { this.yieldPerRecipe = yieldPerRecipe; }
 
     public List<String> getIngredients() { return ingredients; }
     public void setIngredients(List<String> ingredients) { this.ingredients = ingredients; }
