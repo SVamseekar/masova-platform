@@ -61,6 +61,11 @@ public class GatewayConfig {
                 .route("health_order", r -> r.path("/api/health/order")
                         .uri("http://localhost:8083"))
 
+                // Payment Service - Webhook (Public - Razorpay callbacks)
+                .route("payment_webhook", r -> r.path("/api/payments/webhook")
+                        .and().method("POST")
+                        .uri("http://localhost:8086"))
+
                 // ============================================
                 // PROTECTED ROUTES (Authentication Required)
                 // ============================================
@@ -106,6 +111,12 @@ public class GatewayConfig {
                 .route("analytics_protected", r -> r.path("/api/analytics/**")
                         .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
+
+                // Payment Service - Protected Routes (All except webhook)
+                .route("payments_protected", r -> r.path("/api/payments/**")
+                        .and().not(p -> p.path("/api/payments/webhook"))
+                        .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8086"))
 
                 // Default fallback
                 .route("fallback", r -> r.path("/**")

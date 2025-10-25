@@ -17,8 +17,12 @@ const RegisterPage = React.lazy(() => import('./pages/auth/RegisterPage'));
 const CheckoutPage = React.lazy(() => import('./pages/checkout/CheckoutPage'));
 const GuestCheckoutPage = React.lazy(() => import('./pages/checkout/GuestCheckoutPage'));
 const PaymentPage = React.lazy(() => import('./pages/customer/PaymentPage'));
+const PaymentSuccessPage = React.lazy(() => import('./pages/customer/PaymentSuccessPage'));
+const PaymentFailedPage = React.lazy(() => import('./pages/customer/PaymentFailedPage'));
 const TrackingPage = React.lazy(() => import('./pages/customer/TrackingPage'));
 const CustomerDashboard = React.lazy(() => import('./pages/customer/CustomerDashboard'));
+const PaymentDashboardPage = React.lazy(() => import('./pages/manager/PaymentDashboardPage'));
+const RefundManagementPage = React.lazy(() => import('./pages/manager/RefundManagementPage'));
 const ManagerDashboard = React.lazy(() => import('./pages/manager/DashboardPage'));
 const KitchenDisplayPage = React.lazy(() => import('./pages/kitchen/KitchenDisplayPage'));
 const DriverDashboard = React.lazy(() => import('./pages/driver/DriverDashboard'));
@@ -58,6 +62,8 @@ const App: React.FC = () => {
                   <Route path="/checkout" element={<CheckoutPage />} />
                   <Route path="/guest-checkout" element={<GuestCheckoutPage />} />
                   <Route path="/payment" element={<PaymentPage />} />
+                  <Route path="/payment/success" element={<PaymentSuccessPage />} />
+                  <Route path="/payment/failed" element={<PaymentFailedPage />} />
                   <Route path="/tracking/:orderId" element={<TrackingPage />} />
 
                   {/* Customer Dashboard - Login required */}
@@ -76,6 +82,22 @@ const App: React.FC = () => {
                     element={
                       <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
                         <ManagerDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/payments"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <PaymentDashboardPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/refunds"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <RefundManagementPage />
                       </ProtectedRoute>
                     }
                   />

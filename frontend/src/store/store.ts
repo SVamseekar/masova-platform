@@ -10,6 +10,7 @@ import { analyticsApi } from './api/analyticsApi';
 import { menuApi } from './api/menuApi';
 import { storeApi } from './api/storeApi';
 import { shiftApi } from './api/shiftApi';
+import { paymentApi } from './api/paymentApi';
 
 // Slice reducers
 import authReducer from './slices/authSlice';
@@ -34,6 +35,7 @@ export const store = configureStore({
     [menuApi.reducerPath]: menuApi.reducer,
     [storeApi.reducerPath]: storeApi.reducer,
     [shiftApi.reducerPath]: shiftApi.reducer,
+    [paymentApi.reducerPath]: paymentApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -50,7 +52,8 @@ export const store = configureStore({
       analyticsApi.middleware,
       menuApi.middleware,
       storeApi.middleware,
-      shiftApi.middleware
+      shiftApi.middleware,
+      paymentApi.middleware
     ),
   devTools: process.env.NODE_ENV !== 'production',
 });

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { useCreateOrderMutation } from '../../store/api/orderApi';
+import { useInitiatePaymentMutation } from '../../store/api/paymentApi';
 import { clearCart, selectCartItems, selectCartTotal } from '../../store/slices/cartSlice';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { Button, Card, Input } from '../../components/ui/neumorphic';
@@ -9,6 +10,13 @@ import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
 import { colors, spacing, typography, shadows, borderRadius } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
+
+// Razorpay types
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 interface GuestInfo {
   email: string;
@@ -35,7 +43,11 @@ const PaymentPage: React.FC = () => {
 
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'UPI'>('CASH');
   const [orderType, setOrderType] = useState<'DELIVERY' | 'TAKEAWAY' | 'DINE_IN'>('DELIVERY');
-  const [createOrder, { isLoading, error }] = useCreateOrderMutation();
+
+  const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
+  const [initiatePayment, { isLoading: isInitiatingPayment }] = useInitiatePaymentMutation();
+
+  const isLoading = isCreatingOrder || isInitiatingPayment;
 
   // Redirect if cart is empty
   useEffect(() => {
@@ -80,18 +92,88 @@ const PaymentPage: React.FC = () => {
         notes: guestInfo?.deliveryInstructions,
       };
 
-      const result = await createOrder(orderData).unwrap();
+      // Create order first
+      const orderResult = await createOrder(orderData).unwrap();
 
-      // Clear cart after successful order
-      dispatch(clearCart());
+      // If payment method is CASH, just redirect to tracking
+      if (paymentMethod === 'CASH') {
+        dispatch(clearCart());
+        navigate(`/tracking/${orderResult.orderId}`, {
+          state: { orderData: orderResult }
+        });
+        return;
+      }
 
-      // Navigate to tracking page with order ID
-      navigate(`/tracking/${result.orderId}`, {
-        state: { orderData: result }
-      });
+      // For CARD/UPI, initiate Razorpay payment
+      const paymentResult = await initiatePayment({
+        orderId: orderResult.orderId,
+        amount: total,
+        customerId: currentUser?.userId || 'guest',
+        customerEmail: guestInfo?.email || currentUser?.email,
+        customerPhone: guestInfo?.phone || currentUser?.phone,
+        storeId: 'store-1',
+      }).unwrap();
+
+      // Open Razorpay checkout
+      openRazorpayCheckout(paymentResult, orderResult.orderId);
+
     } catch (err) {
       console.error('Failed to create order:', err);
+      alert('Failed to create order. Please try again.');
     }
+  };
+
+  const openRazorpayCheckout = (paymentData: any, orderId: string) => {
+    if (!window.Razorpay) {
+      alert('Razorpay SDK not loaded. Please refresh the page.');
+      return;
+    }
+
+    const options = {
+      key: paymentData.razorpayKeyId,
+      amount: paymentData.amount * 100, // Convert to paise
+      currency: 'INR',
+      name: 'MaSoVa Restaurant',
+      description: `Order #${orderId}`,
+      order_id: paymentData.razorpayOrderId,
+      handler: function (response: any) {
+        // Payment successful
+        console.log('Payment successful:', response);
+
+        // Clear cart
+        dispatch(clearCart());
+
+        // Redirect to success page with payment details
+        navigate(`/payment/success?razorpay_payment_id=${response.razorpay_payment_id}&razorpay_order_id=${response.razorpay_order_id}&razorpay_signature=${response.razorpay_signature}&order_id=${orderId}`);
+      },
+      prefill: {
+        name: guestInfo?.name || currentUser?.name || '',
+        email: guestInfo?.email || currentUser?.email || '',
+        contact: guestInfo?.phone || currentUser?.phone || '',
+      },
+      notes: {
+        order_id: orderId,
+      },
+      theme: {
+        color: colors.brand.primary,
+      },
+      modal: {
+        ondismiss: function() {
+          // Payment cancelled/closed
+          console.log('Payment cancelled');
+          navigate(`/payment/failed?order_id=${orderId}&error=Payment cancelled by user`);
+        }
+      }
+    };
+
+    const razorpay = new window.Razorpay(options);
+
+    razorpay.on('payment.failed', function (response: any) {
+      console.error('Payment failed:', response.error);
+      navigate(`/payment/failed?order_id=${orderId}&error=${response.error.description || 'Payment failed'}`);
+    });
+
+    razorpay.open();
   };
 
   // Styles
@@ -200,16 +282,6 @@ const PaymentPage: React.FC = () => {
     backgroundClip: 'text',
   };
 
-  const errorStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('inset', 'base', 'lg'),
-    padding: spacing[4],
-    marginTop: spacing[4],
-    backgroundColor: colors.semantic.errorLight + '40',
-    color: colors.semantic.error,
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold,
-  };
-
   const customerInfoStyles: React.CSSProperties = {
     ...createNeumorphicSurface('inset', 'sm', 'lg'),
     padding: spacing[4],
@@ -240,6 +312,17 @@ const PaymentPage: React.FC = () => {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
     gap: spacing[3],
+  };
+
+  const paymentInfoBadgeStyles: React.CSSProperties = {
+    ...createNeumorphicSurface('inset', 'sm', 'lg'),
+    padding: spacing[3],
+    marginTop: spacing[3],
+    backgroundColor: colors.semantic.infoLight + '20',
+    border: `2px solid ${colors.semantic.info}`,
+    fontSize: typography.fontSize.sm,
+    color: colors.semantic.info,
+    borderRadius: borderRadius.lg,
   };
 
   return (
@@ -358,7 +441,7 @@ const PaymentPage: React.FC = () => {
                   <div>
                     <div>Credit/Debit Card</div>
                     <div style={{ fontSize: typography.fontSize.sm, color: colors.text.tertiary }}>
-                      Pay securely with your card
+                      Pay securely with your card (Razorpay)
                     </div>
                   </div>
                 </div>
@@ -378,13 +461,13 @@ const PaymentPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </Card>
 
-            {error && (
-              <div style={errorStyles}>
-                ⚠️ Failed to place order. Please try again or contact support.
-              </div>
-            )}
+              {(paymentMethod === 'CARD' || paymentMethod === 'UPI') && (
+                <div style={paymentInfoBadgeStyles}>
+                  ℹ️ You will be redirected to Razorpay's secure payment gateway to complete your payment.
+                </div>
+              )}
+            </Card>
           </div>
 
           {/* Right Column: Order Summary */}
@@ -448,7 +531,12 @@ const PaymentPage: React.FC = () => {
                 disabled={isLoading}
                 style={{ marginBottom: spacing[3] }}
               >
-                {isLoading ? 'Placing Order...' : `Pay ₹${total.toFixed(2)}`}
+                {isLoading
+                  ? 'Processing...'
+                  : paymentMethod === 'CASH'
+                    ? `Place Order - ₹${total.toFixed(2)}`
+                    : `Pay ₹${total.toFixed(2)} via Razorpay`
+                }
               </Button>
 
               <Button
@@ -460,6 +548,12 @@ const PaymentPage: React.FC = () => {
               >
                 Back to Checkout
               </Button>
+
+              {paymentMethod !== 'CASH' && (
+                <div style={{ marginTop: spacing[4], fontSize: typography.fontSize.xs, color: colors.text.tertiary, textAlign: 'center' }}>
+                  🔒 Secured by Razorpay • 256-bit SSL Encrypted
+                </div>
+              )}
             </Card>
           </div>
         </div>
