@@ -1,5 +1,11 @@
 package com.MaSoVa.inventory.controller;
 
+import com.MaSoVa.inventory.dto.request.ApprovalRequest;
+import com.MaSoVa.inventory.dto.request.CancellationRequest;
+import com.MaSoVa.inventory.dto.request.ReceiveRequest;
+import com.MaSoVa.inventory.dto.request.RejectionRequest;
+import com.MaSoVa.inventory.dto.request.StoreIdRequest;
+import com.MaSoVa.inventory.dto.response.MessageResponse;
 import com.MaSoVa.inventory.entity.PurchaseOrder;
 import com.MaSoVa.inventory.service.PurchaseOrderService;
 import org.slf4j.Logger;
@@ -10,9 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * REST Controller for Purchase Order Management
@@ -228,13 +232,11 @@ public class PurchaseOrderController {
      * POST /api/inventory/purchase-orders/auto-generate
      */
     @PostMapping("/auto-generate")
-    public ResponseEntity<Map<String, String>> autoGeneratePurchaseOrders() {
+    public ResponseEntity<MessageResponse> autoGeneratePurchaseOrders() {
         logger.info("Manually triggering auto-generation of purchase orders");
         purchaseOrderService.autoGeneratePurchaseOrders();
 
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Auto-generation completed");
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new MessageResponse("Auto-generation completed"));
     }
 
     /**
@@ -242,63 +244,12 @@ public class PurchaseOrderController {
      * DELETE /api/inventory/purchase-orders/{id}?storeId=xxx
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, String>> deletePurchaseOrder(
+    public ResponseEntity<MessageResponse> deletePurchaseOrder(
             @PathVariable String id,
             @RequestParam String storeId) {
         logger.info("Deleting purchase order: {}", id);
         purchaseOrderService.deletePurchaseOrder(id, storeId);
 
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Purchase order deleted successfully");
-        return ResponseEntity.ok(response);
-    }
-
-    // DTOs for request bodies
-
-    public static class ApprovalRequest {
-        private String approverId;
-        private String storeId;
-
-        public String getApproverId() { return approverId; }
-        public void setApproverId(String approverId) { this.approverId = approverId; }
-        public String getStoreId() { return storeId; }
-        public void setStoreId(String storeId) { this.storeId = storeId; }
-    }
-
-    public static class RejectionRequest {
-        private String rejectionReason;
-        private String storeId;
-
-        public String getRejectionReason() { return rejectionReason; }
-        public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
-        public String getStoreId() { return storeId; }
-        public void setStoreId(String storeId) { this.storeId = storeId; }
-    }
-
-    public static class ReceiveRequest {
-        private String receivedBy;
-        private String notes;
-
-        public String getReceivedBy() { return receivedBy; }
-        public void setReceivedBy(String receivedBy) { this.receivedBy = receivedBy; }
-        public String getNotes() { return notes; }
-        public void setNotes(String notes) { this.notes = notes; }
-    }
-
-    public static class CancellationRequest {
-        private String reason;
-        private String storeId;
-
-        public String getReason() { return reason; }
-        public void setReason(String reason) { this.reason = reason; }
-        public String getStoreId() { return storeId; }
-        public void setStoreId(String storeId) { this.storeId = storeId; }
-    }
-
-    public static class StoreIdRequest {
-        private String storeId;
-
-        public String getStoreId() { return storeId; }
-        public void setStoreId(String storeId) { this.storeId = storeId; }
+        return ResponseEntity.ok(new MessageResponse("Purchase order deleted successfully"));
     }
 }

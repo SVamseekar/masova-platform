@@ -12,7 +12,7 @@ import { Button } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
 import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
-import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
+import { createNeumorphicSurface, createCard } from '../../styles/neumorphic-utils';
 import AddSupplierDialog from '../../components/inventory/AddSupplierDialog';
 import EditSupplierDialog from '../../components/inventory/EditSupplierDialog';
 
@@ -85,11 +85,12 @@ const SupplierManagementPage: React.FC = () => {
     minHeight: '100vh',
     fontFamily: typography.fontFamily.primary,
     padding: spacing[6],
+    backgroundColor: colors.surface.background,
   };
 
   const titleStyles: React.CSSProperties = {
-    fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.extrabold,
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.bold,
     color: colors.text.primary,
     marginBottom: spacing[6],
   };
@@ -102,7 +103,7 @@ const SupplierManagementPage: React.FC = () => {
   };
 
   const statCardStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('raised', 'md', 'lg'),
+    ...createCard('md', 'base'),
     padding: spacing[5],
     textAlign: 'center',
   };
@@ -165,7 +166,7 @@ const SupplierManagementPage: React.FC = () => {
   };
 
   const supplierCardStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('raised', 'md', 'lg'),
+    ...createCard('md', 'base', true),
     padding: spacing[5],
     transition: 'all 0.3s ease',
     cursor: 'pointer',

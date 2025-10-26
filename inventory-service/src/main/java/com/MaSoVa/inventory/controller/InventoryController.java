@@ -1,5 +1,9 @@
 package com.MaSoVa.inventory.controller;
 
+import com.MaSoVa.inventory.dto.request.ReserveStockRequest;
+import com.MaSoVa.inventory.dto.request.StockAdjustmentRequest;
+import com.MaSoVa.inventory.dto.response.InventoryValueResponse;
+import com.MaSoVa.inventory.dto.response.MessageResponse;
 import com.MaSoVa.inventory.entity.InventoryItem;
 import com.MaSoVa.inventory.service.InventoryService;
 import org.slf4j.Logger;
@@ -9,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -131,16 +134,14 @@ public class InventoryController {
      * Body: { "quantity": 5.0, "storeId": "xxx" }
      */
     @PatchMapping("/items/{id}/reserve")
-    public ResponseEntity<Map<String, String>> reserveStock(
+    public ResponseEntity<MessageResponse> reserveStock(
             @PathVariable String id,
             @RequestBody ReserveStockRequest request) {
         logger.info("Reserving {} units for item: {}", request.getQuantity(), id);
 
         inventoryService.reserveStock(id, request.getQuantity(), request.getStoreId());
 
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Stock reserved successfully");
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new MessageResponse("Stock reserved successfully"));
     }
 
     /**
@@ -149,16 +150,14 @@ public class InventoryController {
      * Body: { "quantity": 5.0, "storeId": "xxx" }
      */
     @PatchMapping("/items/{id}/release")
-    public ResponseEntity<Map<String, String>> releaseReservedStock(
+    public ResponseEntity<MessageResponse> releaseReservedStock(
             @PathVariable String id,
             @RequestBody ReserveStockRequest request) {
         logger.info("Releasing {} reserved units for item: {}", request.getQuantity(), id);
 
         inventoryService.releaseReservedStock(id, request.getQuantity(), request.getStoreId());
 
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Reserved stock released successfully");
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new MessageResponse("Reserved stock released successfully"));
     }
 
     /**
@@ -167,16 +166,14 @@ public class InventoryController {
      * Body: { "quantity": 5.0, "storeId": "xxx" }
      */
     @PatchMapping("/items/{id}/consume")
-    public ResponseEntity<Map<String, String>> consumeReservedStock(
+    public ResponseEntity<MessageResponse> consumeReservedStock(
             @PathVariable String id,
             @RequestBody ReserveStockRequest request) {
         logger.info("Consuming {} reserved units for item: {}", request.getQuantity(), id);
 
         inventoryService.consumeReservedStock(id, request.getQuantity(), request.getStoreId());
 
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Reserved stock consumed successfully");
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new MessageResponse("Reserved stock consumed successfully"));
     }
 
     /**
@@ -230,13 +227,11 @@ public class InventoryController {
      * GET /api/inventory/value?storeId=xxx
      */
     @GetMapping("/value")
-    public ResponseEntity<Map<String, BigDecimal>> getTotalInventoryValue(@RequestParam String storeId) {
+    public ResponseEntity<InventoryValueResponse> getTotalInventoryValue(@RequestParam String storeId) {
         logger.info("Getting total inventory value for store: {}", storeId);
         BigDecimal totalValue = inventoryService.getTotalInventoryValue(storeId);
 
-        Map<String, BigDecimal> response = new HashMap<>();
-        response.put("totalValue", totalValue);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new InventoryValueResponse(totalValue));
     }
 
     /**
@@ -255,47 +250,12 @@ public class InventoryController {
      * DELETE /api/inventory/items/{id}?storeId=xxx
      */
     @DeleteMapping("/items/{id}")
-    public ResponseEntity<Map<String, String>> deleteInventoryItem(
+    public ResponseEntity<MessageResponse> deleteInventoryItem(
             @PathVariable String id,
             @RequestParam String storeId) {
         logger.info("Deleting inventory item: {}", id);
         inventoryService.deleteInventoryItem(id, storeId);
 
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Inventory item deleted successfully");
-        return ResponseEntity.ok(response);
-    }
-
-    // DTOs for request bodies
-
-    public static class StockAdjustmentRequest {
-        private Double quantityChange;
-        private String storeId;
-        private BigDecimal unitCost;
-        private String updatedBy;
-        private String reason;
-
-        // Getters and Setters
-        public Double getQuantityChange() { return quantityChange; }
-        public void setQuantityChange(Double quantityChange) { this.quantityChange = quantityChange; }
-        public String getStoreId() { return storeId; }
-        public void setStoreId(String storeId) { this.storeId = storeId; }
-        public BigDecimal getUnitCost() { return unitCost; }
-        public void setUnitCost(BigDecimal unitCost) { this.unitCost = unitCost; }
-        public String getUpdatedBy() { return updatedBy; }
-        public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
-        public String getReason() { return reason; }
-        public void setReason(String reason) { this.reason = reason; }
-    }
-
-    public static class ReserveStockRequest {
-        private Double quantity;
-        private String storeId;
-
-        // Getters and Setters
-        public Double getQuantity() { return quantity; }
-        public void setQuantity(Double quantity) { this.quantity = quantity; }
-        public String getStoreId() { return storeId; }
-        public void setStoreId(String storeId) { this.storeId = storeId; }
+        return ResponseEntity.ok(new MessageResponse("Inventory item deleted successfully"));
     }
 }

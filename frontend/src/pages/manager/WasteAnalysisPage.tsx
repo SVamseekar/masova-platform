@@ -13,7 +13,7 @@ import { Button } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
 import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
-import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
+import { createNeumorphicSurface, createCard } from '../../styles/neumorphic-utils';
 import { format, subDays } from 'date-fns';
 import RecordWasteDialog from '../../components/inventory/RecordWasteDialog';
 
@@ -59,11 +59,12 @@ const WasteAnalysisPage: React.FC = () => {
     minHeight: '100vh',
     fontFamily: typography.fontFamily.primary,
     padding: spacing[6],
+    backgroundColor: colors.surface.background,
   };
 
   const titleStyles: React.CSSProperties = {
-    fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.extrabold,
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.bold,
     color: colors.text.primary,
     marginBottom: spacing[6],
   };
@@ -76,7 +77,7 @@ const WasteAnalysisPage: React.FC = () => {
   };
 
   const statCardStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('raised', 'md', 'lg'),
+    ...createCard('md', 'base'),
     padding: spacing[5],
     textAlign: 'center',
   };
@@ -125,7 +126,7 @@ const WasteAnalysisPage: React.FC = () => {
   };
 
   const chartContainerStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('raised', 'md', 'lg'),
+    ...createCard('md', 'lg'),
     padding: spacing[5],
     marginBottom: spacing[6],
   };

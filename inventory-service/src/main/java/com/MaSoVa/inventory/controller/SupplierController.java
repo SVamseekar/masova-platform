@@ -1,5 +1,9 @@
 package com.MaSoVa.inventory.controller;
 
+import com.MaSoVa.inventory.dto.request.PerformanceUpdateRequest;
+import com.MaSoVa.inventory.dto.request.PreferredUpdateRequest;
+import com.MaSoVa.inventory.dto.request.StatusUpdateRequest;
+import com.MaSoVa.inventory.dto.response.MessageResponse;
 import com.MaSoVa.inventory.entity.Supplier;
 import com.MaSoVa.inventory.service.SupplierService;
 import org.slf4j.Logger;
@@ -8,9 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * REST Controller for Supplier Management
@@ -218,44 +220,10 @@ public class SupplierController {
      * DELETE /api/inventory/suppliers/{id}
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, String>> deleteSupplier(@PathVariable String id) {
+    public ResponseEntity<MessageResponse> deleteSupplier(@PathVariable String id) {
         logger.info("Deleting supplier: {}", id);
         supplierService.deleteSupplier(id);
 
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Supplier deleted successfully");
-        return ResponseEntity.ok(response);
-    }
-
-    // DTOs for request bodies
-
-    public static class StatusUpdateRequest {
-        private String status;
-
-        public String getStatus() { return status; }
-        public void setStatus(String status) { this.status = status; }
-    }
-
-    public static class PreferredUpdateRequest {
-        private Boolean isPreferred;
-
-        public Boolean getIsPreferred() { return isPreferred; }
-        public void setIsPreferred(Boolean isPreferred) { this.isPreferred = isPreferred; }
-    }
-
-    public static class PerformanceUpdateRequest {
-        private Integer completedOrders;
-        private Integer cancelledOrders;
-        private Double onTimeDeliveryRate;
-        private Double qualityRating;
-
-        public Integer getCompletedOrders() { return completedOrders; }
-        public void setCompletedOrders(Integer completedOrders) { this.completedOrders = completedOrders; }
-        public Integer getCancelledOrders() { return cancelledOrders; }
-        public void setCancelledOrders(Integer cancelledOrders) { this.cancelledOrders = cancelledOrders; }
-        public Double getOnTimeDeliveryRate() { return onTimeDeliveryRate; }
-        public void setOnTimeDeliveryRate(Double onTimeDeliveryRate) { this.onTimeDeliveryRate = onTimeDeliveryRate; }
-        public Double getQualityRating() { return qualityRating; }
-        public void setQualityRating(Double qualityRating) { this.qualityRating = qualityRating; }
+        return ResponseEntity.ok(new MessageResponse("Supplier deleted successfully"));
     }
 }

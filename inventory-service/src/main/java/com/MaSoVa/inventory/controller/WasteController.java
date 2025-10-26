@@ -1,5 +1,8 @@
 package com.MaSoVa.inventory.controller;
 
+import com.MaSoVa.inventory.dto.request.WasteApprovalRequest;
+import com.MaSoVa.inventory.dto.response.MessageResponse;
+import com.MaSoVa.inventory.dto.response.WasteSummaryResponse;
 import com.MaSoVa.inventory.entity.WasteRecord;
 import com.MaSoVa.inventory.service.WasteAnalysisService;
 import org.slf4j.Logger;
@@ -11,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -114,7 +116,7 @@ public class WasteController {
     @PatchMapping("/{id}/approve")
     public ResponseEntity<WasteRecord> approveWasteRecord(
             @PathVariable String id,
-            @RequestBody ApprovalRequest request) {
+            @RequestBody WasteApprovalRequest request) {
         logger.info("Approving waste record: {}", id);
         WasteRecord approved = wasteAnalysisService.approveWasteRecord(id, request.getApproverId());
         return ResponseEntity.ok(approved);
@@ -125,13 +127,11 @@ public class WasteController {
      * DELETE /api/inventory/waste/{id}
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, String>> deleteWasteRecord(@PathVariable String id) {
+    public ResponseEntity<MessageResponse> deleteWasteRecord(@PathVariable String id) {
         logger.info("Deleting waste record: {}", id);
         wasteAnalysisService.deleteWasteRecord(id);
 
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Waste record deleted successfully");
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new MessageResponse("Waste record deleted successfully"));
     }
 
     /**
@@ -139,16 +139,14 @@ public class WasteController {
      * GET /api/inventory/waste/total-cost?storeId=xxx&startDate=2024-01-01&endDate=2024-01-31
      */
     @GetMapping("/total-cost")
-    public ResponseEntity<Map<String, BigDecimal>> getTotalWasteCost(
+    public ResponseEntity<WasteSummaryResponse> getTotalWasteCost(
             @RequestParam String storeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         logger.info("Getting total waste cost from {} to {} for store: {}", startDate, endDate, storeId);
         BigDecimal totalCost = wasteAnalysisService.getTotalWasteCost(storeId, startDate, endDate);
 
-        Map<String, BigDecimal> response = new HashMap<>();
-        response.put("totalWasteCost", totalCost);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new WasteSummaryResponse(totalCost));
     }
 
     /**
@@ -205,14 +203,5 @@ public class WasteController {
         logger.info("Getting waste trend for last {} months for store: {}", months, storeId);
         List<Map<String, Object>> trend = wasteAnalysisService.getWasteTrend(storeId, months);
         return ResponseEntity.ok(trend);
-    }
-
-    // DTOs for request bodies
-
-    public static class ApprovalRequest {
-        private String approverId;
-
-        public String getApproverId() { return approverId; }
-        public void setApproverId(String approverId) { this.approverId = approverId; }
     }
 }
