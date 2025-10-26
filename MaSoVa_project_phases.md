@@ -1302,7 +1302,223 @@ frontend/src/
 
 ---
 
-## Phase 8: Driver & Delivery Management (Weeks 12-13)
+## Phase 8: Customer Management & Loyalty System (Weeks 12-13)
+
+**Overall Status:** ✅ **COMPLETE** (100% - Backend + Frontend complete)
+
+### BACKEND Implementation ✅
+
+**8.1 Customer Service (Port 8091)**
+- ✅ Customer Service microservice created
+- ✅ Customer entity with comprehensive profile management
+- ✅ Address management (multiple addresses, default selection)
+- ✅ Loyalty program with tier system (BRONZE, SILVER, GOLD, PLATINUM)
+- ✅ Points tracking (earned, redeemed, transaction history)
+- ✅ Customer preferences (favorites, dietary restrictions, allergens)
+- ✅ Order statistics tracking (total orders, spending, average order value)
+- ✅ Customer notes system (manager/support notes with categories)
+- ✅ Customer segmentation with tags
+- ✅ Email and phone verification tracking
+- ✅ Marketing and SMS opt-in management
+- ✅ Redis caching for customer data
+
+**Customer Repository (20+ query methods):**
+- ✅ Search by name, email, phone (paginated)
+- ✅ Loyalty tier queries
+- ✅ High-value customer identification (spending thresholds)
+- ✅ Recently active customers (last N days)
+- ✅ Inactive customer identification
+- ✅ Birthday customer queries (monthly campaigns)
+- ✅ Marketing and SMS opt-in queries
+
+**Loyalty Management:**
+- ✅ Automatic tier calculation based on points
+- ✅ Point earning on orders (configurable rate: 1 point per rupee)
+- ✅ Point redemption system
+- ✅ Signup bonus (100 points)
+- ✅ Birthday bonus (200 points)
+- ✅ Point transaction history with types (EARNED, REDEEMED, EXPIRED, BONUS)
+- ✅ Tier expiry tracking (yearly renewal)
+
+**Customer Analytics:**
+- ✅ Customer statistics dashboard
+- ✅ Top spenders identification
+- ✅ Customer lifetime value calculation
+- ✅ Average order value tracking
+- ✅ Completion rate tracking
+- ✅ Customers by tier distribution
+
+**Files Created:**
+```
+customer-service/
+├── src/main/java/com/MaSoVa/customer/
+│   ├── CustomerServiceApplication.java ✅
+│   ├── entity/
+│   │   └── Customer.java ✅ (500+ lines with inner classes)
+│   ├── repository/
+│   │   └── CustomerRepository.java ✅ (20+ query methods)
+│   ├── service/
+│   │   └── CustomerService.java ✅ (600+ lines, 30+ methods)
+│   ├── controller/
+│   │   └── CustomerController.java ✅ (400+ lines, 30+ endpoints)
+│   ├── dto/
+│   │   ├── request/ (7 DTOs)
+│   │   │   ├── CreateCustomerRequest.java ✅
+│   │   │   ├── UpdateCustomerRequest.java ✅
+│   │   │   ├── AddAddressRequest.java ✅
+│   │   │   ├── UpdatePreferencesRequest.java ✅
+│   │   │   ├── AddLoyaltyPointsRequest.java ✅
+│   │   │   ├── AddCustomerNoteRequest.java ✅
+│   │   │   └── UpdateOrderStatsRequest.java ✅
+│   │   └── response/ (2 DTOs)
+│   │       ├── MessageResponse.java ✅
+│   │       └── CustomerStatsResponse.java ✅
+│   └── config/
+│       ├── SecurityConfig.java ✅
+│       └── RedisConfig.java ✅
+├── src/main/resources/
+│   └── application.yml ✅
+└── pom.xml ✅
+```
+
+**API Endpoints Built (30+ endpoints):**
+
+*Customer CRUD (11 endpoints):*
+- ✅ `POST /api/customers` - Create customer
+- ✅ `GET /api/customers/{id}` - Get by ID
+- ✅ `GET /api/customers/user/{userId}` - Get by user ID
+- ✅ `GET /api/customers/email/{email}` - Get by email
+- ✅ `GET /api/customers/phone/{phone}` - Get by phone
+- ✅ `GET /api/customers` - Get all customers
+- ✅ `GET /api/customers/active` - Get active customers
+- ✅ `GET /api/customers/search` - Search customers (paginated)
+- ✅ `PUT /api/customers/{id}` - Update customer
+- ✅ `PATCH /api/customers/{id}/deactivate` - Deactivate
+- ✅ `PATCH /api/customers/{id}/activate` - Activate
+- ✅ `DELETE /api/customers/{id}` - Delete customer
+
+*Address Management (3 endpoints):*
+- ✅ `POST /api/customers/{id}/addresses` - Add address
+- ✅ `DELETE /api/customers/{customerId}/addresses/{addressId}` - Remove address
+- ✅ `PATCH /api/customers/{customerId}/addresses/{addressId}/set-default` - Set default address
+
+*Loyalty Management (2 endpoints):*
+- ✅ `POST /api/customers/{id}/loyalty/points` - Add/redeem points
+- ✅ `GET /api/customers/loyalty/tier/{tier}` - Get customers by tier
+
+*Preferences (1 endpoint):*
+- ✅ `PUT /api/customers/{id}/preferences` - Update preferences
+
+*Order Stats (1 endpoint):*
+- ✅ `POST /api/customers/{id}/order-stats` - Update order statistics (called by Order Service)
+
+*Notes (1 endpoint):*
+- ✅ `POST /api/customers/{id}/notes` - Add customer note
+
+*Verification (2 endpoints):*
+- ✅ `PATCH /api/customers/{id}/verify-email` - Mark email as verified
+- ✅ `PATCH /api/customers/{id}/verify-phone` - Mark phone as verified
+
+*Tags (3 endpoints):*
+- ✅ `POST /api/customers/{id}/tags` - Add tags
+- ✅ `DELETE /api/customers/{id}/tags` - Remove tags
+- ✅ `GET /api/customers/tags` - Get customers by tags
+
+*Query Endpoints (8 endpoints):*
+- ✅ `GET /api/customers/high-value` - High-value customers (spending > threshold)
+- ✅ `GET /api/customers/top-spenders` - Top N spenders
+- ✅ `GET /api/customers/recently-active` - Recently active customers
+- ✅ `GET /api/customers/inactive` - Inactive customers
+- ✅ `GET /api/customers/birthdays/today` - Birthday customers for today
+- ✅ `GET /api/customers/marketing-opt-in` - Marketing opt-in customers
+- ✅ `GET /api/customers/sms-opt-in` - SMS opt-in customers
+- ✅ `GET /api/customers/stats` - Customer statistics
+
+**Database Schema:**
+```
+Database: masova_customers ✅
+Collection: customers ✅
+Indexes:
+  - userId (unique) ✅
+  - email (unique) ✅
+  - phone (unique) ✅
+  - active ✅
+  - loyaltyInfo.tier ✅
+  - orderStats.totalSpent ✅
+  - createdAt ✅
+```
+
+### FRONTEND Implementation ✅
+
+**8.1 Customer Management Page** *(Manager)*
+- ✅ CustomerManagementPage at `/manager/customers` (700+ lines)
+- ✅ Customer statistics cards (total, active, high-value, avg lifetime value)
+- ✅ Search functionality (name, email, phone) with real-time filtering
+- ✅ Comprehensive customer table with:
+  - Name, email (with verification icon), phone (with verification icon)
+  - Loyalty tier badge with color coding
+  - Total orders and total spent
+  - Active/inactive status chips
+  - View details and activate/deactivate actions
+- ✅ Customer details dialog with 5 tabs:
+  - **Profile Tab:** Contact info, verification status, member since, last order
+  - **Loyalty & Stats Tab:** Points breakdown, order statistics, spending metrics
+  - **Addresses Tab:** Multiple addresses with default marking
+  - **Preferences Tab:** Favorite items, cuisine preferences, spice level, dietary restrictions
+  - **Notes Tab:** Manager notes with categories (GENERAL, COMPLAINT, PREFERENCE, OTHER)
+- ✅ Add customer notes with category selection
+- ✅ Activate/deactivate customer functionality
+- ✅ Loyalty tier visualization with color coding (Bronze, Silver, Gold, Platinum)
+- ✅ Email and phone verification indicators
+- ✅ Neumorphic design system compliance
+
+**8.2 Customer API Integration**
+- ✅ customerApi.ts (500+ lines, 30+ endpoints)
+- ✅ Complete TypeScript interfaces for all entities
+- ✅ RTK Query hooks for all CRUD operations
+- ✅ Automatic cache invalidation with tags
+- ✅ Paginated search support
+- ✅ Integrated with Redux store
+
+**Files Created:**
+```
+frontend/src/
+├── pages/manager/
+│   └── CustomerManagementPage.tsx ✅ (700+ lines)
+├── store/api/
+│   └── customerApi.ts ✅ (500+ lines, 30+ endpoints)
+└── App.tsx ✅ (updated with /manager/customers route)
+```
+
+**API Gateway Updates:**
+- ✅ Added customer service routing to port 8091
+- ✅ Protected all customer endpoints with JWT authentication
+- ✅ Updated GatewayConfig.java with customers_protected route
+
+**Deliverables:**
+- ✅ Customer Service microservice (Port 8091, 30+ endpoints)
+- ✅ Complete customer profile management system
+- ✅ Loyalty program with 4-tier system and automatic upgrades
+- ✅ Multi-address management with default selection
+- ✅ Customer preferences tracking (favorites, dietary, allergens)
+- ✅ Order statistics integration (auto-updated on order completion)
+- ✅ Customer segmentation with tags
+- ✅ Manager UI for customer management with comprehensive details
+- ✅ Customer analytics and statistics
+- ✅ Marketing opt-in management for campaigns
+- ✅ Redis caching for performance
+
+**Phase 8 Summary:**
+- **Total New Endpoints:** 30+
+- **Total Backend Files:** 15+ files
+- **Total Frontend Files:** 2 files (page + API integration)
+- **Lines of Code Added:** ~3,000+ lines
+- **Database Collections:** 1 (customers)
+- **Features Completed:** Profile management, loyalty program, preferences, analytics, notes
+
+---
+
+## Phase 9: Driver & Delivery Management (Weeks 14-15)
 
 **Overall Status:** ⚠️ **PARTIAL** (~60% - Frontend mostly done, backend partial)
 
@@ -2180,31 +2396,32 @@ frontend/src/
 
 ## 📊 Overall Project Status Summary
 
-### Completed Phases (7/16):
+### Completed Phases (8/16):
 1. ✅ Phase 1: Foundation & Core Infrastructure (100%)
 2. ✅ Phase 2: User Management & Authentication (100%)
 3. ✅ Phase 3: Menu & Catalog Management (100%)
 4. ✅ Phase 4: Order Management System (100%)
 5. ✅ Phase 5: Payment Integration (100%)
 6. ✅ Phase 6: Kitchen Operations Management (100%)
-7. ✅ Phase 7: Inventory Management (100% - backend + frontend + DTO refactoring + design updates)
+7. ✅ Phase 7: Inventory Management (100%)
+8. ✅ Phase 8: Customer Management & Loyalty System (100%)
 
 ### Partially Complete (2/16):
-8. ⚠️ Phase 8: Driver & Delivery (60% - frontend done, backend partial)
-9. ⚠️ Phase 9: POS Analytics (40% - basic analytics done)
+9. ⚠️ Phase 9: Driver & Delivery (60% - frontend done, backend partial)
+10. ⚠️ Phase 10: POS Analytics (40% - basic analytics done)
 
-### Not Started (7/16):
-10. ❌ Phase 10: Customer Reviews
-11. ❌ Phase 11: Advanced BI
-12. ❌ Phase 12: Notifications
-13. ⚠️ Phase 13: Performance Optimization (30% - basic caching)
-14. ⚠️ Phase 14: Security Hardening (40% - basic security)
-15. ❌ Phase 15: Testing & QA
-16. ❌ Phase 16: Deployment
+### Not Started (6/16):
+11. ❌ Phase 11: Customer Reviews
+12. ❌ Phase 12: Advanced BI
+13. ❌ Phase 13: Notifications
+14. ⚠️ Phase 14: Performance Optimization (30% - basic caching)
+15. ⚠️ Phase 15: Security Hardening (40% - basic security)
+16. ❌ Phase 16: Testing & QA
+17. ❌ Phase 17: Deployment
 
-**Overall Completion:** ~52% (considering partial phases)
+**Overall Completion:** ~56% (considering partial phases)
 
-**Next Recommended Phase:** **Complete Phase 8 (Driver & Delivery)** or **Complete Phase 9 (Advanced Analytics)**
+**Next Recommended Phase:** **Complete Phase 9 (Driver & Delivery)** or **Complete Phase 10 (Advanced Analytics)**
 
 ---
 
@@ -2214,15 +2431,16 @@ Based on current status and business priority:
 
 1. ✅ **Phase 5: Payment Integration** (COMPLETED)
 2. ✅ **Phase 6: Kitchen Operations Management** (COMPLETED)
-3. ✅ **Phase 7: Inventory Management** (COMPLETED - Backend + Frontend + DTO Refactoring + Design Updates)
-4. **Complete Phase 8: Driver & Delivery** (finish auto-dispatch, route optimization, real-time tracking)
-5. **Complete Phase 9: Advanced Analytics** (trending, reports, leaderboards)
-6. **Phase 10: Customer Reviews** (improves service quality)
-7. **Phases 11-16: Advanced features, optimization, deployment**
+3. ✅ **Phase 7: Inventory Management** (COMPLETED)
+4. ✅ **Phase 8: Customer Management & Loyalty System** (COMPLETED)
+5. **Complete Phase 9: Driver & Delivery** (finish auto-dispatch, route optimization, real-time tracking)
+6. **Complete Phase 10: Advanced Analytics** (trending, reports, leaderboards)
+7. **Phase 11: Customer Reviews** (improves service quality)
+8. **Phases 12-17: Advanced features, optimization, deployment**
 
 ---
 
 **Document Last Updated:** October 26, 2025
-**Total Phases:** 16
-**Completed:** 7 full phases, 2 partial phases
-**Remaining:** 7 phases to start, 2 phases to complete
+**Total Phases:** 17 (adjusted - Customer Management added as Phase 8, others renumbered)
+**Completed:** 8 full phases, 2 partial phases
+**Remaining:** 6 phases to start, 2 phases to complete

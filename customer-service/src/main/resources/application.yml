@@ -1,0 +1,261 @@
+# ========================================
+# MaSoVa CUSTOMER SERVICE - CONFIGURATION
+# ========================================
+
+server:
+  port: 8091
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: on-param
+    include-exception: false
+
+spring:
+  application:
+    name: customer-service
+  profiles:
+    active: dev
+
+  # DATABASE CONFIGURATION
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/masova_customers
+      auto-index-creation: true
+      repositories:
+        type: auto
+      field-naming-strategy: org.springframework.data.mapping.model.SnakeCaseFieldNamingStrategy
+
+    # REDIS CONFIGURATION
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      connect-timeout: 2000ms
+      database: 0
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1ms
+          time-between-eviction-runs: 30s
+        shutdown-timeout: 100ms
+      ssl:
+        enabled: false
+
+  # CACHE CONFIGURATION
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600000
+      cache-null-values: false
+      use-key-prefix: true
+      key-prefix: "MaSoVa:customers:"
+      enable-statistics: true
+    cache-names:
+      - customers
+      - customerAddresses
+      - loyaltyPoints
+      - preferences
+
+  # JSON CONFIGURATION
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+      indent-output: true
+    deserialization:
+      fail-on-unknown-properties: false
+    default-property-inclusion: non-null
+    time-zone: Asia/Kolkata
+
+# LOGGING CONFIGURATION
+logging:
+  level:
+    com.MaSoVa.customer: DEBUG
+    com.MaSoVa.shared: DEBUG
+    org.springframework.cache: DEBUG
+    org.springframework.data.redis: INFO
+    org.springframework.security: INFO
+    org.springframework.web: INFO
+    org.springframework.transaction: DEBUG
+    root: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/customer-service.log
+    max-size: 10MB
+    max-history: 30
+
+# ACTUATOR CONFIGURATION
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+      base-path: /actuator
+      cors:
+        allowed-origins: "*"
+        allowed-methods: "GET,POST"
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+    info:
+      enabled: true
+    loggers:
+      enabled: true
+    caches:
+      enabled: true
+
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5, 0.95, 0.99
+  health:
+    redis:
+      enabled: true
+    mongo:
+      enabled: true
+    diskspace:
+      enabled: true
+  info:
+    git:
+      mode: full
+    build:
+      enabled: true
+    env:
+      enabled: true
+
+# API DOCUMENTATION
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    try-it-out-enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+    doc-expansion: none
+    disable-swagger-default-url: true
+  show-actuator: true
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+
+# CUSTOM BUSINESS CONFIGURATION
+MaSoVa:
+  customer:
+    loyalty:
+      points-per-rupee: 1
+      signup-bonus-points: 100
+      birthday-bonus-points: 200
+      tier-thresholds:
+        silver: 1000
+        gold: 5000
+        platinum: 10000
+      tier-multipliers:
+        bronze: 1.0
+        silver: 1.2
+        gold: 1.5
+        platinum: 2.0
+    preferences:
+      max-favorite-items: 20
+      max-saved-addresses: 5
+    cache:
+      customer-ttl-hours: 2
+      preferences-ttl-hours: 4
+      loyalty-ttl-minutes: 30
+
+# ENVIRONMENT PROFILES
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/masova_customers
+    redis:
+      host: localhost
+      port: 6379
+      password: ""
+logging:
+  level:
+    com.MaSoVa: DEBUG
+    root: INFO
+
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://admin:password123@mongodb:27017/masova_customers?authSource=admin}
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:redispassword123}
+server:
+  port: 8091
+logging:
+  level:
+    com.MaSoVa: INFO
+    root: WARN
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/masova_customers_test
+    redis:
+      host: localhost
+      port: 6379
+      password: ""
+  cache:
+    type: simple
+logging:
+  level:
+    com.MaSoVa: DEBUG
+    org.springframework.cache: DEBUG
+    root: WARN
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD}
+      ssl:
+        enabled: ${REDIS_SSL:false}
+server:
+  port: ${SERVER_PORT:8091}
+logging:
+  level:
+    com.MaSoVa: INFO
+    root: WARN
+  file:
+    name: /app/logs/customer-service.log

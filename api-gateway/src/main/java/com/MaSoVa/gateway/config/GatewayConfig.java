@@ -118,6 +118,21 @@ public class GatewayConfig {
                         .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8086"))
 
+                // Inventory Service - Protected Routes
+                .route("inventory_protected", r -> r.path("/api/inventory/**")
+                        .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8088"))
+
+                // Customer Service - Protected Routes
+                .route("customers_protected", r -> r.path("/api/customers/**")
+                        .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8091"))
+
+                // Kitchen Equipment - Protected Routes
+                .route("kitchen_equipment_protected", r -> r.path("/api/kitchen-equipment/**")
+                        .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8083"))
+
                 // Default fallback
                 .route("fallback", r -> r.path("/**")
                         .uri("http://localhost:8080/fallback"))

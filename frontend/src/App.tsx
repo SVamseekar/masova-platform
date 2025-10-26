@@ -28,6 +28,7 @@ const InventoryDashboardPage = React.lazy(() => import('./pages/manager/Inventor
 const SupplierManagementPage = React.lazy(() => import('./pages/manager/SupplierManagementPage'));
 const PurchaseOrdersPage = React.lazy(() => import('./pages/manager/PurchaseOrdersPage'));
 const WasteAnalysisPage = React.lazy(() => import('./pages/manager/WasteAnalysisPage'));
+const CustomerManagementPage = React.lazy(() => import('./pages/manager/CustomerManagementPage'));
 const ManagerDashboard = React.lazy(() => import('./pages/manager/DashboardPage'));
 const KitchenDisplayPage = React.lazy(() => import('./pages/kitchen/KitchenDisplayPage'));
 const DriverDashboard = React.lazy(() => import('./pages/driver/DriverDashboard'));
@@ -143,6 +144,14 @@ const App: React.FC = () => {
                     element={
                       <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
                         <WasteAnalysisPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/customers"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <CustomerManagementPage />
                       </ProtectedRoute>
                     }
                   />
