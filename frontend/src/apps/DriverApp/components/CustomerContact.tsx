@@ -1,19 +1,6 @@
 import React from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Stack,
-  Typography,
-  Divider,
-  IconButton,
-  Box
-} from '@mui/material';
-import PhoneIcon from '@mui/icons-material/Phone';
-import MessageIcon from '@mui/icons-material/Message';
-import CloseIcon from '@mui/icons-material/Close';
+import { colors, spacing, typography, borderRadius } from '../../../styles/design-tokens';
+import { createCard, createNeumorphicSurface } from '../../../styles/neumorphic-utils';
 
 interface CustomerContactProps {
   open: boolean;
@@ -30,6 +17,8 @@ const CustomerContact: React.FC<CustomerContactProps> = ({
   customerPhone,
   orderNumber
 }) => {
+  if (!open) return null;
+
   const handleCall = () => {
     window.location.href = `tel:${customerPhone}`;
   };
@@ -41,67 +30,212 @@ const CustomerContact: React.FC<CustomerContactProps> = ({
     window.location.href = `sms:${customerPhone}?body=${message}`;
   };
 
+  // Styles
+  const overlayStyles: React.CSSProperties = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    padding: spacing[4],
+  };
+
+  const dialogStyles: React.CSSProperties = {
+    ...createCard('lg', 'xl'),
+    backgroundColor: colors.surface.background,
+    maxWidth: '400px',
+    width: '100%',
+    padding: spacing[6],
+  };
+
+  const headerStyles: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing[4],
+  };
+
+  const titleStyles: React.CSSProperties = {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+  };
+
+  const closeButtonStyles: React.CSSProperties = {
+    padding: spacing[2],
+    fontSize: typography.fontSize.lg,
+    color: colors.text.secondary,
+    backgroundColor: 'transparent',
+    border: 'none',
+    borderRadius: borderRadius.full,
+    cursor: 'pointer',
+    ...createNeumorphicSurface('raised', 'sm', 'full'),
+    width: '36px',
+    height: '36px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
+
+  const contentStyles: React.CSSProperties = {
+    textAlign: 'center',
+    marginBottom: spacing[4],
+  };
+
+  const customerNameStyles: React.CSSProperties = {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing[2],
+  };
+
+  const phoneStyles: React.CSSProperties = {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.brand.primary,
+    marginBottom: spacing[1],
+  };
+
+  const orderStyles: React.CSSProperties = {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.tertiary,
+  };
+
+  const dividerStyles: React.CSSProperties = {
+    height: '1px',
+    backgroundColor: colors.surface.tertiary,
+    margin: `${spacing[4]} 0`,
+  };
+
+  const buttonContainerStyles: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: spacing[3],
+    marginBottom: spacing[4],
+  };
+
+  const callButtonStyles: React.CSSProperties = {
+    padding: spacing[4],
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: '#fff',
+    background: `linear-gradient(135deg, ${colors.semantic.success} 0%, ${colors.semantic.successLight} 100%)`,
+    border: 'none',
+    borderRadius: borderRadius.lg,
+    cursor: 'pointer',
+    ...createNeumorphicSurface('raised', 'base', 'lg'),
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing[2],
+    transition: 'all 0.2s',
+  };
+
+  const smsButtonStyles: React.CSSProperties = {
+    padding: spacing[4],
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+    backgroundColor: colors.surface.primary,
+    border: `2px solid ${colors.semantic.info}`,
+    borderRadius: borderRadius.lg,
+    cursor: 'pointer',
+    ...createNeumorphicSurface('raised', 'base', 'lg'),
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing[2],
+    transition: 'all 0.2s',
+  };
+
+  const iconStyles: React.CSSProperties = {
+    fontSize: '1.5rem',
+  };
+
+  const noteStyles: React.CSSProperties = {
+    ...createCard('sm', 'sm'),
+    padding: spacing[3],
+    backgroundColor: colors.surface.secondary,
+    textAlign: 'center',
+  };
+
+  const noteTextStyles: React.CSSProperties = {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
+  };
+
+  const footerStyles: React.CSSProperties = {
+    display: 'flex',
+    justifyContent: 'center',
+    marginTop: spacing[4],
+  };
+
+  const cancelButtonStyles: React.CSSProperties = {
+    padding: `${spacing[2]} ${spacing[6]}`,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.secondary,
+    backgroundColor: colors.surface.primary,
+    border: 'none',
+    borderRadius: borderRadius.lg,
+    cursor: 'pointer',
+    ...createNeumorphicSurface('raised', 'sm', 'lg'),
+    transition: 'all 0.2s',
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle>
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6" fontWeight="bold">
-            Contact Customer
-          </Typography>
-          <IconButton size="small" onClick={onClose}>
-            <CloseIcon />
-          </IconButton>
-        </Stack>
-      </DialogTitle>
+    <div style={overlayStyles} onClick={onClose}>
+      <div style={dialogStyles} onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div style={headerStyles}>
+          <span style={titleStyles}>Contact Customer</span>
+          <button onClick={onClose} style={closeButtonStyles}>
+            ✕
+          </button>
+        </div>
 
-      <DialogContent>
-        <Box sx={{ textAlign: 'center', mb: 3 }}>
-          <Typography variant="h5" fontWeight="bold" gutterBottom>
-            {customerName}
-          </Typography>
-          <Typography variant="h6" color="primary" gutterBottom>
-            {customerPhone}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Order #{orderNumber}
-          </Typography>
-        </Box>
+        {/* Customer Info */}
+        <div style={contentStyles}>
+          <div style={customerNameStyles}>{customerName}</div>
+          <div style={phoneStyles}>{customerPhone}</div>
+          <div style={orderStyles}>Order #{orderNumber}</div>
+        </div>
 
-        <Divider sx={{ my: 2 }} />
+        <div style={dividerStyles} />
 
-        <Stack spacing={2}>
-          <Button
-            variant="contained"
-            size="large"
-            startIcon={<PhoneIcon />}
-            onClick={handleCall}
-            fullWidth
-            sx={{ py: 1.5 }}
-          >
-            Call Customer
-          </Button>
+        {/* Action Buttons */}
+        <div style={buttonContainerStyles}>
+          <button onClick={handleCall} style={callButtonStyles}>
+            <span style={iconStyles}>📞</span>
+            <span>Call Customer</span>
+          </button>
 
-          <Button
-            variant="outlined"
-            size="large"
-            startIcon={<MessageIcon />}
-            onClick={handleSMS}
-            fullWidth
-            sx={{ py: 1.5 }}
-          >
-            Send SMS
-          </Button>
-        </Stack>
+          <button onClick={handleSMS} style={smsButtonStyles}>
+            <span style={iconStyles}>💬</span>
+            <span>Send SMS</span>
+          </button>
+        </div>
 
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2, textAlign: 'center' }}>
-          Use these options to update the customer about delivery status
-        </Typography>
-      </DialogContent>
+        {/* Note */}
+        <div style={noteStyles}>
+          <p style={noteTextStyles}>
+            Use these options to update the customer about delivery status
+          </p>
+        </div>
 
-      <DialogActions>
-        <Button onClick={onClose}>Close</Button>
-      </DialogActions>
-    </Dialog>
+        {/* Footer */}
+        <div style={footerStyles}>
+          <button onClick={onClose} style={cancelButtonStyles}>
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 

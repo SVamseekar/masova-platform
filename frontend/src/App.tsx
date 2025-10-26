@@ -20,6 +20,7 @@ const PaymentPage = React.lazy(() => import('./pages/customer/PaymentPage'));
 const PaymentSuccessPage = React.lazy(() => import('./pages/customer/PaymentSuccessPage'));
 const PaymentFailedPage = React.lazy(() => import('./pages/customer/PaymentFailedPage'));
 const TrackingPage = React.lazy(() => import('./pages/customer/TrackingPage'));
+const LiveTrackingPage = React.lazy(() => import('./pages/customer/LiveTrackingPage'));
 const CustomerDashboard = React.lazy(() => import('./pages/customer/CustomerDashboard'));
 const ProfilePage = React.lazy(() => import('./pages/customer/ProfilePage'));
 const PaymentDashboardPage = React.lazy(() => import('./pages/manager/PaymentDashboardPage'));
@@ -30,6 +31,8 @@ const SupplierManagementPage = React.lazy(() => import('./pages/manager/Supplier
 const PurchaseOrdersPage = React.lazy(() => import('./pages/manager/PurchaseOrdersPage'));
 const WasteAnalysisPage = React.lazy(() => import('./pages/manager/WasteAnalysisPage'));
 const CustomerManagementPage = React.lazy(() => import('./pages/manager/CustomerManagementPage'));
+const DriverManagementPage = React.lazy(() => import('./pages/manager/DriverManagementPage'));
+const DeliveryManagementPage = React.lazy(() => import('./pages/manager/DeliveryManagementPage'));
 const ManagerDashboard = React.lazy(() => import('./pages/manager/DashboardPage'));
 const KitchenDisplayPage = React.lazy(() => import('./pages/kitchen/KitchenDisplayPage'));
 const DriverDashboard = React.lazy(() => import('./pages/driver/DriverDashboard'));
@@ -72,6 +75,7 @@ const App: React.FC = () => {
                   <Route path="/payment/success" element={<PaymentSuccessPage />} />
                   <Route path="/payment/failed" element={<PaymentFailedPage />} />
                   <Route path="/tracking/:orderId" element={<TrackingPage />} />
+                  <Route path="/live-tracking/:orderId" element={<LiveTrackingPage />} />
 
                   {/* Customer Dashboard - Login required */}
                   <Route
@@ -161,6 +165,22 @@ const App: React.FC = () => {
                     element={
                       <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
                         <CustomerManagementPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/drivers"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <DriverManagementPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/deliveries"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <DeliveryManagementPage />
                       </ProtectedRoute>
                     }
                   />
