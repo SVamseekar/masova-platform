@@ -97,7 +97,7 @@ const CustomerDashboard: React.FC = () => {
       icon: '👤',
       title: 'Profile',
       description: 'Manage your account details',
-      action: () => alert('Profile management coming soon!'),
+      action: () => navigate('/customer/profile'),
     },
     {
       icon: '🎁',

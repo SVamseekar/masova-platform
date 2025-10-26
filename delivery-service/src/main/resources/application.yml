@@ -1,0 +1,46 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: delivery-service
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/delivery_db
+      auto-index-creation: true
+
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:MaSoVaSecretKeyForJWTTokenGenerationAndValidation2024RestaurantManagementSystem}
+  expiration: 86400000
+
+# Google Maps API Configuration
+google:
+  maps:
+    api-key: ${GOOGLE_MAPS_API_KEY:}
+
+# Service URLs
+services:
+  user-service:
+    url: http://localhost:8081
+  order-service:
+    url: http://localhost:8082
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.MaSoVa.delivery: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
