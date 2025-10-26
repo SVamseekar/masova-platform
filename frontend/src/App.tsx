@@ -24,6 +24,10 @@ const CustomerDashboard = React.lazy(() => import('./pages/customer/CustomerDash
 const PaymentDashboardPage = React.lazy(() => import('./pages/manager/PaymentDashboardPage'));
 const RefundManagementPage = React.lazy(() => import('./pages/manager/RefundManagementPage'));
 const RecipeManagementPage = React.lazy(() => import('./pages/manager/RecipeManagementPage'));
+const InventoryDashboardPage = React.lazy(() => import('./pages/manager/InventoryDashboardPage'));
+const SupplierManagementPage = React.lazy(() => import('./pages/manager/SupplierManagementPage'));
+const PurchaseOrdersPage = React.lazy(() => import('./pages/manager/PurchaseOrdersPage'));
+const WasteAnalysisPage = React.lazy(() => import('./pages/manager/WasteAnalysisPage'));
 const ManagerDashboard = React.lazy(() => import('./pages/manager/DashboardPage'));
 const KitchenDisplayPage = React.lazy(() => import('./pages/kitchen/KitchenDisplayPage'));
 const DriverDashboard = React.lazy(() => import('./pages/driver/DriverDashboard'));
@@ -107,6 +111,38 @@ const App: React.FC = () => {
                     element={
                       <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
                         <RecipeManagementPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/inventory"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <InventoryDashboardPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/suppliers"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <SupplierManagementPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/purchase-orders"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <PurchaseOrdersPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/waste-analysis"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <WasteAnalysisPage />
                       </ProtectedRoute>
                     }
                   />
