@@ -2,6 +2,8 @@ import { Box, Button, Dialog, DialogContent, DialogTitle, Typography, Divider, I
 import { Print as PrintIcon, Close as CloseIcon, Download as DownloadIcon } from '@mui/icons-material';
 import { CURRENCY } from '../config/business-config';
 import { format } from 'date-fns';
+import { createCard, createButtonVariant } from '../styles/neumorphic-utils';
+import { colors, shadows } from '../styles/design-tokens';
 
 interface ReceiptItem {
   itemName: string;
@@ -224,7 +226,18 @@ export default function ReceiptGenerator({ open, onClose, receiptData }: Receipt
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          ...createCard('lg', 'xl'),
+          backgroundColor: colors.surface.background,
+        }
+      }}
+    >
       <DialogTitle>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6">Receipt - Order #{orderNumber}</Typography>
@@ -237,18 +250,18 @@ export default function ReceiptGenerator({ open, onClose, receiptData }: Receipt
         {/* Action Buttons */}
         <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
           <Button
-            variant="contained"
             startIcon={<PrintIcon />}
             onClick={handlePrint}
             fullWidth
+            sx={createButtonVariant('primary', 'base')}
           >
             Print Receipt
           </Button>
           <Button
-            variant="outlined"
             startIcon={<DownloadIcon />}
             onClick={handleDownloadPDF}
             fullWidth
+            sx={createButtonVariant('ghost', 'base')}
           >
             Download
           </Button>
@@ -258,13 +271,11 @@ export default function ReceiptGenerator({ open, onClose, receiptData }: Receipt
         <Box
           id="receipt-content"
           sx={{
-            border: 1,
-            borderColor: 'divider',
-            borderRadius: 1,
-            p: 3,
+            ...createCard('base', 'lg'),
             fontFamily: 'monospace',
             '@media print': {
               border: 'none',
+              boxShadow: 'none',
               p: 0,
             },
           }}

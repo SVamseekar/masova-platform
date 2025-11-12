@@ -14,6 +14,8 @@ import { useGetSalesTrendsQuery } from '../../store/api/analyticsApi';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
+import { createCard } from '../../styles/neumorphic-utils';
+import { colors } from '../../styles/design-tokens';
 
 interface SalesTrendChartProps {
   storeId: string;
@@ -52,7 +54,7 @@ export default function SalesTrendChart({ storeId }: SalesTrendChartProps) {
 
   if (isLoading) {
     return (
-      <Paper sx={{ p: 3, height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Paper sx={{ ...createCard('md', 'lg'), height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Typography>Loading sales trends...</Typography>
       </Paper>
     );
@@ -60,14 +62,14 @@ export default function SalesTrendChart({ storeId }: SalesTrendChartProps) {
 
   if (error || !data) {
     return (
-      <Paper sx={{ p: 3, height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Paper sx={{ ...createCard('md', 'lg'), height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Typography color="error">Failed to load sales trends</Typography>
       </Paper>
     );
   }
 
   return (
-    <Paper sx={{ p: 3 }}>
+    <Paper sx={{ ...createCard('md', 'lg') }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Box>
           <Typography variant="h6" gutterBottom>
@@ -115,7 +117,7 @@ export default function SalesTrendChart({ storeId }: SalesTrendChartProps) {
           <Line
             type="monotone"
             dataKey="sales"
-            stroke="#8884d8"
+            stroke={colors.brand.primary}
             strokeWidth={2}
             name="Sales"
             dot={{ r: 4 }}
@@ -124,7 +126,7 @@ export default function SalesTrendChart({ storeId }: SalesTrendChartProps) {
           <Line
             type="monotone"
             dataKey="orderCount"
-            stroke="#82ca9d"
+            stroke={colors.semantic.success}
             strokeWidth={2}
             name="Orders"
             dot={{ r: 4 }}

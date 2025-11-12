@@ -8,12 +8,19 @@ import {
   Legend,
 } from 'recharts';
 import { useGetOrderTypeBreakdownQuery } from '../../store/api/analyticsApi';
+import { createCard } from '../../styles/neumorphic-utils';
+import { colors } from '../../styles/design-tokens';
 
 interface RevenueBreakdownChartProps {
   storeId: string;
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+const COLORS = [
+  colors.brand.primary,      // MaSoVa red for primary
+  colors.brand.secondary,    // Blue for secondary
+  colors.semantic.success,   // Green
+  colors.semantic.warning,   // Orange
+];
 
 const ORDER_TYPE_LABELS: Record<string, string> = {
   DINE_IN: 'Dine-In',
@@ -34,7 +41,7 @@ export default function RevenueBreakdownChart({ storeId }: RevenueBreakdownChart
 
   if (isLoading) {
     return (
-      <Paper sx={{ p: 3, height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Paper sx={{ ...createCard('md', 'lg'), height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Typography>Loading revenue breakdown...</Typography>
       </Paper>
     );
@@ -42,7 +49,7 @@ export default function RevenueBreakdownChart({ storeId }: RevenueBreakdownChart
 
   if (error || !data) {
     return (
-      <Paper sx={{ p: 3, height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Paper sx={{ ...createCard('md', 'lg'), height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Typography color="error">Failed to load revenue breakdown</Typography>
       </Paper>
     );
@@ -56,7 +63,7 @@ export default function RevenueBreakdownChart({ storeId }: RevenueBreakdownChart
   }));
 
   return (
-    <Paper sx={{ p: 3 }}>
+    <Paper sx={{ ...createCard('md', 'lg') }}>
       <Box sx={{ mb: 2 }}>
         <Typography variant="h6" gutterBottom>
           Revenue by Order Type

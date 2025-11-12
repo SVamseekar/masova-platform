@@ -17,6 +17,8 @@ import {
 import { useState } from 'react';
 import { useGetStaffLeaderboardQuery } from '../../store/api/analyticsApi';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import { createCard } from '../../styles/neumorphic-utils';
+import { colors } from '../../styles/design-tokens';
 
 export default function StaffLeaderboardPage() {
   const storeId = 'store-001'; // TODO: Get from auth context
@@ -104,7 +106,7 @@ export default function StaffLeaderboardPage() {
         </ToggleButtonGroup>
       </Box>
 
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} sx={{ ...createCard('md', 'lg') }}>
         <Table>
           <TableHead>
             <TableRow>

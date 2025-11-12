@@ -10,6 +10,8 @@ import {
   Cell,
 } from 'recharts';
 import { useGetPeakHoursQuery } from '../../store/api/analyticsApi';
+import { createCard } from '../../styles/neumorphic-utils';
+import { colors } from '../../styles/design-tokens';
 
 interface PeakHoursHeatmapProps {
   storeId: string;
@@ -27,15 +29,15 @@ export default function PeakHoursHeatmap({ storeId }: PeakHoursHeatmapProps) {
   };
 
   const getBarColor = (hour: number) => {
-    if (!data) return '#8884d8';
-    if (hour === data.peakHour) return '#4caf50'; // Green for peak hour
-    if (hour === data.slowestHour) return '#f44336'; // Red for slowest hour
-    return '#8884d8'; // Default blue
+    if (!data) return colors.brand.secondary;
+    if (hour === data.peakHour) return colors.semantic.success; // Green for peak hour
+    if (hour === data.slowestHour) return colors.semantic.error; // Red for slowest hour
+    return colors.brand.secondary; // Default blue
   };
 
   if (isLoading) {
     return (
-      <Paper sx={{ p: 3, height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Paper sx={{ ...createCard('md', 'lg'), height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Typography>Loading peak hours data...</Typography>
       </Paper>
     );
@@ -43,7 +45,7 @@ export default function PeakHoursHeatmap({ storeId }: PeakHoursHeatmapProps) {
 
   if (error || !data) {
     return (
-      <Paper sx={{ p: 3, height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Paper sx={{ ...createCard('md', 'lg'), height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Typography color="error">Failed to load peak hours data</Typography>
       </Paper>
     );
@@ -53,7 +55,7 @@ export default function PeakHoursHeatmap({ storeId }: PeakHoursHeatmapProps) {
   const activeHours = data.hourlyData.filter((h) => h.orderCount > 0);
 
   return (
-    <Paper sx={{ p: 3 }}>
+    <Paper sx={{ ...createCard('md', 'lg') }}>
       <Box sx={{ mb: 2 }}>
         <Typography variant="h6" gutterBottom>
           Peak Hours Analysis

@@ -22,6 +22,8 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 import NewReleasesIcon from '@mui/icons-material/NewReleases';
+import { createCard } from '../../styles/neumorphic-utils';
+import { colors } from '../../styles/design-tokens';
 
 export default function ProductAnalyticsPage() {
   const storeId = 'store-001'; // TODO: Get from auth context
@@ -45,13 +47,13 @@ export default function ProductAnalyticsPage() {
   const getTrendIcon = (trend: string) => {
     switch (trend) {
       case 'UP':
-        return <TrendingUpIcon fontSize="small" sx={{ color: '#4caf50' }} />;
+        return <TrendingUpIcon fontSize="small" sx={{ color: colors.semantic.success }} />;
       case 'DOWN':
-        return <TrendingDownIcon fontSize="small" sx={{ color: '#f44336' }} />;
+        return <TrendingDownIcon fontSize="small" sx={{ color: colors.semantic.error }} />;
       case 'NEW':
-        return <NewReleasesIcon fontSize="small" sx={{ color: '#2196f3' }} />;
+        return <NewReleasesIcon fontSize="small" sx={{ color: colors.brand.secondary }} />;
       default:
-        return <TrendingFlatIcon fontSize="small" sx={{ color: '#ff9800' }} />;
+        return <TrendingFlatIcon fontSize="small" sx={{ color: colors.semantic.warning }} />;
     }
   };
 
@@ -122,7 +124,7 @@ export default function ProductAnalyticsPage() {
       {/* Summary Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={4}>
-          <Card>
+          <Card sx={{ ...createCard('md', 'base') }}>
             <CardContent>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Top Seller
@@ -137,7 +139,7 @@ export default function ProductAnalyticsPage() {
           </Card>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Card>
+          <Card sx={{ ...createCard('md', 'base') }}>
             <CardContent>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Total Revenue (Top 20)
@@ -152,7 +154,7 @@ export default function ProductAnalyticsPage() {
           </Card>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Card>
+          <Card sx={{ ...createCard('md', 'base') }}>
             <CardContent>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Total Items Sold (Top 20)
@@ -169,7 +171,7 @@ export default function ProductAnalyticsPage() {
       </Grid>
 
       {/* Products Table */}
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} sx={{ ...createCard('md', 'lg') }}>
         <Table>
           <TableHead>
             <TableRow>
@@ -241,7 +243,7 @@ export default function ProductAnalyticsPage() {
       </TableContainer>
 
       {data.topProducts.length === 0 && (
-        <Paper sx={{ p: 4, textAlign: 'center', mt: 2 }}>
+        <Paper sx={{ ...createCard('base', 'lg'), textAlign: 'center', mt: 2 }}>
           <Typography variant="h6" color="text.secondary">
             No product sales data available for this period
           </Typography>
