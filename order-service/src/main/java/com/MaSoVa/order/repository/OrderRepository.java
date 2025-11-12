@@ -39,6 +39,9 @@ public interface OrderRepository extends MongoRepository<Order, String> {
     @Query("{ 'createdAt': { $gte: ?0, $lte: ?1 } }")
     List<Order> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
+    @Query("{ 'storeId': ?0, 'createdAt': { $gte: ?1, $lte: ?2 } }")
+    List<Order> findByStoreIdAndCreatedAtBetween(String storeId, LocalDateTime start, LocalDateTime end);
+
     @Query("{ 'createdBy': ?0, 'createdAt': { $gte: ?1, $lte: ?2 } }")
     List<Order> findByCreatedByAndCreatedAtBetween(String createdBy, LocalDateTime start, LocalDateTime end);
 

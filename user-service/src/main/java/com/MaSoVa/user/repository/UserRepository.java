@@ -33,7 +33,10 @@ public interface UserRepository extends MongoRepository<User, String> {
     
     @Query("{'employeeDetails.storeId': ?0, 'type': {$in: ?1}}")
     List<User> findByStoreIdAndTypeIn(String storeId, List<UserType> types);
-    
+
+    @Query("{'type': ?0, 'employeeDetails.storeId': ?1}")
+    List<User> findByTypeAndEmployeeDetailsStoreId(UserType type, String storeId);
+
     @Query("{'type': {$in: [?0, ?1]}, 'isActive': true}")
     List<User> findActiveManagersAndAssistants(UserType manager, UserType assistantManager);
     

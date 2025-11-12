@@ -550,7 +550,7 @@ public class OrderService {
 
     // Get orders with failed quality checks
     public List<Order> getOrdersWithFailedQualityChecks(String storeId) {
-        List<Order> storeOrders = getOrdersByStore(storeId);
+        List<Order> storeOrders = getStoreOrders(storeId);
 
         return storeOrders.stream()
                 .filter(order -> order.getQualityCheckpoints() != null &&
@@ -648,7 +648,7 @@ public class OrderService {
         int failedQualityChecks = (int) assignedOrders.stream()
                 .filter(order -> order.getQualityCheckpoints() != null &&
                         order.getQualityCheckpoints().stream()
-                                .anyMatch(cp -> cp.getStatus() == QualityCheckpoint.CheckpointStatus.FAILED))
+                                .anyMatch(cp -> cp.getStatus() == com.MaSoVa.order.entity.QualityCheckpoint.CheckpointStatus.FAILED))
                 .count();
 
         java.util.Map<String, Object> performance = new java.util.HashMap<>();

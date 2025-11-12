@@ -42,7 +42,7 @@ public class RazorpayService {
 
             Order order = razorpayClient.orders.create(orderRequest);
 
-            log.info("Razorpay order created successfully. Order ID: {}", order.get("id"));
+            log.info("Razorpay order created successfully. Order ID: {}", order.get("id").toString());
 
             return order;
         } catch (RazorpayException e) {
@@ -118,12 +118,13 @@ public class RazorpayService {
             log.info("Creating refund for payment: {}, amount: {} INR ({} paisa), speed: {}",
                      paymentId, amount, amountInPaisa, speed);
 
-            Payment payment = razorpayClient.payments.fetch(paymentId);
-            JSONObject refund = payment.refund(refundRequest);
+            // Create refund using the Razorpay client's refund API
+            com.razorpay.Refund refund = razorpayClient.payments.refund(paymentId, refundRequest);
+            JSONObject refundJson = refund.toJson();
 
-            log.info("Refund created successfully. Refund ID: {}", refund.get("id"));
+            log.info("Refund created successfully. Refund ID: {}", refundJson.get("id"));
 
-            return refund;
+            return refundJson;
         } catch (RazorpayException e) {
             log.error("Failed to create refund for payment: {}, amount: {}", paymentId, amount, e);
             throw e;
@@ -139,10 +140,11 @@ public class RazorpayService {
     public JSONObject fetchRefund(String paymentId, String refundId) throws RazorpayException {
         try {
             log.info("Fetching refund details for refund: {}", refundId);
-            Payment payment = razorpayClient.payments.fetch(paymentId);
-            JSONObject refund = payment.fetchRefund(refundId);
+            // Fetch refund using the Razorpay client's refund API
+            com.razorpay.Refund refund = razorpayClient.payments.fetchRefund(paymentId, refundId);
+            JSONObject refundJson = refund.toJson();
             log.info("Refund details fetched successfully for: {}", refundId);
-            return refund;
+            return refundJson;
         } catch (RazorpayException e) {
             log.error("Failed to fetch refund details for: {}", refundId, e);
             throw e;
