@@ -14,19 +14,25 @@ import {
   Card,
   CardContent,
   Divider,
-  List,
-  ListItem,
-  ListItemText,
+  CircularProgress,
+  Button,
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
   TrendingUp as SalesIcon,
   Inventory as InventoryIcon,
   People as StaffIcon,
+  Assessment as AdvancedIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 import { CURRENCY } from '../../config/business-config';
+import {
+  useGetTodaySalesMetricsQuery,
+  useGetSalesTrendsQuery,
+  useGetStaffLeaderboardQuery,
+  useGetTopProductsQuery,
+} from '../../store/api/analyticsApi';
 
 /**
  * Reports Page (Manager Only)
@@ -36,6 +42,22 @@ const Reports: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.auth);
   const [activeTab, setActiveTab] = useState(0);
+
+  const storeId = 'store-001'; // TODO: Get from auth context
+
+  // Fetch real data from APIs
+  const { data: todayData, isLoading: loadingToday } = useGetTodaySalesMetricsQuery(storeId);
+  const { data: weekData, isLoading: loadingWeek } = useGetSalesTrendsQuery({ storeId, period: 'WEEKLY' });
+  const { data: monthData, isLoading: loadingMonth } = useGetSalesTrendsQuery({ storeId, period: 'MONTHLY' });
+  const { data: topProducts, isLoading: loadingProducts } = useGetTopProductsQuery({
+    storeId,
+    period: 'TODAY',
+    sortBy: 'REVENUE'
+  });
+  const { data: staffData, isLoading: loadingStaff } = useGetStaffLeaderboardQuery({
+    storeId,
+    period: 'TODAY'
+  });
 
   // Check if user is manager
   if (user?.type !== 'MANAGER') {
@@ -56,24 +78,7 @@ const Reports: React.FC = () => {
     );
   }
 
-  // TODO: Replace with real API data in Phase 4.5 Day 5
-  const mockData = {
-    sales: {
-      today: 15240,
-      week: 92400,
-      month: 385600,
-      topItems: [
-        { name: 'Butter Chicken', quantity: 45, revenue: 6750 },
-        { name: 'Paneer Tikka', quantity: 38, revenue: 5320 },
-        { name: 'Biryani', quantity: 32, revenue: 6400 },
-      ],
-    },
-    staff: [
-      { name: 'Raj Kumar', orders: 23, sales: 7890 },
-      { name: 'Priya Sharma', orders: 18, sales: 5640 },
-      { name: 'Amit Patel', orders: 6, sales: 1710 },
-    ],
-  };
+  const isLoading = loadingToday || loadingWeek || loadingMonth || loadingProducts || loadingStaff;
 
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
@@ -100,104 +105,179 @@ const Reports: React.FC = () => {
       </AppBar>
 
       <Container maxWidth="xl" sx={{ mt: 3, mb: 3 }}>
-        {/* Sales Tab */}
-        {activeTab === 0 && (
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
-              <Card>
-                <CardContent>
-                  <Typography color="text.secondary" gutterBottom>
-                    Today's Sales
-                  </Typography>
-                  <Typography variant="h4" component="div">
-                    {CURRENCY.format(mockData.sales.today)}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Card>
-                <CardContent>
-                  <Typography color="text.secondary" gutterBottom>
-                    This Week
-                  </Typography>
-                  <Typography variant="h4" component="div">
-                    {CURRENCY.format(mockData.sales.week)}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Card>
-                <CardContent>
-                  <Typography color="text.secondary" gutterBottom>
-                    This Month
-                  </Typography>
-                  <Typography variant="h4" component="div">
-                    {CURRENCY.format(mockData.sales.month)}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
+        {/* Loading State */}
+        {isLoading && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 400 }}>
+            <CircularProgress />
+          </Box>
+        )}
 
-            <Grid item xs={12}>
-              <Paper sx={{ p: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  Top Selling Items (Today)
-                </Typography>
-                <Divider sx={{ mb: 2 }} />
-                <List>
-                  {mockData.sales.topItems.map((item, index) => (
-                    <ListItem key={index}>
-                      <ListItemText
-                        primary={item.name}
-                        secondary={`${item.quantity} orders`}
-                      />
-                      <Typography variant="h6" color="primary">
-                        {CURRENCY.format(item.revenue)}
+        {!isLoading && (
+          <>
+            {/* Sales Tab */}
+            {activeTab === 0 && (
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={4}>
+                  <Card>
+                    <CardContent>
+                      <Typography color="text.secondary" gutterBottom>
+                        Today's Sales
                       </Typography>
-                    </ListItem>
-                  ))}
-                </List>
-              </Paper>
-            </Grid>
-          </Grid>
-        )}
+                      <Typography variant="h4" component="div">
+                        {CURRENCY.format(todayData?.todaySales || 0)}
+                      </Typography>
+                      <Typography variant="body2" color={todayData?.percentChangeFromYesterday && todayData.percentChangeFromYesterday >= 0 ? 'success.main' : 'error.main'}>
+                        {todayData?.percentChangeFromYesterday ? `${todayData.percentChangeFromYesterday >= 0 ? '+' : ''}${todayData.percentChangeFromYesterday.toFixed(1)}% vs yesterday` : ''}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Card>
+                    <CardContent>
+                      <Typography color="text.secondary" gutterBottom>
+                        This Week
+                      </Typography>
+                      <Typography variant="h4" component="div">
+                        {CURRENCY.format(weekData?.totalSales || 0)}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {weekData?.totalOrders || 0} orders
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Card>
+                    <CardContent>
+                      <Typography color="text.secondary" gutterBottom>
+                        This Month
+                      </Typography>
+                      <Typography variant="h4" component="div">
+                        {CURRENCY.format(monthData?.totalSales || 0)}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {monthData?.totalOrders || 0} orders
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
 
-        {/* Staff Performance Tab */}
-        {activeTab === 1 && (
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Staff Performance (Today)
-            </Typography>
-            <Divider sx={{ mb: 2 }} />
-            <List>
-              {mockData.staff.map((staff, index) => (
-                <ListItem key={index}>
-                  <ListItemText
-                    primary={staff.name}
-                    secondary={`${staff.orders} orders processed`}
-                  />
-                  <Typography variant="h6" color="primary">
-                    {CURRENCY.format(staff.sales)}
+                <Grid item xs={12}>
+                  <Paper sx={{ p: 3 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Typography variant="h6">
+                        Top Selling Items (Today)
+                      </Typography>
+                      <Button
+                        startIcon={<AdvancedIcon />}
+                        onClick={() => navigate('/manager/product-analytics')}
+                      >
+                        View Full Analytics
+                      </Button>
+                    </Box>
+                    <Divider sx={{ mb: 2 }} />
+                    {topProducts && topProducts.topProducts.length > 0 ? (
+                      <Grid container spacing={2}>
+                        {topProducts.topProducts.slice(0, 5).map((item) => (
+                          <Grid item xs={12} md={6} key={item.itemId}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
+                              <Box>
+                                <Typography variant="body1" fontWeight="medium">
+                                  {item.itemName}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  {item.quantitySold} sold
+                                </Typography>
+                              </Box>
+                              <Typography variant="h6" color="primary">
+                                {CURRENCY.format(item.revenue)}
+                              </Typography>
+                            </Box>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    ) : (
+                      <Typography color="text.secondary">No sales data available</Typography>
+                    )}
+                  </Paper>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    size="large"
+                    startIcon={<AdvancedIcon />}
+                    onClick={() => navigate('/manager/advanced-reports')}
+                  >
+                    View Advanced Reports (Charts & Trends)
+                  </Button>
+                </Grid>
+              </Grid>
+            )}
+
+            {/* Staff Performance Tab */}
+            {activeTab === 1 && (
+              <Paper sx={{ p: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6">
+                    Staff Performance (Today)
                   </Typography>
-                </ListItem>
-              ))}
-            </List>
-          </Paper>
-        )}
+                  <Button
+                    startIcon={<AdvancedIcon />}
+                    onClick={() => navigate('/manager/staff-leaderboard')}
+                  >
+                    View Full Leaderboard
+                  </Button>
+                </Box>
+                <Divider sx={{ mb: 2 }} />
+                {staffData && staffData.rankings.length > 0 ? (
+                  <Grid container spacing={2}>
+                    {staffData.rankings.slice(0, 5).map((staff, index) => (
+                      <Grid item xs={12} md={6} key={staff.staffId}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
+                          <Box>
+                            <Typography variant="body1" fontWeight="medium">
+                              #{index + 1} {staff.staffName}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {staff.ordersProcessed} orders processed
+                            </Typography>
+                          </Box>
+                          <Typography variant="h6" color="primary">
+                            {CURRENCY.format(staff.salesGenerated)}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    ))}
+                  </Grid>
+                ) : (
+                  <Typography color="text.secondary">No staff performance data available</Typography>
+                )}
+              </Paper>
+            )}
 
-        {/* Inventory Tab */}
-        {activeTab === 2 && (
-          <Paper sx={{ p: 4, textAlign: 'center' }}>
-            <InventoryIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h5" gutterBottom>
-              Inventory Management
-            </Typography>
-            <Typography color="text.secondary">
-              Inventory tracking coming in Phase 6
-            </Typography>
-          </Paper>
+            {/* Inventory Tab */}
+            {activeTab === 2 && (
+              <Paper sx={{ p: 4, textAlign: 'center' }}>
+                <InventoryIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+                <Typography variant="h5" gutterBottom>
+                  Inventory Management
+                </Typography>
+                <Typography color="text.secondary" sx={{ mb: 3 }}>
+                  Comprehensive inventory tracking available
+                </Typography>
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={() => navigate('/manager/inventory')}
+                >
+                  Go to Inventory Management
+                </Button>
+              </Paper>
+            )}
+          </>
         )}
       </Container>
     </Box>

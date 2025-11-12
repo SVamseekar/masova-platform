@@ -20,6 +20,7 @@ import {
   Home as AddressIcon,
 } from '@mui/icons-material';
 import { useCreateOrderMutation } from '../../../store/api/orderApi';
+import { useInitiatePaymentMutation, useVerifyPaymentMutation } from '../../../store/api/paymentApi';
 import { CURRENCY, calculateOrderTotal, isValidPhoneNumber } from '../../../config/business-config';
 
 interface CustomerPanelProps {
@@ -55,6 +56,8 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
   const [addressError, setAddressError] = useState('');
 
   const [createOrder, { isLoading: isSubmitting }] = useCreateOrderMutation();
+  const [initiatePayment] = useInitiatePaymentMutation();
+  const [verifyPayment] = useVerifyPaymentMutation();
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const total = calculateOrderTotal(subtotal, orderType);
@@ -135,7 +138,7 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
         orderType,
         items,
         paymentMethod,
-        paymentStatus: paymentMethod === 'CASH' ? 'PENDING' : 'PAID',
+        paymentStatus: paymentMethod === 'CASH' ? 'PENDING' : 'PENDING', // Will be updated after payment
         deliveryAddress: orderType === 'DELIVERY' ? deliveryAddress : null,
         tableNumber: orderType === 'DINE_IN' ? selectedTable : null,
         specialInstructions: items
@@ -146,19 +149,102 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
 
       const result = await createOrder(orderData).unwrap();
 
-      // Show success message
-      alert(`Order #${result.orderNumber} created successfully!`);
+      // For CASH payments, just complete the order
+      if (paymentMethod === 'CASH') {
+        alert(`Order #${result.orderNumber} created successfully! Payment: Cash on delivery/pickup`);
+        resetForm();
+        onOrderComplete();
+        return;
+      }
 
-      // Reset form
-      setCustomerName('');
-      setCustomerPhone('');
-      setDeliveryAddress('');
-      setPaymentMethod('CASH');
-      onOrderComplete();
+      // For online payments (CARD, UPI, WALLET), initiate Razorpay
+      await handleOnlinePayment(result.id, result.orderNumber);
     } catch (error: any) {
       console.error('Failed to create order:', error);
       alert(`Failed to create order: ${error.message || 'Unknown error'}`);
     }
+  };
+
+  const handleOnlinePayment = async (orderId: string, orderNumber: string) => {
+    try {
+      // Initiate payment with Razorpay
+      const paymentResponse = await initiatePayment({
+        orderId,
+        amount: total,
+        customerId: customer?.id || 'walk-in',
+        customerEmail: customer?.email || undefined,
+        customerPhone: customerPhone || undefined,
+        storeId: storeId!,
+        notes: `POS Order #${orderNumber}`,
+      }).unwrap();
+
+      // Load Razorpay script if not already loaded
+      if (!window.Razorpay) {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        document.body.appendChild(script);
+        await new Promise((resolve) => {
+          script.onload = resolve;
+        });
+      }
+
+      // Configure Razorpay options
+      const options = {
+        key: paymentResponse.razorpayKeyId,
+        amount: paymentResponse.amount,
+        currency: paymentResponse.currency,
+        name: 'MaSoVa Restaurant',
+        description: `Order #${orderNumber}`,
+        order_id: paymentResponse.razorpayOrderId,
+        handler: async (response: any) => {
+          try {
+            // Verify payment
+            await verifyPayment({
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+              paymentMethod: paymentMethod,
+            }).unwrap();
+
+            alert(`Order #${orderNumber} created and paid successfully!`);
+            resetForm();
+            onOrderComplete();
+          } catch (error: any) {
+            console.error('Payment verification failed:', error);
+            alert(`Payment verification failed: ${error.message || 'Unknown error'}\nOrder created but payment pending.`);
+          }
+        },
+        prefill: {
+          name: customerName || 'Customer',
+          contact: customerPhone || '',
+          email: customer?.email || '',
+        },
+        theme: {
+          color: '#1976d2',
+        },
+        modal: {
+          ondismiss: () => {
+            alert(`Payment cancelled. Order #${orderNumber} created but payment is pending.`);
+            onOrderComplete();
+          },
+        },
+      };
+
+      // Open Razorpay checkout
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (error: any) {
+      console.error('Failed to initiate payment:', error);
+      alert(`Failed to initiate payment: ${error.message || 'Unknown error'}\nPlease try again or use cash payment.`);
+    }
+  };
+
+  const resetForm = () => {
+    setCustomerName('');
+    setCustomerPhone('');
+    setDeliveryAddress('');
+    setPaymentMethod('CASH');
   };
 
   const canSubmit =

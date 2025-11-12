@@ -63,6 +63,74 @@ public class AnalyticsController {
     }
 
     /**
+     * Get sales trends (weekly or monthly)
+     * GET /api/analytics/sales/trends/{period}?storeId={storeId}
+     * @param period "WEEKLY" or "MONTHLY"
+     */
+    @GetMapping("/sales/trends/{period}")
+    public ResponseEntity<SalesTrendResponse> getSalesTrends(
+            @PathVariable String period,
+            @RequestParam(defaultValue = "store-001") String storeId) {
+        log.info("GET /api/analytics/sales/trends/{} for store {}", period, storeId);
+        SalesTrendResponse trends = analyticsService.getSalesTrends(storeId, period);
+        return ResponseEntity.ok(trends);
+    }
+
+    /**
+     * Get order type breakdown
+     * GET /api/analytics/sales/breakdown/order-type?storeId={storeId}
+     */
+    @GetMapping("/sales/breakdown/order-type")
+    public ResponseEntity<OrderTypeBreakdownResponse> getOrderTypeBreakdown(
+            @RequestParam(defaultValue = "store-001") String storeId) {
+        log.info("GET /api/analytics/sales/breakdown/order-type for store {}", storeId);
+        OrderTypeBreakdownResponse breakdown = analyticsService.getOrderTypeBreakdown(storeId);
+        return ResponseEntity.ok(breakdown);
+    }
+
+    /**
+     * Get peak hours analysis
+     * GET /api/analytics/sales/peak-hours?storeId={storeId}
+     */
+    @GetMapping("/sales/peak-hours")
+    public ResponseEntity<PeakHoursResponse> getPeakHours(
+            @RequestParam(defaultValue = "store-001") String storeId) {
+        log.info("GET /api/analytics/sales/peak-hours for store {}", storeId);
+        PeakHoursResponse peakHours = analyticsService.getPeakHours(storeId);
+        return ResponseEntity.ok(peakHours);
+    }
+
+    /**
+     * Get staff leaderboard
+     * GET /api/analytics/staff/leaderboard?storeId={storeId}&period={period}
+     * @param period "TODAY", "WEEK", or "MONTH"
+     */
+    @GetMapping("/staff/leaderboard")
+    public ResponseEntity<StaffLeaderboardResponse> getStaffLeaderboard(
+            @RequestParam(defaultValue = "store-001") String storeId,
+            @RequestParam(defaultValue = "TODAY") String period) {
+        log.info("GET /api/analytics/staff/leaderboard for store {}, period {}", storeId, period);
+        StaffLeaderboardResponse leaderboard = analyticsService.getStaffLeaderboard(storeId, period);
+        return ResponseEntity.ok(leaderboard);
+    }
+
+    /**
+     * Get top selling products
+     * GET /api/analytics/products/top-selling?storeId={storeId}&period={period}&sortBy={sortBy}
+     * @param period "TODAY", "WEEK", or "MONTH"
+     * @param sortBy "QUANTITY" or "REVENUE"
+     */
+    @GetMapping("/products/top-selling")
+    public ResponseEntity<TopProductsResponse> getTopProducts(
+            @RequestParam(defaultValue = "store-001") String storeId,
+            @RequestParam(defaultValue = "TODAY") String period,
+            @RequestParam(defaultValue = "QUANTITY") String sortBy) {
+        log.info("GET /api/analytics/products/top-selling for store {}, period {}, sortBy {}", storeId, period, sortBy);
+        TopProductsResponse topProducts = analyticsService.getTopProducts(storeId, period, sortBy);
+        return ResponseEntity.ok(topProducts);
+    }
+
+    /**
      * Health check endpoint
      */
     @GetMapping("/health")

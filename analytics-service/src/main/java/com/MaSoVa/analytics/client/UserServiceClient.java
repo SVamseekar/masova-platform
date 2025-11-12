@@ -60,4 +60,23 @@ public class UserServiceClient {
             return null;
         }
     }
+
+    /**
+     * Get all staff members by store
+     */
+    public List<Map<String, Object>> getStaffByStore(String storeId) {
+        try {
+            String url = userServiceUrl + "/api/users/staff/store/" + storeId;
+            ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<List<Map<String, Object>>>() {}
+            );
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Failed to fetch staff for store: {}", storeId, e);
+            return List.of();
+        }
+    }
 }
