@@ -13,6 +13,7 @@ const HomePage = React.lazy(() => import('./apps/PublicWebsite/HomePage'));
 const PromotionsPage = React.lazy(() => import('./apps/PublicWebsite/PromotionsPage'));
 const PublicMenuPage = React.lazy(() => import('./apps/PublicWebsite/PublicMenuPage'));
 const LoginPage = React.lazy(() => import('./pages/auth/LoginPage'));
+const CustomerLoginPage = React.lazy(() => import('./pages/auth/CustomerLoginPage'));
 const RegisterPage = React.lazy(() => import('./pages/auth/RegisterPage'));
 const CheckoutPage = React.lazy(() => import('./pages/checkout/CheckoutPage'));
 const GuestCheckoutPage = React.lazy(() => import('./pages/checkout/GuestCheckoutPage'));
@@ -68,6 +69,7 @@ const App: React.FC = () => {
 
                   {/* Authentication & Checkout Routes - Public */}
                   <Route path="/login" element={<LoginPage />} />
+                  <Route path="/customer-login" element={<CustomerLoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
                   <Route path="/checkout" element={<CheckoutPage />} />
                   <Route path="/guest-checkout" element={<GuestCheckoutPage />} />

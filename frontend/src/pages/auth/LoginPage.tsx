@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { Button, Card, Input } from '../../components/ui/neumorphic';
-import { colors, spacing, typography, shadows, borderRadius, breakpoints } from '../../styles/design-tokens';
+import { Button, Input } from '../../components/ui/neumorphic';
+import { colors, spacing, typography } from '../../styles/design-tokens';
 import { createNeumorphicSurface, createResponsive } from '../../styles/neumorphic-utils';
 import { useLoginMutation } from '../../store/api/authApi';
 import { useAppSelector } from '../../store/hooks';
@@ -18,17 +17,17 @@ interface DemoAccount {
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const [login, { isLoading, error: apiError }] = useLoginMutation();
+  const [login, { isLoading }] = useLoginMutation();
   const { isAuthenticated, user } = useAppSelector(state => state.auth);
   const [error, setError] = useState<string>('');
   const [activeDemo, setActiveDemo] = useState<string>('');
+
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated (staff login only)
   useEffect(() => {
     if (isAuthenticated && user) {
       const userType = user.type?.toLowerCase();
@@ -39,42 +38,34 @@ const LoginPage: React.FC = () => {
       } else if (userType?.includes('driver')) {
         navigate('/driver');
       } else if (userType?.includes('customer')) {
-        navigate('/customer-dashboard');
+        // Customers shouldn't use this login page, redirect to checkout
+        navigate('/checkout');
       } else {
-        // Fallback to home for unknown types
         navigate('/');
       }
     }
   }, [isAuthenticated, user, navigate]);
 
   const demoAccounts: DemoAccount[] = [
-    { 
-      type: 'Manager', 
-      email: 'manager@masova.com', 
+    {
+      type: 'Manager',
+      email: 'suresh.manager@masova.com',
       password: 'manager123',
       icon: '👨‍💼',
       description: 'Store Management Dashboard',
       route: '/manager'
     },
-    { 
-      type: 'Kitchen Staff', 
-      email: 'staff@masova.com', 
+    {
+      type: 'Kitchen Staff',
+      email: 'rahul.staff@masova.com',
       password: 'staff123',
       icon: '👨‍🍳',
       description: 'Kitchen Display System',
       route: '/kitchen'
     },
     {
-      type: 'Customer',
-      email: 'test@example.com',
-      password: 'password123',
-      icon: '👤',
-      description: 'Order Food Online',
-      route: '/customer-dashboard'
-    },
-    { 
-      type: 'Driver', 
-      email: 'driver@masova.com', 
+      type: 'Driver',
+      email: 'rajesh.driver@masova.com',
       password: 'driver123',
       icon: '🚚',
       description: 'Delivery Management',
@@ -296,6 +287,7 @@ const LoginPage: React.FC = () => {
     marginBottom: spacing[6],
   };
 
+  // Staff login UI
   return (
     <div style={containerStyles}>
       <div style={mainCardStyles}>
@@ -321,19 +313,19 @@ const LoginPage: React.FC = () => {
                     <span style={{ fontSize: '28px', marginBottom: spacing[2], display: 'block' }}>
                       {account.icon}
                     </span>
-                    <div style={{ 
-                      fontSize: typography.fontSize.sm, 
-                      fontWeight: typography.fontWeight.bold, 
+                    <div style={{
+                      fontSize: typography.fontSize.sm,
+                      fontWeight: typography.fontWeight.bold,
                       marginBottom: spacing[1],
                       textTransform: 'uppercase',
                       letterSpacing: typography.letterSpacing.wide,
                     }}>
                       {account.type}
                     </div>
-                    <div style={{ 
-                      fontSize: '11px', 
-                      opacity: 0.8, 
-                      lineHeight: typography.lineHeight.tight 
+                    <div style={{
+                      fontSize: '11px',
+                      opacity: 0.8,
+                      lineHeight: typography.lineHeight.tight
                     }}>
                       {account.description}
                     </div>
@@ -482,13 +474,13 @@ const LoginPage: React.FC = () => {
             transform: translateY(0) scale(1);
           }
         }
-        
+
         @media (max-width: 1024px) {
           .main-card {
             grid-template-columns: 1fr;
           }
         }
-        
+
         @media (max-width: 768px) {
           .container {
             padding: 15px;

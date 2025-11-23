@@ -246,7 +246,7 @@ const HomePage: React.FC = () => {
 
       {/* Hero Section */}
       <HeroSection
-        onOrderNow={() => navigate('/menu')}
+        onOrderNow={() => navigate('/checkout')}
         onBrowseMenu={() => navigate('/menu')}
       />
 
@@ -271,7 +271,7 @@ const HomePage: React.FC = () => {
             <PromotionCard
               key={promo.id}
               promotion={promo}
-              onOrderNow={() => navigate('/menu')}
+              onOrderNow={() => navigate('/checkout')}
             />
           ))}
         </div>
@@ -308,7 +308,7 @@ const HomePage: React.FC = () => {
             <Button
               variant="primary"
               size="xl"
-              onClick={() => navigate('/menu')}
+              onClick={() => navigate('/checkout')}
               style={{
                 minWidth: '200px',
                 boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.25)',

@@ -7,8 +7,14 @@ import {
   selectCartItemCount,
   selectDeliveryFee,
 } from '../../store/slices/cartSlice';
+import { selectCurrentUser } from '../../store/slices/authSlice';
+import {
+  useGetCustomerByUserIdQuery,
+  useAddAddressMutation,
+  CustomerAddress,
+} from '../../store/api/customerApi';
 import { Button, Card, Input } from '../../components/ui/neumorphic';
-import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
+import { colors, spacing, typography } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 
 interface GuestFormData {
@@ -22,6 +28,7 @@ interface GuestFormData {
   state: string;
   zipCode: string;
   specialInstructions: string;
+  addressLabel: string;
 }
 
 const GuestCheckoutPage: React.FC = () => {
@@ -30,26 +37,54 @@ const GuestCheckoutPage: React.FC = () => {
   const subtotal = useAppSelector(selectCartSubtotal);
   const itemCount = useAppSelector(selectCartItemCount);
   const deliveryFee = useAppSelector(selectDeliveryFee);
+  const currentUser = useAppSelector(selectCurrentUser);
 
+  const isLoggedIn = !!currentUser;
   const tax = subtotal * 0.05;
   const total = subtotal + (itemCount > 0 ? deliveryFee : 0) + tax;
 
+  // Fetch customer data for logged-in users
+  const { data: customerData, isLoading: isLoadingCustomer } = useGetCustomerByUserIdQuery(
+    currentUser?.id || '',
+    { skip: !isLoggedIn }
+  );
+
+  const [addAddress] = useAddAddressMutation();
+
+  // Address selection state
+  const [selectedAddressId, setSelectedAddressId] = useState<string | 'new'>('new');
+  const [saveNewAddress, setSaveNewAddress] = useState(true);
+
+  // Parse name into first and last name
+  const nameParts = currentUser?.name?.split(' ') || [];
+  const defaultFirstName = nameParts[0] || '';
+  const defaultLastName = nameParts.slice(1).join(' ') || '';
+
   const [formData, setFormData] = useState<GuestFormData>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
+    firstName: defaultFirstName,
+    lastName: defaultLastName,
+    email: currentUser?.email || '',
+    phone: currentUser?.phone || '',
     addressLine1: '',
     addressLine2: '',
     city: 'Hyderabad',
     state: 'Telangana',
     zipCode: '',
     specialInstructions: '',
+    addressLabel: 'HOME',
   });
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Partial<GuestFormData>>({});
+
+  // Set default address if customer has one
+  useEffect(() => {
+    if (customerData?.addresses && customerData.addresses.length > 0) {
+      const defaultAddr = customerData.addresses.find(a => a.isDefault) || customerData.addresses[0];
+      setSelectedAddressId(defaultAddr.id);
+    }
+  }, [customerData]);
 
   useEffect(() => {
     if (cartItems.length === 0) {
@@ -57,7 +92,7 @@ const GuestCheckoutPage: React.FC = () => {
     }
   }, [cartItems, navigate]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     setValidationErrors(prev => ({ ...prev, [name]: '' }));
@@ -66,6 +101,21 @@ const GuestCheckoutPage: React.FC = () => {
 
   const validateForm = (): boolean => {
     const errors: Partial<GuestFormData> = {};
+
+    // Always validate phone for logged-in users
+    if (isLoggedIn) {
+      if (!formData.phone.trim()) {
+        errors.phone = 'Phone number is required';
+      } else if (!/^[6-9][0-9]{9}$/.test(formData.phone.replace(/\s/g, ''))) {
+        errors.phone = 'Enter valid 10-digit Indian mobile number';
+      }
+    }
+
+    // If using saved address, skip other validation
+    if (isLoggedIn && selectedAddressId !== 'new') {
+      setValidationErrors(errors);
+      return Object.keys(errors).length === 0;
+    }
 
     if (!formData.firstName.trim()) errors.firstName = 'First name is required';
     if (!formData.lastName.trim()) errors.lastName = 'Last name is required';
@@ -76,8 +126,8 @@ const GuestCheckoutPage: React.FC = () => {
     }
     if (!formData.phone.trim()) {
       errors.phone = 'Phone number is required';
-    } else if (!/^[0-9]{10}$/.test(formData.phone.replace(/\s/g, ''))) {
-      errors.phone = 'Phone must be 10 digits';
+    } else if (!/^[6-9][0-9]{9}$/.test(formData.phone.replace(/\s/g, ''))) {
+      errors.phone = 'Enter valid 10-digit Indian mobile number';
     }
     if (!formData.addressLine1.trim()) errors.addressLine1 = 'Address is required';
     if (!formData.city.trim()) errors.city = 'City is required';
@@ -101,29 +151,71 @@ const GuestCheckoutPage: React.FC = () => {
     setLoading(true);
 
     try {
-      // Prepare guest info to pass to PaymentPage
-      const guestInfo = {
-        name: `${formData.firstName} ${formData.lastName}`,
-        email: formData.email,
-        phone: formData.phone,
-        street: `${formData.addressLine1}${formData.addressLine2 ? ', ' + formData.addressLine2 : ''}`,
-        city: formData.city,
-        state: formData.state,
-        pincode: formData.zipCode,
-        deliveryInstructions: formData.specialInstructions,
-      };
+      let guestInfo;
+
+      // If using a saved address
+      if (isLoggedIn && selectedAddressId !== 'new' && customerData?.addresses) {
+        const savedAddress = customerData.addresses.find(a => a.id === selectedAddressId);
+        if (savedAddress) {
+          guestInfo = {
+            name: currentUser?.name || '',
+            email: currentUser?.email || '',
+            phone: formData.phone, // Use phone from form (editable)
+            street: `${savedAddress.addressLine1}${savedAddress.addressLine2 ? ', ' + savedAddress.addressLine2 : ''}`,
+            city: savedAddress.city,
+            state: savedAddress.state,
+            pincode: savedAddress.postalCode,
+            deliveryInstructions: formData.specialInstructions,
+          };
+        }
+      } else {
+        // Using new address
+        guestInfo = {
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          phone: formData.phone,
+          street: `${formData.addressLine1}${formData.addressLine2 ? ', ' + formData.addressLine2 : ''}`,
+          city: formData.city,
+          state: formData.state,
+          pincode: formData.zipCode,
+          deliveryInstructions: formData.specialInstructions,
+        };
+
+        // Save new address for logged-in users if checkbox is checked
+        if (isLoggedIn && saveNewAddress && customerData?.id) {
+          try {
+            await addAddress({
+              customerId: customerData.id,
+              data: {
+                label: formData.addressLabel,
+                addressLine1: formData.addressLine1,
+                addressLine2: formData.addressLine2 || undefined,
+                city: formData.city,
+                state: formData.state,
+                postalCode: formData.zipCode,
+                isDefault: !customerData.addresses || customerData.addresses.length === 0,
+              },
+            }).unwrap();
+          } catch (err) {
+            console.error('Failed to save address:', err);
+            // Continue with checkout even if address save fails
+          }
+        }
+      }
 
       // Navigate to PaymentPage with guest info
       navigate('/payment', {
         state: { guestInfo }
       });
     } catch (err: any) {
-      console.error('Guest checkout error:', err);
+      console.error('Checkout error:', err);
       setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  const savedAddresses = customerData?.addresses || [];
 
   const containerStyles: React.CSSProperties = {
     minHeight: '100vh',
@@ -132,12 +224,34 @@ const GuestCheckoutPage: React.FC = () => {
     fontFamily: typography.fontFamily.primary,
   };
 
+  const addressCardStyles = (isSelected: boolean): React.CSSProperties => ({
+    ...createNeumorphicSurface(isSelected ? 'inset' : 'raised', 'base', 'lg'),
+    padding: spacing[4],
+    marginBottom: spacing[3],
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    backgroundColor: isSelected ? colors.brand.primaryLight + '20' : colors.surface.primary,
+    border: isSelected ? `2px solid ${colors.brand.primary}` : '2px solid transparent',
+  });
+
+  const labelBadgeStyles: React.CSSProperties = {
+    display: 'inline-block',
+    padding: `${spacing[1]} ${spacing[2]}`,
+    backgroundColor: colors.brand.primary,
+    color: colors.text.inverse,
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    borderRadius: '4px',
+    textTransform: 'uppercase',
+    marginBottom: spacing[2],
+  };
+
   return (
     <div style={containerStyles}>
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
         <div style={{ marginBottom: spacing[6] }}>
           <button
-            onClick={() => navigate('/checkout')}
+            onClick={() => navigate(isLoggedIn ? '/menu' : '/checkout')}
             style={{
               ...createNeumorphicSurface('raised', 'sm', 'base'),
               padding: spacing[2],
@@ -147,7 +261,7 @@ const GuestCheckoutPage: React.FC = () => {
               fontSize: typography.fontSize.lg,
             }}
           >
-            ← Back
+            ← {isLoggedIn ? 'Back to Menu' : 'Back'}
           </button>
           <h1 style={{
             fontSize: typography.fontSize['4xl'],
@@ -155,14 +269,18 @@ const GuestCheckoutPage: React.FC = () => {
             color: colors.text.primary,
             margin: `${spacing[4]} 0 ${spacing[2]} 0`,
           }}>
-            Guest Checkout
+            {isLoggedIn ? 'Delivery Details' : 'Guest Checkout'}
           </h1>
           <p style={{
             fontSize: typography.fontSize.lg,
             color: colors.text.secondary,
             margin: 0,
           }}>
-            Complete your order without creating an account
+            {isLoggedIn
+              ? (savedAddresses.length > 0
+                  ? 'Select a saved address or add a new one'
+                  : 'Enter your delivery address to complete your order')
+              : 'Complete your order without creating an account'}
           </p>
         </div>
 
@@ -184,58 +302,27 @@ const GuestCheckoutPage: React.FC = () => {
               </div>
             )}
 
+            {isLoadingCustomer && isLoggedIn && (
+              <div style={{ textAlign: 'center', padding: spacing[8] }}>
+                Loading your saved addresses...
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: spacing[6] }}>
-              {/* Contact Information */}
-              <div>
-                <h3 style={{
-                  fontSize: typography.fontSize.xl,
-                  fontWeight: typography.fontWeight.extrabold,
-                  color: colors.text.primary,
-                  margin: `0 0 ${spacing[4]} 0`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: spacing[2],
-                }}>
-                  <span>📞</span> Contact Information
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[4] }}>
-                    <Input
-                      label="First Name"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleChange}
-                      state={validationErrors.firstName ? 'error' : 'default'}
-                      helperText={validationErrors.firstName}
-                      disabled={loading}
-                      size="lg"
-                      required
-                    />
-                    <Input
-                      label="Last Name"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      state={validationErrors.lastName ? 'error' : 'default'}
-                      helperText={validationErrors.lastName}
-                      disabled={loading}
-                      size="lg"
-                      required
-                    />
-                  </div>
-                  <Input
-                    label="Email Address"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    state={validationErrors.email ? 'error' : 'default'}
-                    helperText={validationErrors.email || 'For order confirmation'}
-                    disabled={loading}
-                    size="lg"
-                    leftIcon="📧"
-                    required
-                  />
+              {/* Contact Phone - Always show for logged-in users */}
+              {isLoggedIn && (
+                <div>
+                  <h3 style={{
+                    fontSize: typography.fontSize.xl,
+                    fontWeight: typography.fontWeight.extrabold,
+                    color: colors.text.primary,
+                    margin: `0 0 ${spacing[4]} 0`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: spacing[2],
+                  }}>
+                    <span>📞</span> Contact Number
+                  </h3>
                   <Input
                     label="Phone Number"
                     name="phone"
@@ -250,112 +337,352 @@ const GuestCheckoutPage: React.FC = () => {
                     required
                   />
                 </div>
-              </div>
+              )}
 
-              <div style={{ height: '1px', backgroundColor: colors.surface.tertiary }} />
+              {/* Saved Addresses Section - Only for logged-in users */}
+              {isLoggedIn && savedAddresses.length > 0 && (
+                <div>
+                  <h3 style={{
+                    fontSize: typography.fontSize.xl,
+                    fontWeight: typography.fontWeight.extrabold,
+                    color: colors.text.primary,
+                    margin: `0 0 ${spacing[4]} 0`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: spacing[2],
+                  }}>
+                    <span>📍</span> Saved Addresses
+                  </h3>
 
-              {/* Delivery Address */}
-              <div>
-                <h3 style={{
-                  fontSize: typography.fontSize.xl,
-                  fontWeight: typography.fontWeight.extrabold,
-                  color: colors.text.primary,
-                  margin: `0 0 ${spacing[4]} 0`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: spacing[2],
-                }}>
-                  <span>📍</span> Delivery Address
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
-                  <Input
-                    label="Address Line 1"
-                    name="addressLine1"
-                    value={formData.addressLine1}
-                    onChange={handleChange}
-                    state={validationErrors.addressLine1 ? 'error' : 'default'}
-                    helperText={validationErrors.addressLine1 || 'House/Flat number, Building name'}
-                    disabled={loading}
-                    size="lg"
-                    required
-                  />
-                  <Input
-                    label="Address Line 2"
-                    name="addressLine2"
-                    value={formData.addressLine2}
-                    onChange={handleChange}
-                    helperText="Street, Area, Landmark (optional)"
-                    disabled={loading}
-                    size="lg"
-                  />
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[4] }}>
-                    <Input
-                      label="City"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleChange}
-                      state={validationErrors.city ? 'error' : 'default'}
-                      helperText={validationErrors.city}
-                      disabled={loading}
-                      size="lg"
-                      required
-                    />
-                    <Input
-                      label="State"
-                      name="state"
-                      value={formData.state}
-                      onChange={handleChange}
-                      state={validationErrors.state ? 'error' : 'default'}
-                      helperText={validationErrors.state}
-                      disabled={loading}
-                      size="lg"
-                      required
-                    />
-                  </div>
-                  <Input
-                    label="ZIP Code"
-                    name="zipCode"
-                    value={formData.zipCode}
-                    onChange={handleChange}
-                    state={validationErrors.zipCode ? 'error' : 'default'}
-                    helperText={validationErrors.zipCode}
-                    placeholder="6-digit PIN code"
-                    disabled={loading}
-                    size="lg"
-                    required
-                  />
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      fontSize: typography.fontSize.sm,
-                      fontWeight: typography.fontWeight.semibold,
-                      color: colors.text.secondary,
-                      marginBottom: spacing[2],
-                      textTransform: 'uppercase',
-                      letterSpacing: typography.letterSpacing.wide,
-                    }}>
-                      Special Instructions (Optional)
-                    </label>
-                    <textarea
-                      name="specialInstructions"
-                      value={formData.specialInstructions}
-                      onChange={handleChange}
-                      placeholder="Any special delivery instructions..."
-                      disabled={loading}
-                      rows={3}
-                      style={{
-                        ...createNeumorphicSurface('inset', 'base', 'md'),
-                        width: '100%',
-                        fontFamily: 'inherit',
-                        fontSize: typography.fontSize.base,
-                        fontWeight: 500,
-                        color: colors.text.primary,
-                        padding: `${spacing[3]} ${spacing[4]}`,
-                        resize: 'vertical',
-                      }}
-                    />
+                  {savedAddresses.map((addr: CustomerAddress) => (
+                    <div
+                      key={addr.id}
+                      style={addressCardStyles(selectedAddressId === addr.id)}
+                      onClick={() => setSelectedAddressId(addr.id)}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <span style={labelBadgeStyles}>
+                            {addr.label} {addr.isDefault && '(Default)'}
+                          </span>
+                          <div style={{
+                            fontSize: typography.fontSize.base,
+                            color: colors.text.primary,
+                            fontWeight: typography.fontWeight.medium,
+                          }}>
+                            {addr.addressLine1}
+                            {addr.addressLine2 && `, ${addr.addressLine2}`}
+                          </div>
+                          <div style={{
+                            fontSize: typography.fontSize.sm,
+                            color: colors.text.secondary,
+                            marginTop: spacing[1],
+                          }}>
+                            {addr.city}, {addr.state} - {addr.postalCode}
+                          </div>
+                          {addr.landmark && (
+                            <div style={{
+                              fontSize: typography.fontSize.xs,
+                              color: colors.text.tertiary,
+                              marginTop: spacing[1],
+                            }}>
+                              Landmark: {addr.landmark}
+                            </div>
+                          )}
+                        </div>
+                        <div style={{
+                          width: '24px',
+                          height: '24px',
+                          borderRadius: '50%',
+                          border: `2px solid ${selectedAddressId === addr.id ? colors.brand.primary : colors.surface.tertiary}`,
+                          backgroundColor: selectedAddressId === addr.id ? colors.brand.primary : 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}>
+                          {selectedAddressId === addr.id && (
+                            <span style={{ color: colors.text.inverse, fontSize: '14px' }}>✓</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Add New Address Option */}
+                  <div
+                    style={addressCardStyles(selectedAddressId === 'new')}
+                    onClick={() => setSelectedAddressId('new')}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3] }}>
+                      <span style={{ fontSize: '24px' }}>➕</span>
+                      <div>
+                        <div style={{
+                          fontSize: typography.fontSize.base,
+                          fontWeight: typography.fontWeight.semibold,
+                          color: colors.text.primary,
+                        }}>
+                          Use a New Address
+                        </div>
+                        <div style={{
+                          fontSize: typography.fontSize.sm,
+                          color: colors.text.secondary,
+                        }}>
+                          Enter a different delivery address
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
+              )}
+
+              {/* New Address Form - Show if guest or if "new" is selected */}
+              {(!isLoggedIn || selectedAddressId === 'new') && (
+                <>
+                  {/* Contact Information - Only for guests */}
+                  {!isLoggedIn && (
+                    <>
+                      <div>
+                        <h3 style={{
+                          fontSize: typography.fontSize.xl,
+                          fontWeight: typography.fontWeight.extrabold,
+                          color: colors.text.primary,
+                          margin: `0 0 ${spacing[4]} 0`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: spacing[2],
+                        }}>
+                          <span>📞</span> Contact Information
+                        </h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[4] }}>
+                            <Input
+                              label="First Name"
+                              name="firstName"
+                              value={formData.firstName}
+                              onChange={handleChange}
+                              state={validationErrors.firstName ? 'error' : 'default'}
+                              helperText={validationErrors.firstName}
+                              disabled={loading}
+                              size="lg"
+                              required
+                            />
+                            <Input
+                              label="Last Name"
+                              name="lastName"
+                              value={formData.lastName}
+                              onChange={handleChange}
+                              state={validationErrors.lastName ? 'error' : 'default'}
+                              helperText={validationErrors.lastName}
+                              disabled={loading}
+                              size="lg"
+                              required
+                            />
+                          </div>
+                          <Input
+                            label="Email Address"
+                            name="email"
+                            type="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            state={validationErrors.email ? 'error' : 'default'}
+                            helperText={validationErrors.email || 'For order confirmation'}
+                            disabled={loading}
+                            size="lg"
+                            leftIcon="📧"
+                            required
+                          />
+                          <Input
+                            label="Phone Number"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleChange}
+                            state={validationErrors.phone ? 'error' : 'default'}
+                            helperText={validationErrors.phone || 'For delivery updates'}
+                            placeholder="10-digit mobile number"
+                            disabled={loading}
+                            size="lg"
+                            leftIcon="📱"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div style={{ height: '1px', backgroundColor: colors.surface.tertiary }} />
+                    </>
+                  )}
+
+                  {/* Delivery Address */}
+                  <div>
+                    <h3 style={{
+                      fontSize: typography.fontSize.xl,
+                      fontWeight: typography.fontWeight.extrabold,
+                      color: colors.text.primary,
+                      margin: `0 0 ${spacing[4]} 0`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: spacing[2],
+                    }}>
+                      <span>📍</span> {isLoggedIn ? 'New Address' : 'Delivery Address'}
+                    </h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
+                      {/* Address Label - Only for logged-in users */}
+                      {isLoggedIn && (
+                        <div>
+                          <label style={{
+                            display: 'block',
+                            fontSize: typography.fontSize.sm,
+                            fontWeight: typography.fontWeight.semibold,
+                            color: colors.text.secondary,
+                            marginBottom: spacing[2],
+                            textTransform: 'uppercase',
+                            letterSpacing: typography.letterSpacing.wide,
+                          }}>
+                            Address Label
+                          </label>
+                          <select
+                            name="addressLabel"
+                            value={formData.addressLabel}
+                            onChange={handleChange}
+                            style={{
+                              ...createNeumorphicSurface('inset', 'base', 'md'),
+                              width: '100%',
+                              padding: `${spacing[3]} ${spacing[4]}`,
+                              fontSize: typography.fontSize.base,
+                              fontWeight: typography.fontWeight.medium,
+                              color: colors.text.primary,
+                              border: 'none',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <option value="HOME">Home</option>
+                            <option value="WORK">Work</option>
+                            <option value="OTHER">Other</option>
+                          </select>
+                        </div>
+                      )}
+
+                      <Input
+                        label="Address Line 1"
+                        name="addressLine1"
+                        value={formData.addressLine1}
+                        onChange={handleChange}
+                        state={validationErrors.addressLine1 ? 'error' : 'default'}
+                        helperText={validationErrors.addressLine1 || 'House/Flat number, Building name'}
+                        disabled={loading}
+                        size="lg"
+                        required
+                      />
+                      <Input
+                        label="Address Line 2"
+                        name="addressLine2"
+                        value={formData.addressLine2}
+                        onChange={handleChange}
+                        helperText="Street, Area, Landmark (optional)"
+                        disabled={loading}
+                        size="lg"
+                      />
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[4] }}>
+                        <Input
+                          label="City"
+                          name="city"
+                          value={formData.city}
+                          onChange={handleChange}
+                          state={validationErrors.city ? 'error' : 'default'}
+                          helperText={validationErrors.city}
+                          disabled={loading}
+                          size="lg"
+                          required
+                        />
+                        <Input
+                          label="State"
+                          name="state"
+                          value={formData.state}
+                          onChange={handleChange}
+                          state={validationErrors.state ? 'error' : 'default'}
+                          helperText={validationErrors.state}
+                          disabled={loading}
+                          size="lg"
+                          required
+                        />
+                      </div>
+                      <Input
+                        label="ZIP Code"
+                        name="zipCode"
+                        value={formData.zipCode}
+                        onChange={handleChange}
+                        state={validationErrors.zipCode ? 'error' : 'default'}
+                        helperText={validationErrors.zipCode}
+                        placeholder="6-digit PIN code"
+                        disabled={loading}
+                        size="lg"
+                        required
+                      />
+
+                      {/* Save Address Checkbox - Only for logged-in users */}
+                      {isLoggedIn && (
+                        <label style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: spacing[3],
+                          cursor: 'pointer',
+                          padding: spacing[3],
+                          backgroundColor: colors.surface.secondary,
+                          borderRadius: '8px',
+                        }}>
+                          <input
+                            type="checkbox"
+                            checked={saveNewAddress}
+                            onChange={(e) => setSaveNewAddress(e.target.checked)}
+                            style={{
+                              width: '20px',
+                              height: '20px',
+                              cursor: 'pointer',
+                            }}
+                          />
+                          <span style={{
+                            fontSize: typography.fontSize.sm,
+                            color: colors.text.primary,
+                            fontWeight: typography.fontWeight.medium,
+                          }}>
+                            Save this address for future orders
+                          </span>
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Special Instructions - Always show */}
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: typography.fontSize.sm,
+                  fontWeight: typography.fontWeight.semibold,
+                  color: colors.text.secondary,
+                  marginBottom: spacing[2],
+                  textTransform: 'uppercase',
+                  letterSpacing: typography.letterSpacing.wide,
+                }}>
+                  Special Instructions (Optional)
+                </label>
+                <textarea
+                  name="specialInstructions"
+                  value={formData.specialInstructions}
+                  onChange={handleChange}
+                  placeholder="Any special delivery instructions..."
+                  disabled={loading}
+                  rows={3}
+                  style={{
+                    ...createNeumorphicSurface('inset', 'base', 'md'),
+                    width: '100%',
+                    fontFamily: 'inherit',
+                    fontSize: typography.fontSize.base,
+                    fontWeight: 500,
+                    color: colors.text.primary,
+                    padding: `${spacing[3]} ${spacing[4]}`,
+                    resize: 'vertical',
+                  }}
+                />
               </div>
 
               <Button
@@ -364,7 +691,7 @@ const GuestCheckoutPage: React.FC = () => {
                 size="xl"
                 fullWidth
                 isLoading={loading}
-                disabled={loading}
+                disabled={loading || isLoadingCustomer}
               >
                 Proceed to Payment
               </Button>

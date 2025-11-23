@@ -59,8 +59,8 @@ const RegisterPage: React.FC = () => {
     }
     if (!formData.phone.trim()) {
       errors.phone = 'Phone number is required';
-    } else if (!/^[0-9]{10}$/.test(formData.phone.replace(/\s/g, ''))) {
-      errors.phone = 'Phone must be 10 digits';
+    } else if (!/^[6-9][0-9]{9}$/.test(formData.phone.replace(/\s/g, ''))) {
+      errors.phone = 'Enter valid 10-digit Indian mobile number';
     }
     if (!formData.password) {
       errors.password = 'Password is required';
@@ -85,17 +85,15 @@ const RegisterPage: React.FC = () => {
 
     try {
       const response = await axios.post('http://localhost:8080/api/users/register', {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
         email: formData.email,
         phone: formData.phone,
         password: formData.password,
         type: 'CUSTOMER',
-        active: true,
       });
 
       if (response.data) {
-        navigate('/login', {
+        navigate('/customer-login', {
           state: {
             from: from,
             email: formData.email,
@@ -285,7 +283,7 @@ const RegisterPage: React.FC = () => {
             }}>
               Already have an account?{' '}
               <button
-                onClick={() => navigate('/login', { state: { from } })}
+                onClick={() => navigate('/customer-login', { state: { from } })}
                 style={{
                   background: 'none',
                   border: 'none',

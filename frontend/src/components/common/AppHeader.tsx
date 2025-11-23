@@ -29,8 +29,10 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   const cartItemCount = useAppSelector(selectCartItemCount);
 
   const handleLogout = () => {
+    const isCustomer = currentUser?.type?.toLowerCase() === 'customer';
     dispatch(logout());
-    navigate('/login');
+    // Customers go to home, staff go to login
+    navigate(isCustomer ? '/' : '/login');
   };
 
   const handleBack = () => {
@@ -224,13 +226,61 @@ const AppHeader: React.FC<AppHeaderProps> = ({
                 </span>
               )}
             </button>
+
+            {/* User info and logout for logged-in customers on public pages */}
+            {currentUser ? (
+              <>
+                <div style={{
+                  ...userInfoStyles,
+                  borderLeft: `1px solid ${colors.surface.tertiary}`,
+                  paddingLeft: spacing[4],
+                  marginLeft: spacing[2],
+                }}>
+                  <span style={userNameStyles}>👤 {currentUser.name}</span>
+                  <span style={userRoleStyles}>{currentUser.type}</span>
+                </div>
+                <button
+                  style={logoutButtonStyles}
+                  onClick={handleLogout}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = shadows.raised.lg;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = shadows.raised.base;
+                  }}
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <button
+                style={{
+                  ...buttonStyles,
+                  background: `linear-gradient(135deg, ${colors.brand.secondary} 0%, ${colors.brand.secondaryLight} 100%)`,
+                  color: colors.text.inverse,
+                }}
+                onClick={() => navigate('/checkout')}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = shadows.raised.lg;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = shadows.raised.base;
+                }}
+              >
+                👤 Login
+              </button>
+            )}
           </>
         ) : (
           <>
             {currentUser && (
               <div style={userInfoStyles}>
                 <span style={userNameStyles}>{currentUser.name}</span>
-                <span style={userRoleStyles}>{currentUser.userType}</span>
+                <span style={userRoleStyles}>{currentUser.type}</span>
               </div>
             )}
 

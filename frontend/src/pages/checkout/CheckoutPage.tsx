@@ -22,10 +22,10 @@ const CheckoutPage: React.FC = () => {
   const tax = subtotal * 0.05;
   const total = subtotal + (itemCount > 0 ? deliveryFee : 0) + tax;
 
-  // If already authenticated, redirect to customer dashboard payment
+  // If already authenticated, redirect to delivery info page
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/customer/payment');
+      navigate('/guest-checkout');
     }
   }, [isAuthenticated, navigate]);
 
@@ -50,7 +50,7 @@ const CheckoutPage: React.FC = () => {
       ],
       buttonText: 'Login to Continue',
       buttonVariant: 'primary' as const,
-      action: () => navigate('/login', { state: { from: '/checkout' } }),
+      action: () => navigate('/customer-login', { state: { from: '/checkout' } }),
     },
     {
       id: 'register',

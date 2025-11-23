@@ -202,7 +202,7 @@ const PromotionsPage: React.FC = () => {
                 <Grid item xs={12} sm={6} md={4} key={promo.id}>
                   <PromotionCard
                     promotion={promo}
-                    onOrderNow={() => navigate('/menu')}
+                    onOrderNow={() => navigate('/checkout')}
                   />
                 </Grid>
               ))}
