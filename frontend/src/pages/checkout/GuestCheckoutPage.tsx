@@ -78,13 +78,46 @@ const GuestCheckoutPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Partial<GuestFormData>>({});
 
-  // Set default address if customer has one
+  // Set default address if customer has one - filter to only include addresses with IDs and addressLine1
   useEffect(() => {
     if (customerData?.addresses && customerData.addresses.length > 0) {
-      const defaultAddr = customerData.addresses.find(a => a.isDefault) || customerData.addresses[0];
-      setSelectedAddressId(defaultAddr.id);
+      // Filter addresses that have both ID and addressLine1 (complete addresses)
+      const validAddresses = customerData.addresses.filter(a => a.id && a.addressLine1);
+      if (validAddresses.length > 0) {
+        const defaultAddr = validAddresses.find(a => a.isDefault) || validAddresses[0];
+        setSelectedAddressId(defaultAddr.id);
+      }
     }
   }, [customerData]);
+
+  // Populate form fields when a saved address is selected
+  useEffect(() => {
+    if (selectedAddressId && selectedAddressId !== 'new' && customerData?.addresses) {
+      const selectedAddress = customerData.addresses.find(a => a.id === selectedAddressId);
+      if (selectedAddress) {
+        setFormData(prev => ({
+          ...prev,
+          addressLine1: selectedAddress.addressLine1 || '',
+          addressLine2: selectedAddress.addressLine2 || '',
+          city: selectedAddress.city || '',
+          state: selectedAddress.state || '',
+          zipCode: selectedAddress.postalCode || '',
+          addressLabel: selectedAddress.label || 'HOME',
+        }));
+      }
+    } else if (selectedAddressId === 'new') {
+      // Reset address fields when "new" is selected
+      setFormData(prev => ({
+        ...prev,
+        addressLine1: '',
+        addressLine2: '',
+        city: 'Hyderabad',
+        state: 'Telangana',
+        zipCode: '',
+        addressLabel: 'HOME',
+      }));
+    }
+  }, [selectedAddressId, customerData?.addresses]);
 
   useEffect(() => {
     if (cartItems.length === 0) {
@@ -215,7 +248,8 @@ const GuestCheckoutPage: React.FC = () => {
     }
   };
 
-  const savedAddresses = customerData?.addresses || [];
+  // Filter to only show complete addresses (with ID and addressLine1)
+  const savedAddresses = (customerData?.addresses || []).filter(a => a.id && a.addressLine1);
 
   const containerStyles: React.CSSProperties = {
     minHeight: '100vh',

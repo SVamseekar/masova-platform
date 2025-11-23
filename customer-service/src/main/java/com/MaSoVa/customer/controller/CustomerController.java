@@ -56,7 +56,7 @@ public class CustomerController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get customer by ID")
-    public ResponseEntity<?> getCustomerById(@PathVariable String id) {
+    public ResponseEntity<?> getCustomerById(@PathVariable("id") String id) {
         try {
             Customer customer = customerService.getCustomerById(id)
                     .orElseThrow(() -> new NoSuchElementException("Customer not found"));
@@ -68,7 +68,7 @@ public class CustomerController {
 
     @GetMapping("/user/{userId}")
     @Operation(summary = "Get customer by user ID")
-    public ResponseEntity<?> getCustomerByUserId(@PathVariable String userId) {
+    public ResponseEntity<?> getCustomerByUserId(@PathVariable("userId") String userId) {
         try {
             Customer customer = customerService.getCustomerByUserId(userId)
                     .orElseThrow(() -> new NoSuchElementException("Customer not found"));
@@ -80,7 +80,7 @@ public class CustomerController {
 
     @GetMapping("/email/{email}")
     @Operation(summary = "Get customer by email")
-    public ResponseEntity<?> getCustomerByEmail(@PathVariable String email) {
+    public ResponseEntity<?> getCustomerByEmail(@PathVariable("email") String email) {
         try {
             Customer customer = customerService.getCustomerByEmail(email)
                     .orElseThrow(() -> new NoSuchElementException("Customer not found"));
@@ -92,7 +92,7 @@ public class CustomerController {
 
     @GetMapping("/phone/{phone}")
     @Operation(summary = "Get customer by phone")
-    public ResponseEntity<?> getCustomerByPhone(@PathVariable String phone) {
+    public ResponseEntity<?> getCustomerByPhone(@PathVariable("phone") String phone) {
         try {
             Customer customer = customerService.getCustomerByPhone(phone)
                     .orElseThrow(() -> new NoSuchElementException("Customer not found"));
@@ -133,7 +133,7 @@ public class CustomerController {
     @PutMapping("/{id}")
     @Operation(summary = "Update customer profile")
     public ResponseEntity<?> updateCustomer(
-            @PathVariable String id,
+            @PathVariable("id") String id,
             @Valid @RequestBody UpdateCustomerRequest request) {
         try {
             Customer updated = customerService.updateCustomer(id, request);
@@ -151,7 +151,7 @@ public class CustomerController {
 
     @PatchMapping("/{id}/deactivate")
     @Operation(summary = "Deactivate customer")
-    public ResponseEntity<?> deactivateCustomer(@PathVariable String id) {
+    public ResponseEntity<?> deactivateCustomer(@PathVariable("id") String id) {
         try {
             Customer customer = customerService.deactivateCustomer(id);
             return ResponseEntity.ok(customer);
@@ -162,7 +162,7 @@ public class CustomerController {
 
     @PatchMapping("/{id}/activate")
     @Operation(summary = "Activate customer")
-    public ResponseEntity<?> activateCustomer(@PathVariable String id) {
+    public ResponseEntity<?> activateCustomer(@PathVariable("id") String id) {
         try {
             Customer customer = customerService.activateCustomer(id);
             return ResponseEntity.ok(customer);
@@ -178,7 +178,7 @@ public class CustomerController {
     @PostMapping("/{id}/addresses")
     @Operation(summary = "Add address to customer")
     public ResponseEntity<?> addAddress(
-            @PathVariable String id,
+            @PathVariable("id") String id,
             @Valid @RequestBody AddAddressRequest request) {
         try {
             Customer customer = customerService.addAddress(id, request);
@@ -191,8 +191,8 @@ public class CustomerController {
     @DeleteMapping("/{customerId}/addresses/{addressId}")
     @Operation(summary = "Remove address from customer")
     public ResponseEntity<?> removeAddress(
-            @PathVariable String customerId,
-            @PathVariable String addressId) {
+            @PathVariable("customerId") String customerId,
+            @PathVariable("addressId") String addressId) {
         try {
             Customer customer = customerService.removeAddress(customerId, addressId);
             return ResponseEntity.ok(customer);
@@ -204,8 +204,8 @@ public class CustomerController {
     @PatchMapping("/{customerId}/addresses/{addressId}/set-default")
     @Operation(summary = "Set default address")
     public ResponseEntity<?> setDefaultAddress(
-            @PathVariable String customerId,
-            @PathVariable String addressId) {
+            @PathVariable("customerId") String customerId,
+            @PathVariable("addressId") String addressId) {
         try {
             Customer customer = customerService.setDefaultAddress(customerId, addressId);
             return ResponseEntity.ok(customer);
@@ -221,7 +221,7 @@ public class CustomerController {
     @PostMapping("/{id}/loyalty/points")
     @Operation(summary = "Add or redeem loyalty points")
     public ResponseEntity<?> addLoyaltyPoints(
-            @PathVariable String id,
+            @PathVariable("id") String id,
             @Valid @RequestBody AddLoyaltyPointsRequest request) {
         try {
             Customer customer = customerService.addLoyaltyPoints(id, request);
@@ -233,7 +233,7 @@ public class CustomerController {
 
     @GetMapping("/loyalty/tier/{tier}")
     @Operation(summary = "Get customers by loyalty tier")
-    public ResponseEntity<List<Customer>> getCustomersByTier(@PathVariable String tier) {
+    public ResponseEntity<List<Customer>> getCustomersByTier(@PathVariable("tier") String tier) {
         List<Customer> customers = customerService.getCustomersByLoyaltyTier(tier.toUpperCase());
         return ResponseEntity.ok(customers);
     }
@@ -245,7 +245,7 @@ public class CustomerController {
     @PutMapping("/{id}/preferences")
     @Operation(summary = "Update customer preferences")
     public ResponseEntity<?> updatePreferences(
-            @PathVariable String id,
+            @PathVariable("id") String id,
             @Valid @RequestBody UpdatePreferencesRequest request) {
         try {
             Customer customer = customerService.updatePreferences(id, request);
@@ -262,7 +262,7 @@ public class CustomerController {
     @PostMapping("/{id}/order-stats")
     @Operation(summary = "Update order statistics", description = "Called by Order Service after order completion")
     public ResponseEntity<?> updateOrderStats(
-            @PathVariable String id,
+            @PathVariable("id") String id,
             @Valid @RequestBody UpdateOrderStatsRequest request) {
         try {
             Customer customer = customerService.updateOrderStats(id, request);
@@ -279,7 +279,7 @@ public class CustomerController {
     @PostMapping("/{id}/notes")
     @Operation(summary = "Add note to customer profile")
     public ResponseEntity<?> addNote(
-            @PathVariable String id,
+            @PathVariable("id") String id,
             @Valid @RequestBody AddCustomerNoteRequest request) {
         try {
             Customer customer = customerService.addNote(id, request);
@@ -295,7 +295,7 @@ public class CustomerController {
 
     @PatchMapping("/{id}/verify-email")
     @Operation(summary = "Mark email as verified")
-    public ResponseEntity<?> verifyEmail(@PathVariable String id) {
+    public ResponseEntity<?> verifyEmail(@PathVariable("id") String id) {
         try {
             Customer customer = customerService.verifyEmail(id);
             return ResponseEntity.ok(customer);
@@ -306,7 +306,7 @@ public class CustomerController {
 
     @PatchMapping("/{id}/verify-phone")
     @Operation(summary = "Mark phone as verified")
-    public ResponseEntity<?> verifyPhone(@PathVariable String id) {
+    public ResponseEntity<?> verifyPhone(@PathVariable("id") String id) {
         try {
             Customer customer = customerService.verifyPhone(id);
             return ResponseEntity.ok(customer);
@@ -322,7 +322,7 @@ public class CustomerController {
     @PostMapping("/{id}/tags")
     @Operation(summary = "Add tags to customer")
     public ResponseEntity<?> addTags(
-            @PathVariable String id,
+            @PathVariable("id") String id,
             @RequestBody Set<String> tags) {
         try {
             Customer customer = customerService.addTags(id, tags);
@@ -335,7 +335,7 @@ public class CustomerController {
     @DeleteMapping("/{id}/tags")
     @Operation(summary = "Remove tags from customer")
     public ResponseEntity<?> removeTags(
-            @PathVariable String id,
+            @PathVariable("id") String id,
             @RequestBody Set<String> tags) {
         try {
             Customer customer = customerService.removeTags(id, tags);
@@ -426,7 +426,7 @@ public class CustomerController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete customer", description = "Permanently delete customer (use with caution)")
-    public ResponseEntity<?> deleteCustomer(@PathVariable String id) {
+    public ResponseEntity<?> deleteCustomer(@PathVariable("id") String id) {
         try {
             customerService.deleteCustomer(id);
             return ResponseEntity.ok(new MessageResponse("Customer deleted successfully"));

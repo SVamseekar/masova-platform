@@ -102,13 +102,13 @@ public class CustomerService {
     // READ
     // ===========================
 
-    @Cacheable(value = "customers", key = "#id")
+    @Cacheable(value = "customers", key = "#p0")
     public Optional<Customer> getCustomerById(String id) {
         logger.debug("Fetching customer by ID: {}", id);
         return customerRepository.findById(id);
     }
 
-    @Cacheable(value = "customers", key = "'userId:' + #userId")
+    @Cacheable(value = "customers", key = "'userId:' + #p0")
     public Optional<Customer> getCustomerByUserId(String userId) {
         logger.debug("Fetching customer by userId: {}", userId);
         return customerRepository.findByUserId(userId);
@@ -141,7 +141,7 @@ public class CustomerService {
     // UPDATE
     // ===========================
 
-    @CacheEvict(value = "customers", key = "#id")
+    @CacheEvict(value = "customers", key = "#p0")
     public Customer updateCustomer(String id, UpdateCustomerRequest request) {
         logger.info("Updating customer: {}", id);
 
@@ -181,7 +181,7 @@ public class CustomerService {
         return customerRepository.save(customer);
     }
 
-    @CacheEvict(value = "customers", key = "#id")
+    @CacheEvict(value = "customers", key = "#p0")
     public Customer deactivateCustomer(String id) {
         logger.info("Deactivating customer: {}", id);
         Customer customer = customerRepository.findById(id)
@@ -190,7 +190,7 @@ public class CustomerService {
         return customerRepository.save(customer);
     }
 
-    @CacheEvict(value = "customers", key = "#id")
+    @CacheEvict(value = "customers", key = "#p0")
     public Customer activateCustomer(String id) {
         logger.info("Activating customer: {}", id);
         Customer customer = customerRepository.findById(id)
@@ -203,7 +203,7 @@ public class CustomerService {
     // ADDRESS MANAGEMENT
     // ===========================
 
-    @CacheEvict(value = "customers", key = "#customerId")
+    @CacheEvict(value = "customers", key = "#p0")
     public Customer addAddress(String customerId, AddAddressRequest request) {
         logger.info("Adding address for customer: {}", customerId);
 
@@ -236,7 +236,7 @@ public class CustomerService {
         return customerRepository.save(customer);
     }
 
-    @CacheEvict(value = "customers", key = "#customerId")
+    @CacheEvict(value = "customers", key = "#p0")
     public Customer removeAddress(String customerId, String addressId) {
         logger.info("Removing address {} for customer: {}", addressId, customerId);
 
@@ -256,7 +256,7 @@ public class CustomerService {
         return customerRepository.save(customer);
     }
 
-    @CacheEvict(value = "customers", key = "#customerId")
+    @CacheEvict(value = "customers", key = "#p0")
     public Customer setDefaultAddress(String customerId, String addressId) {
         logger.info("Setting default address {} for customer: {}", addressId, customerId);
 
@@ -285,7 +285,7 @@ public class CustomerService {
     // LOYALTY MANAGEMENT
     // ===========================
 
-    @CacheEvict(value = "customers", key = "#customerId")
+    @CacheEvict(value = "customers", key = "#p0")
     public Customer addLoyaltyPoints(String customerId, AddLoyaltyPointsRequest request) {
         logger.info("Adding {} loyalty points to customer: {}", request.getPoints(), customerId);
 
@@ -345,7 +345,7 @@ public class CustomerService {
     // PREFERENCES MANAGEMENT
     // ===========================
 
-    @CacheEvict(value = "customers", key = "#customerId")
+    @CacheEvict(value = "customers", key = "#p0")
     public Customer updatePreferences(String customerId, UpdatePreferencesRequest request) {
         logger.info("Updating preferences for customer: {}", customerId);
 
@@ -386,7 +386,7 @@ public class CustomerService {
     // ORDER STATS UPDATE
     // ===========================
 
-    @CacheEvict(value = "customers", key = "#customerId")
+    @CacheEvict(value = "customers", key = "#p0")
     public Customer updateOrderStats(String customerId, UpdateOrderStatsRequest request) {
         logger.info("Updating order stats for customer: {}", customerId);
 
@@ -429,7 +429,7 @@ public class CustomerService {
     // NOTES MANAGEMENT
     // ===========================
 
-    @CacheEvict(value = "customers", key = "#customerId")
+    @CacheEvict(value = "customers", key = "#p0")
     public Customer addNote(String customerId, AddCustomerNoteRequest request) {
         logger.info("Adding note to customer: {}", customerId);
 
@@ -446,7 +446,7 @@ public class CustomerService {
     // VERIFICATION
     // ===========================
 
-    @CacheEvict(value = "customers", key = "#customerId")
+    @CacheEvict(value = "customers", key = "#p0")
     public Customer verifyEmail(String customerId) {
         logger.info("Verifying email for customer: {}", customerId);
         Customer customer = customerRepository.findById(customerId)
@@ -455,7 +455,7 @@ public class CustomerService {
         return customerRepository.save(customer);
     }
 
-    @CacheEvict(value = "customers", key = "#customerId")
+    @CacheEvict(value = "customers", key = "#p0")
     public Customer verifyPhone(String customerId) {
         logger.info("Verifying phone for customer: {}", customerId);
         Customer customer = customerRepository.findById(customerId)
@@ -468,7 +468,7 @@ public class CustomerService {
     // TAGS MANAGEMENT
     // ===========================
 
-    @CacheEvict(value = "customers", key = "#customerId")
+    @CacheEvict(value = "customers", key = "#p0")
     public Customer addTags(String customerId, Set<String> tags) {
         logger.info("Adding tags to customer: {}", customerId);
         Customer customer = customerRepository.findById(customerId)
@@ -477,7 +477,7 @@ public class CustomerService {
         return customerRepository.save(customer);
     }
 
-    @CacheEvict(value = "customers", key = "#customerId")
+    @CacheEvict(value = "customers", key = "#p0")
     public Customer removeTags(String customerId, Set<String> tags) {
         logger.info("Removing tags from customer: {}", customerId);
         Customer customer = customerRepository.findById(customerId)
@@ -572,7 +572,7 @@ public class CustomerService {
     // DELETE
     // ===========================
 
-    @CacheEvict(value = "customers", key = "#id")
+    @CacheEvict(value = "customers", key = "#p0")
     public void deleteCustomer(String id) {
         logger.warn("Deleting customer: {}", id);
         customerRepository.deleteById(id);

@@ -9,6 +9,8 @@ export const API_CONFIG = {
   USER_SERVICE_URL: import.meta.env.VITE_USER_SERVICE_URL || 'http://localhost:8081',
   MENU_SERVICE_URL: import.meta.env.VITE_MENU_SERVICE_URL || 'http://localhost:8082',
   ORDER_SERVICE_URL: import.meta.env.VITE_ORDER_SERVICE_URL || 'http://localhost:8083',
+  CUSTOMER_SERVICE_URL: import.meta.env.VITE_CUSTOMER_SERVICE_URL || 'http://localhost:8091',
+  API_GATEWAY_URL: import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080/api',
 
   // Service endpoints
   USER_SERVICE: '/api/users',

@@ -182,7 +182,8 @@ export interface PageResponse<T> {
 export const customerApi = createApi({
   reducerPath: 'customerApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: `${API_CONFIG.API_GATEWAY_URL}/customers`,
+    // Direct to customer-service (port 8091) or via gateway (port 8080)
+    baseUrl: `${API_CONFIG.CUSTOMER_SERVICE_URL}/api/customers`,
     prepareHeaders: (headers, { getState }) => {
       const token = (getState() as RootState).auth.accessToken;
       if (token) {

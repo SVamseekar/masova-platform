@@ -541,7 +541,7 @@ const PaymentPage: React.FC = () => {
 
               <Button
                 variant="secondary"
-                size="md"
+                size="base"
                 fullWidth
                 onClick={() => navigate('/checkout')}
                 disabled={isLoading}

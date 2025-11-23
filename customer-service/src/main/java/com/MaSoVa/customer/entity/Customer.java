@@ -1,5 +1,12 @@
 package com.MaSoVa.customer.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import jakarta.validation.constraints.*;
 import org.springframework.data.annotation.*;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -33,6 +40,9 @@ public class Customer {
     @Indexed(unique = true)
     private String phone;
 
+    @JsonSerialize(using = LocalDateSerializer.class)
+    @JsonDeserialize(using = LocalDateDeserializer.class)
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateOfBirth;
     private String gender; // MALE, FEMALE, OTHER, PREFER_NOT_TO_SAY
 
@@ -63,12 +73,25 @@ public class Customer {
     private List<CustomerNote> notes = new ArrayList<>();
 
     @CreatedDate
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
 
     @LastModifiedDate
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime updatedAt;
 
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime lastOrderDate;
+
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime lastLoginDate;
 
     // Inner Classes
@@ -86,6 +109,10 @@ public class Customer {
         private Double longitude;
         private String landmark;
         private boolean isDefault = false;
+
+        @JsonSerialize(using = LocalDateTimeSerializer.class)
+        @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
         private LocalDateTime createdAt = LocalDateTime.now();
 
         public CustomerAddress() {}
@@ -145,7 +172,15 @@ public class Customer {
         private int pointsEarned = 0;
         private int pointsRedeemed = 0;
         private String tier = "BRONZE"; // BRONZE, SILVER, GOLD, PLATINUM
+
+        @JsonSerialize(using = LocalDateSerializer.class)
+        @JsonDeserialize(using = LocalDateDeserializer.class)
+        @JsonFormat(pattern = "yyyy-MM-dd")
         private LocalDate tierExpiryDate;
+
+        @JsonSerialize(using = LocalDateTimeSerializer.class)
+        @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
         private LocalDateTime lastPointsUpdate;
         private List<PointTransaction> pointHistory = new ArrayList<>();
 
@@ -180,6 +215,10 @@ public class Customer {
         private String type; // EARNED, REDEEMED, EXPIRED, BONUS
         private String description;
         private String orderId;
+
+        @JsonSerialize(using = LocalDateTimeSerializer.class)
+        @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
         private LocalDateTime timestamp = LocalDateTime.now();
 
         public PointTransaction() {}
@@ -255,7 +294,15 @@ public class Customer {
         private double totalSpent = 0.0;
         private double averageOrderValue = 0.0;
         private String favoriteOrderType; // DINE_IN, TAKEAWAY, DELIVERY
+
+        @JsonSerialize(using = LocalDateTimeSerializer.class)
+        @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
         private LocalDateTime firstOrderDate;
+
+        @JsonSerialize(using = LocalDateTimeSerializer.class)
+        @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
         private LocalDateTime lastOrderDate;
 
         public OrderStats() {}
@@ -290,6 +337,10 @@ public class Customer {
         private String id = java.util.UUID.randomUUID().toString();
         private String note;
         private String addedBy; // staff/manager name or ID
+
+        @JsonSerialize(using = LocalDateTimeSerializer.class)
+        @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
         private LocalDateTime createdAt = LocalDateTime.now();
         private String category; // GENERAL, COMPLAINT, PREFERENCE, OTHER
 
