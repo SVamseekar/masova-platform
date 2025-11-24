@@ -212,7 +212,10 @@ export const customerApi = createApi({
 
     getCustomerByUserId: builder.query<Customer, string>({
       query: (userId) => `/user/${userId}`,
-      providesTags: (result) => (result ? [{ type: 'Customer', id: result.id }] : []),
+      // Provide tags for both the customer ID and a special "USER_QUERY" tag for invalidation
+      providesTags: (result, error, userId) => (result
+        ? [{ type: 'Customer', id: result.id }, { type: 'Customers', id: `USER_${userId}` }]
+        : [{ type: 'Customers', id: `USER_${userId}` }]),
     }),
 
     getCustomerByEmail: builder.query<Customer, string>({
@@ -293,7 +296,12 @@ export const customerApi = createApi({
         url: `/${customerId}/addresses/${addressId}`,
         method: 'DELETE',
       }),
-      invalidatesTags: (result, error, { customerId }) => [{ type: 'Customer', id: customerId }],
+      // Invalidate all customer-related tags to ensure fresh data everywhere
+      invalidatesTags: (result) => [
+        { type: 'Customer', id: result?.id },
+        'Customer',
+        'Customers',
+      ],
     }),
 
     setDefaultAddress: builder.mutation<Customer, { customerId: string; addressId: string }>({
@@ -301,7 +309,12 @@ export const customerApi = createApi({
         url: `/${customerId}/addresses/${addressId}/set-default`,
         method: 'PATCH',
       }),
-      invalidatesTags: (result, error, { customerId }) => [{ type: 'Customer', id: customerId }],
+      // Invalidate all customer-related tags to ensure fresh data everywhere
+      invalidatesTags: (result) => [
+        { type: 'Customer', id: result?.id },
+        'Customer',
+        'Customers',
+      ],
     }),
 
     // LOYALTY MANAGEMENT

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { useCreateOrderMutation } from '../../store/api/orderApi';
 import { useInitiatePaymentMutation } from '../../store/api/paymentApi';
-import { clearCart, selectCartItems, selectCartTotal } from '../../store/slices/cartSlice';
+import { clearCart, selectCartItems, selectCartSubtotal, selectDeliveryFee } from '../../store/slices/cartSlice';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { Button, Card, Input } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
@@ -35,7 +35,8 @@ const PaymentPage: React.FC = () => {
   const dispatch = useAppDispatch();
 
   const cartItems = useAppSelector(selectCartItems);
-  const cartTotal = useAppSelector(selectCartTotal);
+  const subtotal = useAppSelector(selectCartSubtotal);
+  const baseDeliveryFee = useAppSelector(selectDeliveryFee);
   const currentUser = useAppSelector(selectCurrentUser);
 
   // Get guest info from navigation state (passed from GuestCheckoutPage)
@@ -56,12 +57,10 @@ const PaymentPage: React.FC = () => {
     }
   }, [cartItems, navigate]);
 
-  // Calculate totals
-  const subtotal = cartTotal;
-  const deliveryFee = orderType === 'DELIVERY' ? 40 : 0;
-  const gst = subtotal * 0.05; // 5% GST
-  const packagingCharges = orderType === 'TAKEAWAY' ? 10 : 0;
-  const total = subtotal + deliveryFee + gst + packagingCharges;
+  // Calculate totals - consistent with CartDrawer, CheckoutPage, and GuestCheckoutPage
+  const deliveryFee = orderType === 'DELIVERY' ? baseDeliveryFee : 0;
+  const tax = subtotal * 0.05; // 5% tax
+  const total = subtotal + deliveryFee + tax;
 
   const handlePlaceOrder = async () => {
     try {
@@ -381,7 +380,7 @@ const PaymentPage: React.FC = () => {
                     Delivery
                   </div>
                   <div style={{ fontSize: typography.fontSize.xs, color: colors.text.tertiary, marginTop: spacing[1] }}>
-                    +₹{deliveryFee}
+                    +₹{baseDeliveryFee.toFixed(2)}
                   </div>
                 </div>
 
@@ -394,7 +393,7 @@ const PaymentPage: React.FC = () => {
                     Takeaway
                   </div>
                   <div style={{ fontSize: typography.fontSize.xs, color: colors.text.tertiary, marginTop: spacing[1] }}>
-                    +₹{packagingCharges}
+                    No delivery fee
                   </div>
                 </div>
 
@@ -407,7 +406,7 @@ const PaymentPage: React.FC = () => {
                     Dine In
                   </div>
                   <div style={{ fontSize: typography.fontSize.xs, color: colors.text.tertiary, marginTop: spacing[1] }}>
-                    No extra charge
+                    No delivery fee
                   </div>
                 </div>
               </div>
@@ -503,16 +502,9 @@ const PaymentPage: React.FC = () => {
                   </div>
                 )}
 
-                {orderType === 'TAKEAWAY' && (
-                  <div style={summaryRowStyles}>
-                    <span style={summaryLabelStyles}>Packaging Charges</span>
-                    <span style={summaryValueStyles}>₹{packagingCharges.toFixed(2)}</span>
-                  </div>
-                )}
-
                 <div style={summaryRowStyles}>
-                  <span style={summaryLabelStyles}>GST (5%)</span>
-                  <span style={summaryValueStyles}>₹{gst.toFixed(2)}</span>
+                  <span style={summaryLabelStyles}>Tax (5%)</span>
+                  <span style={summaryValueStyles}>₹{tax.toFixed(2)}</span>
                 </div>
               </div>
 

@@ -11,6 +11,8 @@ import { selectCurrentUser } from '../../store/slices/authSlice';
 import {
   useGetCustomerByUserIdQuery,
   useAddAddressMutation,
+  useRemoveAddressMutation,
+  useSetDefaultAddressMutation,
   CustomerAddress,
 } from '../../store/api/customerApi';
 import { Button, Card, Input } from '../../components/ui/neumorphic';
@@ -50,6 +52,8 @@ const GuestCheckoutPage: React.FC = () => {
   );
 
   const [addAddress] = useAddAddressMutation();
+  const [removeAddress] = useRemoveAddressMutation();
+  const [setDefaultAddress] = useSetDefaultAddressMutation();
 
   // Address selection state
   const [selectedAddressId, setSelectedAddressId] = useState<string | 'new'>('new');
@@ -77,6 +81,8 @@ const GuestCheckoutPage: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Partial<GuestFormData>>({});
+  const [addressToDelete, setAddressToDelete] = useState<string | null>(null);
+  const [deletingAddress, setDeletingAddress] = useState(false);
 
   // Set default address if customer has one - filter to only include addresses with IDs and addressLine1
   useEffect(() => {
@@ -130,6 +136,47 @@ const GuestCheckoutPage: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
     setValidationErrors(prev => ({ ...prev, [name]: '' }));
     setError('');
+  };
+
+  const handleDeleteAddress = async (addressId: string) => {
+    if (!customerData?.id) {
+      console.error('No customer ID found');
+      return;
+    }
+
+    console.log('Deleting address:', { customerId: customerData.id, addressId });
+    setDeletingAddress(true);
+    try {
+      const result = await removeAddress({ customerId: customerData.id, addressId }).unwrap();
+      console.log('Address deleted successfully:', result);
+      // If the deleted address was selected, switch to 'new'
+      if (selectedAddressId === addressId) {
+        setSelectedAddressId('new');
+      }
+      setAddressToDelete(null);
+    } catch (err: any) {
+      console.error('Failed to delete address:', err);
+      setError(err?.data?.message || 'Failed to delete address. Please try again.');
+    } finally {
+      setDeletingAddress(false);
+    }
+  };
+
+  const handleSetDefaultAddress = async (addressId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!customerData?.id) {
+      console.error('No customer ID found');
+      return;
+    }
+
+    console.log('Setting default address:', { customerId: customerData.id, addressId });
+    try {
+      const result = await setDefaultAddress({ customerId: customerData.id, addressId }).unwrap();
+      console.log('Default address set successfully:', result);
+    } catch (err: any) {
+      console.error('Failed to set default address:', err);
+      setError(err?.data?.message || 'Failed to set default address. Please try again.');
+    }
   };
 
   const validateForm = (): boolean => {
@@ -395,7 +442,7 @@ const GuestCheckoutPage: React.FC = () => {
                       onClick={() => setSelectedAddressId(addr.id)}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div>
+                        <div style={{ flex: 1 }}>
                           <span style={labelBadgeStyles}>
                             {addr.label} {addr.isDefault && '(Default)'}
                           </span>
@@ -423,6 +470,35 @@ const GuestCheckoutPage: React.FC = () => {
                               Landmark: {addr.landmark}
                             </div>
                           )}
+
+                          {/* Action buttons */}
+                          <div style={{
+                            display: 'flex',
+                            gap: spacing[2],
+                            marginTop: spacing[3],
+                          }}>
+                            {!addr.isDefault && (
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={(e) => handleSetDefaultAddress(addr.id, e)}
+                              >
+                                Set as Default
+                              </Button>
+                            )}
+                            <Button
+                              type="button"
+                              variant="danger"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setAddressToDelete(addr.id);
+                              }}
+                            >
+                              Delete
+                            </Button>
+                          </div>
                         </div>
                         <div style={{
                           width: '24px',
@@ -433,6 +509,8 @@ const GuestCheckoutPage: React.FC = () => {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
+                          flexShrink: 0,
+                          marginLeft: spacing[3],
                         }}>
                           {selectedAddressId === addr.id && (
                             <span style={{ color: colors.text.inverse, fontSize: '14px' }}>✓</span>
@@ -811,6 +889,58 @@ const GuestCheckoutPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Address Confirmation Modal */}
+      {addressToDelete && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+        }}>
+          <Card elevation="lg" padding="lg" style={{ maxWidth: '400px', width: '90%' }}>
+            <h3 style={{
+              fontSize: typography.fontSize.xl,
+              fontWeight: typography.fontWeight.extrabold,
+              color: colors.text.primary,
+              margin: `0 0 ${spacing[3]} 0`,
+            }}>
+              Delete Address
+            </h3>
+            <p style={{
+              fontSize: typography.fontSize.base,
+              color: colors.text.secondary,
+              margin: `0 0 ${spacing[5]} 0`,
+            }}>
+              Are you sure you want to delete this address? This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
+              <Button
+                variant="ghost"
+                size="base"
+                onClick={() => setAddressToDelete(null)}
+                disabled={deletingAddress}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                size="base"
+                onClick={() => handleDeleteAddress(addressToDelete)}
+                isLoading={deletingAddress}
+              >
+                Delete
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

@@ -108,10 +108,37 @@ public class CustomerService {
         return customerRepository.findById(id);
     }
 
-    @Cacheable(value = "customers", key = "'userId:' + #p0")
+    // Removed caching to ensure fresh data is always fetched after address modifications
     public Optional<Customer> getCustomerByUserId(String userId) {
         logger.debug("Fetching customer by userId: {}", userId);
-        return customerRepository.findByUserId(userId);
+        Optional<Customer> customerOpt = customerRepository.findByUserId(userId);
+
+        // Ensure all addresses have IDs
+        if (customerOpt.isPresent()) {
+            Customer customer = customerOpt.get();
+            boolean needsSave = ensureAddressIds(customer);
+            if (needsSave) {
+                customer = customerRepository.save(customer);
+                return Optional.of(customer);
+            }
+        }
+
+        return customerOpt;
+    }
+
+    /**
+     * Ensures all addresses have IDs. Returns true if any were missing and assigned.
+     */
+    private boolean ensureAddressIds(Customer customer) {
+        boolean modified = false;
+        for (CustomerAddress address : customer.getAddresses()) {
+            if (address.getId() == null) {
+                address.setId(UUID.randomUUID().toString());
+                modified = true;
+                logger.info("Assigned ID {} to address for customer {}", address.getId(), customer.getId());
+            }
+        }
+        return modified;
     }
 
     public Optional<Customer> getCustomerByEmail(String email) {
@@ -236,27 +263,51 @@ public class CustomerService {
         return customerRepository.save(customer);
     }
 
-    @CacheEvict(value = "customers", key = "#p0")
+    @CacheEvict(value = "customers", allEntries = true)
     public Customer removeAddress(String customerId, String addressId) {
         logger.info("Removing address {} for customer: {}", addressId, customerId);
 
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new NoSuchElementException("Customer not found with id: " + customerId));
 
-        customer.getAddresses().removeIf(addr -> addr.getId().equals(addressId));
+        int beforeSize = customer.getAddresses().size();
+        logger.info("Customer has {} addresses before removal", beforeSize);
+
+        // Log all address IDs for debugging
+        customer.getAddresses().forEach(addr ->
+            logger.info("Address: id={}, label={}, line1={}", addr.getId(), addr.getLabel(), addr.getAddressLine1())
+        );
+
+        boolean removed = customer.getAddresses().removeIf(addr -> {
+            boolean matches = addressId != null && addressId.equals(addr.getId());
+            if (matches) {
+                logger.info("Found matching address to remove: {}", addr.getId());
+            }
+            return matches;
+        });
+
+        int afterSize = customer.getAddresses().size();
+        logger.info("Customer has {} addresses after removal. Removed: {}", afterSize, removed);
 
         // If removed address was default, set first address as default
         if (addressId.equals(customer.getDefaultAddressId()) && !customer.getAddresses().isEmpty()) {
-            customer.getAddresses().get(0).setDefault(true);
-            customer.setDefaultAddressId(customer.getAddresses().get(0).getId());
+            CustomerAddress firstAddr = customer.getAddresses().get(0);
+            // Ensure first address has an ID
+            if (firstAddr.getId() == null) {
+                firstAddr.setId(UUID.randomUUID().toString());
+            }
+            firstAddr.setDefault(true);
+            customer.setDefaultAddressId(firstAddr.getId());
         } else if (customer.getAddresses().isEmpty()) {
             customer.setDefaultAddressId(null);
         }
 
-        return customerRepository.save(customer);
+        Customer saved = customerRepository.save(customer);
+        logger.info("Customer saved with {} addresses", saved.getAddresses().size());
+        return saved;
     }
 
-    @CacheEvict(value = "customers", key = "#p0")
+    @CacheEvict(value = "customers", allEntries = true)
     public Customer setDefaultAddress(String customerId, String addressId) {
         logger.info("Setting default address {} for customer: {}", addressId, customerId);
 
@@ -265,7 +316,11 @@ public class CustomerService {
 
         boolean addressFound = false;
         for (CustomerAddress address : customer.getAddresses()) {
-            if (address.getId().equals(addressId)) {
+            // Handle null IDs by generating one if needed
+            if (address.getId() == null) {
+                address.setId(UUID.randomUUID().toString());
+            }
+            if (addressId != null && addressId.equals(address.getId())) {
                 address.setDefault(true);
                 customer.setDefaultAddressId(addressId);
                 addressFound = true;
