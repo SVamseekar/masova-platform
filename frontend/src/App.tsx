@@ -24,6 +24,7 @@ const TrackingPage = React.lazy(() => import('./pages/customer/TrackingPage'));
 const LiveTrackingPage = React.lazy(() => import('./pages/customer/LiveTrackingPage'));
 const CustomerDashboard = React.lazy(() => import('./pages/customer/CustomerDashboard'));
 const ProfilePage = React.lazy(() => import('./pages/customer/ProfilePage'));
+const NotificationSettingsPage = React.lazy(() => import('./pages/customer/NotificationSettingsPage'));
 const PaymentDashboardPage = React.lazy(() => import('./pages/manager/PaymentDashboardPage'));
 const RefundManagementPage = React.lazy(() => import('./pages/manager/RefundManagementPage'));
 const RecipeManagementPage = React.lazy(() => import('./pages/manager/RecipeManagementPage'));
@@ -34,6 +35,7 @@ const WasteAnalysisPage = React.lazy(() => import('./pages/manager/WasteAnalysis
 const CustomerManagementPage = React.lazy(() => import('./pages/manager/CustomerManagementPage'));
 const DriverManagementPage = React.lazy(() => import('./pages/manager/DriverManagementPage'));
 const DeliveryManagementPage = React.lazy(() => import('./pages/manager/DeliveryManagementPage'));
+const CampaignManagementPage = React.lazy(() => import('./pages/manager/CampaignManagementPage'));
 const ManagerDashboard = React.lazy(() => import('./pages/manager/DashboardPage'));
 const KitchenDisplayPage = React.lazy(() => import('./pages/kitchen/KitchenDisplayPage'));
 const DriverDashboard = React.lazy(() => import('./pages/driver/DriverDashboard'));
@@ -93,6 +95,14 @@ const App: React.FC = () => {
                     element={
                       <ProtectedRoute allowedRoles={['CUSTOMER']} requireAuth={true}>
                         <ProfilePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/customer/notifications"
+                    element={
+                      <ProtectedRoute allowedRoles={['CUSTOMER']} requireAuth={true}>
+                        <NotificationSettingsPage />
                       </ProtectedRoute>
                     }
                   />
@@ -183,6 +193,14 @@ const App: React.FC = () => {
                     element={
                       <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
                         <DeliveryManagementPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/campaigns"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <CampaignManagementPage />
                       </ProtectedRoute>
                     }
                   />

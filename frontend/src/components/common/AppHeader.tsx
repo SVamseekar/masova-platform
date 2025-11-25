@@ -5,6 +5,7 @@ import { logout, selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartItemCount } from '../../store/slices/cartSlice';
 import { colors, spacing, typography, shadows, borderRadius } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
+import NotificationBell from '../notifications/NotificationBell';
 
 interface AppHeaderProps {
   title?: string;
@@ -160,6 +161,12 @@ const AppHeader: React.FC<AppHeaderProps> = ({
       <div style={rightSectionStyles}>
         {showPublicNav ? (
           <>
+            {/* Notification Bell for logged-in users */}
+            {currentUser && (
+              <div style={{ display: 'flex', alignItems: 'center', marginRight: spacing[2] }}>
+                <NotificationBell />
+              </div>
+            )}
             <button
               style={buttonStyles}
               onClick={() => navigate('/')}
@@ -277,6 +284,12 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           </>
         ) : (
           <>
+            {/* Notification Bell for staff/manager users */}
+            {currentUser && (
+              <div style={{ display: 'flex', alignItems: 'center', marginRight: spacing[2] }}>
+                <NotificationBell />
+              </div>
+            )}
             {currentUser && (
               <div style={userInfoStyles}>
                 <span style={userNameStyles}>{currentUser.name}</span>
