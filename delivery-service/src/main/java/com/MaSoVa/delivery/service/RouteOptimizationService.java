@@ -7,8 +7,8 @@ import com.google.maps.DirectionsApi;
 import com.google.maps.DirectionsApiRequest;
 import com.google.maps.GeoApiContext;
 import com.google.maps.model.*;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -22,10 +22,10 @@ import java.util.List;
  */
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class RouteOptimizationService {
 
-    private final GeoApiContext geoApiContext;
+    @Autowired(required = false)
+    private GeoApiContext geoApiContext;
 
     /**
      * Get optimized route from origin to destination

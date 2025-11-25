@@ -4,8 +4,8 @@ import com.MaSoVa.order.entity.Order;
 import com.MaSoVa.order.entity.Order.OrderStatus;
 import com.MaSoVa.order.entity.Order.PaymentStatus;
 import com.MaSoVa.order.websocket.OrderWebSocketController;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -21,12 +21,17 @@ import java.util.concurrent.CompletableFuture;
  * Based on MaSoVa real-world operational requirements
  */
 @Service
-@Slf4j
-@RequiredArgsConstructor
 public class PredictiveNotificationService {
+
+    private static final Logger log = LoggerFactory.getLogger(PredictiveNotificationService.class);
 
     private final OrderService orderService;
     private final OrderWebSocketController webSocketController;
+
+    public PredictiveNotificationService(OrderService orderService, OrderWebSocketController webSocketController) {
+        this.orderService = orderService;
+        this.webSocketController = webSocketController;
+    }
 
     /**
      * Check for orders that need predictive kitchen alerts
@@ -139,8 +144,6 @@ public class PredictiveNotificationService {
     /**
      * Internal class for make-table notifications
      */
-    @lombok.Data
-    @lombok.Builder
     private static class MakeTableNotification {
         private String orderId;
         private String orderNumber;
@@ -149,5 +152,68 @@ public class PredictiveNotificationService {
         private String notificationType;
         private String message;
         private LocalDateTime timestamp;
+
+        private MakeTableNotification(Builder builder) {
+            this.orderId = builder.orderId;
+            this.orderNumber = builder.orderNumber;
+            this.items = builder.items;
+            this.estimatedPrepTime = builder.estimatedPrepTime;
+            this.notificationType = builder.notificationType;
+            this.message = builder.message;
+            this.timestamp = builder.timestamp;
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder {
+            private String orderId;
+            private String orderNumber;
+            private List<?> items;
+            private Integer estimatedPrepTime;
+            private String notificationType;
+            private String message;
+            private LocalDateTime timestamp;
+
+            public Builder orderId(String orderId) {
+                this.orderId = orderId;
+                return this;
+            }
+
+            public Builder orderNumber(String orderNumber) {
+                this.orderNumber = orderNumber;
+                return this;
+            }
+
+            public Builder items(List<?> items) {
+                this.items = items;
+                return this;
+            }
+
+            public Builder estimatedPrepTime(Integer estimatedPrepTime) {
+                this.estimatedPrepTime = estimatedPrepTime;
+                return this;
+            }
+
+            public Builder notificationType(String notificationType) {
+                this.notificationType = notificationType;
+                return this;
+            }
+
+            public Builder message(String message) {
+                this.message = message;
+                return this;
+            }
+
+            public Builder timestamp(LocalDateTime timestamp) {
+                this.timestamp = timestamp;
+                return this;
+            }
+
+            public MakeTableNotification build() {
+                return new MakeTableNotification(this);
+            }
+        }
     }
 }

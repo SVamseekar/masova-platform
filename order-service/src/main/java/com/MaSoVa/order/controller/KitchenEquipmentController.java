@@ -2,8 +2,8 @@ package com.MaSoVa.order.controller;
 
 import com.MaSoVa.order.entity.KitchenEquipment;
 import com.MaSoVa.order.service.KitchenEquipmentService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,11 +13,15 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/kitchen-equipment")
-@RequiredArgsConstructor
-@Slf4j
 public class KitchenEquipmentController {
 
+    private static final Logger log = LoggerFactory.getLogger(KitchenEquipmentController.class);
+
     private final KitchenEquipmentService equipmentService;
+
+    public KitchenEquipmentController(KitchenEquipmentService equipmentService) {
+        this.equipmentService = equipmentService;
+    }
 
     /**
      * Create new equipment

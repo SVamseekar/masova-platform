@@ -19,13 +19,46 @@ interface CartState {
   isLoading: boolean;
 }
 
-const initialState: CartState = {
-  items: [],
-  total: 0,
-  itemCount: 0,
-  deliveryFee: 29, // Fixed delivery fee in INR
-  isLoading: false,
+// Load cart from localStorage
+const loadCartFromStorage = (): CartState => {
+  try {
+    const cartStr = localStorage.getItem('cart');
+    if (cartStr) {
+      const savedCart = JSON.parse(cartStr);
+      return {
+        items: savedCart.items || [],
+        total: savedCart.total || 0,
+        itemCount: savedCart.itemCount || 0,
+        deliveryFee: 29,
+        isLoading: false,
+      };
+    }
+  } catch (e) {
+    console.error('Failed to load cart from localStorage:', e);
+  }
+  return {
+    items: [],
+    total: 0,
+    itemCount: 0,
+    deliveryFee: 29,
+    isLoading: false,
+  };
 };
+
+// Save cart to localStorage
+const saveCartToStorage = (state: CartState) => {
+  try {
+    localStorage.setItem('cart', JSON.stringify({
+      items: state.items,
+      total: state.total,
+      itemCount: state.itemCount,
+    }));
+  } catch (e) {
+    console.error('Failed to save cart to localStorage:', e);
+  }
+};
+
+const initialState: CartState = loadCartFromStorage();
 
 const cartSlice = createSlice({
   name: 'cart',
@@ -34,20 +67,21 @@ const cartSlice = createSlice({
     addToCart: (state, action: PayloadAction<Omit<CartItem, 'quantity'> & { quantity?: number }>) => {
       const { quantity = 1, ...item } = action.payload;
       const existingItem = state.items.find(i => i.id === item.id);
-      
+
       if (existingItem) {
         existingItem.quantity += quantity;
       } else {
         state.items.push({ ...item, quantity });
       }
-      
+
       cartSlice.caseReducers.calculateTotals(state);
+      saveCartToStorage(state);
     },
-    
+
     removeFromCart: (state, action: PayloadAction<string>) => {
       const itemId = action.payload;
       const existingItem = state.items.find(i => i.id === itemId);
-      
+
       if (existingItem) {
         if (existingItem.quantity > 1) {
           existingItem.quantity -= 1;
@@ -55,19 +89,21 @@ const cartSlice = createSlice({
           state.items = state.items.filter(i => i.id !== itemId);
         }
       }
-      
+
       cartSlice.caseReducers.calculateTotals(state);
+      saveCartToStorage(state);
     },
-    
+
     removeItemCompletely: (state, action: PayloadAction<string>) => {
       state.items = state.items.filter(i => i.id !== action.payload);
       cartSlice.caseReducers.calculateTotals(state);
+      saveCartToStorage(state);
     },
-    
+
     updateItemQuantity: (state, action: PayloadAction<{ id: string; quantity: number }>) => {
       const { id, quantity } = action.payload;
       const existingItem = state.items.find(i => i.id === id);
-      
+
       if (existingItem) {
         if (quantity <= 0) {
           state.items = state.items.filter(i => i.id !== id);
@@ -75,22 +111,24 @@ const cartSlice = createSlice({
           existingItem.quantity = quantity;
         }
       }
-      
+
       cartSlice.caseReducers.calculateTotals(state);
+      saveCartToStorage(state);
     },
-    
+
     clearCart: (state) => {
       state.items = [];
       state.total = 0;
       state.itemCount = 0;
+      saveCartToStorage(state);
     },
-    
+
     calculateTotals: (state) => {
       state.itemCount = state.items.reduce((total, item) => total + item.quantity, 0);
       const subtotal = state.items.reduce((total, item) => total + (item.price * item.quantity), 0);
       state.total = subtotal + (state.itemCount > 0 ? state.deliveryFee : 0);
     },
-    
+
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
     },

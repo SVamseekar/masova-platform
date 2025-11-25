@@ -15,53 +15,53 @@ import { useGetUsersQuery } from '../../store/api/userApi';
 import { ORDER_STATUS_CONFIG, ORDER_TYPE_CONFIG, PAYMENT_STATUS_CONFIG } from '../../types/order';
 import type { OrderStatus, OrderPriority } from '../../types/order';
 
-const OrderManagementPage: React.FC ✅ () ✅> {
-  const currentUser ✅ useAppSelector(selectCurrentUser);
-  const storeId ✅ currentUser?.storeId || '';
+const OrderManagementPage: React.FC = () => {
+  const currentUser = useAppSelector(selectCurrentUser);
+  const storeId = currentUser?.storeId || '';
 
-  const [showOrderForm, setShowOrderForm] ✅ useState(false);
-  const [selectedOrder, setSelectedOrder] ✅ useState<Order | null>(null);
-  const [statusFilter, setStatusFilter] ✅ useState<OrderStatus | 'ALL'>('ALL');
+  const [showOrderForm, setShowOrderForm] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'ALL'>('ALL');
 
   // API hooks
-  const { data: orders ✅ [], isLoading, refetch } ✅ useGetStoreOrdersQuery(storeId, {
+  const { data: orders = [], isLoading, refetch } = useGetStoreOrdersQuery(storeId, {
     skip: !storeId,
     pollingInterval: 10000, // Poll every 10 seconds
   });
 
-  const { data: users ✅ [] } ✅ useGetUsersQuery({});
-  const [updateOrderStatus] ✅ useUpdateOrderStatusMutation();
-  const [updateOrderPriority] ✅ useUpdateOrderPriorityMutation();
-  const [cancelOrder] ✅ useCancelOrderMutation();
-  const [assignDriver] ✅ useAssignDriverMutation();
+  const { data: users = [] } = useGetUsersQuery({});
+  const [updateOrderStatus] = useUpdateOrderStatusMutation();
+  const [updateOrderPriority] = useUpdateOrderPriorityMutation();
+  const [cancelOrder] = useCancelOrderMutation();
+  const [assignDriver] = useAssignDriverMutation();
 
   // Get drivers
-  const drivers ✅ users.filter(user ✅> user.type ✅✅✅ 'DRIVER');
+  const drivers = users.filter(user => user.type === 'DRIVER');
 
   // Filter orders by status
-  const filteredOrders ✅ statusFilter ✅✅✅ 'ALL'
+  const filteredOrders = statusFilter === 'ALL'
     ? orders
-    : orders.filter(order ✅> order.status ✅✅✅ statusFilter);
+    : orders.filter(order => order.status === statusFilter);
 
   // Sort orders: urgent first, then by creation time
-  const sortedOrders ✅ [...filteredOrders].sort((a, b) ✅> {
-    if (a.priority ✅✅✅ 'URGENT' && b.priority !✅✅ 'URGENT') return -1;
-    if (b.priority ✅✅✅ 'URGENT' && a.priority !✅✅ 'URGENT') return 1;
+  const sortedOrders = [...filteredOrders].sort((a, b) => {
+    if (a.priority === 'URGENT' && b.priority !== 'URGENT') return -1;
+    if (b.priority === 'URGENT' && a.priority !== 'URGENT') return 1;
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
   // Calculate statistics
-  const stats ✅ {
+  const stats = {
     total: orders.length,
-    active: orders.filter(o ✅> !['DELIVERED', 'CANCELLED'].includes(o.status)).length,
-    delivered: orders.filter(o ✅> o.status ✅✅✅ 'DELIVERED').length,
-    cancelled: orders.filter(o ✅> o.status ✅✅✅ 'CANCELLED').length,
+    active: orders.filter(o => !['DELIVERED', 'CANCELLED'].includes(o.status)).length,
+    delivered: orders.filter(o => o.status === 'DELIVERED').length,
+    cancelled: orders.filter(o => o.status === 'CANCELLED').length,
     revenue: orders
-      .filter(o ✅> o.status ✅✅✅ 'DELIVERED')
-      .reduce((sum, o) ✅> sum + o.total, 0),
+      .filter(o => o.status === 'DELIVERED')
+      .reduce((sum, o) => sum + o.total, 0),
   };
 
-  const handleStatusChange ✅ async (orderId: string, status: OrderStatus) ✅> {
+  const handleStatusChange = async (orderId: string, status: OrderStatus) => {
     try {
       await updateOrderStatus({ orderId, status }).unwrap();
     } catch (error) {
@@ -70,7 +70,7 @@ const OrderManagementPage: React.FC ✅ () ✅> {
     }
   };
 
-  const handlePriorityChange ✅ async (orderId: string, priority: OrderPriority) ✅> {
+  const handlePriorityChange = async (orderId: string, priority: OrderPriority) => {
     try {
       await updateOrderPriority({ orderId, priority }).unwrap();
     } catch (error) {
@@ -79,8 +79,8 @@ const OrderManagementPage: React.FC ✅ () ✅> {
     }
   };
 
-  const handleCancelOrder ✅ async (orderId: string) ✅> {
-    const reason ✅ prompt('Enter cancellation reason:');
+  const handleCancelOrder = async (orderId: string) => {
+    const reason = prompt('Enter cancellation reason:');
     if (!reason) return;
 
     try {
@@ -92,19 +92,19 @@ const OrderManagementPage: React.FC ✅ () ✅> {
     }
   };
 
-  const handleAssignDriver ✅ async (orderId: string) ✅> {
-    if (drivers.length ✅✅✅ 0) {
+  const handleAssignDriver = async (orderId: string) => {
+    if (drivers.length === 0) {
       alert('No drivers available');
       return;
     }
 
-    const driverList ✅ drivers.map((d, i) ✅> `${i + 1}. ${d.name} (${d.id})`).join('\n');
-    const selection ✅ prompt(`Select driver:\n${driverList}\n\nEnter driver number:`);
+    const driverList = drivers.map((d, i) => `${i + 1}. ${d.name} (${d.id})`).join('\n');
+    const selection = prompt(`Select driver:\n${driverList}\n\nEnter driver number:`);
 
     if (!selection) return;
 
-    const driverIndex ✅ parseInt(selection) - 1;
-    if (driverIndex < 0 || driverIndex >✅ drivers.length) {
+    const driverIndex = parseInt(selection) - 1;
+    if (driverIndex < 0 || driverIndex >= drivers.length) {
       alert('Invalid selection');
       return;
     }
@@ -118,8 +118,8 @@ const OrderManagementPage: React.FC ✅ () ✅> {
     }
   };
 
-  const formatDate ✅ (dateStr: string) ✅> {
-    const date ✅ new Date(dateStr);
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
     return date.toLocaleString('en-IN', {
       day: '2-digit',
       month: 'short',
@@ -129,27 +129,27 @@ const OrderManagementPage: React.FC ✅ () ✅> {
     });
   };
 
-  const formatCurrency ✅ (amount: number) ✅> {
-    return `�${amount.toFixed(2)}`;
+  const formatCurrency = (amount: number) => {
+    return `${amount.toFixed(2)}`;
   };
 
   if (showOrderForm) {
     return (
       <div>
-        <AppHeader title✅"Create New Order" />
+        <AppHeader title="Create New Order" />
         <OrderForm
-          onSuccess✅{(orderId) ✅> {
+          onSuccess={(orderId) => {
             setShowOrderForm(false);
             refetch();
           }}
-          onCancel✅{() ✅> setShowOrderForm(false)}
+          onCancel={() => setShowOrderForm(false)}
         />
       </div>
     );
   }
 
   return (
-    <div className✅"order-management" style✅{{ background: '#f0f0f0', minHeight: '100vh' }}>
+    <div className="order-management" style={{ background: '#f0f0f0', minHeight: '100vh' }}>
       <style>{`
         .order-management {
           font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -478,144 +478,144 @@ const OrderManagementPage: React.FC ✅ () ✅> {
         }
       `}</style>
 
-      <AppHeader title✅"Order Management" />
+      <AppHeader title="Order Management" />
 
       {/* Statistics */}
-      <div className✅"stats-grid">
-        <div className✅"stat-card">
-          <div className✅"stat-label">Total Orders</div>
-          <div className✅"stat-value">{stats.total}</div>
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-label">Total Orders</div>
+          <div className="stat-value">{stats.total}</div>
         </div>
-        <div className✅"stat-card">
-          <div className✅"stat-label">Active Orders</div>
-          <div className✅"stat-value">{stats.active}</div>
+        <div className="stat-card">
+          <div className="stat-label">Active Orders</div>
+          <div className="stat-value">{stats.active}</div>
         </div>
-        <div className✅"stat-card">
-          <div className✅"stat-label">Delivered</div>
-          <div className✅"stat-value">{stats.delivered}</div>
+        <div className="stat-card">
+          <div className="stat-label">Delivered</div>
+          <div className="stat-value">{stats.delivered}</div>
         </div>
-        <div className✅"stat-card">
-          <div className✅"stat-label">Cancelled</div>
-          <div className✅"stat-value">{stats.cancelled}</div>
+        <div className="stat-card">
+          <div className="stat-label">Cancelled</div>
+          <div className="stat-value">{stats.cancelled}</div>
         </div>
-        <div className✅"stat-card">
-          <div className✅"stat-label">Total Revenue</div>
-          <div className✅"stat-value">{formatCurrency(stats.revenue)}</div>
+        <div className="stat-card">
+          <div className="stat-label">Total Revenue</div>
+          <div className="stat-value">{formatCurrency(stats.revenue)}</div>
         </div>
       </div>
 
       {/* Controls */}
-      <div className✅"controls-section">
-        <div className✅"filter-group">
+      <div className="controls-section">
+        <div className="filter-group">
           <button
-            className✅{`filter-btn ${statusFilter ✅✅✅ 'ALL' ? 'active' : ''}`}
-            onClick✅{() ✅> setStatusFilter('ALL')}
+            className={`filter-btn ${statusFilter === 'ALL' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('ALL')}
           >
             All Orders
           </button>
           <button
-            className✅{`filter-btn ${statusFilter ✅✅✅ 'RECEIVED' ? 'active' : ''}`}
-            onClick✅{() ✅> setStatusFilter('RECEIVED')}
+            className={`filter-btn ${statusFilter === 'RECEIVED' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('RECEIVED')}
           >
-            ✅� Received
+            Received
           </button>
           <button
-            className✅{`filter-btn ${statusFilter ✅✅✅ 'PREPARING' ? 'active' : ''}`}
-            onClick✅{() ✅> setStatusFilter('PREPARING')}
+            className={`filter-btn ${statusFilter === 'PREPARING' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('PREPARING')}
           >
-            ✅h<s Preparing
+            Preparing
           </button>
           <button
-            className✅{`filter-btn ${statusFilter ✅✅✅ 'DELIVERED' ? 'active' : ''}`}
-            onClick✅{() ✅> setStatusFilter('DELIVERED')}
+            className={`filter-btn ${statusFilter === 'DELIVERED' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('DELIVERED')}
           >
-             Delivered
+            Delivered
           </button>
           <button
-            className✅{`filter-btn ${statusFilter ✅✅✅ 'CANCELLED' ? 'active' : ''}`}
-            onClick✅{() ✅> setStatusFilter('CANCELLED')}
+            className={`filter-btn ${statusFilter === 'CANCELLED' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('CANCELLED')}
           >
-            L Cancelled
+            Cancelled
           </button>
         </div>
-        <button className✅"create-order-btn" onClick✅{() ✅> setShowOrderForm(true)}>
+        <button className="create-order-btn" onClick={() => setShowOrderForm(true)}>
           + Create Order
         </button>
       </div>
 
       {/* Orders List */}
-      <div className✅"orders-section">
+      <div className="orders-section">
         {isLoading ? (
-          <div className✅"loading-state">
-            <div className✅"empty-icon">�</div>
+          <div className="loading-state">
+            <div className="empty-icon"></div>
             <div>Loading orders...</div>
           </div>
-        ) : sortedOrders.length ✅✅✅ 0 ? (
-          <div className✅"empty-state">
-            <div className✅"empty-icon">✅�</div>
+        ) : sortedOrders.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon"></div>
             <div>No orders found</div>
           </div>
         ) : (
-          <div className✅"orders-list">
-            {sortedOrders.map((order) ✅> (
-              <div key✅{order.id} className✅{`order-card ${order.priority ✅✅✅ 'URGENT' ? 'urgent' : ''}`}>
+          <div className="orders-list">
+            {sortedOrders.map((order) => (
+              <div key={order.id} className={`order-card ${order.priority === 'URGENT' ? 'urgent' : ''}`}>
                 {/* Header */}
-                <div className✅"order-header">
-                  <div className✅"order-number">#{order.orderNumber}</div>
-                  <div className✅"order-badges">
-                    <span className✅"badge badge-status" style✅{{ color: ORDER_STATUS_CONFIG[order.status].color }}>
+                <div className="order-header">
+                  <div className="order-number">#{order.orderNumber}</div>
+                  <div className="order-badges">
+                    <span className="badge badge-status" style={{ color: ORDER_STATUS_CONFIG[order.status].color }}>
                       {ORDER_STATUS_CONFIG[order.status].icon} {ORDER_STATUS_CONFIG[order.status].label}
                     </span>
-                    <span className✅"badge badge-type" style✅{{ color: ORDER_TYPE_CONFIG[order.orderType].color }}>
+                    <span className="badge badge-type" style={{ color: ORDER_TYPE_CONFIG[order.orderType].color }}>
                       {ORDER_TYPE_CONFIG[order.orderType].icon} {ORDER_TYPE_CONFIG[order.orderType].label}
                     </span>
-                    <span className✅"badge badge-payment" style✅{{ color: PAYMENT_STATUS_CONFIG[order.paymentStatus].color }}>
+                    <span className="badge badge-payment" style={{ color: PAYMENT_STATUS_CONFIG[order.paymentStatus].color }}>
                       {PAYMENT_STATUS_CONFIG[order.paymentStatus].icon} {PAYMENT_STATUS_CONFIG[order.paymentStatus].label}
                     </span>
-                    {order.priority ✅✅✅ 'URGENT' && (
-                      <span className✅"badge badge-priority">� URGENT</span>
+                    {order.priority === 'URGENT' && (
+                      <span className="badge badge-priority"> URGENT</span>
                     )}
                   </div>
                 </div>
 
                 {/* Info */}
-                <div className✅"order-info">
-                  <div className✅"info-item">
-                    <div className✅"info-label">Customer</div>
-                    <div className✅"info-value">{order.customerName}</div>
+                <div className="order-info">
+                  <div className="info-item">
+                    <div className="info-label">Customer</div>
+                    <div className="info-value">{order.customerName}</div>
                   </div>
                   {order.customerPhone && (
-                    <div className✅"info-item">
-                      <div className✅"info-label">Phone</div>
-                      <div className✅"info-value">{order.customerPhone}</div>
+                    <div className="info-item">
+                      <div className="info-label">Phone</div>
+                      <div className="info-value">{order.customerPhone}</div>
                     </div>
                   )}
-                  <div className✅"info-item">
-                    <div className✅"info-label">Created At</div>
-                    <div className✅"info-value">{formatDate(order.createdAt)}</div>
+                  <div className="info-item">
+                    <div className="info-label">Created At</div>
+                    <div className="info-value">{formatDate(order.createdAt)}</div>
                   </div>
-                  <div className✅"info-item">
-                    <div className✅"info-label">Total</div>
-                    <div className✅"info-value" style✅{{ color: '#e53e3e', fontSize: '16px' }}>
+                  <div className="info-item">
+                    <div className="info-label">Total</div>
+                    <div className="info-value" style={{ color: '#e53e3e', fontSize: '16px' }}>
                       {formatCurrency(order.total)}
                     </div>
                   </div>
                 </div>
 
                 {/* Items */}
-                <div className✅"order-items">
-                  {order.items.map((item, idx) ✅> (
-                    <div key✅{idx} className✅"order-item">
-                      <div className✅"item-row">
+                <div className="order-items">
+                  {order.items.map((item, idx) => (
+                    <div key={idx} className="order-item">
+                      <div className="item-row">
                         <div>
-                          <span className✅"item-qty">{item.quantity}x</span>
-                          <span className✅"item-name">{item.name}</span>
-                          {item.variant && <span style✅{{ fontSize: '11px', color: '#666', marginLeft: '8px' }}>({item.variant})</span>}
+                          <span className="item-qty">{item.quantity}x</span>
+                          <span className="item-name">{item.name}</span>
+                          {item.variant && <span style={{ fontSize: '11px', color: '#666', marginLeft: '8px' }}>({item.variant})</span>}
                         </div>
-                        <div className✅"item-price">{formatCurrency(item.price * item.quantity)}</div>
+                        <div className="item-price">{formatCurrency(item.price * item.quantity)}</div>
                       </div>
                       {item.customizations && item.customizations.length > 0 && (
-                        <div style✅{{ fontSize: '11px', color: '#666', marginTop: '4px', marginLeft: '32px' }}>
+                        <div style={{ fontSize: '11px', color: '#666', marginTop: '4px', marginLeft: '32px' }}>
                           {item.customizations.join(', ')}
                         </div>
                       )}
@@ -624,49 +624,49 @@ const OrderManagementPage: React.FC ✅ () ✅> {
                 </div>
 
                 {/* Actions */}
-                <div className✅"order-actions">
-                  {order.status !✅✅ 'CANCELLED' && order.status !✅✅ 'DELIVERED' && (
+                <div className="order-actions">
+                  {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
                     <>
                       <select
-                        className✅"status-select"
-                        value✅{order.status}
-                        onChange✅{(e) ✅> handleStatusChange(order.id, e.target.value as OrderStatus)}
+                        className="status-select"
+                        value={order.status}
+                        onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
                       >
-                        <option value✅"RECEIVED">Received</option>
-                        <option value✅"PREPARING">Preparing</option>
-                        <option value✅"OVEN">In Oven</option>
-                        <option value✅"BAKED">Baked</option>
-                        <option value✅"DISPATCHED">Dispatched</option>
-                        <option value✅"DELIVERED">Delivered</option>
+                        <option value="RECEIVED">Received</option>
+                        <option value="PREPARING">Preparing</option>
+                        <option value="OVEN">In Oven</option>
+                        <option value="BAKED">Baked</option>
+                        <option value="DISPATCHED">Dispatched</option>
+                        <option value="DELIVERED">Delivered</option>
                       </select>
 
                       <button
-                        className✅"action-btn warning"
-                        onClick✅{() ✅> handlePriorityChange(order.id, order.priority ✅✅✅ 'URGENT' ? 'NORMAL' : 'URGENT')}
+                        className="action-btn warning"
+                        onClick={() => handlePriorityChange(order.id, order.priority === 'URGENT' ? 'NORMAL' : 'URGENT')}
                       >
-                        {order.priority ✅✅✅ 'URGENT' ? ' Normal' : '� Mark Urgent'}
+                        {order.priority === 'URGENT' ? ' Normal' : ' Mark Urgent'}
                       </button>
 
-                      {order.orderType ✅✅✅ 'DELIVERY' && !order.assignedDriverId && (
-                        <button className✅"action-btn primary" onClick✅{() ✅> handleAssignDriver(order.id)}>
-                          ✅� Assign Driver
+                      {order.orderType === 'DELIVERY' && !order.assignedDriverId && (
+                        <button className="action-btn primary" onClick={() => handleAssignDriver(order.id)}>
+                          = Assign Driver
                         </button>
                       )}
 
-                      <button className✅"action-btn danger" onClick✅{() ✅> handleCancelOrder(order.id)}>
+                      <button className="action-btn danger" onClick={() => handleCancelOrder(order.id)}>
                         L Cancel Order
                       </button>
                     </>
                   )}
 
-                  <button className✅"action-btn" onClick✅{() ✅> setSelectedOrder(order)}>
-                    ✅A View Details
+                  <button className="action-btn" onClick={() => setSelectedOrder(order)}>
+                    =A View Details
                   </button>
                 </div>
 
                 {/* Special Instructions */}
                 {order.specialInstructions && (
-                  <div style✅{{ marginTop: '12px', padding: '8px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '8px', fontSize: '12px' }}>
+                  <div style={{ marginTop: '12px', padding: '8px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '8px', fontSize: '12px' }}>
                     <strong>Special Instructions:</strong> {order.specialInstructions}
                   </div>
                 )}

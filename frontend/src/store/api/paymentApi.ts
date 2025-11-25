@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { RootState } from '../store';
-import { API_BASE_URL } from '../../config/api.config';
+import { API_CONFIG } from '../../config/api.config';
 
 export interface InitiatePaymentRequest {
   orderId: string;
@@ -84,9 +84,9 @@ export interface ReconciliationReport {
 export const paymentApi = createApi({
   reducerPath: 'paymentApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: `${API_BASE_URL}/api/payments`,
+    baseUrl: `${API_CONFIG.PAYMENT_SERVICE_URL}/api/payments`,
     prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as RootState).auth.token;
+      const token = (getState() as RootState).auth.accessToken;
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
       }

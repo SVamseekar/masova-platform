@@ -16,6 +16,7 @@
 6. [Scenario 5: Payment & Refund Flow](#scenario-5-payment--refund-flow)
 7. [Scenario 6: Inventory Management Cycle](#scenario-6-inventory-management-cycle)
 8. [Scenario 7: Customer Loyalty Journey](#scenario-7-customer-loyalty-journey)
+9. [Scenario 8: POS Analytics & Advanced Reporting](#scenario-8-pos-analytics--advanced-reporting)
 
 ---
 
@@ -25,7 +26,7 @@
 End-to-end (E2E) scenarios validate that the entire system works cohesively across all microservices, databases, and user interfaces. Each scenario represents a real-world user journey.
 
 ### Test Environment Requirements
-- ✅ All 8 microservices running
+- ✅ All 9 microservices running (User, Menu, Order, Payment, Delivery, Customer, Inventory, Kitchen, Analytics)
 - ✅ MongoDB and Redis operational
 - ✅ Frontend application running
 - ✅ WebSocket connections active
@@ -192,6 +193,11 @@ End-to-end (E2E) scenarios validate that the entire system works cohesively acro
 | 7.1 | View kitchen analytics | Prep time stats shown | ☐ |
 | 7.2 | Check staff performance | Performance metrics displayed | ☐ |
 | 7.3 | Review delivery analytics | Driver performance shown | ☐ |
+| 7.4 | View Advanced Reports page | Sales trends charts displayed | ☐ |
+| 7.5 | Check Staff Leaderboard | Rankings with performance levels shown | ☐ |
+| 7.6 | Review Product Analytics | Top 20 products with trends displayed | ☐ |
+| 7.7 | View Peak Hours Heatmap | 24-hour breakdown visible | ☐ |
+| 7.8 | Check Revenue Breakdown | Pie chart by order type shown | ☐ |
 | **8. END SHIFT** |
 | 8.1 | Clock out | Working session ended | ☐ |
 | 8.2 | Verify session duration | Duration calculated correctly | ☐ |
@@ -438,6 +444,114 @@ End-to-end (E2E) scenarios validate that the entire system works cohesively acro
 
 ---
 
+## Scenario 8: POS Analytics & Advanced Reporting
+
+**User Persona:** Store Manager / POS Staff
+**Goal:** Access comprehensive analytics and generate reports
+**Duration:** ~15 minutes
+**Services Involved:** Analytics, Payment, Order
+
+### Pre-Conditions
+- [x] Analytics Service running on port 8085
+- [x] Payment Service running with Razorpay configured
+- [x] Order history with sample data available
+- [x] Frontend analytics pages built
+
+### Test Steps
+
+| # | Action | Expected Result | Status |
+|---|--------|-----------------|--------|
+| **1. POS DASHBOARD METRICS** |
+| 1.1 | Login to POS system | POS dashboard loads | ☐ |
+| 1.2 | View Today's Sales tile | Shows total with % vs yesterday | ☐ |
+| 1.3 | Check Average Order Value | Displays AOV with trend indicator | ☐ |
+| 1.4 | View Last Year Comparison | Shows same day last year comparison | ☐ |
+| 1.5 | Check Active Deliveries | Count of in-progress deliveries | ☐ |
+| 1.6 | Verify auto-refresh | Metrics update every 60 seconds | ☐ |
+| **2. ADVANCED REPORTS PAGE** |
+| 2.1 | Navigate to Advanced Reports | Page loads with charts | ☐ |
+| 2.2 | View Weekly Sales Trend | Line chart with 7 days data | ☐ |
+| 2.3 | Switch to Monthly view | Chart updates to 30 days | ☐ |
+| 2.4 | Check percentage changes | Up/down indicators displayed | ☐ |
+| 2.5 | View Revenue Breakdown | Pie chart by order type | ☐ |
+| 2.6 | Verify dine-in/pickup/delivery | All three segments shown | ☐ |
+| 2.7 | View Peak Hours Heatmap | 24-hour bar chart displayed | ☐ |
+| 2.8 | Identify busiest hour | Highest bar highlighted | ☐ |
+| **3. STAFF LEADERBOARD** |
+| 3.1 | Navigate to Staff Leaderboard | Rankings displayed | ☐ |
+| 3.2 | View Today's leaderboard | Staff sorted by sales | ☐ |
+| 3.3 | Check performance levels | Badges (Gold/Silver/Bronze) shown | ☐ |
+| 3.4 | View sales generated | Total sales per staff member | ☐ |
+| 3.5 | Check average order value | AOV per staff displayed | ☐ |
+| 3.6 | View % contribution | Percentage of total sales | ☐ |
+| 3.7 | Switch to Weekly view | Data updates for past week | ☐ |
+| 3.8 | Switch to Monthly view | Data updates for past month | ☐ |
+| **4. PRODUCT ANALYTICS** |
+| 4.1 | Navigate to Product Analytics | Top products page loads | ☐ |
+| 4.2 | View Top 20 products | List with rankings | ☐ |
+| 4.3 | Sort by Quantity | Products sorted by units sold | ☐ |
+| 4.4 | Sort by Revenue | Products sorted by revenue | ☐ |
+| 4.5 | Check trend indicators | UP/DOWN/STABLE/NEW badges | ☐ |
+| 4.6 | View revenue percentages | % contribution to total | ☐ |
+| 4.7 | Toggle period filters | Today/Week/Month options | ☐ |
+| **5. PAYMENT INTEGRATION** |
+| 5.1 | Create new order in POS | Order panel populated | ☐ |
+| 5.2 | Add customer and items | Cart total calculated | ☐ |
+| 5.3 | Select CASH payment | Immediate processing | ☐ |
+| 5.4 | Complete CASH order | Order status: COMPLETED | ☐ |
+| 5.5 | Create another order | New order in system | ☐ |
+| 5.6 | Select CARD payment | Razorpay modal opens | ☐ |
+| 5.7 | Enter test card details | Card: 4111 1111 1111 1111 | ☐ |
+| 5.8 | Complete payment | Payment verified successfully | ☐ |
+| 5.9 | Verify signature validation | Backend signature check passed | ☐ |
+| 5.10 | Check UPI option | UPI payment method available | ☐ |
+| 5.11 | Check WALLET option | Wallet payment method available | ☐ |
+| **6. RECEIPT GENERATION** |
+| 6.1 | After order completion | Receipt generator displayed | ☐ |
+| 6.2 | View receipt layout | Store info, items, payment details | ☐ |
+| 6.3 | Click "Print Receipt" | Print dialog opens | ☐ |
+| 6.4 | Click "Download HTML" | Receipt downloads as HTML file | ☐ |
+| 6.5 | Verify neumorphic design | Receipt uses design tokens | ☐ |
+| **7. ANALYTICS API VERIFICATION** |
+| 7.1 | Check browser console | No API errors | ☐ |
+| 7.2 | Verify RTK Query caching | API calls cached properly | ☐ |
+| 7.3 | Test data refresh | Manual refresh updates data | ☐ |
+| 7.4 | Check Redis caching | Backend uses cached data | ☐ |
+| 7.5 | Verify response times | All API calls < 1 second | ☐ |
+
+### API Endpoints Tested
+- ✅ `GET /api/analytics/store/{storeId}/sales/today`
+- ✅ `GET /api/analytics/store/{storeId}/avgOrderValue/today`
+- ✅ `GET /api/analytics/sales/trends/{period}`
+- ✅ `GET /api/analytics/sales/breakdown/order-type`
+- ✅ `GET /api/analytics/sales/peak-hours`
+- ✅ `GET /api/analytics/staff/leaderboard`
+- ✅ `GET /api/analytics/products/top-selling`
+- ✅ `POST /api/payments/initiate`
+- ✅ `POST /api/payments/verify`
+
+### Success Criteria
+- ✅ All analytics charts rendering correctly
+- ✅ Real-time data updates working
+- ✅ Staff leaderboard calculations accurate
+- ✅ Product analytics with correct trends
+- ✅ Payment integration with all methods (CASH, CARD, UPI, WALLET)
+- ✅ Receipt generation and download functional
+- ✅ Neumorphic design consistent across all components
+- ✅ API response times < 1 second
+- ✅ Redis caching reducing database load
+
+### Data Verification Checklist
+- [ ] Analytics data matches order records in MongoDB
+- [ ] Staff performance calculations correct
+- [ ] Product rankings accurate
+- [ ] Payment transactions recorded properly
+- [ ] Razorpay orders created with correct amounts
+- [ ] Receipt data matches order details
+- [ ] Cache invalidation working (Redis TTL)
+
+---
+
 ## 📊 E2E Testing Summary
 
 ### Scenario Completion Tracking
@@ -451,16 +565,17 @@ End-to-end (E2E) scenarios validate that the entire system works cohesively acro
 | 5. Payment & Refund | 12 min | 20+ | ☐ | - | Payment flows |
 | 6. Inventory Cycle | 15 min | 35+ | ☐ | - | Replenishment |
 | 7. Loyalty Journey | 10 min | 25+ | ☐ | - | Points & tiers |
+| 8. POS Analytics & Reporting | 15 min | 55+ | ☐ | - | Analytics & payments |
 
-**Total Test Time:** ~90 minutes
-**Total Steps:** 240+
+**Total Test Time:** ~105 minutes
+**Total Steps:** 295+
 
 ---
 
 ## ✅ E2E Testing Sign-Off Criteria
 
 ### Critical Requirements
-- [ ] All 7 scenarios pass without errors
+- [ ] All 8 scenarios pass without errors
 - [ ] Data consistency verified across all services
 - [ ] Real-time updates working in all scenarios
 - [ ] No data loss or corruption
@@ -474,6 +589,9 @@ End-to-end (E2E) scenarios validate that the entire system works cohesively acro
 - [ ] Order Service ↔ Inventory Service
 - [ ] Order Service ↔ Delivery Service
 - [ ] Customer Service ↔ Order Service
+- [ ] Analytics Service ↔ Order Service
+- [ ] Analytics Service ↔ User Service
+- [ ] Payment Service ↔ Razorpay Gateway
 - [ ] All services ↔ API Gateway
 - [ ] All services ↔ MongoDB
 - [ ] Caching services ↔ Redis

@@ -122,7 +122,7 @@ const DeliveryManagementPage: React.FC = () => {
     marginBottom: spacing[3],
   };
 
-  const badgeStyles = (color: string): React.CSSProperties = ({
+  const badgeStyles = (color: string): React.CSSProperties => ({
     ...createBadge(),
     backgroundColor: color,
     color: '#fff',

@@ -7,7 +7,7 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://localhost:27017/masova_menu
+      uri: mongodb://localhost:27017/MaSoVa
       auto-index-creation: true
 
   redis:

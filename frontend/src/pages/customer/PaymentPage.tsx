@@ -11,12 +11,7 @@ import AnimatedBackground from '../../components/backgrounds/AnimatedBackground'
 import { colors, spacing, typography, shadows, borderRadius } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 
-// Razorpay types
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
+// Razorpay is declared in types/razorpay.d.ts - no need to redeclare
 
 interface GuestInfo {
   email: string;
@@ -50,12 +45,15 @@ const PaymentPage: React.FC = () => {
 
   const isLoading = isCreatingOrder || isInitiatingPayment;
 
-  // Redirect if cart is empty
+  // Track if order was placed to prevent redirect after successful order
+  const [orderPlaced, setOrderPlaced] = React.useState(false);
+
+  // Redirect if cart is empty (but not if order was just placed)
   useEffect(() => {
-    if (cartItems.length === 0) {
+    if (cartItems.length === 0 && !orderPlaced) {
       navigate('/menu');
     }
-  }, [cartItems, navigate]);
+  }, [cartItems, navigate, orderPlaced]);
 
   // Calculate totals - consistent with CartDrawer, CheckoutPage, and GuestCheckoutPage
   const deliveryFee = orderType === 'DELIVERY' ? baseDeliveryFee : 0;
@@ -64,20 +62,19 @@ const PaymentPage: React.FC = () => {
 
   const handlePlaceOrder = async () => {
     try {
-      // Prepare order data
+      // Prepare order data - matching backend CreateOrderRequest structure
       const orderData = {
         storeId: 'store-1', // Default store ID
         customerName: currentUser?.name || guestInfo?.name || 'Guest',
         customerPhone: guestInfo?.phone || currentUser?.phone || '',
-        customerEmail: guestInfo?.email || currentUser?.email,
-        customerId: currentUser?.userId,
+        customerId: currentUser?.id, // User type uses 'id' not 'userId'
         items: cartItems.map(item => ({
           menuItemId: item.id,
           name: item.name,
           quantity: item.quantity,
-          price: Math.round(item.price * 100), // Convert to paise
-          variant: item.variant,
-          customizations: item.customizations,
+          price: item.price, // Backend expects price in rupees (Double)
+          variant: (item as any).variant,
+          customizations: (item as any).customizations,
         })),
         orderType,
         paymentMethod,
@@ -86,39 +83,47 @@ const PaymentPage: React.FC = () => {
           city: guestInfo.city,
           state: guestInfo.state,
           pincode: guestInfo.pincode,
-          instructions: guestInfo.deliveryInstructions,
+          landmark: guestInfo.deliveryInstructions || '', // Backend uses 'landmark' not 'instructions'
         } : undefined,
-        notes: guestInfo?.deliveryInstructions,
+        specialInstructions: guestInfo?.deliveryInstructions, // Backend uses 'specialInstructions' not 'notes'
       };
+
+      console.log('Creating order with data:', orderData);
 
       // Create order first
       const orderResult = await createOrder(orderData).unwrap();
+      console.log('Order created successfully:', orderResult);
+      const orderId = orderResult.id; // Backend returns 'id' not 'orderId'
 
       // If payment method is CASH, just redirect to tracking
       if (paymentMethod === 'CASH') {
+        console.log('Cash payment - redirecting to tracking page:', orderId);
+        setOrderPlaced(true); // Prevent redirect to menu
         dispatch(clearCart());
-        navigate(`/tracking/${orderResult.orderId}`, {
-          state: { orderData: orderResult }
+        navigate(`/tracking/${orderId}`, {
+          state: { orderData: orderResult },
+          replace: true // Replace history to prevent back navigation issues
         });
         return;
       }
 
       // For CARD/UPI, initiate Razorpay payment
       const paymentResult = await initiatePayment({
-        orderId: orderResult.orderId,
+        orderId: orderId,
         amount: total,
-        customerId: currentUser?.userId || 'guest',
+        customerId: currentUser?.id || 'guest',
         customerEmail: guestInfo?.email || currentUser?.email,
         customerPhone: guestInfo?.phone || currentUser?.phone,
         storeId: 'store-1',
       }).unwrap();
 
       // Open Razorpay checkout
-      openRazorpayCheckout(paymentResult, orderResult.orderId);
+      openRazorpayCheckout(paymentResult, orderId);
 
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to create order:', err);
-      alert('Failed to create order. Please try again.');
+      const errorMessage = err?.data?.message || err?.message || 'Failed to create order. Please try again.';
+      alert(errorMessage);
     }
   };
 
@@ -167,7 +172,7 @@ const PaymentPage: React.FC = () => {
 
     const razorpay = new window.Razorpay(options);
 
-    razorpay.on('payment.failed', function (response: any) {
+    razorpay.on('payment.failed', function (response) {
       console.error('Payment failed:', response.error);
       navigate(`/payment/failed?order_id=${orderId}&error=${response.error.description || 'Payment failed'}`);
     });

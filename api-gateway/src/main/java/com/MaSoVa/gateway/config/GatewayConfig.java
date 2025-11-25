@@ -66,6 +66,11 @@ public class GatewayConfig {
                         .and().method("POST")
                         .uri("http://localhost:8086"))
 
+                // Review Service - Public Routes (ratings display)
+                .route("reviews_public", r -> r.path("/api/reviews/public/**")
+                        .and().method("GET")
+                        .uri("http://localhost:8089"))
+
                 // ============================================
                 // PROTECTED ROUTES (Authentication Required)
                 // ============================================
@@ -132,6 +137,16 @@ public class GatewayConfig {
                 .route("kitchen_equipment_protected", r -> r.path("/api/kitchen-equipment/**")
                         .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8083"))
+
+                // Review Service - Protected Routes
+                .route("reviews_protected", r -> r.path("/api/reviews/**")
+                        .and().not(p -> p.path("/api/reviews/public/**"))
+                        .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8089"))
+
+                .route("responses_protected", r -> r.path("/api/responses/**")
+                        .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8089"))
 
                 // Default fallback
                 .route("fallback", r -> r.path("/**")

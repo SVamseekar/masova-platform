@@ -6,17 +6,9 @@ import com.MaSoVa.order.entity.DeliveryAddress;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class CreateOrderRequest {
 
     @NotBlank(message = "Customer name is required")
@@ -41,10 +33,36 @@ public class CreateOrderRequest {
 
     private String specialInstructions;
 
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
+    public CreateOrderRequest() {}
+
+    // Getters and Setters
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
+
+    public String getCustomerPhone() { return customerPhone; }
+    public void setCustomerPhone(String customerPhone) { this.customerPhone = customerPhone; }
+
+    public String getCustomerId() { return customerId; }
+    public void setCustomerId(String customerId) { this.customerId = customerId; }
+
+    public String getStoreId() { return storeId; }
+    public void setStoreId(String storeId) { this.storeId = storeId; }
+
+    public List<OrderItemRequest> getItems() { return items; }
+    public void setItems(List<OrderItemRequest> items) { this.items = items; }
+
+    public OrderType getOrderType() { return orderType; }
+    public void setOrderType(OrderType orderType) { this.orderType = orderType; }
+
+    public PaymentMethod getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(PaymentMethod paymentMethod) { this.paymentMethod = paymentMethod; }
+
+    public DeliveryAddress getDeliveryAddress() { return deliveryAddress; }
+    public void setDeliveryAddress(DeliveryAddress deliveryAddress) { this.deliveryAddress = deliveryAddress; }
+
+    public String getSpecialInstructions() { return specialInstructions; }
+    public void setSpecialInstructions(String specialInstructions) { this.specialInstructions = specialInstructions; }
+
     public static class OrderItemRequest {
 
         @NotBlank(message = "Menu item ID is required")
@@ -62,5 +80,26 @@ public class CreateOrderRequest {
         private String variant;
 
         private List<String> customizations;
+
+        public OrderItemRequest() {}
+
+        // Getters and Setters
+        public String getMenuItemId() { return menuItemId; }
+        public void setMenuItemId(String menuItemId) { this.menuItemId = menuItemId; }
+
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+
+        public Integer getQuantity() { return quantity; }
+        public void setQuantity(Integer quantity) { this.quantity = quantity; }
+
+        public Double getPrice() { return price; }
+        public void setPrice(Double price) { this.price = price; }
+
+        public String getVariant() { return variant; }
+        public void setVariant(String variant) { this.variant = variant; }
+
+        public List<String> getCustomizations() { return customizations; }
+        public void setCustomizations(List<String> customizations) { this.customizations = customizations; }
     }
 }

@@ -1,6 +1,7 @@
 package com.MaSoVa.order.client;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -13,8 +14,9 @@ import java.util.Map;
  * Used for stock availability validation and pricing validation
  */
 @Component
-@Slf4j
 public class MenuServiceClient {
+
+    private static final Logger log = LoggerFactory.getLogger(MenuServiceClient.class);
 
     private final RestTemplate restTemplate;
     private final String menuServiceUrl;

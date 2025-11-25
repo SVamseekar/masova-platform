@@ -5,7 +5,7 @@ import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import { removeFromCart, updateQuantity } from '../../store/slices/cartSlice';
+import { removeFromCart, updateItemQuantity } from '../../store/slices/cartSlice';
 
 interface CartPageProps {
   onContinueShopping: () => void;
@@ -27,7 +27,7 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
 
   const handleUpdateQuantity = (id: string, quantity: number) => {
     if (quantity > 0) {
-      dispatch(updateQuantity({ id, quantity }));
+      dispatch(updateItemQuantity({ id, quantity }));
     }
   };
 
@@ -64,7 +64,7 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
                   <Grid container spacing={2} alignItems="center">
                     <Grid item xs={12} sm={5}>
                       <Typography variant="h6" fontWeight="bold">{item.name}</Typography>
-                      <Typography variant="body2" color="text.secondary">¹{item.price.toFixed(2)} each</Typography>
+                      <Typography variant="body2" color="text.secondary">ï¿½{item.price.toFixed(2)} each</Typography>
                     </Grid>
                     <Grid item xs={6} sm={3}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -78,7 +78,7 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
                       </Box>
                     </Grid>
                     <Grid item xs={4} sm={3}>
-                      <Typography variant="h6" fontWeight="bold" color="primary">¹{(item.price * item.quantity).toFixed(2)}</Typography>
+                      <Typography variant="h6" fontWeight="bold" color="primary">ï¿½{(item.price * item.quantity).toFixed(2)}</Typography>
                     </Grid>
                     <Grid item xs={2} sm={1}>
                       <IconButton color="error" onClick={() => handleRemove(item.id)}>
@@ -100,21 +100,21 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
               <Box sx={{ mb: 2 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography>Subtotal</Typography>
-                  <Typography>¹{subtotal.toFixed(2)}</Typography>
+                  <Typography>ï¿½{subtotal.toFixed(2)}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography>Delivery Fee</Typography>
-                  <Typography>¹{deliveryFee.toFixed(2)}</Typography>
+                  <Typography>ï¿½{deliveryFee.toFixed(2)}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography>Tax (5%)</Typography>
-                  <Typography>¹{tax.toFixed(2)}</Typography>
+                  <Typography>ï¿½{tax.toFixed(2)}</Typography>
                 </Box>
               </Box>
               <Divider sx={{ my: 2 }} />
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
                 <Typography variant="h6" fontWeight="bold">Total</Typography>
-                <Typography variant="h6" fontWeight="bold" color="primary">¹{total.toFixed(2)}</Typography>
+                <Typography variant="h6" fontWeight="bold" color="primary">ï¿½{total.toFixed(2)}</Typography>
               </Box>
               <Button variant="contained" fullWidth size="large" onClick={onProceedToPayment} sx={{ mb: 2 }}>
                 Proceed to Payment

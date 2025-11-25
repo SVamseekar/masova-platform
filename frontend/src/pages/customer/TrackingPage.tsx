@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useGetOrderByIdQuery } from '../../store/api/orderApi';
+import { useGetOrderQuery } from '../../store/api/orderApi';
 import { Button, Card } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
@@ -30,7 +30,7 @@ const TrackingPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { data: order, isLoading, error, refetch } = useGetOrderByIdQuery(orderId || '', {
+  const { data: order, isLoading, error, refetch } = useGetOrderQuery(orderId || '', {
     skip: !orderId,
     pollingInterval: 10000, // Poll every 10 seconds for real-time updates
   });
@@ -266,7 +266,7 @@ const TrackingPage: React.FC = () => {
     );
   }
 
-  const isDelivered = order.status === 'DELIVERED' || order.status === 'COMPLETED';
+  const isDelivered = order.status === 'DELIVERED';
 
   return (
     <>
@@ -407,7 +407,7 @@ const TrackingPage: React.FC = () => {
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
               }}>
-                ₹{(order.totalAmount / 100).toFixed(2)}
+                ₹{order.total.toFixed(2)}
               </span>
             </div>
           </Card>

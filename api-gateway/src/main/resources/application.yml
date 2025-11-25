@@ -31,6 +31,8 @@ services:
     url: ${ORDER_SERVICE_URL:http://localhost:8083}
   payment-service:
     url: ${PAYMENT_SERVICE_URL:http://localhost:8086}
+  review-service:
+    url: ${REVIEW_SERVICE_URL:http://localhost:8089}
 
 logging:
   level:

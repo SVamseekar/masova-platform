@@ -1,5 +1,5 @@
 // Enhanced MongoDB initialization with 11 AM - 11 PM operating hours
-db = db.getSiblingDB('masova');
+db = db.getSiblingDB('MaSoVa');
 
 // Create collections
 db.createCollection('users');

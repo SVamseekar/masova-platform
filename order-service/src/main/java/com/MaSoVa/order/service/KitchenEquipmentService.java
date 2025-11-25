@@ -2,8 +2,8 @@ package com.MaSoVa.order.service;
 
 import com.MaSoVa.order.entity.KitchenEquipment;
 import com.MaSoVa.order.repository.KitchenEquipmentRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,11 +11,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
-@Slf4j
-@RequiredArgsConstructor
 public class KitchenEquipmentService {
 
+    private static final Logger log = LoggerFactory.getLogger(KitchenEquipmentService.class);
+
     private final KitchenEquipmentRepository equipmentRepository;
+
+    public KitchenEquipmentService(KitchenEquipmentRepository equipmentRepository) {
+        this.equipmentRepository = equipmentRepository;
+    }
 
     /**
      * Create new equipment

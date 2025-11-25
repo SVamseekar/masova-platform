@@ -1,7 +1,8 @@
 package com.MaSoVa.order.websocket;
 
 import com.MaSoVa.order.entity.Order;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
@@ -9,8 +10,9 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 @Controller
-@Slf4j
 public class OrderWebSocketController {
+
+    private static final Logger log = LoggerFactory.getLogger(OrderWebSocketController.class);
 
     private final SimpMessagingTemplate messagingTemplate;
 

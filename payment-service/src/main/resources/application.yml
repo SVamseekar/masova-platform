@@ -17,9 +17,9 @@ spring:
 
 # Razorpay Configuration
 razorpay:
-  key-id: ${RAZORPAY_KEY_ID:rzp_test_YOUR_KEY_ID}
-  key-secret: ${RAZORPAY_KEY_SECRET:YOUR_KEY_SECRET}
-  webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:YOUR_WEBHOOK_SECRET}
+  key-id: rzp_test_RjYYkXMmoArj4C
+  key-secret: Asbe0hf12kZn0VSX4ykn3Nvq
+  webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:webhook_secret_not_needed_for_test}
 
 # Service URLs
 services:

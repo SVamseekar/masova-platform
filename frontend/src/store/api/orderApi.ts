@@ -22,6 +22,16 @@ export interface QualityCheckpoint {
   notes?: string;
 }
 
+export interface DeliveryAddress {
+  street: string;
+  city: string;
+  state?: string;
+  pincode: string;
+  latitude?: number;
+  longitude?: number;
+  landmark?: string;
+}
+
 export interface Order {
   id: string;
   orderNumber: string;
@@ -44,6 +54,9 @@ export interface Order {
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
+  deliveryAddress?: DeliveryAddress;
+  assignedDriverId?: string;
+  specialInstructions?: string;
   qualityCheckpoints?: QualityCheckpoint[];
   actualPreparationTime?: number;
   actualOvenTime?: number;
@@ -62,7 +75,7 @@ export interface CreateOrderRequest {
     menuItemId: string;
     name: string; // Required by backend
     quantity: number;
-    price: number; // Required by backend
+    price: number; // Required by backend - in rupees (Double)
     variant?: string;
     customizations?: string[];
   }>;
@@ -71,9 +84,11 @@ export interface CreateOrderRequest {
   deliveryAddress?: {
     street: string;
     city: string;
+    state?: string;
     pincode: string;
     latitude?: number;
     longitude?: number;
+    landmark?: string;
   };
   specialInstructions?: string;
 }

@@ -1,7 +1,7 @@
 # Test Cases: Phases 6-9 (Comprehensive)
 
 **Document:** 04-phases-6-9-COMPREHENSIVE-TESTS.md
-**Covers:** Kitchen Operations, Inventory, Customer Management, Delivery Management
+**Covers:** Kitchen Operations, Inventory, Customer Management, Delivery Management, POS Analytics
 **Test Priority:** HIGH (Advanced features & operations)
 
 ---
@@ -12,6 +12,7 @@
 2. [Phase 7: Inventory Management](#phase-7-inventory-management)
 3. [Phase 8: Customer Management & Loyalty](#phase-8-customer-management--loyalty)
 4. [Phase 9: Driver & Delivery Management](#phase-9-driver--delivery-management)
+5. [Phase 9: POS Analytics & Advanced Reporting](#phase-9-pos-analytics--advanced-reporting)
 
 ---
 
@@ -1219,6 +1220,345 @@
 
 ---
 
+## Phase 9: POS Analytics & Advanced Reporting
+
+### 🎯 Test Scope
+- Advanced analytics APIs (5 endpoints)
+- Sales trend charts
+- Staff leaderboard
+- Product analytics
+- Payment integration (Razorpay)
+- Receipt generation
+- Neumorphic design compliance
+
+### 9A.1 Sales Trends API Tests
+
+#### TC-9A.1.1: Get Weekly Sales Trends
+**Priority:** HIGH
+**Preconditions:** Orders exist for the past 7 days
+
+| Step | Action | Expected Result | Status |
+|------|--------|-----------------|--------|
+| 1 | GET `/api/analytics/sales/trends/WEEKLY?storeId=store-001` | 200 OK | ☐ |
+| 2 | Verify 7 data points returned | One per day | ☐ |
+| 3 | Check totalSales calculation | Sum of all days | ☐ |
+| 4 | Verify percentChangeFromPreviousPeriod | Comparison with previous week | ☐ |
+| 5 | Check trend value | "UP", "DOWN", or "STABLE" | ☐ |
+
+**Acceptance Criteria:**
+- ✅ Returns 7 daily data points
+- ✅ Accurate sales calculations
+- ✅ Correct trend comparison
+- ✅ Labels formatted correctly (e.g., "Mon", "Tue")
+
+---
+
+#### TC-9A.1.2: Get Monthly Sales Trends
+**Priority:** HIGH
+**Preconditions:** Orders exist for the past 30 days
+
+| Step | Action | Expected Result | Status |
+|------|--------|-----------------|--------|
+| 1 | GET `/api/analytics/sales/trends/MONTHLY?storeId=store-001` | 200 OK | ☐ |
+| 2 | Verify 30 data points returned | One per day | ☐ |
+| 3 | Check data format | Date labels like "Nov 12" | ☐ |
+| 4 | Verify average order value | totalSales / totalOrders | ☐ |
+
+**Acceptance Criteria:**
+- ✅ Returns 30 daily data points
+- ✅ Accurate monthly aggregations
+- ✅ Correct AOV calculations
+
+---
+
+### 9A.2 Revenue Breakdown Tests
+
+#### TC-9A.2.1: Order Type Breakdown
+**Priority:** HIGH
+**Preconditions:** Orders with different types exist (DINE_IN, PICKUP, DELIVERY)
+
+| Step | Action | Expected Result | Status |
+|------|--------|-----------------|--------|
+| 1 | GET `/api/analytics/sales/breakdown/order-type?storeId=store-001` | 200 OK | ☐ |
+| 2 | Verify breakdown by type | 3 categories returned | ☐ |
+| 3 | Check percentage calculations | Sum equals 100% | ☐ |
+| 4 | Verify average order values | Calculated per type | ☐ |
+
+**Acceptance Criteria:**
+- ✅ All order types represented
+- ✅ Accurate percentage calculations
+- ✅ Correct revenue totals
+
+---
+
+### 9A.3 Peak Hours Analysis Tests
+
+#### TC-9A.3.1: Get Peak Hours Data
+**Priority:** HIGH
+**Preconditions:** Orders exist throughout the day
+
+| Step | Action | Expected Result | Status |
+|------|--------|-----------------|--------|
+| 1 | GET `/api/analytics/sales/peak-hours?storeId=store-001` | 200 OK | ☐ |
+| 2 | Verify 24-hour data returned | Hours 0-23 covered | ☐ |
+| 3 | Check peakHour identification | Highest order count hour | ☐ |
+| 4 | Check slowestHour identification | Lowest order count hour (>0) | ☐ |
+| 5 | Verify hour labels formatted | "12 AM", "1 PM", etc. | ☐ |
+
+**Acceptance Criteria:**
+- ✅ All 24 hours represented
+- ✅ Correct peak/slow hour identification
+- ✅ Accurate hourly aggregations
+
+---
+
+### 9A.4 Staff Leaderboard Tests
+
+#### TC-9A.4.1: Daily Staff Leaderboard
+**Priority:** HIGH
+**Preconditions:** Multiple staff members processed orders today
+
+| Step | Action | Expected Result | Status |
+|------|--------|-----------------|--------|
+| 1 | GET `/api/analytics/staff/leaderboard?storeId=store-001&period=TODAY` | 200 OK | ☐ |
+| 2 | Verify staff rankings | Sorted by sales descending | ☐ |
+| 3 | Check performance levels | EXCELLENT/GOOD/AVERAGE/NEEDS_IMPROVEMENT | ☐ |
+| 4 | Verify percentage of total sales | Sum equals 100% | ☐ |
+| 5 | Check average order values | Calculated per staff | ☐ |
+
+**Acceptance Criteria:**
+- ✅ Staff ranked correctly
+- ✅ Performance levels assigned
+- ✅ Accurate sales attribution
+
+---
+
+#### TC-9A.4.2: Weekly Staff Leaderboard
+**Priority:** MEDIUM
+**Preconditions:** Staff processed orders this week
+
+| Step | Action | Expected Result | Status |
+|------|--------|-----------------|--------|
+| 1 | GET `/api/analytics/staff/leaderboard?storeId=store-001&period=WEEK` | 200 OK | ☐ |
+| 2 | Verify 7-day aggregation | Correct date range | ☐ |
+| 3 | Check rankings updated | Based on week's performance | ☐ |
+
+---
+
+### 9A.5 Product Analytics Tests
+
+#### TC-9A.5.1: Top Products by Quantity
+**Priority:** HIGH
+**Preconditions:** Multiple products sold
+
+| Step | Action | Expected Result | Status |
+|------|--------|-----------------|--------|
+| 1 | GET `/api/analytics/products/top-selling?sortBy=QUANTITY&period=TODAY` | 200 OK | ☐ |
+| 2 | Verify top 20 products returned | Ranked by quantity | ☐ |
+| 3 | Check quantity calculations | Accurate item counts | ☐ |
+| 4 | Verify revenue percentages | Calculated correctly | ☐ |
+
+**Acceptance Criteria:**
+- ✅ Products ranked by quantity
+- ✅ Accurate aggregations
+- ✅ Top 20 limit enforced
+
+---
+
+#### TC-9A.5.2: Top Products by Revenue
+**Priority:** HIGH
+**Preconditions:** Multiple products sold
+
+| Step | Action | Expected Result | Status |
+|------|--------|-----------------|--------|
+| 1 | GET `/api/analytics/products/top-selling?sortBy=REVENUE&period=TODAY` | 200 OK | ☐ |
+| 2 | Verify ranking by revenue | Highest revenue first | ☐ |
+| 3 | Check revenue calculations | price × quantity | ☐ |
+
+---
+
+### 9A.6 Payment Integration Tests
+
+#### TC-9A.6.1: Initiate Razorpay Payment
+**Priority:** HIGH
+**Preconditions:** Order created, total calculated
+
+| Step | Action | Expected Result | Status |
+|------|--------|-----------------|--------|
+| 1 | POST `/api/payment/initiate` with order details | 200 OK | ☐ |
+| 2 | Verify Razorpay order created | Order ID returned | ☐ |
+| 3 | Check amount in paise | Converted correctly (×100) | ☐ |
+| 4 | Verify currency INR | Correct currency code | ☐ |
+
+**Test Data:**
+```json
+{
+  "amount": 850.00,
+  "currency": "INR",
+  "orderId": "ORD-12345",
+  "customerId": "customer-001"
+}
+```
+
+**Acceptance Criteria:**
+- ✅ Razorpay order created successfully
+- ✅ Amount converted to paise
+- ✅ Order ID tracked
+
+---
+
+#### TC-9A.6.2: Verify Payment Signature
+**Priority:** HIGH
+**Preconditions:** Payment completed via Razorpay
+
+| Step | Action | Expected Result | Status |
+|------|--------|-----------------|--------|
+| 1 | POST `/api/payment/verify` with signature data | 200 OK | ☐ |
+| 2 | Verify signature validation | HMAC SHA256 check passes | ☐ |
+| 3 | Check payment status updated | Order marked as PAID | ☐ |
+| 4 | Verify transaction ID saved | Razorpay payment ID stored | ☐ |
+
+**Acceptance Criteria:**
+- ✅ Signature validation secure
+- ✅ Payment status updated
+- ✅ Transaction tracked
+
+---
+
+#### TC-9A.6.3: Handle Payment Failure
+**Priority:** MEDIUM
+**Preconditions:** Payment initiation attempted
+
+| Step | Action | Expected Result | Status |
+|------|--------|-----------------|--------|
+| 1 | Simulate Razorpay failure | Error returned | ☐ |
+| 2 | Verify order status unchanged | Still PENDING | ☐ |
+| 3 | Check error message displayed | User-friendly message | ☐ |
+
+---
+
+### 9A.7 Frontend Chart Tests
+
+#### TC-9A.7.1: Sales Trend Chart Rendering
+**Priority:** HIGH
+**Preconditions:** AdvancedReportsPage loaded
+
+| Step | Action | Expected Result | Status |
+|------|--------|-----------------|--------|
+| 1 | Navigate to `/manager/reports/advanced` | Page loads | ☐ |
+| 2 | Verify SalesTrendChart visible | Chart renders | ☐ |
+| 3 | Check data points displayed | 7 or 30 points visible | ☐ |
+| 4 | Toggle between 7/30 days | Chart updates | ☐ |
+| 5 | Verify trend indicator | UP/DOWN/FLAT icon shown | ☐ |
+
+**Acceptance Criteria:**
+- ✅ Chart renders with Recharts
+- ✅ Data toggle works
+- ✅ Neumorphic design applied
+
+---
+
+#### TC-9A.7.2: Revenue Breakdown Pie Chart
+**Priority:** HIGH
+**Preconditions:** Advanced Reports page loaded
+
+| Step | Action | Expected Result | Status |
+|------|--------|-----------------|--------|
+| 1 | Verify pie chart visible | RevenueBreakdownChart shown | ☐ |
+| 2 | Check 3 segments | DINE_IN, PICKUP, DELIVERY | ☐ |
+| 3 | Hover over segment | Tooltip shows details | ☐ |
+| 4 | Verify percentages labeled | Labels show X.X% | ☐ |
+
+---
+
+#### TC-9A.7.3: Peak Hours Heatmap
+**Priority:** HIGH
+**Preconditions:** Advanced Reports page loaded
+
+| Step | Action | Expected Result | Status |
+|------|--------|-----------------|--------|
+| 1 | Verify bar chart visible | PeakHoursHeatmap shown | ☐ |
+| 2 | Check color coding | Peak hour green, slow hour red | ☐ |
+| 3 | Verify hour labels | "12 AM" to "11 PM" format | ☐ |
+
+---
+
+### 9A.8 Receipt Generator Tests
+
+#### TC-9A.8.1: Generate and Display Receipt
+**Priority:** HIGH
+**Preconditions:** Order completed and paid
+
+| Step | Action | Expected Result | Status |
+|------|--------|-----------------|--------|
+| 1 | Click "View Receipt" button | ReceiptGenerator dialog opens | ☐ |
+| 2 | Verify order details shown | Number, date, items, totals | ☐ |
+| 3 | Check payment info displayed | Method and status | ☐ |
+| 4 | Verify store information | Name, address, phone | ☐ |
+
+**Acceptance Criteria:**
+- ✅ Receipt dialog opens
+- ✅ All details accurate
+- ✅ Neumorphic styling applied
+
+---
+
+#### TC-9A.8.2: Print Receipt
+**Priority:** MEDIUM
+**Preconditions:** Receipt dialog open
+
+| Step | Action | Expected Result | Status |
+|------|--------|-----------------|--------|
+| 1 | Click "Print Receipt" button | window.print() called | ☐ |
+| 2 | Verify print preview | Receipt formatted for print | ☐ |
+| 3 | Check print-specific styles | Borders/shadows removed | ☐ |
+
+---
+
+#### TC-9A.8.3: Download Receipt as HTML
+**Priority:** MEDIUM
+**Preconditions:** Receipt dialog open
+
+| Step | Action | Expected Result | Status |
+|------|--------|-----------------|--------|
+| 1 | Click "Download" button | HTML file downloads | ☐ |
+| 2 | Check filename format | Receipt_ORD-XXX_YYYYMMDD_HHMMSS.html | ☐ |
+| 3 | Open downloaded file | Receipt displays correctly | ☐ |
+
+---
+
+### 9A.9 Neumorphic Design Compliance Tests
+
+#### TC-9A.9.1: Chart Components Use Design Tokens
+**Priority:** MEDIUM
+**Preconditions:** Charts rendered
+
+| Step | Action | Expected Result | Status |
+|------|--------|-----------------|--------|
+| 1 | Inspect SalesTrendChart | Uses createCard() styling | ☐ |
+| 2 | Check line colors | Uses colors.brand.primary | ☐ |
+| 3 | Verify RevenueBreakdownChart | Design tokens for colors | ☐ |
+| 4 | Check PeakHoursHeatmap | Semantic colors applied | ☐ |
+
+**Acceptance Criteria:**
+- ✅ All charts use createCard()
+- ✅ No hardcoded color values
+- ✅ Proper neumorphic shadows
+
+---
+
+#### TC-9A.9.2: Button Variants Consistent
+**Priority:** LOW
+**Preconditions:** Receipt and payment UI visible
+
+| Step | Action | Expected Result | Status |
+|------|--------|-----------------|--------|
+| 1 | Check payment buttons | Use createButtonVariant() | ☐ |
+| 2 | Verify receipt buttons | Primary/ghost variants | ☐ |
+| 3 | Test hover states | Proper neumorphic animations | ☐ |
+
+---
+
 ## 📊 Test Summary Template
 
 | Phase | Total Tests | Passed | Failed | Blocked | Pass Rate |
@@ -1227,7 +1567,8 @@
 | Phase 7 (Inventory) | 22 | 0 | 0 | 0 | 0% |
 | Phase 8 (Customer) | 15 | 0 | 0 | 0 | 0% |
 | Phase 9 (Delivery) | 20 | 0 | 0 | 0 | 0% |
-| **Total** | **75** | **0** | **0** | **0** | **0%** |
+| Phase 9 (Analytics) | 18 | 0 | 0 | 0 | 0% |
+| **Total** | **93** | **0** | **0** | **0** | **0%** |
 
 ---
 
@@ -1258,7 +1599,7 @@
 - [ ] Address management complete
 - [ ] Customer analytics accurate
 
-### Phase 9 Sign-Off
+### Phase 9 (Delivery) Sign-Off
 - [ ] All 20 tests passed
 - [ ] Driver management functional
 - [ ] Auto-dispatch intelligent
@@ -1266,6 +1607,18 @@
 - [ ] Route optimization working
 - [ ] Performance tracking accurate
 - [ ] Driver app fully functional
+
+### Phase 9 (Analytics) Sign-Off
+- [ ] All 18 tests passed
+- [ ] Sales trends API working (weekly/monthly)
+- [ ] Revenue breakdown accurate
+- [ ] Peak hours analysis functional
+- [ ] Staff leaderboard ranking correct
+- [ ] Product analytics top 20 accurate
+- [ ] Razorpay payment integration working
+- [ ] Receipt generation functional (print/download)
+- [ ] All charts use neumorphic design system
+- [ ] Design tokens applied consistently
 
 ---
 

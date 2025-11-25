@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { RootState } from '../store';
-import { API_BASE_URL } from '../../config/api.config';
+import { API_CONFIG } from '../../config/api.config';
 
 // ==================== TYPE DEFINITIONS ====================
 
@@ -227,7 +227,7 @@ export interface ReceivePurchaseOrderRequest {
 export const inventoryApi = createApi({
   reducerPath: 'inventoryApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: `${API_BASE_URL}/api/inventory`,
+    baseUrl: `${API_CONFIG.MENU_SERVICE_URL}/api/inventory`,
     prepareHeaders: (headers, { getState }) => {
       const token = (getState() as RootState).auth.token;
       if (token) {

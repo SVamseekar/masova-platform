@@ -9,8 +9,8 @@ import com.MaSoVa.order.entity.OrderItem;
 import com.MaSoVa.order.repository.OrderRepository;
 import com.MaSoVa.order.websocket.OrderWebSocketController;
 import com.MaSoVa.order.client.MenuServiceClient;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,14 +21,20 @@ import java.util.stream.Collectors;
 import java.util.Comparator;
 
 @Service
-@Slf4j
-@RequiredArgsConstructor
 public class OrderService {
+
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
     private final OrderRepository orderRepository;
     private final OrderWebSocketController webSocketController;
     private final MenuServiceClient menuServiceClient;
     private final Random random = new Random();
+
+    public OrderService(OrderRepository orderRepository, OrderWebSocketController webSocketController, MenuServiceClient menuServiceClient) {
+        this.orderRepository = orderRepository;
+        this.webSocketController = webSocketController;
+        this.menuServiceClient = menuServiceClient;
+    }
 
     @Transactional
     public Order createOrder(CreateOrderRequest request) {

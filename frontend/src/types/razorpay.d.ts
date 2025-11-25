@@ -28,11 +28,26 @@ interface RazorpaySuccessResponse {
   razorpay_signature: string;
 }
 
+interface RazorpayFailedResponse {
+  error: {
+    code: string;
+    description: string;
+    source: string;
+    step: string;
+    reason: string;
+    metadata?: {
+      order_id?: string;
+      payment_id?: string;
+    };
+  };
+}
+
 declare class Razorpay {
   constructor(options: RazorpayOptions);
   open(): void;
   close(): void;
-  on(event: string, handler: () => void): void;
+  on(event: 'payment.failed', handler: (response: RazorpayFailedResponse) => void): void;
+  on(event: string, handler: (...args: any[]) => void): void;
 }
 
 interface Window {
