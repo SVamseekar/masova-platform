@@ -1,7 +1,7 @@
 package com.MaSoVa.delivery.client;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -15,11 +15,15 @@ import java.util.Map;
  * Client for communicating with Order Service
  */
 @Component
-@Slf4j
-@RequiredArgsConstructor
 public class OrderServiceClient {
 
+    private static final Logger log = LoggerFactory.getLogger(OrderServiceClient.class);
+
     private final RestTemplate restTemplate;
+
+    public OrderServiceClient(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
 
     @Value("${services.order-service.url}")
     private String orderServiceUrl;

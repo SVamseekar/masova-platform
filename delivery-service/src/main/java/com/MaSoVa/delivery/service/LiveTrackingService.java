@@ -6,8 +6,8 @@ import com.MaSoVa.delivery.entity.DeliveryTracking;
 import com.MaSoVa.delivery.entity.DriverLocation;
 import com.MaSoVa.delivery.repository.DeliveryTrackingRepository;
 import com.MaSoVa.delivery.repository.DriverLocationRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -20,14 +20,22 @@ import java.util.Optional;
  * Service for live tracking of driver locations
  */
 @Service
-@Slf4j
-@RequiredArgsConstructor
 public class LiveTrackingService {
+
+    private static final Logger log = LoggerFactory.getLogger(LiveTrackingService.class);
 
     private final DriverLocationRepository driverLocationRepository;
     private final DeliveryTrackingRepository deliveryTrackingRepository;
     private final ETACalculationService etaCalculationService;
     private final SimpMessagingTemplate messagingTemplate;
+
+    public LiveTrackingService(DriverLocationRepository driverLocationRepository, DeliveryTrackingRepository deliveryTrackingRepository,
+                               ETACalculationService etaCalculationService, SimpMessagingTemplate messagingTemplate) {
+        this.driverLocationRepository = driverLocationRepository;
+        this.deliveryTrackingRepository = deliveryTrackingRepository;
+        this.etaCalculationService = etaCalculationService;
+        this.messagingTemplate = messagingTemplate;
+    }
 
     /**
      * Update driver's real-time location

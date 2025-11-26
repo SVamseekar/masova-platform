@@ -6,8 +6,8 @@ import com.MaSoVa.delivery.dto.TrackingResponse;
 import com.MaSoVa.delivery.service.ETACalculationService;
 import com.MaSoVa.delivery.service.LiveTrackingService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,12 +16,17 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/delivery")
-@RequiredArgsConstructor
-@Slf4j
 public class TrackingController {
+
+    private static final Logger log = LoggerFactory.getLogger(TrackingController.class);
 
     private final LiveTrackingService liveTrackingService;
     private final ETACalculationService etaCalculationService;
+
+    public TrackingController(LiveTrackingService liveTrackingService, ETACalculationService etaCalculationService) {
+        this.liveTrackingService = liveTrackingService;
+        this.etaCalculationService = etaCalculationService;
+    }
 
     /**
      * Driver pushes location update

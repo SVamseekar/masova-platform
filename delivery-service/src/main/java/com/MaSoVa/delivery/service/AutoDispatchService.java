@@ -7,8 +7,8 @@ import com.MaSoVa.delivery.dto.AutoDispatchRequest;
 import com.MaSoVa.delivery.dto.AutoDispatchResponse;
 import com.MaSoVa.delivery.entity.DeliveryTracking;
 import com.MaSoVa.delivery.repository.DeliveryTrackingRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -22,14 +22,22 @@ import java.util.Map;
  * Service for intelligent auto-dispatch of drivers to orders
  */
 @Service
-@Slf4j
-@RequiredArgsConstructor
 public class AutoDispatchService {
+
+    private static final Logger log = LoggerFactory.getLogger(AutoDispatchService.class);
 
     private final UserServiceClient userServiceClient;
     private final OrderServiceClient orderServiceClient;
     private final DeliveryTrackingRepository deliveryTrackingRepository;
     private final RouteOptimizationService routeOptimizationService;
+
+    public AutoDispatchService(UserServiceClient userServiceClient, OrderServiceClient orderServiceClient,
+                               DeliveryTrackingRepository deliveryTrackingRepository, RouteOptimizationService routeOptimizationService) {
+        this.userServiceClient = userServiceClient;
+        this.orderServiceClient = orderServiceClient;
+        this.deliveryTrackingRepository = deliveryTrackingRepository;
+        this.routeOptimizationService = routeOptimizationService;
+    }
 
     /**
      * Auto-dispatch a driver to an order using intelligent algorithm

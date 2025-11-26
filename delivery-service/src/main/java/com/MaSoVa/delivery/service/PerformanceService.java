@@ -4,8 +4,8 @@ import com.MaSoVa.delivery.client.UserServiceClient;
 import com.MaSoVa.delivery.dto.DriverPerformanceResponse;
 import com.MaSoVa.delivery.entity.DeliveryTracking;
 import com.MaSoVa.delivery.repository.DeliveryTrackingRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -22,12 +22,17 @@ import java.util.Map;
  * Service for driver performance analytics
  */
 @Service
-@Slf4j
-@RequiredArgsConstructor
 public class PerformanceService {
+
+    private static final Logger log = LoggerFactory.getLogger(PerformanceService.class);
 
     private final DeliveryTrackingRepository deliveryTrackingRepository;
     private final UserServiceClient userServiceClient;
+
+    public PerformanceService(DeliveryTrackingRepository deliveryTrackingRepository, UserServiceClient userServiceClient) {
+        this.deliveryTrackingRepository = deliveryTrackingRepository;
+        this.userServiceClient = userServiceClient;
+    }
 
     /**
      * Get driver performance metrics for a date range

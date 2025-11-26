@@ -5,8 +5,8 @@ import com.MaSoVa.delivery.entity.DeliveryTracking;
 import com.MaSoVa.delivery.entity.DriverLocation;
 import com.MaSoVa.delivery.repository.DeliveryTrackingRepository;
 import com.MaSoVa.delivery.repository.DriverLocationRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -19,12 +19,17 @@ import java.util.Optional;
  * Service for calculating estimated time of arrival
  */
 @Service
-@Slf4j
-@RequiredArgsConstructor
 public class ETACalculationService {
+
+    private static final Logger log = LoggerFactory.getLogger(ETACalculationService.class);
 
     private final DeliveryTrackingRepository deliveryTrackingRepository;
     private final DriverLocationRepository driverLocationRepository;
+
+    public ETACalculationService(DeliveryTrackingRepository deliveryTrackingRepository, DriverLocationRepository driverLocationRepository) {
+        this.deliveryTrackingRepository = deliveryTrackingRepository;
+        this.driverLocationRepository = driverLocationRepository;
+    }
 
     /**
      * Calculate ETA for an order

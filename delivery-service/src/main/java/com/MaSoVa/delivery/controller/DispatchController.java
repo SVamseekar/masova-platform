@@ -7,8 +7,8 @@ import com.MaSoVa.delivery.dto.RouteOptimizationResponse;
 import com.MaSoVa.delivery.service.AutoDispatchService;
 import com.MaSoVa.delivery.service.RouteOptimizationService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,12 +18,17 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/delivery")
-@RequiredArgsConstructor
-@Slf4j
 public class DispatchController {
+
+    private static final Logger log = LoggerFactory.getLogger(DispatchController.class);
 
     private final AutoDispatchService autoDispatchService;
     private final RouteOptimizationService routeOptimizationService;
+
+    public DispatchController(AutoDispatchService autoDispatchService, RouteOptimizationService routeOptimizationService) {
+        this.autoDispatchService = autoDispatchService;
+        this.routeOptimizationService = routeOptimizationService;
+    }
 
     /**
      * Auto-assign driver to an order
