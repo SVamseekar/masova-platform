@@ -45,9 +45,6 @@ public interface ReviewRepository extends MongoRepository<Review, String> {
     @Query("{ 'responseId': null, 'overallRating': { $lte: 3 }, 'status': 'APPROVED', 'isDeleted': false }")
     Page<Review> findReviewsNeedingResponse(Pageable pageable);
 
-    // Find flagged reviews
-    Page<Review> findByStatusAndIsDeletedFalse(Review.ReviewStatus status, Pageable pageable);
-
     // Date range queries
     List<Review> findByCreatedAtBetweenAndIsDeletedFalse(LocalDateTime startDate, LocalDateTime endDate);
 

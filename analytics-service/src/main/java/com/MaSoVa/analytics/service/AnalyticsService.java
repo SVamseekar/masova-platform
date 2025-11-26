@@ -3,8 +3,8 @@ package com.MaSoVa.analytics.service;
 import com.MaSoVa.analytics.client.OrderServiceClient;
 import com.MaSoVa.analytics.client.UserServiceClient;
 import com.MaSoVa.analytics.dto.*;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -18,12 +18,17 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-@Slf4j
-@RequiredArgsConstructor
 public class AnalyticsService {
+
+    private static final Logger log = LoggerFactory.getLogger(AnalyticsService.class);
 
     private final OrderServiceClient orderServiceClient;
     private final UserServiceClient userServiceClient;
+
+    public AnalyticsService(OrderServiceClient orderServiceClient, UserServiceClient userServiceClient) {
+        this.orderServiceClient = orderServiceClient;
+        this.userServiceClient = userServiceClient;
+    }
 
     /**
      * Get sales metrics for today compared to yesterday and last year
@@ -528,7 +533,7 @@ public class AnalyticsService {
         );
 
         // Extract and aggregate items from all orders
-        Map<String, TopProductsResponse.ProductData.ProductDataBuilder> productAggregates = new HashMap<>();
+        Map<String, TopProductsResponse.ProductData.Builder> productAggregates = new HashMap<>();
         BigDecimal totalRevenue = BigDecimal.ZERO;
 
         for (Map<String, Object> order : orders) {

@@ -5,19 +5,23 @@ import com.razorpay.Payment;
 import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
 import com.razorpay.Utils;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class RazorpayService {
 
+    private static final Logger log = LoggerFactory.getLogger(RazorpayService.class);
+
     private final RazorpayClient razorpayClient;
+
+    public RazorpayService(RazorpayClient razorpayClient) {
+        this.razorpayClient = razorpayClient;
+    }
 
     /**
      * Create Razorpay order

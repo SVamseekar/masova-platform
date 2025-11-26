@@ -3,8 +3,8 @@ package com.MaSoVa.review.controller;
 import com.MaSoVa.review.dto.request.CreateResponseRequest;
 import com.MaSoVa.review.entity.ReviewResponse;
 import com.MaSoVa.review.service.ReviewResponseService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -13,18 +13,22 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.Map;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/responses")
-@RequiredArgsConstructor
-@Slf4j
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"})
 public class ResponseController {
 
+    private static final Logger log = LoggerFactory.getLogger(ResponseController.class);
+
     private final ReviewResponseService responseService;
+
+    public ResponseController(ReviewResponseService responseService) {
+        this.responseService = responseService;
+    }
 
     @PostMapping("/review/{reviewId}")
     public ResponseEntity<?> createResponse(

@@ -4,23 +4,31 @@ import com.MaSoVa.payment.config.RazorpayConfig;
 import com.MaSoVa.payment.service.PaymentService;
 import com.MaSoVa.payment.service.RazorpayService;
 import com.MaSoVa.payment.service.RefundService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/payments/webhook")
-@RequiredArgsConstructor
 public class WebhookController {
+
+    private static final Logger log = LoggerFactory.getLogger(WebhookController.class);
 
     private final RazorpayService razorpayService;
     private final PaymentService paymentService;
     private final RefundService refundService;
     private final RazorpayConfig razorpayConfig;
+
+    public WebhookController(RazorpayService razorpayService, PaymentService paymentService,
+                            RefundService refundService, RazorpayConfig razorpayConfig) {
+        this.razorpayService = razorpayService;
+        this.paymentService = paymentService;
+        this.refundService = refundService;
+        this.razorpayConfig = razorpayConfig;
+    }
 
     /**
      * POST /api/payments/webhook - Handle Razorpay webhooks

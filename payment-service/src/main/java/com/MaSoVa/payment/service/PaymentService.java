@@ -10,8 +10,8 @@ import com.MaSoVa.payment.repository.TransactionRepository;
 import com.razorpay.Order;
 import com.razorpay.Payment;
 import com.razorpay.RazorpayException;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,15 +25,23 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class PaymentService {
+
+    private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
 
     private final TransactionRepository transactionRepository;
     private final RazorpayService razorpayService;
     private final OrderServiceClient orderServiceClient;
     private final RazorpayConfig razorpayConfig;
+
+    public PaymentService(TransactionRepository transactionRepository, RazorpayService razorpayService,
+                         OrderServiceClient orderServiceClient, RazorpayConfig razorpayConfig) {
+        this.transactionRepository = transactionRepository;
+        this.razorpayService = razorpayService;
+        this.orderServiceClient = orderServiceClient;
+        this.razorpayConfig = razorpayConfig;
+    }
 
     /**
      * Initiate payment - Create Razorpay order

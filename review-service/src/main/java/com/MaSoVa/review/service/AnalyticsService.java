@@ -5,8 +5,8 @@ import com.MaSoVa.review.dto.response.ItemRatingResponse;
 import com.MaSoVa.review.dto.response.ReviewStatsResponse;
 import com.MaSoVa.review.entity.Review;
 import com.MaSoVa.review.repository.ReviewRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -14,12 +14,17 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class AnalyticsService {
+
+    private static final Logger log = LoggerFactory.getLogger(AnalyticsService.class);
 
     private final ReviewRepository reviewRepository;
     private final SentimentAnalysisService sentimentAnalysisService;
+
+    public AnalyticsService(ReviewRepository reviewRepository, SentimentAnalysisService sentimentAnalysisService) {
+        this.reviewRepository = reviewRepository;
+        this.sentimentAnalysisService = sentimentAnalysisService;
+    }
 
     public ReviewStatsResponse getOverallStats() {
         List<Review> allReviews = reviewRepository.findByIsDeletedFalseOrderByCreatedAtDesc(

@@ -3,8 +3,8 @@ package com.MaSoVa.review.service;
 import com.MaSoVa.review.dto.request.CreateResponseRequest;
 import com.MaSoVa.review.entity.ReviewResponse;
 import com.MaSoVa.review.repository.ReviewResponseRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -15,12 +15,17 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class ReviewResponseService {
+
+    private static final Logger log = LoggerFactory.getLogger(ReviewResponseService.class);
 
     private final ReviewResponseRepository responseRepository;
     private final ReviewService reviewService;
+
+    public ReviewResponseService(ReviewResponseRepository responseRepository, ReviewService reviewService) {
+        this.responseRepository = responseRepository;
+        this.reviewService = reviewService;
+    }
 
     // Response templates
     private static final Map<ReviewResponse.ResponseType, String> RESPONSE_TEMPLATES = new HashMap<>();

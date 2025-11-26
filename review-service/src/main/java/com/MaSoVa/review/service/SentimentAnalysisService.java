@@ -1,14 +1,16 @@
 package com.MaSoVa.review.service;
 
 import com.MaSoVa.review.entity.Review;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 
 @Service
-@Slf4j
 public class SentimentAnalysisService {
+
+    private static final Logger log = LoggerFactory.getLogger(SentimentAnalysisService.class);
 
     // Simple keyword-based sentiment analysis
     // In production, you would use a proper NLP library or API

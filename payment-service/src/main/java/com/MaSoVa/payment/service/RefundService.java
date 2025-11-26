@@ -6,9 +6,9 @@ import com.MaSoVa.payment.entity.Transaction;
 import com.MaSoVa.payment.repository.RefundRepository;
 import com.MaSoVa.payment.repository.TransactionRepository;
 import com.razorpay.RazorpayException;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,15 +16,23 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class RefundService {
+
+    private static final Logger log = LoggerFactory.getLogger(RefundService.class);
 
     private final RefundRepository refundRepository;
     private final TransactionRepository transactionRepository;
     private final RazorpayService razorpayService;
     private final OrderServiceClient orderServiceClient;
+
+    public RefundService(RefundRepository refundRepository, TransactionRepository transactionRepository,
+                        RazorpayService razorpayService, OrderServiceClient orderServiceClient) {
+        this.refundRepository = refundRepository;
+        this.transactionRepository = transactionRepository;
+        this.razorpayService = razorpayService;
+        this.orderServiceClient = orderServiceClient;
+    }
 
     /**
      * Initiate refund

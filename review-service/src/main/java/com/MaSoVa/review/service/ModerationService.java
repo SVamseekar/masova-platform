@@ -2,8 +2,8 @@ package com.MaSoVa.review.service;
 
 import com.MaSoVa.review.entity.Review;
 import com.MaSoVa.review.repository.ReviewRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -15,11 +15,15 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class ModerationService {
 
+    private static final Logger log = LoggerFactory.getLogger(ModerationService.class);
+
     private final ReviewRepository reviewRepository;
+
+    public ModerationService(ReviewRepository reviewRepository) {
+        this.reviewRepository = reviewRepository;
+    }
 
     // Simple profanity filter
     private static final Set<String> INAPPROPRIATE_WORDS = new HashSet<>(Arrays.asList(

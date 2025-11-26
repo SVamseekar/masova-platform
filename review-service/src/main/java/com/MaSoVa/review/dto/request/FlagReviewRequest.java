@@ -1,17 +1,8 @@
 package com.MaSoVa.review.dto.request;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Size;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class FlagReviewRequest {
 
     @NotBlank(message = "Flag reason is required")
@@ -27,5 +18,52 @@ public class FlagReviewRequest {
         OFFENSIVE_CONTENT,
         MISLEADING,
         OTHER
+    }
+
+    public FlagReviewRequest() {
+    }
+
+    public FlagReviewRequest(String reason, FlagType flagType) {
+        this.reason = reason;
+        this.flagType = flagType;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
+
+    public FlagType getFlagType() {
+        return flagType;
+    }
+
+    public void setFlagType(FlagType flagType) {
+        this.flagType = flagType;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private String reason;
+        private FlagType flagType;
+
+        public Builder reason(String reason) {
+            this.reason = reason;
+            return this;
+        }
+
+        public Builder flagType(FlagType flagType) {
+            this.flagType = flagType;
+            return this;
+        }
+
+        public FlagReviewRequest build() {
+            return new FlagReviewRequest(reason, flagType);
+        }
     }
 }

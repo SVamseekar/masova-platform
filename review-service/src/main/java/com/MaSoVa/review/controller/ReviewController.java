@@ -9,8 +9,8 @@ import com.MaSoVa.review.entity.Review;
 import com.MaSoVa.review.service.AnalyticsService;
 import com.MaSoVa.review.service.ModerationService;
 import com.MaSoVa.review.service.ReviewService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,21 +19,27 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/reviews")
-@RequiredArgsConstructor
-@Slf4j
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"})
 public class ReviewController {
+
+    private static final Logger log = LoggerFactory.getLogger(ReviewController.class);
 
     private final ReviewService reviewService;
     private final AnalyticsService analyticsService;
     private final ModerationService moderationService;
+
+    public ReviewController(ReviewService reviewService, AnalyticsService analyticsService, ModerationService moderationService) {
+        this.reviewService = reviewService;
+        this.analyticsService = analyticsService;
+        this.moderationService = moderationService;
+    }
 
     @PostMapping
     public ResponseEntity<?> createReview(

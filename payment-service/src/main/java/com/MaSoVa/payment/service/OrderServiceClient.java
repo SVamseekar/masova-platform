@@ -1,7 +1,7 @@
 package com.MaSoVa.payment.service;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -14,15 +14,19 @@ import org.springframework.web.client.RestTemplate;
 import java.util.HashMap;
 import java.util.Map;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class OrderServiceClient {
+
+    private static final Logger log = LoggerFactory.getLogger(OrderServiceClient.class);
 
     private final RestTemplate restTemplate;
 
     @Value("${services.order-service.url}")
     private String orderServiceUrl;
+
+    public OrderServiceClient(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
 
     /**
      * Update order payment status
