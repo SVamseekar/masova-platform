@@ -201,7 +201,11 @@ export const customerApi = createApi({
         method: 'POST',
         body: data,
       }),
-      invalidatesTags: ['Customers', 'CustomerStats'],
+      invalidatesTags: (result, error, arg) => [
+        'Customers',
+        'CustomerStats',
+        { type: 'Customers', id: `USER_${arg.userId}` },
+      ],
     }),
 
     // READ

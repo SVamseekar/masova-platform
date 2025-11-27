@@ -40,6 +40,7 @@ const PaymentPage: React.FC = () => {
 
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'UPI'>('CASH');
   const [orderType, setOrderType] = useState<'DELIVERY' | 'TAKEAWAY' | 'DINE_IN'>('DELIVERY');
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
 
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
   const [initiatePayment, { isLoading: isInitiatingPayment }] = useInitiatePaymentMutation();
@@ -49,6 +50,18 @@ const PaymentPage: React.FC = () => {
   const { data: customerProfile } = useGetCustomerByUserIdQuery(currentUser?.id || '', {
     skip: !currentUser?.id,
   });
+
+  // Auto-select default address for logged-in customers
+  useEffect(() => {
+    if (customerProfile?.addresses && customerProfile.addresses.length > 0) {
+      const defaultAddress = customerProfile.addresses.find(addr => addr.isDefault);
+      if (defaultAddress) {
+        setSelectedAddressId(defaultAddress.id);
+      } else {
+        setSelectedAddressId(customerProfile.addresses[0].id);
+      }
+    }
+  }, [customerProfile]);
 
   const isLoading = isCreatingOrder || isInitiatingPayment;
 
@@ -74,17 +87,60 @@ const PaymentPage: React.FC = () => {
       if (currentUser && !customerProfile) {
         try {
           console.log('Creating customer profile for user:', currentUser.id);
+
+          // Clean phone number - remove any spaces, dashes, or special characters
+          const phoneToUse = currentUser.phone || guestInfo?.phone || '';
+          const cleanPhone = phoneToUse.replace(/\D/g, '');
+
           const newCustomer = await createCustomer({
             userId: currentUser.id,
             name: currentUser.name,
             email: currentUser.email || '',
-            phone: currentUser.phone || guestInfo?.phone || '',
+            phone: cleanPhone,
           }).unwrap();
           customerId = newCustomer.id;
           console.log('Customer profile created:', customerId);
         } catch (err) {
           console.error('Failed to create customer profile:', err);
-          // Continue with order even if customer profile creation fails
+          alert('Unable to create customer profile. Please refresh the page and try again.');
+          return; // Don't proceed with order if customer profile creation fails
+        }
+      }
+
+      // For logged-in users, ensure customerId is set
+      if (currentUser && !customerId) {
+        console.error('Customer ID is missing for logged-in user');
+        alert('Unable to retrieve your customer information. Please refresh the page and try again.');
+        return;
+      }
+
+      // Get delivery address based on user type
+      let deliveryAddress = undefined;
+      let specialInstructions = undefined;
+
+      if (orderType === 'DELIVERY') {
+        if (guestInfo) {
+          // Guest checkout - use guest info
+          deliveryAddress = {
+            street: guestInfo.street,
+            city: guestInfo.city,
+            state: guestInfo.state,
+            pincode: guestInfo.pincode,
+            landmark: guestInfo.deliveryInstructions || '',
+          };
+          specialInstructions = guestInfo.deliveryInstructions;
+        } else if (customerProfile && selectedAddressId) {
+          // Logged-in customer - use selected address
+          const selectedAddress = customerProfile.addresses.find(addr => addr.id === selectedAddressId);
+          if (selectedAddress) {
+            deliveryAddress = {
+              street: selectedAddress.addressLine1 + (selectedAddress.addressLine2 ? ', ' + selectedAddress.addressLine2 : ''),
+              city: selectedAddress.city,
+              state: selectedAddress.state,
+              pincode: selectedAddress.postalCode,
+              landmark: selectedAddress.landmark || '',
+            };
+          }
         }
       }
 
@@ -104,14 +160,8 @@ const PaymentPage: React.FC = () => {
         })),
         orderType,
         paymentMethod,
-        deliveryAddress: orderType === 'DELIVERY' && guestInfo ? {
-          street: guestInfo.street,
-          city: guestInfo.city,
-          state: guestInfo.state,
-          pincode: guestInfo.pincode,
-          landmark: guestInfo.deliveryInstructions || '', // Backend uses 'landmark' not 'instructions'
-        } : undefined,
-        specialInstructions: guestInfo?.deliveryInstructions, // Backend uses 'specialInstructions' not 'notes'
+        deliveryAddress,
+        specialInstructions,
       };
 
       console.log('Creating order with data:', orderData);
@@ -374,7 +424,7 @@ const PaymentPage: React.FC = () => {
         <div style={contentStyles}>
           {/* Left Column: Payment Options */}
           <div>
-            {/* Customer Info */}
+            {/* Customer Info - Guest */}
             {guestInfo && (
               <Card elevation="md" padding="lg" style={{ marginBottom: spacing[6] }}>
                 <h2 style={sectionTitleStyles}>Delivery Information</h2>
@@ -397,6 +447,70 @@ const PaymentPage: React.FC = () => {
                     </div>
                   )}
                 </div>
+              </Card>
+            )}
+
+            {/* Customer Info - Logged In */}
+            {currentUser && !guestInfo && customerProfile && (
+              <Card elevation="md" padding="lg" style={{ marginBottom: spacing[6] }}>
+                <h2 style={sectionTitleStyles}>Customer Information</h2>
+                <div style={customerInfoStyles}>
+                  <div style={infoRowStyles}>
+                    <span style={infoLabelStyles}>Name:</span> {currentUser.name}
+                  </div>
+                  <div style={infoRowStyles}>
+                    <span style={infoLabelStyles}>Email:</span> {currentUser.email}
+                  </div>
+                  <div style={infoRowStyles}>
+                    <span style={infoLabelStyles}>Phone:</span> {currentUser.phone}
+                  </div>
+                </div>
+
+                {/* Address Selection for Delivery */}
+                {orderType === 'DELIVERY' && (
+                  <>
+                    <h3 style={{ ...sectionTitleStyles, marginTop: spacing[4], fontSize: typography.fontSize.lg }}>
+                      Delivery Address
+                    </h3>
+                    {customerProfile.addresses.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
+                        {customerProfile.addresses.map((address) => (
+                          <div
+                            key={address.id}
+                            onClick={() => setSelectedAddressId(address.id)}
+                            style={{
+                              ...createNeumorphicSurface(selectedAddressId === address.id ? 'inset' : 'raised', 'sm', 'lg'),
+                              padding: spacing[3],
+                              cursor: 'pointer',
+                              backgroundColor: selectedAddressId === address.id ? colors.brand.primaryLight + '20' : colors.surface.primary,
+                              border: selectedAddressId === address.id ? `2px solid ${colors.brand.primary}` : 'none',
+                            }}
+                          >
+                            <div style={{ fontWeight: typography.fontWeight.semibold, marginBottom: spacing[1] }}>
+                              {address.label}
+                              {address.isDefault && (
+                                <span style={{ marginLeft: spacing[2], fontSize: typography.fontSize.xs, color: colors.brand.primary }}>
+                                  (Default)
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
+                              {address.addressLine1}
+                              {address.addressLine2 && `, ${address.addressLine2}`}
+                              <br />
+                              {address.city}, {address.state} - {address.postalCode}
+                              {address.landmark && <><br />Landmark: {address.landmark}</>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ ...customerInfoStyles, textAlign: 'center', color: colors.text.tertiary }}>
+                        No saved addresses. Please add an address from your profile page.
+                      </div>
+                    )}
+                  </>
+                )}
               </Card>
             )}
 
@@ -553,7 +667,7 @@ const PaymentPage: React.FC = () => {
                 size="lg"
                 fullWidth
                 onClick={handlePlaceOrder}
-                disabled={isLoading}
+                disabled={isLoading || (orderType === 'DELIVERY' && !guestInfo && (!customerProfile || !selectedAddressId))}
                 style={{ marginBottom: spacing[3] }}
               >
                 {isLoading
@@ -563,6 +677,21 @@ const PaymentPage: React.FC = () => {
                     : `Pay ₹${total.toFixed(2)} via Razorpay`
                 }
               </Button>
+
+              {orderType === 'DELIVERY' && !guestInfo && customerProfile && customerProfile.addresses.length === 0 && (
+                <div style={{
+                  padding: spacing[3],
+                  backgroundColor: colors.semantic.warningLight + '20',
+                  border: `2px solid ${colors.semantic.warning}`,
+                  borderRadius: borderRadius.lg,
+                  fontSize: typography.fontSize.sm,
+                  color: colors.semantic.warning,
+                  textAlign: 'center',
+                  marginBottom: spacing[3],
+                }}>
+                  ⚠️ Please add a delivery address in your profile to continue
+                </div>
+              )}
 
               <Button
                 variant="secondary"

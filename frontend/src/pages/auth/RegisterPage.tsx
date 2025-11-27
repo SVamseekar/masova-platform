@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 import { useRegisterMutation } from '../../store/api/authApi';
+import { useCreateCustomerMutation } from '../../store/api/customerApi';
 import { Button, Card, Input } from '../../components/ui/neumorphic';
 import { colors, spacing, typography } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
@@ -22,6 +23,7 @@ const RegisterPage: React.FC = () => {
   const { isAuthenticated } = useAppSelector(state => state.auth);
   const from = (location.state as any)?.from || '/checkout';
   const [register, { isLoading }] = useRegisterMutation();
+  const [createCustomer] = useCreateCustomerMutation();
   console.log('isLoading:', isLoading);
 
   const [formData, setFormData] = useState<RegisterFormData>({
@@ -85,22 +87,52 @@ const RegisterPage: React.FC = () => {
 
     console.log('Validation passed, registering...');
     try {
+      // Clean phone number - remove any spaces, dashes, or special characters
+      const cleanPhone = formData.phone.replace(/\D/g, '');
+
+      // Step 1: Register the user account
       const result = await register({
         name: `${formData.firstName} ${formData.lastName}`.trim(),
         email: formData.email,
-        phone: formData.phone,
+        phone: cleanPhone,
         password: formData.password,
         type: 'CUSTOMER',
         rememberMe: true,
       }).unwrap();
 
       console.log('Registration successful:', result);
+
+      // Step 2: Create customer profile immediately
+      try {
+        console.log('Creating customer profile for new user...');
+        await createCustomer({
+          userId: result.user.id,
+          name: result.user.name,
+          email: result.user.email,
+          phone: cleanPhone,
+          marketingOptIn: false,
+          smsOptIn: false,
+        }).unwrap();
+        console.log('Customer profile created successfully');
+      } catch (customerErr: any) {
+        console.error('Failed to create customer profile during registration:', customerErr);
+        // Don't block user - they can still proceed, profile will be auto-created later
+      }
+
       // User is now automatically logged in with tokens stored in Redux
       // Navigate to the original destination or checkout
       navigate(from);
     } catch (err: any) {
       console.error('Registration error:', err);
-      const errorMessage = err?.data?.message || err?.data?.error || err?.message || 'Registration failed. Please try again.';
+      let errorMessage = err?.data?.message || err?.data?.error || err?.message || 'Registration failed. Please try again.';
+
+      // Provide more user-friendly error messages
+      if (errorMessage.toLowerCase().includes('email already exists')) {
+        errorMessage = 'This email is already registered. Please use a different email or try logging in.';
+      } else if (errorMessage.toLowerCase().includes('phone') && errorMessage.toLowerCase().includes('exists')) {
+        errorMessage = 'This phone number is already registered. Please use a different phone number or try logging in.';
+      }
+
       setError(errorMessage);
     }
   };

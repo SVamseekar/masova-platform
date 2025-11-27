@@ -43,36 +43,98 @@ const ProfilePage: React.FC = () => {
   const [preferencesForm, setPreferencesForm] = useState<UpdatePreferencesRequest>({});
 
   // API queries
-  const { data: customer, isLoading, error } = useGetCustomerByUserIdQuery(currentUser?.id || '', {
+  const { data: customer, isLoading, error, refetch } = useGetCustomerByUserIdQuery(currentUser?.id || '', {
     skip: !currentUser?.id,
   });
 
   const [createCustomer, { isLoading: isCreating }] = useCreateCustomerMutation();
   const [updateCustomer] = useUpdateCustomerMutation();
 
-  // Auto-create customer profile if not found
+  // Auto-create customer profile if not found (use ref to prevent re-runs)
+  const hasAttemptedCreate = React.useRef(false);
+  const [creatingProfile, setCreatingProfile] = React.useState(false);
+  const [creationError, setCreationError] = React.useState<string | null>(null);
+
   useEffect(() => {
     const autoCreateProfile = async () => {
-      if (error && currentUser && !isCreating) {
-        console.log('Customer profile not found, auto-creating...');
+      // Only attempt once per user session
+      if (error && currentUser && !hasAttemptedCreate.current && !customer) {
+        hasAttemptedCreate.current = true;
+        setCreatingProfile(true);
+        console.log('Customer profile not found, auto-creating...', {
+          userId: currentUser.id,
+          name: currentUser.name,
+          email: currentUser.email,
+          phone: currentUser.phone,
+          error: error,
+        });
+
+        // Clean phone number - remove any spaces, dashes, or special characters
+        const cleanPhone = currentUser.phone?.replace(/\D/g, '') || '';
+
+        console.log('Phone validation:', {
+          original: currentUser.phone,
+          cleaned: cleanPhone,
+          length: cleanPhone.length,
+          startsWithValid: /^[6-9]/.test(cleanPhone),
+          isValid: /^[6-9]\d{9}$/.test(cleanPhone)
+        });
+
+        // Validate phone is 10 digits and starts with 6-9
+        if (!cleanPhone.match(/^[6-9]\d{9}$/)) {
+          console.error('Invalid phone number format! Cannot create customer profile.');
+          console.error('Expected: 10 digits starting with 6-9');
+          console.error('Got:', { original: currentUser.phone, cleaned: cleanPhone });
+          setCreatingProfile(false);
+          return;
+        }
+
+        const requestData = {
+          userId: currentUser.id,
+          name: currentUser.name,
+          email: currentUser.email,
+          phone: cleanPhone,
+          marketingOptIn: false,
+          smsOptIn: false,
+        };
+
+        console.log('Sending create customer request:', requestData);
+
         try {
-          await createCustomer({
-            userId: currentUser.id,
-            name: currentUser.name,
-            email: currentUser.email,
-            phone: currentUser.phone,
-            marketingOptIn: false,
-            smsOptIn: false,
-          }).unwrap();
-          console.log('Customer profile created successfully');
-        } catch (err) {
+          const newCustomer = await createCustomer(requestData).unwrap();
+          console.log('Customer profile created successfully:', newCustomer);
+          // Small delay to ensure backend has processed the creation
+          setTimeout(async () => {
+            // Refetch to get the newly created customer
+            await refetch();
+            setCreatingProfile(false);
+          }, 500);
+        } catch (err: any) {
           console.error('Failed to auto-create customer profile:', err);
+          console.error('Error details:', {
+            message: err?.message,
+            data: err?.data,
+            status: err?.status,
+          });
+
+          // Check if it's a duplicate phone/email error
+          const errorMsg = err?.data?.message || '';
+          if (errorMsg.includes('already exists')) {
+            console.warn('Customer profile with this phone/email already exists');
+            setCreationError('A customer profile with your phone number or email already exists. Please contact support for assistance.');
+          } else {
+            setCreationError('Unable to create customer profile. Please try again or contact support.');
+          }
+
+          setCreatingProfile(false);
+          // Don't reset flag - we tried once, that's enough
         }
       }
     };
 
     autoCreateProfile();
-  }, [error, currentUser, isCreating, createCustomer]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error, currentUser?.id]); // Only run when error state or userId changes
   const [addAddress] = useAddAddressMutation();
   const [updateAddress] = useUpdateAddressMutation();
   const [removeAddress] = useRemoveAddressMutation();
@@ -339,23 +401,8 @@ const ProfilePage: React.FC = () => {
     navigate('/menu');
   };
 
-  if (isLoading) {
-    return (
-      <>
-        <AnimatedBackground variant="default" />
-        <div style={containerStyles}>
-          <AppHeader
-            showPublicNav={true}
-            onCartClick={handleCartClick}
-          />
-          <div style={{ textAlign: 'center', padding: spacing[8] }}>Loading...</div>
-        </div>
-      </>
-    );
-  }
-
   // Show loading state while creating profile or loading data
-  if (isLoading || isCreating) {
+  if (isLoading || isCreating || creatingProfile) {
     return (
       <>
         <AnimatedBackground variant="default" />
@@ -376,7 +423,7 @@ const ProfilePage: React.FC = () => {
               backgroundColor: colors.surface.primary,
             }}>
               <div style={{ fontSize: '64px', marginBottom: spacing[4] }}>
-                {isCreating ? '🔧' : '⏳'}
+                {isCreating || creatingProfile ? '🔧' : '⏳'}
               </div>
               <h2 style={{
                 fontSize: typography.fontSize['2xl'],
@@ -384,13 +431,13 @@ const ProfilePage: React.FC = () => {
                 color: colors.text.primary,
                 marginBottom: spacing[4],
               }}>
-                {isCreating ? 'Setting Up Your Profile...' : 'Loading...'}
+                {isCreating || creatingProfile ? 'Setting Up Your Profile...' : 'Loading...'}
               </h2>
               <p style={{
                 fontSize: typography.fontSize.base,
                 color: colors.text.secondary,
               }}>
-                {isCreating ? 'Just a moment while we create your customer profile' : 'Please wait'}
+                {isCreating || creatingProfile ? 'Just a moment while we create your customer profile' : 'Please wait'}
               </p>
             </div>
           </div>
@@ -399,7 +446,7 @@ const ProfilePage: React.FC = () => {
     );
   }
 
-  if (!customer) {
+  if (!customer && !isLoading && !creatingProfile && !isCreating) {
     return (
       <>
         <AnimatedBackground variant="default" />
@@ -408,12 +455,53 @@ const ProfilePage: React.FC = () => {
             showPublicNav={true}
             onCartClick={handleCartClick}
           />
-          <div style={{ textAlign: 'center', padding: spacing[8] }}>
-            <p>Unable to load profile. Please try again later.</p>
+          <div style={{
+            textAlign: 'center',
+            padding: spacing[8],
+            maxWidth: '600px',
+            margin: '0 auto',
+          }}>
+            <div style={{
+              ...createNeumorphicSurface('raised', 'lg', 'xl'),
+              padding: spacing[8],
+              backgroundColor: colors.surface.primary,
+            }}>
+              <div style={{ fontSize: '64px', marginBottom: spacing[4] }}>
+                ⚠️
+              </div>
+              <h2 style={{
+                fontSize: typography.fontSize['2xl'],
+                fontWeight: typography.fontWeight.bold,
+                color: colors.text.primary,
+                marginBottom: spacing[4],
+              }}>
+                Unable to Load Profile
+              </h2>
+              <p style={{
+                fontSize: typography.fontSize.base,
+                color: colors.text.secondary,
+                marginBottom: spacing[6],
+              }}>
+                {creationError || 'We couldn\'t load your customer profile. This might be a temporary issue.'}
+              </p>
+              <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'center' }}>
+                <Button variant="primary" onClick={() => window.location.reload()}>
+                  Refresh Page
+                </Button>
+                <Button variant="secondary" onClick={() => navigate('/menu')}>
+                  Back to Menu
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </>
     );
+  }
+
+  // Type guard: customer is guaranteed to be defined here
+  if (!customer) {
+    return null; // This should never happen due to the check above
   }
 
   const nextTierInfo = customer.loyaltyInfo

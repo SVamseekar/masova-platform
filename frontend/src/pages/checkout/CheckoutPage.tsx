@@ -7,6 +7,7 @@ import {
   selectCartItemCount,
   selectDeliveryFee,
 } from '../../store/slices/cartSlice';
+import { selectIsAuthenticated, selectCurrentUser } from '../../store/slices/authSlice';
 import { Button, Card } from '../../components/ui/neumorphic';
 import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
@@ -17,6 +18,8 @@ const CheckoutPage: React.FC = () => {
   const subtotal = useAppSelector(selectCartSubtotal);
   const itemCount = useAppSelector(selectCartItemCount);
   const deliveryFee = useAppSelector(selectDeliveryFee);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const currentUser = useAppSelector(selectCurrentUser);
 
   const tax = subtotal * 0.05;
   const total = subtotal + (itemCount > 0 ? deliveryFee : 0) + tax;
@@ -27,6 +30,13 @@ const CheckoutPage: React.FC = () => {
       navigate('/menu');
     }
   }, [cartItems, navigate]);
+
+  // If user is already logged in as a customer, skip checkout options and go to payment
+  useEffect(() => {
+    if (isAuthenticated && currentUser?.type === 'CUSTOMER') {
+      navigate('/payment', { replace: true });
+    }
+  }, [isAuthenticated, currentUser, navigate]);
 
   const checkoutOptions = [
     {
