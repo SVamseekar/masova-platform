@@ -9,6 +9,7 @@ import com.MaSoVa.order.entity.OrderItem;
 import com.MaSoVa.order.repository.OrderRepository;
 import com.MaSoVa.order.websocket.OrderWebSocketController;
 import com.MaSoVa.order.client.MenuServiceClient;
+import com.MaSoVa.order.client.CustomerServiceClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -28,12 +29,15 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderWebSocketController webSocketController;
     private final MenuServiceClient menuServiceClient;
+    private final CustomerServiceClient customerServiceClient;
     private final Random random = new Random();
 
-    public OrderService(OrderRepository orderRepository, OrderWebSocketController webSocketController, MenuServiceClient menuServiceClient) {
+    public OrderService(OrderRepository orderRepository, OrderWebSocketController webSocketController,
+                       MenuServiceClient menuServiceClient, CustomerServiceClient customerServiceClient) {
         this.orderRepository = orderRepository;
         this.webSocketController = webSocketController;
         this.menuServiceClient = menuServiceClient;
+        this.customerServiceClient = customerServiceClient;
     }
 
     @Transactional
@@ -102,6 +106,15 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
         log.info("Order created successfully: {}", savedOrder.getOrderNumber());
+
+        // Update customer stats immediately after order creation
+        if (savedOrder.getCustomerId() != null && !savedOrder.getCustomerId().isEmpty()) {
+            customerServiceClient.updateOrderStats(
+                savedOrder.getCustomerId(),
+                "RECEIVED", // Initial status
+                savedOrder.getTotal()
+            );
+        }
 
         // Broadcast new order via WebSocket
         webSocketController.sendKitchenQueueUpdate(savedOrder.getStoreId(), savedOrder);
@@ -172,6 +185,15 @@ public class OrderService {
 
         Order updatedOrder = orderRepository.save(order);
         log.info("Order status updated successfully: {}", updatedOrder.getOrderNumber());
+
+        // Update customer stats when order is delivered (completed)
+        if (newStatus == OrderStatus.DELIVERED && updatedOrder.getCustomerId() != null && !updatedOrder.getCustomerId().isEmpty()) {
+            customerServiceClient.updateOrderStats(
+                updatedOrder.getCustomerId(),
+                "COMPLETED", // Mark as completed for loyalty points
+                updatedOrder.getTotal()
+            );
+        }
 
         // Broadcast status update via WebSocket
         webSocketController.sendKitchenQueueUpdate(updatedOrder.getStoreId(), updatedOrder);
