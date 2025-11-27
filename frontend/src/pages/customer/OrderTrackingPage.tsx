@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AppHeader from '../../components/common/AppHeader';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
@@ -9,6 +10,7 @@ import {
 import { ORDER_STATUS_CONFIG, ORDER_TYPE_CONFIG, PAYMENT_STATUS_CONFIG, ORDER_STATUS_FLOW } from '../../types/order';
 
 const OrderTrackingPage: React.FC = () => {
+  const navigate = useNavigate();
   const currentUser = useAppSelector(selectCurrentUser);
   const customerId = currentUser?.id || '';
 
@@ -31,7 +33,7 @@ const OrderTrackingPage: React.FC = () => {
   };
 
   const formatCurrency = (amount: number) => {
-    return `¹${amount.toFixed(2)}`;
+    return `ï¿½${amount.toFixed(2)}`;
   };
 
   const getStatusProgress = (status: string): number => {
@@ -186,6 +188,10 @@ const OrderTrackingPage: React.FC = () => {
         )}
       </div>
     );
+  };
+
+  const handleCartClick = () => {
+    navigate('/menu');
   };
 
   return (
@@ -569,7 +575,10 @@ const OrderTrackingPage: React.FC = () => {
         }
       `}</style>
 
-      <AppHeader title="Track Your Orders" />
+      <AppHeader
+        showPublicNav={true}
+        onCartClick={handleCartClick}
+      />
 
       <div className="tracking-container">
         {/* Search by Order Number */}
@@ -592,17 +601,17 @@ const OrderTrackingPage: React.FC = () => {
         {/* Orders List */}
         {isLoading ? (
           <div className="loading-state">
-            <div className="empty-icon">ó</div>
+            <div className="empty-icon">ï¿½</div>
             <div>Loading your orders...</div>
           </div>
         ) : error ? (
           <div className="empty-state">
-            <div className="empty-icon"> </div>
+            <div className="empty-icon">ï¿½</div>
             <div className="empty-text">Failed to load orders</div>
           </div>
         ) : customerOrders.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">=í</div>
+            <div className="empty-icon">=ï¿½</div>
             <div className="empty-text">You haven't placed any orders yet</div>
           </div>
         ) : (

@@ -5,6 +5,10 @@ import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
 import { colors, spacing, typography } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
+import { useAppSelector } from '../../store/hooks';
+import { selectCurrentUser } from '../../store/slices/authSlice';
+import { useGetCustomerByUserIdQuery } from '../../store/api/customerApi';
+import { useGetCustomerOrdersQuery } from '../../store/api/orderApi';
 
 /**
  * CustomerDashboard - Main dashboard for authenticated customers
@@ -12,6 +16,17 @@ import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
  */
 const CustomerDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const currentUser = useAppSelector(selectCurrentUser);
+
+  // Fetch customer data
+  const { data: customer, isLoading: customerLoading } = useGetCustomerByUserIdQuery(currentUser?.id || '', {
+    skip: !currentUser?.id,
+  });
+
+  // Fetch recent orders
+  const { data: orders = [], isLoading: ordersLoading } = useGetCustomerOrdersQuery(customer?.id || '', {
+    skip: !customer?.id,
+  });
 
   // Styles
   const containerStyles: React.CSSProperties = {
@@ -80,18 +95,18 @@ const CustomerDashboard: React.FC = () => {
     color: colors.text.secondary,
   };
 
+  // Get recent orders (last 3)
+  const recentOrders = orders.slice(0, 3);
+  const activeOrder = orders.find(order =>
+    !['DELIVERED', 'CANCELLED'].includes(order.status)
+  );
+
   const quickActions = [
-    {
-      icon: '🍽️',
-      title: 'Order Food',
-      description: 'Browse our menu and place an order',
-      action: () => navigate('/menu'),
-    },
     {
       icon: '📦',
       title: 'Order History',
-      description: 'View your past orders',
-      action: () => alert('Order history coming soon!'),
+      description: `View your ${orders.length} orders`,
+      action: () => navigate('/customer/orders'),
     },
     {
       icon: '👤',
@@ -107,20 +122,35 @@ const CustomerDashboard: React.FC = () => {
     },
   ];
 
+  const handleCartClick = () => {
+    navigate('/menu');
+  };
+
+  const orderCardStyles: React.CSSProperties = {
+    ...createNeumorphicSurface('raised', 'md', 'xl'),
+    padding: spacing[4],
+    marginBottom: spacing[4],
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+  };
+
   return (
     <>
       <AnimatedBackground variant="default" />
 
       <div style={containerStyles}>
-        <AppHeader title="My Dashboard" hideStaffLogin={false} />
+        <AppHeader
+          showPublicNav={true}
+          onCartClick={handleCartClick}
+        />
 
         <div style={contentStyles}>
           {/* Welcome Section */}
           <div style={welcomeCardStyles}>
             <div style={{ fontSize: '80px', marginBottom: spacing[4] }}>👋</div>
-            <h1 style={titleStyles}>Welcome Back!</h1>
+            <h1 style={titleStyles}>Welcome Back{customer?.name ? `, ${customer.name}` : ''}!</h1>
             <p style={descriptionStyles}>
-              What would you like to do today?
+              {customer?.loyaltyInfo ? `You have ${customer.loyaltyInfo.totalPoints} loyalty points` : 'What would you like to do today?'}
             </p>
             <Button
               variant="primary"
@@ -130,6 +160,86 @@ const CustomerDashboard: React.FC = () => {
               Order Now
             </Button>
           </div>
+
+          {/* Active Order Tracking */}
+          {activeOrder && (
+            <div style={{ marginBottom: spacing[8] }}>
+              <h2 style={{ ...titleStyles, fontSize: typography.fontSize['2xl'], marginBottom: spacing[4] }}>
+                Active Order
+              </h2>
+              <div
+                style={orderCardStyles}
+                onClick={() => navigate(`/tracking/${activeOrder.id}`)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[3] }}>
+                  <div>
+                    <div style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, color: colors.text.primary }}>
+                      Order #{activeOrder.orderNumber}
+                    </div>
+                    <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
+                      {new Date(activeOrder.createdAt).toLocaleString()}
+                    </div>
+                  </div>
+                  <div style={{
+                    padding: `${spacing[2]} ${spacing[4]}`,
+                    borderRadius: '20px',
+                    backgroundColor: colors.brand.primaryLight,
+                    color: colors.text.inverse,
+                    fontSize: typography.fontSize.sm,
+                    fontWeight: typography.fontWeight.semibold
+                  }}>
+                    {activeOrder.status}
+                  </div>
+                </div>
+                <div style={{ fontSize: typography.fontSize.base, color: colors.text.secondary }}>
+                  {activeOrder.items.length} items • ₹{activeOrder.total.toFixed(2)}
+                </div>
+                <div style={{ marginTop: spacing[2], color: colors.brand.primary, fontWeight: typography.fontWeight.semibold }}>
+                  Track Order →
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Recent Orders */}
+          {recentOrders.length > 0 && (
+            <div style={{ marginBottom: spacing[8] }}>
+              <h2 style={{ ...titleStyles, fontSize: typography.fontSize['2xl'], marginBottom: spacing[4] }}>
+                Recent Orders
+              </h2>
+              {recentOrders.map((order) => (
+                <div
+                  key={order.id}
+                  style={orderCardStyles}
+                  onClick={() => navigate(`/tracking/${order.id}`)}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-4px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[2] }}>
+                    <div style={{ fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.semibold, color: colors.text.primary }}>
+                      Order #{order.orderNumber}
+                    </div>
+                    <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
+                      ₹{order.total.toFixed(2)}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
+                    {new Date(order.createdAt).toLocaleString()} • {order.status}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Quick Actions */}
           <div style={quickActionsStyles}>

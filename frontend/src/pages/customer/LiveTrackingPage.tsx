@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useTrackOrderQuery } from '../../store/api/deliveryApi';
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
@@ -11,6 +11,7 @@ import { createCard, createBadge, createNeumorphicSurface } from '../../styles/n
 
 const LiveTrackingPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
+  const navigate = useNavigate();
   const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
 
   // Poll every 10 seconds for live tracking
@@ -195,12 +196,19 @@ const LiveTrackingPage: React.FC = () => {
     transition: 'all 0.2s',
   };
 
+  const handleCartClick = () => {
+    navigate('/menu');
+  };
+
   if (isLoading) {
     return (
       <>
         <AnimatedBackground variant="default" />
         <div style={containerStyles}>
-          <AppHeader title="Track Delivery" showBackButton={true} />
+          <AppHeader
+            showPublicNav={true}
+            onCartClick={handleCartClick}
+          />
           <div style={{ textAlign: 'center', padding: spacing[8] }}>
             Loading tracking information...
           </div>
@@ -214,7 +222,10 @@ const LiveTrackingPage: React.FC = () => {
       <>
         <AnimatedBackground variant="default" />
         <div style={containerStyles}>
-          <AppHeader title="Track Delivery" showBackButton={true} />
+          <AppHeader
+            showPublicNav={true}
+            onCartClick={handleCartClick}
+          />
           <div style={{ ...statusCardStyles, textAlign: 'center' }}>
             <div style={{ fontSize: '4rem', marginBottom: spacing[3] }}>❌</div>
             <h2 style={statusTextStyles}>Tracking Not Available</h2>
@@ -232,7 +243,10 @@ const LiveTrackingPage: React.FC = () => {
       <AnimatedBackground variant="default" />
 
       <div style={containerStyles}>
-        <AppHeader title="Track Your Delivery" showBackButton={true} />
+        <AppHeader
+          showPublicNav={true}
+          onCartClick={handleCartClick}
+        />
 
         <h1 style={titleStyles}>Live Tracking</h1>
         <p style={subtitleStyles}>Order #{orderId?.slice(-8).toUpperCase()}</p>

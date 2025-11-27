@@ -350,7 +350,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
                   {/* My Orders */}
                   <div
                     style={dropdownItemStyles}
-                    onClick={() => handleMenuItemClick('/customer-dashboard')}
+                    onClick={() => handleMenuItemClick('/customer/orders')}
                     onMouseEnter={(e) => {
                       Object.assign(e.currentTarget.style, dropdownItemHoverStyles);
                     }}

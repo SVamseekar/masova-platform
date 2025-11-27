@@ -91,6 +91,10 @@ const TrackingPage: React.FC = () => {
 
   const currentStepIndex = order ? getCurrentStepIndex(order.status as OrderStatus) : 0;
 
+  const handleCartClick = () => {
+    navigate('/menu');
+  };
+
   // Estimate remaining time (mock logic - would come from backend in production)
   const getEstimatedTime = (status: OrderStatus): string => {
     switch (status) {
@@ -256,7 +260,10 @@ const TrackingPage: React.FC = () => {
       <>
         <AnimatedBackground variant="minimal" />
         <div style={containerStyles}>
-          <AppHeader title="Order Tracking" hideStaffLogin />
+          <AppHeader
+            showPublicNav={true}
+            onCartClick={handleCartClick}
+          />
           <div style={errorStyles}>
             ⚠️ No order ID provided. Please check your order confirmation.
           </div>
@@ -270,7 +277,10 @@ const TrackingPage: React.FC = () => {
       <>
         <AnimatedBackground variant="minimal" />
         <div style={containerStyles}>
-          <AppHeader title="Order Tracking" hideStaffLogin />
+          <AppHeader
+            showPublicNav={true}
+            onCartClick={handleCartClick}
+          />
           <div style={loadingStyles}>Loading order details...</div>
         </div>
       </>
@@ -282,7 +292,10 @@ const TrackingPage: React.FC = () => {
       <>
         <AnimatedBackground variant="minimal" />
         <div style={containerStyles}>
-          <AppHeader title="Order Tracking" hideStaffLogin />
+          <AppHeader
+            showPublicNav={true}
+            onCartClick={handleCartClick}
+          />
           <div style={errorStyles}>
             ⚠️ Unable to load order details. Please try again or contact support.
           </div>
@@ -326,7 +339,10 @@ const TrackingPage: React.FC = () => {
       <AnimatedBackground variant="minimal" />
 
       <div style={containerStyles}>
-        <AppHeader title="Order Tracking" hideStaffLogin />
+        <AppHeader
+          showPublicNav={true}
+          onCartClick={handleCartClick}
+        />
 
         <div style={contentStyles}>
           {/* Success Banner */}

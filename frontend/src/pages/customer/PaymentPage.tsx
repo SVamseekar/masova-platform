@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { useCreateOrderMutation } from '../../store/api/orderApi';
 import { useInitiatePaymentMutation } from '../../store/api/paymentApi';
+import { useGetCustomerByUserIdQuery, useCreateCustomerMutation } from '../../store/api/customerApi';
 import { clearCart, selectCartItems, selectCartSubtotal, selectDeliveryFee } from '../../store/slices/cartSlice';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { Button, Card, Input } from '../../components/ui/neumorphic';
@@ -42,6 +43,12 @@ const PaymentPage: React.FC = () => {
 
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
   const [initiatePayment, { isLoading: isInitiatingPayment }] = useInitiatePaymentMutation();
+  const [createCustomer] = useCreateCustomerMutation();
+
+  // Check if customer profile exists
+  const { data: customerProfile } = useGetCustomerByUserIdQuery(currentUser?.id || '', {
+    skip: !currentUser?.id,
+  });
 
   const isLoading = isCreatingOrder || isInitiatingPayment;
 
@@ -62,12 +69,31 @@ const PaymentPage: React.FC = () => {
 
   const handlePlaceOrder = async () => {
     try {
+      // If user is logged in but doesn't have a customer profile, create one
+      let customerId = customerProfile?.id;
+      if (currentUser && !customerProfile) {
+        try {
+          console.log('Creating customer profile for user:', currentUser.id);
+          const newCustomer = await createCustomer({
+            userId: currentUser.id,
+            name: currentUser.name,
+            email: currentUser.email || '',
+            phone: currentUser.phone || guestInfo?.phone || '',
+          }).unwrap();
+          customerId = newCustomer.id;
+          console.log('Customer profile created:', customerId);
+        } catch (err) {
+          console.error('Failed to create customer profile:', err);
+          // Continue with order even if customer profile creation fails
+        }
+      }
+
       // Prepare order data - matching backend CreateOrderRequest structure
       const orderData = {
         storeId: 'store-1', // Default store ID
         customerName: currentUser?.name || guestInfo?.name || 'Guest',
         customerPhone: guestInfo?.phone || currentUser?.phone || '',
-        customerId: currentUser?.id, // User type uses 'id' not 'userId'
+        customerId: customerId, // Use customer ID from profile or newly created
         items: cartItems.map(item => ({
           menuItemId: item.id,
           name: item.name,
@@ -99,11 +125,13 @@ const PaymentPage: React.FC = () => {
       if (paymentMethod === 'CASH') {
         console.log('Cash payment - redirecting to tracking page:', orderId);
         setOrderPlaced(true); // Prevent redirect to menu
-        dispatch(clearCart());
+
+        // Navigate to tracking page (cart will be cleared there)
         navigate(`/tracking/${orderId}`, {
           state: { orderData: orderResult },
           replace: true // Replace history to prevent back navigation issues
         });
+
         return;
       }
 
@@ -144,10 +172,10 @@ const PaymentPage: React.FC = () => {
         // Payment successful
         console.log('Payment successful:', response);
 
-        // Clear cart
-        dispatch(clearCart());
+        // Set order placed flag to prevent redirect to menu
+        setOrderPlaced(true);
 
-        // Redirect to success page with payment details
+        // Navigate to success page (cart will be cleared there)
         navigate(`/payment/success?razorpay_payment_id=${response.razorpay_payment_id}&razorpay_order_id=${response.razorpay_order_id}&razorpay_signature=${response.razorpay_signature}&order_id=${orderId}`);
       },
       prefill: {

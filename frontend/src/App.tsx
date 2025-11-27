@@ -22,6 +22,7 @@ const PaymentSuccessPage = React.lazy(() => import('./pages/customer/PaymentSucc
 const PaymentFailedPage = React.lazy(() => import('./pages/customer/PaymentFailedPage'));
 const TrackingPage = React.lazy(() => import('./pages/customer/TrackingPage'));
 const LiveTrackingPage = React.lazy(() => import('./pages/customer/LiveTrackingPage'));
+const OrderTrackingPage = React.lazy(() => import('./pages/customer/OrderTrackingPage'));
 const CustomerDashboard = React.lazy(() => import('./pages/customer/CustomerDashboard'));
 const ProfilePage = React.lazy(() => import('./pages/customer/ProfilePage'));
 const NotificationSettingsPage = React.lazy(() => import('./pages/customer/NotificationSettingsPage'));
@@ -87,6 +88,14 @@ const App: React.FC = () => {
                     element={
                       <ProtectedRoute allowedRoles={['CUSTOMER']} requireAuth={true}>
                         <CustomerDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/customer/orders"
+                    element={
+                      <ProtectedRoute allowedRoles={['CUSTOMER']} requireAuth={true}>
+                        <OrderTrackingPage />
                       </ProtectedRoute>
                     }
                   />

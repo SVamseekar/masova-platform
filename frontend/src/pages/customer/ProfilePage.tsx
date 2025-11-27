@@ -232,12 +232,19 @@ const ProfilePage: React.FC = () => {
     display: 'inline-block',
   });
 
+  const handleCartClick = () => {
+    navigate('/menu');
+  };
+
   if (isLoading) {
     return (
       <>
         <AnimatedBackground variant="default" />
         <div style={containerStyles}>
-          <AppHeader title="My Profile" showBackButton={true} />
+          <AppHeader
+            showPublicNav={true}
+            onCartClick={handleCartClick}
+          />
           <div style={{ textAlign: 'center', padding: spacing[8] }}>Loading...</div>
         </div>
       </>
@@ -249,7 +256,10 @@ const ProfilePage: React.FC = () => {
       <>
         <AnimatedBackground variant="default" />
         <div style={containerStyles}>
-          <AppHeader title="My Profile" showBackButton={true} />
+          <AppHeader
+            showPublicNav={true}
+            onCartClick={handleCartClick}
+          />
           <div style={{ textAlign: 'center', padding: spacing[8] }}>
             <p>Customer profile not found. Please contact support.</p>
           </div>
@@ -265,7 +275,10 @@ const ProfilePage: React.FC = () => {
       <AnimatedBackground variant="default" />
 
       <div style={containerStyles}>
-        <AppHeader title="My Profile" showBackButton={true} />
+        <AppHeader
+          showPublicNav={true}
+          onCartClick={handleCartClick}
+        />
 
         <h1 style={titleStyles}>My Profile</h1>
 
@@ -312,11 +325,11 @@ const ProfilePage: React.FC = () => {
               <div style={{ fontSize: typography.fontSize.xs, opacity: 0.9 }}>Total Orders</div>
             </div>
             <div>
-              <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>¹{Math.round(customer.orderStats.totalSpent)}</div>
+              <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>ï¿½{Math.round(customer.orderStats.totalSpent)}</div>
               <div style={{ fontSize: typography.fontSize.xs, opacity: 0.9 }}>Total Spent</div>
             </div>
             <div>
-              <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>¹{Math.round(customer.orderStats.averageOrderValue)}</div>
+              <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>ï¿½{Math.round(customer.orderStats.averageOrderValue)}</div>
               <div style={{ fontSize: typography.fontSize.xs, opacity: 0.9 }}>Avg Order Value</div>
             </div>
           </div>
