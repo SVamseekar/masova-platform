@@ -6,6 +6,7 @@ import type { RootState } from '../store';
 export interface LoginRequest {
   email: string;
   password: string;
+  rememberMe?: boolean;
 }
 
 export interface RegisterRequest {
@@ -15,6 +16,7 @@ export interface RegisterRequest {
   phone: string;
   password: string;
   storeId?: string;
+  rememberMe?: boolean;
 }
 
 export interface AuthResponse {
@@ -29,6 +31,7 @@ export interface AuthResponse {
     storeId?: string;
     isActive: boolean;
   };
+  rememberMe?: boolean;
 }
 
 export interface RefreshTokenRequest {
@@ -50,18 +53,26 @@ export const authApi = createApi({
   tagTypes: ['Auth', 'User'],
   endpoints: (builder) => ({
     login: builder.mutation<AuthResponse, LoginRequest>({
-      query: (credentials) => ({
+      query: ({ email, password }) => ({
         url: '/api/users/login',
         method: 'POST',
-        body: credentials,
+        body: { email, password },
+      }),
+      transformResponse: (response: AuthResponse, _meta, arg) => ({
+        ...response,
+        rememberMe: arg.rememberMe ?? true, // Include rememberMe in response
       }),
       invalidatesTags: ['Auth'],
     }),
     register: builder.mutation<AuthResponse, RegisterRequest>({
-      query: (userData) => ({
+      query: ({ rememberMe, ...userData }) => ({
         url: '/api/users/register',
         method: 'POST',
         body: userData,
+      }),
+      transformResponse: (response: AuthResponse, _meta, arg) => ({
+        ...response,
+        rememberMe: arg.rememberMe ?? true, // Include rememberMe in response
       }),
       invalidatesTags: ['Auth'],
     }),

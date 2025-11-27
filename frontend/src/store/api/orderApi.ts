@@ -110,7 +110,7 @@ export const orderApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Order', 'Orders', 'KitchenQueue'],
+  tagTypes: ['Order', 'Orders', 'KitchenQueue', 'Customer'],
   endpoints: (builder) => ({
     // Get all orders (with filters)
     getOrders: builder.query<Order[], { storeId?: string; status?: string; startDate?: string; endDate?: string }>({
@@ -148,7 +148,7 @@ export const orderApi = createApi({
         method: 'POST',
         body: data,
       }),
-      invalidatesTags: [{ type: 'Orders', id: 'LIST' }, 'KitchenQueue'],
+      invalidatesTags: [{ type: 'Orders', id: 'LIST' }, 'KitchenQueue', 'Customer'],
     }),
 
     // Update order status

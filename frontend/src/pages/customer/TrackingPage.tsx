@@ -7,7 +7,7 @@ import AnimatedBackground from '../../components/backgrounds/AnimatedBackground'
 import { colors, spacing, typography, shadows } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { clearCart, addToCart } from '../../store/slices/cartSlice';
+import { clearCart } from '../../store/slices/cartSlice';
 
 type OrderStatus = 'RECEIVED' | 'PREPARING' | 'COOKING' | 'READY' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'COMPLETED';
 
@@ -311,29 +311,6 @@ const TrackingPage: React.FC = () => {
 
   const isDelivered = order.status === 'DELIVERED';
 
-  // Reorder functionality - add all items from this order back to cart
-  const handleReorder = () => {
-    if (!order || !order.items) return;
-
-    // Clear current cart first
-    dispatch(clearCart());
-
-    // Add all items from the order to cart
-    order.items.forEach((item: any) => {
-      dispatch(addToCart({
-        id: item.menuItemId,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        imageUrl: '', // Will be fetched from menu if needed
-        category: '', // Will be set from menu if needed
-      }));
-    });
-
-    // Navigate to menu or cart
-    navigate('/menu');
-  };
-
   return (
     <>
       <AnimatedBackground variant="minimal" />
@@ -489,45 +466,22 @@ const TrackingPage: React.FC = () => {
             justifyContent: 'center',
             flexWrap: 'wrap',
           }}>
-            {/* Reorder button - only for logged-in customers */}
-            {currentUser && (
-              <Button
-                variant="primary"
-                size="lg"
-                onClick={handleReorder}
-              >
-                🔄 Reorder Same Items
-              </Button>
-            )}
-
             <Button
-              variant={currentUser ? "secondary" : "primary"}
+              variant="primary"
               size="lg"
               onClick={() => navigate('/menu')}
             >
-              {currentUser ? 'Order More' : 'Browse Menu'}
+              Browse Menu
             </Button>
 
             {isDelivered && currentUser && (
-              <>
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  onClick={() => navigate('/customer-dashboard')}
-                >
-                  View Order History
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="base"
-                  onClick={() => {
-                    sessionStorage.removeItem('activeOrderId');
-                    navigate('/menu');
-                  }}
-                >
-                  Clear & Continue Shopping
-                </Button>
-              </>
+              <Button
+                variant="secondary"
+                size="lg"
+                onClick={() => navigate('/customer-dashboard')}
+              >
+                View Order History
+              </Button>
             )}
           </div>
         </div>

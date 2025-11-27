@@ -6,13 +6,15 @@ import {
   useGetCustomerByUserIdQuery,
   useUpdateCustomerMutation,
   useAddAddressMutation,
+  useUpdateAddressMutation,
   useRemoveAddressMutation,
   useSetDefaultAddressMutation,
-  Customer,
+  useUpdatePreferencesMutation,
   UpdateCustomerRequest,
   AddAddressRequest,
+  UpdatePreferencesRequest,
 } from '../../store/api/customerApi';
-import { Button } from '../../components/ui/neumorphic';
+import { Button, Checkbox } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
 import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
@@ -24,6 +26,8 @@ const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [editing, setEditing] = useState(false);
   const [addressDialogOpen, setAddressDialogOpen] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [editingPreferences, setEditingPreferences] = useState(false);
 
   // Form states
   const [profileForm, setProfileForm] = useState<UpdateCustomerRequest>({});
@@ -35,6 +39,7 @@ const ProfilePage: React.FC = () => {
     postalCode: '',
     country: 'India',
   });
+  const [preferencesForm, setPreferencesForm] = useState<UpdatePreferencesRequest>({});
 
   // API queries
   const { data: customer, isLoading } = useGetCustomerByUserIdQuery(currentUser?.id || '', {
@@ -43,8 +48,10 @@ const ProfilePage: React.FC = () => {
 
   const [updateCustomer] = useUpdateCustomerMutation();
   const [addAddress] = useAddAddressMutation();
+  const [updateAddress] = useUpdateAddressMutation();
   const [removeAddress] = useRemoveAddressMutation();
   const [setDefaultAddress] = useSetDefaultAddressMutation();
+  const [updatePreferences] = useUpdatePreferencesMutation();
 
   useEffect(() => {
     if (customer && !editing) {
@@ -58,6 +65,20 @@ const ProfilePage: React.FC = () => {
     }
   }, [customer, editing]);
 
+  useEffect(() => {
+    if (customer && !editingPreferences) {
+      setPreferencesForm({
+        spiceLevel: customer.preferences?.spiceLevel || 'MEDIUM',
+        cuisinePreferences: customer.preferences?.cuisinePreferences || [],
+        dietaryRestrictions: customer.preferences?.dietaryRestrictions || [],
+        allergens: customer.preferences?.allergens || [],
+        preferredPaymentMethod: customer.preferences?.preferredPaymentMethod || '',
+        notifyOnOffers: customer.preferences?.notifyOnOffers !== false,
+        notifyOnOrderStatus: customer.preferences?.notifyOnOrderStatus !== false,
+      });
+    }
+  }, [customer, editingPreferences]);
+
   const handleUpdateProfile = async () => {
     if (!customer) return;
     try {
@@ -65,13 +86,18 @@ const ProfilePage: React.FC = () => {
       setEditing(false);
     } catch (error) {
       console.error('Error updating profile:', error);
+      alert('Failed to update profile. Please try again.');
     }
   };
 
-  const handleAddAddress = async () => {
+  const handleAddOrUpdateAddress = async () => {
     if (!customer) return;
     try {
-      await addAddress({ customerId: customer.id, data: addressForm }).unwrap();
+      if (editingAddressId) {
+        await updateAddress({ customerId: customer.id, addressId: editingAddressId, data: addressForm }).unwrap();
+      } else {
+        await addAddress({ customerId: customer.id, data: addressForm }).unwrap();
+      }
       setAddressForm({
         label: 'HOME',
         addressLine1: '',
@@ -81,9 +107,26 @@ const ProfilePage: React.FC = () => {
         country: 'India',
       });
       setAddressDialogOpen(false);
+      setEditingAddressId(null);
     } catch (error) {
-      console.error('Error adding address:', error);
+      console.error('Error saving address:', error);
+      alert('Failed to save address. Please try again.');
     }
+  };
+
+  const handleEditAddress = (address: any) => {
+    setAddressForm({
+      label: address.label,
+      addressLine1: address.addressLine1,
+      addressLine2: address.addressLine2,
+      city: address.city,
+      state: address.state,
+      postalCode: address.postalCode,
+      country: address.country,
+      landmark: address.landmark,
+    });
+    setEditingAddressId(address.id);
+    setAddressDialogOpen(true);
   };
 
   const handleRemoveAddress = async (addressId: string) => {
@@ -92,6 +135,7 @@ const ProfilePage: React.FC = () => {
       await removeAddress({ customerId: customer.id, addressId }).unwrap();
     } catch (error) {
       console.error('Error removing address:', error);
+      alert('Failed to remove address. Please try again.');
     }
   };
 
@@ -101,6 +145,18 @@ const ProfilePage: React.FC = () => {
       await setDefaultAddress({ customerId: customer.id, addressId }).unwrap();
     } catch (error) {
       console.error('Error setting default address:', error);
+      alert('Failed to set default address. Please try again.');
+    }
+  };
+
+  const handleUpdatePreferences = async () => {
+    if (!customer) return;
+    try {
+      await updatePreferences({ customerId: customer.id, data: preferencesForm }).unwrap();
+      setEditingPreferences(false);
+    } catch (error) {
+      console.error('Error updating preferences:', error);
+      alert('Failed to update preferences. Please try again.');
     }
   };
 
@@ -145,34 +201,27 @@ const ProfilePage: React.FC = () => {
     marginBottom: spacing[2],
   };
 
-  const loyaltyCardStyles: React.CSSProperties = {
-    ...createCard('lg', 'xl'),
-    padding: spacing[6],
-    marginBottom: spacing[6],
-    background: `linear-gradient(135deg, ${colors.primary.main} 0%, ${colors.primary.dark} 100%)`,
-    color: '#fff',
-  };
-
   const tabsContainerStyles: React.CSSProperties = {
     display: 'flex',
     gap: spacing[2],
     marginBottom: spacing[6],
-    borderBottom: `2px solid ${colors.surface.border}`,
-    ...createCard('sm', 'base'),
+    ...createNeumorphicSurface('inset', 'md', 'xl'),
     padding: spacing[2],
+    backgroundColor: colors.surface.secondary,
   };
 
   const tabButtonStyles = (isActive: boolean): React.CSSProperties => ({
+    flex: 1,
     padding: `${spacing[3]} ${spacing[4]}`,
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
-    color: isActive ? colors.primary.main : colors.text.secondary,
-    backgroundColor: isActive ? colors.surface.elevated : 'transparent',
+    color: isActive ? colors.text.primary : colors.text.secondary,
+    backgroundColor: isActive ? colors.surface.primary : 'transparent',
     border: 'none',
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
     cursor: 'pointer',
-    transition: 'all 0.2s',
-    ...(isActive ? createNeumorphicSurface('raised', 'sm', 'base') : {}),
+    transition: 'all 0.3s ease',
+    ...(isActive ? createNeumorphicSurface('raised', 'md', 'lg') : {}),
   });
 
   const formGroupStyles: React.CSSProperties = {
@@ -188,6 +237,7 @@ const ProfilePage: React.FC = () => {
   };
 
   const inputStyles: React.CSSProperties = {
+    ...createNeumorphicSurface('inset', 'sm', 'base'),
     width: '100%',
     padding: spacing[3],
     fontSize: typography.fontSize.base,
@@ -195,7 +245,6 @@ const ProfilePage: React.FC = () => {
     borderRadius: borderRadius.lg,
     backgroundColor: colors.surface.background,
     color: colors.text.primary,
-    ...createNeumorphicSurface('inset', 'sm', 'base'),
   };
 
   const modalOverlayStyles: React.CSSProperties = {
@@ -231,6 +280,34 @@ const ProfilePage: React.FC = () => {
     fontWeight: typography.fontWeight.semibold,
     display: 'inline-block',
   });
+
+  const checkboxContainerStyles: React.CSSProperties = {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: spacing[3],
+    marginTop: spacing[2],
+  };
+
+  const infoCardStyles: React.CSSProperties = {
+    ...createNeumorphicSurface('inset', 'sm', 'lg'),
+    padding: spacing[4],
+    marginBottom: spacing[4],
+    backgroundColor: colors.surface.secondary,
+    borderRadius: borderRadius.xl,
+  };
+
+  const infoLabelStyles: React.CSSProperties = {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.secondary,
+    marginBottom: spacing[2],
+  };
+
+  const infoValueStyles: React.CSSProperties = {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+  };
 
   const handleCartClick = () => {
     navigate('/menu');
@@ -268,7 +345,20 @@ const ProfilePage: React.FC = () => {
     );
   }
 
-  const nextTierInfo = getNextTierInfo(customer.loyaltyInfo.tier, customer.loyaltyInfo.totalPoints);
+  const nextTierInfo = customer.loyaltyInfo
+    ? getNextTierInfo(customer.loyaltyInfo.tier, customer.loyaltyInfo.totalPoints)
+    : null;
+
+  const cuisineOptions = ['Indian', 'Chinese', 'Italian', 'Mexican', 'Thai', 'Japanese', 'Continental', 'Mediterranean'];
+  const dietaryOptions = ['Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free', 'Nut-Free', 'Low-Carb', 'Keto', 'Halal', 'Kosher'];
+  const allergenOptions = ['Peanuts', 'Tree Nuts', 'Milk', 'Eggs', 'Wheat', 'Soy', 'Fish', 'Shellfish', 'Sesame'];
+
+  const toggleArrayItem = (array: string[], item: string) => {
+    if (array.includes(item)) {
+      return array.filter(i => i !== item);
+    }
+    return [...array, item];
+  };
 
   return (
     <>
@@ -282,58 +372,148 @@ const ProfilePage: React.FC = () => {
 
         <h1 style={titleStyles}>My Profile</h1>
 
-        {/* Loyalty Card */}
-        <div style={loyaltyCardStyles}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing[4] }}>
-            <div>
-              <div style={{ fontSize: typography.fontSize['3xl'], fontWeight: typography.fontWeight.bold, marginBottom: spacing[1] }}>
-                {customer.loyaltyInfo.totalPoints}
+        {/* Loyalty Card - Clean Professional Design */}
+        {customer.loyaltyInfo && customer.orderStats && (
+          <div style={{
+            ...createNeumorphicSurface('raised', 'lg', 'xl'),
+            padding: spacing[6],
+            marginBottom: spacing[6],
+            background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.primaryDark} 100%)`,
+            color: '#fff',
+          }}>
+            {/* Header Section */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: spacing[6],
+              paddingBottom: spacing[4],
+              borderBottom: '1px solid rgba(255,255,255,0.2)',
+            }}>
+              <div>
+                <div style={{ fontSize: typography.fontSize.sm, opacity: 0.8, marginBottom: spacing[1] }}>
+                  Loyalty Points
+                </div>
+                <div style={{ fontSize: typography.fontSize['4xl'], fontWeight: typography.fontWeight.bold }}>
+                  {customer.loyaltyInfo?.totalPoints || 0}
+                </div>
               </div>
-              <div style={{ fontSize: typography.fontSize.sm, opacity: 0.9 }}>Loyalty Points</div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={badgeStyles(getLoyaltyTierColor(customer.loyaltyInfo.tier))}>
-                {customer.loyaltyInfo.tier}
-              </div>
-              <div style={{ fontSize: typography.fontSize.xs, marginTop: spacing[1], opacity: 0.9 }}>
-                Member since {new Date(customer.createdAt).toLocaleDateString()}
-              </div>
-            </div>
-          </div>
-
-          {/* Tier Progress */}
-          {nextTierInfo && (
-            <div>
-              <div style={{ fontSize: typography.fontSize.sm, marginBottom: spacing[2], opacity: 0.9 }}>
-                {nextTierInfo.pointsNeeded} points to {nextTierInfo.nextTier}
-              </div>
-              <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: borderRadius.full, overflow: 'hidden' }}>
+              <div style={{ textAlign: 'right' }}>
                 <div style={{
-                  width: `${nextTierInfo.progress}%`,
+                  display: 'inline-block',
+                  padding: `${spacing[2]} ${spacing[4]}`,
+                  borderRadius: borderRadius.full,
+                  backgroundColor: getLoyaltyTierColor(customer.loyaltyInfo?.tier || 'BRONZE'),
+                  color: '#000',
+                  fontSize: typography.fontSize.sm,
+                  fontWeight: typography.fontWeight.bold,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                }}>
+                  {customer.loyaltyInfo?.tier || 'BRONZE'}
+                </div>
+                <div style={{ fontSize: typography.fontSize.xs, marginTop: spacing[2], opacity: 0.8 }}>
+                  Member since {new Date(customer.createdAt).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
+                </div>
+              </div>
+            </div>
+
+            {/* Progress Section */}
+            <div style={{ marginBottom: spacing[6] }}>
+              <div style={{
+                fontSize: typography.fontSize.sm,
+                marginBottom: spacing[3],
+                opacity: 0.9,
+                fontWeight: typography.fontWeight.medium,
+              }}>
+                {nextTierInfo
+                  ? `${nextTierInfo.pointsNeeded} points until ${nextTierInfo.nextTier} tier`
+                  : 'Maximum tier achieved!'}
+              </div>
+
+              {/* Simple clean progress bar */}
+              <div style={{
+                width: '100%',
+                height: '8px',
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                borderRadius: borderRadius.full,
+                overflow: 'hidden',
+                position: 'relative',
+              }}>
+                <div style={{
+                  width: `${Math.min((customer.loyaltyInfo.totalPoints / 10000) * 100, 100)}%`,
                   height: '100%',
-                  backgroundColor: '#fff',
-                  transition: 'width 0.3s ease',
+                  background: 'linear-gradient(90deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,1) 100%)',
+                  transition: 'width 0.5s ease',
+                  borderRadius: borderRadius.full,
                 }}></div>
               </div>
-            </div>
-          )}
 
-          {/* Order Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: spacing[4], marginTop: spacing[4], paddingTop: spacing[4], borderTop: '1px solid rgba(255,255,255,0.2)' }}>
-            <div>
-              <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>{customer.orderStats.totalOrders}</div>
-              <div style={{ fontSize: typography.fontSize.xs, opacity: 0.9 }}>Total Orders</div>
+              {/* Milestone labels below bar */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginTop: spacing[2],
+              }}>
+                <div style={{ fontSize: typography.fontSize.xs, opacity: 0.7 }}>
+                  <div style={{ fontWeight: typography.fontWeight.semibold }}>Bronze</div>
+                  <div>0</div>
+                </div>
+                <div style={{ fontSize: typography.fontSize.xs, opacity: 0.7, textAlign: 'center' }}>
+                  <div style={{ fontWeight: typography.fontWeight.semibold }}>Silver</div>
+                  <div>1,000</div>
+                </div>
+                <div style={{ fontSize: typography.fontSize.xs, opacity: 0.7, textAlign: 'center' }}>
+                  <div style={{ fontWeight: typography.fontWeight.semibold }}>Gold</div>
+                  <div>5,000</div>
+                </div>
+                <div style={{ fontSize: typography.fontSize.xs, opacity: 0.7, textAlign: 'right' }}>
+                  <div style={{ fontWeight: typography.fontWeight.semibold }}>Platinum</div>
+                  <div>10,000</div>
+                </div>
+              </div>
             </div>
-            <div>
-              <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>�{Math.round(customer.orderStats.totalSpent)}</div>
-              <div style={{ fontSize: typography.fontSize.xs, opacity: 0.9 }}>Total Spent</div>
-            </div>
-            <div>
-              <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>�{Math.round(customer.orderStats.averageOrderValue)}</div>
-              <div style={{ fontSize: typography.fontSize.xs, opacity: 0.9 }}>Avg Order Value</div>
+
+            {/* Stats Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: spacing[3] }}>
+              <div style={{
+                padding: spacing[4],
+                borderRadius: borderRadius.lg,
+                backgroundColor: 'rgba(255,255,255,0.1)',
+                backdropFilter: 'blur(10px)',
+                textAlign: 'center',
+              }}>
+                <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>
+                  {customer.orderStats?.totalOrders || 0}
+                </div>
+                <div style={{ fontSize: typography.fontSize.xs, opacity: 0.8, marginTop: spacing[1] }}>Total Orders</div>
+              </div>
+              <div style={{
+                padding: spacing[4],
+                borderRadius: borderRadius.lg,
+                backgroundColor: 'rgba(255,255,255,0.1)',
+                backdropFilter: 'blur(10px)',
+                textAlign: 'center',
+              }}>
+                <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>
+                  ₹{Math.round(customer.orderStats?.totalSpent || 0)}
+                </div>
+                <div style={{ fontSize: typography.fontSize.xs, opacity: 0.8, marginTop: spacing[1] }}>Total Spent</div>
+              </div>
+              <div style={{
+                padding: spacing[4],
+                borderRadius: borderRadius.lg,
+                backgroundColor: 'rgba(255,255,255,0.1)',
+                backdropFilter: 'blur(10px)',
+                textAlign: 'center',
+              }}>
+                <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>
+                  ₹{Math.round(customer.orderStats?.averageOrderValue || 0)}
+                </div>
+                <div style={{ fontSize: typography.fontSize.xs, opacity: 0.8, marginTop: spacing[1] }}>Avg Order</div>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Tabs */}
         <div style={tabsContainerStyles}>
@@ -343,6 +523,7 @@ const ProfilePage: React.FC = () => {
               onClick={() => {
                 setActiveTab(index);
                 setEditing(false);
+                setEditingPreferences(false);
               }}
               style={tabButtonStyles(activeTab === index)}
             >
@@ -352,11 +533,11 @@ const ProfilePage: React.FC = () => {
         </div>
 
         {/* Tab Content */}
-        <div style={{ ...createCard('md', 'base'), padding: spacing[6] }}>
+        <div style={{ ...createNeumorphicSurface('raised', 'md', 'xl'), padding: spacing[6], backgroundColor: colors.surface.primary }}>
           {activeTab === 0 && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[4] }}>
-                <h2 style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>Personal Information</h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[6] }}>
+                <h2 style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold, color: colors.text.primary }}>Personal Information</h2>
                 {!editing ? (
                   <Button variant="primary" size="sm" onClick={() => setEditing(true)}>Edit</Button>
                 ) : (
@@ -367,66 +548,107 @@ const ProfilePage: React.FC = () => {
                 )}
               </div>
 
-              <div style={formGroupStyles}>
-                <label style={labelStyles}>Name</label>
-                {editing ? (
-                  <input
-                    type="text"
-                    value={profileForm.name || ''}
-                    onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                    style={inputStyles}
-                  />
-                ) : (
-                  <div style={{ fontSize: typography.fontSize.lg }}>{customer.name}</div>
-                )}
-              </div>
+              {editing ? (
+                // Edit mode - show inputs
+                <div>
+                  <div style={formGroupStyles}>
+                    <label style={labelStyles}>Name</label>
+                    <input
+                      type="text"
+                      value={profileForm.name || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                      style={inputStyles}
+                    />
+                  </div>
 
-              <div style={formGroupStyles}>
-                <label style={labelStyles}>Email</label>
-                <div style={{ fontSize: typography.fontSize.lg }}>
-                  {customer.email} {customer.emailVerified && <span style={{ color: colors.success.main }}> Verified</span>}
+                  <div style={formGroupStyles}>
+                    <label style={labelStyles}>Email</label>
+                    <input
+                      type="email"
+                      value={profileForm.email || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                      style={inputStyles}
+                    />
+                  </div>
+
+                  <div style={formGroupStyles}>
+                    <label style={labelStyles}>Phone</label>
+                    <input
+                      type="tel"
+                      value={profileForm.phone || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                      style={inputStyles}
+                    />
+                  </div>
+
+                  <div style={formGroupStyles}>
+                    <label style={labelStyles}>Date of Birth</label>
+                    <input
+                      type="date"
+                      value={profileForm.dateOfBirth || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, dateOfBirth: e.target.value })}
+                      style={inputStyles}
+                    />
+                  </div>
+
+                  <div style={formGroupStyles}>
+                    <label style={labelStyles}>Gender</label>
+                    <select
+                      value={profileForm.gender || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, gender: e.target.value })}
+                      style={inputStyles}
+                    >
+                      <option value="">Select</option>
+                      <option value="MALE">Male</option>
+                      <option value="FEMALE">Female</option>
+                      <option value="OTHER">Other</option>
+                      <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                // View mode - show neumorphic cards
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: spacing[4] }}>
+                  <div style={infoCardStyles}>
+                    <div style={infoLabelStyles}>Name</div>
+                    <div style={infoValueStyles}>{customer.name}</div>
+                  </div>
 
-              <div style={formGroupStyles}>
-                <label style={labelStyles}>Phone</label>
-                <div style={{ fontSize: typography.fontSize.lg }}>
-                  {customer.phone} {customer.phoneVerified && <span style={{ color: colors.success.main }}> Verified</span>}
+                  <div style={infoCardStyles}>
+                    <div style={infoLabelStyles}>Email</div>
+                    <div style={infoValueStyles}>
+                      {customer.email}
+                      {customer.emailVerified && (
+                        <span style={{ color: colors.semantic.success, fontSize: typography.fontSize.sm, marginLeft: spacing[2] }}>
+                          ✓ Verified
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={infoCardStyles}>
+                    <div style={infoLabelStyles}>Phone</div>
+                    <div style={infoValueStyles}>
+                      {customer.phone}
+                      {customer.phoneVerified && (
+                        <span style={{ color: colors.semantic.success, fontSize: typography.fontSize.sm, marginLeft: spacing[2] }}>
+                          ✓ Verified
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={infoCardStyles}>
+                    <div style={infoLabelStyles}>Date of Birth</div>
+                    <div style={infoValueStyles}>{customer.dateOfBirth || 'Not set'}</div>
+                  </div>
+
+                  <div style={{ ...infoCardStyles, gridColumn: 'span 2' }}>
+                    <div style={infoLabelStyles}>Gender</div>
+                    <div style={infoValueStyles}>{customer.gender || 'Not set'}</div>
+                  </div>
                 </div>
-              </div>
-
-              <div style={formGroupStyles}>
-                <label style={labelStyles}>Date of Birth</label>
-                {editing ? (
-                  <input
-                    type="date"
-                    value={profileForm.dateOfBirth || ''}
-                    onChange={(e) => setProfileForm({ ...profileForm, dateOfBirth: e.target.value })}
-                    style={inputStyles}
-                  />
-                ) : (
-                  <div style={{ fontSize: typography.fontSize.lg }}>{customer.dateOfBirth || 'Not set'}</div>
-                )}
-              </div>
-
-              <div style={formGroupStyles}>
-                <label style={labelStyles}>Gender</label>
-                {editing ? (
-                  <select
-                    value={profileForm.gender || ''}
-                    onChange={(e) => setProfileForm({ ...profileForm, gender: e.target.value })}
-                    style={inputStyles}
-                  >
-                    <option value="">Select</option>
-                    <option value="MALE">Male</option>
-                    <option value="FEMALE">Female</option>
-                    <option value="OTHER">Other</option>
-                    <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
-                  </select>
-                ) : (
-                  <div style={{ fontSize: typography.fontSize.lg }}>{customer.gender || 'Not set'}</div>
-                )}
-              </div>
+              )}
             </div>
           )}
 
@@ -434,7 +656,18 @@ const ProfilePage: React.FC = () => {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[4] }}>
                 <h2 style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>My Addresses</h2>
-                <Button variant="primary" size="sm" onClick={() => setAddressDialogOpen(true)}>Add Address</Button>
+                <Button variant="primary" size="sm" onClick={() => {
+                  setEditingAddressId(null);
+                  setAddressForm({
+                    label: 'HOME',
+                    addressLine1: '',
+                    city: '',
+                    state: '',
+                    postalCode: '',
+                    country: 'India',
+                  });
+                  setAddressDialogOpen(true);
+                }}>Add Address</Button>
               </div>
 
               {customer.addresses.length === 0 ? (
@@ -444,17 +677,20 @@ const ProfilePage: React.FC = () => {
               ) : (
                 <div style={{ display: 'grid', gap: spacing[4] }}>
                   {customer.addresses.map((address) => (
-                    <div key={address.id} style={{ ...createCard('sm', 'base'), padding: spacing[4] }}>
+                    <div key={address.id} style={{ ...createNeumorphicSurface('inset', 'sm', 'lg'), padding: spacing[4], backgroundColor: colors.surface.secondary }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing[2] }}>
                         <div>
                           <span style={{ fontWeight: typography.fontWeight.semibold, fontSize: typography.fontSize.lg }}>
                             {address.label}
                           </span>
                           {address.isDefault && (
-                            <span style={{ ...badgeStyles(colors.primary.main), marginLeft: spacing[2] }}>Default</span>
+                            <span style={{ ...badgeStyles(colors.brand.primary), marginLeft: spacing[2] }}>Default</span>
                           )}
                         </div>
                         <div style={{ display: 'flex', gap: spacing[2] }}>
+                          <Button variant="secondary" size="sm" onClick={() => handleEditAddress(address)}>
+                            Edit
+                          </Button>
                           {!address.isDefault && (
                             <Button variant="secondary" size="sm" onClick={() => handleSetDefaultAddress(address.id)}>
                               Set Default
@@ -479,58 +715,255 @@ const ProfilePage: React.FC = () => {
 
           {activeTab === 2 && (
             <div>
-              <h2 style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold, marginBottom: spacing[4] }}>
-                My Preferences
-              </h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[4] }}>
+                <h2 style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>
+                  My Preferences
+                </h2>
+                {!editingPreferences ? (
+                  <Button variant="primary" size="sm" onClick={() => setEditingPreferences(true)}>Edit</Button>
+                ) : (
+                  <div style={{ display: 'flex', gap: spacing[2] }}>
+                    <Button variant="secondary" size="sm" onClick={() => setEditingPreferences(false)}>Cancel</Button>
+                    <Button variant="primary" size="sm" onClick={handleUpdatePreferences}>Save</Button>
+                  </div>
+                )}
+              </div>
 
               <div style={formGroupStyles}>
                 <label style={labelStyles}>Spice Level</label>
-                <div style={{ fontSize: typography.fontSize.lg }}>{customer.preferences.spiceLevel}</div>
+                {editingPreferences ? (
+                  <select
+                    value={preferencesForm.spiceLevel || 'MEDIUM'}
+                    onChange={(e) => setPreferencesForm({ ...preferencesForm, spiceLevel: e.target.value })}
+                    style={inputStyles}
+                  >
+                    <option value="MILD">Mild</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="HOT">Hot</option>
+                    <option value="EXTRA_HOT">Extra Hot</option>
+                  </select>
+                ) : (
+                  <div style={infoCardStyles}>
+                    <div style={infoValueStyles}>{customer.preferences?.spiceLevel || 'MEDIUM'}</div>
+                  </div>
+                )}
               </div>
 
-              {customer.preferences.favoriteMenuItems.length > 0 && (
-                <div style={formGroupStyles}>
-                  <label style={labelStyles}>Favorite Items</label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: spacing[2] }}>
-                    {customer.preferences.favoriteMenuItems.map((item, idx) => (
-                      <span key={idx} style={badgeStyles(colors.primary.light)}>{item}</span>
+              <div style={formGroupStyles}>
+                <label style={labelStyles}>Cuisine Preferences</label>
+                {editingPreferences ? (
+                  <div style={checkboxContainerStyles}>
+                    {cuisineOptions.map((cuisine) => (
+                      <Checkbox
+                        key={cuisine}
+                        label={cuisine}
+                        checked={(preferencesForm.cuisinePreferences || []).includes(cuisine)}
+                        onChange={() => setPreferencesForm({
+                          ...preferencesForm,
+                          cuisinePreferences: toggleArrayItem(preferencesForm.cuisinePreferences || [], cuisine)
+                        })}
+                      />
                     ))}
                   </div>
-                </div>
-              )}
+                ) : customer.preferences?.cuisinePreferences?.length ? (
+                  <div style={infoCardStyles}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: spacing[2] }}>
+                      {customer.preferences.cuisinePreferences.map((cuisine, idx) => (
+                        <span key={idx} style={{
+                          ...createNeumorphicSurface('raised', 'sm', 'md'),
+                          padding: `${spacing[2]} ${spacing[3]}`,
+                          fontSize: typography.fontSize.sm,
+                          fontWeight: typography.fontWeight.medium,
+                          color: colors.text.primary,
+                          backgroundColor: colors.surface.primary,
+                          borderRadius: borderRadius.full,
+                        }}>
+                          {cuisine}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={infoCardStyles}>
+                    <div style={{ fontSize: typography.fontSize.base, color: colors.text.tertiary }}>No preferences set</div>
+                  </div>
+                )}
+              </div>
 
-              {customer.preferences.cuisinePreferences.length > 0 && (
-                <div style={formGroupStyles}>
-                  <label style={labelStyles}>Cuisine Preferences</label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: spacing[2] }}>
-                    {customer.preferences.cuisinePreferences.map((cuisine, idx) => (
-                      <span key={idx} style={badgeStyles(colors.info.light)}>{cuisine}</span>
+              <div style={formGroupStyles}>
+                <label style={labelStyles}>Dietary Restrictions</label>
+                {editingPreferences ? (
+                  <div style={checkboxContainerStyles}>
+                    {dietaryOptions.map((restriction) => (
+                      <Checkbox
+                        key={restriction}
+                        label={restriction}
+                        checked={(preferencesForm.dietaryRestrictions || []).includes(restriction)}
+                        onChange={() => setPreferencesForm({
+                          ...preferencesForm,
+                          dietaryRestrictions: toggleArrayItem(preferencesForm.dietaryRestrictions || [], restriction)
+                        })}
+                      />
                     ))}
                   </div>
-                </div>
-              )}
+                ) : customer.preferences?.dietaryRestrictions?.length ? (
+                  <div style={infoCardStyles}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: spacing[2] }}>
+                      {customer.preferences.dietaryRestrictions.map((restriction, idx) => (
+                        <span key={idx} style={{
+                          ...createNeumorphicSurface('raised', 'sm', 'md'),
+                          padding: `${spacing[2]} ${spacing[3]}`,
+                          fontSize: typography.fontSize.sm,
+                          fontWeight: typography.fontWeight.medium,
+                          color: colors.text.primary,
+                          backgroundColor: colors.surface.primary,
+                          borderRadius: borderRadius.full,
+                        }}>
+                          {restriction}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={infoCardStyles}>
+                    <div style={{ fontSize: typography.fontSize.base, color: colors.text.tertiary }}>No restrictions set</div>
+                  </div>
+                )}
+              </div>
 
-              {customer.preferences.dietaryRestrictions.length > 0 && (
-                <div style={formGroupStyles}>
-                  <label style={labelStyles}>Dietary Restrictions</label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: spacing[2] }}>
-                    {customer.preferences.dietaryRestrictions.map((restriction, idx) => (
-                      <span key={idx} style={badgeStyles(colors.warning.light)}>{restriction}</span>
+              <div style={formGroupStyles}>
+                <label style={labelStyles}>Allergens</label>
+                {editingPreferences ? (
+                  <div style={checkboxContainerStyles}>
+                    {allergenOptions.map((allergen) => (
+                      <Checkbox
+                        key={allergen}
+                        label={allergen}
+                        checked={(preferencesForm.allergens || []).includes(allergen)}
+                        onChange={() => setPreferencesForm({
+                          ...preferencesForm,
+                          allergens: toggleArrayItem(preferencesForm.allergens || [], allergen)
+                        })}
+                      />
                     ))}
                   </div>
-                </div>
-              )}
+                ) : customer.preferences?.allergens?.length ? (
+                  <div style={infoCardStyles}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: spacing[2] }}>
+                      {customer.preferences.allergens.map((allergen, idx) => (
+                        <span key={idx} style={{
+                          ...createNeumorphicSurface('raised', 'sm', 'md'),
+                          padding: `${spacing[2]} ${spacing[3]}`,
+                          fontSize: typography.fontSize.sm,
+                          fontWeight: typography.fontWeight.semibold,
+                          color: '#FFFFFF',
+                          backgroundColor: colors.semantic.error,
+                          borderRadius: borderRadius.full,
+                          boxShadow: `0 2px 8px ${colors.semantic.error}40`,
+                        }}>
+                          ⚠ {allergen}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={infoCardStyles}>
+                    <div style={{ fontSize: typography.fontSize.base, color: colors.text.tertiary }}>No allergens set</div>
+                  </div>
+                )}
+              </div>
+
+              <div style={formGroupStyles}>
+                <label style={labelStyles}>Preferred Payment Method</label>
+                {editingPreferences ? (
+                  <select
+                    value={preferencesForm.preferredPaymentMethod || ''}
+                    onChange={(e) => setPreferencesForm({ ...preferencesForm, preferredPaymentMethod: e.target.value })}
+                    style={inputStyles}
+                  >
+                    <option value="">Select</option>
+                    <option value="CASH">Cash</option>
+                    <option value="CARD">Card</option>
+                    <option value="UPI">UPI</option>
+                    <option value="WALLET">Wallet</option>
+                  </select>
+                ) : (
+                  <div style={infoCardStyles}>
+                    <div style={infoValueStyles}>{customer.preferences?.preferredPaymentMethod || 'Not set'}</div>
+                  </div>
+                )}
+              </div>
+
+              <div style={formGroupStyles}>
+                <label style={labelStyles}>Notifications</label>
+                {editingPreferences ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
+                    <Checkbox
+                      label="Notify me about special offers and promotions"
+                      checked={preferencesForm.notifyOnOffers !== false}
+                      onChange={(e) => setPreferencesForm({ ...preferencesForm, notifyOnOffers: e.target.checked })}
+                    />
+                    <Checkbox
+                      label="Notify me about order status updates"
+                      checked={preferencesForm.notifyOnOrderStatus !== false}
+                      onChange={(e) => setPreferencesForm({ ...preferencesForm, notifyOnOrderStatus: e.target.checked })}
+                    />
+                  </div>
+                ) : (
+                  <div style={infoCardStyles}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+                        <span style={{
+                          display: 'inline-flex',
+                          width: '20px',
+                          height: '20px',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '50%',
+                          backgroundColor: customer.preferences?.notifyOnOffers !== false ? colors.semantic.success : colors.surface.tertiary,
+                          color: '#fff',
+                          fontSize: typography.fontSize.xs,
+                          fontWeight: typography.fontWeight.bold,
+                        }}>
+                          {customer.preferences?.notifyOnOffers !== false ? '✓' : '✗'}
+                        </span>
+                        <span style={{ fontSize: typography.fontSize.base, color: colors.text.primary }}>Special Offers</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+                        <span style={{
+                          display: 'inline-flex',
+                          width: '20px',
+                          height: '20px',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '50%',
+                          backgroundColor: customer.preferences?.notifyOnOrderStatus !== false ? colors.semantic.success : colors.surface.tertiary,
+                          color: '#fff',
+                          fontSize: typography.fontSize.xs,
+                          fontWeight: typography.fontWeight.bold,
+                        }}>
+                          {customer.preferences?.notifyOnOrderStatus !== false ? '✓' : '✗'}
+                        </span>
+                        <span style={{ fontSize: typography.fontSize.base, color: colors.text.primary }}>Order Updates</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Add Address Modal */}
+      {/* Add/Edit Address Modal */}
       {addressDialogOpen && (
-        <div style={modalOverlayStyles} onClick={() => setAddressDialogOpen(false)}>
+        <div style={modalOverlayStyles} onClick={() => {
+          setAddressDialogOpen(false);
+          setEditingAddressId(null);
+        }}>
           <div style={modalStyles} onClick={(e) => e.stopPropagation()}>
             <h3 style={{ fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.bold, marginBottom: spacing[4] }}>
-              Add New Address
+              {editingAddressId ? 'Edit Address' : 'Add New Address'}
             </h3>
 
             <div style={formGroupStyles}>
@@ -613,13 +1046,16 @@ const ProfilePage: React.FC = () => {
             </div>
 
             <div style={{ display: 'flex', gap: spacing[2], justifyContent: 'flex-end', marginTop: spacing[6] }}>
-              <Button variant="secondary" onClick={() => setAddressDialogOpen(false)}>Cancel</Button>
+              <Button variant="secondary" onClick={() => {
+                setAddressDialogOpen(false);
+                setEditingAddressId(null);
+              }}>Cancel</Button>
               <Button
                 variant="primary"
-                onClick={handleAddAddress}
+                onClick={handleAddOrUpdateAddress}
                 disabled={!addressForm.addressLine1 || !addressForm.city || !addressForm.state || !addressForm.postalCode}
               >
-                Add Address
+                {editingAddressId ? 'Update Address' : 'Add Address'}
               </Button>
             </div>
           </div>

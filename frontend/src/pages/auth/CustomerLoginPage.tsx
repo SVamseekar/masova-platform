@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Button, Card, Input } from '../../components/ui/neumorphic';
+import { Button, Card, Input, Checkbox } from '../../components/ui/neumorphic';
 import { colors, spacing, typography } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 import { useLoginMutation } from '../../store/api/authApi';
@@ -19,7 +19,8 @@ const CustomerLoginPage: React.FC = () => {
 
   const [formData, setFormData] = useState({
     email: prefillEmail,
-    password: ''
+    password: '',
+    rememberMe: false
   });
 
   // Update form when prefillEmail changes
@@ -47,10 +48,10 @@ const CustomerLoginPage: React.FC = () => {
     if (error) setError('');
   };
 
-  const handleLogin = async (email: string, password: string) => {
+  const handleLogin = async (email: string, password: string, rememberMe: boolean) => {
     try {
       setError('');
-      await login({ email, password }).unwrap();
+      await login({ email, password, rememberMe }).unwrap();
       // Redirect happens via useEffect when isAuthenticated changes
     } catch (err: any) {
       console.error('Login error:', err);
@@ -77,7 +78,7 @@ const CustomerLoginPage: React.FC = () => {
       return;
     }
 
-    await handleLogin(formData.email, formData.password);
+    await handleLogin(formData.email, formData.password, formData.rememberMe);
   };
 
   const containerStyles: React.CSSProperties = {
@@ -115,19 +116,15 @@ const CustomerLoginPage: React.FC = () => {
     <div style={containerStyles}>
       <div style={{ maxWidth: '500px', margin: '0 auto' }}>
         <div style={{ marginBottom: spacing[6] }}>
-          <button
+          <Button
             onClick={() => navigate('/checkout')}
-            style={{
-              ...createNeumorphicSurface('raised', 'sm', 'base'),
-              padding: spacing[2],
-              marginBottom: spacing[4],
-              cursor: 'pointer',
-              border: 'none',
-              fontSize: typography.fontSize.lg,
-            }}
+            variant="secondary"
+            size="base"
+            leftIcon="←"
+            style={{ marginBottom: spacing[4] }}
           >
-            ← Back to Checkout
-          </button>
+            Back to Checkout
+          </Button>
 
           <div style={{ textAlign: 'center', marginBottom: spacing[6] }}>
             <div style={{ fontSize: '60px', marginBottom: spacing[3] }}>🔐</div>
@@ -179,6 +176,14 @@ const CustomerLoginPage: React.FC = () => {
               state={error && formData.password.length < 6 ? 'error' : 'default'}
               showPasswordToggle
               leftIcon="🔒"
+            />
+
+            <Checkbox
+              label="Remember me (keep me logged in)"
+              checked={formData.rememberMe}
+              onChange={(e) => setFormData(prev => ({ ...prev, rememberMe: e.target.checked }))}
+              disabled={isLoading}
+              size="base"
             />
 
             <Button

@@ -18,9 +18,11 @@ public class RazorpayService {
     private static final Logger log = LoggerFactory.getLogger(RazorpayService.class);
 
     private final RazorpayClient razorpayClient;
+    private final com.MaSoVa.payment.config.RazorpayConfig razorpayConfig;
 
-    public RazorpayService(RazorpayClient razorpayClient) {
+    public RazorpayService(RazorpayClient razorpayClient, com.MaSoVa.payment.config.RazorpayConfig razorpayConfig) {
         this.razorpayClient = razorpayClient;
+        this.razorpayConfig = razorpayConfig;
     }
 
     /**
@@ -172,9 +174,6 @@ public class RazorpayService {
     }
 
     private String getRazorpaySecret() {
-        // This should be injected from config
-        // For now, we'll get it from the RazorpayClient instance
-        // In a real implementation, inject this from RazorpayConfig
-        return System.getenv("RAZORPAY_KEY_SECRET");
+        return razorpayConfig.getKeySecret();
     }
 }

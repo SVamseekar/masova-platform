@@ -1,11 +1,14 @@
 package com.MaSoVa.shared.model;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * Nutritional information for menu items
  */
-public class NutritionalInfo {
+public class NutritionalInfo implements Serializable {
+
+    private static final long serialVersionUID = 1L;
     private Integer calories;         // Calories per serving
     private Double protein;           // Protein in grams
     private Double carbohydrates;     // Carbs in grams

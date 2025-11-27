@@ -1,5 +1,6 @@
 package com.MaSoVa.payment.service;
 
+import com.MaSoVa.payment.dto.UpdateOrderPaymentRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -30,19 +30,22 @@ public class OrderServiceClient {
 
     /**
      * Update order payment status
+     * Enterprise-grade implementation with proper DTO and error handling
      */
     public void updateOrderPaymentStatus(String orderId, String status, String transactionId) {
         try {
             String url = orderServiceUrl + "/api/orders/" + orderId + "/payment";
 
-            Map<String, String> request = new HashMap<>();
-            request.put("paymentStatus", status);
-            request.put("transactionId", transactionId);
+            // Use proper DTO instead of Map for type safety
+            UpdateOrderPaymentRequest request = new UpdateOrderPaymentRequest(status, transactionId);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            HttpEntity<Map<String, String>> entity = new HttpEntity<>(request, headers);
+            HttpEntity<UpdateOrderPaymentRequest> entity = new HttpEntity<>(request, headers);
+
+            log.info("Sending payment status update to order-service. Order: {}, Status: {}, Transaction: {}",
+                     orderId, status, transactionId);
 
             ResponseEntity<String> response = restTemplate.exchange(
                     url,
@@ -52,15 +55,17 @@ public class OrderServiceClient {
             );
 
             if (response.getStatusCode().is2xxSuccessful()) {
-                log.info("Successfully updated payment status for order: {}", orderId);
+                log.info("Successfully updated payment status for order: {} to {}", orderId, status);
             } else {
-                log.error("Failed to update payment status for order: {}. Status: {}",
+                log.error("Failed to update payment status for order: {}. HTTP Status: {}",
                          orderId, response.getStatusCode());
             }
         } catch (Exception e) {
-            log.error("Error updating order payment status for order: {}", orderId, e);
+            log.error("Error updating order payment status for order: {}. Status: {}, Transaction: {}",
+                     orderId, status, transactionId, e);
             // Don't throw exception - payment succeeded even if order update failed
             // This should be handled asynchronously or with retry logic
+            // In production, this would trigger a compensating transaction or alert
         }
     }
 

@@ -2,8 +2,8 @@ package com.MaSoVa.order.controller;
 
 import com.MaSoVa.order.dto.CreateOrderRequest;
 import com.MaSoVa.order.dto.UpdateOrderStatusRequest;
+import com.MaSoVa.order.dto.UpdatePaymentStatusRequest;
 import com.MaSoVa.order.entity.Order;
-import com.MaSoVa.order.entity.Order.PaymentStatus;
 import com.MaSoVa.order.service.OrderService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -99,10 +99,10 @@ public class OrderController {
     @PatchMapping("/{orderId}/payment")
     public ResponseEntity<Order> updatePaymentStatus(
             @PathVariable String orderId,
-            @RequestBody Map<String, String> payload) {
-        PaymentStatus status = PaymentStatus.valueOf(payload.get("status"));
-        String transactionId = payload.get("transactionId");
-        Order order = orderService.updatePaymentStatus(orderId, status, transactionId);
+            @RequestBody @Valid UpdatePaymentStatusRequest request) {
+        log.info("Updating payment status for order: {} to status: {}", orderId, request.getStatus());
+        Order order = orderService.updatePaymentStatus(orderId, request.getStatus(), request.getTransactionId());
+        log.info("Payment status updated successfully for order: {}", orderId);
         return ResponseEntity.ok(order);
     }
 

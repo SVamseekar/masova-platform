@@ -5,7 +5,6 @@ import { logout, selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartItemCount } from '../../store/slices/cartSlice';
 import { colors, spacing, typography, shadows, borderRadius } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
-import NotificationBell from '../notifications/NotificationBell';
 
 interface AppHeaderProps {
   title?: string;
@@ -200,7 +199,6 @@ const AppHeader: React.FC<AppHeaderProps> = ({
     display: 'flex',
     alignItems: 'center',
     gap: spacing[3],
-    borderBottom: `1px solid ${colors.surface.tertiary}`,
   };
 
   const dropdownItemHoverStyles: React.CSSProperties = {
@@ -208,17 +206,10 @@ const AppHeader: React.FC<AppHeaderProps> = ({
     backgroundColor: colors.brand.primaryLight + '10',
   };
 
-  const dropdownDividerStyles: React.CSSProperties = {
-    height: '1px',
-    backgroundColor: colors.surface.tertiary,
-    margin: `${spacing[2]} 0`,
-  };
-
   const logoutItemStyles: React.CSSProperties = {
     ...dropdownItemStyles,
     color: colors.semantic.error,
     fontWeight: typography.fontWeight.semibold,
-    borderBottom: 'none',
   };
 
   return (
@@ -249,12 +240,6 @@ const AppHeader: React.FC<AppHeaderProps> = ({
       <div style={rightSectionStyles}>
         {showPublicNav ? (
           <>
-            {/* Notification Bell for logged-in users */}
-            {currentUser && (
-              <div style={{ display: 'flex', alignItems: 'center', marginRight: spacing[2] }}>
-                <NotificationBell />
-              </div>
-            )}
             <button
               style={buttonStyles}
               onClick={() => navigate('/')}
@@ -397,8 +382,6 @@ const AppHeader: React.FC<AppHeaderProps> = ({
                     <span>My Profile</span>
                   </div>
 
-                  <div style={dropdownDividerStyles} />
-
                   {/* Logout */}
                   <div
                     style={logoutItemStyles}
@@ -439,12 +422,6 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           </>
         ) : (
           <>
-            {/* Notification Bell for staff/manager users */}
-            {currentUser && (
-              <div style={{ display: 'flex', alignItems: 'center', marginRight: spacing[2] }}>
-                <NotificationBell />
-              </div>
-            )}
             {currentUser && (
               <div style={userInfoStyles}>
                 <span style={userNameStyles}>{currentUser.name}</span>

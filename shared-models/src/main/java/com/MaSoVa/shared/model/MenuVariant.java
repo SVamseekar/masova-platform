@@ -1,9 +1,13 @@
 package com.MaSoVa.shared.model;
 
+import java.io.Serializable;
+
 /**
  * Represents a variant of a menu item (e.g., size, portion)
  */
-public class MenuVariant {
+public class MenuVariant implements Serializable {
+
+    private static final long serialVersionUID = 1L;
     private String name;              // e.g., "Regular", "Large", "7 inch", "9 inch"
     private Long priceModifier;       // Additional price in paise (₹)
     private Boolean isAvailable;      // Variant availability

@@ -40,7 +40,7 @@ MaSoVa is a **production-ready microservices-based restaurant management platfor
 └─────────────────────────────────────────────────────────────────┘
                               ↓ Routes to ↓
 ┌──────────────┬──────────────┬──────────────┬──────────────┐
-│ User Service │ Menu Service │Order Service │Payment Service│
+│ User Service │ Menu Service │Order Service |PaymentService│
 │   (8081)     │   (8082)     │   (8083)     │   (8086)     │
 ├──────────────┼──────────────┼──────────────┼──────────────┤
 │Analytics Svc │Inventory Svc │Delivery Svc  │Customer Svc  │
@@ -51,7 +51,7 @@ MaSoVa is a **production-ready microservices-based restaurant management platfor
 └──────────────┴──────────────┴──────────────┴──────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│                    MongoDB (9 Databases)                         │
+│                    MongoDB (9 Databases)                        │
 │  masova • masova_menu • masova_orders • masova_payments         │
 │  masova_inventory • masova_customers • masova_reviews           │
 │  masova_notifications • masova_deliveries                       │

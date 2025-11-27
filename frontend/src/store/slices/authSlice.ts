@@ -12,10 +12,30 @@ interface AuthState {
   lastLoginAttempt: string | null;
 }
 
-// Try to load user from localStorage on init
+// Storage helper functions to support both localStorage and sessionStorage
+const getStorage = (key: string): string | null => {
+  return localStorage.getItem(key) || sessionStorage.getItem(key);
+};
+
+const setStorage = (key: string, value: string, rememberMe: boolean = true): void => {
+  if (rememberMe) {
+    localStorage.setItem(key, value);
+    sessionStorage.removeItem(key); // Remove from sessionStorage if exists
+  } else {
+    sessionStorage.setItem(key, value);
+    localStorage.removeItem(key); // Remove from localStorage if exists
+  }
+};
+
+const removeStorage = (key: string): void => {
+  localStorage.removeItem(key);
+  sessionStorage.removeItem(key);
+};
+
+// Try to load user from storage (checks both localStorage and sessionStorage)
 const loadUserFromStorage = (): User | null => {
   try {
-    const userStr = localStorage.getItem('user');
+    const userStr = getStorage('user');
     return userStr ? JSON.parse(userStr) : null;
   } catch {
     return null;
@@ -23,9 +43,9 @@ const loadUserFromStorage = (): User | null => {
 };
 
 const initialState: AuthState = {
-  isAuthenticated: !!localStorage.getItem('accessToken'),
-  accessToken: localStorage.getItem('accessToken'),
-  refreshToken: localStorage.getItem('refreshToken'),
+  isAuthenticated: !!getStorage('accessToken'),
+  accessToken: getStorage('accessToken'),
+  refreshToken: getStorage('refreshToken'),
   user: loadUserFromStorage(),
   loading: false,
   error: null,
@@ -45,8 +65,9 @@ const authSlice = createSlice({
       accessToken: string;
       refreshToken: string;
       user: User;
+      rememberMe?: boolean;
     }>) => {
-      const { accessToken, refreshToken, user } = action.payload;
+      const { accessToken, refreshToken, user, rememberMe = true } = action.payload;
 
       state.isAuthenticated = true;
       state.accessToken = accessToken;
@@ -55,10 +76,10 @@ const authSlice = createSlice({
       state.loading = false;
       state.error = null;
 
-      // Store tokens and user in localStorage
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
-      localStorage.setItem('user', JSON.stringify(user));
+      // Store tokens and user in appropriate storage
+      setStorage('accessToken', accessToken, rememberMe);
+      setStorage('refreshToken', refreshToken, rememberMe);
+      setStorage('user', JSON.stringify(user), rememberMe);
     },
     loginFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
@@ -67,10 +88,11 @@ const authSlice = createSlice({
       state.refreshToken = null;
       state.user = null;
       state.error = action.payload;
-      
-      // Clear tokens from localStorage
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+
+      // Clear tokens from both storages
+      removeStorage('accessToken');
+      removeStorage('refreshToken');
+      removeStorage('user');
     },
     logout: (state) => {
       state.isAuthenticated = false;
@@ -80,14 +102,16 @@ const authSlice = createSlice({
       state.loading = false;
       state.error = null;
 
-      // Clear all auth data from localStorage
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('user');
+      // Clear all auth data from both storages
+      removeStorage('accessToken');
+      removeStorage('refreshToken');
+      removeStorage('user');
     },
     refreshTokenSuccess: (state, action: PayloadAction<string>) => {
       state.accessToken = action.payload;
-      localStorage.setItem('accessToken', action.payload);
+      // Preserve existing storage type (localStorage or sessionStorage)
+      const existingInLocal = !!localStorage.getItem('accessToken');
+      setStorage('accessToken', action.payload, existingInLocal);
     },
     updateUserProfile: (state, action: PayloadAction<Partial<User>>) => {
       if (state.user) {
@@ -114,7 +138,7 @@ const authSlice = createSlice({
     builder.addMatcher(
       authApi.endpoints.login.matchFulfilled,
       (state, action) => {
-        const { accessToken, refreshToken, user } = action.payload;
+        const { accessToken, refreshToken, user, rememberMe = true } = action.payload;
         state.isAuthenticated = true;
         state.accessToken = accessToken;
         state.refreshToken = refreshToken;
@@ -122,10 +146,10 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = null;
 
-        // Store in localStorage
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', refreshToken);
-        localStorage.setItem('user', JSON.stringify(user));
+        // Store in appropriate storage based on rememberMe
+        setStorage('accessToken', accessToken, rememberMe);
+        setStorage('refreshToken', refreshToken, rememberMe);
+        setStorage('user', JSON.stringify(user), rememberMe);
       }
     );
     builder.addMatcher(
@@ -138,10 +162,10 @@ const authSlice = createSlice({
         state.user = null;
         state.error = (action.error.message || 'Login failed');
 
-        // Clear localStorage
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
+        // Clear both storages
+        removeStorage('accessToken');
+        removeStorage('refreshToken');
+        removeStorage('user');
       }
     );
 
@@ -149,7 +173,7 @@ const authSlice = createSlice({
     builder.addMatcher(
       authApi.endpoints.register.matchFulfilled,
       (state, action) => {
-        const { accessToken, refreshToken, user } = action.payload;
+        const { accessToken, refreshToken, user, rememberMe = true } = action.payload;
         state.isAuthenticated = true;
         state.accessToken = accessToken;
         state.refreshToken = refreshToken;
@@ -157,10 +181,10 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = null;
 
-        // Store in localStorage
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', refreshToken);
-        localStorage.setItem('user', JSON.stringify(user));
+        // Store in appropriate storage
+        setStorage('accessToken', accessToken, rememberMe);
+        setStorage('refreshToken', refreshToken, rememberMe);
+        setStorage('user', JSON.stringify(user), rememberMe);
       }
     );
 
@@ -175,10 +199,10 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = null;
 
-        // Clear localStorage
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
+        // Clear both storages
+        removeStorage('accessToken');
+        removeStorage('refreshToken');
+        removeStorage('user');
       }
     );
   },

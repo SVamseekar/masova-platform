@@ -291,6 +291,19 @@ export const customerApi = createApi({
       invalidatesTags: (result, error, { customerId }) => [{ type: 'Customer', id: customerId }],
     }),
 
+    updateAddress: builder.mutation<Customer, { customerId: string; addressId: string; data: AddAddressRequest }>({
+      query: ({ customerId, addressId, data }) => ({
+        url: `/${customerId}/addresses/${addressId}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: (result) => [
+        { type: 'Customer', id: result?.id },
+        'Customer',
+        'Customers',
+      ],
+    }),
+
     removeAddress: builder.mutation<Customer, { customerId: string; addressId: string }>({
       query: ({ customerId, addressId }) => ({
         url: `/${customerId}/addresses/${addressId}`,
@@ -481,6 +494,7 @@ export const {
   useDeactivateCustomerMutation,
   useActivateCustomerMutation,
   useAddAddressMutation,
+  useUpdateAddressMutation,
   useRemoveAddressMutation,
   useSetDefaultAddressMutation,
   useAddLoyaltyPointsMutation,

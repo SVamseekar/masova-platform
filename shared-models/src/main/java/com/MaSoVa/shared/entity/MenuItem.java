@@ -16,6 +16,7 @@ import com.MaSoVa.shared.model.NutritionalInfo;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Min;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +25,9 @@ import java.util.List;
  * Menu Item Entity - Represents a dish/item in the restaurant menu
  */
 @Document(collection = "menu_items")
-public class MenuItem {
+public class MenuItem implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     private String id;

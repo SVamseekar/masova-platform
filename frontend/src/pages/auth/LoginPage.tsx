@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Input } from '../../components/ui/neumorphic';
+import { Button, Input, Checkbox } from '../../components/ui/neumorphic';
 import { colors, spacing, typography } from '../../styles/design-tokens';
 import { createNeumorphicSurface, createResponsive } from '../../styles/neumorphic-utils';
 import { useLoginMutation } from '../../store/api/authApi';
@@ -24,7 +24,8 @@ const LoginPage: React.FC = () => {
 
   const [formData, setFormData] = useState({
     email: '',
-    password: ''
+    password: '',
+    rememberMe: true // Default to true for staff accounts
   });
 
   // Redirect if already authenticated (staff login only)
@@ -82,12 +83,12 @@ const LoginPage: React.FC = () => {
     if (error) setError('');
   };
 
-  const handleLogin = async (email: string, password: string) => {
+  const handleLogin = async (email: string, password: string, rememberMe: boolean) => {
     try {
       setError('');
 
       // Call the actual API
-      const result = await login({ email, password }).unwrap();
+      const result = await login({ email, password, rememberMe }).unwrap();
 
       // Redux will handle token storage via extraReducers in authSlice
       // Navigation will happen via useEffect when isAuthenticated changes
@@ -117,7 +118,7 @@ const LoginPage: React.FC = () => {
       return;
     }
 
-    await handleLogin(formData.email, formData.password);
+    await handleLogin(formData.email, formData.password, formData.rememberMe);
   };
 
   const handleDemoLogin = async (account: DemoAccount): Promise<void> => {
@@ -125,11 +126,12 @@ const LoginPage: React.FC = () => {
     setError('');
     setFormData({
       email: account.email,
-      password: account.password
+      password: account.password,
+      rememberMe: true // Demo accounts should use persistent storage
     });
-    
+
     setTimeout(async () => {
-      await handleLogin(account.email, account.password);
+      await handleLogin(account.email, account.password, true);
       setActiveDemo('');
     }, 500);
   };
@@ -409,6 +411,14 @@ const LoginPage: React.FC = () => {
                 state={error && formData.password.length < 6 ? 'error' : 'default'}
                 showPasswordToggle
                 leftIcon="🔒"
+              />
+
+              <Checkbox
+                label="Remember me (keep me logged in)"
+                checked={formData.rememberMe}
+                onChange={(e) => setFormData(prev => ({ ...prev, rememberMe: e.target.checked }))}
+                disabled={isLoading}
+                size="base"
               />
 
               <Button

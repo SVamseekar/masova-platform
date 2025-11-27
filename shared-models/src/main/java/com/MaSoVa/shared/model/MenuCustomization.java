@@ -1,9 +1,13 @@
 package com.MaSoVa.shared.model;
 
+import java.io.Serializable;
+
 /**
  * Represents customization options for menu items (e.g., extra toppings)
  */
-public class MenuCustomization {
+public class MenuCustomization implements Serializable {
+
+    private static final long serialVersionUID = 1L;
     private String name;              // e.g., "Extra Cheese", "Add Mushrooms"
     private Long price;               // Price in paise (₹)
     private Boolean isAvailable;      // Customization availability

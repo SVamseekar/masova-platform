@@ -44,7 +44,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/payments/webhook").permitAll()
                         // Allow actuator health endpoint
                         .requestMatchers("/actuator/health").permitAll()
-                        // All other endpoints require authentication (handled by API Gateway)
+                        // Allow payment endpoints for authenticated users
+                        .requestMatchers("/api/payments/**").permitAll()
+                        // All other endpoints require authentication
                         .anyRequest().authenticated()
                 );
 
