@@ -13,11 +13,17 @@ import com.MaSoVa.user.repository.WorkingSessionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,12 +46,18 @@ public class UserService {
     
     @Autowired
     private PasswordEncoder passwordEncoder;
-    
+
     @Autowired
     private JwtService jwtService;
-    
+
     @Autowired
     private WorkingSessionService sessionService;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @Value("${customer.service.url:http://localhost:8082}")
+    private String customerServiceUrl;
     
     public LoginResponse registerUser(UserCreateRequest request) {
         validateUserCreation(request);
@@ -72,6 +84,17 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
 
+        // Create customer profile for CUSTOMER type users
+        if (savedUser.getType() == UserType.CUSTOMER) {
+            try {
+                createCustomerProfile(savedUser);
+            } catch (Exception e) {
+                logger.error("Failed to create customer profile for user {}: {}", savedUser.getId(), e.getMessage(), e);
+                // Don't fail registration if customer profile creation fails
+                // Customer profile will be auto-created on first access
+            }
+        }
+
         // Generate tokens and auto-login the user
         String storeId = savedUser.isEmployee() ? savedUser.getEmployeeDetails().getStoreId() : null;
         String accessToken = jwtService.generateAccessToken(savedUser.getId(), savedUser.getType().name(), storeId);
@@ -82,6 +105,31 @@ public class UserService {
         userRepository.save(savedUser);
 
         return new LoginResponse(accessToken, refreshToken, mapToUserResponse(savedUser));
+    }
+
+    private void createCustomerProfile(User user) {
+        logger.info("Creating customer profile for user: {}", user.getId());
+
+        Map<String, Object> customerRequest = new HashMap<>();
+        customerRequest.put("userId", user.getId());
+        customerRequest.put("name", user.getPersonalInfo().getName());
+        customerRequest.put("email", user.getPersonalInfo().getEmail());
+        customerRequest.put("phone", user.getPersonalInfo().getPhone());
+        customerRequest.put("marketingOptIn", false);
+        customerRequest.put("smsOptIn", false);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(customerRequest, headers);
+
+        String url = customerServiceUrl + "/api/customers";
+        ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
+
+        if (response.getStatusCode().is2xxSuccessful()) {
+            logger.info("Customer profile created successfully for user: {}", user.getId());
+        } else {
+            logger.error("Failed to create customer profile, status: {}", response.getStatusCode());
+        }
     }
 
     public UserResponse createUser(UserCreateRequest request) {

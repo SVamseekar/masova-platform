@@ -4,6 +4,7 @@ import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import {
   useGetCustomerByUserIdQuery,
+  useCreateCustomerMutation,
   useUpdateCustomerMutation,
   useAddAddressMutation,
   useUpdateAddressMutation,
@@ -42,11 +43,36 @@ const ProfilePage: React.FC = () => {
   const [preferencesForm, setPreferencesForm] = useState<UpdatePreferencesRequest>({});
 
   // API queries
-  const { data: customer, isLoading } = useGetCustomerByUserIdQuery(currentUser?.id || '', {
+  const { data: customer, isLoading, error } = useGetCustomerByUserIdQuery(currentUser?.id || '', {
     skip: !currentUser?.id,
   });
 
+  const [createCustomer, { isLoading: isCreating }] = useCreateCustomerMutation();
   const [updateCustomer] = useUpdateCustomerMutation();
+
+  // Auto-create customer profile if not found
+  useEffect(() => {
+    const autoCreateProfile = async () => {
+      if (error && currentUser && !isCreating) {
+        console.log('Customer profile not found, auto-creating...');
+        try {
+          await createCustomer({
+            userId: currentUser.id,
+            name: currentUser.name,
+            email: currentUser.email,
+            phone: currentUser.phone,
+            marketingOptIn: false,
+            smsOptIn: false,
+          }).unwrap();
+          console.log('Customer profile created successfully');
+        } catch (err) {
+          console.error('Failed to auto-create customer profile:', err);
+        }
+      }
+    };
+
+    autoCreateProfile();
+  }, [error, currentUser, isCreating, createCustomer]);
   const [addAddress] = useAddAddressMutation();
   const [updateAddress] = useUpdateAddressMutation();
   const [removeAddress] = useRemoveAddressMutation();
@@ -328,6 +354,51 @@ const ProfilePage: React.FC = () => {
     );
   }
 
+  // Show loading state while creating profile or loading data
+  if (isLoading || isCreating) {
+    return (
+      <>
+        <AnimatedBackground variant="default" />
+        <div style={containerStyles}>
+          <AppHeader
+            showPublicNav={true}
+            onCartClick={handleCartClick}
+          />
+          <div style={{
+            textAlign: 'center',
+            padding: spacing[8],
+            maxWidth: '600px',
+            margin: '0 auto',
+          }}>
+            <div style={{
+              ...createNeumorphicSurface('raised', 'lg', 'xl'),
+              padding: spacing[8],
+              backgroundColor: colors.surface.primary,
+            }}>
+              <div style={{ fontSize: '64px', marginBottom: spacing[4] }}>
+                {isCreating ? '🔧' : '⏳'}
+              </div>
+              <h2 style={{
+                fontSize: typography.fontSize['2xl'],
+                fontWeight: typography.fontWeight.bold,
+                color: colors.text.primary,
+                marginBottom: spacing[4],
+              }}>
+                {isCreating ? 'Setting Up Your Profile...' : 'Loading...'}
+              </h2>
+              <p style={{
+                fontSize: typography.fontSize.base,
+                color: colors.text.secondary,
+              }}>
+                {isCreating ? 'Just a moment while we create your customer profile' : 'Please wait'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   if (!customer) {
     return (
       <>
@@ -338,7 +409,7 @@ const ProfilePage: React.FC = () => {
             onCartClick={handleCartClick}
           />
           <div style={{ textAlign: 'center', padding: spacing[8] }}>
-            <p>Customer profile not found. Please contact support.</p>
+            <p>Unable to load profile. Please try again later.</p>
           </div>
         </div>
       </>
