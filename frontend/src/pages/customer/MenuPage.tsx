@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { colors, spacing, typography, shadows, borderRadius } from '../../styles/design-tokens';
 import { createNeumorphicSurface, createCard, createBadge } from '../../styles/neumorphic-utils';
 import {
@@ -10,8 +10,8 @@ import {
   DietaryType,
   SpiceLevel,
 } from '../../store/api/menuApi';
-import { useAppDispatch } from '../../store/hooks';
-import { addToCart } from '../../store/slices/cartSlice';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { addToCart, updateItemQuantity, selectCartItems } from '../../store/slices/cartSlice';
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
 import RecipeViewer from '../../components/RecipeViewer';
@@ -33,6 +33,17 @@ const MenuPage: React.FC<MenuPageProps> = ({
   const [selectedDietary, setSelectedDietary] = useState<DietaryType | null>(null);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [selectedRecipeItem, setSelectedRecipeItem] = useState<MenuItem | null>(null);
+
+  const cartItems = useAppSelector(selectCartItems);
+
+  // Sync menu quantities with cart
+  useEffect(() => {
+    const newQuantities: Record<string, number> = {};
+    cartItems.forEach(item => {
+      newQuantities[item.id] = item.quantity;
+    });
+    setQuantities(newQuantities);
+  }, [cartItems]);
 
   // Category mappings based on cuisine
   const getCategoriesForCuisine = (cuisine: Cuisine): MenuCategory[] => {
@@ -111,20 +122,51 @@ const MenuPage: React.FC<MenuPageProps> = ({
     }
   };
 
-  const getQuantity = (itemId: string) => quantities[itemId] || 1;
+  // Helper to check if item is in cart
+  const isItemInCart = (itemId: string) => cartItems.some(item => item.id === itemId);
+
+  const getQuantity = (itemId: string) => {
+    // If item is in cart, get quantity from cart, otherwise default to 0
+    const cartItem = cartItems.find(item => item.id === itemId);
+    return cartItem ? cartItem.quantity : (quantities[itemId] || 0);
+  };
 
   const incrementQuantity = (itemId: string) => {
-    setQuantities(prev => ({ ...prev, [itemId]: (prev[itemId] || 1) + 1 }));
+    const cartItem = cartItems.find(item => item.id === itemId);
+    if (cartItem) {
+      // Update cart quantity
+      dispatch(updateItemQuantity({ id: itemId, quantity: cartItem.quantity + 1 }));
+    } else {
+      // Just update local state for items not yet in cart, starting from 0
+      setQuantities(prev => ({ ...prev, [itemId]: (prev[itemId] || 0) + 1 }));
+    }
   };
 
   const decrementQuantity = (itemId: string) => {
-    setQuantities(prev => ({ ...prev, [itemId]: Math.max(1, (prev[itemId] || 1) - 1) }));
+    const cartItem = cartItems.find(item => item.id === itemId);
+    if (cartItem) {
+      // Update cart quantity, minimum 1 for items in cart
+      dispatch(updateItemQuantity({ id: itemId, quantity: Math.max(1, cartItem.quantity - 1) }));
+    } else {
+      // Just update local state for items not yet in cart, can go to 0
+      setQuantities(prev => ({ ...prev, [itemId]: Math.max(0, (prev[itemId] || 0) - 1) }));
+    }
   };
 
-  const [addedToCartItem, setAddedToCartItem] = useState<string | null>(null);
-
   const handleAddToCart = (item: MenuItem) => {
-    const quantity = getQuantity(item.id);
+    let quantity = getQuantity(item.id);
+
+    // Don't add if already in cart - user should use quantity controls
+    if (isItemInCart(item.id)) {
+      return;
+    }
+
+    // If quantity is 0, default to 1
+    if (quantity === 0) {
+      quantity = 1;
+    }
+
+    // Add to cart
     dispatch(addToCart({
       id: item.id,
       name: item.name,
@@ -134,12 +176,8 @@ const MenuPage: React.FC<MenuPageProps> = ({
       category: item.category,
     }));
 
-    // Show feedback
-    setAddedToCartItem(item.id);
-    setTimeout(() => setAddedToCartItem(null), 2000);
-
-    // Reset quantity after adding
-    setQuantities(prev => ({ ...prev, [item.id]: 1 }));
+    // Don't reset quantity - it will stay synced with cart
+    // Green state will persist while item is in cart
   };
 
   const formatPrice = (priceInPaise: number) => {
@@ -399,18 +437,23 @@ const MenuPage: React.FC<MenuPageProps> = ({
     color: colors.text.primary,
   };
 
-  const addButtonStyles: React.CSSProperties = {
+  const getAddButtonStyles = (inCart: boolean, disabled: boolean): React.CSSProperties => ({
     ...createNeumorphicSurface('raised', 'base', 'lg'),
-    background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.primaryLight} 100%)`,
+    background: disabled
+      ? colors.surface.tertiary
+      : inCart
+        ? `linear-gradient(135deg, ${colors.semantic.success} 0%, ${colors.semantic.successLight} 100%)`
+        : `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.primaryLight} 100%)`,
     padding: `${spacing[3]} ${spacing[6]}`,
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.bold,
-    color: colors.text.inverse,
+    color: disabled ? colors.text.tertiary : colors.text.inverse,
     border: 'none',
-    cursor: 'pointer',
+    cursor: disabled ? 'not-allowed' : 'pointer',
     fontFamily: typography.fontFamily.primary,
     transition: 'all 0.3s ease',
-  };
+    opacity: disabled ? 0.5 : 1,
+  });
 
   const recipeButtonStyles: React.CSSProperties = {
     ...createNeumorphicSurface('raised', 'sm', 'lg'),
@@ -618,61 +661,75 @@ const MenuPage: React.FC<MenuPageProps> = ({
                   </div>
                 )}
 
-                <div style={priceRowStyles}>
-                  <span style={priceStyles}>{formatPrice(item.basePrice)}</span>
+                {/* Price on left, Quantity controls below */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: spacing[3],
+                }}>
+                  <div style={priceRowStyles}>
+                    <span style={priceStyles}>{formatPrice(item.basePrice)}</span>
+                  </div>
 
-                  <div style={quantityControlStyles}>
-                    <button
-                      style={quantityButtonStyles}
-                      onClick={() => decrementQuantity(item.id)}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = shadows.raised.md;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = shadows.raised.sm;
-                      }}
-                    >
-                      −
-                    </button>
-                    <div style={quantityDisplayStyles}>{getQuantity(item.id)}</div>
-                    <button
-                      style={quantityButtonStyles}
-                      onClick={() => incrementQuantity(item.id)}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = shadows.raised.md;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = shadows.raised.sm;
-                      }}
-                    >
-                      +
-                    </button>
+                  {/* Quantity controls and Add to Cart side by side */}
+                  <div style={{
+                    display: 'flex',
+                    gap: spacing[3],
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}>
+                    <div style={quantityControlStyles}>
+                      <button
+                        style={quantityButtonStyles}
+                        onClick={() => decrementQuantity(item.id)}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.boxShadow = shadows.raised.md;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = shadows.raised.sm;
+                        }}
+                      >
+                        −
+                      </button>
+                      <div style={quantityDisplayStyles}>{getQuantity(item.id)}</div>
+                      <button
+                        style={quantityButtonStyles}
+                        onClick={() => incrementQuantity(item.id)}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.boxShadow = shadows.raised.md;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = shadows.raised.sm;
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
                     <button
                       style={{
-                        ...addButtonStyles,
-                        ...(addedToCartItem === item.id ? {
-                          background: `linear-gradient(135deg, ${colors.semantic.success} 0%, ${colors.semantic.successLight} 100%)`,
-                        } : {})
+                        ...getAddButtonStyles(isItemInCart(item.id), false),
+                        flex: '0 1 auto',
+                        whiteSpace: 'nowrap',
                       }}
                       onClick={() => handleAddToCart(item)}
                       onMouseEnter={(e) => {
-                        if (addedToCartItem !== item.id) {
+                        if (!isItemInCart(item.id)) {
                           e.currentTarget.style.transform = 'translateY(-2px)';
                           e.currentTarget.style.boxShadow = shadows.raised.lg;
                         }
                       }}
                       onMouseLeave={(e) => {
-                        if (addedToCartItem !== item.id) {
+                        if (!isItemInCart(item.id)) {
                           e.currentTarget.style.transform = 'translateY(0)';
                           e.currentTarget.style.boxShadow = shadows.raised.base;
                         }
                       }}
                     >
-                      {addedToCartItem === item.id ? '✓ Added!' : 'Add to Cart'}
+                      {isItemInCart(item.id) ? '✓ In Cart' : 'Add to Cart'}
                     </button>
                   </div>
                 </div>

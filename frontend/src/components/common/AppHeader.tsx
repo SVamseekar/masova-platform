@@ -14,6 +14,7 @@ interface AppHeaderProps {
   hideStaffLogin?: boolean;  // Hide staff login button for public pages
   showPublicNav?: boolean; // Show Home, Offers, Cart buttons
   onCartClick?: () => void; // Handler for cart button
+  showTrackOrder?: boolean; // Show track order button for customers with active orders
 }
 
 const AppHeader: React.FC<AppHeaderProps> = ({
@@ -22,15 +23,22 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   backRoute = '/',
   hideStaffLogin = false,
   showPublicNav = false,
-  onCartClick
+  onCartClick,
+  showTrackOrder = false
 }) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const currentUser = useAppSelector(selectCurrentUser);
   const cartItemCount = useAppSelector(selectCartItemCount);
 
+  // Check for active order in sessionStorage
+  // Works for both guests (temporary tracking) and logged-in customers (saved to profile)
+  const activeOrderId = sessionStorage.getItem('activeOrderId');
+
   const handleLogout = () => {
     const isCustomer = currentUser?.type?.toLowerCase() === 'customer';
+    // Clear active order from sessionStorage on logout
+    sessionStorage.removeItem('activeOrderId');
     dispatch(logout());
     // Customers go to home, staff go to login
     navigate(isCustomer ? '/' : '/login');
@@ -195,6 +203,30 @@ const AppHeader: React.FC<AppHeaderProps> = ({
             >
               🎁 Offers
             </button>
+
+            {/* Track Order button - shown when there's an active order */}
+            {(showTrackOrder || activeOrderId) && (
+              <button
+                style={{
+                  ...buttonStyles,
+                  background: `linear-gradient(135deg, ${colors.semantic.warning} 0%, ${colors.semantic.warningLight} 100%)`,
+                  color: colors.text.inverse,
+                  fontWeight: typography.fontWeight.bold,
+                }}
+                onClick={() => navigate(`/track-order/${activeOrderId}`)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = shadows.raised.lg;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = shadows.raised.base;
+                }}
+              >
+                📦 Track Order
+              </button>
+            )}
+
             <button
               style={{
                 ...buttonStyles,

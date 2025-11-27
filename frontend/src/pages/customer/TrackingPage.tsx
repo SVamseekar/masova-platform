@@ -6,6 +6,8 @@ import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
 import { colors, spacing, typography, shadows } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { clearCart, addToCart } from '../../store/slices/cartSlice';
 
 type OrderStatus = 'RECEIVED' | 'PREPARING' | 'COOKING' | 'READY' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'COMPLETED';
 
@@ -29,13 +31,41 @@ const TrackingPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useAppDispatch();
+  const currentUser = useAppSelector((state) => state.auth.user);
 
+  // For logged-in customers: Backend validates order belongs to customer via JWT token
+  // For guests: Anyone with order ID can track (temporary, not saved to profile)
   const { data: order, isLoading, error, refetch } = useGetOrderQuery(orderId || '', {
     skip: !orderId,
     pollingInterval: 10000, // Poll every 10 seconds for real-time updates
   });
 
   const [elapsedTime, setElapsedTime] = useState(0);
+
+  // Clear cart when tracking page loads (user has successfully placed order)
+  useEffect(() => {
+    dispatch(clearCart());
+  }, [dispatch]);
+
+  // Store active order ID in sessionStorage for tracking from other pages
+  // Works for both guests and logged-in customers
+  useEffect(() => {
+    if (orderId) {
+      sessionStorage.setItem('activeOrderId', orderId);
+    }
+  }, [orderId]);
+
+  // Clear active order from sessionStorage when delivered
+  useEffect(() => {
+    if (order?.status === 'DELIVERED') {
+      // Clear after a delay to allow user to see the delivered status
+      const timer = setTimeout(() => {
+        sessionStorage.removeItem('activeOrderId');
+      }, 60000); // Clear after 1 minute
+      return () => clearTimeout(timer);
+    }
+  }, [order?.status]);
 
   // Calculate elapsed time since order placed
   useEffect(() => {
@@ -268,6 +298,29 @@ const TrackingPage: React.FC = () => {
 
   const isDelivered = order.status === 'DELIVERED';
 
+  // Reorder functionality - add all items from this order back to cart
+  const handleReorder = () => {
+    if (!order || !order.items) return;
+
+    // Clear current cart first
+    dispatch(clearCart());
+
+    // Add all items from the order to cart
+    order.items.forEach((item: any) => {
+      dispatch(addToCart({
+        id: item.menuItemId,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        imageUrl: '', // Will be fetched from menu if needed
+        category: '', // Will be set from menu if needed
+      }));
+    });
+
+    // Navigate to menu or cart
+    navigate('/menu');
+  };
+
   return (
     <>
       <AnimatedBackground variant="minimal" />
@@ -386,7 +439,7 @@ const TrackingPage: React.FC = () => {
                 <div key={index} style={itemStyles}>
                   <span>{item.quantity}x {item.name}</span>
                   <span style={{ fontWeight: typography.fontWeight.semibold }}>
-                    ₹{((item.price * item.quantity) / 100).toFixed(2)}
+                    ₹{(item.price * item.quantity).toFixed(2)}
                   </span>
                 </div>
               ))}
@@ -420,21 +473,45 @@ const TrackingPage: React.FC = () => {
             justifyContent: 'center',
             flexWrap: 'wrap',
           }}>
+            {/* Reorder button - only for logged-in customers */}
+            {currentUser && (
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={handleReorder}
+              >
+                🔄 Reorder Same Items
+              </Button>
+            )}
+
             <Button
-              variant="primary"
+              variant={currentUser ? "secondary" : "primary"}
               size="lg"
               onClick={() => navigate('/menu')}
             >
-              Order More
+              {currentUser ? 'Order More' : 'Browse Menu'}
             </Button>
-            {isDelivered && (
-              <Button
-                variant="secondary"
-                size="lg"
-                onClick={() => navigate('/customer-dashboard')}
-              >
-                View Order History
-              </Button>
+
+            {isDelivered && currentUser && (
+              <>
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  onClick={() => navigate('/customer-dashboard')}
+                >
+                  View Order History
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="base"
+                  onClick={() => {
+                    sessionStorage.removeItem('activeOrderId');
+                    navigate('/menu');
+                  }}
+                >
+                  Clear & Continue Shopping
+                </Button>
+              </>
             )}
           </div>
         </div>

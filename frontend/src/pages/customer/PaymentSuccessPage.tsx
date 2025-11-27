@@ -6,9 +6,13 @@ import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
 import { colors, spacing, typography } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { clearCart } from '../../store/slices/cartSlice';
 
 const PaymentSuccessPage: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const currentUser = useAppSelector((state) => state.auth.user);
   const [searchParams] = useSearchParams();
   const [verifyPayment, { isLoading, isError, isSuccess }] = useVerifyPaymentMutation();
 
@@ -17,6 +21,19 @@ const PaymentSuccessPage: React.FC = () => {
   const razorpayOrderId = searchParams.get('razorpay_order_id');
   const razorpaySignature = searchParams.get('razorpay_signature');
   const orderId = searchParams.get('order_id'); // Our internal order ID
+
+  // Clear cart when payment success page loads
+  useEffect(() => {
+    dispatch(clearCart());
+  }, [dispatch]);
+
+  // Store active order ID in sessionStorage for tracking
+  // Works for both guests (temporary) and logged-in customers (saved to profile in backend)
+  useEffect(() => {
+    if (orderId) {
+      sessionStorage.setItem('activeOrderId', orderId);
+    }
+  }, [orderId]);
 
   useEffect(() => {
     // Verify payment when component mounts
@@ -119,7 +136,7 @@ const PaymentSuccessPage: React.FC = () => {
               <Button
                 variant="primary"
                 size="lg"
-                onClick={() => navigate('/customer/orders')}
+                onClick={() => navigate('/customer-dashboard')}
               >
                 View My Orders
               </Button>
