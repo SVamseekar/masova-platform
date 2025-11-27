@@ -47,12 +47,12 @@ public class UserService {
     @Autowired
     private WorkingSessionService sessionService;
     
-    public UserResponse createUser(UserCreateRequest request) {
+    public LoginResponse registerUser(UserCreateRequest request) {
         validateUserCreation(request);
-        
+
         User user = new User();
         user.setType(request.getType());
-        
+
         User.PersonalInfo personalInfo = new User.PersonalInfo();
         personalInfo.setName(request.getName());
         personalInfo.setEmail(request.getEmail());
@@ -60,7 +60,7 @@ public class UserService {
         personalInfo.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         personalInfo.setAddress(request.getAddress());
         user.setPersonalInfo(personalInfo);
-        
+
         if (user.isEmployee()) {
             User.EmployeeDetails employeeDetails = new User.EmployeeDetails();
             employeeDetails.setStoreId(request.getStoreId());
@@ -69,7 +69,44 @@ public class UserService {
             employeeDetails.setSchedule(request.getSchedule());
             user.setEmployeeDetails(employeeDetails);
         }
-        
+
+        User savedUser = userRepository.save(user);
+
+        // Generate tokens and auto-login the user
+        String storeId = savedUser.isEmployee() ? savedUser.getEmployeeDetails().getStoreId() : null;
+        String accessToken = jwtService.generateAccessToken(savedUser.getId(), savedUser.getType().name(), storeId);
+        String refreshToken = jwtService.generateRefreshToken(savedUser.getId());
+
+        // Update last login
+        savedUser.setLastLogin(LocalDateTime.now());
+        userRepository.save(savedUser);
+
+        return new LoginResponse(accessToken, refreshToken, mapToUserResponse(savedUser));
+    }
+
+    public UserResponse createUser(UserCreateRequest request) {
+        validateUserCreation(request);
+
+        User user = new User();
+        user.setType(request.getType());
+
+        User.PersonalInfo personalInfo = new User.PersonalInfo();
+        personalInfo.setName(request.getName());
+        personalInfo.setEmail(request.getEmail());
+        personalInfo.setPhone(request.getPhone());
+        personalInfo.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        personalInfo.setAddress(request.getAddress());
+        user.setPersonalInfo(personalInfo);
+
+        if (user.isEmployee()) {
+            User.EmployeeDetails employeeDetails = new User.EmployeeDetails();
+            employeeDetails.setStoreId(request.getStoreId());
+            employeeDetails.setRole(request.getRole());
+            employeeDetails.setPermissions(request.getPermissions());
+            employeeDetails.setSchedule(request.getSchedule());
+            user.setEmployeeDetails(employeeDetails);
+        }
+
         User savedUser = userRepository.save(user);
         return mapToUserResponse(savedUser);
     }

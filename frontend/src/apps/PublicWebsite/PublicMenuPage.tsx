@@ -18,7 +18,7 @@ const PublicMenuPage: React.FC = () => {
   };
 
   const handleCheckout = () => {
-    // Navigate to checkout page
+    // Always navigate to checkout page to show options
     navigate('/checkout');
   };
 

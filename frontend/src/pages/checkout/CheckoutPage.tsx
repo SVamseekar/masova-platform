@@ -17,17 +17,9 @@ const CheckoutPage: React.FC = () => {
   const subtotal = useAppSelector(selectCartSubtotal);
   const itemCount = useAppSelector(selectCartItemCount);
   const deliveryFee = useAppSelector(selectDeliveryFee);
-  const { isAuthenticated } = useAppSelector(state => state.auth);
 
   const tax = subtotal * 0.05;
   const total = subtotal + (itemCount > 0 ? deliveryFee : 0) + tax;
-
-  // If already authenticated, redirect to delivery info page
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/guest-checkout');
-    }
-  }, [isAuthenticated, navigate]);
 
   // If cart is empty, redirect to menu
   useEffect(() => {
@@ -50,7 +42,10 @@ const CheckoutPage: React.FC = () => {
       ],
       buttonText: 'Login to Continue',
       buttonVariant: 'primary' as const,
-      action: () => navigate('/customer-login', { state: { from: '/checkout' } }),
+      action: () => {
+        console.log('Login button clicked');
+        navigate('/customer-login', { state: { from: '/checkout' } });
+      },
     },
     {
       id: 'register',
@@ -65,7 +60,10 @@ const CheckoutPage: React.FC = () => {
       ],
       buttonText: 'Create Account',
       buttonVariant: 'secondary' as const,
-      action: () => navigate('/register', { state: { from: '/checkout' } }),
+      action: () => {
+        console.log('Create Account button clicked');
+        navigate('/register', { state: { from: '/checkout' } });
+      },
     },
     {
       id: 'guest',
@@ -80,7 +78,10 @@ const CheckoutPage: React.FC = () => {
       ],
       buttonText: 'Continue as Guest',
       buttonVariant: 'ghost' as const,
-      action: () => navigate('/guest-checkout'),
+      action: () => {
+        console.log('Guest Checkout button clicked');
+        navigate('/guest-checkout');
+      },
     },
   ];
 

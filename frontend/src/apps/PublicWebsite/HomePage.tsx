@@ -22,6 +22,7 @@ const HomePage: React.FC = () => {
   };
 
   const handleCheckout = () => {
+    // Always navigate to checkout page to show options
     navigate('/checkout');
   };
 

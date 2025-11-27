@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
-import axios from 'axios';
+import { useRegisterMutation } from '../../store/api/authApi';
 import { Button, Card, Input } from '../../components/ui/neumorphic';
 import { colors, spacing, typography } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
@@ -16,10 +16,13 @@ interface RegisterFormData {
 }
 
 const RegisterPage: React.FC = () => {
+  console.log('RegisterPage loaded');
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated } = useAppSelector(state => state.auth);
   const from = (location.state as any)?.from || '/checkout';
+  const [register, { isLoading }] = useRegisterMutation();
+  console.log('isLoading:', isLoading);
 
   const [formData, setFormData] = useState<RegisterFormData>({
     firstName: '',
@@ -31,14 +34,8 @@ const RegisterPage: React.FC = () => {
   });
 
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Partial<RegisterFormData>>({});
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate(from);
-    }
-  }, [isAuthenticated, navigate, from]);
+  const currentUser = useAppSelector(state => state.auth.user);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -77,36 +74,34 @@ const RegisterPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted');
     setError('');
 
-    if (!validateForm()) return;
+    console.log('Form data:', formData);
+    if (!validateForm()) {
+      console.log('Validation failed');
+      return;
+    }
 
-    setLoading(true);
-
+    console.log('Validation passed, registering...');
     try {
-      const response = await axios.post('http://localhost:8080/api/auth/register', {
+      const result = await register({
         name: `${formData.firstName} ${formData.lastName}`.trim(),
         email: formData.email,
         phone: formData.phone,
         password: formData.password,
         type: 'CUSTOMER',
-      });
+        rememberMe: true,
+      }).unwrap();
 
-      if (response.data) {
-        navigate('/customer-login', {
-          state: {
-            from: from,
-            email: formData.email,
-            message: 'Registration successful! Please login to continue.',
-          },
-        });
-      }
+      console.log('Registration successful:', result);
+      // User is now automatically logged in with tokens stored in Redux
+      // Navigate to the original destination or checkout
+      navigate(from);
     } catch (err: any) {
       console.error('Registration error:', err);
-      const errorMessage = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Registration failed. Please try again.';
+      const errorMessage = err?.data?.message || err?.data?.error || err?.message || 'Registration failed. Please try again.';
       setError(errorMessage);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -156,23 +151,79 @@ const RegisterPage: React.FC = () => {
         </div>
 
         <Card elevation="lg" padding="xl">
-          {error && (
-            <div style={{
-              ...createNeumorphicSurface('inset', 'base', 'base'),
-              backgroundColor: colors.semantic.errorLight,
-              border: `1px solid ${colors.semantic.error}`,
-              color: colors.semantic.errorDark,
-              padding: spacing[4],
-              marginBottom: spacing[5],
-              fontSize: typography.fontSize.sm,
-              fontWeight: typography.fontWeight.semibold,
-              borderLeft: `4px solid ${colors.semantic.error}`,
-            }}>
-              {error}
+          {isAuthenticated && currentUser ? (
+            <div>
+              <div style={{
+                ...createNeumorphicSurface('inset', 'base', 'base'),
+                backgroundColor: colors.brand.primaryLight,
+                border: `1px solid ${colors.brand.primary}`,
+                color: colors.brand.primaryDark,
+                padding: spacing[6],
+                marginBottom: spacing[5],
+                fontSize: typography.fontSize.base,
+                textAlign: 'center',
+                borderRadius: '12px',
+              }}>
+                <div style={{ fontSize: '48px', marginBottom: spacing[4] }}>👋</div>
+                <h2 style={{
+                  fontSize: typography.fontSize['2xl'],
+                  fontWeight: typography.fontWeight.bold,
+                  marginBottom: spacing[3],
+                  color: colors.text.primary,
+                }}>
+                  You're Already Logged In!
+                </h2>
+                <p style={{
+                  fontSize: typography.fontSize.base,
+                  color: colors.text.secondary,
+                  marginBottom: spacing[6],
+                }}>
+                  Welcome back, <strong>{currentUser.name}</strong>!<br/>
+                  You don't need to create a new account.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    onClick={() => navigate('/guest-checkout')}
+                  >
+                    Continue to Checkout
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    fullWidth
+                    onClick={() => {
+                      localStorage.clear();
+                      sessionStorage.clear();
+                      window.location.reload();
+                    }}
+                  >
+                    Logout & Create New Account
+                  </Button>
+                </div>
+              </div>
             </div>
-          )}
+          ) : (
+            <>
+              {error && (
+                <div style={{
+                  ...createNeumorphicSurface('inset', 'base', 'base'),
+                  backgroundColor: colors.semantic.errorLight,
+                  border: `1px solid ${colors.semantic.error}`,
+                  color: colors.semantic.errorDark,
+                  padding: spacing[4],
+                  marginBottom: spacing[5],
+                  fontSize: typography.fontSize.sm,
+                  fontWeight: typography.fontWeight.semibold,
+                  borderLeft: `4px solid ${colors.semantic.error}`,
+                }}>
+                  {error}
+                </div>
+              )}
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: spacing[5] }}>
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: spacing[5] }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[4] }}>
               <Input
                 label="First Name"
@@ -181,7 +232,7 @@ const RegisterPage: React.FC = () => {
                 onChange={handleChange}
                 state={validationErrors.firstName ? 'error' : 'default'}
                 helperText={validationErrors.firstName}
-                disabled={loading}
+                disabled={isLoading}
                 size="lg"
                 leftIcon="👤"
                 required
@@ -194,7 +245,7 @@ const RegisterPage: React.FC = () => {
                 onChange={handleChange}
                 state={validationErrors.lastName ? 'error' : 'default'}
                 helperText={validationErrors.lastName}
-                disabled={loading}
+                disabled={isLoading}
                 size="lg"
                 required
               />
@@ -208,7 +259,7 @@ const RegisterPage: React.FC = () => {
               onChange={handleChange}
               state={validationErrors.email ? 'error' : 'default'}
               helperText={validationErrors.email}
-              disabled={loading}
+              disabled={isLoading}
               size="lg"
               leftIcon="📧"
               required
@@ -222,7 +273,7 @@ const RegisterPage: React.FC = () => {
               state={validationErrors.phone ? 'error' : 'default'}
               helperText={validationErrors.phone || '10-digit mobile number'}
               placeholder="Enter your phone number"
-              disabled={loading}
+              disabled={isLoading}
               size="lg"
               leftIcon="📱"
               required
@@ -236,7 +287,7 @@ const RegisterPage: React.FC = () => {
               onChange={handleChange}
               state={validationErrors.password ? 'error' : 'default'}
               helperText={validationErrors.password || 'Minimum 6 characters'}
-              disabled={loading}
+              disabled={isLoading}
               size="lg"
               leftIcon="🔒"
               showPasswordToggle
@@ -251,7 +302,7 @@ const RegisterPage: React.FC = () => {
               onChange={handleChange}
               state={validationErrors.confirmPassword ? 'error' : 'default'}
               helperText={validationErrors.confirmPassword}
-              disabled={loading}
+              disabled={isLoading}
               size="lg"
               leftIcon="🔒"
               showPasswordToggle
@@ -263,8 +314,8 @@ const RegisterPage: React.FC = () => {
               variant="primary"
               size="xl"
               fullWidth
-              isLoading={loading}
-              disabled={loading}
+              isLoading={isLoading}
+              disabled={isLoading}
             >
               Create Account
             </Button>
@@ -298,6 +349,8 @@ const RegisterPage: React.FC = () => {
               </button>
             </p>
           </div>
+            </>
+          )}
         </Card>
       </div>
     </div>
