@@ -455,7 +455,7 @@ const HomePage: React.FC = () => {
             { tier: 'PLATINUM', icon: '💎', points: '10,000+', multiplier: '2x', color: '#e5e4e2' },
           ].map((tier, index) => (
             <div key={index} style={{
-              ...createCard('sm', 'md', false),
+              ...createCard('sm', 'base', false),
               padding: spacing[4],
               textAlign: 'center',
               background: colors.surface.primary,
