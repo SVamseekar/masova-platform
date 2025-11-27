@@ -22,7 +22,7 @@ const HomePage: React.FC = () => {
   };
 
   const titleStyles: React.CSSProperties = {
-    fontSize: typography.fontSize['6xl'],
+    fontSize: typography.fontSize['5xl'],
     fontWeight: typography.fontWeight.extrabold,
     background: `linear-gradient(135deg, ${colors.brand.primary}, ${colors.brand.secondary})`,
     WebkitBackgroundClip: 'text',
