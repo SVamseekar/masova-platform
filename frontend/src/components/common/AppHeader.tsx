@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { logout, selectCurrentUser } from '../../store/slices/authSlice';
@@ -31,17 +31,39 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   const currentUser = useAppSelector(selectCurrentUser);
   const cartItemCount = useAppSelector(selectCartItemCount);
 
+  // Dropdown menu state
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   // Check for active order in sessionStorage
   // Works for both guests (temporary tracking) and logged-in customers (saved to profile)
   const activeOrderId = sessionStorage.getItem('activeOrderId');
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleLogout = () => {
     const isCustomer = currentUser?.type?.toLowerCase() === 'customer';
     // Clear active order from sessionStorage on logout
     sessionStorage.removeItem('activeOrderId');
+    setIsDropdownOpen(false);
     dispatch(logout());
     // Customers go to home, staff go to login
     navigate(isCustomer ? '/' : '/login');
+  };
+
+  const handleMenuItemClick = (path: string) => {
+    setIsDropdownOpen(false);
+    navigate(path);
   };
 
   const handleBack = () => {
@@ -141,6 +163,66 @@ const AppHeader: React.FC<AppHeaderProps> = ({
     ...buttonStyles,
   };
 
+  // Dropdown menu styles
+  const dropdownContainerStyles: React.CSSProperties = {
+    position: 'relative',
+    display: 'inline-block',
+  };
+
+  const userButtonStyles: React.CSSProperties = {
+    ...buttonStyles,
+    display: 'flex',
+    alignItems: 'center',
+    gap: spacing[2],
+    padding: `${spacing[2]} ${spacing[4]}`,
+    cursor: 'pointer',
+  };
+
+  const dropdownMenuStyles: React.CSSProperties = {
+    ...createNeumorphicSurface('raised', 'md', 'lg'),
+    position: 'absolute',
+    top: 'calc(100% + 8px)',
+    right: 0,
+    minWidth: '220px',
+    backgroundColor: colors.surface.primary,
+    zIndex: 1000,
+    opacity: isDropdownOpen ? 1 : 0,
+    visibility: isDropdownOpen ? 'visible' : 'hidden',
+    transform: isDropdownOpen ? 'translateY(0)' : 'translateY(-10px)',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  };
+
+  const dropdownItemStyles: React.CSSProperties = {
+    padding: `${spacing[3]} ${spacing[4]}`,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.primary,
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    display: 'flex',
+    alignItems: 'center',
+    gap: spacing[3],
+    borderBottom: `1px solid ${colors.surface.tertiary}`,
+  };
+
+  const dropdownItemHoverStyles: React.CSSProperties = {
+    ...createNeumorphicSurface('inset', 'sm', 'base'),
+    backgroundColor: colors.brand.primaryLight + '10',
+  };
+
+  const dropdownDividerStyles: React.CSSProperties = {
+    height: '1px',
+    backgroundColor: colors.surface.tertiary,
+    margin: `${spacing[2]} 0`,
+  };
+
+  const logoutItemStyles: React.CSSProperties = {
+    ...dropdownItemStyles,
+    color: colors.semantic.error,
+    fontWeight: typography.fontWeight.semibold,
+    borderBottom: 'none',
+  };
+
   return (
     <header style={headerStyles}>
       <div style={leftSectionStyles}>
@@ -213,7 +295,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
                   color: colors.text.inverse,
                   fontWeight: typography.fontWeight.bold,
                 }}
-                onClick={() => navigate(`/track-order/${activeOrderId}`)}
+                onClick={() => navigate(`/tracking/${activeOrderId}`)}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-2px)';
                   e.currentTarget.style.boxShadow = shadows.raised.lg;
@@ -266,33 +348,78 @@ const AppHeader: React.FC<AppHeaderProps> = ({
               )}
             </button>
 
-            {/* User info and logout for logged-in customers on public pages */}
+            {/* User dropdown menu for logged-in customers on public pages */}
             {currentUser ? (
-              <>
-                <div style={{
-                  ...userInfoStyles,
-                  borderLeft: `1px solid ${colors.surface.tertiary}`,
-                  paddingLeft: spacing[4],
-                  marginLeft: spacing[2],
-                }}>
-                  <span style={userNameStyles}>👤 {currentUser.name}</span>
-                  <span style={userRoleStyles}>{currentUser.type}</span>
-                </div>
+              <div ref={dropdownRef} style={dropdownContainerStyles}>
                 <button
-                  style={logoutButtonStyles}
-                  onClick={handleLogout}
+                  style={userButtonStyles}
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = shadows.raised.lg;
+                    e.currentTarget.style.boxShadow = shadows.raised.md;
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = shadows.raised.base;
+                    e.currentTarget.style.boxShadow = shadows.raised.sm;
                   }}
                 >
-                  Logout
+                  <span>👤</span>
+                  <span>{currentUser.name}</span>
+                  <span style={{ fontSize: typography.fontSize.xs }}>
+                    {isDropdownOpen ? '▲' : '▼'}
+                  </span>
                 </button>
-              </>
+
+                {/* Dropdown Menu */}
+                <div style={dropdownMenuStyles}>
+                  <div
+                    style={dropdownItemStyles}
+                    onClick={() => handleMenuItemClick('/customer-dashboard')}
+                    onMouseEnter={(e) => {
+                      Object.assign(e.currentTarget.style, dropdownItemHoverStyles);
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow = '';
+                      e.currentTarget.style.backgroundColor = '';
+                    }}
+                  >
+                    <span>📊</span>
+                    <span>My Orders</span>
+                  </div>
+
+                  <div
+                    style={dropdownItemStyles}
+                    onClick={() => handleMenuItemClick('/customer/profile')}
+                    onMouseEnter={(e) => {
+                      Object.assign(e.currentTarget.style, dropdownItemHoverStyles);
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow = '';
+                      e.currentTarget.style.backgroundColor = '';
+                    }}
+                  >
+                    <span>👤</span>
+                    <span>My Profile</span>
+                  </div>
+
+                  <div style={dropdownDividerStyles} />
+
+                  <div
+                    style={logoutItemStyles}
+                    onClick={handleLogout}
+                    onMouseEnter={(e) => {
+                      Object.assign(e.currentTarget.style, dropdownItemHoverStyles);
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow = '';
+                      e.currentTarget.style.backgroundColor = '';
+                    }}
+                  >
+                    <span>🚪</span>
+                    <span>Logout</span>
+                  </div>
+                </div>
+              </div>
             ) : (
               <button
                 style={{
