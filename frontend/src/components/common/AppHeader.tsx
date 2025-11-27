@@ -14,7 +14,6 @@ interface AppHeaderProps {
   hideStaffLogin?: boolean;  // Hide staff login button for public pages
   showPublicNav?: boolean; // Show Home, Offers, Cart buttons
   onCartClick?: () => void; // Handler for cart button
-  showTrackOrder?: boolean; // Show track order button for customers with active orders
 }
 
 const AppHeader: React.FC<AppHeaderProps> = ({
@@ -23,8 +22,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   backRoute = '/',
   hideStaffLogin = false,
   showPublicNav = false,
-  onCartClick,
-  showTrackOrder = false
+  onCartClick
 }) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -286,29 +284,6 @@ const AppHeader: React.FC<AppHeaderProps> = ({
               🎁 Offers
             </button>
 
-            {/* Track Order button - shown when there's an active order */}
-            {(showTrackOrder || activeOrderId) && (
-              <button
-                style={{
-                  ...buttonStyles,
-                  background: `linear-gradient(135deg, ${colors.semantic.warning} 0%, ${colors.semantic.warningLight} 100%)`,
-                  color: colors.text.inverse,
-                  fontWeight: typography.fontWeight.bold,
-                }}
-                onClick={() => navigate(`/tracking/${activeOrderId}`)}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = shadows.raised.lg;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = shadows.raised.base;
-                }}
-              >
-                📦 Track Order
-              </button>
-            )}
-
             <button
               style={{
                 ...buttonStyles,
@@ -372,6 +347,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
 
                 {/* Dropdown Menu */}
                 <div style={dropdownMenuStyles}>
+                  {/* My Orders */}
                   <div
                     style={dropdownItemStyles}
                     onClick={() => handleMenuItemClick('/customer-dashboard')}
@@ -383,10 +359,29 @@ const AppHeader: React.FC<AppHeaderProps> = ({
                       e.currentTarget.style.backgroundColor = '';
                     }}
                   >
-                    <span>📊</span>
+                    <span>📦</span>
                     <span>My Orders</span>
                   </div>
 
+                  {/* Track Order - only if active order exists */}
+                  {activeOrderId && (
+                    <div
+                      style={dropdownItemStyles}
+                      onClick={() => handleMenuItemClick(`/tracking/${activeOrderId}`)}
+                      onMouseEnter={(e) => {
+                        Object.assign(e.currentTarget.style, dropdownItemHoverStyles);
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.boxShadow = '';
+                        e.currentTarget.style.backgroundColor = '';
+                      }}
+                    >
+                      <span>🚚</span>
+                      <span>Track Order</span>
+                    </div>
+                  )}
+
+                  {/* My Profile */}
                   <div
                     style={dropdownItemStyles}
                     onClick={() => handleMenuItemClick('/customer/profile')}
@@ -404,6 +399,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
 
                   <div style={dropdownDividerStyles} />
 
+                  {/* Logout */}
                   <div
                     style={logoutItemStyles}
                     onClick={handleLogout}
