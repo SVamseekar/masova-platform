@@ -344,6 +344,25 @@ export const customerApi = createApi({
       invalidatesTags: (result, error, { customerId }) => [{ type: 'Customer', id: customerId }],
     }),
 
+    redeemLoyaltyPoints: builder.mutation<
+      { customer: Customer; pointsRedeemed: number; discountAmount: number },
+      { customerId: string; points: number; orderId: string }
+    >({
+      query: ({ customerId, points, orderId }) => ({
+        url: `/${customerId}/loyalty/redeem?points=${points}&orderId=${orderId}`,
+        method: 'POST',
+      }),
+      invalidatesTags: (result, error, { customerId }) => [{ type: 'Customer', id: customerId }],
+    }),
+
+    getMaxRedeemablePoints: builder.query<
+      { maxRedeemablePoints: number; maxDiscountAmount: number; redemptionRate: string },
+      { customerId: string; orderTotal: number }
+    >({
+      query: ({ customerId, orderTotal }) => `/${customerId}/loyalty/max-redeemable?orderTotal=${orderTotal}`,
+      providesTags: (result, error, { customerId }) => [{ type: 'Customer', id: customerId }],
+    }),
+
     getCustomersByTier: builder.query<Customer[], string>({
       query: (tier) => `/loyalty/tier/${tier}`,
       providesTags: (result) =>
@@ -502,6 +521,8 @@ export const {
   useRemoveAddressMutation,
   useSetDefaultAddressMutation,
   useAddLoyaltyPointsMutation,
+  useRedeemLoyaltyPointsMutation,
+  useGetMaxRedeemablePointsQuery,
   useGetCustomersByTierQuery,
   useUpdatePreferencesMutation,
   useUpdateOrderStatsMutation,

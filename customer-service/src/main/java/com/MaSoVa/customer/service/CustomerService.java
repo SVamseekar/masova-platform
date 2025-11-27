@@ -30,8 +30,9 @@ public class CustomerService {
 
     private final CustomerRepository customerRepository;
 
-    @Value("${MaSoVa.customer.loyalty.points-per-rupee:1}")
-    private int pointsPerRupee;
+    // Loyalty points earning configuration
+    @Value("${MaSoVa.customer.loyalty.rupees-per-point:10}")
+    private int rupeesPerPoint;
 
     @Value("${MaSoVa.customer.loyalty.signup-bonus-points:100}")
     private int signupBonusPoints;
@@ -39,6 +40,20 @@ public class CustomerService {
     @Value("${MaSoVa.customer.loyalty.birthday-bonus-points:200}")
     private int birthdayBonusPoints;
 
+    // Loyalty points redemption configuration
+    @Value("${MaSoVa.customer.loyalty.points-redemption-rate:100}")
+    private int pointsRedemptionRate;
+
+    @Value("${MaSoVa.customer.loyalty.rupees-per-redemption:50}")
+    private int rupeesPerRedemption;
+
+    @Value("${MaSoVa.customer.loyalty.min-points-to-redeem:100}")
+    private int minPointsToRedeem;
+
+    @Value("${MaSoVa.customer.loyalty.max-redemption-percent:50}")
+    private int maxRedemptionPercent;
+
+    // Tier thresholds
     @Value("${MaSoVa.customer.loyalty.tier-thresholds.silver:1000}")
     private int silverThreshold;
 
@@ -47,6 +62,19 @@ public class CustomerService {
 
     @Value("${MaSoVa.customer.loyalty.tier-thresholds.platinum:10000}")
     private int platinumThreshold;
+
+    // Tier multipliers for earning bonus
+    @Value("${MaSoVa.customer.loyalty.tier-multipliers.bronze:1.0}")
+    private double bronzeMultiplier;
+
+    @Value("${MaSoVa.customer.loyalty.tier-multipliers.silver:1.25}")
+    private double silverMultiplier;
+
+    @Value("${MaSoVa.customer.loyalty.tier-multipliers.gold:1.5}")
+    private double goldMultiplier;
+
+    @Value("${MaSoVa.customer.loyalty.tier-multipliers.platinum:2.0}")
+    private double platinumMultiplier;
 
     public CustomerService(CustomerRepository customerRepository) {
         this.customerRepository = customerRepository;
@@ -396,6 +424,83 @@ public class CustomerService {
         }
     }
 
+    private double getTierMultiplier(String tier) {
+        return switch (tier.toUpperCase()) {
+            case "PLATINUM" -> platinumMultiplier;
+            case "GOLD" -> goldMultiplier;
+            case "SILVER" -> silverMultiplier;
+            default -> bronzeMultiplier;
+        };
+    }
+
+    /**
+     * Calculate discount amount based on points to redeem
+     */
+    public double calculatePointsDiscount(int pointsToRedeem) {
+        if (pointsToRedeem < minPointsToRedeem) {
+            return 0.0;
+        }
+        return (pointsToRedeem / (double) pointsRedemptionRate) * rupeesPerRedemption;
+    }
+
+    /**
+     * Calculate maximum points that can be redeemed for an order
+     */
+    public int calculateMaxRedeemablePoints(String customerId, double orderTotal) {
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new NoSuchElementException("Customer not found with id: " + customerId));
+
+        int availablePoints = customer.getLoyaltyInfo().getTotalPoints();
+
+        // Maximum discount is 50% of order total
+        double maxDiscount = orderTotal * (maxRedemptionPercent / 100.0);
+
+        // Calculate max points based on discount cap
+        int maxPointsFromDiscount = (int) ((maxDiscount / rupeesPerRedemption) * pointsRedemptionRate);
+
+        // Return the smaller of available points or max allowed points
+        return Math.min(availablePoints, maxPointsFromDiscount);
+    }
+
+    /**
+     * Redeem loyalty points for a discount
+     */
+    @CacheEvict(value = "customers", key = "#p0")
+    public Customer redeemLoyaltyPoints(String customerId, int pointsToRedeem, String orderId) {
+        logger.info("Redeeming {} loyalty points for customer: {}", pointsToRedeem, customerId);
+
+        if (pointsToRedeem < minPointsToRedeem) {
+            throw new IllegalArgumentException("Minimum " + minPointsToRedeem + " points required for redemption");
+        }
+
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new NoSuchElementException("Customer not found with id: " + customerId));
+
+        LoyaltyInfo loyalty = customer.getLoyaltyInfo();
+
+        if (loyalty.getTotalPoints() < pointsToRedeem) {
+            throw new IllegalArgumentException("Insufficient points. Available: " + loyalty.getTotalPoints() + ", Requested: " + pointsToRedeem);
+        }
+
+        // Deduct points
+        loyalty.setTotalPoints(loyalty.getTotalPoints() - pointsToRedeem);
+        loyalty.setPointsRedeemed(loyalty.getPointsRedeemed() + pointsToRedeem);
+        loyalty.setLastPointsUpdate(LocalDateTime.now());
+
+        // Add transaction to history
+        double discountAmount = calculatePointsDiscount(pointsToRedeem);
+        PointTransaction transaction = new PointTransaction(
+                pointsToRedeem,
+                "REDEEMED",
+                "Redeemed for ₹" + String.format("%.2f", discountAmount) + " discount on Order #" + orderId
+        );
+        transaction.setOrderId(orderId);
+        loyalty.getPointHistory().add(transaction);
+
+        logger.info("Redeemed {} points for ₹{} discount", pointsToRedeem, discountAmount);
+        return customerRepository.save(customer);
+    }
+
     // ===========================
     // PREFERENCES MANAGEMENT
     // ===========================
@@ -460,10 +565,13 @@ public class CustomerService {
             stats.setLastOrderDate(now);
             customer.setLastOrderDate(now);
 
-            // Award loyalty points
-            int pointsToAdd = (int) (request.getOrderTotal() * pointsPerRupee);
+            // Award loyalty points with tier multiplier
+            int basePoints = (int) (request.getOrderTotal() / rupeesPerPoint);
+            double tierMultiplier = getTierMultiplier(customer.getLoyaltyInfo().getTier());
+            int pointsToAdd = (int) (basePoints * tierMultiplier);
+
             AddLoyaltyPointsRequest loyaltyRequest = new AddLoyaltyPointsRequest(
-                    pointsToAdd, "EARNED", "Order #" + request.getOrderId());
+                    pointsToAdd, "EARNED", "Order #" + request.getOrderId() + " (" + basePoints + " base × " + tierMultiplier + "x tier bonus)");
             loyaltyRequest.setOrderId(request.getOrderId());
             addLoyaltyPoints(customerId, loyaltyRequest);
         } else if ("CANCELLED".equals(request.getStatus())) {

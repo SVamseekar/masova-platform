@@ -192,6 +192,13 @@ const HomePage: React.FC = () => {
       buttonText: 'Explore Menu'
     },
     {
+      icon: '⭐',
+      title: 'Loyalty Rewards',
+      description: 'Earn 1 point per ₹10 spent. Redeem 100 points for ₹50 discount. Tier benefits up to 2x points!',
+      action: () => navigate('/customer-login'),
+      buttonText: 'Join Now'
+    },
+    {
       icon: '👨‍💼',
       title: 'Manager Dashboard',
       description: 'Complete store management with clock in/out, shift scheduling, and employee tracking.',

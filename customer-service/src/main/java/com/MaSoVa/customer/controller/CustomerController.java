@@ -231,6 +231,45 @@ public class CustomerController {
         }
     }
 
+    @PostMapping("/{id}/loyalty/redeem")
+    @Operation(summary = "Redeem loyalty points for discount")
+    public ResponseEntity<?> redeemLoyaltyPoints(
+            @PathVariable("id") String id,
+            @RequestParam("points") int points,
+            @RequestParam("orderId") String orderId) {
+        try {
+            Customer customer = customerService.redeemLoyaltyPoints(id, points, orderId);
+            double discount = customerService.calculatePointsDiscount(points);
+            return ResponseEntity.ok(java.util.Map.of(
+                    "customer", customer,
+                    "pointsRedeemed", points,
+                    "discountAmount", discount
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/{id}/loyalty/max-redeemable")
+    @Operation(summary = "Get maximum redeemable points for order")
+    public ResponseEntity<?> getMaxRedeemablePoints(
+            @PathVariable("id") String id,
+            @RequestParam("orderTotal") double orderTotal) {
+        try {
+            int maxPoints = customerService.calculateMaxRedeemablePoints(id, orderTotal);
+            double maxDiscount = customerService.calculatePointsDiscount(maxPoints);
+            return ResponseEntity.ok(java.util.Map.of(
+                    "maxRedeemablePoints", maxPoints,
+                    "maxDiscountAmount", maxDiscount,
+                    "redemptionRate", "100 points = ₹50"
+            ));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @GetMapping("/loyalty/tier/{tier}")
     @Operation(summary = "Get customers by loyalty tier")
     public ResponseEntity<List<Customer>> getCustomersByTier(@PathVariable("tier") String tier) {
