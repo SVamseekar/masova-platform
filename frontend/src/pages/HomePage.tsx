@@ -294,6 +294,256 @@ const HomePage: React.FC = () => {
         ))}
       </div>
 
+      {/* Loyalty Program Section */}
+      <div style={{
+        ...createNeumorphicSurface('raised', 'lg', '2xl'),
+        padding: spacing[8],
+        marginBottom: spacing[12],
+        background: `linear-gradient(135deg, ${colors.brand.primary}11, ${colors.brand.secondary}11)`,
+      }}>
+        <h2 style={{
+          fontSize: typography.fontSize['3xl'],
+          fontWeight: typography.fontWeight.bold,
+          color: colors.text.primary,
+          marginBottom: spacing[2],
+          textAlign: 'center',
+        }}>
+          ⭐ MaSoVa Loyalty Rewards Program
+        </h2>
+        <p style={{
+          fontSize: typography.fontSize.base,
+          color: colors.text.secondary,
+          marginBottom: spacing[8],
+          textAlign: 'center',
+          maxWidth: '800px',
+          margin: `0 auto ${spacing[8]} auto`,
+        }}>
+          Earn points on every order and redeem them for real discounts. The more you order, the more you save!
+        </p>
+
+        {/* Earn & Redeem Grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: spacing[6],
+          marginBottom: spacing[8],
+        }}>
+          {/* How to Earn */}
+          <div style={{
+            ...createCard('md', 'lg', false),
+            padding: spacing[6],
+            textAlign: 'center',
+            background: colors.surface.primary,
+          }}>
+            <div style={{ fontSize: '60px', marginBottom: spacing[3] }}>💰</div>
+            <h3 style={{
+              fontSize: typography.fontSize.xl,
+              fontWeight: typography.fontWeight.bold,
+              color: colors.brand.primary,
+              marginBottom: spacing[3],
+            }}>
+              How to Earn Points
+            </h3>
+            <div style={{
+              fontSize: typography.fontSize['2xl'],
+              fontWeight: typography.fontWeight.extrabold,
+              color: colors.text.primary,
+              marginBottom: spacing[2],
+            }}>
+              1 Point per ₹10
+            </div>
+            <p style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary, marginBottom: spacing[4] }}>
+              Spend on food, earn valuable points
+            </p>
+            <div style={{
+              background: colors.surface.secondary,
+              padding: spacing[3],
+              borderRadius: borderRadius.base,
+              marginBottom: spacing[3],
+            }}>
+              <div style={{ fontSize: typography.fontSize.xs, color: colors.text.tertiary, marginBottom: spacing[1] }}>
+                Example:
+              </div>
+              <div style={{ fontSize: typography.fontSize.sm, color: colors.text.primary }}>
+                Order ₹500 = <strong>50 points</strong>
+              </div>
+            </div>
+            <div style={{
+              background: colors.semantic.successLight + '22',
+              padding: spacing[2],
+              borderRadius: borderRadius.base,
+              fontSize: typography.fontSize.xs,
+              color: colors.semantic.successDark,
+              fontWeight: typography.fontWeight.semibold,
+            }}>
+              ✓ Signup Bonus: 100 points
+            </div>
+          </div>
+
+          {/* How to Redeem */}
+          <div style={{
+            ...createCard('md', 'lg', false),
+            padding: spacing[6],
+            textAlign: 'center',
+            background: colors.surface.primary,
+          }}>
+            <div style={{ fontSize: '60px', marginBottom: spacing[3] }}>🎁</div>
+            <h3 style={{
+              fontSize: typography.fontSize.xl,
+              fontWeight: typography.fontWeight.bold,
+              color: colors.brand.primary,
+              marginBottom: spacing[3],
+            }}>
+              How to Redeem
+            </h3>
+            <div style={{
+              fontSize: typography.fontSize['2xl'],
+              fontWeight: typography.fontWeight.extrabold,
+              color: colors.text.primary,
+              marginBottom: spacing[2],
+            }}>
+              100 Points = ₹50
+            </div>
+            <p style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary, marginBottom: spacing[4] }}>
+              Use points at checkout for instant savings
+            </p>
+            <div style={{
+              background: colors.surface.secondary,
+              padding: spacing[3],
+              borderRadius: borderRadius.base,
+              marginBottom: spacing[3],
+            }}>
+              <div style={{ fontSize: typography.fontSize.xs, color: colors.text.tertiary, marginBottom: spacing[1] }}>
+                Example:
+              </div>
+              <div style={{ fontSize: typography.fontSize.sm, color: colors.text.primary }}>
+                200 points = <strong>₹100 off</strong>
+              </div>
+            </div>
+            <div style={{
+              background: colors.semantic.warningLight + '22',
+              padding: spacing[2],
+              borderRadius: borderRadius.base,
+              fontSize: typography.fontSize.xs,
+              color: colors.semantic.warningDark,
+              fontWeight: typography.fontWeight.semibold,
+            }}>
+              ⚠ Min: 100 pts | Max: 50% of order
+            </div>
+          </div>
+        </div>
+
+        {/* Tier Benefits */}
+        <h3 style={{
+          fontSize: typography.fontSize['2xl'],
+          fontWeight: typography.fontWeight.bold,
+          color: colors.text.primary,
+          marginBottom: spacing[6],
+          textAlign: 'center',
+        }}>
+          🏆 Membership Tiers & Benefits
+        </h3>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: spacing[4],
+        }}>
+          {[
+            { tier: 'BRONZE', icon: '🥉', points: '0-999', multiplier: '1x', color: '#cd7f32' },
+            { tier: 'SILVER', icon: '🥈', points: '1,000+', multiplier: '1.25x', color: '#c0c0c0' },
+            { tier: 'GOLD', icon: '🥇', points: '5,000+', multiplier: '1.5x', color: '#ffd700' },
+            { tier: 'PLATINUM', icon: '💎', points: '10,000+', multiplier: '2x', color: '#e5e4e2' },
+          ].map((tier, index) => (
+            <div key={index} style={{
+              ...createCard('sm', 'md', false),
+              padding: spacing[4],
+              textAlign: 'center',
+              background: colors.surface.primary,
+              borderTop: `4px solid ${tier.color}`,
+            }}>
+              <div style={{ fontSize: '40px', marginBottom: spacing[2] }}>{tier.icon}</div>
+              <div style={{
+                fontSize: typography.fontSize.lg,
+                fontWeight: typography.fontWeight.bold,
+                color: colors.text.primary,
+                marginBottom: spacing[1],
+              }}>
+                {tier.tier}
+              </div>
+              <div style={{
+                fontSize: typography.fontSize.xs,
+                color: colors.text.tertiary,
+                marginBottom: spacing[2],
+              }}>
+                {tier.points} points
+              </div>
+              <div style={{
+                background: colors.brand.primary + '22',
+                color: colors.brand.primary,
+                padding: `${spacing[2]} ${spacing[3]}`,
+                borderRadius: borderRadius.full,
+                fontSize: typography.fontSize.sm,
+                fontWeight: typography.fontWeight.bold,
+              }}>
+                {tier.multiplier} Points
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Example Calculations */}
+        <div style={{
+          marginTop: spacing[8],
+          padding: spacing[6],
+          background: colors.surface.secondary,
+          borderRadius: borderRadius.xl,
+          border: `2px solid ${colors.brand.primary}33`,
+        }}>
+          <h4 style={{
+            fontSize: typography.fontSize.lg,
+            fontWeight: typography.fontWeight.bold,
+            color: colors.text.primary,
+            marginBottom: spacing[4],
+            textAlign: 'center',
+          }}>
+            📊 Real Examples
+          </h4>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: spacing[4],
+          }}>
+            <div style={{ padding: spacing[3], background: colors.surface.primary, borderRadius: borderRadius.base }}>
+              <div style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold, color: colors.text.primary, marginBottom: spacing[2] }}>
+                Bronze Member Orders ₹1,000
+              </div>
+              <div style={{ fontSize: typography.fontSize.xs, color: colors.text.secondary }}>
+                Base: ₹1,000 ÷ 10 = 100 pts<br/>
+                Multiplier: 100 × 1x = <strong style={{ color: colors.brand.primary }}>100 points</strong>
+              </div>
+            </div>
+            <div style={{ padding: spacing[3], background: colors.surface.primary, borderRadius: borderRadius.base }}>
+              <div style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold, color: colors.text.primary, marginBottom: spacing[2] }}>
+                Gold Member Orders ₹1,000
+              </div>
+              <div style={{ fontSize: typography.fontSize.xs, color: colors.text.secondary }}>
+                Base: ₹1,000 ÷ 10 = 100 pts<br/>
+                Multiplier: 100 × 1.5x = <strong style={{ color: colors.brand.primary }}>150 points</strong>
+              </div>
+            </div>
+            <div style={{ padding: spacing[3], background: colors.surface.primary, borderRadius: borderRadius.base }}>
+              <div style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold, color: colors.text.primary, marginBottom: spacing[2] }}>
+                Redeem 500 Points
+              </div>
+              <div style={{ fontSize: typography.fontSize.xs, color: colors.text.secondary }}>
+                500 ÷ 100 = 5 units<br/>
+                5 × ₹50 = <strong style={{ color: colors.semantic.success }}>₹250 discount</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Completed Phases Section */}
       <div style={phasesSectionStyles}>
         <h2 style={phaseTitleStyles}>Completed Development Phases</h2>
