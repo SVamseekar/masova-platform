@@ -32,14 +32,14 @@ public class StoreController {
     
     @GetMapping("/{storeId}")
     @Operation(summary = "Get store by ID")
-    public ResponseEntity<Store> getStore(@PathVariable String storeId) {
+    public ResponseEntity<Store> getStore(@PathVariable("storeId") String storeId) {
         Store store = storeService.getStore(storeId);
         return ResponseEntity.ok(store);
     }
     
     @GetMapping("/code/{storeCode}")
     @Operation(summary = "Get store by code")
-    public ResponseEntity<Store> getStoreByCode(@PathVariable String storeCode) {
+    public ResponseEntity<Store> getStoreByCode(@PathVariable("storeCode") String storeCode) {
         Store store = storeService.getStoreByCode(storeCode);
         return ResponseEntity.ok(store);
     }
@@ -54,7 +54,7 @@ public class StoreController {
     @GetMapping("/region/{regionId}")
     @Operation(summary = "Get stores by region")
     @PreAuthorize("hasRole('MANAGER')")
-    public ResponseEntity<List<Store>> getStoresByRegion(@PathVariable String regionId) {
+    public ResponseEntity<List<Store>> getStoresByRegion(@PathVariable("regionId") String regionId) {
         List<Store> stores = storeService.getStoresByRegion(regionId);
         return ResponseEntity.ok(stores);
     }
@@ -80,7 +80,7 @@ public class StoreController {
     @Operation(summary = "Update store")
     @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<Store> updateStore(
-            @PathVariable String storeId,
+            @PathVariable("storeId") String storeId,
             @Valid @RequestBody Store store) {
         store.setId(storeId);
         Store updatedStore = storeService.saveStore(store);
@@ -89,7 +89,7 @@ public class StoreController {
     
     @GetMapping("/{storeId}/operational-status")
     @Operation(summary = "Check if store is operational")
-    public ResponseEntity<Map<String, Boolean>> getOperationalStatus(@PathVariable String storeId) {
+    public ResponseEntity<Map<String, Boolean>> getOperationalStatus(@PathVariable("storeId") String storeId) {
         boolean isOperational = storeService.validateStoreOperational(storeId);
         return ResponseEntity.ok(Map.of("isOperational", isOperational));
     }
@@ -97,7 +97,7 @@ public class StoreController {
     @GetMapping("/{storeId}/metrics")
     @Operation(summary = "Get store metrics")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
-    public ResponseEntity<Map<String, Object>> getStoreMetrics(@PathVariable String storeId) {
+    public ResponseEntity<Map<String, Object>> getStoreMetrics(@PathVariable("storeId") String storeId) {
         Map<String, Object> metrics = storeService.getStoreMetrics(storeId);
         return ResponseEntity.ok(metrics);
     }
@@ -105,9 +105,9 @@ public class StoreController {
     @PostMapping("/{storeId}/access-check")
     @Operation(summary = "Validate order taking access")
     public ResponseEntity<AccessControlService.OrderTakingPermission> validateOrderAccess(
-            @PathVariable String storeId,
+            @PathVariable("storeId") String storeId,
             @RequestHeader("X-User-Id") String userId) {
-        AccessControlService.OrderTakingPermission permission = 
+        AccessControlService.OrderTakingPermission permission =
             accessControlService.validateOrderTakingAccess(userId, storeId);
         return ResponseEntity.ok(permission);
     }

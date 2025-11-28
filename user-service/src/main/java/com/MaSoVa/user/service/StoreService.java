@@ -22,7 +22,7 @@ public class StoreService {
     @Autowired
     private StoreRepository storeRepository;
     
-    @Cacheable(value = "stores", key = "#storeId")
+    // @Cacheable(value = "stores", key = "#p0")
     public Store getStore(String storeId) {
         return storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found: " + storeId));
@@ -48,7 +48,7 @@ public class StoreService {
                 .toList();
     }
     
-    @CacheEvict(value = "stores", key = "#store.id")
+    // @CacheEvict(value = "stores", key = "#p0.id")
     public Store saveStore(Store store) {
         store.setLastModified(LocalDateTime.now());
         return storeRepository.save(store);
