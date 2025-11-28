@@ -31,10 +31,11 @@ const CheckoutPage: React.FC = () => {
     }
   }, [cartItems, navigate]);
 
-  // If user is already logged in as a customer, skip checkout options and go to payment
+  // If user is already logged in as a customer, go to guest-checkout to select/add address
+  // Guest checkout page will handle both selecting existing addresses and adding new ones
   useEffect(() => {
     if (isAuthenticated && currentUser?.type === 'CUSTOMER') {
-      navigate('/payment', { replace: true });
+      navigate('/guest-checkout', { replace: true });
     }
   }, [isAuthenticated, currentUser, navigate]);
 

@@ -13,39 +13,101 @@ interface AuthState {
 }
 
 // Storage helper functions to support both localStorage and sessionStorage
-const getStorage = (key: string): string | null => {
-  return localStorage.getItem(key) || sessionStorage.getItem(key);
+// Uses different keys for customer and staff to prevent session conflicts
+const getStorageKey = (baseKey: string, userType?: string): string => {
+  const type = userType || 'customer'; // Default to customer for backward compatibility
+  return type === 'CUSTOMER' || !userType ? baseKey : `${type}_${baseKey}`;
 };
 
-const setStorage = (key: string, value: string, rememberMe: boolean = true): void => {
+const getStorage = (key: string, userType?: string): string | null => {
+  const storageKey = getStorageKey(key, userType);
+  return localStorage.getItem(storageKey) || sessionStorage.getItem(storageKey);
+};
+
+const setStorage = (key: string, value: string, rememberMe: boolean = true, userType?: string): void => {
+  const storageKey = getStorageKey(key, userType);
+
+  // Clear old keys from opposite storage
   if (rememberMe) {
-    localStorage.setItem(key, value);
-    sessionStorage.removeItem(key); // Remove from sessionStorage if exists
+    localStorage.setItem(storageKey, value);
+    sessionStorage.removeItem(storageKey); // Remove from sessionStorage if exists
   } else {
-    sessionStorage.setItem(key, value);
-    localStorage.removeItem(key); // Remove from localStorage if exists
+    sessionStorage.setItem(storageKey, value);
+    localStorage.removeItem(storageKey); // Remove from localStorage if exists
   }
 };
 
-const removeStorage = (key: string): void => {
-  localStorage.removeItem(key);
-  sessionStorage.removeItem(key);
+const removeStorage = (key: string, userType?: string): void => {
+  const storageKey = getStorageKey(key, userType);
+  localStorage.removeItem(storageKey);
+  sessionStorage.removeItem(storageKey);
+
+  // Also clear legacy keys (for customers who were using old system)
+  if (!userType || userType === 'CUSTOMER') {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  }
 };
 
 // Try to load user from storage (checks both localStorage and sessionStorage)
+// Tries all user types to find an active session
 const loadUserFromStorage = (): User | null => {
   try {
-    const userStr = getStorage('user');
-    return userStr ? JSON.parse(userStr) : null;
+    // Try to load customer (default/legacy)
+    let userStr = getStorage('user');
+    if (userStr) {
+      return JSON.parse(userStr);
+    }
+
+    // Try other user types
+    const userTypes = ['STAFF', 'MANAGER', 'DRIVER', 'ASSISTANT_MANAGER'];
+    for (const type of userTypes) {
+      userStr = getStorage('user', type);
+      if (userStr) {
+        return JSON.parse(userStr);
+      }
+    }
+
+    return null;
   } catch {
     return null;
   }
 };
 
+const loadAccessTokenFromStorage = (): string | null => {
+  // Try customer (default/legacy) first
+  let token = getStorage('accessToken');
+  if (token) return token;
+
+  // Try other user types
+  const userTypes = ['STAFF', 'MANAGER', 'DRIVER', 'ASSISTANT_MANAGER'];
+  for (const type of userTypes) {
+    token = getStorage('accessToken', type);
+    if (token) return token;
+  }
+
+  return null;
+};
+
+const loadRefreshTokenFromStorage = (): string | null => {
+  // Try customer (default/legacy) first
+  let token = getStorage('refreshToken');
+  if (token) return token;
+
+  // Try other user types
+  const userTypes = ['STAFF', 'MANAGER', 'DRIVER', 'ASSISTANT_MANAGER'];
+  for (const type of userTypes) {
+    token = getStorage('refreshToken', type);
+    if (token) return token;
+  }
+
+  return null;
+};
+
 const initialState: AuthState = {
-  isAuthenticated: !!getStorage('accessToken'),
-  accessToken: getStorage('accessToken'),
-  refreshToken: getStorage('refreshToken'),
+  isAuthenticated: !!loadAccessTokenFromStorage(),
+  accessToken: loadAccessTokenFromStorage(),
+  refreshToken: loadRefreshTokenFromStorage(),
   user: loadUserFromStorage(),
   loading: false,
   error: null,
@@ -76,10 +138,10 @@ const authSlice = createSlice({
       state.loading = false;
       state.error = null;
 
-      // Store tokens and user in appropriate storage
-      setStorage('accessToken', accessToken, rememberMe);
-      setStorage('refreshToken', refreshToken, rememberMe);
-      setStorage('user', JSON.stringify(user), rememberMe);
+      // Store tokens and user in appropriate storage with user type to prevent conflicts
+      setStorage('accessToken', accessToken, rememberMe, user.type);
+      setStorage('refreshToken', refreshToken, rememberMe, user.type);
+      setStorage('user', JSON.stringify(user), rememberMe, user.type);
     },
     loginFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
@@ -95,6 +157,8 @@ const authSlice = createSlice({
       removeStorage('user');
     },
     logout: (state) => {
+      const userType = state.user?.type;
+
       state.isAuthenticated = false;
       state.accessToken = null;
       state.refreshToken = null;
@@ -102,16 +166,18 @@ const authSlice = createSlice({
       state.loading = false;
       state.error = null;
 
-      // Clear all auth data from both storages
-      removeStorage('accessToken');
-      removeStorage('refreshToken');
-      removeStorage('user');
+      // Clear all auth data from both storages for the specific user type
+      removeStorage('accessToken', userType);
+      removeStorage('refreshToken', userType);
+      removeStorage('user', userType);
     },
     refreshTokenSuccess: (state, action: PayloadAction<string>) => {
       state.accessToken = action.payload;
+      const userType = state.user?.type;
       // Preserve existing storage type (localStorage or sessionStorage)
-      const existingInLocal = !!localStorage.getItem('accessToken');
-      setStorage('accessToken', action.payload, existingInLocal);
+      const storageKey = getStorageKey('accessToken', userType);
+      const existingInLocal = !!localStorage.getItem(storageKey);
+      setStorage('accessToken', action.payload, existingInLocal, userType);
     },
     updateUserProfile: (state, action: PayloadAction<Partial<User>>) => {
       if (state.user) {
@@ -146,10 +212,11 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = null;
 
-        // Store in appropriate storage based on rememberMe
-        setStorage('accessToken', accessToken, rememberMe);
-        setStorage('refreshToken', refreshToken, rememberMe);
-        setStorage('user', JSON.stringify(user), rememberMe);
+        // Store in appropriate storage based on rememberMe and user type
+        const userType = (user as User).type;
+        setStorage('accessToken', accessToken, rememberMe, userType);
+        setStorage('refreshToken', refreshToken, rememberMe, userType);
+        setStorage('user', JSON.stringify(user), rememberMe, userType);
       }
     );
     builder.addMatcher(
@@ -181,10 +248,11 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = null;
 
-        // Store in appropriate storage
-        setStorage('accessToken', accessToken, rememberMe);
-        setStorage('refreshToken', refreshToken, rememberMe);
-        setStorage('user', JSON.stringify(user), rememberMe);
+        // Store in appropriate storage with user type
+        const userType = (user as User).type;
+        setStorage('accessToken', accessToken, rememberMe, userType);
+        setStorage('refreshToken', refreshToken, rememberMe, userType);
+        setStorage('user', JSON.stringify(user), rememberMe, userType);
       }
     );
 
@@ -192,6 +260,8 @@ const authSlice = createSlice({
     builder.addMatcher(
       authApi.endpoints.logout.matchFulfilled,
       (state) => {
+        const userType = state.user?.type;
+
         state.isAuthenticated = false;
         state.accessToken = null;
         state.refreshToken = null;
@@ -199,10 +269,10 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = null;
 
-        // Clear both storages
-        removeStorage('accessToken');
-        removeStorage('refreshToken');
-        removeStorage('user');
+        // Clear both storages for the specific user type
+        removeStorage('accessToken', userType);
+        removeStorage('refreshToken', userType);
+        removeStorage('user', userType);
       }
     );
   },

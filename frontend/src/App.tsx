@@ -29,6 +29,7 @@ const NotificationSettingsPage = React.lazy(() => import('./pages/customer/Notif
 const PaymentDashboardPage = React.lazy(() => import('./pages/manager/PaymentDashboardPage'));
 const RefundManagementPage = React.lazy(() => import('./pages/manager/RefundManagementPage'));
 const RecipeManagementPage = React.lazy(() => import('./pages/manager/RecipeManagementPage'));
+const StoreManagementPage = React.lazy(() => import('./pages/manager/StoreManagementPage'));
 const InventoryDashboardPage = React.lazy(() => import('./pages/manager/InventoryDashboardPage'));
 const SupplierManagementPage = React.lazy(() => import('./pages/manager/SupplierManagementPage'));
 const PurchaseOrdersPage = React.lazy(() => import('./pages/manager/PurchaseOrdersPage'));
@@ -71,8 +72,9 @@ const App: React.FC = () => {
                   <Route path="/promotions" element={<PromotionsPage />} />
 
                   {/* Authentication & Checkout Routes - Public */}
-                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/login" element={<Navigate to="/customer-login" replace />} />
                   <Route path="/customer-login" element={<CustomerLoginPage />} />
+                  <Route path="/staff-login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
                   <Route path="/checkout" element={<CheckoutPage />} />
                   <Route path="/guest-checkout" element={<GuestCheckoutPage />} />
@@ -116,6 +118,9 @@ const App: React.FC = () => {
                     }
                   />
 
+                  {/* Kitchen Display - Public Access (No Login Required) */}
+                  <Route path="/kitchen" element={<KitchenDisplayPage />} />
+
                   {/* Staff Routes - Login Required */}
                   <Route
                     path="/manager/*"
@@ -146,6 +151,14 @@ const App: React.FC = () => {
                     element={
                       <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
                         <RecipeManagementPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/stores"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <StoreManagementPage />
                       </ProtectedRoute>
                     }
                   />

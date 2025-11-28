@@ -46,10 +46,23 @@ const GuestCheckoutPage: React.FC = () => {
   const total = subtotal + (itemCount > 0 ? deliveryFee : 0) + tax;
 
   // Fetch customer data for logged-in users
-  const { data: customerData, isLoading: isLoadingCustomer } = useGetCustomerByUserIdQuery(
+  const { data: customerData, isLoading: isLoadingCustomer, error: customerError } = useGetCustomerByUserIdQuery(
     currentUser?.id || '',
     { skip: !isLoggedIn }
   );
+
+  // Debug logging for customer data
+  React.useEffect(() => {
+    console.log('GuestCheckoutPage Debug:', {
+      isLoggedIn,
+      currentUser,
+      customerData,
+      addresses: customerData?.addresses,
+      addressCount: customerData?.addresses?.length,
+      isLoadingCustomer,
+      customerError,
+    });
+  }, [isLoggedIn, currentUser, customerData, isLoadingCustomer, customerError]);
 
   const [addAddress] = useAddAddressMutation();
   const [removeAddress] = useRemoveAddressMutation();
@@ -98,18 +111,28 @@ const GuestCheckoutPage: React.FC = () => {
 
   // Populate form fields when a saved address is selected
   useEffect(() => {
+    console.log('Populating form from selected address:', {
+      selectedAddressId,
+      hasAddresses: !!customerData?.addresses,
+      addressCount: customerData?.addresses?.length,
+    });
+
     if (selectedAddressId && selectedAddressId !== 'new' && customerData?.addresses) {
       const selectedAddress = customerData.addresses.find(a => a.id === selectedAddressId);
+      console.log('Found selected address:', selectedAddress);
+
       if (selectedAddress) {
-        setFormData(prev => ({
-          ...prev,
+        const newFormData = {
+          ...formData,
           addressLine1: selectedAddress.addressLine1 || '',
           addressLine2: selectedAddress.addressLine2 || '',
           city: selectedAddress.city || '',
           state: selectedAddress.state || '',
           zipCode: selectedAddress.postalCode || '',
           addressLabel: selectedAddress.label || 'HOME',
-        }));
+        };
+        console.log('Setting form data:', newFormData);
+        setFormData(newFormData);
       }
     } else if (selectedAddressId === 'new') {
       // Reset address fields when "new" is selected
@@ -547,11 +570,9 @@ const GuestCheckoutPage: React.FC = () => {
                 </div>
               )}
 
-              {/* New Address Form - Show if guest or if "new" is selected */}
-              {(!isLoggedIn || selectedAddressId === 'new') && (
-                <>
-                  {/* Contact Information - Only for guests */}
-                  {!isLoggedIn && (
+              {/* Address Form - Always show to allow viewing and editing */}
+              {/* Contact Information - Only for guests */}
+              {!isLoggedIn && (
                     <>
                       <div>
                         <h3 style={{
@@ -761,8 +782,6 @@ const GuestCheckoutPage: React.FC = () => {
                       )}
                     </div>
                   </div>
-                </>
-              )}
 
               {/* Special Instructions - Always show */}
               <div>

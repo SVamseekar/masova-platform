@@ -43,12 +43,22 @@ const KitchenDisplayPage: React.FC = () => {
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [selectedRecipeItem, setSelectedRecipeItem] = useState<MenuItem | null>(null);
   const currentUser = useAppSelector(selectCurrentUser);
-  const storeId = currentUser?.storeId || '';
+
+  // Store selection - allow selecting which store to display
+  // If user has storeId (manager/staff), use that as default, otherwise use store-1
+  const [selectedStoreId, setSelectedStoreId] = useState<string>(currentUser?.storeId || 'store-1');
+
+  // Update selected store when user changes
+  React.useEffect(() => {
+    if (currentUser?.storeId && selectedStoreId !== currentUser.storeId) {
+      setSelectedStoreId(currentUser.storeId);
+    }
+  }, [currentUser?.storeId, selectedStoreId]);
 
   // API Hooks - Poll every 5 seconds for real-time updates
-  const { data: apiOrders = [], isLoading, error } = useGetKitchenQueueQuery(storeId, {
-    skip: !storeId,
+  const { data: apiOrders = [], isLoading, error } = useGetKitchenQueueQuery(selectedStoreId, {
     pollingInterval: 5000, // Poll every 5 seconds
+    refetchOnMountOrArgChange: true,
   });
 
   const { data: menuItems = [] } = useGetAllMenuItemsQuery();
@@ -836,7 +846,7 @@ const KitchenDisplayPage: React.FC = () => {
         }
       `}</style>
 
-      <AppHeader title="Kitchen Display" />
+      <AppHeader title={`Kitchen Display - ${selectedStoreId.toUpperCase()}`} hideStaffLogin={true} />
 
       {/* Main Board */}
       <main className="kitchen-board">

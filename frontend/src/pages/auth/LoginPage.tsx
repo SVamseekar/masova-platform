@@ -90,6 +90,15 @@ const LoginPage: React.FC = () => {
       // Call the actual API
       const result = await login({ email, password, rememberMe }).unwrap();
 
+      // Check if user is a customer - they should use customer login page
+      if (result.user.type === 'CUSTOMER') {
+        setError('Customers should use the customer login page. Redirecting...');
+        setTimeout(() => {
+          navigate('/customer-login');
+        }, 2000);
+        return;
+      }
+
       // Redux will handle token storage via extraReducers in authSlice
       // Navigation will happen via useEffect when isAuthenticated changes
 

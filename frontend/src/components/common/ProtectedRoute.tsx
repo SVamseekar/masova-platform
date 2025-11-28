@@ -18,11 +18,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const location = useLocation();
 
   if (requireAuth && !isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    // Redirect to customer login for customer routes, staff login for others
+    const isCustomerRoute = location.pathname.startsWith('/customer');
+    const redirectTo = isCustomerRoute ? '/customer-login' : '/staff-login';
+    return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
   if (allowedRoles.length > 0 && user && !allowedRoles.includes(user.type)) {
-    return <Navigate to="/login" replace />;
+    // Redirect based on required role
+    const isCustomerRole = allowedRoles.includes('CUSTOMER');
+    const redirectTo = isCustomerRole ? '/customer-login' : '/staff-login';
+    return <Navigate to={redirectTo} replace />;
   }
 
   return <>{children}</>;

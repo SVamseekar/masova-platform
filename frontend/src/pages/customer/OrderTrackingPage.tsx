@@ -19,16 +19,38 @@ const OrderTrackingPage: React.FC = () => {
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month' | 'year'>('all');
 
   // Get customer data first
-  const { data: customer, isLoading: customerLoading } = useGetCustomerByUserIdQuery(currentUser?.id || '', {
+  const { data: customer, isLoading: customerLoading, error: customerError } = useGetCustomerByUserIdQuery(currentUser?.id || '', {
     skip: !currentUser?.id,
   });
 
+  // Debug logging
+  React.useEffect(() => {
+    console.log('OrderTrackingPage Debug:', {
+      currentUser,
+      customer,
+      customerLoading,
+      customerError,
+      customerId: customer?.id,
+    });
+  }, [currentUser, customer, customerLoading, customerError]);
+
   // API hooks - use customer ID from customer data
-  const { data: customerOrders = [], isLoading: ordersLoading, error, refetch } = useGetCustomerOrdersQuery(customer?.id || '', {
+  const { data: customerOrders = [], isLoading: ordersLoading, error: ordersError, refetch } = useGetCustomerOrdersQuery(customer?.id || '', {
     skip: !customer?.id,
     pollingInterval: 10000, // Poll every 10 seconds for real-time updates
     refetchOnMountOrArgChange: true, // Refetch on mount to get latest orders
   });
+
+  // Debug orders query
+  React.useEffect(() => {
+    console.log('Orders Query Debug:', {
+      customerId: customer?.id,
+      ordersLoading,
+      ordersError,
+      customerOrders,
+      orderCount: customerOrders?.length,
+    });
+  }, [customer?.id, ordersLoading, ordersError, customerOrders]);
 
   const isLoading = customerLoading || ordersLoading;
 
