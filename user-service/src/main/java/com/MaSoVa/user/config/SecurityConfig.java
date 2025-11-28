@@ -48,6 +48,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/users/register", "/api/users/login", "/api/users/refresh").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
+                // Public store endpoints - allow customers to view stores
+                .requestMatchers("/api/stores", "/api/stores/{storeId}", "/api/stores/code/{storeCode}",
+                                "/api/stores/nearby", "/api/stores/{storeId}/operational-status").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);

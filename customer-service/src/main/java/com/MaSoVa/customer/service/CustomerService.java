@@ -292,6 +292,33 @@ public class CustomerService {
     }
 
     @CacheEvict(value = "customers", allEntries = true)
+    public Customer updateAddress(String customerId, String addressId, AddAddressRequest request) {
+        logger.info("Updating address {} for customer: {}", addressId, customerId);
+
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new NoSuchElementException("Customer not found with id: " + customerId));
+
+        CustomerAddress address = customer.getAddresses().stream()
+                .filter(addr -> addressId.equals(addr.getId()))
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException("Address not found with id: " + addressId));
+
+        // Update address fields
+        address.setLabel(request.getLabel());
+        address.setAddressLine1(request.getAddressLine1());
+        address.setAddressLine2(request.getAddressLine2());
+        address.setCity(request.getCity());
+        address.setState(request.getState());
+        address.setPostalCode(request.getPostalCode());
+        address.setCountry(request.getCountry());
+        address.setLatitude(request.getLatitude());
+        address.setLongitude(request.getLongitude());
+        address.setLandmark(request.getLandmark());
+
+        return customerRepository.save(customer);
+    }
+
+    @CacheEvict(value = "customers", allEntries = true)
     public Customer removeAddress(String customerId, String addressId) {
         logger.info("Removing address {} for customer: {}", addressId, customerId);
 

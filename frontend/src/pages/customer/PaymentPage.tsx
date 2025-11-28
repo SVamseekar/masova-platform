@@ -501,6 +501,8 @@ const PaymentPage: React.FC = () => {
                               {address.addressLine2 && `, ${address.addressLine2}`}
                               <br />
                               {address.city}, {address.state} - {address.postalCode}
+                              <br />
+                              {address.country}
                               {address.landmark && <><br />Landmark: {address.landmark}</>}
                             </div>
                           </div>

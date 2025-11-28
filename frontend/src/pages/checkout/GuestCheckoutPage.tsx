@@ -319,6 +319,7 @@ const GuestCheckoutPage: React.FC = () => {
                 city: formData.city,
                 state: formData.state,
                 postalCode: formData.zipCode,
+                country: 'India',
                 isDefault: !customerData.addresses || customerData.addresses.length === 0,
               },
             }).unwrap();
@@ -507,7 +508,8 @@ const GuestCheckoutPage: React.FC = () => {
                             color: colors.text.secondary,
                             marginTop: spacing[1],
                           }}>
-                            {addr.city}, {addr.state} - {addr.postalCode}
+                            {addr.city}, {addr.state} - {addr.postalCode}<br />
+                            {addr.country}
                           </div>
                           {addr.landmark && (
                             <div style={{
@@ -773,6 +775,14 @@ const GuestCheckoutPage: React.FC = () => {
                         disabled={loading}
                         size="lg"
                         required
+                      />
+                      <Input
+                        label="Country"
+                        name="country"
+                        value="India"
+                        disabled
+                        size="lg"
+                        helperText="Currently serving India only"
                       />
 
                       {/* Save Address Checkbox - Only for logged-in customer users */}

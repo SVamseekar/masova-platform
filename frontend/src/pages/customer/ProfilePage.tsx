@@ -862,7 +862,8 @@ const ProfilePage: React.FC = () => {
                       </div>
                       <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary, lineHeight: 1.6 }}>
                         {address.addressLine1}{address.addressLine2 && `, ${address.addressLine2}`}<br />
-                        {address.city}, {address.state} - {address.postalCode}
+                        {address.city}, {address.state} - {address.postalCode}<br />
+                        {address.country}
                         {address.landmark && <><br />Landmark: {address.landmark}</>}
                       </div>
                     </div>
@@ -1194,6 +1195,17 @@ const ProfilePage: React.FC = () => {
             </div>
 
             <div style={formGroupStyles}>
+              <label style={labelStyles}>Country *</label>
+              <input
+                type="text"
+                value={addressForm.country}
+                onChange={(e) => setAddressForm({ ...addressForm, country: e.target.value })}
+                style={inputStyles}
+                placeholder="Country"
+              />
+            </div>
+
+            <div style={formGroupStyles}>
               <label style={labelStyles}>Landmark</label>
               <input
                 type="text"
@@ -1212,7 +1224,7 @@ const ProfilePage: React.FC = () => {
               <Button
                 variant="primary"
                 onClick={handleAddOrUpdateAddress}
-                disabled={!addressForm.addressLine1 || !addressForm.city || !addressForm.state || !addressForm.postalCode}
+                disabled={!addressForm.addressLine1 || !addressForm.city || !addressForm.state || !addressForm.postalCode || !addressForm.country}
               >
                 {editingAddressId ? 'Update Address' : 'Add Address'}
               </Button>

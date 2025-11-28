@@ -193,6 +193,20 @@ public class CustomerController {
         }
     }
 
+    @PatchMapping("/{customerId}/addresses/{addressId}")
+    @Operation(summary = "Update address")
+    public ResponseEntity<?> updateAddress(
+            @PathVariable("customerId") String customerId,
+            @PathVariable("addressId") String addressId,
+            @Valid @RequestBody AddAddressRequest request) {
+        try {
+            Customer customer = customerService.updateAddress(customerId, addressId, request);
+            return ResponseEntity.ok(customer);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @DeleteMapping("/{customerId}/addresses/{addressId}")
     @Operation(summary = "Remove address from customer")
     public ResponseEntity<?> removeAddress(

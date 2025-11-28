@@ -122,7 +122,7 @@ export interface AddAddressRequest {
   city: string;
   state: string;
   postalCode: string;
-  country?: string;
+  country: string; // Required - defaults to 'India'
   latitude?: number;
   longitude?: number;
   landmark?: string;
@@ -298,7 +298,7 @@ export const customerApi = createApi({
     updateAddress: builder.mutation<Customer, { customerId: string; addressId: string; data: AddAddressRequest }>({
       query: ({ customerId, addressId, data }) => ({
         url: `/${customerId}/addresses/${addressId}`,
-        method: 'PUT',
+        method: 'PATCH',
         body: data,
       }),
       invalidatesTags: (result) => [
