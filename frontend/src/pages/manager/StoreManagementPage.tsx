@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppSelector } from '../../store/hooks';
+import { selectCurrentUser } from '../../store/slices/authSlice';
 import {
+  useGetStoreQuery,
   useGetActiveStoresQuery,
   useCreateStoreMutation,
   useUpdateStoreMutation,
@@ -10,16 +13,19 @@ import {
 import { Button, Card, Input } from '../../components/ui/neumorphic';
 import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
+import AppHeader from '../../components/common/AppHeader';
 
 const StoreManagementPage: React.FC = () => {
   const navigate = useNavigate();
-  const { data: stores = [], isLoading, refetch } = useGetActiveStoresQuery();
-  const [createStore, { isLoading: isCreating }] = useCreateStoreMutation();
+  const currentUser = useAppSelector(selectCurrentUser);
+  const storeId = currentUser?.storeId || '';
+
+  // Get manager's own store
+  const { data: myStore, isLoading: loadingMyStore, refetch } = useGetStoreQuery(storeId, { skip: !storeId });
   const [updateStore, { isLoading: isUpdating }] = useUpdateStoreMutation();
 
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
-  const [formData, setFormData] = useState<CreateStoreRequest>({
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState<Partial<CreateStoreRequest>>({
     name: '',
     storeCode: '',
     address: {
@@ -61,23 +67,32 @@ const StoreManagementPage: React.FC = () => {
     }
   };
 
+  // Load store data when available
+  useEffect(() => {
+    if (myStore && !isEditing) {
+      setFormData({
+        name: myStore.name,
+        storeCode: myStore.storeCode,
+        address: myStore.address,
+        phoneNumber: myStore.phoneNumber || '',
+        regionId: myStore.regionId || '',
+        operatingConfig: myStore.operatingConfig,
+      });
+    }
+  }, [myStore, isEditing]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!myStore) return;
+
     try {
-      if (selectedStore) {
-        await updateStore({ storeId: selectedStore.id, data: formData }).unwrap();
-        alert('Store updated successfully!');
-      } else {
-        await createStore(formData).unwrap();
-        alert('Store created successfully!');
-      }
-      setShowCreateModal(false);
-      setSelectedStore(null);
+      await updateStore({ storeId: myStore.id, data: formData as CreateStoreRequest }).unwrap();
+      alert('Store updated successfully!');
+      setIsEditing(false);
       refetch();
-      resetForm();
     } catch (error: any) {
       console.error('Error saving store:', error);
-      alert(error?.data?.message || 'Failed to save store');
+      alert(error?.data?.message || 'Failed to update store');
     }
   };
 

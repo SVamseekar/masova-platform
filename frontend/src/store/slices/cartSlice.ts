@@ -17,6 +17,8 @@ interface CartState {
   itemCount: number;
   deliveryFee: number;
   isLoading: boolean;
+  selectedStoreId: string | null;
+  selectedStoreName: string | null;
 }
 
 // Load cart from localStorage
@@ -31,6 +33,8 @@ const loadCartFromStorage = (): CartState => {
         itemCount: savedCart.itemCount || 0,
         deliveryFee: 29,
         isLoading: false,
+        selectedStoreId: savedCart.selectedStoreId || null,
+        selectedStoreName: savedCart.selectedStoreName || null,
       };
     }
   } catch (e) {
@@ -42,6 +46,8 @@ const loadCartFromStorage = (): CartState => {
     itemCount: 0,
     deliveryFee: 29,
     isLoading: false,
+    selectedStoreId: null,
+    selectedStoreName: null,
   };
 };
 
@@ -52,6 +58,8 @@ const saveCartToStorage = (state: CartState) => {
       items: state.items,
       total: state.total,
       itemCount: state.itemCount,
+      selectedStoreId: state.selectedStoreId,
+      selectedStoreName: state.selectedStoreName,
     }));
   } catch (e) {
     console.error('Failed to save cart to localStorage:', e);
@@ -132,6 +140,18 @@ const cartSlice = createSlice({
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
     },
+
+    setSelectedStore: (state, action: PayloadAction<{ storeId: string; storeName: string }>) => {
+      state.selectedStoreId = action.payload.storeId;
+      state.selectedStoreName = action.payload.storeName;
+      saveCartToStorage(state);
+    },
+
+    clearSelectedStore: (state) => {
+      state.selectedStoreId = null;
+      state.selectedStoreName = null;
+      saveCartToStorage(state);
+    },
   },
 });
 
@@ -143,14 +163,18 @@ export const {
   clearCart,
   calculateTotals,
   setLoading,
+  setSelectedStore,
+  clearSelectedStore,
 } = cartSlice.actions;
 
 // Selectors
 export const selectCartItems = (state: { cart: CartState }) => state.cart.items;
 export const selectCartTotal = (state: { cart: CartState }) => state.cart.total;
 export const selectCartItemCount = (state: { cart: CartState }) => state.cart.itemCount;
-export const selectCartSubtotal = (state: { cart: CartState }) => 
+export const selectCartSubtotal = (state: { cart: CartState }) =>
   state.cart.items.reduce((total, item) => total + (item.price * item.quantity), 0);
 export const selectDeliveryFee = (state: { cart: CartState }) => state.cart.deliveryFee;
+export const selectSelectedStoreId = (state: { cart: CartState }) => state.cart.selectedStoreId;
+export const selectSelectedStoreName = (state: { cart: CartState }) => state.cart.selectedStoreName;
 
 export default cartSlice.reducer;

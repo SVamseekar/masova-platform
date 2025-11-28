@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
+import StoreInfo from '../../components/StoreInfo';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import {
@@ -142,7 +143,7 @@ const OrderTrackingPage: React.FC = () => {
           paddingBottom: spacing[4],
           borderBottom: `2px solid ${colors.surface.tertiary}`,
         }}>
-          <div>
+          <div style={{ flex: 1 }}>
             <div style={{
               fontSize: typography.fontSize['2xl'],
               fontWeight: typography.fontWeight.bold,
@@ -154,9 +155,16 @@ const OrderTrackingPage: React.FC = () => {
             <div style={{
               fontSize: typography.fontSize.sm,
               color: colors.text.secondary,
+              marginBottom: spacing[2],
             }}>
               Placed on {formatDate(order.createdAt)} at {formatTime(order.createdAt)}
             </div>
+            {/* Store Info */}
+            {order.storeId && (
+              <div style={{ marginTop: spacing[3] }}>
+                <StoreInfo storeId={order.storeId} variant="compact" />
+              </div>
+            )}
           </div>
           <div style={{
             textAlign: 'right',
@@ -561,9 +569,9 @@ const OrderTrackingPage: React.FC = () => {
   }
 
   // Don't show error if customer is not found yet - just show empty state instead
-  if (error && customer) {
-    console.error('Error loading orders:', error);
-    const errorData = error as any;
+  if (ordersError && customer) {
+    console.error('Error loading orders:', ordersError);
+    const errorData = ordersError as any;
     const errorMessage = errorData?.data?.message || errorData?.error || 'Unknown error occurred';
 
     return (

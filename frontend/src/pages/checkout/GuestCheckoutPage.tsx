@@ -6,6 +6,8 @@ import {
   selectCartSubtotal,
   selectCartItemCount,
   selectDeliveryFee,
+  selectSelectedStoreId,
+  selectSelectedStoreName,
 } from '../../store/slices/cartSlice';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import {
@@ -40,6 +42,8 @@ const GuestCheckoutPage: React.FC = () => {
   const itemCount = useAppSelector(selectCartItemCount);
   const deliveryFee = useAppSelector(selectDeliveryFee);
   const currentUser = useAppSelector(selectCurrentUser);
+  const selectedStoreId = useAppSelector(selectSelectedStoreId);
+  const selectedStoreName = useAppSelector(selectSelectedStoreName);
 
   const isLoggedIn = !!currentUser;
   const tax = subtotal * 0.05;
@@ -97,14 +101,17 @@ const GuestCheckoutPage: React.FC = () => {
   const [addressToDelete, setAddressToDelete] = useState<string | null>(null);
   const [deletingAddress, setDeletingAddress] = useState(false);
 
-  // Set default address if customer has one - filter to only include addresses with IDs and addressLine1
+  // Set default address if customer has one
   useEffect(() => {
     if (customerData?.addresses && customerData.addresses.length > 0) {
-      // Filter addresses that have both ID and addressLine1 (complete addresses)
-      const validAddresses = customerData.addresses.filter(a => a.id && a.addressLine1);
+      const validAddresses = customerData.addresses.filter(a => a && a.id && a.addressLine1);
+      console.log('Valid addresses found:', validAddresses.length, validAddresses);
       if (validAddresses.length > 0) {
         const defaultAddr = validAddresses.find(a => a.isDefault) || validAddresses[0];
-        setSelectedAddressId(defaultAddr.id);
+        if (defaultAddr && defaultAddr.id) {
+          console.log('Setting default address:', defaultAddr);
+          setSelectedAddressId(defaultAddr.id);
+        }
       }
     }
   }, [customerData]);
@@ -318,8 +325,10 @@ const GuestCheckoutPage: React.FC = () => {
     }
   };
 
-  // Filter to only show complete addresses (with ID and addressLine1)
-  const savedAddresses = (customerData?.addresses || []).filter(a => a.id && a.addressLine1);
+  // Filter to only show valid addresses
+  const savedAddresses = (customerData?.addresses || []).filter(a =>
+    a && a.id && a.addressLine1
+  );
 
   const containerStyles: React.CSSProperties = {
     minHeight: '100vh',
@@ -840,6 +849,40 @@ const GuestCheckoutPage: React.FC = () => {
               }}>
                 Order Summary
               </h3>
+
+              {/* Store Info */}
+              {selectedStoreName && (
+                <div style={{
+                  ...createNeumorphicSurface('inset', 'sm', 'base'),
+                  padding: spacing[3],
+                  marginBottom: spacing[4],
+                  backgroundColor: colors.brand.primaryLight + '10',
+                  borderLeft: `3px solid ${colors.brand.primary}`,
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: spacing[2],
+                  }}>
+                    <span style={{ fontSize: '18px' }}>🏪</span>
+                    <div>
+                      <div style={{
+                        fontSize: typography.fontSize.sm,
+                        fontWeight: typography.fontWeight.bold,
+                        color: colors.text.primary,
+                      }}>
+                        {selectedStoreName}
+                      </div>
+                      <div style={{
+                        fontSize: typography.fontSize.xs,
+                        color: colors.text.secondary,
+                      }}>
+                        Store ID: {selectedStoreId}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div style={{ height: '1px', backgroundColor: colors.surface.tertiary, margin: `${spacing[4]} 0` }} />
 

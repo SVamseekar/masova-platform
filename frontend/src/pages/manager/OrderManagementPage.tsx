@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import AppHeader from '../../components/common/AppHeader';
+import StoreSelector from '../../components/StoreSelector';
 import OrderForm from '../../components/forms/OrderForm';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectSelectedStoreId, selectSelectedStoreName } from '../../store/slices/cartSlice';
 import {
   useGetStoreOrdersQuery,
   useUpdateOrderStatusMutation,
@@ -17,7 +19,11 @@ import type { OrderStatus, OrderPriority } from '../../types/order';
 
 const OrderManagementPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
-  const storeId = currentUser?.storeId || '';
+  const selectedStoreId = useAppSelector(selectSelectedStoreId);
+  const selectedStoreName = useAppSelector(selectSelectedStoreName);
+
+  // Use selected store or fallback to user's store
+  const storeId = selectedStoreId || currentUser?.storeId || '';
 
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -150,6 +156,24 @@ const OrderManagementPage: React.FC = () => {
 
   return (
     <div className="order-management" style={{ background: '#f0f0f0', minHeight: '100vh' }}>
+      <AppHeader title="Order Management" />
+
+      {/* Store Selector */}
+      <div style={{
+        background: 'white',
+        padding: '16px 24px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+        borderBottom: '1px solid #e5e7eb',
+        marginBottom: '24px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', maxWidth: '1400px', margin: '0 auto' }}>
+          <StoreSelector variant="manager" />
+          <div style={{ fontSize: '14px', color: '#6b7280' }}>
+            {storeId ? `Managing orders for: ${selectedStoreName || storeId}` : 'Select a store to manage orders'}
+          </div>
+        </div>
+      </div>
+
       <style>{`
         .order-management {
           font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;

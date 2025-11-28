@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectSelectedStoreId, selectSelectedStoreName } from '../../store/slices/cartSlice';
+import StoreSelector from '../../components/StoreSelector';
 import {
   useGetAllInventoryItemsQuery,
   useGetLowStockAlertsQuery,
@@ -20,7 +22,11 @@ import AddInventoryItemDialog from '../../components/inventory/AddInventoryItemD
 
 const InventoryDashboardPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
-  const storeId = currentUser?.storeId || 'store-1';
+  const selectedStoreId = useAppSelector(selectSelectedStoreId);
+  const selectedStoreName = useAppSelector(selectSelectedStoreName);
+
+  // Use selected store or fallback to user's store
+  const storeId = selectedStoreId || currentUser?.storeId || 'store-1';
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
@@ -252,6 +258,22 @@ const InventoryDashboardPage: React.FC = () => {
     <div style={containerStyles}>
       <AnimatedBackground />
       <AppHeader title="Inventory Management" showBackButton />
+
+      {/* Store Selector */}
+      <div style={{
+        background: 'white',
+        padding: '16px 24px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+        borderRadius: '12px',
+        marginBottom: spacing[6],
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <StoreSelector variant="manager" />
+          <div style={{ fontSize: '14px', color: '#6b7280' }}>
+            {storeId ? `Managing inventory for: ${selectedStoreName || storeId}` : 'Select a store'}
+          </div>
+        </div>
+      </div>
 
       <h1 style={titleStyles}>Inventory Dashboard</h1>
 

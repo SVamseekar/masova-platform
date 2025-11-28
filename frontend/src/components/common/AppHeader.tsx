@@ -48,14 +48,17 @@ const AppHeader: React.FC<AppHeaderProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Check if user is customer or staff/manager
+  const isCustomer = currentUser?.type === 'CUSTOMER';
+  const isStaff = currentUser && !isCustomer;
+
   const handleLogout = () => {
-    const isCustomer = currentUser?.type?.toLowerCase() === 'customer';
     // Clear active order from sessionStorage on logout
     sessionStorage.removeItem('activeOrderId');
     setIsDropdownOpen(false);
     dispatch(logout());
-    // Customers go to home, staff go to login
-    navigate(isCustomer ? '/' : '/login');
+    // Customers go to home, staff go to staff login
+    navigate(isCustomer ? '/' : '/staff-login');
   };
 
   const handleMenuItemClick = (path: string) => {
@@ -308,8 +311,32 @@ const AppHeader: React.FC<AppHeaderProps> = ({
               )}
             </button>
 
-            {/* User dropdown menu for logged-in customers on public pages */}
-            {currentUser ? (
+            {/* Show different UI for staff vs customers on public pages */}
+            {isStaff ? (
+              /* Staff users see Go to Dashboard button instead of customer dropdown */
+              <button
+                style={{
+                  ...buttonStyles,
+                  background: `linear-gradient(135deg, ${colors.semantic.warning}, ${colors.semantic.warningLight})`,
+                  color: colors.text.inverse,
+                }}
+                onClick={() => {
+                  const userType = currentUser?.type;
+                  if (userType === 'MANAGER' || userType === 'ASSISTANT_MANAGER') {
+                    navigate('/manager');
+                  } else if (userType === 'STAFF') {
+                    navigate('/staff');
+                  } else if (userType === 'DRIVER') {
+                    navigate('/driver');
+                  }
+                }}
+              >
+                <span>👨‍💼</span>
+                <span>{currentUser?.name} ({currentUser?.type})</span>
+                <span style={{ marginLeft: spacing[2] }}>→ Go to Dashboard</span>
+              </button>
+            ) : currentUser ? (
+              /* Regular customer dropdown */
               <div ref={dropdownRef} style={dropdownContainerStyles}>
                 <button
                   style={userButtonStyles}

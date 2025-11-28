@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectSelectedStoreId } from '../../store/slices/cartSlice';
+import StoreSelector from '../../components/StoreSelector';
 import {
   useGetAllDriversQuery,
   useGetOnlineDriversQuery,
@@ -19,6 +21,9 @@ import { createNeumorphicSurface, createCard, createBadge } from '../../styles/n
 
 const DriverManagementPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
+  const selectedStoreId = useAppSelector(selectSelectedStoreId);
+  const storeId = selectedStoreId || currentUser?.storeId || '';
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -260,6 +265,16 @@ const DriverManagementPage: React.FC = () => {
         <AnimatedBackground variant="default" />
         <div style={containerStyles}>
           <AppHeader title="Driver Management" showBackButton={false} />
+
+          {/* Store Selector */}
+          <div style={{
+            background: 'white',
+            padding: '16px 24px',
+            borderRadius: '12px',
+            marginBottom: spacing[6],
+          }}>
+            <StoreSelector variant="manager" />
+          </div>
           <div style={{ textAlign: 'center', padding: spacing[8] }}>Loading...</div>
         </div>
       </>

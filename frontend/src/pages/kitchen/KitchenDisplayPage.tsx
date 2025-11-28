@@ -376,14 +376,28 @@ const KitchenDisplayPage: React.FC = () => {
           display: flex;
           flex-direction: column;
           gap: 16px;
-          max-height: calc(100vh - 240px);
+          max-height: calc(100vh - 280px);
           overflow-y: auto;
-          scrollbar-width: none;
-          -ms-overflow-style: none;
+          padding-right: 4px;
+          scrollbar-width: thin;
+          scrollbar-color: rgba(163, 163, 163, 0.3) transparent;
         }
 
         .orders-list::-webkit-scrollbar {
-          display: none;
+          width: 6px;
+        }
+
+        .orders-list::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        .orders-list::-webkit-scrollbar-thumb {
+          background: rgba(163, 163, 163, 0.3);
+          border-radius: 3px;
+        }
+
+        .orders-list::-webkit-scrollbar-thumb:hover {
+          background: rgba(163, 163, 163, 0.5);
         }
 
         /* Order Cards */

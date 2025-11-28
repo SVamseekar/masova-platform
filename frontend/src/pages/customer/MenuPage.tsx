@@ -15,6 +15,7 @@ import { addToCart, updateItemQuantity, selectCartItems } from '../../store/slic
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
 import RecipeViewer from '../../components/RecipeViewer';
+import StoreSelector from '../../components/StoreSelector';
 
 interface MenuPageProps {
   hideStaffLogin?: boolean;  // Pass through to AppHeader for public pages
@@ -508,8 +509,22 @@ const MenuPage: React.FC<MenuPageProps> = ({
           onCartClick={onCartClick}
         />
 
-      {/* Search Bar */}
-      <div style={searchContainerStyles}>
+      {/* Store Selector and Search Bar */}
+      <div style={{ display: 'flex', gap: spacing[4], marginBottom: spacing[6], alignItems: 'center', justifyContent: 'space-between' }}>
+        <StoreSelector />
+        <div style={{ flex: 1 }}>
+          <input
+            type="text"
+            placeholder="Search for dishes..."
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+            style={searchInputStyles}
+          />
+        </div>
+      </div>
+
+      {/* Original Search Container Removed - Replaced above */}
+      <div style={{ ...searchContainerStyles, display: 'none' }}>
         <input
           type="text"
           placeholder="Search for dishes..."

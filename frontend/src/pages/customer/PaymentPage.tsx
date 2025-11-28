@@ -4,7 +4,7 @@ import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { useCreateOrderMutation } from '../../store/api/orderApi';
 import { useInitiatePaymentMutation } from '../../store/api/paymentApi';
 import { useGetCustomerByUserIdQuery, useCreateCustomerMutation } from '../../store/api/customerApi';
-import { clearCart, selectCartItems, selectCartSubtotal, selectDeliveryFee } from '../../store/slices/cartSlice';
+import { clearCart, selectCartItems, selectCartSubtotal, selectDeliveryFee, selectSelectedStoreId, selectSelectedStoreName } from '../../store/slices/cartSlice';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { Button, Card, Input } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
@@ -34,6 +34,8 @@ const PaymentPage: React.FC = () => {
   const subtotal = useAppSelector(selectCartSubtotal);
   const baseDeliveryFee = useAppSelector(selectDeliveryFee);
   const currentUser = useAppSelector(selectCurrentUser);
+  const selectedStoreId = useAppSelector(selectSelectedStoreId);
+  const selectedStoreName = useAppSelector(selectSelectedStoreName);
 
   // Get guest info from navigation state (passed from GuestCheckoutPage)
   const guestInfo = location.state?.guestInfo as GuestInfo | undefined;
@@ -146,7 +148,7 @@ const PaymentPage: React.FC = () => {
 
       // Prepare order data - matching backend CreateOrderRequest structure
       const orderData = {
-        storeId: 'store-1', // Default store ID
+        storeId: selectedStoreId || 'store-1', // Use selected store or default
         customerName: currentUser?.name || guestInfo?.name || 'Guest',
         customerPhone: guestInfo?.phone || currentUser?.phone || '',
         customerId: customerId, // Use customer ID from profile or newly created
