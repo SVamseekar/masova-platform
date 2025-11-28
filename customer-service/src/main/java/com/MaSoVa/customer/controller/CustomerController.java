@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -54,8 +55,10 @@ public class CustomerController {
     // READ
     // ===========================
 
+    // Only customers and managers can view customer profiles
     @GetMapping("/{id}")
     @Operation(summary = "Get customer by ID")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER')")
     public ResponseEntity<?> getCustomerById(@PathVariable("id") String id) {
         try {
             Customer customer = customerService.getCustomerById(id)
@@ -66,8 +69,10 @@ public class CustomerController {
         }
     }
 
+    // Only customers can view their own profile by userId
     @GetMapping("/user/{userId}")
     @Operation(summary = "Get customer by user ID")
+    @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<?> getCustomerByUserId(@PathVariable("userId") String userId) {
         try {
             Customer customer = customerService.getCustomerByUserId(userId)

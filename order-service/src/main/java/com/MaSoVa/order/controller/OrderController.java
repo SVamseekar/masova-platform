@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,7 +29,9 @@ public class OrderController {
         this.orderService = orderService;
     }
 
+    // Only customers can create orders - staff/managers cannot place orders as customers
     @PostMapping
+    @PreAuthorize("hasRole('CUSTOMER') or isAnonymous()")
     public ResponseEntity<Order> createOrder(@Valid @RequestBody CreateOrderRequest request) {
         log.info("Creating order for customer: {}", request.getCustomerName());
         Order order = orderService.createOrder(request);
@@ -59,13 +62,17 @@ public class OrderController {
         return ResponseEntity.ok(orders);
     }
 
+    // Only customers can view their own orders
     @GetMapping("/customer/{customerId}")
+    @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<List<Order>> getCustomerOrders(@PathVariable String customerId) {
         List<Order> orders = orderService.getCustomerOrders(customerId);
         return ResponseEntity.ok(orders);
     }
 
+    // Only staff/managers can update order status
     @PatchMapping("/{orderId}/status")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     public ResponseEntity<Order> updateOrderStatus(
             @PathVariable String orderId,
             @Valid @RequestBody UpdateOrderStatusRequest request) {
@@ -73,13 +80,17 @@ public class OrderController {
         return ResponseEntity.ok(order);
     }
 
+    // Only staff/managers can move orders to next stage
     @PatchMapping("/{orderId}/next-stage")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     public ResponseEntity<Order> moveToNextStage(@PathVariable String orderId) {
         Order order = orderService.moveOrderToNextStage(orderId);
         return ResponseEntity.ok(order);
     }
 
+    // Customers can cancel their own orders, staff can cancel any order
     @DeleteMapping("/{orderId}")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     public ResponseEntity<Order> cancelOrder(
             @PathVariable String orderId,
             @RequestParam(required = false) String reason) {

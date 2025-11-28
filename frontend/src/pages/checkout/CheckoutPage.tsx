@@ -24,12 +24,25 @@ const CheckoutPage: React.FC = () => {
   const tax = subtotal * 0.05;
   const total = subtotal + (itemCount > 0 ? deliveryFee : 0) + tax;
 
-  // If cart is empty, redirect to menu
+  // Redirect staff/managers to their respective dashboards - they shouldn't access customer checkout
   useEffect(() => {
-    if (cartItems.length === 0) {
-      navigate('/menu');
+    if (isAuthenticated && currentUser) {
+      const userType = currentUser.type;
+      if (userType === 'MANAGER' || userType === 'ASSISTANT_MANAGER') {
+        navigate('/manager', { replace: true });
+        return;
+      } else if (userType === 'STAFF') {
+        navigate('/pos', { replace: true });
+        return;
+      } else if (userType === 'DRIVER') {
+        navigate('/driver', { replace: true });
+        return;
+      }
     }
-  }, [cartItems, navigate]);
+  }, [isAuthenticated, currentUser, navigate]);
+
+  // Note: We allow empty cart on checkout page so users can see login options
+  // Users clicking "Login" button should be able to access this page even without items
 
   // If user is already logged in as a customer, go to guest-checkout to select/add address
   // Guest checkout page will handle both selecting existing addresses and adding new ones

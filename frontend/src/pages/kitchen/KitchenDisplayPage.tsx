@@ -44,16 +44,16 @@ const KitchenDisplayPage: React.FC = () => {
   const [selectedRecipeItem, setSelectedRecipeItem] = useState<MenuItem | null>(null);
   const currentUser = useAppSelector(selectCurrentUser);
 
-  // Store selection - allow selecting which store to display
-  // If user has storeId (manager/staff), use that as default, otherwise use store-1
-  const [selectedStoreId, setSelectedStoreId] = useState<string>(currentUser?.storeId || 'store-1');
+  // Store selection - ALWAYS use store-1 for now (single store setup)
+  // TODO: Add multi-store support later with store selector
+  // Note: Orders are being created with storeId='store-1', so KDS must use the same
+  const DEFAULT_STORE_ID = 'store-1';
+  const [selectedStoreId] = useState<string>(DEFAULT_STORE_ID);
 
-  // Update selected store when user changes
+  // Log for debugging
   React.useEffect(() => {
-    if (currentUser?.storeId && selectedStoreId !== currentUser.storeId) {
-      setSelectedStoreId(currentUser.storeId);
-    }
-  }, [currentUser?.storeId, selectedStoreId]);
+    console.log('KDS Store ID:', selectedStoreId, 'User Store:', currentUser?.storeId);
+  }, [selectedStoreId, currentUser?.storeId]);
 
   // API Hooks - Poll every 5 seconds for real-time updates
   const { data: apiOrders = [], isLoading, error } = useGetKitchenQueueQuery(selectedStoreId, {

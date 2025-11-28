@@ -46,19 +46,35 @@ const GuestCheckoutPage: React.FC = () => {
   const selectedStoreName = useAppSelector(selectSelectedStoreName);
 
   const isLoggedIn = !!currentUser;
+  const isCustomer = currentUser?.type === 'CUSTOMER';
   const tax = subtotal * 0.05;
   const total = subtotal + (itemCount > 0 ? deliveryFee : 0) + tax;
 
-  // Fetch customer data for logged-in users
+  // Redirect staff/managers to their respective dashboards - they shouldn't access customer checkout
+  useEffect(() => {
+    if (isLoggedIn && !isCustomer) {
+      const userType = currentUser?.type;
+      if (userType === 'MANAGER' || userType === 'ASSISTANT_MANAGER') {
+        navigate('/manager', { replace: true });
+      } else if (userType === 'STAFF') {
+        navigate('/pos', { replace: true });
+      } else if (userType === 'DRIVER') {
+        navigate('/driver', { replace: true });
+      }
+    }
+  }, [isLoggedIn, isCustomer, currentUser, navigate]);
+
+  // Fetch customer data for logged-in CUSTOMER users only
   const { data: customerData, isLoading: isLoadingCustomer, error: customerError } = useGetCustomerByUserIdQuery(
     currentUser?.id || '',
-    { skip: !isLoggedIn }
+    { skip: !isLoggedIn || !isCustomer }
   );
 
   // Debug logging for customer data
   React.useEffect(() => {
     console.log('GuestCheckoutPage Debug:', {
       isLoggedIn,
+      isCustomer,
       currentUser,
       customerData,
       addresses: customerData?.addresses,
@@ -66,7 +82,7 @@ const GuestCheckoutPage: React.FC = () => {
       isLoadingCustomer,
       customerError,
     });
-  }, [isLoggedIn, currentUser, customerData, isLoadingCustomer, customerError]);
+  }, [isLoggedIn, isCustomer, currentUser, customerData, isLoadingCustomer, customerError]);
 
   const [addAddress] = useAddAddressMutation();
   const [removeAddress] = useRemoveAddressMutation();
@@ -212,8 +228,8 @@ const GuestCheckoutPage: React.FC = () => {
   const validateForm = (): boolean => {
     const errors: Partial<GuestFormData> = {};
 
-    // Always validate phone for logged-in users
-    if (isLoggedIn) {
+    // Always validate phone for logged-in customer users
+    if (isCustomer) {
       if (!formData.phone.trim()) {
         errors.phone = 'Phone number is required';
       } else if (!/^[6-9][0-9]{9}$/.test(formData.phone.replace(/\s/g, ''))) {
@@ -222,7 +238,7 @@ const GuestCheckoutPage: React.FC = () => {
     }
 
     // If using saved address, skip other validation
-    if (isLoggedIn && selectedAddressId !== 'new') {
+    if (isCustomer && selectedAddressId !== 'new') {
       setValidationErrors(errors);
       return Object.keys(errors).length === 0;
     }
@@ -263,8 +279,8 @@ const GuestCheckoutPage: React.FC = () => {
     try {
       let guestInfo;
 
-      // If using a saved address
-      if (isLoggedIn && selectedAddressId !== 'new' && customerData?.addresses) {
+      // If using a saved address (for logged-in customers only)
+      if (isCustomer && selectedAddressId !== 'new' && customerData?.addresses) {
         const savedAddress = customerData.addresses.find(a => a.id === selectedAddressId);
         if (savedAddress) {
           guestInfo = {
@@ -291,8 +307,8 @@ const GuestCheckoutPage: React.FC = () => {
           deliveryInstructions: formData.specialInstructions,
         };
 
-        // Save new address for logged-in users if checkbox is checked
-        if (isLoggedIn && saveNewAddress && customerData?.id) {
+        // Save new address for logged-in customer users if checkbox is checked
+        if (isCustomer && saveNewAddress && customerData?.id) {
           try {
             await addAddress({
               customerId: customerData.id,
@@ -364,7 +380,7 @@ const GuestCheckoutPage: React.FC = () => {
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
         <div style={{ marginBottom: spacing[6] }}>
           <button
-            onClick={() => navigate(isLoggedIn ? '/menu' : '/checkout')}
+            onClick={() => navigate(isCustomer ? '/menu' : '/checkout')}
             style={{
               ...createNeumorphicSurface('raised', 'sm', 'base'),
               padding: spacing[2],
@@ -374,7 +390,7 @@ const GuestCheckoutPage: React.FC = () => {
               fontSize: typography.fontSize.lg,
             }}
           >
-            ← {isLoggedIn ? 'Back to Menu' : 'Back'}
+            ← {isCustomer ? 'Back to Menu' : 'Back'}
           </button>
           <h1 style={{
             fontSize: typography.fontSize['4xl'],
@@ -382,14 +398,14 @@ const GuestCheckoutPage: React.FC = () => {
             color: colors.text.primary,
             margin: `${spacing[4]} 0 ${spacing[2]} 0`,
           }}>
-            {isLoggedIn ? 'Delivery Details' : 'Guest Checkout'}
+            {isCustomer ? 'Delivery Details' : 'Guest Checkout'}
           </h1>
           <p style={{
             fontSize: typography.fontSize.lg,
             color: colors.text.secondary,
             margin: 0,
           }}>
-            {isLoggedIn
+            {isCustomer
               ? (savedAddresses.length > 0
                   ? 'Select a saved address or add a new one'
                   : 'Enter your delivery address to complete your order')
@@ -415,15 +431,15 @@ const GuestCheckoutPage: React.FC = () => {
               </div>
             )}
 
-            {isLoadingCustomer && isLoggedIn && (
+            {isLoadingCustomer && isCustomer && (
               <div style={{ textAlign: 'center', padding: spacing[8] }}>
                 Loading your saved addresses...
               </div>
             )}
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: spacing[6] }}>
-              {/* Contact Phone - Always show for logged-in users */}
-              {isLoggedIn && (
+              {/* Contact Phone - Always show for logged-in customers */}
+              {isCustomer && (
                 <div>
                   <h3 style={{
                     fontSize: typography.fontSize.xl,
@@ -452,8 +468,8 @@ const GuestCheckoutPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Saved Addresses Section - Only for logged-in users */}
-              {isLoggedIn && savedAddresses.length > 0 && (
+              {/* Saved Addresses Section - Only for logged-in customer users */}
+              {isCustomer && savedAddresses.length > 0 && (
                 <div>
                   <h3 style={{
                     fontSize: typography.fontSize.xl,
@@ -580,8 +596,8 @@ const GuestCheckoutPage: React.FC = () => {
               )}
 
               {/* Address Form - Always show to allow viewing and editing */}
-              {/* Contact Information - Only for guests */}
-              {!isLoggedIn && (
+              {/* Contact Information - Only for guests (non-logged-in users) */}
+              {!isCustomer && (
                     <>
                       <div>
                         <h3 style={{
@@ -663,11 +679,11 @@ const GuestCheckoutPage: React.FC = () => {
                       alignItems: 'center',
                       gap: spacing[2],
                     }}>
-                      <span>📍</span> {isLoggedIn ? 'New Address' : 'Delivery Address'}
+                      <span>📍</span> {isCustomer ? 'New Address' : 'Delivery Address'}
                     </h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
-                      {/* Address Label - Only for logged-in users */}
-                      {isLoggedIn && (
+                      {/* Address Label - Only for logged-in customer users */}
+                      {isCustomer && (
                         <div>
                           <label style={{
                             display: 'block',
@@ -759,8 +775,8 @@ const GuestCheckoutPage: React.FC = () => {
                         required
                       />
 
-                      {/* Save Address Checkbox - Only for logged-in users */}
-                      {isLoggedIn && (
+                      {/* Save Address Checkbox - Only for logged-in customer users */}
+                      {isCustomer && (
                         <label style={{
                           display: 'flex',
                           alignItems: 'center',

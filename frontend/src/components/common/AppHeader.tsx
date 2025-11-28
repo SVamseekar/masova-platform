@@ -272,44 +272,47 @@ const AppHeader: React.FC<AppHeaderProps> = ({
               🎁 Offers
             </button>
 
-            <button
-              style={{
-                ...buttonStyles,
-                background: cartItemCount > 0
-                  ? `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.primaryLight} 100%)`
-                  : buttonStyles.background,
-                color: cartItemCount > 0 ? colors.text.inverse : colors.text.primary,
-                position: 'relative',
-              }}
-              onClick={onCartClick}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = shadows.raised.lg;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = cartItemCount > 0 ? shadows.raised.base : shadows.raised.sm;
-              }}
-            >
-              🛒 Cart
-              {cartItemCount > 0 && (
-                <span style={{
-                  position: 'absolute',
-                  top: '-8px',
-                  right: '-8px',
-                  background: colors.semantic.error,
-                  color: colors.text.inverse,
-                  borderRadius: borderRadius.full,
-                  padding: `${spacing[1]} ${spacing[2]}`,
-                  fontSize: typography.fontSize.xs,
-                  fontWeight: typography.fontWeight.bold,
-                  minWidth: '20px',
-                  textAlign: 'center',
-                }}>
-                  {cartItemCount}
-                </span>
-              )}
-            </button>
+            {/* Only show cart for customers and guests, NOT for staff/managers/drivers */}
+            {!isStaff && (
+              <button
+                style={{
+                  ...buttonStyles,
+                  background: cartItemCount > 0
+                    ? `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.primaryLight} 100%)`
+                    : buttonStyles.background,
+                  color: cartItemCount > 0 ? colors.text.inverse : colors.text.primary,
+                  position: 'relative',
+                }}
+                onClick={onCartClick}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = shadows.raised.lg;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = cartItemCount > 0 ? shadows.raised.base : shadows.raised.sm;
+                }}
+              >
+                🛒 Cart
+                {cartItemCount > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '-8px',
+                    right: '-8px',
+                    background: colors.semantic.error,
+                    color: colors.text.inverse,
+                    borderRadius: borderRadius.full,
+                    padding: `${spacing[1]} ${spacing[2]}`,
+                    fontSize: typography.fontSize.xs,
+                    fontWeight: typography.fontWeight.bold,
+                    minWidth: '20px',
+                    textAlign: 'center',
+                  }}>
+                    {cartItemCount}
+                  </span>
+                )}
+              </button>
+            )}
 
             {/* Show different UI for staff vs customers on public pages */}
             {isStaff ? (
