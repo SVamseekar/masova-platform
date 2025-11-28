@@ -39,6 +39,8 @@ const DriverManagementPage = React.lazy(() => import('./pages/manager/DriverMana
 const DeliveryManagementPage = React.lazy(() => import('./pages/manager/DeliveryManagementPage'));
 const CampaignManagementPage = React.lazy(() => import('./pages/manager/CampaignManagementPage'));
 const ManagerDashboard = React.lazy(() => import('./pages/manager/DashboardPage'));
+const ReviewManagementPage = React.lazy(() => import('./pages/manager/ReviewManagementPage'));
+const OrderManagementPage = React.lazy(() => import('./pages/manager/OrderManagementPage'));
 const KitchenDisplayPage = React.lazy(() => import('./pages/kitchen/KitchenDisplayPage'));
 const DriverDashboard = React.lazy(() => import('./pages/driver/DriverDashboard'));
 const POSSystem = React.lazy(() => import('./apps/POSSystem/POSSystem'));
@@ -223,6 +225,22 @@ const App: React.FC = () => {
                     element={
                       <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
                         <CampaignManagementPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/reviews"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <ReviewManagementPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/orders"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <OrderManagementPage />
                       </ProtectedRoute>
                     }
                   />

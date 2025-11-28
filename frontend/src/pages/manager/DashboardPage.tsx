@@ -46,10 +46,13 @@ const DashboardPage: React.FC = () => {
   const getTabFromPath = () => {
     if (location.pathname.includes('/staff')) return 'staff';
     if (location.pathname.includes('/analytics')) return 'analytics';
+    if (location.pathname.includes('/links')) return 'links';
     return 'overview';
   };
 
   const [activeTab, setActiveTab] = useState(getTabFromPath());
+  const [showLinkDialog, setShowLinkDialog] = useState(false);
+  const [linkType, setLinkType] = useState<'pos' | 'driver' | null>(null);
 
   // Update tab when URL changes
   useEffect(() => {
@@ -670,6 +673,168 @@ const DashboardPage: React.FC = () => {
     return colors[status as keyof typeof colors] || { bg: '#f3f4f6', text: '#374151' };
   };
 
+  const generateShareableLink = (type: 'pos' | 'driver') => {
+    const baseUrl = window.location.origin;
+    if (type === 'pos') {
+      return `${baseUrl}/pos?storeId=${storeId}`;
+    } else {
+      return `${baseUrl}/driver?storeId=${storeId}`;
+    }
+  };
+
+  const handleCopyLink = (type: 'pos' | 'driver') => {
+    const link = generateShareableLink(type);
+    navigator.clipboard.writeText(link);
+    alert(`${type === 'pos' ? 'POS' : 'Driver App'} link copied to clipboard!`);
+  };
+
+  const handleShareLink = (type: 'pos' | 'driver') => {
+    setLinkType(type);
+    setShowLinkDialog(true);
+  };
+
+  const LinksTab: React.FC = () => (
+    <div>
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '15px',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+        border: '1px solid #e5e7eb',
+        padding: '32px'
+      }}>
+        <h3 style={{ margin: '0 0 24px 0', fontSize: '24px', fontWeight: '700', color: '#1f2937' }}>
+          Share System Links
+        </h3>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: '24px'
+        }}>
+          {/* POS System */}
+          <div style={{
+            padding: '24px',
+            backgroundColor: '#f8fafc',
+            borderRadius: '12px',
+            border: '2px solid #3b82f6'
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <div style={{ fontSize: '48px', marginBottom: '12px' }}>🖥️</div>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '700', color: '#1f2937' }}>
+                POS System
+              </h4>
+              <p style={{ margin: '0', fontSize: '14px', color: '#6b7280' }}>
+                Share with staff to access the point-of-sale system
+              </p>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button
+                onClick={() => handleCopyLink('pos')}
+                style={{
+                  padding: '12px 16px',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
+              >
+                Copy POS Link
+              </button>
+              <button
+                onClick={() => handleShareLink('pos')}
+                style={{
+                  padding: '12px 16px',
+                  backgroundColor: 'white',
+                  color: '#3b82f6',
+                  border: '2px solid #3b82f6',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#eff6ff';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'white';
+                }}
+              >
+                View Link
+              </button>
+            </div>
+          </div>
+
+          {/* Driver App */}
+          <div style={{
+            padding: '24px',
+            backgroundColor: '#f8fafc',
+            borderRadius: '12px',
+            border: '2px solid #8b5cf6'
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <div style={{ fontSize: '48px', marginBottom: '12px' }}>🚗</div>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '700', color: '#1f2937' }}>
+                Driver App
+              </h4>
+              <p style={{ margin: '0', fontSize: '14px', color: '#6b7280' }}>
+                Share with delivery drivers to manage deliveries
+              </p>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button
+                onClick={() => handleCopyLink('driver')}
+                style={{
+                  padding: '12px 16px',
+                  backgroundColor: '#8b5cf6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#7c3aed'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#8b5cf6'}
+              >
+                Copy Driver Link
+              </button>
+              <button
+                onClick={() => handleShareLink('driver')}
+                style={{
+                  padding: '12px 16px',
+                  backgroundColor: 'white',
+                  color: '#8b5cf6',
+                  border: '2px solid #8b5cf6',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#faf5ff';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'white';
+                }}
+              >
+                View Link
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -704,13 +869,19 @@ const DashboardPage: React.FC = () => {
           {[
             { key: 'overview', label: 'Overview', icon: '📊' },
             { key: 'staff', label: 'Staff Sessions', icon: '👥' },
-            { key: 'analytics', label: 'Analytics', icon: '📈' }
+            { key: 'analytics', label: 'Analytics', icon: '📈' },
+            { key: 'links', label: 'Share Links', icon: '🔗' },
+            { key: 'reviews', label: 'Reviews', icon: '⭐' }
           ].map(tab => (
             <button
               key={tab.key}
               onClick={() => {
-                setActiveTab(tab.key);
-                navigate(`/manager/${tab.key === 'overview' ? '' : tab.key}`);
+                if (tab.key === 'reviews') {
+                  navigate('/manager/reviews');
+                } else {
+                  setActiveTab(tab.key);
+                  navigate(`/manager/${tab.key === 'overview' ? '' : tab.key}`);
+                }
               }}
               style={{
                 padding: '20px 0',
@@ -734,12 +905,172 @@ const DashboardPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Quick Access Navigation */}
+      <div style={{
+        backgroundColor: 'white',
+        padding: '24px 32px',
+        borderBottom: '1px solid #e5e7eb',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+      }}>
+        <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '700', color: '#1f2937' }}>
+          Management Pages
+        </h3>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+          gap: '12px'
+        }}>
+          {[
+            { path: '/manager/orders', label: 'Order Management', icon: '📦' },
+            { path: '/manager/payments', label: 'Payments', icon: '💳' },
+            { path: '/manager/refunds', label: 'Refunds', icon: '💰' },
+            { path: '/manager/inventory', label: 'Inventory', icon: '📊' },
+            { path: '/manager/suppliers', label: 'Suppliers', icon: '🏭' },
+            { path: '/manager/purchase-orders', label: 'Purchase Orders', icon: '📋' },
+            { path: '/manager/waste-analysis', label: 'Waste Analysis', icon: '🗑️' },
+            { path: '/manager/recipes', label: 'Recipes', icon: '📖' },
+            { path: '/manager/customers', label: 'Customers', icon: '👥' },
+            { path: '/manager/drivers', label: 'Drivers', icon: '🚗' },
+            { path: '/manager/deliveries', label: 'Deliveries', icon: '🚚' },
+            { path: '/manager/campaigns', label: 'Campaigns', icon: '📢' },
+            { path: '/manager/stores', label: 'Stores', icon: '🏪' },
+          ].map(item => (
+            <button
+              key={item.path}
+              onClick={() => navigate(item.path)}
+              style={{
+                padding: '12px 16px',
+                backgroundColor: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#1f2937',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.2s',
+                textAlign: 'left'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#0066CC';
+                e.currentTarget.style.color = 'white';
+                e.currentTarget.style.borderColor = '#0066CC';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 102, 204, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#f8fafc';
+                e.currentTarget.style.color = '#1f2937';
+                e.currentTarget.style.borderColor = '#e2e8f0';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              <span style={{ fontSize: '18px' }}>{item.icon}</span>
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Main Content */}
       <div style={{ padding: '32px' }}>
         {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'staff' && <StaffTab />}
         {activeTab === 'analytics' && <AnalyticsTab />}
+        {activeTab === 'links' && <LinksTab />}
       </div>
+
+      {/* Link Dialog Modal */}
+      {showLinkDialog && linkType && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            padding: '32px',
+            maxWidth: '500px',
+            width: '90%',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
+          }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '24px', fontWeight: '700', color: '#1f2937' }}>
+              {linkType === 'pos' ? 'POS System' : 'Driver App'} Link
+            </h3>
+            <div style={{ marginBottom: '24px' }}>
+              <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '12px' }}>
+                Share this link or scan the QR code:
+              </p>
+              <div style={{
+                padding: '16px',
+                backgroundColor: '#f9fafb',
+                borderRadius: '8px',
+                border: '1px solid #e5e7eb',
+                wordBreak: 'break-all',
+                fontSize: '14px',
+                fontFamily: 'monospace',
+                color: '#1f2937'
+              }}>
+                {generateShareableLink(linkType)}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => handleCopyLink(linkType)}
+                style={{
+                  flex: 1,
+                  padding: '12px 16px',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
+              >
+                Copy Link
+              </button>
+              <button
+                onClick={() => setShowLinkDialog(false)}
+                style={{
+                  padding: '12px 16px',
+                  backgroundColor: 'white',
+                  color: '#6b7280',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f9fafb';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'white';
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

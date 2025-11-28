@@ -26,7 +26,7 @@ const InventoryDashboardPage: React.FC = () => {
   const selectedStoreName = useAppSelector(selectSelectedStoreName);
 
   // Use selected store or fallback to user's store
-  const storeId = selectedStoreId || currentUser?.storeId || 'store-1';
+  const storeId = selectedStoreId || currentUser?.storeId || '';
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectSelectedStoreId } from '../../store/slices/cartSlice';
 import {
   useGetAllWasteRecordsQuery,
   useGetTotalWasteCostQuery,
@@ -19,7 +20,8 @@ import RecordWasteDialog from '../../components/inventory/RecordWasteDialog';
 
 const WasteAnalysisPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
-  const storeId = currentUser?.storeId || 'store-1';
+  const selectedStoreId = useAppSelector(selectSelectedStoreId);
+  const storeId = selectedStoreId || currentUser?.storeId || '';
 
   const [dateRange, setDateRange] = useState({
     startDate: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
