@@ -7,6 +7,7 @@ import com.MaSoVa.customer.entity.Customer;
 import com.MaSoVa.customer.service.CustomerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +31,20 @@ public class CustomerController {
 
     public CustomerController(CustomerService customerService) {
         this.customerService = customerService;
+    }
+
+    /**
+     * Extract storeId from HTTP headers
+     */
+    private String getStoreIdFromHeaders(HttpServletRequest request) {
+        String userType = request.getHeader("X-User-Type");
+        String selectedStoreId = request.getHeader("X-Selected-Store-Id");
+        String userStoreId = request.getHeader("X-User-Store-Id");
+
+        if ("MANAGER".equals(userType) || "CUSTOMER".equals(userType)) {
+            return selectedStoreId != null ? selectedStoreId : userStoreId;
+        }
+        return userStoreId;
     }
 
     // ===========================
@@ -109,14 +124,18 @@ public class CustomerController {
 
     @GetMapping
     @Operation(summary = "Get all customers")
-    public ResponseEntity<List<Customer>> getAllCustomers() {
+    public ResponseEntity<List<Customer>> getAllCustomers(HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
+        logger.info("Getting all customers for store: {}", storeId);
         List<Customer> customers = customerService.getAllCustomers();
         return ResponseEntity.ok(customers);
     }
 
     @GetMapping("/active")
     @Operation(summary = "Get all active customers")
-    public ResponseEntity<List<Customer>> getActiveCustomers() {
+    public ResponseEntity<List<Customer>> getActiveCustomers(HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
+        logger.info("Getting active customers for store: {}", storeId);
         List<Customer> customers = customerService.getActiveCustomers();
         return ResponseEntity.ok(customers);
     }
@@ -126,7 +145,10 @@ public class CustomerController {
     public ResponseEntity<Page<Customer>> searchCustomers(
             @RequestParam String query,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
+        logger.info("Searching customers with query: {} for store: {}", query, storeId);
         Page<Customer> customers = customerService.searchCustomers(query, page, size);
         return ResponseEntity.ok(customers);
     }
@@ -291,7 +313,11 @@ public class CustomerController {
 
     @GetMapping("/loyalty/tier/{tier}")
     @Operation(summary = "Get customers by loyalty tier")
-    public ResponseEntity<List<Customer>> getCustomersByTier(@PathVariable("tier") String tier) {
+    public ResponseEntity<List<Customer>> getCustomersByTier(
+            @PathVariable("tier") String tier,
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
+        logger.info("Getting customers by tier: {} for store: {}", tier, storeId);
         List<Customer> customers = customerService.getCustomersByLoyaltyTier(tier.toUpperCase());
         return ResponseEntity.ok(customers);
     }
@@ -405,7 +431,11 @@ public class CustomerController {
 
     @GetMapping("/tags")
     @Operation(summary = "Get customers by tags")
-    public ResponseEntity<List<Customer>> getCustomersByTags(@RequestParam List<String> tags) {
+    public ResponseEntity<List<Customer>> getCustomersByTags(
+            @RequestParam List<String> tags,
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
+        logger.info("Getting customers by tags for store: {}", storeId);
         List<Customer> customers = customerService.getCustomersByTags(tags);
         return ResponseEntity.ok(customers);
     }
@@ -417,7 +447,10 @@ public class CustomerController {
     @GetMapping("/high-value")
     @Operation(summary = "Get high-value customers", description = "Customers with spending above threshold")
     public ResponseEntity<List<Customer>> getHighValueCustomers(
-            @RequestParam(defaultValue = "10000") double minSpending) {
+            @RequestParam(defaultValue = "10000") double minSpending,
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
+        logger.info("Getting high-value customers (min spending: {}) for store: {}", minSpending, storeId);
         List<Customer> customers = customerService.getHighValueCustomers(minSpending);
         return ResponseEntity.ok(customers);
     }
@@ -425,7 +458,10 @@ public class CustomerController {
     @GetMapping("/top-spenders")
     @Operation(summary = "Get top spenders")
     public ResponseEntity<List<Customer>> getTopSpenders(
-            @RequestParam(defaultValue = "10") int limit) {
+            @RequestParam(defaultValue = "10") int limit,
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
+        logger.info("Getting top {} spenders for store: {}", limit, storeId);
         List<Customer> customers = customerService.getTopSpenders(limit);
         return ResponseEntity.ok(customers);
     }
@@ -433,7 +469,10 @@ public class CustomerController {
     @GetMapping("/recently-active")
     @Operation(summary = "Get recently active customers")
     public ResponseEntity<List<Customer>> getRecentlyActiveCustomers(
-            @RequestParam(defaultValue = "30") int days) {
+            @RequestParam(defaultValue = "30") int days,
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
+        logger.info("Getting recently active customers (within {} days) for store: {}", days, storeId);
         List<Customer> customers = customerService.getRecentlyActiveCustomers(days);
         return ResponseEntity.ok(customers);
     }
@@ -441,28 +480,37 @@ public class CustomerController {
     @GetMapping("/inactive")
     @Operation(summary = "Get inactive customers")
     public ResponseEntity<List<Customer>> getInactiveCustomers(
-            @RequestParam(defaultValue = "90") int days) {
+            @RequestParam(defaultValue = "90") int days,
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
+        logger.info("Getting inactive customers (inactive for {} days) for store: {}", days, storeId);
         List<Customer> customers = customerService.getInactiveCustomers(days);
         return ResponseEntity.ok(customers);
     }
 
     @GetMapping("/birthdays/today")
     @Operation(summary = "Get customers with birthday today")
-    public ResponseEntity<List<Customer>> getBirthdayCustomersToday() {
+    public ResponseEntity<List<Customer>> getBirthdayCustomersToday(HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
+        logger.info("Getting birthday customers for store: {}", storeId);
         List<Customer> customers = customerService.getBirthdayCustomersToday();
         return ResponseEntity.ok(customers);
     }
 
     @GetMapping("/marketing-opt-in")
     @Operation(summary = "Get customers opted in for marketing")
-    public ResponseEntity<List<Customer>> getMarketingOptInCustomers() {
+    public ResponseEntity<List<Customer>> getMarketingOptInCustomers(HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
+        logger.info("Getting marketing opt-in customers for store: {}", storeId);
         List<Customer> customers = customerService.getMarketingOptInCustomers();
         return ResponseEntity.ok(customers);
     }
 
     @GetMapping("/sms-opt-in")
     @Operation(summary = "Get customers opted in for SMS")
-    public ResponseEntity<List<Customer>> getSmsOptInCustomers() {
+    public ResponseEntity<List<Customer>> getSmsOptInCustomers(HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
+        logger.info("Getting SMS opt-in customers for store: {}", storeId);
         List<Customer> customers = customerService.getSmsOptInCustomers();
         return ResponseEntity.ok(customers);
     }
@@ -473,7 +521,9 @@ public class CustomerController {
 
     @GetMapping("/stats")
     @Operation(summary = "Get customer statistics")
-    public ResponseEntity<CustomerStatsResponse> getCustomerStats() {
+    public ResponseEntity<CustomerStatsResponse> getCustomerStats(HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
+        logger.info("Getting customer statistics for store: {}", storeId);
         CustomerStatsResponse stats = customerService.getCustomerStats();
         return ResponseEntity.ok(stats);
     }

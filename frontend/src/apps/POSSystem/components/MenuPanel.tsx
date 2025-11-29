@@ -21,7 +21,7 @@ import {
   Add as AddIcon,
   Restaurant as RestaurantIcon,
 } from '@mui/icons-material';
-import { useGetMenuItemsQuery } from '../../../store/api/menuApi';
+import { useGetAvailableMenuQuery } from '../../../store/api/menuApi';
 import { CURRENCY } from '../../../config/business-config';
 
 interface MenuPanelProps {
@@ -41,7 +41,7 @@ const MenuPanel: React.FC<MenuPanelProps> = ({ onAddItem }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
 
-  const { data: menuItems = [], isLoading, error } = useGetMenuItemsQuery();
+  const { data: menuItems = [], isLoading, error } = useGetAvailableMenuQuery();
 
   // Filter menu items
   const filteredItems = menuItems.filter((item: any) => {

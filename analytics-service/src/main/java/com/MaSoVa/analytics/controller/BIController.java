@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 /**
  * REST API endpoints for Business Intelligence and Advanced Analytics
  * Phase 11 Implementation
@@ -33,16 +35,31 @@ public class BIController {
     }
 
     /**
+     * Extract storeId from HTTP headers
+     */
+    private String getStoreIdFromHeaders(HttpServletRequest request) {
+        String userType = request.getHeader("X-User-Type");
+        String selectedStoreId = request.getHeader("X-Selected-Store-Id");
+        String userStoreId = request.getHeader("X-User-Store-Id");
+
+        if ("MANAGER".equals(userType) || "CUSTOMER".equals(userType)) {
+            return selectedStoreId != null ? selectedStoreId : userStoreId;
+        }
+        return userStoreId;
+    }
+
+    /**
      * Generate sales forecast
-     * GET /api/bi/forecast/sales?storeId={storeId}&period={period}&days={days}
+     * GET /api/bi/forecast/sales?period={period}&days={days}
      * @param period "DAILY", "WEEKLY", or "MONTHLY"
      * @param days Number of days to forecast (default: 7)
      */
     @GetMapping("/forecast/sales")
     public ResponseEntity<SalesForecastResponse> getSalesForecast(
-            @RequestParam(defaultValue = "store-001") String storeId,
+            HttpServletRequest request,
             @RequestParam(defaultValue = "WEEKLY") String period,
             @RequestParam(defaultValue = "7") int days) {
+        String storeId = getStoreIdFromHeaders(request);
         log.info("GET /api/bi/forecast/sales - storeId: {}, period: {}, days: {}", storeId, period, days);
         SalesForecastResponse forecast = biEngineService.generateSalesForecast(storeId, period, days);
         return ResponseEntity.ok(forecast);
@@ -50,11 +67,11 @@ public class BIController {
 
     /**
      * Analyze customer behavior patterns
-     * GET /api/bi/analysis/customer-behavior?storeId={storeId}
+     * GET /api/bi/analysis/customer-behavior
      */
     @GetMapping("/analysis/customer-behavior")
-    public ResponseEntity<CustomerBehaviorResponse> getCustomerBehaviorAnalysis(
-            @RequestParam(defaultValue = "store-001") String storeId) {
+    public ResponseEntity<CustomerBehaviorResponse> getCustomerBehaviorAnalysis(HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
         log.info("GET /api/bi/analysis/customer-behavior - storeId: {}", storeId);
         CustomerBehaviorResponse analysis = biEngineService.analyzeCustomerBehavior(storeId);
         return ResponseEntity.ok(analysis);
@@ -62,11 +79,11 @@ public class BIController {
 
     /**
      * Predict customer churn
-     * GET /api/bi/prediction/churn?storeId={storeId}
+     * GET /api/bi/prediction/churn
      */
     @GetMapping("/prediction/churn")
-    public ResponseEntity<ChurnPredictionResponse> getChurnPrediction(
-            @RequestParam(defaultValue = "store-001") String storeId) {
+    public ResponseEntity<ChurnPredictionResponse> getChurnPrediction(HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
         log.info("GET /api/bi/prediction/churn - storeId: {}", storeId);
         ChurnPredictionResponse prediction = biEngineService.predictChurn(storeId);
         return ResponseEntity.ok(prediction);
@@ -74,13 +91,14 @@ public class BIController {
 
     /**
      * Generate demand forecast
-     * GET /api/bi/forecast/demand?storeId={storeId}&period={period}
+     * GET /api/bi/forecast/demand?period={period}
      * @param period "WEEKLY" or "MONTHLY"
      */
     @GetMapping("/forecast/demand")
     public ResponseEntity<DemandForecastResponse> getDemandForecast(
-            @RequestParam(defaultValue = "store-001") String storeId,
+            HttpServletRequest request,
             @RequestParam(defaultValue = "WEEKLY") String period) {
+        String storeId = getStoreIdFromHeaders(request);
         log.info("GET /api/bi/forecast/demand - storeId: {}, period: {}", storeId, period);
         DemandForecastResponse forecast = biEngineService.generateDemandForecast(storeId, period);
         return ResponseEntity.ok(forecast);
@@ -88,13 +106,14 @@ public class BIController {
 
     /**
      * Get comprehensive cost analysis
-     * GET /api/bi/cost-analysis?storeId={storeId}&period={period}
+     * GET /api/bi/cost-analysis?period={period}
      * @param period "TODAY", "WEEK", or "MONTH"
      */
     @GetMapping("/cost-analysis")
     public ResponseEntity<CostAnalysisResponse> getCostAnalysis(
-            @RequestParam(defaultValue = "store-001") String storeId,
+            HttpServletRequest request,
             @RequestParam(defaultValue = "MONTH") String period) {
+        String storeId = getStoreIdFromHeaders(request);
         log.info("GET /api/bi/cost-analysis - storeId: {}, period: {}", storeId, period);
         CostAnalysisResponse analysis = costAnalysisService.analyzeCosts(storeId, period);
         return ResponseEntity.ok(analysis);

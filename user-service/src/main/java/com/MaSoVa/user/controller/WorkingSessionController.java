@@ -1,6 +1,7 @@
 package com.MaSoVa.user.controller;
 
-import com.MaSoVa.shared.model.Location; // ADD THIS LINE
+import com.MaSoVa.shared.model.Location;
+import com.MaSoVa.shared.util.StoreContextUtil;
 import com.MaSoVa.user.dto.WorkingSessionResponse;
 import com.MaSoVa.user.dto.WorkingHoursReport;
 import com.MaSoVa.user.service.WorkingSessionService;
@@ -15,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
@@ -28,13 +30,17 @@ public class WorkingSessionController {
     
     @Autowired
     private WorkingSessionService sessionService;
-    
+
     @PostMapping("/start")
     @Operation(summary = "Start working session")
     @PreAuthorize("hasRole('STAFF') or hasRole('DRIVER') or hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
     public ResponseEntity<WorkingSessionResponse> startSession(
             @RequestHeader("X-User-Id") String employeeId,
-            @RequestHeader("X-Store-Id") String storeId) {
+            HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
         var session = sessionService.startSession(employeeId, storeId);
         return ResponseEntity.ok(mapToResponse(session));
     }
@@ -65,9 +71,13 @@ public class WorkingSessionController {
     @PreAuthorize("hasRole('STAFF') or hasRole('DRIVER') or hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
     public ResponseEntity<WorkingSessionResponse> startSessionWithLocation(
             @RequestHeader("X-User-Id") String employeeId,
-            @RequestHeader("X-Store-Id") String storeId,
-            @RequestBody Map<String, Object> locationData) {
-        
+            @RequestBody Map<String, Object> locationData,
+            HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
+
         Location clockInLocation = null;
         if (locationData.containsKey("latitude") && locationData.containsKey("longitude")) {
             clockInLocation = new Location(
@@ -75,7 +85,7 @@ public class WorkingSessionController {
                 (Double) locationData.get("longitude")
             );
         }
-        
+
         var session = sessionService.startSessionWithLocation(employeeId, storeId, clockInLocation);
         return ResponseEntity.ok(mapToResponse(session));
     }
@@ -103,7 +113,8 @@ public class WorkingSessionController {
     @Operation(summary = "Get sessions pending approval")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
     public ResponseEntity<List<WorkingSessionResponse>> getSessionsPendingApproval(
-            @RequestParam(required = false) String storeId) {
+            HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
         // Implementation will be added to service
         return ResponseEntity.ok(List.of());
     }
@@ -148,13 +159,17 @@ public class WorkingSessionController {
         return ResponseEntity.ok(sessions);
     }
     
-    @GetMapping("/store/{storeId}")
+    @GetMapping("/store")
     @Operation(summary = "Get store working sessions")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
     public ResponseEntity<List<WorkingSessionResponse>> getStoreSessions(
-            @PathVariable String storeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
         List<WorkingSessionResponse> sessions = sessionService.getStoreSessions(storeId, startDate, endDate);
         return ResponseEntity.ok(sessions);
     }
@@ -170,10 +185,14 @@ public class WorkingSessionController {
         return ResponseEntity.ok(report);
     }
     
-    @GetMapping("/store/{storeId}/active")
+    @GetMapping("/store/active")
     @Operation(summary = "Get active sessions for store")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
-    public ResponseEntity<List<WorkingSessionResponse>> getActiveStoreSessions(@PathVariable String storeId) {
+    public ResponseEntity<List<WorkingSessionResponse>> getActiveStoreSessions(HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
         List<WorkingSessionResponse> sessions = sessionService.getActiveSessionsForStore(storeId);
         return ResponseEntity.ok(sessions);
     }

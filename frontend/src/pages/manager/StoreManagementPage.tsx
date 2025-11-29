@@ -22,9 +22,13 @@ const StoreManagementPage: React.FC = () => {
 
   // Get manager's own store
   const { data: myStore, isLoading: loadingMyStore, refetch } = useGetStoreQuery(storeId, { skip: !storeId });
+  const { data: stores = [], isLoading } = useGetActiveStoresQuery();
   const [updateStore, { isLoading: isUpdating }] = useUpdateStoreMutation();
+  const [createStore, { isLoading: isCreating }] = useCreateStoreMutation();
 
   const [isEditing, setIsEditing] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [formData, setFormData] = useState<Partial<CreateStoreRequest>>({
     name: '',
     storeCode: '',
@@ -318,12 +322,13 @@ const StoreManagementPage: React.FC = () => {
                   placeholder="Main Branch"
                 />
                 <Input
-                  label="Store Code"
+                  label="Store Code (Format: DOM###)"
                   name="storeCode"
                   value={formData.storeCode}
                   onChange={handleInputChange}
                   required
-                  placeholder="store-1"
+                  placeholder="DOM001"
+                  helperText="Use format: DOM followed by 3 digits (e.g., DOM001, DOM002)"
                 />
               </div>
 

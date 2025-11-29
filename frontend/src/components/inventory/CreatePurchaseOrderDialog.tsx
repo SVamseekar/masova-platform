@@ -16,7 +16,7 @@ const CreatePurchaseOrderDialog: React.FC<CreatePurchaseOrderDialogProps> = ({ o
   const currentUser = useAppSelector(selectCurrentUser);
   const [createPO, { isLoading }] = useCreatePurchaseOrderMutation();
   const { data: suppliers = [] } = useGetAllSuppliersQuery();
-  const { data: lowStockItems = [] } = useGetLowStockItemsQuery(storeId);
+  const { data: lowStockItems = [] } = useGetLowStockItemsQuery(undefined);
 
   const [supplierId, setSupplierId] = useState('');
   const [expectedDeliveryDate, setExpectedDeliveryDate] = useState('');

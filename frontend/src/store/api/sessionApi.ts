@@ -32,19 +32,28 @@ export const sessionApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: API_CONFIG.USER_SERVICE_URL,
     prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as RootState).auth.accessToken;
-      const user = (getState() as RootState).auth.user;
+      const state = getState() as RootState;
+      const token = state.auth.accessToken;
+      const user = state.auth.user;
+      const selectedStoreId = state.cart?.selectedStoreId;
 
+      // Add authorization token
       if (token) {
-        headers.set('authorization', `Bearer ${token}`);
+        headers.set('Authorization', `Bearer ${token}`);
       }
 
-      // Add required headers for backend
+      // Add user context headers
       if (user) {
         headers.set('X-User-Id', user.id);
+        headers.set('X-User-Type', user.type);
         if (user.storeId) {
-          headers.set('X-Store-Id', user.storeId);
+          headers.set('X-User-Store-Id', user.storeId);
         }
+      }
+
+      // Add selected store for managers/customers
+      if (selectedStoreId) {
+        headers.set('X-Selected-Store-Id', selectedStoreId);
       }
 
       return headers;
@@ -88,16 +97,16 @@ export const sessionApi = createApi({
     }),
 
     // Get all active sessions for a store (for managers)
-    getActiveStoreSessions: builder.query<WorkingSession[], string>({
-      query: (storeId) => `/api/users/sessions/store/${storeId}/active`,
+    getActiveStoreSessions: builder.query<WorkingSession[], void>({
+      query: () => `/api/users/sessions/store/active`,
       providesTags: ['WorkingSessions'],
     }),
 
     // Get all sessions for a store (including completed)
-    getStoreSessions: builder.query<WorkingSession[], { storeId: string; date?: string }>({
-      query: ({ storeId, date }) => {
+    getStoreSessions: builder.query<WorkingSession[], { date?: string }>({
+      query: ({ date }) => {
         const params = date ? `?date=${date}` : '';
-        return `/api/users/sessions/store/${storeId}${params}`;
+        return `/api/users/sessions/store${params}`;
       },
       providesTags: ['WorkingSessions'],
     }),

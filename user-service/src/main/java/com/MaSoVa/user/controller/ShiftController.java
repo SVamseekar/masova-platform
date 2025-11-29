@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -28,7 +29,24 @@ public class ShiftController {
     
     @Autowired
     private ShiftService shiftService;
-    
+
+    /**
+     * Extract storeId from HTTP headers
+     */
+    private String getStoreIdFromHeaders(HttpServletRequest request) {
+        String userType = request.getHeader("X-User-Type");
+        String selectedStoreId = request.getHeader("X-Selected-Store-Id");
+        String userStoreId = request.getHeader("X-User-Store-Id");
+
+        // Managers/Customers use selected store
+        if ("MANAGER".equals(userType) || "CUSTOMER".equals(userType)) {
+            return selectedStoreId != null ? selectedStoreId : userStoreId;
+        }
+
+        // Staff/Driver use assigned store
+        return userStoreId;
+    }
+
     @PostMapping
     @Operation(summary = "Create new shift")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
@@ -74,12 +92,13 @@ public class ShiftController {
         return ResponseEntity.ok(shifts);
     }
     
-    @GetMapping("/store/{storeId}")
+    @GetMapping("/store")
     @Operation(summary = "Get store shifts")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
     public ResponseEntity<List<Shift>> getStoreShifts(
-            @PathVariable String storeId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
         List<Shift> shifts = shiftService.getStoreShifts(storeId, date);
         return ResponseEntity.ok(shifts);
     }
@@ -115,12 +134,13 @@ public class ShiftController {
         return ResponseEntity.ok(shift);
     }
     
-    @GetMapping("/store/{storeId}/coverage")
+    @GetMapping("/store/coverage")
     @Operation(summary = "Check shift coverage for store")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
     public ResponseEntity<Map<String, Object>> getShiftCoverage(
-            @PathVariable String storeId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
         Map<String, Object> coverage = shiftService.getShiftCoverage(storeId, date);
         return ResponseEntity.ok(coverage);
     }

@@ -2,6 +2,7 @@ package com.MaSoVa.user.controller;
 
 import com.MaSoVa.shared.entity.User;
 import com.MaSoVa.shared.enums.UserType;
+import com.MaSoVa.shared.util.StoreContextUtil;
 import com.MaSoVa.user.dto.*;
 import com.MaSoVa.user.service.UserService;
 
@@ -9,6 +10,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +31,7 @@ public class UserController {
 
     @Autowired
     private UserService userService;
-    
+
     @PostMapping("/register")
     @Operation(summary = "Register new user")
     public ResponseEntity<LoginResponse> register(@Valid @RequestBody UserCreateRequest request) {
@@ -97,11 +99,15 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
     
-    @GetMapping("/store/{storeId}")
+    @GetMapping("/store")
     @Operation(summary = "Get store employees")
     @SecurityRequirement(name = "bearerAuth")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
-    public ResponseEntity<List<UserResponse>> getStoreEmployees(@PathVariable("storeId") String storeId) {
+    public ResponseEntity<List<UserResponse>> getStoreEmployees(HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
         List<UserResponse> employees = userService.getStoreEmployees(storeId);
         return ResponseEntity.ok(employees);
     }
@@ -192,11 +198,12 @@ public class UserController {
     @SecurityRequirement(name = "bearerAuth")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
     public ResponseEntity<List<UserResponse>> searchUsers(
+            HttpServletRequest request,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String email,
             @RequestParam(required = false) String phone,
-            @RequestParam(required = false) UserType type,
-            @RequestParam(required = false) String storeId) {
+            @RequestParam(required = false) UserType type) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
         List<UserResponse> users = userService.searchUsers(name, email, phone, type, storeId);
         return ResponseEntity.ok(users);
     }
@@ -211,10 +218,14 @@ public class UserController {
     }
 
     // Analytics endpoints
-    @GetMapping("/drivers/store/{storeId}")
+    @GetMapping("/drivers/store")
     @Operation(summary = "Get drivers by store")
     @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<List<UserResponse>> getDriversByStore(@PathVariable String storeId) {
+    public ResponseEntity<List<UserResponse>> getDriversByStore(HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
         logger.info("Fetching drivers for store: {}", storeId);
         List<UserResponse> drivers = userService.getDriversByStore(storeId);
         return ResponseEntity.ok(drivers);

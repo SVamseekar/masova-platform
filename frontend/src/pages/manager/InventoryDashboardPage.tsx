@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectSelectedStoreId, selectSelectedStoreName } from '../../store/slices/cartSlice';
@@ -35,15 +35,27 @@ const InventoryDashboardPage: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
 
   // Fetch data
-  const { data: allItems = [], isLoading: itemsLoading } = useGetAllInventoryItemsQuery(storeId, {
+  const { data: allItems = [], isLoading: itemsLoading, refetch: refetchAllItems } = useGetAllInventoryItemsQuery(undefined, {
+    skip: !storeId,
     pollingInterval: 60000, // Poll every minute
   });
-  const { data: lowStockItems = [] } = useGetLowStockAlertsQuery(storeId);
-  const { data: outOfStockItems = [] } = useGetOutOfStockItemsQuery(storeId);
-  const { data: expiringItems = [] } = useGetExpiringItemsQuery({ storeId, days: 7 });
-  const { data: inventoryValue } = useGetTotalInventoryValueQuery(storeId);
+  const { data: lowStockItems = [], refetch: refetchLowStock } = useGetLowStockAlertsQuery(undefined, { skip: !storeId });
+  const { data: outOfStockItems = [], refetch: refetchOutOfStock } = useGetOutOfStockItemsQuery(undefined, { skip: !storeId });
+  const { data: expiringItems = [], refetch: refetchExpiring } = useGetExpiringItemsQuery({ days: 7 }, { skip: !storeId });
+  const { data: inventoryValue, refetch: refetchValue } = useGetTotalInventoryValueQuery(undefined, { skip: !storeId });
 
   const [deleteItem] = useDeleteInventoryItemMutation();
+
+  // Refetch data when store changes
+  useEffect(() => {
+    if (storeId) {
+      refetchAllItems();
+      refetchLowStock();
+      refetchOutOfStock();
+      refetchExpiring();
+      refetchValue();
+    }
+  }, [storeId, refetchAllItems, refetchLowStock, refetchOutOfStock, refetchExpiring, refetchValue]);
 
   // Categories
   const categories = ['ALL', 'RAW_MATERIAL', 'INGREDIENT', 'PACKAGING', 'BEVERAGE', 'OTHER'];
@@ -141,7 +153,7 @@ const InventoryDashboardPage: React.FC = () => {
   };
 
   const categoryButtonStyles = (isActive: boolean): React.CSSProperties => ({
-    ...createNeumorphicSurface(isActive ? 'pressed' : 'raised', 'sm', 'lg'),
+    ...createNeumorphicSurface(isActive ? 'inset' : 'raised', 'sm', 'lg'),
     padding: `${spacing[2]} ${spacing[4]}`,
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semibold,

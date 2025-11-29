@@ -127,30 +127,50 @@ export const analyticsApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: '/api/analytics',
     prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as any).auth.accessToken;
+      const state = getState() as any;
+      const token = state.auth.accessToken;
+      const user = state.auth.user;
+      const selectedStoreId = state.cart?.selectedStoreId;
+
+      // Add authorization token
       if (token) {
-        headers.set('authorization', `Bearer ${token}`);
+        headers.set('Authorization', `Bearer ${token}`);
       }
+
+      // Add user context headers
+      if (user) {
+        headers.set('X-User-Id', user.id);
+        headers.set('X-User-Type', user.type);
+        if (user.storeId) {
+          headers.set('X-User-Store-Id', user.storeId);
+        }
+      }
+
+      // Add selected store for managers/customers
+      if (selectedStoreId) {
+        headers.set('X-Selected-Store-Id', selectedStoreId);
+      }
+
       return headers;
     },
   }),
   tagTypes: ['Analytics', 'SalesMetrics', 'DriverStatus', 'StaffPerformance'],
   endpoints: (builder) => ({
     // Get today's sales metrics with comparisons
-    getTodaySalesMetrics: builder.query<SalesMetricsResponse, string>({
-      query: (storeId) => `store/${storeId}/sales/today`,
+    getTodaySalesMetrics: builder.query<SalesMetricsResponse, void>({
+      query: () => `store/sales/today`,
       providesTags: ['SalesMetrics'],
     }),
 
     // Get average order value
-    getAverageOrderValue: builder.query<AverageOrderValueResponse, string>({
-      query: (storeId) => `store/${storeId}/avgOrderValue/today`,
+    getAverageOrderValue: builder.query<AverageOrderValueResponse, void>({
+      query: () => `store/avgOrderValue/today`,
       providesTags: ['SalesMetrics'],
     }),
 
     // Get driver status
-    getDriverStatus: builder.query<DriverStatusResponse, string>({
-      query: (storeId) => `drivers/status/${storeId}`,
+    getDriverStatus: builder.query<DriverStatusResponse, void>({
+      query: () => `drivers/status`,
       providesTags: ['DriverStatus'],
     }),
 
@@ -161,32 +181,32 @@ export const analyticsApi = createApi({
     }),
 
     // Get sales trends (weekly or monthly)
-    getSalesTrends: builder.query<SalesTrendResponse, { storeId: string; period: 'WEEKLY' | 'MONTHLY' }>({
-      query: ({ storeId, period }) => `sales/trends/${period}?storeId=${storeId}`,
+    getSalesTrends: builder.query<SalesTrendResponse, { period: 'WEEKLY' | 'MONTHLY' }>({
+      query: ({ period }) => `sales/trends/${period}`,
       providesTags: ['SalesMetrics'],
     }),
 
     // Get order type breakdown
-    getOrderTypeBreakdown: builder.query<OrderTypeBreakdownResponse, string>({
-      query: (storeId) => `sales/breakdown/order-type?storeId=${storeId}`,
+    getOrderTypeBreakdown: builder.query<OrderTypeBreakdownResponse, void>({
+      query: () => `sales/breakdown/order-type`,
       providesTags: ['SalesMetrics'],
     }),
 
     // Get peak hours analysis
-    getPeakHours: builder.query<PeakHoursResponse, string>({
-      query: (storeId) => `sales/peak-hours?storeId=${storeId}`,
+    getPeakHours: builder.query<PeakHoursResponse, void>({
+      query: () => `sales/peak-hours`,
       providesTags: ['Analytics'],
     }),
 
     // Get staff leaderboard
-    getStaffLeaderboard: builder.query<StaffLeaderboardResponse, { storeId: string; period: string }>({
-      query: ({ storeId, period }) => `staff/leaderboard?storeId=${storeId}&period=${period}`,
+    getStaffLeaderboard: builder.query<StaffLeaderboardResponse, { period: string }>({
+      query: ({ period }) => `staff/leaderboard?period=${period}`,
       providesTags: ['StaffPerformance'],
     }),
 
     // Get top selling products
-    getTopProducts: builder.query<TopProductsResponse, { storeId: string; period: string; sortBy: string }>({
-      query: ({ storeId, period, sortBy }) => `products/top-selling?storeId=${storeId}&period=${period}&sortBy=${sortBy}`,
+    getTopProducts: builder.query<TopProductsResponse, { period: string; sortBy: string }>({
+      query: ({ period, sortBy }) => `products/top-selling?period=${period}&sortBy=${sortBy}`,
       providesTags: ['Analytics'],
     }),
   }),

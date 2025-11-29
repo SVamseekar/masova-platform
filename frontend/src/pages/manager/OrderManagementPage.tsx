@@ -30,7 +30,7 @@ const OrderManagementPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'ALL'>('ALL');
 
   // API hooks
-  const { data: orders = [], isLoading, refetch } = useGetStoreOrdersQuery(storeId, {
+  const { data: orders = [], isLoading, refetch } = useGetStoreOrdersQuery(undefined, {
     skip: !storeId,
     pollingInterval: 10000, // Poll every 10 seconds
   });

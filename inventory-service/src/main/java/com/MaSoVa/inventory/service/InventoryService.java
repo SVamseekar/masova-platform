@@ -299,6 +299,17 @@ public class InventoryService {
     }
 
     /**
+     * Get all unique store IDs from inventory items
+     * Used for scheduled tasks and bulk operations
+     */
+    public List<String> getAllStoreIds() {
+        return inventoryItemRepository.findAll().stream()
+                .map(InventoryItem::getStoreId)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Batch update stock (for receiving purchase orders)
      */
     @Transactional

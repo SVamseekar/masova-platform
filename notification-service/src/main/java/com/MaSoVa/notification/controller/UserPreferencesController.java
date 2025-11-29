@@ -2,6 +2,7 @@ package com.MaSoVa.notification.controller;
 
 import com.MaSoVa.notification.entity.UserPreferences;
 import com.MaSoVa.notification.service.UserPreferencesService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +15,17 @@ public class UserPreferencesController {
 
     public UserPreferencesController(UserPreferencesService userPreferencesService) {
         this.userPreferencesService = userPreferencesService;
+    }
+
+    private String getStoreIdFromHeaders(HttpServletRequest request) {
+        String userType = request.getHeader("X-User-Type");
+        String selectedStoreId = request.getHeader("X-Selected-Store-Id");
+        String userStoreId = request.getHeader("X-User-Store-Id");
+
+        if ("MANAGER".equals(userType) || "CUSTOMER".equals(userType)) {
+            return selectedStoreId != null ? selectedStoreId : userStoreId;
+        }
+        return userStoreId;
     }
 
     @GetMapping("/user/{userId}")

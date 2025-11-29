@@ -18,7 +18,7 @@ const OrderQueuePage: React.FC = () => {
   const storeId = currentUser?.storeId || '';
 
   // API hooks
-  const { data: orders = [], isLoading, error } = useGetKitchenQueueQuery(storeId, {
+  const { data: orders = [], isLoading, error } = useGetKitchenQueueQuery(undefined, {
     skip: !storeId,
     pollingInterval: 5000, // Poll every 5 seconds
   });
@@ -321,17 +321,17 @@ const OrderQueuePage: React.FC = () => {
         <div className="queue-table">
           {isLoading ? (
             <div className="loading-state">
-              <div className="empty-icon">ó</div>
+              <div className="empty-icon">ï¿½</div>
               <div>Loading orders...</div>
             </div>
           ) : error ? (
             <div className="error-state">
-              <div className="empty-icon"> </div>
+              <div className="empty-icon">ï¿½</div>
               <div>Error loading orders. Check if Order Service is running.</div>
             </div>
           ) : orders.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-icon">=í</div>
+              <div className="empty-icon">=ï¿½</div>
               <div>No active orders in queue</div>
             </div>
           ) : (
@@ -352,7 +352,7 @@ const OrderQueuePage: React.FC = () => {
                   <div key={order.id} className={`table-row ${order.priority === 'URGENT' ? 'urgent' : ''}`}>
                     <div className="order-num">
                       #{order.orderNumber.split('-').pop()}
-                      {order.priority === 'URGENT' && <div style={{ fontSize: '10px', color: '#ef4444' }}>¡URGENT</div>}
+                      {order.priority === 'URGENT' && <div style={{ fontSize: '10px', color: '#ef4444' }}>ï¿½URGENT</div>}
                     </div>
                     <div className="order-details">
                       <div className="customer-name">{order.customerName}</div>
@@ -373,7 +373,7 @@ const OrderQueuePage: React.FC = () => {
                     </div>
                     <div>
                       <div className="order-type-badge">
-                        {order.orderType === 'DELIVERY' ? '=š' : order.orderType === 'TAKEAWAY' ? '<ê' : '<}'} {order.orderType}
+                        {order.orderType === 'DELIVERY' ? '=ï¿½' : order.orderType === 'TAKEAWAY' ? '<ï¿½' : '<}'} {order.orderType}
                       </div>
                     </div>
                     <div>
@@ -388,7 +388,7 @@ const OrderQueuePage: React.FC = () => {
                           onClick={() => handleMoveToNextStage(order.id)}
                           disabled={isMoving}
                         >
-                          {isMoving ? 'Moving...' : '’ Next Stage'}
+                          {isMoving ? 'Moving...' : 'ï¿½ Next Stage'}
                         </button>
                       )}
                     </div>

@@ -6,9 +6,8 @@ import { useAppSelector } from '../../store/hooks';
 
 const EquipmentMonitoringPage: React.FC = () => {
   const user = useAppSelector((state) => state.auth.user);
-  const storeId = user?.storeId || 'default-store';
 
-  const { data: equipment = [], isLoading } = useGetEquipmentByStoreQuery(storeId, {
+  const { data: equipment = [], isLoading } = useGetEquipmentByStoreQuery(undefined, {
     pollingInterval: 30000,
   });
 

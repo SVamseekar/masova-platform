@@ -18,7 +18,7 @@ interface PeakHoursHeatmapProps {
 }
 
 export default function PeakHoursHeatmap({ storeId }: PeakHoursHeatmapProps) {
-  const { data, isLoading, error } = useGetPeakHoursQuery(storeId);
+  const { data, isLoading, error } = useGetPeakHoursQuery(undefined);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-IN', {

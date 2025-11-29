@@ -5,6 +5,7 @@ import com.MaSoVa.delivery.dto.LocationUpdateRequest;
 import com.MaSoVa.delivery.dto.TrackingResponse;
 import com.MaSoVa.delivery.service.ETACalculationService;
 import com.MaSoVa.delivery.service.LiveTrackingService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,23 @@ public class TrackingController {
     public TrackingController(LiveTrackingService liveTrackingService, ETACalculationService etaCalculationService) {
         this.liveTrackingService = liveTrackingService;
         this.etaCalculationService = etaCalculationService;
+    }
+
+    /**
+     * Extract storeId from HTTP headers
+     */
+    private String getStoreIdFromHeaders(HttpServletRequest request) {
+        String userType = request.getHeader("X-User-Type");
+        String selectedStoreId = request.getHeader("X-Selected-Store-Id");
+        String userStoreId = request.getHeader("X-User-Store-Id");
+
+        // Managers/Customers use selected store
+        if ("MANAGER".equals(userType) || "CUSTOMER".equals(userType)) {
+            return selectedStoreId != null ? selectedStoreId : userStoreId;
+        }
+
+        // Staff/Driver use assigned store
+        return userStoreId;
     }
 
     /**

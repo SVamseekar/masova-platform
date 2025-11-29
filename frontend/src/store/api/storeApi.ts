@@ -81,10 +81,30 @@ export const storeApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: API_CONFIG.USER_SERVICE_URL,
     prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as RootState).auth.accessToken;
+      const state = getState() as RootState;
+      const token = state.auth.accessToken;
+      const user = state.auth.user;
+      const selectedStoreId = state.cart?.selectedStoreId;
+
+      // Add authorization token
       if (token) {
-        headers.set('authorization', `Bearer ${token}`);
+        headers.set('Authorization', `Bearer ${token}`);
       }
+
+      // Add user context headers
+      if (user) {
+        headers.set('X-User-Id', user.id);
+        headers.set('X-User-Type', user.type);
+        if (user.storeId) {
+          headers.set('X-User-Store-Id', user.storeId);
+        }
+      }
+
+      // Add selected store for managers/customers
+      if (selectedStoreId) {
+        headers.set('X-Selected-Store-Id', selectedStoreId);
+      }
+
       return headers;
     },
   }),
@@ -150,16 +170,16 @@ export const storeApi = createApi({
       ],
     }),
 
-    // Get operational status
-    getOperationalStatus: builder.query<{ isOperational: boolean }, string>({
-      query: (storeId) => `/api/stores/${storeId}/operational-status`,
-      providesTags: (result, error, storeId) => [{ type: 'Store', id: storeId }],
+    // Get operational status (uses header-based store filtering)
+    getOperationalStatus: builder.query<{ isOperational: boolean }, void>({
+      query: () => `/api/stores/operational-status`,
+      providesTags: [{ type: 'Store', id: 'CURRENT' }],
     }),
 
-    // Get store metrics
-    getStoreMetrics: builder.query<StoreMetrics, string>({
-      query: (storeId) => `/api/stores/${storeId}/metrics`,
-      providesTags: (result, error, storeId) => [{ type: 'Store', id: storeId }],
+    // Get store metrics (uses header-based store filtering)
+    getStoreMetrics: builder.query<StoreMetrics, void>({
+      query: () => `/api/stores/metrics`,
+      providesTags: [{ type: 'Store', id: 'CURRENT' }],
     }),
   }),
 });

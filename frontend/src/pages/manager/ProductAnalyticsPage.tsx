@@ -26,11 +26,10 @@ import { createCard } from '../../styles/neumorphic-utils';
 import { colors } from '../../styles/design-tokens';
 
 export default function ProductAnalyticsPage() {
-  const storeId = 'store-001'; // TODO: Get from auth context
   const [period, setPeriod] = useState('TODAY');
   const [sortBy, setSortBy] = useState('QUANTITY');
 
-  const { data, isLoading, error } = useGetTopProductsQuery({ storeId, period, sortBy });
+  const { data, isLoading, error } = useGetTopProductsQuery({ period, sortBy });
 
   const handlePeriodChange = (_event: React.MouseEvent<HTMLElement>, newPeriod: string | null) => {
     if (newPeriod) {

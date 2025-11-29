@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectSelectedStoreId } from '../../store/slices/cartSlice';
@@ -9,7 +9,7 @@ import {
 import { Card, Button } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
-import { colors, spacing, typography } from '../../styles/design-tokens';
+import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 import { format } from 'date-fns';
 
@@ -23,17 +23,29 @@ const PaymentDashboardPage: React.FC = () => {
   );
 
   // Fetch today's transactions
-  const { data: transactions, isLoading: transactionsLoading } =
-    useGetTransactionsByStoreIdQuery(storeId, {
+  const { data: transactions, isLoading: transactionsLoading, refetch: refetchTransactions } =
+    useGetTransactionsByStoreIdQuery(undefined, {
+      skip: !storeId,
       pollingInterval: 30000, // Poll every 30 seconds
     });
 
   // Fetch reconciliation report
-  const { data: report, isLoading: reportLoading } =
+  const { data: report, isLoading: reportLoading, refetch: refetchReport } =
     useGetReconciliationReportQuery(
-      { storeId, date: selectedDate },
-      { pollingInterval: 60000 } // Poll every minute
+      { date: selectedDate },
+      {
+        skip: !storeId,
+        pollingInterval: 60000 // Poll every minute
+      }
     );
+
+  // Refetch data when store changes
+  useEffect(() => {
+    if (storeId) {
+      refetchTransactions();
+      refetchReport();
+    }
+  }, [storeId, refetchTransactions, refetchReport]);
 
   const containerStyles: React.CSSProperties = {
     position: 'relative',

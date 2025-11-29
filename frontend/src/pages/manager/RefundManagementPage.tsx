@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectSelectedStoreId } from '../../store/slices/cartSlice';
@@ -25,8 +25,15 @@ const RefundManagementPage: React.FC = () => {
   const [refundType, setRefundType] = useState<'FULL' | 'PARTIAL'>('FULL');
   const [showRefundForm, setShowRefundForm] = useState(false);
 
-  const { data: transactions, isLoading } = useGetTransactionsByStoreIdQuery(storeId);
+  const { data: transactions, isLoading, refetch } = useGetTransactionsByStoreIdQuery();
   const [initiateRefund, { isLoading: refundLoading }] = useInitiateRefundMutation();
+
+  // Refetch data when store changes
+  useEffect(() => {
+    if (storeId) {
+      refetch();
+    }
+  }, [storeId, refetch]);
 
   // Filter only successful transactions that can be refunded
   const refundableTransactions = transactions?.filter(
@@ -45,7 +52,7 @@ const RefundManagementPage: React.FC = () => {
         amount: parseFloat(refundAmount),
         type: refundType,
         reason: refundReason,
-        initiatedBy: currentUser?.userId || 'unknown',
+        initiatedBy: currentUser?.id || 'unknown',
         speed: 'normal',
       }).unwrap();
 

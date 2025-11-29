@@ -54,10 +54,30 @@ export const shiftApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: API_CONFIG.USER_SERVICE_URL,
     prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as RootState).auth.accessToken;
+      const state = getState() as RootState;
+      const token = state.auth.accessToken;
+      const user = state.auth.user;
+      const selectedStoreId = state.cart?.selectedStoreId;
+
+      // Add authorization token
       if (token) {
-        headers.set('authorization', `Bearer ${token}`);
+        headers.set('Authorization', `Bearer ${token}`);
       }
+
+      // Add user context headers
+      if (user) {
+        headers.set('X-User-Id', user.id);
+        headers.set('X-User-Type', user.type);
+        if (user.storeId) {
+          headers.set('X-User-Store-Id', user.storeId);
+        }
+      }
+
+      // Add selected store for managers/customers
+      if (selectedStoreId) {
+        headers.set('X-Selected-Store-Id', selectedStoreId);
+      }
+
       return headers;
     },
   }),

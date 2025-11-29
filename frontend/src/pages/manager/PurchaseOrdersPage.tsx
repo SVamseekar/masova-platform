@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectSelectedStoreId } from '../../store/slices/cartSlice';
@@ -31,15 +31,24 @@ const PurchaseOrdersPage: React.FC = () => {
   const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null);
 
   // Fetch data
-  const { data: allOrders = [], isLoading } = useGetAllPurchaseOrdersQuery(storeId, {
+  const { data: allOrders = [], isLoading, refetch: refetchAll } = useGetAllPurchaseOrdersQuery(undefined, {
+    skip: !storeId,
     pollingInterval: 60000,
   });
-  const { data: pendingOrders = [] } = useGetPendingApprovalPurchaseOrdersQuery(storeId);
+  const { data: pendingOrders = [], refetch: refetchPending } = useGetPendingApprovalPurchaseOrdersQuery(undefined, { skip: !storeId });
 
   const [approvePO] = useApprovePurchaseOrderMutation();
   const [rejectPO] = useRejectPurchaseOrderMutation();
   const [sendPO] = useSendPurchaseOrderMutation();
   const [autoGenerate, { isLoading: isGenerating }] = useAutoGeneratePurchaseOrdersMutation();
+
+  // Refetch data when store changes
+  useEffect(() => {
+    if (storeId) {
+      refetchAll();
+      refetchPending();
+    }
+  }, [storeId, refetchAll, refetchPending]);
 
   // Filter by status
   const filteredOrders =
@@ -84,7 +93,7 @@ const PurchaseOrdersPage: React.FC = () => {
   const handleAutoGenerate = async () => {
     if (window.confirm('Auto-generate purchase orders for all low stock items?')) {
       try {
-        await autoGenerate({ storeId, createdBy: currentUser?.id || 'unknown' }).unwrap();
+        await autoGenerate({ createdBy: currentUser?.id || 'unknown' }).unwrap();
         alert('Purchase orders generated successfully!');
       } catch (error) {
         console.error('Failed to auto-generate POs:', error);
@@ -148,7 +157,7 @@ const PurchaseOrdersPage: React.FC = () => {
   };
 
   const filterButtonStyles = (isActive: boolean): React.CSSProperties => ({
-    ...createNeumorphicSurface(isActive ? 'pressed' : 'raised', 'sm', 'lg'),
+    ...createNeumorphicSurface(isActive ? 'inset' : 'raised', 'sm', 'lg'),
     padding: `${spacing[2]} ${spacing[4]}`,
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semibold,

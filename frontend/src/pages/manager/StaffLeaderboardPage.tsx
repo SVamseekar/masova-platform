@@ -21,10 +21,9 @@ import { createCard } from '../../styles/neumorphic-utils';
 import { colors } from '../../styles/design-tokens';
 
 export default function StaffLeaderboardPage() {
-  const storeId = 'store-001'; // TODO: Get from auth context
   const [period, setPeriod] = useState('TODAY');
 
-  const { data, isLoading, error } = useGetStaffLeaderboardQuery({ storeId, period });
+  const { data, isLoading, error } = useGetStaffLeaderboardQuery({ period });
 
   const handlePeriodChange = (_event: React.MouseEvent<HTMLElement>, newPeriod: string | null) => {
     if (newPeriod) {

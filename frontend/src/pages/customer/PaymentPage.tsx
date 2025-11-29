@@ -148,7 +148,7 @@ const PaymentPage: React.FC = () => {
 
       // Prepare order data - matching backend CreateOrderRequest structure
       const orderData = {
-        storeId: selectedStoreId || 'store-1', // Use selected store or default
+        storeId: selectedStoreId || currentUser?.storeId || '', // Use selected store from cart
         customerName: currentUser?.name || guestInfo?.name || 'Guest',
         customerPhone: guestInfo?.phone || currentUser?.phone || '',
         customerId: customerId, // Use customer ID from profile or newly created
@@ -194,7 +194,7 @@ const PaymentPage: React.FC = () => {
         customerId: currentUser?.id || 'guest',
         customerEmail: guestInfo?.email || currentUser?.email,
         customerPhone: guestInfo?.phone || currentUser?.phone,
-        storeId: 'store-1',
+        storeId: selectedStoreId || currentUser?.storeId || '',
       }).unwrap();
 
       // Open Razorpay checkout

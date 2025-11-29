@@ -229,10 +229,30 @@ export const inventoryApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: `${API_CONFIG.MENU_SERVICE_URL}/api/inventory`,
     prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as RootState).auth.token;
+      const state = getState() as RootState;
+      const token = state.auth.accessToken;
+      const user = state.auth.user;
+      const selectedStoreId = state.cart?.selectedStoreId;
+
+      // Add authorization token
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
       }
+
+      // Add user context headers
+      if (user) {
+        headers.set('X-User-Id', user.id);
+        headers.set('X-User-Type', user.type);
+        if (user.storeId) {
+          headers.set('X-User-Store-Id', user.storeId);
+        }
+      }
+
+      // Add selected store for managers/customers
+      if (selectedStoreId) {
+        headers.set('X-Selected-Store-Id', selectedStoreId);
+      }
+
       return headers;
     },
   }),
@@ -252,8 +272,8 @@ export const inventoryApi = createApi({
     }),
 
     // Get all inventory items for a store
-    getAllInventoryItems: builder.query<InventoryItem[], string>({
-      query: (storeId) => `/items?storeId=${storeId}`,
+    getAllInventoryItems: builder.query<InventoryItem[], void>({
+      query: () => `/items`,
       providesTags: ['InventoryItem'],
     }),
 
@@ -264,14 +284,14 @@ export const inventoryApi = createApi({
     }),
 
     // Get items by category
-    getItemsByCategory: builder.query<InventoryItem[], { storeId: string; category: string }>({
-      query: ({ storeId, category }) => `/items/category/${category}?storeId=${storeId}`,
+    getItemsByCategory: builder.query<InventoryItem[], { category: string }>({
+      query: ({ category }) => `/items/category/${category}`,
       providesTags: ['InventoryItem'],
     }),
 
     // Search inventory items
-    searchInventoryItems: builder.query<InventoryItem[], { storeId: string; query: string }>({
-      query: ({ storeId, query }) => `/items/search?storeId=${storeId}&q=${query}`,
+    searchInventoryItems: builder.query<InventoryItem[], { query: string }>({
+      query: ({ query }) => `/items/search?q=${query}`,
       providesTags: ['InventoryItem'],
     }),
 
@@ -326,38 +346,38 @@ export const inventoryApi = createApi({
     }),
 
     // Get low stock items
-    getLowStockItems: builder.query<InventoryItem[], string>({
-      query: (storeId) => `/low-stock?storeId=${storeId}`,
+    getLowStockItems: builder.query<InventoryItem[], void>({
+      query: () => `/low-stock`,
       providesTags: ['InventoryItem'],
     }),
 
     // Get out of stock items
-    getOutOfStockItems: builder.query<InventoryItem[], string>({
-      query: (storeId) => `/out-of-stock?storeId=${storeId}`,
+    getOutOfStockItems: builder.query<InventoryItem[], void>({
+      query: () => `/out-of-stock`,
       providesTags: ['InventoryItem'],
     }),
 
     // Get items expiring soon
-    getExpiringItems: builder.query<InventoryItem[], { storeId: string; days: number }>({
-      query: ({ storeId, days }) => `/expiring-soon?storeId=${storeId}&days=${days}`,
+    getExpiringItems: builder.query<InventoryItem[], { days: number }>({
+      query: ({ days }) => `/expiring-soon?days=${days}`,
       providesTags: ['InventoryItem'],
     }),
 
     // Get low stock alerts
-    getLowStockAlerts: builder.query<InventoryItem[], string>({
-      query: (storeId) => `/alerts/low-stock?storeId=${storeId}`,
+    getLowStockAlerts: builder.query<InventoryItem[], void>({
+      query: () => `/alerts/low-stock`,
       providesTags: ['InventoryItem'],
     }),
 
     // Get total inventory value
-    getTotalInventoryValue: builder.query<InventoryValueResponse, string>({
-      query: (storeId) => `/value?storeId=${storeId}`,
+    getTotalInventoryValue: builder.query<InventoryValueResponse, void>({
+      query: () => `/value`,
       providesTags: ['InventoryValue'],
     }),
 
     // Get inventory value by category
-    getInventoryValueByCategory: builder.query<InventoryValueResponse, string>({
-      query: (storeId) => `/value/by-category?storeId=${storeId}`,
+    getInventoryValueByCategory: builder.query<InventoryValueResponse, void>({
+      query: () => `/value/by-category`,
       providesTags: ['InventoryValue'],
     }),
 
@@ -495,8 +515,8 @@ export const inventoryApi = createApi({
     }),
 
     // Get all purchase orders
-    getAllPurchaseOrders: builder.query<PurchaseOrder[], string>({
-      query: (storeId) => `/purchase-orders?storeId=${storeId}`,
+    getAllPurchaseOrders: builder.query<PurchaseOrder[], void>({
+      query: () => `/purchase-orders`,
       providesTags: ['PurchaseOrder'],
     }),
 
@@ -513,27 +533,27 @@ export const inventoryApi = createApi({
     }),
 
     // Get purchase orders by status
-    getPurchaseOrdersByStatus: builder.query<PurchaseOrder[], { storeId: string; status: string }>({
-      query: ({ storeId, status }) => `/purchase-orders/status/${status}?storeId=${storeId}`,
+    getPurchaseOrdersByStatus: builder.query<PurchaseOrder[], { status: string }>({
+      query: ({ status }) => `/purchase-orders/status/${status}`,
       providesTags: ['PurchaseOrder'],
     }),
 
     // Get pending approval purchase orders
-    getPendingApprovalPurchaseOrders: builder.query<PurchaseOrder[], string>({
-      query: (storeId) => `/purchase-orders/pending-approval?storeId=${storeId}`,
+    getPendingApprovalPurchaseOrders: builder.query<PurchaseOrder[], void>({
+      query: () => `/purchase-orders/pending-approval`,
       providesTags: ['PurchaseOrder'],
     }),
 
     // Get overdue purchase orders
-    getOverduePurchaseOrders: builder.query<PurchaseOrder[], string>({
-      query: (storeId) => `/purchase-orders/overdue?storeId=${storeId}`,
+    getOverduePurchaseOrders: builder.query<PurchaseOrder[], void>({
+      query: () => `/purchase-orders/overdue`,
       providesTags: ['PurchaseOrder'],
     }),
 
     // Get purchase orders by date range
-    getPurchaseOrdersByDateRange: builder.query<PurchaseOrder[], { storeId: string; startDate: string; endDate: string }>({
-      query: ({ storeId, startDate, endDate }) =>
-        `/purchase-orders/date-range?storeId=${storeId}&startDate=${startDate}&endDate=${endDate}`,
+    getPurchaseOrdersByDateRange: builder.query<PurchaseOrder[], { startDate: string; endDate: string }>({
+      query: ({ startDate, endDate }) =>
+        `/purchase-orders/date-range?startDate=${startDate}&endDate=${endDate}`,
       providesTags: ['PurchaseOrder'],
     }),
 
@@ -602,11 +622,11 @@ export const inventoryApi = createApi({
     }),
 
     // Auto-generate purchase orders for low stock items
-    autoGeneratePurchaseOrders: builder.mutation<PurchaseOrder[], { storeId: string; createdBy: string }>({
-      query: ({ storeId, createdBy }) => ({
+    autoGeneratePurchaseOrders: builder.mutation<PurchaseOrder[], { createdBy: string }>({
+      query: ({ createdBy }) => ({
         url: '/purchase-orders/auto-generate',
         method: 'POST',
-        body: { storeId, createdBy },
+        body: { createdBy },
       }),
       invalidatesTags: ['PurchaseOrder'],
     }),
@@ -633,8 +653,8 @@ export const inventoryApi = createApi({
     }),
 
     // Get all waste records
-    getAllWasteRecords: builder.query<WasteRecord[], string>({
-      query: (storeId) => `/waste?storeId=${storeId}`,
+    getAllWasteRecords: builder.query<WasteRecord[], void>({
+      query: () => `/waste`,
       providesTags: ['WasteRecord'],
     }),
 
@@ -645,15 +665,15 @@ export const inventoryApi = createApi({
     }),
 
     // Get waste records by date range
-    getWasteRecordsByDateRange: builder.query<WasteRecord[], { storeId: string; startDate: string; endDate: string }>({
-      query: ({ storeId, startDate, endDate }) =>
-        `/waste/date-range?storeId=${storeId}&startDate=${startDate}&endDate=${endDate}`,
+    getWasteRecordsByDateRange: builder.query<WasteRecord[], { startDate: string; endDate: string }>({
+      query: ({ startDate, endDate }) =>
+        `/waste/date-range?startDate=${startDate}&endDate=${endDate}`,
       providesTags: ['WasteRecord'],
     }),
 
     // Get waste records by category
-    getWasteRecordsByCategory: builder.query<WasteRecord[], { storeId: string; category: string }>({
-      query: ({ storeId, category }) => `/waste/category/${category}?storeId=${storeId}`,
+    getWasteRecordsByCategory: builder.query<WasteRecord[], { category: string }>({
+      query: ({ category }) => `/waste/category/${category}`,
       providesTags: ['WasteRecord'],
     }),
 
@@ -687,36 +707,36 @@ export const inventoryApi = createApi({
     }),
 
     // Get total waste cost
-    getTotalWasteCost: builder.query<WasteSummary, { storeId: string; startDate: string; endDate: string }>({
-      query: ({ storeId, startDate, endDate }) =>
-        `/waste/total-cost?storeId=${storeId}&startDate=${startDate}&endDate=${endDate}`,
+    getTotalWasteCost: builder.query<WasteSummary, { startDate: string; endDate: string }>({
+      query: ({ startDate, endDate }) =>
+        `/waste/total-cost?startDate=${startDate}&endDate=${endDate}`,
       providesTags: ['WasteRecord'],
     }),
 
     // Get waste cost by category
-    getWasteCostByCategory: builder.query<WasteSummary, { storeId: string; startDate: string; endDate: string }>({
-      query: ({ storeId, startDate, endDate }) =>
-        `/waste/cost-by-category?storeId=${storeId}&startDate=${startDate}&endDate=${endDate}`,
+    getWasteCostByCategory: builder.query<WasteSummary, { startDate: string; endDate: string }>({
+      query: ({ startDate, endDate }) =>
+        `/waste/cost-by-category?startDate=${startDate}&endDate=${endDate}`,
       providesTags: ['WasteRecord'],
     }),
 
     // Get top wasted items
-    getTopWastedItems: builder.query<any[], { storeId: string; startDate: string; endDate: string; limit: number }>({
-      query: ({ storeId, startDate, endDate, limit }) =>
-        `/waste/top-items?storeId=${storeId}&startDate=${startDate}&endDate=${endDate}&limit=${limit}`,
+    getTopWastedItems: builder.query<any[], { startDate: string; endDate: string; limit: number }>({
+      query: ({ startDate, endDate, limit }) =>
+        `/waste/top-items?startDate=${startDate}&endDate=${endDate}&limit=${limit}`,
       providesTags: ['WasteRecord'],
     }),
 
     // Get preventable waste analysis
-    getPreventableWasteAnalysis: builder.query<WasteSummary, { storeId: string; startDate: string; endDate: string }>({
-      query: ({ storeId, startDate, endDate }) =>
-        `/waste/preventable-analysis?storeId=${storeId}&startDate=${startDate}&endDate=${endDate}`,
+    getPreventableWasteAnalysis: builder.query<WasteSummary, { startDate: string; endDate: string }>({
+      query: ({ startDate, endDate }) =>
+        `/waste/preventable-analysis?startDate=${startDate}&endDate=${endDate}`,
       providesTags: ['WasteRecord'],
     }),
 
     // Get waste trend (monthly)
-    getWasteTrend: builder.query<WasteTrend[], { storeId: string; months: number }>({
-      query: ({ storeId, months }) => `/waste/trend?storeId=${storeId}&months=${months}`,
+    getWasteTrend: builder.query<WasteTrend[], { months: number }>({
+      query: ({ months }) => `/waste/trend?months=${months}`,
       providesTags: ['WasteRecord'],
     }),
   }),

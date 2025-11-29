@@ -5,6 +5,8 @@ import com.MaSoVa.order.dto.UpdateOrderStatusRequest;
 import com.MaSoVa.order.dto.UpdatePaymentStatusRequest;
 import com.MaSoVa.order.entity.Order;
 import com.MaSoVa.order.service.OrderService;
+import com.MaSoVa.shared.util.StoreContextUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +31,13 @@ public class OrderController {
         this.orderService = orderService;
     }
 
+    /**
+     * Extract storeId from request headers based on user type
+     */
+    private String getStoreIdFromHeaders(HttpServletRequest request) {
+        return StoreContextUtil.getStoreIdFromHeaders(request);
+    }
+
     // Only customers can create orders - staff/managers cannot place orders as customers
     @PostMapping
     @PreAuthorize("hasRole('CUSTOMER') or isAnonymous()")
@@ -50,14 +59,16 @@ public class OrderController {
         return ResponseEntity.ok(order);
     }
 
-    @GetMapping("/kitchen/{storeId}")
-    public ResponseEntity<List<Order>> getKitchenQueue(@PathVariable String storeId) {
+    @GetMapping("/kitchen")
+    public ResponseEntity<List<Order>> getKitchenQueue(HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
         List<Order> orders = orderService.getKitchenQueue(storeId);
         return ResponseEntity.ok(orders);
     }
 
-    @GetMapping("/store/{storeId}")
-    public ResponseEntity<List<Order>> getStoreOrders(@PathVariable String storeId) {
+    @GetMapping("/store")
+    public ResponseEntity<List<Order>> getStoreOrders(HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
         List<Order> orders = orderService.getStoreOrders(storeId);
         return ResponseEntity.ok(orders);
     }
@@ -119,8 +130,9 @@ public class OrderController {
 
     @GetMapping("/search")
     public ResponseEntity<List<Order>> searchOrders(
-            @RequestParam String storeId,
+            HttpServletRequest request,
             @RequestParam String query) {
+        String storeId = getStoreIdFromHeaders(request);
         List<Order> orders = orderService.searchOrders(storeId, query);
         return ResponseEntity.ok(orders);
     }
@@ -214,17 +226,19 @@ public class OrderController {
         return ResponseEntity.ok(checkpoints);
     }
 
-    @GetMapping("/store/{storeId}/failed-quality-checks")
-    public ResponseEntity<List<Order>> getOrdersWithFailedQualityChecks(@PathVariable String storeId) {
+    @GetMapping("/store/failed-quality-checks")
+    public ResponseEntity<List<Order>> getOrdersWithFailedQualityChecks(HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
         log.info("Fetching orders with failed quality checks for store: {}", storeId);
         List<Order> orders = orderService.getOrdersWithFailedQualityChecks(storeId);
         return ResponseEntity.ok(orders);
     }
 
-    @GetMapping("/store/{storeId}/avg-prep-time")
+    @GetMapping("/store/avg-prep-time")
     public ResponseEntity<Double> getAveragePreparationTime(
-            @PathVariable String storeId,
+            HttpServletRequest request,
             @RequestParam String date) {
+        String storeId = getStoreIdFromHeaders(request);
         log.info("Fetching average preparation time for store: {} on date: {}", storeId, date);
         Double avgPrepTime = orderService.getAveragePreparationTime(storeId, java.time.LocalDate.parse(date));
         return ResponseEntity.ok(avgPrepTime);
@@ -243,20 +257,22 @@ public class OrderController {
         return ResponseEntity.ok(order);
     }
 
-    @GetMapping("/store/{storeId}/make-table/{station}")
+    @GetMapping("/store/make-table/{station}")
     public ResponseEntity<List<Order>> getOrdersByMakeTableStation(
-            @PathVariable String storeId,
+            HttpServletRequest request,
             @PathVariable String station) {
+        String storeId = getStoreIdFromHeaders(request);
         log.info("Fetching orders for make-table station: {} in store: {}", station, storeId);
         List<Order> orders = orderService.getOrdersByMakeTableStation(storeId, station);
         return ResponseEntity.ok(orders);
     }
 
     // Kitchen analytics endpoints
-    @GetMapping("/store/{storeId}/analytics/prep-time-by-item")
+    @GetMapping("/store/analytics/prep-time-by-item")
     public ResponseEntity<Map<String, Double>> getAveragePreparationTimeByItem(
-            @PathVariable String storeId,
+            HttpServletRequest request,
             @RequestParam String date) {
+        String storeId = getStoreIdFromHeaders(request);
         log.info("Fetching average prep time by menu item for store: {} on date: {}", storeId, date);
         Map<String, Double> prepTimes = orderService.getAveragePreparationTimeByMenuItem(
                 storeId, java.time.LocalDate.parse(date));
@@ -273,10 +289,11 @@ public class OrderController {
         return ResponseEntity.ok(performance);
     }
 
-    @GetMapping("/store/{storeId}/analytics/prep-time-distribution")
+    @GetMapping("/store/analytics/prep-time-distribution")
     public ResponseEntity<Map<String, Object>> getPreparationTimeDistribution(
-            @PathVariable String storeId,
+            HttpServletRequest request,
             @RequestParam String date) {
+        String storeId = getStoreIdFromHeaders(request);
         log.info("Fetching prep time distribution for store: {} on date: {}", storeId, date);
         Map<String, Object> distribution = orderService.getPreparationTimeDistribution(
                 storeId, java.time.LocalDate.parse(date));

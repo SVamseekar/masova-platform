@@ -3,6 +3,7 @@ import AppHeader from '../../components/common/AppHeader';
 import RecipeViewer from '../../components/RecipeViewer';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectSelectedStoreId } from '../../store/slices/cartSlice';
 import {
   useGetKitchenQueueQuery,
   useUpdateOrderStatusMutation,
@@ -43,20 +44,19 @@ const KitchenDisplayPage: React.FC = () => {
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [selectedRecipeItem, setSelectedRecipeItem] = useState<MenuItem | null>(null);
   const currentUser = useAppSelector(selectCurrentUser);
+  const selectedStoreIdFromRedux = useAppSelector(selectSelectedStoreId);
 
-  // Store selection - ALWAYS use store-1 for now (single store setup)
-  // TODO: Add multi-store support later with store selector
-  // Note: Orders are being created with storeId='store-1', so KDS must use the same
-  const DEFAULT_STORE_ID = 'store-1';
-  const [selectedStoreId] = useState<string>(DEFAULT_STORE_ID);
+  // Get store ID from Redux store selector or user's assigned store
+  const storeId = selectedStoreIdFromRedux || currentUser?.storeId || '';
 
   // Log for debugging
   React.useEffect(() => {
-    console.log('KDS Store ID:', selectedStoreId, 'User Store:', currentUser?.storeId);
-  }, [selectedStoreId, currentUser?.storeId]);
+    console.log('KDS Store ID:', storeId, 'User Store:', currentUser?.storeId);
+  }, [storeId, currentUser?.storeId]);
 
   // API Hooks - Poll every 5 seconds for real-time updates
-  const { data: apiOrders = [], isLoading, error } = useGetKitchenQueueQuery(selectedStoreId, {
+  const { data: apiOrders = [], isLoading, error } = useGetKitchenQueueQuery(undefined, {
+    skip: !storeId,
     pollingInterval: 5000, // Poll every 5 seconds
     refetchOnMountOrArgChange: true,
   });
@@ -860,7 +860,7 @@ const KitchenDisplayPage: React.FC = () => {
         }
       `}</style>
 
-      <AppHeader title={`Kitchen Display - ${selectedStoreId.toUpperCase()}`} hideStaffLogin={true} />
+      <AppHeader title={`Kitchen Display - ${storeId.toUpperCase() || 'NO STORE'}`} hideStaffLogin={true} />
 
       {/* Main Board */}
       <main className="kitchen-board">

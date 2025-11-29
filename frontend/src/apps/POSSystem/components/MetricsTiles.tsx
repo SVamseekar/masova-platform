@@ -15,35 +15,31 @@ import {
   useGetDriverStatusQuery,
 } from '../../../store/api/analyticsApi';
 
-interface MetricsTilesProps {
-  storeId?: string;
-}
-
 /**
  * Real-time metrics display for POS dashboard
  * Shows today's sales, comparisons, and operational stats
  */
-const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId = 'default-store' }) => {
+const MetricsTiles: React.FC = () => {
   // Fetch real-time metrics from analytics service
   const {
     data: salesMetrics,
     isLoading: salesLoading,
     error: salesError,
-  } = useGetTodaySalesMetricsQuery(storeId, {
+  } = useGetTodaySalesMetricsQuery(undefined, {
     pollingInterval: 60000, // Refresh every minute
   });
 
   const {
     data: avgOrderValue,
     isLoading: avgLoading,
-  } = useGetAverageOrderValueQuery(storeId, {
+  } = useGetAverageOrderValueQuery(undefined, {
     pollingInterval: 60000,
   });
 
   const {
     data: driverStatus,
     isLoading: driverLoading,
-  } = useGetDriverStatusQuery(storeId, {
+  } = useGetDriverStatusQuery(undefined, {
     pollingInterval: 30000, // Refresh every 30 seconds
   });
 

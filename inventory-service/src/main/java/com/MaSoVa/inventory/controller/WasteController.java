@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -34,6 +35,23 @@ public class WasteController {
     }
 
     /**
+     * Extract storeId from HTTP headers
+     */
+    private String getStoreIdFromHeaders(HttpServletRequest request) {
+        String userType = request.getHeader("X-User-Type");
+        String selectedStoreId = request.getHeader("X-Selected-Store-Id");
+        String userStoreId = request.getHeader("X-User-Store-Id");
+
+        // Managers/Customers use selected store
+        if ("MANAGER".equals(userType) || "CUSTOMER".equals(userType)) {
+            return selectedStoreId != null ? selectedStoreId : userStoreId;
+        }
+
+        // Staff/Driver use assigned store
+        return userStoreId;
+    }
+
+    /**
      * Record waste
      * POST /api/inventory/waste
      */
@@ -47,10 +65,11 @@ public class WasteController {
 
     /**
      * Get all waste records for a store
-     * GET /api/inventory/waste?storeId=xxx
+     * GET /api/inventory/waste
      */
     @GetMapping
-    public ResponseEntity<List<WasteRecord>> getAllWasteRecords(@RequestParam String storeId) {
+    public ResponseEntity<List<WasteRecord>> getAllWasteRecords(HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting all waste records for store: {}", storeId);
         List<WasteRecord> records = wasteAnalysisService.getAllWasteRecords(storeId);
         return ResponseEntity.ok(records);
@@ -69,13 +88,14 @@ public class WasteController {
 
     /**
      * Get waste records by date range
-     * GET /api/inventory/waste/date-range?storeId=xxx&startDate=2024-01-01&endDate=2024-01-31
+     * GET /api/inventory/waste/date-range?startDate=2024-01-01&endDate=2024-01-31
      */
     @GetMapping("/date-range")
     public ResponseEntity<List<WasteRecord>> getWasteRecordsByDateRange(
-            @RequestParam String storeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting waste records from {} to {} for store: {}", startDate, endDate, storeId);
         List<WasteRecord> records = wasteAnalysisService.getWasteRecordsByDateRange(storeId, startDate, endDate);
         return ResponseEntity.ok(records);
@@ -83,12 +103,13 @@ public class WasteController {
 
     /**
      * Get waste records by category
-     * GET /api/inventory/waste/category/{category}?storeId=xxx
+     * GET /api/inventory/waste/category/{category}
      */
     @GetMapping("/category/{category}")
     public ResponseEntity<List<WasteRecord>> getWasteRecordsByCategory(
             @PathVariable String category,
-            @RequestParam String storeId) {
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting waste records for category: {} in store: {}", category, storeId);
         List<WasteRecord> records = wasteAnalysisService.getWasteRecordsByCategory(storeId, category);
         return ResponseEntity.ok(records);
@@ -136,13 +157,14 @@ public class WasteController {
 
     /**
      * Get total waste cost
-     * GET /api/inventory/waste/total-cost?storeId=xxx&startDate=2024-01-01&endDate=2024-01-31
+     * GET /api/inventory/waste/total-cost?startDate=2024-01-01&endDate=2024-01-31
      */
     @GetMapping("/total-cost")
     public ResponseEntity<WasteSummaryResponse> getTotalWasteCost(
-            @RequestParam String storeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting total waste cost from {} to {} for store: {}", startDate, endDate, storeId);
         BigDecimal totalCost = wasteAnalysisService.getTotalWasteCost(storeId, startDate, endDate);
 
@@ -151,13 +173,14 @@ public class WasteController {
 
     /**
      * Get waste cost by category
-     * GET /api/inventory/waste/cost-by-category?storeId=xxx&startDate=2024-01-01&endDate=2024-01-31
+     * GET /api/inventory/waste/cost-by-category?startDate=2024-01-01&endDate=2024-01-31
      */
     @GetMapping("/cost-by-category")
     public ResponseEntity<Map<String, BigDecimal>> getWasteCostByCategory(
-            @RequestParam String storeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting waste cost by category from {} to {} for store: {}", startDate, endDate, storeId);
         Map<String, BigDecimal> costByCategory = wasteAnalysisService.getWasteCostByCategory(storeId, startDate, endDate);
         return ResponseEntity.ok(costByCategory);
@@ -165,14 +188,15 @@ public class WasteController {
 
     /**
      * Get top wasted items
-     * GET /api/inventory/waste/top-items?storeId=xxx&startDate=2024-01-01&endDate=2024-01-31&limit=10
+     * GET /api/inventory/waste/top-items?startDate=2024-01-01&endDate=2024-01-31&limit=10
      */
     @GetMapping("/top-items")
     public ResponseEntity<List<Map<String, Object>>> getTopWastedItems(
-            @RequestParam String storeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(defaultValue = "10") Integer limit) {
+            @RequestParam(defaultValue = "10") Integer limit,
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting top {} wasted items from {} to {} for store: {}", limit, startDate, endDate, storeId);
         List<Map<String, Object>> topItems = wasteAnalysisService.getTopWastedItems(storeId, startDate, endDate, limit);
         return ResponseEntity.ok(topItems);
@@ -180,13 +204,14 @@ public class WasteController {
 
     /**
      * Get preventable waste analysis
-     * GET /api/inventory/waste/preventable-analysis?storeId=xxx&startDate=2024-01-01&endDate=2024-01-31
+     * GET /api/inventory/waste/preventable-analysis?startDate=2024-01-01&endDate=2024-01-31
      */
     @GetMapping("/preventable-analysis")
     public ResponseEntity<Map<String, Object>> getPreventableWasteAnalysis(
-            @RequestParam String storeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting preventable waste analysis from {} to {} for store: {}", startDate, endDate, storeId);
         Map<String, Object> analysis = wasteAnalysisService.getPreventableWasteAnalysis(storeId, startDate, endDate);
         return ResponseEntity.ok(analysis);
@@ -194,12 +219,13 @@ public class WasteController {
 
     /**
      * Get waste trend (monthly)
-     * GET /api/inventory/waste/trend?storeId=xxx&months=6
+     * GET /api/inventory/waste/trend?months=6
      */
     @GetMapping("/trend")
     public ResponseEntity<List<Map<String, Object>>> getWasteTrend(
-            @RequestParam String storeId,
-            @RequestParam(defaultValue = "6") Integer months) {
+            @RequestParam(defaultValue = "6") Integer months,
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting waste trend for last {} months for store: {}", months, storeId);
         List<Map<String, Object>> trend = wasteAnalysisService.getWasteTrend(storeId, months);
         return ResponseEntity.ok(trend);

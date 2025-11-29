@@ -358,15 +358,8 @@ public class ExecutiveReportingService {
                 .rank(1)
                 .build()));
 
-        // Mock other top performers
-        performers.add(ExecutiveSummaryResponse.TopPerformer.builder()
-            .category("Store")
-            .name("Mumbai Central Branch")
-            .id("STORE001")
-            .value(BigDecimal.valueOf(250000))
-            .metric("Sales")
-            .rank(1)
-            .build());
+        // TODO: Add real store performance data from order analytics
+        // Removed hardcoded STORE001 mock data
 
         return performers;
     }

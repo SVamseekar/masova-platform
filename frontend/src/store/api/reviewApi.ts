@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { API_CONFIG } from '../../config/api.config';
+import type { RootState } from '../store';
 
 export interface Review {
   id: string;
@@ -170,19 +171,30 @@ export const reviewApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: `${API_CONFIG.REVIEW_SERVICE_URL}/api`,
     prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as any).auth.token;
-      const userId = (getState() as any).auth.user?.id;
-      const userName = (getState() as any).auth.user?.name;
+      const state = getState() as RootState;
+      const token = state.auth.accessToken;
+      const user = state.auth.user;
+      const selectedStoreId = state.cart?.selectedStoreId;
 
+      // Add authorization token
       if (token) {
-        headers.set('authorization', `Bearer ${token}`);
+        headers.set('Authorization', `Bearer ${token}`);
       }
-      if (userId) {
-        headers.set('X-User-ID', userId);
+
+      // Add user context headers
+      if (user) {
+        headers.set('X-User-Id', user.id);
+        headers.set('X-User-Type', user.type);
+        if (user.storeId) {
+          headers.set('X-User-Store-Id', user.storeId);
+        }
       }
-      if (userName) {
-        headers.set('X-User-Name', userName);
+
+      // Add selected store for managers/customers
+      if (selectedStoreId) {
+        headers.set('X-Selected-Store-Id', selectedStoreId);
       }
+
       return headers;
     },
   }),

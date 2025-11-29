@@ -2,6 +2,8 @@ package com.MaSoVa.order.controller;
 
 import com.MaSoVa.order.entity.KitchenEquipment;
 import com.MaSoVa.order.service.KitchenEquipmentService;
+import com.MaSoVa.shared.util.StoreContextUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -36,9 +38,13 @@ public class KitchenEquipmentController {
     /**
      * Get all equipment for a store
      */
-    @GetMapping("/store/{storeId}")
-    public ResponseEntity<List<KitchenEquipment>> getEquipmentByStore(@PathVariable String storeId) {
-        log.info("GET /api/kitchen-equipment/store/{} - Fetching equipment", storeId);
+    @GetMapping("/store")
+    public ResponseEntity<List<KitchenEquipment>> getEquipmentByStore(HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        log.info("GET /api/kitchen-equipment/store - Fetching equipment for store: {}", storeId);
         List<KitchenEquipment> equipment = equipmentService.getEquipmentByStore(storeId);
         return ResponseEntity.ok(equipment);
     }
@@ -123,12 +129,16 @@ public class KitchenEquipmentController {
     /**
      * Get equipment by status
      */
-    @GetMapping("/store/{storeId}/status/{status}")
+    @GetMapping("/store/status/{status}")
     public ResponseEntity<List<KitchenEquipment>> getEquipmentByStatus(
-            @PathVariable String storeId,
+            HttpServletRequest request,
             @PathVariable String status) {
 
-        log.info("GET /api/kitchen-equipment/store/{}/status/{}", storeId, status);
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        log.info("GET /api/kitchen-equipment/store/status/{} - Fetching equipment with status for store: {}", status, storeId);
 
         KitchenEquipment.EquipmentStatus equipmentStatus = KitchenEquipment.EquipmentStatus.valueOf(status);
         List<KitchenEquipment> equipment = equipmentService.getEquipmentByStatus(storeId, equipmentStatus);
@@ -138,9 +148,13 @@ public class KitchenEquipmentController {
     /**
      * Get equipment needing maintenance
      */
-    @GetMapping("/store/{storeId}/maintenance-needed")
-    public ResponseEntity<List<KitchenEquipment>> getEquipmentNeedingMaintenance(@PathVariable String storeId) {
-        log.info("GET /api/kitchen-equipment/store/{}/maintenance-needed", storeId);
+    @GetMapping("/store/maintenance-needed")
+    public ResponseEntity<List<KitchenEquipment>> getEquipmentNeedingMaintenance(HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        log.info("GET /api/kitchen-equipment/store/maintenance-needed - Fetching equipment needing maintenance for store: {}", storeId);
         List<KitchenEquipment> equipment = equipmentService.getEquipmentNeedingMaintenance(storeId);
         return ResponseEntity.ok(equipment);
     }
@@ -158,9 +172,13 @@ public class KitchenEquipmentController {
     /**
      * Reset daily usage counts
      */
-    @PostMapping("/store/{storeId}/reset-usage")
-    public ResponseEntity<Void> resetUsageCounts(@PathVariable String storeId) {
-        log.info("POST /api/kitchen-equipment/store/{}/reset-usage", storeId);
+    @PostMapping("/store/reset-usage")
+    public ResponseEntity<Void> resetUsageCounts(HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        log.info("POST /api/kitchen-equipment/store/reset-usage - Resetting usage counts for store: {}", storeId);
         equipmentService.resetDailyUsageCounts(storeId);
         return ResponseEntity.ok().build();
     }

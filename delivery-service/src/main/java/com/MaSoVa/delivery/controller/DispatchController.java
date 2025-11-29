@@ -6,6 +6,7 @@ import com.MaSoVa.delivery.dto.RouteOptimizationRequest;
 import com.MaSoVa.delivery.dto.RouteOptimizationResponse;
 import com.MaSoVa.delivery.service.AutoDispatchService;
 import com.MaSoVa.delivery.service.RouteOptimizationService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +29,23 @@ public class DispatchController {
     public DispatchController(AutoDispatchService autoDispatchService, RouteOptimizationService routeOptimizationService) {
         this.autoDispatchService = autoDispatchService;
         this.routeOptimizationService = routeOptimizationService;
+    }
+
+    /**
+     * Extract storeId from HTTP headers
+     */
+    private String getStoreIdFromHeaders(HttpServletRequest request) {
+        String userType = request.getHeader("X-User-Type");
+        String selectedStoreId = request.getHeader("X-Selected-Store-Id");
+        String userStoreId = request.getHeader("X-User-Store-Id");
+
+        // Managers/Customers use selected store
+        if ("MANAGER".equals(userType) || "CUSTOMER".equals(userType)) {
+            return selectedStoreId != null ? selectedStoreId : userStoreId;
+        }
+
+        // Staff/Driver use assigned store
+        return userStoreId;
     }
 
     /**

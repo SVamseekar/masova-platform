@@ -11,10 +11,6 @@ import { useGetOrderTypeBreakdownQuery } from '../../store/api/analyticsApi';
 import { createCard } from '../../styles/neumorphic-utils';
 import { colors } from '../../styles/design-tokens';
 
-interface RevenueBreakdownChartProps {
-  storeId: string;
-}
-
 const COLORS = [
   colors.brand.primary,      // MaSoVa red for primary
   colors.brand.secondary,    // Blue for secondary
@@ -28,8 +24,8 @@ const ORDER_TYPE_LABELS: Record<string, string> = {
   DELIVERY: 'Delivery',
 };
 
-export default function RevenueBreakdownChart({ storeId }: RevenueBreakdownChartProps) {
-  const { data, isLoading, error } = useGetOrderTypeBreakdownQuery(storeId);
+export default function RevenueBreakdownChart() {
+  const { data, isLoading, error } = useGetOrderTypeBreakdownQuery(undefined);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -83,7 +79,7 @@ export default function RevenueBreakdownChart({ storeId }: RevenueBreakdownChart
             cx="50%"
             cy="50%"
             labelLine={false}
-            label={({ name, percentage }) => `${name}: ${percentage.toFixed(1)}%`}
+            label={(entry: any) => `${entry.name}: ${entry.percentage.toFixed(1)}%`}
             outerRadius={100}
             fill="#8884d8"
             dataKey="value"

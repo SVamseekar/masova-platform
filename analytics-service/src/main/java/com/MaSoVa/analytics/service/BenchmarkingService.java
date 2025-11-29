@@ -98,14 +98,11 @@ public class BenchmarkingService {
         Map<String, List<Map<String, Object>>> byStore = new HashMap<>();
 
         for (Map<String, Object> order : orders) {
-            // Mock store ID - in reality this would come from the order
-            String storeId = (String) order.getOrDefault("storeId", "STORE001");
-            byStore.computeIfAbsent(storeId, k -> new ArrayList<>()).add(order);
-        }
-
-        // If no stores, create a default one
-        if (byStore.isEmpty()) {
-            byStore.put("STORE001", orders);
+            // Get store ID from order - skip if not present
+            String storeId = (String) order.get("storeId");
+            if (storeId != null && !storeId.isEmpty()) {
+                byStore.computeIfAbsent(storeId, k -> new ArrayList<>()).add(order);
+            }
         }
 
         return byStore;

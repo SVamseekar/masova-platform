@@ -2,6 +2,7 @@ package com.MaSoVa.delivery.controller;
 
 import com.MaSoVa.delivery.dto.DriverPerformanceResponse;
 import com.MaSoVa.delivery.service.PerformanceService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -23,6 +24,23 @@ public class PerformanceController {
 
     public PerformanceController(PerformanceService performanceService) {
         this.performanceService = performanceService;
+    }
+
+    /**
+     * Extract storeId from HTTP headers
+     */
+    private String getStoreIdFromHeaders(HttpServletRequest request) {
+        String userType = request.getHeader("X-User-Type");
+        String selectedStoreId = request.getHeader("X-Selected-Store-Id");
+        String userStoreId = request.getHeader("X-User-Store-Id");
+
+        // Managers/Customers use selected store
+        if ("MANAGER".equals(userType) || "CUSTOMER".equals(userType)) {
+            return selectedStoreId != null ? selectedStoreId : userStoreId;
+        }
+
+        // Staff/Driver use assigned store
+        return userStoreId;
     }
 
     /**

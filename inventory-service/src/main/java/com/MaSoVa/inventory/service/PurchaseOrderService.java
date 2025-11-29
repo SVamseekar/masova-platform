@@ -304,9 +304,14 @@ public class PurchaseOrderService {
     public void autoGeneratePurchaseOrders() {
         logger.info("Running auto-generation of purchase orders for low stock items");
 
-        // This would need store information - placeholder implementation
-        // In a real system, you'd iterate through all stores
-        List<String> storeIds = List.of("STORE001"); // Placeholder
+        // Get all unique store IDs from inventory items
+        // This ensures we only process stores that actually have inventory
+        List<String> storeIds = inventoryService.getAllStoreIds();
+
+        if (storeIds.isEmpty()) {
+            logger.warn("No stores found in inventory system. Skipping auto-generation.");
+            return;
+        }
 
         for (String storeId : storeIds) {
             List<InventoryItem> lowStockItems = inventoryService.getItemsNeedingReorder(storeId);

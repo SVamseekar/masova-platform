@@ -27,10 +27,30 @@ export const equipmentApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: API_CONFIG.ORDER_SERVICE_URL,
     prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as RootState).auth.accessToken;
+      const state = getState() as RootState;
+      const token = state.auth.accessToken;
+      const user = state.auth.user;
+      const selectedStoreId = state.cart?.selectedStoreId;
+
+      // Add authorization token
       if (token) {
-        headers.set('authorization', `Bearer ${token}`);
+        headers.set('Authorization', `Bearer ${token}`);
       }
+
+      // Add user context headers
+      if (user) {
+        headers.set('X-User-Id', user.id);
+        headers.set('X-User-Type', user.type);
+        if (user.storeId) {
+          headers.set('X-User-Store-Id', user.storeId);
+        }
+      }
+
+      // Add selected store for managers/customers
+      if (selectedStoreId) {
+        headers.set('X-Selected-Store-Id', selectedStoreId);
+      }
+
       return headers;
     },
   }),
@@ -47,8 +67,8 @@ export const equipmentApi = createApi({
     }),
 
     // Get equipment by store
-    getEquipmentByStore: builder.query<KitchenEquipment[], string>({
-      query: (storeId) => `/api/kitchen-equipment/store/${storeId}`,
+    getEquipmentByStore: builder.query<KitchenEquipment[], void>({
+      query: () => `/api/kitchen-equipment/store`,
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Equipment' as const, id })), { type: 'Equipment', id: 'LIST' }]
@@ -114,14 +134,14 @@ export const equipmentApi = createApi({
     }),
 
     // Get equipment by status
-    getEquipmentByStatus: builder.query<KitchenEquipment[], { storeId: string; status: KitchenEquipment['status'] }>({
-      query: ({ storeId, status }) => `/api/kitchen-equipment/store/${storeId}/status/${status}`,
+    getEquipmentByStatus: builder.query<KitchenEquipment[], { status: KitchenEquipment['status'] }>({
+      query: ({ status }) => `/api/kitchen-equipment/store/status/${status}`,
       providesTags: ['Equipment'],
     }),
 
     // Get equipment needing maintenance
-    getEquipmentNeedingMaintenance: builder.query<KitchenEquipment[], string>({
-      query: (storeId) => `/api/kitchen-equipment/store/${storeId}/maintenance-needed`,
+    getEquipmentNeedingMaintenance: builder.query<KitchenEquipment[], void>({
+      query: () => `/api/kitchen-equipment/store/maintenance-needed`,
       providesTags: ['Equipment'],
     }),
 
@@ -135,9 +155,9 @@ export const equipmentApi = createApi({
     }),
 
     // Reset usage counts
-    resetUsageCounts: builder.mutation<void, string>({
-      query: (storeId) => ({
-        url: `/api/kitchen-equipment/store/${storeId}/reset-usage`,
+    resetUsageCounts: builder.mutation<void, void>({
+      query: () => ({
+        url: `/api/kitchen-equipment/store/reset-usage`,
         method: 'POST',
       }),
       invalidatesTags: ['Equipment'],

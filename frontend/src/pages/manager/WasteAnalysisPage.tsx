@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectSelectedStoreId } from '../../store/slices/cartSlice';
@@ -30,27 +30,33 @@ const WasteAnalysisPage: React.FC = () => {
   const [recordDialogOpen, setRecordDialogOpen] = useState(false);
 
   // Fetch data
-  const { data: wasteRecords = [], isLoading } = useGetAllWasteRecordsQuery(storeId, {
+  const { data: wasteRecords = [], isLoading, refetch: refetchRecords } = useGetAllWasteRecordsQuery(undefined, {
+    skip: !storeId,
     pollingInterval: 60000,
   });
-  const { data: totalWaste } = useGetTotalWasteCostQuery({
-    storeId,
+  const { data: totalWaste, refetch: refetchTotal } = useGetTotalWasteCostQuery({
     startDate: dateRange.startDate,
     endDate: dateRange.endDate,
-  });
-  const { data: wasteByCategory } = useGetWasteCostByCategoryQuery({
-    storeId,
+  }, { skip: !storeId });
+  const { data: wasteByCategory, refetch: refetchCategory } = useGetWasteCostByCategoryQuery({
     startDate: dateRange.startDate,
     endDate: dateRange.endDate,
-  });
+  }, { skip: !storeId });
+
+  // Refetch data when store changes
+  useEffect(() => {
+    if (storeId) {
+      refetchRecords();
+      refetchTotal();
+      refetchCategory();
+    }
+  }, [storeId, refetchRecords, refetchTotal, refetchCategory]);
   const { data: topWasted = [] } = useGetTopWastedItemsQuery({
-    storeId,
     startDate: dateRange.startDate,
     endDate: dateRange.endDate,
     limit: 10,
   });
   const { data: preventableWaste } = useGetPreventableWasteAnalysisQuery({
-    storeId,
     startDate: dateRange.startDate,
     endDate: dateRange.endDate,
   });

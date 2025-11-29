@@ -6,6 +6,8 @@ import com.MaSoVa.payment.dto.PaymentResponse;
 import com.MaSoVa.payment.dto.ReconciliationReportResponse;
 import com.MaSoVa.payment.entity.Transaction;
 import com.MaSoVa.payment.service.PaymentService;
+import com.MaSoVa.shared.util.StoreContextUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,10 +107,14 @@ public class PaymentController {
     }
 
     /**
-     * GET /api/payments/store/{storeId} - Get transactions by store ID
+     * GET /api/payments/store - Get transactions by store ID
      */
-    @GetMapping("/store/{storeId}")
-    public ResponseEntity<List<Transaction>> getTransactionsByStoreId(@PathVariable String storeId) {
+    @GetMapping("/store")
+    public ResponseEntity<List<Transaction>> getTransactionsByStoreId(HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
         log.info("Fetching transactions for store: {}", storeId);
         try {
             List<Transaction> transactions = paymentService.getTransactionsByStoreId(storeId);
@@ -121,12 +127,16 @@ public class PaymentController {
 
     /**
      * GET /api/payments/reconciliation - Get daily reconciliation report
-     * Query params: storeId, date (YYYY-MM-DD)
+     * Query params: date (YYYY-MM-DD)
      */
     @GetMapping("/reconciliation")
     public ResponseEntity<ReconciliationReportResponse> getDailyReconciliation(
-            @RequestParam String storeId,
+            HttpServletRequest request,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
         log.info("Generating reconciliation report for store: {} on date: {}", storeId, date);
         try {
             ReconciliationReportResponse report = paymentService.getDailyReconciliation(storeId, date);

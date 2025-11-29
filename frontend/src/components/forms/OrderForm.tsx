@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCreateOrderMutation } from '../../store/api/orderApi';
-import { useGetMenuItemsQuery } from '../../store/api/menuApi';
+import { useGetAllMenuItemsQuery } from '../../store/api/menuApi';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import type { CreateOrderRequest, OrderType, PaymentMethod, DeliveryAddress } from '../../types/order';
@@ -38,7 +38,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSuccess, onCancel }) => {
   });
 
   // API hooks
-  const { data: menuItems = [], isLoading: isLoadingMenu } = useGetMenuItemsQuery({});
+  const { data: menuItems = [], isLoading: isLoadingMenu } = useGetAllMenuItemsQuery();
   const [createOrder, { isLoading: isCreating, isSuccess, error }] = useCreateOrderMutation();
 
   // Filter menu items by search

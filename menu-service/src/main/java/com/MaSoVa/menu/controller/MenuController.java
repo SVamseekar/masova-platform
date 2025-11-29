@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 
@@ -25,11 +26,29 @@ public class MenuController {
     @Autowired
     private MenuService menuService;
 
+    /**
+     * Extract storeId from HTTP headers
+     */
+    private String getStoreIdFromHeaders(HttpServletRequest request) {
+        String userType = request.getHeader("X-User-Type");
+        String selectedStoreId = request.getHeader("X-Selected-Store-Id");
+        String userStoreId = request.getHeader("X-User-Store-Id");
+
+        // Managers/Customers use selected store
+        if ("MANAGER".equals(userType) || "CUSTOMER".equals(userType)) {
+            return selectedStoreId != null ? selectedStoreId : userStoreId;
+        }
+
+        // Staff/Driver use assigned store
+        return userStoreId;
+    }
+
     // ========== PUBLIC ENDPOINTS (Customer Access - No Auth) ==========
 
     @GetMapping("/public")
-    public ResponseEntity<List<MenuItem>> getAvailableMenu() {
-        return ResponseEntity.ok(menuService.getAvailableMenuItems());
+    public ResponseEntity<List<MenuItem>> getAvailableMenu(HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
+        return ResponseEntity.ok(menuService.getMenuItemsByStore(storeId));
     }
 
     @GetMapping("/public/{id}")
@@ -40,40 +59,57 @@ public class MenuController {
     }
 
     @GetMapping("/public/cuisine/{cuisine}")
-    public ResponseEntity<List<MenuItem>> getMenuByCuisine(@PathVariable Cuisine cuisine) {
-        return ResponseEntity.ok(menuService.getMenuItemsByCuisine(cuisine));
+    public ResponseEntity<List<MenuItem>> getMenuByCuisine(
+            @PathVariable Cuisine cuisine,
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
+        return ResponseEntity.ok(menuService.getMenuItemsByStoreAndCuisine(storeId, cuisine));
     }
 
     @GetMapping("/public/category/{category}")
-    public ResponseEntity<List<MenuItem>> getMenuByCategory(@PathVariable MenuCategory category) {
-        return ResponseEntity.ok(menuService.getMenuItemsByCategory(category));
+    public ResponseEntity<List<MenuItem>> getMenuByCategory(
+            @PathVariable MenuCategory category,
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
+        return ResponseEntity.ok(menuService.getMenuItemsByStoreAndCategory(storeId, category));
     }
 
     @GetMapping("/public/dietary/{dietaryType}")
-    public ResponseEntity<List<MenuItem>> getMenuByDietaryType(@PathVariable DietaryType dietaryType) {
-        return ResponseEntity.ok(menuService.getMenuItemsByDietaryType(dietaryType));
+    public ResponseEntity<List<MenuItem>> getMenuByDietaryType(
+            @PathVariable DietaryType dietaryType,
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
+        return ResponseEntity.ok(menuService.getMenuItemsByStoreAndDietaryType(storeId, dietaryType));
     }
 
     @GetMapping("/public/recommended")
-    public ResponseEntity<List<MenuItem>> getRecommendedItems() {
-        return ResponseEntity.ok(menuService.getRecommendedItems());
+    public ResponseEntity<List<MenuItem>> getRecommendedItems(HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
+        return ResponseEntity.ok(menuService.getRecommendedItemsByStore(storeId));
     }
 
     @GetMapping("/public/search")
-    public ResponseEntity<List<MenuItem>> searchMenu(@RequestParam String q) {
-        return ResponseEntity.ok(menuService.searchMenuItems(q));
+    public ResponseEntity<List<MenuItem>> searchMenu(
+            @RequestParam String q,
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
+        return ResponseEntity.ok(menuService.searchMenuItemsByStore(storeId, q));
     }
 
     @GetMapping("/public/tag/{tag}")
-    public ResponseEntity<List<MenuItem>> getMenuByTag(@PathVariable String tag) {
-        return ResponseEntity.ok(menuService.getMenuItemsByTag(tag));
+    public ResponseEntity<List<MenuItem>> getMenuByTag(
+            @PathVariable String tag,
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
+        return ResponseEntity.ok(menuService.getMenuItemsByStoreAndTag(storeId, tag));
     }
 
     // ========== MANAGER ENDPOINTS (Full CRUD - Auth handled by API Gateway) ==========
 
     @GetMapping("/items")
-    public ResponseEntity<List<MenuItem>> getAllMenuItems() {
-        return ResponseEntity.ok(menuService.getAllMenuItems());
+    public ResponseEntity<List<MenuItem>> getAllMenuItems(HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
+        return ResponseEntity.ok(menuService.getMenuItemsByStore(storeId));
     }
 
     @PostMapping("/items")
@@ -135,16 +171,17 @@ public class MenuController {
     // ========== STATISTICS ENDPOINTS ==========
 
     @GetMapping("/stats")
-    public ResponseEntity<Map<String, Object>> getMenuStatistics() {
+    public ResponseEntity<Map<String, Object>> getMenuStatistics(HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
         Map<String, Object> stats = Map.of(
-            "totalItems", menuService.getTotalItemsCount(),
-            "availableItems", menuService.getAvailableItemsCount(),
-            "southIndianCount", menuService.getItemsCountByCuisine(Cuisine.SOUTH_INDIAN),
-            "northIndianCount", menuService.getItemsCountByCuisine(Cuisine.NORTH_INDIAN),
-            "indoChineseCount", menuService.getItemsCountByCuisine(Cuisine.INDO_CHINESE),
-            "italianCount", menuService.getItemsCountByCuisine(Cuisine.ITALIAN),
-            "pizzaCount", menuService.getItemsCountByCategory(MenuCategory.PIZZA),
-            "burgerCount", menuService.getItemsCountByCategory(MenuCategory.BURGER)
+            "totalItems", menuService.getTotalItemsCountByStore(storeId),
+            "availableItems", menuService.getAvailableItemsCountByStore(storeId),
+            "southIndianCount", menuService.getItemsCountByStoreAndCuisine(storeId, Cuisine.SOUTH_INDIAN),
+            "northIndianCount", menuService.getItemsCountByStoreAndCuisine(storeId, Cuisine.NORTH_INDIAN),
+            "indoChineseCount", menuService.getItemsCountByStoreAndCuisine(storeId, Cuisine.INDO_CHINESE),
+            "italianCount", menuService.getItemsCountByStoreAndCuisine(storeId, Cuisine.ITALIAN),
+            "pizzaCount", menuService.getItemsCountByStoreAndCategory(storeId, MenuCategory.PIZZA),
+            "burgerCount", menuService.getItemsCountByStoreAndCategory(storeId, MenuCategory.BURGER)
         );
         return ResponseEntity.ok(stats);
     }

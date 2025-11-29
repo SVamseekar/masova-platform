@@ -43,19 +43,15 @@ const Reports: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
   const [activeTab, setActiveTab] = useState(0);
 
-  const storeId = 'store-001'; // TODO: Get from auth context
-
   // Fetch real data from APIs
-  const { data: todayData, isLoading: loadingToday } = useGetTodaySalesMetricsQuery(storeId);
-  const { data: weekData, isLoading: loadingWeek } = useGetSalesTrendsQuery({ storeId, period: 'WEEKLY' });
-  const { data: monthData, isLoading: loadingMonth } = useGetSalesTrendsQuery({ storeId, period: 'MONTHLY' });
+  const { data: todayData, isLoading: loadingToday } = useGetTodaySalesMetricsQuery(undefined);
+  const { data: weekData, isLoading: loadingWeek } = useGetSalesTrendsQuery({ period: 'WEEKLY' });
+  const { data: monthData, isLoading: loadingMonth } = useGetSalesTrendsQuery({ period: 'MONTHLY' });
   const { data: topProducts, isLoading: loadingProducts } = useGetTopProductsQuery({
-    storeId,
     period: 'TODAY',
     sortBy: 'REVENUE'
   });
   const { data: staffData, isLoading: loadingStaff } = useGetStaffLeaderboardQuery({
-    storeId,
     period: 'TODAY'
   });
 

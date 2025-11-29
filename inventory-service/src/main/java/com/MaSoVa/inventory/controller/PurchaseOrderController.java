@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -35,6 +36,23 @@ public class PurchaseOrderController {
     }
 
     /**
+     * Extract storeId from HTTP headers
+     */
+    private String getStoreIdFromHeaders(HttpServletRequest request) {
+        String userType = request.getHeader("X-User-Type");
+        String selectedStoreId = request.getHeader("X-Selected-Store-Id");
+        String userStoreId = request.getHeader("X-User-Store-Id");
+
+        // Managers/Customers use selected store
+        if ("MANAGER".equals(userType) || "CUSTOMER".equals(userType)) {
+            return selectedStoreId != null ? selectedStoreId : userStoreId;
+        }
+
+        // Staff/Driver use assigned store
+        return userStoreId;
+    }
+
+    /**
      * Create a new purchase order
      * POST /api/inventory/purchase-orders
      */
@@ -47,10 +65,11 @@ public class PurchaseOrderController {
 
     /**
      * Get all purchase orders for a store
-     * GET /api/inventory/purchase-orders?storeId=xxx
+     * GET /api/inventory/purchase-orders
      */
     @GetMapping
-    public ResponseEntity<List<PurchaseOrder>> getAllPurchaseOrders(@RequestParam String storeId) {
+    public ResponseEntity<List<PurchaseOrder>> getAllPurchaseOrders(HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting all purchase orders for store: {}", storeId);
         List<PurchaseOrder> orders = purchaseOrderService.getAllPurchaseOrders(storeId);
         return ResponseEntity.ok(orders);
@@ -80,12 +99,13 @@ public class PurchaseOrderController {
 
     /**
      * Get purchase orders by status
-     * GET /api/inventory/purchase-orders/status/{status}?storeId=xxx
+     * GET /api/inventory/purchase-orders/status/{status}
      */
     @GetMapping("/status/{status}")
     public ResponseEntity<List<PurchaseOrder>> getPurchaseOrdersByStatus(
             @PathVariable String status,
-            @RequestParam String storeId) {
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting purchase orders with status: {} for store: {}", status, storeId);
         List<PurchaseOrder> orders = purchaseOrderService.getPurchaseOrdersByStatus(storeId, status);
         return ResponseEntity.ok(orders);
@@ -93,10 +113,11 @@ public class PurchaseOrderController {
 
     /**
      * Get pending approval purchase orders
-     * GET /api/inventory/purchase-orders/pending-approval?storeId=xxx
+     * GET /api/inventory/purchase-orders/pending-approval
      */
     @GetMapping("/pending-approval")
-    public ResponseEntity<List<PurchaseOrder>> getPendingApprovalOrders(@RequestParam String storeId) {
+    public ResponseEntity<List<PurchaseOrder>> getPendingApprovalOrders(HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting pending approval purchase orders for store: {}", storeId);
         List<PurchaseOrder> orders = purchaseOrderService.getPendingApprovalOrders(storeId);
         return ResponseEntity.ok(orders);
@@ -104,10 +125,11 @@ public class PurchaseOrderController {
 
     /**
      * Get overdue purchase orders
-     * GET /api/inventory/purchase-orders/overdue?storeId=xxx
+     * GET /api/inventory/purchase-orders/overdue
      */
     @GetMapping("/overdue")
-    public ResponseEntity<List<PurchaseOrder>> getOverdueOrders(@RequestParam String storeId) {
+    public ResponseEntity<List<PurchaseOrder>> getOverdueOrders(HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting overdue purchase orders for store: {}", storeId);
         List<PurchaseOrder> orders = purchaseOrderService.getOverdueOrders(storeId);
         return ResponseEntity.ok(orders);
@@ -115,13 +137,14 @@ public class PurchaseOrderController {
 
     /**
      * Get purchase orders by date range
-     * GET /api/inventory/purchase-orders/date-range?storeId=xxx&startDate=2024-01-01&endDate=2024-01-31
+     * GET /api/inventory/purchase-orders/date-range?startDate=2024-01-01&endDate=2024-01-31
      */
     @GetMapping("/date-range")
     public ResponseEntity<List<PurchaseOrder>> getPurchaseOrdersByDateRange(
-            @RequestParam String storeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting purchase orders from {} to {} for store: {}", startDate, endDate, storeId);
         List<PurchaseOrder> orders = purchaseOrderService.getPurchaseOrdersByDateRange(storeId, startDate, endDate);
         return ResponseEntity.ok(orders);
@@ -241,12 +264,13 @@ public class PurchaseOrderController {
 
     /**
      * Delete purchase order
-     * DELETE /api/inventory/purchase-orders/{id}?storeId=xxx
+     * DELETE /api/inventory/purchase-orders/{id}
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<MessageResponse> deletePurchaseOrder(
             @PathVariable String id,
-            @RequestParam String storeId) {
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
         logger.info("Deleting purchase order: {}", id);
         purchaseOrderService.deletePurchaseOrder(id, storeId);
 

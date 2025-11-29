@@ -15,7 +15,7 @@ interface RecordWasteDialogProps {
 const RecordWasteDialog: React.FC<RecordWasteDialogProps> = ({ open, onClose, storeId }) => {
   const currentUser = useAppSelector(selectCurrentUser);
   const [recordWaste, { isLoading }] = useRecordWasteMutation();
-  const { data: inventoryItems = [] } = useGetAllInventoryItemsQuery(storeId);
+  const { data: inventoryItems = [] } = useGetAllInventoryItemsQuery(undefined);
 
   const [formData, setFormData] = useState({
     inventoryItemId: '',

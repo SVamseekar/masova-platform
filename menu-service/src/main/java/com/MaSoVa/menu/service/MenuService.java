@@ -61,14 +61,29 @@ public class MenuService {
         return menuItemRepository.findByCuisineAndIsAvailableTrue(cuisine);
     }
 
+    @Cacheable(value = "menuItems", key = "'store-' + #storeId + '-cuisine-' + #cuisine")
+    public List<MenuItem> getMenuItemsByStoreAndCuisine(String storeId, Cuisine cuisine) {
+        return menuItemRepository.findByStoreIdAndCuisineAndIsAvailableTrue(storeId, cuisine);
+    }
+
     @Cacheable(value = "menuItems", key = "'category-' + #category")
     public List<MenuItem> getMenuItemsByCategory(MenuCategory category) {
         return menuItemRepository.findByCategoryAndIsAvailableTrue(category);
     }
 
+    @Cacheable(value = "menuItems", key = "'store-' + #storeId + '-category-' + #category")
+    public List<MenuItem> getMenuItemsByStoreAndCategory(String storeId, MenuCategory category) {
+        return menuItemRepository.findByStoreIdAndCategoryAndIsAvailableTrue(storeId, category);
+    }
+
     @Cacheable(value = "menuItems", key = "'dietary-' + #dietaryType")
     public List<MenuItem> getMenuItemsByDietaryType(DietaryType dietaryType) {
         return menuItemRepository.findByDietaryTypeAndIsAvailableTrue(dietaryType);
+    }
+
+    @Cacheable(value = "menuItems", key = "'store-' + #storeId + '-dietary-' + #dietaryType")
+    public List<MenuItem> getMenuItemsByStoreAndDietaryType(String storeId, DietaryType dietaryType) {
+        return menuItemRepository.findByStoreIdAndDietaryTypeAndIsAvailableTrue(storeId, dietaryType);
     }
 
     @Cacheable(value = "menuItems", key = "'store-' + #storeId")
@@ -81,14 +96,29 @@ public class MenuService {
         return menuItemRepository.findByIsRecommendedTrueAndIsAvailableTrue();
     }
 
+    @Cacheable(value = "menuItems", key = "'store-' + #storeId + '-recommended'")
+    public List<MenuItem> getRecommendedItemsByStore(String storeId) {
+        return menuItemRepository.findByStoreIdAndIsRecommendedTrueAndIsAvailableTrue(storeId);
+    }
+
     @Cacheable(value = "menuItems", key = "'tag-' + #tag")
     public List<MenuItem> getMenuItemsByTag(String tag) {
         return menuItemRepository.findByTagAndIsAvailableTrue(tag);
     }
 
+    @Cacheable(value = "menuItems", key = "'store-' + #storeId + '-tag-' + #tag")
+    public List<MenuItem> getMenuItemsByStoreAndTag(String storeId, String tag) {
+        return menuItemRepository.findByStoreIdAndTagAndIsAvailableTrue(storeId, tag);
+    }
+
     @Cacheable(value = "menuItems", key = "'search-' + #searchTerm")
     public List<MenuItem> searchMenuItems(String searchTerm) {
         return menuItemRepository.searchByNameAndIsAvailableTrue(searchTerm);
+    }
+
+    @Cacheable(value = "menuItems", key = "'store-' + #storeId + '-search-' + #searchTerm")
+    public List<MenuItem> searchMenuItemsByStore(String storeId, String searchTerm) {
+        return menuItemRepository.searchByStoreIdAndNameAndIsAvailableTrue(storeId, searchTerm);
     }
 
     // ========== UPDATE ==========
@@ -168,15 +198,31 @@ public class MenuService {
         return menuItemRepository.count();
     }
 
+    public long getTotalItemsCountByStore(String storeId) {
+        return menuItemRepository.countByStoreId(storeId);
+    }
+
     public long getAvailableItemsCount() {
         return menuItemRepository.findByIsAvailableTrue().size();
+    }
+
+    public long getAvailableItemsCountByStore(String storeId) {
+        return menuItemRepository.countByStoreIdAndIsAvailableTrue(storeId);
     }
 
     public long getItemsCountByCuisine(Cuisine cuisine) {
         return menuItemRepository.countByCuisine(cuisine);
     }
 
+    public long getItemsCountByStoreAndCuisine(String storeId, Cuisine cuisine) {
+        return menuItemRepository.countByStoreIdAndCuisine(storeId, cuisine);
+    }
+
     public long getItemsCountByCategory(MenuCategory category) {
         return menuItemRepository.countByCategory(category);
+    }
+
+    public long getItemsCountByStoreAndCategory(String storeId, MenuCategory category) {
+        return menuItemRepository.countByStoreIdAndCategory(storeId, category);
     }
 }

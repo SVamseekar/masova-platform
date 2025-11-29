@@ -103,10 +103,30 @@ export const orderApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: API_CONFIG.ORDER_SERVICE_URL,
     prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as RootState).auth.accessToken;
+      const state = getState() as RootState;
+      const token = state.auth.accessToken;
+      const user = state.auth.user;
+      const selectedStoreId = state.cart?.selectedStoreId;
+
+      // Add authorization token
       if (token) {
-        headers.set('authorization', `Bearer ${token}`);
+        headers.set('Authorization', `Bearer ${token}`);
       }
+
+      // Add user context headers
+      if (user) {
+        headers.set('X-User-Id', user.id);
+        headers.set('X-User-Type', user.type);
+        if (user.storeId) {
+          headers.set('X-User-Store-Id', user.storeId);
+        }
+      }
+
+      // Add selected store for managers/customers
+      if (selectedStoreId) {
+        headers.set('X-Selected-Store-Id', selectedStoreId);
+      }
+
       return headers;
     },
   }),
@@ -136,9 +156,18 @@ export const orderApi = createApi({
     }),
 
     // Get kitchen queue (active orders for kitchen display)
-    getKitchenQueue: builder.query<Order[], string>({
-      query: (storeId) => `/api/orders/kitchen/${storeId}`,
+    getKitchenQueue: builder.query<Order[], void>({
+      query: () => `/api/orders/kitchen`,
       providesTags: ['KitchenQueue'],
+    }),
+
+    // Get orders by status
+    getOrdersByStatus: builder.query<Order[], string>({
+      query: (status) => `/api/orders/status/${status}`,
+      providesTags: (result) =>
+        result
+          ? [...result.map(({ id }) => ({ type: 'Order' as const, id })), { type: 'Orders', id: 'LIST' }]
+          : [{ type: 'Orders', id: 'LIST' }],
     }),
 
     // Create new order
@@ -199,8 +228,8 @@ export const orderApi = createApi({
     }),
 
     // Get store orders
-    getStoreOrders: builder.query<Order[], string>({
-      query: (storeId) => `/api/orders/store/${storeId}`,
+    getStoreOrders: builder.query<Order[], void>({
+      query: () => `/api/orders/store`,
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Order' as const, id })), { type: 'Orders', id: 'LIST' }]
@@ -318,13 +347,13 @@ export const orderApi = createApi({
       providesTags: (result, error, orderId) => [{ type: 'Order', id: orderId }],
     }),
 
-    getOrdersWithFailedQualityChecks: builder.query<Order[], string>({
-      query: (storeId) => `/api/orders/store/${storeId}/failed-quality-checks`,
+    getOrdersWithFailedQualityChecks: builder.query<Order[], void>({
+      query: () => `/api/orders/store/failed-quality-checks`,
       providesTags: ['Orders'],
     }),
 
-    getAveragePreparationTime: builder.query<number, { storeId: string; date: string }>({
-      query: ({ storeId, date }) => `/api/orders/store/${storeId}/avg-prep-time?date=${date}`,
+    getAveragePreparationTime: builder.query<number, { date: string }>({
+      query: ({ date }) => `/api/orders/store/avg-prep-time?date=${date}`,
     }),
 
     // Make-table workflow endpoints
@@ -340,14 +369,14 @@ export const orderApi = createApi({
       ],
     }),
 
-    getOrdersByMakeTableStation: builder.query<Order[], { storeId: string; station: string }>({
-      query: ({ storeId, station }) => `/api/orders/store/${storeId}/make-table/${station}`,
+    getOrdersByMakeTableStation: builder.query<Order[], { station: string }>({
+      query: ({ station }) => `/api/orders/store/make-table/${station}`,
       providesTags: ['KitchenQueue'],
     }),
 
     // Kitchen analytics endpoints
-    getAveragePreparationTimeByItem: builder.query<{ [itemName: string]: number }, { storeId: string; date: string }>({
-      query: ({ storeId, date }) => `/api/orders/store/${storeId}/analytics/prep-time-by-item?date=${date}`,
+    getAveragePreparationTimeByItem: builder.query<{ [itemName: string]: number }, { date: string }>({
+      query: ({ date }) => `/api/orders/store/analytics/prep-time-by-item?date=${date}`,
     }),
 
     getKitchenStaffPerformance: builder.query<{
@@ -369,8 +398,8 @@ export const orderApi = createApi({
       p90: number;
       p95: number;
       totalOrders: number;
-    }, { storeId: string; date: string }>({
-      query: ({ storeId, date }) => `/api/orders/store/${storeId}/analytics/prep-time-distribution?date=${date}`,
+    }, { date: string }>({
+      query: ({ date }) => `/api/orders/store/analytics/prep-time-distribution?date=${date}`,
     }),
   }),
 });
@@ -379,6 +408,7 @@ export const {
   useGetOrdersQuery,
   useGetOrderQuery,
   useGetKitchenQueueQuery,
+  useGetOrdersByStatusQuery,
   useCreateOrderMutation,
   useUpdateOrderStatusMutation,
   useCancelOrderMutation,

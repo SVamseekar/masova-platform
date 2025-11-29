@@ -2,6 +2,7 @@ package com.MaSoVa.user.controller;
 
 import com.MaSoVa.shared.entity.Store;
 import com.MaSoVa.shared.enums.StoreStatus;
+import com.MaSoVa.shared.util.StoreContextUtil;
 import com.MaSoVa.user.service.StoreService;
 import com.MaSoVa.user.service.AccessControlService;
 
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
@@ -26,10 +28,10 @@ public class StoreController {
     
     @Autowired
     private StoreService storeService;
-    
+
     @Autowired
     private AccessControlService accessControlService;
-    
+
     @GetMapping("/{storeId}")
     @Operation(summary = "Get store by ID")
     public ResponseEntity<Store> getStore(@PathVariable("storeId") String storeId) {
@@ -87,26 +89,38 @@ public class StoreController {
         return ResponseEntity.ok(updatedStore);
     }
     
-    @GetMapping("/{storeId}/operational-status")
+    @GetMapping("/operational-status")
     @Operation(summary = "Check if store is operational")
-    public ResponseEntity<Map<String, Boolean>> getOperationalStatus(@PathVariable("storeId") String storeId) {
+    public ResponseEntity<Map<String, Boolean>> getOperationalStatus(HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
         boolean isOperational = storeService.validateStoreOperational(storeId);
         return ResponseEntity.ok(Map.of("isOperational", isOperational));
     }
     
-    @GetMapping("/{storeId}/metrics")
+    @GetMapping("/metrics")
     @Operation(summary = "Get store metrics")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
-    public ResponseEntity<Map<String, Object>> getStoreMetrics(@PathVariable("storeId") String storeId) {
+    public ResponseEntity<Map<String, Object>> getStoreMetrics(HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
         Map<String, Object> metrics = storeService.getStoreMetrics(storeId);
         return ResponseEntity.ok(metrics);
     }
     
-    @PostMapping("/{storeId}/access-check")
+    @PostMapping("/access-check")
     @Operation(summary = "Validate order taking access")
     public ResponseEntity<AccessControlService.OrderTakingPermission> validateOrderAccess(
-            @PathVariable("storeId") String storeId,
-            @RequestHeader("X-User-Id") String userId) {
+            @RequestHeader("X-User-Id") String userId,
+            HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
         AccessControlService.OrderTakingPermission permission =
             accessControlService.validateOrderTakingAccess(userId, storeId);
         return ResponseEntity.ok(permission);

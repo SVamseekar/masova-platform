@@ -67,17 +67,17 @@ const DashboardPage: React.FC = () => {
   const storeId = selectedStoreId || currentUser?.storeId || '';
 
   // API Hooks
-  const { data: sessions = [], isLoading: loadingSessions, error: sessionsError } = useGetActiveStoreSessionsQuery(storeId, {
+  const { data: sessions = [], isLoading: loadingSessions, error: sessionsError } = useGetActiveStoreSessionsQuery(undefined, {
     skip: !storeId,
     pollingInterval: 30000, // Poll every 30 seconds for real-time updates
   });
 
-  const { data: storeMetrics, isLoading: loadingMetrics } = useGetStoreMetricsQuery(storeId, {
+  const { data: storeMetrics, isLoading: loadingMetrics } = useGetStoreMetricsQuery(undefined, {
     skip: !storeId,
     pollingInterval: 60000, // Poll every minute
   });
 
-  const { data: liveOrders = [], isLoading: loadingOrders } = useGetStoreOrdersQuery(storeId, {
+  const { data: liveOrders = [], isLoading: loadingOrders } = useGetStoreOrdersQuery(undefined, {
     skip: !storeId,
     pollingInterval: 10000, // Poll every 10 seconds for live updates
   });
