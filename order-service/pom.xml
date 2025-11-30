@@ -24,6 +24,13 @@
             <version>1.0.0</version>
         </dependency>
 
+        <!-- Shared Security -->
+        <dependency>
+            <groupId>com.MaSoVa</groupId>
+            <artifactId>shared-security</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
         <!-- Spring Boot Starters -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

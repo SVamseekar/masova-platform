@@ -12,7 +12,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * Manages inventory, suppliers, purchase orders, and waste tracking
  * Port: 8088
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.MaSoVa.inventory", "com.MaSoVa.shared.security"})
 @EnableMongoRepositories
 @EnableMongoAuditing
 @EnableScheduling

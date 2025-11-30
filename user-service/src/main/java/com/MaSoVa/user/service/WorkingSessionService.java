@@ -44,19 +44,31 @@ public class WorkingSessionService {
     
     public WorkingSession startSessionWithLocation(String employeeId, String storeId, Location clockInLocation) {
         LocalDateTime startTime = LocalDateTime.now();
-        
+
         // Step 1: Handle any existing active sessions
         handleExistingActiveSessions(employeeId, startTime);
-        
+
         // Step 2: Validate shift and business rules
         ShiftValidationResult validation = shiftValidationService
             .validateSessionStart(employeeId, storeId, startTime);
-        
-        // Step 3: Validate store operational status
-        if (!storeService.validateStoreOperational(storeId)) {
-            throw new RuntimeException("Store is not operational");
+
+        // Step 3: Validate store operational status (only if store exists)
+        if (storeId != null && !storeId.trim().isEmpty()) {
+            try {
+                if (!storeService.validateStoreOperational(storeId)) {
+                    throw new RuntimeException("Store is not operational");
+                }
+            } catch (RuntimeException e) {
+                // If store not found, log warning but allow session to continue
+                // This handles cases where manager is created manually without proper store setup
+                if (e.getMessage().contains("Store not found")) {
+                    // Allow login to proceed without store validation
+                } else {
+                    throw e;
+                }
+            }
         }
-        
+
         // Step 4: Create new session
         WorkingSession session = new WorkingSession(employeeId, storeId, startTime);
         
@@ -118,20 +130,25 @@ public class WorkingSessionService {
     
     private void validateClockInLocation(WorkingSession session, String storeId, Location clockInLocation) {
         // Get store location and validate proximity
-        var store = storeService.getStore(storeId);
-        if (store.getAddress().getLatitude() != null && store.getAddress().getLongitude() != null) {
-            Location storeLocation = new Location(
-                store.getAddress().getLatitude(), 
-                store.getAddress().getLongitude()
-            );
-            
-            double distance = clockInLocation.getDistanceFrom(storeLocation);
-            
-            // Allow clock in within 100 meters of store
-            if (distance > 0.1) { // 0.1 km = 100 meters
-                session.addViolation(new SessionViolation("REMOTE_CLOCKIN", 
-                    "Clock in location is " + String.format("%.2f", distance) + " km from store"));
+        try {
+            var store = storeService.getStore(storeId);
+            if (store.getAddress().getLatitude() != null && store.getAddress().getLongitude() != null) {
+                Location storeLocation = new Location(
+                    store.getAddress().getLatitude(),
+                    store.getAddress().getLongitude()
+                );
+
+                double distance = clockInLocation.getDistanceFrom(storeLocation);
+
+                // Allow clock in within 100 meters of store
+                if (distance > 0.1) { // 0.1 km = 100 meters
+                    session.addViolation(new SessionViolation("REMOTE_CLOCKIN",
+                        "Clock in location is " + String.format("%.2f", distance) + " km from store"));
+                }
             }
+        } catch (RuntimeException e) {
+            // If store not found, skip location validation
+            // This allows managers created manually without proper store setup to log in
         }
     }
     

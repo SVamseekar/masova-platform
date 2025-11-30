@@ -6,7 +6,7 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
-@SpringBootApplication(scanBasePackages = {"com.MaSoVa.customer", "com.MaSoVa.shared"})
+@SpringBootApplication(scanBasePackages = {"com.MaSoVa.customer", "com.MaSoVa.shared.security"})
 @EnableMongoRepositories(basePackages = "com.MaSoVa.customer.repository")
 @EnableMongoAuditing
 @EnableCaching

@@ -26,6 +26,12 @@ spring:
       time-to-live: 600000 # 10 minutes default
       cache-null-values: false
 
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-512-bits-for-HS512-algorithm-security-requirement}
+  access-token-expiration: 3600000
+  refresh-token-expiration: 604800000
 server:
   port: 8088
   servlet:

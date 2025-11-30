@@ -186,34 +186,57 @@ public class UserService {
     }
     
     public LoginResponse authenticate(LoginRequest request) {
+        logger.info("Authentication attempt for email: {}", request.getEmail());
+
         User user = userRepository.findByPersonalInfoEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
-        
-        if (!passwordEncoder.matches(request.getPassword(), user.getPersonalInfo().getPasswordHash())) {
+                .orElseThrow(() -> {
+                    logger.error("User not found for email: {}", request.getEmail());
+                    return new RuntimeException("Invalid credentials");
+                });
+
+        logger.info("User found: {} (type: {}, active: {})", user.getId(), user.getType(), user.isActive());
+
+        boolean passwordMatches = passwordEncoder.matches(request.getPassword(), user.getPersonalInfo().getPasswordHash());
+        logger.info("Password match result: {}", passwordMatches);
+
+        if (!passwordMatches) {
+            logger.error("Password mismatch for user: {}", user.getId());
             throw new RuntimeException("Invalid credentials");
         }
-        
+
         if (!user.isActive()) {
+            logger.error("User account deactivated: {}", user.getId());
             throw new RuntimeException("Account is deactivated");
         }
-        
+
         user.setLastLogin(LocalDateTime.now());
         userRepository.save(user);
-        
-        String storeId = user.isEmployee() ? user.getEmployeeDetails().getStoreId() : null;
+
+        String storeId = null;
+        if (user.isEmployee() && user.getEmployeeDetails() != null) {
+            storeId = user.getEmployeeDetails().getStoreId();
+            logger.info("Employee store ID: {}", storeId);
+        }
+
+        logger.info("Generating tokens for user: {}", user.getId());
         String accessToken = jwtService.generateAccessToken(user.getId(), user.getType().name(), storeId);
         String refreshToken = jwtService.generateRefreshToken(user.getId());
-        
-        // Start working session for employees
-        if (user.isEmployee()) {
+
+        // Start working session for non-manager employees only
+        // Managers don't need working sessions as they manage the store
+        if (user.isEmployee() && user.getType() != UserType.MANAGER && storeId != null) {
             try {
+                logger.info("Starting working session for non-manager employee: {}", user.getId());
                 sessionService.startSession(user.getId(), storeId);
             } catch (Exception e) {
                 // Log the error but don't fail the login
                 logger.error("Failed to start working session for user {}: {}", user.getId(), e.getMessage(), e);
             }
+        } else {
+            logger.info("Skipping working session for manager or customer: {}", user.getId());
         }
-        
+
+        logger.info("Authentication successful for user: {}", user.getId());
         return new LoginResponse(accessToken, refreshToken, mapToUserResponse(user));
     }
     
@@ -240,12 +263,18 @@ public class UserService {
         return mapToUserResponse(getUserById(userId));
     }
     
+    public List<UserResponse> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(this::mapToUserResponse)
+                .toList();
+    }
+
     public List<UserResponse> getUsersByType(UserType type) {
         return userRepository.findByType(type).stream()
                 .map(this::mapToUserResponse)
                 .toList();
     }
-    
+
     public List<UserResponse> getStoreEmployees(String storeId) {
         return userRepository.findByStoreId(storeId).stream()
                 .map(this::mapToUserResponse)

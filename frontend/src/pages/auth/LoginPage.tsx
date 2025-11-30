@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Input, Checkbox } from '../../components/ui/neumorphic';
 import { colors, spacing, typography } from '../../styles/design-tokens';
-import { createNeumorphicSurface, createResponsive } from '../../styles/neumorphic-utils';
+import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 import { useLoginMutation } from '../../store/api/authApi';
 import { useAppSelector } from '../../store/hooks';
 
@@ -169,9 +169,6 @@ const LoginPage: React.FC = () => {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
     minHeight: '600px',
-    ...createResponsive({
-      md: { gridTemplateColumns: '1fr' }
-    })
   };
 
   const brandSectionStyles: React.CSSProperties = {
@@ -245,9 +242,6 @@ const LoginPage: React.FC = () => {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
     gap: spacing[3],
-    ...createResponsive({
-      sm: { gridTemplateColumns: '1fr' }
-    })
   };
 
   const getDemoCardStyles = (isActive: boolean): React.CSSProperties => ({

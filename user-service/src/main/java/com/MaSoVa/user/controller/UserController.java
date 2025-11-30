@@ -89,7 +89,16 @@ public class UserController {
         userService.deactivateUser(userId);
         return ResponseEntity.ok(Map.of("message", "User deactivated successfully"));
     }
-    
+
+    @GetMapping
+    @Operation(summary = "Get all users")
+    @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
+        List<UserResponse> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
+    }
+
     @GetMapping("/type/{type}")
     @Operation(summary = "Get users by type")
     @SecurityRequirement(name = "bearerAuth")

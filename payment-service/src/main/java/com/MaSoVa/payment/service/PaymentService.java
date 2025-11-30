@@ -217,15 +217,19 @@ public class PaymentService {
     /**
      * Get transactions by customer ID
      */
-    public List<Transaction> getTransactionsByCustomerId(String customerId) {
-        return transactionRepository.findByCustomerId(customerId);
+    public List<PaymentResponse> getTransactionsByCustomerId(String customerId) {
+        return transactionRepository.findByCustomerId(customerId).stream()
+                .map(this::buildPaymentResponse)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     /**
      * Get transactions by store ID
      */
-    public List<Transaction> getTransactionsByStoreId(String storeId) {
-        return transactionRepository.findByStoreId(storeId);
+    public List<PaymentResponse> getTransactionsByStoreId(String storeId) {
+        return transactionRepository.findByStoreId(storeId).stream()
+                .map(this::buildPaymentResponse)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     /**

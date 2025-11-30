@@ -77,7 +77,7 @@ const ExecutiveDashboardPage: React.FC = () => {
   const fetchExecutiveSummary = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:8086/api/bi/executive-summary?period=${period}`);
+      const response = await axios.get<ExecutiveSummary>(`http://localhost:8080/api/bi/executive-summary?period=${period}`);
       setSummary(response.data);
     } catch (error) {
       console.error('Failed to fetch executive summary:', error);

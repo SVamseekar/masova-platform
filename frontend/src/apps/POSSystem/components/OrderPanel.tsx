@@ -21,7 +21,7 @@ import {
   Remove as RemoveIcon,
   ShoppingCart as CartIcon,
   RestaurantMenu as DineInIcon,
-  Takeout as TakeoutIcon,
+  ShoppingBag as TakeoutIcon,
   DeliveryDining as DeliveryIcon,
   DeleteSweep as ClearIcon,
 } from '@mui/icons-material';

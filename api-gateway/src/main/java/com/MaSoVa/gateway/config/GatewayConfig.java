@@ -128,6 +128,18 @@ public class GatewayConfig {
                         .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8088"))
 
+                .route("suppliers_protected", r -> r.path("/api/suppliers/**")
+                        .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8088"))
+
+                .route("purchase_orders_protected", r -> r.path("/api/purchase-orders/**")
+                        .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8088"))
+
+                .route("waste_protected", r -> r.path("/api/waste/**")
+                        .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8088"))
+
                 // Customer Service - Protected Routes
                 .route("customers_protected", r -> r.path("/api/customers/**")
                         .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
@@ -147,6 +159,28 @@ public class GatewayConfig {
                 .route("responses_protected", r -> r.path("/api/responses/**")
                         .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8089"))
+
+                // Delivery Service - Protected Routes
+                .route("delivery_protected", r -> r.path("/api/delivery/**")
+                        .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8090"))
+
+                .route("dispatch_protected", r -> r.path("/api/dispatch/**")
+                        .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8090"))
+
+                .route("tracking_protected", r -> r.path("/api/tracking/**")
+                        .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8090"))
+
+                // Notification Service - Protected Routes
+                .route("notifications_protected", r -> r.path("/api/notifications/**")
+                        .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8092"))
+
+                .route("campaigns_protected", r -> r.path("/api/campaigns/**")
+                        .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8092"))
 
                 // Default fallback
                 .route("fallback", r -> r.path("/**")

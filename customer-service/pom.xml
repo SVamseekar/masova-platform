@@ -53,6 +53,12 @@
             <artifactId>shared-models</artifactId>
             <version>1.0.0</version>
         </dependency>
+        <!-- Shared Security -->
+        <dependency>
+            <groupId>com.MaSoVa</groupId>
+            <artifactId>shared-security</artifactId>
+            <version>1.0.0</version>
+        </dependency>
 
         <!-- Jackson Java 8 Date/Time Support -->
         <dependency>

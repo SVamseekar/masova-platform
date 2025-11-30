@@ -5,6 +5,12 @@ spring:
   application:
     name: menu-service
 
+# JWT Configuration
+jwt:
+  secret: MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-512-bits-for-HS512-algorithm-security-requirement
+  access-token-expiration: 3600000
+  refresh-token-expiration: 604800000
+
   data:
     mongodb:
       uri: mongodb://localhost:27017/MaSoVa

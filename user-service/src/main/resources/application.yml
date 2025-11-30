@@ -20,11 +20,10 @@ spring:
   # DATABASE CONFIGURATION
   data:
     mongodb:
-      uri: mongodb://localhost:27017/MaSoVa
+      uri: mongodb://localhost:27017/masova_db
       auto-index-creation: true
       repositories:
         type: auto
-      field-naming-strategy: org.springframework.data.mapping.model.SnakeCaseFieldNamingStrategy
     
     # REDIS CONFIGURATION
     redis:
@@ -72,7 +71,7 @@ spring:
 
 # JWT CONFIGURATION - MUST NOT BE ESCAPED (needed for @Value injection)
 jwt:
-  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-256-bits-for-production-security}
+  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-512-bits-for-HS512-algorithm-security-requirement}
   access-token-expiration: ${JWT_ACCESS_EXPIRATION:3600000}
   refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
   issuer: MaSoVa-restaurant-system
@@ -85,6 +84,7 @@ logging:
     com.MaSoVa.shared: DEBUG
     org.springframework.cache: DEBUG
     org.springframework.data.redis: INFO
+    org.springframework.data.mongodb.core: DEBUG
     org.springframework.security: INFO
     org.springframework.web: INFO
     org.springframework.transaction: DEBUG
@@ -203,7 +203,7 @@ spring:
       on-profile: dev
   data:
     mongodb:
-      uri: mongodb://localhost:27017/MaSoVa
+      uri: mongodb://localhost:27017/masova_db
     redis:
       host: localhost
       port: 6379

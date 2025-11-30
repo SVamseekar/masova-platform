@@ -26,8 +26,9 @@ spring:
     time-zone: Asia/Kolkata
 
 jwt:
-  secret: your-secret-key-change-this-in-production-min-256-bits-required-for-hs256-algorithm
-  expiration: 3600000
+  secret: MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-512-bits-for-HS512-algorithm-security-requirement
+  access-token-expiration: 3600000
+  refresh-token-expiration: 604800000
 
 logging:
   level:

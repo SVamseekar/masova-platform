@@ -12,13 +12,17 @@ import java.util.Optional;
 
 @Repository
 public interface UserRepository extends MongoRepository<User, String> {
-    
+
+    @Query("{'personalInfo.email': ?0}")
     Optional<User> findByPersonalInfoEmail(String email);
-    
+
+    @Query("{'personalInfo.phone': ?0}")
     Optional<User> findByPersonalInfoPhone(String phone);
-    
+
+    @Query(value = "{'personalInfo.email': ?0}", exists = true)
     boolean existsByPersonalInfoEmail(String email);
-    
+
+    @Query(value = "{'personalInfo.phone': ?0}", exists = true)
     boolean existsByPersonalInfoPhone(String phone);
     
     List<User> findByType(UserType type);

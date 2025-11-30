@@ -1,65 +1,121 @@
 /**
  * API Configuration
  * Central configuration for all API endpoints and settings
+ *
+ * IMPORTANT: All requests MUST go through API Gateway for security
  */
 
 export const API_CONFIG = {
-  // Base URLs for microservices
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081',
-  USER_SERVICE_URL: import.meta.env.VITE_USER_SERVICE_URL || 'http://localhost:8081',
-  MENU_SERVICE_URL: import.meta.env.VITE_MENU_SERVICE_URL || 'http://localhost:8082',
-  ORDER_SERVICE_URL: import.meta.env.VITE_ORDER_SERVICE_URL || 'http://localhost:8083',
-  PAYMENT_SERVICE_URL: import.meta.env.VITE_PAYMENT_SERVICE_URL || 'http://localhost:8086',
-  CUSTOMER_SERVICE_URL: import.meta.env.VITE_CUSTOMER_SERVICE_URL || 'http://localhost:8091',
-  REVIEW_SERVICE_URL: import.meta.env.VITE_REVIEW_SERVICE_URL || 'http://localhost:8089',
+  // API Gateway - Single entry point for all backend services
   API_GATEWAY_URL: import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080/api',
 
-  // Service endpoints
-  USER_SERVICE: '/api/users',
-  ORDER_SERVICE: '/api/orders',
-  MENU_SERVICE: '/api/menu',
-  ANALYTICS_SERVICE: '/api/analytics',
-  SESSION_SERVICE: '/api/sessions',
+  // Service URLs (for reference only - DO NOT USE DIRECTLY)
+  // All requests go through API Gateway
+  _INTERNAL_SERVICES: {
+    USER_SERVICE: 8081,
+    MENU_SERVICE: 8082,
+    ORDER_SERVICE: 8083,
+    ANALYTICS_SERVICE: 8085,
+    PAYMENT_SERVICE: 8086,
+    INVENTORY_SERVICE: 8088,
+    REVIEW_SERVICE: 8089,
+    DELIVERY_SERVICE: 8090,
+    CUSTOMER_SERVICE: 8091,
+    NOTIFICATION_SERVICE: 8092,
+  },
 
   // Timeouts
   TIMEOUT: 30000, // 30 seconds
 
   // WebSocket
-  WS_URL: import.meta.env.VITE_WS_URL || 'ws://localhost:8081/ws',
+  WS_URL: import.meta.env.VITE_WS_URL || 'ws://localhost:8083/ws',
 } as const;
+
+// Use API Gateway for all endpoints
+const GATEWAY = API_CONFIG.API_GATEWAY_URL;
 
 export const API_ENDPOINTS = {
   // Authentication
   AUTH: {
-    LOGIN: `${API_CONFIG.USER_SERVICE}/login`,
-    REGISTER: `${API_CONFIG.USER_SERVICE}/register`,
-    REFRESH_TOKEN: `${API_CONFIG.USER_SERVICE}/refresh-token`,
-    LOGOUT: `${API_CONFIG.USER_SERVICE}/logout`,
-    PROFILE: `${API_CONFIG.USER_SERVICE}/profile`,
+    LOGIN: `${GATEWAY}/auth/login`,
+    REGISTER: `${GATEWAY}/auth/register`,
+    REFRESH_TOKEN: `${GATEWAY}/auth/refresh`,
+    LOGOUT: `${GATEWAY}/auth/logout`,
+    PROFILE: `${GATEWAY}/users/profile`,
   },
 
   // Users
   USERS: {
-    BASE: API_CONFIG.USER_SERVICE,
-    BY_ID: (id: string) => `${API_CONFIG.USER_SERVICE}/${id}`,
-    BY_ROLE: (role: string) => `${API_CONFIG.USER_SERVICE}/role/${role}`,
-    BY_STORE: (storeId: string) => `${API_CONFIG.USER_SERVICE}/store/${storeId}`,
+    BASE: `${GATEWAY}/users`,
+    BY_ID: (id: string) => `${GATEWAY}/users/${id}`,
+    BY_ROLE: (role: string) => `${GATEWAY}/users/role/${role}`,
+    BY_STORE: (storeId: string) => `${GATEWAY}/users/store/${storeId}`,
   },
 
   // Sessions (Working Hours)
   SESSIONS: {
-    BASE: API_CONFIG.SESSION_SERVICE,
-    START: `${API_CONFIG.SESSION_SERVICE}/start`,
-    END: `${API_CONFIG.SESSION_SERVICE}/end`,
-    BY_ID: (id: string) => `${API_CONFIG.SESSION_SERVICE}/${id}`,
-    BY_EMPLOYEE: (employeeId: string) => `${API_CONFIG.SESSION_SERVICE}/employee/${employeeId}`,
-    ACTIVE: (storeId: string) => `${API_CONFIG.SESSION_SERVICE}/store/${storeId}/active`,
-    APPROVE: (id: string) => `${API_CONFIG.SESSION_SERVICE}/${id}/approve`,
+    BASE: `${GATEWAY}/sessions`,
+    START: `${GATEWAY}/sessions/start`,
+    END: `${GATEWAY}/sessions/end`,
+    BY_ID: (id: string) => `${GATEWAY}/sessions/${id}`,
+    BY_EMPLOYEE: (employeeId: string) => `${GATEWAY}/sessions/employee/${employeeId}`,
+    ACTIVE: (storeId: string) => `${GATEWAY}/sessions/store/${storeId}/active`,
+    APPROVE: (id: string) => `${GATEWAY}/sessions/${id}/approve`,
+  },
+
+  // Orders
+  ORDERS: {
+    BASE: `${GATEWAY}/orders`,
+    BY_ID: (id: string) => `${GATEWAY}/orders/${id}`,
+  },
+
+  // Menu
+  MENU: {
+    BASE: `${GATEWAY}/menu`,
+    ITEMS: `${GATEWAY}/menu/items`,
+  },
+
+  // Payments
+  PAYMENTS: {
+    BASE: `${GATEWAY}/payments`,
   },
 
   // Analytics
   ANALYTICS: {
-    SALES: (storeId: string) => `${API_CONFIG.ANALYTICS_SERVICE}/sales/${storeId}`,
+    BASE: `${GATEWAY}/analytics`,
+    SALES: (storeId: string) => `${GATEWAY}/analytics/sales/${storeId}`,
+  },
+
+  // Inventory
+  INVENTORY: {
+    BASE: `${GATEWAY}/inventory`,
+    SUPPLIERS: `${GATEWAY}/suppliers`,
+    PURCHASE_ORDERS: `${GATEWAY}/purchase-orders`,
+    WASTE: `${GATEWAY}/waste`,
+  },
+
+  // Reviews
+  REVIEWS: {
+    BASE: `${GATEWAY}/reviews`,
+    PUBLIC: `${GATEWAY}/reviews/public`,
+  },
+
+  // Customers
+  CUSTOMERS: {
+    BASE: `${GATEWAY}/customers`,
+  },
+
+  // Delivery
+  DELIVERY: {
+    BASE: `${GATEWAY}/delivery`,
+    DISPATCH: `${GATEWAY}/dispatch`,
+    TRACKING: `${GATEWAY}/tracking`,
+  },
+
+  // Notifications
+  NOTIFICATIONS: {
+    BASE: `${GATEWAY}/notifications`,
+    CAMPAIGNS: `${GATEWAY}/campaigns`,
   },
 } as const;
 

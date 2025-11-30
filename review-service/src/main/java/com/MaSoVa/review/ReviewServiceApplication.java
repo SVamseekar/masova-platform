@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.MaSoVa.review", "com.MaSoVa.shared.security"})
 @EnableMongoAuditing
 @EnableScheduling
 public class ReviewServiceApplication {

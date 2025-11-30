@@ -95,10 +95,10 @@ public class PaymentController {
      * GET /api/payments/customer/{customerId} - Get transactions by customer ID
      */
     @GetMapping("/customer/{customerId}")
-    public ResponseEntity<List<Transaction>> getTransactionsByCustomerId(@PathVariable String customerId) {
+    public ResponseEntity<List<PaymentResponse>> getTransactionsByCustomerId(@PathVariable String customerId) {
         log.info("Fetching transactions for customer: {}", customerId);
         try {
-            List<Transaction> transactions = paymentService.getTransactionsByCustomerId(customerId);
+            List<PaymentResponse> transactions = paymentService.getTransactionsByCustomerId(customerId);
             return ResponseEntity.ok(transactions);
         } catch (Exception e) {
             log.error("Error fetching customer transactions", e);
@@ -110,14 +110,14 @@ public class PaymentController {
      * GET /api/payments/store - Get transactions by store ID
      */
     @GetMapping("/store")
-    public ResponseEntity<List<Transaction>> getTransactionsByStoreId(HttpServletRequest request) {
+    public ResponseEntity<List<PaymentResponse>> getTransactionsByStoreId(HttpServletRequest request) {
         String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
         if (storeId == null || storeId.isEmpty()) {
             return ResponseEntity.badRequest().body(null);
         }
         log.info("Fetching transactions for store: {}", storeId);
         try {
-            List<Transaction> transactions = paymentService.getTransactionsByStoreId(storeId);
+            List<PaymentResponse> transactions = paymentService.getTransactionsByStoreId(storeId);
             return ResponseEntity.ok(transactions);
         } catch (Exception e) {
             log.error("Error fetching store transactions", e);

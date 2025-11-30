@@ -25,6 +25,12 @@ spring:
       write-dates-as-timestamps: false
     time-zone: Asia/Kolkata
 
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-512-bits-for-HS512-algorithm-security-requirement}
+  access-token-expiration: 3600000
+  refresh-token-expiration: 604800000
 jwt:
   secret: ${JWT_SECRET:your-secret-key-change-this-in-production-min-256-bits-required-for-hs256-algorithm}
   expiration: ${JWT_EXPIRATION:3600000}

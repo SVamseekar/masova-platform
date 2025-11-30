@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.cache.annotation.EnableCaching;
 
-@SpringBootApplication(scanBasePackages = {"com.MaSoVa.analytics", "com.MaSoVa.shared"})
+@SpringBootApplication(scanBasePackages = {"com.MaSoVa.analytics", "com.MaSoVa.shared.security"})
 @EnableMongoRepositories
 @EnableMongoAuditing
 @EnableScheduling

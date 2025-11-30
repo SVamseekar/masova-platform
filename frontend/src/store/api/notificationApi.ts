@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { RootState } from '../store';
 
-const NOTIFICATION_SERVICE_URL = 'http://localhost:8090/api';
+const NOTIFICATION_SERVICE_URL = 'http://localhost:8080/api/api';
 
 export interface Notification {
   id: string;

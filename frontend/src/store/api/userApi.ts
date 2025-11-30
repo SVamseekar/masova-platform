@@ -158,6 +158,15 @@ export const userApi = createApi({
     canTakeOrders: builder.query<{ canTakeOrders: boolean; reason?: string }, string>({
       query: (userId) => `/api/users/${userId}/can-take-orders`,
     }),
+
+    // Get all users
+    getUsers: builder.query<User[], void>({
+      query: () => '/api/users',
+      providesTags: (result) =>
+        result
+          ? [...result.map(({ id }) => ({ type: 'User' as const, id })), { type: 'Users', id: 'LIST' }]
+          : [{ type: 'Users', id: 'LIST' }],
+    }),
   }),
 });
 
@@ -172,4 +181,5 @@ export const {
   useGetStoreEmployeesQuery,
   useGetManagersQuery,
   useCanTakeOrdersQuery,
+  useGetUsersQuery,
 } = userApi;

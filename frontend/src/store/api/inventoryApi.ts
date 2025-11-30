@@ -227,7 +227,7 @@ export interface ReceivePurchaseOrderRequest {
 export const inventoryApi = createApi({
   reducerPath: 'inventoryApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: `${API_CONFIG.MENU_SERVICE_URL}/api/inventory`,
+    baseUrl: `${API_CONFIG.API_GATEWAY_URL}/inventory`,
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState;
       const token = state.auth.accessToken;

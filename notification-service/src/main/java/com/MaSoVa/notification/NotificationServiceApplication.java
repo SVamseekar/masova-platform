@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.MaSoVa.notification", "com.MaSoVa.shared.security"})
 @EnableCaching
 @EnableMongoAuditing
 @EnableAsync

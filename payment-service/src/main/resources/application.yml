@@ -10,16 +10,17 @@ spring:
       uri: ${MONGODB_URI:mongodb://localhost:27017/masova_payments}
       auto-index-creation: true
 
-  security:
-    jwt:
-      secret: ${JWT_SECRET:MaSoVa2024SecretKeyForJWTTokenGenerationAndValidation}
-      expiration: 86400000 # 24 hours
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-512-bits-for-HS512-algorithm-security-requirement}
+  access-token-expiration: 3600000
+  refresh-token-expiration: 604800000
 
 # Razorpay Configuration
 razorpay:
-  key-id: rzp_test_RjYYkXMmoArj4C
-  key-secret: Asbe0hf12kZn0VSX4ykn3Nvq
-  webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:webhook_secret_not_needed_for_test}
+  key-id: $rzp_test_RjYYkXMmoArj4C 
+  key-secret: $Asbe0hf12kZn0VSX4ykn3Nvq
+  webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:YOUR_WEBHOOK_SECRET}
 
 # Service URLs
 services:

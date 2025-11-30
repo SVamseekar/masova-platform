@@ -930,8 +930,10 @@ const DashboardPage: React.FC = () => {
             { path: '/manager/waste-analysis', label: 'Waste Analysis', icon: '🗑️' },
             { path: '/manager/recipes', label: 'Recipes', icon: '📖' },
             { path: '/manager/customers', label: 'Customers', icon: '👥' },
-            { path: '/manager/drivers', label: 'Drivers', icon: '🚗' },
+            { path: '/manager/drivers', label: 'Driver Management', icon: '🚗' },
             { path: '/manager/deliveries', label: 'Deliveries', icon: '🚚' },
+            { path: `/pos?storeId=${storeId}`, label: 'POS System', icon: '🖥️' },
+            { path: '/driver', label: 'Driver App', icon: '🚙' },
             { path: '/manager/campaigns', label: 'Campaigns', icon: '📢' },
             { path: '/manager/stores', label: 'Stores', icon: '🏪' },
           ].map(item => (

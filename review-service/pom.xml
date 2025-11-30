@@ -65,6 +65,12 @@
             <artifactId>shared-models</artifactId>
             <version>1.0.0</version>
         </dependency>
+        <!-- Shared Security -->
+        <dependency>
+            <groupId>com.MaSoVa</groupId>
+            <artifactId>shared-security</artifactId>
+            <version>1.0.0</version>
+        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

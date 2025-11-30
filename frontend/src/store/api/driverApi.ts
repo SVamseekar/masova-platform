@@ -75,7 +75,7 @@ export interface LocationUpdateRequest {
 export const driverApi = createApi({
   reducerPath: 'driverApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: API_CONFIG.BASE_URL,
+    baseUrl: API_CONFIG.USER_SERVICE_URL,
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState;
       const token = state.auth.accessToken;
@@ -108,38 +108,38 @@ export const driverApi = createApi({
   endpoints: (builder) => ({
     // Get all drivers
     getAllDrivers: builder.query<Driver[], void>({
-      query: () => '/users/role/DRIVER',
+      query: () => '/api/users/type/DRIVER',
       providesTags: ['Driver'],
     }),
 
     // Get driver by ID
     getDriverById: builder.query<Driver, string>({
-      query: (id) => `/users/${id}`,
+      query: (id) => `/api/users/${id}`,
       providesTags: (result, error, id) => [{ type: 'Driver', id }],
     }),
 
     // Get driver by user ID
     getDriverByUserId: builder.query<Driver, string>({
-      query: (userId) => `/users/${userId}`,
+      query: (userId) => `/api/users/${userId}`,
       providesTags: (result, error, userId) => [{ type: 'Driver', id: userId }],
     }),
 
     // Get online drivers
     getOnlineDrivers: builder.query<Driver[], void>({
-      query: () => '/users/role/DRIVER?status=online',
+      query: () => '/api/users/type/DRIVER?status=online',
       providesTags: ['Driver'],
     }),
 
     // Get available drivers
     getAvailableDrivers: builder.query<Driver[], void>({
-      query: () => '/users/role/DRIVER?available=true',
+      query: () => '/api/users/type/DRIVER?available=true',
       providesTags: ['Driver'],
     }),
 
     // Update driver
     updateDriver: builder.mutation<Driver, { id: string; data: UpdateDriverRequest }>({
       query: ({ id, data }) => ({
-        url: `/users/${id}`,
+        url: `/api/users/${id}`,
         method: 'PUT',
         body: data,
       }),
@@ -178,14 +178,14 @@ export const driverApi = createApi({
 
     // Get driver stats
     getDriverStats: builder.query<DriverStats, void>({
-      query: () => '/users/role/DRIVER/stats',
+      query: () => '/api/users/stats',
       providesTags: ['DriverStats'],
     }),
 
     // Activate driver
     activateDriver: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/users/${id}/activate`,
+        url: `/api/users/${id}/activate`,
         method: 'POST',
       }),
       invalidatesTags: (result, error, id) => [{ type: 'Driver', id }, 'Driver', 'DriverStats'],
@@ -194,7 +194,7 @@ export const driverApi = createApi({
     // Deactivate driver
     deactivateDriver: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/users/${id}/deactivate`,
+        url: `/api/users/${id}/deactivate`,
         method: 'POST',
       }),
       invalidatesTags: (result, error, id) => [{ type: 'Driver', id }, 'Driver', 'DriverStats'],

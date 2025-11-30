@@ -52,6 +52,13 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <!-- Shared Security -->
+        <dependency>
+            <groupId>com.MaSoVa</groupId>
+            <artifactId>shared-security</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>

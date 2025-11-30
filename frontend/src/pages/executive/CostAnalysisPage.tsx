@@ -72,7 +72,7 @@ const CostAnalysisPage: React.FC = () => {
   const fetchCostAnalysis = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:8086/api/bi/cost-analysis?period=${period}`);
+      const response = await axios.get<CostAnalysis>(`http://localhost:8080/api/bi/cost-analysis?period=${period}`);
       setAnalysis(response.data);
     } catch (error) {
       console.error('Failed to fetch cost analysis:', error);

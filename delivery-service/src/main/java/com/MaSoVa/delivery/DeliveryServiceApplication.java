@@ -9,7 +9,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
  * Delivery Service - Manages auto-dispatch, route optimization, and live tracking
  * Port: 8090
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.MaSoVa.delivery", "com.MaSoVa.shared.security"})
 @EnableCaching
 @EnableMongoRepositories
 public class DeliveryServiceApplication {
