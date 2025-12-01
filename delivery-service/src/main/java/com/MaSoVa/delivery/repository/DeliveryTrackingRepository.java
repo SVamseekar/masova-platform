@@ -24,6 +24,11 @@ public interface DeliveryTrackingRepository extends MongoRepository<DeliveryTrac
             LocalDateTime end
     );
 
+    List<DeliveryTracking> findByCreatedAtBetween(
+            LocalDateTime start,
+            LocalDateTime end
+    );
+
     List<DeliveryTracking> findByStatusAndStoreId(String status, String storeId);
 
     Long countByDriverIdAndStatusAndCreatedAtBetween(

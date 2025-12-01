@@ -92,8 +92,8 @@ public class ReviewController {
     @GetMapping("/customer/{customerId}")
     public ResponseEntity<Page<Review>> getReviewsByCustomerId(
             @PathVariable String customerId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Review> reviews = reviewService.getReviewsByCustomerId(customerId, pageable);
@@ -103,8 +103,8 @@ public class ReviewController {
     @GetMapping("/driver/{driverId}")
     public ResponseEntity<Page<Review>> getReviewsByDriverId(
             @PathVariable String driverId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Review> reviews = reviewService.getReviewsByDriverId(driverId, pageable);
@@ -114,8 +114,8 @@ public class ReviewController {
     @GetMapping("/item/{menuItemId}")
     public ResponseEntity<Page<Review>> getReviewsByMenuItemId(
             @PathVariable String menuItemId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Review> reviews = reviewService.getReviewsByMenuItemId(menuItemId, pageable);
@@ -124,8 +124,8 @@ public class ReviewController {
 
     @GetMapping("/recent")
     public ResponseEntity<Page<Review>> getRecentReviews(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size
     ) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Review> reviews = reviewService.getRecentReviews(pageable);
@@ -134,10 +134,10 @@ public class ReviewController {
 
     @GetMapping("/rating")
     public ResponseEntity<Page<Review>> getReviewsByRating(
-            @RequestParam(defaultValue = "1") Integer minRating,
-            @RequestParam(defaultValue = "5") Integer maxRating,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(name = "minRating", defaultValue = "1") Integer minRating,
+            @RequestParam(name = "maxRating", defaultValue = "5") Integer maxRating,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Review> reviews = reviewService.getReviewsByRating(minRating, maxRating, pageable);
@@ -146,8 +146,8 @@ public class ReviewController {
 
     @GetMapping("/needs-response")
     public ResponseEntity<Page<Review>> getReviewsNeedingResponse(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").ascending());
         Page<Review> reviews = reviewService.getReviewsNeedingResponse(pageable);
@@ -221,8 +221,8 @@ public class ReviewController {
     // Moderation endpoints
     @GetMapping("/pending")
     public ResponseEntity<Page<Review>> getPendingReviews(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").ascending());
         Page<Review> reviews = moderationService.getPendingReviews(pageable);
@@ -231,8 +231,8 @@ public class ReviewController {
 
     @GetMapping("/flagged")
     public ResponseEntity<Page<Review>> getFlaggedReviews(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").ascending());
         Page<Review> reviews = moderationService.getFlaggedReviews(pageable);
@@ -255,7 +255,7 @@ public class ReviewController {
     @PostMapping("/{reviewId}/reject")
     public ResponseEntity<?> rejectReview(
             @PathVariable String reviewId,
-            @RequestParam String reason,
+            @RequestParam(name = "reason") String reason,
             @RequestHeader("X-User-ID") String moderatorId
     ) {
         try {

@@ -1,5 +1,6 @@
 package com.MaSoVa.delivery.controller;
 
+import com.MaSoVa.delivery.dto.DeliveryMetricsResponse;
 import com.MaSoVa.delivery.dto.DriverPerformanceResponse;
 import com.MaSoVa.delivery.service.PerformanceService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -87,6 +88,23 @@ public class PerformanceController {
         } catch (Exception e) {
             log.error("Error fetching today's performance: {}", e.getMessage());
             throw new RuntimeException("Failed to get today's performance: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Get today's overall delivery metrics
+     * GET /api/delivery/metrics/today
+     */
+    @GetMapping("/metrics/today")
+    public ResponseEntity<DeliveryMetricsResponse> getTodayMetrics() {
+        log.info("GET /api/delivery/metrics/today");
+
+        try {
+            DeliveryMetricsResponse response = performanceService.getTodayMetrics();
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error fetching today's metrics", e);
+            throw new RuntimeException("Failed to get today's metrics: " + e.getMessage(), e);
         }
     }
 }

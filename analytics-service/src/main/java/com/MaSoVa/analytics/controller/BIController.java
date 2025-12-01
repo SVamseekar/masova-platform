@@ -57,8 +57,8 @@ public class BIController {
     @GetMapping("/forecast/sales")
     public ResponseEntity<SalesForecastResponse> getSalesForecast(
             HttpServletRequest request,
-            @RequestParam(defaultValue = "WEEKLY") String period,
-            @RequestParam(defaultValue = "7") int days) {
+            @RequestParam(name = "period", defaultValue = "WEEKLY") String period,
+            @RequestParam(name = "days", defaultValue = "7") int days) {
         String storeId = getStoreIdFromHeaders(request);
         log.info("GET /api/bi/forecast/sales - storeId: {}, period: {}, days: {}", storeId, period, days);
         SalesForecastResponse forecast = biEngineService.generateSalesForecast(storeId, period, days);
@@ -97,7 +97,7 @@ public class BIController {
     @GetMapping("/forecast/demand")
     public ResponseEntity<DemandForecastResponse> getDemandForecast(
             HttpServletRequest request,
-            @RequestParam(defaultValue = "WEEKLY") String period) {
+            @RequestParam(name = "period", defaultValue = "WEEKLY") String period) {
         String storeId = getStoreIdFromHeaders(request);
         log.info("GET /api/bi/forecast/demand - storeId: {}, period: {}", storeId, period);
         DemandForecastResponse forecast = biEngineService.generateDemandForecast(storeId, period);
@@ -112,7 +112,7 @@ public class BIController {
     @GetMapping("/cost-analysis")
     public ResponseEntity<CostAnalysisResponse> getCostAnalysis(
             HttpServletRequest request,
-            @RequestParam(defaultValue = "MONTH") String period) {
+            @RequestParam(name = "period", defaultValue = "MONTH") String period) {
         String storeId = getStoreIdFromHeaders(request);
         log.info("GET /api/bi/cost-analysis - storeId: {}, period: {}", storeId, period);
         CostAnalysisResponse analysis = costAnalysisService.analyzeCosts(storeId, period);
@@ -126,7 +126,7 @@ public class BIController {
      */
     @GetMapping("/benchmarking/stores")
     public ResponseEntity<BenchmarkingResponse> getStoreBenchmarking(
-            @RequestParam(defaultValue = "MONTH") String period) {
+            @RequestParam(name = "period", defaultValue = "MONTH") String period) {
         log.info("GET /api/bi/benchmarking/stores - period: {}", period);
         BenchmarkingResponse benchmarking = benchmarkingService.generateBenchmarkingReport(period);
         return ResponseEntity.ok(benchmarking);
@@ -139,7 +139,7 @@ public class BIController {
      */
     @GetMapping("/executive-summary")
     public ResponseEntity<ExecutiveSummaryResponse> getExecutiveSummary(
-            @RequestParam(defaultValue = "MONTH") String period) {
+            @RequestParam(name = "period", defaultValue = "MONTH") String period) {
         log.info("GET /api/bi/executive-summary - period: {}", period);
         ExecutiveSummaryResponse summary = executiveReportingService.generateExecutiveSummary(period);
         return ResponseEntity.ok(summary);

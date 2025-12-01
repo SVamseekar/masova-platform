@@ -1,423 +1,327 @@
-WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
-WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/opt/homebrew/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)
-WARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner
-WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
-[INFO] Scanning for projects...
-[INFO] ------------------------------------------------------------------------
-[INFO] Reactor Build Order:
-[INFO] 
-[INFO] MaSoVa Restaurant Management System                                [pom]
-[INFO] Shared Models                                                      [jar]
-[INFO] API Gateway Service                                                [jar]
-[INFO] User Service                                                       [jar]
-[INFO] Menu Service                                                       [jar]
-[INFO] Order Service                                                      [jar]
-[INFO] Payment Service                                                    [jar]
-[INFO] Analytics Service                                                  [jar]
-[INFO] Inventory Service                                                  [jar]
-[INFO] Customer Service                                                   [jar]
-[INFO] Delivery Service                                                   [jar]
-[INFO] 
-[INFO] --------------< com.MaSoVa:restaurant-management-system >---------------
-[INFO] Building MaSoVa Restaurant Management System 1.0.0                [1/11]
-[INFO]   from pom.xml
-[INFO] --------------------------------[ pom ]---------------------------------
-[INFO] 
-[INFO] --- clean:3.2.0:clean (default-clean) @ restaurant-management-system ---
-[INFO] 
-[INFO] ----------------------< com.MaSoVa:shared-models >----------------------
-[INFO] Building Shared Models 1.0.0                                      [2/11]
-[INFO]   from shared-models/pom.xml
-[INFO] --------------------------------[ jar ]---------------------------------
-[INFO] 
-[INFO] --- clean:3.2.0:clean (default-clean) @ shared-models ---
-[INFO] Deleting /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/shared-models/target
-[INFO] 
-[INFO] --- resources:3.3.1:resources (default-resources) @ shared-models ---
-[INFO] skip non existing resourceDirectory /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/shared-models/src/main/resources
-[INFO] 
-[INFO] --- compiler:3.11.0:compile (default-compile) @ shared-models ---
-[INFO] Changes detected - recompiling the module! :source
-[INFO] Compiling 51 source files with javac [forked debug target 21] to target/classes
-[WARNING] [options] location of system modules is not set in conjunction with -source 21
-[INFO] 
-[INFO] -----------------------< com.MaSoVa:api-gateway >-----------------------
-[INFO] Building API Gateway Service 1.0.0                                [3/11]
-[INFO]   from api-gateway/pom.xml
-[INFO] --------------------------------[ jar ]---------------------------------
-[INFO] 
-[INFO] --- clean:3.2.0:clean (default-clean) @ api-gateway ---
-[INFO] Deleting /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/api-gateway/target
-[INFO] 
-[INFO] --- resources:3.3.1:resources (default-resources) @ api-gateway ---
-[INFO] Copying 1 resource from src/main/resources to target/classes
-[INFO] 
-[INFO] --- compiler:3.11.0:compile (default-compile) @ api-gateway ---
-[INFO] Changes detected - recompiling the module! :source
-[INFO] Compiling 6 source files with javac [forked debug target 21] to target/classes
-[WARNING] [options] location of system modules is not set in conjunction with -source 21
-[INFO] 
-[INFO] ----------------------< com.MaSoVa:user-service >-----------------------
-[INFO] Building User Service 1.0.0                                       [4/11]
-[INFO]   from user-service/pom.xml
-[INFO] --------------------------------[ jar ]---------------------------------
-[INFO] 
-[INFO] --- clean:3.2.0:clean (default-clean) @ user-service ---
-[INFO] Deleting /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/user-service/target
-[INFO] 
-[INFO] --- resources:3.3.1:resources (default-resources) @ user-service ---
-[INFO] Copying 2 resources from src/main/resources to target/classes
-[INFO] 
-[INFO] --- compiler:3.11.0:compile (default-compile) @ user-service ---
-[INFO] Changes detected - recompiling the module! :dependency
-[INFO] Compiling 42 source files with javac [forked debug target 21] to target/classes
-[WARNING] [options] location of system modules is not set in conjunction with -source 21
-[INFO] 
-[INFO] ----------------------< com.MaSoVa:menu-service >-----------------------
-[INFO] Building Menu Service 1.0.0                                       [5/11]
-[INFO]   from menu-service/pom.xml
-[INFO] --------------------------------[ jar ]---------------------------------
-[INFO] 
-[INFO] --- clean:3.2.0:clean (default-clean) @ menu-service ---
-[INFO] Deleting /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/menu-service/target
-[INFO] 
-[INFO] --- resources:3.3.1:resources (default-resources) @ menu-service ---
-[INFO] Copying 1 resource from src/main/resources to target/classes
-[INFO] 
-[INFO] --- compiler:3.11.0:compile (default-compile) @ menu-service ---
-[INFO] Changes detected - recompiling the module! :dependency
-[INFO] Compiling 5 source files with javac [forked debug target 21] to target/classes
-[WARNING] [options] location of system modules is not set in conjunction with -source 21
-[INFO] 
-[INFO] ----------------------< com.MaSoVa:order-service >----------------------
-[INFO] Building Order Service 1.0.0                                      [6/11]
-[INFO]   from order-service/pom.xml
-[INFO] --------------------------------[ jar ]---------------------------------
-[INFO] 
-[INFO] --- clean:3.2.0:clean (default-clean) @ order-service ---
-[INFO] Deleting /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/order-service/target
-[INFO] 
-[INFO] --- resources:3.3.1:resources (default-resources) @ order-service ---
-[INFO] Copying 1 resource from src/main/resources to target/classes
-[INFO] 
-[INFO] --- compiler:3.11.0:compile (default-compile) @ order-service ---
-[INFO] Changes detected - recompiling the module! :dependency
-[INFO] Compiling 21 source files with javac [forked debug target 21] to target/classes
-[WARNING] [options] location of system modules is not set in conjunction with -source 21
-[INFO] 
-[INFO] ---------------------< com.MaSoVa:payment-service >---------------------
-[INFO] Building Payment Service 1.0.0                                    [7/11]
-[INFO]   from payment-service/pom.xml
-[INFO] --------------------------------[ jar ]---------------------------------
-[INFO] 
-[INFO] --- clean:3.2.0:clean (default-clean) @ payment-service ---
-[INFO] Deleting /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/payment-service/target
-[INFO] 
-[INFO] --- resources:3.3.1:resources (default-resources) @ payment-service ---
-[INFO] Copying 1 resource from src/main/resources to target/classes
-[INFO] 
-[INFO] --- compiler:3.11.0:compile (default-compile) @ payment-service ---
-[INFO] Changes detected - recompiling the module! :dependency
-[INFO] Compiling 20 source files with javac [forked debug target 21] to target/classes
-[WARNING] [options] location of system modules is not set in conjunction with -source 21
-[INFO] 
-[INFO] --------------------< com.MaSoVa:analytics-service >--------------------
-[INFO] Building Analytics Service 1.0.0                                  [8/11]
-[INFO]   from analytics-service/pom.xml
-[INFO] --------------------------------[ jar ]---------------------------------
-[INFO] 
-[INFO] --- clean:3.2.0:clean (default-clean) @ analytics-service ---
-[INFO] Deleting /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/target
-[INFO] 
-[INFO] --- resources:3.3.1:resources (default-resources) @ analytics-service ---
-[INFO] Copying 1 resource from src/main/resources to target/classes
-[INFO] 
-[INFO] --- compiler:3.11.0:compile (default-compile) @ analytics-service ---
-[INFO] Changes detected - recompiling the module! :dependency
-[INFO] Compiling 30 source files with javac [forked debug target 21] to target/classes
-[INFO] -------------------------------------------------------------
-[WARNING] COMPILATION WARNING : 
-[INFO] -------------------------------------------------------------
-[WARNING] [options] location of system modules is not set in conjunction with -source 21
-[INFO] 1 warning
-[INFO] -------------------------------------------------------------
-[INFO] -------------------------------------------------------------
-[ERROR] COMPILATION ERROR : 
-[INFO] -------------------------------------------------------------
-[ERROR]   not setting the location of system modules may lead to class files that cannot run on JDK 21
-    --release 21 is recommended instead of -source 21 -target 21 because it sets the location of system modules automatically
-/Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/AnalyticsService.java:[536,51] error: cannot find symbol
-  symbol:   class ProductDataBuilder
-  location: class ProductData
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[96,39] error: cannot find symbol
-  symbol:   method builder()
-  location: class ExecutiveSummaryResponse
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[150,56] error: cannot find symbol
-  symbol:   method builder()
-  location: class FinancialSummary
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[192,58] error: cannot find symbol
-  symbol:   method builder()
-  location: class OperationalMetrics
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[270,47] error: cannot find symbol
-  symbol:   method builder()
-  location: class KPITile
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[305,49] error: cannot find symbol
-  symbol:   method builder()
-  location: class GrowthDriver
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[310,49] error: cannot find symbol
-  symbol:   method builder()
-  location: class GrowthDriver
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[315,49] error: cannot find symbol
-  symbol:   method builder()
-  location: class GrowthDriver
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[322,53] error: cannot find symbol
-  symbol:   method builder()
-  location: class GrowthMetrics
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[352,84] error: cannot find symbol
-  symbol:   method builder()
-  location: class TopPerformer
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[362,60] error: cannot find symbol
-  symbol:   method builder()
-  location: class TopPerformer
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[382,63] error: cannot find symbol
-  symbol:   method builder()
-  location: class ActionableInsight
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[393,63] error: cannot find symbol
-  symbol:   method builder()
-  location: class ActionableInsight
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[404,63] error: cannot find symbol
-  symbol:   method builder()
-  location: class ActionableInsight
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/CostAnalysisService.java:[93,93] error: cannot find symbol
-  symbol:   method builder()
-  location: class CostBreakdown
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/CostAnalysisService.java:[111,35] error: cannot find symbol
-  symbol:   method builder()
-  location: class CostAnalysisResponse
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/CostAnalysisService.java:[162,58] error: cannot find symbol
-  symbol:   method builder()
-  location: class IngredientCost
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/CostAnalysisService.java:[192,53] error: cannot find symbol
-  symbol:   method builder()
-  location: class WasteCost
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/CostAnalysisService.java:[201,53] error: cannot find symbol
-  symbol:   method builder()
-  location: class WasteCost
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/CostAnalysisService.java:[230,63] error: cannot find symbol
-  symbol:   method builder()
-  location: class OrderCostAnalysis
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/CostAnalysisService.java:[250,46] error: cannot find symbol
-  symbol:   method builder()
-  location: class SupplierPrice
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/CostAnalysisService.java:[258,46] error: cannot find symbol
-  symbol:   method builder()
-  location: class SupplierPrice
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/CostAnalysisService.java:[268,63] error: cannot find symbol
-  symbol:   method builder()
-  location: class SupplierComparison
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BenchmarkingService.java:[88,35] error: cannot find symbol
-  symbol:   method builder()
-  location: class BenchmarkingResponse
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BenchmarkingService.java:[147,64] error: cannot find symbol
-  symbol:   method builder()
-  location: class StoreComparison
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BenchmarkingService.java:[195,51] error: cannot find symbol
-  symbol:   method builder()
-  location: class KPIComparison
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BenchmarkingService.java:[210,51] error: cannot find symbol
-  symbol:   method builder()
-  location: class KPIComparison
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BenchmarkingService.java:[225,51] error: cannot find symbol
-  symbol:   method builder()
-  location: class KPIComparison
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BenchmarkingService.java:[246,60] error: cannot find symbol
-  symbol:   method builder()
-  location: class PerformanceInsight
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BenchmarkingService.java:[255,60] error: cannot find symbol
-  symbol:   method builder()
-  location: class PerformanceInsight
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BenchmarkingService.java:[264,60] error: cannot find symbol
-  symbol:   method builder()
-  location: class PerformanceInsight
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BIEngineService.java:[166,39] error: cannot find symbol
-  symbol:   method builder()
-  location: class CustomerBehaviorResponse
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BIEngineService.java:[221,77] error: cannot find symbol
-  symbol:   method builder()
-  location: class ChurnRiskCustomer
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BIEngineService.java:[253,38] error: cannot find symbol
-  symbol:   method builder()
-  location: class ChurnPredictionResponse
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BIEngineService.java:[489,63] error: cannot find symbol
-  symbol:   method builder()
-  location: class CustomerSegment
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BIEngineService.java:[527,61] error: cannot find symbol
-  symbol:   method builder()
-  location: class BehaviorPattern
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BIEngineService.java:[602,59] error: cannot find symbol
-  symbol:   method builder()
-  location: class ChurnFactor
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BIEngineService.java:[672,71] error: cannot find symbol
-  symbol:   method builder()
-  location: class ItemDemandForecast
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BIEngineService.java:[698,79] error: cannot find symbol
-  symbol:   method builder()
-  location: class CategoryDemandForecast
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BIEngineService.java:[707,37] error: cannot find symbol
-  symbol:   method builder()
-  location: class DemandForecastResponse
-[INFO] 40 errors 
-[INFO] -------------------------------------------------------------
-[INFO] ------------------------------------------------------------------------
-[INFO] Reactor Summary for MaSoVa Restaurant Management System 1.0.0:
-[INFO] 
-[INFO] MaSoVa Restaurant Management System ................ SUCCESS [  0.068 s]
-[INFO] Shared Models ...................................... SUCCESS [  1.255 s]
-[INFO] API Gateway Service ................................ SUCCESS [  0.826 s]
-[INFO] User Service ....................................... SUCCESS [  1.181 s]
-[INFO] Menu Service ....................................... SUCCESS [  0.697 s]
-[INFO] Order Service ...................................... SUCCESS [  0.939 s]
-[INFO] Payment Service .................................... SUCCESS [  0.933 s]
-[INFO] Analytics Service .................................. FAILURE [  0.903 s]
-[INFO] Inventory Service .................................. SKIPPED
-[INFO] Customer Service ................................... SKIPPED
-[INFO] Delivery Service ................................... SKIPPED
-[INFO] ------------------------------------------------------------------------
-[INFO] BUILD FAILURE
-[INFO] ------------------------------------------------------------------------
-[INFO] Total time:  7.027 s
-[INFO] Finished at: 2025-11-26T13:42:15+05:30
-[INFO] ------------------------------------------------------------------------
-[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:compile (default-compile) on project analytics-service: Compilation failure: Compilation failure: 
-[ERROR]   not setting the location of system modules may lead to class files that cannot run on JDK 21
-[ERROR]     --release 21 is recommended instead of -source 21 -target 21 because it sets the location of system modules automatically
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/AnalyticsService.java:[536,51] error: cannot find symbol
-[ERROR]   symbol:   class ProductDataBuilder
-[ERROR]   location: class ProductData
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[96,39] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class ExecutiveSummaryResponse
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[150,56] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class FinancialSummary
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[192,58] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class OperationalMetrics
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[270,47] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class KPITile
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[305,49] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class GrowthDriver
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[310,49] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class GrowthDriver
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[315,49] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class GrowthDriver
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[322,53] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class GrowthMetrics
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[352,84] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class TopPerformer
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[362,60] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class TopPerformer
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[382,63] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class ActionableInsight
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[393,63] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class ActionableInsight
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/ExecutiveReportingService.java:[404,63] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class ActionableInsight
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/CostAnalysisService.java:[93,93] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class CostBreakdown
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/CostAnalysisService.java:[111,35] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class CostAnalysisResponse
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/CostAnalysisService.java:[162,58] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class IngredientCost
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/CostAnalysisService.java:[192,53] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class WasteCost
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/CostAnalysisService.java:[201,53] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class WasteCost
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/CostAnalysisService.java:[230,63] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class OrderCostAnalysis
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/CostAnalysisService.java:[250,46] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class SupplierPrice
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/CostAnalysisService.java:[258,46] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class SupplierPrice
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/CostAnalysisService.java:[268,63] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class SupplierComparison
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BenchmarkingService.java:[88,35] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class BenchmarkingResponse
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BenchmarkingService.java:[147,64] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class StoreComparison
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BenchmarkingService.java:[195,51] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class KPIComparison
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BenchmarkingService.java:[210,51] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class KPIComparison
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BenchmarkingService.java:[225,51] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class KPIComparison
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BenchmarkingService.java:[246,60] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class PerformanceInsight
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BenchmarkingService.java:[255,60] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class PerformanceInsight
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BenchmarkingService.java:[264,60] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class PerformanceInsight
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BIEngineService.java:[166,39] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class CustomerBehaviorResponse
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BIEngineService.java:[221,77] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class ChurnRiskCustomer
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BIEngineService.java:[253,38] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class ChurnPredictionResponse
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BIEngineService.java:[489,63] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class CustomerSegment
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BIEngineService.java:[527,61] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class BehaviorPattern
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BIEngineService.java:[602,59] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class ChurnFactor
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BIEngineService.java:[672,71] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class ItemDemandForecast
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BIEngineService.java:[698,79] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class CategoryDemandForecast
-[ERROR] /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/analytics-service/src/main/java/com/MaSoVa/analytics/service/BIEngineService.java:[707,37] error: cannot find symbol
-[ERROR]   symbol:   method builder()
-[ERROR]   location: class DemandForecastResponse
-[ERROR] -> [Help 1]
-[ERROR] 
-[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
-[ERROR] Re-run Maven using the -X switch to enable full debug logging.
-[ERROR] 
-[ERROR] For more information about the errors and possible solutions, please read the following articles:
-[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
-[ERROR] 
-[ERROR] After correcting the problems, you can resume the build with the command
-[ERROR]   mvn <args> -rf :analytics-service
+
+react-dom_client.js?v=7cf4e9e8:17995 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+chunk-4MKO5TN2.js?v=7cf4e9e8:129 
+ GET http://localhost:8080/api/inventory/out-of-stock 401 (Unauthorized)
+chunk-4MKO5TN2.js?v=7cf4e9e8:129 
+ GET http://localhost:8080/api/inventory/items 401 (Unauthorized)
+chunk-4MKO5TN2.js?v=7cf4e9e8:129 
+ GET http://localhost:8080/api/inventory/expiring-soon?days=7 401 (Unauthorized)
+chunk-4MKO5TN2.js?v=7cf4e9e8:129 
+ GET http://localhost:8080/api/inventory/value 401 (Unauthorized)
+chunk-4MKO5TN2.js?v=7cf4e9e8:129 
+ GET http://localhost:8080/api/inventory/alerts/low-stock 401 (Unauthorized)
+chunk-4MKO5TN2.js?v=7cf4e9e8:129 
+ GET http://localhost:8080/api/inventory/suppliers 401 (Unauthorized)
+react-dom_client.js?v=7cf4e9e8:6264 TypeError: Cannot read properties of undefined (reading 'sm')
+    at createNeumorphicSurface (neumorphic-utils.ts:16:59)
+    at filterButtonStyles (SupplierManagementPage.tsx:150:8)
+    at SupplierManagementPage (SupplierManagementPage.tsx:298:24)
+
+
+The above error occurred in the <SupplierManagementPage> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+ErrorBoundary.tsx:25 Uncaught error: TypeError: Cannot read properties of undefined (reading 'sm')
+    at createNeumorphicSurface (neumorphic-utils.ts:16:59)
+    at filterButtonStyles (SupplierManagementPage.tsx:150:8)
+    at SupplierManagementPage (SupplierManagementPage.tsx:298:24)
+ 
+{componentStack: '\n    at SupplierManagementPage (http://localhost:3…SY.js?v=7cf4e9e8:923:11)\n    at App (<anonymous>)'}
+
+
+
+react-dom_client.js?v=7cf4e9e8:17995 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+App.tsx:187 
+ GET http://localhost:8080/api/inventory/purchase-orders 401 (Unauthorized)
+App.tsx:187 
+ GET http://localhost:8080/api/inventory/purchase-orders/pending-approval 401 (Unauthorized)
+PurchaseOrdersPage.tsx:418 
+ GET http://localhost:8080/api/inventory/suppliers 401 (Unauthorized)
+PurchaseOrdersPage.tsx:418 
+ GET http://localhost:8080/api/inventory/low-stock 401 (Unauthorized)
+﻿
+
+Press cmd i to turn on code suggestions. Press cmd x to disable code suggestions.
+cmd
+i
+ to turn on code suggestions. Don't show again
+
+App.tsx:195 
+ GET http://localhost:8080/api/inventory/waste 401 (Unauthorized)
+
+App.tsx:195 
+ GET http://localhost:8080/api/inventory/waste/total-cost?startDate=2025-10-31&endDate=2025-11-30 401 (Unauthorized)
+App.tsx:195 
+ GET http://localhost:8080/api/inventory/waste/cost-by-category?startDate=2025-10-31&endDate=2025-11-30 401 (Unauthorized)
+App.tsx:195 
+ GET http://localhost:8080/api/inventory/waste/preventable-analysis?startDate=2025-10-31&endDate=2025-11-30 401 (Unauthorized)
+App.tsx:195 
+ GET http://localhost:8080/api/inventory/waste/top-items?startDate=2025-10-31&endDate=2025-11-30&limit=10 401 (Unauthorized)
+WasteAnalysisPage.tsx:373 
+ GET http://localhost:8080/api/inventory/items 401 (Unauthorized)
+﻿
+react-dom_client.js?v=7cf4e9e8:17995 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+recipes:1 Access to fetch at 'http://localhost:8080/api/api/menu/items' from origin 'http://localhost:3000' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header contains multiple values 'http://localhost:3000, http://localhost:3000, http://localhost:3000, http://localhost:3000, http://localhost:3000, http://localhost:3000, http://localhost:3000, http://localhost:3000, http://localhost:3000, http://localhost:3000, http://localhost:3000, http://localhost:3000, http://localhost:3000', but only one is allowed. Have the server send the header with a valid value.Understand this error
+App.tsx:155  GET http://localhost:8080/api/api/menu/items net::ERR_FAILED 500 (Internal Server Error)
+defaultFetchFn @ chunk-4MKO5TN2.js?v=7cf4e9e8:129
+(anonymous) @ chunk-4MKO5TN2.js?v=7cf4e9e8:227
+await in (anonymous)
+executeRequest @ chunk-4MKO5TN2.js?v=7cf4e9e8:864
+executeEndpoint @ chunk-4MKO5TN2.js?v=7cf4e9e8:953
+(anonymous) @ chunk-MMCGUQTY.js?v=7cf4e9e8:2599
+(anonymous) @ chunk-MMCGUQTY.js?v=7cf4e9e8:2633
+(anonymous) @ chunk-MMCGUQTY.js?v=7cf4e9e8:1707
+(anonymous) @ chunk-MMCGUQTY.js?v=7cf4e9e8:1965
+(anonymous) @ chunk-MMCGUQTY.js?v=7cf4e9e8:1798
+dispatch @ chunk-MMCGUQTY.js?v=7cf4e9e8:348
+(anonymous) @ chunk-4MKO5TN2.js?v=7cf4e9e8:531
+(anonymous) @ chunk-MMCGUQTY.js?v=7cf4e9e8:1707
+(anonymous) @ chunk-MMCGUQTY.js?v=7cf4e9e8:1965
+(anonymous) @ chunk-MMCGUQTY.js?v=7cf4e9e8:1798
+(anonymous) @ @reduxjs_toolkit_query_react.js?v=7cf4e9e8:264
+react_stack_bottom_frame @ react-dom_client.js?v=7cf4e9e8:17486
+runWithFiberInDEV @ react-dom_client.js?v=7cf4e9e8:1485
+commitHookEffectListMount @ react-dom_client.js?v=7cf4e9e8:8460
+commitHookPassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:8518
+reconnectPassiveEffects @ react-dom_client.js?v=7cf4e9e8:10016
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=7cf4e9e8:9995
+reconnectPassiveEffects @ react-dom_client.js?v=7cf4e9e8:10009
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=7cf4e9e8:9995
+reconnectPassiveEffects @ react-dom_client.js?v=7cf4e9e8:10054
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=7cf4e9e8:9995
+reconnectPassiveEffects @ react-dom_client.js?v=7cf4e9e8:10009
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=7cf4e9e8:9995
+reconnectPassiveEffects @ react-dom_client.js?v=7cf4e9e8:10009
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=7cf4e9e8:9995
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9965
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9940
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9984
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9984
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9984
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9881
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9881
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9890
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9984
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9984
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9881
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9984
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9881
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9984
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9984
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9881
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9881
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9881
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9984
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9881
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9881
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9984
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=7cf4e9e8:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=7cf4e9e8:9899
+flushPassiveEffects @ react-dom_client.js?v=7cf4e9e8:11302
+(anonymous) @ react-dom_client.js?v=7cf4e9e8:11060
+performWorkUntilDeadline @ react-dom_client.js?v=7cf4e9e8:36
+<...>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=7cf4e9e8:250
+App @ App.tsx:155
+react_stack_bottom_frame @ react-dom_client.js?v=7cf4e9e8:17424
+renderWithHooksAgain @ react-dom_client.js?v=7cf4e9e8:4281
+renderWithHooks @ react-dom_client.js?v=7cf4e9e8:4217
+updateFunctionComponent @ react-dom_client.js?v=7cf4e9e8:6619
+beginWork @ react-dom_client.js?v=7cf4e9e8:7654
+runWithFiberInDEV @ react-dom_client.js?v=7cf4e9e8:1485
+performUnitOfWork @ react-dom_client.js?v=7cf4e9e8:10868
+workLoopSync @ react-dom_client.js?v=7cf4e9e8:10728
+renderRootSync @ react-dom_client.js?v=7cf4e9e8:10711
+performWorkOnRoot @ react-dom_client.js?v=7cf4e9e8:10330
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=7cf4e9e8:11623
+performWorkUntilDeadline @ react-dom_client.js?v=7cf4e9e8:36Understand this error
+
+
+Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+App.tsx:203 TypeError: Cannot read properties of undefined (reading 'main')
+    at CustomerManagementPage (CustomerManagementPage.tsx:128:27)
+    at Object.react_stack_bottom_frame (react-dom_client.js?v=7cf4e9e8:17424:20)
+    at renderWithHooks (react-dom_client.js?v=7cf4e9e8:4206:24)
+    at updateFunctionComponent (react-dom_client.js?v=7cf4e9e8:6619:21)
+    at beginWork (react-dom_client.js?v=7cf4e9e8:7613:199)
+    at runWithFiberInDEV (react-dom_client.js?v=7cf4e9e8:1485:72)
+    at performUnitOfWork (react-dom_client.js?v=7cf4e9e8:10868:98)
+    at workLoopSync (react-dom_client.js?v=7cf4e9e8:10728:43)
+    at renderRootSync (react-dom_client.js?v=7cf4e9e8:10711:13)
+    at performWorkOnRoot (react-dom_client.js?v=7cf4e9e8:10359:46)
+
+The above error occurred in the <CustomerManagementPage> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+
+defaultOnCaughtError @ react-dom_client.js?v=7cf4e9e8:6264
+logCaughtError @ react-dom_client.js?v=7cf4e9e8:6296
+runWithFiberInDEV @ react-dom_client.js?v=7cf4e9e8:1485
+inst.componentDidCatch.update.callback @ react-dom_client.js?v=7cf4e9e8:6341
+callCallback @ react-dom_client.js?v=7cf4e9e8:4097
+commitCallbacks @ react-dom_client.js?v=7cf4e9e8:4109
+runWithFiberInDEV @ react-dom_client.js?v=7cf4e9e8:1485
+commitClassCallbacks @ react-dom_client.js?v=7cf4e9e8:8543
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:9011
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:9096
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:9096
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:9096
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:9096
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:9096
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:9096
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:9096
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:9016
+flushLayoutEffects @ react-dom_client.js?v=7cf4e9e8:11174
+commitRoot @ react-dom_client.js?v=7cf4e9e8:11080
+commitRootWhenReady @ react-dom_client.js?v=7cf4e9e8:10512
+performWorkOnRoot @ react-dom_client.js?v=7cf4e9e8:10457
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=7cf4e9e8:11623
+performWorkUntilDeadline @ react-dom_client.js?v=7cf4e9e8:36
+<...>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=7cf4e9e8:250
+App @ App.tsx:203
+react_stack_bottom_frame @ react-dom_client.js?v=7cf4e9e8:17424
+renderWithHooksAgain @ react-dom_client.js?v=7cf4e9e8:4281
+renderWithHooks @ react-dom_client.js?v=7cf4e9e8:4217
+updateFunctionComponent @ react-dom_client.js?v=7cf4e9e8:6619
+beginWork @ react-dom_client.js?v=7cf4e9e8:7654
+runWithFiberInDEV @ react-dom_client.js?v=7cf4e9e8:1485
+performUnitOfWork @ react-dom_client.js?v=7cf4e9e8:10868
+workLoopSync @ react-dom_client.js?v=7cf4e9e8:10728
+renderRootSync @ react-dom_client.js?v=7cf4e9e8:10711
+performWorkOnRoot @ react-dom_client.js?v=7cf4e9e8:10330
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=7cf4e9e8:11623
+performWorkUntilDeadline @ react-dom_client.js?v=7cf4e9e8:36Understand this error
+ErrorBoundary.tsx:25 Uncaught error: TypeError: Cannot read properties of undefined (reading 'main')
+    at CustomerManagementPage (CustomerManagementPage.tsx:128:27)
+    at Object.react_stack_bottom_frame (react-dom_client.js?v=7cf4e9e8:17424:20)
+    at renderWithHooks (react-dom_client.js?v=7cf4e9e8:4206:24)
+    at updateFunctionComponent (react-dom_client.js?v=7cf4e9e8:6619:21)
+    at beginWork (react-dom_client.js?v=7cf4e9e8:7613:199)
+    at runWithFiberInDEV (react-dom_client.js?v=7cf4e9e8:1485:72)
+    at performUnitOfWork (react-dom_client.js?v=7cf4e9e8:10868:98)
+    at workLoopSync (react-dom_client.js?v=7cf4e9e8:10728:43)
+    at renderRootSync (react-dom_client.js?v=7cf4e9e8:10711:13)
+    at performWorkOnRoot (react-dom_client.js?v=7cf4e9e8:10359:46) {componentStack: '\n    at CustomerManagementPage (http://localhost:3…SY.js?v=7cf4e9e8:923:11)\n    at App (<anonymous>)'}
+componentDidCatch @ ErrorBoundary.tsx:25
+react_stack_bottom_frame @ react-dom_client.js?v=7cf4e9e8:17462
+inst.componentDidCatch.update.callback @ react-dom_client.js?v=7cf4e9e8:6349
+callCallback @ react-dom_client.js?v=7cf4e9e8:4097
+commitCallbacks @ react-dom_client.js?v=7cf4e9e8:4109
+runWithFiberInDEV @ react-dom_client.js?v=7cf4e9e8:1485
+commitClassCallbacks @ react-dom_client.js?v=7cf4e9e8:8543
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:9011
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:9096
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:9096
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:9096
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:9096
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:9096
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:9096
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:9096
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=7cf4e9e8:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=7cf4e9e8:9016
+flushLayoutEffects @ react-dom_client.js?v=7cf4e9e8:11174
+commitRoot @ react-dom_client.js?v=7cf4e9e8:11080
+commitRootWhenReady @ react-dom_client.js?v=7cf4e9e8:10512
+performWorkOnRoot @ react-dom_client.js?v=7cf4e9e8:10457
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=7cf4e9e8:11623
+performWorkUntilDeadline @ react-dom_client.js?v=7cf4e9e8:36
+<ErrorBoundary>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=7cf4e9e8:250
+App @ App.tsx:66
+react_stack_bottom_frame @ react-dom_client.js?v=7cf4e9e8:17424
+renderWithHooksAgain @ react-dom_client.js?v=7cf4e9e8:4281
+renderWithHooks @ react-dom_client.js?v=7cf4e9e8:4217
+updateFunctionComponent @ react-dom_client.js?v=7cf4e9e8:6619
+beginWork @ react-dom_client.js?v=7cf4e9e8:7654
+runWithFiberInDEV @ react-dom_client.js?v=7cf4e9e8:1485
+performUnitOfWork @ react-dom_client.js?v=7cf4e9e8:10868
+workLoopSync @ react-dom_client.js?v=7cf4e9e8:10728
+renderRootSync @ react-dom_client.js?v=7cf4e9e8:10711
+performWorkOnRoot @ react-dom_client.js?v=7cf4e9e8:10330
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=7cf4e9e8:11623
+performWorkUntilDeadline @ react-dom_client.js?v=7cf4e9e8:36Understand this error
+
+
+react-dom_client.js?v=7cf4e9e8:17995 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+POSSystem.tsx:16 ReferenceError: Cannot access 'isManager' before initialization
+    at POSDashboard (POSDashboard.tsx:80:17)
+
+
+The above error occurred in the <POSDashboard> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+ErrorBoundary.tsx:25 Uncaught error: ReferenceError: Cannot access 'isManager' before initialization
+    at POSDashboard (POSDashboard.tsx:80:17)
+ 
+{componentStack: '\n    at POSDashboard (http://localhost:3000/src/ap…SY.js?v=7cf4e9e8:923:11)\n    at App (<anonymous>)'}
+
+
+react-dom_client.js?v=7cf4e9e8:17995 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+manager/campaigns:1 Access to fetch at 'http://localhost:8080/api/api/campaigns?page=0&size=20' from origin 'http://localhost:3000' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header contains multiple values 'http://localhost:3000, http://localhost:3000, http://localhost:3000, http://localhost:3000, http://localhost:3000, http://localhost:3000, http://localhost:3000, http://localhost:3000, http://localhost:3000, http://localhost:3000, http://localhost:3000, http://localhost:3000, http://localhost:3000', but only one is allowed. Have the server send the header with a valid value.Understand this error
+App.tsx:227  GET http://localhost:8080/api/api/campaigns?page=0&size=20 net::ERR_FAILED 500 (Internal Server Error)
+

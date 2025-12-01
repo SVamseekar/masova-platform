@@ -137,7 +137,7 @@ public class AnalyticsController {
     @GetMapping("/staff/leaderboard")
     public ResponseEntity<StaffLeaderboardResponse> getStaffLeaderboard(
             HttpServletRequest request,
-            @RequestParam(defaultValue = "TODAY") String period) {
+            @RequestParam(name = "period", defaultValue = "TODAY") String period) {
         String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
         if (storeId == null || storeId.isEmpty()) {
             return ResponseEntity.badRequest().body(null);
@@ -156,8 +156,8 @@ public class AnalyticsController {
     @GetMapping("/products/top-selling")
     public ResponseEntity<TopProductsResponse> getTopProducts(
             HttpServletRequest request,
-            @RequestParam(defaultValue = "TODAY") String period,
-            @RequestParam(defaultValue = "QUANTITY") String sortBy) {
+            @RequestParam(name = "period", defaultValue = "TODAY") String period,
+            @RequestParam(name = "sortBy", defaultValue = "QUANTITY") String sortBy) {
         String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
         if (storeId == null || storeId.isEmpty()) {
             return ResponseEntity.badRequest().body(null);

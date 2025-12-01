@@ -24,10 +24,14 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
   className = '',
   style,
   id,
+  value,
   ...props
 }, ref) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+
+  // Handle null value - React expects string or undefined, never null
+  const safeValue = value === null ? '' : value;
   
   const inputStyles = createInputField(size, state);
   const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
@@ -108,6 +112,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
           id={inputId}
           type={actualType}
           style={combinedInputStyles}
+          value={safeValue}
           onFocus={(e) => {
             setIsFocused(true);
             props.onFocus?.(e);

@@ -1,7 +1,5 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import type { RootState } from '../store';
-
-const NOTIFICATION_SERVICE_URL = 'http://localhost:8080/api/api';
+import { createApi } from '@reduxjs/toolkit/query/react';
+import baseQueryWithAuth from './baseQueryWithAuth';
 
 export interface Notification {
   id: string;
@@ -166,36 +164,7 @@ export interface PageResponse<T> {
 
 export const notificationApi = createApi({
   reducerPath: 'notificationApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: NOTIFICATION_SERVICE_URL,
-    prepareHeaders: (headers, { getState }) => {
-      const state = getState() as RootState;
-      const token = state.auth.accessToken;
-      const user = state.auth.user;
-      const selectedStoreId = state.cart?.selectedStoreId;
-
-      // Add authorization token
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
-      }
-
-      // Add user context headers
-      if (user) {
-        headers.set('X-User-Id', user.id);
-        headers.set('X-User-Type', user.type);
-        if (user.storeId) {
-          headers.set('X-User-Store-Id', user.storeId);
-        }
-      }
-
-      // Add selected store for managers/customers
-      if (selectedStoreId) {
-        headers.set('X-Selected-Store-Id', selectedStoreId);
-      }
-
-      return headers;
-    },
-  }),
+  baseQuery: baseQueryWithAuth,
   tagTypes: ['Notification', 'Preferences', 'Campaign'],
   endpoints: (builder) => ({
     // Notification endpoints

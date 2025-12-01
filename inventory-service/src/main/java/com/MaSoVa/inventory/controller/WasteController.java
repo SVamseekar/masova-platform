@@ -191,9 +191,9 @@ public class WasteController {
      */
     @GetMapping("/top-items")
     public ResponseEntity<List<Map<String, Object>>> getTopWastedItems(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(defaultValue = "10") Integer limit,
+            @RequestParam(name = "startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(name = "endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(name = "limit", defaultValue = "10") Integer limit,
             HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting top {} wasted items from {} to {} for store: {}", limit, startDate, endDate, storeId);
@@ -207,8 +207,8 @@ public class WasteController {
      */
     @GetMapping("/preventable-analysis")
     public ResponseEntity<Map<String, Object>> getPreventableWasteAnalysis(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(name = "startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(name = "endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting preventable waste analysis from {} to {} for store: {}", startDate, endDate, storeId);
@@ -222,7 +222,7 @@ public class WasteController {
      */
     @GetMapping("/trend")
     public ResponseEntity<List<Map<String, Object>>> getWasteTrend(
-            @RequestParam(defaultValue = "6") Integer months,
+            @RequestParam(name = "months", defaultValue = "6") Integer months,
             HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting waste trend for last {} months for store: {}", months, storeId);

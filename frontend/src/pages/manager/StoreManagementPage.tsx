@@ -274,8 +274,8 @@ const StoreManagementPage: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', gap: spacing[4], fontSize: typography.fontSize.xs, color: colors.text.tertiary }}>
-                <span>📦 Max Orders: {store.operatingConfig.maxConcurrentOrders}</span>
-                <span>🚚 Radius: {store.operatingConfig.deliveryRadiusKm}km</span>
+                <span>📦 Max Orders: {store.operatingConfig?.maxConcurrentOrders ?? 'N/A'}</span>
+                <span>🚚 Radius: {store.operatingConfig?.deliveryRadiusKm ?? 'N/A'}km</span>
               </div>
 
               <div style={{ marginTop: spacing[4], display: 'flex', gap: spacing[2] }}>

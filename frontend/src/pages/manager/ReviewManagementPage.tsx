@@ -177,7 +177,7 @@ const ReviewManagementPage: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 <p className="text-3xl font-bold text-gray-900">
-                  {stats.averageRating.toFixed(1)}
+                  {stats.averageRating?.toFixed(1) ?? '0.0'}
                 </p>
                 <span className="text-sm text-gray-500">/ 5.0</span>
               </div>
@@ -185,7 +185,7 @@ const ReviewManagementPage: React.FC = () => {
                 {getTrendIcon(stats.trendDirection)}
                 <span className="text-sm text-gray-600">
                   {stats.recentTrendPercentage > 0 ? '+' : ''}
-                  {stats.recentTrendPercentage.toFixed(1)}%
+                  {stats.recentTrendPercentage?.toFixed(1) ?? '0.0'}%
                 </span>
               </div>
             </Card>
@@ -207,7 +207,7 @@ const ReviewManagementPage: React.FC = () => {
                 <Star className="w-5 h-5 text-orange-500" />
               </div>
               <p className="text-3xl font-bold text-gray-900">
-                {stats.averageFoodQualityRating.toFixed(1)}
+                {stats.averageFoodQualityRating?.toFixed(1) ?? '0.0'}
               </p>
               <p className="text-sm text-gray-500 mt-2">Average rating</p>
             </Card>
@@ -218,7 +218,7 @@ const ReviewManagementPage: React.FC = () => {
                 <CheckCircle className="w-5 h-5 text-purple-500" />
               </div>
               <p className="text-3xl font-bold text-gray-900">
-                {stats.averageServiceRating.toFixed(1)}
+                {stats.averageServiceRating?.toFixed(1) ?? '0.0'}
               </p>
               <p className="text-sm text-gray-500 mt-2">Average rating</p>
             </Card>

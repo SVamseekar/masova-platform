@@ -143,9 +143,9 @@ public class CustomerController {
     @GetMapping("/search")
     @Operation(summary = "Search customers", description = "Search by name, email, or phone")
     public ResponseEntity<Page<Customer>> searchCustomers(
-            @RequestParam String query,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(name = "query") String query,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size,
             HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
         logger.info("Searching customers with query: {} for store: {}", query, storeId);
@@ -458,7 +458,7 @@ public class CustomerController {
     @GetMapping("/top-spenders")
     @Operation(summary = "Get top spenders")
     public ResponseEntity<List<Customer>> getTopSpenders(
-            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(name = "limit", defaultValue = "10") int limit,
             HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting top {} spenders for store: {}", limit, storeId);
@@ -469,7 +469,7 @@ public class CustomerController {
     @GetMapping("/recently-active")
     @Operation(summary = "Get recently active customers")
     public ResponseEntity<List<Customer>> getRecentlyActiveCustomers(
-            @RequestParam(defaultValue = "30") int days,
+            @RequestParam(name = "days", defaultValue = "30") int days,
             HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting recently active customers (within {} days) for store: {}", days, storeId);
@@ -480,7 +480,7 @@ public class CustomerController {
     @GetMapping("/inactive")
     @Operation(summary = "Get inactive customers")
     public ResponseEntity<List<Customer>> getInactiveCustomers(
-            @RequestParam(defaultValue = "90") int days,
+            @RequestParam(name = "days", defaultValue = "90") int days,
             HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting inactive customers (inactive for {} days) for store: {}", days, storeId);

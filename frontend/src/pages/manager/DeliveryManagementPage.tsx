@@ -21,10 +21,10 @@ const DeliveryManagementPage: React.FC = () => {
 
   // API queries
   const { data: todayMetrics, isLoading: loadingMetrics } = useGetTodayMetricsQuery();
-  const { data: outForDeliveryOrders } = useGetOrdersByStatusQuery('OUT_FOR_DELIVERY', {
+  const { data: outForDeliveryOrders } = useGetOrdersByStatusQuery('DISPATCHED', {
     pollingInterval: 30000, // Poll every 30 seconds
   });
-  const { data: readyOrders } = useGetOrdersByStatusQuery('READY_FOR_PICKUP', {
+  const { data: readyOrders } = useGetOrdersByStatusQuery('BAKED', {
     pollingInterval: 30000,
   });
   const { data: trackingData } = useTrackOrderQuery(selectedOrderId, {

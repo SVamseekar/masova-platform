@@ -23,7 +23,7 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
-    @Value("${jwt.secret:MaSoVa-secret-key-for-jwt-token-generation-very-long-key}")
+    @Value("${jwt.secret:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-512-bits-for-HS512-algorithm-security-requirement}")
     private String secretKey;
 
     public JwtAuthenticationFilter() {

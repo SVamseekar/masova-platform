@@ -72,6 +72,23 @@ public class OrderController {
         return ResponseEntity.ok(orders);
     }
 
+    @GetMapping("/status/{status}")
+    public ResponseEntity<List<Order>> getOrdersByStatus(
+            HttpServletRequest request,
+            @PathVariable String status) {
+        String storeId = getStoreIdFromHeaders(request);
+        log.info("Fetching orders with status: {} for store: {}", status, storeId);
+
+        try {
+            Order.OrderStatus orderStatus = Order.OrderStatus.valueOf(status);
+            List<Order> orders = orderService.getOrdersByStatus(storeId, orderStatus);
+            return ResponseEntity.ok(orders);
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid order status: {}", status);
+            return ResponseEntity.badRequest().body(List.of());
+        }
+    }
+
     // Only customers can view their own orders
     @GetMapping("/customer/{customerId}")
     @PreAuthorize("hasRole('CUSTOMER')")

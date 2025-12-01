@@ -226,7 +226,7 @@ public class InventoryController {
      */
     @GetMapping("/expiring-soon")
     public ResponseEntity<List<InventoryItem>> getItemsExpiringSoon(
-            @RequestParam(defaultValue = "7") Integer days,
+            @RequestParam(name = "days", defaultValue = "7") Integer days,
             HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting items expiring within {} days for store: {}", days, storeId);

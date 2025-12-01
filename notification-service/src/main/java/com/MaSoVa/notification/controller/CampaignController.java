@@ -64,8 +64,8 @@ public class CampaignController {
 
     @GetMapping
     public ResponseEntity<Page<Campaign>> getAllCampaigns(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Campaign> campaigns = campaignService.getAllCampaigns(pageable);
         return ResponseEntity.ok(campaigns);

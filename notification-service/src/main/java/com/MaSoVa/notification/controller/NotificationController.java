@@ -65,8 +65,8 @@ public class NotificationController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<Page<Notification>> getUserNotifications(
             @PathVariable String userId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Notification> notifications = notificationService.getUserNotifications(userId, pageable);
         return ResponseEntity.ok(notifications);
@@ -105,7 +105,7 @@ public class NotificationController {
     @GetMapping("/user/{userId}/recent")
     public ResponseEntity<List<Notification>> getRecentNotifications(
             @PathVariable String userId,
-            @RequestParam(defaultValue = "7") int days) {
+            @RequestParam(name = "days", defaultValue = "7") int days) {
         List<Notification> notifications = notificationService.getRecentNotifications(userId, days);
         return ResponseEntity.ok(notifications);
     }

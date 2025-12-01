@@ -83,8 +83,8 @@ public class ResponseController {
     @GetMapping("/manager/{managerId}")
     public ResponseEntity<Page<ReviewResponse>> getResponsesByManagerId(
             @PathVariable String managerId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<ReviewResponse> responses = responseService.getResponsesByManagerId(managerId, pageable);
@@ -93,8 +93,8 @@ public class ResponseController {
 
     @GetMapping
     public ResponseEntity<Page<ReviewResponse>> getAllResponses(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size
     ) {
         Pageable pageable = PageRequest.of(page, size);
         Page<ReviewResponse> responses = responseService.getAllResponses(pageable);

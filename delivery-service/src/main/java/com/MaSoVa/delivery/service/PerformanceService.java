@@ -1,6 +1,7 @@
 package com.MaSoVa.delivery.service;
 
 import com.MaSoVa.delivery.client.UserServiceClient;
+import com.MaSoVa.delivery.dto.DeliveryMetricsResponse;
 import com.MaSoVa.delivery.dto.DriverPerformanceResponse;
 import com.MaSoVa.delivery.entity.DeliveryTracking;
 import com.MaSoVa.delivery.repository.DeliveryTrackingRepository;
@@ -171,5 +172,95 @@ public class PerformanceService {
         } else {
             return "NEEDS_IMPROVEMENT";
         }
+    }
+
+    /**
+     * Get today's overall delivery metrics
+     */
+    public DeliveryMetricsResponse getTodayMetrics() {
+        LocalDate today = LocalDate.now();
+        LocalDateTime startOfDay = LocalDateTime.of(today, LocalTime.MIN);
+        LocalDateTime endOfDay = LocalDateTime.of(today, LocalTime.MAX);
+
+        log.info("Calculating today's delivery metrics for {}", today);
+
+        // Get all deliveries for today
+        List<DeliveryTracking> todayDeliveries = deliveryTrackingRepository
+                .findByCreatedAtBetween(startOfDay, endOfDay);
+
+        // Calculate metrics
+        int totalDeliveries = todayDeliveries.size();
+
+        int activeDeliveries = (int) todayDeliveries.stream()
+                .filter(d -> "ASSIGNED".equals(d.getStatus()) ||
+                            "PICKED_UP".equals(d.getStatus()) ||
+                            "OUT_FOR_DELIVERY".equals(d.getStatus()))
+                .count();
+
+        int completedDeliveries = (int) todayDeliveries.stream()
+                .filter(d -> "DELIVERED".equals(d.getStatus()))
+                .count();
+
+        int cancelledDeliveries = (int) todayDeliveries.stream()
+                .filter(d -> "CANCELLED".equals(d.getStatus()))
+                .count();
+
+        // Calculate average delivery time
+        List<DeliveryTracking> completed = todayDeliveries.stream()
+                .filter(d -> "DELIVERED".equals(d.getStatus()) && d.getActualDeliveryMinutes() != null)
+                .toList();
+
+        BigDecimal averageDeliveryTime = completed.isEmpty()
+                ? BigDecimal.ZERO
+                : BigDecimal.valueOf(
+                        completed.stream()
+                                .mapToInt(DeliveryTracking::getActualDeliveryMinutes)
+                                .average()
+                                .orElse(0.0)
+                ).setScale(2, RoundingMode.HALF_UP);
+
+        // Calculate average delivery distance
+        BigDecimal totalDistance = todayDeliveries.stream()
+                .filter(d -> d.getDistanceKm() != null)
+                .map(DeliveryTracking::getDistanceKm)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal averageDistance = totalDeliveries > 0
+                ? totalDistance.divide(BigDecimal.valueOf(totalDeliveries), 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        // Calculate on-time delivery rate
+        long onTimeDeliveries = completed.stream()
+                .filter(d -> Boolean.TRUE.equals(d.getOnTime()))
+                .count();
+
+        BigDecimal onTimeRate = !completed.isEmpty()
+                ? BigDecimal.valueOf(onTimeDeliveries * 100.0 / completed.size()).setScale(2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        // Calculate customer satisfaction rate (average rating)
+        List<DeliveryTracking> rated = todayDeliveries.stream()
+                .filter(d -> d.getCustomerRating() != null)
+                .toList();
+
+        BigDecimal satisfactionRate = rated.isEmpty()
+                ? BigDecimal.ZERO
+                : BigDecimal.valueOf(
+                        rated.stream()
+                                .mapToInt(DeliveryTracking::getCustomerRating)
+                                .average()
+                                .orElse(0.0)
+                ).setScale(2, RoundingMode.HALF_UP);
+
+        return new DeliveryMetricsResponse(
+                totalDeliveries,
+                activeDeliveries,
+                completedDeliveries,
+                cancelledDeliveries,
+                averageDeliveryTime,
+                averageDistance,
+                onTimeRate,
+                satisfactionRate
+        );
     }
 }

@@ -158,6 +158,11 @@ public class OrderService {
         return orderRepository.findByStoreIdOrderByCreatedAtDesc(storeId);
     }
 
+    public List<Order> getOrdersByStatus(String storeId, OrderStatus status) {
+        log.info("Fetching orders with status {} for store {}", status, storeId);
+        return orderRepository.findByStoreIdAndStatus(storeId, status);
+    }
+
     public List<Order> getCustomerOrders(String customerId) {
         return orderRepository.findByCustomerIdOrderByCreatedAtDesc(customerId);
     }
