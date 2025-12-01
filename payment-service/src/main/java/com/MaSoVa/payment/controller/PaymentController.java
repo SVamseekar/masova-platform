@@ -132,7 +132,7 @@ public class PaymentController {
     @GetMapping("/reconciliation")
     public ResponseEntity<ReconciliationReportResponse> getDailyReconciliation(
             HttpServletRequest request,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+            @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
         if (storeId == null || storeId.isEmpty()) {
             return ResponseEntity.badRequest().body(null);
@@ -153,7 +153,7 @@ public class PaymentController {
     @PostMapping("/{transactionId}/reconcile")
     public ResponseEntity<Void> markAsReconciled(
             @PathVariable String transactionId,
-            @RequestParam String reconciledBy) {
+            @RequestParam("reconciledBy") String reconciledBy) {
         log.info("Marking transaction {} as reconciled by {}", transactionId, reconciledBy);
         try {
             paymentService.markAsReconciled(transactionId, reconciledBy);
