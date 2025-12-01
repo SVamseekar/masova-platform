@@ -16,6 +16,7 @@ import {
 import { useGetUsersQuery } from '../../store/api/userApi';
 import { ORDER_STATUS_CONFIG, ORDER_TYPE_CONFIG, PAYMENT_STATUS_CONFIG } from '../../types/order';
 import type { OrderStatus, OrderPriority } from '../../types/order';
+import { colors, spacing, typography, shadows } from '../../styles/design-tokens';
 
 const OrderManagementPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
@@ -155,20 +156,20 @@ const OrderManagementPage: React.FC = () => {
   }
 
   return (
-    <div className="order-management" style={{ background: '#f0f0f0', minHeight: '100vh' }}>
+    <div className="order-management" style={{ background: colors.surface.background, minHeight: '100vh' }}>
       <AppHeader title="Order Management" />
 
       {/* Store Selector */}
       <div style={{
-        background: 'white',
-        padding: '16px 24px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-        borderBottom: '1px solid #e5e7eb',
-        marginBottom: '24px',
+        background: colors.surface.primary,
+        padding: `${spacing[4]} ${spacing[6]}`,
+        boxShadow: shadows.floating.sm,
+        borderBottom: `1px solid ${colors.surface.border}`,
+        marginBottom: spacing[6],
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', maxWidth: '1400px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: spacing[4], maxWidth: '1400px', margin: '0 auto' }}>
           <StoreSelector variant="manager" />
-          <div style={{ fontSize: '14px', color: '#6b7280' }}>
+          <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
             {storeId ? `Managing orders for: ${selectedStoreName || storeId}` : 'Select a store to manage orders'}
           </div>
         </div>
@@ -176,77 +177,71 @@ const OrderManagementPage: React.FC = () => {
 
       <style>{`
         .order-management {
-          font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+          font-family: ${typography.fontFamily.primary};
           padding: 0;
         }
 
         .stats-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 20px;
-          padding: 24px;
+          gap: ${spacing[5]};
+          padding: ${spacing[6]};
           max-width: 1400px;
           margin: 0 auto;
         }
 
         .stat-card {
-          background: #f0f0f0;
+          background: ${colors.surface.primary};
           border-radius: 16px;
-          padding: 20px;
-          box-shadow:
-            8px 8px 16px rgba(163, 163, 163, 0.3),
-            -8px -8px 16px rgba(255, 255, 255, 0.8);
+          padding: ${spacing[5]};
+          box-shadow: ${shadows.raised.md};
         }
 
         .stat-label {
-          font-size: 13px;
-          font-weight: 600;
-          color: #666;
-          margin-bottom: 8px;
+          font-size: ${typography.fontSize.sm};
+          font-weight: ${typography.fontWeight.semibold};
+          color: ${colors.text.secondary};
+          margin-bottom: ${spacing[2]};
         }
 
         .stat-value {
-          font-size: 28px;
-          font-weight: 800;
-          color: #e53e3e;
+          font-size: ${typography.fontSize['3xl']};
+          font-weight: ${typography.fontWeight.extrabold};
+          color: ${colors.brand.primary};
         }
 
         .controls-section {
-          padding: 0 24px 24px;
+          padding: 0 ${spacing[6]} ${spacing[6]};
           max-width: 1400px;
           margin: 0 auto;
           display: flex;
-          gap: 16px;
+          gap: ${spacing[4]};
           align-items: center;
           flex-wrap: wrap;
         }
 
         .filter-group {
           display: flex;
-          gap: 8px;
+          gap: ${spacing[2]};
           flex-wrap: wrap;
         }
 
         .filter-btn {
-          padding: 10px 16px;
+          padding: ${spacing[2]} ${spacing[4]};
           border: none;
           border-radius: 12px;
-          background: #f0f0f0;
-          box-shadow:
-            6px 6px 12px rgba(163, 163, 163, 0.3),
-            -6px -6px 12px rgba(255, 255, 255, 0.8);
+          background: ${colors.surface.primary};
+          box-shadow: ${shadows.raised.sm};
           cursor: pointer;
-          font-size: 13px;
-          font-weight: 600;
-          color: #666;
+          font-size: ${typography.fontSize.sm};
+          font-weight: ${typography.fontWeight.semibold};
+          color: ${colors.text.secondary};
           transition: all 0.2s ease;
         }
 
         .filter-btn.active {
-          color: #e53e3e;
-          box-shadow:
-            inset 4px 4px 8px rgba(163, 163, 163, 0.3),
-            inset -4px -4px 8px rgba(255, 255, 255, 0.8);
+          color: ${colors.brand.primary};
+          box-shadow: ${shadows.inset.sm};
         }
 
         .filter-btn:hover {
@@ -255,25 +250,23 @@ const OrderManagementPage: React.FC = () => {
 
         .create-order-btn {
           margin-left: auto;
-          padding: 12px 24px;
+          padding: ${spacing[3]} ${spacing[6]};
           border: none;
           border-radius: 12px;
-          background: #e53e3e;
-          color: white;
-          font-size: 14px;
-          font-weight: 700;
+          background: ${colors.brand.primary};
+          color: ${colors.text.inverse};
+          font-size: ${typography.fontSize.sm};
+          font-weight: ${typography.fontWeight.bold};
           cursor: pointer;
-          box-shadow:
-            6px 6px 12px rgba(163, 163, 163, 0.3),
-            -6px -6px 12px rgba(255, 255, 255, 0.8);
+          box-shadow: ${shadows.raised.sm};
         }
 
         .create-order-btn:hover {
-          background: #dc2626;
+          background: ${colors.brand.primaryDark};
         }
 
         .orders-section {
-          padding: 0 24px 24px;
+          padding: 0 ${spacing[6]} ${spacing[6]};
           max-width: 1400px;
           margin: 0 auto;
         }
@@ -281,78 +274,76 @@ const OrderManagementPage: React.FC = () => {
         .orders-list {
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: ${spacing[4]};
         }
 
         .order-card {
-          background: #f0f0f0;
+          background: ${colors.surface.primary};
           border-radius: 16px;
-          padding: 20px;
-          box-shadow:
-            8px 8px 16px rgba(163, 163, 163, 0.3),
-            -8px -8px 16px rgba(255, 255, 255, 0.8);
+          padding: ${spacing[5]};
+          box-shadow: ${shadows.raised.md};
           border-left: 4px solid transparent;
         }
 
         .order-card.urgent {
-          border-left-color: #ef4444;
+          border-left-color: ${colors.semantic.error};
         }
 
         .order-header {
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
-          margin-bottom: 16px;
+          margin-bottom: ${spacing[4]};
           flex-wrap: wrap;
-          gap: 12px;
+          gap: ${spacing[3]};
         }
 
         .order-number {
-          font-size: 22px;
-          font-weight: 800;
-          color: #e53e3e;
+          font-size: ${typography.fontSize['2xl']};
+          font-weight: ${typography.fontWeight.extrabold};
+          color: ${colors.brand.primary};
         }
 
         .order-badges {
           display: flex;
-          gap: 8px;
+          gap: ${spacing[2]};
           flex-wrap: wrap;
         }
 
         .badge {
-          padding: 6px 12px;
+          padding: ${spacing[1]} ${spacing[3]};
           border-radius: 8px;
-          font-size: 11px;
-          font-weight: 700;
+          font-size: ${typography.fontSize.xs};
+          font-weight: ${typography.fontWeight.bold};
           text-transform: uppercase;
           letter-spacing: 0.5px;
         }
 
         .badge-status {
-          background: rgba(59, 130, 246, 0.1);
-          color: #2563eb;
+          background: ${colors.semantic.infoLight}22;
+          color: ${colors.semantic.info};
         }
 
         .badge-type {
-          background: rgba(16, 185, 129, 0.1);
-          color: #059669;
+          background: ${colors.semantic.successLight}22;
+          color: ${colors.semantic.success};
         }
 
         .badge-payment {
-          background: rgba(245, 158, 11, 0.1);
-          color: #d97706;
+          background: ${colors.semantic.warningLight}22;
+          color: ${colors.semantic.warning};
         }
 
         .badge-priority {
-          background: rgba(239, 68, 68, 0.1);
-          color: #dc2626;
+          background: ${colors.semantic.errorLight}22;
+          color: ${colors.semantic.error};
         }
 
         .order-info {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 16px;
-          margin-bottom: 16px;
+          gap: ${spacing[4]};
+          margin-bottom: ${spacing[4]};
         }
 
         .info-item {
@@ -361,31 +352,29 @@ const OrderManagementPage: React.FC = () => {
         }
 
         .info-label {
-          font-size: 12px;
-          font-weight: 600;
-          color: #666;
-          margin-bottom: 4px;
+          font-size: ${typography.fontSize.xs};
+          font-weight: ${typography.fontWeight.semibold};
+          color: ${colors.text.secondary};
+          margin-bottom: ${spacing[1]};
         }
 
         .info-value {
-          font-size: 14px;
-          font-weight: 600;
-          color: #333;
+          font-size: ${typography.fontSize.sm};
+          font-weight: ${typography.fontWeight.semibold};
+          color: ${colors.text.primary};
         }
 
         .order-items {
-          background: #f0f0f0;
+          background: ${colors.surface.primary};
           border-radius: 12px;
-          padding: 12px;
-          margin-bottom: 16px;
-          box-shadow:
-            inset 3px 3px 6px rgba(163, 163, 163, 0.2),
-            inset -3px -3px 6px rgba(255, 255, 255, 0.8);
+          padding: ${spacing[3]};
+          margin-bottom: ${spacing[4]};
+          box-shadow: ${shadows.inset.sm};
         }
 
         .order-item {
-          padding: 8px 0;
-          border-bottom: 1px solid rgba(163, 163, 163, 0.1);
+          padding: ${spacing[2]} 0;
+          border-bottom: 1px solid ${colors.surface.border};
         }
 
         .order-item:last-child {
@@ -399,45 +388,43 @@ const OrderManagementPage: React.FC = () => {
         }
 
         .item-name {
-          font-size: 13px;
-          font-weight: 600;
-          color: #333;
+          font-size: ${typography.fontSize.sm};
+          font-weight: ${typography.fontWeight.semibold};
+          color: ${colors.text.primary};
         }
 
         .item-qty {
-          background: #e53e3e;
-          color: white;
-          padding: 2px 6px;
+          background: ${colors.brand.primary};
+          color: ${colors.text.inverse};
+          padding: ${spacing[1]} ${spacing[2]};
           border-radius: 4px;
-          font-size: 11px;
-          font-weight: 700;
-          margin-right: 8px;
+          font-size: ${typography.fontSize.xs};
+          font-weight: ${typography.fontWeight.bold};
+          margin-right: ${spacing[2]};
         }
 
         .item-price {
-          font-size: 13px;
-          font-weight: 700;
-          color: #e53e3e;
+          font-size: ${typography.fontSize.sm};
+          font-weight: ${typography.fontWeight.bold};
+          color: ${colors.brand.primary};
         }
 
         .order-actions {
           display: flex;
-          gap: 8px;
+          gap: ${spacing[2]};
           flex-wrap: wrap;
         }
 
         .action-btn {
-          padding: 8px 12px;
+          padding: ${spacing[2]} ${spacing[3]};
           border: none;
           border-radius: 8px;
-          background: #f0f0f0;
-          box-shadow:
-            4px 4px 8px rgba(163, 163, 163, 0.3),
-            -4px -4px 8px rgba(255, 255, 255, 0.8);
+          background: ${colors.surface.primary};
+          box-shadow: ${shadows.raised.sm};
           cursor: pointer;
-          font-size: 12px;
-          font-weight: 600;
-          color: #666;
+          font-size: ${typography.fontSize.xs};
+          font-weight: ${typography.fontWeight.semibold};
+          color: ${colors.text.secondary};
           transition: all 0.2s ease;
         }
 
@@ -447,27 +434,25 @@ const OrderManagementPage: React.FC = () => {
 
         .action-btn:active {
           transform: scale(0.98);
-          box-shadow:
-            inset 3px 3px 6px rgba(163, 163, 163, 0.3),
-            inset -3px -3px 6px rgba(255, 255, 255, 0.8);
+          box-shadow: ${shadows.inset.sm};
         }
 
         .action-btn.primary {
-          color: #10b981;
+          color: ${colors.semantic.success};
         }
 
         .action-btn.danger {
-          color: #ef4444;
+          color: ${colors.semantic.error};
         }
 
         .action-btn.warning {
-          color: #f59e0b;
+          color: ${colors.semantic.warning};
         }
 
         .empty-state {
           text-align: center;
-          padding: 60px 20px;
-          color: #999;
+          padding: ${spacing[10]} ${spacing[5]};
+          color: ${colors.text.tertiary};
         }
 
         .empty-icon {
@@ -501,8 +486,6 @@ const OrderManagementPage: React.FC = () => {
           }
         }
       `}</style>
-
-      <AppHeader title="Order Management" />
 
       {/* Statistics */}
       <div className="stats-grid">

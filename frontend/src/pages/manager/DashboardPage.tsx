@@ -146,6 +146,87 @@ const DashboardPage: React.FC = () => {
     return date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
   };
 
+  // Management page categories
+  const managementCategories = [
+    {
+      title: 'Orders & Payments',
+      icon: '💰',
+      color: colors.semantic.success,
+      items: [
+        { path: '/manager/orders', label: 'Order Management', icon: '📦', description: 'Track and manage all orders' },
+        { path: '/manager/payments', label: 'Payments', icon: '💳', description: 'Payment processing & history' },
+        { path: '/manager/refunds', label: 'Refunds', icon: '↩️', description: 'Handle refund requests' },
+        { path: '/manager/deliveries', label: 'Deliveries', icon: '🚚', description: 'Delivery status tracking' },
+      ]
+    },
+    {
+      title: 'Inventory & Supply',
+      icon: '📊',
+      color: colors.semantic.info,
+      items: [
+        { path: '/manager/inventory', label: 'Inventory', icon: '📊', description: 'Stock levels & tracking' },
+        { path: '/manager/suppliers', label: 'Suppliers', icon: '🏭', description: 'Manage supplier relationships' },
+        { path: '/manager/purchase-orders', label: 'Purchase Orders', icon: '📋', description: 'Create & track POs' },
+        { path: '/manager/waste-analysis', label: 'Waste Analysis', icon: '🗑️', description: 'Track waste & optimize' },
+      ]
+    },
+    {
+      title: 'Operations',
+      icon: '⚙️',
+      color: colors.brand.secondary,
+      items: [
+        { path: '/manager/recipes', label: 'Recipes', icon: '📖', description: 'Recipe management' },
+        { path: `/pos?storeId=${storeId}`, label: 'POS System', icon: '🖥️', description: 'Point of sale access' },
+        { path: '/manager/drivers', label: 'Drivers', icon: '🚗', description: 'Driver fleet management' },
+        { path: '/manager/stores', label: 'Stores', icon: '🏪', description: 'Multi-store management' },
+      ]
+    },
+    {
+      title: 'People & Marketing',
+      icon: '👥',
+      color: colors.semantic.warning,
+      items: [
+        { path: '/manager/customers', label: 'Customers', icon: '👥', description: 'Customer database & insights' },
+        { path: '/manager/campaigns', label: 'Campaigns', icon: '📢', description: 'Marketing campaigns' },
+      ]
+    },
+  ];
+
+  const [managementSearchQuery, setManagementSearchQuery] = useState('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+  const toggleCategory = (categoryTitle: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryTitle)) {
+        newSet.delete(categoryTitle);
+      } else {
+        newSet.add(categoryTitle);
+      }
+      return newSet;
+    });
+  };
+
+  const expandAll = () => {
+    setExpandedCategories(new Set(managementCategories.map(cat => cat.title)));
+  };
+
+  const collapseAll = () => {
+    setExpandedCategories(new Set());
+  };
+
+  // Keyboard shortcut: ESC to close sidebar
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isSidebarOpen) {
+        setIsSidebarOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isSidebarOpen]);
+
   const OverviewTab: React.FC = () => (
     <div>
       {/* Stats Grid */}
@@ -1021,6 +1102,36 @@ const DashboardPage: React.FC = () => {
       backgroundColor: colors.surface.background,
       fontFamily: typography.fontFamily.primary
     }}>
+      <style>{`
+        @keyframes slideInFromRight {
+          from {
+            transform: translateX(100%);
+          }
+          to {
+            transform: translateX(0);
+          }
+        }
+
+        .sidebar-curve {
+          position: absolute;
+          left: -20px;
+          top: 0;
+          bottom: 0;
+          width: 20px;
+          background: ${colors.surface.background};
+        }
+
+        .sidebar-curve::before {
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 20px;
+          height: 100%;
+          border-radius: 0 20px 20px 0;
+          box-shadow: inset -8px 0 16px rgba(0, 0, 0, 0.1);
+        }
+      `}</style>
       <AppHeader title="Manager Dashboard" />
 
       {/* Store Selector Bar */}
@@ -1088,63 +1199,496 @@ const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Quick Access Navigation */}
-      <div style={{
-        backgroundColor: colors.surface.primary,
-        padding: `${spacing[6]} ${spacing[8]}`,
-        borderBottom: `1px solid ${colors.surface.border}`,
-        boxShadow: shadows.floating.sm
-      }}>
-        <h3 style={{
-          margin: `0 0 ${spacing[4]} 0`,
-          fontSize: typography.fontSize.base,
-          fontWeight: typography.fontWeight.bold,
-          color: colors.text.primary
-        }}>
-          Management Pages
-        </h3>
+      {/* Management Hub Menu Button */}
+      <button
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        onMouseEnter={(e) => {
+          if (!isSidebarOpen) {
+            e.currentTarget.style.transform = 'scale(1.05)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isSidebarOpen) {
+            e.currentTarget.style.transform = 'scale(1)';
+          }
+        }}
+        style={{
+          position: 'fixed',
+          top: '100px',
+          right: spacing[6],
+          display: 'flex',
+          alignItems: 'center',
+          gap: spacing[3],
+          padding: `${spacing[3]} ${spacing[4]}`,
+          borderRadius: '50px',
+          backgroundColor: isSidebarOpen ? colors.brand.primary : colors.surface.primary,
+          border: `2px solid ${colors.brand.primary}`,
+          cursor: 'pointer',
+          boxShadow: isSidebarOpen ? shadows.floating.lg : shadows.floating.md,
+          zIndex: 999,
+          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+          opacity: isSidebarOpen ? 0 : 1,
+          pointerEvents: isSidebarOpen ? 'none' : 'auto',
+        }}
+      >
+        {/* Grid Icon */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-          gap: spacing[3]
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: '3px',
+          width: '20px',
+          height: '20px',
+          transition: 'all 0.3s ease'
         }}>
-          {[
-            { path: '/manager/orders', label: 'Order Management', icon: '📦' },
-            { path: '/manager/payments', label: 'Payments', icon: '💳' },
-            { path: '/manager/refunds', label: 'Refunds', icon: '💰' },
-            { path: '/manager/inventory', label: 'Inventory', icon: '📊' },
-            { path: '/manager/suppliers', label: 'Suppliers', icon: '🏭' },
-            { path: '/manager/purchase-orders', label: 'Purchase Orders', icon: '📋' },
-            { path: '/manager/waste-analysis', label: 'Waste Analysis', icon: '🗑️' },
-            { path: '/manager/recipes', label: 'Recipes', icon: '📖' },
-            { path: '/manager/customers', label: 'Customers', icon: '👥' },
-            { path: '/manager/drivers', label: 'Driver Management', icon: '🚗' },
-            { path: '/manager/deliveries', label: 'Deliveries', icon: '🚚' },
-            { path: `/pos?storeId=${storeId}`, label: 'POS System', icon: '🖥️' },
-            { path: '/manager/campaigns', label: 'Campaigns', icon: '📢' },
-            { path: '/manager/stores', label: 'Stores', icon: '🏪' },
-          ].map(item => (
-            <Card
-              key={item.path}
-              elevation="sm"
-              padding="base"
-              interactive
-              onClick={() => navigate(item.path)}
+          <div style={{
+            width: '8px',
+            height: '8px',
+            backgroundColor: isSidebarOpen ? colors.text.inverse : colors.brand.primary,
+            borderRadius: '2px',
+            transition: 'all 0.3s ease'
+          }} />
+          <div style={{
+            width: '8px',
+            height: '8px',
+            backgroundColor: isSidebarOpen ? colors.text.inverse : colors.brand.primary,
+            borderRadius: '2px',
+            transition: 'all 0.3s ease'
+          }} />
+          <div style={{
+            width: '8px',
+            height: '8px',
+            backgroundColor: isSidebarOpen ? colors.text.inverse : colors.brand.primary,
+            borderRadius: '2px',
+            transition: 'all 0.3s ease'
+          }} />
+          <div style={{
+            width: '8px',
+            height: '8px',
+            backgroundColor: isSidebarOpen ? colors.text.inverse : colors.brand.primary,
+            borderRadius: '2px',
+            transition: 'all 0.3s ease'
+          }} />
+        </div>
+
+        {/* Label */}
+        <span style={{
+          fontSize: typography.fontSize.sm,
+          fontWeight: typography.fontWeight.bold,
+          color: isSidebarOpen ? colors.text.inverse : colors.brand.primary,
+          whiteSpace: 'nowrap',
+          transition: 'color 0.3s ease'
+        }}>
+          Management Hub
+        </span>
+      </button>
+
+      {/* Overlay */}
+      <div
+        onClick={() => setIsSidebarOpen(false)}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 1000,
+          opacity: isSidebarOpen ? 1 : 0,
+          pointerEvents: isSidebarOpen ? 'auto' : 'none',
+          transition: 'opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), backdrop-filter 0.4s ease'
+        }}
+      />
+
+      {/* Management Pages Sidebar */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        right: 0,
+        bottom: 0,
+        width: '520px',
+        maxWidth: '90vw',
+        backgroundColor: colors.surface.background,
+        boxShadow: isSidebarOpen ? '-8px 0 32px rgba(0, 0, 0, 0.3)' : 'none',
+        zIndex: 1001,
+        transform: isSidebarOpen ? 'translateX(0)' : 'translateX(100%)',
+        transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.5s ease',
+        display: 'flex',
+        flexDirection: 'column',
+        overflowY: 'auto',
+        overflowX: 'visible',
+        willChange: 'transform',
+        borderTopLeftRadius: '32px',
+        borderBottomLeftRadius: '32px'
+      }}>
+        {/* Curved Left Edge */}
+        <div className="sidebar-curve" />
+        {/* Sidebar Header */}
+        <div style={{
+          padding: `${spacing[6]} ${spacing[6]} ${spacing[5]} ${spacing[6]}`,
+          background: `linear-gradient(135deg, ${colors.brand.primary}11 0%, ${colors.brand.secondary}11 100%)`,
+          borderBottom: `2px solid ${colors.surface.border}`,
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          backdropFilter: 'blur(10px)'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            marginBottom: spacing[4]
+          }}>
+            <div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: spacing[3],
+                marginBottom: spacing[2]
+              }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '10px',
+                  background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.secondary} 100%)`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: shadows.brand.primary
+                }}>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: '3px',
+                    width: '20px',
+                    height: '20px'
+                  }}>
+                    <div style={{ width: '8px', height: '8px', backgroundColor: colors.text.inverse, borderRadius: '2px' }} />
+                    <div style={{ width: '8px', height: '8px', backgroundColor: colors.text.inverse, borderRadius: '2px' }} />
+                    <div style={{ width: '8px', height: '8px', backgroundColor: colors.text.inverse, borderRadius: '2px' }} />
+                    <div style={{ width: '8px', height: '8px', backgroundColor: colors.text.inverse, borderRadius: '2px' }} />
+                  </div>
+                </div>
+                <h3 style={{
+                  margin: '0',
+                  fontSize: typography.fontSize['2xl'],
+                  fontWeight: typography.fontWeight.extrabold,
+                  color: colors.text.primary,
+                  letterSpacing: '-0.02em'
+                }}>
+                  Management Hub
+                </h3>
+              </div>
+              <p style={{
+                margin: '0',
+                fontSize: typography.fontSize.sm,
+                color: colors.text.secondary,
+                lineHeight: '1.5'
+              }}>
+                Navigate to all management features
+              </p>
+            </div>
+            <button
+              onClick={() => setIsSidebarOpen(false)}
               style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '12px',
+                backgroundColor: colors.surface.primary,
+                border: `2px solid ${colors.surface.border}`,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: spacing[2],
-                textAlign: 'left',
-                fontSize: typography.fontSize.sm,
-                fontWeight: typography.fontWeight.semibold,
-                color: colors.text.primary
+                justifyContent: 'center',
+                fontSize: '24px',
+                color: colors.text.secondary,
+                boxShadow: shadows.raised.sm,
+                transition: 'all 0.2s ease',
+                flexShrink: 0
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = colors.semantic.error;
+                e.currentTarget.style.color = colors.text.inverse;
+                e.currentTarget.style.borderColor = colors.semantic.error;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = colors.surface.primary;
+                e.currentTarget.style.color = colors.text.secondary;
+                e.currentTarget.style.borderColor = colors.surface.border;
               }}
             >
-              <span style={{ fontSize: typography.fontSize.lg }}>{item.icon}</span>
-              <span>{item.label}</span>
+              ✕
+            </button>
+          </div>
+
+          {/* Search Bar */}
+          <div style={{
+            position: 'relative',
+            marginBottom: spacing[3]
+          }}>
+            <div style={{
+              position: 'absolute',
+              left: spacing[3],
+              top: '50%',
+              transform: 'translateY(-50%)',
+              fontSize: typography.fontSize.lg,
+              color: colors.text.tertiary
+            }}>
+              🔍
+            </div>
+            <input
+              type="text"
+              placeholder="Search management pages..."
+              value={managementSearchQuery}
+              onChange={(e) => setManagementSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: `${spacing[3]} ${spacing[3]} ${spacing[3]} ${spacing[10]}`,
+                border: `2px solid ${colors.surface.border}`,
+                borderRadius: '12px',
+                outline: 'none',
+                backgroundColor: colors.surface.primary,
+                fontSize: typography.fontSize.sm,
+                color: colors.text.primary,
+                fontFamily: typography.fontFamily.primary,
+                boxShadow: shadows.inset.sm,
+                transition: 'all 0.2s ease'
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = colors.brand.primary;
+                e.currentTarget.style.boxShadow = `0 0 0 3px ${colors.brand.primary}22`;
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = colors.surface.border;
+                e.currentTarget.style.boxShadow = shadows.inset.sm;
+              }}
+            />
+          </div>
+
+          {/* Expand/Collapse Controls */}
+          <div style={{
+            display: 'flex',
+            gap: spacing[3]
+          }}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={expandAll}
+              style={{
+                flex: 1,
+                fontSize: typography.fontSize.xs,
+                fontWeight: typography.fontWeight.semibold
+              }}
+            >
+              Expand All
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={collapseAll}
+              style={{
+                flex: 1,
+                fontSize: typography.fontSize.xs,
+                fontWeight: typography.fontWeight.semibold
+              }}
+            >
+              Collapse All
+            </Button>
+          </div>
+        </div>
+
+        {/* Categorized Management Sections */}
+        <div style={{
+          padding: spacing[6],
+          display: 'flex',
+          flexDirection: 'column',
+          gap: spacing[5],
+          flex: 1
+        }}>
+          {managementCategories
+            .filter(category => {
+              if (!managementSearchQuery) return true;
+              return category.items.some(item =>
+                item.label.toLowerCase().includes(managementSearchQuery.toLowerCase()) ||
+                item.description.toLowerCase().includes(managementSearchQuery.toLowerCase())
+              );
+            })
+            .map(category => {
+              const filteredItems = managementSearchQuery
+                ? category.items.filter(item =>
+                    item.label.toLowerCase().includes(managementSearchQuery.toLowerCase()) ||
+                    item.description.toLowerCase().includes(managementSearchQuery.toLowerCase())
+                  )
+                : category.items;
+
+              if (filteredItems.length === 0) return null;
+
+              const isExpanded = managementSearchQuery || expandedCategories.has(category.title);
+
+              return (
+                <div
+                  key={category.title}
+                  style={{
+                    marginBottom: spacing[3]
+                  }}
+                >
+                  {/* Category Header - Clickable */}
+                  <button
+                    onClick={() => toggleCategory(category.title)}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: spacing[3],
+                      padding: `${spacing[3]} ${spacing[3]}`,
+                      borderRadius: '12px',
+                      background: isExpanded
+                        ? `linear-gradient(135deg, ${category.color}20 0%, ${category.color}10 100%)`
+                        : `linear-gradient(135deg, ${category.color}15 0%, ${category.color}08 100%)`,
+                      border: `2px solid ${isExpanded ? category.color : category.color + '33'}`,
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      marginBottom: isExpanded ? spacing[2] : 0
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = shadows.floating.sm;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    {/* Chevron Icon */}
+                    <div style={{
+                      fontSize: typography.fontSize.lg,
+                      color: category.color,
+                      transition: 'transform 0.3s ease',
+                      transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
+                    }}>
+                      ▸
+                    </div>
+
+                    <div style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '10px',
+                      background: `linear-gradient(135deg, ${category.color} 0%, ${category.color}dd 100%)`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: typography.fontSize.lg,
+                      boxShadow: `0 4px 12px ${category.color}44`,
+                      flexShrink: 0
+                    }}>
+                      {category.icon}
+                    </div>
+                    <h4 style={{
+                      margin: '0',
+                      fontSize: typography.fontSize.base,
+                      fontWeight: typography.fontWeight.bold,
+                      color: colors.text.primary,
+                      flex: 1,
+                      textAlign: 'left'
+                    }}>
+                      {category.title}
+                    </h4>
+                    <Badge variant="secondary" size="sm" style={{
+                      backgroundColor: category.color,
+                      color: colors.text.inverse,
+                      fontWeight: typography.fontWeight.bold,
+                      flexShrink: 0
+                    }}>
+                      {filteredItems.length}
+                    </Badge>
+                  </button>
+
+                  {/* Category Items - Collapsible */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: spacing[2],
+                    maxHeight: isExpanded ? '2000px' : '0',
+                    overflow: 'hidden',
+                    transition: 'max-height 0.4s ease, opacity 0.3s ease',
+                    opacity: isExpanded ? 1 : 0
+                  }}>
+                    {filteredItems.map(item => (
+                      <Card
+                        key={item.path}
+                        elevation="sm"
+                        padding="base"
+                        interactive
+                        onClick={() => {
+                          navigate(item.path);
+                          setIsSidebarOpen(false);
+                        }}
+                        style={{
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: spacing[3],
+                          transition: 'all 0.2s ease',
+                          border: `2px solid transparent`,
+                          backgroundColor: colors.surface.primary
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = category.color;
+                          e.currentTarget.style.transform = 'translateX(4px)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = 'transparent';
+                          e.currentTarget.style.transform = 'translateX(0)';
+                        }}
+                      >
+                        <span style={{
+                          fontSize: typography.fontSize.xl,
+                          marginTop: '2px'
+                        }}>
+                          {item.icon}
+                        </span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{
+                            fontSize: typography.fontSize.sm,
+                            fontWeight: typography.fontWeight.semibold,
+                            color: colors.text.primary,
+                            marginBottom: spacing[1]
+                          }}>
+                            {item.label}
+                          </div>
+                          <div style={{
+                            fontSize: typography.fontSize.xs,
+                            color: colors.text.secondary,
+                            lineHeight: '1.4'
+                          }}>
+                            {item.description}
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+
+          {/* No Results Message */}
+          {managementSearchQuery && managementCategories.every(cat =>
+            !cat.items.some(item =>
+              item.label.toLowerCase().includes(managementSearchQuery.toLowerCase()) ||
+              item.description.toLowerCase().includes(managementSearchQuery.toLowerCase())
+            )
+          ) && (
+            <Card elevation="md" padding="xl" style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: typography.fontSize['4xl'], marginBottom: spacing[3] }}>🔍</div>
+              <p style={{
+                fontSize: typography.fontSize.base,
+                color: colors.text.secondary,
+                margin: '0'
+              }}>
+                No results for "<strong>{managementSearchQuery}</strong>"
+              </p>
             </Card>
-          ))}
+          )}
         </div>
       </div>
 
