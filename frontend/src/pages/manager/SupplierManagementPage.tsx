@@ -85,7 +85,8 @@ const SupplierManagementPage: React.FC = () => {
     minHeight: '100vh',
     fontFamily: typography.fontFamily.primary,
     padding: spacing[6],
-    backgroundColor: colors.surface.background,
+    backgroundColor: '#e8e8e8',
+    zIndex: 1,
   };
 
   const titleStyles: React.CSSProperties = {
@@ -147,7 +148,7 @@ const SupplierManagementPage: React.FC = () => {
   };
 
   const filterButtonStyles = (isActive: boolean): React.CSSProperties => ({
-    ...createNeumorphicSurface(isActive ? 'pressed' : 'raised', 'sm', 'lg'),
+    ...createNeumorphicSurface(isActive ? 'inset' : 'raised', 'sm', 'lg'),
     padding: `${spacing[2]} ${spacing[4]}`,
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semibold,
@@ -255,9 +256,10 @@ const SupplierManagementPage: React.FC = () => {
       : '0.0';
 
   return (
-    <div style={containerStyles}>
+    <>
       <AnimatedBackground />
-      <AppHeader title="Supplier Management" showBackButton />
+      <div style={containerStyles}>
+        <AppHeader title="Supplier Management" showBackButton />
 
       <h1 style={titleStyles}>Supplier Management</h1>
 
@@ -414,7 +416,8 @@ const SupplierManagementPage: React.FC = () => {
           supplier={selectedSupplier}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

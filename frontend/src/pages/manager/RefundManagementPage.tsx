@@ -72,6 +72,8 @@ const RefundManagementPage: React.FC = () => {
     minHeight: '100vh',
     fontFamily: typography.fontFamily.primary,
     padding: spacing[6],
+    backgroundColor: '#e8e8e8',
+    zIndex: 1,
   };
 
   const titleStyles: React.CSSProperties = {

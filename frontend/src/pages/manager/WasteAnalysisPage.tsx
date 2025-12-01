@@ -67,7 +67,8 @@ const WasteAnalysisPage: React.FC = () => {
     minHeight: '100vh',
     fontFamily: typography.fontFamily.primary,
     padding: spacing[6],
-    backgroundColor: colors.surface.background,
+    backgroundColor: '#e8e8e8',
+    zIndex: 1,
   };
 
   const titleStyles: React.CSSProperties = {
@@ -218,11 +219,13 @@ const WasteAnalysisPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div style={containerStyles}>
+      <>
         <AnimatedBackground />
-        <AppHeader title="Waste Analysis" showBackButton />
-        <div style={{ textAlign: 'center', padding: spacing[10] }}>Loading waste data...</div>
-      </div>
+        <div style={containerStyles}>
+          <AppHeader title="Waste Analysis" showBackButton />
+          <div style={{ textAlign: 'center', padding: spacing[10] }}>Loading waste data...</div>
+        </div>
+      </>
     );
   }
 
@@ -231,9 +234,10 @@ const WasteAnalysisPage: React.FC = () => {
     : 1;
 
   return (
-    <div style={containerStyles}>
+    <>
       <AnimatedBackground />
-      <AppHeader title="Waste Analysis" showBackButton />
+      <div style={containerStyles}>
+        <AppHeader title="Waste Analysis" showBackButton />
 
       <h1 style={titleStyles}>Waste Analysis</h1>
 
@@ -371,7 +375,8 @@ const WasteAnalysisPage: React.FC = () => {
 
       {/* Dialog */}
       <RecordWasteDialog open={recordDialogOpen} onClose={() => setRecordDialogOpen(false)} storeId={storeId} />
-    </div>
+      </div>
+    </>
   );
 };
 

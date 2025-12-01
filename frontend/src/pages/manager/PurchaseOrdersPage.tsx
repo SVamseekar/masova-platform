@@ -108,7 +108,8 @@ const PurchaseOrdersPage: React.FC = () => {
     minHeight: '100vh',
     fontFamily: typography.fontFamily.primary,
     padding: spacing[6],
-    backgroundColor: colors.surface.background,
+    backgroundColor: '#e8e8e8',
+    zIndex: 1,
   };
 
   const titleStyles: React.CSSProperties = {
@@ -252,11 +253,13 @@ const PurchaseOrdersPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div style={containerStyles}>
+      <>
         <AnimatedBackground />
-        <AppHeader title="Purchase Orders" showBackButton />
-        <div style={{ textAlign: 'center', padding: spacing[10] }}>Loading purchase orders...</div>
-      </div>
+        <div style={containerStyles}>
+          <AppHeader title="Purchase Orders" showBackButton />
+          <div style={{ textAlign: 'center', padding: spacing[10] }}>Loading purchase orders...</div>
+        </div>
+      </>
     );
   }
 
@@ -270,9 +273,10 @@ const PurchaseOrdersPage: React.FC = () => {
   const totalValue = allOrders.reduce((sum, po) => sum + po.totalAmount, 0);
 
   return (
-    <div style={containerStyles}>
+    <>
       <AnimatedBackground />
-      <AppHeader title="Purchase Orders" showBackButton />
+      <div style={containerStyles}>
+        <AppHeader title="Purchase Orders" showBackButton />
 
       <h1 style={titleStyles}>Purchase Orders</h1>
 
@@ -426,7 +430,8 @@ const PurchaseOrdersPage: React.FC = () => {
           purchaseOrder={selectedPO}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

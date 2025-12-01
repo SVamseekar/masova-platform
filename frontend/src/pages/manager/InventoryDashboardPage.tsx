@@ -90,7 +90,8 @@ const InventoryDashboardPage: React.FC = () => {
     minHeight: '100vh',
     fontFamily: typography.fontFamily.primary,
     padding: spacing[6],
-    backgroundColor: colors.surface.background,
+    backgroundColor: '#e8e8e8',
+    zIndex: 1,
   };
 
   const titleStyles: React.CSSProperties = {
@@ -267,9 +268,10 @@ const InventoryDashboardPage: React.FC = () => {
   }
 
   return (
-    <div style={containerStyles}>
+    <>
       <AnimatedBackground />
-      <AppHeader title="Inventory Management" showBackButton />
+      <div style={containerStyles}>
+        <AppHeader title="Inventory Management" showBackButton />
 
       {/* Store Selector */}
       <div style={{
@@ -430,7 +432,8 @@ const InventoryDashboardPage: React.FC = () => {
         />
       )}
       <AddInventoryItemDialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)} storeId={storeId} />
-    </div>
+      </div>
+    </>
   );
 };
 
