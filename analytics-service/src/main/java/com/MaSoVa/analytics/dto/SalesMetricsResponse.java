@@ -1,8 +1,10 @@
 package com.MaSoVa.analytics.dto;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
-public class SalesMetricsResponse {
+public class SalesMetricsResponse implements Serializable {
+    private static final long serialVersionUID = 1L;
     private BigDecimal todaySales;
     private BigDecimal yesterdaySalesAtSameTime;
     private BigDecimal lastYearSameDaySales;

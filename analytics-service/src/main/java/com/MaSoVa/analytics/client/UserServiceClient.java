@@ -33,10 +33,11 @@ public class UserServiceClient {
 
     /**
      * Get drivers by store
+     * Note: storeId is passed via X-Store-ID header by JwtForwardingInterceptor
      */
     public List<Map<String, Object>> getDriversByStore(String storeId) {
         try {
-            String url = userServiceUrl + "/api/users/drivers/store/" + storeId;
+            String url = userServiceUrl + "/api/users/drivers/store";
             ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
                 url,
                 HttpMethod.GET,
@@ -65,10 +66,11 @@ public class UserServiceClient {
 
     /**
      * Get all staff members by store
+     * Note: storeId is passed via X-Store-ID header by JwtForwardingInterceptor
      */
     public List<Map<String, Object>> getStaffByStore(String storeId) {
         try {
-            String url = userServiceUrl + "/api/users/staff/store/" + storeId;
+            String url = userServiceUrl + "/api/users/store";
             ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
                 url,
                 HttpMethod.GET,

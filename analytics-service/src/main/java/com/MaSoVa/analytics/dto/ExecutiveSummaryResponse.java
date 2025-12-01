@@ -1,11 +1,14 @@
 package com.MaSoVa.analytics.dto;
+import java.io.Serializable;
+
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
-public class ExecutiveSummaryResponse {
+public class ExecutiveSummaryResponse implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private String reportPeriod; // "WEEK", "MONTH", "QUARTER", "YEAR"
     private LocalDate startDate;

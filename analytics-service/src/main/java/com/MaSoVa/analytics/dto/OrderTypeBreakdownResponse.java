@@ -1,9 +1,12 @@
 package com.MaSoVa.analytics.dto;
+import java.io.Serializable;
+
 
 import java.math.BigDecimal;
 import java.util.List;
 
-public class OrderTypeBreakdownResponse {
+public class OrderTypeBreakdownResponse implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private List<OrderTypeData> breakdown;
     private BigDecimal totalSales;

@@ -1,9 +1,12 @@
 package com.MaSoVa.analytics.dto;
+import java.io.Serializable;
+
 
 import java.math.BigDecimal;
 import java.util.List;
 
-public class StaffLeaderboardResponse {
+public class StaffLeaderboardResponse implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private List<StaffRanking> rankings;
     private String period; // "TODAY", "WEEK", "MONTH"

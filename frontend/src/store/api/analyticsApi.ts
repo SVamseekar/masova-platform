@@ -158,13 +158,13 @@ export const analyticsApi = createApi({
   endpoints: (builder) => ({
     // Get today's sales metrics with comparisons
     getTodaySalesMetrics: builder.query<SalesMetricsResponse, void>({
-      query: () => `store/sales/today`,
+      query: () => `sales/today`,
       providesTags: ['SalesMetrics'],
     }),
 
     // Get average order value
     getAverageOrderValue: builder.query<AverageOrderValueResponse, void>({
-      query: () => `store/avgOrderValue/today`,
+      query: () => `avgOrderValue/today`,
       providesTags: ['SalesMetrics'],
     }),
 

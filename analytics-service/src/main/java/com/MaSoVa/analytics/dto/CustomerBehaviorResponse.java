@@ -1,10 +1,13 @@
 package com.MaSoVa.analytics.dto;
+import java.io.Serializable;
+
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
-public class CustomerBehaviorResponse {
+public class CustomerBehaviorResponse implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private int totalCustomers;
     private int activeCustomers; // Ordered in last 30 days

@@ -1,9 +1,12 @@
 package com.MaSoVa.analytics.dto;
+import java.io.Serializable;
+
 
 import java.math.BigDecimal;
 import java.util.List;
 
-public class PeakHoursResponse {
+public class PeakHoursResponse implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private List<HourData> hourlyData;
     private int peakHour; // Hour of day (0-23)

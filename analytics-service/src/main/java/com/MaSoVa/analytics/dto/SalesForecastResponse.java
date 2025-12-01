@@ -1,10 +1,13 @@
 package com.MaSoVa.analytics.dto;
+import java.io.Serializable;
+
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-public class SalesForecastResponse {
+public class SalesForecastResponse implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private String forecastPeriod; // "DAILY", "WEEKLY", "MONTHLY"
     private List<ForecastDataPoint> forecasts;

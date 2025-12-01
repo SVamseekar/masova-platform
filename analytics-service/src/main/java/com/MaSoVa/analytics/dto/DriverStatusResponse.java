@@ -1,6 +1,10 @@
 package com.MaSoVa.analytics.dto;
 
-public class DriverStatusResponse {
+import java.io.Serializable;
+
+public class DriverStatusResponse implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private Integer totalDrivers;
     private Integer availableDrivers;
     private Integer busyDrivers;

@@ -1,10 +1,13 @@
 package com.MaSoVa.analytics.dto;
+import java.io.Serializable;
+
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public class ChurnPredictionResponse {
+public class ChurnPredictionResponse implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private int totalCustomersAnalyzed;
     private int highRiskCustomers;

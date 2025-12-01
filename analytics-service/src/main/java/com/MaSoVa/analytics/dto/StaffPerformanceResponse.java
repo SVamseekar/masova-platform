@@ -1,8 +1,11 @@
 package com.MaSoVa.analytics.dto;
+import java.io.Serializable;
+
 
 import java.math.BigDecimal;
 
-public class StaffPerformanceResponse {
+public class StaffPerformanceResponse implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String staffId;
     private String staffName;
     private Integer ordersProcessedToday;

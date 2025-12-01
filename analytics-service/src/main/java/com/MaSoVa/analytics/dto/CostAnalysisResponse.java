@@ -1,10 +1,13 @@
 package com.MaSoVa.analytics.dto;
+import java.io.Serializable;
+
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-public class CostAnalysisResponse {
+public class CostAnalysisResponse implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private String period; // "TODAY", "WEEK", "MONTH"
     private BigDecimal totalRevenue; // INR

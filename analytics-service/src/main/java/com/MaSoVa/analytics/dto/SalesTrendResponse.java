@@ -1,10 +1,13 @@
 package com.MaSoVa.analytics.dto;
+import java.io.Serializable;
+
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-public class SalesTrendResponse {
+public class SalesTrendResponse implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private String period; // "WEEKLY" or "MONTHLY"
     private List<DailyDataPoint> dataPoints;

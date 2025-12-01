@@ -1,8 +1,10 @@
 package com.MaSoVa.analytics.dto;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
-public class AverageOrderValueResponse {
+public class AverageOrderValueResponse implements Serializable {
+    private static final long serialVersionUID = 1L;
     private BigDecimal averageOrderValue;
     private BigDecimal yesterdayAverageOrderValue;
     private BigDecimal percentChange;
