@@ -33,7 +33,7 @@ public class AnalyticsService {
     /**
      * Get sales metrics for today compared to yesterday and last year
      */
-    @Cacheable(value = "salesMetrics", key = "#storeId")
+    @Cacheable(value = "salesMetrics", key = "#p0")
     public SalesMetricsResponse getTodaySalesMetrics(String storeId) {
         log.info("Calculating sales metrics for store: {}", storeId);
 
@@ -81,7 +81,7 @@ public class AnalyticsService {
     /**
      * Get average order value for today
      */
-    @Cacheable(value = "salesMetrics", key = "'aov-' + #storeId")
+    @Cacheable(value = "salesMetrics", key = "'aov-' + #p0")
     public AverageOrderValueResponse getAverageOrderValue(String storeId) {
         log.info("Calculating average order value for store: {}", storeId);
 
@@ -120,7 +120,7 @@ public class AnalyticsService {
     /**
      * Get driver status for a store
      */
-    @Cacheable(value = "driverStatus", key = "#storeId")
+    @Cacheable(value = "driverStatus", key = "#p0")
     public DriverStatusResponse getDriverStatus(String storeId) {
         log.info("Fetching driver status for store: {}", storeId);
 
@@ -155,7 +155,7 @@ public class AnalyticsService {
     /**
      * Get staff performance for a specific staff member
      */
-    @Cacheable(value = "staffPerformance", key = "#staffId")
+    @Cacheable(value = "staffPerformance", key = "#p0")
     public StaffPerformanceResponse getStaffPerformance(String staffId) {
         log.info("Fetching staff performance for: {}", staffId);
 
@@ -233,7 +233,7 @@ public class AnalyticsService {
     /**
      * Get sales trends for weekly or monthly period
      */
-    @Cacheable(value = "salesTrends", key = "#storeId + '-' + #period")
+    @Cacheable(value = "salesTrends", key = "#p0 + '-' + #p1")
     public SalesTrendResponse getSalesTrends(String storeId, String period) {
         log.info("Calculating sales trends for store: {}, period: {}", storeId, period);
 
@@ -318,7 +318,7 @@ public class AnalyticsService {
     /**
      * Get order type breakdown (Dine-in, Pickup, Delivery)
      */
-    @Cacheable(value = "orderTypeBreakdown", key = "#storeId")
+    @Cacheable(value = "orderTypeBreakdown", key = "#p0")
     public OrderTypeBreakdownResponse getOrderTypeBreakdown(String storeId) {
         log.info("Calculating order type breakdown for store: {}", storeId);
 
@@ -368,7 +368,7 @@ public class AnalyticsService {
     /**
      * Get peak hours analysis
      */
-    @Cacheable(value = "peakHours", key = "#storeId")
+    @Cacheable(value = "peakHours", key = "#p0")
     public PeakHoursResponse getPeakHours(String storeId) {
         log.info("Calculating peak hours for store: {}", storeId);
 
@@ -428,7 +428,7 @@ public class AnalyticsService {
     /**
      * Get staff leaderboard
      */
-    @Cacheable(value = "staffLeaderboard", key = "#storeId + '-' + #period")
+    @Cacheable(value = "staffLeaderboard", key = "#p0 + '-' + #p1")
     public StaffLeaderboardResponse getStaffLeaderboard(String storeId, String period) {
         log.info("Fetching staff leaderboard for store: {}, period: {}", storeId, period);
 
@@ -508,7 +508,7 @@ public class AnalyticsService {
     /**
      * Get top selling products
      */
-    @Cacheable(value = "topProducts", key = "#storeId + '-' + #period + '-' + #sortBy")
+    @Cacheable(value = "topProducts", key = "#p0 + '-' + #p1 + '-' + #p2")
     public TopProductsResponse getTopProducts(String storeId, String period, String sortBy) {
         log.info("Fetching top products for store: {}, period: {}, sortBy: {}", storeId, period, sortBy);
 

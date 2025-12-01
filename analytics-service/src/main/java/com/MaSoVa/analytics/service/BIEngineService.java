@@ -118,7 +118,7 @@ public class BIEngineService {
     /**
      * Analyze customer behavior patterns
      */
-    @Cacheable(value = "customerBehavior", key = "#storeId")
+    @Cacheable(value = "customerBehavior", key = "#p0")
     public CustomerBehaviorResponse analyzeCustomerBehavior(String storeId) {
         log.info("Analyzing customer behavior for store: {}", storeId);
 
@@ -177,7 +177,7 @@ public class BIEngineService {
     /**
      * Predict customer churn risk
      */
-    @Cacheable(value = "churnPrediction", key = "#storeId")
+    @Cacheable(value = "churnPrediction", key = "#p0")
     public ChurnPredictionResponse predictChurn(String storeId) {
         log.info("Predicting customer churn for store: {}", storeId);
 

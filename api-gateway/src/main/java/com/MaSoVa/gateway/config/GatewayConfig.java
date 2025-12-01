@@ -20,14 +20,22 @@ public class GatewayConfig {
                 // PUBLIC ROUTES (No Authentication Required)
                 // ============================================
 
-                // Auth Routes - Login/Register
-                .route("auth_login", r -> r.path("/api/auth/login")
+                // Auth Routes - Login/Register (mapped to user service /api/users/*)
+                .route("auth_login", r -> r.path("/api/users/login")
+                        .and().method("POST")
                         .uri("http://localhost:8081"))
 
-                .route("auth_register", r -> r.path("/api/auth/register")
+                .route("auth_register", r -> r.path("/api/users/register")
+                        .and().method("POST")
                         .uri("http://localhost:8081"))
 
-                .route("auth_refresh", r -> r.path("/api/auth/refresh")
+                .route("auth_refresh", r -> r.path("/api/users/refresh")
+                        .and().method("POST")
+                        .uri("http://localhost:8081"))
+
+                .route("auth_logout", r -> r.path("/api/users/logout")
+                        .and().method("POST")
+                        .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8081"))
 
                 // Public Menu Browsing

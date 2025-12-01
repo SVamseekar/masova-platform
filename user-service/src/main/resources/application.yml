@@ -5,6 +5,8 @@
 
 server:
   port: 8081
+  compression:
+    enabled: false
   error:
     include-message: always
     include-binding-errors: always

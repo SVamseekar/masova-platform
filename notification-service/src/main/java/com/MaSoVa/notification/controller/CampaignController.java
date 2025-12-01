@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/campaigns")
-@CrossOrigin(origins = "*")
 public class CampaignController {
 
     private final CampaignService campaignService;

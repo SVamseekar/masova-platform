@@ -11,6 +11,8 @@ export const colors = {
     secondary: '#e8e8e8',
     tertiary: '#d0d0d0',
     background: '#f1f5f9',
+    elevated: '#fafafa',
+    border: '#e5e7eb',
   },
   
   // Brand colors
@@ -58,7 +60,34 @@ export const colors = {
     success: 'rgba(16, 185, 129, 0.3)',
     warning: 'rgba(245, 158, 11, 0.3)',
     error: 'rgba(239, 68, 68, 0.3)',
-  }
+  },
+
+  // Backward-compatible aliases (for components using old structure)
+  primary: {
+    main: '#e53e3e',
+    light: '#ff6b6b',
+    dark: '#c0392b',
+  },
+  success: {
+    main: '#10b981',
+    light: '#34d399',
+    dark: '#059669',
+  },
+  error: {
+    main: '#ef4444',
+    light: '#f87171',
+    dark: '#dc2626',
+  },
+  warning: {
+    main: '#f59e0b',
+    light: '#fbbf24',
+    dark: '#d97706',
+  },
+  info: {
+    main: '#3b82f6',
+    light: '#60a5fa',
+    dark: '#2563eb',
+  },
 } as const;
 
 // Typography Scale

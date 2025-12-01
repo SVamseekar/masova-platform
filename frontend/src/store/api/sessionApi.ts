@@ -63,14 +63,14 @@ export const sessionApi = createApi({
   endpoints: (builder) => ({
     // Get current user's active session
     getCurrentSession: builder.query<WorkingSession | null, void>({
-      query: () => `/api/users/sessions/current`,
+      query: () => `/users/sessions/current`,
       providesTags: ['Session'],
     }),
 
     // Start a new working session
     startSession: builder.mutation<WorkingSession, StartSessionRequest>({
       query: (data) => ({
-        url: '/api/users/sessions/start',
+        url: '/users/sessions/start',
         method: 'POST',
         body: data,
       }),
@@ -80,7 +80,7 @@ export const sessionApi = createApi({
     // End current session
     endSession: builder.mutation<WorkingSession, void>({
       query: () => ({
-        url: `/api/users/sessions/end`,
+        url: `/users/sessions/end`,
         method: 'POST',
       }),
       invalidatesTags: ['Session', 'WorkingSessions'],
@@ -89,7 +89,7 @@ export const sessionApi = createApi({
     // Add break time to session
     addBreakTime: builder.mutation<WorkingSession, { employeeId: string; breakMinutes: number }>({
       query: ({ employeeId, breakMinutes }) => ({
-        url: `/api/users/sessions/${employeeId}/break`,
+        url: `/users/sessions/${employeeId}/break`,
         method: 'POST',
         body: { breakMinutes },
       }),
@@ -98,7 +98,7 @@ export const sessionApi = createApi({
 
     // Get all active sessions for a store (for managers)
     getActiveStoreSessions: builder.query<WorkingSession[], void>({
-      query: () => `/api/users/sessions/store/active`,
+      query: () => `/users/sessions/store/active`,
       providesTags: ['WorkingSessions'],
     }),
 
@@ -106,7 +106,7 @@ export const sessionApi = createApi({
     getStoreSessions: builder.query<WorkingSession[], { date?: string }>({
       query: ({ date }) => {
         const params = date ? `?date=${date}` : '';
-        return `/api/users/sessions/store${params}`;
+        return `/users/sessions/store${params}`;
       },
       providesTags: ['WorkingSessions'],
     }),
@@ -118,21 +118,21 @@ export const sessionApi = createApi({
         if (startDate && endDate) {
           params = `?startDate=${startDate}&endDate=${endDate}`;
         }
-        return `/api/users/sessions/${employeeId}${params}`;
+        return `/users/sessions/${employeeId}${params}`;
       },
       providesTags: ['Session'],
     }),
 
     // Get pending approval sessions
     getPendingApprovalSessions: builder.query<WorkingSession[], void>({
-      query: () => `/api/users/sessions/pending-approval`,
+      query: () => `/users/sessions/pending-approval`,
       providesTags: ['WorkingSessions'],
     }),
 
     // Approve a session (for managers)
     approveSession: builder.mutation<WorkingSession, string>({
       query: (sessionId) => ({
-        url: `/api/users/sessions/${sessionId}/approve`,
+        url: `/users/sessions/${sessionId}/approve`,
         method: 'POST',
       }),
       invalidatesTags: ['WorkingSessions'],
@@ -141,7 +141,7 @@ export const sessionApi = createApi({
     // Reject a session (for managers)
     rejectSession: builder.mutation<WorkingSession, { sessionId: string; reason?: string }>({
       query: ({ sessionId, reason }) => ({
-        url: `/api/users/sessions/${sessionId}/reject`,
+        url: `/users/sessions/${sessionId}/reject`,
         method: 'POST',
         body: { reason },
       }),

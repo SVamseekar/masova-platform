@@ -9,6 +9,16 @@ export const API_CONFIG = {
   // API Gateway - Single entry point for all backend services
   API_GATEWAY_URL: import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080/api',
 
+  // Base URL (alias for API Gateway)
+  BASE_URL: import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080/api',
+
+  // Service URLs through API Gateway
+  USER_SERVICE_URL: import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080/api',
+  ORDER_SERVICE_URL: import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080/api',
+  PAYMENT_SERVICE_URL: import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080/api',
+  CUSTOMER_SERVICE_URL: import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080/api',
+  REVIEW_SERVICE_URL: import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080/api',
+
   // Service URLs (for reference only - DO NOT USE DIRECTLY)
   // All requests go through API Gateway
   _INTERNAL_SERVICES: {

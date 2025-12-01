@@ -58,7 +58,9 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
                 String storeId = claims.get("storeId", String.class);
 
                 // Add user info to request headers for downstream services
+                // Keep the original Authorization header for downstream authentication
                 ServerHttpRequest modifiedRequest = exchange.getRequest().mutate()
+                        .header("Authorization", authHeader) // Forward the original Authorization header
                         .header("X-User-Id", userId)
                         .header("X-User-Type", userType)
                         .header("X-Store-Id", storeId != null ? storeId : "")

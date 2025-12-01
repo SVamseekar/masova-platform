@@ -112,19 +112,19 @@ export const storeApi = createApi({
   endpoints: (builder) => ({
     // Get store by ID
     getStore: builder.query<Store, string>({
-      query: (storeId) => `/api/stores/${storeId}`,
+      query: (storeId) => `/stores/${storeId}`,
       providesTags: (result, error, storeId) => [{ type: 'Store', id: storeId }],
     }),
 
     // Get store by code
     getStoreByCode: builder.query<Store, string>({
-      query: (storeCode) => `/api/stores/code/${storeCode}`,
+      query: (storeCode) => `/stores/code/${storeCode}`,
       providesTags: (result) => result ? [{ type: 'Store', id: result.id }] : [],
     }),
 
     // Get all active stores
     getActiveStores: builder.query<Store[], void>({
-      query: () => `/api/stores`,
+      query: () => `/stores`,
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Store' as const, id })), { type: 'Stores', id: 'LIST' }]
@@ -133,7 +133,7 @@ export const storeApi = createApi({
 
     // Get stores by region
     getStoresByRegion: builder.query<Store[], string>({
-      query: (regionId) => `/api/stores/region/${regionId}`,
+      query: (regionId) => `/stores/region/${regionId}`,
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Store' as const, id })), { type: 'Stores', id: 'LIST' }]
@@ -143,14 +143,14 @@ export const storeApi = createApi({
     // Find nearby stores
     getNearbyStores: builder.query<Store[], { latitude: number; longitude: number; radiusKm?: number }>({
       query: ({ latitude, longitude, radiusKm = 10 }) =>
-        `/api/stores/nearby?latitude=${latitude}&longitude=${longitude}&radiusKm=${radiusKm}`,
+        `/stores/nearby?latitude=${latitude}&longitude=${longitude}&radiusKm=${radiusKm}`,
       providesTags: [{ type: 'Stores', id: 'LIST' }],
     }),
 
     // Create new store
     createStore: builder.mutation<Store, CreateStoreRequest>({
       query: (data) => ({
-        url: '/api/stores',
+        url: '/stores',
         method: 'POST',
         body: data,
       }),
@@ -160,7 +160,7 @@ export const storeApi = createApi({
     // Update store
     updateStore: builder.mutation<Store, { storeId: string; data: UpdateStoreRequest }>({
       query: ({ storeId, data }) => ({
-        url: `/api/stores/${storeId}`,
+        url: `/stores/${storeId}`,
         method: 'PUT',
         body: data,
       }),
@@ -172,13 +172,13 @@ export const storeApi = createApi({
 
     // Get operational status (uses header-based store filtering)
     getOperationalStatus: builder.query<{ isOperational: boolean }, void>({
-      query: () => `/api/stores/operational-status`,
+      query: () => `/stores/operational-status`,
       providesTags: [{ type: 'Store', id: 'CURRENT' }],
     }),
 
     // Get store metrics (uses header-based store filtering)
     getStoreMetrics: builder.query<StoreMetrics, void>({
-      query: () => `/api/stores/metrics`,
+      query: () => `/stores/metrics`,
       providesTags: [{ type: 'Store', id: 'CURRENT' }],
     }),
   }),

@@ -19,6 +19,8 @@ public class SecurityConfig extends SecurityConfigurationBase {
     protected String[] getPublicEndpoints() {
         return new String[]{
             // Public menu browsing (GET only)
+            "/api/menu/public",
+            "/api/menu/public/**",
             "/api/menu/items",
             "/api/menu/items/**",
             "/api/menu/cuisine/**",

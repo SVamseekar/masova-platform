@@ -23,7 +23,6 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/inventory/waste")
-@CrossOrigin(origins = "*")
 public class WasteController {
 
     private static final Logger logger = LoggerFactory.getLogger(WasteController.class);

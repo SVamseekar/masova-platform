@@ -22,7 +22,7 @@ import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../store/store';
-import { useStartWorkingSessionMutation, useEndWorkingSessionMutation } from '../../../store/api/sessionApi';
+import { useStartSessionMutation, useEndSessionMutation } from '../../../store/api/sessionApi';
 
 interface DeliveryHomePageProps {
   isOnline: boolean;
@@ -32,8 +32,8 @@ interface DeliveryHomePageProps {
 
 const DeliveryHomePage: React.FC<DeliveryHomePageProps> = ({ isOnline, setIsOnline, setActiveDeliveries }) => {
   const { user } = useSelector((state: RootState) => state.auth);
-  const [startSession] = useStartWorkingSessionMutation();
-  const [endSession] = useEndWorkingSessionMutation();
+  const [startSession] = useStartSessionMutation();
+  const [endSession] = useEndSessionMutation();
 
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationError, setLocationError] = useState<string>('');

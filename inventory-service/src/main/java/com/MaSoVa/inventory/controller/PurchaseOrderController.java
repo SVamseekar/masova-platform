@@ -24,7 +24,6 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/inventory/purchase-orders")
-@CrossOrigin(origins = "*")
 public class PurchaseOrderController {
 
     private static final Logger logger = LoggerFactory.getLogger(PurchaseOrderController.class);

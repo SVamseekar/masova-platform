@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/preferences")
-@CrossOrigin(origins = "*")
 public class UserPreferencesController {
 
     private final UserPreferencesService userPreferencesService;

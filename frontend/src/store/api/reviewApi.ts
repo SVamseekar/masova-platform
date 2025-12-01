@@ -169,7 +169,7 @@ export interface PagedResponse<T> {
 export const reviewApi = createApi({
   reducerPath: 'reviewApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: `${API_CONFIG.REVIEW_SERVICE_URL}/api`,
+    baseUrl: API_CONFIG.REVIEW_SERVICE_URL,
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState;
       const token = state.auth.accessToken;

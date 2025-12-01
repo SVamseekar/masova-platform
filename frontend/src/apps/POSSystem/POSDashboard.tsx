@@ -34,6 +34,10 @@ const POSDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.auth);
 
+  // User role and store info
+  const isManager = user?.type === 'MANAGER';
+  const storeId = user?.storeId;
+
   // Current order state
   const [orderItems, setOrderItems] = useState<any[]>([]);
   const [customer, setCustomer] = useState<any>(null);
@@ -78,9 +82,6 @@ const POSDashboard: React.FC = () => {
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [navigate, isManager]);
-
-  const isManager = user?.type === 'MANAGER';
-  const storeId = user?.employeeDetails?.storeId;
 
   const handleAddItem = (item: any, quantity: number = 1) => {
     const existingIndex = orderItems.findIndex(

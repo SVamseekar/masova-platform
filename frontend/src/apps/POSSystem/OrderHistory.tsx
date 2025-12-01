@@ -28,7 +28,7 @@ import {
   Print as PrintIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useGetOrdersByStoreQuery } from '../../store/api/orderApi';
+import { useGetStoreOrdersQuery } from '../../store/api/orderApi';
 import { useAppSelector } from '../../store/hooks';
 import { CURRENCY } from '../../config/business-config';
 
@@ -43,8 +43,8 @@ const OrderHistory: React.FC = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { data: orders = [], isLoading, error } = useGetOrdersByStoreQuery(
-    { storeId: storeId || '' },
+  const { data: orders = [], isLoading, error } = useGetStoreOrdersQuery(
+    undefined,
     { skip: !storeId }
   );
 

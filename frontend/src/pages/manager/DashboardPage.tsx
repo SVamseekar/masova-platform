@@ -933,7 +933,6 @@ const DashboardPage: React.FC = () => {
             { path: '/manager/drivers', label: 'Driver Management', icon: '🚗' },
             { path: '/manager/deliveries', label: 'Deliveries', icon: '🚚' },
             { path: `/pos?storeId=${storeId}`, label: 'POS System', icon: '🖥️' },
-            { path: '/driver', label: 'Driver App', icon: '🚙' },
             { path: '/manager/campaigns', label: 'Campaigns', icon: '📢' },
             { path: '/manager/stores', label: 'Stores', icon: '🏪' },
           ].map(item => (

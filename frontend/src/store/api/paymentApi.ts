@@ -84,7 +84,7 @@ export interface ReconciliationReport {
 export const paymentApi = createApi({
   reducerPath: 'paymentApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: `${API_CONFIG.PAYMENT_SERVICE_URL}/api/payments`,
+    baseUrl: `${API_CONFIG.PAYMENT_SERVICE_URL}/payments`,
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState;
       const token = state.auth.accessToken;

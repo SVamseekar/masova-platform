@@ -1,5 +1,7 @@
 server:
   port: 8080
+  compression:
+    enabled: false
 
 spring:
   application:
@@ -12,6 +14,18 @@ spring:
         add-to-simple-url-handler-mapping: true
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      httpclient:
+        compression: false
+        wiretap: false
+      forwarded:
+        enabled: false
+      x-forwarded:
+        enabled: false
+        for-enabled: false
+        proto-enabled: false
+        host-enabled: false
+        port-enabled: false
+        prefix-enabled: false
 
 # JWT Configuration (must match User Service)
 jwt:

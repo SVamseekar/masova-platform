@@ -183,7 +183,7 @@ export const customerApi = createApi({
   reducerPath: 'customerApi',
   baseQuery: fetchBaseQuery({
     // Direct to customer-service (port 8091) or via gateway (port 8080)
-    baseUrl: `${API_CONFIG.CUSTOMER_SERVICE_URL}/api/customers`,
+    baseUrl: `${API_CONFIG.CUSTOMER_SERVICE_URL}/customers`,
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState;
       const token = state.auth.accessToken;

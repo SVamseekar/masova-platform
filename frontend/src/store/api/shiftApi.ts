@@ -86,7 +86,7 @@ export const shiftApi = createApi({
     // Create new shift
     createShift: builder.mutation<Shift, CreateShiftRequest>({
       query: (data) => ({
-        url: '/api/shifts',
+        url: '/shifts',
         method: 'POST',
         body: data,
       }),
@@ -95,14 +95,14 @@ export const shiftApi = createApi({
 
     // Get shift by ID
     getShift: builder.query<Shift, string>({
-      query: (shiftId) => `/api/shifts/${shiftId}`,
+      query: (shiftId) => `/shifts/${shiftId}`,
       providesTags: (result, error, shiftId) => [{ type: 'Shift', id: shiftId }],
     }),
 
     // Update shift
     updateShift: builder.mutation<Shift, { shiftId: string; data: UpdateShiftRequest }>({
       query: ({ shiftId, data }) => ({
-        url: `/api/shifts/${shiftId}`,
+        url: `/shifts/${shiftId}`,
         method: 'PUT',
         body: data,
       }),
@@ -116,7 +116,7 @@ export const shiftApi = createApi({
     // Cancel/Delete shift
     deleteShift: builder.mutation<void, string>({
       query: (shiftId) => ({
-        url: `/api/shifts/${shiftId}`,
+        url: `/shifts/${shiftId}`,
         method: 'DELETE',
       }),
       invalidatesTags: (result, error, shiftId) => [
@@ -129,7 +129,7 @@ export const shiftApi = createApi({
     // Get employee shifts
     getEmployeeShifts: builder.query<Shift[], { employeeId: string; startDate?: string; endDate?: string }>({
       query: ({ employeeId, startDate, endDate }) => {
-        let url = `/api/shifts/employee/${employeeId}`;
+        let url = `/shifts/employee/${employeeId}`;
         const params = new URLSearchParams();
         if (startDate) params.append('startDate', startDate);
         if (endDate) params.append('endDate', endDate);
@@ -145,7 +145,7 @@ export const shiftApi = createApi({
     // Get store shifts
     getStoreShifts: builder.query<Shift[], { storeId: string; startDate?: string; endDate?: string }>({
       query: ({ storeId, startDate, endDate }) => {
-        let url = `/api/shifts/store/${storeId}`;
+        let url = `/shifts/store/${storeId}`;
         const params = new URLSearchParams();
         if (startDate) params.append('startDate', startDate);
         if (endDate) params.append('endDate', endDate);
@@ -160,14 +160,14 @@ export const shiftApi = createApi({
 
     // Get current shift for employee
     getCurrentShift: builder.query<Shift | null, string>({
-      query: (employeeId) => `/api/shifts/employee/${employeeId}/current`,
+      query: (employeeId) => `/shifts/employee/${employeeId}/current`,
       providesTags: (result) => (result ? [{ type: 'Shift', id: result.id }] : []),
     }),
 
     // Confirm shift attendance
     confirmShift: builder.mutation<Shift, string>({
       query: (shiftId) => ({
-        url: `/api/shifts/${shiftId}/confirm`,
+        url: `/shifts/${shiftId}/confirm`,
         method: 'POST',
       }),
       invalidatesTags: (result, error, shiftId) => [
@@ -179,7 +179,7 @@ export const shiftApi = createApi({
     // Start shift
     startShift: builder.mutation<Shift, string>({
       query: (shiftId) => ({
-        url: `/api/shifts/${shiftId}/start`,
+        url: `/shifts/${shiftId}/start`,
         method: 'POST',
       }),
       invalidatesTags: (result, error, shiftId) => [
@@ -191,7 +191,7 @@ export const shiftApi = createApi({
     // Complete shift
     completeShift: builder.mutation<Shift, string>({
       query: (shiftId) => ({
-        url: `/api/shifts/${shiftId}/complete`,
+        url: `/shifts/${shiftId}/complete`,
         method: 'POST',
       }),
       invalidatesTags: (result, error, shiftId) => [
@@ -204,7 +204,7 @@ export const shiftApi = createApi({
     // Get shift coverage
     getShiftCoverage: builder.query<ShiftCoverage, { storeId: string; date?: string }>({
       query: ({ storeId, date }) => {
-        let url = `/api/shifts/store/${storeId}/coverage`;
+        let url = `/shifts/store/${storeId}/coverage`;
         if (date) {
           url += `?date=${date}`;
         }

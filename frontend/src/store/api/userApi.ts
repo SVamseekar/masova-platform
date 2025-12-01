@@ -73,14 +73,14 @@ export const userApi = createApi({
   endpoints: (builder) => ({
     // Get current user profile
     getProfile: builder.query<User, void>({
-      query: () => '/api/users/profile',
+      query: () => '/users/profile',
       providesTags: ['User'],
     }),
 
     // Update current user profile
     updateProfile: builder.mutation<User, UpdateUserRequest>({
       query: (data) => ({
-        url: '/api/users/profile',
+        url: '/users/profile',
         method: 'PUT',
         body: data,
       }),
@@ -90,7 +90,7 @@ export const userApi = createApi({
     // Change password
     changePassword: builder.mutation<void, ChangePasswordRequest>({
       query: (data) => ({
-        url: '/api/users/change-password',
+        url: '/users/change-password',
         method: 'POST',
         body: data,
       }),
@@ -98,14 +98,14 @@ export const userApi = createApi({
 
     // Get user by ID
     getUser: builder.query<User, string>({
-      query: (userId) => `/api/users/${userId}`,
+      query: (userId) => `/users/${userId}`,
       providesTags: (result, error, userId) => [{ type: 'User', id: userId }],
     }),
 
     // Update user
     updateUser: builder.mutation<User, { userId: string; data: UpdateUserRequest }>({
       query: ({ userId, data }) => ({
-        url: `/api/users/${userId}`,
+        url: `/users/${userId}`,
         method: 'PUT',
         body: data,
       }),
@@ -118,7 +118,7 @@ export const userApi = createApi({
     // Deactivate user
     deactivateUser: builder.mutation<void, string>({
       query: (userId) => ({
-        url: `/api/users/${userId}`,
+        url: `/users/${userId}`,
         method: 'DELETE',
       }),
       invalidatesTags: (result, error, userId) => [
@@ -129,7 +129,7 @@ export const userApi = createApi({
 
     // Get users by type
     getUsersByType: builder.query<User[], string>({
-      query: (type) => `/api/users/type/${type}`,
+      query: (type) => `/users/type/${type}`,
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'User' as const, id })), { type: 'Users', id: 'LIST' }]
@@ -138,7 +138,7 @@ export const userApi = createApi({
 
     // Get store employees
     getStoreEmployees: builder.query<User[], void>({
-      query: () => `/api/users/store`,
+      query: () => `/users/store`,
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'User' as const, id })), { type: 'Users', id: 'LIST' }]
@@ -147,7 +147,7 @@ export const userApi = createApi({
 
     // Get active managers
     getManagers: builder.query<User[], void>({
-      query: () => '/api/users/managers',
+      query: () => '/users/managers',
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'User' as const, id })), { type: 'Users', id: 'LIST' }]
@@ -156,12 +156,12 @@ export const userApi = createApi({
 
     // Check if user can take orders
     canTakeOrders: builder.query<{ canTakeOrders: boolean; reason?: string }, string>({
-      query: (userId) => `/api/users/${userId}/can-take-orders`,
+      query: (userId) => `/users/${userId}/can-take-orders`,
     }),
 
     // Get all users
     getUsers: builder.query<User[], void>({
-      query: () => '/api/users',
+      query: () => '/users',
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'User' as const, id })), { type: 'Users', id: 'LIST' }]

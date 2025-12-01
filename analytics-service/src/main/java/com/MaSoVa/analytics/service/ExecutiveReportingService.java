@@ -36,7 +36,7 @@ public class ExecutiveReportingService {
     /**
      * Generate comprehensive executive summary report
      */
-    @Cacheable(value = "executiveSummary", key = "#period")
+    @Cacheable(value = "executiveSummary", key = "#p0")
     public ExecutiveSummaryResponse generateExecutiveSummary(String period) {
         log.info("Generating executive summary for period: {}", period);
 

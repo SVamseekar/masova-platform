@@ -37,9 +37,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 List<String> roles = tokenProvider.getRolesFromToken(jwt);
                 String storeId = tokenProvider.getStoreIdFromToken(jwt);
 
-                List<SimpleGrantedAuthority> authorities = roles.stream()
-                    .map(SimpleGrantedAuthority::new)
-                    .collect(Collectors.toList());
+                // Handle null roles - use empty list if roles claim is missing
+                List<SimpleGrantedAuthority> authorities = roles != null
+                    ? roles.stream()
+                        .map(SimpleGrantedAuthority::new)
+                        .collect(Collectors.toList())
+                    : List.of();
 
                 UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(userId, null, authorities);

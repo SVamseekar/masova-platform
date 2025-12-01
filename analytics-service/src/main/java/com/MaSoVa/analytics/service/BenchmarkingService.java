@@ -36,7 +36,7 @@ public class BenchmarkingService {
     /**
      * Generate benchmarking report comparing stores and industry standards
      */
-    @Cacheable(value = "benchmarking", key = "#period")
+    @Cacheable(value = "benchmarking", key = "#p0")
     public BenchmarkingResponse generateBenchmarkingReport(String period) {
         log.info("Generating benchmarking report for period: {}", period);
 
