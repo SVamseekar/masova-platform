@@ -43,8 +43,17 @@ jobs:
 
       - name: Package Monolith
         run: |
-          chmod +x ./build-monolith.sh
-          ./build-monolith.sh --skip-tests --version=${{ steps.version.outputs.VERSION }} || cat build-*.log
+          mkdir -p masova-monolith
+          cp api-gateway/target/*.jar masova-monolith/ || true
+          cp user-service/target/*.jar masova-monolith/ || true
+          cp menu-service/target/*.jar masova-monolith/ || true
+          cp order-service/target/*.jar masova-monolith/ || true
+          cp payment-service/target/*.jar masova-monolith/ || true
+          cp analytics-service/target/*.jar masova-monolith/ || true
+          cp inventory-service/target/*.jar masova-monolith/ || true
+          cp customer-service/target/*.jar masova-monolith/ || true
+          cp delivery-service/target/*.jar masova-monolith/ || true
+          ls -lh masova-monolith/
 
       - name: Upload Monolith Artifacts
         uses: actions/upload-artifact@v4
