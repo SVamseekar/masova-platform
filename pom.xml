@@ -24,6 +24,7 @@
     
     <modules>
         <module>shared-models</module>
+        <module>shared-security</module>
         <module>api-gateway</module>
         <module>user-service</module>
         <module>menu-service</module>
@@ -69,6 +70,14 @@
                     <configuration>
                         <source>${java.version}</source>
                         <target>${java.version}</target>
+                        <parameters>true</parameters>
+                        <compilerArgs>
+                            <arg>-Xlint:all</arg>
+                            <arg>-Xlint:-processing</arg>
+                            <!-- Suppress null warnings for unannotated libraries like Spring -->
+                            <arg>-Xmaxwarns</arg>
+                            <arg>1000</arg>
+                        </compilerArgs>
                     </configuration>
                 </plugin>
             </plugins>
