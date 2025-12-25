@@ -163,9 +163,6 @@ jobs:
           # Copy configuration files (if they exist)
           cp masova-monolith/application.properties release/masova-$VERSION/ 2>/dev/null || echo "No application.properties found"
 
-          # Copy docker-compose.yml from docs
-          cp imp_docs/DEPLOYMENT_STRATEGY_INSTALLABLE_SOFTWARE.md release/masova-$VERSION/DEPLOYMENT_GUIDE.md
-
           # Create .env.example
           cat > release/masova-$VERSION/.env.example << 'EOF'
           # MaSoVa Configuration
