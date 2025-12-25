@@ -1,0 +1,18 @@
+# MaSoVa Update System Configuration
+#
+# IMPORTANT: Update this file with your Docker Hub username
+# before running build-monolith.sh or creating releases
+
+# Your Docker Hub username (CHANGE THIS!)
+DOCKER_HUB_USERNAME=souravamseekar
+
+# Docker image names (will use username above)
+DOCKER_BACKEND_IMAGE=${DOCKER_HUB_USERNAME}/masova-backend
+DOCKER_FRONTEND_IMAGE=${DOCKER_HUB_USERNAME}/masova-frontend
+
+# GitHub repository (update with your username)
+GITHUB_USERNAME=SVamseekar
+GITHUB_REPO=MaSoVa-restaurant-management-system
+
+# Version check URL (used by UpdateService)
+VERSION_CHECK_URL=https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/main/version.properties
