@@ -74,7 +74,7 @@ export const managerPageStyles = {
 
   // Main content card
   contentCard: {
-    ...createCard('xl', 'lg', true),
+    ...createCard('lg', 'lg', true),
     padding: spacing[8],
     marginBottom: spacing[6],
   },
@@ -218,7 +218,7 @@ export const managerPageStyles = {
   },
 
   emptyIcon: {
-    fontSize: typography.fontSize['6xl'],
+    fontSize: typography.fontSize['5xl'],
     marginBottom: spacing[4],
     opacity: 0.5,
   },

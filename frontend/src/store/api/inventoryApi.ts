@@ -14,8 +14,10 @@ export interface InventoryItem {
 
   // Stock levels
   currentStock: number;
+  quantity?: number; // Alias for currentStock (for backwards compatibility)
   reservedStock: number;
   minimumStock: number;
+  reorderLevel?: number; // Alias for minimumStock (for backwards compatibility)
   maximumStock: number;
   reorderQuantity: number;
 
@@ -272,9 +274,9 @@ export const inventoryApi = createApi({
     }),
 
     // Get all inventory items for a store
-    getAllInventoryItems: builder.query<InventoryItem[], void>({
-      query: () => `/items`,
-      providesTags: ['InventoryItem'],
+    getAllInventoryItems: builder.query<InventoryItem[], string | undefined>({
+      query: (storeId) => `/items${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'InventoryItem', id: storeId || 'DEFAULT' }],
     }),
 
     // Get inventory item by ID
@@ -346,15 +348,15 @@ export const inventoryApi = createApi({
     }),
 
     // Get low stock items
-    getLowStockItems: builder.query<InventoryItem[], void>({
-      query: () => `/low-stock`,
-      providesTags: ['InventoryItem'],
+    getLowStockItems: builder.query<InventoryItem[], string | undefined>({
+      query: (storeId) => `/low-stock${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'InventoryItem', id: storeId || 'DEFAULT' }],
     }),
 
     // Get out of stock items
-    getOutOfStockItems: builder.query<InventoryItem[], void>({
-      query: () => `/out-of-stock`,
-      providesTags: ['InventoryItem'],
+    getOutOfStockItems: builder.query<InventoryItem[], string | undefined>({
+      query: (storeId) => `/out-of-stock${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'InventoryItem', id: storeId || 'DEFAULT' }],
     }),
 
     // Get items expiring soon
@@ -364,21 +366,21 @@ export const inventoryApi = createApi({
     }),
 
     // Get low stock alerts
-    getLowStockAlerts: builder.query<InventoryItem[], void>({
-      query: () => `/alerts/low-stock`,
-      providesTags: ['InventoryItem'],
+    getLowStockAlerts: builder.query<InventoryItem[], string | undefined>({
+      query: (storeId) => `/alerts/low-stock${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'InventoryItem', id: storeId || 'DEFAULT' }],
     }),
 
     // Get total inventory value
-    getTotalInventoryValue: builder.query<InventoryValueResponse, void>({
-      query: () => `/value`,
-      providesTags: ['InventoryValue'],
+    getTotalInventoryValue: builder.query<InventoryValueResponse, string | undefined>({
+      query: (storeId) => `/value${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'InventoryValue', id: storeId || 'DEFAULT' }],
     }),
 
     // Get inventory value by category
-    getInventoryValueByCategory: builder.query<InventoryValueResponse, void>({
-      query: () => `/value/by-category`,
-      providesTags: ['InventoryValue'],
+    getInventoryValueByCategory: builder.query<InventoryValueResponse, string | undefined>({
+      query: (storeId) => `/value/by-category${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'InventoryValue', id: storeId || 'DEFAULT' }],
     }),
 
     // Delete inventory item
@@ -403,9 +405,9 @@ export const inventoryApi = createApi({
     }),
 
     // Get all suppliers
-    getAllSuppliers: builder.query<Supplier[], void>({
-      query: () => '/suppliers',
-      providesTags: ['Supplier'],
+    getAllSuppliers: builder.query<Supplier[], string | undefined>({
+      query: (storeId) => `/suppliers${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'Supplier', id: storeId || 'DEFAULT' }],
     }),
 
     // Get supplier by ID
@@ -421,21 +423,21 @@ export const inventoryApi = createApi({
     }),
 
     // Get active suppliers
-    getActiveSuppliers: builder.query<Supplier[], void>({
-      query: () => '/suppliers/active',
-      providesTags: ['Supplier'],
+    getActiveSuppliers: builder.query<Supplier[], string | undefined>({
+      query: (storeId) => `/suppliers/active${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'Supplier', id: storeId || 'DEFAULT' }],
     }),
 
     // Get preferred suppliers
-    getPreferredSuppliers: builder.query<Supplier[], void>({
-      query: () => '/suppliers/preferred',
-      providesTags: ['Supplier'],
+    getPreferredSuppliers: builder.query<Supplier[], string | undefined>({
+      query: (storeId) => `/suppliers/preferred${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'Supplier', id: storeId || 'DEFAULT' }],
     }),
 
     // Get reliable suppliers
-    getReliableSuppliers: builder.query<Supplier[], void>({
-      query: () => '/suppliers/reliable',
-      providesTags: ['Supplier'],
+    getReliableSuppliers: builder.query<Supplier[], string | undefined>({
+      query: (storeId) => `/suppliers/reliable${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'Supplier', id: storeId || 'DEFAULT' }],
     }),
 
     // Get suppliers by category
@@ -515,9 +517,9 @@ export const inventoryApi = createApi({
     }),
 
     // Get all purchase orders
-    getAllPurchaseOrders: builder.query<PurchaseOrder[], void>({
-      query: () => `/purchase-orders`,
-      providesTags: ['PurchaseOrder'],
+    getAllPurchaseOrders: builder.query<PurchaseOrder[], string | undefined>({
+      query: (storeId) => `/purchase-orders${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'PurchaseOrder', id: storeId || 'DEFAULT' }],
     }),
 
     // Get purchase order by ID
@@ -539,15 +541,15 @@ export const inventoryApi = createApi({
     }),
 
     // Get pending approval purchase orders
-    getPendingApprovalPurchaseOrders: builder.query<PurchaseOrder[], void>({
-      query: () => `/purchase-orders/pending-approval`,
-      providesTags: ['PurchaseOrder'],
+    getPendingApprovalPurchaseOrders: builder.query<PurchaseOrder[], string | undefined>({
+      query: (storeId) => `/purchase-orders/pending-approval${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'PurchaseOrder', id: storeId || 'DEFAULT' }],
     }),
 
     // Get overdue purchase orders
-    getOverduePurchaseOrders: builder.query<PurchaseOrder[], void>({
-      query: () => `/purchase-orders/overdue`,
-      providesTags: ['PurchaseOrder'],
+    getOverduePurchaseOrders: builder.query<PurchaseOrder[], string | undefined>({
+      query: (storeId) => `/purchase-orders/overdue${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'PurchaseOrder', id: storeId || 'DEFAULT' }],
     }),
 
     // Get purchase orders by date range
@@ -653,9 +655,9 @@ export const inventoryApi = createApi({
     }),
 
     // Get all waste records
-    getAllWasteRecords: builder.query<WasteRecord[], void>({
-      query: () => `/waste`,
-      providesTags: ['WasteRecord'],
+    getAllWasteRecords: builder.query<WasteRecord[], string | undefined>({
+      query: (storeId) => `/waste${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'WasteRecord', id: storeId || 'DEFAULT' }],
     }),
 
     // Get waste record by ID

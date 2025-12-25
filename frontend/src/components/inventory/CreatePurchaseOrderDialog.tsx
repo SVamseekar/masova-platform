@@ -15,7 +15,7 @@ interface CreatePurchaseOrderDialogProps {
 const CreatePurchaseOrderDialog: React.FC<CreatePurchaseOrderDialogProps> = ({ open, onClose, storeId }) => {
   const currentUser = useAppSelector(selectCurrentUser);
   const [createPO, { isLoading }] = useCreatePurchaseOrderMutation();
-  const { data: suppliers = [] } = useGetAllSuppliersQuery();
+  const { data: suppliers = [] } = useGetAllSuppliersQuery(undefined);
   const { data: lowStockItems = [] } = useGetLowStockItemsQuery(undefined);
 
   const [supplierId, setSupplierId] = useState('');
@@ -118,7 +118,7 @@ const CreatePurchaseOrderDialog: React.FC<CreatePurchaseOrderDialogProps> = ({ o
         </div>
       </DialogContent>
       <DialogActions style={{ padding: spacing[4] }}>
-        <Button onClick={onClose} variant="text" disabled={isLoading}>
+        <Button onClick={onClose} variant="ghost" disabled={isLoading}>
           Cancel
         </Button>
         <Button onClick={handleSubmit} disabled={isLoading}>

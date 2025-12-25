@@ -9,6 +9,8 @@ public class CreateCustomerRequest {
     @NotBlank(message = "User ID is required")
     private String userId;
 
+    private String storeId; // Store where customer is registered
+
     @NotBlank(message = "Name is required")
     @Size(min = 2, max = 100, message = "Name must be between 2 and 100 characters")
     private String name;
@@ -41,6 +43,9 @@ public class CreateCustomerRequest {
     // Getters and Setters
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
+
+    public String getStoreId() { return storeId; }
+    public void setStoreId(String storeId) { this.storeId = storeId; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }

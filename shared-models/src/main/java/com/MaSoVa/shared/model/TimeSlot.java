@@ -35,10 +35,13 @@ public class TimeSlot {
     // Getters and setters
     public LocalTime getStartTime() { return startTime; }
     public void setStartTime(LocalTime startTime) { this.startTime = startTime; }
-    
+
     public LocalTime getEndTime() { return endTime; }
     public void setEndTime(LocalTime endTime) { this.endTime = endTime; }
-    
+
     public boolean isOpen() { return isOpen; }
-    public void setOpen(boolean open) { isOpen = open; }
+    public void setIsOpen(boolean isOpen) { this.isOpen = isOpen; }
+
+    // Legacy setter for backwards compatibility
+    public void setOpen(boolean open) { this.isOpen = open; }
 }

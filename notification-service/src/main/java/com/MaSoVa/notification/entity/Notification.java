@@ -51,6 +51,7 @@ public class Notification {
         ORDER_PICKED_UP,
         ORDER_DELIVERED,
         ORDER_CANCELLED,
+        ORDER_STATUS_UPDATE,  // Generic status update for any order status change
         PAYMENT_SUCCESS,
         PAYMENT_FAILED,
         DRIVER_ASSIGNED,

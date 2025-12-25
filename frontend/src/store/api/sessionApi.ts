@@ -6,16 +6,17 @@ import type { RootState } from '../store';
 export interface WorkingSession {
   id: string;
   employeeId: string;
-  name: string;
+  employeeName: string;  // Changed from 'name' to match backend
   role: string;
   storeId: string;
   loginTime: string;
   logoutTime?: string;
   currentDuration?: string;
   totalHours?: number;
-  breakTime: number;
+  breakTime?: number;  // Made optional
+  breakDurationMinutes?: number;  // Backend uses this field name
   isActive: boolean;
-  status: 'ACTIVE' | 'COMPLETED' | 'PENDING_APPROVAL';
+  status: 'ACTIVE' | 'COMPLETED' | 'PENDING_APPROVAL' | 'AUTO_CLOSED';
 }
 
 export interface StartSessionRequest {
@@ -97,36 +98,38 @@ export const sessionApi = createApi({
     }),
 
     // Get all active sessions for a store (for managers)
-    getActiveStoreSessions: builder.query<WorkingSession[], void>({
-      query: () => `/users/sessions/store/active`,
-      providesTags: ['WorkingSessions'],
+    getActiveStoreSessions: builder.query<WorkingSession[], string | undefined>({
+      query: (storeId) => `/users/sessions/store/active${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'WorkingSessions', id: storeId || 'DEFAULT' }],
     }),
 
     // Get all sessions for a store (including completed)
     getStoreSessions: builder.query<WorkingSession[], { date?: string }>({
       query: ({ date }) => {
-        const params = date ? `?date=${date}` : '';
+        // Backend expects startDate and endDate, so use the same date for both to get sessions for a single day
+        const params = date ? `?startDate=${date}&endDate=${date}` : '';
         return `/users/sessions/store${params}`;
       },
       providesTags: ['WorkingSessions'],
     }),
 
     // Get sessions by employee
-    getEmployeeSessions: builder.query<WorkingSession[], { employeeId: string; startDate?: string; endDate?: string }>({
-      query: ({ employeeId, startDate, endDate }) => {
-        let params = '';
-        if (startDate && endDate) {
-          params = `?startDate=${startDate}&endDate=${endDate}`;
-        }
-        return `/users/sessions/${employeeId}${params}`;
+    getEmployeeSessions: builder.query<WorkingSession[], { employeeId: string; startDate?: string; endDate?: string; page?: number; size?: number }>({
+      query: ({ employeeId, startDate, endDate, page = 0, size = 20 }) => {
+        const params = new URLSearchParams();
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        params.append('page', page.toString());
+        params.append('size', size.toString());
+        return `/users/sessions/${employeeId}?${params.toString()}`;
       },
       providesTags: ['Session'],
     }),
 
     // Get pending approval sessions
-    getPendingApprovalSessions: builder.query<WorkingSession[], void>({
-      query: () => `/users/sessions/pending-approval`,
-      providesTags: ['WorkingSessions'],
+    getPendingApprovalSessions: builder.query<WorkingSession[], string | undefined>({
+      query: (storeId) => `/users/sessions/pending-approval${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'WorkingSessions', id: storeId || 'DEFAULT' }],
     }),
 
     // Approve a session (for managers)
@@ -147,6 +150,26 @@ export const sessionApi = createApi({
       }),
       invalidatesTags: ['WorkingSessions'],
     }),
+
+    // Clock in employee with PIN (manager initiated) - Phase 2
+    clockInWithPin: builder.mutation<{ message: string; session: WorkingSession }, { employeeId: string; pin: string }>({
+      query: ({ employeeId, pin }) => ({
+        url: '/users/sessions/clock-in-with-pin',
+        method: 'POST',
+        body: { employeeId, pin },
+      }),
+      invalidatesTags: ['WorkingSessions'],
+    }),
+
+    // Clock out employee (manager initiated) - Phase 2
+    clockOutEmployee: builder.mutation<{ message: string; session: WorkingSession }, { employeeId: string }>({
+      query: ({ employeeId }) => ({
+        url: '/users/sessions/clock-out-employee',
+        method: 'POST',
+        body: { employeeId },
+      }),
+      invalidatesTags: ['WorkingSessions'],
+    }),
   }),
 });
 
@@ -161,4 +184,9 @@ export const {
   useGetPendingApprovalSessionsQuery,
   useApproveSessionMutation,
   useRejectSessionMutation,
+  useClockInWithPinMutation,
+  useClockOutEmployeeMutation,
 } = sessionApi;
+
+// Phase 3: Alias for break recording (same as addBreakTime)
+export const useRecordBreakMutation = useAddBreakTimeMutation;

@@ -66,8 +66,8 @@ const StoreInfo: React.FC<StoreInfoProps> = ({ storeId, variant = 'compact' }) =
             fontWeight: typography.fontWeight.bold,
             padding: `${spacing[1]} ${spacing[2]}`,
             borderRadius: '4px',
-            backgroundColor: store.status === 'OPEN' ? colors.semantic.successLight : colors.semantic.errorLight,
-            color: store.status === 'OPEN' ? colors.semantic.successDark : colors.semantic.errorDark,
+            backgroundColor: store.status === 'ACTIVE' ? colors.semantic.successLight : colors.semantic.errorLight,
+            color: store.status === 'ACTIVE' ? colors.semantic.successDark : colors.semantic.errorDark,
           }}>
             {store.status}
           </span>
@@ -108,8 +108,8 @@ const StoreInfo: React.FC<StoreInfoProps> = ({ storeId, variant = 'compact' }) =
           fontWeight: typography.fontWeight.bold,
           padding: `${spacing[2]} ${spacing[3]}`,
           borderRadius: '8px',
-          backgroundColor: store.status === 'OPEN' ? colors.semantic.successLight : colors.semantic.errorLight,
-          color: store.status === 'OPEN' ? colors.semantic.successDark : colors.semantic.errorDark,
+          backgroundColor: store.status === 'ACTIVE' ? colors.semantic.successLight : colors.semantic.errorLight,
+          color: store.status === 'ACTIVE' ? colors.semantic.successDark : colors.semantic.errorDark,
         }}>
           {store.status}
         </span>

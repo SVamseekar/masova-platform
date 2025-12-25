@@ -6,8 +6,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -30,7 +33,9 @@ public class CacheInvalidationService {
     /**
      * Invalidate a specific cache entry
      */
-    public void invalidateCache(String cacheName, String key) {
+    public void invalidateCache(@NonNull String cacheName, @NonNull String key) {
+        Objects.requireNonNull(cacheName, "cacheName cannot be null");
+        Objects.requireNonNull(key, "key cannot be null");
         try {
             Cache cache = cacheManager.getCache(cacheName);
             if (cache != null) {
@@ -45,7 +50,8 @@ public class CacheInvalidationService {
     /**
      * Invalidate all entries in a specific cache
      */
-    public void invalidateAllCache(String cacheName) {
+    public void invalidateAllCache(@NonNull String cacheName) {
+        Objects.requireNonNull(cacheName, "cacheName cannot be null");
         try {
             Cache cache = cacheManager.getCache(cacheName);
             if (cache != null) {
@@ -60,7 +66,8 @@ public class CacheInvalidationService {
     /**
      * Invalidate multiple cache entries by pattern
      */
-    public void invalidateCacheByPattern(String pattern) {
+    public void invalidateCacheByPattern(@NonNull String pattern) {
+        Objects.requireNonNull(pattern, "pattern cannot be null");
         try {
             Set<String> keys = redisTemplate.keys(pattern);
             if (keys != null && !keys.isEmpty()) {
@@ -78,9 +85,11 @@ public class CacheInvalidationService {
     public void invalidateAllCaches() {
         try {
             cacheManager.getCacheNames().forEach(cacheName -> {
-                Cache cache = cacheManager.getCache(cacheName);
-                if (cache != null) {
-                    cache.clear();
+                if (cacheName != null) {
+                    Cache cache = cacheManager.getCache(cacheName);
+                    if (cache != null) {
+                        cache.clear();
+                    }
                 }
             });
             logger.info("Cleared all caches");
@@ -120,7 +129,9 @@ public class CacheInvalidationService {
     /**
      * Set expiration time for a cache entry
      */
-    public void setCacheExpiration(String key, long timeout, TimeUnit timeUnit) {
+    public void setCacheExpiration(@NonNull String key, long timeout, @NonNull TimeUnit timeUnit) {
+        Objects.requireNonNull(key, "key cannot be null");
+        Objects.requireNonNull(timeUnit, "timeUnit cannot be null");
         try {
             redisTemplate.expire(key, timeout, timeUnit);
             logger.info("Set expiration for key: {} to {} {}", key, timeout, timeUnit);
@@ -133,7 +144,9 @@ public class CacheInvalidationService {
      * Invalidate related caches (cascade invalidation)
      * Example: When menu item is updated, invalidate menu, orders, and analytics caches
      */
-    public void invalidateRelatedCaches(String entityType, String entityId) {
+    public void invalidateRelatedCaches(@NonNull String entityType, @NonNull String entityId) {
+        Objects.requireNonNull(entityType, "entityType cannot be null");
+        Objects.requireNonNull(entityId, "entityId cannot be null");
         switch (entityType.toLowerCase()) {
             case "menu":
                 invalidateCache("menu", entityId);
@@ -171,7 +184,9 @@ public class CacheInvalidationService {
     /**
      * Warm up cache with frequently accessed data
      */
-    public void warmUpCache(String cacheName, String key, Object value) {
+    public void warmUpCache(@NonNull String cacheName, @NonNull String key, @Nullable Object value) {
+        Objects.requireNonNull(cacheName, "cacheName cannot be null");
+        Objects.requireNonNull(key, "key cannot be null");
         try {
             Cache cache = cacheManager.getCache(cacheName);
             if (cache != null) {

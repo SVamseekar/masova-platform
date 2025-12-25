@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useCreateReviewMutation, useGetReviewsByOrderIdQuery } from '../../store/api/reviewApi';
-import { useGetOrderByIdQuery } from '../../store/api/orderApi';
+import { useGetOrderQuery } from '../../store/api/orderApi';
 import ReviewForm from '../../components/reviews/ReviewForm';
 import { Card } from '../../components/ui/neumorphic/Card';
 import { Button } from '../../components/ui/neumorphic/Button';
@@ -14,7 +14,7 @@ const ReviewOrderPage: React.FC = () => {
 
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
-  const { data: order, isLoading: orderLoading } = useGetOrderByIdQuery(orderId!, {
+  const { data: order, isLoading: orderLoading } = useGetOrderQuery(orderId!, {
     skip: !orderId,
   });
 
@@ -152,7 +152,7 @@ const ReviewOrderPage: React.FC = () => {
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Total Amount:</span>
-              <span className="font-medium">₹{order.totalAmount.toFixed(2)}</span>
+              <span className="font-medium">₹{(order.totalAmount ?? order.total ?? 0).toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Items:</span>

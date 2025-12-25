@@ -38,7 +38,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSuccess, onCancel }) => {
   });
 
   // API hooks
-  const { data: menuItems = [], isLoading: isLoadingMenu } = useGetAllMenuItemsQuery();
+  const { data: menuItems = [], isLoading: isLoadingMenu } = useGetAllMenuItemsQuery(storeId);
   const [createOrder, { isLoading: isCreating, isSuccess, error }] = useCreateOrderMutation();
 
   // Filter menu items by search
@@ -609,7 +609,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSuccess, onCancel }) => {
                     <div key={item.id} className="menu-item-card">
                       <div className="menu-item-info">
                         <div className="menu-item-name">{item.name}</div>
-                        <div className="menu-item-price">₹{item.price.toFixed(2)}</div>
+                        <div className="menu-item-price">₹{(item.price ?? item.basePrice ?? 0).toFixed(2)}</div>
                       </div>
                       <div className="menu-item-controls">
                         {quantity === 0 ? (

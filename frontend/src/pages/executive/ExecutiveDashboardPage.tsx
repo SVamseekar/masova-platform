@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import AppHeader from '../../components/common/AppHeader';
 import axios from 'axios';
+import API_CONFIG from '../../config/api.config';
 
 interface KPITile {
   kpiName: string;
@@ -77,7 +78,7 @@ const ExecutiveDashboardPage: React.FC = () => {
   const fetchExecutiveSummary = async () => {
     try {
       setLoading(true);
-      const response = await axios.get<ExecutiveSummary>(`http://localhost:8080/api/bi/executive-summary?period=${period}`);
+      const response = await axios.get<ExecutiveSummary>(`${API_CONFIG.BASE_URL}/bi/executive-summary?period=${period}`);
       setSummary(response.data);
     } catch (error) {
       console.error('Failed to fetch executive summary:', error);

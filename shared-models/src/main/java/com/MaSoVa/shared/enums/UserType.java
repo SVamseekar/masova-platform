@@ -5,5 +5,6 @@ public enum UserType {
     STAFF,
     DRIVER,
     MANAGER,
-    ASSISTANT_MANAGER
+    ASSISTANT_MANAGER,
+    KIOSK  // Kiosk terminal accounts for POS auto-login
 }

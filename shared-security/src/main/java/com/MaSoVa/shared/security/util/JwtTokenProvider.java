@@ -14,7 +14,7 @@ import java.util.List;
 @Component
 public class JwtTokenProvider {
 
-    @Value("${jwt.secret}")
+    @Value("${jwt.secret:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-256-bits-for-production-security}")
     private String jwtSecret;
 
     @Value("${jwt.access-token-expiration:3600000}")

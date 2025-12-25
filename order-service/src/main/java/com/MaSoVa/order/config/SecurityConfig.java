@@ -22,6 +22,13 @@ public class SecurityConfig extends SecurityConfigurationBase {
             "/ws/**",
             "/api/ws/**",
 
+            // Kitchen Display System - Public access for kitchen screens
+            "/api/orders/kitchen",
+            "/api/orders/kitchen/**",
+
+            // Payment status updates (called by payment-service after verification)
+            "/api/orders/*/payment",
+
             // Health and actuator endpoints
             "/actuator/health",
             "/api/health/**",

@@ -1,0 +1,79 @@
+server:
+  port: 8092
+
+spring:
+  application:
+    name: notification-service
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/masova-notification}
+      database: masova-notification
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    jedis:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-512-bits-for-HS512-algorithm-security-requirement}
+  access-token-expiration: 3600000
+  refresh-token-expiration: 604800000
+# Twilio Configuration
+twilio:
+  account-sid: ${TWILIO_ACCOUNT_SID:}
+  auth-token: ${TWILIO_AUTH_TOKEN:}
+  phone-number: ${TWILIO_PHONE_NUMBER:}
+  enabled: ${TWILIO_ENABLED:false}
+
+# SendGrid Configuration
+sendgrid:
+  api-key: ${SENDGRID_API_KEY:}
+  from-email: ${SENDGRID_FROM_EMAIL:noreply@masova.com}
+  from-name: ${SENDGRID_FROM_NAME:MaSoVa Restaurant}
+  enabled: ${SENDGRID_ENABLED:false}
+
+# Firebase Configuration
+firebase:
+  credentials-path: ${FIREBASE_CREDENTIALS_PATH:}
+  enabled: ${FIREBASE_ENABLED:false}
+
+# Notification Settings
+notification:
+  max-batch-size: 100
+  retry-attempts: 3
+  retry-delay-ms: 5000
+  rate-limit:
+    sms-per-hour: 100
+    email-per-hour: 500
+    push-per-hour: 1000
+
+# Management Endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# Logging
+logging:
+  level:
+    com.MaSoVa.notification: DEBUG
+    org.springframework.data.mongodb: DEBUG
+    com.twilio: INFO
+    com.sendgrid: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

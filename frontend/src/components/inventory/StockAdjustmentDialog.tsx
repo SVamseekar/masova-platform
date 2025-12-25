@@ -159,7 +159,7 @@ const StockAdjustmentDialog: React.FC<StockAdjustmentDialogProps> = ({ open, onC
         )}
       </DialogContent>
       <DialogActions style={{ padding: spacing[4] }}>
-        <Button onClick={onClose} variant="text" disabled={isLoading}>
+        <Button onClick={onClose} variant="ghost" disabled={isLoading}>
           Cancel
         </Button>
         <Button onClick={handleSubmit} disabled={isLoading || !quantity}>

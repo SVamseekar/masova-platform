@@ -1,41 +1,48 @@
+/**
+ * DeliveryHistoryPage - Redesigned (Timeline Style)
+ * Modern timeline view with charts and clean search/filter
+ */
+
 import React, { useState } from 'react';
 import {
   Box,
   Container,
   Typography,
-  Card,
-  CardContent,
-  Stack,
-  Chip,
-  Divider,
   TextField,
+  InputAdornment,
   MenuItem,
-  Grid,
-  List,
-  ListItem,
-  ListItemText
+  Divider,
+  Collapse,
+  IconButton,
 } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
+import {
+  Search as SearchIcon,
+  ExpandMore as ExpandMoreIcon,
+  CheckCircle as CheckCircleIcon,
+  Schedule as ScheduleIcon,
+} from '@mui/icons-material';
 import { useGetOrdersByStatusQuery } from '../../../store/api/orderApi';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../store/store';
+import { MetricCard, StatsChart } from '../components/shared';
+import { colors, spacing, typography, borderRadius, shadows, animations } from '../../../styles/driver-design-tokens';
+import { skeletonStyles } from '../utils/animations';
 
 const DeliveryHistoryPage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const [timeFilter, setTimeFilter] = useState('today');
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [chartPeriod, setChartPeriod] = useState<'day' | 'week' | 'month'>('week');
 
   // Fetch delivered orders
   const { data: deliveredOrders, isLoading } = useGetOrdersByStatusQuery('DELIVERED', {
-    pollingInterval: 60000 // Poll every 60 seconds
+    pollingInterval: 60000
   });
 
   // Filter orders for this driver
   const myDeliveries = deliveredOrders?.filter((order: any) =>
-    order.assignedDriver?._id === user?._id || order.assignedDriver === user?._id
+    order.assignedDriver?.id === user?.id || order.assignedDriver === user?.id
   ) || [];
 
   // Apply time filter
@@ -60,7 +67,7 @@ const DeliveryHistoryPage: React.FC = () => {
   const filteredDeliveries = filteredByTime.filter((order: any) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
-    const orderNumber = (order.orderNumber || order._id.slice(-6)).toLowerCase();
+    const orderNumber = (order.orderNumber || (order.id || order._id).slice(-6)).toLowerCase();
     const customerName = (order.customer?.name || '').toLowerCase();
     return orderNumber.includes(query) || customerName.includes(query);
   });
@@ -68,218 +75,364 @@ const DeliveryHistoryPage: React.FC = () => {
   // Calculate stats
   const stats = {
     totalDeliveries: filteredDeliveries.length,
-    totalEarnings: filteredDeliveries.reduce((sum: number, order: any) => {
-      // Assuming 20% commission for driver
-      return sum + (order.totalAmount * 0.2);
-    }, 0),
-    totalDistance: filteredDeliveries.length * 5.5, // Estimated avg 5.5km per delivery
-    avgDeliveryTime: 28 // Minutes
+    totalEarnings: filteredDeliveries.reduce((sum: number, order: any) => sum + (order.totalAmount * 0.2), 0),
+    totalDistance: filteredDeliveries.length * 5.5,
+    avgDeliveryTime: 28
   };
+
+  // Mock chart data (replace with real API data)
+  const deliveryChartData = [
+    { label: 'Mon', value: 12 },
+    { label: 'Tue', value: 15 },
+    { label: 'Wed', value: 18 },
+    { label: 'Thu', value: 14 },
+    { label: 'Fri', value: 22 },
+    { label: 'Sat', value: 28 },
+    { label: 'Sun', value: filteredDeliveries.length },
+  ];
+
+  // Group deliveries by date
+  const groupedDeliveries = filteredDeliveries.reduce((groups: any, order: any) => {
+    const date = new Date(order.deliveredAt || order.updatedAt);
+    const dateKey = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    if (!groups[dateKey]) {
+      groups[dateKey] = [];
+    }
+    groups[dateKey].push(order);
+    return groups;
+  }, {});
 
   if (isLoading) {
     return (
-      <Container maxWidth="md" sx={{ py: 3, textAlign: 'center' }}>
-        <Typography>Loading delivery history...</Typography>
+      <Container maxWidth="md" sx={{ py: spacing.lg }}>
+        <Box sx={{ mb: spacing.lg }}>
+          <Box sx={{ ...skeletonStyles.text('250px', '24px'), mb: spacing.sm }} />
+          <Box sx={{ ...skeletonStyles.text('180px', '14px') }} />
+        </Box>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: spacing.md, mb: spacing.lg }}>
+          {[1, 2, 3, 4].map((i) => (
+            <Box key={i} sx={{ ...skeletonStyles.card('100px') }} />
+          ))}
+        </Box>
       </Container>
     );
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 3 }}>
-      <Typography variant="h5" fontWeight="bold" gutterBottom>
-        Delivery History
-      </Typography>
+    <Box
+      sx={{
+        minHeight: '100%',
+        background: colors.surface.backgroundAlt,
+      }}
+    >
+      <Container maxWidth="md" sx={{ py: spacing.lg, pb: `calc(${spacing.xxl} + ${spacing.lg})` }}>
+        {/* Header */}
+        <Box sx={{ mb: spacing.lg }}>
+          <Typography
+            sx={{
+              fontSize: typography.fontSize.h1,
+              fontWeight: typography.fontWeight.bold,
+              color: colors.text.primary,
+              mb: spacing.xs,
+            }}
+          >
+            Delivery History
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: typography.fontSize.caption,
+              color: colors.text.secondary,
+            }}
+          >
+            {filteredDeliveries.length} {filteredDeliveries.length === 1 ? 'delivery' : 'deliveries'} completed
+          </Typography>
+        </Box>
 
-      {/* Filters */}
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }}>
-        <TextField
-          select
-          label="Time Period"
-          value={timeFilter}
-          onChange={(e) => setTimeFilter(e.target.value)}
-          size="small"
-          sx={{ minWidth: 150 }}
+        {/* Filter Bar */}
+        <Box
+          sx={{
+            display: 'flex',
+            gap: spacing.md,
+            marginBottom: spacing.lg,
+            background: colors.surface.background,
+            padding: spacing.base,
+            borderRadius: borderRadius.md,
+            boxShadow: shadows.subtle,
+          }}
         >
-          <MenuItem value="today">Today</MenuItem>
-          <MenuItem value="week">This Week</MenuItem>
-          <MenuItem value="month">This Month</MenuItem>
-          <MenuItem value="all">All Time</MenuItem>
-        </TextField>
+          <TextField
+            placeholder="Search orders..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            size="small"
+            fullWidth
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: colors.text.tertiary, fontSize: '20px' }} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: borderRadius.sm,
+                fontSize: typography.fontSize.body,
+                '& fieldset': {
+                  borderColor: colors.surface.border,
+                },
+                '&:hover fieldset': {
+                  borderColor: colors.primary.green,
+                },
+              },
+            }}
+          />
 
-        <TextField
-          label="Search orders..."
-          placeholder="Order # or Customer name"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          size="small"
-          fullWidth
-        />
-      </Stack>
+          <TextField
+            select
+            value={timeFilter}
+            onChange={(e) => setTimeFilter(e.target.value)}
+            size="small"
+            sx={{
+              minWidth: '120px',
+              '& .MuiOutlinedInput-root': {
+                borderRadius: borderRadius.sm,
+                fontSize: typography.fontSize.body,
+              },
+            }}
+          >
+            <MenuItem value="today">Today</MenuItem>
+            <MenuItem value="week">This Week</MenuItem>
+            <MenuItem value="month">This Month</MenuItem>
+            <MenuItem value="all">All Time</MenuItem>
+          </TextField>
+        </Box>
 
-      {/* Stats Cards */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={6} sm={3}>
-          <Card>
-            <CardContent sx={{ textAlign: 'center', py: 2 }}>
-              <LocalShippingIcon color="primary" sx={{ fontSize: 28, mb: 0.5 }} />
-              <Typography variant="h5" fontWeight="bold">
-                {stats.totalDeliveries}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Deliveries
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+        {/* Deliveries Chart */}
+        {filteredDeliveries.length > 0 && (
+          <Box sx={{ mb: spacing.lg }}>
+            <StatsChart
+              title="Deliveries Over Time"
+              data={deliveryChartData}
+              type="bar"
+              height={180}
+              showPeriodToggle
+              currentPeriod={chartPeriod}
+              onPeriodChange={setChartPeriod}
+            />
+          </Box>
+        )}
 
-        <Grid item xs={6} sm={3}>
-          <Card>
-            <CardContent sx={{ textAlign: 'center', py: 2 }}>
-              <MonetizationOnIcon color="success" sx={{ fontSize: 28, mb: 0.5 }} />
-              <Typography variant="h5" fontWeight="bold">
-                ₹{stats.totalEarnings.toFixed(0)}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Earned
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={6} sm={3}>
-          <Card>
-            <CardContent sx={{ textAlign: 'center', py: 2 }}>
-              <Typography variant="h5" fontWeight="bold">
-                {stats.totalDistance.toFixed(1)}km
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Distance
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={6} sm={3}>
-          <Card>
-            <CardContent sx={{ textAlign: 'center', py: 2 }}>
-              <AccessTimeIcon color="info" sx={{ fontSize: 28, mb: 0.5 }} />
-              <Typography variant="h5" fontWeight="bold">
-                {stats.avgDeliveryTime}m
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Avg Time
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Delivery List */}
-      {filteredDeliveries.length === 0 ? (
-        <Card>
-          <CardContent sx={{ textAlign: 'center', py: 6 }}>
-            <CheckCircleIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
+        {/* Timeline List */}
+        {filteredDeliveries.length === 0 ? (
+          <Box
+            sx={{
+              textAlign: 'center',
+              py: spacing.xxl,
+            }}
+          >
+            <Box sx={{ fontSize: '64px', mb: spacing.base, opacity: 0.5, display: 'flex', justifyContent: 'center', color: colors.text.secondary }}>
+              <CheckCircleIcon sx={{ fontSize: '64px' }} />
+            </Box>
+            <Typography
+              sx={{
+                fontSize: typography.fontSize.h2,
+                fontWeight: typography.fontWeight.semibold,
+                color: colors.text.primary,
+                mb: spacing.xs,
+              }}
+            >
               No Deliveries Found
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {searchQuery
-                ? 'Try adjusting your search or filters'
-                : 'Complete deliveries will appear here'}
+            <Typography
+              sx={{
+                fontSize: typography.fontSize.body,
+                color: colors.text.secondary,
+              }}
+            >
+              {searchQuery ? 'Try adjusting your search or filters' : 'Complete deliveries will appear here'}
             </Typography>
-          </CardContent>
-        </Card>
-      ) : (
-        <Stack spacing={2}>
-          {filteredDeliveries.map((order: any) => {
-            const deliveryTime = new Date(order.deliveredAt || order.updatedAt);
-            const earnings = (order.totalAmount * 0.2).toFixed(0); // 20% commission
+          </Box>
+        ) : (
+          <Box>
+            {Object.entries(groupedDeliveries).map(([date, orders]: [string, any]) => (
+              <Box key={date} sx={{ mb: spacing.lg }}>
+                {/* Date Header */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: spacing.md,
+                    mb: spacing.base,
+                  }}
+                >
+                  <Divider sx={{ flexGrow: 1, borderColor: colors.surface.border }} />
+                  <Typography
+                    sx={{
+                      fontSize: typography.fontSize.caption,
+                      fontWeight: typography.fontWeight.semibold,
+                      color: colors.text.secondary,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                    }}
+                  >
+                    {date}
+                  </Typography>
+                  <Divider sx={{ flexGrow: 1, borderColor: colors.surface.border }} />
+                </Box>
 
-            return (
-              <Card key={order._id}>
-                <CardContent>
-                  <Stack direction="row" justifyContent="space-between" alignItems="start" mb={2}>
-                    <Box>
-                      <Typography variant="subtitle1" fontWeight="bold">
-                        Order #{order.orderNumber || order._id.slice(-6).toUpperCase()}
-                      </Typography>
-                      <Chip
-                        icon={<CheckCircleIcon />}
-                        label="Delivered"
-                        color="success"
-                        size="small"
-                        sx={{ mt: 0.5 }}
-                      />
-                    </Box>
-                    <Box sx={{ textAlign: 'right' }}>
-                      <Typography variant="h6" fontWeight="bold" color="success.main">
-                        +₹{earnings}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Your earning
-                      </Typography>
-                    </Box>
-                  </Stack>
+                {/* Timeline Items */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: spacing.md }}>
+                  {orders.map((order: any) => {
+                    const deliveryTime = new Date(order.deliveredAt || order.updatedAt);
+                    const earnings = (order.totalAmount * 0.2).toFixed(0);
+                    const isExpanded = expandedOrder === (order.id || order._id);
 
-                  <Divider sx={{ my: 1.5 }} />
+                    return (
+                      <Box
+                        key={order.id || order._id}
+                        sx={{
+                          display: 'flex',
+                          gap: spacing.base,
+                          alignItems: 'flex-start',
+                        }}
+                      >
+                        {/* Timeline Dot */}
+                        <Box
+                          sx={{
+                            marginTop: spacing.xs,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <CheckCircleIcon
+                            sx={{
+                              fontSize: '20px',
+                              color: colors.semantic.success,
+                            }}
+                          />
+                        </Box>
 
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary">
-                        Customer
-                      </Typography>
-                      <Typography variant="body2" fontWeight="medium">
-                        {order.customer?.name || `${order.customer?.firstName || ''} ${order.customer?.lastName || ''}`.trim()}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary">
-                        Delivered At
-                      </Typography>
-                      <Typography variant="body2" fontWeight="medium">
-                        {deliveryTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={12}>
-                      <Typography variant="caption" color="text.secondary">
-                        Delivery Address
-                      </Typography>
-                      <Typography variant="body2">
-                        {order.deliveryAddress || 'N/A'}
-                      </Typography>
-                    </Grid>
-                  </Grid>
+                        {/* Order Card */}
+                        <Box
+                          sx={{
+                            flex: 1,
+                            background: colors.surface.background,
+                            borderRadius: borderRadius.md,
+                            padding: spacing.base,
+                            boxShadow: shadows.subtle,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'flex-start',
+                              mb: spacing.sm,
+                            }}
+                          >
+                            <Box sx={{ flex: 1 }}>
+                              <Typography
+                                sx={{
+                                  fontSize: typography.fontSize.caption,
+                                  color: colors.text.secondary,
+                                  lineHeight: typography.lineHeight.tight,
+                                }}
+                              >
+                                {deliveryTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </Typography>
+                              <Typography
+                                sx={{
+                                  fontSize: typography.fontSize.body,
+                                  fontWeight: typography.fontWeight.semibold,
+                                  color: colors.text.primary,
+                                }}
+                              >
+                                #{order.orderNumber || (order.id || order._id).slice(-6).toUpperCase()} · ₹{order.totalAmount}
+                              </Typography>
+                            </Box>
 
-                  {order.items && order.items.length > 0 && (
-                    <>
-                      <Divider sx={{ my: 1.5 }} />
-                      <Typography variant="caption" color="text.secondary">
-                        Items ({order.items.length})
-                      </Typography>
-                      <List dense disablePadding>
-                        {order.items.slice(0, 2).map((item: any, index: number) => (
-                          <ListItem key={index} disablePadding>
-                            <ListItemText
-                              primary={`${item.quantity}x ${item.name}`}
-                              primaryTypographyProps={{ variant: 'body2', color: 'text.secondary' }}
-                            />
-                          </ListItem>
-                        ))}
-                        {order.items.length > 2 && (
-                          <Typography variant="caption" color="text.secondary">
-                            +{order.items.length - 2} more items
+                            <Box sx={{ textAlign: 'right' }}>
+                              <Typography
+                                sx={{
+                                  fontSize: typography.fontSize.h2,
+                                  fontWeight: typography.fontWeight.bold,
+                                  color: colors.semantic.success,
+                                  lineHeight: typography.lineHeight.tight,
+                                }}
+                              >
+                                +₹{earnings}
+                              </Typography>
+                              <Typography
+                                sx={{
+                                  fontSize: typography.fontSize.small,
+                                  color: colors.text.tertiary,
+                                }}
+                              >
+                                earned
+                              </Typography>
+                            </Box>
+                          </Box>
+
+                          <Typography
+                            sx={{
+                              fontSize: typography.fontSize.caption,
+                              color: colors.text.secondary,
+                              mb: spacing.xs,
+                            }}
+                          >
+                            {order.customer?.name || 'Customer'} · {(stats.totalDistance / stats.totalDeliveries).toFixed(1)} km · {stats.avgDeliveryTime} min
                           </Typography>
-                        )}
-                      </List>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </Stack>
-      )}
-    </Container>
+
+                          {/* Expandable Details */}
+                          <Collapse in={isExpanded}>
+                            <Divider sx={{ my: spacing.sm }} />
+                            <Box sx={{ fontSize: typography.fontSize.caption, color: colors.text.secondary }}>
+                              <Box sx={{ mb: spacing.xs }}>
+                                <strong>Address:</strong> {order.deliveryAddress || 'N/A'}
+                              </Box>
+                              {order.items && order.items.length > 0 && (
+                                <Box>
+                                  <strong>Items ({order.items.length}):</strong>
+                                  {order.items.slice(0, 3).map((item: any, idx: number) => (
+                                    <Box key={idx} sx={{ ml: spacing.sm }}>
+                                      • {item.quantity}x {item.name}
+                                    </Box>
+                                  ))}
+                                  {order.items.length > 3 && (
+                                    <Box sx={{ ml: spacing.sm, fontStyle: 'italic' }}>
+                                      +{order.items.length - 3} more items
+                                    </Box>
+                                  )}
+                                </Box>
+                              )}
+                            </Box>
+                          </Collapse>
+
+                          <IconButton
+                            size="small"
+                            onClick={() => setExpandedOrder(isExpanded ? null : (order.id || order._id))}
+                            sx={{
+                              marginTop: spacing.xs,
+                              color: colors.text.tertiary,
+                              transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)',
+                              transition: `transform ${animations.duration.normal} ${animations.easing.standard}`,
+                            }}
+                          >
+                            <ExpandMoreIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </Box>
+                    );
+                  })}
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        )}
+      </Container>
+    </Box>
   );
 };
 

@@ -23,7 +23,7 @@ export function VirtualList<T>({
   overscan = 3,
   renderItem,
   onScrollEnd,
-}: VirtualListProps<T>): JSX.Element {
+}: VirtualListProps<T>): React.ReactElement {
   const [scrollTop, setScrollTop] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 

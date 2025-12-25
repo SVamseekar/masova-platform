@@ -1,0 +1,666 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Container,
+  Typography,
+  Button,
+  Card,
+  CardContent,
+  Grid,
+  Stack,
+  Switch,
+  FormControlLabel,
+  CircularProgress,
+  Divider,
+  Alert
+} from '@mui/material';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../../store/store';
+import { useStartSessionMutation, useEndSessionMutation } from '../../../store/api/sessionApi';
+import { useGetDriverPerformanceQuery, useUpdateDriverStatusMutation } from '../../../store/api/driverApi';
+import { websocketService } from '../../../services/websocketService';
+
+interface DeliveryHomePageProps {
+  isOnline: boolean;
+  setIsOnline: (value: boolean) => void;
+  setActiveDeliveries: (value: number) => void;
+}
+
+const DeliveryHomePage: React.FC<DeliveryHomePageProps> = ({ isOnline, setIsOnline, setActiveDeliveries }) => {
+  const { user } = useSelector((state: RootState) => state.auth);
+  const [startSession] = useStartSessionMutation();
+  const [endSession] = useEndSessionMutation();
+  const [updateDriverStatus] = useUpdateDriverStatusMutation(); // Phase 8: Backend status update
+
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [isUsingFallback, setIsUsingFallback] = useState(false);
+  const [locationError, setLocationError] = useState<string>('');
+  const [locationMode, setLocationMode] = useState<'auto' | 'manual'>('auto'); // Always start with Auto mode
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(() => {
+    // Restore session start time from localStorage
+    const savedTime = localStorage.getItem(`driver_session_start_${user?.id}`);
+    return savedTime ? new Date(savedTime) : null;
+  });
+  const [elapsedTime, setElapsedTime] = useState('00:00:00');
+
+  // Fetch real driver performance data for today
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+  const { data: performanceData, isLoading: isLoadingPerformance } = useGetDriverPerformanceQuery(
+    {
+      driverId: user?.id || '',
+      startDate: today,
+      endDate: today
+    },
+    {
+      skip: !user?.id,
+      pollingInterval: 30000 // Refresh every 30 seconds
+    }
+  );
+
+  // Calculate today's stats from performance data
+  const todayStats = {
+    deliveries: performanceData?.totalDeliveries || 0,
+    earnings: performanceData?.totalEarnings || 0,
+    distance: performanceData?.totalDistanceCovered || 0,
+    avgDeliveryTime: Math.round(performanceData?.averageDeliveryTime || 0)
+  };
+
+  // Get store/default location for driver
+  const getDefaultLocation = (): { latitude: number; longitude: number } => {
+    // Try to get saved location from localStorage
+    const savedLocation = localStorage.getItem(`driver_default_location_${user?.id}`);
+    if (savedLocation) {
+      return JSON.parse(savedLocation);
+    }
+    // Default to Bangalore city center
+    return {
+      latitude: 12.9716,
+      longitude: 77.5946
+    };
+  };
+
+  // Get current location - GPS is TOP PRIORITY
+  const getCurrentLocation = (): Promise<{ latitude: number; longitude: number }> => {
+    return new Promise((resolve) => {
+      // If user manually switched to manual mode (only after GPS failed multiple times)
+      if (locationMode === 'manual') {
+        const manualCoords = getDefaultLocation();
+        setLocation(manualCoords);
+        setIsUsingFallback(true);
+        setLocationError('Using manual location. Click "Try GPS" to enable GPS tracking.');
+        console.log('📍 Manual mode active:', manualCoords);
+        resolve(manualCoords);
+        return;
+      }
+
+      // PRIORITY: Always try GPS first (Auto mode)
+      if (!navigator.geolocation) {
+        const fallbackCoords = getDefaultLocation();
+        console.warn('⚠️ GPS not supported on this device');
+        setLocation(fallbackCoords);
+        setIsUsingFallback(true);
+        setLocationError('GPS not supported. Using fallback location.');
+        resolve(fallbackCoords);
+        return;
+      }
+
+      setIsLoadingLocation(true);
+      setIsUsingFallback(false);
+      setLocationError('');
+
+      // Try to get REAL GPS with high accuracy
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const coords = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          };
+          setLocation(coords);
+          setIsLoadingLocation(false);
+          setIsUsingFallback(false);
+          setLocationError('');
+          console.log('✅ Real GPS location acquired:', coords);
+          resolve(coords);
+        },
+        (error) => {
+          setIsLoadingLocation(false);
+          // Only fall back if GPS completely fails
+          const fallbackCoords = getDefaultLocation();
+
+          let errorMsg = 'GPS unavailable. ';
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMsg += 'Please enable location permissions in your browser settings.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMsg += 'GPS signal not found. Enable location services on your device.';
+              break;
+            case error.TIMEOUT:
+              errorMsg += 'GPS request timed out.';
+              break;
+          }
+
+          console.warn('⚠️ GPS failed:', errorMsg, '→ Using fallback');
+          setLocation(fallbackCoords);
+          setIsUsingFallback(true);
+          setLocationError(errorMsg + ' Using fallback location.');
+
+          resolve(fallbackCoords);
+        },
+        {
+          enableHighAccuracy: true, // HIGH ACCURACY - GPS priority
+          timeout: 10000, // Give GPS more time to acquire signal
+          maximumAge: 30000 // Accept cached location up to 30 seconds old
+        }
+      );
+    });
+  };
+
+  // Persist session start time to localStorage
+  useEffect(() => {
+    if (user?.id) {
+      if (sessionStartTime) {
+        localStorage.setItem(`driver_session_start_${user.id}`, sessionStartTime.toISOString());
+      } else {
+        localStorage.removeItem(`driver_session_start_${user.id}`);
+      }
+    }
+  }, [sessionStartTime, user?.id]);
+
+  // Update elapsed time
+  useEffect(() => {
+    if (!sessionStartTime) return;
+
+    const interval = setInterval(() => {
+      const now = new Date();
+      const diff = now.getTime() - sessionStartTime.getTime();
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      setElapsedTime(
+        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      );
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [sessionStartTime]);
+
+  // Continuous location tracking and broadcasting when online
+  useEffect(() => {
+    if (!isOnline || !user?.id) return;
+
+    let watchId: number | null = null;
+    let updateInterval: NodeJS.Timeout | null = null;
+
+    // Connect to WebSocket for location broadcasting (optional - graceful degradation)
+    const connectWebSocket = async () => {
+      // Don't attempt connection if already connected or connecting
+      if (websocketService.isConnected()) {
+        console.log('📡 WebSocket already connected');
+        return;
+      }
+
+      try {
+        await websocketService.connect();
+        console.log('📡 WebSocket connected for location broadcasting');
+      } catch (error) {
+        console.warn('⚠️ WebSocket connection failed - driver tracking will work in local mode only:', error);
+        // App continues to work - location updates stored locally
+      }
+    };
+
+    // Only attempt WebSocket if delivery service is expected to be running
+    // In production, this would always be available
+    connectWebSocket();
+
+    // PRIORITY: Try GPS continuous tracking first (Auto mode is default)
+    if (locationMode === 'auto' && navigator.geolocation) {
+      console.log('🎯 Starting GPS continuous tracking (HIGH PRIORITY)...');
+
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const coords = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            speed: position.coords.speed || undefined,
+            heading: position.coords.heading || undefined,
+            timestamp: new Date().toISOString()
+          };
+
+          // Update local state
+          setLocation({ latitude: coords.latitude, longitude: coords.longitude });
+          setIsUsingFallback(false);
+          setLocationError('');
+
+          // Broadcast to backend via WebSocket
+          if (websocketService.isConnected()) {
+            websocketService.sendLocationUpdate(user.id, coords);
+            console.log('✅ GPS location sent to backend:', coords);
+          }
+        },
+        (error) => {
+          console.warn('⚠️ GPS tracking error:', error.message);
+          // Don't auto-switch to manual - let user decide
+          // Just use fallback and show warning
+          const fallbackCoords = getDefaultLocation();
+          setLocation(fallbackCoords);
+          setIsUsingFallback(true);
+
+          let errorMsg = 'GPS signal lost. ';
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMsg += 'Enable location permissions to use GPS.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMsg += 'Enable location services on your device.';
+              break;
+            case error.TIMEOUT:
+              errorMsg += 'GPS signal weak.';
+              break;
+          }
+          setLocationError(errorMsg);
+        },
+        {
+          enableHighAccuracy: true, // HIGH ACCURACY GPS
+          timeout: 10000,
+          maximumAge: 10000 // Update every 10 seconds
+        }
+      );
+    }
+
+    // If in manual mode OR GPS not available, send periodic updates with default location
+    if (locationMode === 'manual' || !navigator.geolocation) {
+      // Send location update every 30 seconds
+      updateInterval = setInterval(() => {
+        const coords = location || getDefaultLocation();
+
+        // Broadcast to backend via WebSocket
+        if (websocketService.isConnected()) {
+          websocketService.sendLocationUpdate(user.id, {
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            timestamp: new Date().toISOString()
+          });
+          console.log('📍 Manual location sent to backend:', coords);
+        }
+      }, 30000); // Every 30 seconds
+
+      // Send initial update immediately
+      const coords = location || getDefaultLocation();
+      if (websocketService.isConnected()) {
+        websocketService.sendLocationUpdate(user.id, {
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+
+    // Cleanup function
+    return () => {
+      if (watchId !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchId);
+        console.log('📍 Stopped watching GPS location');
+      }
+      if (updateInterval) {
+        clearInterval(updateInterval);
+        console.log('📍 Stopped manual location updates');
+      }
+      // Disconnect WebSocket when going offline
+      if (!isOnline) {
+        websocketService.disconnect();
+        console.log('📡 WebSocket disconnected');
+      }
+    };
+  }, [isOnline, locationMode, user?.id]); // Removed 'location' from deps to prevent infinite loop
+
+  const handleToggleOnline = async () => {
+    try {
+      if (!isOnline) {
+        // Going online - start session with GPS (or fallback location)
+        try {
+          const coords = await getCurrentLocation();
+          console.log('Driver clocking in at:', coords);
+        } catch (error) {
+          console.warn('Location unavailable, proceeding without GPS:', error);
+        }
+
+        if (user?.id && user?.storeId) {
+          try {
+            // Phase 2 & 8: Update driver status to AVAILABLE in backend
+            // Backend will validate that driver has active working session
+            await updateDriverStatus({
+              driverId: user.id,
+              status: 'AVAILABLE'
+            }).unwrap();
+            console.log('✅ Driver status set to AVAILABLE in backend');
+          } catch (error: any) {
+            // Phase 2: Check if error is due to missing working session
+            if (error?.data?.requiresClockIn || error?.status === 403) {
+              setLocationError(error?.data?.error || 'You must be clocked in by a manager before going online');
+              alert('You must be clocked in by a manager before going online.\n\nPlease contact your manager to clock you in.');
+              return; // Don't proceed with going online
+            }
+            console.warn('⚠️ Failed to update driver status in backend, proceeding with local state:', error);
+          }
+
+          try {
+            // Backend session API should accept GPS location for driver clock-in
+            await startSession({
+              employeeId: user.id,
+              storeId: user.storeId
+            }).unwrap();
+          } catch (error) {
+            console.warn('Session API call failed, proceeding with local state:', error);
+          }
+
+          setIsOnline(true);
+          setSessionStartTime(new Date());
+          setActiveDeliveries(0);
+        }
+      } else {
+        // Going offline - end session
+        if (user?.id) {
+          try {
+            const coords = await getCurrentLocation();
+            console.log('Driver clocking out at:', coords);
+          } catch (error) {
+            console.warn('Location unavailable, proceeding without GPS:', error);
+          }
+
+          try {
+            // Phase 8: Update driver status to OFF_DUTY in backend
+            await updateDriverStatus({
+              driverId: user.id,
+              status: 'OFF_DUTY'
+            }).unwrap();
+            console.log('✅ Driver status set to OFF_DUTY in backend');
+          } catch (error) {
+            console.warn('⚠️ Failed to update driver status in backend, proceeding with local state:', error);
+          }
+
+          try {
+            // Backend session API should accept GPS location for driver clock-out
+            await endSession().unwrap();
+          } catch (error) {
+            console.warn('Session API call failed, proceeding with local state:', error);
+          }
+
+          setIsOnline(false);
+          setSessionStartTime(null);
+          setElapsedTime('00:00:00');
+        }
+      }
+    } catch (error: any) {
+      console.error('Error toggling online status:', error);
+      // Don't show error to user, just log it
+      // setLocationError(error.message || 'Failed to update status');
+    }
+  };
+
+  return (
+    <Container maxWidth="md" sx={{ py: 3 }}>
+      {/* Online/Offline Toggle Card */}
+      <Card sx={{ mb: 3, bgcolor: isOnline ? 'success.light' : 'grey.100' }}>
+        <CardContent>
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Box>
+              <Typography variant="h5" fontWeight="bold" gutterBottom>
+                {isOnline ? '🟢 You are Online' : '⚫ You are Offline'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {isOnline
+                  ? 'Ready to accept delivery orders'
+                  : 'Turn online to start accepting deliveries'}
+              </Typography>
+            </Box>
+            <Box>
+              {isLoadingLocation ? (
+                <CircularProgress size={40} />
+              ) : (
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={isOnline}
+                      onChange={handleToggleOnline}
+                      color="success"
+                      size="medium"
+                    />
+                  }
+                  label=""
+                  sx={{ m: 0 }}
+                />
+              )}
+            </Box>
+          </Stack>
+
+          {isOnline && sessionStartTime && (
+            <Box sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+              <Stack direction="row" spacing={3}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Session Duration
+                  </Typography>
+                  <Typography variant="h6" fontWeight="bold">
+                    {elapsedTime}
+                  </Typography>
+                </Box>
+                {location && (
+                  <Box>
+                    <Typography variant="caption" color={isUsingFallback ? 'warning.main' : 'success.main'}>
+                      {isUsingFallback ? '⚠️ Fallback Location' : '✅ Real GPS'}
+                    </Typography>
+                    <Typography variant="body2" fontWeight="bold">
+                      {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
+                    </Typography>
+                  </Box>
+                )}
+              </Stack>
+            </Box>
+          )}
+
+          {locationError && (
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              {locationError}
+            </Alert>
+          )}
+
+          {isUsingFallback && (
+            <Box sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+              <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    Location Mode
+                  </Typography>
+                  <Typography variant="body2" fontWeight="medium" color={locationMode === 'auto' ? 'warning.main' : 'text.primary'}>
+                    {locationMode === 'auto' ? '⚠️ GPS Unavailable - Using Fallback' : '📍 Manual (Fixed location)'}
+                  </Typography>
+                </Box>
+                {locationMode === 'auto' && (
+                  <Button
+                    size="small"
+                    variant="contained"
+                    color="primary"
+                    onClick={() => {
+                      getCurrentLocation();
+                    }}
+                  >
+                    🔄 Retry GPS
+                  </Button>
+                )}
+                {locationMode === 'manual' && (
+                  <Button
+                    size="small"
+                    variant="contained"
+                    color="success"
+                    onClick={() => {
+                      setLocationMode('auto');
+                      getCurrentLocation();
+                    }}
+                  >
+                    🎯 Enable GPS
+                  </Button>
+                )}
+              </Stack>
+            </Box>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Today's Stats */}
+      <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ mb: 2 }}>
+        Today's Performance
+      </Typography>
+
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={6} sm={3}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <LocalShippingIcon sx={{ fontSize: 32, color: 'primary.main', mb: 1 }} />
+              {isLoadingPerformance ? (
+                <CircularProgress size={24} />
+              ) : (
+                <>
+                  <Typography variant="h4" fontWeight="bold">
+                    {todayStats.deliveries}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Deliveries
+                  </Typography>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={6} sm={3}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <MonetizationOnIcon sx={{ fontSize: 32, color: 'success.main', mb: 1 }} />
+              {isLoadingPerformance ? (
+                <CircularProgress size={24} />
+              ) : (
+                <>
+                  <Typography variant="h4" fontWeight="bold">
+                    ₹{todayStats.earnings}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Earnings
+                  </Typography>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={6} sm={3}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <TrendingUpIcon sx={{ fontSize: 32, color: 'info.main', mb: 1 }} />
+              {isLoadingPerformance ? (
+                <CircularProgress size={24} />
+              ) : (
+                <>
+                  <Typography variant="h4" fontWeight="bold">
+                    {todayStats.distance}km
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Distance
+                  </Typography>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={6} sm={3}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <AccessTimeIcon sx={{ fontSize: 32, color: 'warning.main', mb: 1 }} />
+              {isLoadingPerformance ? (
+                <CircularProgress size={24} />
+              ) : (
+                <>
+                  <Typography variant="h4" fontWeight="bold">
+                    {todayStats.avgDeliveryTime}m
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Avg Time
+                  </Typography>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Instructions */}
+      <Card>
+        <CardContent>
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
+            How It Works
+          </Typography>
+          <Divider sx={{ my: 2 }} />
+          <Stack spacing={2}>
+            <Box>
+              <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                1. Go Online
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Toggle the switch above to go online. GPS location is required for clock-in.
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                2. Accept Orders
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                New delivery orders will appear in the "Active" tab. Accept and start delivery.
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                3. Navigate & Deliver
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Use the map navigation to reach the customer. Mark as delivered when complete.
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                4. Return to Store
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                After delivery, return to store to pick up the next order.
+              </Typography>
+            </Box>
+          </Stack>
+        </CardContent>
+      </Card>
+
+      {!isOnline && (
+        <Box sx={{ mt: 3, textAlign: 'center' }}>
+          <Button
+            variant="contained"
+            size="large"
+            startIcon={<LocationOnIcon />}
+            onClick={handleToggleOnline}
+            disabled={isLoadingLocation}
+            sx={{ px: 4, py: 1.5 }}
+          >
+            {isLoadingLocation ? 'Getting Location...' : 'Go Online & Start Deliveries'}
+          </Button>
+        </Box>
+      )}
+    </Container>
+  );
+};
+
+export default DeliveryHomePage;

@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
+import AppHeader from '../../components/common/AppHeader';
 import { colors, spacing, typography, shadows, borderRadius } from '../../styles/design-tokens';
 import { createNeumorphicSurface, createCard } from '../../styles/neumorphic-utils';
 import { useAppSelector } from '../../store/hooks';
+import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
+import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 
 // These would come from orderApi - for now using placeholder
 interface PrepTimeByItem {
@@ -29,6 +32,7 @@ interface PrepTimeDistribution {
 
 const KitchenAnalyticsPage: React.FC = () => {
   const user = useAppSelector((state) => state.auth.user);
+  const { handleBack } = useSmartBackNavigation();
   const storeId = user?.storeId || 'default-store';
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
@@ -80,6 +84,7 @@ const KitchenAnalyticsPage: React.FC = () => {
     backgroundColor: colors.surface.background,
     minHeight: '100vh',
     fontFamily: typography.fontFamily.primary,
+    paddingTop: '80px',
   };
 
   const headerStyles: React.CSSProperties = {
@@ -193,6 +198,7 @@ const KitchenAnalyticsPage: React.FC = () => {
 
   return (
     <div style={containerStyles}>
+      <AppHeader title="Kitchen Analytics" showBackButton={true} onBack={handleBack} showManagerNav={true} />
       <div style={headerStyles}>
         <h1 style={titleStyles}>Kitchen Analytics</h1>
         <input
@@ -385,4 +391,4 @@ const KitchenAnalyticsPage: React.FC = () => {
   );
 };
 
-export default KitchenAnalyticsPage;
+export default withPageStoreContext(KitchenAnalyticsPage, 'kitchen-analytics');

@@ -28,7 +28,7 @@ spring:
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-512-bits-for-HS512-algorithm-security-requirement}
+  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-256-bits-for-production-security}
   access-token-expiration: 3600000
   refresh-token-expiration: 604800000
 
@@ -67,3 +67,107 @@ management:
   endpoint:
     health:
       show-details: always
+
+# Resilience4j Circuit Breaker and Retry Configuration
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        failure-rate-threshold: 50
+        slow-call-rate-threshold: 80
+        slow-call-duration-threshold: 3s
+        minimum-number-of-calls: 10
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 20
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 5
+        automatic-transition-from-open-to-half-open-enabled: true
+    instances:
+      orderService:
+        base-config: default
+        failure-rate-threshold: 60
+        minimum-number-of-calls: 10
+        wait-duration-in-open-state: 15s
+      customerService:
+        base-config: default
+        failure-rate-threshold: 60
+        minimum-number-of-calls: 10
+        wait-duration-in-open-state: 15s
+      menuService:
+        base-config: default
+        failure-rate-threshold: 70
+        minimum-number-of-calls: 10
+        wait-duration-in-open-state: 10s
+      userService:
+        base-config: default
+        failure-rate-threshold: 60
+        minimum-number-of-calls: 10
+        wait-duration-in-open-state: 15s
+      inventoryService:
+        base-config: default
+        failure-rate-threshold: 50
+        minimum-number-of-calls: 10
+        wait-duration-in-open-state: 20s
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 500ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - org.springframework.web.client.RestClientException
+          - org.springframework.web.client.HttpServerErrorException
+          - org.springframework.web.client.ResourceAccessException
+          - java.io.IOException
+          - java.net.SocketTimeoutException
+          - java.util.concurrent.TimeoutException
+    instances:
+      orderService:
+        base-config: default
+      customerService:
+        base-config: default
+      menuService:
+        base-config: default
+      userService:
+        base-config: default
+      inventoryService:
+        base-config: default
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 5s
+        cancel-running-future: true
+
+---
+# Production Profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+      auto-index-creation: false
+  redis:
+    host: ${REDIS_HOST}
+    password: ${REDIS_PASSWORD}
+    ssl: true
+    lettuce:
+      pool:
+        max-active: 100
+
+logging:
+  level:
+    root: WARN
+    com.MaSoVa: INFO
+    org.springframework: WARN
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
+  endpoint:
+    health:
+      show-details: when-authorized

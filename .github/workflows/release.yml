@@ -114,22 +114,23 @@ jobs:
           cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
 
       # Build Frontend Docker Image
-      # TODO: Fix TypeScript errors in frontend before enabling
-      # - name: Build Frontend
-      #   working-directory: frontend
-      #   run: |
-      #     npm ci
-      #     npm run build
+      - name: Build Frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
 
-      # - name: Build and Push Frontend
-      #   uses: docker/build-push-action@v5
-      #   with:
-      #     context: ./frontend
-      #     file: ./frontend/Dockerfile.production
-      #     push: true
-      #     tags: |
-      #       ${{ env.DOCKER_FRONTEND_IMAGE }}:${{ steps.version.outputs.VERSION }}
-      #       ${{ env.DOCKER_FRONTEND_IMAGE }}:latest
+      - name: Build and Push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile.production
+          push: true
+          tags: |
+            ${{ env.DOCKER_FRONTEND_IMAGE }}:${{ steps.version.outputs.VERSION }}
+            ${{ env.DOCKER_FRONTEND_IMAGE }}:latest
+          cache-from: type=registry,ref=${{ env.DOCKER_FRONTEND_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.DOCKER_FRONTEND_IMAGE }}:buildcache,mode=max
 
   # ============================================================================
   # Job 3: Create GitHub Release (FREE)

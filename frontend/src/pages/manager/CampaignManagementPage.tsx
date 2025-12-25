@@ -1,4 +1,9 @@
 import React, { useState } from 'react';
+import { useAppSelector } from '../../store/hooks';
+import { selectCurrentUser } from '../../store/slices/authSlice';
+import AppHeader from '../../components/common/AppHeader';
+import { usePageStore } from '../../contexts/PageStoreContext';
+import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import {
   Box,
   Container,
@@ -25,6 +30,7 @@ import {
   MenuItem,
   LinearProgress,
 } from '@mui/material';
+import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import {
   Add as AddIcon,
   Campaign as CampaignIcon,
@@ -50,6 +56,7 @@ import { format } from 'date-fns';
 import CampaignBuilder from '../../components/notifications/CampaignBuilder';
 
 const CampaignManagementPage: React.FC = () => {
+  const { handleBack } = useSmartBackNavigation();
   const [currentTab, setCurrentTab] = useState(0);
   const [page, setPage] = useState(0);
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
@@ -58,7 +65,12 @@ const CampaignManagementPage: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [menuCampaign, setMenuCampaign] = useState<Campaign | null>(null);
 
-  const { data: campaignsData, isLoading, refetch } = useGetAllCampaignsQuery({ page, size: 20 });
+  // Get storeId
+  const currentUser = useAppSelector(selectCurrentUser);
+  const { selectedStoreId } = usePageStore();
+  const storeId = selectedStoreId || currentUser?.storeId || '';
+
+  const { data: campaignsData, isLoading, refetch } = useGetAllCampaignsQuery({ storeId, page, size: 20 }, { skip: !storeId });
   const [executeCampaign] = useExecuteCampaignMutation();
   const [cancelCampaign] = useCancelCampaignMutation();
   const [deleteCampaign] = useDeleteCampaignMutation();
@@ -196,9 +208,11 @@ const CampaignManagementPage: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      {/* Header */}
-      <Box
+    <>
+      <AppHeader title="Campaign Management" showBackButton={true} onBack={handleBack} showManagerNav={true} />
+      <Container maxWidth="xl" sx={{ py: 4, paddingTop: '80px' }}>
+        {/* Header */}
+        <Box
         sx={{
           ...createNeumorphicSurface('raised', 'md', '2xl'),
           p: 4,
@@ -598,7 +612,8 @@ const CampaignManagementPage: React.FC = () => {
         </DialogActions>
       </Dialog>
     </Container>
+    </>
   );
 };
 
-export default CampaignManagementPage;
+export default withPageStoreContext(CampaignManagementPage, 'campaigns');

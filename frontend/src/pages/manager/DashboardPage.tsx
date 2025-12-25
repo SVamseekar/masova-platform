@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AppHeader from '../../components/common/AppHeader';
-import StoreSelector from '../../components/StoreSelector';
 import Card from '../../components/ui/neumorphic/Card';
 import Button from '../../components/ui/neumorphic/Button';
 import Badge from '../../components/ui/neumorphic/Badge';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { selectSelectedStoreId, selectSelectedStoreName } from '../../store/slices/cartSlice';
+import { usePageStore } from '../../contexts/PageStoreContext';
+import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import {
   useGetActiveStoreSessionsQuery,
   useApproveSessionMutation,
@@ -16,6 +16,8 @@ import {
 } from '../../store/api/sessionApi';
 import { useGetStoreMetricsQuery } from '../../store/api/storeApi';
 import { useGetStoreOrdersQuery } from '../../store/api/orderApi';
+import { useCheckWeeklyScheduleExistsQuery } from '../../store/api/shiftApi';
+import { pushNotificationService } from '../../services/pushNotificationService';
 import { colors, shadows, spacing, typography } from '../../styles/design-tokens';
 
 // TypeScript interfaces
@@ -50,13 +52,10 @@ const DashboardPage: React.FC = () => {
   const getTabFromPath = () => {
     if (location.pathname.includes('/staff')) return 'staff';
     if (location.pathname.includes('/analytics')) return 'analytics';
-    if (location.pathname.includes('/links')) return 'links';
     return 'overview';
   };
 
   const [activeTab, setActiveTab] = useState(getTabFromPath());
-  const [showLinkDialog, setShowLinkDialog] = useState(false);
-  const [linkType, setLinkType] = useState<'pos' | 'driver' | null>(null);
 
   // Update tab when URL changes
   useEffect(() => {
@@ -64,30 +63,84 @@ const DashboardPage: React.FC = () => {
   }, [location.pathname]);
 
   const currentUser = useAppSelector(selectCurrentUser);
-  const selectedStoreId = useAppSelector(selectSelectedStoreId);
-  const selectedStoreName = useAppSelector(selectSelectedStoreName);
+  const { selectedStoreId } = usePageStore();
 
   // Use selected store or fallback to user's store
   const storeId = selectedStoreId || currentUser?.storeId || '';
 
   // API Hooks
-  const { data: sessions = [], isLoading: loadingSessions, error: sessionsError } = useGetActiveStoreSessionsQuery(undefined, {
+  // Pass storeId to trigger refetch when store changes
+  const { data: sessions = [], isLoading: loadingSessions, error: sessionsError, refetch: refetchSessions } = useGetActiveStoreSessionsQuery(storeId, {
     skip: !storeId,
     pollingInterval: 30000, // Poll every 30 seconds for real-time updates
   });
 
-  const { data: storeMetrics, isLoading: loadingMetrics } = useGetStoreMetricsQuery(undefined, {
+  // Pass storeId to trigger refetch when store changes
+  const { data: storeMetrics, isLoading: loadingMetrics, refetch: refetchMetrics } = useGetStoreMetricsQuery(storeId, {
     skip: !storeId,
     pollingInterval: 60000, // Poll every minute
   });
 
-  const { data: liveOrders = [], isLoading: loadingOrders } = useGetStoreOrdersQuery(undefined, {
+  // Pass storeId to trigger refetch when store changes
+  const { data: liveOrders = [], isLoading: loadingOrders, refetch: refetchOrders } = useGetStoreOrdersQuery(storeId, {
     skip: !storeId,
     pollingInterval: 10000, // Poll every 10 seconds for live updates
   });
 
+  // Refetch all data when store changes
+  useEffect(() => {
+    if (storeId) {
+      refetchSessions();
+      refetchMetrics();
+      refetchOrders();
+    }
+  }, [storeId, refetchSessions, refetchMetrics, refetchOrders]);
+
   const [approveSession, { isLoading: approvingSession }] = useApproveSessionMutation();
   const [rejectSession, { isLoading: rejectingSession }] = useRejectSessionMutation();
+
+  // Check if we should show schedule reminder (Thursday-Sunday)
+  const today = new Date();
+  const dayOfWeek = today.getDay(); // 0 = Sunday, 4 = Thursday, 6 = Saturday
+  const shouldShowScheduleReminder = dayOfWeek === 0 || dayOfWeek >= 4; // Thursday, Friday, Saturday, Sunday
+
+  // Calculate next Monday's date for schedule check
+  const getNextMonday = () => {
+    const date = new Date();
+    const day = date.getDay();
+    const daysUntilMonday = day === 0 ? 1 : 8 - day; // If Sunday, 1 day, otherwise 8 - current day
+    date.setDate(date.getDate() + daysUntilMonday);
+    return date.toISOString().split('T')[0]; // YYYY-MM-DD format
+  };
+
+  const nextMondayDate = getNextMonday();
+
+  // Check if next week's schedule exists
+  const { data: scheduleCheck } = useCheckWeeklyScheduleExistsQuery(
+    { storeId, startDate: nextMondayDate },
+    { skip: !storeId || !shouldShowScheduleReminder }
+  );
+
+  // Show banner if it's Thursday-Sunday AND next week has no or incomplete schedule
+  const showScheduleBanner = shouldShowScheduleReminder &&
+    scheduleCheck &&
+    (!scheduleCheck.exists || scheduleCheck.shiftCount < 5);
+
+  // Request notification permission and schedule push notifications
+  useEffect(() => {
+    if (showScheduleBanner && scheduleCheck) {
+      // Request permission on first load
+      pushNotificationService.requestPermission().then(granted => {
+        if (granted) {
+          // Schedule push notification reminder
+          pushNotificationService.scheduleWeeklyReminder(nextMondayDate);
+        }
+      });
+
+      // Clean up old reminder flags
+      pushNotificationService.clearOldReminders();
+    }
+  }, [showScheduleBanner, nextMondayDate, scheduleCheck]);
 
   // Calculate sales data from metrics (placeholder until analytics API is fully connected)
   const salesData: SalesData = {
@@ -146,86 +199,7 @@ const DashboardPage: React.FC = () => {
     return date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
   };
 
-  // Management page categories
-  const managementCategories = [
-    {
-      title: 'Orders & Payments',
-      icon: '💰',
-      color: colors.semantic.success,
-      items: [
-        { path: '/manager/orders', label: 'Order Management', icon: '📦', description: 'Track and manage all orders' },
-        { path: '/manager/payments', label: 'Payments', icon: '💳', description: 'Payment processing & history' },
-        { path: '/manager/refunds', label: 'Refunds', icon: '↩️', description: 'Handle refund requests' },
-        { path: '/manager/deliveries', label: 'Deliveries', icon: '🚚', description: 'Delivery status tracking' },
-      ]
-    },
-    {
-      title: 'Inventory & Supply',
-      icon: '📊',
-      color: colors.semantic.info,
-      items: [
-        { path: '/manager/inventory', label: 'Inventory', icon: '📊', description: 'Stock levels & tracking' },
-        { path: '/manager/suppliers', label: 'Suppliers', icon: '🏭', description: 'Manage supplier relationships' },
-        { path: '/manager/purchase-orders', label: 'Purchase Orders', icon: '📋', description: 'Create & track POs' },
-        { path: '/manager/waste-analysis', label: 'Waste Analysis', icon: '🗑️', description: 'Track waste & optimize' },
-      ]
-    },
-    {
-      title: 'Operations',
-      icon: '⚙️',
-      color: colors.brand.secondary,
-      items: [
-        { path: '/manager/recipes', label: 'Recipes', icon: '📖', description: 'Recipe management' },
-        { path: `/pos?storeId=${storeId}`, label: 'POS System', icon: '🖥️', description: 'Point of sale access' },
-        { path: '/manager/drivers', label: 'Drivers', icon: '🚗', description: 'Driver fleet management' },
-        { path: '/manager/stores', label: 'Stores', icon: '🏪', description: 'Multi-store management' },
-      ]
-    },
-    {
-      title: 'People & Marketing',
-      icon: '👥',
-      color: colors.semantic.warning,
-      items: [
-        { path: '/manager/customers', label: 'Customers', icon: '👥', description: 'Customer database & insights' },
-        { path: '/manager/campaigns', label: 'Campaigns', icon: '📢', description: 'Marketing campaigns' },
-      ]
-    },
-  ];
 
-  const [managementSearchQuery, setManagementSearchQuery] = useState('');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-
-  const toggleCategory = (categoryTitle: string) => {
-    setExpandedCategories(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(categoryTitle)) {
-        newSet.delete(categoryTitle);
-      } else {
-        newSet.add(categoryTitle);
-      }
-      return newSet;
-    });
-  };
-
-  const expandAll = () => {
-    setExpandedCategories(new Set(managementCategories.map(cat => cat.title)));
-  };
-
-  const collapseAll = () => {
-    setExpandedCategories(new Set());
-  };
-
-  // Keyboard shortcut: ESC to close sidebar
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isSidebarOpen) {
-        setIsSidebarOpen(false);
-      }
-    };
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [isSidebarOpen]);
 
   const OverviewTab: React.FC = () => (
     <div>
@@ -492,7 +466,7 @@ const DashboardPage: React.FC = () => {
                     fontWeight: typography.fontWeight.bold,
                     boxShadow: shadows.brand.secondary
                   }}>
-                    {session.name.split(' ').map(n => n[0]).join('')}
+                    {session.employeeName?.split(' ').map(n => n[0]).join('') || '??'}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{
@@ -500,7 +474,7 @@ const DashboardPage: React.FC = () => {
                       color: colors.text.primary,
                       marginBottom: '2px'
                     }}>
-                      {session.name}
+                      {session.employeeName || 'Unknown Employee'}
                     </div>
                     <div style={{
                       fontSize: typography.fontSize.sm,
@@ -589,7 +563,7 @@ const DashboardPage: React.FC = () => {
                       fontWeight: typography.fontWeight.bold,
                       boxShadow: shadows.brand.secondary
                     }}>
-                      {session.name.split(' ').map(n => n[0]).join('')}
+                      {session.employeeName?.split(' ').map(n => n[0]).join('')}
                     </div>
                     <div>
                       <h4 style={{
@@ -598,7 +572,7 @@ const DashboardPage: React.FC = () => {
                         fontWeight: typography.fontWeight.semibold,
                         color: colors.text.primary
                       }}>
-                        {session.name}
+                        {session.employeeName}
                       </h4>
                       <p style={{
                         margin: '0',
@@ -943,7 +917,7 @@ const DashboardPage: React.FC = () => {
                       fontWeight: typography.fontWeight.semibold,
                       color: colors.text.primary
                     }}>
-                      {staff.name}
+                      {staff.employeeName}
                     </div>
                     <div style={{
                       fontSize: typography.fontSize.xs,
@@ -962,145 +936,11 @@ const DashboardPage: React.FC = () => {
     </div>
   );
 
-  const generateShareableLink = (type: 'pos' | 'driver') => {
-    const baseUrl = window.location.origin;
-    if (type === 'pos') {
-      return `${baseUrl}/pos?storeId=${storeId}`;
-    } else {
-      return `${baseUrl}/driver?storeId=${storeId}`;
-    }
-  };
-
-  const handleCopyLink = (type: 'pos' | 'driver') => {
-    const link = generateShareableLink(type);
-    navigator.clipboard.writeText(link);
-    alert(`${type === 'pos' ? 'POS' : 'Driver App'} link copied to clipboard!`);
-  };
-
-  const handleShareLink = (type: 'pos' | 'driver') => {
-    setLinkType(type);
-    setShowLinkDialog(true);
-  };
-
-  const LinksTab: React.FC = () => (
-    <div>
-      <Card elevation="lg" padding="xl">
-        <h3 style={{
-          margin: `0 0 ${spacing[6]} 0`,
-          fontSize: typography.fontSize['2xl'],
-          fontWeight: typography.fontWeight.bold,
-          color: colors.text.primary
-        }}>
-          Share System Links
-        </h3>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: spacing[6]
-        }}>
-          {/* POS System */}
-          <Card
-            elevation="md"
-            padding="lg"
-            style={{
-              border: `2px solid ${colors.semantic.info}`,
-              background: `linear-gradient(135deg, ${colors.semantic.infoLight}11 0%, ${colors.semantic.info}05 100%)`
-            }}
-          >
-            <div style={{ textAlign: 'center', marginBottom: spacing[5] }}>
-              <div style={{ fontSize: typography.fontSize['5xl'], marginBottom: spacing[3] }}>🖥️</div>
-              <h4 style={{
-                margin: `0 0 ${spacing[2]} 0`,
-                fontSize: typography.fontSize.lg,
-                fontWeight: typography.fontWeight.bold,
-                color: colors.text.primary
-              }}>
-                POS System
-              </h4>
-              <p style={{
-                margin: '0',
-                fontSize: typography.fontSize.sm,
-                color: colors.text.secondary
-              }}>
-                Share with staff to access the point-of-sale system
-              </p>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
-              <Button
-                variant="secondary"
-                size="base"
-                onClick={() => handleCopyLink('pos')}
-                style={{ background: `linear-gradient(135deg, ${colors.semantic.info} 0%, ${colors.semantic.infoDark} 100%)` }}
-              >
-                Copy POS Link
-              </Button>
-              <Button
-                variant="ghost"
-                size="base"
-                onClick={() => handleShareLink('pos')}
-                style={{ color: colors.semantic.info }}
-              >
-                View Link
-              </Button>
-            </div>
-          </Card>
-
-          {/* Driver App */}
-          <Card
-            elevation="md"
-            padding="lg"
-            style={{
-              border: `2px solid ${colors.brand.secondary}`,
-              background: `linear-gradient(135deg, ${colors.brand.secondaryLight}11 0%, ${colors.brand.secondary}05 100%)`
-            }}
-          >
-            <div style={{ textAlign: 'center', marginBottom: spacing[5] }}>
-              <div style={{ fontSize: typography.fontSize['5xl'], marginBottom: spacing[3] }}>🚗</div>
-              <h4 style={{
-                margin: `0 0 ${spacing[2]} 0`,
-                fontSize: typography.fontSize.lg,
-                fontWeight: typography.fontWeight.bold,
-                color: colors.text.primary
-              }}>
-                Driver App
-              </h4>
-              <p style={{
-                margin: '0',
-                fontSize: typography.fontSize.sm,
-                color: colors.text.secondary
-              }}>
-                Share with delivery drivers to manage deliveries
-              </p>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
-              <Button
-                variant="secondary"
-                size="base"
-                onClick={() => handleCopyLink('driver')}
-              >
-                Copy Driver Link
-              </Button>
-              <Button
-                variant="ghost"
-                size="base"
-                onClick={() => handleShareLink('driver')}
-                style={{ color: colors.brand.secondary }}
-              >
-                View Link
-              </Button>
-            </div>
-          </Card>
-        </div>
-      </Card>
-    </div>
-  );
-
   return (
     <div style={{
       minHeight: '100vh',
       backgroundColor: colors.surface.background,
-      fontFamily: typography.fontFamily.primary
+      fontFamily: typography.fontFamily.primary,
     }}>
       <style>{`
         @keyframes slideInFromRight {
@@ -1132,50 +972,71 @@ const DashboardPage: React.FC = () => {
           box-shadow: inset -8px 0 16px rgba(0, 0, 0, 0.1);
         }
       `}</style>
-      <AppHeader title="Manager Dashboard" />
+      <AppHeader title="Manager Dashboard" showManagerNav={true} storeSelectorContextKey="dashboard" />
 
-      {/* Store Selector Bar */}
-      <div style={{
-        backgroundColor: colors.surface.primary,
-        padding: spacing[4] + ' ' + spacing[8],
-        boxShadow: shadows.floating.sm,
-        borderBottom: `1px solid ${colors.surface.border}`,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: spacing[4] }}>
-          <StoreSelector variant="manager" />
-          <div style={{
-            fontSize: typography.fontSize.sm,
-            color: colors.text.secondary
-          }}>
-            {storeId ? `Viewing data for: ${selectedStoreName || currentUser?.storeId}` : 'Select a store to view data'}
+      {/* Schedule Reminder Banner */}
+      {showScheduleBanner && (
+        <div style={{
+          backgroundColor: colors.semantic.warning,
+          color: colors.text.primary,
+          padding: spacing[4],
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          boxShadow: shadows.floating.sm,
+          borderBottom: `2px solid ${colors.semantic.warningDark}`,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3] }}>
+            <span style={{ fontSize: typography.fontSize['2xl'] }}>⚠️</span>
+            <div>
+              <h3 style={{ margin: 0, fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.bold }}>
+                Schedule Reminder
+              </h3>
+              <p style={{ margin: 0, fontSize: typography.fontSize.sm, opacity: 0.9 }}>
+                {scheduleCheck?.shiftCount === 0
+                  ? "Next week's schedule hasn't been created yet."
+                  : `Next week's schedule is incomplete (${scheduleCheck?.shiftCount || 0} shifts scheduled).`}
+              </p>
+            </div>
           </div>
+          <Button
+            variant="primary"
+            onClick={() => navigate('/manager/staff-scheduling')}
+            style={{
+              backgroundColor: colors.brand.secondary,
+              color: colors.text.inverse,
+            }}
+          >
+            Go to Scheduling
+          </Button>
         </div>
-      </div>
+      )}
 
       {/* Navigation Tabs */}
       <div style={{
+        position: 'sticky',
+        top: '110px',
+        left: 0,
+        right: 0,
+        width: '100%',
+        zIndex: 999,
         backgroundColor: colors.surface.primary,
         borderBottom: `1px solid ${colors.surface.border}`,
         padding: `0 ${spacing[8]}`,
-        boxShadow: shadows.floating.sm
+        boxShadow: shadows.floating.sm,
+        marginBottom: spacing[6]
       }}>
         <div style={{ display: 'flex', gap: spacing[10] }}>
           {[
             { key: 'overview', label: 'Overview', icon: '📊' },
             { key: 'staff', label: 'Staff Sessions', icon: '👥' },
-            { key: 'analytics', label: 'Analytics', icon: '📈' },
-            { key: 'links', label: 'Share Links', icon: '🔗' },
-            { key: 'reviews', label: 'Reviews', icon: '⭐' }
+            { key: 'analytics', label: 'Analytics', icon: '📈' }
           ].map(tab => (
             <button
               key={tab.key}
               onClick={() => {
-                if (tab.key === 'reviews') {
-                  navigate('/manager/reviews');
-                } else {
-                  setActiveTab(tab.key);
-                  navigate(`/manager/${tab.key === 'overview' ? '' : tab.key}`);
-                }
+                setActiveTab(tab.key);
+                navigate(`/manager/${tab.key === 'overview' ? '' : tab.key}`);
               }}
               style={{
                 padding: `${spacing[5]} 0`,
@@ -1199,583 +1060,14 @@ const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Management Hub Menu Button */}
-      <button
-        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        onMouseEnter={(e) => {
-          if (!isSidebarOpen) {
-            e.currentTarget.style.transform = 'scale(1.05)';
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (!isSidebarOpen) {
-            e.currentTarget.style.transform = 'scale(1)';
-          }
-        }}
-        style={{
-          position: 'fixed',
-          top: '100px',
-          right: spacing[6],
-          display: 'flex',
-          alignItems: 'center',
-          gap: spacing[3],
-          padding: `${spacing[3]} ${spacing[4]}`,
-          borderRadius: '50px',
-          backgroundColor: isSidebarOpen ? colors.brand.primary : colors.surface.primary,
-          border: `2px solid ${colors.brand.primary}`,
-          cursor: 'pointer',
-          boxShadow: isSidebarOpen ? shadows.floating.lg : shadows.floating.md,
-          zIndex: 999,
-          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-          opacity: isSidebarOpen ? 0 : 1,
-          pointerEvents: isSidebarOpen ? 'none' : 'auto',
-        }}
-      >
-        {/* Grid Icon */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '3px',
-          width: '20px',
-          height: '20px',
-          transition: 'all 0.3s ease'
-        }}>
-          <div style={{
-            width: '8px',
-            height: '8px',
-            backgroundColor: isSidebarOpen ? colors.text.inverse : colors.brand.primary,
-            borderRadius: '2px',
-            transition: 'all 0.3s ease'
-          }} />
-          <div style={{
-            width: '8px',
-            height: '8px',
-            backgroundColor: isSidebarOpen ? colors.text.inverse : colors.brand.primary,
-            borderRadius: '2px',
-            transition: 'all 0.3s ease'
-          }} />
-          <div style={{
-            width: '8px',
-            height: '8px',
-            backgroundColor: isSidebarOpen ? colors.text.inverse : colors.brand.primary,
-            borderRadius: '2px',
-            transition: 'all 0.3s ease'
-          }} />
-          <div style={{
-            width: '8px',
-            height: '8px',
-            backgroundColor: isSidebarOpen ? colors.text.inverse : colors.brand.primary,
-            borderRadius: '2px',
-            transition: 'all 0.3s ease'
-          }} />
-        </div>
-
-        {/* Label */}
-        <span style={{
-          fontSize: typography.fontSize.sm,
-          fontWeight: typography.fontWeight.bold,
-          color: isSidebarOpen ? colors.text.inverse : colors.brand.primary,
-          whiteSpace: 'nowrap',
-          transition: 'color 0.3s ease'
-        }}>
-          Management Hub
-        </span>
-      </button>
-
-      {/* Overlay */}
-      <div
-        onClick={() => setIsSidebarOpen(false)}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
-          backdropFilter: 'blur(4px)',
-          zIndex: 1000,
-          opacity: isSidebarOpen ? 1 : 0,
-          pointerEvents: isSidebarOpen ? 'auto' : 'none',
-          transition: 'opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), backdrop-filter 0.4s ease'
-        }}
-      />
-
-      {/* Management Pages Sidebar */}
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        right: 0,
-        bottom: 0,
-        width: '520px',
-        maxWidth: '90vw',
-        backgroundColor: colors.surface.background,
-        boxShadow: isSidebarOpen ? '-8px 0 32px rgba(0, 0, 0, 0.3)' : 'none',
-        zIndex: 1001,
-        transform: isSidebarOpen ? 'translateX(0)' : 'translateX(100%)',
-        transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.5s ease',
-        display: 'flex',
-        flexDirection: 'column',
-        overflowY: 'auto',
-        overflowX: 'visible',
-        willChange: 'transform',
-        borderTopLeftRadius: '32px',
-        borderBottomLeftRadius: '32px'
-      }}>
-        {/* Curved Left Edge */}
-        <div className="sidebar-curve" />
-        {/* Sidebar Header */}
-        <div style={{
-          padding: `${spacing[6]} ${spacing[6]} ${spacing[5]} ${spacing[6]}`,
-          background: `linear-gradient(135deg, ${colors.brand.primary}11 0%, ${colors.brand.secondary}11 100%)`,
-          borderBottom: `2px solid ${colors.surface.border}`,
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
-          backdropFilter: 'blur(10px)'
-        }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            marginBottom: spacing[4]
-          }}>
-            <div>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: spacing[3],
-                marginBottom: spacing[2]
-              }}>
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '10px',
-                  background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.secondary} 100%)`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: shadows.brand.primary
-                }}>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(2, 1fr)',
-                    gap: '3px',
-                    width: '20px',
-                    height: '20px'
-                  }}>
-                    <div style={{ width: '8px', height: '8px', backgroundColor: colors.text.inverse, borderRadius: '2px' }} />
-                    <div style={{ width: '8px', height: '8px', backgroundColor: colors.text.inverse, borderRadius: '2px' }} />
-                    <div style={{ width: '8px', height: '8px', backgroundColor: colors.text.inverse, borderRadius: '2px' }} />
-                    <div style={{ width: '8px', height: '8px', backgroundColor: colors.text.inverse, borderRadius: '2px' }} />
-                  </div>
-                </div>
-                <h3 style={{
-                  margin: '0',
-                  fontSize: typography.fontSize['2xl'],
-                  fontWeight: typography.fontWeight.extrabold,
-                  color: colors.text.primary,
-                  letterSpacing: '-0.02em'
-                }}>
-                  Management Hub
-                </h3>
-              </div>
-              <p style={{
-                margin: '0',
-                fontSize: typography.fontSize.sm,
-                color: colors.text.secondary,
-                lineHeight: '1.5'
-              }}>
-                Navigate to all management features
-              </p>
-            </div>
-            <button
-              onClick={() => setIsSidebarOpen(false)}
-              style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '12px',
-                backgroundColor: colors.surface.primary,
-                border: `2px solid ${colors.surface.border}`,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '24px',
-                color: colors.text.secondary,
-                boxShadow: shadows.raised.sm,
-                transition: 'all 0.2s ease',
-                flexShrink: 0
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = colors.semantic.error;
-                e.currentTarget.style.color = colors.text.inverse;
-                e.currentTarget.style.borderColor = colors.semantic.error;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = colors.surface.primary;
-                e.currentTarget.style.color = colors.text.secondary;
-                e.currentTarget.style.borderColor = colors.surface.border;
-              }}
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* Search Bar */}
-          <div style={{
-            position: 'relative',
-            marginBottom: spacing[3]
-          }}>
-            <div style={{
-              position: 'absolute',
-              left: spacing[3],
-              top: '50%',
-              transform: 'translateY(-50%)',
-              fontSize: typography.fontSize.lg,
-              color: colors.text.tertiary
-            }}>
-              🔍
-            </div>
-            <input
-              type="text"
-              placeholder="Search management pages..."
-              value={managementSearchQuery}
-              onChange={(e) => setManagementSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                padding: `${spacing[3]} ${spacing[3]} ${spacing[3]} ${spacing[10]}`,
-                border: `2px solid ${colors.surface.border}`,
-                borderRadius: '12px',
-                outline: 'none',
-                backgroundColor: colors.surface.primary,
-                fontSize: typography.fontSize.sm,
-                color: colors.text.primary,
-                fontFamily: typography.fontFamily.primary,
-                boxShadow: shadows.inset.sm,
-                transition: 'all 0.2s ease'
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = colors.brand.primary;
-                e.currentTarget.style.boxShadow = `0 0 0 3px ${colors.brand.primary}22`;
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = colors.surface.border;
-                e.currentTarget.style.boxShadow = shadows.inset.sm;
-              }}
-            />
-          </div>
-
-          {/* Expand/Collapse Controls */}
-          <div style={{
-            display: 'flex',
-            gap: spacing[3]
-          }}>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={expandAll}
-              style={{
-                flex: 1,
-                fontSize: typography.fontSize.xs,
-                fontWeight: typography.fontWeight.semibold
-              }}
-            >
-              Expand All
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={collapseAll}
-              style={{
-                flex: 1,
-                fontSize: typography.fontSize.xs,
-                fontWeight: typography.fontWeight.semibold
-              }}
-            >
-              Collapse All
-            </Button>
-          </div>
-        </div>
-
-        {/* Categorized Management Sections */}
-        <div style={{
-          padding: spacing[6],
-          display: 'flex',
-          flexDirection: 'column',
-          gap: spacing[5],
-          flex: 1
-        }}>
-          {managementCategories
-            .filter(category => {
-              if (!managementSearchQuery) return true;
-              return category.items.some(item =>
-                item.label.toLowerCase().includes(managementSearchQuery.toLowerCase()) ||
-                item.description.toLowerCase().includes(managementSearchQuery.toLowerCase())
-              );
-            })
-            .map(category => {
-              const filteredItems = managementSearchQuery
-                ? category.items.filter(item =>
-                    item.label.toLowerCase().includes(managementSearchQuery.toLowerCase()) ||
-                    item.description.toLowerCase().includes(managementSearchQuery.toLowerCase())
-                  )
-                : category.items;
-
-              if (filteredItems.length === 0) return null;
-
-              const isExpanded = managementSearchQuery || expandedCategories.has(category.title);
-
-              return (
-                <div
-                  key={category.title}
-                  style={{
-                    marginBottom: spacing[3]
-                  }}
-                >
-                  {/* Category Header - Clickable */}
-                  <button
-                    onClick={() => toggleCategory(category.title)}
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: spacing[3],
-                      padding: `${spacing[3]} ${spacing[3]}`,
-                      borderRadius: '12px',
-                      background: isExpanded
-                        ? `linear-gradient(135deg, ${category.color}20 0%, ${category.color}10 100%)`
-                        : `linear-gradient(135deg, ${category.color}15 0%, ${category.color}08 100%)`,
-                      border: `2px solid ${isExpanded ? category.color : category.color + '33'}`,
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease',
-                      marginBottom: isExpanded ? spacing[2] : 0
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = shadows.floating.sm;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }}
-                  >
-                    {/* Chevron Icon */}
-                    <div style={{
-                      fontSize: typography.fontSize.lg,
-                      color: category.color,
-                      transition: 'transform 0.3s ease',
-                      transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
-                    }}>
-                      ▸
-                    </div>
-
-                    <div style={{
-                      width: '36px',
-                      height: '36px',
-                      borderRadius: '10px',
-                      background: `linear-gradient(135deg, ${category.color} 0%, ${category.color}dd 100%)`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: typography.fontSize.lg,
-                      boxShadow: `0 4px 12px ${category.color}44`,
-                      flexShrink: 0
-                    }}>
-                      {category.icon}
-                    </div>
-                    <h4 style={{
-                      margin: '0',
-                      fontSize: typography.fontSize.base,
-                      fontWeight: typography.fontWeight.bold,
-                      color: colors.text.primary,
-                      flex: 1,
-                      textAlign: 'left'
-                    }}>
-                      {category.title}
-                    </h4>
-                    <Badge variant="secondary" size="sm" style={{
-                      backgroundColor: category.color,
-                      color: colors.text.inverse,
-                      fontWeight: typography.fontWeight.bold,
-                      flexShrink: 0
-                    }}>
-                      {filteredItems.length}
-                    </Badge>
-                  </button>
-
-                  {/* Category Items - Collapsible */}
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: spacing[2],
-                    maxHeight: isExpanded ? '2000px' : '0',
-                    overflow: 'hidden',
-                    transition: 'max-height 0.4s ease, opacity 0.3s ease',
-                    opacity: isExpanded ? 1 : 0
-                  }}>
-                    {filteredItems.map(item => (
-                      <Card
-                        key={item.path}
-                        elevation="sm"
-                        padding="base"
-                        interactive
-                        onClick={() => {
-                          navigate(item.path);
-                          setIsSidebarOpen(false);
-                        }}
-                        style={{
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          gap: spacing[3],
-                          transition: 'all 0.2s ease',
-                          border: `2px solid transparent`,
-                          backgroundColor: colors.surface.primary
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = category.color;
-                          e.currentTarget.style.transform = 'translateX(4px)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = 'transparent';
-                          e.currentTarget.style.transform = 'translateX(0)';
-                        }}
-                      >
-                        <span style={{
-                          fontSize: typography.fontSize.xl,
-                          marginTop: '2px'
-                        }}>
-                          {item.icon}
-                        </span>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{
-                            fontSize: typography.fontSize.sm,
-                            fontWeight: typography.fontWeight.semibold,
-                            color: colors.text.primary,
-                            marginBottom: spacing[1]
-                          }}>
-                            {item.label}
-                          </div>
-                          <div style={{
-                            fontSize: typography.fontSize.xs,
-                            color: colors.text.secondary,
-                            lineHeight: '1.4'
-                          }}>
-                            {item.description}
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-
-          {/* No Results Message */}
-          {managementSearchQuery && managementCategories.every(cat =>
-            !cat.items.some(item =>
-              item.label.toLowerCase().includes(managementSearchQuery.toLowerCase()) ||
-              item.description.toLowerCase().includes(managementSearchQuery.toLowerCase())
-            )
-          ) && (
-            <Card elevation="md" padding="xl" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: typography.fontSize['4xl'], marginBottom: spacing[3] }}>🔍</div>
-              <p style={{
-                fontSize: typography.fontSize.base,
-                color: colors.text.secondary,
-                margin: '0'
-              }}>
-                No results for "<strong>{managementSearchQuery}</strong>"
-              </p>
-            </Card>
-          )}
-        </div>
-      </div>
-
       {/* Main Content */}
       <div style={{ padding: spacing[8] }}>
         {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'staff' && <StaffTab />}
         {activeTab === 'analytics' && <AnalyticsTab />}
-        {activeTab === 'links' && <LinksTab />}
       </div>
-
-      {/* Link Dialog Modal */}
-      {showLinkDialog && linkType && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <Card
-            elevation="lg"
-            padding="xl"
-            style={{
-              maxWidth: '500px',
-              width: '90%',
-              boxShadow: shadows.floating.lg
-            }}
-          >
-            <h3 style={{
-              margin: `0 0 ${spacing[4]} 0`,
-              fontSize: typography.fontSize['2xl'],
-              fontWeight: typography.fontWeight.bold,
-              color: colors.text.primary
-            }}>
-              {linkType === 'pos' ? 'POS System' : 'Driver App'} Link
-            </h3>
-            <div style={{ marginBottom: spacing[6] }}>
-              <p style={{
-                fontSize: typography.fontSize.sm,
-                color: colors.text.secondary,
-                marginBottom: spacing[3]
-              }}>
-                Share this link or scan the QR code:
-              </p>
-              <Card
-                elevation="sm"
-                padding="base"
-                style={{
-                  wordBreak: 'break-all',
-                  fontSize: typography.fontSize.sm,
-                  fontFamily: typography.fontFamily.mono,
-                  color: colors.text.primary,
-                  background: colors.surface.secondary
-                }}
-              >
-                {generateShareableLink(linkType)}
-              </Card>
-            </div>
-            <div style={{ display: 'flex', gap: spacing[3] }}>
-              <Button
-                variant="secondary"
-                size="base"
-                onClick={() => handleCopyLink(linkType)}
-                style={{ flex: 1, background: `linear-gradient(135deg, ${colors.semantic.info} 0%, ${colors.semantic.infoDark} 100%)` }}
-              >
-                Copy Link
-              </Button>
-              <Button
-                variant="ghost"
-                size="base"
-                onClick={() => setShowLinkDialog(false)}
-                style={{ color: colors.text.secondary }}
-              >
-                Close
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
     </div>
   );
 };
 
-export default DashboardPage;
+export default withPageStoreContext(DashboardPage, 'dashboard');

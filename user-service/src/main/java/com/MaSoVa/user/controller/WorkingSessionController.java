@@ -114,7 +114,6 @@ public class WorkingSessionController {
     @PreAuthorize("hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
     public ResponseEntity<List<WorkingSessionResponse>> getSessionsPendingApproval(
             HttpServletRequest request) {
-        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
         // Implementation will be added to service
         return ResponseEntity.ok(List.of());
     }
@@ -153,9 +152,11 @@ public class WorkingSessionController {
     @PreAuthorize("#employeeId == authentication.name or hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
     public ResponseEntity<List<WorkingSessionResponse>> getEmployeeSessions(
             @PathVariable String employeeId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        List<WorkingSessionResponse> sessions = sessionService.getEmployeeSessions(employeeId, startDate, endDate);
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        List<WorkingSessionResponse> sessions = sessionService.getEmployeeSessions(employeeId, startDate, endDate, page, size);
         return ResponseEntity.ok(sessions);
     }
     
@@ -163,14 +164,19 @@ public class WorkingSessionController {
     @Operation(summary = "Get store working sessions")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
     public ResponseEntity<List<WorkingSessionResponse>> getStoreSessions(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             HttpServletRequest request) {
         String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
         if (storeId == null || storeId.isEmpty()) {
             return ResponseEntity.badRequest().body(null);
         }
-        List<WorkingSessionResponse> sessions = sessionService.getStoreSessions(storeId, startDate, endDate);
+
+        // If no dates provided, default to today
+        LocalDate effectiveStartDate = startDate != null ? startDate : LocalDate.now();
+        LocalDate effectiveEndDate = endDate != null ? endDate : LocalDate.now();
+
+        List<WorkingSessionResponse> sessions = sessionService.getStoreSessions(storeId, effectiveStartDate, effectiveEndDate);
         return ResponseEntity.ok(sessions);
     }
     
@@ -202,11 +208,67 @@ public class WorkingSessionController {
     public ResponseEntity<Map<String, Object>> getEmployeeWorkingStatus(@PathVariable String employeeId) {
         boolean isWorking = sessionService.isEmployeeCurrentlyWorking(employeeId);
         Duration currentDuration = sessionService.getCurrentWorkingDuration(employeeId);
-        
+
         return ResponseEntity.ok(Map.of(
             "isWorking", isWorking,
             "currentWorkingDuration", currentDuration
         ));
+    }
+
+    @PostMapping("/clock-in-with-pin")
+    @Operation(summary = "Clock in employee with PIN - supports dual authentication for staff")
+    public ResponseEntity<?> clockInWithPin(
+            @RequestBody Map<String, String> request,
+            HttpServletRequest httpRequest) {
+        String employeeId = request.get("employeeId");
+        String pin = request.get("pin");
+        String authorizedBy = request.get("authorizedBy"); // Manager ID for staff/driver auth
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(httpRequest);
+
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Store ID is required"));
+        }
+
+        if (employeeId == null || pin == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Employee ID and PIN are required"));
+        }
+
+        try {
+            // If authorizedBy is provided, it's a staff/driver needing manager auth
+            // Otherwise, it's a manager clocking themselves in
+            String managerId = authorizedBy != null ? authorizedBy : employeeId;
+
+            var session = sessionService.clockInWithPin(employeeId, pin, storeId, managerId);
+            return ResponseEntity.ok(Map.of(
+                "message", "Employee clocked in successfully",
+                "session", mapToResponse(session)
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/clock-out-employee")
+    @Operation(summary = "Clock out employee (manager initiated)")
+    @PreAuthorize("hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
+    public ResponseEntity<?> clockOutEmployee(
+            @RequestBody Map<String, String> request,
+            @RequestHeader("X-User-Id") String managerId) {
+        String employeeId = request.get("employeeId");
+
+        if (employeeId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Employee ID is required"));
+        }
+
+        try {
+            var session = sessionService.endSession(employeeId);
+            return ResponseEntity.ok(Map.of(
+                "message", "Employee clocked out successfully",
+                "session", mapToResponse(session)
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
     
     private WorkingSessionResponse mapToResponse(com.MaSoVa.shared.entity.WorkingSession session) {

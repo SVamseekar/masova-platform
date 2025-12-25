@@ -1,5 +1,6 @@
 package com.MaSoVa.shared.service;
 
+import com.MaSoVa.shared.util.PiiMasker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
@@ -131,7 +132,7 @@ public class AsyncProcessingService {
     public CompletableFuture<Void> sendEmailAsync(String to, String subject, String body) {
         return executeAsync(() -> {
             // Email sending logic would go here
-            logger.info("Sending email to: {} with subject: {}", to, subject);
+            logger.info("Sending email to: {} with subject: {}", PiiMasker.maskEmail(to), subject);
         }, "sendEmail");
     }
 

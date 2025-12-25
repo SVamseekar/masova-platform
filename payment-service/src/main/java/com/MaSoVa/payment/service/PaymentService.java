@@ -22,9 +22,16 @@ import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Payment service handling payment initiation, verification, and transaction management.
+ *
+ * GDPR Compliance: Customer PII (email, phone) is encrypted at rest using AES-256-GCM.
+ * NOTIF-003: Payment notifications integrated for success/failure events.
+ */
 @Service
 public class PaymentService {
 
@@ -34,13 +41,19 @@ public class PaymentService {
     private final RazorpayService razorpayService;
     private final OrderServiceClient orderServiceClient;
     private final RazorpayConfig razorpayConfig;
+    private final PiiEncryptionService encryptionService;
+    private final PaymentNotificationService paymentNotificationService;
 
     public PaymentService(TransactionRepository transactionRepository, RazorpayService razorpayService,
-                         OrderServiceClient orderServiceClient, RazorpayConfig razorpayConfig) {
+                         OrderServiceClient orderServiceClient, RazorpayConfig razorpayConfig,
+                         PiiEncryptionService encryptionService,
+                         PaymentNotificationService paymentNotificationService) {
         this.transactionRepository = transactionRepository;
         this.razorpayService = razorpayService;
         this.orderServiceClient = orderServiceClient;
         this.razorpayConfig = razorpayConfig;
+        this.encryptionService = encryptionService;
+        this.paymentNotificationService = paymentNotificationService;
     }
 
     /**
@@ -49,7 +62,14 @@ public class PaymentService {
     @Transactional
     public PaymentResponse initiatePayment(InitiatePaymentRequest request) {
         try {
-            log.info("Initiating payment for order: {}, amount: {}", request.getOrderId(), request.getAmount());
+            log.info("Initiating payment for order: {}, amount: {}, orderType: {}, paymentMethod: {}",
+                     request.getOrderId(), request.getAmount(), request.getOrderType(), request.getPaymentMethod());
+
+            // Validate payment method based on order type
+            if ("DELIVERY".equals(request.getOrderType()) && "CASH".equals(request.getPaymentMethod())) {
+                log.error("CASH payment not allowed for DELIVERY orders. Order: {}", request.getOrderId());
+                throw new IllegalArgumentException("Cash payment is not allowed for delivery orders. Please use online payment methods.");
+            }
 
             // Check if payment already exists for this order
             Optional<Transaction> existingTransaction = transactionRepository.findByOrderId(request.getOrderId());
@@ -65,27 +85,27 @@ public class PaymentService {
             // Create Razorpay order
             Order razorpayOrder = razorpayService.createOrder(request.getAmount(), request.getOrderId(), receipt);
 
-            // Create transaction record
+            // Create transaction record with encrypted PII (GDPR compliance)
             Transaction transaction = Transaction.builder()
                     .orderId(request.getOrderId())
                     .razorpayOrderId(razorpayOrder.get("id"))
                     .amount(request.getAmount())
                     .status(Transaction.PaymentStatus.INITIATED)
                     .customerId(request.getCustomerId())
-                    .customerEmail(request.getCustomerEmail())
-                    .customerPhone(request.getCustomerPhone())
+                    .customerEmail(encryptionService.encrypt(request.getCustomerEmail()))
+                    .customerPhone(encryptionService.encrypt(request.getCustomerPhone()))
                     .storeId(request.getStoreId())
                     .receipt(receipt)
                     .currency("INR")
                     .reconciled(false)
                     .build();
 
-            transaction = transactionRepository.save(transaction);
+            transaction = Objects.requireNonNull(transactionRepository.save(transaction));
 
             log.info("Payment initiated successfully. Transaction ID: {}, Razorpay Order ID: {}",
                      transaction.getId(), transaction.getRazorpayOrderId());
 
-            // Build response
+            // Build response (return original unencrypted values to client)
             return PaymentResponse.builder()
                     .transactionId(transaction.getId())
                     .orderId(transaction.getOrderId())
@@ -93,8 +113,8 @@ public class PaymentService {
                     .amount(transaction.getAmount())
                     .status(transaction.getStatus())
                     .customerId(transaction.getCustomerId())
-                    .customerEmail(transaction.getCustomerEmail())
-                    .customerPhone(transaction.getCustomerPhone())
+                    .customerEmail(request.getCustomerEmail())  // Return original (not encrypted)
+                    .customerPhone(request.getCustomerPhone())  // Return original (not encrypted)
                     .storeId(transaction.getStoreId())
                     .currency(transaction.getCurrency())
                     .createdAt(transaction.getCreatedAt())
@@ -112,6 +132,7 @@ public class PaymentService {
 
     /**
      * Verify and complete payment
+     * Week 3 Fix: Added idempotency - prevent duplicate processing
      */
     @Transactional
     public PaymentResponse verifyPayment(PaymentCallbackRequest request) {
@@ -123,6 +144,20 @@ public class PaymentService {
             Transaction transaction = transactionRepository.findByRazorpayOrderId(request.getRazorpayOrderId())
                     .orElseThrow(() -> new RuntimeException("Transaction not found for Razorpay order: " +
                                                             request.getRazorpayOrderId()));
+
+            // IDEMPOTENCY CHECK: If payment already processed successfully, return existing response
+            if (transaction.getStatus() == Transaction.PaymentStatus.SUCCESS &&
+                request.getRazorpayPaymentId().equals(transaction.getRazorpayPaymentId())) {
+                log.info("Payment already verified for transaction: {}. Returning cached response.", transaction.getId());
+                return buildPaymentResponse(transaction);
+            }
+
+            // Check if payment ID is different but transaction already succeeded
+            if (transaction.getStatus() == Transaction.PaymentStatus.SUCCESS) {
+                log.warn("Transaction {} already completed with different payment ID. Current: {}, New: {}",
+                        transaction.getId(), transaction.getRazorpayPaymentId(), request.getRazorpayPaymentId());
+                throw new RuntimeException("Transaction already completed with a different payment ID");
+            }
 
             // Verify signature
             boolean isValid = razorpayService.verifyPaymentSignature(
@@ -137,6 +172,12 @@ public class PaymentService {
                 transaction.setErrorCode("SIGNATURE_VERIFICATION_FAILED");
                 transaction.setErrorDescription("Payment signature verification failed");
                 transactionRepository.save(transaction);
+
+                // Send payment failure notification (NOTIF-003)
+                String customerEmail = encryptionService.decrypt(transaction.getCustomerEmail());
+                String customerPhone = encryptionService.decrypt(transaction.getCustomerPhone());
+                paymentNotificationService.sendPaymentFailureNotification(
+                        transaction, customerEmail, customerPhone, "Payment verification failed");
 
                 throw new RuntimeException("Payment signature verification failed");
             }
@@ -185,6 +226,12 @@ public class PaymentService {
                     transaction.getId()
             );
 
+            // Send payment success notification (NOTIF-003)
+            String customerEmail = encryptionService.decrypt(transaction.getCustomerEmail());
+            String customerPhone = encryptionService.decrypt(transaction.getCustomerPhone());
+            paymentNotificationService.sendPaymentSuccessNotification(
+                    transaction, customerEmail, customerPhone);
+
             return buildPaymentResponse(transaction);
 
         } catch (RazorpayException e) {
@@ -200,7 +247,7 @@ public class PaymentService {
      * Get transaction by ID
      */
     public PaymentResponse getTransaction(String transactionId) {
-        Transaction transaction = transactionRepository.findById(transactionId)
+        Transaction transaction = transactionRepository.findById(Objects.requireNonNull(transactionId))
                 .orElseThrow(() -> new RuntimeException("Transaction not found: " + transactionId));
         return buildPaymentResponse(transaction);
     }
@@ -305,7 +352,7 @@ public class PaymentService {
      */
     @Transactional
     public void markAsReconciled(String transactionId, String reconciledBy) {
-        Transaction transaction = transactionRepository.findById(transactionId)
+        Transaction transaction = transactionRepository.findById(Objects.requireNonNull(transactionId))
                 .orElseThrow(() -> new RuntimeException("Transaction not found: " + transactionId));
 
         transaction.setReconciled(true);
@@ -314,6 +361,78 @@ public class PaymentService {
 
         transactionRepository.save(transaction);
         log.info("Transaction {} marked as reconciled by {}", transactionId, reconciledBy);
+    }
+
+    /**
+     * Build PaymentResponse with decrypted PII fields.
+     * GDPR Note: PII is stored encrypted in database and decrypted only when needed.
+     */
+    /**
+     * Record a CASH payment as SUCCESS
+     * Used for POS/walk-in orders where payment is collected immediately
+     */
+    @Transactional
+    public PaymentResponse recordCashPayment(InitiatePaymentRequest request) {
+        try {
+            log.info("Recording cash payment for order: {}, amount: {}, orderType: {}",
+                     request.getOrderId(), request.getAmount(), request.getOrderType());
+
+            // Validate: Cash payment only allowed for PICKUP/TAKEAWAY orders
+            if ("DELIVERY".equals(request.getOrderType())) {
+                log.error("CASH payment not allowed for DELIVERY orders. Order: {}", request.getOrderId());
+                throw new IllegalArgumentException("Cash payment is not allowed for delivery orders. Please use online payment methods.");
+            }
+
+            // Check if payment already exists for this order
+            Optional<Transaction> existingTransaction = transactionRepository.findByOrderId(request.getOrderId());
+            if (existingTransaction.isPresent()) {
+                log.warn("Transaction already exists for order: {}", request.getOrderId());
+                return buildPaymentResponse(existingTransaction.get());
+            }
+
+            // Generate receipt number
+            String receipt = "CASH_" + UUID.randomUUID().toString().substring(0, 8);
+
+            // Create transaction record with SUCCESS status (cash collected immediately)
+            Transaction transaction = Transaction.builder()
+                    .orderId(request.getOrderId())
+                    .razorpayOrderId("CASH_" + request.getOrderId()) // No Razorpay order for cash
+                    .amount(request.getAmount())
+                    .status(Transaction.PaymentStatus.SUCCESS) // Cash is collected immediately
+                    .customerId(request.getCustomerId())
+                    .customerEmail(encryptionService.encrypt(request.getCustomerEmail()))
+                    .customerPhone(encryptionService.encrypt(request.getCustomerPhone()))
+                    .storeId(request.getStoreId())
+                    .receipt(receipt)
+                    .currency("INR")
+                    .reconciled(false)
+                    .build();
+
+            // Set payment method to CASH
+            transaction.setPaymentMethod(Transaction.PaymentMethod.CASH);
+            transaction.setPaidAt(LocalDateTime.now());
+
+            transaction = Objects.requireNonNull(transactionRepository.save(transaction));
+
+            log.info("Cash payment recorded successfully. Transaction ID: {}", transaction.getId());
+
+            // Update order payment status
+            try {
+                orderServiceClient.updateOrderPaymentStatus(
+                        transaction.getOrderId(),
+                        "PAID",
+                        transaction.getId()
+                );
+            } catch (Exception e) {
+                log.warn("Failed to update order payment status, but cash transaction recorded: {}", e.getMessage());
+            }
+
+            return buildPaymentResponse(transaction);
+
+        } catch (Exception e) {
+            log.error("Error recording cash payment", e);
+            throw new RuntimeException("Failed to record cash payment", e);
+        }
     }
 
     private PaymentResponse buildPaymentResponse(Transaction transaction) {
@@ -326,8 +445,8 @@ public class PaymentService {
                 .status(transaction.getStatus())
                 .paymentMethod(transaction.getPaymentMethod())
                 .customerId(transaction.getCustomerId())
-                .customerEmail(transaction.getCustomerEmail())
-                .customerPhone(transaction.getCustomerPhone())
+                .customerEmail(encryptionService.decrypt(transaction.getCustomerEmail()))
+                .customerPhone(encryptionService.decrypt(transaction.getCustomerPhone()))
                 .storeId(transaction.getStoreId())
                 .currency(transaction.getCurrency())
                 .createdAt(transaction.getCreatedAt())

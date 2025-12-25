@@ -257,5 +257,5 @@ export function shouldLoadModule(moduleName: string): boolean {
   };
 
   const allowedRoles = modulePermissions[moduleName];
-  return !allowedRoles || (userRole && allowedRoles.includes(userRole));
+  return !allowedRoles || (!!userRole && allowedRoles.includes(userRole));
 }

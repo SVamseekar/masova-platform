@@ -1,0 +1,199 @@
+package com.MaSoVa.analytics.client;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+/**
+ * Client for communicating with Customer Service
+ * Used for fetching customer data for analytics
+ *
+ * IMPORTANT: All methods require storeId and authToken for proper store data isolation
+ */
+@Component
+public class CustomerServiceClient {
+
+    private static final Logger log = LoggerFactory.getLogger(CustomerServiceClient.class);
+
+    private final RestTemplate restTemplate;
+
+    @Value("${services.customer.url:http://localhost:8083}")
+    private String customerServiceUrl;
+
+    public CustomerServiceClient(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+
+    /**
+     * Creates HTTP headers with proper authentication and store context
+     */
+    private HttpEntity<Void> createHttpEntity(String storeId, String authToken) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + authToken);
+        headers.set("X-Store-Id", storeId);
+        headers.set("X-Request-Id", UUID.randomUUID().toString());
+        return new HttpEntity<>(headers);
+    }
+
+    /**
+     * Get all customers for a specific store
+     * @param storeId The store ID for data isolation
+     * @param authToken The authentication token
+     */
+    public List<Map<String, Object>> getAllCustomers(String storeId, String authToken) {
+        try {
+            String url = customerServiceUrl + "/api/customers?storeId=" + storeId;
+            log.info("Fetching customers for store: {}", storeId);
+
+            HttpEntity<Void> entity = createHttpEntity(storeId, authToken);
+            ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                new ParameterizedTypeReference<List<Map<String, Object>>>() {}
+            );
+
+            return response.getBody() != null ? response.getBody() : Collections.emptyList();
+        } catch (Exception e) {
+            log.error("Error fetching customers for storeId {}: {}", storeId, e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * @deprecated Use getAllCustomers(String, String) for store data isolation
+     */
+    @Deprecated
+    public List<Map<String, Object>> getAllCustomers() {
+        log.warn("Using deprecated method without storeId - this may cause data isolation issues");
+        try {
+            String url = customerServiceUrl + "/api/customers";
+            log.info("Fetching all customers from: {}", url);
+
+            ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<List<Map<String, Object>>>() {}
+            );
+
+            return response.getBody() != null ? response.getBody() : Collections.emptyList();
+        } catch (Exception e) {
+            log.error("Error fetching customers: {}", e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Get customer by ID for a specific store
+     * @param customerId The customer ID
+     * @param storeId The store ID for data isolation
+     * @param authToken The authentication token
+     */
+    public Map<String, Object> getCustomerById(String customerId, String storeId, String authToken) {
+        try {
+            String url = customerServiceUrl + "/api/customers/" + customerId + "?storeId=" + storeId;
+            log.info("Fetching customer {} for store: {}", customerId, storeId);
+
+            HttpEntity<Void> entity = createHttpEntity(storeId, authToken);
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+
+            return response.getBody();
+        } catch (Exception e) {
+            log.error("Error fetching customer {} for storeId {}: {}", customerId, storeId, e.getMessage());
+            return Collections.emptyMap();
+        }
+    }
+
+    /**
+     * @deprecated Use getCustomerById(String, String, String) for store data isolation
+     */
+    @Deprecated
+    public Map<String, Object> getCustomerById(String customerId) {
+        log.warn("Using deprecated method without storeId - this may cause data isolation issues");
+        try {
+            String url = customerServiceUrl + "/api/customers/" + customerId;
+            log.info("Fetching customer {} from: {}", customerId, url);
+
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+
+            return response.getBody();
+        } catch (Exception e) {
+            log.error("Error fetching customer {}: {}", customerId, e.getMessage());
+            return Collections.emptyMap();
+        }
+    }
+
+    /**
+     * Get customers registered after a specific date for a specific store
+     * @param date The date to filter customers
+     * @param storeId The store ID for data isolation
+     * @param authToken The authentication token
+     */
+    public List<Map<String, Object>> getCustomersRegisteredAfter(LocalDate date, String storeId, String authToken) {
+        try {
+            String url = customerServiceUrl + "/api/customers?registeredAfter=" + date.toString() + "&storeId=" + storeId;
+            log.info("Fetching customers registered after {} for store: {}", date, storeId);
+
+            HttpEntity<Void> entity = createHttpEntity(storeId, authToken);
+            ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                new ParameterizedTypeReference<List<Map<String, Object>>>() {}
+            );
+
+            return response.getBody() != null ? response.getBody() : Collections.emptyList();
+        } catch (Exception e) {
+            log.error("Error fetching customers registered after {} for storeId {}: {}", date, storeId, e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * @deprecated Use getCustomersRegisteredAfter(LocalDate, String, String) for store data isolation
+     */
+    @Deprecated
+    public List<Map<String, Object>> getCustomersRegisteredAfter(LocalDate date) {
+        log.warn("Using deprecated method without storeId - this may cause data isolation issues");
+        try {
+            String url = customerServiceUrl + "/api/customers?registeredAfter=" + date.toString();
+            log.info("Fetching customers registered after {} from: {}", date, url);
+
+            ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<List<Map<String, Object>>>() {}
+            );
+
+            return response.getBody() != null ? response.getBody() : Collections.emptyList();
+        } catch (Exception e) {
+            log.error("Error fetching customers registered after {}: {}", date, e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+}

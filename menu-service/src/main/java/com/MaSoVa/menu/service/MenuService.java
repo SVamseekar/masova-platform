@@ -12,6 +12,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,8 +47,9 @@ public class MenuService {
         return menuItemRepository.findAll();
     }
 
-    @Cacheable(value = "menuItems", key = "'available'")
+    @Cacheable(value = "menuItems", key = "'available-all-stores'")
     public List<MenuItem> getAvailableMenuItems() {
+        // Returns items from ALL stores - should rarely be used
         return menuItemRepository.findByIsAvailableTrue();
     }
 
@@ -86,13 +88,19 @@ public class MenuService {
         return menuItemRepository.findByStoreIdAndDietaryTypeAndIsAvailableTrue(storeId, dietaryType);
     }
 
-    @Cacheable(value = "menuItems", key = "'store-' + #storeId")
+    @Cacheable(value = "menuItems", key = "'store-' + (#storeId != null && !#storeId.isEmpty() ? #storeId : 'all')", unless = "#storeId == null || #storeId.isEmpty()")
     public List<MenuItem> getMenuItemsByStore(String storeId) {
+        // If no storeId provided, return all available items (NOT CACHED for safety)
+        if (storeId == null || storeId.isEmpty()) {
+            return menuItemRepository.findByIsAvailableTrue();
+        }
+        // Repository queries are now case-insensitive
         return menuItemRepository.findByStoreIdAndIsAvailableTrue(storeId);
     }
 
-    @Cacheable(value = "menuItems", key = "'recommended'")
+    @Cacheable(value = "menuItems", key = "'recommended-all-stores'")
     public List<MenuItem> getRecommendedItems() {
+        // Returns recommended items from ALL stores - use getRecommendedItemsByStore() instead
         return menuItemRepository.findByIsRecommendedTrueAndIsAvailableTrue();
     }
 
@@ -224,5 +232,74 @@ public class MenuService {
 
     public long getItemsCountByStoreAndCategory(String storeId, MenuCategory category) {
         return menuItemRepository.countByStoreIdAndCategory(storeId, category);
+    }
+
+    // ========== MENU COPY/CLONE ==========
+
+    /**
+     * Copy all menu items from source store to target store
+     * @param sourceStoreId The store to copy menu from
+     * @param targetStoreId The store to copy menu to
+     * @return List of newly created menu items
+     */
+    @CacheEvict(value = "menuItems", allEntries = true)
+    public List<MenuItem> copyMenuBetweenStores(String sourceStoreId, String targetStoreId) {
+        // Get all menu items from source store
+        List<MenuItem> sourceItems = menuItemRepository.findByStoreId(sourceStoreId);
+
+        if (sourceItems.isEmpty()) {
+            throw new RuntimeException("No menu items found for source store: " + sourceStoreId);
+        }
+
+        // Create copies for target store
+        List<MenuItem> targetItems = new ArrayList<>();
+        for (MenuItem sourceItem : sourceItems) {
+            MenuItem copiedItem = new MenuItem();
+
+            // Copy all fields except id, storeId, and timestamps
+            copiedItem.setName(sourceItem.getName());
+            copiedItem.setDescription(sourceItem.getDescription());
+            copiedItem.setCuisine(sourceItem.getCuisine());
+            copiedItem.setCategory(sourceItem.getCategory());
+            copiedItem.setSubCategory(sourceItem.getSubCategory());
+            copiedItem.setBasePrice(sourceItem.getBasePrice());
+
+            // Copy complex fields
+            copiedItem.setVariants(new ArrayList<>(sourceItem.getVariants()));
+            copiedItem.setCustomizations(new ArrayList<>(sourceItem.getCustomizations()));
+            copiedItem.setDietaryInfo(new ArrayList<>(sourceItem.getDietaryInfo()));
+            copiedItem.setSpiceLevel(sourceItem.getSpiceLevel());
+            copiedItem.setNutritionalInfo(sourceItem.getNutritionalInfo());
+
+            copiedItem.setImageUrl(sourceItem.getImageUrl());
+            copiedItem.setIsAvailable(sourceItem.getIsAvailable());
+            copiedItem.setPreparationTime(sourceItem.getPreparationTime());
+            copiedItem.setServingSize(sourceItem.getServingSize());
+            copiedItem.setStandardPortionSize(sourceItem.getStandardPortionSize());
+            copiedItem.setPortionUnit(sourceItem.getPortionUnit());
+            copiedItem.setYieldPerRecipe(sourceItem.getYieldPerRecipe());
+
+            copiedItem.setIngredients(new ArrayList<>(sourceItem.getIngredients()));
+            copiedItem.setAllergens(new ArrayList<>(sourceItem.getAllergens()));
+            copiedItem.setPreparationInstructions(new ArrayList<>(sourceItem.getPreparationInstructions()));
+
+            // Set target store ID
+            copiedItem.setStoreId(targetStoreId);
+
+            copiedItem.setDisplayOrder(sourceItem.getDisplayOrder());
+            copiedItem.setTags(new ArrayList<>(sourceItem.getTags()));
+            copiedItem.setIsRecommended(sourceItem.getIsRecommended());
+
+            // Set new timestamps
+            copiedItem.setCreatedAt(LocalDateTime.now());
+            copiedItem.setUpdatedAt(LocalDateTime.now());
+
+            targetItems.add(copiedItem);
+        }
+
+        // Save all copied items
+        List<MenuItem> savedItems = menuItemRepository.saveAll(targetItems);
+
+        return savedItems;
     }
 }

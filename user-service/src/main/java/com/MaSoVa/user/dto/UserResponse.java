@@ -20,7 +20,13 @@ public class UserResponse {
     private String storeId;
     private String role;
     private List<String> permissions;
-    
+    private String status; // Employee status: AVAILABLE, ON_DUTY, OFF_DUTY, BUSY
+    private Double rating; // Driver rating
+    private Integer activeDeliveryCount; // For drivers
+    private String activeDeliveryId; // Current delivery ID
+    private boolean isOnline; // Derived from working session status
+    private String generatedPIN; // 5-digit PIN generated on employee creation (shown only once)
+
     public UserResponse() {}
     
     public String getId() { return id; }
@@ -47,8 +53,8 @@ public class UserResponse {
     public LocalDateTime getLastLogin() { return lastLogin; }
     public void setLastLogin(LocalDateTime lastLogin) { this.lastLogin = lastLogin; }
     
-    public boolean isActive() { return isActive; }
-    public void setActive(boolean active) { isActive = active; }
+    public boolean getIsActive() { return isActive; }
+    public void setIsActive(boolean active) { isActive = active; }
     
     public String getStoreId() { return storeId; }
     public void setStoreId(String storeId) { this.storeId = storeId; }
@@ -58,4 +64,22 @@ public class UserResponse {
     
     public List<String> getPermissions() { return permissions; }
     public void setPermissions(List<String> permissions) { this.permissions = permissions; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public Double getRating() { return rating; }
+    public void setRating(Double rating) { this.rating = rating; }
+
+    public Integer getActiveDeliveryCount() { return activeDeliveryCount; }
+    public void setActiveDeliveryCount(Integer activeDeliveryCount) { this.activeDeliveryCount = activeDeliveryCount; }
+
+    public String getActiveDeliveryId() { return activeDeliveryId; }
+    public void setActiveDeliveryId(String activeDeliveryId) { this.activeDeliveryId = activeDeliveryId; }
+
+    public boolean getIsOnline() { return isOnline; }
+    public void setIsOnline(boolean isOnline) { this.isOnline = isOnline; }
+
+    public String getGeneratedPIN() { return generatedPIN; }
+    public void setGeneratedPIN(String generatedPIN) { this.generatedPIN = generatedPIN; }
 }

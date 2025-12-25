@@ -38,7 +38,9 @@ public class TopProductsResponse implements Serializable {
         public TopProductsResponse build() { return response; }
     }
 
-    public static class ProductData {
+    public static class ProductData implements Serializable {
+        private static final long serialVersionUID = 1L;
+
         private int rank;
         private String itemId;
         private String itemName;

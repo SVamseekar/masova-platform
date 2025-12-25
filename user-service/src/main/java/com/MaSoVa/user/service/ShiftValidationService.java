@@ -2,7 +2,6 @@ package com.MaSoVa.user.service;
 
 import com.MaSoVa.shared.entity.Shift;
 import com.MaSoVa.shared.entity.WorkingSession;
-import com.MaSoVa.shared.enums.ShiftStatus;
 import com.MaSoVa.user.repository.ShiftRepository;
 import com.MaSoVa.user.repository.WorkingSessionRepository;
 import com.MaSoVa.user.exception.ShiftViolationException;
@@ -42,9 +41,8 @@ public class ShiftValidationService {
         
         // Validate timing
         if (!shift.canStartAt(startTime)) {
-            Duration earlyBy = Duration.between(startTime, shift.getScheduledStart());
             Duration lateBy = Duration.between(shift.getScheduledStart(), startTime);
-            
+
             if (!startTime.isBefore(shift.getScheduledStart())) {
                 throw new ShiftViolationException(
                     "Starting too early. Shift starts at: " + shift.getScheduledStart());

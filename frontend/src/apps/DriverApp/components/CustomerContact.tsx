@@ -1,6 +1,18 @@
+/**
+ * CustomerContact Component - Redesigned (Bottom Sheet)
+ * Modern bottom sheet dialog with smooth slide-up animation
+ */
+
 import React from 'react';
-import { colors, spacing, typography, borderRadius } from '../../../styles/design-tokens';
-import { createCard, createNeumorphicSurface } from '../../../styles/neumorphic-utils';
+import { Box, Drawer, Avatar, Divider, IconButton } from '@mui/material';
+import {
+  Phone as PhoneIcon,
+  Sms as SmsIcon,
+  Navigation as NavigationIcon,
+  Close as CloseIcon,
+} from '@mui/icons-material';
+import { colors, spacing, typography, borderRadius, shadows, animations } from '../../../styles/driver-design-tokens';
+import { ActionButton } from './shared';
 
 interface CustomerContactProps {
   open: boolean;
@@ -17,8 +29,6 @@ const CustomerContact: React.FC<CustomerContactProps> = ({
   customerPhone,
   orderNumber
 }) => {
-  if (!open) return null;
-
   const handleCall = () => {
     window.location.href = `tel:${customerPhone}`;
   };
@@ -30,212 +40,224 @@ const CustomerContact: React.FC<CustomerContactProps> = ({
     window.location.href = `sms:${customerPhone}?body=${message}`;
   };
 
-  // Styles
-  const overlayStyles: React.CSSProperties = {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-    padding: spacing[4],
-  };
-
-  const dialogStyles: React.CSSProperties = {
-    ...createCard('lg', 'xl'),
-    backgroundColor: colors.surface.background,
-    maxWidth: '400px',
-    width: '100%',
-    padding: spacing[6],
-  };
-
-  const headerStyles: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing[4],
-  };
-
-  const titleStyles: React.CSSProperties = {
-    fontSize: typography.fontSize['2xl'],
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-  };
-
-  const closeButtonStyles: React.CSSProperties = {
-    padding: spacing[2],
-    fontSize: typography.fontSize.lg,
-    color: colors.text.secondary,
-    backgroundColor: 'transparent',
-    border: 'none',
-    borderRadius: borderRadius.full,
-    cursor: 'pointer',
-    ...createNeumorphicSurface('raised', 'sm', 'full'),
-    width: '36px',
-    height: '36px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  };
-
-  const contentStyles: React.CSSProperties = {
-    textAlign: 'center',
-    marginBottom: spacing[4],
-  };
-
-  const customerNameStyles: React.CSSProperties = {
-    fontSize: typography.fontSize['2xl'],
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-    marginBottom: spacing[2],
-  };
-
-  const phoneStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.brand.primary,
-    marginBottom: spacing[1],
-  };
-
-  const orderStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.tertiary,
-  };
-
-  const dividerStyles: React.CSSProperties = {
-    height: '1px',
-    backgroundColor: colors.surface.tertiary,
-    margin: `${spacing[4]} 0`,
-  };
-
-  const buttonContainerStyles: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: spacing[3],
-    marginBottom: spacing[4],
-  };
-
-  const callButtonStyles: React.CSSProperties = {
-    padding: spacing[4],
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: '#fff',
-    background: `linear-gradient(135deg, ${colors.semantic.success} 0%, ${colors.semantic.successLight} 100%)`,
-    border: 'none',
-    borderRadius: borderRadius.lg,
-    cursor: 'pointer',
-    ...createNeumorphicSurface('raised', 'base', 'lg'),
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing[2],
-    transition: 'all 0.2s',
-  };
-
-  const smsButtonStyles: React.CSSProperties = {
-    padding: spacing[4],
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.primary,
-    backgroundColor: colors.surface.primary,
-    border: `2px solid ${colors.semantic.info}`,
-    borderRadius: borderRadius.lg,
-    cursor: 'pointer',
-    ...createNeumorphicSurface('raised', 'base', 'lg'),
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing[2],
-    transition: 'all 0.2s',
-  };
-
-  const iconStyles: React.CSSProperties = {
-    fontSize: '1.5rem',
-  };
-
-  const noteStyles: React.CSSProperties = {
-    ...createCard('sm', 'sm'),
-    padding: spacing[3],
-    backgroundColor: colors.surface.secondary,
-    textAlign: 'center',
-  };
-
-  const noteTextStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.tertiary,
-  };
-
-  const footerStyles: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'center',
-    marginTop: spacing[4],
-  };
-
-  const cancelButtonStyles: React.CSSProperties = {
-    padding: `${spacing[2]} ${spacing[6]}`,
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.secondary,
-    backgroundColor: colors.surface.primary,
-    border: 'none',
-    borderRadius: borderRadius.lg,
-    cursor: 'pointer',
-    ...createNeumorphicSurface('raised', 'sm', 'lg'),
-    transition: 'all 0.2s',
+  const getInitials = (name: string): string => {
+    const parts = name.split(' ').filter(Boolean);
+    if (parts.length === 0) return '?';
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
   };
 
   return (
-    <div style={overlayStyles} onClick={onClose}>
-      <div style={dialogStyles} onClick={(e) => e.stopPropagation()}>
+    <Drawer
+      anchor="bottom"
+      open={open}
+      onClose={onClose}
+      sx={{
+        '& .MuiDrawer-paper': {
+          borderTopLeftRadius: borderRadius.lg,
+          borderTopRightRadius: borderRadius.lg,
+          background: colors.surface.background,
+          boxShadow: shadows.elevated,
+          maxHeight: '90vh',
+        },
+      }}
+    >
+      <Box
+        sx={{
+          padding: spacing.lg,
+          paddingBottom: spacing.xl,
+        }}
+      >
+        {/* Drag Handle */}
+        <Box
+          sx={{
+            width: '40px',
+            height: '4px',
+            borderRadius: borderRadius.full,
+            backgroundColor: colors.surface.border,
+            margin: '0 auto',
+            marginBottom: spacing.lg,
+          }}
+        />
+
         {/* Header */}
-        <div style={headerStyles}>
-          <span style={titleStyles}>Contact Customer</span>
-          <button onClick={onClose} style={closeButtonStyles}>
-            ✕
-          </button>
-        </div>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: spacing.lg,
+          }}
+        >
+          <Box
+            sx={{
+              fontSize: typography.fontSize.h2,
+              fontWeight: typography.fontWeight.semibold,
+              color: colors.text.primary,
+            }}
+          >
+            Contact Customer
+          </Box>
 
-        {/* Customer Info */}
-        <div style={contentStyles}>
-          <div style={customerNameStyles}>{customerName}</div>
-          <div style={phoneStyles}>{customerPhone}</div>
-          <div style={orderStyles}>Order #{orderNumber}</div>
-        </div>
+          <IconButton
+            onClick={onClose}
+            size="small"
+            sx={{
+              color: colors.text.secondary,
+              '&:hover': {
+                backgroundColor: colors.surface.backgroundAlt,
+              },
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </Box>
 
-        <div style={dividerStyles} />
+        {/* Customer Info Section */}
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center',
+            marginBottom: spacing.lg,
+            padding: spacing.base,
+          }}
+        >
+          {/* Avatar */}
+          <Avatar
+            sx={{
+              width: '80px',
+              height: '80px',
+              backgroundColor: colors.primary.green,
+              color: colors.text.inverse,
+              fontSize: typography.fontSize.h1,
+              fontWeight: typography.fontWeight.bold,
+              marginBottom: spacing.base,
+            }}
+          >
+            {getInitials(customerName)}
+          </Avatar>
+
+          {/* Customer Name */}
+          <Box
+            sx={{
+              fontSize: typography.fontSize.h1,
+              fontWeight: typography.fontWeight.bold,
+              color: colors.text.primary,
+              marginBottom: spacing.xs,
+            }}
+          >
+            {customerName}
+          </Box>
+
+          {/* Phone Number */}
+          <Box
+            sx={{
+              fontSize: typography.fontSize.h2,
+              fontWeight: typography.fontWeight.medium,
+              color: colors.primary.green,
+              marginBottom: spacing.xs,
+              fontFamily: typography.fontFamily.mono,
+            }}
+          >
+            {customerPhone}
+          </Box>
+
+          {/* Order Number */}
+          <Box
+            sx={{
+              fontSize: typography.fontSize.caption,
+              color: colors.text.secondary,
+              padding: `${spacing.xs} ${spacing.md}`,
+              backgroundColor: colors.surface.backgroundAlt,
+              borderRadius: borderRadius.full,
+            }}
+          >
+            Order #{orderNumber}
+          </Box>
+        </Box>
+
+        <Divider sx={{ marginY: spacing.lg }} />
 
         {/* Action Buttons */}
-        <div style={buttonContainerStyles}>
-          <button onClick={handleCall} style={callButtonStyles}>
-            <span style={iconStyles}>📞</span>
-            <span>Call Customer</span>
-          </button>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: spacing.md,
+            marginBottom: spacing.lg,
+          }}
+        >
+          <ActionButton
+            variant="primary"
+            size="large"
+            fullWidth
+            startIcon={<PhoneIcon />}
+            onClick={handleCall}
+          >
+            Call Customer
+          </ActionButton>
 
-          <button onClick={handleSMS} style={smsButtonStyles}>
-            <span style={iconStyles}>💬</span>
-            <span>Send SMS</span>
-          </button>
-        </div>
+          <ActionButton
+            variant="secondary"
+            size="large"
+            fullWidth
+            startIcon={<SmsIcon />}
+            onClick={handleSMS}
+          >
+            Send SMS
+          </ActionButton>
 
-        {/* Note */}
-        <div style={noteStyles}>
-          <p style={noteTextStyles}>
-            Use these options to update the customer about delivery status
-          </p>
-        </div>
+          <ActionButton
+            variant="secondary"
+            size="large"
+            fullWidth
+            startIcon={<NavigationIcon />}
+            onClick={onClose}
+          >
+            Get Directions
+          </ActionButton>
+        </Box>
 
-        {/* Footer */}
-        <div style={footerStyles}>
-          <button onClick={onClose} style={cancelButtonStyles}>
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
+        {/* Info Note */}
+        <Box
+          sx={{
+            padding: spacing.base,
+            backgroundColor: colors.primary.greenLight,
+            borderRadius: borderRadius.sm,
+            border: `1px solid ${colors.primary.green}20`,
+          }}
+        >
+          <Box
+            sx={{
+              fontSize: typography.fontSize.small,
+              color: colors.text.secondary,
+              textAlign: 'center',
+              lineHeight: typography.lineHeight.relaxed,
+            }}
+          >
+            💡 Keep the customer updated about delivery status for better experience
+          </Box>
+        </Box>
+
+        {/* Cancel Button */}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            marginTop: spacing.lg,
+          }}
+        >
+          <ActionButton
+            variant="text"
+            onClick={onClose}
+          >
+            Cancel
+          </ActionButton>
+        </Box>
+      </Box>
+    </Drawer>
   );
 };
 

@@ -1,5 +1,7 @@
 package com.MaSoVa.analytics.client;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,10 +14,13 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Client for communicating with User Service
  * Used for fetching staff and driver information
+ * Week 2 Performance Fix: Added circuit breaker protection
+ * Week 2/3 Fix: Added retry logic with exponential backoff
  */
 @Component
 public class UserServiceClient {
@@ -35,6 +40,8 @@ public class UserServiceClient {
      * Get drivers by store
      * Note: storeId is passed via X-Store-ID header by JwtForwardingInterceptor
      */
+    @Retry(name = "userService")
+    @CircuitBreaker(name = "userService", fallbackMethod = "getDriversByStoreFallback")
     public List<Map<String, Object>> getDriversByStore(String storeId) {
         try {
             String url = userServiceUrl + "/api/users/drivers/store";
@@ -44,23 +51,27 @@ public class UserServiceClient {
                 null,
                 new ParameterizedTypeReference<List<Map<String, Object>>>() {}
             );
-            return response.getBody();
+            return Objects.requireNonNullElse(response.getBody(), List.of());
         } catch (RestClientException e) {
             log.error("Failed to fetch drivers for store: {}", storeId, e);
-            return List.of();
+            throw e;
         }
     }
 
     /**
      * Get staff member details
      */
+    @SuppressWarnings("unchecked")
+    @Retry(name = "userService")
+    @CircuitBreaker(name = "userService", fallbackMethod = "getStaffDetailsFallback")
     public Map<String, Object> getStaffDetails(String staffId) {
         try {
             String url = userServiceUrl + "/api/users/" + staffId;
-            return restTemplate.getForObject(url, Map.class);
+            Map<String, Object> result = restTemplate.getForObject(url, Map.class);
+            return Objects.requireNonNullElse(result, Map.of());
         } catch (RestClientException e) {
             log.error("Failed to fetch staff details for: {}", staffId, e);
-            return null;
+            throw e;
         }
     }
 
@@ -68,6 +79,8 @@ public class UserServiceClient {
      * Get all staff members by store
      * Note: storeId is passed via X-Store-ID header by JwtForwardingInterceptor
      */
+    @Retry(name = "userService")
+    @CircuitBreaker(name = "userService", fallbackMethod = "getStaffByStoreFallback")
     public List<Map<String, Object>> getStaffByStore(String storeId) {
         try {
             String url = userServiceUrl + "/api/users/store";
@@ -77,10 +90,26 @@ public class UserServiceClient {
                 null,
                 new ParameterizedTypeReference<List<Map<String, Object>>>() {}
             );
-            return response.getBody();
+            return Objects.requireNonNullElse(response.getBody(), List.of());
         } catch (RestClientException e) {
             log.error("Failed to fetch staff for store: {}", storeId, e);
-            return List.of();
+            throw e;
         }
+    }
+
+    // Fallback methods
+    private List<Map<String, Object>> getDriversByStoreFallback(String storeId, Exception ex) {
+        log.warn("Circuit breaker fallback for getDriversByStore. StoreId: {}, Error: {}", storeId, ex.getMessage());
+        return List.of();
+    }
+
+    private Map<String, Object> getStaffDetailsFallback(String staffId, Exception ex) {
+        log.warn("Circuit breaker fallback for getStaffDetails. StaffId: {}, Error: {}", staffId, ex.getMessage());
+        return Map.of();
+    }
+
+    private List<Map<String, Object>> getStaffByStoreFallback(String storeId, Exception ex) {
+        log.warn("Circuit breaker fallback for getStaffByStore. StoreId: {}, Error: {}", storeId, ex.getMessage());
+        return List.of();
     }
 }

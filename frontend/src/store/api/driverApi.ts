@@ -40,14 +40,15 @@ export interface DriverStats {
 export interface Driver {
   id: string;
   userId: string;
-  firstName: string;
-  lastName: string;
+  name: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   phone: string;
   vehicleType?: string;
   vehicleNumber?: string;
   licenseNumber?: string;
-  isAvailable: boolean;
+  isActive: boolean;
   isOnline: boolean;
   currentLocation?: DriverLocation;
   rating: number;
@@ -62,7 +63,7 @@ export interface UpdateDriverRequest {
   vehicleType?: string;
   vehicleNumber?: string;
   licenseNumber?: string;
-  isAvailable?: boolean;
+  isActive?: boolean;
 }
 
 export interface LocationUpdateRequest {
@@ -106,10 +107,10 @@ export const driverApi = createApi({
   }),
   tagTypes: ['Driver', 'DriverStats', 'DriverPerformance'],
   endpoints: (builder) => ({
-    // Get all drivers
-    getAllDrivers: builder.query<Driver[], void>({
-      query: () => '/users/type/DRIVER',
-      providesTags: ['Driver'],
+    // Get all drivers - uses store context from headers
+    getAllDrivers: builder.query<Driver[], string | undefined>({
+      query: (storeId) => `/users/drivers/store${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'Driver', id: storeId || 'DEFAULT' }],
     }),
 
     // Get driver by ID
@@ -125,15 +126,25 @@ export const driverApi = createApi({
     }),
 
     // Get online drivers
-    getOnlineDrivers: builder.query<Driver[], void>({
-      query: () => '/users/type/DRIVER?status=online',
-      providesTags: ['Driver'],
+    getOnlineDrivers: builder.query<Driver[], string | undefined>({
+      query: (storeId) => {
+        const params = new URLSearchParams();
+        params.append('status', 'online');
+        if (storeId) params.append('storeId', storeId);
+        return `/users/type/DRIVER?${params.toString()}`;
+      },
+      providesTags: (result, error, storeId) => [{ type: 'Driver', id: storeId || 'DEFAULT' }],
     }),
 
     // Get available drivers
-    getAvailableDrivers: builder.query<Driver[], void>({
-      query: () => '/users/type/DRIVER?available=true',
-      providesTags: ['Driver'],
+    getAvailableDrivers: builder.query<Driver[], string | undefined>({
+      query: (storeId) => {
+        const params = new URLSearchParams();
+        params.append('available', 'true');
+        if (storeId) params.append('storeId', storeId);
+        return `/users/type/DRIVER?${params.toString()}`;
+      },
+      providesTags: (result, error, storeId) => [{ type: 'Driver', id: storeId || 'DEFAULT' }],
     }),
 
     // Update driver
@@ -177,9 +188,9 @@ export const driverApi = createApi({
     }),
 
     // Get driver stats
-    getDriverStats: builder.query<DriverStats, void>({
-      query: () => '/users/stats',
-      providesTags: ['DriverStats'],
+    getDriverStats: builder.query<DriverStats, string | undefined>({
+      query: (storeId) => `/users/stats${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'DriverStats', id: storeId || 'DEFAULT' }],
     }),
 
     // Activate driver
@@ -199,6 +210,32 @@ export const driverApi = createApi({
       }),
       invalidatesTags: (result, error, id) => [{ type: 'Driver', id }, 'Driver', 'DriverStats'],
     }),
+
+    // ==================== DRIVER STATUS ENDPOINTS (PHASE 8) ====================
+
+    // Get driver online/offline status
+    getDriverStatus: builder.query<{ success: boolean; userId: string; status: string; isOnline: boolean }, string>({
+      query: (driverId) => `/users/${driverId}/status`,
+      providesTags: (result, error, driverId) => [{ type: 'Driver', id: `${driverId}-status` }],
+    }),
+
+    // Update driver online/offline status
+    updateDriverStatus: builder.mutation<
+      { success: boolean; userId: string; status: string; timestamp: number },
+      { driverId: string; status: 'AVAILABLE' | 'OFF_DUTY' }
+    >({
+      query: ({ driverId, status }) => ({
+        url: `/users/${driverId}/status`,
+        method: 'PUT',
+        body: { status },
+      }),
+      invalidatesTags: (result, error, { driverId }) => [
+        { type: 'Driver', id: `${driverId}-status` },
+        { type: 'Driver', id: driverId },
+        'Driver',
+        'DriverStats',
+      ],
+    }),
   }),
 });
 
@@ -215,4 +252,6 @@ export const {
   useGetDriverStatsQuery,
   useActivateDriverMutation,
   useDeactivateDriverMutation,
+  useGetDriverStatusQuery,
+  useUpdateDriverStatusMutation,
 } = driverApi;

@@ -141,7 +141,9 @@ public class SalesTrendResponse implements Serializable {
         }
     }
 
-    public static class DailyDataPoint {
+    public static class DailyDataPoint implements Serializable {
+        private static final long serialVersionUID = 1L;
+
         private LocalDate date;
         private String label; // e.g., "Mon", "Jan 15"
         private BigDecimal sales;

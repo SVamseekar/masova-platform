@@ -5,15 +5,10 @@ spring:
   application:
     name: menu-service
 
-# JWT Configuration
-jwt:
-  secret: MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-512-bits-for-HS512-algorithm-security-requirement
-  access-token-expiration: 3600000
-  refresh-token-expiration: 604800000
-
   data:
     mongodb:
-      uri: mongodb://localhost:27017/MaSoVa
+      uri: mongodb://localhost:27017
+      database: MaSoVa
       auto-index-creation: true
 
   redis:
@@ -25,6 +20,12 @@ jwt:
     type: redis
     redis:
       time-to-live: 3600000  # 1 hour
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-256-bits-for-production-security}
+  access-token-expiration: 3600000
+  refresh-token-expiration: 604800000
 
 management:
   endpoints:
@@ -39,3 +40,29 @@ logging:
   level:
     com.MaSoVa: DEBUG
     org.springframework.data.mongodb: DEBUG
+
+---
+# Production Profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+      auto-index-creation: false
+
+logging:
+  level:
+    root: WARN
+    com.MaSoVa: INFO
+    org.springframework: WARN
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
+  endpoint:
+    health:
+      show-details: when-authorized

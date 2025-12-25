@@ -1,51 +1,47 @@
+/**
+ * ActiveDeliveryPage - Redesigned (Uber-style)
+ * Clean delivery cards with modern layout and actions
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
   Typography,
-  Card,
-  CardContent,
-  Button,
-  Stack,
-  Chip,
-  Divider,
   IconButton,
-  Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  List,
-  ListItem,
-  ListItemText
+  ToggleButtonGroup,
+  ToggleButton,
+  CircularProgress,
 } from '@mui/material';
-import DirectionsIcon from '@mui/icons-material/Directions';
-import PhoneIcon from '@mui/icons-material/Phone';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import NavigationIcon from '@mui/icons-material/Navigation';
+import {
+  ViewList as ListIcon,
+  Map as MapIcon,
+  FilterList as FilterIcon,
+} from '@mui/icons-material';
 import { useGetOrdersByStatusQuery, useUpdateOrderStatusMutation } from '../../../store/api/orderApi';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../store/store';
-import NavigationMap from '../components/NavigationMap';
+import { DeliveryCard } from '../components/shared';
 import CustomerContact from '../components/CustomerContact';
+import { colors, spacing, typography, borderRadius, shadows } from '../../../styles/driver-design-tokens';
+import { skeletonStyles } from '../utils/animations';
 
 const ActiveDeliveryPage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
-  const [showMap, setShowMap] = useState(false);
   const [showContactDialog, setShowContactDialog] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [sortBy, setSortBy] = useState<'time' | 'distance' | 'amount'>('time');
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
 
-  // Fetch orders assigned to this driver with status OUT_FOR_DELIVERY
-  const { data: activeOrders, isLoading, refetch } = useGetOrdersByStatusQuery('OUT_FOR_DELIVERY', {
-    pollingInterval: 30000 // Poll every 30 seconds
+  // Fetch orders assigned to this driver with status DISPATCHED
+  const { data: activeOrders, isLoading, refetch } = useGetOrdersByStatusQuery('DISPATCHED', {
+    pollingInterval: 30000
   });
 
   // Filter orders assigned to current driver
   const myDeliveries = activeOrders?.filter((order: any) =>
-    order.assignedDriver?._id === user?._id || order.assignedDriver === user?._id
+    order.assignedDriver?.id === user?.id || order.assignedDriver === user?.id
   ) || [];
 
   useEffect(() => {
@@ -70,206 +66,307 @@ const ActiveDeliveryPage: React.FC = () => {
     }
   };
 
-  const handlePickedUp = async (orderId: string) => {
-    try {
-      await updateOrderStatus({
-        orderId,
-        status: 'OUT_FOR_DELIVERY'
-      }).unwrap();
-
-      refetch();
-    } catch (error) {
-      console.error('Failed to update status:', error);
-    }
-  };
-
   const openGoogleMaps = (address: string) => {
     const encodedAddress = encodeURIComponent(address);
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
   };
 
+  const formatAddress = (rawAddress: any): string => {
+    if (typeof rawAddress === 'string') {
+      return rawAddress;
+    } else if (rawAddress && typeof rawAddress === 'object') {
+      const parts = [
+        rawAddress.street,
+        rawAddress.landmark,
+        rawAddress.city,
+        rawAddress.state,
+        rawAddress.pincode
+      ].filter(Boolean);
+      return parts.join(', ') || 'Address not provided';
+    }
+    return 'Address not provided';
+  };
+
+  // Loading state
   if (isLoading) {
     return (
-      <Container maxWidth="md" sx={{ py: 3, textAlign: 'center' }}>
-        <Typography>Loading deliveries...</Typography>
+      <Container maxWidth="md" sx={{ py: spacing.lg }}>
+        {/* Header Skeleton */}
+        <Box sx={{ mb: spacing.lg }}>
+          <Box sx={{ ...skeletonStyles.text('200px', '24px'), mb: spacing.sm }} />
+          <Box sx={{ ...skeletonStyles.text('150px', '14px') }} />
+        </Box>
+
+        {/* Card Skeletons */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: spacing.md }}>
+          {[1, 2, 3].map((i) => (
+            <Box key={i} sx={{ ...skeletonStyles.card('200px') }} />
+          ))}
+        </Box>
       </Container>
     );
   }
 
+  // Empty state
   if (myDeliveries.length === 0) {
     return (
-      <Container maxWidth="md" sx={{ py: 3 }}>
-        <Alert severity="info" sx={{ mb: 3 }}>
-          No active deliveries at the moment. New orders will appear here automatically.
-        </Alert>
-        <Card>
-          <CardContent sx={{ textAlign: 'center', py: 6 }}>
-            <NavigationIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              No Active Deliveries
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              You're all caught up! Wait for new delivery assignments.
-            </Typography>
-          </CardContent>
-        </Card>
-      </Container>
+      <Box
+        sx={{
+          minHeight: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: colors.gradients.heroBackground,
+        }}
+      >
+        <Container maxWidth="sm" sx={{ py: spacing.xxl, textAlign: 'center' }}>
+          {/* Illustration */}
+          <Box
+            sx={{
+              fontSize: '80px',
+              mb: spacing.lg,
+              opacity: 0.5,
+            }}
+          >
+            🎯
+          </Box>
+
+          <Typography
+            sx={{
+              fontSize: typography.fontSize.h1,
+              fontWeight: typography.fontWeight.bold,
+              color: colors.text.primary,
+              mb: spacing.sm,
+            }}
+          >
+            No Active Deliveries
+          </Typography>
+
+          <Typography
+            sx={{
+              fontSize: typography.fontSize.body,
+              color: colors.text.secondary,
+              mb: spacing.lg,
+              lineHeight: typography.lineHeight.relaxed,
+            }}
+          >
+            You're all caught up! Go online to receive new delivery assignments.
+          </Typography>
+
+          {/* Optional CTA */}
+          <Box
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: spacing.xs,
+              padding: `${spacing.sm} ${spacing.base}`,
+              background: colors.primary.greenLight,
+              color: colors.primary.green,
+              borderRadius: borderRadius.full,
+              fontSize: typography.fontSize.caption,
+              fontWeight: typography.fontWeight.medium,
+            }}
+          >
+            <span>💡</span>
+            <span>New orders will appear here automatically</span>
+          </Box>
+        </Container>
+      </Box>
     );
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 3 }}>
-      <Typography variant="h5" fontWeight="bold" gutterBottom>
-        Active Deliveries ({myDeliveries.length})
-      </Typography>
-
-      <Stack spacing={2}>
-        {myDeliveries.map((order: any) => {
-          const customerAddress = order.deliveryAddress || order.customer?.address || 'Address not provided';
-          const customerPhone = order.customer?.phone || order.customer?.phoneNumber || 'Phone not provided';
-          const customerName = order.customer?.name || `${order.customer?.firstName || ''} ${order.customer?.lastName || ''}`.trim() || 'Customer';
-
-          return (
-            <Card
-              key={order._id}
+    <Box
+      sx={{
+        minHeight: '100%',
+        background: colors.surface.backgroundAlt,
+      }}
+    >
+      <Container maxWidth="md" sx={{ py: spacing.lg, pb: `calc(${spacing.xxl} + ${spacing.lg})` }}>
+        {/* Header */}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mb: spacing.lg,
+          }}
+        >
+          <Box>
+            <Typography
               sx={{
-                border: selectedOrder?._id === order._id ? 2 : 0,
-                borderColor: 'primary.main'
+                fontSize: typography.fontSize.h1,
+                fontWeight: typography.fontWeight.bold,
+                color: colors.text.primary,
+                lineHeight: typography.lineHeight.tight,
               }}
             >
-              <CardContent>
-                {/* Order Header */}
-                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-                  <Box>
-                    <Typography variant="h6" fontWeight="bold">
-                      Order #{order.orderNumber || order._id.slice(-6).toUpperCase()}
-                    </Typography>
-                    <Chip
-                      label={order.status}
-                      color="warning"
-                      size="small"
-                      sx={{ mt: 0.5 }}
-                    />
-                  </Box>
-                  <Typography variant="h5" fontWeight="bold" color="primary">
-                    ₹{order.totalAmount}
-                  </Typography>
-                </Stack>
+              Active Deliveries
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: typography.fontSize.caption,
+                color: colors.text.secondary,
+                mt: spacing.xs,
+              }}
+            >
+              {myDeliveries.length} {myDeliveries.length === 1 ? 'order' : 'orders'} in queue
+            </Typography>
+          </Box>
 
-                <Divider sx={{ my: 2 }} />
+          {/* View Toggle */}
+          <Box sx={{ display: 'flex', gap: spacing.sm, alignItems: 'center' }}>
+            {/* Filter Button */}
+            <IconButton
+              size="small"
+              sx={{
+                color: colors.text.secondary,
+                '&:hover': {
+                  backgroundColor: colors.primary.greenLight,
+                  color: colors.primary.green,
+                },
+              }}
+            >
+              <FilterIcon />
+            </IconButton>
 
-                {/* Customer Details */}
-                <Stack spacing={1.5}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <LocationOnIcon color="action" />
-                    <Box flexGrow={1}>
-                      <Typography variant="caption" color="text.secondary">
-                        Delivery Address
-                      </Typography>
-                      <Typography variant="body2" fontWeight="medium">
-                        {customerAddress}
-                      </Typography>
-                    </Box>
-                  </Stack>
+            {/* List/Map Toggle */}
+            <ToggleButtonGroup
+              value={viewMode}
+              exclusive
+              onChange={(_, value) => value && setViewMode(value)}
+              size="small"
+              sx={{
+                '& .MuiToggleButton-root': {
+                  padding: spacing.xs,
+                  border: `1px solid ${colors.surface.border}`,
+                  color: colors.text.secondary,
 
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <PhoneIcon color="action" />
-                    <Box flexGrow={1}>
-                      <Typography variant="caption" color="text.secondary">
-                        Customer
-                      </Typography>
-                      <Typography variant="body2" fontWeight="medium">
-                        {customerName} - {customerPhone}
-                      </Typography>
-                    </Box>
-                  </Stack>
+                  '&.Mui-selected': {
+                    backgroundColor: colors.primary.green,
+                    color: colors.text.inverse,
+                    borderColor: colors.primary.green,
 
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <AccessTimeIcon color="action" />
-                    <Box flexGrow={1}>
-                      <Typography variant="caption" color="text.secondary">
-                        Order Time
-                      </Typography>
-                      <Typography variant="body2" fontWeight="medium">
-                        {new Date(order.createdAt).toLocaleTimeString()}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </Stack>
+                    '&:hover': {
+                      backgroundColor: colors.primary.greenDark,
+                    },
+                  },
+                },
+              }}
+            >
+              <ToggleButton value="list">
+                <ListIcon fontSize="small" />
+              </ToggleButton>
+              <ToggleButton value="map">
+                <MapIcon fontSize="small" />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+        </Box>
 
-                <Divider sx={{ my: 2 }} />
+        {/* Delivery Cards */}
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: spacing.md,
+          }}
+        >
+          {myDeliveries.map((order: any) => {
+            const rawAddress = order.deliveryAddress || order.customer?.address;
+            const customerAddress = formatAddress(rawAddress);
+            const customerPhone = order.customer?.phone || 'Phone not provided';
+            const customerName = order.customer?.name || 'Customer';
 
-                {/* Order Items */}
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="caption" color="text.secondary" gutterBottom>
-                    Items ({order.items?.length || 0})
-                  </Typography>
-                  <List dense disablePadding>
-                    {order.items?.slice(0, 3).map((item: any, index: number) => (
-                      <ListItem key={index} disablePadding>
-                        <ListItemText
-                          primary={`${item.quantity}x ${item.name}`}
-                          primaryTypographyProps={{ variant: 'body2' }}
-                        />
-                      </ListItem>
-                    ))}
-                    {order.items?.length > 3 && (
-                      <ListItem disablePadding>
-                        <ListItemText
-                          primary={`+${order.items.length - 3} more items`}
-                          primaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
-                        />
-                      </ListItem>
-                    )}
-                  </List>
-                </Box>
+            const items = order.items?.map((item: any) => ({
+              name: item.name,
+              quantity: item.quantity,
+            })) || [];
 
-                {/* Action Buttons */}
-                <Stack direction="row" spacing={1}>
-                  <Button
-                    variant="outlined"
-                    startIcon={<DirectionsIcon />}
-                    onClick={() => openGoogleMaps(customerAddress)}
-                    fullWidth
-                  >
-                    Navigate
-                  </Button>
-                  <IconButton
-                    color="primary"
-                    onClick={() => {
-                      setSelectedOrder(order);
-                      setShowContactDialog(true);
-                    }}
-                  >
-                    <PhoneIcon />
-                  </IconButton>
-                  <Button
-                    variant="contained"
-                    startIcon={<CheckCircleIcon />}
-                    color="success"
-                    onClick={() => handleMarkDelivered(order._id)}
-                    fullWidth
-                  >
-                    Delivered
-                  </Button>
-                </Stack>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </Stack>
+            return (
+              <DeliveryCard
+                key={order.id || order._id}
+                orderNumber={`#${order.orderNumber || (order.id || order._id).slice(-6).toUpperCase()}`}
+                amount={order.totalAmount}
+                customerName={customerName}
+                customerPhone={customerPhone}
+                address={customerAddress}
+                items={items}
+                onNavigate={() => openGoogleMaps(customerAddress)}
+                onContact={() => {
+                  setSelectedOrder(order);
+                  setShowContactDialog(true);
+                }}
+                onComplete={() => handleMarkDelivered(order.id || order._id)}
+              />
+            );
+          })}
+        </Box>
 
-      {/* Customer Contact Dialog */}
-      {selectedOrder && (
-        <CustomerContact
-          open={showContactDialog}
-          onClose={() => setShowContactDialog(false)}
-          customerName={selectedOrder.customer?.name || `${selectedOrder.customer?.firstName || ''} ${selectedOrder.customer?.lastName || ''}`.trim()}
-          customerPhone={selectedOrder.customer?.phone || selectedOrder.customer?.phoneNumber}
-          orderNumber={selectedOrder.orderNumber || selectedOrder._id.slice(-6).toUpperCase()}
-        />
-      )}
-    </Container>
+        {/* Map View Placeholder (for future implementation) */}
+        {viewMode === 'map' && (
+          <Box
+            sx={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: colors.surface.background,
+              zIndex: 999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography
+                sx={{
+                  fontSize: typography.fontSize.h2,
+                  fontWeight: typography.fontWeight.semibold,
+                  color: colors.text.primary,
+                  mb: spacing.sm,
+                }}
+              >
+                Map View
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: typography.fontSize.body,
+                  color: colors.text.secondary,
+                  mb: spacing.lg,
+                }}
+              >
+                Interactive map with delivery routes coming soon
+              </Typography>
+              <IconButton
+                onClick={() => setViewMode('list')}
+                sx={{
+                  backgroundColor: colors.primary.green,
+                  color: colors.text.inverse,
+                  '&:hover': {
+                    backgroundColor: colors.primary.greenDark,
+                  },
+                }}
+              >
+                <ListIcon />
+              </IconButton>
+            </Box>
+          </Box>
+        )}
+
+        {/* Customer Contact Dialog */}
+        {selectedOrder && (
+          <CustomerContact
+            open={showContactDialog}
+            onClose={() => setShowContactDialog(false)}
+            customerName={selectedOrder.customer?.name || 'Customer'}
+            customerPhone={selectedOrder.customer?.phone || 'Phone not provided'}
+            orderNumber={selectedOrder.orderNumber || (selectedOrder.id || selectedOrder._id).slice(-6).toUpperCase()}
+          />
+        )}
+      </Container>
+    </Box>
   );
 };
 

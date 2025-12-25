@@ -26,6 +26,10 @@ public interface TransactionRepository extends MongoRepository<Transaction, Stri
 
     List<Transaction> findByStoreIdAndStatus(String storeId, Transaction.PaymentStatus status);
 
+    /**
+     * @deprecated Use findByStoreIdAndCreatedAtBetween instead for store data isolation
+     */
+    @Deprecated
     @Query("{ 'createdAt' : { $gte: ?0, $lte: ?1 } }")
     List<Transaction> findTransactionsBetweenDates(LocalDateTime startDate, LocalDateTime endDate);
 

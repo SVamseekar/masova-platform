@@ -1,6 +1,7 @@
 package com.MaSoVa.delivery.entity;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -15,6 +16,9 @@ public class DeliveryTracking {
 
     @Id
     private String id;
+
+    @Version
+    private Long version;
 
     @Indexed(unique = true)
     private String orderId;
@@ -34,6 +38,7 @@ public class DeliveryTracking {
 
     // Dispatch details
     private String dispatchMethod; // AUTO, MANUAL
+    private String priorityLevel; // LOW, MEDIUM, HIGH, URGENT
     private LocalDateTime assignedAt;
     private LocalDateTime acceptedAt;
     private LocalDateTime pickedUpAt;
@@ -41,7 +46,13 @@ public class DeliveryTracking {
 
     // Status
     @Indexed
-    private String status; // ASSIGNED, ACCEPTED, PICKED_UP, OUT_FOR_DELIVERY, DELIVERED, CANCELLED
+    private String status; // PENDING_ASSIGNMENT, ASSIGNED, ACCEPTED, REJECTED, PICKED_UP, IN_TRANSIT, ARRIVED, DELIVERED, FAILED, CANCELLED
+
+    // Rejection tracking (for DELIV-003)
+    private String rejectionReason;
+    private LocalDateTime rejectedAt;
+    private Integer reassignmentCount;  // How many times this delivery has been reassigned
+    private Integer acceptanceTimeoutMinutes;  // Max time to accept before auto-reassignment
 
     // Metrics
     private BigDecimal distanceKm;
@@ -129,6 +140,14 @@ public class DeliveryTracking {
 
     public void setDispatchMethod(String dispatchMethod) {
         this.dispatchMethod = dispatchMethod;
+    }
+
+    public String getPriorityLevel() {
+        return priorityLevel;
+    }
+
+    public void setPriorityLevel(String priorityLevel) {
+        this.priorityLevel = priorityLevel;
     }
 
     public LocalDateTime getAssignedAt() {
@@ -219,6 +238,38 @@ public class DeliveryTracking {
         this.customerFeedback = customerFeedback;
     }
 
+    public String getRejectionReason() {
+        return rejectionReason;
+    }
+
+    public void setRejectionReason(String rejectionReason) {
+        this.rejectionReason = rejectionReason;
+    }
+
+    public LocalDateTime getRejectedAt() {
+        return rejectedAt;
+    }
+
+    public void setRejectedAt(LocalDateTime rejectedAt) {
+        this.rejectedAt = rejectedAt;
+    }
+
+    public Integer getReassignmentCount() {
+        return reassignmentCount;
+    }
+
+    public void setReassignmentCount(Integer reassignmentCount) {
+        this.reassignmentCount = reassignmentCount;
+    }
+
+    public Integer getAcceptanceTimeoutMinutes() {
+        return acceptanceTimeoutMinutes;
+    }
+
+    public void setAcceptanceTimeoutMinutes(Integer acceptanceTimeoutMinutes) {
+        this.acceptanceTimeoutMinutes = acceptanceTimeoutMinutes;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -249,6 +300,7 @@ public class DeliveryTracking {
         private DeliveryAddress pickupAddress;
         private DeliveryAddress deliveryAddress;
         private String dispatchMethod;
+        private String priorityLevel;
         private LocalDateTime assignedAt;
         private LocalDateTime acceptedAt;
         private LocalDateTime pickedUpAt;
@@ -260,6 +312,10 @@ public class DeliveryTracking {
         private Boolean onTime;
         private Integer customerRating;
         private String customerFeedback;
+        private String rejectionReason;
+        private LocalDateTime rejectedAt;
+        private Integer reassignmentCount;
+        private Integer acceptanceTimeoutMinutes;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
 
@@ -305,6 +361,11 @@ public class DeliveryTracking {
 
         public Builder dispatchMethod(String dispatchMethod) {
             this.dispatchMethod = dispatchMethod;
+            return this;
+        }
+
+        public Builder priorityLevel(String priorityLevel) {
+            this.priorityLevel = priorityLevel;
             return this;
         }
 
@@ -363,6 +424,26 @@ public class DeliveryTracking {
             return this;
         }
 
+        public Builder rejectionReason(String rejectionReason) {
+            this.rejectionReason = rejectionReason;
+            return this;
+        }
+
+        public Builder rejectedAt(LocalDateTime rejectedAt) {
+            this.rejectedAt = rejectedAt;
+            return this;
+        }
+
+        public Builder reassignmentCount(Integer reassignmentCount) {
+            this.reassignmentCount = reassignmentCount;
+            return this;
+        }
+
+        public Builder acceptanceTimeoutMinutes(Integer acceptanceTimeoutMinutes) {
+            this.acceptanceTimeoutMinutes = acceptanceTimeoutMinutes;
+            return this;
+        }
+
         public Builder createdAt(LocalDateTime createdAt) {
             this.createdAt = createdAt;
             return this;
@@ -384,6 +465,7 @@ public class DeliveryTracking {
             tracking.pickupAddress = this.pickupAddress;
             tracking.deliveryAddress = this.deliveryAddress;
             tracking.dispatchMethod = this.dispatchMethod;
+            tracking.priorityLevel = this.priorityLevel;
             tracking.assignedAt = this.assignedAt;
             tracking.acceptedAt = this.acceptedAt;
             tracking.pickedUpAt = this.pickedUpAt;
@@ -395,6 +477,10 @@ public class DeliveryTracking {
             tracking.onTime = this.onTime;
             tracking.customerRating = this.customerRating;
             tracking.customerFeedback = this.customerFeedback;
+            tracking.rejectionReason = this.rejectionReason;
+            tracking.rejectedAt = this.rejectedAt;
+            tracking.reassignmentCount = this.reassignmentCount;
+            tracking.acceptanceTimeoutMinutes = this.acceptanceTimeoutMinutes;
             tracking.createdAt = this.createdAt;
             tracking.updatedAt = this.updatedAt;
             return tracking;

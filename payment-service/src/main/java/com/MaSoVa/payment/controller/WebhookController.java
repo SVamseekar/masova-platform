@@ -18,6 +18,7 @@ public class WebhookController {
     private static final Logger log = LoggerFactory.getLogger(WebhookController.class);
 
     private final RazorpayService razorpayService;
+    @SuppressWarnings("unused")
     private final PaymentService paymentService;
     private final RefundService refundService;
     private final RazorpayConfig razorpayConfig;

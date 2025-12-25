@@ -19,42 +19,91 @@ export interface DeliveryAddress {
   landmark?: string;
 }
 
+// AddressDTO format matching backend
+export interface AddressDTO {
+  street?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  latitude: number;
+  longitude: number;
+}
+
 export interface RouteOptimizationRequest {
-  origin: DeliveryLocation;
-  destination: DeliveryLocation;
+  origin: AddressDTO;
+  destination: AddressDTO;
+  travelMode?: 'DRIVING' | 'WALKING' | 'BICYCLING';
   avoidTolls?: boolean;
   avoidHighways?: boolean;
 }
 
+export interface RouteStep {
+  instruction: string;
+  distanceMeters: number;
+  durationSeconds: number;
+  maneuver?: string;
+}
+
+// Backend response format
+export interface RouteOptimizationResponse {
+  distanceKm: number;
+  durationMinutes: number;
+  polyline: string;
+  steps: RouteStep[];
+  startLocation?: AddressDTO;
+  endLocation?: AddressDTO;
+  // Computed fields for frontend convenience
+  distance: number; // in meters (computed from distanceKm)
+  duration: number; // in seconds (computed from durationMinutes)
+  segments: RouteSegment[]; // mapped from steps for backward compatibility
+  estimatedArrival?: string;
+}
+
+// Legacy format for backward compatibility
 export interface RouteSegment {
   distance: number; // in meters
   duration: number; // in seconds
   instruction: string;
 }
 
-export interface RouteOptimizationResponse {
-  distance: number; // in meters
-  duration: number; // in seconds
-  polyline: string;
-  segments: RouteSegment[];
-  estimatedArrival: string;
+// Available driver for manual assignment
+export interface AvailableDriver {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  rating?: number;
+  activeDeliveries?: number;
+  currentLocation?: {
+    latitude: number;
+    longitude: number;
+  };
+  status?: string;
 }
 
 export interface AutoDispatchRequest {
   orderId: string;
-  pickupLocation: DeliveryLocation;
-  deliveryLocation: DeliveryLocation;
+  storeId: string;
+  // Frontend format - GeoJSON Point
+  pickupLocation?: DeliveryLocation;
+  deliveryLocation?: DeliveryLocation;
+  // Backend format - AddressDTO
+  deliveryAddress?: AddressDTO;
   priorityLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  preferredDriverId?: string; // For manual driver assignment
 }
 
 export interface AutoDispatchResponse {
   orderId: string;
-  assignedDriverId: string;
+  driverId: string;
   driverName: string;
   driverPhone: string;
-  estimatedPickupTime: string;
-  estimatedDeliveryTime: string;
-  distance: number;
+  distanceToPickup?: number;
+  estimatedPickupTime?: number; // in minutes
+  estimatedDeliveryTime?: number; // in minutes
+  assignedAt?: string;
+  dispatchMethod?: 'AUTO' | 'MANUAL';
+  status?: string;
 }
 
 export interface TrackingResponse {
@@ -68,6 +117,7 @@ export interface TrackingResponse {
   estimatedArrival: string;
   distanceRemaining: number; // in meters
   lastUpdated: string;
+  orderType?: 'DELIVERY' | 'PICKUP' | 'DINE_IN'; // Order type to restrict tracking
 }
 
 export interface ETAResponse {
@@ -131,8 +181,14 @@ export const deliveryApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Delivery', 'Tracking', 'Metrics'],
+  tagTypes: ['Delivery', 'Tracking', 'Metrics', 'Drivers'],
   endpoints: (builder) => ({
+    // Get available drivers for manual assignment
+    getAvailableDrivers: builder.query<AvailableDriver[], string>({
+      query: (storeId) => `/delivery/drivers/available?storeId=${storeId}`,
+      providesTags: ['Drivers'],
+    }),
+
     // Auto-dispatch driver to order
     autoDispatch: builder.mutation<AutoDispatchResponse, AutoDispatchRequest>({
       query: (data) => ({
@@ -143,13 +199,37 @@ export const deliveryApi = createApi({
       invalidatesTags: ['Delivery', 'Metrics'],
     }),
 
-    // Get optimized route
+    // Get optimized route (DELIV-004: Real navigation)
     getOptimizedRoute: builder.mutation<RouteOptimizationResponse, RouteOptimizationRequest>({
       query: (data) => ({
         url: '/delivery/route-optimize',
         method: 'POST',
         body: data,
       }),
+      // Transform backend response to include computed fields for frontend convenience
+      transformResponse: (response: any): RouteOptimizationResponse => {
+        const distanceMeters = (response.distanceKm || 0) * 1000;
+        const durationSeconds = (response.durationMinutes || 0) * 60;
+
+        // Map steps to segments for backward compatibility
+        const segments: RouteSegment[] = (response.steps || []).map((step: any) => ({
+          distance: step.distanceMeters || 0,
+          duration: step.durationSeconds || 0,
+          instruction: step.instruction || '',
+        }));
+
+        // Calculate estimated arrival if not provided
+        const estimatedArrival = response.estimatedArrival ||
+          new Date(Date.now() + durationSeconds * 1000).toISOString();
+
+        return {
+          ...response,
+          distance: distanceMeters,
+          duration: durationSeconds,
+          segments,
+          estimatedArrival,
+        };
+      },
     }),
 
     // Update driver location
@@ -186,14 +266,15 @@ export const deliveryApi = createApi({
     }),
 
     // Get today's metrics
-    getTodayMetrics: builder.query<DeliveryMetrics, void>({
-      query: () => '/delivery/metrics/today',
-      providesTags: ['Metrics'],
+    getTodayMetrics: builder.query<DeliveryMetrics, string | undefined>({
+      query: (storeId) => `/delivery/metrics/today${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'Metrics', id: storeId || 'DEFAULT' }],
     }),
   }),
 });
 
 export const {
+  useGetAvailableDriversQuery,
   useAutoDispatchMutation,
   useGetOptimizedRouteMutation,
   useUpdateLocationMutation,

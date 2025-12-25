@@ -44,7 +44,8 @@ export interface Order {
   deliveryFee: number;
   tax: number;
   total: number;
-  status: 'RECEIVED' | 'PREPARING' | 'OVEN' | 'BAKED' | 'DISPATCHED' | 'DELIVERED' | 'CANCELLED';
+  totalAmount?: number; // Alias for total (for backwards compatibility)
+  status: 'RECEIVED' | 'PREPARING' | 'OVEN' | 'BAKED' | 'READY' | 'DISPATCHED' | 'DELIVERED' | 'COMPLETED' | 'SERVED' | 'CANCELLED';
   orderType: 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY';
   paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
   paymentMethod?: 'CASH' | 'CARD' | 'UPI' | 'WALLET';
@@ -56,12 +57,16 @@ export interface Order {
   completedAt?: string;
   deliveryAddress?: DeliveryAddress;
   assignedDriverId?: string;
+  driverId?: string; // Alias for assignedDriverId (for backwards compatibility)
+  driverName?: string; // Driver name for display
   specialInstructions?: string;
   qualityCheckpoints?: QualityCheckpoint[];
   actualPreparationTime?: number;
   actualOvenTime?: number;
   assignedMakeTableStation?: string;
   assignedKitchenStaffId?: string;
+  createdByStaffId?: string;
+  createdByStaffName?: string;
   assignedKitchenStaffName?: string;
   assignedToKitchenAt?: string;
 }
@@ -91,18 +96,21 @@ export interface CreateOrderRequest {
     landmark?: string;
   };
   specialInstructions?: string;
+  // POS staff attribution - tracks which staff member created the order
+  createdByStaffId?: string;
+  createdByStaffName?: string;
 }
 
 export interface UpdateOrderStatusRequest {
   orderId: string;
-  status: 'RECEIVED' | 'PREPARING' | 'OVEN' | 'BAKED' | 'DISPATCHED' | 'DELIVERED' | 'CANCELLED';
+  status: 'RECEIVED' | 'PREPARING' | 'OVEN' | 'BAKED' | 'READY' | 'DISPATCHED' | 'DELIVERED' | 'COMPLETED' | 'SERVED' | 'CANCELLED';
 }
 
 export const orderApi = createApi({
   reducerPath: 'orderApi',
   baseQuery: fetchBaseQuery({
     baseUrl: API_CONFIG.ORDER_SERVICE_URL,
-    prepareHeaders: (headers, { getState }) => {
+    prepareHeaders: (headers, { getState, endpoint }) => {
       const state = getState() as RootState;
       const token = state.auth.accessToken;
       const user = state.auth.user;
@@ -123,8 +131,10 @@ export const orderApi = createApi({
       }
 
       // Add selected store for managers/customers
-      if (selectedStoreId) {
-        headers.set('X-Selected-Store-Id', selectedStoreId);
+      // Priority: cart selectedStoreId > user's storeId
+      const storeIdToUse = selectedStoreId || user?.storeId;
+      if (storeIdToUse) {
+        headers.set('X-Selected-Store-Id', storeIdToUse);
       }
 
       return headers;
@@ -156,9 +166,12 @@ export const orderApi = createApi({
     }),
 
     // Get kitchen queue (active orders for kitchen display)
-    getKitchenQueue: builder.query<Order[], void>({
-      query: () => `/orders/kitchen`,
-      providesTags: ['KitchenQueue'],
+    // Takes storeId as parameter to ensure refetch when store changes
+    getKitchenQueue: builder.query<Order[], string | undefined>({
+      query: (storeId) => `/orders/kitchen${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [
+        { type: 'KitchenQueue', id: storeId || 'DEFAULT' }
+      ],
     }),
 
     // Get orders by status
@@ -228,12 +241,14 @@ export const orderApi = createApi({
     }),
 
     // Get store orders
-    getStoreOrders: builder.query<Order[], void>({
-      query: () => `/orders/store`,
-      providesTags: (result) =>
+    // Takes storeId as parameter to ensure refetch when store changes
+    // Note: storeId is passed via headers (X-Selected-Store-Id), not query params
+    getStoreOrders: builder.query<Order[], string | undefined>({
+      query: (storeId) => '/orders/store',
+      providesTags: (result, error, storeId) =>
         result
-          ? [...result.map(({ id }) => ({ type: 'Order' as const, id })), { type: 'Orders', id: 'LIST' }]
-          : [{ type: 'Orders', id: 'LIST' }],
+          ? [...result.map(({ id }) => ({ type: 'Order' as const, id })), { type: 'Orders', id: storeId || 'DEFAULT' }]
+          : [{ type: 'Orders', id: storeId || 'DEFAULT' }],
     }),
 
     // Move order to next stage
@@ -347,9 +362,9 @@ export const orderApi = createApi({
       providesTags: (result, error, orderId) => [{ type: 'Order', id: orderId }],
     }),
 
-    getOrdersWithFailedQualityChecks: builder.query<Order[], void>({
-      query: () => `/orders/store/failed-quality-checks`,
-      providesTags: ['Orders'],
+    getOrdersWithFailedQualityChecks: builder.query<Order[], string | undefined>({
+      query: (storeId) => `/orders/store/failed-quality-checks${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'Orders', id: storeId || 'DEFAULT' }],
     }),
 
     getAveragePreparationTime: builder.query<number, { date: string }>({
@@ -388,6 +403,19 @@ export const orderApi = createApi({
       completionRate: number;
     }, { staffId: string; date: string }>({
       query: ({ staffId, date }) => `/orders/analytics/kitchen-staff/${staffId}/performance?date=${date}`,
+    }),
+
+    getPosStaffPerformance: builder.query<{
+      staffId: string;
+      staffName: string | null;
+      totalOrders: number;
+      totalRevenue: number;
+      completedOrders: number;
+      cancelledOrders: number;
+      averageOrderValue: number;
+    }, { staffId: string; startDate: string; endDate: string }>({
+      query: ({ staffId, startDate, endDate }) =>
+        `/orders/analytics/pos-staff/${staffId}/performance?startDate=${startDate}&endDate=${endDate}`,
     }),
 
     getPreparationTimeDistribution: builder.query<{
@@ -431,5 +459,6 @@ export const {
   useGetOrdersByMakeTableStationQuery,
   useGetAveragePreparationTimeByItemQuery,
   useGetKitchenStaffPerformanceQuery,
+  useGetPosStaffPerformanceQuery,
   useGetPreparationTimeDistributionQuery,
 } = orderApi;

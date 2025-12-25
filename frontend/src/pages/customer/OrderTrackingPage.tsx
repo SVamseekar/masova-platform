@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
@@ -13,6 +13,8 @@ import { useGetCustomerByUserIdQuery } from '../../store/api/customerApi';
 import { ORDER_STATUS_CONFIG, ORDER_TYPE_CONFIG, PAYMENT_STATUS_CONFIG, ORDER_STATUS_FLOW } from '../../types/order';
 import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
+import { useCustomerOrdersWebSocket } from '../../hooks/useCustomerOrdersWebSocket';
+import { OrderTrackingUpdate } from '../../services/websocketService';
 
 const OrderTrackingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -35,12 +37,32 @@ const OrderTrackingPage: React.FC = () => {
     });
   }, [currentUser, customer, customerLoading, customerError]);
 
+  // RT-002: WebSocket for real-time order updates across all customer orders
+  const handleWebSocketUpdate = useCallback((update: OrderTrackingUpdate) => {
+    console.log('[OrderTrackingPage] WebSocket update:', update);
+    // Refetch orders to get the updated data
+    // The WebSocket gives us instant notification, refetch ensures data consistency
+  }, []);
+
+  const { isConnected: wsConnected, recentUpdates } = useCustomerOrdersWebSocket({
+    customerId: customer?.id || '',
+    onOrderUpdate: handleWebSocketUpdate,
+    enabled: !!customer?.id,
+  });
+
   // API hooks - use customer ID from customer data
   const { data: customerOrders = [], isLoading: ordersLoading, error: ordersError, refetch } = useGetCustomerOrdersQuery(customer?.id || '', {
     skip: !customer?.id,
-    pollingInterval: 10000, // Poll every 10 seconds for real-time updates
+    pollingInterval: wsConnected ? 30000 : 10000, // Reduce polling when WebSocket connected
     refetchOnMountOrArgChange: true, // Refetch on mount to get latest orders
   });
+
+  // Refetch when WebSocket receives updates
+  React.useEffect(() => {
+    if (recentUpdates.length > 0) {
+      refetch();
+    }
+  }, [recentUpdates, refetch]);
 
   // Debug orders query
   React.useEffect(() => {
@@ -630,6 +652,26 @@ const OrderTrackingPage: React.FC = () => {
         />
 
         <div style={contentStyles}>
+          {/* RT-002: WebSocket Connection Indicator */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            marginBottom: spacing[2],
+            fontSize: typography.fontSize.xs,
+            color: wsConnected ? colors.semantic.success : colors.text.tertiary,
+          }}>
+            <span style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: wsConnected ? colors.semantic.success : colors.text.tertiary,
+              marginRight: spacing[2],
+              animation: wsConnected ? 'pulse 2s infinite' : 'none',
+            }} />
+            {wsConnected ? 'Live Updates' : 'Polling Mode'}
+          </div>
+
           {/* Page Header */}
           <div style={{ marginBottom: spacing[6] }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing[4] }}>

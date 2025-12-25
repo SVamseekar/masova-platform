@@ -25,6 +25,12 @@ export interface Review {
   moderatorId?: string;
   moderatedAt?: string;
   responseId?: string;
+  response?: {
+    id: string;
+    text: string;
+    respondedBy: string;
+    respondedAt: string;
+  }; // Populated response object
   sentiment?: SentimentType;
   sentimentScore?: number;
   createdAt: string;
@@ -258,20 +264,31 @@ export const reviewApi = createApi({
     // Get recent reviews
     getRecentReviews: builder.query<
       PagedResponse<Review>,
-      { page?: number; size?: number }
+      { storeId?: string; page?: number; size?: number }
     >({
-      query: ({ page = 0, size = 20 }) => `/reviews/recent?page=${page}&size=${size}`,
-      providesTags: ['Review'],
+      query: ({ storeId, page = 0, size = 20 }) => {
+        const params = new URLSearchParams();
+        if (storeId) params.append('storeId', storeId);
+        params.append('page', page.toString());
+        params.append('size', size.toString());
+        return `/reviews/recent?${params.toString()}`;
+      },
+      providesTags: (result, error, { storeId }) => [{ type: 'Review', id: storeId || 'DEFAULT' }],
     }),
 
     // Get reviews needing response
     getReviewsNeedingResponse: builder.query<
       PagedResponse<Review>,
-      { page?: number; size?: number }
+      { storeId?: string; page?: number; size?: number }
     >({
-      query: ({ page = 0, size = 20 }) =>
-        `/reviews/needs-response?page=${page}&size=${size}`,
-      providesTags: ['Review'],
+      query: ({ storeId, page = 0, size = 20 }) => {
+        const params = new URLSearchParams();
+        if (storeId) params.append('storeId', storeId);
+        params.append('page', page.toString());
+        params.append('size', size.toString());
+        return `/reviews/needs-response?${params.toString()}`;
+      },
+      providesTags: (result, error, { storeId }) => [{ type: 'Review', id: storeId || 'DEFAULT' }],
     }),
 
     // Flag review
@@ -306,15 +323,45 @@ export const reviewApi = createApi({
     }),
 
     // Get overall stats
-    getOverallStats: builder.query<ReviewStatsResponse, void>({
-      query: () => '/reviews/stats/overall',
-      providesTags: ['ReviewStats'],
+    getOverallStats: builder.query<ReviewStatsResponse, string | undefined>({
+      query: (storeId) => `/reviews/stats/overall${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'ReviewStats', id: storeId || 'DEFAULT' }],
     }),
 
     // Get driver rating
     getDriverRating: builder.query<DriverRatingResponse, string>({
       query: (driverId) => `/reviews/stats/driver/${driverId}`,
       providesTags: (result, error, id) => [{ type: 'ReviewStats', id }],
+    }),
+
+    // Get staff rating
+    getStaffRating: builder.query<{
+      staffId: string;
+      staffName: string | null;
+      averageRating: number;
+      totalReviews: number;
+    }, string>({
+      query: (staffId) => `/reviews/staff/${staffId}/rating`,
+      providesTags: (result, error, id) => [{ type: 'ReviewStats', id: `staff-${id}` }],
+    }),
+
+    // Get reviews by staff
+    getReviewsByStaffId: builder.query<{
+      content: Review[];
+      totalElements: number;
+      totalPages: number;
+      size: number;
+      number: number;
+    }, { staffId: string; page?: number; size?: number }>({
+      query: ({ staffId, page = 0, size = 20 }) =>
+        `/reviews/staff/${staffId}?page=${page}&size=${size}`,
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.content.map(({ id }) => ({ type: 'Review' as const, id })),
+              { type: 'Review', id: 'LIST' },
+            ]
+          : [{ type: 'Review', id: 'LIST' }],
     }),
 
     // Get item rating
@@ -381,18 +428,30 @@ export const reviewApi = createApi({
     // Moderation endpoints
     getPendingReviews: builder.query<
       PagedResponse<Review>,
-      { page?: number; size?: number }
+      { storeId?: string; page?: number; size?: number }
     >({
-      query: ({ page = 0, size = 20 }) => `/reviews/pending?page=${page}&size=${size}`,
-      providesTags: ['Review'],
+      query: ({ storeId, page = 0, size = 20 }) => {
+        const params = new URLSearchParams();
+        if (storeId) params.append('storeId', storeId);
+        params.append('page', page.toString());
+        params.append('size', size.toString());
+        return `/reviews/pending?${params.toString()}`;
+      },
+      providesTags: (result, error, { storeId }) => [{ type: 'Review', id: storeId || 'DEFAULT' }],
     }),
 
     getFlaggedReviews: builder.query<
       PagedResponse<Review>,
-      { page?: number; size?: number }
+      { storeId?: string; page?: number; size?: number }
     >({
-      query: ({ page = 0, size = 20 }) => `/reviews/flagged?page=${page}&size=${size}`,
-      providesTags: ['Review'],
+      query: ({ storeId, page = 0, size = 20 }) => {
+        const params = new URLSearchParams();
+        if (storeId) params.append('storeId', storeId);
+        params.append('page', page.toString());
+        params.append('size', size.toString());
+        return `/reviews/flagged?${params.toString()}`;
+      },
+      providesTags: (result, error, { storeId }) => [{ type: 'Review', id: storeId || 'DEFAULT' }],
     }),
 
     approveReview: builder.mutation<Review, string>({
@@ -430,6 +489,8 @@ export const {
   useDeleteReviewMutation,
   useGetOverallStatsQuery,
   useGetDriverRatingQuery,
+  useGetStaffRatingQuery,
+  useGetReviewsByStaffIdQuery,
   useGetItemRatingQuery,
   useGetPublicItemRatingQuery,
   useCreateResponseMutation,

@@ -5,7 +5,6 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -43,8 +42,15 @@ public interface WasteRecordRepository extends MongoRepository<WasteRecord, Stri
 
     /**
      * Find waste records reported by user
+     * @deprecated Use findByStoreIdAndReportedBy for store data isolation
      */
+    @Deprecated
     List<WasteRecord> findByReportedBy(String userId);
+
+    /**
+     * Week 4: Store-aware query for waste records by reporter
+     */
+    List<WasteRecord> findByStoreIdAndReportedBy(String storeId, String userId);
 
     /**
      * Calculate total waste cost by store and date range

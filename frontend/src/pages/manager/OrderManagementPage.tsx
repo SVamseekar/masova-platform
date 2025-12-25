@@ -1,42 +1,90 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import AppHeader from '../../components/common/AppHeader';
-import StoreSelector from '../../components/StoreSelector';
 import OrderForm from '../../components/forms/OrderForm';
-import { useAppSelector } from '../../store/hooks';
+import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { selectSelectedStoreId, selectSelectedStoreName } from '../../store/slices/cartSlice';
+import { setSelectedStore, selectSelectedStoreId } from '../../store/slices/cartSlice';
+import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
+import { usePageStore } from '../../contexts/PageStoreContext';
+import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import {
   useGetStoreOrdersQuery,
   useUpdateOrderStatusMutation,
   useUpdateOrderPriorityMutation,
   useCancelOrderMutation,
   useAssignDriverMutation,
+  useUpdatePaymentStatusMutation,
   Order,
 } from '../../store/api/orderApi';
 import { useGetUsersQuery } from '../../store/api/userApi';
+import { useGetTodaySalesMetricsQuery } from '../../store/api/analyticsApi';
 import { ORDER_STATUS_CONFIG, ORDER_TYPE_CONFIG, PAYMENT_STATUS_CONFIG } from '../../types/order';
 import type { OrderStatus, OrderPriority } from '../../types/order';
+import { FilterBar, type FilterConfig, type FilterValues, type SortConfig } from '../../components/common/FilterBar';
+import { applyFilters, applySort, exportToCSV, commonFilters } from '../../utils/filterUtils';
 import { colors, spacing, typography, shadows } from '../../styles/design-tokens';
 
 const OrderManagementPage: React.FC = () => {
+  const dispatch = useAppDispatch();
   const currentUser = useAppSelector(selectCurrentUser);
-  const selectedStoreId = useAppSelector(selectSelectedStoreId);
-  const selectedStoreName = useAppSelector(selectSelectedStoreName);
+  const reduxSelectedStoreId = useAppSelector(selectSelectedStoreId);
+  const { selectedStoreId } = usePageStore();
+  const { handleBack } = useSmartBackNavigation();
+  const [isStoreInitialized, setIsStoreInitialized] = useState(false);
+
+  // Initialize Redux store selection IMMEDIATELY if not set (for API headers)
+  // This must happen BEFORE any API calls are made
+  useEffect(() => {
+    if (!reduxSelectedStoreId && currentUser?.storeId) {
+      // Set user's assigned store as default in Redux for API headers
+      dispatch(setSelectedStore({
+        storeId: currentUser.storeId,
+        storeName: currentUser.storeId // Use storeId as storeName for now
+      }));
+      setIsStoreInitialized(true);
+    } else if (reduxSelectedStoreId) {
+      // Redux store already has a selected store
+      setIsStoreInitialized(true);
+    } else if (currentUser && !currentUser.storeId) {
+      console.error('[OrderManagementPage] ERROR: User has no storeId! User:', currentUser);
+      // User doesn't have a storeId - they MUST select one via StoreSelector
+      // Mark as initialized so component can render, but skip will prevent API call
+      setIsStoreInitialized(true);
+    }
+  }, [reduxSelectedStoreId, currentUser, dispatch]);
 
   // Use selected store or fallback to user's store
   const storeId = selectedStoreId || currentUser?.storeId || '';
 
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'ALL'>('ALL');
 
-  // API hooks
-  const { data: orders = [], isLoading, refetch } = useGetStoreOrdersQuery(undefined, {
-    skip: !storeId,
+  // Filter and sort state
+  const [filterValues, setFilterValues] = useState<FilterValues>({
+    search: '',
+    status: '',
+    orderType: '',
+    paymentStatus: '',
+    dateRange: {},
+  });
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    field: 'createdAt',
+    direction: 'desc',
+  });
+
+  // API hooks - WAIT for store initialization before making API calls
+  const { data: orders = [], isLoading, refetch } = useGetStoreOrdersQuery(storeId, {
+    skip: !storeId || !isStoreInitialized, // Skip until store is initialized
     pollingInterval: 10000, // Poll every 10 seconds
   });
 
-  const { data: users = [] } = useGetUsersQuery({});
+  const { data: users = [] } = useGetUsersQuery();
+
+  // Fetch real-time analytics for the stats cards
+  const { data: todaySalesMetrics, refetch: refetchAnalytics } = useGetTodaySalesMetricsQuery(storeId, {
+    skip: !storeId || !isStoreInitialized,
+    pollingInterval: 60000, // Refresh every minute
+  });
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
   const [updateOrderPriority] = useUpdateOrderPriorityMutation();
   const [cancelOrder] = useCancelOrderMutation();
@@ -45,25 +93,161 @@ const OrderManagementPage: React.FC = () => {
   // Get drivers
   const drivers = users.filter(user => user.type === 'DRIVER');
 
-  // Filter orders by status
-  const filteredOrders = statusFilter === 'ALL'
-    ? orders
-    : orders.filter(order => order.status === statusFilter);
+  // Filter configuration
+  const filterConfigs: FilterConfig[] = [
+    {
+      type: 'search',
+      label: 'Search',
+      field: 'search',
+      placeholder: 'Search by order ID or customer...',
+    },
+    {
+      type: 'select',
+      label: 'Status',
+      field: 'status',
+      options: Object.keys(ORDER_STATUS_CONFIG).map(status => ({
+        label: ORDER_STATUS_CONFIG[status as OrderStatus].label,
+        value: status,
+      })),
+    },
+    {
+      type: 'select',
+      label: 'Order Type',
+      field: 'orderType',
+      options: Object.keys(ORDER_TYPE_CONFIG).map(type => ({
+        label: ORDER_TYPE_CONFIG[type as keyof typeof ORDER_TYPE_CONFIG].label,
+        value: type,
+      })),
+    },
+    {
+      type: 'select',
+      label: 'Payment Status',
+      field: 'paymentStatus',
+      options: Object.keys(PAYMENT_STATUS_CONFIG).map(status => ({
+        label: PAYMENT_STATUS_CONFIG[status as keyof typeof PAYMENT_STATUS_CONFIG].label,
+        value: status,
+      })),
+    },
+    {
+      type: 'dateRange',
+      label: 'Order Date',
+      field: 'dateRange',
+    },
+  ];
 
-  // Sort orders: urgent first, then by creation time
-  const sortedOrders = [...filteredOrders].sort((a, b) => {
-    if (a.priority === 'URGENT' && b.priority !== 'URGENT') return -1;
-    if (b.priority === 'URGENT' && a.priority !== 'URGENT') return 1;
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
+  const sortOptions = [
+    { label: 'Order Date', field: 'createdAt' },
+    { label: 'Total Amount', field: 'total' },
+    { label: 'Status', field: 'status' },
+    { label: 'Priority', field: 'priority' },
+  ];
 
-  // Calculate statistics
+  // Apply filters and sorting
+  const filteredAndSortedOrders = useMemo(() => {
+    const filtered = applyFilters(orders, filterValues, {
+      search: (order, value) =>
+        commonFilters.searchText(order, value as string, ['id', 'customer.name', 'customer.phone']),
+      status: (order, value) => order.status === value,
+      orderType: (order, value) => order.orderType === value,
+      paymentStatus: (order, value) => order.paymentStatus === value,
+      dateRange: (order, value) =>
+        commonFilters.dateRange(order, value as { from?: string; to?: string }, 'createdAt'),
+    });
+
+    // Sort with priority consideration (urgent orders first)
+    return filtered.sort((a, b) => {
+      // First, sort by priority (URGENT comes first)
+      if (a.priority === 'URGENT' && b.priority !== 'URGENT') return -1;
+      if (b.priority === 'URGENT' && a.priority !== 'URGENT') return 1;
+
+      // Then apply the selected sort config
+      const aValue = a[sortConfig.field as keyof Order];
+      const bValue = b[sortConfig.field as keyof Order];
+
+      if (sortConfig.field === 'createdAt') {
+        const aDate = new Date(aValue as string).getTime();
+        const bDate = new Date(bValue as string).getTime();
+        return sortConfig.direction === 'asc' ? aDate - bDate : bDate - aDate;
+      }
+
+      if (sortConfig.field === 'total') {
+        return sortConfig.direction === 'asc'
+          ? (aValue as number) - (bValue as number)
+          : (bValue as number) - (aValue as number);
+      }
+
+      // String comparison for other fields
+      return sortConfig.direction === 'asc'
+        ? String(aValue).localeCompare(String(bValue))
+        : String(bValue).localeCompare(String(aValue));
+    });
+  }, [orders, filterValues, sortConfig]);
+
+  const handleFilterChange = (field: string, value: string | string[] | { from?: string; to?: string }) => {
+    setFilterValues((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleClearFilters = () => {
+    setFilterValues({
+      search: '',
+      status: '',
+      orderType: '',
+      paymentStatus: '',
+      dateRange: {},
+    });
+  };
+
+  const handleSortChange = (field: string) => {
+    setSortConfig((prev) => ({
+      field,
+      direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
+  const handleExport = () => {
+    exportToCSV(
+      filteredAndSortedOrders,
+      'orders',
+      [
+        { label: 'Order ID', field: 'id' },
+        { label: 'Customer Name', field: 'customer.name' },
+        { label: 'Customer Phone', field: 'customer.phone' },
+        {
+          label: 'Order Type',
+          field: 'orderType',
+          format: (value) => ORDER_TYPE_CONFIG[value as keyof typeof ORDER_TYPE_CONFIG]?.label || value,
+        },
+        {
+          label: 'Status',
+          field: 'status',
+          format: (value) => ORDER_STATUS_CONFIG[value as OrderStatus]?.label || value,
+        },
+        {
+          label: 'Total Amount',
+          field: 'total',
+          format: (value) => `₹${value}`,
+        },
+        {
+          label: 'Payment Status',
+          field: 'paymentStatus',
+          format: (value) => PAYMENT_STATUS_CONFIG[value as keyof typeof PAYMENT_STATUS_CONFIG]?.label || value,
+        },
+        {
+          label: 'Created At',
+          field: 'createdAt',
+          format: (value) => new Date(value).toLocaleString(),
+        },
+      ]
+    );
+  };
+
+  // Calculate statistics - use real-time analytics when available, fallback to local calculation
   const stats = {
-    total: orders.length,
-    active: orders.filter(o => !['DELIVERED', 'CANCELLED'].includes(o.status)).length,
-    delivered: orders.filter(o => o.status === 'DELIVERED').length,
-    cancelled: orders.filter(o => o.status === 'CANCELLED').length,
-    revenue: orders
+    total: todaySalesMetrics?.todayOrderCount ?? filteredAndSortedOrders.length,
+    active: filteredAndSortedOrders.filter(o => !['DELIVERED', 'CANCELLED'].includes(o.status)).length,
+    delivered: filteredAndSortedOrders.filter(o => o.status === 'DELIVERED').length,
+    cancelled: filteredAndSortedOrders.filter(o => o.status === 'CANCELLED').length,
+    revenue: todaySalesMetrics?.todaySales ?? filteredAndSortedOrders
       .filter(o => o.status === 'DELIVERED')
       .reduce((sum, o) => sum + o.total, 0),
   };
@@ -71,9 +255,24 @@ const OrderManagementPage: React.FC = () => {
   const handleStatusChange = async (orderId: string, status: OrderStatus) => {
     try {
       await updateOrderStatus({ orderId, status }).unwrap();
+      // Refetch both orders and analytics to update stats cards immediately
+      refetch();
+      refetchAnalytics();
     } catch (error) {
       console.error('Failed to update status:', error);
       alert('Failed to update order status');
+    }
+  };
+
+  const handleMarkAsCompleted = async (orderId: string) => {
+    try {
+      await updateOrderStatus({ orderId, status: 'DELIVERED' }).unwrap();
+      // Refetch both orders and analytics to update stats cards immediately
+      refetch();
+      refetchAnalytics();
+    } catch (error) {
+      console.error('Failed to mark order as completed:', error);
+      alert('Failed to mark order as completed');
     }
   };
 
@@ -142,8 +341,8 @@ const OrderManagementPage: React.FC = () => {
 
   if (showOrderForm) {
     return (
-      <div>
-        <AppHeader title="Create New Order" />
+      <div style={{ paddingTop: '80px' }}>
+        <AppHeader title="Create New Order" showManagerNav={true} />
         <OrderForm
           onSuccess={(orderId) => {
             setShowOrderForm(false);
@@ -157,23 +356,7 @@ const OrderManagementPage: React.FC = () => {
 
   return (
     <div className="order-management" style={{ background: colors.surface.background, minHeight: '100vh' }}>
-      <AppHeader title="Order Management" />
-
-      {/* Store Selector */}
-      <div style={{
-        background: colors.surface.primary,
-        padding: `${spacing[4]} ${spacing[6]}`,
-        boxShadow: shadows.floating.sm,
-        borderBottom: `1px solid ${colors.surface.border}`,
-        marginBottom: spacing[6],
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: spacing[4], maxWidth: '1400px', margin: '0 auto' }}>
-          <StoreSelector variant="manager" />
-          <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
-            {storeId ? `Managing orders for: ${selectedStoreName || storeId}` : 'Select a store to manage orders'}
-          </div>
-        </div>
-      </div>
+      <AppHeader title="Order Management" showBackButton={true} onBack={handleBack} showManagerNav={true} />
 
       <style>{`
         .order-management {
@@ -194,7 +377,17 @@ const OrderManagementPage: React.FC = () => {
           background: ${colors.surface.primary};
           border-radius: 16px;
           padding: ${spacing[5]};
-          box-shadow: ${shadows.raised.md};
+          border: 2px solid ${colors.surface.border};
+          box-shadow: 8px 8px 16px rgba(163, 163, 163, 0.25),
+                      -8px -8px 16px rgba(255, 255, 255, 0.9);
+          transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+          transform: translateY(-3px);
+          box-shadow: 10px 10px 20px rgba(163, 163, 163, 0.3),
+                      -10px -10px 20px rgba(255, 255, 255, 1);
+          border-color: ${colors.brand.primary}44;
         }
 
         .stat-label {
@@ -227,42 +420,60 @@ const OrderManagementPage: React.FC = () => {
         }
 
         .filter-btn {
-          padding: ${spacing[2]} ${spacing[4]};
-          border: none;
+          padding: ${spacing[3]} ${spacing[5]};
+          border: 2px solid ${colors.surface.border};
           border-radius: 12px;
           background: ${colors.surface.primary};
-          box-shadow: ${shadows.raised.sm};
+          box-shadow: 6px 6px 12px rgba(163, 163, 163, 0.25),
+                      -6px -6px 12px rgba(255, 255, 255, 0.9);
           cursor: pointer;
           font-size: ${typography.fontSize.sm};
-          font-weight: ${typography.fontWeight.semibold};
-          color: ${colors.text.secondary};
+          font-weight: ${typography.fontWeight.bold};
+          color: ${colors.text.primary};
           transition: all 0.2s ease;
         }
 
         .filter-btn.active {
           color: ${colors.brand.primary};
-          box-shadow: ${shadows.inset.sm};
+          border-color: ${colors.brand.primary};
+          box-shadow: inset 4px 4px 8px rgba(163, 163, 163, 0.25),
+                      inset -4px -4px 8px rgba(255, 255, 255, 0.9);
+          background: ${colors.brand.primaryLight}11;
         }
 
         .filter-btn:hover {
-          transform: translateY(-1px);
+          transform: translateY(-2px);
+          box-shadow: 8px 8px 16px rgba(163, 163, 163, 0.3),
+                      -8px -8px 16px rgba(255, 255, 255, 1);
+          border-color: ${colors.brand.primary}88;
         }
 
         .create-order-btn {
           margin-left: auto;
           padding: ${spacing[3]} ${spacing[6]};
-          border: none;
+          border: 2px solid ${colors.brand.primary};
           border-radius: 12px;
-          background: ${colors.brand.primary};
+          background: linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.primaryDark} 100%);
           color: ${colors.text.inverse};
           font-size: ${typography.fontSize.sm};
           font-weight: ${typography.fontWeight.bold};
           cursor: pointer;
-          box-shadow: ${shadows.raised.sm};
+          box-shadow: 6px 6px 16px ${colors.brand.primary}44,
+                      -2px -2px 8px rgba(255, 255, 255, 0.3);
+          transition: all 0.3s ease;
         }
 
         .create-order-btn:hover {
-          background: ${colors.brand.primaryDark};
+          transform: translateY(-2px);
+          box-shadow: 8px 8px 20px ${colors.brand.primary}66,
+                      -3px -3px 10px rgba(255, 255, 255, 0.4);
+          background: linear-gradient(135deg, ${colors.brand.primaryDark} 0%, ${colors.brand.primary} 100%);
+        }
+
+        .create-order-btn:active {
+          transform: scale(0.98);
+          box-shadow: inset 4px 4px 8px ${colors.brand.primaryDark}88,
+                      inset -2px -2px 6px ${colors.brand.primary}44;
         }
 
         .orders-section {
@@ -281,12 +492,22 @@ const OrderManagementPage: React.FC = () => {
           background: ${colors.surface.primary};
           border-radius: 16px;
           padding: ${spacing[5]};
-          box-shadow: ${shadows.raised.md};
+          border: 2px solid ${colors.surface.border};
           border-left: 4px solid transparent;
+          box-shadow: 8px 8px 16px rgba(163, 163, 163, 0.25),
+                      -8px -8px 16px rgba(255, 255, 255, 0.9);
+          transition: all 0.3s ease;
+        }
+
+        .order-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 10px 10px 20px rgba(163, 163, 163, 0.3),
+                      -10px -10px 20px rgba(255, 255, 255, 1);
         }
 
         .order-card.urgent {
           border-left-color: ${colors.semantic.error};
+          border-left-width: 6px;
         }
 
         .order-header {
@@ -416,37 +637,82 @@ const OrderManagementPage: React.FC = () => {
         }
 
         .action-btn {
-          padding: ${spacing[2]} ${spacing[3]};
-          border: none;
-          border-radius: 8px;
+          padding: ${spacing[2]} ${spacing[4]};
+          border: 2px solid ${colors.surface.border};
+          border-radius: 10px;
           background: ${colors.surface.primary};
-          box-shadow: ${shadows.raised.sm};
+          box-shadow: 6px 6px 12px rgba(163, 163, 163, 0.25),
+                      -6px -6px 12px rgba(255, 255, 255, 0.9);
           cursor: pointer;
-          font-size: ${typography.fontSize.xs};
-          font-weight: ${typography.fontWeight.semibold};
-          color: ${colors.text.secondary};
+          font-size: ${typography.fontSize.sm};
+          font-weight: ${typography.fontWeight.bold};
+          color: ${colors.text.primary};
           transition: all 0.2s ease;
         }
 
         .action-btn:hover {
-          transform: translateY(-1px);
+          transform: translateY(-2px);
+          box-shadow: 8px 8px 16px rgba(163, 163, 163, 0.3),
+                      -8px -8px 16px rgba(255, 255, 255, 1);
+          border-color: ${colors.brand.primary};
         }
 
         .action-btn:active {
           transform: scale(0.98);
-          box-shadow: ${shadows.inset.sm};
+          box-shadow: inset 4px 4px 8px rgba(163, 163, 163, 0.25),
+                      inset -4px -4px 8px rgba(255, 255, 255, 0.9);
         }
 
         .action-btn.primary {
           color: ${colors.semantic.success};
+          border-color: ${colors.semantic.success}44;
+        }
+
+        .action-btn.primary:hover {
+          border-color: ${colors.semantic.success};
+          background: ${colors.semantic.successLight}11;
         }
 
         .action-btn.danger {
           color: ${colors.semantic.error};
+          border-color: ${colors.semantic.error}44;
+        }
+
+        .action-btn.danger:hover {
+          border-color: ${colors.semantic.error};
+          background: ${colors.semantic.errorLight}11;
         }
 
         .action-btn.warning {
           color: ${colors.semantic.warning};
+          border-color: ${colors.semantic.warning}44;
+        }
+
+        .action-btn.warning:hover {
+          border-color: ${colors.semantic.warning};
+          background: ${colors.semantic.warningLight}11;
+        }
+
+        .action-btn.success {
+          color: ${colors.text.inverse};
+          background: linear-gradient(135deg, ${colors.semantic.success} 0%, #059669 100%);
+          border-color: ${colors.semantic.success};
+          font-weight: ${typography.fontWeight.extrabold};
+          box-shadow: 6px 6px 12px ${colors.semantic.success}44,
+                      -6px -6px 12px rgba(255, 255, 255, 0.9);
+        }
+
+        .action-btn.success:hover {
+          background: linear-gradient(135deg, #059669 0%, ${colors.semantic.success} 100%);
+          box-shadow: 8px 8px 16px ${colors.semantic.success}66,
+                      -8px -8px 16px rgba(255, 255, 255, 1);
+          transform: translateY(-3px);
+        }
+
+        .action-btn.success:active {
+          transform: scale(0.97);
+          box-shadow: inset 4px 4px 8px rgba(5, 150, 105, 0.5),
+                      inset -4px -4px 8px rgba(16, 185, 129, 0.3);
         }
 
         .empty-state {
@@ -511,40 +777,21 @@ const OrderManagementPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Filter Bar */}
+      <FilterBar
+        filters={filterConfigs}
+        filterValues={filterValues}
+        onFilterChange={handleFilterChange}
+        onClearFilters={handleClearFilters}
+        sortConfig={sortConfig}
+        onSortChange={handleSortChange}
+        sortOptions={sortOptions}
+        onExport={handleExport}
+        showExport={filteredAndSortedOrders.length > 0}
+      />
+
       {/* Controls */}
-      <div className="controls-section">
-        <div className="filter-group">
-          <button
-            className={`filter-btn ${statusFilter === 'ALL' ? 'active' : ''}`}
-            onClick={() => setStatusFilter('ALL')}
-          >
-            All Orders
-          </button>
-          <button
-            className={`filter-btn ${statusFilter === 'RECEIVED' ? 'active' : ''}`}
-            onClick={() => setStatusFilter('RECEIVED')}
-          >
-            Received
-          </button>
-          <button
-            className={`filter-btn ${statusFilter === 'PREPARING' ? 'active' : ''}`}
-            onClick={() => setStatusFilter('PREPARING')}
-          >
-            Preparing
-          </button>
-          <button
-            className={`filter-btn ${statusFilter === 'DELIVERED' ? 'active' : ''}`}
-            onClick={() => setStatusFilter('DELIVERED')}
-          >
-            Delivered
-          </button>
-          <button
-            className={`filter-btn ${statusFilter === 'CANCELLED' ? 'active' : ''}`}
-            onClick={() => setStatusFilter('CANCELLED')}
-          >
-            Cancelled
-          </button>
-        </div>
+      <div className="controls-section" style={{ justifyContent: 'flex-end', marginTop: spacing[4] }}>
         <button className="create-order-btn" onClick={() => setShowOrderForm(true)}>
           + Create Order
         </button>
@@ -557,14 +804,16 @@ const OrderManagementPage: React.FC = () => {
             <div className="empty-icon"></div>
             <div>Loading orders...</div>
           </div>
-        ) : sortedOrders.length === 0 ? (
+        ) : filteredAndSortedOrders.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon"></div>
-            <div>No orders found</div>
+            <div>
+              {orders.length > 0 ? 'No orders match the current filters' : 'No orders found'}
+            </div>
           </div>
         ) : (
           <div className="orders-list">
-            {sortedOrders.map((order) => (
+            {filteredAndSortedOrders.map((order) => (
               <div key={order.id} className={`order-card ${order.priority === 'URGENT' ? 'urgent' : ''}`}>
                 {/* Header */}
                 <div className="order-header">
@@ -579,6 +828,28 @@ const OrderManagementPage: React.FC = () => {
                     <span className="badge badge-payment" style={{ color: PAYMENT_STATUS_CONFIG[order.paymentStatus].color }}>
                       {PAYMENT_STATUS_CONFIG[order.paymentStatus].icon} {PAYMENT_STATUS_CONFIG[order.paymentStatus].label}
                     </span>
+                    {/* Payment Method Badge */}
+                    {order.paymentMethod && (
+                      <span
+                        className="badge badge-payment-method"
+                        style={{
+                          backgroundColor: order.paymentMethod === 'CASH' ? '#fef3c7' :
+                                         order.paymentMethod === 'CARD' ? '#dbeafe' :
+                                         order.paymentMethod === 'UPI' ? '#d1fae5' : '#e5e7eb',
+                          color: order.paymentMethod === 'CASH' ? '#92400e' :
+                                 order.paymentMethod === 'CARD' ? '#1e40af' :
+                                 order.paymentMethod === 'UPI' ? '#065f46' : '#1f2937',
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {order.paymentMethod === 'CASH' ? '💵' :
+                         order.paymentMethod === 'CARD' ? '💳' :
+                         order.paymentMethod === 'UPI' ? '📱' : '💰'} {order.paymentMethod}
+                      </span>
+                    )}
                     {order.priority === 'URGENT' && (
                       <span className="badge badge-priority"> URGENT</span>
                     )}
@@ -601,6 +872,14 @@ const OrderManagementPage: React.FC = () => {
                     <div className="info-label">Created At</div>
                     <div className="info-value">{formatDate(order.createdAt)}</div>
                   </div>
+                  {order.createdByStaffName && (
+                    <div className="info-item">
+                      <div className="info-label">👤 Taken By</div>
+                      <div className="info-value" style={{ fontWeight: 600, color: '#2563eb' }}>
+                        {order.createdByStaffName}
+                      </div>
+                    </div>
+                  )}
                   <div className="info-item">
                     <div className="info-label">Total</div>
                     <div className="info-value" style={{ color: '#e53e3e', fontSize: '16px' }}>
@@ -634,6 +913,17 @@ const OrderManagementPage: React.FC = () => {
                 <div className="order-actions">
                   {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
                     <>
+                      {/* Show prominent "Mark as Completed" button for DISPATCHED orders */}
+                      {order.status === 'DISPATCHED' && (
+                        <button
+                          className="action-btn success"
+                          onClick={() => handleMarkAsCompleted(order.id)}
+                          title="Mark order as completed and delivered to update metrics"
+                        >
+                          ✓ Mark as Completed
+                        </button>
+                      )}
+
                       <select
                         className="status-select"
                         value={order.status}
@@ -656,12 +946,12 @@ const OrderManagementPage: React.FC = () => {
 
                       {order.orderType === 'DELIVERY' && !order.assignedDriverId && (
                         <button className="action-btn primary" onClick={() => handleAssignDriver(order.id)}>
-                          = Assign Driver
+                          🚚 Assign Driver
                         </button>
                       )}
 
                       <button className="action-btn danger" onClick={() => handleCancelOrder(order.id)}>
-                        L Cancel Order
+                        ❌ Cancel Order
                       </button>
                     </>
                   )}
@@ -686,4 +976,4 @@ const OrderManagementPage: React.FC = () => {
   );
 };
 
-export default OrderManagementPage;
+export default withPageStoreContext(OrderManagementPage, 'orders');

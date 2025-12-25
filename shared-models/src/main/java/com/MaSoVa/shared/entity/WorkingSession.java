@@ -30,7 +30,10 @@ public class WorkingSession {
     @Field("employeeId")
     @Indexed
     private String employeeId;
-    
+
+    @Field("employeeName")
+    private String employeeName; // Cached employee name for display
+
     @NotNull
     @Field("storeId")
     @Indexed
@@ -284,7 +287,10 @@ public class WorkingSession {
     
     public String getEmployeeId() { return employeeId; }
     public void setEmployeeId(String employeeId) { this.employeeId = employeeId; }
-    
+
+    public String getEmployeeName() { return employeeName; }
+    public void setEmployeeName(String employeeName) { this.employeeName = employeeName; }
+
     public String getStoreId() { return storeId; }
     public void setStoreId(String storeId) { this.storeId = storeId; }
     

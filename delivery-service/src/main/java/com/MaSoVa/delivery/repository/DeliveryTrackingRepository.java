@@ -37,4 +37,18 @@ public interface DeliveryTrackingRepository extends MongoRepository<DeliveryTrac
             LocalDateTime start,
             LocalDateTime end
     );
+
+    // Week 4: Store-aware queries for performance metrics
+    List<DeliveryTracking> findByDriverIdAndStoreIdAndCreatedAtBetween(
+            String driverId,
+            String storeId,
+            LocalDateTime start,
+            LocalDateTime end
+    );
+
+    List<DeliveryTracking> findByStoreIdAndCreatedAtBetween(
+            String storeId,
+            LocalDateTime start,
+            LocalDateTime end
+    );
 }

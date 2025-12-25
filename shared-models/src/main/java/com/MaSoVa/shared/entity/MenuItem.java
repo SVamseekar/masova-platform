@@ -1,6 +1,7 @@
 package com.MaSoVa.shared.entity;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -31,6 +32,9 @@ public class MenuItem implements Serializable {
 
     @Id
     private String id;
+
+    @Version
+    private Long version;
 
     @NotNull
     @Field("name")

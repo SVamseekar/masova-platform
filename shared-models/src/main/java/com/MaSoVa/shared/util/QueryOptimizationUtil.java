@@ -5,8 +5,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * Utility for optimizing MongoDB queries
@@ -36,8 +39,14 @@ public class QueryOptimizationUtil {
     /**
      * Execute query with performance logging
      */
-    public static <T> T executeQueryWithLogging(MongoTemplate mongoTemplate, Query query,
-                                                  Class<T> entityClass, String queryName) {
+    @Nullable
+    public static <T> T executeQueryWithLogging(@NonNull MongoTemplate mongoTemplate, @NonNull Query query,
+                                                  @NonNull Class<T> entityClass, @NonNull String queryName) {
+        Objects.requireNonNull(mongoTemplate, "mongoTemplate cannot be null");
+        Objects.requireNonNull(query, "query cannot be null");
+        Objects.requireNonNull(entityClass, "entityClass cannot be null");
+        Objects.requireNonNull(queryName, "queryName cannot be null");
+
         long startTime = System.currentTimeMillis();
 
         T result = mongoTemplate.findOne(query, entityClass);
@@ -54,9 +63,14 @@ public class QueryOptimizationUtil {
     /**
      * Add field inclusion to query (projection)
      */
-    public static Query addFieldInclusion(Query query, String... fields) {
+    @NonNull
+    public static Query addFieldInclusion(@NonNull Query query, @NonNull String... fields) {
+        Objects.requireNonNull(query, "query cannot be null");
+        Objects.requireNonNull(fields, "fields cannot be null");
         for (String field : fields) {
-            query.fields().include(field);
+            if (field != null && !field.isEmpty()) {
+                query.fields().include(field);
+            }
         }
         return query;
     }
@@ -64,9 +78,14 @@ public class QueryOptimizationUtil {
     /**
      * Add field exclusion to query
      */
-    public static Query addFieldExclusion(Query query, String... fields) {
+    @NonNull
+    public static Query addFieldExclusion(@NonNull Query query, @NonNull String... fields) {
+        Objects.requireNonNull(query, "query cannot be null");
+        Objects.requireNonNull(fields, "fields cannot be null");
         for (String field : fields) {
-            query.fields().exclude(field);
+            if (field != null && !field.isEmpty()) {
+                query.fields().exclude(field);
+            }
         }
         return query;
     }
@@ -74,7 +93,9 @@ public class QueryOptimizationUtil {
     /**
      * Create a query with date range optimization
      */
-    public static Query createDateRangeQuery(LocalDateTime startDate, LocalDateTime endDate, String dateField) {
+    @NonNull
+    public static Query createDateRangeQuery(@Nullable LocalDateTime startDate, @Nullable LocalDateTime endDate, @NonNull String dateField) {
+        Objects.requireNonNull(dateField, "dateField cannot be null");
         Query query = new Query();
         if (startDate != null) {
             query.addCriteria(org.springframework.data.mongodb.core.query.Criteria.where(dateField).gte(startDate));

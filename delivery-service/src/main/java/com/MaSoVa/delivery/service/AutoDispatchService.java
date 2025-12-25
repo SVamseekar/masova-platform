@@ -30,24 +30,36 @@ public class AutoDispatchService {
     private final OrderServiceClient orderServiceClient;
     private final DeliveryTrackingRepository deliveryTrackingRepository;
     private final RouteOptimizationService routeOptimizationService;
+    private final FreeRoutingService freeRoutingService;
 
     public AutoDispatchService(UserServiceClient userServiceClient, OrderServiceClient orderServiceClient,
-                               DeliveryTrackingRepository deliveryTrackingRepository, RouteOptimizationService routeOptimizationService) {
+                               DeliveryTrackingRepository deliveryTrackingRepository,
+                               RouteOptimizationService routeOptimizationService,
+                               FreeRoutingService freeRoutingService) {
         this.userServiceClient = userServiceClient;
         this.orderServiceClient = orderServiceClient;
         this.deliveryTrackingRepository = deliveryTrackingRepository;
         this.routeOptimizationService = routeOptimizationService;
+        this.freeRoutingService = freeRoutingService;
     }
 
     /**
      * Auto-dispatch a driver to an order using intelligent algorithm
+     * Supports both frontend format (pickupLocation/deliveryLocation) and backend format (deliveryAddress)
      */
     public AutoDispatchResponse autoDispatch(AutoDispatchRequest request) {
-        log.info("Auto-dispatching driver for order: {}", request.getOrderId());
+        log.info("Auto-dispatching driver for order: {} with priority: {}",
+                request.getOrderId(), request.getPriorityLevel());
+
+        // Get effective delivery address (supports both formats)
+        AddressDTO effectiveDeliveryAddress = request.getEffectiveDeliveryAddress();
+        if (effectiveDeliveryAddress == null) {
+            throw new RuntimeException("Delivery address is required (either deliveryAddress or deliveryLocation)");
+        }
 
         // If preferred driver specified, assign directly
         if (request.getPreferredDriverId() != null && !request.getPreferredDriverId().isEmpty()) {
-            return assignPreferredDriver(request);
+            return assignPreferredDriver(request, effectiveDeliveryAddress);
         }
 
         // Get available drivers
@@ -58,10 +70,10 @@ public class AutoDispatchService {
         }
 
         // Find best driver using intelligent algorithm
-        Map<String, Object> bestDriver = findBestDriver(availableDrivers, request.getDeliveryAddress());
+        Map<String, Object> bestDriver = findBestDriver(availableDrivers, effectiveDeliveryAddress);
 
         // Create delivery tracking
-        DeliveryTracking tracking = createDeliveryTracking(request, bestDriver);
+        DeliveryTracking tracking = createDeliveryTracking(request, bestDriver, effectiveDeliveryAddress);
         deliveryTrackingRepository.save(tracking);
 
         // Assign driver to order in Order Service
@@ -70,7 +82,7 @@ public class AutoDispatchService {
         // Calculate route details
         BigDecimal distance = calculateDistance(
                 getDriverLocation(bestDriver),
-                request.getDeliveryAddress()
+                effectiveDeliveryAddress
         );
 
         return AutoDispatchResponse.builder()
@@ -142,13 +154,34 @@ public class AutoDispatchService {
     }
 
     /**
-     * Calculate distance between two coordinates using Haversine formula
+     * Calculate REAL road distance using OSRM routing
+     * This replaces the old Haversine formula which only gave straight-line distance
      */
     private BigDecimal calculateDistance(AddressDTO from, AddressDTO to) {
         if (from.getLatitude() == null || to.getLatitude() == null) {
             return BigDecimal.ZERO;
         }
 
+        try {
+            // Use OSRM to get actual road route
+            FreeRoutingService.RouteResult route = freeRoutingService.getRoute(
+                from.getLatitude(), from.getLongitude(),
+                to.getLatitude(), to.getLongitude()
+            );
+
+            return BigDecimal.valueOf(route.getDistanceKm()).setScale(2, RoundingMode.HALF_UP);
+
+        } catch (Exception e) {
+            log.warn("⚠️ OSRM routing failed, falling back to Haversine: {}", e.getMessage());
+            // Fallback to Haversine if OSRM fails
+            return calculateDistanceHaversine(from, to);
+        }
+    }
+
+    /**
+     * Fallback: Haversine formula for straight-line distance
+     */
+    private BigDecimal calculateDistanceHaversine(AddressDTO from, AddressDTO to) {
         double lat1 = Math.toRadians(from.getLatitude());
         double lat2 = Math.toRadians(to.getLatitude());
         double lon1 = Math.toRadians(from.getLongitude());
@@ -167,27 +200,57 @@ public class AutoDispatchService {
         return BigDecimal.valueOf(distanceKm).setScale(2, RoundingMode.HALF_UP);
     }
 
+    /**
+     * Calculate ETA using OSRM's actual route duration
+     * This replaces the old speed-based estimation
+     */
     private Integer calculateEstimatedTime(BigDecimal distanceKm) {
-        // Assume average speed of 30 km/h in city
+        // This method is now deprecated in favor of route-based calculation
+        // Keeping for backward compatibility
         double hours = distanceKm.doubleValue() / 30.0;
         return (int) Math.ceil(hours * 60); // Convert to minutes
     }
 
-    private AutoDispatchResponse assignPreferredDriver(AutoDispatchRequest request) {
+    /**
+     * Calculate ETA from OSRM route (more accurate than speed-based estimation)
+     */
+    private Integer calculateEstimatedTimeFromRoute(AddressDTO from, AddressDTO to) {
+        if (from.getLatitude() == null || to.getLatitude() == null) {
+            return 0;
+        }
+
+        try {
+            FreeRoutingService.RouteResult route = freeRoutingService.getRoute(
+                from.getLatitude(), from.getLongitude(),
+                to.getLatitude(), to.getLongitude()
+            );
+
+            // Add 5-minute buffer for traffic and pickups
+            return route.getDurationMinutes() + 5;
+
+        } catch (Exception e) {
+            log.warn("⚠️ OSRM routing failed for ETA, using distance-based estimate: {}", e.getMessage());
+            // Fallback to old method
+            BigDecimal distance = calculateDistanceHaversine(from, to);
+            return calculateEstimatedTime(distance);
+        }
+    }
+
+    private AutoDispatchResponse assignPreferredDriver(AutoDispatchRequest request, AddressDTO effectiveDeliveryAddress) {
         Map<String, Object> driver = userServiceClient.getDriverDetails(request.getPreferredDriverId());
 
         if (driver.isEmpty()) {
             throw new RuntimeException("Preferred driver not found: " + request.getPreferredDriverId());
         }
 
-        DeliveryTracking tracking = createDeliveryTracking(request, driver);
+        DeliveryTracking tracking = createDeliveryTracking(request, driver, effectiveDeliveryAddress);
         deliveryTrackingRepository.save(tracking);
 
         orderServiceClient.assignDriverToOrder(request.getOrderId(), request.getPreferredDriverId());
 
         BigDecimal distance = calculateDistance(
                 getDriverLocation(driver),
-                request.getDeliveryAddress()
+                effectiveDeliveryAddress
         );
 
         return AutoDispatchResponse.builder()
@@ -204,7 +267,7 @@ public class AutoDispatchService {
                 .build();
     }
 
-    private DeliveryTracking createDeliveryTracking(AutoDispatchRequest request, Map<String, Object> driver) {
+    private DeliveryTracking createDeliveryTracking(AutoDispatchRequest request, Map<String, Object> driver, AddressDTO effectiveDeliveryAddress) {
         return DeliveryTracking.builder()
                 .orderId(request.getOrderId())
                 .driverId((String) driver.get("id"))
@@ -212,14 +275,15 @@ public class AutoDispatchService {
                 .driverName((String) driver.get("name"))
                 .driverPhone((String) driver.get("phone"))
                 .deliveryAddress(DeliveryTracking.DeliveryAddress.builder()
-                        .street(request.getDeliveryAddress().getStreet())
-                        .city(request.getDeliveryAddress().getCity())
-                        .state(request.getDeliveryAddress().getState())
-                        .zipCode(request.getDeliveryAddress().getZipCode())
-                        .latitude(request.getDeliveryAddress().getLatitude())
-                        .longitude(request.getDeliveryAddress().getLongitude())
+                        .street(effectiveDeliveryAddress.getStreet())
+                        .city(effectiveDeliveryAddress.getCity())
+                        .state(effectiveDeliveryAddress.getState())
+                        .zipCode(effectiveDeliveryAddress.getZipCode())
+                        .latitude(effectiveDeliveryAddress.getLatitude())
+                        .longitude(effectiveDeliveryAddress.getLongitude())
                         .build())
                 .dispatchMethod(request.getPreferredDriverId() != null ? "MANUAL" : "AUTO")
+                .priorityLevel(request.getPriorityLevel())
                 .assignedAt(LocalDateTime.now())
                 .status("ASSIGNED")
                 .createdAt(LocalDateTime.now())

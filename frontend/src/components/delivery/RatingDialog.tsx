@@ -144,9 +144,6 @@ const RatingDialog: React.FC<RatingDialogProps> = ({
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.primary,
     color: colors.text.primary,
-    backgroundColor: colors.surface.background,
-    border: 'none',
-    borderRadius: borderRadius.lg,
     ...createNeumorphicSurface('inset', 'sm', 'lg'),
     resize: 'vertical',
   };
@@ -162,9 +159,6 @@ const RatingDialog: React.FC<RatingDialogProps> = ({
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text.secondary,
-    backgroundColor: colors.surface.primary,
-    border: 'none',
-    borderRadius: borderRadius.lg,
     cursor: 'pointer',
     ...createNeumorphicSurface('raised', 'sm', 'lg'),
     transition: 'all 0.2s',
@@ -176,12 +170,10 @@ const RatingDialog: React.FC<RatingDialogProps> = ({
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
     color: '#fff',
-    background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.primaryLight} 100%)`,
-    border: 'none',
-    borderRadius: borderRadius.lg,
     cursor: rating > 0 ? 'pointer' : 'not-allowed',
     opacity: rating > 0 ? 1 : 0.5,
     ...createNeumorphicSurface('raised', 'sm', 'lg'),
+    background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.primaryLight} 100%)`,
     transition: 'all 0.2s',
   };
 

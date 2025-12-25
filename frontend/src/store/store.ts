@@ -18,6 +18,7 @@ import { driverApi } from './api/driverApi';
 import { deliveryApi } from './api/deliveryApi';
 import { reviewApi } from './api/reviewApi';
 import { notificationApi } from './api/notificationApi';
+import { kioskApi } from './api/kioskApi';
 
 // Slice reducers
 import authReducer from './slices/authSlice';
@@ -50,6 +51,7 @@ export const store = configureStore({
     [deliveryApi.reducerPath]: deliveryApi.reducer,
     [reviewApi.reducerPath]: reviewApi.reducer,
     [notificationApi.reducerPath]: notificationApi.reducer,
+    [kioskApi.reducerPath]: kioskApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -74,7 +76,8 @@ export const store = configureStore({
       driverApi.middleware,
       deliveryApi.middleware,
       reviewApi.middleware,
-      notificationApi.middleware
+      notificationApi.middleware,
+      kioskApi.middleware
     ),
   devTools: process.env.NODE_ENV !== 'production',
 });

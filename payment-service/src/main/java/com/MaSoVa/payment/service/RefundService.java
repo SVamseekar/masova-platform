@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class RefundService {
@@ -43,7 +44,7 @@ public class RefundService {
             log.info("Initiating refund for transaction: {}, amount: {}", request.getTransactionId(), request.getAmount());
 
             // Find transaction
-            Transaction transaction = transactionRepository.findById(request.getTransactionId())
+            Transaction transaction = transactionRepository.findById(Objects.requireNonNull(request.getTransactionId()))
                     .orElseThrow(() -> new RuntimeException("Transaction not found: " + request.getTransactionId()));
 
             // Validate transaction status
@@ -101,7 +102,7 @@ public class RefundService {
                 refund.setStatus(Refund.RefundStatus.PROCESSING);
             }
 
-            refund = refundRepository.save(refund);
+            refund = Objects.requireNonNull(refundRepository.save(refund));
 
             // Update transaction status
             updateTransactionStatusAfterRefund(transaction, request.getAmount());
@@ -131,7 +132,7 @@ public class RefundService {
      * Get refund by ID
      */
     public Refund getRefund(String refundId) {
-        return refundRepository.findById(refundId)
+        return refundRepository.findById(Objects.requireNonNull(refundId))
                 .orElseThrow(() -> new RuntimeException("Refund not found: " + refundId));
     }
 

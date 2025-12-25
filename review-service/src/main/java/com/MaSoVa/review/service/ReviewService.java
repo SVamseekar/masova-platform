@@ -170,4 +170,109 @@ public class ReviewService {
     public Long countReviewsByMenuItem(String menuItemId) {
         return reviewRepository.countByMenuItemId(menuItemId);
     }
+
+    public com.MaSoVa.review.dto.StaffRatingDTO getStaffAverageRating(String staffId) {
+        List<com.MaSoVa.review.repository.ReviewRepository.StaffRatingAggregation> results =
+            reviewRepository.getStaffAverageRating(staffId);
+
+        if (results.isEmpty()) {
+            // No ratings found for this staff member
+            return new com.MaSoVa.review.dto.StaffRatingDTO(staffId, null, 0.0, 0L);
+        }
+
+        com.MaSoVa.review.repository.ReviewRepository.StaffRatingAggregation result = results.get(0);
+        return new com.MaSoVa.review.dto.StaffRatingDTO(
+            staffId,
+            result.getStaffName(),
+            result.getAvgRating() != null ? result.getAvgRating() : 0.0,
+            result.getTotalReviews() != null ? result.getTotalReviews() : 0L
+        );
+    }
+
+    public Page<Review> getReviewsByStaffId(String staffId, Pageable pageable) {
+        return reviewRepository.findByStaffIdAndIsDeletedFalseAndStaffRatingIsNotNull(staffId, pageable);
+    }
+
+    /**
+     * Create review via public token (SMS/Email link)
+     * Validates token with Order Service and creates anonymous review
+     */
+    @Transactional
+    public Review createPublicReview(CreateReviewRequest request, String token) {
+        log.info("Creating public review via token for order: {}", request.getOrderId());
+
+        // Call Order Service to validate token and get customer details
+        // For now, we'll create a simple HTTP client call
+        try {
+            // TODO: Make HTTP call to Order Service: GET /api/orders/rating-token/{token}
+            // This should return: orderId, customerId, customerName, driverId, isValid
+
+            // For now, we'll just check if order already has a review
+            List<Review> existingReviews = reviewRepository.findByOrderIdAndIsDeletedFalse(request.getOrderId());
+            if (!existingReviews.isEmpty()) {
+                throw new IllegalStateException("This order has already been rated. Thank you!");
+            }
+
+            // Build item reviews
+            List<Review.ItemReview> itemReviews = new ArrayList<>();
+            if (request.getItemReviews() != null) {
+                itemReviews = request.getItemReviews().stream()
+                        .map(ir -> Review.ItemReview.builder()
+                                .menuItemId(ir.getMenuItemId())
+                                .rating(ir.getRating())
+                                .comment(ir.getComment())
+                                .build())
+                        .collect(Collectors.toList());
+            }
+
+            // Analyze sentiment
+            Review.SentimentType sentiment = sentimentAnalysisService.analyzeSentiment(request.getComment());
+            Double sentimentScore = sentimentAnalysisService.calculateSentimentScore(request.getComment());
+
+            // Create review (anonymous)
+            Review review = Review.builder()
+                    .orderId(request.getOrderId())
+                    .customerId("anonymous") // Will be updated by Order Service validation
+                    .customerName("Customer") // Will be updated by Order Service validation
+                    .overallRating(request.getOverallRating())
+                    .comment(request.getComment())
+                    .foodQualityRating(request.getFoodQualityRating())
+                    .serviceRating(request.getServiceRating())
+                    .deliveryRating(request.getDeliveryRating())
+                    .driverId(request.getDriverId())
+                    .driverRating(request.getDriverRating())
+                    .driverComment(request.getDriverComment())
+                    .itemReviews(itemReviews)
+                    .isAnonymous(true) // Always anonymous for public submissions
+                    .isVerifiedPurchase(true)
+                    .photoUrls(request.getPhotoUrls() != null ? request.getPhotoUrls() : new ArrayList<>())
+                    .status(Review.ReviewStatus.APPROVED)
+                    .sentiment(sentiment)
+                    .sentimentScore(sentimentScore)
+                    .isDeleted(false)
+                    .build();
+
+            review = reviewRepository.save(review);
+            log.info("Public review created successfully with ID: {}", review.getId());
+
+            // TODO: Call Order Service to mark token as used
+
+            return review;
+        } catch (Exception e) {
+            log.error("Error creating public review", e);
+            throw e;
+        }
+    }
+
+    /**
+     * Get token details for displaying on rating page
+     */
+    public java.util.Map<String, Object> getTokenDetails(String token) {
+        // TODO: Call Order Service to validate and get token details
+        // For now, return minimal info
+        java.util.Map<String, Object> details = new java.util.HashMap<>();
+        details.put("valid", true);
+        details.put("message", "Please rate your recent order");
+        return details;
+    }
 }

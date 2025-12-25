@@ -1,15 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import AppHeader from '../../components/common/AppHeader';
 import RecipeViewer from '../../components/RecipeViewer';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { selectSelectedStoreId } from '../../store/slices/cartSlice';
+import { selectSelectedStoreId, setSelectedStore } from '../../store/slices/cartSlice';
 import {
   useGetKitchenQueueQuery,
   useUpdateOrderStatusMutation,
   Order as ApiOrder
 } from '../../store/api/orderApi';
 import { useGetAllMenuItemsQuery, MenuItem } from '../../store/api/menuApi';
+import { useKitchenWebSocket } from '../../hooks/useKitchenWebSocket';
+import { KitchenOrder } from '../../services/websocketService';
 
 // TypeScript interfaces
 interface OrderItem {
@@ -41,27 +45,112 @@ interface StatusColumn {
 }
 
 const KitchenDisplayPage: React.FC = () => {
+  const dispatch = useDispatch();
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [selectedRecipeItem, setSelectedRecipeItem] = useState<MenuItem | null>(null);
   const currentUser = useAppSelector(selectCurrentUser);
   const selectedStoreIdFromRedux = useAppSelector(selectSelectedStoreId);
 
-  // Get store ID from Redux store selector or user's assigned store
-  const storeId = selectedStoreIdFromRedux || currentUser?.storeId || '';
+  // Get storeId from URL parameters (highest priority)
+  const { storeId: urlStoreId } = useParams<{ storeId?: string }>();
+
+  // Sync URL storeId with Redux state on mount or when URL changes
+  useEffect(() => {
+    if (urlStoreId && urlStoreId !== selectedStoreIdFromRedux) {
+      console.log(`[KitchenDisplay] Syncing store ID from URL (${urlStoreId}) to Redux`);
+      dispatch(setSelectedStore({ storeId: urlStoreId, storeName: urlStoreId.toUpperCase() }));
+    }
+  }, [urlStoreId, selectedStoreIdFromRedux, dispatch]);
+
+  // Prioritize: URL param > Redux state > User's assigned store
+  const storeId = urlStoreId || selectedStoreIdFromRedux || currentUser?.storeId || '';
 
   // Log for debugging
-  React.useEffect(() => {
-    console.log('KDS Store ID:', storeId, 'User Store:', currentUser?.storeId);
-  }, [storeId, currentUser?.storeId]);
+  useEffect(() => {
+    console.log('KDS - URL Store:', urlStoreId, 'Redux Store:', selectedStoreIdFromRedux, 'User Store:', currentUser?.storeId, 'Final:', storeId);
+  }, [urlStoreId, selectedStoreIdFromRedux, currentUser?.storeId, storeId]);
 
-  // API Hooks - Poll every 5 seconds for real-time updates
-  const { data: apiOrders = [], isLoading, error } = useGetKitchenQueueQuery(undefined, {
+  // Local state for orders (updated via WebSocket or polling)
+  const [localOrders, setLocalOrders] = useState<ApiOrder[]>([]);
+
+  // WebSocket integration for real-time updates (RT-001)
+  const handleWebSocketOrderUpdate = useCallback((wsOrder: KitchenOrder) => {
+    setLocalOrders(prevOrders => {
+      // Find if order exists
+      const existingIndex = prevOrders.findIndex(o => o.id === wsOrder.id);
+
+      if (existingIndex >= 0) {
+        // Update existing order
+        const updated = [...prevOrders];
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          status: wsOrder.status as ApiOrder['status'],
+          orderNumber: wsOrder.orderNumber,
+          items: wsOrder.items.map(item => ({
+            menuItemId: item.menuItemId || '',
+            name: item.name,
+            quantity: item.quantity,
+            variant: item.variant,
+            customizations: item.customizations,
+            price: 0  // Price not needed for KDS
+          })),
+        };
+        return updated;
+      } else {
+        // Add new order
+        const newOrder: ApiOrder = {
+          id: wsOrder.id,
+          orderNumber: wsOrder.orderNumber,
+          status: wsOrder.status as ApiOrder['status'],
+          items: wsOrder.items.map(item => ({
+            menuItemId: item.menuItemId || '',
+            name: item.name,
+            quantity: item.quantity,
+            variant: item.variant,
+            customizations: item.customizations,
+            price: 0
+          })),
+          customerName: wsOrder.customerName,
+          orderType: wsOrder.orderType as ApiOrder['orderType'],
+          priority: wsOrder.priority as ApiOrder['priority'],
+          preparationTime: wsOrder.preparationTime,
+          createdAt: wsOrder.createdAt,
+          updatedAt: wsOrder.createdAt,
+          storeId: wsOrder.storeId,
+          subtotal: 0,
+          deliveryFee: 0,
+          tax: 0,
+          total: 0,
+          totalAmount: 0,
+          paymentStatus: 'PENDING' as const,
+        };
+        return [...prevOrders, newOrder];
+      }
+    });
+  }, []);
+
+  const { isConnected: wsConnected, error: wsError } = useKitchenWebSocket({
+    storeId,
+    onOrderUpdate: handleWebSocketOrderUpdate,
+    enabled: !!storeId,
+  });
+
+  // API Hooks - Poll as fallback (reduced frequency when WebSocket is connected)
+  // Pass storeId as parameter to ensure proper filtering and refetch on store change
+  const { data: apiOrders = [], isLoading, error, refetch } = useGetKitchenQueueQuery(storeId || undefined, {
     skip: !storeId,
-    pollingInterval: 5000, // Poll every 5 seconds
+    pollingInterval: wsConnected ? 30000 : 5000, // Reduced polling when WebSocket connected
     refetchOnMountOrArgChange: true,
   });
 
-  const { data: menuItems = [] } = useGetAllMenuItemsQuery();
+  // Sync API data to local state (initial load and fallback)
+  useEffect(() => {
+    if (apiOrders.length > 0) {
+      setLocalOrders(apiOrders);
+    }
+  }, [apiOrders]);
+
+  const { data: menuItems = [] } = useGetAllMenuItemsQuery(undefined);
   const [updateOrderStatus, { isLoading: isUpdating }] = useUpdateOrderStatusMutation();
 
   const findMenuItemByName = (itemName: string): MenuItem | null => {
@@ -70,8 +159,8 @@ const KitchenDisplayPage: React.FC = () => {
     ) || null;
   };
 
-  // Transform API orders to local format
-  const orders: Order[] = apiOrders.map(order => ({
+  // Transform orders to local format (using localOrders which is updated via WebSocket or polling)
+  const orders: Order[] = localOrders.map(order => ({
     id: order.id,
     orderNumber: order.orderNumber,
     status: order.status as Order['status'],
@@ -108,17 +197,35 @@ const KitchenDisplayPage: React.FC = () => {
   };
 
   const moveOrderToNext = async (orderId: string, currentStatus: Order['status']): Promise<void> => {
+    // Kitchen flow: RECEIVED -> PREPARING -> OVEN -> BAKED -> DISPATCHED
+    // DISPATCHED is the final state - order stays there as "Completed"
     const statusFlow: Order['status'][] = ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED', 'DISPATCHED'];
     const currentIndex = statusFlow.indexOf(currentStatus);
     const nextStatus = statusFlow[currentIndex + 1];
 
-    if (!nextStatus) return;
+    if (!nextStatus) {
+      // Already at final stage (DISPATCHED = Completed)
+      return;
+    }
 
     try {
       await updateOrderStatus({ orderId, status: nextStatus }).unwrap();
+      // Trigger a refetch to update the order list and metrics
+      refetch();
     } catch (error) {
       console.error('Failed to update order status:', error);
       alert('Failed to update order status. Please try again.');
+    }
+  };
+
+  const markAsCompleted = async (orderId: string): Promise<void> => {
+    try {
+      await updateOrderStatus({ orderId, status: 'DELIVERED' }).unwrap();
+      // Trigger a refetch to update the order list and metrics
+      refetch();
+    } catch (error) {
+      console.error('Failed to mark order as completed:', error);
+      alert('Failed to mark order as completed. Please try again.');
     }
   };
 
@@ -199,6 +306,17 @@ const KitchenDisplayPage: React.FC = () => {
             <span className="next-icon">→</span>
           </button>
         )}
+        {order.status === 'DISPATCHED' && (
+          <button
+            className="complete-btn"
+            onClick={() => markAsCompleted(order.id)}
+            disabled={isUpdating}
+            title="Mark this order as completed and delivered"
+          >
+            <span>✓</span>
+            <span>{isUpdating ? 'Updating...' : 'Mark as Completed'}</span>
+          </button>
+        )}
       </div>
     </div>
   );
@@ -208,7 +326,7 @@ const KitchenDisplayPage: React.FC = () => {
     { status: 'PREPARING', title: 'Preparing', icon: '👨‍🍳', color: '#f59e0b' },
     { status: 'OVEN', title: 'In Oven', icon: '🔥', color: '#e53e3e' },
     { status: 'BAKED', title: 'Ready', icon: '✅', color: '#10b981' },
-    { status: 'DISPATCHED', title: 'Dispatched', icon: '🚚', color: '#8b5cf6' }
+    { status: 'DISPATCHED', title: 'Completed', icon: '✅', color: '#8b5cf6' }
   ];
 
   const getOrdersByStatus = (status: string): Order[] => {
@@ -720,6 +838,46 @@ const KitchenDisplayPage: React.FC = () => {
           font-weight: 700;
         }
 
+        .complete-btn {
+          width: 100%;
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          border: none;
+          padding: 12px 16px;
+          border-radius: 12px;
+          cursor: pointer;
+          font-weight: 700;
+          color: white;
+          font-size: 13px;
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          box-shadow:
+            6px 6px 12px rgba(16, 185, 129, 0.4),
+            -6px -6px 12px rgba(255, 255, 255, 0.8);
+        }
+
+        .complete-btn:hover {
+          background: linear-gradient(135deg, #059669 0%, #047857 100%);
+          transform: translateY(-2px);
+          box-shadow:
+            8px 8px 16px rgba(16, 185, 129, 0.5),
+            -8px -8px 16px rgba(255, 255, 255, 0.9);
+        }
+
+        .complete-btn:active {
+          transform: scale(0.97);
+          box-shadow:
+            inset 4px 4px 8px rgba(5, 150, 105, 0.5),
+            inset -4px -4px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .complete-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
         /* Empty State */
         .empty-column {
           display: flex;
@@ -861,6 +1019,39 @@ const KitchenDisplayPage: React.FC = () => {
       `}</style>
 
       <AppHeader title={`Kitchen Display - ${storeId.toUpperCase() || 'NO STORE'}`} hideStaffLogin={true} />
+
+      {/* WebSocket Connection Status */}
+      <div style={{
+        position: 'fixed',
+        top: '80px',
+        right: '20px',
+        zIndex: 1000,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '8px 16px',
+        borderRadius: '20px',
+        background: '#f0f0f0',
+        boxShadow: '4px 4px 8px rgba(163, 163, 163, 0.3), -4px -4px 8px rgba(255, 255, 255, 0.8)',
+        fontSize: '12px',
+        fontWeight: 600,
+      }}>
+        <div style={{
+          width: '10px',
+          height: '10px',
+          borderRadius: '50%',
+          background: wsConnected ? '#10b981' : '#ef4444',
+          animation: wsConnected ? 'none' : 'pulse 2s infinite',
+        }} />
+        <span style={{ color: wsConnected ? '#10b981' : '#ef4444' }}>
+          {wsConnected ? 'Live Updates' : 'Polling Mode'}
+        </span>
+        {wsError && (
+          <span style={{ color: '#f59e0b', marginLeft: '4px' }} title={wsError}>
+            ⚠️
+          </span>
+        )}
+      </div>
 
       {/* Main Board */}
       <main className="kitchen-board">

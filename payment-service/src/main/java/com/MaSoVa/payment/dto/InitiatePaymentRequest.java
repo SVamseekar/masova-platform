@@ -27,13 +27,18 @@ public class InitiatePaymentRequest {
 
     private String notes;
 
+    private String orderType; // DELIVERY, TAKEAWAY, DINE_IN
+
+    private String paymentMethod; // CASH, CARD, UPI, etc.
+
     // No-arg constructor
     public InitiatePaymentRequest() {
     }
 
     // All-args constructor
     public InitiatePaymentRequest(String orderId, BigDecimal amount, String customerId,
-                                  String customerEmail, String customerPhone, String storeId, String notes) {
+                                  String customerEmail, String customerPhone, String storeId, String notes,
+                                  String orderType, String paymentMethod) {
         this.orderId = orderId;
         this.amount = amount;
         this.customerId = customerId;
@@ -41,6 +46,8 @@ public class InitiatePaymentRequest {
         this.customerPhone = customerPhone;
         this.storeId = storeId;
         this.notes = notes;
+        this.orderType = orderType;
+        this.paymentMethod = paymentMethod;
     }
 
     // Getters
@@ -72,6 +79,14 @@ public class InitiatePaymentRequest {
         return notes;
     }
 
+    public String getOrderType() {
+        return orderType;
+    }
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
     // Setters
     public void setOrderId(String orderId) {
         this.orderId = orderId;
@@ -101,6 +116,14 @@ public class InitiatePaymentRequest {
         this.notes = notes;
     }
 
+    public void setOrderType(String orderType) {
+        this.orderType = orderType;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
     // Builder
     public static Builder builder() {
         return new Builder();
@@ -114,6 +137,8 @@ public class InitiatePaymentRequest {
         private String customerPhone;
         private String storeId;
         private String notes;
+        private String orderType;
+        private String paymentMethod;
 
         public Builder orderId(String orderId) {
             this.orderId = orderId;
@@ -150,9 +175,19 @@ public class InitiatePaymentRequest {
             return this;
         }
 
+        public Builder orderType(String orderType) {
+            this.orderType = orderType;
+            return this;
+        }
+
+        public Builder paymentMethod(String paymentMethod) {
+            this.paymentMethod = paymentMethod;
+            return this;
+        }
+
         public InitiatePaymentRequest build() {
             return new InitiatePaymentRequest(orderId, amount, customerId, customerEmail,
-                                             customerPhone, storeId, notes);
+                                             customerPhone, storeId, notes, orderType, paymentMethod);
         }
     }
 }

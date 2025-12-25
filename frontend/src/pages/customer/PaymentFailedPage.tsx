@@ -86,7 +86,7 @@ const PaymentFailedPage: React.FC = () => {
     <>
       <AnimatedBackground variant="minimal" />
       <div style={containerStyles}>
-        <Card elevation="xl" padding="xl" style={cardStyles}>
+        <Card elevation="lg" padding="xl" style={cardStyles}>
           <div style={iconStyles}>❌</div>
           <h1 style={titleStyles}>Payment Failed</h1>
           <p style={messageStyles}>

@@ -1,8 +1,6 @@
 package com.MaSoVa.analytics.service;
 
 import com.MaSoVa.analytics.client.OrderServiceClient;
-import com.MaSoVa.analytics.client.UserServiceClient;
-import com.MaSoVa.analytics.client.CustomerServiceClient;
 import com.MaSoVa.analytics.dto.BenchmarkingResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,15 +20,9 @@ public class BenchmarkingService {
     private static final Logger log = LoggerFactory.getLogger(BenchmarkingService.class);
 
     private final OrderServiceClient orderServiceClient;
-    private final CustomerServiceClient customerServiceClient;
-    private final UserServiceClient userServiceClient;
 
-    public BenchmarkingService(OrderServiceClient orderServiceClient,
-                               CustomerServiceClient customerServiceClient,
-                               UserServiceClient userServiceClient) {
+    public BenchmarkingService(OrderServiceClient orderServiceClient) {
         this.orderServiceClient = orderServiceClient;
-        this.customerServiceClient = customerServiceClient;
-        this.userServiceClient = userServiceClient;
     }
 
     /**

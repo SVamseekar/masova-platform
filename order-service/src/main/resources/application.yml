@@ -7,18 +7,30 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://localhost:27017/masova_orders
+      uri: ${MONGODB_URI:mongodb://localhost:27017/masova_orders}
       auto-index-creation: true
 
   redis:
-    host: localhost
-    port: 6379
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
     timeout: 2000ms
     lettuce:
       pool:
-        max-active: 8
-        max-idle: 8
-        min-idle: 0
+        max-active: 50
+        max-idle: 25
+        min-idle: 10
+        max-wait: 5000ms
+
+# MongoDB connection pool settings (used by MongoPoolConfig)
+mongo:
+  pool:
+    min-size: ${MONGO_POOL_MIN_SIZE:10}
+    max-size: ${MONGO_POOL_MAX_SIZE:100}
+    max-wait-ms: ${MONGO_POOL_MAX_WAIT_MS:30000}
+    max-connection-idle-ms: ${MONGO_POOL_MAX_IDLE_MS:60000}
+    max-connection-life-ms: ${MONGO_POOL_MAX_LIFE_MS:0}
+    maintenance-initial-delay-ms: 0
+    maintenance-frequency-ms: 10000
 
   jackson:
     serialization:
@@ -26,23 +38,211 @@ spring:
     time-zone: Asia/Kolkata
 
 jwt:
-  secret: MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-512-bits-for-HS512-algorithm-security-requirement
+  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-256-bits-for-production-security}
   access-token-expiration: 3600000
   refresh-token-expiration: 604800000
+
+# Service URLs (HARD-004: Externalized service URLs)
+services:
+  delivery:
+    url: ${DELIVERY_SERVICE_URL:http://localhost:8090}
+  customer-service:
+    url: ${CUSTOMER_SERVICE_URL:http://localhost:8091}
+  notification:
+    url: ${NOTIFICATION_SERVICE_URL:http://localhost:8092}
+  user:
+    url: ${USER_SERVICE_URL:http://localhost:8081}
+  menu:
+    url: ${MENU_SERVICE_URL:http://localhost:8082}
+
+# Tax Configuration (HARD-002: Dynamic tax rates)
+tax:
+  default-gst-percent: ${TAX_DEFAULT_GST:5.0}
+  ac-restaurant-gst-percent: ${TAX_AC_RESTAURANT:5.0}
+  non-ac-restaurant-gst-percent: ${TAX_NON_AC_RESTAURANT:5.0}
+  delivery-service-tax-percent: ${TAX_DELIVERY_SERVICE:0.0}
+  packaging-tax-percent: ${TAX_PACKAGING:18.0}
+  state-rates:
+    Maharashtra: 5.0
+    Karnataka: 5.0
+    Delhi: 5.0
+    Tamil Nadu: 5.0
+    Gujarat: 5.0
+  category-rates:
+    FOOD: 5.0
+    BEVERAGE: 12.0
+    ALCOHOL: 28.0
+    PACKAGED: 18.0
+    ICE_CREAM: 18.0
+
+# Preparation Time Configuration (HARD-003: Dynamic preparation times)
+preparation:
+  base-time-minutes: ${PREP_BASE_TIME:15}
+  per-item-minutes: ${PREP_PER_ITEM:5}
+  rush-hour-multiplier: ${PREP_RUSH_MULTIPLIER:1.5}
+  max-time-minutes: ${PREP_MAX_TIME:120}
+  min-time-minutes: ${PREP_MIN_TIME:10}
+  rush-hour-start-hour: ${PREP_RUSH_START:12}
+  rush-hour-end-hour: ${PREP_RUSH_END:14}
+  evening-rush-start-hour: ${PREP_EVENING_RUSH_START:19}
+  evening-rush-end-hour: ${PREP_EVENING_RUSH_END:21}
+
+# Delivery Fee Configuration (Week 3 Fix: Externalized delivery fees)
+masova:
+  delivery:
+    base-fee: ${DELIVERY_BASE_FEE:50.0}
+    free-delivery-threshold: ${DELIVERY_FREE_THRESHOLD:500.0}
+    per-km-charge: ${DELIVERY_PER_KM:5.0}
+    base-distance-km: ${DELIVERY_BASE_DISTANCE:3.0}
+
+# Application Configuration
+app:
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:3000}  # For generating tracking links in emails
+    base-url: ${FRONTEND_BASE_URL:http://localhost:3000}  # For generating rating URLs
+  rating:
+    token-validity-days: 30  # Rating links expire after 30 days
 
 logging:
   level:
     com.MaSoVa.order: DEBUG
     org.springframework.data.mongodb: DEBUG
     org.springframework.security: DEBUG
+    io.github.resilience4j: DEBUG
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    # PROD-002: Include correlation ID in logs for request tracing
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} [correlationId=%X{correlationId:-N/A}] - %msg%n"
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,circuitbreakers,circuitbreakerevents
   endpoint:
     health:
       show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
+
+# Resilience4j Circuit Breaker Configuration (PROD-001)
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        failure-rate-threshold: 50
+        slow-call-rate-threshold: 80
+        slow-call-duration-threshold: 3s
+        minimum-number-of-calls: 10
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 20
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 5
+        automatic-transition-from-open-to-half-open-enabled: true
+    instances:
+      deliveryService:
+        base-config: default
+        failure-rate-threshold: 60
+        minimum-number-of-calls: 10
+        wait-duration-in-open-state: 15s
+      customerService:
+        base-config: default
+        failure-rate-threshold: 60
+        minimum-number-of-calls: 10
+        wait-duration-in-open-state: 15s
+      menuService:
+        base-config: default
+        failure-rate-threshold: 70
+        minimum-number-of-calls: 10
+        wait-duration-in-open-state: 10s
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 5s
+        cancel-running-future: true
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 500ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - org.springframework.web.client.RestClientException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+    instances:
+      deliveryService:
+        base-config: default
+      customerService:
+        base-config: default
+      menuService:
+        base-config: default
+
+---
+# Production Profile Configuration
+# Week 5: Production-ready settings with optimized performance and security
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  # Production MongoDB settings
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+      auto-index-creation: false  # Disable in production, create indexes manually
+
+  # Production Redis settings with connection pooling
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD}
+    ssl: ${REDIS_SSL:true}
+    timeout: 3000ms
+    lettuce:
+      pool:
+        max-active: 100
+        max-idle: 50
+        min-idle: 25
+        max-wait: 10000ms
+      shutdown-timeout: 100ms
+
+# Production MongoDB pool settings (optimized for high load)
+mongo:
+  pool:
+    min-size: 25
+    max-size: 200
+    max-wait-ms: 10000
+    max-connection-idle-ms: 30000
+    max-connection-life-ms: 600000
+
+# Production logging (WARN/ERROR levels only)
+logging:
+  level:
+    root: WARN
+    com.MaSoVa: INFO
+    org.springframework: WARN
+    org.mongodb: ERROR
+    io.github.resilience4j: WARN
+
+# Production actuator settings (security-focused)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus  # Only health and metrics
+  endpoint:
+    health:
+      show-details: when-authorized  # Hide details from public
+
+# Production circuit breaker settings (more conservative)
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        failure-rate-threshold: 40
+        slow-call-rate-threshold: 70
+        minimum-number-of-calls: 20
+        sliding-window-size: 50
+        wait-duration-in-open-state: 60s

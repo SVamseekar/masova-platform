@@ -21,7 +21,7 @@ spring:
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-512-bits-for-HS512-algorithm-security-requirement}
+  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-256-bits-for-production-security}
   access-token-expiration: 3600000
   refresh-token-expiration: 604800000
 # Twilio Configuration
@@ -31,12 +31,18 @@ twilio:
   phone-number: ${TWILIO_PHONE_NUMBER:}
   enabled: ${TWILIO_ENABLED:false}
 
-# SendGrid Configuration
-sendgrid:
-  api-key: ${SENDGRID_API_KEY:}
-  from-email: ${SENDGRID_FROM_EMAIL:noreply@masova.com}
-  from-name: ${SENDGRID_FROM_NAME:MaSoVa Restaurant}
-  enabled: ${SENDGRID_ENABLED:false}
+# Brevo Email Configuration (Transactional Email Service)
+brevo:
+  api-key: ${BREVO_API_KEY:}
+  from-email: ${BREVO_FROM_EMAIL:noreply@masova.com}
+  from-name: ${BREVO_FROM_NAME:MaSoVa Restaurant}
+  enabled: ${BREVO_ENABLED:false}
+  api-url: ${BREVO_API_URL:https://api.brevo.com/v3/smtp/email}
+  rate-limit:
+    daily: ${BREVO_DAILY_LIMIT:300}  # Free tier: 300 emails/day
+  timeout:
+    connect: 5000  # 5 seconds
+    read: 10000    # 10 seconds
 
 # Firebase Configuration
 firebase:
@@ -73,7 +79,41 @@ logging:
     com.MaSoVa.notification: DEBUG
     org.springframework.data.mongodb: DEBUG
     com.twilio: INFO
-    com.sendgrid: INFO
+    org.apache.hc.client5: INFO  # Brevo uses Apache HttpClient
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+---
+# Production Profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+      auto-index-creation: false
+
+logging:
+  level:
+    root: WARN
+    com.MaSoVa: INFO
+    org.springframework: WARN
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# Rating System Configuration
+app:
+  rating:
+    enabled: true  # Enable/disable rating requests
+  frontend:
+    base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
+

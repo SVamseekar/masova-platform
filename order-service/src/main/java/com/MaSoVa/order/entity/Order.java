@@ -1,11 +1,13 @@
 package com.MaSoVa.order.entity;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.index.Indexed;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -15,22 +17,26 @@ public class Order {
     @Id
     private String id;
 
+    @Version
+    private Long version;
+
     @Indexed(unique = true)
     private String orderNumber;
 
     private String customerId;
     private String customerName;
     private String customerPhone;
+    private String customerEmail;  // Store email directly for notifications (walk-in customers)
 
     @Indexed
     private String storeId;
 
     private List<OrderItem> items;
 
-    private Double subtotal;
-    private Double deliveryFee;
-    private Double tax;
-    private Double total;
+    private BigDecimal subtotal;
+    private BigDecimal deliveryFee;
+    private BigDecimal tax;
+    private BigDecimal total;
 
     @Indexed
     private OrderStatus status;
@@ -68,8 +74,19 @@ public class Order {
     private LocalDateTime preparingStartedAt;
     private LocalDateTime ovenStartedAt;
     private LocalDateTime bakedAt;
+    private LocalDateTime readyAt;        // When order is ready (READY status for all order types)
     private LocalDateTime dispatchedAt;
     private LocalDateTime deliveredAt;
+
+    // Proof of Delivery (POD) fields - DELIV-002
+    private String deliveryOtp;                    // 4-digit OTP for delivery verification
+    private LocalDateTime deliveryOtpGeneratedAt;  // When OTP was generated
+    private LocalDateTime deliveryOtpExpiresAt;    // OTP expiry (15 min from generation)
+    private String deliveryProofType;              // OTP, SIGNATURE, PHOTO, CONTACTLESS
+    private String deliveryPhotoUrl;               // URL to delivery confirmation photo
+    private String deliverySignatureUrl;           // URL to customer signature
+    private Boolean contactlessDelivery;           // If true, skip OTP verification
+    private String deliveryNotes;                  // Driver notes at delivery
 
     // Quality checkpoints
     private List<QualityCheckpoint> qualityCheckpoints;
@@ -83,6 +100,11 @@ public class Order {
     private String assignedKitchenStaffId;
     private String assignedKitchenStaffName;
     private LocalDateTime assignedToKitchenAt;
+
+    // POS staff tracking - for staff performance metrics
+    @Indexed
+    private String createdByStaffId;     // POS staff who created the order
+    private String createdByStaffName;   // For quick display
 
     // Constructors
     public Order() {}
@@ -103,23 +125,26 @@ public class Order {
     public String getCustomerPhone() { return customerPhone; }
     public void setCustomerPhone(String customerPhone) { this.customerPhone = customerPhone; }
 
+    public String getCustomerEmail() { return customerEmail; }
+    public void setCustomerEmail(String customerEmail) { this.customerEmail = customerEmail; }
+
     public String getStoreId() { return storeId; }
     public void setStoreId(String storeId) { this.storeId = storeId; }
 
     public List<OrderItem> getItems() { return items; }
     public void setItems(List<OrderItem> items) { this.items = items; }
 
-    public Double getSubtotal() { return subtotal; }
-    public void setSubtotal(Double subtotal) { this.subtotal = subtotal; }
+    public BigDecimal getSubtotal() { return subtotal; }
+    public void setSubtotal(BigDecimal subtotal) { this.subtotal = subtotal; }
 
-    public Double getDeliveryFee() { return deliveryFee; }
-    public void setDeliveryFee(Double deliveryFee) { this.deliveryFee = deliveryFee; }
+    public BigDecimal getDeliveryFee() { return deliveryFee; }
+    public void setDeliveryFee(BigDecimal deliveryFee) { this.deliveryFee = deliveryFee; }
 
-    public Double getTax() { return tax; }
-    public void setTax(Double tax) { this.tax = tax; }
+    public BigDecimal getTax() { return tax; }
+    public void setTax(BigDecimal tax) { this.tax = tax; }
 
-    public Double getTotal() { return total; }
-    public void setTotal(Double total) { this.total = total; }
+    public BigDecimal getTotal() { return total; }
+    public void setTotal(BigDecimal total) { this.total = total; }
 
     public OrderStatus getStatus() { return status; }
     public void setStatus(OrderStatus status) { this.status = status; }
@@ -181,6 +206,9 @@ public class Order {
     public LocalDateTime getBakedAt() { return bakedAt; }
     public void setBakedAt(LocalDateTime bakedAt) { this.bakedAt = bakedAt; }
 
+    public LocalDateTime getReadyAt() { return readyAt; }
+    public void setReadyAt(LocalDateTime readyAt) { this.readyAt = readyAt; }
+
     public LocalDateTime getDispatchedAt() { return dispatchedAt; }
     public void setDispatchedAt(LocalDateTime dispatchedAt) { this.dispatchedAt = dispatchedAt; }
 
@@ -208,6 +236,37 @@ public class Order {
     public LocalDateTime getAssignedToKitchenAt() { return assignedToKitchenAt; }
     public void setAssignedToKitchenAt(LocalDateTime assignedToKitchenAt) { this.assignedToKitchenAt = assignedToKitchenAt; }
 
+    public String getCreatedByStaffId() { return createdByStaffId; }
+    public void setCreatedByStaffId(String createdByStaffId) { this.createdByStaffId = createdByStaffId; }
+
+    public String getCreatedByStaffName() { return createdByStaffName; }
+    public void setCreatedByStaffName(String createdByStaffName) { this.createdByStaffName = createdByStaffName; }
+
+    // Proof of Delivery getters/setters
+    public String getDeliveryOtp() { return deliveryOtp; }
+    public void setDeliveryOtp(String deliveryOtp) { this.deliveryOtp = deliveryOtp; }
+
+    public LocalDateTime getDeliveryOtpGeneratedAt() { return deliveryOtpGeneratedAt; }
+    public void setDeliveryOtpGeneratedAt(LocalDateTime deliveryOtpGeneratedAt) { this.deliveryOtpGeneratedAt = deliveryOtpGeneratedAt; }
+
+    public LocalDateTime getDeliveryOtpExpiresAt() { return deliveryOtpExpiresAt; }
+    public void setDeliveryOtpExpiresAt(LocalDateTime deliveryOtpExpiresAt) { this.deliveryOtpExpiresAt = deliveryOtpExpiresAt; }
+
+    public String getDeliveryProofType() { return deliveryProofType; }
+    public void setDeliveryProofType(String deliveryProofType) { this.deliveryProofType = deliveryProofType; }
+
+    public String getDeliveryPhotoUrl() { return deliveryPhotoUrl; }
+    public void setDeliveryPhotoUrl(String deliveryPhotoUrl) { this.deliveryPhotoUrl = deliveryPhotoUrl; }
+
+    public String getDeliverySignatureUrl() { return deliverySignatureUrl; }
+    public void setDeliverySignatureUrl(String deliverySignatureUrl) { this.deliverySignatureUrl = deliverySignatureUrl; }
+
+    public Boolean getContactlessDelivery() { return contactlessDelivery; }
+    public void setContactlessDelivery(Boolean contactlessDelivery) { this.contactlessDelivery = contactlessDelivery; }
+
+    public String getDeliveryNotes() { return deliveryNotes; }
+    public void setDeliveryNotes(String deliveryNotes) { this.deliveryNotes = deliveryNotes; }
+
     // Builder pattern
     public static Builder builder() { return new Builder(); }
 
@@ -219,12 +278,13 @@ public class Order {
         public Builder customerId(String customerId) { order.customerId = customerId; return this; }
         public Builder customerName(String customerName) { order.customerName = customerName; return this; }
         public Builder customerPhone(String customerPhone) { order.customerPhone = customerPhone; return this; }
+        public Builder customerEmail(String customerEmail) { order.customerEmail = customerEmail; return this; }
         public Builder storeId(String storeId) { order.storeId = storeId; return this; }
         public Builder items(List<OrderItem> items) { order.items = items; return this; }
-        public Builder subtotal(Double subtotal) { order.subtotal = subtotal; return this; }
-        public Builder deliveryFee(Double deliveryFee) { order.deliveryFee = deliveryFee; return this; }
-        public Builder tax(Double tax) { order.tax = tax; return this; }
-        public Builder total(Double total) { order.total = total; return this; }
+        public Builder subtotal(BigDecimal subtotal) { order.subtotal = subtotal; return this; }
+        public Builder deliveryFee(BigDecimal deliveryFee) { order.deliveryFee = deliveryFee; return this; }
+        public Builder tax(BigDecimal tax) { order.tax = tax; return this; }
+        public Builder total(BigDecimal total) { order.total = total; return this; }
         public Builder status(OrderStatus status) { order.status = status; return this; }
         public Builder orderType(OrderType orderType) { order.orderType = orderType; return this; }
         public Builder paymentStatus(PaymentStatus paymentStatus) { order.paymentStatus = paymentStatus; return this; }
@@ -236,19 +296,24 @@ public class Order {
         public Builder specialInstructions(String specialInstructions) { order.specialInstructions = specialInstructions; return this; }
         public Builder receivedAt(LocalDateTime receivedAt) { order.receivedAt = receivedAt; return this; }
         public Builder qualityCheckpoints(List<QualityCheckpoint> qualityCheckpoints) { order.qualityCheckpoints = qualityCheckpoints; return this; }
+        public Builder createdByStaffId(String createdByStaffId) { order.createdByStaffId = createdByStaffId; return this; }
+        public Builder createdByStaffName(String createdByStaffName) { order.createdByStaffName = createdByStaffName; return this; }
 
         public Order build() { return order; }
     }
 
     // Enums
     public enum OrderStatus {
-        RECEIVED,
-        PREPARING,
-        OVEN,
-        BAKED,
-        DISPATCHED,
-        DELIVERED,
-        CANCELLED
+        RECEIVED,      // Initial state for all orders
+        PREPARING,     // Kitchen started work
+        OVEN,          // In oven (for items that need baking)
+        BAKED,         // Finished baking
+        READY,         // Ready for pickup/serving (TAKEAWAY/DINE_IN)
+        DISPATCHED,    // Out for delivery (DELIVERY only)
+        DELIVERED,     // Delivered to customer (DELIVERY final state)
+        SERVED,        // Served to table (DINE_IN final state)
+        COMPLETED,     // Picked up by customer (TAKEAWAY final state)
+        CANCELLED      // Cancelled order
     }
 
     public enum OrderType {

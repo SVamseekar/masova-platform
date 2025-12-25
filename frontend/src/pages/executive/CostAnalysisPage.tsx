@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Package } from 'lucide-react';
 import axios from 'axios';
+import API_CONFIG from '../../config/api.config';
 
 interface CostAnalysis {
   period: string;
@@ -72,7 +73,7 @@ const CostAnalysisPage: React.FC = () => {
   const fetchCostAnalysis = async () => {
     try {
       setLoading(true);
-      const response = await axios.get<CostAnalysis>(`http://localhost:8080/api/bi/cost-analysis?period=${period}`);
+      const response = await axios.get<CostAnalysis>(`${API_CONFIG.BASE_URL}/bi/cost-analysis?period=${period}`);
       setAnalysis(response.data);
     } catch (error) {
       console.error('Failed to fetch cost analysis:', error);
@@ -208,8 +209,8 @@ const CostAnalysisPage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="breakdown" className="space-y-4">
-        <TabsList className="bg-white">
+      <Tabs defaultValue="breakdown">
+        <TabsList>
           <TabsTrigger value="breakdown">Cost Breakdown</TabsTrigger>
           <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
           <TabsTrigger value="waste">Waste Analysis</TabsTrigger>
@@ -218,7 +219,7 @@ const CostAnalysisPage: React.FC = () => {
         </TabsList>
 
         {/* Cost Breakdown Tab */}
-        <TabsContent value="breakdown" className="space-y-4">
+        <TabsContent value="breakdown">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card>
               <CardHeader>
@@ -267,7 +268,7 @@ const CostAnalysisPage: React.FC = () => {
         </TabsContent>
 
         {/* Ingredients Tab */}
-        <TabsContent value="ingredients" className="space-y-4">
+        <TabsContent value="ingredients">
           <Card>
             <CardHeader>
               <CardTitle>Ingredient Cost Analysis</CardTitle>
@@ -308,7 +309,7 @@ const CostAnalysisPage: React.FC = () => {
         </TabsContent>
 
         {/* Waste Analysis Tab */}
-        <TabsContent value="waste" className="space-y-4">
+        <TabsContent value="waste">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -352,7 +353,7 @@ const CostAnalysisPage: React.FC = () => {
         </TabsContent>
 
         {/* Order Costs Tab */}
-        <TabsContent value="orders" className="space-y-4">
+        <TabsContent value="orders">
           <Card>
             <CardHeader>
               <CardTitle>Top Cost Orders</CardTitle>
@@ -403,7 +404,7 @@ const CostAnalysisPage: React.FC = () => {
         </TabsContent>
 
         {/* Suppliers Tab */}
-        <TabsContent value="suppliers" className="space-y-4">
+        <TabsContent value="suppliers">
           {analysis.supplierComparisons.map((comparison, index) => (
             <Card key={index}>
               <CardHeader>

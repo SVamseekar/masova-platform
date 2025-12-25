@@ -1,29 +1,5 @@
 // src/apps/POSSystem/Reports.tsx
 import React, { useState } from 'react';
-import {
-  Box,
-  Container,
-  Typography,
-  Paper,
-  Grid,
-  AppBar,
-  Toolbar,
-  IconButton,
-  Tabs,
-  Tab,
-  Card,
-  CardContent,
-  Divider,
-  CircularProgress,
-  Button,
-} from '@mui/material';
-import {
-  ArrowBack as BackIcon,
-  TrendingUp as SalesIcon,
-  Inventory as InventoryIcon,
-  People as StaffIcon,
-  Assessment as AdvancedIcon,
-} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 import { CURRENCY } from '../../config/business-config';
@@ -33,6 +9,10 @@ import {
   useGetStaffLeaderboardQuery,
   useGetTopProductsQuery,
 } from '../../store/api/analyticsApi';
+import AppHeader from '../../components/common/AppHeader';
+import Card from '../../components/ui/neumorphic/Card';
+import Button from '../../components/ui/neumorphic/Button';
+import { colors, shadows, spacing, typography } from '../../styles/design-tokens';
 
 /**
  * Reports Page (Manager Only)
@@ -41,7 +21,7 @@ import {
 const Reports: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.auth);
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState<'sales' | 'staff' | 'inventory'>('sales');
 
   // Fetch real data from APIs
   const { data: todayData, isLoading: loadingToday } = useGetTodaySalesMetricsQuery(undefined);
@@ -58,225 +38,492 @@ const Reports: React.FC = () => {
   // Check if user is manager
   if (user?.type !== 'MANAGER') {
     return (
-      <Container maxWidth="lg" sx={{ mt: 4 }}>
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <Typography variant="h5" color="error">
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100vh',
+        backgroundColor: colors.surface.background,
+        fontFamily: typography.fontFamily.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: spacing[6]
+      }}>
+        <Card
+          elevation="lg"
+          padding="lg"
+          style={{
+            maxWidth: '500px',
+            textAlign: 'center',
+            background: `linear-gradient(135deg, ${colors.semantic.errorLight}22 0%, ${colors.semantic.error}11 100%)`,
+            border: `2px solid ${colors.semantic.error}`
+          }}
+        >
+          <div style={{
+            fontSize: typography.fontSize['2xl'],
+            marginBottom: spacing[4]
+          }}>
+            🔒
+          </div>
+          <h2 style={{
+            margin: `0 0 ${spacing[3]} 0`,
+            fontSize: typography.fontSize.xl,
+            fontWeight: typography.fontWeight.bold,
+            color: colors.semantic.error
+          }}>
             Access Denied
-          </Typography>
-          <Typography variant="body1" sx={{ mt: 2 }}>
+          </h2>
+          <p style={{
+            margin: `0 0 ${spacing[4]} 0`,
+            color: colors.text.secondary
+          }}>
             This page is only accessible to managers.
-          </Typography>
-          <IconButton onClick={() => navigate('/pos')} sx={{ mt: 2 }}>
-            <BackIcon />
-          </IconButton>
-        </Paper>
-      </Container>
+          </p>
+          <Button
+            variant="primary"
+            onClick={() => navigate('/pos')}
+          >
+            ← Back to POS
+          </Button>
+        </Card>
+      </div>
     );
   }
 
   const isLoading = loadingToday || loadingWeek || loadingMonth || loadingProducts || loadingStaff;
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
-      {/* Header */}
-      <AppBar position="static">
-        <Toolbar>
-          <IconButton edge="start" color="inherit" onClick={() => navigate('/pos')}>
-            <BackIcon />
-          </IconButton>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Reports & Analytics
-          </Typography>
-        </Toolbar>
-        <Tabs
-          value={activeTab}
-          onChange={(_, value) => setActiveTab(value)}
-          sx={{ backgroundColor: 'primary.dark' }}
-          textColor="inherit"
-        >
-          <Tab icon={<SalesIcon />} label="Sales" />
-          <Tab icon={<StaffIcon />} label="Staff Performance" />
-          <Tab icon={<InventoryIcon />} label="Inventory" />
-        </Tabs>
-      </AppBar>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100vh',
+      backgroundColor: colors.surface.background,
+      fontFamily: typography.fontFamily.primary
+    }}>
+      {/* App Header */}
+      <AppHeader title={`Reports & Analytics - ${user?.name || 'Manager'}`} />
 
-      <Container maxWidth="xl" sx={{ mt: 3, mb: 3 }}>
+      {/* Action Bar with Tabs */}
+      <div style={{
+        padding: `${spacing[2]} ${spacing[6]}`,
+        backgroundColor: colors.surface.primary,
+        borderBottom: `1px solid ${colors.surface.border}`,
+        display: 'flex',
+        gap: spacing[3],
+        alignItems: 'center',
+        flexShrink: 0
+      }}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate('/pos')}
+        >
+          ← Back to POS
+        </Button>
+
+        <div style={{
+          marginLeft: 'auto',
+          display: 'flex',
+          gap: spacing[2]
+        }}>
+          {[
+            { key: 'sales', label: '📊 Sales', icon: '📊' },
+            { key: 'staff', label: '👥 Staff', icon: '👥' },
+            { key: 'inventory', label: '📦 Inventory', icon: '📦' }
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key as any)}
+              style={{
+                padding: `${spacing[2]} ${spacing[4]}`,
+                borderRadius: '10px',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: typography.fontSize.sm,
+                fontWeight: typography.fontWeight.semibold,
+                fontFamily: typography.fontFamily.primary,
+                transition: 'all 0.2s ease',
+                ...(activeTab === tab.key ? {
+                  background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.secondary} 100%)`,
+                  color: colors.text.inverse,
+                  boxShadow: shadows.floating.md
+                } : {
+                  background: colors.surface.secondary,
+                  color: colors.text.secondary,
+                  boxShadow: shadows.raised.sm
+                })
+              }}
+              onMouseEnter={(e) => {
+                if (activeTab !== tab.key) {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = shadows.floating.sm;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeTab !== tab.key) {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = shadows.raised.sm;
+                }
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div style={{
+        flex: 1,
+        overflow: 'auto',
+        padding: spacing[6]
+      }}>
         {/* Loading State */}
         {isLoading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 400 }}>
-            <CircularProgress />
-          </Box>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: spacing[10],
+            color: colors.text.secondary
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              border: `4px solid ${colors.surface.border}`,
+              borderTopColor: colors.brand.primary,
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }} />
+            <style>{`
+              @keyframes spin {
+                to { transform: rotate(360deg); }
+              }
+            `}</style>
+          </div>
         )}
 
         {!isLoading && (
           <>
             {/* Sales Tab */}
-            {activeTab === 0 && (
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={4}>
-                  <Card>
-                    <CardContent>
-                      <Typography color="text.secondary" gutterBottom>
-                        Today's Sales
-                      </Typography>
-                      <Typography variant="h4" component="div">
-                        {CURRENCY.format(todayData?.todaySales || 0)}
-                      </Typography>
-                      <Typography variant="body2" color={todayData?.percentChangeFromYesterday && todayData.percentChangeFromYesterday >= 0 ? 'success.main' : 'error.main'}>
-                        {todayData?.percentChangeFromYesterday ? `${todayData.percentChangeFromYesterday >= 0 ? '+' : ''}${todayData.percentChangeFromYesterday.toFixed(1)}% vs yesterday` : ''}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <Card>
-                    <CardContent>
-                      <Typography color="text.secondary" gutterBottom>
-                        This Week
-                      </Typography>
-                      <Typography variant="h4" component="div">
-                        {CURRENCY.format(weekData?.totalSales || 0)}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {weekData?.totalOrders || 0} orders
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <Card>
-                    <CardContent>
-                      <Typography color="text.secondary" gutterBottom>
-                        This Month
-                      </Typography>
-                      <Typography variant="h4" component="div">
-                        {CURRENCY.format(monthData?.totalSales || 0)}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {monthData?.totalOrders || 0} orders
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Paper sx={{ p: 3 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                      <Typography variant="h6">
-                        Top Selling Items (Today)
-                      </Typography>
-                      <Button
-                        startIcon={<AdvancedIcon />}
-                        onClick={() => navigate('/manager/product-analytics')}
-                      >
-                        View Full Analytics
-                      </Button>
-                    </Box>
-                    <Divider sx={{ mb: 2 }} />
-                    {topProducts && topProducts.topProducts.length > 0 ? (
-                      <Grid container spacing={2}>
-                        {topProducts.topProducts.slice(0, 5).map((item) => (
-                          <Grid item xs={12} md={6} key={item.itemId}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
-                              <Box>
-                                <Typography variant="body1" fontWeight="medium">
-                                  {item.itemName}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                  {item.quantitySold} sold
-                                </Typography>
-                              </Box>
-                              <Typography variant="h6" color="primary">
-                                {CURRENCY.format(item.revenue)}
-                              </Typography>
-                            </Box>
-                          </Grid>
-                        ))}
-                      </Grid>
-                    ) : (
-                      <Typography color="text.secondary">No sales data available</Typography>
-                    )}
-                  </Paper>
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    size="large"
-                    startIcon={<AdvancedIcon />}
-                    onClick={() => navigate('/manager/advanced-reports')}
+            {activeTab === 'sales' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
+                {/* Metrics Cards */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                  gap: spacing[4]
+                }}>
+                  <Card
+                    elevation="md"
+                    padding="lg"
+                    style={{
+                      background: `linear-gradient(135deg, ${colors.semantic.successLight}22 0%, ${colors.semantic.success}11 100%)`,
+                      border: `2px solid ${colors.semantic.success}`
+                    }}
                   >
-                    View Advanced Reports (Charts & Trends)
-                  </Button>
-                </Grid>
-              </Grid>
+                    <div style={{
+                      fontSize: typography.fontSize.sm,
+                      color: colors.text.secondary,
+                      marginBottom: spacing[2]
+                    }}>
+                      Today's Sales
+                    </div>
+                    <div style={{
+                      fontSize: typography.fontSize['2xl'],
+                      fontWeight: typography.fontWeight.extrabold,
+                      color: colors.text.primary,
+                      marginBottom: spacing[2]
+                    }}>
+                      {CURRENCY.format(todayData?.todaySales || 0)}
+                    </div>
+                    <div style={{
+                      fontSize: typography.fontSize.xs,
+                      color: todayData?.percentChangeFromYesterday && todayData.percentChangeFromYesterday >= 0 ? colors.semantic.success : colors.semantic.error
+                    }}>
+                      {todayData?.percentChangeFromYesterday ? `${todayData.percentChangeFromYesterday >= 0 ? '+' : ''}${todayData.percentChangeFromYesterday.toFixed(1)}% vs yesterday` : '—'}
+                    </div>
+                  </Card>
+
+                  <Card elevation="md" padding="lg">
+                    <div style={{
+                      fontSize: typography.fontSize.sm,
+                      color: colors.text.secondary,
+                      marginBottom: spacing[2]
+                    }}>
+                      This Week
+                    </div>
+                    <div style={{
+                      fontSize: typography.fontSize['2xl'],
+                      fontWeight: typography.fontWeight.extrabold,
+                      color: colors.text.primary,
+                      marginBottom: spacing[2]
+                    }}>
+                      {CURRENCY.format(weekData?.totalSales || 0)}
+                    </div>
+                    <div style={{
+                      fontSize: typography.fontSize.xs,
+                      color: colors.text.secondary
+                    }}>
+                      {weekData?.totalOrders || 0} orders
+                    </div>
+                  </Card>
+
+                  <Card elevation="md" padding="lg">
+                    <div style={{
+                      fontSize: typography.fontSize.sm,
+                      color: colors.text.secondary,
+                      marginBottom: spacing[2]
+                    }}>
+                      This Month
+                    </div>
+                    <div style={{
+                      fontSize: typography.fontSize['2xl'],
+                      fontWeight: typography.fontWeight.extrabold,
+                      color: colors.text.primary,
+                      marginBottom: spacing[2]
+                    }}>
+                      {CURRENCY.format(monthData?.totalSales || 0)}
+                    </div>
+                    <div style={{
+                      fontSize: typography.fontSize.xs,
+                      color: colors.text.secondary
+                    }}>
+                      {monthData?.totalOrders || 0} orders
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Top Selling Items */}
+                <Card elevation="md" padding="lg">
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: spacing[4]
+                  }}>
+                    <h3 style={{
+                      margin: 0,
+                      fontSize: typography.fontSize.lg,
+                      fontWeight: typography.fontWeight.bold,
+                      color: colors.text.primary
+                    }}>
+                      🔥 Top Selling Items (Today)
+                    </h3>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => navigate('/manager/product-analytics')}
+                    >
+                      View Full Analytics →
+                    </Button>
+                  </div>
+                  <div style={{
+                    height: '1px',
+                    background: colors.surface.border,
+                    marginBottom: spacing[4]
+                  }} />
+                  {topProducts && topProducts.topProducts.length > 0 ? (
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                      gap: spacing[3]
+                    }}>
+                      {topProducts.topProducts.slice(0, 5).map((item) => (
+                        <div
+                          key={item.itemId}
+                          style={{
+                            padding: spacing[3],
+                            borderRadius: '10px',
+                            background: colors.surface.secondary,
+                            boxShadow: shadows.raised.sm,
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <div>
+                            <div style={{
+                              fontSize: typography.fontSize.sm,
+                              fontWeight: typography.fontWeight.bold,
+                              color: colors.text.primary,
+                              marginBottom: spacing[1]
+                            }}>
+                              {item.itemName}
+                            </div>
+                            <div style={{
+                              fontSize: typography.fontSize.xs,
+                              color: colors.text.secondary
+                            }}>
+                              {item.quantitySold} sold
+                            </div>
+                          </div>
+                          <div style={{
+                            fontSize: typography.fontSize.base,
+                            fontWeight: typography.fontWeight.bold,
+                            color: colors.brand.primary
+                          }}>
+                            {CURRENCY.format(item.revenue)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{
+                      padding: spacing[6],
+                      textAlign: 'center',
+                      color: colors.text.secondary
+                    }}>
+                      No sales data available
+                    </div>
+                  )}
+                </Card>
+
+                {/* Advanced Reports Button */}
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={() => navigate('/manager/advanced-reports')}
+                  style={{ width: '100%' }}
+                >
+                  📈 View Advanced Reports (Charts & Trends)
+                </Button>
+              </div>
             )}
 
             {/* Staff Performance Tab */}
-            {activeTab === 1 && (
-              <Paper sx={{ p: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6">
-                    Staff Performance (Today)
-                  </Typography>
+            {activeTab === 'staff' && (
+              <Card elevation="md" padding="lg">
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: spacing[4]
+                }}>
+                  <h3 style={{
+                    margin: 0,
+                    fontSize: typography.fontSize.lg,
+                    fontWeight: typography.fontWeight.bold,
+                    color: colors.text.primary
+                  }}>
+                    👥 Staff Performance (Today)
+                  </h3>
                   <Button
-                    startIcon={<AdvancedIcon />}
+                    size="sm"
+                    variant="ghost"
                     onClick={() => navigate('/manager/staff-leaderboard')}
                   >
-                    View Full Leaderboard
+                    View Full Leaderboard →
                   </Button>
-                </Box>
-                <Divider sx={{ mb: 2 }} />
+                </div>
+                <div style={{
+                  height: '1px',
+                  background: colors.surface.border,
+                  marginBottom: spacing[4]
+                }} />
                 {staffData && staffData.rankings.length > 0 ? (
-                  <Grid container spacing={2}>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                    gap: spacing[3]
+                  }}>
                     {staffData.rankings.slice(0, 5).map((staff, index) => (
-                      <Grid item xs={12} md={6} key={staff.staffId}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
-                          <Box>
-                            <Typography variant="body1" fontWeight="medium">
-                              #{index + 1} {staff.staffName}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {staff.ordersProcessed} orders processed
-                            </Typography>
-                          </Box>
-                          <Typography variant="h6" color="primary">
-                            {CURRENCY.format(staff.salesGenerated)}
-                          </Typography>
-                        </Box>
-                      </Grid>
+                      <div
+                        key={staff.staffId}
+                        style={{
+                          padding: spacing[3],
+                          borderRadius: '10px',
+                          background: index === 0
+                            ? `linear-gradient(135deg, ${colors.semantic.warningLight}22 0%, ${colors.semantic.warning}11 100%)`
+                            : colors.surface.secondary,
+                          border: index === 0 ? `2px solid ${colors.semantic.warning}` : 'none',
+                          boxShadow: shadows.raised.sm,
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}
+                      >
+                        <div>
+                          <div style={{
+                            fontSize: typography.fontSize.sm,
+                            fontWeight: typography.fontWeight.bold,
+                            color: colors.text.primary,
+                            marginBottom: spacing[1]
+                          }}>
+                            {index === 0 && '🏆 '}#{index + 1} {staff.staffName}
+                          </div>
+                          <div style={{
+                            fontSize: typography.fontSize.xs,
+                            color: colors.text.secondary
+                          }}>
+                            {staff.ordersProcessed} orders processed
+                          </div>
+                        </div>
+                        <div style={{
+                          fontSize: typography.fontSize.base,
+                          fontWeight: typography.fontWeight.bold,
+                          color: colors.brand.primary
+                        }}>
+                          {CURRENCY.format(staff.salesGenerated)}
+                        </div>
+                      </div>
                     ))}
-                  </Grid>
+                  </div>
                 ) : (
-                  <Typography color="text.secondary">No staff performance data available</Typography>
+                  <div style={{
+                    padding: spacing[6],
+                    textAlign: 'center',
+                    color: colors.text.secondary
+                  }}>
+                    No staff performance data available
+                  </div>
                 )}
-              </Paper>
+              </Card>
             )}
 
             {/* Inventory Tab */}
-            {activeTab === 2 && (
-              <Paper sx={{ p: 4, textAlign: 'center' }}>
-                <InventoryIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-                <Typography variant="h5" gutterBottom>
+            {activeTab === 'inventory' && (
+              <Card
+                elevation="md"
+                padding="lg"
+                style={{
+                  textAlign: 'center',
+                  background: `linear-gradient(135deg, ${colors.semantic.infoLight}22 0%, ${colors.semantic.info}11 100%)`,
+                  border: `2px solid ${colors.semantic.info}`
+                }}
+              >
+                <div style={{
+                  fontSize: typography.fontSize['4xl'],
+                  marginBottom: spacing[4]
+                }}>
+                  📦
+                </div>
+                <h3 style={{
+                  margin: `0 0 ${spacing[3]} 0`,
+                  fontSize: typography.fontSize.xl,
+                  fontWeight: typography.fontWeight.bold,
+                  color: colors.text.primary
+                }}>
                   Inventory Management
-                </Typography>
-                <Typography color="text.secondary" sx={{ mb: 3 }}>
-                  Comprehensive inventory tracking available
-                </Typography>
+                </h3>
+                <p style={{
+                  margin: `0 0 ${spacing[4]} 0`,
+                  color: colors.text.secondary
+                }}>
+                  Comprehensive inventory tracking available in the Manager Dashboard
+                </p>
                 <Button
-                  variant="contained"
-                  size="large"
+                  variant="primary"
+                  size="lg"
                   onClick={() => navigate('/manager/inventory')}
                 >
                   Go to Inventory Management
                 </Button>
-              </Paper>
+              </Card>
             )}
           </>
         )}
-      </Container>
-    </Box>
+      </div>
+    </div>
   );
 };
 

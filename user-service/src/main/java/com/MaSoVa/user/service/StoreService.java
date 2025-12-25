@@ -7,10 +7,7 @@ import com.MaSoVa.user.repository.StoreRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,7 +15,6 @@ import java.util.Map;
 import java.util.HashMap;
 
 @Service
-@Transactional
 public class StoreService {
 
     private static final Logger logger = LoggerFactory.getLogger(StoreService.class);
@@ -63,15 +59,16 @@ public class StoreService {
         return store.isOperational(LocalDateTime.now());
     }
     
-    public Map<String, Object> getStoreMetrics(String storeId) {
+    public Map<String, Object> getStoreMetrics(String storeCode) {
         try {
-            logger.debug("Getting metrics for store: {}", storeId);
-            Store store = getStore(storeId);
+            logger.debug("Getting metrics for store: {}", storeCode);
+            // Use getStoreByCode since storeCode (like DOM001) is passed, not MongoDB _id
+            Store store = getStoreByCode(storeCode);
             logger.debug("Store found: {}", store.getName());
 
             Map<String, Object> metrics = new HashMap<>();
 
-            metrics.put("storeId", storeId);
+            metrics.put("storeId", storeCode);
             metrics.put("storeName", store.getName());
 
             try {
@@ -89,16 +86,16 @@ public class StoreService {
                 metrics.put("deliveryRadius", store.getConfiguration().getDeliveryRadiusKm());
                 metrics.put("maxConcurrentOrders", store.getConfiguration().getMaxConcurrentOrders());
             } else {
-                logger.warn("Store {} has no configuration", storeId);
+                logger.warn("Store {} has no configuration", storeCode);
                 metrics.put("deliveryRadius", 0.0);
                 metrics.put("maxConcurrentOrders", 0);
             }
 
-            logger.debug("Successfully generated metrics for store: {}", storeId);
+            logger.debug("Successfully generated metrics for store: {}", storeCode);
             return metrics;
 
         } catch (Exception e) {
-            logger.error("Error getting metrics for store {}: {}", storeId, e.getMessage(), e);
+            logger.error("Error getting metrics for store {}: {}", storeCode, e.getMessage(), e);
             throw e;
         }
     }

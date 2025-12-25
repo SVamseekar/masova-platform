@@ -17,6 +17,14 @@ spring:
       httpclient:
         compression: false
         wiretap: false
+        connect-timeout: 3000  # 3 seconds connection timeout
+        response-timeout: 10s  # 10 seconds response timeout
+        pool:
+          type: fixed
+          max-connections: 500
+          acquire-timeout: 5000  # 5 seconds to acquire connection from pool
+        websocket:
+          max-frame-payload-length: 10485760  # 10MB
       forwarded:
         enabled: false
       x-forwarded:
@@ -29,11 +37,17 @@ spring:
 
 # JWT Configuration (must match User Service)
 jwt:
-  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-512-bits-for-HS512-algorithm-security-requirement}
+  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-256-bits-for-production-security}
 
 # Rate Limiting
-rate-limit:
-  requests-per-minute: 100
+rate:
+  limit:
+    enabled: true
+    default:
+      requests-per-minute: 1000  # Increased to 1000 for development (POS makes many concurrent requests)
+    login:
+      max-attempts: 5
+      lockout-minutes: 15
 
 # Service URLs
 services:
@@ -61,9 +75,12 @@ management:
   endpoints:
     web:
       exposure:
-        include: "health,info,gateway,routes"
+        include: "info,gateway,routes"  # Removed 'health' - it's causing 504 timeouts
   endpoint:
     health:
-      show-details: always
+      enabled: false  # Disabled entirely to prevent timeout cascade
     gateway:
       enabled: true
+  health:
+    defaults:
+      enabled: false

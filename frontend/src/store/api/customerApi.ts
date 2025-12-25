@@ -92,10 +92,12 @@ export interface Customer {
   updatedAt: string;
   lastOrderDate?: string;
   lastLoginDate?: string;
+  storeIds?: string[]; // Multi-store support: All stores this customer has ordered from
 }
 
 export interface CreateCustomerRequest {
   userId: string;
+  storeId?: string;
   name: string;
   email: string;
   phone: string;
@@ -228,6 +230,19 @@ export const customerApi = createApi({
       ],
     }),
 
+    getOrCreateCustomer: builder.mutation<Customer, CreateCustomerRequest>({
+      query: (data) => ({
+        url: '/get-or-create',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: (result, error, arg) => [
+        'Customers',
+        'CustomerStats',
+        { type: 'Customers', id: `USER_${arg.userId}` },
+      ],
+    }),
+
     // READ
     getCustomerById: builder.query<Customer, string>({
       query: (id) => `/${id}`,
@@ -252,20 +267,20 @@ export const customerApi = createApi({
       providesTags: (result) => (result ? [{ type: 'Customer', id: result.id }] : []),
     }),
 
-    getAllCustomers: builder.query<Customer[], void>({
-      query: () => '',
-      providesTags: (result) =>
+    getAllCustomers: builder.query<Customer[], string | undefined>({
+      query: (storeId) => `${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) =>
         result
-          ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), { type: 'Customers', id: 'LIST' }]
-          : [{ type: 'Customers', id: 'LIST' }],
+          ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), { type: 'Customers', id: storeId || 'DEFAULT' }]
+          : [{ type: 'Customers', id: storeId || 'DEFAULT' }],
     }),
 
-    getActiveCustomers: builder.query<Customer[], void>({
-      query: () => '/active',
-      providesTags: (result) =>
+    getActiveCustomers: builder.query<Customer[], string | undefined>({
+      query: (storeId) => `/active${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) =>
         result
-          ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), { type: 'Customers', id: 'ACTIVE' }]
-          : [{ type: 'Customers', id: 'ACTIVE' }],
+          ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), { type: 'Customers', id: storeId || 'DEFAULT' }]
+          : [{ type: 'Customers', id: storeId || 'DEFAULT' }],
     }),
 
     searchCustomers: builder.query<PageResponse<Customer>, { query: string; page?: number; size?: number }>({
@@ -508,9 +523,9 @@ export const customerApi = createApi({
     }),
 
     // STATISTICS
-    getCustomerStats: builder.query<CustomerStatsResponse, void>({
-      query: () => '/stats',
-      providesTags: ['CustomerStats'],
+    getCustomerStats: builder.query<CustomerStatsResponse, string | undefined>({
+      query: (storeId) => `/stats${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'CustomerStats', id: storeId || 'DEFAULT' }],
     }),
 
     // DELETE
@@ -526,6 +541,7 @@ export const customerApi = createApi({
 
 export const {
   useCreateCustomerMutation,
+  useGetOrCreateCustomerMutation,
   useGetCustomerByIdQuery,
   useGetCustomerByUserIdQuery,
   useGetCustomerByEmailQuery,

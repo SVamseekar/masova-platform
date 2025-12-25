@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { selectSelectedStoreId } from '../../store/slices/cartSlice';
+import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
+import { usePageStore } from '../../contexts/PageStoreContext';
+import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import {
   useGetAllPurchaseOrdersQuery,
   useGetPendingApprovalPurchaseOrdersQuery,
@@ -22,8 +24,9 @@ import ReceivePurchaseOrderDialog from '../../components/inventory/ReceivePurcha
 
 const PurchaseOrdersPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
-  const selectedStoreId = useAppSelector(selectSelectedStoreId);
+  const { selectedStoreId } = usePageStore();
   const storeId = selectedStoreId || currentUser?.storeId || '';
+  const { handleBack } = useSmartBackNavigation();
 
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -31,11 +34,13 @@ const PurchaseOrdersPage: React.FC = () => {
   const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null);
 
   // Fetch data
-  const { data: allOrders = [], isLoading, refetch: refetchAll } = useGetAllPurchaseOrdersQuery(undefined, {
+  // Pass storeId to trigger refetch when store changes
+  const { data: allOrders = [], isLoading, refetch: refetchAll } = useGetAllPurchaseOrdersQuery(storeId, {
     skip: !storeId,
     pollingInterval: 60000,
   });
-  const { data: pendingOrders = [], refetch: refetchPending } = useGetPendingApprovalPurchaseOrdersQuery(undefined, { skip: !storeId });
+  // Pass storeId to trigger refetch when store changes
+  const { data: pendingOrders = [], refetch: refetchPending } = useGetPendingApprovalPurchaseOrdersQuery(storeId, { skip: !storeId });
 
   const [approvePO] = useApprovePurchaseOrderMutation();
   const [rejectPO] = useRejectPurchaseOrderMutation();
@@ -110,6 +115,7 @@ const PurchaseOrdersPage: React.FC = () => {
     padding: spacing[6],
     backgroundColor: '#e8e8e8',
     zIndex: 1,
+    paddingTop: '80px',
   };
 
   const titleStyles: React.CSSProperties = {
@@ -256,7 +262,7 @@ const PurchaseOrdersPage: React.FC = () => {
       <>
         <AnimatedBackground />
         <div style={containerStyles}>
-          <AppHeader title="Purchase Orders" showBackButton />
+          <AppHeader title="Purchase Orders" showBackButton onBack={handleBack} showManagerNav={true} />
           <div style={{ textAlign: 'center', padding: spacing[10] }}>Loading purchase orders...</div>
         </div>
       </>
@@ -276,7 +282,7 @@ const PurchaseOrdersPage: React.FC = () => {
     <>
       <AnimatedBackground />
       <div style={containerStyles}>
-        <AppHeader title="Purchase Orders" showBackButton />
+        <AppHeader title="Purchase Orders" showBackButton onBack={handleBack} showManagerNav={true} />
 
       <h1 style={titleStyles}>Purchase Orders</h1>
 
@@ -435,4 +441,4 @@ const PurchaseOrdersPage: React.FC = () => {
   );
 };
 
-export default PurchaseOrdersPage;
+export default withPageStoreContext(PurchaseOrdersPage, 'purchase-orders');

@@ -23,7 +23,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
   showActions = false,
   className = '',
 }) => {
-  const getSentimentColor = (sentiment?: string) => {
+  const getSentimentColor = (sentiment?: string): 'success' | 'error' | 'warning' | 'primary' | 'secondary' => {
     switch (sentiment) {
       case 'POSITIVE':
         return 'success';
@@ -32,7 +32,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
       case 'MIXED':
         return 'warning';
       default:
-        return 'default';
+        return 'primary';
     }
   };
 
@@ -65,7 +65,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
                 {review.isAnonymous ? 'Anonymous' : review.customerName}
               </h4>
               {review.isVerifiedPurchase && (
-                <CheckCircle className="w-4 h-4 text-green-500" title="Verified Purchase" />
+                <CheckCircle className="w-4 h-4 text-green-500" />
               )}
             </div>
             <p className="text-sm text-gray-500">

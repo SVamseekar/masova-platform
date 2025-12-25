@@ -8,8 +8,11 @@ export type OrderStatus =
   | 'PREPARING'
   | 'OVEN'
   | 'BAKED'
+  | 'READY'
   | 'DISPATCHED'
   | 'DELIVERED'
+  | 'COMPLETED'
+  | 'SERVED'
   | 'CANCELLED';
 
 export type OrderType =
@@ -62,6 +65,7 @@ export interface Order {
   deliveryFee: number;
   tax: number;
   total: number;
+  totalAmount?: number; // Alias for total (for backwards compatibility)
   status: OrderStatus;
   orderType: OrderType;
   paymentStatus: PaymentStatus;
@@ -72,6 +76,8 @@ export interface Order {
   estimatedDeliveryTime?: string;
   deliveryAddress?: DeliveryAddress;
   assignedDriverId?: string;
+  driverId?: string; // Alias for assignedDriverId (for backwards compatibility)
+  driverName?: string; // Driver name for display
   specialInstructions?: string;
 
   // Timestamps
@@ -161,13 +167,20 @@ export interface OrderStats {
 }
 
 // Status flow for kitchen workflow
+// Note: After READY, the flow diverges based on order type:
+// - DELIVERY: READY → DISPATCHED → DELIVERED
+// - TAKEAWAY: READY → COMPLETED
+// - DINE_IN: READY → SERVED
 export const ORDER_STATUS_FLOW: OrderStatus[] = [
   'RECEIVED',
   'PREPARING',
   'OVEN',
   'BAKED',
-  'DISPATCHED',
-  'DELIVERED'
+  'READY',
+  'DISPATCHED',  // DELIVERY only
+  'DELIVERED',   // DELIVERY final state
+  'COMPLETED',   // TAKEAWAY final state
+  'SERVED'       // DINE_IN final state
 ];
 
 // Helper to get next status in workflow
@@ -184,9 +197,12 @@ export const ORDER_STATUS_CONFIG: Record<OrderStatus, { label: string; color: st
   RECEIVED: { label: 'Received', color: '#3b82f6', icon: '📋' },
   PREPARING: { label: 'Preparing', color: '#f59e0b', icon: '👨‍🍳' },
   OVEN: { label: 'In Oven', color: '#e53e3e', icon: '🔥' },
-  BAKED: { label: 'Ready', color: '#10b981', icon: '✅' },
+  BAKED: { label: 'Baked', color: '#f97316', icon: '🍕' },
+  READY: { label: 'Ready', color: '#10b981', icon: '✅' },
   DISPATCHED: { label: 'Dispatched', color: '#8b5cf6', icon: '🚚' },
   DELIVERED: { label: 'Delivered', color: '#059669', icon: '📦' },
+  COMPLETED: { label: 'Completed', color: '#059669', icon: '✅' },
+  SERVED: { label: 'Served', color: '#10b981', icon: '🍽️' },
   CANCELLED: { label: 'Cancelled', color: '#6b7280', icon: '❌' },
 };
 

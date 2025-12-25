@@ -5,6 +5,7 @@ import com.MaSoVa.customer.dto.response.CustomerStatsResponse;
 import com.MaSoVa.customer.dto.response.MessageResponse;
 import com.MaSoVa.customer.entity.Customer;
 import com.MaSoVa.customer.service.CustomerService;
+import com.MaSoVa.shared.config.ApiVersionConfig;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,8 +22,11 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+/**
+ * Customer Controller - Week 4: API Versioning Applied
+ */
 @RestController
-@RequestMapping("/api/customers")
+@RequestMapping({ApiVersionConfig.V1 + "/customers", ApiVersionConfig.LEGACY + "/customers"})
 @Tag(name = "Customer Management", description = "Customer profile, loyalty, preferences, and address management")
 public class CustomerController {
 
@@ -66,6 +70,19 @@ public class CustomerController {
         }
     }
 
+    @PostMapping("/get-or-create")
+    @Operation(summary = "Get or create customer", description = "Returns existing customer or creates new one if not found")
+    public ResponseEntity<?> getOrCreateCustomer(@Valid @RequestBody CreateCustomerRequest request) {
+        try {
+            Customer customer = customerService.getOrCreateCustomer(request);
+            return ResponseEntity.ok(customer);
+        } catch (Exception e) {
+            logger.error("Error getting or creating customer", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new MessageResponse("Failed to get or create customer"));
+        }
+    }
+
     // ===========================
     // READ
     // ===========================
@@ -74,10 +91,27 @@ public class CustomerController {
     @GetMapping("/{id}")
     @Operation(summary = "Get customer by ID")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER')")
-    public ResponseEntity<?> getCustomerById(@PathVariable("id") String id) {
+    public ResponseEntity<?> getCustomerById(@PathVariable("id") String id, HttpServletRequest request) {
         try {
             Customer customer = customerService.getCustomerById(id)
                     .orElseThrow(() -> new NoSuchElementException("Customer not found"));
+
+            // IDOR Protection: Validate store ownership
+            String userStoreId = getStoreIdFromHeaders(request);
+            String userType = request.getHeader("X-User-Type");
+
+            // Customers can only view their own profile or profiles from their store
+            // Managers/Assistant Managers can view any customer from their store
+            if (userStoreId != null && !userStoreId.isEmpty() &&
+                customer.getStoreId() != null && !customer.getStoreId().isEmpty()) {
+                if (!userStoreId.equals(customer.getStoreId())) {
+                    logger.warn("IDOR attempt: User from store {} tried to access customer from store {}",
+                               userStoreId, customer.getStoreId());
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(new MessageResponse("Access denied: Cannot access customer from different store"));
+                }
+            }
+
             return ResponseEntity.ok(customer);
         } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
@@ -127,7 +161,7 @@ public class CustomerController {
     public ResponseEntity<List<Customer>> getAllCustomers(HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting all customers for store: {}", storeId);
-        List<Customer> customers = customerService.getAllCustomers();
+        List<Customer> customers = customerService.getAllCustomersByStoreId(storeId);
         return ResponseEntity.ok(customers);
     }
 
@@ -136,7 +170,7 @@ public class CustomerController {
     public ResponseEntity<List<Customer>> getActiveCustomers(HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting active customers for store: {}", storeId);
-        List<Customer> customers = customerService.getActiveCustomers();
+        List<Customer> customers = customerService.getActiveCustomersByStoreId(storeId);
         return ResponseEntity.ok(customers);
     }
 
@@ -149,7 +183,7 @@ public class CustomerController {
             HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
         logger.info("Searching customers with query: {} for store: {}", query, storeId);
-        Page<Customer> customers = customerService.searchCustomers(query, page, size);
+        Page<Customer> customers = customerService.searchCustomersByStoreId(storeId, query, page, size);
         return ResponseEntity.ok(customers);
     }
 
@@ -318,7 +352,7 @@ public class CustomerController {
             HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting customers by tier: {} for store: {}", tier, storeId);
-        List<Customer> customers = customerService.getCustomersByLoyaltyTier(tier.toUpperCase());
+        List<Customer> customers = customerService.getCustomersByLoyaltyTierAndStore(storeId, tier.toUpperCase());
         return ResponseEntity.ok(customers);
     }
 
@@ -353,6 +387,28 @@ public class CustomerController {
             return ResponseEntity.ok(customer);
         } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/{id}/update-email")
+    @Operation(summary = "Update customer email", description = "Called by Order Service to update walk-in customer emails")
+    public ResponseEntity<?> updateCustomerEmail(
+            @PathVariable("id") String id,
+            @RequestBody java.util.Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            if (email == null || email.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(new MessageResponse("Email is required"));
+            }
+
+            Customer customer = customerService.updateEmail(id, email);
+            return ResponseEntity.ok(customer);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            logger.error("Error updating customer email", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new MessageResponse("Failed to update email"));
         }
     }
 
@@ -436,7 +492,7 @@ public class CustomerController {
             HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting customers by tags for store: {}", storeId);
-        List<Customer> customers = customerService.getCustomersByTags(tags);
+        List<Customer> customers = customerService.getCustomersByTagsAndStore(storeId, tags);
         return ResponseEntity.ok(customers);
     }
 
@@ -451,7 +507,7 @@ public class CustomerController {
             HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting high-value customers (min spending: {}) for store: {}", minSpending, storeId);
-        List<Customer> customers = customerService.getHighValueCustomers(minSpending);
+        List<Customer> customers = customerService.getHighValueCustomersByStore(storeId, minSpending);
         return ResponseEntity.ok(customers);
     }
 
@@ -462,7 +518,7 @@ public class CustomerController {
             HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting top {} spenders for store: {}", limit, storeId);
-        List<Customer> customers = customerService.getTopSpenders(limit);
+        List<Customer> customers = customerService.getTopSpendersByStore(storeId, limit);
         return ResponseEntity.ok(customers);
     }
 
@@ -473,7 +529,7 @@ public class CustomerController {
             HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting recently active customers (within {} days) for store: {}", days, storeId);
-        List<Customer> customers = customerService.getRecentlyActiveCustomers(days);
+        List<Customer> customers = customerService.getRecentlyActiveCustomersByStore(storeId, days);
         return ResponseEntity.ok(customers);
     }
 
@@ -484,7 +540,7 @@ public class CustomerController {
             HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting inactive customers (inactive for {} days) for store: {}", days, storeId);
-        List<Customer> customers = customerService.getInactiveCustomers(days);
+        List<Customer> customers = customerService.getInactiveCustomersByStore(storeId, days);
         return ResponseEntity.ok(customers);
     }
 
@@ -493,7 +549,7 @@ public class CustomerController {
     public ResponseEntity<List<Customer>> getBirthdayCustomersToday(HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting birthday customers for store: {}", storeId);
-        List<Customer> customers = customerService.getBirthdayCustomersToday();
+        List<Customer> customers = customerService.getBirthdayCustomersTodayByStore(storeId);
         return ResponseEntity.ok(customers);
     }
 
@@ -502,7 +558,7 @@ public class CustomerController {
     public ResponseEntity<List<Customer>> getMarketingOptInCustomers(HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting marketing opt-in customers for store: {}", storeId);
-        List<Customer> customers = customerService.getMarketingOptInCustomers();
+        List<Customer> customers = customerService.getMarketingOptInCustomersByStore(storeId);
         return ResponseEntity.ok(customers);
     }
 
@@ -511,7 +567,7 @@ public class CustomerController {
     public ResponseEntity<List<Customer>> getSmsOptInCustomers(HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting SMS opt-in customers for store: {}", storeId);
-        List<Customer> customers = customerService.getSmsOptInCustomers();
+        List<Customer> customers = customerService.getSmsOptInCustomersByStore(storeId);
         return ResponseEntity.ok(customers);
     }
 
@@ -524,20 +580,76 @@ public class CustomerController {
     public ResponseEntity<CustomerStatsResponse> getCustomerStats(HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
         logger.info("Getting customer statistics for store: {}", storeId);
-        CustomerStatsResponse stats = customerService.getCustomerStats();
+        CustomerStatsResponse stats = customerService.getCustomerStatsByStore(storeId);
         return ResponseEntity.ok(stats);
     }
 
     // ===========================
-    // DELETE
+    // GDPR DELETE / ANONYMIZATION
     // ===========================
 
-    @DeleteMapping("/{id}")
-    @Operation(summary = "Delete customer", description = "Permanently delete customer (use with caution)")
-    public ResponseEntity<?> deleteCustomer(@PathVariable("id") String id) {
+    /**
+     * GDPR-compliant deletion: Anonymizes customer data instead of hard delete.
+     * This is the recommended deletion method for GDPR compliance.
+     */
+    @DeleteMapping("/{id}/gdpr")
+    @Operation(summary = "GDPR Delete (Anonymize)", description = "GDPR-compliant deletion - anonymizes customer PII")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER')")
+    public ResponseEntity<?> gdprDeleteCustomer(
+            @PathVariable("id") String id,
+            @RequestParam(name = "reason", defaultValue = "GDPR_REQUEST") String reason) {
         try {
-            customerService.deleteCustomer(id);
-            return ResponseEntity.ok(new MessageResponse("Customer deleted successfully"));
+            Customer anonymized = customerService.anonymizeAndDeleteCustomer(id, reason);
+            return ResponseEntity.ok(java.util.Map.of(
+                    "message", "Customer data anonymized successfully per GDPR requirements",
+                    "customerId", id,
+                    "deletionReason", reason,
+                    "deletedAt", anonymized.getDeletedAt()
+            ));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            logger.error("Error anonymizing customer for GDPR", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new MessageResponse("Failed to process GDPR deletion request"));
+        }
+    }
+
+    /**
+     * Hard delete - Only for managers, after data has been anonymized.
+     * Use with extreme caution - this permanently removes all customer data.
+     */
+    @DeleteMapping("/{id}/hard")
+    @Operation(summary = "Hard Delete", description = "Permanently delete customer record (requires prior anonymization)")
+    @PreAuthorize("hasRole('MANAGER')")
+    public ResponseEntity<?> hardDeleteCustomer(@PathVariable("id") String id) {
+        try {
+            customerService.hardDeleteCustomer(id);
+            return ResponseEntity.ok(new MessageResponse("Customer permanently deleted"));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error hard deleting customer", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new MessageResponse("Failed to delete customer"));
+        }
+    }
+
+    /**
+     * @deprecated Use /gdpr endpoint for GDPR-compliant deletion.
+     * This endpoint is kept for backwards compatibility but calls the GDPR-compliant method.
+     */
+    @Deprecated
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete customer (deprecated)", description = "Use DELETE /{id}/gdpr instead for GDPR compliance")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    public ResponseEntity<?> deleteCustomer(@PathVariable("id") String id) {
+        logger.warn("Deprecated DELETE endpoint called - redirecting to GDPR-compliant deletion");
+        try {
+            customerService.anonymizeAndDeleteCustomer(id, "ACCOUNT_CLOSURE");
+            return ResponseEntity.ok(new MessageResponse("Customer deleted (anonymized) successfully"));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.notFound().build();
         } catch (Exception e) {
             logger.error("Error deleting customer", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

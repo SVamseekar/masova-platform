@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import java.time.LocalDate;
 
@@ -16,6 +18,8 @@ import java.time.LocalDate;
  * REST Controller for driver performance analytics
  */
 @RestController
+@Tag(name = "Delivery Performance", description = "APIs for driver performance analytics")
+@SecurityRequirement(name = "bearerAuth")
 @RequestMapping("/api/delivery")
 public class PerformanceController {
 
@@ -29,6 +33,7 @@ public class PerformanceController {
 
     /**
      * Extract storeId from HTTP headers
+     * Week 4: Now actively used for store isolation
      */
     private String getStoreIdFromHeaders(HttpServletRequest request) {
         String userType = request.getHeader("X-User-Type");
@@ -47,14 +52,23 @@ public class PerformanceController {
     /**
      * Get driver performance metrics
      * GET /api/delivery/driver/{driverId}/performance
+     * Week 4: Added store validation
      */
     @GetMapping("/driver/{driverId}/performance")
     public ResponseEntity<DriverPerformanceResponse> getDriverPerformance(
             @PathVariable String driverId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            HttpServletRequest request
     ) {
         log.info("GET /api/delivery/driver/{}/performance", driverId);
+
+        // Get storeId from headers for store isolation
+        String storeId = getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            log.error("Missing storeId in request headers");
+            throw new RuntimeException("Store ID is required");
+        }
 
         // Default to last 30 days if not specified
         if (startDate == null) {
@@ -65,25 +79,36 @@ public class PerformanceController {
         }
 
         try {
-            DriverPerformanceResponse response = performanceService.getDriverPerformance(driverId, startDate, endDate);
+            DriverPerformanceResponse response = performanceService.getDriverPerformance(driverId, storeId, startDate, endDate);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            log.error("Error fetching driver performance: {}", e.getMessage());
-            throw new RuntimeException("Failed to get driver performance: " + e.getMessage());
+            log.error("Error fetching driver performance: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to get driver performance: " + e.getMessage(), e);
         }
     }
 
     /**
      * Get today's performance for a driver
      * GET /api/delivery/driver/{driverId}/performance/today
+     * Week 4: Added store validation
      */
     @GetMapping("/driver/{driverId}/performance/today")
-    public ResponseEntity<DriverPerformanceResponse> getTodayPerformance(@PathVariable String driverId) {
+    public ResponseEntity<DriverPerformanceResponse> getTodayPerformance(
+            @PathVariable String driverId,
+            HttpServletRequest request
+    ) {
         log.info("GET /api/delivery/driver/{}/performance/today", driverId);
+
+        // Get storeId from headers for store isolation
+        String storeId = getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            log.error("Missing storeId in request headers");
+            throw new RuntimeException("Store ID is required");
+        }
 
         try {
             LocalDate today = LocalDate.now();
-            DriverPerformanceResponse response = performanceService.getDriverPerformance(driverId, today, today);
+            DriverPerformanceResponse response = performanceService.getDriverPerformance(driverId, storeId, today, today);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error fetching today's performance: {}", e.getMessage());
@@ -94,13 +119,21 @@ public class PerformanceController {
     /**
      * Get today's overall delivery metrics
      * GET /api/delivery/metrics/today
+     * Week 4: Added store validation
      */
     @GetMapping("/metrics/today")
-    public ResponseEntity<DeliveryMetricsResponse> getTodayMetrics() {
+    public ResponseEntity<DeliveryMetricsResponse> getTodayMetrics(HttpServletRequest request) {
         log.info("GET /api/delivery/metrics/today");
 
+        // Get storeId from headers for store isolation
+        String storeId = getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            log.error("Missing storeId in request headers");
+            throw new RuntimeException("Store ID is required");
+        }
+
         try {
-            DeliveryMetricsResponse response = performanceService.getTodayMetrics();
+            DeliveryMetricsResponse response = performanceService.getTodayMetrics(storeId);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error fetching today's metrics", e);

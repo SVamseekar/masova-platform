@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { useCreateOrderMutation } from '../../store/api/orderApi';
 import { useInitiatePaymentMutation } from '../../store/api/paymentApi';
-import { useGetCustomerByUserIdQuery, useCreateCustomerMutation } from '../../store/api/customerApi';
+import { useGetCustomerByUserIdQuery, useGetOrCreateCustomerMutation } from '../../store/api/customerApi';
 import { clearCart, selectCartItems, selectCartSubtotal, selectDeliveryFee, selectSelectedStoreId, selectSelectedStoreName } from '../../store/slices/cartSlice';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { Button, Card, Input } from '../../components/ui/neumorphic';
@@ -40,13 +40,13 @@ const PaymentPage: React.FC = () => {
   // Get guest info from navigation state (passed from GuestCheckoutPage)
   const guestInfo = location.state?.guestInfo as GuestInfo | undefined;
 
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'UPI'>('CASH');
-  const [orderType, setOrderType] = useState<'DELIVERY' | 'TAKEAWAY' | 'DINE_IN'>('DELIVERY');
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'UPI'>('CARD'); // Changed default to CARD
+  const [orderType, setOrderType] = useState<'DELIVERY' | 'TAKEAWAY'>('DELIVERY'); // Removed DINE_IN
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
 
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
   const [initiatePayment, { isLoading: isInitiatingPayment }] = useInitiatePaymentMutation();
-  const [createCustomer] = useCreateCustomerMutation();
+  const [getOrCreateCustomer] = useGetOrCreateCustomerMutation();
 
   // Check if customer profile exists
   const { data: customerProfile } = useGetCustomerByUserIdQuery(currentUser?.id || '', {
@@ -77,6 +77,14 @@ const PaymentPage: React.FC = () => {
     }
   }, [cartItems, navigate, orderPlaced]);
 
+  // Auto-switch payment method when order type changes
+  useEffect(() => {
+    // If DELIVERY order, cannot use CASH - switch to CARD
+    if (orderType === 'DELIVERY' && paymentMethod === 'CASH') {
+      setPaymentMethod('CARD');
+    }
+  }, [orderType, paymentMethod]);
+
   // Calculate totals - consistent with CartDrawer, CheckoutPage, and GuestCheckoutPage
   const deliveryFee = orderType === 'DELIVERY' ? baseDeliveryFee : 0;
   const tax = subtotal * 0.05; // 5% tax
@@ -84,28 +92,33 @@ const PaymentPage: React.FC = () => {
 
   const handlePlaceOrder = async () => {
     try {
-      // If user is logged in but doesn't have a customer profile, create one
+      // If user is logged in, ensure they have a customer profile (get or create)
       let customerId = customerProfile?.id;
-      if (currentUser && !customerProfile) {
+      if (currentUser && !customerId) {
         try {
-          console.log('Creating customer profile for user:', currentUser.id);
+          console.log('Getting or creating customer profile for user:', currentUser.id);
 
           // Clean phone number - remove any spaces, dashes, or special characters
           const phoneToUse = currentUser.phone || guestInfo?.phone || '';
           const cleanPhone = phoneToUse.replace(/\D/g, '');
 
-          const newCustomer = await createCustomer({
+          const customer = await getOrCreateCustomer({
             userId: currentUser.id,
+            storeId: selectedStoreId || undefined,
             name: currentUser.name,
             email: currentUser.email || '',
             phone: cleanPhone,
           }).unwrap();
-          customerId = newCustomer.id;
-          console.log('Customer profile created:', customerId);
-        } catch (err) {
-          console.error('Failed to create customer profile:', err);
-          alert('Unable to create customer profile. Please refresh the page and try again.');
-          return; // Don't proceed with order if customer profile creation fails
+          customerId = customer.id;
+          console.log('Customer profile ready:', customerId);
+        } catch (err: any) {
+          console.error('Failed to get or create customer profile:', err);
+
+          // Show specific error message
+          const errorMessage = err?.data?.message || 'Unable to retrieve customer profile';
+          alert(`Unable to retrieve your customer profile. Please try again or contact support.\n\nError: ${errorMessage}`);
+
+          return; // Don't proceed with order if customer profile retrieval fails
         }
       }
 
@@ -151,6 +164,7 @@ const PaymentPage: React.FC = () => {
         storeId: selectedStoreId || currentUser?.storeId || '', // Use selected store from cart
         customerName: currentUser?.name || guestInfo?.name || 'Guest',
         customerPhone: guestInfo?.phone || currentUser?.phone || '',
+        customerEmail: currentUser?.email || guestInfo?.email || '', // Include email for notifications
         customerId: customerId, // Use customer ID from profile or newly created
         items: cartItems.map(item => ({
           menuItemId: item.id,
@@ -188,13 +202,17 @@ const PaymentPage: React.FC = () => {
       }
 
       // For CARD/UPI, initiate Razorpay payment
+      // IMPORTANT: Use the total from orderResult, not the frontend-calculated total
+      // Backend calculates dynamic delivery fees and state-based taxes
       const paymentResult = await initiatePayment({
         orderId: orderId,
-        amount: total,
+        amount: orderResult.total, // Use backend-calculated total
         customerId: currentUser?.id || 'guest',
         customerEmail: guestInfo?.email || currentUser?.email,
         customerPhone: guestInfo?.phone || currentUser?.phone,
         storeId: selectedStoreId || currentUser?.storeId || '',
+        orderType: orderType, // For payment analytics
+        paymentMethod: paymentMethod, // For payment analytics
       }).unwrap();
 
       // Open Razorpay checkout
@@ -547,19 +565,6 @@ const PaymentPage: React.FC = () => {
                     No delivery fee
                   </div>
                 </div>
-
-                <div
-                  style={orderTypeOptionStyles(orderType === 'DINE_IN')}
-                  onClick={() => setOrderType('DINE_IN')}
-                >
-                  <div style={optionIconStyles}>🍽️</div>
-                  <div style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.semibold, marginTop: spacing[2] }}>
-                    Dine In
-                  </div>
-                  <div style={{ fontSize: typography.fontSize.xs, color: colors.text.tertiary, marginTop: spacing[1] }}>
-                    No delivery fee
-                  </div>
-                </div>
               </div>
             </Card>
 
@@ -567,20 +572,23 @@ const PaymentPage: React.FC = () => {
             <Card elevation="md" padding="lg">
               <h2 style={sectionTitleStyles}>Payment Method</h2>
 
-              <div
-                style={paymentOptionStyles(paymentMethod === 'CASH')}
-                onClick={() => setPaymentMethod('CASH')}
-              >
-                <div style={optionLabelStyles}>
-                  <span style={optionIconStyles}>💵</span>
-                  <div>
-                    <div>Cash on Delivery</div>
-                    <div style={{ fontSize: typography.fontSize.sm, color: colors.text.tertiary }}>
-                      Pay with cash when your order arrives
+              {/* Cash payment only available for TAKEAWAY orders */}
+              {orderType === 'TAKEAWAY' && (
+                <div
+                  style={paymentOptionStyles(paymentMethod === 'CASH')}
+                  onClick={() => setPaymentMethod('CASH')}
+                >
+                  <div style={optionLabelStyles}>
+                    <span style={optionIconStyles}>💵</span>
+                    <div>
+                      <div>Cash on Pickup</div>
+                      <div style={{ fontSize: typography.fontSize.sm, color: colors.text.tertiary }}>
+                        Pay with cash when you collect your order
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               <div
                 style={paymentOptionStyles(paymentMethod === 'CARD')}
@@ -648,21 +656,32 @@ const PaymentPage: React.FC = () => {
 
                 {orderType === 'DELIVERY' && (
                   <div style={summaryRowStyles}>
-                    <span style={summaryLabelStyles}>Delivery Fee</span>
+                    <span style={summaryLabelStyles}>Delivery Fee (estimated)</span>
                     <span style={summaryValueStyles}>₹{deliveryFee.toFixed(2)}</span>
                   </div>
                 )}
 
                 <div style={summaryRowStyles}>
-                  <span style={summaryLabelStyles}>Tax (5%)</span>
+                  <span style={summaryLabelStyles}>Tax (estimated)</span>
                   <span style={summaryValueStyles}>₹{tax.toFixed(2)}</span>
                 </div>
               </div>
 
               {/* Total */}
               <div style={totalRowStyles}>
-                <span style={totalLabelStyles}>Total</span>
+                <span style={totalLabelStyles}>Total (estimated)</span>
                 <span style={totalValueStyles}>₹{total.toFixed(2)}</span>
+              </div>
+
+              {/* Note about dynamic pricing */}
+              <div style={{
+                fontSize: typography.fontSize.xs,
+                color: colors.text.secondary,
+                fontStyle: 'italic',
+                marginBottom: spacing[4],
+                textAlign: 'center',
+              }}>
+                Final amount may vary based on delivery distance and state taxes
               </div>
 
               {/* Action Buttons */}

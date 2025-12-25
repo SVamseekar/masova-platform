@@ -1,36 +1,15 @@
 // src/apps/POSSystem/OrderHistory.tsx
 import React, { useState } from 'react';
-import {
-  Box,
-  Container,
-  Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Chip,
-  IconButton,
-  TextField,
-  InputAdornment,
-  AppBar,
-  Toolbar,
-  Button,
-  CircularProgress,
-  Alert,
-} from '@mui/material';
-import {
-  ArrowBack as BackIcon,
-  Search as SearchIcon,
-  Visibility as ViewIcon,
-  Print as PrintIcon,
-} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useGetStoreOrdersQuery } from '../../store/api/orderApi';
+import { useRecordCashPaymentMutation } from '../../store/api/paymentApi';
 import { useAppSelector } from '../../store/hooks';
 import { CURRENCY } from '../../config/business-config';
+import AppHeader from '../../components/common/AppHeader';
+import Card from '../../components/ui/neumorphic/Card';
+import Badge from '../../components/ui/neumorphic/Badge';
+import Button from '../../components/ui/neumorphic/Button';
+import { colors, shadows, spacing, typography } from '../../styles/design-tokens';
 
 /**
  * Order History Page
@@ -39,14 +18,47 @@ import { CURRENCY } from '../../config/business-config';
 const OrderHistory: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.auth);
-  const storeId = user?.employeeDetails?.storeId;
+  const storeId = user?.storeId;
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [recordCashPayment] = useRecordCashPaymentMutation();
 
   const { data: orders = [], isLoading, error } = useGetStoreOrdersQuery(
     undefined,
     { skip: !storeId }
   );
+
+  // Handler for marking cash orders as paid
+  const handleMarkAsPaid = async (order: any) => {
+    const confirmed = window.confirm(
+      `Mark this order as PAID?\n\n` +
+      `Order: #${order.orderNumber}\n` +
+      `Amount: ${CURRENCY.format(order.total)}\n` +
+      `Payment Method: ${order.paymentMethod}\n\n` +
+      `This confirms that CASH payment has been received.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await recordCashPayment({
+        orderId: order.id,
+        amount: order.total,
+        customerId: order.customerId || 'walk-in',
+        customerEmail: `${order.customerId || 'walkin'}@cash.local`,
+        customerPhone: order.customerPhone || '0000000000',
+        storeId: order.storeId,
+        orderType: order.orderType,
+        paymentMethod: 'CASH',
+        notes: `Cash payment recorded for Order #${order.orderNumber}`,
+      }).unwrap();
+
+      alert(`✅ Order #${order.orderNumber} marked as PAID!\n\n💵 Cash payment of ${CURRENCY.format(order.total)} recorded.`);
+    } catch (error: any) {
+      console.error('Failed to record cash payment:', error);
+      alert(`❌ Failed to mark order as paid.\n\n${error?.data?.message || 'Please try again.'}`);
+    }
+  };
 
   // Filter today's orders
   const today = new Date().toDateString();
@@ -65,10 +77,10 @@ const OrderHistory: React.FC = () => {
     );
   });
 
-  const getStatusColor = (status: string) => {
-    const colors: any = {
+  const getStatusColor = (status: string): 'success' | 'warning' | 'error' | 'secondary' | 'primary' => {
+    const colors: Record<string, 'success' | 'warning' | 'error' | 'secondary' | 'primary'> = {
       PENDING: 'warning',
-      CONFIRMED: 'info',
+      CONFIRMED: 'primary',
       PREPARING: 'primary',
       READY: 'success',
       OUT_FOR_DELIVERY: 'secondary',
@@ -76,160 +88,307 @@ const OrderHistory: React.FC = () => {
       COMPLETED: 'success',
       CANCELLED: 'error',
     };
-    return colors[status] || 'default';
+    return colors[status] || 'secondary';
   };
 
   const handlePrintOrder = (orderId: string) => {
-    // TODO: Implement print functionality
     alert(`Print functionality for order ${orderId} coming soon!`);
   };
 
-  const totalSales = filteredOrders.reduce((sum: number, order: any) => sum + order.totalAmount, 0);
+  const totalSales = filteredOrders.reduce((sum: number, order: any) => sum + (order.total || 0), 0);
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
-      {/* Header */}
-      <AppBar position="static">
-        <Toolbar>
-          <IconButton edge="start" color="inherit" onClick={() => navigate('/pos')}>
-            <BackIcon />
-          </IconButton>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Order History - Today
-          </Typography>
-          <Typography variant="body2">
-            {filteredOrders.length} orders • {CURRENCY.format(totalSales)}
-          </Typography>
-        </Toolbar>
-      </AppBar>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100vh',
+      backgroundColor: colors.surface.background,
+      fontFamily: typography.fontFamily.primary
+    }}>
+      {/* App Header */}
+      <AppHeader title={`Order History - ${user?.name || 'Staff'}`} />
 
-      <Container maxWidth="xl" sx={{ mt: 3, mb: 3 }}>
+      {/* Action Bar */}
+      <div style={{
+        padding: `${spacing[2]} ${spacing[6]}`,
+        backgroundColor: colors.surface.primary,
+        borderBottom: `1px solid ${colors.surface.border}`,
+        display: 'flex',
+        gap: spacing[3],
+        alignItems: 'center',
+        flexShrink: 0
+      }}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate('/pos')}
+        >
+          ← Back to POS
+        </Button>
+
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: spacing[3], alignItems: 'center' }}>
+          <div style={{
+            fontSize: typography.fontSize.sm,
+            color: colors.text.primary,
+            fontWeight: typography.fontWeight.semibold
+          }}>
+            {filteredOrders.length} orders
+          </div>
+          <div style={{
+            padding: `${spacing[1]} ${spacing[3]}`,
+            borderRadius: '8px',
+            background: `linear-gradient(135deg, ${colors.semantic.success} 0%, ${colors.semantic.successDark} 100%)`,
+            color: colors.text.inverse,
+            fontSize: typography.fontSize.sm,
+            fontWeight: typography.fontWeight.bold
+          }}>
+            {CURRENCY.format(totalSales)}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div style={{
+        flex: 1,
+        overflow: 'auto',
+        padding: spacing[6]
+      }}>
         {/* Search Bar */}
-        <Paper sx={{ p: 2, mb: 3 }}>
-          <TextField
-            fullWidth
-            placeholder="Search by order number, customer name, or phone..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
+        <Card
+          elevation="md"
+          padding="base"
+          style={{
+            marginBottom: spacing[4],
+            backgroundColor: colors.surface.primary
+          }}
+        >
+          <div style={{ position: 'relative' }}>
+            <div style={{
+              position: 'absolute',
+              left: spacing[3],
+              top: '50%',
+              transform: 'translateY(-50%)',
+              fontSize: typography.fontSize.base,
+              color: colors.text.tertiary
+            }}>
+              🔍
+            </div>
+            <input
+              type="text"
+              placeholder="Search by order number, customer name, or phone..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: '100%',
+                padding: `${spacing[3]} ${spacing[3]} ${spacing[3]} ${spacing[10]}`,
+                border: `2px solid ${colors.surface.border}`,
+                borderRadius: '12px',
+                outline: 'none',
+                backgroundColor: colors.surface.secondary,
+                fontSize: typography.fontSize.sm,
+                color: colors.text.primary,
+                fontFamily: typography.fontFamily.primary,
+                boxShadow: shadows.inset.sm,
+                transition: 'all 0.2s ease'
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = colors.brand.primary;
+                e.currentTarget.style.boxShadow = `0 0 0 3px ${colors.brand.primary}22`;
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = colors.surface.border;
+                e.currentTarget.style.boxShadow = shadows.inset.sm;
+              }}
+            />
+          </div>
+        </Card>
+
+        {/* Orders List */}
+        {isLoading && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: spacing[10],
+            color: colors.text.secondary
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              border: `4px solid ${colors.surface.border}`,
+              borderTopColor: colors.brand.primary,
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }} />
+            <style>{`
+              @keyframes spin {
+                to { transform: rotate(360deg); }
+              }
+            `}</style>
+          </div>
+        )}
+
+        {error && (
+          <Card
+            elevation="sm"
+            padding="lg"
+            style={{
+              background: `linear-gradient(135deg, ${colors.semantic.errorLight}22 0%, ${colors.semantic.error}11 100%)`,
+              border: `2px solid ${colors.semantic.error}`,
+              color: colors.text.primary,
+              textAlign: 'center'
             }}
-          />
-        </Paper>
+          >
+            ❌ Failed to load orders. Please try again.
+          </Card>
+        )}
 
-        {/* Orders Table */}
-        <Paper>
-          {isLoading && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-              <CircularProgress />
-            </Box>
-          )}
+        {!isLoading && !error && filteredOrders.length === 0 && (
+          <Card
+            elevation="sm"
+            padding="lg"
+            style={{
+              background: `linear-gradient(135deg, ${colors.semantic.infoLight}22 0%, ${colors.semantic.info}11 100%)`,
+              border: `2px solid ${colors.semantic.info}`,
+              color: colors.text.primary,
+              textAlign: 'center'
+            }}
+          >
+            ℹ️ {searchTerm ? 'No orders found matching your search' : 'No orders today yet'}
+          </Card>
+        )}
 
-          {error && (
-            <Alert severity="error" sx={{ m: 2 }}>
-              Failed to load orders. Please try again.
-            </Alert>
-          )}
+        {!isLoading && !error && filteredOrders.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
+            {filteredOrders.map((order: any) => (
+              <Card
+                key={order.id}
+                elevation="md"
+                padding="base"
+                interactive
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: spacing[3],
+                  transition: 'all 0.2s ease',
+                  border: `2px solid transparent`
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = colors.brand.primary;
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'transparent';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                {/* Order Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                  <div>
+                    <div style={{
+                      fontSize: typography.fontSize.base,
+                      fontWeight: typography.fontWeight.bold,
+                      color: colors.text.primary,
+                      marginBottom: spacing[1]
+                    }}>
+                      Order #{order.orderNumber}
+                    </div>
+                    <div style={{
+                      fontSize: typography.fontSize.xs,
+                      color: colors.text.secondary
+                    }}>
+                      {new Date(order.createdAt).toLocaleTimeString('en-IN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </div>
+                  </div>
+                  <div style={{
+                    fontSize: typography.fontSize.lg,
+                    fontWeight: typography.fontWeight.bold,
+                    color: colors.brand.primary
+                  }}>
+                    {CURRENCY.format(order.total || 0)}
+                  </div>
+                </div>
 
-          {!isLoading && !error && filteredOrders.length === 0 && (
-            <Box sx={{ p: 4, textAlign: 'center' }}>
-              <Typography variant="h6" color="text.secondary">
-                {searchTerm ? 'No orders found matching your search' : 'No orders today yet'}
-              </Typography>
-            </Box>
-          )}
+                {/* Order Details */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: spacing[2] }}>
+                  <Badge variant={getStatusColor(order.status)} size="sm">
+                    {order.status.replace('_', ' ')}
+                  </Badge>
+                  <Badge variant="secondary" size="sm">
+                    {order.orderType.replace('_', ' ')}
+                  </Badge>
+                  <Badge variant="secondary" size="sm">
+                    {order.items?.length || 0} items
+                  </Badge>
+                  <Badge variant="secondary" size="sm">
+                    {order.paymentMethod}
+                  </Badge>
+                  {order.paymentStatus === 'PAID' ? (
+                    <Badge variant="success" size="sm">
+                      ✓ Paid
+                    </Badge>
+                  ) : order.paymentStatus === 'PENDING' ? (
+                    <Badge variant="warning" size="sm">
+                      💰 Unpaid
+                    </Badge>
+                  ) : null}
+                </div>
 
-          {!isLoading && !error && filteredOrders.length > 0 && (
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell><strong>Order #</strong></TableCell>
-                    <TableCell><strong>Time</strong></TableCell>
-                    <TableCell><strong>Customer</strong></TableCell>
-                    <TableCell><strong>Type</strong></TableCell>
-                    <TableCell><strong>Items</strong></TableCell>
-                    <TableCell align="right"><strong>Amount</strong></TableCell>
-                    <TableCell><strong>Status</strong></TableCell>
-                    <TableCell><strong>Payment</strong></TableCell>
-                    <TableCell align="center"><strong>Actions</strong></TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredOrders.map((order: any) => (
-                    <TableRow key={order.id} hover>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight="bold">
-                          {order.orderNumber}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {new Date(order.createdAt).toLocaleTimeString('en-IN', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">{order.customerName || 'Walk-in'}</Typography>
-                        {order.customerPhone && (
-                          <Typography variant="caption" color="text.secondary" display="block">
-                            {order.customerPhone}
-                          </Typography>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Chip label={order.orderType.replace('_', ' ')} size="small" />
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">{order.items?.length || 0} items</Typography>
-                      </TableCell>
-                      <TableCell align="right">
-                        <Typography variant="body2" fontWeight="bold">
-                          {CURRENCY.format(order.totalAmount)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={order.status.replace('_', ' ')}
-                          color={getStatusColor(order.status)}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={order.paymentMethod}
-                          size="small"
-                          variant="outlined"
-                        />
-                        {order.paymentStatus === 'PAID' && (
-                          <Typography variant="caption" color="success.main" display="block">
-                            ✓ Paid
-                          </Typography>
-                        )}
-                      </TableCell>
-                      <TableCell align="center">
-                        <IconButton size="small" onClick={() => handlePrintOrder(order.id)}>
-                          <PrintIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton size="small" onClick={() => navigate(`/manager/orders/${order.id}`)}>
-                          <ViewIcon fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </Paper>
-      </Container>
-    </Box>
+                {/* Customer Info */}
+                {(order.customerName || order.customerPhone) && (
+                  <div style={{
+                    padding: spacing[2],
+                    borderRadius: '8px',
+                    backgroundColor: colors.surface.secondary,
+                    fontSize: typography.fontSize.xs,
+                    color: colors.text.secondary
+                  }}>
+                    <strong style={{ color: colors.text.primary }}>{order.customerName || 'Walk-in'}</strong>
+                    {order.customerPhone && <> • {order.customerPhone}</>}
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: spacing[2], flexWrap: 'wrap' }}>
+                  {/* Mark as Paid button for PENDING cash orders */}
+                  {order.paymentStatus === 'PENDING' && order.paymentMethod === 'CASH' && (
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      onClick={() => handleMarkAsPaid(order)}
+                      style={{
+                        backgroundColor: '#10b981',
+                        color: 'white',
+                        fontWeight: 600,
+                      }}
+                    >
+                      💰 Mark as Paid
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handlePrintOrder(order.id)}
+                  >
+                    🖨️ Print
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => navigate(`/manager/orders/${order.id}`)}
+                  >
+                    👁️ View Details
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

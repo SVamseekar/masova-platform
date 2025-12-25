@@ -1,27 +1,34 @@
 import React, { createContext, useContext, useState } from 'react';
+import { colors, spacing, typography } from '../../styles/design-tokens';
 
 const TabsContext = createContext<{ value: string; onChange: (value: string) => void } | null>(null);
 
 export const Tabs = ({
   children,
   defaultValue,
-  className = ''
+  style,
+  ...props
 }: {
   children: React.ReactNode;
   defaultValue: string;
-  className?: string
+  style?: React.CSSProperties;
 }) => {
   const [value, setValue] = useState(defaultValue);
 
   return (
     <TabsContext.Provider value={{ value, onChange: setValue }}>
-      <div className={className}>{children}</div>
+      <div style={style} {...props}>{children}</div>
     </TabsContext.Provider>
   );
 };
 
-export const TabsList = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
-  <div className={`flex border-b ${className}`}>
+export const TabsList = ({ children, style, ...props }: { children: React.ReactNode; style?: React.CSSProperties }) => (
+  <div style={{
+    display: 'flex',
+    borderBottom: `2px solid ${colors.surface.border}`,
+    gap: spacing[2],
+    ...style
+  }} {...props}>
     {children}
   </div>
 );
@@ -29,11 +36,12 @@ export const TabsList = ({ children, className = '' }: { children: React.ReactNo
 export const TabsTrigger = ({
   children,
   value,
-  className = ''
+  style,
+  ...props
 }: {
   children: React.ReactNode;
   value: string;
-  className?: string
+  style?: React.CSSProperties;
 }) => {
   const context = useContext(TabsContext);
   if (!context) throw new Error('TabsTrigger must be used within Tabs');
@@ -43,7 +51,19 @@ export const TabsTrigger = ({
   return (
     <button
       onClick={() => context.onChange(value)}
-      className={`px-4 py-2 ${isActive ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600'} ${className}`}
+      style={{
+        padding: `${spacing[2]} ${spacing[4]}`,
+        background: 'none',
+        border: 'none',
+        borderBottom: isActive ? `2px solid ${colors.brand.primary}` : '2px solid transparent',
+        color: isActive ? colors.brand.primary : colors.text.secondary,
+        fontSize: typography.fontSize.sm,
+        fontWeight: isActive ? typography.fontWeight.semibold : typography.fontWeight.medium,
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+        ...style
+      }}
+      {...props}
     >
       {children}
     </button>
@@ -53,16 +73,17 @@ export const TabsTrigger = ({
 export const TabsContent = ({
   children,
   value,
-  className = ''
+  style,
+  ...props
 }: {
   children: React.ReactNode;
   value: string;
-  className?: string
+  style?: React.CSSProperties;
 }) => {
   const context = useContext(TabsContext);
   if (!context) throw new Error('TabsContent must be used within Tabs');
 
   if (context.value !== value) return null;
 
-  return <div className={className}>{children}</div>;
+  return <div style={{ marginTop: spacing[4], ...style }} {...props}>{children}</div>;
 };

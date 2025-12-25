@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class StoreManagementIntegrationTest {
     
     @Container
-    static MongoDBContainer mongoDBContainer = new MongoDBContainer("mongo:7.0")
+    static final MongoDBContainer mongoDBContainer = new MongoDBContainer("mongo:7.0")
             .withExposedPorts(27017);
     
     @Autowired

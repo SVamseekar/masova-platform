@@ -3,22 +3,43 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTrackOrderQuery } from '../../store/api/deliveryApi';
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
-import LiveMap from '../../components/delivery/LiveMap';
+import { DriverTrackingMap } from '../../components/delivery/DriverTrackingMap';
 import RatingDialog from '../../components/delivery/RatingDialog';
 import { Card, Button } from '../../components/ui/neumorphic';
 import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
 import { createCard, createBadge, createNeumorphicSurface } from '../../styles/neumorphic-utils';
+import { useOrderTrackingWebSocket } from '../../hooks/useOrderTrackingWebSocket';
+import { OrderTrackingUpdate } from '../../services/websocketService';
 
 const LiveTrackingPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
   const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
+  const [localStatus, setLocalStatus] = useState<string | null>(null);
+  const [localDriverLocation, setLocalDriverLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
-  // Poll every 10 seconds for live tracking
-  const { data: trackingData, isLoading, error } = useTrackOrderQuery(orderId!, {
-    skip: !orderId,
-    pollingInterval: 10000, // 10 seconds
+  // RT-002: WebSocket for real-time order tracking updates
+  const { isConnected: wsConnected, lastUpdate } = useOrderTrackingWebSocket({
+    orderId: orderId || '',
+    onOrderUpdate: (update: OrderTrackingUpdate) => {
+      console.log('[LiveTrackingPage] WebSocket update:', update);
+      setLocalStatus(update.status);
+      if (update.driverLocation) {
+        setLocalDriverLocation(update.driverLocation);
+      }
+    },
+    enabled: !!orderId,
   });
+
+  // Poll every 10 seconds for live tracking (reduced to 30s when WebSocket connected)
+  const { data: trackingData, isLoading, error, refetch } = useTrackOrderQuery(orderId!, {
+    skip: !orderId,
+    pollingInterval: wsConnected ? 30000 : 10000,
+  });
+
+  // Use WebSocket data if available for instant updates
+  const effectiveStatus = localStatus || trackingData?.status;
+  const effectiveDriverLocation = localDriverLocation || trackingData?.currentLocation;
 
   const handleSubmitRating = async (rating: number, feedback: string) => {
     console.log('Rating submitted:', { orderId, rating, feedback });
@@ -99,8 +120,8 @@ const LiveTrackingPage: React.FC = () => {
   };
 
   const statusBadgeStyles: React.CSSProperties = {
-    display: 'inline-block',
     ...createBadge(),
+    display: 'inline-block',
     padding: `${spacing[2]} ${spacing[4]}`,
     fontSize: typography.fontSize.base,
     marginBottom: spacing[4],
@@ -174,11 +195,9 @@ const LiveTrackingPage: React.FC = () => {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
     color: '#fff',
-    background: `linear-gradient(135deg, ${colors.semantic.success} 0%, ${colors.semantic.successLight} 100%)`,
-    border: 'none',
-    borderRadius: borderRadius.lg,
     cursor: 'pointer',
     ...createNeumorphicSurface('raised', 'sm', 'lg'),
+    background: `linear-gradient(135deg, ${colors.semantic.success} 0%, ${colors.semantic.successLight} 100%)`,
     transition: 'all 0.2s',
   };
 
@@ -188,9 +207,6 @@ const LiveTrackingPage: React.FC = () => {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text.primary,
-    backgroundColor: colors.surface.primary,
-    border: 'none',
-    borderRadius: borderRadius.lg,
     cursor: 'pointer',
     ...createNeumorphicSurface('raised', 'sm', 'lg'),
     transition: 'all 0.2s',
@@ -238,6 +254,33 @@ const LiveTrackingPage: React.FC = () => {
     );
   }
 
+  // Phase 4.5: Restrict tracking to DELIVERY orders only
+  if (trackingData.orderType && trackingData.orderType !== 'DELIVERY') {
+    return (
+      <>
+        <AnimatedBackground variant="default" />
+        <div style={containerStyles}>
+          <AppHeader
+            showPublicNav={true}
+            onCartClick={handleCartClick}
+          />
+          <div style={{ ...statusCardStyles, textAlign: 'center' }}>
+            <div style={{ fontSize: '4rem', marginBottom: spacing[3] }}>🚫</div>
+            <h2 style={statusTextStyles}>Live Tracking Unavailable</h2>
+            <p style={{ color: colors.text.secondary, marginBottom: spacing[4] }}>
+              {trackingData.orderType === 'PICKUP'
+                ? 'Live tracking is not available for pickup orders.'
+                : 'Live tracking is not available for dine-in orders.'}
+            </p>
+            <p style={{ color: colors.text.tertiary, fontSize: typography.fontSize.sm }}>
+              Live driver tracking is only available for delivery orders.
+            </p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <AnimatedBackground variant="default" />
@@ -248,17 +291,37 @@ const LiveTrackingPage: React.FC = () => {
           onCartClick={handleCartClick}
         />
 
+        {/* RT-002: WebSocket Connection Indicator */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          marginBottom: spacing[2],
+          fontSize: typography.fontSize.xs,
+          color: wsConnected ? colors.semantic.success : colors.text.tertiary,
+        }}>
+          <span style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            backgroundColor: wsConnected ? colors.semantic.success : colors.text.tertiary,
+            marginRight: spacing[2],
+            animation: wsConnected ? 'pulse 2s infinite' : 'none',
+          }} />
+          {wsConnected ? 'Live Updates' : 'Polling Mode'}
+        </div>
+
         <h1 style={titleStyles}>Live Tracking</h1>
         <p style={subtitleStyles}>Order #{orderId?.slice(-8).toUpperCase()}</p>
 
         {/* Status Card */}
         <div style={statusCardStyles}>
-          <div style={statusIconStyles}>{getStatusIcon(trackingData.status)}</div>
+          <div style={statusIconStyles}>{getStatusIcon(effectiveStatus || '')}</div>
           <div style={statusTextStyles}>
-            {trackingData.status?.replace(/_/g, ' ')}
+            {effectiveStatus?.replace(/_/g, ' ')}
           </div>
-          <div style={{ ...statusBadgeStyles, backgroundColor: getStatusColor(trackingData.status) }}>
-            {trackingData.status?.toUpperCase()}
+          <div style={{ ...statusBadgeStyles, backgroundColor: getStatusColor(effectiveStatus || '') }}>
+            {effectiveStatus?.toUpperCase()}
           </div>
 
           {trackingData.estimatedArrival && (
@@ -294,7 +357,7 @@ const LiveTrackingPage: React.FC = () => {
               <div style={infoValueStyles}>📞 {trackingData.driverPhone}</div>
             </div>
 
-            {trackingData.currentLocation && (
+            {effectiveDriverLocation && (
               <div style={infoItemStyles}>
                 <div style={infoLabelStyles}>Last Updated</div>
                 <div style={infoValueStyles}>
@@ -308,7 +371,7 @@ const LiveTrackingPage: React.FC = () => {
             <button onClick={callDriver} style={callButtonStyles}>
               📞 Call Driver
             </button>
-            {trackingData.status?.toUpperCase() === 'DELIVERED' && (
+            {effectiveStatus?.toUpperCase() === 'DELIVERED' && (
               <button onClick={() => setRatingDialogOpen(true)} style={rateButtonStyles}>
                 ⭐ Rate Delivery
               </button>
@@ -316,16 +379,34 @@ const LiveTrackingPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Live Map */}
-        {trackingData.currentLocation && trackingData.destination && (
-          <LiveMap
-            driverId={trackingData.driverId}
-            destination={{
-              latitude: trackingData.destination.latitude,
-              longitude: trackingData.destination.longitude,
-              address: trackingData.destination.address || 'Delivery Address',
-            }}
-          />
+        {/* Live Map - OpenStreetMap (Free) */}
+        {effectiveDriverLocation && trackingData.destination && 'latitude' in effectiveDriverLocation && 'longitude' in effectiveDriverLocation && (
+          <div style={{ marginBottom: spacing[6] }}>
+            <DriverTrackingMap
+              driverPosition={[
+                effectiveDriverLocation.latitude,
+                effectiveDriverLocation.longitude,
+              ]}
+              restaurantPosition={[12.9716, 77.5946]} // TODO: Fetch actual store coordinates
+              customerPosition={[
+                trackingData.destination.coordinates[1], // GeoJSON: [lng, lat] -> [lat, lng]
+                trackingData.destination.coordinates[0],
+              ]}
+              eta={
+                trackingData.estimatedArrival
+                  ? (() => {
+                      const etaDate = new Date(trackingData.estimatedArrival);
+                      const now = new Date();
+                      const minutesRemaining = Math.round((etaDate.getTime() - now.getTime()) / 60000);
+                      return `${minutesRemaining} min`;
+                    })()
+                  : undefined
+              }
+              driverName={trackingData.driverName}
+              height="450px"
+              autoCenter={true}
+            />
+          </div>
         )}
       </div>
 

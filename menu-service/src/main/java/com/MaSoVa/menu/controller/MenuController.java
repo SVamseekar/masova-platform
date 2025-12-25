@@ -167,6 +167,39 @@ public class MenuController {
         return ResponseEntity.noContent().build();
     }
 
+    // ========== MENU COPY ENDPOINT ==========
+
+    /**
+     * Copy all menu items from source store to target store
+     * Usage: POST /api/menu/copy-menu?sourceStoreId=xxx&targetStoreId=yyy
+     */
+    @PostMapping("/copy-menu")
+    public ResponseEntity<Map<String, Object>> copyMenuBetweenStores(
+            @RequestParam String sourceStoreId,
+            @RequestParam String targetStoreId) {
+        try {
+            List<MenuItem> copiedItems = menuService.copyMenuBetweenStores(sourceStoreId, targetStoreId);
+
+            Map<String, Object> response = Map.of(
+                "success", true,
+                "message", String.format("Successfully copied %d menu items from store %s to store %s",
+                                        copiedItems.size(), sourceStoreId, targetStoreId),
+                "copiedItemsCount", copiedItems.size(),
+                "sourceStoreId", sourceStoreId,
+                "targetStoreId", targetStoreId
+            );
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = Map.of(
+                "success", false,
+                "message", "Failed to copy menu: " + e.getMessage(),
+                "error", e.getClass().getSimpleName()
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
     // ========== STATISTICS ENDPOINTS ==========
 
     @GetMapping("/stats")

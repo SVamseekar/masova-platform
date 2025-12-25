@@ -91,4 +91,67 @@ public class UserServiceClient {
             return Map.of();
         }
     }
+
+    /**
+     * Update driver online/offline status
+     * Phase 8: Driver status persistence
+     */
+    public void updateDriverStatus(String driverId, String status) {
+        String url = userServiceUrl + "/api/users/" + driverId + "/status";
+        log.info("Updating driver {} status to: {}", driverId, status);
+
+        try {
+            Map<String, String> request = Map.of("status", status);
+            restTemplate.put(url, request);
+            log.info("Driver status updated successfully");
+        } catch (Exception e) {
+            log.error("Error updating driver status: {}", e.getMessage());
+            throw new RuntimeException("Failed to update driver status: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Get driver's current online/offline status
+     * Phase 8: Driver status persistence
+     */
+    public String getDriverStatus(String driverId) {
+        String url = userServiceUrl + "/api/users/" + driverId + "/status";
+        log.debug("Fetching driver status from: {}", url);
+
+        try {
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+            Map<String, Object> body = response.getBody();
+            return body != null ? (String) body.get("status") : "OFF_DUTY";
+        } catch (Exception e) {
+            log.error("Error fetching driver status: {}", e.getMessage());
+            return "OFF_DUTY"; // Default to offline on error
+        }
+    }
+
+    /**
+     * Get employee's working session status
+     * Phase 2: Check if employee is currently clocked in
+     */
+    public Map<String, Object> getEmployeeWorkingStatus(String employeeId) {
+        String url = userServiceUrl + "/api/users/sessions/" + employeeId + "/status";
+        log.debug("Fetching employee working status from: {}", url);
+
+        try {
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+            return response.getBody();
+        } catch (Exception e) {
+            log.error("Error fetching employee working status: {}", e.getMessage());
+            throw new RuntimeException("Failed to check working session: " + e.getMessage());
+        }
+    }
 }

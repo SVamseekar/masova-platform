@@ -24,8 +24,12 @@ const ORDER_TYPE_LABELS: Record<string, string> = {
   DELIVERY: 'Delivery',
 };
 
-export default function RevenueBreakdownChart() {
-  const { data, isLoading, error } = useGetOrderTypeBreakdownQuery(undefined);
+interface RevenueBreakdownChartProps {
+  storeId?: string;
+}
+
+export default function RevenueBreakdownChart({ storeId }: RevenueBreakdownChartProps) {
+  const { data, isLoading, error } = useGetOrderTypeBreakdownQuery(storeId);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-IN', {

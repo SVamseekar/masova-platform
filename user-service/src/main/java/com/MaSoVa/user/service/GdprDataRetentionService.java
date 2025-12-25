@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,7 +30,6 @@ public class GdprDataRetentionService {
     @Autowired
     private UserRepository userRepository;
 
-    @Transactional
     public GdprDataRetention createRetentionPolicy(String dataType, Integer retentionPeriodDays,
                                                      String legalBasis, String description) {
         logger.info("Creating retention policy for data type: {}", dataType);
@@ -49,7 +47,6 @@ public class GdprDataRetentionService {
         return retentionRepository.save(retention);
     }
 
-    @Transactional
     public GdprDataRetention updateRetentionPolicy(String id, Integer retentionPeriodDays,
                                                      String legalBasis, String reviewedBy) {
         logger.info("Updating retention policy: {}", id);
@@ -75,7 +72,6 @@ public class GdprDataRetentionService {
     }
 
     @Scheduled(cron = "0 0 2 * * *")
-    @Transactional
     public void applyRetentionPolicies() {
         logger.info("Running automated data retention cleanup");
 
@@ -108,10 +104,8 @@ public class GdprDataRetentionService {
         LocalDateTime cutoffDate = LocalDateTime.now().minusDays(retentionDays);
         logger.info("Deleting inactive users with last login before: {}", cutoffDate);
 
-        var inactiveUsers = userRepository.findAll().stream()
-            .filter(user -> !user.isActive() && user.getLastLogin() != null &&
-                            user.getLastLogin().isBefore(cutoffDate))
-            .toList();
+        // Use dedicated query instead of findAll() to avoid loading all users
+        var inactiveUsers = userRepository.findByActiveAndLastLoginBefore(false, cutoffDate);
 
         for (var user : inactiveUsers) {
             createAuditLog(user.getId(), GdprActionType.RETENTION_POLICY_APPLIED, "SYSTEM",

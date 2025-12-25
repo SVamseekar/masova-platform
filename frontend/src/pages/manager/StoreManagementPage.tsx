@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import {
   useGetStoreQuery,
   useGetActiveStoresQuery,
@@ -18,6 +19,7 @@ import AppHeader from '../../components/common/AppHeader';
 const StoreManagementPage: React.FC = () => {
   const navigate = useNavigate();
   const currentUser = useAppSelector(selectCurrentUser);
+  const { handleBack } = useSmartBackNavigation();
   const storeId = currentUser?.storeId || '';
 
   // Get manager's own store
@@ -40,6 +42,8 @@ const StoreManagementPage: React.FC = () => {
     },
     phoneNumber: '',
     regionId: '',
+    areaManagerId: '',
+    openingDate: '',
     operatingConfig: {
       weeklySchedule: {
         MONDAY: { startTime: '09:00', endTime: '22:00', isOpen: true },
@@ -64,7 +68,7 @@ const StoreManagementPage: React.FC = () => {
       const addressField = name.split('.')[1];
       setFormData(prev => ({
         ...prev,
-        address: { ...prev.address, [addressField]: value },
+        address: { ...(prev.address || {}), [addressField]: value } as any,
       }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -80,6 +84,8 @@ const StoreManagementPage: React.FC = () => {
         address: myStore.address,
         phoneNumber: myStore.phoneNumber || '',
         regionId: myStore.regionId || '',
+        areaManagerId: myStore.areaManagerId || '',
+        openingDate: myStore.openingDate || '',
         operatingConfig: myStore.operatingConfig,
       });
     }
@@ -87,16 +93,48 @@ const StoreManagementPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!myStore) return;
 
     try {
-      await updateStore({ storeId: myStore.id, data: formData as CreateStoreRequest }).unwrap();
-      alert('Store updated successfully!');
-      setIsEditing(false);
+      // Convert date to LocalDateTime format (YYYY-MM-DDTHH:MM:SS)
+      // Ensure all time strings are in HH:mm format for LocalTime parsing
+      const submissionData = {
+        ...formData,
+        openingDate: formData.openingDate
+          ? `${formData.openingDate}T00:00:00`
+          : undefined,
+        operatingConfig: formData.operatingConfig ? {
+          ...formData.operatingConfig,
+          weeklySchedule: Object.entries(formData.operatingConfig.weeklySchedule).reduce((acc, [day, schedule]) => {
+            acc[day] = {
+              startTime: schedule.startTime || '09:00',
+              endTime: schedule.endTime || '22:00',
+              isOpen: schedule.isOpen !== undefined ? schedule.isOpen : true
+            };
+            return acc;
+          }, {} as any)
+        } : undefined
+      };
+
+      if (selectedStore) {
+        // Update existing store
+        await updateStore({
+          storeId: selectedStore.id,
+          data: submissionData as CreateStoreRequest
+        }).unwrap();
+        alert('Store updated successfully!');
+      } else {
+        // Create new store
+        await createStore(submissionData as CreateStoreRequest).unwrap();
+        alert('Store created successfully!');
+      }
+
+      setShowCreateModal(false);
+      setSelectedStore(null);
+      resetForm();
       refetch();
     } catch (error: any) {
       console.error('Error saving store:', error);
-      alert(error?.data?.message || 'Failed to update store');
+      alert(error?.data?.message || 'Failed to save store');
     }
   };
 
@@ -107,6 +145,8 @@ const StoreManagementPage: React.FC = () => {
       address: { street: '', city: '', state: '', pincode: '' },
       phoneNumber: '',
       regionId: '',
+      areaManagerId: '',
+      openingDate: '',
       operatingConfig: {
         weeklySchedule: {
           MONDAY: { startTime: '09:00', endTime: '22:00', isOpen: true },
@@ -134,6 +174,8 @@ const StoreManagementPage: React.FC = () => {
       address: store.address,
       phoneNumber: store.phoneNumber || '',
       regionId: store.regionId || '',
+      areaManagerId: store.areaManagerId || '',
+      openingDate: store.openingDate || '',
       operatingConfig: store.operatingConfig,
     });
     setShowCreateModal(true);
@@ -144,6 +186,7 @@ const StoreManagementPage: React.FC = () => {
     minHeight: '100vh',
     backgroundColor: colors.surface.background,
     fontFamily: typography.fontFamily.primary,
+    paddingTop: '80px',
   };
 
   const headerStyles: React.CSSProperties = {
@@ -197,6 +240,7 @@ const StoreManagementPage: React.FC = () => {
 
   return (
     <div style={containerStyles}>
+      <AppHeader title="Store Management" showBackButton={true} onBack={handleBack} showManagerNav={true} />
       <div style={headerStyles}>
         <h1 style={titleStyles}>🏪 Store Management</h1>
         <Button
@@ -255,8 +299,8 @@ const StoreManagementPage: React.FC = () => {
                   borderRadius: borderRadius.full,
                   fontSize: typography.fontSize.xs,
                   fontWeight: typography.fontWeight.semibold,
-                  backgroundColor: store.status === 'OPEN' ? colors.semantic.successLight : colors.semantic.warningLight,
-                  color: store.status === 'OPEN' ? colors.semantic.success : colors.semantic.warning,
+                  backgroundColor: store.status === 'ACTIVE' ? colors.semantic.successLight : colors.semantic.warningLight,
+                  color: store.status === 'ACTIVE' ? colors.semantic.success : colors.semantic.warning,
                 }}>
                   {store.status}
                 </span>
@@ -336,10 +380,20 @@ const StoreManagementPage: React.FC = () => {
                 <Input
                   label="Street Address"
                   name="address.street"
-                  value={formData.address.street}
+                  value={formData.address?.street || ''}
                   onChange={handleInputChange}
                   required
                   placeholder="123 Main Street"
+                />
+              </div>
+
+              <div style={{ marginBottom: spacing[4] }}>
+                <Input
+                  label="Landmark (Optional)"
+                  name="address.landmark"
+                  value={formData.address?.landmark || ''}
+                  onChange={handleInputChange}
+                  placeholder="Near City Mall"
                 />
               </div>
 
@@ -347,33 +401,35 @@ const StoreManagementPage: React.FC = () => {
                 <Input
                   label="City"
                   name="address.city"
-                  value={formData.address.city}
+                  value={formData.address?.city || ''}
                   onChange={handleInputChange}
                   required
                 />
                 <Input
                   label="State"
                   name="address.state"
-                  value={formData.address.state}
+                  value={formData.address?.state || ''}
                   onChange={handleInputChange}
                   required
                 />
                 <Input
                   label="Pincode"
                   name="address.pincode"
-                  value={formData.address.pincode}
+                  value={formData.address?.pincode || ''}
                   onChange={handleInputChange}
                   required
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[4], marginBottom: spacing[6] }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[4], marginBottom: spacing[4] }}>
                 <Input
-                  label="Phone Number"
+                  label="Phone Number (Required)"
                   name="phoneNumber"
                   value={formData.phoneNumber || ''}
                   onChange={handleInputChange}
-                  placeholder="+91 9876543210"
+                  placeholder="9876543210"
+                  required
+                  helperText="10 digits, no country code or spaces"
                 />
                 <Input
                   label="Region ID (Optional)"
@@ -383,6 +439,158 @@ const StoreManagementPage: React.FC = () => {
                   placeholder="south-region"
                 />
               </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[4], marginBottom: spacing[4] }}>
+                <Input
+                  label="Area Manager ID (Optional)"
+                  name="areaManagerId"
+                  value={formData.areaManagerId || ''}
+                  onChange={handleInputChange}
+                  placeholder="manager-123"
+                />
+                <Input
+                  label="Opening Date (Optional)"
+                  name="openingDate"
+                  type="date"
+                  value={formData.openingDate || ''}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              {/* Store Configuration Section */}
+              <div style={{ marginBottom: spacing[4] }}>
+                <h3 style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, marginBottom: spacing[3], color: colors.text.primary }}>
+                  Store Configuration
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[4] }}>
+                  <Input
+                    label="Delivery Radius (km)"
+                    name="deliveryRadiusKm"
+                    type="number"
+                    value={formData.operatingConfig?.deliveryRadiusKm || 10}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      operatingConfig: { ...prev.operatingConfig!, deliveryRadiusKm: parseFloat(e.target.value) }
+                    }))}
+                  />
+                  <Input
+                    label="Max Concurrent Orders"
+                    name="maxConcurrentOrders"
+                    type="number"
+                    value={formData.operatingConfig?.maxConcurrentOrders || 50}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      operatingConfig: { ...prev.operatingConfig!, maxConcurrentOrders: parseInt(e.target.value) }
+                    }))}
+                  />
+                  <Input
+                    label="Estimated Prep Time (min)"
+                    name="estimatedPrepTimeMinutes"
+                    type="number"
+                    value={formData.operatingConfig?.estimatedPrepTimeMinutes || 30}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      operatingConfig: { ...prev.operatingConfig!, estimatedPrepTimeMinutes: parseInt(e.target.value) }
+                    }))}
+                  />
+                  <Input
+                    label="Minimum Order Value (₹)"
+                    name="minimumOrderValueINR"
+                    type="number"
+                    value={formData.operatingConfig?.minimumOrderValueINR || 100}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      operatingConfig: { ...prev.operatingConfig!, minimumOrderValueINR: parseFloat(e.target.value) }
+                    }))}
+                  />
+                </div>
+              </div>
+
+              {/* Operating Hours Section */}
+              <div style={{ marginBottom: spacing[6] }}>
+                <h3 style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, marginBottom: spacing[3], color: colors.text.primary }}>
+                  Operating Hours
+                </h3>
+                <div style={{ display: 'grid', gap: spacing[3] }}>
+                  {Object.entries(formData.operatingConfig?.weeklySchedule || {}).map(([day, schedule]) => (
+                    <div key={day} style={{ display: 'grid', gridTemplateColumns: '120px 1fr 1fr 80px', gap: spacing[3], alignItems: 'center' }}>
+                      <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold, color: colors.text.primary }}>
+                        {day}
+                      </span>
+                      <Input
+                        label="Start Time"
+                        type="time"
+                        value={schedule.startTime}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          operatingConfig: {
+                            ...prev.operatingConfig!,
+                            weeklySchedule: {
+                              ...prev.operatingConfig!.weeklySchedule,
+                              [day]: { ...schedule, startTime: e.target.value }
+                            }
+                          }
+                        }))}
+                      />
+                      <Input
+                        label="End Time"
+                        type="time"
+                        value={schedule.endTime}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          operatingConfig: {
+                            ...prev.operatingConfig!,
+                            weeklySchedule: {
+                              ...prev.operatingConfig!.weeklySchedule,
+                              [day]: { ...schedule, endTime: e.target.value }
+                            }
+                          }
+                        }))}
+                      />
+                      <label style={{ display: 'flex', alignItems: 'center', gap: spacing[2], fontSize: typography.fontSize.sm }}>
+                        <input
+                          type="checkbox"
+                          checked={schedule.isOpen}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            operatingConfig: {
+                              ...prev.operatingConfig!,
+                              weeklySchedule: {
+                                ...prev.operatingConfig!.weeklySchedule,
+                                [day]: { ...schedule, isOpen: e.target.checked }
+                              }
+                            }
+                          }))}
+                        />
+                        Open
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Read-only fields for existing stores */}
+              {selectedStore && (
+                <div style={{ marginBottom: spacing[6], padding: spacing[4], backgroundColor: colors.surface.secondary, borderRadius: borderRadius.lg }}>
+                  <h3 style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, marginBottom: spacing[3], color: colors.text.primary }}>
+                    Store Information
+                  </h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3] }}>
+                    <div>
+                      <p style={{ fontSize: typography.fontSize.xs, color: colors.text.tertiary }}>Status</p>
+                      <p style={{ fontSize: typography.fontSize.sm, color: colors.text.primary, fontWeight: typography.fontWeight.semibold }}>{selectedStore.status}</p>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: typography.fontSize.xs, color: colors.text.tertiary }}>Created At</p>
+                      <p style={{ fontSize: typography.fontSize.sm, color: colors.text.primary }}>{selectedStore.createdAt ? new Date(selectedStore.createdAt).toLocaleString() : 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: typography.fontSize.xs, color: colors.text.tertiary }}>Last Modified</p>
+                      <p style={{ fontSize: typography.fontSize.sm, color: colors.text.primary }}>{selectedStore.lastModified ? new Date(selectedStore.lastModified).toLocaleString() : 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
                 <Button

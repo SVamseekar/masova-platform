@@ -24,17 +24,11 @@ public class BIEngineService {
 
     private final OrderServiceClient orderServiceClient;
     private final CustomerServiceClient customerServiceClient;
-    private final InventoryServiceClient inventoryServiceClient;
-    private final UserServiceClient userServiceClient;
 
     public BIEngineService(OrderServiceClient orderServiceClient,
-                          CustomerServiceClient customerServiceClient,
-                          InventoryServiceClient inventoryServiceClient,
-                          UserServiceClient userServiceClient) {
+                          CustomerServiceClient customerServiceClient) {
         this.orderServiceClient = orderServiceClient;
         this.customerServiceClient = customerServiceClient;
-        this.inventoryServiceClient = inventoryServiceClient;
-        this.userServiceClient = userServiceClient;
     }
 
     /**
@@ -387,11 +381,16 @@ public class BIEngineService {
     }
 
     private Set<String> getActiveCustomerIds(List<Map<String, Object>> orders, LocalDate since) {
-        return orders.stream()
-            .filter(o -> getOrderDate(o).isAfter(since))
-            .map(o -> (String) o.get("customerId"))
-            .filter(Objects::nonNull)
-            .collect(Collectors.toSet());
+        Set<String> activeIds = new HashSet<>();
+        for (Map<String, Object> order : orders) {
+            if (getOrderDate(order).isAfter(since)) {
+                String customerId = (String) order.get("customerId");
+                if (customerId != null) {
+                    activeIds.add(customerId);
+                }
+            }
+        }
+        return activeIds;
     }
 
     private Map<String, BigDecimal> calculateCustomerSpending(List<Map<String, Object>> orders) {
@@ -411,7 +410,7 @@ public class BIEngineService {
         for (Map<String, Object> order : orders) {
             String customerId = (String) order.get("customerId");
             if (customerId != null) {
-                counts.merge(customerId, 1, Integer::sum);
+                counts.merge(customerId, 1, (a, b) -> a + b);
             }
         }
         return counts;
@@ -589,7 +588,7 @@ public class BIEngineService {
         Map<String, Integer> factorCounts = new HashMap<>();
         for (ChurnPredictionResponse.ChurnRiskCustomer customer : atRiskCustomers) {
             for (String factor : customer.getRiskFactors()) {
-                factorCounts.merge(factor, 1, Integer::sum);
+                factorCounts.merge(factor, 1, (a, b) -> a + b);
             }
         }
 
@@ -631,14 +630,19 @@ public class BIEngineService {
         // Extract all items from orders
         Map<String, DemandItemData> itemDemandData = new HashMap<>();
         for (Map<String, Object> order : historicalOrders) {
-            List<Map<String, Object>> items = (List<Map<String, Object>>) order.get("items");
-            if (items != null) {
-                for (Map<String, Object> item : items) {
-                    String itemId = (String) item.get("menuItemId");
-                    String itemName = (String) item.get("itemName");
-                    String category = (String) item.getOrDefault("category", "Unknown");
-                    int quantity = ((Number) item.get("quantity")).intValue();
-                    BigDecimal price = BigDecimal.valueOf(((Number) item.get("price")).doubleValue());
+            Object itemsObj = order.get("items");
+            if (itemsObj instanceof List<?> itemsList) {
+                for (Object itemObj : itemsList) {
+                    if (!(itemObj instanceof Map<?, ?>)) continue;
+                    Map<?, ?> itemMap = (Map<?, ?>) itemObj;
+                    String itemId = (String) itemMap.get("menuItemId");
+                    String itemName = (String) itemMap.get("itemName");
+                    Object categoryObj = itemMap.get("category");
+                    String category = categoryObj != null ? String.valueOf(categoryObj) : "Unknown";
+                    Object quantityObj = itemMap.get("quantity");
+                    int quantity = quantityObj instanceof Number ? ((Number) quantityObj).intValue() : 0;
+                    Object priceObj = itemMap.get("price");
+                    BigDecimal price = priceObj instanceof Number ? BigDecimal.valueOf(((Number) priceObj).doubleValue()) : BigDecimal.ZERO;
 
                     itemDemandData.computeIfAbsent(itemId, k -> new DemandItemData(itemName, category))
                         .addQuantity(quantity, price);
@@ -718,20 +722,17 @@ public class BIEngineService {
         private final String category;
         private int totalQuantity;
         private BigDecimal totalRevenue;
-        private int orderCount;
 
         public DemandItemData(String itemName, String category) {
             this.itemName = itemName;
             this.category = category;
             this.totalQuantity = 0;
             this.totalRevenue = BigDecimal.ZERO;
-            this.orderCount = 0;
         }
 
         public void addQuantity(int quantity, BigDecimal price) {
             this.totalQuantity += quantity;
             this.totalRevenue = this.totalRevenue.add(price.multiply(BigDecimal.valueOf(quantity)));
-            this.orderCount++;
         }
 
         public String getItemName() { return itemName; }

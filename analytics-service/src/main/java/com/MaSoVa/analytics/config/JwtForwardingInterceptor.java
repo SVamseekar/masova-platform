@@ -7,6 +7,7 @@ import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -33,7 +34,8 @@ public class JwtForwardingInterceptor implements ClientHttpRequestInterceptor {
     };
 
     @Override
-    public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution) throws IOException {
+    @NonNull
+    public ClientHttpResponse intercept(@NonNull HttpRequest request, @NonNull byte[] body, @NonNull ClientHttpRequestExecution execution) throws IOException {
         // Get the current HTTP request from the context
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
 
@@ -53,7 +55,7 @@ public class JwtForwardingInterceptor implements ClientHttpRequestInterceptor {
             for (String headerName : HEADERS_TO_FORWARD) {
                 String headerValue = currentRequest.getHeader(headerName);
                 if (headerValue != null && !headerValue.isEmpty()) {
-                    request.getHeaders().add(headerName, headerValue);
+                    request.getHeaders().add(headerName, (String) headerValue);
                     log.debug("Forwarding {}: {} to: {}", headerName, headerValue, request.getURI());
                 }
             }

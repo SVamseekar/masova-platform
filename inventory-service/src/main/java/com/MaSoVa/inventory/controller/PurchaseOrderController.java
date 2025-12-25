@@ -14,6 +14,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
@@ -23,6 +25,8 @@ import java.util.List;
  * REST Controller for Purchase Order Management
  */
 @RestController
+@Tag(name = "PurchaseOrderController", description = "Purchase order management")
+@SecurityRequirement(name = "bearerAuth")
 @RequestMapping("/api/inventory/purchase-orders")
 public class PurchaseOrderController {
 

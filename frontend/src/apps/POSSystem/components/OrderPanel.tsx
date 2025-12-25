@@ -1,31 +1,10 @@
 // src/apps/POSSystem/components/OrderPanel.tsx
 import React from 'react';
-import {
-  Box,
-  Typography,
-  IconButton,
-  TextField,
-  Button,
-  Divider,
-  List,
-  ListItem,
-  ListItemText,
-  ToggleButtonGroup,
-  ToggleButton,
-  Alert,
-  Chip,
-} from '@mui/material';
-import {
-  Delete as DeleteIcon,
-  Add as AddIcon,
-  Remove as RemoveIcon,
-  ShoppingCart as CartIcon,
-  RestaurantMenu as DineInIcon,
-  ShoppingBag as TakeoutIcon,
-  DeliveryDining as DeliveryIcon,
-  DeleteSweep as ClearIcon,
-} from '@mui/icons-material';
-import { CURRENCY, calculateOrderTotal, calculateTax, calculateDeliveryFee } from '../../../config/business-config';
+import { CURRENCY } from '../../../config/business-config';
+import Card from '../../../components/ui/neumorphic/Card';
+import Badge from '../../../components/ui/neumorphic/Badge';
+import Button from '../../../components/ui/neumorphic/Button';
+import { colors, shadows, spacing, typography } from '../../../styles/design-tokens';
 
 interface OrderPanelProps {
   items: any[];
@@ -33,8 +12,8 @@ interface OrderPanelProps {
   onRemoveItem: (menuItemId: string) => void;
   onUpdateInstructions: (menuItemId: string, instructions: string) => void;
   onNewOrder: () => void;
-  orderType: 'DINE_IN' | 'PICKUP' | 'DELIVERY';
-  onOrderTypeChange: (type: 'DINE_IN' | 'PICKUP' | 'DELIVERY') => void;
+  orderType: 'PICKUP' | 'DELIVERY'; // Removed DINE_IN
+  onOrderTypeChange: (type: 'PICKUP' | 'DELIVERY') => void;
   selectedTable?: string | null;
   onTableSelect: (table: string | null) => void;
 }
@@ -50,208 +29,384 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
   selectedTable,
   onTableSelect,
 }) => {
-  // Calculate totals
+  // Calculate totals - matching customer side logic
   const subtotal = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  const tax = calculateTax(subtotal);
-  const deliveryFee = orderType === 'DELIVERY' ? calculateDeliveryFee(subtotal) : 0;
-  const total = calculateOrderTotal(subtotal, orderType);
+  const tax = subtotal * 0.05; // 5% tax
+  const deliveryFee = orderType === 'DELIVERY' && subtotal > 0 ? 40 : 0;
+  const total = subtotal + tax + deliveryFee;
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Header */}
-      <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6">
-            <CartIcon sx={{ verticalAlign: 'middle', mr: 1 }} />
+      <div style={{
+        padding: spacing[3],
+        borderBottom: `2px solid ${colors.surface.border}`,
+        background: `linear-gradient(135deg, ${colors.surface.background} 0%, ${colors.surface.secondary} 100%)`
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: spacing[3]
+        }}>
+          <h3 style={{
+            margin: 0,
+            fontSize: typography.fontSize.base,
+            fontWeight: typography.fontWeight.bold,
+            color: colors.text.primary,
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing[2]
+          }}>
+            <span style={{ fontSize: typography.fontSize.lg }}>🛒</span>
             Current Order
-          </Typography>
+          </h3>
           {items.length > 0 && (
             <Button
-              size="small"
-              startIcon={<ClearIcon />}
+              size="sm"
+              variant="danger"
               onClick={onNewOrder}
-              color="error"
-              variant="outlined"
             >
-              Clear
+              🗑️ Clear
             </Button>
           )}
-        </Box>
+        </div>
 
         {/* Order Type Selection */}
-        <ToggleButtonGroup
-          value={orderType}
-          exclusive
-          onChange={(_, value) => value && onOrderTypeChange(value)}
-          size="small"
-          fullWidth
-          sx={{ mb: 2 }}
-        >
-          <ToggleButton value="DINE_IN">
-            <DineInIcon sx={{ mr: 0.5 }} />
-            Dine In
-          </ToggleButton>
-          <ToggleButton value="PICKUP">
-            <TakeoutIcon sx={{ mr: 0.5 }} />
-            Pickup
-          </ToggleButton>
-          <ToggleButton value="DELIVERY">
-            <DeliveryIcon sx={{ mr: 0.5 }} />
-            Delivery
-          </ToggleButton>
-        </ToggleButtonGroup>
-
-        {/* Table Number (for Dine In) */}
-        {orderType === 'DINE_IN' && (
-          <TextField
-            fullWidth
-            size="small"
-            label="Table Number"
-            value={selectedTable || ''}
-            onChange={(e) => onTableSelect(e.target.value)}
-            placeholder="Enter table number"
-          />
-        )}
-      </Box>
+        <div style={{
+          display: 'flex',
+          gap: spacing[2],
+          marginBottom: spacing[3]
+        }}>
+          {[
+            { value: 'PICKUP', label: 'Pickup', icon: '🛍️' },
+            { value: 'DELIVERY', label: 'Delivery', icon: '🚚' }
+          ].map(type => (
+            <button
+              key={type.value}
+              onClick={() => onOrderTypeChange(type.value as any)}
+              style={{
+                flex: 1,
+                padding: `${spacing[3]} ${spacing[2]}`,
+                borderRadius: '10px',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: typography.fontSize.xs,
+                fontWeight: typography.fontWeight.semibold,
+                fontFamily: typography.fontFamily.primary,
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: spacing[1],
+                ...(orderType === type.value ? {
+                  background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.secondary} 100%)`,
+                  color: colors.text.inverse,
+                  boxShadow: shadows.floating.md
+                } : {
+                  background: colors.surface.primary,
+                  color: colors.text.secondary,
+                  boxShadow: shadows.raised.sm
+                })
+              }}
+              onMouseEnter={(e) => {
+                if (orderType !== type.value) {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = shadows.floating.sm;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (orderType !== type.value) {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = shadows.raised.sm;
+                }
+              }}
+            >
+              <span style={{ fontSize: typography.fontSize.base }}>{type.icon}</span>
+              <span>{type.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Order Items List */}
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>
+      <div style={{ flex: 1, overflow: 'auto', padding: spacing[4] }}>
         {items.length === 0 ? (
-          <Alert severity="info" sx={{ mt: 2 }}>
-            No items in order. Select items from the menu to get started.
-          </Alert>
+          <Card
+            elevation="sm"
+            padding="lg"
+            style={{
+              background: `linear-gradient(135deg, ${colors.semantic.infoLight}22 0%, ${colors.semantic.info}11 100%)`,
+              border: `2px solid ${colors.semantic.info}`,
+              color: colors.text.primary,
+              textAlign: 'center',
+              marginTop: spacing[6]
+            }}
+          >
+            ℹ️ No items in order. Select items from the menu to get started.
+          </Card>
         ) : (
-          <List disablePadding>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
             {items.map((item, index) => (
-              <React.Fragment key={item.menuItemId}>
-                {index > 0 && <Divider sx={{ my: 1 }} />}
-                <ListItem
-                  disablePadding
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'stretch',
-                    py: 1,
-                  }}
-                >
-                  {/* Item Name and Price */}
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', mb: 1 }}>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" fontWeight="bold">
-                        {item.name}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {CURRENCY.format(item.price)} each
-                      </Typography>
-                    </Box>
-                    <Typography variant="body2" fontWeight="bold" color="primary">
-                      {CURRENCY.format(item.price * item.quantity)}
-                    </Typography>
-                  </Box>
+              <Card
+                key={item.menuItemId}
+                elevation="md"
+                padding="base"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: spacing[3]
+                }}
+              >
+                {/* Item Name and Price */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{
+                      fontSize: typography.fontSize.sm,
+                      fontWeight: typography.fontWeight.bold,
+                      color: colors.text.primary,
+                      marginBottom: spacing[1]
+                    }}>
+                      {item.name}
+                    </div>
+                    <div style={{
+                      fontSize: typography.fontSize.xs,
+                      color: colors.text.secondary
+                    }}>
+                      {CURRENCY.format(item.price)} each
+                    </div>
+                  </div>
+                  <div style={{
+                    fontSize: typography.fontSize.sm,
+                    fontWeight: typography.fontWeight.bold,
+                    color: colors.brand.primary
+                  }}>
+                    {CURRENCY.format(item.price * item.quantity)}
+                  </div>
+                </div>
 
-                  {/* Quantity Controls */}
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <IconButton
-                        size="small"
-                        onClick={() => onUpdateQuantity(item.menuItemId, item.quantity - 1)}
-                        disabled={item.quantity <= 1}
-                      >
-                        <RemoveIcon fontSize="small" />
-                      </IconButton>
-                      <Chip
-                        label={item.quantity}
-                        size="small"
-                        color="primary"
-                        sx={{ minWidth: 40 }}
-                      />
-                      <IconButton
-                        size="small"
-                        onClick={() => onUpdateQuantity(item.menuItemId, item.quantity + 1)}
-                      >
-                        <AddIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => onRemoveItem(item.menuItemId)}
+                {/* Quantity Controls */}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+                    <button
+                      onClick={() => onUpdateQuantity(item.menuItemId, item.quantity - 1)}
+                      disabled={item.quantity <= 1}
+                      style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background: item.quantity <= 1 ? colors.surface.secondary : colors.surface.primary,
+                        color: item.quantity <= 1 ? colors.text.tertiary : colors.text.primary,
+                        fontSize: typography.fontSize.base,
+                        fontWeight: typography.fontWeight.bold,
+                        cursor: item.quantity <= 1 ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: item.quantity <= 1 ? 'none' : shadows.raised.sm,
+                        transition: 'all 0.2s ease',
+                        opacity: item.quantity <= 1 ? 0.5 : 1
+                      }}
+                      onMouseEnter={(e) => {
+                        if (item.quantity > 1) {
+                          e.currentTarget.style.boxShadow = shadows.inset.sm;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (item.quantity > 1) {
+                          e.currentTarget.style.boxShadow = shadows.raised.sm;
+                        }
+                      }}
                     >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
+                      −
+                    </button>
+                    <Badge variant="secondary" size="sm" style={{ minWidth: '40px', textAlign: 'center' }}>
+                      {item.quantity}
+                    </Badge>
+                    <button
+                      onClick={() => onUpdateQuantity(item.menuItemId, item.quantity + 1)}
+                      style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background: colors.surface.primary,
+                        color: colors.text.primary,
+                        fontSize: typography.fontSize.base,
+                        fontWeight: typography.fontWeight.bold,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: shadows.raised.sm,
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.boxShadow = shadows.inset.sm;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.boxShadow = shadows.raised.sm;
+                      }}
+                    >
+                      +
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => onRemoveItem(item.menuItemId)}
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: colors.semantic.error,
+                      color: colors.text.inverse,
+                      fontSize: typography.fontSize.base,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: shadows.raised.sm,
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.1)';
+                      e.currentTarget.style.boxShadow = shadows.floating.md;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.boxShadow = shadows.raised.sm;
+                    }}
+                  >
+                    🗑️
+                  </button>
+                </div>
 
-                  {/* Special Instructions */}
-                  <TextField
-                    fullWidth
-                    size="small"
-                    placeholder="Special instructions (optional)"
-                    value={item.specialInstructions || ''}
-                    onChange={(e) =>
-                      onUpdateInstructions(item.menuItemId, e.target.value)
-                    }
-                    multiline
-                    rows={1}
-                    sx={{ mt: 0.5 }}
-                  />
-                </ListItem>
-              </React.Fragment>
+                {/* Special Instructions */}
+                <textarea
+                  placeholder="Special instructions (optional)"
+                  value={item.specialInstructions || ''}
+                  onChange={(e) => onUpdateInstructions(item.menuItemId, e.target.value)}
+                  rows={1}
+                  style={{
+                    width: '100%',
+                    padding: spacing[2],
+                    border: `2px solid ${colors.surface.border}`,
+                    borderRadius: '8px',
+                    outline: 'none',
+                    backgroundColor: colors.surface.primary,
+                    fontSize: typography.fontSize.xs,
+                    color: colors.text.primary,
+                    fontFamily: typography.fontFamily.primary,
+                    boxShadow: shadows.inset.sm,
+                    resize: 'vertical',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = colors.brand.primary;
+                    e.currentTarget.style.boxShadow = `0 0 0 3px ${colors.brand.primary}22`;
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = colors.surface.border;
+                    e.currentTarget.style.boxShadow = shadows.inset.sm;
+                  }}
+                />
+              </Card>
             ))}
-          </List>
+          </div>
         )}
-      </Box>
+      </div>
 
       {/* Order Summary */}
       {items.length > 0 && (
-        <Box
-          sx={{
-            p: 2,
-            borderTop: 2,
-            borderColor: 'divider',
-            backgroundColor: '#f9f9f9',
-          }}
-        >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-            <Typography variant="body2">Subtotal:</Typography>
-            <Typography variant="body2">{CURRENCY.format(subtotal)}</Typography>
-          </Box>
+        <div style={{
+          padding: spacing[3],
+          borderTop: `2px solid ${colors.surface.border}`,
+          backgroundColor: colors.surface.secondary
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            marginBottom: spacing[1],
+            fontSize: typography.fontSize.xs,
+            color: colors.text.secondary
+          }}>
+            <span>Subtotal:</span>
+            <span style={{ fontWeight: typography.fontWeight.semibold }}>{CURRENCY.format(subtotal)}</span>
+          </div>
 
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-            <Typography variant="body2">Tax (5%):</Typography>
-            <Typography variant="body2">{CURRENCY.format(tax)}</Typography>
-          </Box>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            marginBottom: spacing[1],
+            fontSize: typography.fontSize.xs,
+            color: colors.text.secondary
+          }}>
+            <span>Tax (5%):</span>
+            <span style={{ fontWeight: typography.fontWeight.semibold }}>{CURRENCY.format(tax)}</span>
+          </div>
 
           {orderType === 'DELIVERY' && (
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-              <Typography variant="body2">Delivery Fee:</Typography>
-              <Typography variant="body2">
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginBottom: spacing[1],
+              fontSize: typography.fontSize.xs,
+              color: colors.text.secondary
+            }}>
+              <span>Delivery Fee:</span>
+              <span style={{ fontWeight: typography.fontWeight.semibold }}>
                 {deliveryFee === 0 ? 'FREE' : CURRENCY.format(deliveryFee)}
-              </Typography>
-            </Box>
+              </span>
+            </div>
           )}
 
-          <Divider sx={{ my: 1.5 }} />
+          <div style={{
+            height: '1px',
+            background: colors.surface.border,
+            margin: `${spacing[2]} 0`
+          }} />
 
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-            <Typography variant="h6" fontWeight="bold">
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            marginBottom: spacing[2]
+          }}>
+            <span style={{
+              fontSize: typography.fontSize.base,
+              fontWeight: typography.fontWeight.extrabold,
+              color: colors.text.primary
+            }}>
               Total:
-            </Typography>
-            <Typography variant="h6" fontWeight="bold" color="primary">
+            </span>
+            <span style={{
+              fontSize: typography.fontSize.base,
+              fontWeight: typography.fontWeight.extrabold,
+              color: colors.brand.primary
+            }}>
               {CURRENCY.format(total)}
-            </Typography>
-          </Box>
+            </span>
+          </div>
 
           {/* Item Count */}
-          <Typography variant="caption" color="text.secondary" display="block" textAlign="center">
-            {items.length} item{items.length !== 1 ? 's' : ''} •{' '}
-            {items.reduce((sum, item) => sum + item.quantity, 0)} total quantity
-          </Typography>
-        </Box>
+          <div style={{
+            fontSize: typography.fontSize.xs,
+            color: colors.text.secondary,
+            textAlign: 'center',
+            fontWeight: typography.fontWeight.medium
+          }}>
+            📦 {items.length} item{items.length !== 1 ? 's' : ''} • {items.reduce((sum, item) => sum + item.quantity, 0)} qty
+          </div>
+        </div>
       )}
-    </Box>
+    </div>
   );
 };
 

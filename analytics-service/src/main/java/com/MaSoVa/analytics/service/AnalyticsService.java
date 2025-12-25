@@ -13,6 +13,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -21,6 +22,8 @@ import java.util.stream.Collectors;
 public class AnalyticsService {
 
     private static final Logger log = LoggerFactory.getLogger(AnalyticsService.class);
+    // Use IST timezone for all date operations (Indian restaurant business hours)
+    private static final ZoneId IST_ZONE = ZoneId.of("Asia/Kolkata");
 
     private final OrderServiceClient orderServiceClient;
     private final UserServiceClient userServiceClient;
@@ -37,7 +40,7 @@ public class AnalyticsService {
     public SalesMetricsResponse getTodaySalesMetrics(String storeId) {
         log.info("Calculating sales metrics for store: {}", storeId);
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(IST_ZONE);
         LocalDate yesterday = today.minusDays(1);
         LocalDate lastYear = today.minusYears(1);
         LocalTime currentTime = LocalTime.now();
@@ -45,7 +48,7 @@ public class AnalyticsService {
         // Get today's orders
         List<Map<String, Object>> todayOrders = orderServiceClient.getOrdersByDate(today);
         BigDecimal todaySales = calculateTotalSales(todayOrders);
-        int todayOrderCount = todayOrders.size();
+        int todayOrderCount = (int) todayOrders.stream().filter(this::isCompletedOrder).count();
 
         // Get yesterday's orders up to same time
         List<Map<String, Object>> yesterdayOrders = orderServiceClient.getOrdersByDateRange(
@@ -85,13 +88,13 @@ public class AnalyticsService {
     public AverageOrderValueResponse getAverageOrderValue(String storeId) {
         log.info("Calculating average order value for store: {}", storeId);
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(IST_ZONE);
         LocalDate yesterday = today.minusDays(1);
 
         // Get today's orders
         List<Map<String, Object>> todayOrders = orderServiceClient.getOrdersByDate(today);
         BigDecimal todaySales = calculateTotalSales(todayOrders);
-        int todayOrderCount = todayOrders.size();
+        int todayOrderCount = (int) todayOrders.stream().filter(this::isCompletedOrder).count();
         BigDecimal todayAOV = todayOrderCount > 0
             ? todaySales.divide(BigDecimal.valueOf(todayOrderCount), 2, RoundingMode.HALF_UP)
             : BigDecimal.ZERO;
@@ -137,7 +140,7 @@ public class AnalyticsService {
         Integer activeDeliveries = orderServiceClient.getActiveDeliveryCount();
 
         // Calculate completed deliveries today
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(IST_ZONE);
         List<Map<String, Object>> todayOrders = orderServiceClient.getOrdersByDate(today);
         long completedDeliveries = todayOrders.stream()
                 .filter(o -> "DELIVERY".equals(o.get("orderType")) && "DELIVERED".equals(o.get("status")))
@@ -159,7 +162,7 @@ public class AnalyticsService {
     public StaffPerformanceResponse getStaffPerformance(String staffId) {
         log.info("Fetching staff performance for: {}", staffId);
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(IST_ZONE);
         List<Map<String, Object>> staffOrders = orderServiceClient.getOrdersByStaff(staffId, today);
 
         int ordersProcessed = staffOrders.size();
@@ -188,13 +191,57 @@ public class AnalyticsService {
 
     // Helper methods
 
+    /**
+     * Check if order is completed based on its type
+     * DELIVERY: status = DELIVERED
+     * TAKEAWAY: status = COMPLETED
+     * DINE_IN: status = SERVED
+     */
+    private boolean isCompletedOrder(Map<String, Object> order) {
+        String status = (String) order.get("status");
+        String orderType = (String) order.get("orderType");
+
+        if (status == null || orderType == null) {
+            return false;
+        }
+
+        switch (orderType) {
+            case "DELIVERY":
+                return "DELIVERED".equals(status);
+            case "TAKEAWAY":
+                return "COMPLETED".equals(status);
+            case "DINE_IN":
+                return "SERVED".equals(status);
+            default:
+                // For backward compatibility, also accept DELIVERED for unknown types
+                return "DELIVERED".equals(status) || "COMPLETED".equals(status) || "SERVED".equals(status);
+        }
+    }
+
     private BigDecimal calculateTotalSales(List<Map<String, Object>> orders) {
         return orders.stream()
+                .filter(this::isCompletedOrder)  // Only count completed orders
                 .map(order -> {
-                    Object totalAmountObj = order.get("totalAmount");
-                    if (totalAmountObj instanceof Number) {
-                        return BigDecimal.valueOf(((Number) totalAmountObj).doubleValue());
+                    // Try "total" first (correct field name), fallback to "totalAmount" for backwards compatibility
+                    Object totalObj = order.get("total");
+                    if (totalObj == null) {
+                        totalObj = order.get("totalAmount");
                     }
+
+                    if (totalObj instanceof Number) {
+                        return BigDecimal.valueOf(((Number) totalObj).doubleValue());
+                    }
+
+                    // Handle String representation (MongoDB may return as String)
+                    if (totalObj instanceof String) {
+                        try {
+                            return new BigDecimal((String) totalObj);
+                        } catch (NumberFormatException e) {
+                            log.warn("Failed to parse total amount: {}", totalObj);
+                            return BigDecimal.ZERO;
+                        }
+                    }
+
                     return BigDecimal.ZERO;
                 })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -237,7 +284,7 @@ public class AnalyticsService {
     public SalesTrendResponse getSalesTrends(String storeId, String period) {
         log.info("Calculating sales trends for store: {}, period: {}", storeId, period);
 
-        LocalDate endDate = LocalDate.now();
+        LocalDate endDate = LocalDate.now(IST_ZONE);
         LocalDate startDate;
         int days;
 
@@ -322,7 +369,7 @@ public class AnalyticsService {
     public OrderTypeBreakdownResponse getOrderTypeBreakdown(String storeId) {
         log.info("Calculating order type breakdown for store: {}", storeId);
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(IST_ZONE);
         List<Map<String, Object>> orders = orderServiceClient.getOrdersByDate(today);
 
         // Group by order type
@@ -372,7 +419,7 @@ public class AnalyticsService {
     public PeakHoursResponse getPeakHours(String storeId) {
         log.info("Calculating peak hours for store: {}", storeId);
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(IST_ZONE);
         List<Map<String, Object>> orders = orderServiceClient.getOrdersByDate(today);
 
         // Group by hour
@@ -432,7 +479,8 @@ public class AnalyticsService {
     public StaffLeaderboardResponse getStaffLeaderboard(String storeId, String period) {
         log.info("Fetching staff leaderboard for store: {}, period: {}", storeId, period);
 
-        LocalDate endDate = LocalDate.now();
+        // Use IST timezone for Indian restaurant operations
+        LocalDate endDate = LocalDate.now(IST_ZONE);
         LocalDate startDate;
 
         switch (period.toUpperCase()) {
@@ -448,6 +496,26 @@ public class AnalyticsService {
 
         // Get all staff for the store
         List<Map<String, Object>> staffList = userServiceClient.getStaffByStore(storeId);
+        log.debug("Found {} staff members for store {}", staffList.size(), storeId);
+
+        // Fetch all orders in date range once
+        List<Map<String, Object>> allOrders = orderServiceClient.getOrdersByDateRange(
+            LocalDateTime.of(startDate, LocalTime.MIN),
+            LocalDateTime.of(endDate, LocalTime.MAX)
+        );
+        log.debug("Fetched {} total orders for date range {} to {}", allOrders.size(), startDate, endDate);
+
+        // Debug: Count orders with staff attribution
+        long ordersWithStaff = allOrders.stream()
+            .filter(o -> o.get("createdByStaffId") != null && !o.get("createdByStaffId").toString().isEmpty())
+            .count();
+        log.debug("Orders with createdByStaffId populated: {}", ordersWithStaff);
+
+        // Debug: Count completed orders (what gets counted in sales)
+        long completedOrders = allOrders.stream()
+            .filter(this::isCompletedOrder)
+            .count();
+        log.debug("Completed orders (counted in analytics): {}", completedOrders);
 
         // Calculate performance for each staff member
         List<StaffLeaderboardResponse.StaffRanking> rankings = new ArrayList<>();
@@ -457,16 +525,18 @@ public class AnalyticsService {
             String staffId = (String) staff.get("id");
             String staffName = (String) staff.get("name");
 
-            List<Map<String, Object>> staffOrders = orderServiceClient.getOrdersByDateRange(
-                LocalDateTime.of(startDate, LocalTime.MIN),
-                LocalDateTime.of(endDate, LocalTime.MAX)
-            ).stream()
-            .filter(o -> staffId.equals(o.get("createdBy")))
+            List<Map<String, Object>> staffOrders = allOrders.stream()
+            .filter(o -> staffId.equals(o.get("createdByStaffId")))
             .collect(Collectors.toList());
 
             int ordersProcessed = staffOrders.size();
             BigDecimal salesGenerated = calculateTotalSales(staffOrders);
             totalSales = totalSales.add(salesGenerated);
+
+            log.debug("Staff {}: {} total orders, {} completed orders, ₹{} sales",
+                staffName, ordersProcessed,
+                staffOrders.stream().filter(this::isCompletedOrder).count(),
+                salesGenerated);
 
             BigDecimal aov = ordersProcessed > 0
                 ? salesGenerated.divide(BigDecimal.valueOf(ordersProcessed), 2, RoundingMode.HALF_UP)
@@ -512,7 +582,7 @@ public class AnalyticsService {
     public TopProductsResponse getTopProducts(String storeId, String period, String sortBy) {
         log.info("Fetching top products for store: {}, period: {}, sortBy: {}", storeId, period, sortBy);
 
-        LocalDate endDate = LocalDate.now();
+        LocalDate endDate = LocalDate.now(IST_ZONE);
         LocalDate startDate;
 
         switch (period.toUpperCase()) {
@@ -537,14 +607,19 @@ public class AnalyticsService {
         BigDecimal totalRevenue = BigDecimal.ZERO;
 
         for (Map<String, Object> order : orders) {
-            List<Map<String, Object>> items = (List<Map<String, Object>>) order.get("items");
-            if (items != null) {
-                for (Map<String, Object> item : items) {
-                    String itemId = (String) item.get("menuItemId");
-                    String itemName = (String) item.get("itemName");
-                    String category = (String) item.getOrDefault("category", "Unknown");
-                    int quantity = ((Number) item.get("quantity")).intValue();
-                    BigDecimal unitPrice = BigDecimal.valueOf(((Number) item.get("price")).doubleValue());
+            Object itemsObj = order.get("items");
+            if (itemsObj instanceof List<?> itemsList) {
+                for (Object itemObj : itemsList) {
+                    if (!(itemObj instanceof Map<?, ?>)) continue;
+                    Map<?, ?> itemMap = (Map<?, ?>) itemObj;
+                    String itemId = (String) itemMap.get("menuItemId");
+                    String itemName = (String) itemMap.get("itemName");
+                    Object categoryObj = itemMap.get("category");
+                    String category = categoryObj != null ? String.valueOf(categoryObj) : "Unknown";
+                    Object quantityObj = itemMap.get("quantity");
+                    int quantity = quantityObj instanceof Number ? ((Number) quantityObj).intValue() : 0;
+                    Object priceObj = itemMap.get("price");
+                    BigDecimal unitPrice = priceObj instanceof Number ? BigDecimal.valueOf(((Number) priceObj).doubleValue()) : BigDecimal.ZERO;
                     BigDecimal itemRevenue = unitPrice.multiply(BigDecimal.valueOf(quantity));
 
                     totalRevenue = totalRevenue.add(itemRevenue);
@@ -618,7 +693,7 @@ public class AnalyticsService {
                     return ((LocalDateTime) createdAtObj).toLocalDate();
                 }
                 // Fallback to today if date is missing
-                return LocalDate.now();
+                return LocalDate.now(IST_ZONE);
             }));
     }
 

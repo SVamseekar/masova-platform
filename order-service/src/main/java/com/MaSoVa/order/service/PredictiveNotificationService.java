@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -25,11 +24,9 @@ public class PredictiveNotificationService {
 
     private static final Logger log = LoggerFactory.getLogger(PredictiveNotificationService.class);
 
-    private final OrderService orderService;
     private final OrderWebSocketController webSocketController;
 
     public PredictiveNotificationService(OrderService orderService, OrderWebSocketController webSocketController) {
-        this.orderService = orderService;
         this.webSocketController = webSocketController;
     }
 
@@ -53,17 +50,6 @@ public class PredictiveNotificationService {
         // Predictive logic: Alert kitchen if order meets criteria
         if (shouldTriggerPredictiveAlert(order)) {
             log.info("Triggering predictive make-table alert for order: {}", order.getOrderNumber());
-
-            // Send notification to kitchen to start prep
-            MakeTableNotification notification = MakeTableNotification.builder()
-                    .orderId(order.getId())
-                    .orderNumber(order.getOrderNumber())
-                    .items(order.getItems())
-                    .estimatedPrepTime(order.getPreparationTime())
-                    .notificationType("PREDICTIVE_START")
-                    .message("Start preparation - payment expected shortly")
-                    .timestamp(LocalDateTime.now())
-                    .build();
 
             // Broadcast to kitchen
             webSocketController.sendKitchenQueueUpdate(order.getStoreId(), order);
@@ -106,14 +92,6 @@ public class PredictiveNotificationService {
     public CompletableFuture<Void> cancelPredictiveAlert(Order order) {
         log.info("Cancelling predictive alert for order: {}", order.getOrderNumber());
 
-        MakeTableNotification notification = MakeTableNotification.builder()
-                .orderId(order.getId())
-                .orderNumber(order.getOrderNumber())
-                .notificationType("PREDICTIVE_CANCEL")
-                .message("Hold preparation - payment failed")
-                .timestamp(LocalDateTime.now())
-                .build();
-
         // Broadcast cancellation to kitchen
         webSocketController.sendKitchenQueueUpdate(order.getStoreId(), order);
 
@@ -127,93 +105,10 @@ public class PredictiveNotificationService {
     public CompletableFuture<Void> confirmPredictiveAlert(Order order) {
         log.info("Confirming predictive alert for order: {}", order.getOrderNumber());
 
-        MakeTableNotification notification = MakeTableNotification.builder()
-                .orderId(order.getId())
-                .orderNumber(order.getOrderNumber())
-                .notificationType("PREDICTIVE_CONFIRM")
-                .message("Payment confirmed - continue preparation")
-                .timestamp(LocalDateTime.now())
-                .build();
-
         // Broadcast confirmation to kitchen
         webSocketController.sendKitchenQueueUpdate(order.getStoreId(), order);
 
         return CompletableFuture.completedFuture(null);
     }
 
-    /**
-     * Internal class for make-table notifications
-     */
-    private static class MakeTableNotification {
-        private String orderId;
-        private String orderNumber;
-        private List<?> items;
-        private Integer estimatedPrepTime;
-        private String notificationType;
-        private String message;
-        private LocalDateTime timestamp;
-
-        private MakeTableNotification(Builder builder) {
-            this.orderId = builder.orderId;
-            this.orderNumber = builder.orderNumber;
-            this.items = builder.items;
-            this.estimatedPrepTime = builder.estimatedPrepTime;
-            this.notificationType = builder.notificationType;
-            this.message = builder.message;
-            this.timestamp = builder.timestamp;
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public static class Builder {
-            private String orderId;
-            private String orderNumber;
-            private List<?> items;
-            private Integer estimatedPrepTime;
-            private String notificationType;
-            private String message;
-            private LocalDateTime timestamp;
-
-            public Builder orderId(String orderId) {
-                this.orderId = orderId;
-                return this;
-            }
-
-            public Builder orderNumber(String orderNumber) {
-                this.orderNumber = orderNumber;
-                return this;
-            }
-
-            public Builder items(List<?> items) {
-                this.items = items;
-                return this;
-            }
-
-            public Builder estimatedPrepTime(Integer estimatedPrepTime) {
-                this.estimatedPrepTime = estimatedPrepTime;
-                return this;
-            }
-
-            public Builder notificationType(String notificationType) {
-                this.notificationType = notificationType;
-                return this;
-            }
-
-            public Builder message(String message) {
-                this.message = message;
-                return this;
-            }
-
-            public Builder timestamp(LocalDateTime timestamp) {
-                this.timestamp = timestamp;
-                return this;
-            }
-
-            public MakeTableNotification build() {
-                return new MakeTableNotification(this);
-            }
-        }
-    }
 }

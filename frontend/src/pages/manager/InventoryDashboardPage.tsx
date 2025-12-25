@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { selectSelectedStoreId, selectSelectedStoreName } from '../../store/slices/cartSlice';
-import StoreSelector from '../../components/StoreSelector';
+import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
+import { usePageStore } from '../../contexts/PageStoreContext';
+import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import {
   useGetAllInventoryItemsQuery,
   useGetLowStockAlertsQuery,
@@ -15,6 +16,8 @@ import {
 import { Card, Button } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
+import { FilterBar, type FilterConfig, type FilterValues, type SortConfig } from '../../components/common/FilterBar';
+import { applyFilters, applySort, exportToCSV, commonFilters } from '../../utils/filterUtils';
 import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
 import { createNeumorphicSurface, createCard } from '../../styles/neumorphic-utils';
 import StockAdjustmentDialog from '../../components/inventory/StockAdjustmentDialog';
@@ -22,27 +25,40 @@ import AddInventoryItemDialog from '../../components/inventory/AddInventoryItemD
 
 const InventoryDashboardPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
-  const selectedStoreId = useAppSelector(selectSelectedStoreId);
-  const selectedStoreName = useAppSelector(selectSelectedStoreName);
+  const { selectedStoreId } = usePageStore();
+  const { handleBack } = useSmartBackNavigation();
 
   // Use selected store or fallback to user's store
   const storeId = selectedStoreId || currentUser?.storeId || '';
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [adjustmentDialogOpen, setAdjustmentDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
 
+  // Filter and sort state
+  const [filterValues, setFilterValues] = useState<FilterValues>({
+    search: '',
+    category: '',
+    stockStatus: '',
+  });
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    field: 'itemName',
+    direction: 'asc',
+  });
+
   // Fetch data
-  const { data: allItems = [], isLoading: itemsLoading, refetch: refetchAllItems } = useGetAllInventoryItemsQuery(undefined, {
+  // Pass storeId to trigger refetch when store changes
+  const { data: allItems = [], isLoading: itemsLoading, refetch: refetchAllItems } = useGetAllInventoryItemsQuery(storeId, {
     skip: !storeId,
     pollingInterval: 60000, // Poll every minute
   });
-  const { data: lowStockItems = [], refetch: refetchLowStock } = useGetLowStockAlertsQuery(undefined, { skip: !storeId });
-  const { data: outOfStockItems = [], refetch: refetchOutOfStock } = useGetOutOfStockItemsQuery(undefined, { skip: !storeId });
+  // Pass storeId to trigger refetch when store changes
+  const { data: lowStockItems = [], refetch: refetchLowStock } = useGetLowStockAlertsQuery(storeId, { skip: !storeId });
+  // Pass storeId to trigger refetch when store changes
+  const { data: outOfStockItems = [], refetch: refetchOutOfStock } = useGetOutOfStockItemsQuery(storeId, { skip: !storeId });
   const { data: expiringItems = [], refetch: refetchExpiring } = useGetExpiringItemsQuery({ days: 7 }, { skip: !storeId });
-  const { data: inventoryValue, refetch: refetchValue } = useGetTotalInventoryValueQuery(undefined, { skip: !storeId });
+  // Pass storeId to trigger refetch when store changes
+  const { data: inventoryValue, refetch: refetchValue } = useGetTotalInventoryValueQuery(storeId, { skip: !storeId });
 
   const [deleteItem] = useDeleteInventoryItemMutation();
 
@@ -57,17 +73,105 @@ const InventoryDashboardPage: React.FC = () => {
     }
   }, [storeId, refetchAllItems, refetchLowStock, refetchOutOfStock, refetchExpiring, refetchValue]);
 
-  // Categories
-  const categories = ['ALL', 'RAW_MATERIAL', 'INGREDIENT', 'PACKAGING', 'BEVERAGE', 'OTHER'];
+  // Filter configuration
+  const filterConfigs: FilterConfig[] = [
+    {
+      type: 'search',
+      label: 'Search',
+      field: 'search',
+      placeholder: 'Search by item name or code...',
+    },
+    {
+      type: 'select',
+      label: 'Category',
+      field: 'category',
+      options: [
+        { label: 'Raw Material', value: 'RAW_MATERIAL' },
+        { label: 'Ingredient', value: 'INGREDIENT' },
+        { label: 'Packaging', value: 'PACKAGING' },
+        { label: 'Beverage', value: 'BEVERAGE' },
+        { label: 'Other', value: 'OTHER' },
+      ],
+    },
+    {
+      type: 'select',
+      label: 'Stock Status',
+      field: 'stockStatus',
+      options: [
+        { label: 'In Stock', value: 'inStock' },
+        { label: 'Low Stock', value: 'lowStock' },
+        { label: 'Out of Stock', value: 'outOfStock' },
+      ],
+    },
+  ];
 
-  // Filter items
-  const filteredItems = allItems.filter((item) => {
-    const matchesCategory = selectedCategory === 'ALL' || item.category === selectedCategory;
-    const matchesSearch =
-      item.itemName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.itemCode.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const sortOptions = [
+    { label: 'Item Name', field: 'itemName' },
+    { label: 'Item Code', field: 'itemCode' },
+    { label: 'Quantity', field: 'quantity' },
+    { label: 'Unit Price', field: 'unitPrice' },
+  ];
+
+  // Apply filters and sorting
+  const filteredAndSortedItems = useMemo(() => {
+    const filtered = applyFilters(allItems, filterValues, {
+      search: (item, value) =>
+        commonFilters.searchText(item, value as string, ['itemName', 'itemCode']),
+      category: (item, value) => item.category === value,
+      stockStatus: (item, value) => {
+        if (value === 'inStock') return (item.quantity ?? 0) > (item.reorderLevel ?? 0);
+        if (value === 'lowStock')
+          return (item.quantity ?? 0) > 0 && (item.quantity ?? 0) <= (item.reorderLevel ?? 0);
+        if (value === 'outOfStock') return (item.quantity ?? 0) === 0;
+        return true;
+      },
+    });
+
+    return applySort(filtered, sortConfig);
+  }, [allItems, filterValues, sortConfig]);
+
+  const handleFilterChange = (field: string, value: string | string[] | { from?: string; to?: string }) => {
+    setFilterValues((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleClearFilters = () => {
+    setFilterValues({
+      search: '',
+      category: '',
+      stockStatus: '',
+    });
+  };
+
+  const handleSortChange = (field: string) => {
+    setSortConfig((prev) => ({
+      field,
+      direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
+  const handleExport = () => {
+    exportToCSV(
+      filteredAndSortedItems,
+      'inventory',
+      [
+        { label: 'Item Code', field: 'itemCode' },
+        { label: 'Item Name', field: 'itemName' },
+        { label: 'Category', field: 'category' },
+        { label: 'Quantity', field: 'quantity' },
+        { label: 'Unit', field: 'unit' },
+        { label: 'Unit Price', field: 'unitPrice', format: (v) => `₹${v}` },
+        { label: 'Reorder Level', field: 'reorderLevel' },
+        {
+          label: 'Total Value',
+          field: 'quantity',
+          format: (v: any) => {
+            // Note: This is a simplified version. Full implementation would need item context
+            return `₹${v}`;
+          },
+        },
+      ]
+    );
+  };
 
   const handleAdjustStock = (item: InventoryItem) => {
     setSelectedItem(item);
@@ -90,6 +194,7 @@ const InventoryDashboardPage: React.FC = () => {
     minHeight: '100vh',
     fontFamily: typography.fontFamily.primary,
     padding: spacing[6],
+    paddingTop: '80px',
     backgroundColor: '#e8e8e8',
     zIndex: 1,
   };
@@ -261,7 +366,7 @@ const InventoryDashboardPage: React.FC = () => {
     return (
       <div style={containerStyles}>
         <AnimatedBackground />
-        <AppHeader title="Inventory Dashboard" showBackButton />
+        <AppHeader title="Inventory Dashboard" showBackButton onBack={handleBack} showManagerNav={true} />
         <div style={{ textAlign: 'center', padding: spacing[10] }}>Loading inventory...</div>
       </div>
     );
@@ -271,23 +376,7 @@ const InventoryDashboardPage: React.FC = () => {
     <>
       <AnimatedBackground />
       <div style={containerStyles}>
-        <AppHeader title="Inventory Management" showBackButton />
-
-      {/* Store Selector */}
-      <div style={{
-        background: 'white',
-        padding: '16px 24px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-        borderRadius: '12px',
-        marginBottom: spacing[6],
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <StoreSelector variant="manager" />
-          <div style={{ fontSize: '14px', color: '#6b7280' }}>
-            {storeId ? `Managing inventory for: ${selectedStoreName || storeId}` : 'Select a store'}
-          </div>
-        </div>
-      </div>
+        <AppHeader title="Inventory Management" showBackButton onBack={handleBack} showManagerNav={true} />
 
       <h1 style={titleStyles}>Inventory Dashboard</h1>
 
@@ -334,29 +423,22 @@ const InventoryDashboardPage: React.FC = () => {
         )}
       </div>
 
-      {/* Controls */}
-      <div style={controlsStyles}>
-        <input
-          type="text"
-          placeholder="Search by item name or code..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          style={searchInputStyles}
-        />
-        <Button onClick={() => setAddDialogOpen(true)}>+ Add Item</Button>
-      </div>
+      {/* Filter Bar */}
+      <FilterBar
+        filters={filterConfigs}
+        filterValues={filterValues}
+        onFilterChange={handleFilterChange}
+        onClearFilters={handleClearFilters}
+        sortConfig={sortConfig}
+        onSortChange={handleSortChange}
+        sortOptions={sortOptions}
+        onExport={handleExport}
+        showExport={filteredAndSortedItems.length > 0}
+      />
 
-      {/* Category Filters */}
-      <div style={{ display: 'flex', gap: spacing[2], marginBottom: spacing[6], flexWrap: 'wrap' }}>
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            style={categoryButtonStyles(selectedCategory === cat)}
-            onClick={() => setSelectedCategory(cat)}
-          >
-            {cat.replace('_', ' ')}
-          </button>
-        ))}
+      {/* Controls */}
+      <div style={{ ...controlsStyles, justifyContent: 'flex-end', marginTop: spacing[4] }}>
+        <Button onClick={() => setAddDialogOpen(true)}>+ Add Item</Button>
       </div>
 
       {/* Inventory Table */}
@@ -376,7 +458,7 @@ const InventoryDashboardPage: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredItems.map((item) => (
+            {filteredAndSortedItems.map((item) => (
               <tr key={item.id} style={tableRowStyles}>
                 <td style={tableCellStyles}>{item.itemCode}</td>
                 <td style={tableCellStyles}>
@@ -413,9 +495,9 @@ const InventoryDashboardPage: React.FC = () => {
           </tbody>
         </table>
 
-        {filteredItems.length === 0 && (
+        {filteredAndSortedItems.length === 0 && (
           <div style={{ textAlign: 'center', padding: spacing[10], color: colors.text.tertiary }}>
-            No inventory items found
+            {allItems.length > 0 ? 'No items match the current filters' : 'No inventory items found'}
           </div>
         )}
       </div>
@@ -437,4 +519,4 @@ const InventoryDashboardPage: React.FC = () => {
   );
 };
 
-export default InventoryDashboardPage;
+export default withPageStoreContext(InventoryDashboardPage, 'inventory');

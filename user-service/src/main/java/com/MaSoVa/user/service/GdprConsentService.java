@@ -11,11 +11,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -29,7 +27,6 @@ public class GdprConsentService {
     @Autowired
     private GdprAuditLogRepository auditLogRepository;
 
-    @Transactional
     public GdprConsent grantConsent(String userId, ConsentType consentType, String version,
                                      String ipAddress, String userAgent, String consentText) {
         logger.info("Granting consent for user: {}, type: {}", userId, consentType);
@@ -64,7 +61,6 @@ public class GdprConsentService {
         return saved;
     }
 
-    @Transactional
     public GdprConsent revokeConsent(String userId, ConsentType consentType,
                                       String ipAddress, String userAgent) {
         logger.info("Revoking consent for user: {}, type: {}", userId, consentType);
@@ -108,7 +104,6 @@ public class GdprConsentService {
         return consent.get().isActive();
     }
 
-    @Transactional
     public void expireOldConsents() {
         logger.info("Running consent expiration job");
         List<GdprConsent> expiredConsents = consentRepository.findByExpiresAtBefore(LocalDateTime.now());

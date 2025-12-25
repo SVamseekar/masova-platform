@@ -1,5 +1,7 @@
 package com.MaSoVa.analytics.client;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,7 +15,13 @@ import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+/**
+ * Client for communicating with Customer Service
+ * Week 2 Performance Fix: Added circuit breaker protection
+ * Week 2/3 Fix: Added retry logic with exponential backoff
+ */
 @Component
 public class CustomerServiceClient {
 
@@ -21,13 +29,15 @@ public class CustomerServiceClient {
 
     private final RestTemplate restTemplate;
 
-    @Value("${services.customer.url:http://localhost:8083}")
+    @Value("${services.customer.url:http://localhost:8091}")
     private String customerServiceUrl;
 
     public CustomerServiceClient(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
+    @Retry(name = "customerService")
+    @CircuitBreaker(name = "customerService", fallbackMethod = "getAllCustomersFallback")
     public List<Map<String, Object>> getAllCustomers() {
         try {
             String url = customerServiceUrl + "/api/customers";
@@ -40,13 +50,15 @@ public class CustomerServiceClient {
                 new ParameterizedTypeReference<List<Map<String, Object>>>() {}
             );
 
-            return response.getBody() != null ? response.getBody() : Collections.emptyList();
+            return Objects.requireNonNullElse(response.getBody(), Collections.emptyList());
         } catch (Exception e) {
             log.error("Error fetching customers: {}", e.getMessage());
-            return Collections.emptyList();
+            throw e; // Rethrow to trigger circuit breaker
         }
     }
 
+    @Retry(name = "customerService")
+    @CircuitBreaker(name = "customerService", fallbackMethod = "getCustomerByIdFallback")
     public Map<String, Object> getCustomerById(String customerId) {
         try {
             String url = customerServiceUrl + "/api/customers/" + customerId;
@@ -59,13 +71,15 @@ public class CustomerServiceClient {
                 new ParameterizedTypeReference<Map<String, Object>>() {}
             );
 
-            return response.getBody();
+            return Objects.requireNonNullElse(response.getBody(), Collections.emptyMap());
         } catch (Exception e) {
             log.error("Error fetching customer {}: {}", customerId, e.getMessage());
-            return Collections.emptyMap();
+            throw e; // Rethrow to trigger circuit breaker
         }
     }
 
+    @Retry(name = "customerService")
+    @CircuitBreaker(name = "customerService", fallbackMethod = "getCustomersRegisteredAfterFallback")
     public List<Map<String, Object>> getCustomersRegisteredAfter(LocalDate date) {
         try {
             String url = customerServiceUrl + "/api/customers?registeredAfter=" + date.toString();
@@ -78,10 +92,28 @@ public class CustomerServiceClient {
                 new ParameterizedTypeReference<List<Map<String, Object>>>() {}
             );
 
-            return response.getBody() != null ? response.getBody() : Collections.emptyList();
+            return Objects.requireNonNullElse(response.getBody(), Collections.emptyList());
         } catch (Exception e) {
             log.error("Error fetching customers registered after {}: {}", date, e.getMessage());
-            return Collections.emptyList();
+            throw e; // Rethrow to trigger circuit breaker
         }
+    }
+
+    // Fallback methods
+    private List<Map<String, Object>> getAllCustomersFallback(Exception ex) {
+        log.warn("Circuit breaker fallback for getAllCustomers. Error: {}", ex.getMessage());
+        return Collections.emptyList();
+    }
+
+    private Map<String, Object> getCustomerByIdFallback(String customerId, Exception ex) {
+        log.warn("Circuit breaker fallback for getCustomerById. CustomerId: {}, Error: {}",
+                customerId, ex.getMessage());
+        return Collections.emptyMap();
+    }
+
+    private List<Map<String, Object>> getCustomersRegisteredAfterFallback(LocalDate date, Exception ex) {
+        log.warn("Circuit breaker fallback for getCustomersRegisteredAfter. Date: {}, Error: {}",
+                date, ex.getMessage());
+        return Collections.emptyList();
     }
 }

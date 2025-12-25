@@ -199,7 +199,6 @@ const NotificationList: React.FC<NotificationListProps> = ({ onClose }) => {
                   variant="caption"
                   sx={{
                     color: '#666666',
-                    display: 'block',
                     mb: 0.5,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',

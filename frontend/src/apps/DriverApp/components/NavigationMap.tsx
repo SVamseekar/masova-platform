@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { colors, spacing, typography, borderRadius } from '../../../styles/design-tokens';
 import { createCard, createNeumorphicSurface } from '../../../styles/neumorphic-utils';
+import { useGetOptimizedRouteMutation, RouteOptimizationResponse, RouteSegment, AddressDTO } from '../../../store/api/deliveryApi';
 
 interface NavigationMapProps {
   destination: string;
   destinationCoords?: { latitude: number; longitude: number };
   currentLocation?: { latitude: number; longitude: number };
+  orderId?: string;
+  autoRefresh?: boolean;
+  refreshIntervalMs?: number;
 }
 
 interface RouteStep {
@@ -14,10 +18,111 @@ interface RouteStep {
   duration: string;
 }
 
-const NavigationMap: React.FC<NavigationMapProps> = ({ destination, destinationCoords, currentLocation }) => {
+const NavigationMap: React.FC<NavigationMapProps> = ({
+  destination,
+  destinationCoords,
+  currentLocation,
+  orderId,
+  autoRefresh = true,
+  refreshIntervalMs = 30000, // Refresh route every 30 seconds
+}) => {
   const [showInstructions, setShowInstructions] = useState(false);
+  const [routeData, setRouteData] = useState<RouteOptimizationResponse | null>(null);
+  const [routeError, setRouteError] = useState<string | null>(null);
 
-  // Mock turn-by-turn instructions (in production, get from Google Maps API)
+  // RTK Query mutation for route optimization (DELIV-004)
+  const [getOptimizedRoute, { isLoading: isLoadingRoute }] = useGetOptimizedRouteMutation();
+
+  // Convert RouteSegments to display format
+  const formatDistance = (meters: number): string => {
+    if (meters >= 1000) {
+      return `${(meters / 1000).toFixed(1)} km`;
+    }
+    return `${Math.round(meters)} m`;
+  };
+
+  const formatDuration = (seconds: number): string => {
+    if (seconds < 60) {
+      return '< 1 min';
+    }
+    const minutes = Math.round(seconds / 60);
+    if (minutes >= 60) {
+      const hours = Math.floor(minutes / 60);
+      const remainingMins = minutes % 60;
+      return `${hours}h ${remainingMins}min`;
+    }
+    return `${minutes} min`;
+  };
+
+  // Fetch real route from backend RouteOptimizationService (DELIV-004)
+  const fetchRoute = useCallback(async () => {
+    if (!currentLocation || !destinationCoords) {
+      console.log('[NavigationMap] Missing location data, skipping route fetch');
+      return;
+    }
+
+    try {
+      setRouteError(null);
+      console.log('[NavigationMap] Fetching optimized route from backend...');
+
+      // Create AddressDTO format matching backend expectations
+      const originAddress: AddressDTO = {
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+      };
+
+      const destinationAddress: AddressDTO = {
+        latitude: destinationCoords.latitude,
+        longitude: destinationCoords.longitude,
+      };
+
+      const response = await getOptimizedRoute({
+        origin: originAddress,
+        destination: destinationAddress,
+        travelMode: 'DRIVING',
+        avoidTolls: false,
+        avoidHighways: false,
+      }).unwrap();
+
+      setRouteData(response);
+      console.log('[NavigationMap] Route received:', {
+        distance: formatDistance(response.distance),
+        duration: formatDuration(response.duration),
+        steps: response.segments?.length || response.steps?.length || 0,
+      });
+    } catch (err: any) {
+      console.error('[NavigationMap] Route optimization failed:', err);
+      setRouteError(err.data?.message || err.message || 'Failed to fetch route');
+    }
+  }, [currentLocation, destinationCoords, getOptimizedRoute]);
+
+  // Fetch route on mount and when locations change
+  useEffect(() => {
+    fetchRoute();
+  }, [fetchRoute]);
+
+  // Auto-refresh route periodically for real-time updates
+  useEffect(() => {
+    if (!autoRefresh || !currentLocation || !destinationCoords) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      console.log('[NavigationMap] Auto-refreshing route...');
+      fetchRoute();
+    }, refreshIntervalMs);
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, refreshIntervalMs, fetchRoute, currentLocation, destinationCoords]);
+
+  // Convert route segments to display format
+  const routeInstructions: RouteStep[] = routeData?.segments?.map((segment: RouteSegment) => ({
+    instruction: segment.instruction,
+    distance: formatDistance(segment.distance),
+    duration: formatDuration(segment.duration),
+  })) || [];
+
+  // Fallback to mock data if no real route available
   const mockInstructions: RouteStep[] = [
     { instruction: 'Head north on Main St toward 1st Ave', distance: '0.5 km', duration: '2 min' },
     { instruction: 'Turn right onto Park Avenue', distance: '1.2 km', duration: '3 min' },
@@ -26,6 +131,10 @@ const NavigationMap: React.FC<NavigationMapProps> = ({ destination, destinationC
     { instruction: 'Turn left onto Elm Street', distance: '0.3 km', duration: '1 min' },
     { instruction: 'Destination will be on your right', distance: '50 m', duration: '< 1 min' },
   ];
+
+  // Use real route if available, otherwise fallback to mock
+  const displayInstructions = routeInstructions.length > 0 ? routeInstructions : mockInstructions;
+  const isUsingRealRoute = routeInstructions.length > 0;
 
   const handleOpenGoogleMaps = () => {
     if (currentLocation && destinationCoords) {
@@ -104,6 +213,7 @@ const NavigationMap: React.FC<NavigationMapProps> = ({ destination, destinationC
   };
 
   const primaryButtonStyles: React.CSSProperties = {
+    ...createNeumorphicSurface('raised', 'sm', 'lg'),
     flex: 1,
     padding: spacing[3],
     fontSize: typography.fontSize.base,
@@ -113,11 +223,11 @@ const NavigationMap: React.FC<NavigationMapProps> = ({ destination, destinationC
     border: 'none',
     borderRadius: borderRadius.lg,
     cursor: 'pointer',
-    ...createNeumorphicSurface('raised', 'sm', 'lg'),
     transition: 'all 0.2s',
   };
 
   const secondaryButtonStyles: React.CSSProperties = {
+    ...createNeumorphicSurface('raised', 'sm', 'lg'),
     flex: 1,
     padding: spacing[3],
     fontSize: typography.fontSize.base,
@@ -127,7 +237,6 @@ const NavigationMap: React.FC<NavigationMapProps> = ({ destination, destinationC
     border: 'none',
     borderRadius: borderRadius.lg,
     cursor: 'pointer',
-    ...createNeumorphicSurface('raised', 'sm', 'lg'),
     transition: 'all 0.2s',
   };
 
@@ -200,11 +309,76 @@ const NavigationMap: React.FC<NavigationMapProps> = ({ destination, destinationC
     <div style={containerStyles}>
       <h3 style={headerStyles}>Navigation to Delivery Location</h3>
 
+      {/* Route Summary - DELIV-004: Show real route data */}
+      {routeData && (
+        <div style={{
+          ...createCard('sm', 'sm'),
+          padding: spacing[3],
+          marginBottom: spacing[4],
+          backgroundColor: colors.semantic.success + '15',
+          borderLeft: `4px solid ${colors.semantic.success}`,
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: spacing[2],
+          }}>
+            <span style={{ fontWeight: typography.fontWeight.bold, color: colors.text.primary }}>
+              📍 Route Summary
+            </span>
+            <span style={{
+              fontSize: typography.fontSize.xs,
+              color: colors.semantic.success,
+              backgroundColor: colors.semantic.success + '20',
+              padding: `${spacing[1]} ${spacing[2]}`,
+              borderRadius: borderRadius.md,
+            }}>
+              ✓ Real-time Route
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: spacing[4], fontSize: typography.fontSize.sm }}>
+            <span><strong>📏 Distance:</strong> {formatDistance(routeData.distance)}</span>
+            <span><strong>⏱️ Duration:</strong> {formatDuration(routeData.duration)}</span>
+            {routeData.estimatedArrival && (
+              <span><strong>🎯 ETA:</strong> {new Date(routeData.estimatedArrival).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Loading/Error State */}
+      {isLoadingRoute && (
+        <div style={{
+          textAlign: 'center',
+          padding: spacing[4],
+          color: colors.text.secondary,
+          fontSize: typography.fontSize.sm,
+        }}>
+          <span style={{ marginRight: spacing[2] }}>⏳</span>
+          Fetching optimal route...
+        </div>
+      )}
+
+      {routeError && (
+        <div style={{
+          ...createCard('sm', 'sm'),
+          padding: spacing[3],
+          marginBottom: spacing[4],
+          backgroundColor: colors.semantic.warning + '15',
+          borderLeft: `4px solid ${colors.semantic.warning}`,
+        }}>
+          <span style={{ fontSize: typography.fontSize.sm, color: colors.semantic.warning }}>
+            ⚠️ {routeError} - Using fallback directions
+          </span>
+        </div>
+      )}
+
       {/* Map Placeholder */}
       <div style={mapPlaceholderStyles}>
         <span style={mapIconStyles}>🗺️</span>
         <p style={mapTextStyles}>
-          <strong>Map Integration Placeholder</strong>
+          <strong>{isUsingRealRoute ? 'Route Optimized' : 'Map Integration Placeholder'}</strong>
           <br />
           Click "Open in Google Maps" for navigation
         </p>
@@ -234,18 +408,31 @@ const NavigationMap: React.FC<NavigationMapProps> = ({ destination, destinationC
           style={secondaryButtonStyles}
         >
           {showInstructions ? '📍 Hide' : '🧭 Show'} Directions
+          {isUsingRealRoute && <span style={{ marginLeft: spacing[1], fontSize: typography.fontSize.xs }}>({displayInstructions.length} steps)</span>}
         </button>
       </div>
 
-      {/* Turn-by-Turn Instructions */}
+      {/* Turn-by-Turn Instructions - DELIV-004: Use real route data */}
       {showInstructions && (
         <div style={instructionsContainerStyles}>
           <div style={instructionsTitleStyles}>
             <span>🧭</span>
             <span>Turn-by-Turn Directions</span>
+            {isUsingRealRoute && (
+              <span style={{
+                fontSize: typography.fontSize.xs,
+                color: colors.semantic.success,
+                backgroundColor: colors.semantic.success + '20',
+                padding: `${spacing[1]} ${spacing[2]}`,
+                borderRadius: borderRadius.md,
+                marginLeft: 'auto',
+              }}>
+                ✓ Live Route
+              </span>
+            )}
           </div>
 
-          {mockInstructions.map((step, index) => (
+          {displayInstructions.map((step, index) => (
             <div key={index} style={stepStyles}>
               <div style={stepTextStyles}>
                 <span style={stepNumberStyles}>{index + 1}</span>
@@ -257,25 +444,42 @@ const NavigationMap: React.FC<NavigationMapProps> = ({ destination, destinationC
               </div>
             </div>
           ))}
+
+          {/* Refresh button for real-time updates */}
+          <button
+            onClick={fetchRoute}
+            disabled={isLoadingRoute}
+            style={{
+              ...secondaryButtonStyles,
+              marginTop: spacing[3],
+              opacity: isLoadingRoute ? 0.6 : 1,
+            }}
+          >
+            {isLoadingRoute ? '⏳ Updating...' : '🔄 Refresh Route'}
+          </button>
         </div>
       )}
 
-      {/* Production Note */}
+      {/* Production Note - Updated for DELIV-004 */}
       <div style={alertStyles}>
         <strong style={{ fontSize: typography.fontSize.sm, color: colors.text.primary }}>
-          For Production:
+          {isUsingRealRoute ? '✓ Connected to Route Service' : 'Route Service Status'}
         </strong>
         <p style={alertTextStyles}>
-          Integrate Google Maps JavaScript API with your API key in .env file.
-          Add REACT_APP_GOOGLE_MAPS_API_KEY to enable:
+          {isUsingRealRoute
+            ? 'Real-time route optimization is active. Routes refresh automatically every 30 seconds.'
+            : 'Configure Google Maps API key for enhanced features:'
+          }
         </p>
-        <ul style={{ ...alertTextStyles, marginLeft: spacing[4], marginTop: spacing[2] }}>
-          <li>Real-time embedded maps</li>
-          <li>Live turn-by-turn navigation</li>
-          <li>Traffic updates</li>
-          <li>Route optimization</li>
-          <li>ETA calculations</li>
-        </ul>
+        {!isUsingRealRoute && (
+          <ul style={{ ...alertTextStyles, marginLeft: spacing[4], marginTop: spacing[2] }}>
+            <li>Real-time embedded maps</li>
+            <li>Live turn-by-turn navigation</li>
+            <li>Traffic updates</li>
+            <li>Route optimization</li>
+            <li>ETA calculations</li>
+          </ul>
+        )}
       </div>
     </div>
   );

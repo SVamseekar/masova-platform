@@ -1,7 +1,6 @@
 package com.MaSoVa.user.controller;
 
 import com.MaSoVa.shared.entity.Shift;
-import com.MaSoVa.shared.enums.ShiftStatus;
 import com.MaSoVa.user.service.ShiftService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -143,5 +142,52 @@ public class ShiftController {
         String storeId = getStoreIdFromHeaders(request);
         Map<String, Object> coverage = shiftService.getShiftCoverage(storeId, date);
         return ResponseEntity.ok(coverage);
+    }
+
+    @PostMapping("/bulk-create")
+    @Operation(summary = "Create multiple shifts for weekly schedule")
+    @PreAuthorize("hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
+    public ResponseEntity<List<Shift>> bulkCreateShifts(@Valid @RequestBody List<Shift> shifts) {
+        List<Shift> createdShifts = shiftService.bulkCreateShifts(shifts);
+        return ResponseEntity.ok(createdShifts);
+    }
+
+    @GetMapping("/store/{storeId}/week")
+    @Operation(summary = "Get store shifts for a specific week")
+    @PreAuthorize("hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
+    public ResponseEntity<List<Shift>> getWeeklySchedule(
+            @PathVariable String storeId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate) {
+        List<Shift> shifts = shiftService.getWeeklySchedule(storeId, startDate);
+        return ResponseEntity.ok(shifts);
+    }
+
+    @GetMapping("/store/{storeId}/week/exists")
+    @Operation(summary = "Check if next week's schedule exists")
+    @PreAuthorize("hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
+    public ResponseEntity<Map<String, Object>> checkWeeklyScheduleExists(
+            @PathVariable String storeId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate) {
+        boolean exists = shiftService.weeklyScheduleExists(storeId, startDate);
+        int shiftCount = shiftService.getWeeklySchedule(storeId, startDate).size();
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("exists", exists);
+        response.put("shiftCount", shiftCount);
+        response.put("startDate", startDate);
+        response.put("endDate", startDate.plusDays(6));
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/copy-previous-week")
+    @Operation(summary = "Copy previous week's schedule to next week")
+    @PreAuthorize("hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
+    public ResponseEntity<List<Shift>> copyPreviousWeekSchedule(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate targetWeekStart,
+            HttpServletRequest request) {
+        String storeId = getStoreIdFromHeaders(request);
+        List<Shift> copiedShifts = shiftService.copyPreviousWeekSchedule(storeId, targetWeekStart);
+        return ResponseEntity.ok(copiedShifts);
     }
 }

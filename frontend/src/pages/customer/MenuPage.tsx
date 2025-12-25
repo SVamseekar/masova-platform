@@ -3,7 +3,6 @@ import { colors, spacing, typography, shadows, borderRadius } from '../../styles
 import { createNeumorphicSurface, createCard, createBadge } from '../../styles/neumorphic-utils';
 import {
   useGetAvailableMenuQuery,
-  useLazySearchMenuQuery,
   Cuisine,
   MenuCategory,
   MenuItem,
@@ -11,7 +10,7 @@ import {
   SpiceLevel,
 } from '../../store/api/menuApi';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { addToCart, updateItemQuantity, selectCartItems } from '../../store/slices/cartSlice';
+import { addToCart, updateItemQuantity, selectCartItems, selectSelectedStoreId } from '../../store/slices/cartSlice';
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
 import RecipeViewer from '../../components/RecipeViewer';
@@ -36,6 +35,7 @@ const MenuPage: React.FC<MenuPageProps> = ({
   const [selectedRecipeItem, setSelectedRecipeItem] = useState<MenuItem | null>(null);
 
   const cartItems = useAppSelector(selectCartItems);
+  const selectedStoreId = useAppSelector(selectSelectedStoreId);
 
   // Sync menu quantities with cart
   useEffect(() => {
@@ -100,13 +100,32 @@ const MenuPage: React.FC<MenuPageProps> = ({
   const dispatch = useAppDispatch();
 
   // Always fetch all menu items
-  const { data: allMenu, isLoading: loadingAll } = useGetAvailableMenuQuery();
-  const [searchMenu, { data: searchResults, isLoading: loadingSearch }] = useLazySearchMenuQuery();
+  const { data: allMenu, isLoading } = useGetAvailableMenuQuery();
 
-  // Use search results if searching, otherwise use all menu
-  let menuItems = searchTerm ? (searchResults || []) : (allMenu || []);
+  // Filter by search term client-side
+  let rawMenuItems = allMenu || [];
+  if (searchTerm && searchTerm.trim().length >= 2) {
+    const searchLower = searchTerm.toLowerCase();
+    rawMenuItems = rawMenuItems.filter(item =>
+      item.name.toLowerCase().includes(searchLower) ||
+      item.description?.toLowerCase().includes(searchLower)
+    );
+  }
 
-  const isLoading = loadingAll || loadingSearch;
+  // Filter by store first (to avoid duplicates across stores)
+  let menuItems = rawMenuItems;
+  if (selectedStoreId) {
+    menuItems = menuItems.filter(item => item.storeId === selectedStoreId);
+  } else {
+    // If no store selected, deduplicate by name
+    const uniqueItems = new Map<string, MenuItem>();
+    menuItems.forEach(item => {
+      if (!uniqueItems.has(item.name)) {
+        uniqueItems.set(item.name, item);
+      }
+    });
+    menuItems = Array.from(uniqueItems.values());
+  }
 
   // Filter by cuisine, category, and dietary preferences
   const filteredMenu = menuItems.filter((item) => {
@@ -118,9 +137,6 @@ const MenuPage: React.FC<MenuPageProps> = ({
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-    if (value.trim().length >= 2) {
-      searchMenu(value.trim());
-    }
   };
 
   // Helper to check if item is in cart

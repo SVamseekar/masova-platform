@@ -212,6 +212,44 @@ export const shiftApi = createApi({
       },
       providesTags: ['ShiftCoverage'],
     }),
+
+    // Bulk create shifts (for weekly schedule)
+    bulkCreateShifts: builder.mutation<Shift[], CreateShiftRequest[]>({
+      query: (shifts) => ({
+        url: '/shifts/bulk-create',
+        method: 'POST',
+        body: shifts,
+      }),
+      invalidatesTags: [{ type: 'Shifts', id: 'LIST' }, 'ShiftCoverage'],
+    }),
+
+    // Get weekly schedule
+    getWeeklySchedule: builder.query<Shift[], { storeId: string; startDate: string }>({
+      query: ({ storeId, startDate }) => `/shifts/store/${storeId}/week?startDate=${startDate}`,
+      providesTags: (result) =>
+        result
+          ? [...result.map(({ id }) => ({ type: 'Shift' as const, id })), { type: 'Shifts', id: 'LIST' }]
+          : [{ type: 'Shifts', id: 'LIST' }],
+    }),
+
+    // Check if weekly schedule exists
+    checkWeeklyScheduleExists: builder.query<
+      { exists: boolean; shiftCount: number; startDate: string; endDate: string },
+      { storeId: string; startDate: string }
+    >({
+      query: ({ storeId, startDate }) =>
+        `/shifts/store/${storeId}/week/exists?startDate=${startDate}`,
+      providesTags: [{ type: 'Shifts', id: 'LIST' }],
+    }),
+
+    // Copy previous week's schedule
+    copyPreviousWeekSchedule: builder.mutation<Shift[], { targetWeekStart: string }>({
+      query: ({ targetWeekStart }) => ({
+        url: `/shifts/copy-previous-week?targetWeekStart=${targetWeekStart}`,
+        method: 'POST',
+      }),
+      invalidatesTags: [{ type: 'Shifts', id: 'LIST' }, 'ShiftCoverage'],
+    }),
   }),
 });
 
@@ -227,4 +265,8 @@ export const {
   useStartShiftMutation,
   useCompleteShiftMutation,
   useGetShiftCoverageQuery,
+  useBulkCreateShiftsMutation,
+  useGetWeeklyScheduleQuery,
+  useCheckWeeklyScheduleExistsQuery,
+  useCopyPreviousWeekScheduleMutation,
 } = shiftApi;

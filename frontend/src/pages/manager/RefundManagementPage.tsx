@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { selectSelectedStoreId } from '../../store/slices/cartSlice';
+import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
+import { usePageStore } from '../../contexts/PageStoreContext';
+import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import {
   useGetTransactionsByStoreIdQuery,
   useInitiateRefundMutation,
@@ -16,8 +18,9 @@ import { format } from 'date-fns';
 
 const RefundManagementPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
-  const selectedStoreId = useAppSelector(selectSelectedStoreId);
+  const { selectedStoreId } = usePageStore();
   const storeId = selectedStoreId || currentUser?.storeId || '';
+  const { handleBack } = useSmartBackNavigation();
 
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [refundAmount, setRefundAmount] = useState<string>('');
@@ -25,15 +28,8 @@ const RefundManagementPage: React.FC = () => {
   const [refundType, setRefundType] = useState<'FULL' | 'PARTIAL'>('FULL');
   const [showRefundForm, setShowRefundForm] = useState(false);
 
-  const { data: transactions, isLoading, refetch } = useGetTransactionsByStoreIdQuery();
+  const { data: transactions, isLoading } = useGetTransactionsByStoreIdQuery(storeId, { skip: !storeId });
   const [initiateRefund, { isLoading: refundLoading }] = useInitiateRefundMutation();
-
-  // Refetch data when store changes
-  useEffect(() => {
-    if (storeId) {
-      refetch();
-    }
-  }, [storeId, refetch]);
 
   // Filter only successful transactions that can be refunded
   const refundableTransactions = transactions?.filter(
@@ -74,6 +70,7 @@ const RefundManagementPage: React.FC = () => {
     padding: spacing[6],
     backgroundColor: '#e8e8e8',
     zIndex: 1,
+    paddingTop: '80px',
   };
 
   const titleStyles: React.CSSProperties = {
@@ -189,7 +186,7 @@ const RefundManagementPage: React.FC = () => {
       <>
         <AnimatedBackground variant="minimal" />
         <div style={containerStyles}>
-          <AppHeader title="Refund Management" showBackButton />
+          <AppHeader title="Refund Management" showBackButton onBack={handleBack} showManagerNav={true} />
           <h1 style={titleStyles}>Loading...</h1>
         </div>
       </>
@@ -200,7 +197,7 @@ const RefundManagementPage: React.FC = () => {
     <>
       <AnimatedBackground variant="minimal" />
       <div style={containerStyles}>
-        <AppHeader title="Refund Management" showBackButton />
+        <AppHeader title="Refund Management" showBackButton onBack={handleBack} showManagerNav={true} />
 
         <h1 style={titleStyles}>Refund Management</h1>
 
@@ -397,4 +394,4 @@ const RefundManagementPage: React.FC = () => {
   );
 };
 
-export default RefundManagementPage;
+export default withPageStoreContext(RefundManagementPage, 'refunds');

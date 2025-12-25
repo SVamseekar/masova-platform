@@ -8,6 +8,7 @@ import com.MaSoVa.delivery.repository.DeliveryTrackingRepository;
 import com.MaSoVa.delivery.repository.DriverLocationRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.lang.NonNull;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +27,7 @@ public class LiveTrackingService {
 
     private final DriverLocationRepository driverLocationRepository;
     private final DeliveryTrackingRepository deliveryTrackingRepository;
+    @SuppressWarnings("unused")
     private final ETACalculationService etaCalculationService;
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -56,10 +58,10 @@ public class LiveTrackingService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        driverLocationRepository.save(location);
+        DriverLocation savedLocation = driverLocationRepository.save(location);
 
         // Broadcast location update via WebSocket
-        broadcastLocationUpdate(request.getDriverId(), location);
+        broadcastLocationUpdate(request.getDriverId(), savedLocation);
 
         log.debug("Location updated for driver: {}", request.getDriverId());
     }
@@ -129,7 +131,7 @@ public class LiveTrackingService {
     /**
      * Broadcast location update to WebSocket subscribers
      */
-    private void broadcastLocationUpdate(String driverId, DriverLocation location) {
+    private void broadcastLocationUpdate(String driverId, @NonNull DriverLocation location) {
         try {
             messagingTemplate.convertAndSend(
                     "/topic/driver/" + driverId + "/location",

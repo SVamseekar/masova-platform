@@ -12,20 +12,27 @@ spring:
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-512-bits-for-HS512-algorithm-security-requirement}
+  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-256-bits-for-production-security}
   access-token-expiration: 3600000
   refresh-token-expiration: 604800000
 
-# Razorpay Configuration
+# Razorpay Configuration - Using test keys for development
+# In production, set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET as environment variables
 razorpay:
-  key-id: $rzp_test_RjYYkXMmoArj4C 
-  key-secret: $Asbe0hf12kZn0VSX4ykn3Nvq
-  webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:YOUR_WEBHOOK_SECRET}
+  key-id: ${RAZORPAY_KEY_ID:rzp_test_RjYYkXMmoArj4C}
+  key-secret: ${RAZORPAY_KEY_SECRET:Asbe0hf12kZn0VSX4ykn3Nvq}
+  webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:whsec_YOUR_WEBHOOK_SECRET_HERE}
 
 # Service URLs
 services:
   order-service:
     url: ${ORDER_SERVICE_URL:http://localhost:8083}
+
+# Notification Service Configuration
+notification:
+  service:
+    url: ${NOTIFICATION_SERVICE_URL:http://localhost:8092}
+  enabled: true
 
 # Logging
 logging:
@@ -43,3 +50,79 @@ management:
   endpoint:
     health:
       show-details: always
+
+# Resilience4j Circuit Breaker and Retry Configuration
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        failure-rate-threshold: 50
+        slow-call-rate-threshold: 80
+        slow-call-duration-threshold: 3s
+        minimum-number-of-calls: 10
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 20
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 5
+        automatic-transition-from-open-to-half-open-enabled: true
+    instances:
+      orderService:
+        base-config: default
+        failure-rate-threshold: 60
+        minimum-number-of-calls: 10
+        wait-duration-in-open-state: 15s
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 5s
+        cancel-running-future: true
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 500ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - org.springframework.web.client.RestClientException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+    instances:
+      orderService:
+        base-config: default
+
+---
+# Production Profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+      auto-index-creation: false
+  redis:
+    host: ${REDIS_HOST}
+    password: ${REDIS_PASSWORD}
+    ssl: true
+    lettuce:
+      pool:
+        max-active: 100
+        max-idle: 50
+        min-idle: 25
+
+logging:
+  level:
+    root: WARN
+    com.MaSoVa: INFO
+    org.springframework: WARN
+    org.mongodb: ERROR
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
+  endpoint:
+    health:
+      show-details: when-authorized

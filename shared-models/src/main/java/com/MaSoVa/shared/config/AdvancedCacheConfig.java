@@ -71,14 +71,14 @@ public class AdvancedCacheConfig {
                 .shutdownTimeout(Duration.ofMillis(100))
                 .build();
 
-        LettuceConnectionFactory factory = new LettuceConnectionFactory(
-                new org.springframework.data.redis.connection.RedisStandaloneConfiguration(redisHost, redisPort),
-                clientConfig
-        );
+        org.springframework.data.redis.connection.RedisStandaloneConfiguration redisConfig =
+                new org.springframework.data.redis.connection.RedisStandaloneConfiguration(redisHost, redisPort);
 
         if (redisPassword != null && !redisPassword.trim().isEmpty()) {
-            factory.setPassword(redisPassword);
+            redisConfig.setPassword(redisPassword);
         }
+
+        LettuceConnectionFactory factory = new LettuceConnectionFactory(redisConfig, clientConfig);
         factory.setValidateConnection(true);
         return factory;
     }
@@ -172,6 +172,19 @@ public class AdvancedCacheConfig {
         // Static data - cache for 24 hours
         cacheConfigurations.put("static",
             defaultConfig.entryTtl(Duration.ofHours(24)));
+
+        // Delivery service caches
+        // Performance metrics - cache for 30 minutes
+        cacheConfigurations.put("performance",
+            defaultConfig.entryTtl(Duration.ofMinutes(30)));
+
+        // Route optimization - cache for 1 hour (routes don't change frequently)
+        cacheConfigurations.put("routes",
+            defaultConfig.entryTtl(Duration.ofHours(1)));
+
+        // ETA calculations - cache for 5 minutes (traffic conditions change)
+        cacheConfigurations.put("eta",
+            defaultConfig.entryTtl(Duration.ofMinutes(5)));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { selectSelectedStoreId } from '../../store/slices/cartSlice';
-import StoreSelector from '../../components/StoreSelector';
+import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
+import { usePageStore } from '../../contexts/PageStoreContext';
+import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import {
   useGetAllDriversQuery,
   useGetOnlineDriversQuery,
@@ -16,23 +17,47 @@ import {
 import { Card, Button } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
+import { ManagerDriverTrackingMap } from '../../components/delivery/ManagerDriverTrackingMap';
+import { FilterBar, type FilterConfig, type FilterValues, type SortConfig } from '../../components/common/FilterBar';
+import { applyFilters, applySort, exportToCSV, commonFilters } from '../../utils/filterUtils';
 import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
 import { createNeumorphicSurface, createCard, createBadge } from '../../styles/neumorphic-utils';
 
 const DriverManagementPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
-  const selectedStoreId = useAppSelector(selectSelectedStoreId);
+  const { selectedStoreId } = usePageStore();
   const storeId = selectedStoreId || currentUser?.storeId || '';
+  const { handleBack } = useSmartBackNavigation();
 
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<'ALL' | 'ONLINE' | 'OFFLINE' | 'AVAILABLE'>('ALL');
+  const [trackingDriver, setTrackingDriver] = useState<Driver | null>(null);
+  const [trackingOpen, setTrackingOpen] = useState(false);
 
-  // API queries
-  const { data: allDrivers, isLoading: loadingAll } = useGetAllDriversQuery();
-  const { data: onlineDrivers } = useGetOnlineDriversQuery();
-  const { data: stats } = useGetDriverStatsQuery();
+  // Filter and sort state
+  const [filterValues, setFilterValues] = useState<FilterValues>({
+    search: '',
+    status: '',
+    availability: '',
+  });
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    field: 'name',
+    direction: 'asc',
+  });
+
+  // API queries with polling for real-time updates
+  const { data: allDrivers, isLoading: loadingAll } = useGetAllDriversQuery(storeId, {
+    skip: !storeId,
+    pollingInterval: 10000 // Poll every 10 seconds for real-time status updates
+  });
+  const { data: onlineDrivers } = useGetOnlineDriversQuery(storeId, {
+    skip: !storeId,
+    pollingInterval: 10000
+  });
+  const { data: stats } = useGetDriverStatsQuery(storeId, {
+    skip: !storeId,
+    pollingInterval: 15000 // Poll stats every 15 seconds
+  });
   const { data: driverPerformance } = useGetDriverPerformanceQuery(
     { driverId: selectedDriver?.id || '' },
     { skip: !selectedDriver?.id }
@@ -42,26 +67,112 @@ const DriverManagementPage: React.FC = () => {
   const [activateDriver] = useActivateDriverMutation();
   const [deactivateDriver] = useDeactivateDriverMutation();
 
-  // Filter drivers
-  const displayDrivers = allDrivers?.filter((driver) => {
-    const matchesSearch =
-      driver.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      driver.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      driver.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      driver.phone.includes(searchQuery);
+  // Filter configuration
+  const filterConfigs: FilterConfig[] = [
+    {
+      type: 'search',
+      label: 'Search',
+      field: 'search',
+      placeholder: 'Search by name, email, or phone...',
+    },
+    {
+      type: 'select',
+      label: 'Online Status',
+      field: 'status',
+      options: [
+        { label: 'Online', value: 'online' },
+        { label: 'Offline', value: 'offline' },
+        { label: 'Busy', value: 'busy' },
+      ],
+    },
+    {
+      type: 'select',
+      label: 'Availability',
+      field: 'availability',
+      options: [
+        { label: 'Active', value: 'active' },
+        { label: 'Inactive', value: 'inactive' },
+      ],
+    },
+  ];
 
-    const matchesFilter =
-      filterStatus === 'ALL' ||
-      (filterStatus === 'ONLINE' && driver.isOnline) ||
-      (filterStatus === 'OFFLINE' && !driver.isOnline) ||
-      (filterStatus === 'AVAILABLE' && driver.isAvailable);
+  const sortOptions = [
+    { label: 'Name', field: 'name' },
+    { label: 'Email', field: 'email' },
+    { label: 'Phone', field: 'phone' },
+    { label: 'Status', field: 'isOnline' },
+  ];
 
-    return matchesSearch && matchesFilter;
-  }) || [];
+  // Apply filters and sorting
+  const filteredAndSortedDrivers = useMemo(() => {
+    if (!allDrivers) return [];
+
+    const filtered = applyFilters(allDrivers, filterValues, {
+      search: (driver, value) =>
+        commonFilters.searchText(driver, value as string, ['name', 'email', 'phone']),
+      status: (driver, value) => {
+        if (value === 'online') return driver.isOnline && !driver.activeDeliveryId;
+        if (value === 'offline') return !driver.isOnline;
+        if (value === 'busy') return driver.isOnline && !!driver.activeDeliveryId;
+        return true;
+      },
+      availability: (driver, value) =>
+        (value === 'active' && driver.isActive) ||
+        (value === 'inactive' && !driver.isActive),
+    });
+
+    return applySort(filtered, sortConfig);
+  }, [allDrivers, filterValues, sortConfig]);
+
+  const handleFilterChange = (field: string, value: string | string[] | { from?: string; to?: string }) => {
+    setFilterValues((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleClearFilters = () => {
+    setFilterValues({
+      search: '',
+      status: '',
+      availability: '',
+    });
+  };
+
+  const handleSortChange = (field: string) => {
+    setSortConfig((prev) => ({
+      field,
+      direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
+  const handleExport = () => {
+    exportToCSV(
+      filteredAndSortedDrivers,
+      'drivers',
+      [
+        { label: 'Name', field: 'name' },
+        { label: 'Email', field: 'email' },
+        { label: 'Phone', field: 'phone' },
+        {
+          label: 'Status',
+          field: 'isOnline',
+          format: (value) => (value ? 'Online' : 'Offline'),
+        },
+        {
+          label: 'Availability',
+          field: 'isActive',
+          format: (value) => (value ? 'Active' : 'Inactive'),
+        },
+        {
+          label: 'Active Delivery',
+          field: 'activeDeliveryId',
+          format: (value) => value || 'None',
+        },
+      ]
+    );
+  };
 
   const handleToggleActive = async (driver: Driver) => {
     try {
-      if (driver.isAvailable) {
+      if (driver.isActive) {
         await deactivateDriver(driver.id).unwrap();
       } else {
         await activateDriver(driver.id).unwrap();
@@ -76,14 +187,19 @@ const DriverManagementPage: React.FC = () => {
     setDetailsOpen(true);
   };
 
+  const handleTrackDriver = (driver: Driver) => {
+    setTrackingDriver(driver);
+    setTrackingOpen(true);
+  };
+
   const getStatusColor = (driver: Driver) => {
-    if (!driver.isAvailable) return colors.text.disabled;
+    if (!driver.isActive) return colors.text.disabled;
     if (driver.isOnline) return colors.semantic.success;
     return colors.semantic.warning;
   };
 
   const getStatusText = (driver: Driver) => {
-    if (!driver.isAvailable) return 'Inactive';
+    if (!driver.isActive) return 'Inactive';
     if (driver.isOnline) return driver.activeDeliveryId ? 'Busy' : 'Online';
     return 'Offline';
   };
@@ -96,6 +212,7 @@ const DriverManagementPage: React.FC = () => {
     padding: spacing[6],
     backgroundColor: '#e8e8e8',
     zIndex: 1,
+    paddingTop: '80px',
   };
 
   const titleStyles: React.CSSProperties = {
@@ -136,41 +253,6 @@ const DriverManagementPage: React.FC = () => {
     color: colors.text.tertiary,
   };
 
-  const filterContainerStyles: React.CSSProperties = {
-    ...createCard('md', 'base'),
-    padding: spacing[4],
-    marginBottom: spacing[6],
-    display: 'flex',
-    gap: spacing[4],
-    flexWrap: 'wrap',
-    alignItems: 'center',
-  };
-
-  const searchInputStyles: React.CSSProperties = {
-    flexGrow: 1,
-    minWidth: '250px',
-    padding: spacing[3],
-    fontSize: typography.fontSize.base,
-    border: 'none',
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.surface.background,
-    color: colors.text.primary,
-    ...createNeumorphicSurface('inset', 'sm', 'base'),
-  };
-
-  const filterButtonStyles = (isActive: boolean): React.CSSProperties => ({
-    padding: `${spacing[2]} ${spacing[4]}`,
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: isActive ? colors.text.inverse : colors.text.secondary,
-    backgroundColor: isActive ? colors.brand.primary : 'transparent',
-    border: 'none',
-    borderRadius: borderRadius.lg,
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    ...(isActive ? {} : createNeumorphicSurface('flat', 'sm', 'base')),
-  });
-
   const tableCardStyles: React.CSSProperties = {
     ...createCard('md', 'base'),
     padding: 0,
@@ -201,15 +283,18 @@ const DriverManagementPage: React.FC = () => {
     fontSize: typography.fontSize.sm,
   };
 
-  const badgeStyles = (color: string): React.CSSProperties => ({
-    ...createBadge(),
-    backgroundColor: color,
-    color: '#fff',
-    padding: `${spacing[1]} ${spacing[2]}`,
-    borderRadius: borderRadius.full,
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.semibold,
-  });
+  const badgeStyles = (color: string): React.CSSProperties => {
+    const { backgroundColor: _, ...badgeBase } = createBadge();
+    return {
+      ...badgeBase,
+      backgroundColor: color,
+      color: '#fff',
+      padding: `${spacing[1]} ${spacing[2]}`,
+      borderRadius: borderRadius.full,
+      fontSize: typography.fontSize.xs,
+      fontWeight: typography.fontWeight.semibold,
+    };
+  };
 
   const modalOverlayStyles: React.CSSProperties = {
     position: 'fixed',
@@ -265,17 +350,8 @@ const DriverManagementPage: React.FC = () => {
       <>
         <AnimatedBackground variant="default" />
         <div style={containerStyles}>
-          <AppHeader title="Driver Management" showBackButton={false} />
+          <AppHeader title="Driver Management" showBackButton={true} onBack={handleBack} showManagerNav={true} storeSelectorContextKey="driver-management" />
 
-          {/* Store Selector */}
-          <div style={{
-            background: 'white',
-            padding: '16px 24px',
-            borderRadius: '12px',
-            marginBottom: spacing[6],
-          }}>
-            <StoreSelector variant="manager" />
-          </div>
           <div style={{ textAlign: 'center', padding: spacing[8] }}>Loading...</div>
         </div>
       </>
@@ -287,7 +363,7 @@ const DriverManagementPage: React.FC = () => {
       <AnimatedBackground variant="default" />
 
       <div style={containerStyles}>
-        <AppHeader title="Driver Management" showBackButton={false} />
+        <AppHeader title="Driver Management" showBackButton={true} onBack={handleBack} showManagerNav={true} storeSelectorContextKey="driver-management" />
 
         <h1 style={titleStyles}>Driver Management</h1>
         <p style={subtitleStyles}>Manage delivery drivers and monitor performance</p>
@@ -322,34 +398,26 @@ const DriverManagementPage: React.FC = () => {
           </div>
         )}
 
-        {/* Filters */}
-        <div style={filterContainerStyles}>
-          <input
-            type="text"
-            placeholder="Search drivers by name, email, or phone..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={searchInputStyles}
-          />
-
-          <div style={{ display: 'flex', gap: spacing[2] }}>
-            {(['ALL', 'ONLINE', 'OFFLINE', 'AVAILABLE'] as const).map((status) => (
-              <button
-                key={status}
-                onClick={() => setFilterStatus(status)}
-                style={filterButtonStyles(filterStatus === status)}
-              >
-                {status}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Filter Bar */}
+        <FilterBar
+          filters={filterConfigs}
+          filterValues={filterValues}
+          onFilterChange={handleFilterChange}
+          onClearFilters={handleClearFilters}
+          sortConfig={sortConfig}
+          onSortChange={handleSortChange}
+          sortOptions={sortOptions}
+          onExport={handleExport}
+          showExport={filteredAndSortedDrivers.length > 0}
+        />
 
         {/* Drivers Table */}
         <div style={tableCardStyles}>
-          {displayDrivers.length === 0 ? (
+          {filteredAndSortedDrivers.length === 0 ? (
             <div style={{ padding: spacing[8], textAlign: 'center', color: colors.text.tertiary }}>
-              No drivers found. {searchQuery && 'Try adjusting your search.'}
+              {allDrivers && allDrivers.length > 0
+                ? 'No drivers match the current filters'
+                : 'No drivers found'}
             </div>
           ) : (
             <table style={tableStyles}>
@@ -365,11 +433,21 @@ const DriverManagementPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {displayDrivers.map((driver) => (
+                {filteredAndSortedDrivers.map((driver) => (
                   <tr key={driver.id}>
                     <td style={tableCellStyles}>
-                      <div style={{ fontWeight: typography.fontWeight.semibold }}>
-                        {driver.firstName} {driver.lastName}
+                      <div
+                        onClick={() => driver.isOnline && handleTrackDriver(driver)}
+                        style={{
+                          fontWeight: typography.fontWeight.semibold,
+                          cursor: driver.isOnline ? 'pointer' : 'default',
+                          color: driver.isOnline ? colors.brand.primary : colors.text.primary,
+                          textDecoration: driver.isOnline ? 'underline' : 'none',
+                        }}
+                        title={driver.isOnline ? 'Click to track live location' : 'Driver is offline'}
+                      >
+                        {driver.isOnline && '📍 '}
+                        {driver.name}
                       </div>
                       <div style={{ fontSize: typography.fontSize.xs, color: colors.text.tertiary }}>
                         ID: {driver.id.slice(-8).toUpperCase()}
@@ -399,30 +477,35 @@ const DriverManagementPage: React.FC = () => {
                       </span>
                     </td>
                     <td style={tableCellStyles}>
-                      <div>{driver.completedDeliveries} completed</div>
+                      <div>{driver.completedDeliveries || 0} completed</div>
                       <div style={{ fontSize: typography.fontSize.xs, color: colors.text.tertiary }}>
-                        {driver.totalDeliveries} total
+                        {driver.totalDeliveries || 0} total
                       </div>
                     </td>
                     <td style={tableCellStyles}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: spacing[1] }}>
                         <span>⭐</span>
                         <span style={{ fontWeight: typography.fontWeight.semibold }}>
-                          {driver.rating.toFixed(1)}
+                          {driver.rating ? driver.rating.toFixed(1) : 'N/A'}
                         </span>
                       </div>
                     </td>
                     <td style={tableCellStyles}>
-                      <div style={{ display: 'flex', gap: spacing[2] }}>
+                      <div style={{ display: 'flex', gap: spacing[2], flexWrap: 'wrap' }}>
+                        {driver.isOnline && (
+                          <Button variant="primary" size="sm" onClick={() => handleTrackDriver(driver)}>
+                            📍 Track Live
+                          </Button>
+                        )}
                         <Button variant="secondary" size="sm" onClick={() => handleViewDetails(driver)}>
                           Details
                         </Button>
                         <Button
-                          variant={driver.isAvailable ? 'danger' : 'primary'}
+                          variant={driver.isActive ? 'danger' : 'primary'}
                           size="sm"
                           onClick={() => handleToggleActive(driver)}
                         >
-                          {driver.isAvailable ? 'Deactivate' : 'Activate'}
+                          {driver.isActive ? 'Deactivate' : 'Activate'}
                         </Button>
                       </div>
                     </td>
@@ -434,12 +517,23 @@ const DriverManagementPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Live Tracking Modal */}
+      {trackingOpen && trackingDriver && (
+        <ManagerDriverTrackingMap
+          driver={trackingDriver}
+          onClose={() => {
+            setTrackingOpen(false);
+            setTrackingDriver(null);
+          }}
+        />
+      )}
+
       {/* Driver Details Modal */}
       {detailsOpen && selectedDriver && (
         <div style={modalOverlayStyles} onClick={() => setDetailsOpen(false)}>
           <div style={modalStyles} onClick={(e) => e.stopPropagation()}>
             <h2 style={sectionTitleStyles}>
-              Driver Details: {selectedDriver.firstName} {selectedDriver.lastName}
+              Driver Details: {selectedDriver.name}
             </h2>
 
             {/* Basic Info */}
@@ -484,35 +578,35 @@ const DriverManagementPage: React.FC = () => {
                 <div style={infoGridStyles}>
                   <div>
                     <div style={infoLabelStyles}>Total Deliveries</div>
-                    <div style={infoValueStyles}>{driverPerformance.totalDeliveries}</div>
+                    <div style={infoValueStyles}>{driverPerformance.totalDeliveries || 0}</div>
                   </div>
                   <div>
                     <div style={infoLabelStyles}>Completed</div>
-                    <div style={infoValueStyles}>{driverPerformance.completedDeliveries}</div>
+                    <div style={infoValueStyles}>{driverPerformance.completedDeliveries || 0}</div>
                   </div>
                   <div>
                     <div style={infoLabelStyles}>On-Time Rate</div>
-                    <div style={infoValueStyles}>{driverPerformance.onTimeDeliveryPercentage.toFixed(1)}%</div>
+                    <div style={infoValueStyles}>{(driverPerformance.onTimeDeliveryPercentage || 0).toFixed(1)}%</div>
                   </div>
                   <div>
                     <div style={infoLabelStyles}>Avg Delivery Time</div>
-                    <div style={infoValueStyles}>{driverPerformance.averageDeliveryTime}m</div>
+                    <div style={infoValueStyles}>{driverPerformance.averageDeliveryTime || 0}m</div>
                   </div>
                   <div>
                     <div style={infoLabelStyles}>Distance Covered</div>
-                    <div style={infoValueStyles}>{driverPerformance.totalDistanceCovered.toFixed(1)}km</div>
+                    <div style={infoValueStyles}>{(driverPerformance.totalDistanceCovered || 0).toFixed(1)}km</div>
                   </div>
                   <div>
                     <div style={infoLabelStyles}>Average Rating</div>
-                    <div style={infoValueStyles}>⭐ {driverPerformance.averageRating.toFixed(1)}</div>
+                    <div style={infoValueStyles}>⭐ {(driverPerformance.averageRating || 0).toFixed(1)}</div>
                   </div>
                   <div>
                     <div style={infoLabelStyles}>Total Earnings</div>
-                    <div style={infoValueStyles}>₹{driverPerformance.totalEarnings.toFixed(0)}</div>
+                    <div style={infoValueStyles}>₹{(driverPerformance.totalEarnings || 0).toFixed(0)}</div>
                   </div>
                   <div>
                     <div style={infoLabelStyles}>Today's Deliveries</div>
-                    <div style={infoValueStyles}>{driverPerformance.todayDeliveries}</div>
+                    <div style={infoValueStyles}>{driverPerformance.todayDeliveries || 0}</div>
                   </div>
                 </div>
               </div>
@@ -530,4 +624,4 @@ const DriverManagementPage: React.FC = () => {
   );
 };
 
-export default DriverManagementPage;
+export default withPageStoreContext(DriverManagementPage, 'driver-management');

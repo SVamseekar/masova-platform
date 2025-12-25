@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { selectSelectedStoreId } from '../../store/slices/cartSlice';
+import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
+import { usePageStore } from '../../contexts/PageStoreContext';
+import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import {
   useGetAllWasteRecordsQuery,
   useGetTotalWasteCostQuery,
@@ -20,8 +22,9 @@ import RecordWasteDialog from '../../components/inventory/RecordWasteDialog';
 
 const WasteAnalysisPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
-  const selectedStoreId = useAppSelector(selectSelectedStoreId);
+  const { selectedStoreId } = usePageStore();
   const storeId = selectedStoreId || currentUser?.storeId || '';
+  const { handleBack } = useSmartBackNavigation();
 
   const [dateRange, setDateRange] = useState({
     startDate: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
@@ -30,7 +33,8 @@ const WasteAnalysisPage: React.FC = () => {
   const [recordDialogOpen, setRecordDialogOpen] = useState(false);
 
   // Fetch data
-  const { data: wasteRecords = [], isLoading, refetch: refetchRecords } = useGetAllWasteRecordsQuery(undefined, {
+  // Pass storeId to trigger refetch when store changes
+  const { data: wasteRecords = [], isLoading, refetch: refetchRecords } = useGetAllWasteRecordsQuery(storeId, {
     skip: !storeId,
     pollingInterval: 60000,
   });
@@ -69,6 +73,7 @@ const WasteAnalysisPage: React.FC = () => {
     padding: spacing[6],
     backgroundColor: '#e8e8e8',
     zIndex: 1,
+    paddingTop: '80px',
   };
 
   const titleStyles: React.CSSProperties = {
@@ -222,7 +227,7 @@ const WasteAnalysisPage: React.FC = () => {
       <>
         <AnimatedBackground />
         <div style={containerStyles}>
-          <AppHeader title="Waste Analysis" showBackButton />
+          <AppHeader title="Waste Analysis" showBackButton onBack={handleBack} showManagerNav={true} />
           <div style={{ textAlign: 'center', padding: spacing[10] }}>Loading waste data...</div>
         </div>
       </>
@@ -237,7 +242,7 @@ const WasteAnalysisPage: React.FC = () => {
     <>
       <AnimatedBackground />
       <div style={containerStyles}>
-        <AppHeader title="Waste Analysis" showBackButton />
+        <AppHeader title="Waste Analysis" showBackButton onBack={handleBack} showManagerNav={true} />
 
       <h1 style={titleStyles}>Waste Analysis</h1>
 
@@ -380,4 +385,4 @@ const WasteAnalysisPage: React.FC = () => {
   );
 };
 
-export default WasteAnalysisPage;
+export default withPageStoreContext(WasteAnalysisPage, 'waste-analysis');

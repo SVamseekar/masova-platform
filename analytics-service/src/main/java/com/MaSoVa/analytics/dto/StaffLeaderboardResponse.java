@@ -74,7 +74,9 @@ public class StaffLeaderboardResponse implements Serializable {
         }
     }
 
-    public static class StaffRanking {
+    public static class StaffRanking implements Serializable {
+        private static final long serialVersionUID = 1L;
+
         private int rank;
         private String staffId;
         private String staffName;

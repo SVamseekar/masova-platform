@@ -18,6 +18,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -26,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
+@Tag(name = "ReviewController", description = "Customer review management")
+@SecurityRequirement(name = "bearerAuth")
 @RequestMapping("/api/reviews")
 public class ReviewController {
 
@@ -73,6 +77,53 @@ public class ReviewController {
         }
     }
 
+    /**
+     * Public endpoint for anonymous rating submission via token (SMS/Email link)
+     * No authentication required - security via unique token
+     */
+    @PostMapping("/public/submit")
+    public ResponseEntity<?> submitPublicRating(
+            @Valid @RequestBody CreateReviewRequest request,
+            @RequestParam("token") String token
+    ) {
+        try {
+            // Validate token and get customer info from Order Service
+            Review review = reviewService.createPublicReview(request, token);
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "success", true,
+                "message", "Thank you for your feedback!",
+                "reviewId", review.getId()
+            ));
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid rating token: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid or expired rating link"));
+        } catch (IllegalStateException e) {
+            log.warn("Rating already submitted: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error submitting public rating", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to submit rating. Please try again."));
+        }
+    }
+
+    /**
+     * Get rating token details (for displaying order info on rating page)
+     */
+    @GetMapping("/public/token/{token}")
+    public ResponseEntity<?> getTokenDetails(@PathVariable String token) {
+        try {
+            Map<String, Object> tokenDetails = reviewService.getTokenDetails(token);
+            return ResponseEntity.ok(tokenDetails);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid or expired rating link"));
+        } catch (Exception e) {
+            log.error("Error fetching token details", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to load rating page"));
+        }
+    }
+
     @GetMapping("/{reviewId}")
     public ResponseEntity<?> getReviewById(@PathVariable String reviewId) {
         try {
@@ -109,6 +160,23 @@ public class ReviewController {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Review> reviews = reviewService.getReviewsByDriverId(driverId, pageable);
         return ResponseEntity.ok(reviews);
+    }
+
+    @GetMapping("/staff/{staffId}")
+    public ResponseEntity<Page<Review>> getReviewsByStaffId(
+            @PathVariable String staffId,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Review> reviews = reviewService.getReviewsByStaffId(staffId, pageable);
+        return ResponseEntity.ok(reviews);
+    }
+
+    @GetMapping("/staff/{staffId}/rating")
+    public ResponseEntity<com.MaSoVa.review.dto.StaffRatingDTO> getStaffRating(@PathVariable String staffId) {
+        com.MaSoVa.review.dto.StaffRatingDTO rating = reviewService.getStaffAverageRating(staffId);
+        return ResponseEntity.ok(rating);
     }
 
     @GetMapping("/item/{menuItemId}")

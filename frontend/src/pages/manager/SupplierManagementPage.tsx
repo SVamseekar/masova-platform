@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
+import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import {
   useGetAllSuppliersQuery,
   useGetActiveSuppliersQuery,
   useGetPreferredSuppliersQuery,
-  useDeleteSupplierMutation,
   useUpdateSupplierStatusMutation,
   useMarkSupplierPreferredMutation,
   Supplier,
@@ -17,6 +17,7 @@ import AddSupplierDialog from '../../components/inventory/AddSupplierDialog';
 import EditSupplierDialog from '../../components/inventory/EditSupplierDialog';
 
 const SupplierManagementPage: React.FC = () => {
+  const { handleBack } = useSmartBackNavigation();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'ACTIVE' | 'PREFERRED'>('ALL');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -24,14 +25,17 @@ const SupplierManagementPage: React.FC = () => {
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
 
   // Fetch data based on filter
-  const { data: allSuppliers = [], isLoading: allLoading } = useGetAllSuppliersQuery(undefined, {
+  // Pass storeId to trigger refetch when store changes
+  const { data: allSuppliers = [], isLoading: allLoading } = useGetAllSuppliersQuery('', {
     skip: filterStatus !== 'ALL',
     pollingInterval: 60000,
   });
-  const { data: activeSuppliers = [], isLoading: activeLoading } = useGetActiveSuppliersQuery(undefined, {
+  // Pass storeId to trigger refetch when store changes
+  const { data: activeSuppliers = [], isLoading: activeLoading } = useGetActiveSuppliersQuery('', {
     skip: filterStatus !== 'ACTIVE',
   });
-  const { data: preferredSuppliers = [], isLoading: preferredLoading } = useGetPreferredSuppliersQuery(undefined, {
+  // Pass storeId to trigger refetch when store changes
+  const { data: preferredSuppliers = [], isLoading: preferredLoading } = useGetPreferredSuppliersQuery('', {
     skip: filterStatus !== 'PREFERRED',
   });
 
@@ -87,6 +91,7 @@ const SupplierManagementPage: React.FC = () => {
     padding: spacing[6],
     backgroundColor: '#e8e8e8',
     zIndex: 1,
+    paddingTop: '80px',
   };
 
   const titleStyles: React.CSSProperties = {
@@ -242,7 +247,7 @@ const SupplierManagementPage: React.FC = () => {
     return (
       <div style={containerStyles}>
         <AnimatedBackground />
-        <AppHeader title="Supplier Management" showBackButton />
+        <AppHeader title="Supplier Management" showBackButton onBack={handleBack} showManagerNav={true} />
         <div style={{ textAlign: 'center', padding: spacing[10] }}>Loading suppliers...</div>
       </div>
     );
@@ -259,7 +264,7 @@ const SupplierManagementPage: React.FC = () => {
     <>
       <AnimatedBackground />
       <div style={containerStyles}>
-        <AppHeader title="Supplier Management" showBackButton />
+        <AppHeader title="Supplier Management" showBackButton onBack={handleBack} showManagerNav={true} />
 
       <h1 style={titleStyles}>Supplier Management</h1>
 

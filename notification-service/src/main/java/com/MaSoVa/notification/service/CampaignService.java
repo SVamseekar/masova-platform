@@ -151,17 +151,12 @@ public class CampaignService {
         }
 
         // Otherwise, get users based on segment
-        List<String> userIds = new ArrayList<>();
-        List<UserPreferences> allPreferences = userPreferencesRepository.findAll();
+        // Use dedicated query instead of loading all preferences
+        List<UserPreferences> promotionalUsers = userPreferencesRepository.findByPromotionalEnabledTrue();
 
-        for (UserPreferences prefs : allPreferences) {
-            // Check if user has opted in for promotional messages
-            if (prefs.isPromotionalEnabled()) {
-                userIds.add(prefs.getUserId());
-            }
-        }
-
-        return userIds;
+        return promotionalUsers.stream()
+                .map(UserPreferences::getUserId)
+                .toList();
     }
 
     public Page<Campaign> getAllCampaigns(Pageable pageable) {

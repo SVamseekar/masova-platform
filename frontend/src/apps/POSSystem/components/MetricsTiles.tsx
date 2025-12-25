@@ -1,46 +1,47 @@
 // src/apps/POSSystem/components/MetricsTiles.tsx
 import React from 'react';
-import { Grid, Paper, Box, Typography, Skeleton, Alert } from '@mui/material';
-import {
-  TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon,
-  AttachMoney as MoneyIcon,
-  ShoppingCart as OrderIcon,
-  LocalShipping as DeliveryIcon,
-} from '@mui/icons-material';
 import { CURRENCY } from '../../../config/business-config';
 import {
   useGetTodaySalesMetricsQuery,
   useGetAverageOrderValueQuery,
   useGetDriverStatusQuery,
 } from '../../../store/api/analyticsApi';
+import Card from '../../../components/ui/neumorphic/Card';
+import { colors, shadows, spacing, typography } from '../../../styles/design-tokens';
+
+interface MetricsTilesProps {
+  storeId?: string;
+}
 
 /**
  * Real-time metrics display for POS dashboard
  * Shows today's sales, comparisons, and operational stats
  */
-const MetricsTiles: React.FC = () => {
+const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
   // Fetch real-time metrics from analytics service
   const {
     data: salesMetrics,
     isLoading: salesLoading,
     error: salesError,
-  } = useGetTodaySalesMetricsQuery(undefined, {
+  } = useGetTodaySalesMetricsQuery(storeId, {
     pollingInterval: 60000, // Refresh every minute
+    skip: !storeId, // Skip if no storeId
   });
 
   const {
     data: avgOrderValue,
     isLoading: avgLoading,
-  } = useGetAverageOrderValueQuery(undefined, {
+  } = useGetAverageOrderValueQuery(storeId, {
     pollingInterval: 60000,
+    skip: !storeId,
   });
 
   const {
     data: driverStatus,
     isLoading: driverLoading,
-  } = useGetDriverStatusQuery(undefined, {
+  } = useGetDriverStatusQuery(storeId, {
     pollingInterval: 30000, // Refresh every 30 seconds
+    skip: !storeId,
   });
 
   const isLoading = salesLoading || avgLoading || driverLoading;
@@ -48,9 +49,17 @@ const MetricsTiles: React.FC = () => {
   // Show error state if sales data fails to load
   if (salesError) {
     return (
-      <Alert severity="warning" sx={{ mb: 2 }}>
-        Unable to load metrics. Using offline mode.
-      </Alert>
+      <Card
+        elevation="sm"
+        padding="base"
+        style={{
+          background: `linear-gradient(135deg, ${colors.semantic.warningLight}22 0%, ${colors.semantic.warning}11 100%)`,
+          border: `2px solid ${colors.semantic.warning}`,
+          textAlign: 'center'
+        }}
+      >
+        ⚠️ Unable to load metrics. Using offline mode.
+      </Card>
     );
   }
 
@@ -61,124 +70,169 @@ const MetricsTiles: React.FC = () => {
     icon,
     trend,
     trendValue,
-    color = 'primary.main'
+    bgColor = colors.brand.primary
   }: any) => (
-    <Paper
-      elevation={1}
-      sx={{
-        p: 2,
+    <Card
+      elevation="md"
+      padding="lg"
+      interactive
+      style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 2,
-        transition: 'all 0.2s',
-        '&:hover': {
-          boxShadow: 3,
-          transform: 'translateY(-2px)',
-        },
+        gap: spacing[4],
+        transition: 'all 0.3s ease',
+        border: `2px solid transparent`
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-4px)';
+        e.currentTarget.style.borderColor = bgColor;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.borderColor = 'transparent';
       }}
     >
-      <Box
-        sx={{
-          width: 50,
-          height: 50,
-          borderRadius: 2,
-          backgroundColor: color,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
-        }}
-      >
+      <div style={{
+        width: '56px',
+        height: '56px',
+        borderRadius: '12px',
+        background: `linear-gradient(135deg, ${bgColor} 0%, ${bgColor}dd 100%)`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: colors.text.inverse,
+        fontSize: typography.fontSize['2xl'],
+        boxShadow: `0 8px 16px ${bgColor}44`,
+        flexShrink: 0
+      }}>
         {icon}
-      </Box>
-      <Box sx={{ flex: 1 }}>
-        <Typography variant="caption" color="text.secondary" display="block">
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{
+          margin: 0,
+          fontSize: typography.fontSize.xs,
+          fontWeight: typography.fontWeight.semibold,
+          color: colors.text.secondary,
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em'
+        }}>
           {title}
-        </Typography>
-        <Typography variant="h6" fontWeight="bold">
-          {isLoading ? <Skeleton width={80} /> : value}
-        </Typography>
+        </p>
+        <h4 style={{
+          margin: `${spacing[1]} 0`,
+          fontSize: typography.fontSize['2xl'],
+          fontWeight: typography.fontWeight.extrabold,
+          color: colors.text.primary,
+          lineHeight: '1.2'
+        }}>
+          {isLoading ? (
+            <div style={{
+              width: '80px',
+              height: '20px',
+              borderRadius: '4px',
+              background: colors.surface.border,
+              animation: 'pulse 1.5s ease-in-out infinite'
+            }} />
+          ) : value}
+        </h4>
         {subtitle && (
-          <Typography variant="caption" color="text.secondary">
+          <p style={{
+            margin: 0,
+            fontSize: typography.fontSize.xs,
+            color: colors.text.secondary
+          }}>
             {subtitle}
-          </Typography>
+          </p>
         )}
         {trend && trendValue !== undefined && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-            {trendValue >= 0 ? (
-              <TrendingUpIcon sx={{ fontSize: 16, color: 'success.main' }} />
-            ) : (
-              <TrendingDownIcon sx={{ fontSize: 16, color: 'error.main' }} />
-            )}
-            <Typography
-              variant="caption"
-              sx={{
-                color: trendValue >= 0 ? 'success.main' : 'error.main',
-                fontWeight: 'bold',
-              }}
-            >
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing[1],
+            marginTop: spacing[2]
+          }}>
+            <span style={{
+              fontSize: typography.fontSize.base,
+              color: trendValue >= 0 ? colors.semantic.success : colors.semantic.error
+            }}>
+              {trendValue >= 0 ? '📈' : '📉'}
+            </span>
+            <span style={{
+              fontSize: typography.fontSize.xs,
+              fontWeight: typography.fontWeight.bold,
+              color: trendValue >= 0 ? colors.semantic.success : colors.semantic.error
+            }}>
               {trendValue >= 0 ? '+' : ''}{trendValue.toFixed(1)}%
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
+            </span>
+            <span style={{
+              fontSize: typography.fontSize.xs,
+              color: colors.text.secondary
+            }}>
               {trend}
-            </Typography>
-          </Box>
+            </span>
+          </div>
         )}
-      </Box>
-    </Paper>
+      </div>
+      <style>{`
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.5;
+          }
+        }
+      `}</style>
+    </Card>
   );
 
   return (
-    <Grid container spacing={2}>
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+      gap: spacing[4]
+    }}>
       {/* Today's Sales */}
-      <Grid item xs={12} sm={6} md={3}>
-        <MetricCard
-          title="Today's Sales"
-          value={salesMetrics ? CURRENCY.format(salesMetrics.todaySales) : '-'}
-          subtitle={salesMetrics ? `${salesMetrics.todayOrderCount} orders` : 'Loading...'}
-          icon={<MoneyIcon />}
-          trend="vs yesterday"
-          trendValue={salesMetrics?.percentChangeFromYesterday}
-          color="#4caf50"
-        />
-      </Grid>
+      <MetricCard
+        title="Today's Sales"
+        value={salesMetrics ? CURRENCY.format(salesMetrics.todaySales) : '-'}
+        subtitle={salesMetrics ? `${salesMetrics.todayOrderCount} orders` : 'Loading...'}
+        icon="💰"
+        trend="vs yesterday"
+        trendValue={salesMetrics?.percentChangeFromYesterday}
+        bgColor={colors.semantic.success}
+      />
 
       {/* Average Order Value */}
-      <Grid item xs={12} sm={6} md={3}>
-        <MetricCard
-          title="Avg Order Value"
-          value={avgOrderValue ? CURRENCY.format(avgOrderValue.averageOrderValue) : '-'}
-          subtitle={avgOrderValue ? `${avgOrderValue.totalOrders} orders` : 'Loading...'}
-          icon={<OrderIcon />}
-          trend={avgOrderValue ? 'vs yesterday' : undefined}
-          trendValue={avgOrderValue?.percentChange}
-          color="#2196f3"
-        />
-      </Grid>
+      <MetricCard
+        title="Avg Order Value"
+        value={avgOrderValue ? CURRENCY.format(avgOrderValue.averageOrderValue) : '-'}
+        subtitle={avgOrderValue ? `${avgOrderValue.totalOrders} orders` : 'Loading...'}
+        icon="🛒"
+        trend={avgOrderValue ? 'vs yesterday' : undefined}
+        trendValue={avgOrderValue?.percentChange}
+        bgColor={colors.semantic.info}
+      />
 
       {/* Year-over-Year Comparison */}
-      <Grid item xs={12} sm={6} md={3}>
-        <MetricCard
-          title="Last Year (Same Day)"
-          value={salesMetrics ? CURRENCY.format(salesMetrics.lastYearSameDaySales) : '-'}
-          trend="YoY growth"
-          trendValue={salesMetrics?.percentChangeFromLastYear}
-          icon={<TrendingUpIcon />}
-          color="#ff9800"
-        />
-      </Grid>
+      <MetricCard
+        title="Last Year (Same Day)"
+        value={salesMetrics ? CURRENCY.format(salesMetrics.lastYearSameDaySales) : '-'}
+        trend="YoY growth"
+        trendValue={salesMetrics?.percentChangeFromLastYear}
+        icon="📊"
+        bgColor={colors.semantic.warning}
+      />
 
       {/* Active Deliveries */}
-      <Grid item xs={12} sm={6} md={3}>
-        <MetricCard
-          title="Active Deliveries"
-          value={driverStatus?.activeDeliveries ?? '-'}
-          subtitle={driverStatus ? `${driverStatus.availableDrivers}/${driverStatus.totalDrivers} drivers available` : 'Loading...'}
-          icon={<DeliveryIcon />}
-          color="#9c27b0"
-        />
-      </Grid>
-    </Grid>
+      <MetricCard
+        title="Active Deliveries"
+        value={driverStatus?.activeDeliveries ?? '-'}
+        subtitle={driverStatus ? `${driverStatus.availableDrivers}/${driverStatus.totalDrivers} drivers available` : 'Loading...'}
+        icon="🚚"
+        bgColor={colors.brand.secondary}
+      />
+    </div>
   );
 };
 

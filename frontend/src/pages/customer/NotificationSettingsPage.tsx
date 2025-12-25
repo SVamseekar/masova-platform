@@ -237,7 +237,7 @@ const NotificationSettingsPage: React.FC = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
                     <Box
                       sx={{
-                        ...createNeumorphicSurface('raised', 'xs', 'lg'),
+                        ...createNeumorphicSurface('raised', 'sm', 'lg'),
                         width: 48,
                         height: 48,
                         display: 'flex',
@@ -287,7 +287,7 @@ const NotificationSettingsPage: React.FC = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
           <Box
             sx={{
-              ...createNeumorphicSurface('raised', 'xs', 'lg'),
+              ...createNeumorphicSurface('raised', 'sm', 'lg'),
               width: 40,
               height: 40,
               display: 'flex',
@@ -375,7 +375,7 @@ const NotificationSettingsPage: React.FC = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
           <Box
             sx={{
-              ...createNeumorphicSurface('raised', 'xs', 'lg'),
+              ...createNeumorphicSurface('raised', 'sm', 'lg'),
               width: 40,
               height: 40,
               display: 'flex',

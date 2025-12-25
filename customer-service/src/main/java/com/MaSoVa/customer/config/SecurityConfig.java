@@ -22,6 +22,13 @@ public class SecurityConfig extends SecurityConfigurationBase {
             "/actuator/health",
             "/api/health/**",
 
+            // Customer creation endpoints (for user registration flow)
+            "/api/customers",
+            "/api/customers/get-or-create",
+
+            // Service-to-service endpoints (called by Order Service)
+            "/api/customers/*/order-stats",
+
             // API documentation
             "/v3/api-docs/**",
             "/swagger-ui/**",

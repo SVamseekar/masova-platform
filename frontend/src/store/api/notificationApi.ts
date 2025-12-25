@@ -293,9 +293,15 @@ export const notificationApi = createApi({
       invalidatesTags: ['Campaign'],
     }),
 
-    getAllCampaigns: builder.query<PageResponse<Campaign>, { page?: number; size?: number }>({
-      query: ({ page = 0, size = 20 }) => `/campaigns?page=${page}&size=${size}`,
-      providesTags: ['Campaign'],
+    getAllCampaigns: builder.query<PageResponse<Campaign>, { storeId?: string; page?: number; size?: number }>({
+      query: ({ storeId, page = 0, size = 20 }) => {
+        const params = new URLSearchParams();
+        params.append('page', page.toString());
+        params.append('size', size.toString());
+        if (storeId) params.append('storeId', storeId);
+        return `/campaigns?${params.toString()}`;
+      },
+      providesTags: (result, error, { storeId }) => [{ type: 'Campaign', id: storeId || 'DEFAULT' }],
     }),
 
     getCampaign: builder.query<Campaign, string>({

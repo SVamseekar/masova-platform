@@ -51,18 +51,17 @@
             <version>9.14.1</version>
         </dependency>
 
-        <!-- SendGrid for Email -->
-        <dependency>
-            <groupId>com.sendgrid</groupId>
-            <artifactId>sendgrid-java</artifactId>
-            <version>4.9.3</version>
-        </dependency>
-
         <!-- Firebase for Push Notifications -->
         <dependency>
             <groupId>com.google.firebase</groupId>
             <artifactId>firebase-admin</artifactId>
             <version>9.2.0</version>
+        </dependency>
+
+        <!-- Apache HttpClient for RestTemplate -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
         </dependency>
 
         <dependency>
@@ -80,6 +79,23 @@
             <groupId>com.MaSoVa</groupId>
             <artifactId>shared-security</artifactId>
             <version>1.0.0</version>
+        </dependency>
+
+        <!-- JJWT - Override version to match shared-security -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.12.3</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.12.3</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.12.3</version>
         </dependency>
 
         <!-- Lombok -->

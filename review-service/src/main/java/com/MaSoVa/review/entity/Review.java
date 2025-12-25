@@ -2,8 +2,10 @@ package com.MaSoVa.review.entity;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.index.Indexed;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -14,6 +16,12 @@ public class Review {
 
     @Id
     private String id;
+
+    @Version
+    private Long version;
+
+    @Indexed
+    private String storeId;
 
     private String orderId;
     private String customerId;
@@ -33,6 +41,13 @@ public class Review {
     private String driverName;
     private Integer driverRating; // 1-5 stars
     private String driverComment;
+
+    // Staff review (for POS and kitchen staff)
+    @Indexed
+    private String staffId;
+    private String staffName;
+    private Integer staffRating; // 1-5 stars
+    private String staffComment;
 
     // Item-specific reviews
     private List<ItemReview> itemReviews = new ArrayList<>();
@@ -72,6 +87,9 @@ public class Review {
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
+    public String getStoreId() { return storeId; }
+    public void setStoreId(String storeId) { this.storeId = storeId; }
+
     public String getOrderId() { return orderId; }
     public void setOrderId(String orderId) { this.orderId = orderId; }
 
@@ -107,6 +125,18 @@ public class Review {
 
     public String getDriverComment() { return driverComment; }
     public void setDriverComment(String driverComment) { this.driverComment = driverComment; }
+
+    public String getStaffId() { return staffId; }
+    public void setStaffId(String staffId) { this.staffId = staffId; }
+
+    public String getStaffName() { return staffName; }
+    public void setStaffName(String staffName) { this.staffName = staffName; }
+
+    public Integer getStaffRating() { return staffRating; }
+    public void setStaffRating(Integer staffRating) { this.staffRating = staffRating; }
+
+    public String getStaffComment() { return staffComment; }
+    public void setStaffComment(String staffComment) { this.staffComment = staffComment; }
 
     public List<ItemReview> getItemReviews() { return itemReviews; }
     public void setItemReviews(List<ItemReview> itemReviews) { this.itemReviews = itemReviews; }
@@ -157,6 +187,7 @@ public class Review {
         private final Review review = new Review();
 
         public Builder id(String id) { review.id = id; return this; }
+        public Builder storeId(String storeId) { review.storeId = storeId; return this; }
         public Builder orderId(String orderId) { review.orderId = orderId; return this; }
         public Builder customerId(String customerId) { review.customerId = customerId; return this; }
         public Builder customerName(String customerName) { review.customerName = customerName; return this; }
@@ -169,6 +200,10 @@ public class Review {
         public Builder driverName(String driverName) { review.driverName = driverName; return this; }
         public Builder driverRating(Integer driverRating) { review.driverRating = driverRating; return this; }
         public Builder driverComment(String driverComment) { review.driverComment = driverComment; return this; }
+        public Builder staffId(String staffId) { review.staffId = staffId; return this; }
+        public Builder staffName(String staffName) { review.staffName = staffName; return this; }
+        public Builder staffRating(Integer staffRating) { review.staffRating = staffRating; return this; }
+        public Builder staffComment(String staffComment) { review.staffComment = staffComment; return this; }
         public Builder itemReviews(List<ItemReview> itemReviews) { review.itemReviews = itemReviews; return this; }
         public Builder isAnonymous(Boolean isAnonymous) { review.isAnonymous = isAnonymous; return this; }
         public Builder isVerifiedPurchase(Boolean isVerifiedPurchase) { review.isVerifiedPurchase = isVerifiedPurchase; return this; }

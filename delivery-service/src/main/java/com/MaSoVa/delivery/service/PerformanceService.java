@@ -7,7 +7,6 @@ import com.MaSoVa.delivery.entity.DeliveryTracking;
 import com.MaSoVa.delivery.repository.DeliveryTrackingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -15,7 +14,6 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
@@ -37,21 +35,23 @@ public class PerformanceService {
 
     /**
      * Get driver performance metrics for a date range
+     * Week 4: Added storeId parameter for store isolation
+     * Note: Caching temporarily disabled due to serialization issues with DriverPerformanceResponse
      */
-    @Cacheable(value = "performance", key = "#driverId + '-' + #startDate + '-' + #endDate")
-    public DriverPerformanceResponse getDriverPerformance(String driverId, LocalDate startDate, LocalDate endDate) {
-        log.info("Calculating performance for driver: {} from {} to {}", driverId, startDate, endDate);
+    // @Cacheable(value = "performance", key = "#driverId + '-' + #storeId + '-' + #startDate + '-' + #endDate")
+    public DriverPerformanceResponse getDriverPerformance(String driverId, String storeId, LocalDate startDate, LocalDate endDate) {
+        log.info("Calculating performance for driver: {} in store: {} from {} to {}", driverId, storeId, startDate, endDate);
 
         // Get driver details
         Map<String, Object> driverDetails = userServiceClient.getDriverDetails(driverId);
         String driverName = driverDetails.get("name") != null ? (String) driverDetails.get("name") : "Unknown";
 
-        // Get deliveries in date range
+        // Get deliveries in date range filtered by storeId
         LocalDateTime start = LocalDateTime.of(startDate, LocalTime.MIN);
         LocalDateTime end = LocalDateTime.of(endDate, LocalTime.MAX);
 
         List<DeliveryTracking> deliveries = deliveryTrackingRepository
-                .findByDriverIdAndCreatedAtBetween(driverId, start, end);
+                .findByDriverIdAndStoreIdAndCreatedAtBetween(driverId, storeId, start, end);
 
         // Calculate metrics
         int totalDeliveries = deliveries.size();
@@ -176,17 +176,18 @@ public class PerformanceService {
 
     /**
      * Get today's overall delivery metrics
+     * Week 4: Added storeId parameter for store isolation
      */
-    public DeliveryMetricsResponse getTodayMetrics() {
+    public DeliveryMetricsResponse getTodayMetrics(String storeId) {
         LocalDate today = LocalDate.now();
         LocalDateTime startOfDay = LocalDateTime.of(today, LocalTime.MIN);
         LocalDateTime endOfDay = LocalDateTime.of(today, LocalTime.MAX);
 
-        log.info("Calculating today's delivery metrics for {}", today);
+        log.info("Calculating today's delivery metrics for {} in store: {}", today, storeId);
 
-        // Get all deliveries for today
+        // Get all deliveries for today filtered by storeId
         List<DeliveryTracking> todayDeliveries = deliveryTrackingRepository
-                .findByCreatedAtBetween(startOfDay, endOfDay);
+                .findByStoreIdAndCreatedAtBetween(storeId, startOfDay, endOfDay);
 
         // Calculate metrics
         int totalDeliveries = todayDeliveries.size();

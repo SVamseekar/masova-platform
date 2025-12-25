@@ -108,7 +108,7 @@ const PaymentSuccessPage: React.FC = () => {
       <>
         <AnimatedBackground variant="minimal" />
         <div style={containerStyles}>
-          <Card elevation="xl" padding="xl" style={cardStyles}>
+          <Card elevation="lg" padding="xl" style={cardStyles}>
             <div style={iconStyles}>⏳</div>
             <h1 style={titleStyles}>Verifying Payment...</h1>
             <p style={messageStyles}>
@@ -125,7 +125,7 @@ const PaymentSuccessPage: React.FC = () => {
       <>
         <AnimatedBackground variant="minimal" />
         <div style={containerStyles}>
-          <Card elevation="xl" padding="xl" style={cardStyles}>
+          <Card elevation="lg" padding="xl" style={cardStyles}>
             <div style={iconStyles}>⚠️</div>
             <h1 style={titleStyles}>Payment Verification Failed</h1>
             <p style={messageStyles}>
@@ -156,9 +156,9 @@ const PaymentSuccessPage: React.FC = () => {
 
   return (
     <>
-      <AnimatedBackground variant="success" />
+      <AnimatedBackground variant="default" />
       <div style={containerStyles}>
-        <Card elevation="xl" padding="xl" style={cardStyles}>
+        <Card elevation="lg" padding="xl" style={cardStyles}>
           <div style={iconStyles}>✅</div>
           <h1 style={titleStyles}>Payment Successful!</h1>
           <p style={messageStyles}>

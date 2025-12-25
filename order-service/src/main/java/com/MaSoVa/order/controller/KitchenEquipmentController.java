@@ -3,6 +3,11 @@ package com.MaSoVa.order.controller;
 import com.MaSoVa.order.entity.KitchenEquipment;
 import com.MaSoVa.order.service.KitchenEquipmentService;
 import com.MaSoVa.shared.util.StoreContextUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +20,8 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/kitchen-equipment")
+@Tag(name = "Kitchen Equipment", description = "APIs for managing kitchen equipment monitoring and maintenance")
+@SecurityRequirement(name = "bearerAuth")
 public class KitchenEquipmentController {
 
     private static final Logger log = LoggerFactory.getLogger(KitchenEquipmentController.class);
@@ -29,6 +36,11 @@ public class KitchenEquipmentController {
      * Create new equipment
      */
     @PostMapping
+    @Operation(summary = "Create new kitchen equipment", description = "Register new kitchen equipment for monitoring")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Equipment created successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid equipment data")
+    })
     public ResponseEntity<KitchenEquipment> createEquipment(@RequestBody KitchenEquipment equipment) {
         log.info("POST /api/kitchen-equipment - Creating equipment: {}", equipment.getEquipmentName());
         KitchenEquipment created = equipmentService.createEquipment(equipment);
@@ -39,6 +51,11 @@ public class KitchenEquipmentController {
      * Get all equipment for a store
      */
     @GetMapping("/store")
+    @Operation(summary = "Get store equipment", description = "Retrieves all kitchen equipment for the authenticated user's store")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Equipment list retrieved successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid store ID")
+    })
     public ResponseEntity<List<KitchenEquipment>> getEquipmentByStore(HttpServletRequest request) {
         String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
         if (storeId == null || storeId.isEmpty()) {

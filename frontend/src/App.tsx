@@ -2,11 +2,14 @@ import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, CssBaseline, CircularProgress, Box } from '@mui/material';
 import { Provider } from 'react-redux';
+import { SnackbarProvider } from 'notistack';
 import { store } from './store/store';
 import { MaSoVaTheme } from './styles/theme';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { NotificationSystem } from './components/common/NotificationSystem';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
+import { TokenRefreshManager } from './components/auth/TokenRefreshManager';
+import { ConnectionMonitorProvider } from './components/common/ConnectionMonitorProvider';
 
 // Lazy load components
 const HomePage = React.lazy(() => import('./apps/PublicWebsite/HomePage'));
@@ -23,6 +26,7 @@ const PaymentFailedPage = React.lazy(() => import('./pages/customer/PaymentFaile
 const TrackingPage = React.lazy(() => import('./pages/customer/TrackingPage'));
 const LiveTrackingPage = React.lazy(() => import('./pages/customer/LiveTrackingPage'));
 const OrderTrackingPage = React.lazy(() => import('./pages/customer/OrderTrackingPage'));
+const PublicRatingPage = React.lazy(() => import('./pages/PublicRatingPage'));
 const CustomerDashboard = React.lazy(() => import('./pages/customer/CustomerDashboard'));
 const ProfilePage = React.lazy(() => import('./pages/customer/ProfilePage'));
 const NotificationSettingsPage = React.lazy(() => import('./pages/customer/NotificationSettingsPage'));
@@ -35,6 +39,9 @@ const SupplierManagementPage = React.lazy(() => import('./pages/manager/Supplier
 const PurchaseOrdersPage = React.lazy(() => import('./pages/manager/PurchaseOrdersPage'));
 const WasteAnalysisPage = React.lazy(() => import('./pages/manager/WasteAnalysisPage'));
 const CustomerManagementPage = React.lazy(() => import('./pages/manager/CustomerManagementPage'));
+const StaffManagementPage = React.lazy(() => import('./pages/manager/StaffManagementPage'));
+const StaffSchedulingPage = React.lazy(() => import('./pages/manager/StaffSchedulingPage'));
+const StaffProfilePage = React.lazy(() => import('./pages/staff/StaffProfilePage'));
 const DriverManagementPage = React.lazy(() => import('./pages/manager/DriverManagementPage'));
 const DeliveryManagementPage = React.lazy(() => import('./pages/manager/DeliveryManagementPage'));
 const CampaignManagementPage = React.lazy(() => import('./pages/manager/CampaignManagementPage'));
@@ -44,13 +51,23 @@ const OrderManagementPage = React.lazy(() => import('./pages/manager/OrderManage
 const KitchenDisplayPage = React.lazy(() => import('./pages/kitchen/KitchenDisplayPage'));
 const DriverDashboard = React.lazy(() => import('./pages/driver/DriverDashboard'));
 const POSSystem = React.lazy(() => import('./apps/POSSystem/POSSystem'));
+const KioskManagementPage = React.lazy(() => import('./pages/manager/KioskManagementPage'));
+const KioskSetupPage = React.lazy(() => import('./pages/kiosk/KioskSetupPage'));
+const KitchenAnalyticsPage = React.lazy(() => import('./pages/manager/KitchenAnalyticsPage'));
+const ProductAnalyticsPage = React.lazy(() => import('./pages/manager/ProductAnalyticsPage'));
+const AdvancedReportsPage = React.lazy(() => import('./pages/manager/AdvancedReportsPage'));
+const StaffLeaderboardPage = React.lazy(() => import('./pages/manager/StaffLeaderboardPage'));
+const EquipmentMonitoringPage = React.lazy(() => import('./pages/manager/EquipmentMonitoringPage'));
+
+// Kiosk mode hook
+import { useKioskMode } from './hooks/useKioskMode';
 
 // Loading component
 const AppLoader = () => (
-  <Box 
-    display="flex" 
-    justifyContent="center" 
-    alignItems="center" 
+  <Box
+    display="flex"
+    justifyContent="center"
+    alignItems="center"
     minHeight="100vh"
     bgcolor="background.default"
   >
@@ -58,16 +75,37 @@ const AppLoader = () => (
   </Box>
 );
 
+// Kiosk Mode Initializer component
+const KioskModeInitializer: React.FC = () => {
+  const { isLoading } = useKioskMode();
+
+  if (isLoading) {
+    return <AppLoader />;
+  }
+
+  return null;
+};
+
 const App: React.FC = () => {
   return (
     <Provider store={store}>
-      <ThemeProvider theme={MaSoVaTheme}>
-        <CssBaseline />
-        <ErrorBoundary>
-          <Router>
-            <div className="App">
-              <Suspense fallback={<AppLoader />}>
-                <Routes>
+      <TokenRefreshManager />
+      <KioskModeInitializer />
+      <ConnectionMonitorProvider>
+        <ThemeProvider theme={MaSoVaTheme}>
+          <CssBaseline />
+          <SnackbarProvider
+            maxSnack={4}
+            autoHideDuration={3000}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            preventDuplicate
+            dense
+          >
+            <ErrorBoundary>
+              <Router>
+                <div className="App">
+                  <Suspense fallback={<AppLoader />}>
+                    <Routes>
                   {/* Public Routes - No Login Required */}
                   <Route path="/" element={<HomePage />} />
                   <Route path="/menu" element={<PublicMenuPage />} />
@@ -85,6 +123,7 @@ const App: React.FC = () => {
                   <Route path="/payment/failed" element={<PaymentFailedPage />} />
                   <Route path="/tracking/:orderId" element={<TrackingPage />} />
                   <Route path="/live-tracking/:orderId" element={<LiveTrackingPage />} />
+                  <Route path="/rate/:orderId/:token" element={<PublicRatingPage />} />
 
                   {/* Customer Dashboard - Login required */}
                   <Route
@@ -122,10 +161,11 @@ const App: React.FC = () => {
 
                   {/* Kitchen Display - Public Access (No Login Required) */}
                   <Route path="/kitchen" element={<KitchenDisplayPage />} />
+                  <Route path="/kitchen/:storeId" element={<KitchenDisplayPage />} />
 
                   {/* Staff Routes - Login Required */}
                   <Route
-                    path="/manager/*"
+                    path="/manager"
                     element={
                       <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
                         <ManagerDashboard />
@@ -161,6 +201,14 @@ const App: React.FC = () => {
                     element={
                       <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
                         <StoreManagementPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/kiosk"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <KioskManagementPage />
                       </ProtectedRoute>
                     }
                   />
@@ -205,6 +253,38 @@ const App: React.FC = () => {
                     }
                   />
                   <Route
+                    path="/manager/staff"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <StaffManagementPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/staff-scheduling"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <StaffSchedulingPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/staff/:staffId/profile"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <StaffProfilePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/staff/profile"
+                    element={
+                      <ProtectedRoute allowedRoles={['STAFF', 'MANAGER', 'ASSISTANT_MANAGER']}>
+                        <StaffProfilePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
                     path="/manager/drivers"
                     element={
                       <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
@@ -245,6 +325,46 @@ const App: React.FC = () => {
                     }
                   />
                   <Route
+                    path="/manager/kitchen-analytics"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <KitchenAnalyticsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/product-analytics"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <ProductAnalyticsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/advanced-reports"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <AdvancedReportsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/staff-leaderboard"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <StaffLeaderboardPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/equipment-monitoring"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <EquipmentMonitoringPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
                     path="/kitchen/*"
                     element={
                       <ProtectedRoute allowedRoles={['STAFF', 'MANAGER', 'ASSISTANT_MANAGER']}>
@@ -260,23 +380,21 @@ const App: React.FC = () => {
                       </ProtectedRoute>
                     }
                   />
-                  <Route
-                    path="/pos/*"
-                    element={
-                      <ProtectedRoute allowedRoles={['STAFF', 'MANAGER', 'ASSISTANT_MANAGER']}>
-                        <POSSystem />
-                      </ProtectedRoute>
-                    }
-                  />
+                  {/* POS System - Public Access (PIN authentication per order) */}
+                  <Route path="/pos/*" element={<POSSystem />} />
+                  {/* Kiosk Setup (Public) */}
+                  <Route path="/kiosk-setup" element={<KioskSetupPage />} />
 
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </Suspense>
-              <NotificationSystem />
-            </div>
-          </Router>
-        </ErrorBoundary>
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </Suspense>
+                <NotificationSystem />
+              </div>
+            </Router>
+          </ErrorBoundary>
+        </SnackbarProvider>
       </ThemeProvider>
+      </ConnectionMonitorProvider>
     </Provider>
   );
 };

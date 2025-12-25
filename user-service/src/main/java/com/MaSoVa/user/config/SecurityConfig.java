@@ -36,12 +36,20 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            // CSRF disabled for stateless REST API with JWT authentication
+            // CSRF protection is not needed because:
+            // 1. JWT tokens are sent in Authorization header (not cookies)
+            // 2. Custom headers cannot be set by browsers in cross-origin requests without CORS
+            // 3. API is stateless - no session cookies to be exploited
             .csrf(csrf -> csrf.disable())
             // CORS is handled by API Gateway - do not configure here to avoid duplicate headers
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/users/register", "/api/users/login", "/api/users/refresh").permitAll()
-                .requestMatchers("/actuator/**").permitAll()
+                .requestMatchers("/api/test-data/**").permitAll() // Allow test/migration endpoints
+                // Secure actuator endpoints - only health and info are public, rest require authentication
+                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                .requestMatchers("/actuator/**").hasRole("MANAGER")
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
                 // Public store endpoints - allow customers to view stores
                 .requestMatchers("/api/stores", "/api/stores/{storeId}", "/api/stores/code/{storeCode}",

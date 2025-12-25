@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import {
   useGetAllCustomersQuery,
   useSearchCustomersQuery,
@@ -16,10 +17,12 @@ import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
 import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
 import { createNeumorphicSurface, createCard, createBadge } from '../../styles/neumorphic-utils';
+import { FilterBar, FilterConfig, FilterValues, SortConfig } from '../../components/common/FilterBar';
+import { applyFilters, applySort, exportToCSV, commonFilters } from '../../utils/filterUtils';
 
 const CustomerManagementPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
-  const [searchQuery, setSearchQuery] = useState('');
+  const { handleBack } = useSmartBackNavigation();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
@@ -27,26 +30,93 @@ const CustomerManagementPage: React.FC = () => {
   const [noteCategory, setNoteCategory] = useState<'GENERAL' | 'COMPLAINT' | 'PREFERENCE' | 'OTHER'>('GENERAL');
   const [activeTab, setActiveTab] = useState(0);
 
-  // API queries
-  const { data: allCustomers, isLoading: loadingAll } = useGetAllCustomersQuery(undefined, {
-    skip: searchQuery.length > 0,
+  // Filter and Sort State
+  const [filterValues, setFilterValues] = useState<FilterValues>({
+    search: '',
+    loyaltyTier: '',
+    status: '',
+    dateRange: {},
   });
 
-  const { data: searchResults, isLoading: loadingSearch } = useSearchCustomersQuery(
-    { query: searchQuery, page: 0, size: 50 },
-    { skip: searchQuery.length === 0 }
-  );
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    field: 'name',
+    direction: 'asc',
+  });
 
-  const { data: stats } = useGetCustomerStatsQuery();
+  // Filter Configuration
+  const filterConfigs: FilterConfig[] = [
+    {
+      type: 'search',
+      label: 'Search',
+      field: 'search',
+      placeholder: 'Search by name, email, phone...',
+    },
+    {
+      type: 'select',
+      label: 'Loyalty Tier',
+      field: 'loyaltyTier',
+      options: [
+        { label: 'Bronze', value: 'BRONZE' },
+        { label: 'Silver', value: 'SILVER' },
+        { label: 'Gold', value: 'GOLD' },
+        { label: 'Platinum', value: 'PLATINUM' },
+      ],
+    },
+    {
+      type: 'select',
+      label: 'Status',
+      field: 'status',
+      options: [
+        { label: 'Active', value: 'active' },
+        { label: 'Inactive', value: 'inactive' },
+      ],
+    },
+    {
+      type: 'dateRange',
+      label: 'Registration Date',
+      field: 'dateRange',
+    },
+  ];
+
+  const sortOptions = [
+    { label: 'Name', field: 'name' },
+    { label: 'Email', field: 'email' },
+    { label: 'Join Date', field: 'createdAt' },
+    { label: 'Total Orders', field: 'orderStats.totalOrders' },
+    { label: 'Total Spent', field: 'orderStats.totalSpent' },
+  ];
+
+  // API queries
+  const { data: allCustomers, isLoading: loadingAll } = useGetAllCustomersQuery(currentUser?.storeId || '', {
+    pollingInterval: 30000, // Refresh every 30 seconds
+  });
+  const { data: stats } = useGetCustomerStatsQuery(currentUser?.storeId, {
+    skip: !currentUser?.storeId,
+    pollingInterval: 60000, // Refresh every minute
+  });
 
   // Mutations
   const [deactivateCustomer] = useDeactivateCustomerMutation();
   const [activateCustomer] = useActivateCustomerMutation();
   const [addNote] = useAddNoteMutation();
 
-  const displayCustomers = searchQuery.length > 0
-    ? (searchResults?.content || [])
-    : (allCustomers || []);
+  // Apply filters and sorting
+  const displayCustomers = useMemo(() => {
+    const filtered = applyFilters(allCustomers || [], filterValues, {
+      search: (customer, value) =>
+        commonFilters.searchText(customer, value as string, ['name', 'email', 'phone']),
+      loyaltyTier: (customer, value) => customer.loyaltyInfo.tier === value,
+      status: (customer, value) => {
+        if (value === 'active') return customer.active === true;
+        if (value === 'inactive') return customer.active === false;
+        return true;
+      },
+      dateRange: (customer, value) =>
+        commonFilters.dateRange(customer, value, 'createdAt'),
+    });
+
+    return applySort(filtered, sortConfig);
+  }, [allCustomers, filterValues, sortConfig]);
 
   const handleToggleActive = async (customer: Customer) => {
     try {
@@ -78,6 +148,36 @@ const CustomerManagementPage: React.FC = () => {
     }
   };
 
+  const handleExport = () => {
+    exportToCSV(displayCustomers, 'customers', [
+      { label: 'Name', field: 'name' },
+      { label: 'Email', field: 'email' },
+      { label: 'Phone', field: 'phone' },
+      { label: 'Loyalty Tier', field: 'loyaltyInfo.tier' },
+      { label: 'Loyalty Points', field: 'loyaltyInfo.totalPoints' },
+      { label: 'Total Orders', field: 'orderStats.totalOrders' },
+      { label: 'Total Spent', field: 'orderStats.totalSpent', format: (v) => `₹${Math.round(v)}` },
+      { label: 'Status', field: 'active', format: (v) => v ? 'Active' : 'Inactive' },
+      { label: 'Join Date', field: 'createdAt', format: (v) => new Date(v).toLocaleDateString() },
+    ]);
+  };
+
+  const handleSortChange = (field: string) => {
+    setSortConfig((prev) => ({
+      field,
+      direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
+  const handleClearFilters = () => {
+    setFilterValues({
+      search: '',
+      loyaltyTier: '',
+      status: '',
+      dateRange: {},
+    });
+  };
+
   const getLoyaltyTierColor = (tier: string) => {
     switch (tier) {
       case 'PLATINUM': return '#E5E4E2';
@@ -95,6 +195,7 @@ const CustomerManagementPage: React.FC = () => {
     padding: spacing[6],
     backgroundColor: '#e8e8e8',
     zIndex: 1,
+    paddingTop: '80px',
   };
 
   const titleStyles: React.CSSProperties = {
@@ -135,19 +236,10 @@ const CustomerManagementPage: React.FC = () => {
     color: colors.text.tertiary,
   };
 
-  const searchContainerStyles: React.CSSProperties = {
-    ...createCard('md', 'base'),
-    padding: spacing[4],
-    marginBottom: spacing[6],
-  };
-
   const searchInputStyles: React.CSSProperties = {
     width: '100%',
     padding: spacing[3],
     fontSize: typography.fontSize.base,
-    border: 'none',
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.surface.background,
     color: colors.text.primary,
     ...createNeumorphicSurface('inset', 'sm', 'base'),
   };
@@ -239,7 +331,7 @@ const CustomerManagementPage: React.FC = () => {
       <AnimatedBackground variant="default" />
 
       <div style={containerStyles}>
-        <AppHeader title="Customer Management" showBackButton={true} />
+        <AppHeader title="Customer Management" showBackButton={true} onBack={handleBack} showManagerNav={true} />
 
         <div>
           <h1 style={titleStyles}>Customer Management</h1>
@@ -267,16 +359,19 @@ const CustomerManagementPage: React.FC = () => {
             </div>
           )}
 
-          {/* Search Bar */}
-          <div style={searchContainerStyles}>
-            <input
-              type="text"
-              placeholder="Search by name, email, or phone..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={searchInputStyles}
-            />
-          </div>
+          {/* Filter Bar */}
+          <FilterBar
+            filters={filterConfigs}
+            filterValues={filterValues}
+            onFilterChange={(field, value) => setFilterValues({ ...filterValues, [field]: value })}
+            onClearFilters={handleClearFilters}
+            sortConfig={sortConfig}
+            onSortChange={handleSortChange}
+            sortOptions={sortOptions}
+            onExport={handleExport}
+            showExport={displayCustomers.length > 0}
+            isLoading={loadingAll}
+          />
 
           {/* Customer Table */}
           <div style={tableCardStyles}>
@@ -294,14 +389,14 @@ const CustomerManagementPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {(loadingAll || loadingSearch) && (
+                {loadingAll && (
                   <tr>
                     <td colSpan={8} style={{ ...tableCellStyles, textAlign: 'center', padding: spacing[8] }}>
                       Loading customers...
                     </td>
                   </tr>
                 )}
-                {!loadingAll && !loadingSearch && displayCustomers.length === 0 && (
+                {!loadingAll && displayCustomers.length === 0 && (
                   <tr>
                     <td colSpan={8} style={{ ...tableCellStyles, textAlign: 'center', padding: spacing[8] }}>
                       No customers found
@@ -345,7 +440,7 @@ const CustomerManagementPage: React.FC = () => {
                         View
                       </Button>
                       <Button
-                        variant={customer.active ? 'danger' : 'success'}
+                        variant={customer.active ? 'danger' : 'primary'}
                         size="sm"
                         onClick={() => handleToggleActive(customer)}
                       >
@@ -411,6 +506,30 @@ const CustomerManagementPage: React.FC = () => {
                     <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>Member Since</div>
                     <div>{new Date(selectedCustomer.createdAt).toLocaleDateString()}</div>
                   </div>
+                  {selectedCustomer.storeIds && selectedCustomer.storeIds.length > 0 && (
+                    <div style={{ marginBottom: spacing[3] }}>
+                      <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary, marginBottom: spacing[2] }}>
+                        Ordered From Stores
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: spacing[2] }}>
+                        {selectedCustomer.storeIds.map((storeId) => (
+                          <span
+                            key={storeId}
+                            style={{
+                              ...badgeStyles(colors.primary.main),
+                              fontSize: typography.fontSize.xs,
+                              padding: `${spacing[1]} ${spacing[2]}`,
+                            }}
+                          >
+                            {storeId}
+                          </span>
+                        ))}
+                      </div>
+                      <div style={{ fontSize: typography.fontSize.xs, color: colors.text.tertiary, marginTop: spacing[1] }}>
+                        This customer has ordered from {selectedCustomer.storeIds.length} {selectedCustomer.storeIds.length === 1 ? 'store' : 'stores'}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -449,7 +568,7 @@ const CustomerManagementPage: React.FC = () => {
                     <div style={{ color: colors.text.tertiary }}>No addresses saved</div>
                   ) : (
                     selectedCustomer.addresses.map((address) => (
-                      <div key={address.id} style={{ marginBottom: spacing[3], padding: spacing[3], ...createCard('sm', 'base') }}>
+                      <div key={address.id} style={{ marginBottom: spacing[3], ...createCard('sm', 'base') }}>
                         <div style={{ fontWeight: typography.fontWeight.semibold, marginBottom: spacing[1] }}>
                           {address.label} {address.isDefault && <span style={badgeStyles(colors.primary.main)}>Default</span>}
                         </div>
@@ -492,7 +611,7 @@ const CustomerManagementPage: React.FC = () => {
                     <div style={{ color: colors.text.tertiary }}>No notes</div>
                   ) : (
                     selectedCustomer.notes.map((note) => (
-                      <div key={note.id} style={{ marginBottom: spacing[3], padding: spacing[3], ...createCard('sm', 'base') }}>
+                      <div key={note.id} style={{ marginBottom: spacing[3], ...createCard('sm', 'base') }}>
                         <div style={{ marginBottom: spacing[2] }}>
                           <span style={badgeStyles(colors.info.main)}>{note.category}</span>
                           <span style={{ marginLeft: spacing[2], fontSize: typography.fontSize.xs, color: colors.text.tertiary }}>

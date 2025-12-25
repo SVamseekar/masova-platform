@@ -27,6 +27,10 @@ public class AuditService {
      */
     @Async
     public void logAudit(AuditLog auditLog) {
+        if (auditLog == null) {
+            logger.warn("Attempted to log null audit log");
+            return;
+        }
         try {
             mongoTemplate.save(auditLog);
             logger.info("Audit log saved: {} - {} on {}/{}",

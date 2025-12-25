@@ -53,7 +53,7 @@ export const GdprRequests: React.FC = () => {
 
   const fetchRequests = async () => {
     try {
-      const response = await axios.get(`/api/gdpr/request/user/${userId}`);
+      const response = await axios.get<GdprRequest[]>(`/api/gdpr/request/user/${userId}`);
       setRequests(response.data);
     } catch (error) {
       console.error('Error fetching requests:', error);

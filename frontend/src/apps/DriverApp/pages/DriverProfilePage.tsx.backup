@@ -1,0 +1,447 @@
+import React, { useState } from 'react';
+import {
+  Box,
+  Container,
+  Typography,
+  Card,
+  CardContent,
+  Avatar,
+  Stack,
+  Divider,
+  Grid,
+  Chip,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Button,
+  CircularProgress,
+  Alert
+} from '@mui/material';
+import PersonIcon from '@mui/icons-material/Person';
+import EmailIcon from '@mui/icons-material/Email';
+import PhoneIcon from '@mui/icons-material/Phone';
+import BadgeIcon from '@mui/icons-material/Badge';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import StarIcon from '@mui/icons-material/Star';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../../store/store';
+import { useGetDriverPerformanceQuery } from '../../../store/api/driverApi';
+import { useGetCurrentSessionQuery, useStartSessionMutation, useEndSessionMutation } from '../../../store/api/sessionApi';
+
+const DriverProfilePage: React.FC = () => {
+  const { user } = useSelector((state: RootState) => state.auth);
+
+  // Fetch driver performance data from backend
+  const { data: performance, isLoading, error } = useGetDriverPerformanceQuery(
+    { driverId: user?.id || '' },
+    { skip: !user?.id }
+  );
+
+  // Fetch current working session
+  const { data: currentSession, refetch: refetchSession } = useGetCurrentSessionQuery(undefined, {
+    pollingInterval: 30000, // Poll every 30 seconds for real-time updates
+  });
+
+  // Session mutations
+  const [startSession, { isLoading: isStarting }] = useStartSessionMutation();
+  const [endSession, { isLoading: isEnding }] = useEndSessionMutation();
+
+  // Handle clock in/out
+  const handleClockIn = async () => {
+    if (!user?.id || !user?.storeId) {
+      alert('Unable to start session. Missing user or store information.');
+      return;
+    }
+    try {
+      await startSession({ employeeId: user.id, storeId: user.storeId }).unwrap();
+      refetchSession();
+    } catch (err) {
+      console.error('Failed to start session:', err);
+      alert('Failed to start session. Please try again.');
+    }
+  };
+
+  const handleClockOut = async () => {
+    if (!currentSession) return;
+    try {
+      await endSession().unwrap();
+      refetchSession();
+    } catch (err) {
+      console.error('Failed to end session:', err);
+      alert('Failed to end session. Please try again.');
+    }
+  };
+
+  // Calculate current session duration
+  const getSessionDuration = () => {
+    if (!currentSession?.loginTime) return '0h 0m';
+    const loginTime = new Date(currentSession.loginTime);
+    const now = new Date();
+    const diffMs = now.getTime() - loginTime.getTime();
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h ${minutes}m`;
+  };
+
+  // Use backend data or fallback to defaults
+  const driverStats = performance ? {
+    totalDeliveries: performance.totalDeliveries,
+    rating: performance.averageRating,
+    onTimePercentage: performance.onTimeDeliveryPercentage,
+    totalDistance: performance.totalDistanceCovered,
+    avgDeliveryTime: performance.averageDeliveryTime,
+    earnings: {
+      today: performance.todayEarnings,
+      week: performance.weekEarnings,
+      month: performance.monthEarnings
+    }
+  } : {
+    totalDeliveries: 0,
+    rating: 0,
+    onTimePercentage: 0,
+    totalDistance: 0,
+    avgDeliveryTime: 0,
+    earnings: {
+      today: 0,
+      week: 0,
+      month: 0
+    }
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <Container maxWidth="md" sx={{ py: 3, textAlign: 'center' }}>
+        <CircularProgress />
+        <Typography variant="body1" sx={{ mt: 2 }}>Loading driver profile...</Typography>
+      </Container>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Container maxWidth="md" sx={{ py: 3 }}>
+        <Alert severity="error">Failed to load driver performance data</Alert>
+      </Container>
+    );
+  }
+
+  // Get driver name parts
+  const nameParts = user?.name?.split(' ') || [];
+  const firstName = nameParts[0] || '';
+  const lastName = nameParts.slice(1).join(' ') || '';
+  const initials = `${firstName[0] || ''}${lastName[0] || ''}`;
+
+  return (
+    <Container maxWidth="md" sx={{ py: 3 }}>
+      {/* Profile Header */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Stack direction="row" spacing={3} alignItems="center">
+            <Avatar
+              sx={{
+                width: 80,
+                height: 80,
+                bgcolor: 'primary.main',
+                fontSize: '2rem',
+                fontWeight: 'bold'
+              }}
+            >
+              {initials}
+            </Avatar>
+            <Box flexGrow={1}>
+              <Typography variant="h5" fontWeight="bold" gutterBottom>
+                {user?.name || 'Driver'}
+              </Typography>
+              <Stack direction="row" spacing={1} alignItems="center" mb={1}>
+                <Chip
+                  label={user?.isActive ? "Active Driver" : "Inactive"}
+                  color={user?.isActive ? "success" : "default"}
+                  size="small"
+                  icon={<LocalShippingIcon />}
+                />
+                {driverStats.rating > 0 && (
+                  <Chip
+                    label={`⭐ ${driverStats.rating.toFixed(1)}`}
+                    size="small"
+                    sx={{ fontWeight: 'bold' }}
+                  />
+                )}
+              </Stack>
+              <Typography variant="body2" color="text.secondary">
+                Member since {new Date(user?.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </Typography>
+            </Box>
+          </Stack>
+        </CardContent>
+      </Card>
+
+      {/* Personal Information */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
+            Personal Information
+          </Typography>
+          <Divider sx={{ my: 2 }} />
+          <List disablePadding>
+            <ListItem disablePadding sx={{ py: 1 }}>
+              <ListItemIcon sx={{ minWidth: 40 }}>
+                <PersonIcon color="action" />
+              </ListItemIcon>
+              <ListItemText
+                primary="Full Name"
+                secondary={user?.name || 'Not provided'}
+              />
+            </ListItem>
+            <ListItem disablePadding sx={{ py: 1 }}>
+              <ListItemIcon sx={{ minWidth: 40 }}>
+                <EmailIcon color="action" />
+              </ListItemIcon>
+              <ListItemText
+                primary="Email"
+                secondary={user?.email}
+              />
+            </ListItem>
+            <ListItem disablePadding sx={{ py: 1 }}>
+              <ListItemIcon sx={{ minWidth: 40 }}>
+                <PhoneIcon color="action" />
+              </ListItemIcon>
+              <ListItemText
+                primary="Phone"
+                secondary={user?.phone || 'Not provided'}
+              />
+            </ListItem>
+            <ListItem disablePadding sx={{ py: 1 }}>
+              <ListItemIcon sx={{ minWidth: 40 }}>
+                <BadgeIcon color="action" />
+              </ListItemIcon>
+              <ListItemText
+                primary="Employee ID"
+                secondary={user?.id?.slice(-8).toUpperCase() || 'N/A'}
+              />
+            </ListItem>
+            {user?.address && (
+              <ListItem disablePadding sx={{ py: 1 }}>
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  <LocationOnIcon color="action" />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Address"
+                  secondary={typeof user.address === 'string' ? user.address : `${user.address.street}, ${user.address.city}`}
+                />
+              </ListItem>
+            )}
+          </List>
+        </CardContent>
+      </Card>
+
+      {/* Performance Stats */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
+            Performance Statistics
+          </Typography>
+          <Divider sx={{ my: 2 }} />
+
+          <Grid container spacing={2}>
+            <Grid item xs={6} sm={3}>
+              <Box sx={{ textAlign: 'center' }}>
+                <LocalShippingIcon sx={{ fontSize: 32, color: 'primary.main', mb: 1 }} />
+                <Typography variant="h5" fontWeight="bold">
+                  {driverStats.totalDeliveries}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Total Deliveries
+                </Typography>
+              </Box>
+            </Grid>
+
+            <Grid item xs={6} sm={3}>
+              <Box sx={{ textAlign: 'center' }}>
+                <StarIcon sx={{ fontSize: 32, color: 'warning.main', mb: 1 }} />
+                <Typography variant="h5" fontWeight="bold">
+                  {driverStats.rating}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Average Rating
+                </Typography>
+              </Box>
+            </Grid>
+
+            <Grid item xs={6} sm={3}>
+              <Box sx={{ textAlign: 'center' }}>
+                <TrendingUpIcon sx={{ fontSize: 32, color: 'success.main', mb: 1 }} />
+                <Typography variant="h5" fontWeight="bold">
+                  {driverStats.onTimePercentage}%
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  On-Time Rate
+                </Typography>
+              </Box>
+            </Grid>
+
+            <Grid item xs={6} sm={3}>
+              <Box sx={{ textAlign: 'center' }}>
+                <AccessTimeIcon sx={{ fontSize: 32, color: 'info.main', mb: 1 }} />
+                <Typography variant="h5" fontWeight="bold">
+                  {driverStats.avgDeliveryTime}m
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Avg Time
+                </Typography>
+              </Box>
+            </Grid>
+          </Grid>
+
+          <Divider sx={{ my: 2 }} />
+
+          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+            Total Distance Covered
+          </Typography>
+          <Typography variant="h6" fontWeight="bold" mb={2}>
+            {driverStats.totalDistance} km
+          </Typography>
+        </CardContent>
+      </Card>
+
+      {/* Earnings Summary */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
+            Earnings Summary
+          </Typography>
+          <Divider sx={{ my: 2 }} />
+
+          <Grid container spacing={3}>
+            <Grid item xs={4}>
+              <Typography variant="caption" color="text.secondary">
+                Today
+              </Typography>
+              <Typography variant="h5" fontWeight="bold" color="primary">
+                ₹{driverStats.earnings.today}
+              </Typography>
+            </Grid>
+            <Grid item xs={4}>
+              <Typography variant="caption" color="text.secondary">
+                This Week
+              </Typography>
+              <Typography variant="h5" fontWeight="bold" color="primary">
+                ₹{driverStats.earnings.week}
+              </Typography>
+            </Grid>
+            <Grid item xs={4}>
+              <Typography variant="caption" color="text.secondary">
+                This Month
+              </Typography>
+              <Typography variant="h5" fontWeight="bold" color="primary">
+                ₹{driverStats.earnings.month}
+              </Typography>
+            </Grid>
+          </Grid>
+
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
+            * Earnings calculated at 20% commission rate per delivery
+          </Typography>
+        </CardContent>
+      </Card>
+
+      {/* Working Session */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
+            Current Shift
+          </Typography>
+          <Divider sx={{ my: 2 }} />
+
+          {currentSession?.isActive ? (
+            <>
+              <Stack spacing={2}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Clocked In At
+                  </Typography>
+                  <Typography variant="body1" fontWeight="bold">
+                    {new Date(currentSession.loginTime).toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Current Duration
+                  </Typography>
+                  <Typography variant="h5" fontWeight="bold" color="primary">
+                    {getSessionDuration()}
+                  </Typography>
+                </Box>
+
+                {currentSession.breakTime > 0 && (
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Break Time
+                    </Typography>
+                    <Typography variant="body1">
+                      {currentSession.breakTime} minutes
+                    </Typography>
+                  </Box>
+                )}
+
+                <Chip
+                  label="Currently Working"
+                  color="success"
+                  icon={<AccessTimeIcon />}
+                  sx={{ alignSelf: 'flex-start' }}
+                />
+
+                <Button
+                  variant="contained"
+                  color="error"
+                  fullWidth
+                  onClick={handleClockOut}
+                  disabled={isEnding}
+                >
+                  {isEnding ? <CircularProgress size={24} /> : 'Clock Out'}
+                </Button>
+              </Stack>
+            </>
+          ) : (
+            <>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                You are not currently clocked in. Start your shift to begin tracking.
+              </Alert>
+              <Button
+                variant="contained"
+                color="primary"
+                fullWidth
+                onClick={handleClockIn}
+                disabled={isStarting}
+                startIcon={<AccessTimeIcon />}
+              >
+                {isStarting ? <CircularProgress size={24} /> : 'Clock In'}
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Actions */}
+      <Stack spacing={2}>
+        <Button variant="outlined" fullWidth>
+          Edit Profile
+        </Button>
+        <Button variant="outlined" color="error" fullWidth>
+          Report an Issue
+        </Button>
+      </Stack>
+    </Container>
+  );
+};
+
+export default DriverProfilePage;

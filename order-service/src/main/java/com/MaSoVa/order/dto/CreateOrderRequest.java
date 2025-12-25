@@ -16,6 +16,8 @@ public class CreateOrderRequest {
 
     private String customerPhone;
 
+    private String customerEmail;
+
     private String customerId;
 
     @NotBlank(message = "Store ID is required")
@@ -33,6 +35,11 @@ public class CreateOrderRequest {
 
     private String specialInstructions;
 
+    // Staff who created the order (for POS orders)
+    private String createdByStaffId;
+
+    private String createdByStaffName;
+
     public CreateOrderRequest() {}
 
     // Getters and Setters
@@ -41,6 +48,9 @@ public class CreateOrderRequest {
 
     public String getCustomerPhone() { return customerPhone; }
     public void setCustomerPhone(String customerPhone) { this.customerPhone = customerPhone; }
+
+    public String getCustomerEmail() { return customerEmail; }
+    public void setCustomerEmail(String customerEmail) { this.customerEmail = customerEmail; }
 
     public String getCustomerId() { return customerId; }
     public void setCustomerId(String customerId) { this.customerId = customerId; }
@@ -62,6 +72,12 @@ public class CreateOrderRequest {
 
     public String getSpecialInstructions() { return specialInstructions; }
     public void setSpecialInstructions(String specialInstructions) { this.specialInstructions = specialInstructions; }
+
+    public String getCreatedByStaffId() { return createdByStaffId; }
+    public void setCreatedByStaffId(String createdByStaffId) { this.createdByStaffId = createdByStaffId; }
+
+    public String getCreatedByStaffName() { return createdByStaffName; }
+    public void setCreatedByStaffName(String createdByStaffName) { this.createdByStaffName = createdByStaffName; }
 
     public static class OrderItemRequest {
 

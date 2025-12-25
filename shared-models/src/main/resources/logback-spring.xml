@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Week 5: Structured logging configuration with MDC context -->
+    
+    <!-- Define log pattern with MDC fields: correlationId, storeId, userId -->
+    <property name="LOG_PATTERN" 
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [correlationId=%X{correlationId:-N/A}] [storeId=%X{storeId:-N/A}] [userId=%X{userId:-N/A}] - %msg%n"/>
+    
+    <!-- Console appender for development -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+    
+    <!-- File appender for application logs -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/application.log</file>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/application-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+    
+    <!-- Separate file for error logs -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/error.log</file>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/error-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>90</maxHistory>
+            <totalSizeCap>2GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+    
+    <!-- JSON appender for production environments (ELK/Splunk integration) -->
+    <appender name="JSON_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/application-json.log</file>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <!-- Include MDC fields in JSON output -->
+            <includeMdcKeyName>correlationId</includeMdcKeyName>
+            <includeMdcKeyName>storeId</includeMdcKeyName>
+            <includeMdcKeyName>userId</includeMdcKeyName>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/application-json-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>2GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+    
+    <!-- Spring profiles for different environments -->
+    
+    <!-- Development profile: Console + File -->
+    <springProfile name="dev,default">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+            <appender-ref ref="FILE" />
+            <appender-ref ref="ERROR_FILE" />
+        </root>
+        
+        <!-- Debug level for our application packages -->
+        <logger name="com.MaSoVa" level="DEBUG" />
+        
+        <!-- Reduce noise from Spring and MongoDB -->
+        <logger name="org.springframework" level="INFO" />
+        <logger name="org.mongodb" level="WARN" />
+    </springProfile>
+    
+    <!-- Test profile: Console only, less verbose -->
+    <springProfile name="test">
+        <root level="WARN">
+            <appender-ref ref="CONSOLE" />
+        </root>
+        <logger name="com.MaSoVa" level="INFO" />
+    </springProfile>
+    
+    <!-- Production profile: File + JSON, optimized for performance -->
+    <springProfile name="prod">
+        <root level="WARN">
+            <appender-ref ref="FILE" />
+            <appender-ref ref="ERROR_FILE" />
+            <appender-ref ref="JSON_FILE" />
+        </root>
+        
+        <!-- Error level for application in production -->
+        <logger name="com.MaSoVa" level="INFO" />
+        
+        <!-- Minimal logging from frameworks -->
+        <logger name="org.springframework" level="WARN" />
+        <logger name="org.mongodb" level="ERROR" />
+        <logger name="com.razorpay" level="WARN" />
+    </springProfile>
+    
+    <!-- Async appender wrapper for better performance in production -->
+    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>512</queueSize>
+        <appender-ref ref="FILE" />
+    </appender>
+    
+    <!-- Security: Never log sensitive information -->
+    <!-- Configure sensitive data masking in application code -->
+    
+</configuration>

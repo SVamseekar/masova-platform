@@ -25,7 +25,10 @@ public class SecurityConfig extends SecurityConfigurationBase {
             // API documentation
             "/v3/api-docs/**",
             "/swagger-ui/**",
-            "/swagger-ui.html"
+            "/swagger-ui.html",
+
+            // Notification endpoints (TEMPORARY - for testing only, secure in production)
+            "/api/notifications/**"
         };
     }
 }

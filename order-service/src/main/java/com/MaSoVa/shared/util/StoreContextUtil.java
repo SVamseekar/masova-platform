@@ -3,6 +3,7 @@ package com.MaSoVa.shared.util;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.lang.Nullable;
 
 /**
  * Utility class for extracting store context from HTTP headers.
@@ -26,6 +27,7 @@ public class StoreContextUtil {
      * @param request The HTTP servlet request containing headers
      * @return The storeId extracted from headers, or null if not found
      */
+    @Nullable
     public static String getStoreIdFromHeaders(HttpServletRequest request) {
         String userType = request.getHeader(HEADER_USER_TYPE);
         String selectedStoreId = request.getHeader(HEADER_SELECTED_STORE_ID);
@@ -61,8 +63,14 @@ public class StoreContextUtil {
             return selectedStoreId != null && !selectedStoreId.isEmpty() ? selectedStoreId : userStoreId;
         }
 
-        // Staff, drivers, and kitchen staff can only see their assigned store
-        // Ignore selected store for these user types
+        // Staff, drivers, and kitchen staff: if a selected store is explicitly provided
+        // (e.g., from URL-based KDS routing), use it; otherwise fall back to assigned store
+        // This allows KDS to display orders for any store specified in the URL
+        if (selectedStoreId != null && !selectedStoreId.isEmpty()) {
+            logger.debug("Staff user with explicit store selection: using selectedStoreId={} instead of userStoreId={}",
+                        selectedStoreId, userStoreId);
+            return selectedStoreId;
+        }
         return userStoreId;
     }
 
@@ -78,6 +86,7 @@ public class StoreContextUtil {
     /**
      * Get user ID from headers.
      */
+    @Nullable
     public static String getUserIdFromHeaders(HttpServletRequest request) {
         return request.getHeader(HEADER_USER_ID);
     }
@@ -85,6 +94,7 @@ public class StoreContextUtil {
     /**
      * Get user type from headers.
      */
+    @Nullable
     public static String getUserTypeFromHeaders(HttpServletRequest request) {
         return request.getHeader(HEADER_USER_TYPE);
     }

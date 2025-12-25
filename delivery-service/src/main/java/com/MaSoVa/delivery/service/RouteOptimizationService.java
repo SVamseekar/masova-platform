@@ -1,6 +1,5 @@
 package com.MaSoVa.delivery.service;
 
-import com.MaSoVa.delivery.dto.AddressDTO;
 import com.MaSoVa.delivery.dto.RouteOptimizationRequest;
 import com.MaSoVa.delivery.dto.RouteOptimizationResponse;
 import com.google.maps.DirectionsApi;
@@ -87,6 +86,7 @@ public class RouteOptimizationService {
     /**
      * Parse Google Maps steps into our format
      */
+    @SuppressWarnings("deprecation")
     private List<RouteOptimizationResponse.Step> parseSteps(DirectionsStep[] steps) {
         List<RouteOptimizationResponse.Step> parsedSteps = new ArrayList<>();
 

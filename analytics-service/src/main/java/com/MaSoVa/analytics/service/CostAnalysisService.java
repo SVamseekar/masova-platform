@@ -130,13 +130,16 @@ public class CostAnalysisService {
 
         // Extract items from orders
         for (Map<String, Object> order : orders) {
-            List<Map<String, Object>> items = (List<Map<String, Object>>) order.get("items");
-            if (items != null) {
-                for (Map<String, Object> item : items) {
+            Object itemsObj = order.get("items");
+            if (itemsObj instanceof List<?> itemsList) {
+                for (Object itemObj : itemsList) {
+                    if (!(itemObj instanceof Map<?, ?>)) continue;
+                    Map<?, ?> itemMap = (Map<?, ?>) itemObj;
                     // Simplified: Assume each menu item uses ingredients
                     // In reality, you'd have a mapping of menu items to ingredients
-                    String itemName = (String) item.get("itemName");
-                    int quantity = ((Number) item.get("quantity")).intValue();
+                    String itemName = (String) itemMap.get("itemName");
+                    Object quantityObj = itemMap.get("quantity");
+                    int quantity = quantityObj instanceof Number ? ((Number) quantityObj).intValue() : 0;
 
                     // Mock ingredient cost (₹50 per item on average)
                     BigDecimal costPerItem = BigDecimal.valueOf(50);
@@ -224,8 +227,11 @@ public class CostAnalysisService {
                 ? profit.divide(revenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))
                 : BigDecimal.ZERO;
 
-            List<Map<String, Object>> items = (List<Map<String, Object>>) order.get("items");
-            int itemCount = items != null ? items.size() : 0;
+            int itemCount = 0;
+            Object itemsObj = order.get("items");
+            if (itemsObj instanceof List<?> itemsList) {
+                itemCount = itemsList.size();
+            }
 
             analyses.add(CostAnalysisResponse.OrderCostAnalysis.builder()
                 .orderId(orderId)

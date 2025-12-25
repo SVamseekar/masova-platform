@@ -6,6 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -14,6 +16,8 @@ import jakarta.servlet.http.HttpServletRequest;
  * Phase 11 Implementation
  */
 @RestController
+@Tag(name = "BIController", description = "Business Intelligence and advanced analytics")
+@SecurityRequirement(name = "bearerAuth")
 @RequestMapping("/api/bi")
 public class BIController {
 

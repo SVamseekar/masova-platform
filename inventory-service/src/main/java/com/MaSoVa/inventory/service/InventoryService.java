@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -81,7 +82,7 @@ public class InventoryService {
         logger.info("Updating inventory item: {}", item.getId());
 
         // Verify item exists
-        InventoryItem existing = getInventoryItemById(item.getId());
+        getInventoryItemById(item.getId());
 
         // Update stock status
         updateStockStatus(item);
@@ -134,68 +135,140 @@ public class InventoryService {
 
     /**
      * Reserve stock for an order
+     * Week 3 Fix: Added retry logic for optimistic locking failures
      */
     @Transactional
     @CacheEvict(value = "inventoryItems", key = "#storeId")
     public void reserveStock(String itemId, Double quantity, String storeId) {
         logger.info("Reserving {} units for item: {}", quantity, itemId);
 
-        InventoryItem item = getInventoryItemById(itemId);
+        int maxRetries = 3;
+        int attempt = 0;
 
-        // Check if enough stock available
-        if (item.getAvailableStock() < quantity) {
-            throw new RuntimeException("Insufficient stock available. Available: " +
-                item.getAvailableStock() + ", Requested: " + quantity);
+        while (attempt < maxRetries) {
+            try {
+                InventoryItem item = getInventoryItemById(itemId);
+
+                // Check if enough stock available
+                if (item.getAvailableStock() < quantity) {
+                    throw new RuntimeException("Insufficient stock available. Available: " +
+                        item.getAvailableStock() + ", Requested: " + quantity);
+                }
+
+                item.setReservedStock(item.getReservedStock() + quantity);
+                updateStockStatus(item);
+
+                inventoryItemRepository.save(item);
+                logger.info("Successfully reserved {} units for item: {}", quantity, itemId);
+                return; // Success - exit retry loop
+
+            } catch (OptimisticLockingFailureException e) {
+                attempt++;
+                if (attempt >= maxRetries) {
+                    logger.error("Failed to reserve stock after {} attempts due to concurrent updates", maxRetries);
+                    throw new RuntimeException("Unable to reserve stock due to concurrent updates. Please try again.", e);
+                }
+                logger.warn("Optimistic locking failure on attempt {}. Retrying...", attempt);
+                try {
+                    Thread.sleep(50 * attempt); // Exponential backoff: 50ms, 100ms, 150ms
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Interrupted while retrying stock reservation", ie);
+                }
+            }
         }
-
-        item.setReservedStock(item.getReservedStock() + quantity);
-        updateStockStatus(item);
-
-        inventoryItemRepository.save(item);
     }
 
     /**
      * Release reserved stock (e.g., when order is cancelled)
+     * Week 3 Fix: Added retry logic for optimistic locking failures
      */
     @Transactional
     @CacheEvict(value = "inventoryItems", key = "#storeId")
     public void releaseReservedStock(String itemId, Double quantity, String storeId) {
         logger.info("Releasing {} reserved units for item: {}", quantity, itemId);
 
-        InventoryItem item = getInventoryItemById(itemId);
+        int maxRetries = 3;
+        int attempt = 0;
 
-        Double newReserved = item.getReservedStock() - quantity;
-        if (newReserved < 0) {
-            newReserved = 0.0;
+        while (attempt < maxRetries) {
+            try {
+                InventoryItem item = getInventoryItemById(itemId);
+
+                Double newReserved = item.getReservedStock() - quantity;
+                if (newReserved < 0) {
+                    newReserved = 0.0;
+                }
+
+                item.setReservedStock(newReserved);
+                updateStockStatus(item);
+
+                inventoryItemRepository.save(item);
+                logger.info("Successfully released {} units for item: {}", quantity, itemId);
+                return; // Success - exit retry loop
+
+            } catch (OptimisticLockingFailureException e) {
+                attempt++;
+                if (attempt >= maxRetries) {
+                    logger.error("Failed to release stock after {} attempts due to concurrent updates", maxRetries);
+                    throw new RuntimeException("Unable to release stock due to concurrent updates. Please try again.", e);
+                }
+                logger.warn("Optimistic locking failure on attempt {}. Retrying...", attempt);
+                try {
+                    Thread.sleep(50 * attempt);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Interrupted while retrying stock release", ie);
+                }
+            }
         }
-
-        item.setReservedStock(newReserved);
-        updateStockStatus(item);
-
-        inventoryItemRepository.save(item);
     }
 
     /**
      * Consume reserved stock (when order is fulfilled)
+     * Week 3 Fix: Added retry logic for optimistic locking failures
      */
     @Transactional
     @CacheEvict(value = "inventoryItems", key = "#storeId")
     public void consumeReservedStock(String itemId, Double quantity, String storeId) {
         logger.info("Consuming {} reserved units for item: {}", quantity, itemId);
 
-        InventoryItem item = getInventoryItemById(itemId);
+        int maxRetries = 3;
+        int attempt = 0;
 
-        // Reduce both current and reserved stock
-        item.setCurrentStock(item.getCurrentStock() - quantity);
-        item.setReservedStock(item.getReservedStock() - quantity);
+        while (attempt < maxRetries) {
+            try {
+                InventoryItem item = getInventoryItemById(itemId);
 
-        // Ensure stocks don't go negative
-        if (item.getCurrentStock() < 0) item.setCurrentStock(0.0);
-        if (item.getReservedStock() < 0) item.setReservedStock(0.0);
+                // Reduce both current and reserved stock
+                item.setCurrentStock(item.getCurrentStock() - quantity);
+                item.setReservedStock(item.getReservedStock() - quantity);
 
-        updateStockStatus(item);
+                // Ensure stocks don't go negative
+                if (item.getCurrentStock() < 0) item.setCurrentStock(0.0);
+                if (item.getReservedStock() < 0) item.setReservedStock(0.0);
 
-        inventoryItemRepository.save(item);
+                updateStockStatus(item);
+
+                inventoryItemRepository.save(item);
+                logger.info("Successfully consumed {} units for item: {}", quantity, itemId);
+                return; // Success - exit retry loop
+
+            } catch (OptimisticLockingFailureException e) {
+                attempt++;
+                if (attempt >= maxRetries) {
+                    logger.error("Failed to consume stock after {} attempts due to concurrent updates", maxRetries);
+                    throw new RuntimeException("Unable to consume stock due to concurrent updates. Please try again.", e);
+                }
+                logger.warn("Optimistic locking failure on attempt {}. Retrying...", attempt);
+                try {
+                    Thread.sleep(50 * attempt);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Interrupted while retrying stock consumption", ie);
+                }
+            }
+        }
     }
 
     /**
@@ -303,7 +376,8 @@ public class InventoryService {
      * Used for scheduled tasks and bulk operations
      */
     public List<String> getAllStoreIds() {
-        return inventoryItemRepository.findAll().stream()
+        // Use projection query to load only storeId field instead of full documents
+        return inventoryItemRepository.findAllStoreIds().stream()
                 .map(InventoryItem::getStoreId)
                 .distinct()
                 .collect(Collectors.toList());

@@ -17,7 +17,8 @@ public interface WorkingSessionRepository extends MongoRepository<WorkingSession
     Optional<WorkingSession> findByEmployeeIdAndIsActive(String employeeId, boolean isActive);
     
     List<WorkingSession> findByEmployeeIdAndDateBetween(String employeeId, LocalDate startDate, LocalDate endDate);
-    
+
+    @Query("{'storeId': ?0, 'date': {$gte: ?1, $lte: ?2}}")
     List<WorkingSession> findByStoreIdAndDateBetween(String storeId, LocalDate startDate, LocalDate endDate);
     
     @Query("{'employeeId': ?0, 'date': ?1}")
@@ -26,6 +27,9 @@ public interface WorkingSessionRepository extends MongoRepository<WorkingSession
     @Query("{'storeId': ?0, 'date': ?1, 'isActive': false}")
     List<WorkingSession> findCompletedSessionsByStoreAndDate(String storeId, LocalDate date);
     
+    @Query(value = "{'employeeId': ?0, 'isActive': true}", sort = "{'loginTime': -1}")
+    List<WorkingSession> findAllActiveSessionsByEmployeeIdSorted(String employeeId);
+
     @Query("{'employeeId': ?0, 'isActive': true}")
     Optional<WorkingSession> findActiveSessionByEmployeeId(String employeeId);
     
@@ -46,6 +50,8 @@ public interface WorkingSessionRepository extends MongoRepository<WorkingSession
 
     @Query("{'employeeId': ?0}")
     List<WorkingSession> findAllActiveSessionsByEmployeeId(String employeeId);
+
+    List<WorkingSession> findByEmployeeId(String employeeId);
 
     @Query("{'employeeId': ?0, 'loginTime': {$gte: ?1, $lt: ?2}, 'logoutTime': {$ne: null}}")
     Optional<WorkingSession> findLastCompletedSession(String employeeId, LocalDate date);

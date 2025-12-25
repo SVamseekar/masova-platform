@@ -17,19 +17,31 @@ import {
   CardContent,
 } from '@mui/material';
 import { useState } from 'react';
+import { useAppSelector } from '../../store/hooks';
+import { selectCurrentUser } from '../../store/slices/authSlice';
 import { useGetTopProductsQuery } from '../../store/api/analyticsApi';
+import { usePageStore } from '../../contexts/PageStoreContext';
+import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 import NewReleasesIcon from '@mui/icons-material/NewReleases';
 import { createCard } from '../../styles/neumorphic-utils';
 import { colors } from '../../styles/design-tokens';
+import AppHeader from '../../components/common/AppHeader';
+import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 
-export default function ProductAnalyticsPage() {
+function ProductAnalyticsPage() {
+  const { handleBack } = useSmartBackNavigation();
   const [period, setPeriod] = useState('TODAY');
   const [sortBy, setSortBy] = useState('QUANTITY');
 
-  const { data, isLoading, error } = useGetTopProductsQuery({ period, sortBy });
+  // Get storeId
+  const currentUser = useAppSelector(selectCurrentUser);
+  const { selectedStoreId } = usePageStore();
+  const storeId = selectedStoreId || currentUser?.storeId || '';
+
+  const { data, isLoading, error } = useGetTopProductsQuery({ storeId, period, sortBy }, { skip: !storeId });
 
   const handlePeriodChange = (_event: React.MouseEvent<HTMLElement>, newPeriod: string | null) => {
     if (newPeriod) {
@@ -85,7 +97,9 @@ export default function ProductAnalyticsPage() {
   const totalQuantity = data.topProducts.reduce((sum, p) => sum + p.quantitySold, 0);
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <>
+      <AppHeader title="Product Analytics" showBackButton={true} onBack={handleBack} showManagerNav={true} />
+      <Container maxWidth="xl" sx={{ mt: 4, mb: 4, paddingTop: '80px' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Box>
           <Typography variant="h4" gutterBottom>
@@ -249,5 +263,8 @@ export default function ProductAnalyticsPage() {
         </Paper>
       )}
     </Container>
+    </>
   );
 }
+
+export default withPageStoreContext(ProductAnalyticsPage, 'product-analytics');

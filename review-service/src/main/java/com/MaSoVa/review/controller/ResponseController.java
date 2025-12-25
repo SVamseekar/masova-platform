@@ -12,6 +12,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -19,6 +21,8 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
+@Tag(name = "ResponseController", description = "Review response management")
+@SecurityRequirement(name = "bearerAuth")
 @RequestMapping("/api/responses")
 public class ResponseController {
 

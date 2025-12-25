@@ -5,21 +5,34 @@ import com.MaSoVa.order.dto.UpdateOrderStatusRequest;
 import com.MaSoVa.order.dto.UpdatePaymentStatusRequest;
 import com.MaSoVa.order.entity.Order;
 import com.MaSoVa.order.service.OrderService;
+import com.MaSoVa.shared.config.ApiVersionConfig;
 import com.MaSoVa.shared.util.StoreContextUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Order Controller - Week 4: API Versioning Applied, Week 5: Swagger Documentation
+ */
 @RestController
-@RequestMapping("/api/orders")
+@RequestMapping({ApiVersionConfig.V1 + "/orders", ApiVersionConfig.LEGACY + "/orders"})
+@Tag(name = "Order Management", description = "APIs for managing orders, kitchen workflow, and order lifecycle")
+@SecurityRequirement(name = "bearerAuth")
 public class OrderController {
 
     private static final Logger log = LoggerFactory.getLogger(OrderController.class);
@@ -37,42 +50,94 @@ public class OrderController {
         return StoreContextUtil.getStoreIdFromHeaders(request);
     }
 
-    // Only customers can create orders - staff/managers cannot place orders as customers
+    /**
+     * Validate that the requested storeId matches the user's authorized store.
+     * For store data isolation - prevents cross-store access.
+     */
+    private String validateAndGetStoreId(HttpServletRequest request, String requestedStoreId) {
+        String userStoreId = getStoreIdFromHeaders(request);
+
+        // If no storeId provided in query param, use user's store
+        if (requestedStoreId == null || requestedStoreId.isEmpty()) {
+            return userStoreId;
+        }
+
+        // If storeId provided but different from user's store, reject
+        if (!requestedStoreId.equals(userStoreId)) {
+            log.warn("Cross-store access attempt: user store={}, requested store={}", userStoreId, requestedStoreId);
+            throw new AccessDeniedException("Cannot access data from different store");
+        }
+
+        return userStoreId;
+    }
+
+    // Customers can create their own orders, staff/managers can create orders for walk-in customers (POS)
     @PostMapping
-    @PreAuthorize("hasRole('CUSTOMER') or isAnonymous()")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
+    @Operation(summary = "Create new order", description = "Allows customers to create orders or staff/managers to create orders for walk-in customers via POS")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Order created successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid request data"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - Customer or Staff role required")
+    })
     public ResponseEntity<Order> createOrder(@Valid @RequestBody CreateOrderRequest request) {
         log.info("Creating order for customer: {}", request.getCustomerName());
         Order order = orderService.createOrder(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(order);
     }
 
+    // Customers, staff, managers, and drivers can view orders
     @GetMapping("/{orderId}")
-    public ResponseEntity<Order> getOrder(@PathVariable String orderId) {
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF', 'DRIVER')")
+    @Operation(summary = "Get order by ID", description = "Retrieves order details by order ID")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Order retrieved successfully"),
+        @ApiResponse(responseCode = "404", description = "Order not found"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    public ResponseEntity<Order> getOrder(
+            @Parameter(description = "Order ID", required = true) @PathVariable String orderId) {
         Order order = orderService.getOrderById(orderId);
         return ResponseEntity.ok(order);
     }
 
     @GetMapping("/number/{orderNumber}")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF', 'DRIVER')")
     public ResponseEntity<Order> getOrderByNumber(@PathVariable String orderNumber) {
         Order order = orderService.getOrderByNumber(orderNumber);
         return ResponseEntity.ok(order);
     }
 
+    // Only staff and managers can view kitchen queue (for Kitchen Display System)
     @GetMapping("/kitchen")
-    public ResponseEntity<List<Order>> getKitchenQueue(HttpServletRequest request) {
-        String storeId = getStoreIdFromHeaders(request);
-        List<Order> orders = orderService.getKitchenQueue(storeId);
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
+    @Operation(summary = "Get kitchen queue", description = "Retrieves all active orders in kitchen queue for Kitchen Display System")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Kitchen queue retrieved successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - Staff role required"),
+        @ApiResponse(responseCode = "403", description = "Access denied - Cross-store access attempt")
+    })
+    public ResponseEntity<List<Order>> getKitchenQueue(
+            HttpServletRequest request,
+            @Parameter(description = "Store ID (optional, defaults to user's store)") @RequestParam(required = false) String storeId) {
+        // Validate store access - prevents cross-store data access
+        String resolvedStoreId = validateAndGetStoreId(request, storeId);
+        List<Order> orders = orderService.getKitchenQueue(resolvedStoreId);
         return ResponseEntity.ok(orders);
     }
 
+    // Staff and managers can view store orders
     @GetMapping("/store")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     public ResponseEntity<List<Order>> getStoreOrders(HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
         List<Order> orders = orderService.getStoreOrders(storeId);
         return ResponseEntity.ok(orders);
     }
 
+    // Staff, managers, and drivers can view orders by status
     @GetMapping("/status/{status}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF', 'DRIVER')")
     public ResponseEntity<List<Order>> getOrdersByStatus(
             HttpServletRequest request,
             @PathVariable String status) {
@@ -97,11 +162,17 @@ public class OrderController {
         return ResponseEntity.ok(orders);
     }
 
-    // Only staff/managers can update order status
+    // Staff, managers, and drivers can update order status
     @PatchMapping("/{orderId}/status")
-    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF', 'DRIVER')")
+    @Operation(summary = "Update order status", description = "Updates the status of an order (e.g., preparing, ready, completed)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Order status updated successfully"),
+        @ApiResponse(responseCode = "404", description = "Order not found"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - Staff role required")
+    })
     public ResponseEntity<Order> updateOrderStatus(
-            @PathVariable String orderId,
+            @Parameter(description = "Order ID", required = true) @PathVariable String orderId,
             @Valid @RequestBody UpdateOrderStatusRequest request) {
         Order order = orderService.updateOrderStatus(orderId, request);
         return ResponseEntity.ok(order);
@@ -125,7 +196,9 @@ public class OrderController {
         return ResponseEntity.ok(order);
     }
 
+    // Only managers and assistant managers can assign drivers
     @PatchMapping("/{orderId}/assign-driver")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     public ResponseEntity<Order> assignDriver(
             @PathVariable String orderId,
             @RequestBody Map<String, String> payload) {
@@ -134,6 +207,7 @@ public class OrderController {
         return ResponseEntity.ok(order);
     }
 
+    // Called by payment-service after payment verification (public endpoint for inter-service communication)
     @PatchMapping("/{orderId}/payment")
     public ResponseEntity<Order> updatePaymentStatus(
             @PathVariable String orderId,
@@ -173,20 +247,28 @@ public class OrderController {
         return ResponseEntity.ok(order);
     }
 
-    // Analytics endpoints
+    // Analytics endpoints - Used by analytics service for reporting
     @GetMapping("/date/{date}")
-    public ResponseEntity<List<Order>> getOrdersByDate(@PathVariable String date) {
-        log.info("Fetching orders for date: {}", date);
-        List<Order> orders = orderService.getOrdersByDate(java.time.LocalDate.parse(date));
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Get orders by date", description = "Retrieves all orders for a specific date (used by analytics service)")
+    public ResponseEntity<List<Order>> getOrdersByDate(@PathVariable String date, HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        log.info("Fetching orders for store {} on date: {}", storeId, date);
+        List<Order> orders = orderService.getOrdersByDate(storeId, java.time.LocalDate.parse(date));
         return ResponseEntity.ok(orders);
     }
 
     @GetMapping("/range")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Get orders by date range", description = "Retrieves orders within a date range (used by analytics service)")
     public ResponseEntity<List<Order>> getOrdersByDateRange(
             @RequestParam String start,
-            @RequestParam String end) {
-        log.info("Fetching orders between {} and {}", start, end);
+            @RequestParam String end,
+            HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        log.info("Fetching orders for store {} between {} and {}", storeId, start, end);
         List<Order> orders = orderService.getOrdersByDateRange(
+            storeId,
             java.time.LocalDateTime.parse(start),
             java.time.LocalDateTime.parse(end)
         );
@@ -194,18 +276,23 @@ public class OrderController {
     }
 
     @GetMapping("/staff/{staffId}/date/{date}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Get orders by staff and date", description = "Retrieves orders created by specific staff member on a date (used by analytics service)")
     public ResponseEntity<List<Order>> getOrdersByStaffAndDate(
             @PathVariable String staffId,
-            @PathVariable String date) {
-        log.info("Fetching orders for staff: {} on date: {}", staffId, date);
-        List<Order> orders = orderService.getOrdersByStaffAndDate(staffId, java.time.LocalDate.parse(date));
+            @PathVariable String date,
+            HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        log.info("Fetching orders for store {} staff: {} on date: {}", storeId, staffId, date);
+        List<Order> orders = orderService.getOrdersByStaffAndDate(storeId, staffId, java.time.LocalDate.parse(date));
         return ResponseEntity.ok(orders);
     }
 
     @GetMapping("/active-deliveries/count")
-    public ResponseEntity<Integer> getActiveDeliveryCount() {
-        log.info("Fetching active delivery count");
-        Integer count = orderService.getActiveDeliveryCount();
+    public ResponseEntity<Integer> getActiveDeliveryCount(HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        log.info("Fetching active delivery count for store {}", storeId);
+        Integer count = orderService.getActiveDeliveryCount(storeId);
         return ResponseEntity.ok(count);
     }
 
@@ -305,6 +392,26 @@ public class OrderController {
         return ResponseEntity.ok(performance);
     }
 
+    @GetMapping("/analytics/pos-staff/{staffId}/performance")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
+    @Operation(summary = "Get POS staff performance", description = "Retrieves performance metrics for POS staff including orders processed and revenue generated")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Performance metrics retrieved successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+        @ApiResponse(responseCode = "403", description = "Forbidden")
+    })
+    public ResponseEntity<com.MaSoVa.order.dto.PosStaffPerformanceDTO> getPosStaffPerformance(
+            @Parameter(description = "Staff ID", required = true) @PathVariable String staffId,
+            @Parameter(description = "Start date (YYYY-MM-DD)", required = true) @RequestParam String startDate,
+            @Parameter(description = "End date (YYYY-MM-DD)", required = true) @RequestParam String endDate) {
+        log.info("Fetching POS staff performance for: {} from {} to {}", staffId, startDate, endDate);
+        com.MaSoVa.order.dto.PosStaffPerformanceDTO performance = orderService.getPosStaffPerformance(
+                staffId,
+                java.time.LocalDate.parse(startDate),
+                java.time.LocalDate.parse(endDate));
+        return ResponseEntity.ok(performance);
+    }
+
     @GetMapping("/store/analytics/prep-time-distribution")
     public ResponseEntity<Map<String, Object>> getPreparationTimeDistribution(
             HttpServletRequest request,
@@ -314,6 +421,68 @@ public class OrderController {
         Map<String, Object> distribution = orderService.getPreparationTimeDistribution(
                 storeId, java.time.LocalDate.parse(date));
         return ResponseEntity.ok(distribution);
+    }
+
+    // ==================== PROOF OF DELIVERY ENDPOINTS (DELIV-002) ====================
+
+    /**
+     * Set delivery OTP for an order
+     * Called by delivery-service when generating OTP
+     */
+    @PutMapping("/{orderId}/delivery-otp")
+    public ResponseEntity<Order> setDeliveryOtp(
+            @PathVariable String orderId,
+            @RequestBody Map<String, Object> payload) {
+        log.info("Setting delivery OTP for order: {}", orderId);
+
+        String otp = (String) payload.get("otp");
+        String generatedAt = (String) payload.get("generatedAt");
+        String expiresAt = (String) payload.get("expiresAt");
+
+        Order order = orderService.setDeliveryOtp(
+                orderId,
+                otp,
+                java.time.LocalDateTime.parse(generatedAt),
+                java.time.LocalDateTime.parse(expiresAt)
+        );
+        return ResponseEntity.ok(order);
+    }
+
+    /**
+     * Set delivery proof details
+     * Called by delivery-service when verifying delivery
+     */
+    @PutMapping("/{orderId}/delivery-proof")
+    public ResponseEntity<Order> setDeliveryProof(
+            @PathVariable String orderId,
+            @RequestBody Map<String, Object> payload) {
+        log.info("Setting delivery proof for order: {}", orderId);
+
+        String proofType = (String) payload.get("proofType");
+        String photoUrl = (String) payload.get("photoUrl");
+        String signatureUrl = (String) payload.get("signatureUrl");
+        String notes = (String) payload.get("notes");
+
+        Order order = orderService.setDeliveryProof(orderId, proofType, photoUrl, signatureUrl, notes);
+        return ResponseEntity.ok(order);
+    }
+
+    /**
+     * Mark order as delivered
+     * Called by delivery-service after verification
+     */
+    @PutMapping("/{orderId}/mark-delivered")
+    public ResponseEntity<Order> markOrderDelivered(
+            @PathVariable String orderId,
+            @RequestBody Map<String, Object> payload) {
+        log.info("Marking order as delivered: {}", orderId);
+
+        String deliveredAtStr = (String) payload.get("deliveredAt");
+        String proofType = (String) payload.get("proofType");
+
+        java.time.LocalDateTime deliveredAt = java.time.LocalDateTime.parse(deliveredAtStr);
+        Order order = orderService.markOrderDelivered(orderId, deliveredAt, proofType);
+        return ResponseEntity.ok(order);
     }
 
     @ExceptionHandler(RuntimeException.class)

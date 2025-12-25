@@ -69,4 +69,10 @@ public interface InventoryItemRepository extends MongoRepository<InventoryItem, 
      */
     @Query("{ 'storeId': ?0, 'itemName': { $regex: ?1, $options: 'i' } }")
     List<InventoryItem> searchByName(String storeId, String searchTerm);
+
+    /**
+     * Get all distinct store IDs
+     */
+    @Query(value = "{}", fields = "{ 'storeId': 1 }")
+    List<InventoryItem> findAllStoreIds();
 }

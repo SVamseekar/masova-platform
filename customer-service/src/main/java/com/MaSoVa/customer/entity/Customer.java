@@ -12,6 +12,7 @@ import org.springframework.data.annotation.*;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -20,14 +21,26 @@ import java.util.List;
 import java.util.Set;
 
 @Document(collection = "customers")
-public class Customer {
+public class Customer implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     private String id;
 
+    @Version
+    private Long version;
+
     @NotBlank(message = "User ID is required")
     @Indexed(unique = true)
     private String userId; // Reference to user-service User ID
+
+    @Indexed
+    @Deprecated // Use storeIds instead for multi-store support
+    private String storeId; // Legacy: Reference to store where customer is registered (kept for backward compatibility)
+
+    @Indexed
+    private Set<String> storeIds = new HashSet<>(); // Multi-store support: All stores this customer has ordered from
 
     @NotBlank(message = "Name is required")
     private String name;
@@ -63,8 +76,32 @@ public class Customer {
     private boolean active = true;
     private boolean emailVerified = false;
     private boolean phoneVerified = false;
-    private boolean marketingOptIn = true;
-    private boolean smsOptIn = true;
+
+    // GDPR Compliant Consent - must default to false (opt-in required)
+    private boolean marketingOptIn = false;  // GDPR: Must be explicit opt-in
+    private boolean smsOptIn = false;        // GDPR: Must be explicit opt-in
+
+    // GDPR Consent Tracking
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime marketingConsentDate;
+    private String marketingConsentVersion;   // Privacy policy version when consented
+    private String marketingConsentMethod;    // CHECKBOX, FORM, API
+
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime smsConsentDate;
+    private String smsConsentVersion;
+    private String smsConsentMethod;
+
+    // GDPR Deletion tracking
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime deletedAt;          // When soft-deleted/anonymized
+    private String deletionReason;            // GDPR_REQUEST, ACCOUNT_CLOSURE, etc.
 
     // Tags for segmentation
     private Set<String> tags = new HashSet<>();
@@ -96,7 +133,8 @@ public class Customer {
 
     // Inner Classes
 
-    public static class CustomerAddress {
+    public static class CustomerAddress implements Serializable {
+        private static final long serialVersionUID = 1L;
         private String id;
         private String label; // HOME, WORK, OTHER
         private String addressLine1;
@@ -379,12 +417,47 @@ public class Customer {
         this.phone = phone;
     }
 
+    public Customer(String userId, String name, String email, String phone, String storeId) {
+        this.userId = userId;
+        this.name = name;
+        this.email = email;
+        this.phone = phone;
+        this.storeId = storeId;
+    }
+
     // Main Entity Getters and Setters
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
+
+    @Deprecated // Use getStoreIds() instead
+    public String getStoreId() { return storeId; }
+    @Deprecated // Use addStoreId() instead
+    public void setStoreId(String storeId) {
+        this.storeId = storeId;
+        // Also add to storeIds for backward compatibility
+        if (storeId != null && !storeId.isEmpty()) {
+            this.storeIds.add(storeId);
+        }
+    }
+
+    public Set<String> getStoreIds() { return storeIds; }
+    public void setStoreIds(Set<String> storeIds) { this.storeIds = storeIds; }
+
+    /**
+     * Add a store to the customer's store list (for multi-store support)
+     */
+    public void addStoreId(String storeId) {
+        if (storeId != null && !storeId.isEmpty()) {
+            this.storeIds.add(storeId);
+            // Keep legacy field in sync with first store
+            if (this.storeId == null || this.storeId.isEmpty()) {
+                this.storeId = storeId;
+            }
+        }
+    }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
@@ -430,6 +503,31 @@ public class Customer {
 
     public boolean isSmsOptIn() { return smsOptIn; }
     public void setSmsOptIn(boolean smsOptIn) { this.smsOptIn = smsOptIn; }
+
+    // GDPR Consent Tracking Getters/Setters
+    public LocalDateTime getMarketingConsentDate() { return marketingConsentDate; }
+    public void setMarketingConsentDate(LocalDateTime marketingConsentDate) { this.marketingConsentDate = marketingConsentDate; }
+
+    public String getMarketingConsentVersion() { return marketingConsentVersion; }
+    public void setMarketingConsentVersion(String marketingConsentVersion) { this.marketingConsentVersion = marketingConsentVersion; }
+
+    public String getMarketingConsentMethod() { return marketingConsentMethod; }
+    public void setMarketingConsentMethod(String marketingConsentMethod) { this.marketingConsentMethod = marketingConsentMethod; }
+
+    public LocalDateTime getSmsConsentDate() { return smsConsentDate; }
+    public void setSmsConsentDate(LocalDateTime smsConsentDate) { this.smsConsentDate = smsConsentDate; }
+
+    public String getSmsConsentVersion() { return smsConsentVersion; }
+    public void setSmsConsentVersion(String smsConsentVersion) { this.smsConsentVersion = smsConsentVersion; }
+
+    public String getSmsConsentMethod() { return smsConsentMethod; }
+    public void setSmsConsentMethod(String smsConsentMethod) { this.smsConsentMethod = smsConsentMethod; }
+
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
+
+    public String getDeletionReason() { return deletionReason; }
+    public void setDeletionReason(String deletionReason) { this.deletionReason = deletionReason; }
 
     public Set<String> getTags() { return tags; }
     public void setTags(Set<String> tags) { this.tags = tags; }

@@ -5,6 +5,7 @@ import { colors, spacing, typography } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 import { useLoginMutation } from '../../store/api/authApi';
 import { useAppSelector } from '../../store/hooks';
+import { getSavedReturnUrl, clearReturnUrl } from '../../utils/security';
 
 const CustomerLoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -33,9 +34,17 @@ const CustomerLoginPage: React.FC = () => {
   // Redirect if already authenticated - go back to checkout flow
   useEffect(() => {
     if (isAuthenticated && user) {
+      // Phase 12: Check for saved return URL first
+      const returnUrl = getSavedReturnUrl();
+      if (returnUrl) {
+        clearReturnUrl();
+        navigate(returnUrl, { replace: true });
+        return;
+      }
+
       // Customer logged in, redirect to guest-checkout to collect delivery info
       // (even logged-in users need to provide delivery address)
-      navigate('/guest-checkout');
+      navigate('/guest-checkout', { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
 

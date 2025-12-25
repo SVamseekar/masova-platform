@@ -5,19 +5,41 @@
  * IMPORTANT: All requests MUST go through API Gateway for security
  */
 
+// Validate required environment variables
+const validateEnvVars = () => {
+  const required = {
+    VITE_API_GATEWAY_URL: import.meta.env.VITE_API_GATEWAY_URL,
+    VITE_WS_URL: import.meta.env.VITE_WS_URL,
+  };
+
+  const missing = Object.entries(required)
+    .filter(([, value]) => !value)
+    .map(([key]) => key);
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Missing required environment variables: ${missing.join(', ')}\n` +
+      'Please set these in your .env file. See .env.example for reference.'
+    );
+  }
+};
+
+// Validate on module load
+validateEnvVars();
+
 export const API_CONFIG = {
   // API Gateway - Single entry point for all backend services
-  API_GATEWAY_URL: import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080/api',
+  API_GATEWAY_URL: import.meta.env.VITE_API_GATEWAY_URL,
 
   // Base URL (alias for API Gateway)
-  BASE_URL: import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080/api',
+  BASE_URL: import.meta.env.VITE_API_GATEWAY_URL,
 
   // Service URLs through API Gateway
-  USER_SERVICE_URL: import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080/api',
-  ORDER_SERVICE_URL: import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080/api',
-  PAYMENT_SERVICE_URL: import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080/api',
-  CUSTOMER_SERVICE_URL: import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080/api',
-  REVIEW_SERVICE_URL: import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080/api',
+  USER_SERVICE_URL: import.meta.env.VITE_API_GATEWAY_URL,
+  ORDER_SERVICE_URL: import.meta.env.VITE_API_GATEWAY_URL,
+  PAYMENT_SERVICE_URL: import.meta.env.VITE_API_GATEWAY_URL,
+  CUSTOMER_SERVICE_URL: import.meta.env.VITE_API_GATEWAY_URL,
+  REVIEW_SERVICE_URL: import.meta.env.VITE_API_GATEWAY_URL,
 
   // Service URLs (for reference only - DO NOT USE DIRECTLY)
   // All requests go through API Gateway
@@ -38,7 +60,7 @@ export const API_CONFIG = {
   TIMEOUT: 30000, // 30 seconds
 
   // WebSocket
-  WS_URL: import.meta.env.VITE_WS_URL || 'ws://localhost:8083/ws',
+  WS_URL: import.meta.env.VITE_WS_URL,
 } as const;
 
 // Use API Gateway for all endpoints

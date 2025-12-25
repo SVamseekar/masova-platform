@@ -4,6 +4,7 @@ import com.MaSoVa.order.entity.KitchenEquipment;
 import com.MaSoVa.order.repository.KitchenEquipmentRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,7 +50,7 @@ public class KitchenEquipmentService {
     /**
      * Get equipment by ID
      */
-    public KitchenEquipment getEquipmentById(String equipmentId) {
+    public KitchenEquipment getEquipmentById(@NonNull String equipmentId) {
         return equipmentRepository.findById(equipmentId)
                 .orElseThrow(() -> new RuntimeException("Equipment not found with ID: " + equipmentId));
     }
@@ -58,7 +59,7 @@ public class KitchenEquipmentService {
      * Update equipment status
      */
     @Transactional
-    public KitchenEquipment updateEquipmentStatus(String equipmentId, KitchenEquipment.EquipmentStatus status,
+    public KitchenEquipment updateEquipmentStatus(@NonNull String equipmentId, KitchenEquipment.EquipmentStatus status,
                                                    String staffId, String notes) {
         KitchenEquipment equipment = getEquipmentById(equipmentId);
 
@@ -82,7 +83,7 @@ public class KitchenEquipmentService {
      * Toggle equipment on/off
      */
     @Transactional
-    public KitchenEquipment toggleEquipmentPower(String equipmentId, Boolean isOn, String staffId) {
+    public KitchenEquipment toggleEquipmentPower(@NonNull String equipmentId, Boolean isOn, String staffId) {
         KitchenEquipment equipment = getEquipmentById(equipmentId);
 
         // Can only turn on if status is AVAILABLE or IN_USE
@@ -112,7 +113,7 @@ public class KitchenEquipmentService {
      * Update equipment temperature (for ovens, grills, etc.)
      */
     @Transactional
-    public KitchenEquipment updateTemperature(String equipmentId, Integer temperature) {
+    public KitchenEquipment updateTemperature(@NonNull String equipmentId, Integer temperature) {
         KitchenEquipment equipment = getEquipmentById(equipmentId);
 
         if (equipment.getType() != KitchenEquipment.EquipmentType.OVEN &&
@@ -132,7 +133,7 @@ public class KitchenEquipmentService {
      * Record maintenance
      */
     @Transactional
-    public KitchenEquipment recordMaintenance(String equipmentId, LocalDateTime nextMaintenanceDate, String notes) {
+    public KitchenEquipment recordMaintenance(@NonNull String equipmentId, LocalDateTime nextMaintenanceDate, String notes) {
         KitchenEquipment equipment = getEquipmentById(equipmentId);
 
         equipment.setLastMaintenanceDate(LocalDateTime.now());
@@ -167,7 +168,7 @@ public class KitchenEquipmentService {
     /**
      * Delete equipment
      */
-    public void deleteEquipment(String equipmentId) {
+    public void deleteEquipment(@NonNull String equipmentId) {
         log.info("Deleting equipment {}", equipmentId);
         equipmentRepository.deleteById(equipmentId);
     }

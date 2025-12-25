@@ -1,18 +1,27 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import API_CONFIG from '../../config/api.config';
 import type { RootState } from '../store';
+import { User } from '../../types/user';
 
 // Types
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  userType: 'CUSTOMER' | 'STAFF' | 'DRIVER' | 'MANAGER' | 'ASSISTANT_MANAGER';
-  storeId?: string;
-  isActive: boolean;
-  createdAt?: string;
-  updatedAt?: string;
+export interface Address {
+  street: string;
+  city: string;
+  state: string;
+  pincode: string;
+  landmark?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface ShiftTime {
+  startTime: string;
+  endTime: string;
+}
+
+export interface WorkSchedule {
+  weeklySchedule?: Record<string, ShiftTime>;
+  maxHoursPerWeek?: number;
 }
 
 export interface CreateUserRequest {
@@ -20,8 +29,15 @@ export interface CreateUserRequest {
   email: string;
   password: string;
   phone?: string;
-  userType: 'CUSTOMER' | 'STAFF' | 'DRIVER' | 'MANAGER' | 'ASSISTANT_MANAGER';
+  type: 'CUSTOMER' | 'STAFF' | 'DRIVER' | 'MANAGER' | 'ASSISTANT_MANAGER';
   storeId?: string;
+  address?: Address;
+  role?: string;
+  permissions?: string[];
+  schedule?: WorkSchedule;
+  // Driver-specific fields
+  vehicleType?: string;
+  licenseNumber?: string;
 }
 
 export interface UpdateUserRequest {
@@ -115,11 +131,23 @@ export const userApi = createApi({
       ],
     }),
 
+    // Activate user
+    activateUser: builder.mutation<void, string>({
+      query: (userId) => ({
+        url: `/users/${userId}/activate`,
+        method: 'POST',
+      }),
+      invalidatesTags: (result, error, userId) => [
+        { type: 'User', id: userId },
+        { type: 'Users', id: 'LIST' },
+      ],
+    }),
+
     // Deactivate user
     deactivateUser: builder.mutation<void, string>({
       query: (userId) => ({
-        url: `/users/${userId}`,
-        method: 'DELETE',
+        url: `/users/${userId}/deactivate`,
+        method: 'POST',
       }),
       invalidatesTags: (result, error, userId) => [
         { type: 'User', id: userId },
@@ -137,12 +165,12 @@ export const userApi = createApi({
     }),
 
     // Get store employees
-    getStoreEmployees: builder.query<User[], void>({
-      query: () => `/users/store`,
-      providesTags: (result) =>
+    getStoreEmployees: builder.query<User[], string | undefined>({
+      query: (storeId) => `/users/store${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) =>
         result
-          ? [...result.map(({ id }) => ({ type: 'User' as const, id })), { type: 'Users', id: 'LIST' }]
-          : [{ type: 'Users', id: 'LIST' }],
+          ? [...result.map(({ id }) => ({ type: 'User' as const, id })), { type: 'Users', id: storeId || 'DEFAULT' }]
+          : [{ type: 'Users', id: storeId || 'DEFAULT' }],
     }),
 
     // Get active managers
@@ -167,6 +195,47 @@ export const userApi = createApi({
           ? [...result.map(({ id }) => ({ type: 'User' as const, id })), { type: 'Users', id: 'LIST' }]
           : [{ type: 'Users', id: 'LIST' }],
     }),
+
+    // Create new user (staff member)
+    createUser: builder.mutation<User, CreateUserRequest>({
+      query: (data) => ({
+        url: '/users/create',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: [{ type: 'Users', id: 'LIST' }],
+    }),
+
+    // Get staff profile by ID (for both staff viewing own profile and managers viewing staff)
+    getStaffProfile: builder.query<User, string>({
+      query: (userId) => `/users/${userId}`,
+      providesTags: (result, error, userId) => [{ type: 'User', id: userId }],
+    }),
+
+    // Update staff profile (for both staff and managers)
+    updateStaffProfile: builder.mutation<User, { userId: string; data: UpdateUserRequest }>({
+      query: ({ userId, data }) => ({
+        url: `/users/${userId}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: (result, error, { userId }) => [
+        { type: 'User', id: userId },
+        { type: 'Users', id: 'LIST' },
+      ],
+    }),
+
+    // Validate PIN for POS authentication
+    validatePIN: builder.mutation<
+      { userId: string; name: string; type: string; role: string; storeId: string },
+      { pin: string }
+    >({
+      query: (data) => ({
+        url: '/users/validate-pin',
+        method: 'POST',
+        body: data,
+      }),
+    }),
   }),
 });
 
@@ -176,10 +245,15 @@ export const {
   useChangePasswordMutation,
   useGetUserQuery,
   useUpdateUserMutation,
+  useActivateUserMutation,
   useDeactivateUserMutation,
   useGetUsersByTypeQuery,
   useGetStoreEmployeesQuery,
   useGetManagersQuery,
   useCanTakeOrdersQuery,
   useGetUsersQuery,
+  useCreateUserMutation,
+  useGetStaffProfileQuery,
+  useUpdateStaffProfileMutation,
+  useValidatePINMutation,
 } = userApi;

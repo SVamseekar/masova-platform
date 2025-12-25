@@ -3,6 +3,7 @@ package com.MaSoVa.review.repository;
 import com.MaSoVa.review.entity.Review;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -46,6 +47,10 @@ public interface ReviewRepository extends MongoRepository<Review, String> {
     Page<Review> findReviewsNeedingResponse(Pageable pageable);
 
     // Date range queries
+    /**
+     * @deprecated Use findByStoreIdAndCreatedAtBetweenAndIsDeletedFalse for store data isolation
+     */
+    @Deprecated
     List<Review> findByCreatedAtBetweenAndIsDeletedFalse(LocalDateTime startDate, LocalDateTime endDate);
 
     // Count queries
@@ -56,9 +61,55 @@ public interface ReviewRepository extends MongoRepository<Review, String> {
     Long countByMenuItemId(String menuItemId);
 
     // Sentiment queries
+    /**
+     * @deprecated Use findByStoreIdAndSentimentAndIsDeletedFalse for store data isolation
+     */
+    @Deprecated
     List<Review> findBySentimentAndIsDeletedFalse(Review.SentimentType sentiment);
+
+    /**
+     * @deprecated Use countByStoreIdAndSentimentAndIsDeletedFalse for store data isolation
+     */
+    @Deprecated
     Long countBySentimentAndIsDeletedFalse(Review.SentimentType sentiment);
 
     // Verified purchases
     Page<Review> findByIsVerifiedPurchaseTrueAndIsDeletedFalseOrderByCreatedAtDesc(Pageable pageable);
+
+    // Week 4: Store-aware queries for proper data isolation
+    List<Review> findByStoreIdAndCreatedAtBetweenAndIsDeletedFalse(
+            String storeId,
+            LocalDateTime startDate,
+            LocalDateTime endDate
+    );
+
+    List<Review> findByStoreIdAndSentimentAndIsDeletedFalse(String storeId, Review.SentimentType sentiment);
+
+    Long countByStoreIdAndSentimentAndIsDeletedFalse(String storeId, Review.SentimentType sentiment);
+
+    Page<Review> findByStoreIdAndStatusAndIsDeletedFalse(String storeId, Review.ReviewStatus status, Pageable pageable);
+
+    Page<Review> findByStoreIdAndIsDeletedFalseOrderByCreatedAtDesc(String storeId, Pageable pageable);
+
+    @Query("{ 'storeId': ?0, 'responseId': null, 'overallRating': { $lte: 3 }, 'status': 'APPROVED', 'isDeleted': false }")
+    Page<Review> findByStoreIdReviewsNeedingResponse(String storeId, Pageable pageable);
+
+    // Staff rating queries
+    List<Review> findByStaffIdAndIsDeletedFalseAndStaffRatingIsNotNull(String staffId);
+    Page<Review> findByStaffIdAndIsDeletedFalseAndStaffRatingIsNotNull(String staffId, Pageable pageable);
+    Long countByStaffIdAndIsDeletedFalseAndStaffRatingIsNotNull(String staffId);
+
+    // Staff average rating aggregation
+    @Aggregation(pipeline = {
+        "{ $match: { 'staffId': ?0, 'staffRating': { $exists: true, $ne: null }, 'isDeleted': false } }",
+        "{ $group: { _id: null, avgRating: { $avg: '$staffRating' }, totalReviews: { $sum: 1 }, staffName: { $first: '$staffName' } } }"
+    })
+    List<StaffRatingAggregation> getStaffAverageRating(String staffId);
+
+    // Inner interface for aggregation result
+    interface StaffRatingAggregation {
+        Double getAvgRating();
+        Long getTotalReviews();
+        String getStaffName();
+    }
 }

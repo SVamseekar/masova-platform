@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
+import { useAppSelector } from '../../store/hooks';
+import { selectCurrentUser } from '../../store/slices/authSlice';
+import AppHeader from '../../components/common/AppHeader';
+import { usePageStore } from '../../contexts/PageStoreContext';
+import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import { colors, spacing, typography, shadows, borderRadius } from '../../styles/design-tokens';
 import { createNeumorphicSurface, createCard, createBadge } from '../../styles/neumorphic-utils';
+import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import {
   useGetAllMenuItemsQuery,
   useUpdateMenuItemMutation,
@@ -9,7 +15,14 @@ import {
 } from '../../store/api/menuApi';
 
 const RecipeManagementPage: React.FC = () => {
-  const { data: menuItems = [], isLoading } = useGetAllMenuItemsQuery();
+  const { handleBack } = useSmartBackNavigation();
+
+  // Get storeId
+  const currentUser = useAppSelector(selectCurrentUser);
+  const { selectedStoreId } = usePageStore();
+  const storeId = selectedStoreId || currentUser?.storeId || '';
+
+  const { data: menuItems = [], isLoading } = useGetAllMenuItemsQuery(storeId, { skip: !storeId });
   const [updateMenuItem] = useUpdateMenuItemMutation();
 
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
@@ -239,6 +252,7 @@ const RecipeManagementPage: React.FC = () => {
     padding: spacing[8],
     backgroundColor: colors.surface.primary,
     minHeight: '100vh',
+    paddingTop: '80px',
   };
 
   const headerStyles: React.CSSProperties = {
@@ -399,6 +413,7 @@ const RecipeManagementPage: React.FC = () => {
 
   return (
     <div style={containerStyles}>
+      <AppHeader title="Recipe Management" showBackButton={true} onBack={handleBack} showManagerNav={true} />
       <div style={headerStyles}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
@@ -508,12 +523,12 @@ const RecipeManagementPage: React.FC = () => {
                 </div>
                 <div style={{ marginTop: spacing[2], fontSize: typography.fontSize.xs }}>
                   {item.ingredients && item.ingredients.length > 0 && (
-                    <span style={{ ...createBadge('success', 'xs'), marginRight: spacing[2] }}>
+                    <span style={{ ...createBadge('success', 'sm'), marginRight: spacing[2] }}>
                       {item.ingredients.length} ingredients
                     </span>
                   )}
                   {item.preparationInstructions && item.preparationInstructions.length > 0 && (
-                    <span style={createBadge('info', 'xs')}>
+                    <span style={createBadge('primary', 'sm')}>
                       {item.preparationInstructions.length} steps
                     </span>
                   )}
@@ -798,4 +813,4 @@ const RecipeManagementPage: React.FC = () => {
   );
 };
 
-export default RecipeManagementPage;
+export default withPageStoreContext(RecipeManagementPage, 'recipes');

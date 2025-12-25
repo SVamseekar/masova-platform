@@ -49,4 +49,42 @@ public interface UserRepository extends MongoRepository<User, String> {
     
     @Query("{'type': {$ne: 'CUSTOMER'}, 'isActive': true}")
     List<User> findAllActiveEmployees();
+
+    // Count queries for statistics
+    long countByType(UserType type);
+
+    long countByIsActive(boolean isActive);
+
+    @Query(value = "{'lastLogin': {$gte: ?0}}", count = true)
+    long countByLastLoginAfter(LocalDateTime dateTime);
+
+    // Search support - add pagination-friendly methods
+    @Query("{'personalInfo.name': {$regex: ?0, $options: 'i'}}")
+    List<User> findByNameContainingIgnoreCase(String name);
+
+    @Query("{'personalInfo.email': {$regex: ?0, $options: 'i'}}")
+    List<User> findByEmailContainingIgnoreCase(String email);
+
+    @Query("{'personalInfo.phone': {$regex: ?0}}")
+    List<User> findByPhoneContaining(String phone);
+
+    // Inactive users for GDPR
+    @Query("{'isActive': ?0, 'lastLogin': {$lt: ?1}}")
+    List<User> findByActiveAndLastLoginBefore(boolean active, LocalDateTime cutoff);
+
+    // PIN-related queries for 5-digit PIN system
+    @Query(value = "{'employeeDetails.storeId': ?0, 'employeeDetails.employeePINHash': ?1}", exists = true)
+    boolean existsByStoreIdAndEmployeeDetailsPINHash(String storeId, String pinHash);
+
+    // Find employees by type for PIN validation
+    @Query("{'type': {$in: ?0}}")
+    List<User> findByTypeIn(List<UserType> types);
+
+    // Kiosk-specific queries
+    @Query("{'employeeDetails.storeId': ?0, 'employeeDetails.terminalId': ?1}")
+    Optional<User> findByEmployeeDetailsStoreIdAndEmployeeDetailsTerminalId(String storeId, String terminalId);
+
+    // Optimized PIN lookup - query by suffix first (reduces candidates from ~100 to ~1)
+    @Query("{'employeeDetails.pinSuffix': ?0}")
+    List<User> findByEmployeeDetailsPinSuffix(String pinSuffix);
 }

@@ -35,21 +35,29 @@ public class ForwardedHeaderFilter implements GlobalFilter, Ordered {
                     headers.remove("X-Forwarded-Prefix");
 
                     // Add only essential forwarding information if needed
-                    if (request.getRemoteAddress() != null && request.getRemoteAddress().getAddress() != null) {
-                        String remoteAddress = request.getRemoteAddress().getAddress().getHostAddress();
-                        headers.set("X-Forwarded-For", remoteAddress);
-                    } else {
-                        headers.set("X-Forwarded-For", "unknown");
+                    String remoteAddress = "unknown";
+                    var remoteAddr = request.getRemoteAddress();
+                    if (remoteAddr != null) {
+                        var address = remoteAddr.getAddress();
+                        if (address != null) {
+                            String addr = address.getHostAddress();
+                            if (addr != null) {
+                                remoteAddress = addr;
+                            }
+                        }
                     }
+                    headers.set("X-Forwarded-For", remoteAddress);
 
                     // Add protocol
-                    if (request.getURI().getScheme() != null) {
-                        headers.set("X-Forwarded-Proto", request.getURI().getScheme());
+                    String scheme = request.getURI().getScheme();
+                    if (scheme != null) {
+                        headers.set("X-Forwarded-Proto", scheme);
                     }
 
                     // Add original host
-                    if (request.getHeaders().getHost() != null) {
-                        String hostString = request.getHeaders().getHost().getHostString();
+                    var host = request.getHeaders().getHost();
+                    if (host != null) {
+                        String hostString = host.getHostString();
                         if (hostString != null) {
                             headers.set("X-Forwarded-Host", hostString);
                         }

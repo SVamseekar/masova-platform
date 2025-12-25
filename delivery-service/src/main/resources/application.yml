@@ -7,12 +7,13 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://localhost:27017/delivery_db
+      uri: ${MONGODB_DELIVERY_URI:mongodb://localhost:27017/delivery_db}
       auto-index-creation: true
 
   redis:
-    host: localhost
-    port: 6379
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
     timeout: 2000ms
     lettuce:
       pool:
@@ -23,21 +24,40 @@ spring:
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-512-bits-for-HS512-algorithm-security-requirement}
+  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-256-bits-for-production-security}
   access-token-expiration: 3600000
   refresh-token-expiration: 604800000
 
-# Google Maps API Configuration
+# Google Maps API Configuration (DEPRECATED - using free OSM services instead)
 google:
   maps:
     api-key: ${GOOGLE_MAPS_API_KEY:}
 
+# Free Routing Configuration (OSRM + Nominatim)
+routing:
+  osrm:
+    # Use public demo for development, self-hosted for production
+    base-url: ${OSRM_URL:https://router.project-osrm.org}
+  nominatim:
+    base-url: ${NOMINATIM_URL:https://nominatim.openstreetmap.org}
+    # Respect rate limits when using public instance
+    rate-limit-ms: 1000
+  # ETA configuration
+  eta:
+    pickup-buffer-minutes: 5
+    traffic-buffer-percent: 15
+    rush-hours:
+      morning-start: 8
+      morning-end: 10
+      evening-start: 17
+      evening-end: 20
+
 # Service URLs
 services:
   user-service:
-    url: http://localhost:8081
+    url: ${USER_SERVICE_URL:http://localhost:8081}
   order-service:
-    url: http://localhost:8082
+    url: ${ORDER_SERVICE_URL:http://localhost:8083}
 
 # Logging
 logging:
@@ -46,3 +66,84 @@ logging:
     com.MaSoVa.delivery: DEBUG
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# Resilience4j Circuit Breaker and Retry Configuration
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        failure-rate-threshold: 50
+        slow-call-rate-threshold: 80
+        slow-call-duration-threshold: 3s
+        minimum-number-of-calls: 10
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 20
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 5
+        automatic-transition-from-open-to-half-open-enabled: true
+    instances:
+      orderService:
+        base-config: default
+        failure-rate-threshold: 60
+        minimum-number-of-calls: 10
+        wait-duration-in-open-state: 15s
+      userService:
+        base-config: default
+        failure-rate-threshold: 60
+        minimum-number-of-calls: 10
+        wait-duration-in-open-state: 15s
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 5s
+        cancel-running-future: true
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 500ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - org.springframework.web.client.RestClientException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+    instances:
+      orderService:
+        base-config: default
+      userService:
+        base-config: default
+
+---
+# Production Profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+      auto-index-creation: false
+  redis:
+    host: ${REDIS_HOST}
+    password: ${REDIS_PASSWORD}
+    ssl: true
+    lettuce:
+      pool:
+        max-active: 100
+        max-idle: 50
+
+logging:
+  level:
+    root: WARN
+    com.MaSoVa: INFO
+    org.springframework: WARN
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
+  endpoint:
+    health:
+      show-details: when-authorized

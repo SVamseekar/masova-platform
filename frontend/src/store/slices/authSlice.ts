@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { User } from '../../types/user';
 import { authApi } from '../api/authApi';
+import { clearAllStoreContexts } from '../../contexts/PageStoreContext';
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -32,22 +33,35 @@ const STORAGE_KEYS = {
 } as const;
 
 const getStorage = (key: string): string | null => {
-  return localStorage.getItem(key) || sessionStorage.getItem(key);
+  try {
+    return localStorage.getItem(key) || sessionStorage.getItem(key);
+  } catch (error) {
+    console.warn('Storage access denied:', error);
+    return null;
+  }
 };
 
 const setStorage = (key: string, value: string, rememberMe: boolean = true): void => {
-  const storage = rememberMe ? localStorage : sessionStorage;
-  const oppositeStorage = rememberMe ? sessionStorage : localStorage;
+  try {
+    const storage = rememberMe ? localStorage : sessionStorage;
+    const oppositeStorage = rememberMe ? sessionStorage : localStorage;
 
-  // Set in preferred storage
-  storage.setItem(key, value);
-  // Remove from opposite storage
-  oppositeStorage.removeItem(key);
+    // Set in preferred storage
+    storage.setItem(key, value);
+    // Remove from opposite storage
+    oppositeStorage.removeItem(key);
+  } catch (error) {
+    console.warn('Storage write failed:', error);
+  }
 };
 
 const removeStorage = (key: string): void => {
-  localStorage.removeItem(key);
-  sessionStorage.removeItem(key);
+  try {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  } catch (error) {
+    console.warn('Storage removal failed:', error);
+  }
 };
 
 /**
@@ -55,24 +69,40 @@ const removeStorage = (key: string): void => {
  * Called on logout and before new login to prevent pollution
  */
 const clearAllAuthStorage = (): void => {
-  Object.values(STORAGE_KEYS).forEach(key => {
-    removeStorage(key);
-  });
+  try {
+    Object.values(STORAGE_KEYS).forEach(key => {
+      removeStorage(key);
+    });
 
-  // Also clear legacy keys from old multi-user-type system
-  const legacyKeys = [
-    'accessToken', 'refreshToken', 'user',
-    'MANAGER_accessToken', 'MANAGER_refreshToken', 'MANAGER_user',
-    'STAFF_accessToken', 'STAFF_refreshToken', 'STAFF_user',
-    'DRIVER_accessToken', 'DRIVER_refreshToken', 'DRIVER_user',
-    'CUSTOMER_accessToken', 'CUSTOMER_refreshToken', 'CUSTOMER_user',
-    'ASSISTANT_MANAGER_accessToken', 'ASSISTANT_MANAGER_refreshToken', 'ASSISTANT_MANAGER_user',
-  ];
+    // NOTE: We do NOT clear returnUrl here anymore. It is now intentionally
+    // preserved during logout so users can return to their previous page
+    // after logging back in. The returnUrl is only cleared after successful
+    // redirect in LoginPage.tsx (line 40).
 
-  legacyKeys.forEach(key => {
-    localStorage.removeItem(key);
-    sessionStorage.removeItem(key);
-  });
+    // Also clear legacy keys from old multi-user-type system
+    const legacyKeys = [
+      'accessToken', 'refreshToken', 'user',
+      'MANAGER_accessToken', 'MANAGER_refreshToken', 'MANAGER_user',
+      'STAFF_accessToken', 'STAFF_refreshToken', 'STAFF_user',
+      'DRIVER_accessToken', 'DRIVER_refreshToken', 'DRIVER_user',
+      'CUSTOMER_accessToken', 'CUSTOMER_refreshToken', 'CUSTOMER_user',
+      'ASSISTANT_MANAGER_accessToken', 'ASSISTANT_MANAGER_refreshToken', 'ASSISTANT_MANAGER_user',
+    ];
+
+    legacyKeys.forEach(key => {
+      try {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+      } catch (error) {
+        console.warn(`Failed to remove legacy key ${key}:`, error);
+      }
+    });
+
+    // Phase 11: Clear all page-specific store contexts on logout
+    clearAllStoreContexts();
+  } catch (error) {
+    console.warn('Storage cleanup failed:', error);
+  }
 };
 
 // Load functions - simplified, no multi-user-type complexity

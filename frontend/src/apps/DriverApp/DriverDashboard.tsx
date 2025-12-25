@@ -1,35 +1,126 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
+import { Box, Avatar, IconButton, Badge, BottomNavigation, BottomNavigationAction } from '@mui/material';
+import {
+  Home as HomeIcon,
+  LocalShipping as ActiveIcon,
+  History as HistoryIcon,
+  Person as PersonIcon,
+  Settings as SettingsIcon,
+  HomeOutlined as HomeOutlinedIcon,
+  LocalShippingOutlined as ActiveOutlinedIcon,
+  HistoryOutlined as HistoryOutlinedIcon,
+  PersonOutline as PersonOutlinedIcon,
+} from '@mui/icons-material';
 import { RootState } from '../../store/store';
 import { logout } from '../../store/slices/authSlice';
 import DeliveryHomePage from './pages/DeliveryHomePage';
 import ActiveDeliveryPage from './pages/ActiveDeliveryPage';
 import DeliveryHistoryPage from './pages/DeliveryHistoryPage';
 import DriverProfilePage from './pages/DriverProfilePage';
-import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
-import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
+import { StatusBadge } from './components/shared';
+import { colors, spacing, typography, borderRadius, shadows, components, animations } from '../../styles/driver-design-tokens';
+import { useGetDriverStatusQuery } from '../../store/api/driverApi';
+import { injectKeyframes } from './utils/animations';
+import { getTabSync } from './utils/tabSync';
 
 const DriverDashboard: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
-  const [currentNavValue, setCurrentNavValue] = useState('/driver');
-  const [isOnline, setIsOnline] = useState(false);
+  const [currentNavValue, setCurrentNavValue] = useState(0);
+
+  // Inject keyframes on mount
+  useEffect(() => {
+    injectKeyframes();
+  }, []);
+
+  // Phase 8: Fetch driver status from backend on mount
+  const { data: driverStatusData, isLoading: isLoadingStatus } = useGetDriverStatusQuery(
+    user?.id || '',
+    {
+      skip: !user?.id,
+      // Poll every 30 seconds to keep status in sync
+      pollingInterval: 30000,
+    }
+  );
+
+  // Initialize online status from backend (fallback to localStorage for offline scenarios)
+  const [isOnline, setIsOnline] = useState(() => {
+    const savedStatus = localStorage.getItem(`driver_online_${user?.id}`);
+    const initialOnline = savedStatus === 'true';
+    console.log(`🎬 Initial online status from localStorage: ${initialOnline} (saved value: "${savedStatus}")`);
+    return initialOnline;
+  });
   const [activeDeliveries, setActiveDeliveries] = useState(0);
+
+  // Phase 8: Sync with backend status when loaded
+  // BUT: Don't override if we're in the middle of restoring a session
+  useEffect(() => {
+    if (driverStatusData && !isLoadingStatus && user?.id) {
+      const backendIsOnline = driverStatusData.isOnline;
+      const savedStatus = localStorage.getItem(`driver_online_${user.id}`);
+      const savedSessionStart = localStorage.getItem(`driver_session_start_${user.id}`);
+
+      console.log(`🔄 Backend sync: backend=${backendIsOnline}, localStorage=${savedStatus}, sessionStart=${savedSessionStart}`);
+
+      // If we have a saved session and backend says offline, trust the local state
+      // The backend might not have synced yet
+      if (savedStatus === 'true' && savedSessionStart && !backendIsOnline) {
+        console.log('⚠️ Backend shows offline but localStorage shows online - keeping local state');
+        return;
+      }
+
+      // Otherwise, sync with backend
+      console.log(`✅ Syncing with backend: setting isOnline to ${backendIsOnline}`);
+      setIsOnline(backendIsOnline);
+      localStorage.setItem(`driver_online_${user.id}`, String(backendIsOnline));
+    }
+  }, [driverStatusData, isLoadingStatus, user?.id]);
+
+  // Persist online status to localStorage whenever it changes (fallback for offline)
+  useEffect(() => {
+    if (user?.id) {
+      console.log(`💾 Saving online status to localStorage: ${isOnline}`);
+      localStorage.setItem(`driver_online_${user.id}`, String(isOnline));
+    }
+  }, [isOnline, user?.id]);
+
+  // Tab Synchronization: Listen for status changes from other tabs
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const tabSync = getTabSync();
+
+    // Listen for driver status changes from other tabs
+    const unsubscribeStatus = tabSync.on('DRIVER_STATUS_CHANGE', (data) => {
+      if (data.userId === user.id) {
+        console.log('📡 TabSync: Received status change from another tab:', data.isOnline);
+        setIsOnline(data.isOnline);
+        // Update localStorage to keep all tabs in sync
+        localStorage.setItem(`driver_online_${user.id}`, String(data.isOnline));
+      }
+    });
+
+    // Cleanup on unmount
+    return () => {
+      unsubscribeStatus();
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     // Update navigation value based on current path
     const path = location.pathname;
     if (path.includes('/active')) {
-      setCurrentNavValue('/driver/active');
+      setCurrentNavValue(1);
     } else if (path.includes('/history')) {
-      setCurrentNavValue('/driver/history');
+      setCurrentNavValue(2);
     } else if (path.includes('/profile')) {
-      setCurrentNavValue('/driver/profile');
+      setCurrentNavValue(3);
     } else {
-      setCurrentNavValue('/driver');
+      setCurrentNavValue(0);
     }
   }, [location]);
 
@@ -38,170 +129,134 @@ const DriverDashboard: React.FC = () => {
     navigate('/login');
   };
 
-  const handleNavigationChange = (newValue: string) => {
+  const handleNavigationChange = (_event: React.SyntheticEvent, newValue: number) => {
     setCurrentNavValue(newValue);
-    navigate(newValue);
+    const routes = ['/driver', '/driver/active', '/driver/history', '/driver/profile'];
+    navigate(routes[newValue]);
   };
 
-  // Styles
-  const containerStyles: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100vh',
-    backgroundColor: colors.surface.background,
-    fontFamily: typography.fontFamily.primary,
+  const handleSettingsClick = () => {
+    // Navigate to settings or show settings dialog
+    console.log('Settings clicked');
   };
 
-  const topBarStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('raised', 'sm', 'none'),
-    padding: spacing[4],
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.surface.primary,
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!user || !user.name) return '?';
+    const nameParts = user.name.split(' ').filter(Boolean);
+    if (nameParts.length === 0) return '?';
+    if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase();
+    return (nameParts[0].charAt(0) + nameParts[nameParts.length - 1].charAt(0)).toUpperCase();
   };
 
-  const logoContainerStyles: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: spacing[2],
+  // Get driver display name
+  const getDriverName = () => {
+    if (!user || !user.name) return 'Driver';
+    return user.name;
   };
 
-  const iconStyles: React.CSSProperties = {
-    fontSize: '1.5rem',
-  };
-
-  const titleStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-  };
-
-  const statusContainerStyles: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: spacing[3],
-  };
-
-  const statusBadgeStyles: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: spacing[1],
-    padding: `${spacing[1]} ${spacing[3]}`,
-    borderRadius: borderRadius.full,
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    backgroundColor: isOnline ? colors.semantic.success : colors.surface.secondary,
-    color: isOnline ? '#fff' : colors.text.secondary,
-    ...createNeumorphicSurface('flat', 'sm', 'full'),
-  };
-
-  const userNameStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-    display: 'none', // Hidden on mobile
-    '@media (min-width: 640px)': {
-      display: 'block',
-    },
-  };
-
-  const logoutButtonStyles: React.CSSProperties = {
-    padding: `${spacing[2]} ${spacing[3]}`,
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.primary,
-    backgroundColor: 'transparent',
-    border: 'none',
-    borderRadius: borderRadius.md,
-    cursor: 'pointer',
-    ...createNeumorphicSurface('raised', 'sm', 'md'),
-    transition: 'all 0.2s',
-  };
-
-  const contentStyles: React.CSSProperties = {
-    flexGrow: 1,
-    overflow: 'auto',
-    paddingBottom: '80px', // Space for bottom nav
-  };
-
-  const bottomNavStyles: React.CSSProperties = {
-    position: 'fixed',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    display: 'flex',
-    backgroundColor: colors.surface.primary,
-    ...createNeumorphicSurface('raised', 'sm', 'none'),
-    borderTop: `1px solid ${colors.surface.tertiary}`,
-    zIndex: 1000,
-  };
-
-  const navButtonStyles = (isActive: boolean): React.CSSProperties => ({
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing[3],
-    gap: spacing[1],
-    border: 'none',
-    backgroundColor: isActive ? colors.surface.secondary : 'transparent',
-    color: isActive ? colors.brand.primary : colors.text.secondary,
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    fontSize: typography.fontSize.xs,
-    fontWeight: isActive ? typography.fontWeight.semibold : typography.fontWeight.normal,
-    ...(isActive ? createNeumorphicSurface('inset', 'sm', 'none') : {}),
-  });
-
-  const navIconStyles: React.CSSProperties = {
-    fontSize: '1.5rem',
-  };
-
-  const badgeStyles: React.CSSProperties = {
-    position: 'absolute',
-    top: '-4px',
-    right: '-4px',
-    minWidth: '18px',
-    height: '18px',
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.brand.primary,
-    color: '#fff',
-    fontSize: typography.fontSize.xs,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '2px 4px',
-    fontWeight: typography.fontWeight.bold,
+  // Get employee ID or user ID
+  const getEmployeeId = () => {
+    if (!user) return '';
+    // @ts-ignore - employeeId might exist on user
+    return user.employeeId || `#EMP${user.id.slice(-6).toUpperCase()}`;
   };
 
   return (
-    <div style={containerStyles}>
-      {/* Top Bar */}
-      <div style={topBarStyles}>
-        <div style={logoContainerStyles}>
-          <span style={iconStyles}>🚚</span>
-          <span style={titleStyles}>Driver App</span>
-        </div>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100vh',
+        backgroundColor: colors.surface.background,
+        fontFamily: typography.fontFamily.primary,
+      }}
+    >
+      {/* Top Navigation Bar - Uber Style */}
+      <Box
+        sx={{
+          height: components.topBar.height,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: `0 ${spacing.base}`,
+          backgroundColor: colors.primary.white,
+          borderBottom: `1px solid ${colors.surface.border}`,
+          boxShadow: shadows.subtle,
+          position: 'sticky',
+          top: 0,
+          zIndex: 1000,
+          transition: `all ${animations.duration.normal} ${animations.easing.standard}`,
+        }}
+      >
+        {/* Left: Avatar + Name + ID */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing.md,
+          }}
+        >
+          <Avatar
+            sx={{
+              width: components.avatar.size.medium,
+              height: components.avatar.size.medium,
+              backgroundColor: colors.primary.green,
+              color: colors.text.inverse,
+              fontSize: typography.fontSize.body,
+              fontWeight: typography.fontWeight.bold,
+            }}
+          >
+            {getUserInitials()}
+          </Avatar>
 
-        <div style={statusContainerStyles}>
-          <div style={statusBadgeStyles}>
-            <span>📍</span>
-            <span>{isOnline ? 'Online' : 'Offline'}</span>
-          </div>
-          {user && (
-            <span style={userNameStyles}>
-              {user.firstName} {user.lastName}
-            </span>
-          )}
-          <button onClick={handleLogout} style={logoutButtonStyles}>
-            🚪
-          </button>
-        </div>
-      </div>
+          <Box>
+            <Box
+              sx={{
+                fontSize: typography.fontSize.body,
+                fontWeight: typography.fontWeight.semibold,
+                color: colors.text.primary,
+                lineHeight: typography.lineHeight.tight,
+              }}
+            >
+              {getDriverName()}
+            </Box>
+            <Box
+              sx={{
+                fontSize: typography.fontSize.small,
+                color: colors.text.secondary,
+                lineHeight: typography.lineHeight.tight,
+              }}
+            >
+              {getEmployeeId()}
+            </Box>
+          </Box>
+        </Box>
+
+        {/* Right: Status Badge */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing.md,
+          }}
+        >
+          <StatusBadge
+            status={isOnline ? 'online' : 'offline'}
+            size="medium"
+            animated
+          />
+        </Box>
+      </Box>
 
       {/* Main Content Area */}
-      <div style={contentStyles}>
+      <Box
+        sx={{
+          flexGrow: 1,
+          overflow: 'auto',
+          paddingBottom: `${components.bottomNav.height}px`,
+        }}
+      >
         <Routes>
           <Route
             path="/"
@@ -217,46 +272,75 @@ const DriverDashboard: React.FC = () => {
           <Route path="/history" element={<DeliveryHistoryPage />} />
           <Route path="/profile" element={<DriverProfilePage />} />
         </Routes>
-      </div>
+      </Box>
 
-      {/* Bottom Navigation */}
-      <div style={bottomNavStyles}>
-        <button
-          onClick={() => handleNavigationChange('/driver')}
-          style={navButtonStyles(currentNavValue === '/driver')}
-        >
-          <span style={navIconStyles}>🏠</span>
-          <span>Home</span>
-        </button>
+      {/* Bottom Navigation - Minimalist Uber Style */}
+      <BottomNavigation
+        value={currentNavValue}
+        onChange={handleNavigationChange}
+        showLabels
+        sx={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: components.bottomNav.height,
+          borderTop: `1px solid ${colors.surface.border}`,
+          backgroundColor: colors.primary.white,
+          zIndex: 1000,
 
-        <button
-          onClick={() => handleNavigationChange('/driver/active')}
-          style={{ ...navButtonStyles(currentNavValue === '/driver/active'), position: 'relative' }}
-        >
-          <span style={navIconStyles}>🚚</span>
-          {activeDeliveries > 0 && (
-            <span style={badgeStyles}>{activeDeliveries}</span>
-          )}
-          <span>Active</span>
-        </button>
+          '& .MuiBottomNavigationAction-root': {
+            color: colors.text.secondary,
+            fontSize: typography.fontSize.caption,
+            minWidth: 'unset',
+            padding: spacing.sm,
+            transition: `all ${animations.duration.normal} ${animations.easing.spring}`,
 
-        <button
-          onClick={() => handleNavigationChange('/driver/history')}
-          style={navButtonStyles(currentNavValue === '/driver/history')}
-        >
-          <span style={navIconStyles}>📋</span>
-          <span>History</span>
-        </button>
+            '&.Mui-selected': {
+              color: colors.primary.green,
+              fontSize: typography.fontSize.caption,
+              transform: 'scale(1.05)',
 
-        <button
-          onClick={() => handleNavigationChange('/driver/profile')}
-          style={navButtonStyles(currentNavValue === '/driver/profile')}
-        >
-          <span style={navIconStyles}>👤</span>
-          <span>Profile</span>
-        </button>
-      </div>
-    </div>
+              '& .MuiSvgIcon-root': {
+                transform: 'scale(1.1)',
+              },
+            },
+
+            '& .MuiBottomNavigationAction-label': {
+              fontSize: typography.fontSize.caption,
+              fontWeight: typography.fontWeight.medium,
+              marginTop: spacing.xs,
+
+              '&.Mui-selected': {
+                fontSize: typography.fontSize.caption,
+                fontWeight: typography.fontWeight.semibold,
+              },
+            },
+          },
+        }}
+      >
+        <BottomNavigationAction
+          label="Home"
+          icon={currentNavValue === 0 ? <HomeIcon /> : <HomeOutlinedIcon />}
+        />
+        <BottomNavigationAction
+          label="Active"
+          icon={
+            <Badge badgeContent={activeDeliveries} color="error">
+              {currentNavValue === 1 ? <ActiveIcon /> : <ActiveOutlinedIcon />}
+            </Badge>
+          }
+        />
+        <BottomNavigationAction
+          label="History"
+          icon={currentNavValue === 2 ? <HistoryIcon /> : <HistoryOutlinedIcon />}
+        />
+        <BottomNavigationAction
+          label="Profile"
+          icon={currentNavValue === 3 ? <PersonIcon /> : <PersonOutlinedIcon />}
+        />
+      </BottomNavigation>
+    </Box>
   );
 };
 

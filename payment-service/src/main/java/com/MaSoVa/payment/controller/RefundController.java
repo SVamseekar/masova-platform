@@ -3,6 +3,8 @@ package com.MaSoVa.payment.controller;
 import com.MaSoVa.payment.dto.RefundRequest;
 import com.MaSoVa.payment.entity.Refund;
 import com.MaSoVa.payment.service.RefundService;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +16,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/payments/refund")
+@Tag(name = "Refund Management", description = "APIs for processing and managing payment refunds")
+@SecurityRequirement(name = "bearerAuth")
 public class RefundController {
 
     private static final Logger log = LoggerFactory.getLogger(RefundController.class);

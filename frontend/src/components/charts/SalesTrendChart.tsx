@@ -17,10 +17,14 @@ import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 import { createCard } from '../../styles/neumorphic-utils';
 import { colors } from '../../styles/design-tokens';
 
-export default function SalesTrendChart() {
+interface SalesTrendChartProps {
+  storeId?: string;
+}
+
+export default function SalesTrendChart({ storeId }: SalesTrendChartProps) {
   const [period, setPeriod] = useState<'WEEKLY' | 'MONTHLY'>('WEEKLY');
 
-  const { data, isLoading, error } = useGetSalesTrendsQuery({ period });
+  const { data, isLoading, error } = useGetSalesTrendsQuery({ period, storeId });
 
   const handlePeriodChange = (_event: React.MouseEvent<HTMLElement>, newPeriod: 'WEEKLY' | 'MONTHLY' | null) => {
     if (newPeriod) {

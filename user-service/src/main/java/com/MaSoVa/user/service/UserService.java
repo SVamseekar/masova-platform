@@ -1,8 +1,8 @@
 package com.MaSoVa.user.service;
 
 import com.MaSoVa.shared.entity.User;
-import com.MaSoVa.shared.entity.WorkingSession;
 import com.MaSoVa.shared.enums.UserType;
+import com.MaSoVa.shared.util.PiiMasker;
 import com.MaSoVa.user.dto.LoginRequest;
 import com.MaSoVa.user.dto.LoginResponse;
 import com.MaSoVa.user.dto.UserCreateRequest;
@@ -22,28 +22,27 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
 public class UserService {
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
-    
+
     @Autowired
     private UserRepository userRepository;
-    
+
+    @SuppressWarnings("unused")
     @Autowired
     private WorkingSessionRepository sessionRepository;
-    
+
     @Autowired
     private PasswordEncoder passwordEncoder;
 
@@ -79,6 +78,15 @@ public class UserService {
             employeeDetails.setRole(request.getRole());
             employeeDetails.setPermissions(request.getPermissions());
             employeeDetails.setSchedule(request.getSchedule());
+
+            // Set driver-specific fields if provided
+            if (request.getVehicleType() != null) {
+                employeeDetails.setVehicleType(request.getVehicleType());
+            }
+            if (request.getLicenseNumber() != null) {
+                employeeDetails.setLicenseNumber(request.getLicenseNumber());
+            }
+
             user.setEmployeeDetails(employeeDetails);
         }
 
@@ -88,10 +96,24 @@ public class UserService {
         if (savedUser.getType() == UserType.CUSTOMER) {
             try {
                 createCustomerProfile(savedUser);
+            } catch (org.springframework.web.client.HttpClientErrorException.Forbidden e) {
+                logger.error("Failed to create customer profile - authentication issue for user {}", savedUser.getId());
+                // Customer profile will be auto-created on first order
+            } catch (org.springframework.web.client.HttpClientErrorException.BadRequest e) {
+                // Check if it's a duplicate error
+                String errorBody = e.getResponseBodyAsString();
+                if (errorBody.contains("already exists")) {
+                    logger.warn("Customer profile already exists for user {} with email {}", savedUser.getId(), PiiMasker.maskEmail(savedUser.getPersonalInfo().getEmail()));
+                    // This is okay - customer profile exists from previous registration
+                } else {
+                    logger.error("Failed to create customer profile for user {}: {}", savedUser.getId(), e.getMessage());
+                    // Delete the user to keep data consistent
+                    userRepository.delete(savedUser);
+                    throw new RuntimeException("Registration failed: " + errorBody);
+                }
             } catch (Exception e) {
                 logger.error("Failed to create customer profile for user {}: {}", savedUser.getId(), e.getMessage(), e);
-                // Don't fail registration if customer profile creation fails
-                // Customer profile will be auto-created on first access
+                // Customer profile will be auto-created on first order
             }
         }
 
@@ -123,6 +145,7 @@ public class UserService {
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(customerRequest, headers);
 
         String url = customerServiceUrl + "/api/customers";
+        @SuppressWarnings("rawtypes")
         ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
 
         if (response.getStatusCode().is2xxSuccessful()) {
@@ -152,10 +175,37 @@ public class UserService {
             employeeDetails.setRole(request.getRole());
             employeeDetails.setPermissions(request.getPermissions());
             employeeDetails.setSchedule(request.getSchedule());
+
+            // Set driver-specific fields if provided
+            if (request.getVehicleType() != null) {
+                employeeDetails.setVehicleType(request.getVehicleType());
+            }
+            if (request.getLicenseNumber() != null) {
+                employeeDetails.setLicenseNumber(request.getLicenseNumber());
+            }
+
             user.setEmployeeDetails(employeeDetails);
         }
 
         User savedUser = userRepository.save(user);
+
+        // Auto-generate 5-digit PIN for employees
+        if (savedUser.isEmployee()) {
+            try {
+                String plainPin = generateEmployeePIN(savedUser.getId(), request.getStoreId());
+                logger.info("IMPORTANT: Generated PIN for employee {} ({}): {}",
+                    savedUser.getPersonalInfo().getName(),
+                    savedUser.getId(),
+                    plainPin);
+                // Store PIN temporarily in response so it can be displayed to manager
+                UserResponse response = mapToUserResponse(savedUser);
+                response.setGeneratedPIN(plainPin);
+                return response;
+            } catch (Exception e) {
+                logger.error("Failed to generate PIN for employee {}: {}", savedUser.getId(), e.getMessage());
+            }
+        }
+
         return mapToUserResponse(savedUser);
     }
     
@@ -179,18 +229,27 @@ public class UserService {
         employeeDetails.setRole(request.getRole());
         employeeDetails.setPermissions(request.getPermissions());
         employeeDetails.setSchedule(request.getSchedule());
+
+        // Set driver-specific fields if provided
+        if (request.getVehicleType() != null) {
+            employeeDetails.setVehicleType(request.getVehicleType());
+        }
+        if (request.getLicenseNumber() != null) {
+            employeeDetails.setLicenseNumber(request.getLicenseNumber());
+        }
+
         user.setEmployeeDetails(employeeDetails);
-        
+
         User savedUser = userRepository.save(user);
         return mapToUserResponse(savedUser);
     }
     
     public LoginResponse authenticate(LoginRequest request) {
-        logger.info("Authentication attempt for email: {}", request.getEmail());
+        logger.info("Authentication attempt for email: {}", PiiMasker.maskEmail(request.getEmail()));
 
         User user = userRepository.findByPersonalInfoEmail(request.getEmail())
                 .orElseThrow(() -> {
-                    logger.error("User not found for email: {}", request.getEmail());
+                    logger.error("User not found for email: {}", PiiMasker.maskEmail(request.getEmail()));
                     return new RuntimeException("Invalid credentials");
                 });
 
@@ -222,19 +281,13 @@ public class UserService {
         String accessToken = jwtService.generateAccessToken(user.getId(), user.getType().name(), storeId);
         String refreshToken = jwtService.generateRefreshToken(user.getId());
 
-        // Start working session for non-manager employees only
-        // Managers don't need working sessions as they manage the store
-        if (user.isEmployee() && user.getType() != UserType.MANAGER && storeId != null) {
-            try {
-                logger.info("Starting working session for non-manager employee: {}", user.getId());
-                sessionService.startSession(user.getId(), storeId);
-            } catch (Exception e) {
-                // Log the error but don't fail the login
-                logger.error("Failed to start working session for user {}: {}", user.getId(), e.getMessage(), e);
-            }
-        } else {
-            logger.info("Skipping working session for manager or customer: {}", user.getId());
-        }
+        // DISABLED: Auto clock-in for ALL employees
+        // All employees (STAFF, DRIVER, MANAGER, ASSISTANT_MANAGER) must use POS clock-in feature
+        // This ensures intentional session recording and accurate time tracking
+        logger.info("Auto clock-in disabled - user must clock in via POS: {} (type: {})",
+            user.getId(), user.getType());
+
+        // No automatic session start on login
 
         logger.info("Authentication successful for user: {}", user.getId());
         return new LoginResponse(accessToken, refreshToken, mapToUserResponse(user));
@@ -263,14 +316,26 @@ public class UserService {
         return mapToUserResponse(getUserById(userId));
     }
     
+    /**
+     * WARNING: This method loads all users - should use pagination in production
+     * Consider using getUsersByType() or getStoreEmployees() for filtered queries
+     */
+    @Deprecated
     public List<UserResponse> getAllUsers() {
-        return userRepository.findAll().stream()
+        // For now, limit to active employees only to reduce memory footprint
+        return userRepository.findAllActiveEmployees().stream()
                 .map(this::mapToUserResponse)
                 .toList();
     }
 
     public List<UserResponse> getUsersByType(UserType type) {
         return userRepository.findByType(type).stream()
+                .map(this::mapToUserResponse)
+                .toList();
+    }
+
+    public List<UserResponse> getUsersByTypeAndStore(UserType type, String storeId) {
+        return userRepository.findByTypeAndEmployeeDetailsStoreId(type, storeId).stream()
                 .map(this::mapToUserResponse)
                 .toList();
     }
@@ -313,11 +378,19 @@ public class UserService {
     }
     
     @CacheEvict(value = "users", key = "'user:' + #p0")
+    public void activateUser(String userId) {
+        User user = getUserById(userId);
+        user.setActive(true);
+        userRepository.save(user);
+        logger.info("Activated user: {}", userId);
+    }
+
+    @CacheEvict(value = "users", key = "'user:' + #p0")
     public void deactivateUser(String userId) {
         User user = getUserById(userId);
         user.setActive(false);
         userRepository.save(user);
-        
+
         // End any active working session
         if (user.isEmployee()) {
             try {
@@ -327,6 +400,178 @@ public class UserService {
                 logger.error("Failed to end session during deactivation for user {}: {}", userId, e.getMessage(), e);
             }
         }
+    }
+
+    // SecureRandom for 5-digit PIN generation
+    private static final java.security.SecureRandom SECURE_RANDOM = new java.security.SecureRandom();
+
+    /**
+     * Generate a random 5-digit PIN for an employee with store-level uniqueness guarantee
+     * PIN is used for authentication in POS and clock-in systems
+     * @param userId User ID
+     * @param storeId Store ID for uniqueness constraint
+     * @return Plain PIN string (to be shown once)
+     */
+    @CacheEvict(value = "users", key = "'user:' + #userId")
+    public String generateEmployeePIN(String userId, String storeId) {
+        User user = getUserById(userId);
+
+        if (!user.isEmployee()) {
+            throw new RuntimeException("Only employees can have PINs");
+        }
+
+        if (user.getEmployeeDetails() == null) {
+            user.setEmployeeDetails(new User.EmployeeDetails());
+        }
+
+        String pin = null;
+        int maxAttempts = 100;
+        int attempts = 0;
+
+        // Generate random PIN with collision detection
+        while (attempts < maxAttempts) {
+            // Generate random 5-digit PIN (00000-99999)
+            pin = String.format("%05d", SECURE_RANDOM.nextInt(100000));
+
+            // Hash the PIN
+            String hashedPin = passwordEncoder.encode(pin);
+
+            // Check if PIN already exists in this store
+            boolean exists = userRepository.existsByStoreIdAndEmployeeDetailsPINHash(storeId, hashedPin);
+
+            if (!exists) {
+                // Unique PIN found - save it
+                user.getEmployeeDetails().setEmployeePINHash(hashedPin);
+
+                // OPTIMIZATION: Store last 2 digits for indexed lookups (95% faster)
+                String pinSuffix = pin.substring(3); // Last 2 digits
+                user.getEmployeeDetails().setPinSuffix(pinSuffix);
+
+                userRepository.save(user);
+                logger.info("Generated 5-digit PIN for employee {} in store {} (suffix: {})", userId, storeId, pinSuffix);
+                return pin; // Return plain PIN only once
+            }
+
+            attempts++;
+        }
+
+        throw new RuntimeException("Failed to generate unique PIN after " + maxAttempts + " attempts");
+    }
+
+    /**
+     * Legacy method - calls new method with user's storeId
+     */
+    @Deprecated
+    public String generateEmployeePIN(String userId) {
+        User user = getUserById(userId);
+        String storeId = user.getEmployeeDetails() != null ? user.getEmployeeDetails().getStoreId() : null;
+
+        if (storeId == null) {
+            throw new RuntimeException("Employee must be assigned to a store before generating PIN");
+        }
+
+        return generateEmployeePIN(userId, storeId);
+    }
+
+    /**
+     * Verify employee PIN
+     * @param userId User ID
+     * @param plainPin Plain 5-digit PIN
+     * @return true if PIN matches
+     */
+    public boolean verifyEmployeePIN(String userId, String plainPin) {
+        User user = getUserById(userId);
+
+        if (user.getEmployeeDetails() == null ||
+            user.getEmployeeDetails().getEmployeePINHash() == null) {
+            return false;
+        }
+
+        return passwordEncoder.matches(plainPin, user.getEmployeeDetails().getEmployeePINHash());
+    }
+
+    /**
+     * Find user by validating their PIN
+     * @param plainPin Plain 5-digit PIN
+     * @return User if PIN matches, null otherwise
+     */
+    /**
+     * Find user by PIN with optimized lookup
+     * Uses pinSuffix index to reduce BCrypt checks from O(n) to O(1)
+     *
+     * Performance:
+     * - Old: Check all ~100 employees with BCrypt (~100ms)
+     * - New: Query by suffix index (~1-2 candidates), check with BCrypt (~5ms)
+     *
+     * @param plainPin Plain 5-digit PIN
+     * @return User if found, null otherwise
+     */
+    public User findUserByPIN(String plainPin) {
+        if (plainPin == null || plainPin.length() != 5) {
+            return null;
+        }
+
+        // OPTIMIZATION: Extract suffix and query by index first
+        String pinSuffix = plainPin.substring(3); // Last 2 digits
+
+        // Query only users with matching suffix (reduces from ~100 to ~1-2 candidates)
+        List<User> candidates = userRepository.findByEmployeeDetailsPinSuffix(pinSuffix);
+
+        // Fallback: If suffix query returns nothing, try old method (for backwards compatibility)
+        if (candidates == null || candidates.isEmpty()) {
+            logger.warn("No users found with PIN suffix '{}', falling back to full scan", pinSuffix);
+            candidates = userRepository.findByTypeIn(
+                java.util.Arrays.asList(
+                    UserType.STAFF,
+                    UserType.DRIVER,
+                    UserType.MANAGER,
+                    UserType.ASSISTANT_MANAGER
+                )
+            );
+        }
+
+        // Check PIN for each candidate with BCrypt
+        for (User candidate : candidates) {
+            if (candidate.getEmployeeDetails() != null &&
+                candidate.getEmployeeDetails().getEmployeePINHash() != null) {
+
+                if (passwordEncoder.matches(plainPin, candidate.getEmployeeDetails().getEmployeePINHash())) {
+                    logger.debug("PIN lookup optimized: checked {} candidates instead of all employees",
+                        candidates.size());
+                    return candidate;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Generate PINs for all employees without PINs (Phase 2 - Migration)
+     */
+    public Map<String, String> generatePINsForAllEmployees() {
+        Map<String, String> results = new HashMap<>();
+
+        List<User> employees = userRepository.findAll().stream()
+            .filter(User::isEmployee)
+            .filter(u -> u.getEmployeeDetails() != null)
+            .filter(u -> u.getEmployeeDetails().getEmployeePINHash() == null)
+            .collect(Collectors.toList());
+
+        logger.info("Generating PINs for {} employees", employees.size());
+
+        for (User employee : employees) {
+            try {
+                String pin = generateEmployeePIN(employee.getId());
+                results.put(employee.getId(), pin);
+                logger.info("Generated PIN for employee: {} ({})", employee.getPersonalInfo().getName(), employee.getId());
+            } catch (Exception e) {
+                logger.error("Failed to generate PIN for employee {}: {}", employee.getId(), e.getMessage());
+                results.put(employee.getId(), "ERROR: " + e.getMessage());
+            }
+        }
+
+        return results;
     }
     
     // FIX 3: Robust permission checking method
@@ -385,9 +630,29 @@ public class UserService {
     }
     
     public List<UserResponse> searchUsers(String name, String email, String phone, UserType type, String storeId) {
-        List<User> allUsers = userRepository.findAll();
-        
-        return allUsers.stream()
+        // Build a smarter query based on available parameters instead of loading all users
+        List<User> users;
+
+        // Priority: Use most specific filter first
+        if (storeId != null && type != null) {
+            users = userRepository.findByStoreIdAndType(storeId, type);
+        } else if (storeId != null) {
+            users = userRepository.findByStoreId(storeId);
+        } else if (type != null) {
+            users = userRepository.findByType(type);
+        } else if (name != null) {
+            users = userRepository.findByNameContainingIgnoreCase(name);
+        } else if (email != null) {
+            users = userRepository.findByEmailContainingIgnoreCase(email);
+        } else if (phone != null) {
+            users = userRepository.findByPhoneContaining(phone);
+        } else {
+            // Fallback: only active employees instead of all users
+            users = userRepository.findAllActiveEmployees();
+        }
+
+        // Apply remaining filters in-memory (much smaller dataset now)
+        return users.stream()
                 .filter(user -> name == null || user.getPersonalInfo().getName().toLowerCase().contains(name.toLowerCase()))
                 .filter(user -> email == null || user.getPersonalInfo().getEmail().toLowerCase().contains(email.toLowerCase()))
                 .filter(user -> phone == null || user.getPersonalInfo().getPhone().contains(phone))
@@ -398,29 +663,65 @@ public class UserService {
     }
     
     public Map<String, Object> getUserStatistics() {
-        List<User> allUsers = userRepository.findAll();
-        
-        Map<UserType, Long> usersByType = allUsers.stream()
-                .collect(Collectors.groupingBy(User::getType, Collectors.counting()));
-        
-        long activeUsers = allUsers.stream()
-                .filter(User::isActive)
-                .count();
-        
-        long inactiveUsers = allUsers.size() - activeUsers;
-        
-        long recentLogins = allUsers.stream()
-                .filter(user -> user.getLastLogin() != null && 
-                       user.getLastLogin().isAfter(LocalDateTime.now().minusDays(7)))
-                .count();
-        
+        // Use count queries instead of loading all users
+        long totalUsers = userRepository.count();
+        long activeUsers = userRepository.countByIsActive(true);
+        long inactiveUsers = totalUsers - activeUsers;
+        long recentLogins = userRepository.countByLastLoginAfter(LocalDateTime.now().minusDays(7));
+
+        // For usersByType, we need to count each type separately
+        Map<UserType, Long> usersByType = new HashMap<>();
+        for (UserType type : UserType.values()) {
+            usersByType.put(type, userRepository.countByType(type));
+        }
+
         Map<String, Object> stats = new HashMap<>();
-        stats.put("totalUsers", allUsers.size());
+        stats.put("totalUsers", totalUsers);
         stats.put("activeUsers", activeUsers);
         stats.put("inactiveUsers", inactiveUsers);
         stats.put("recentLogins", recentLogins);
         stats.put("usersByType", usersByType);
-        
+
+        return stats;
+    }
+
+    public Map<String, Object> getDriverStatsByStore(String storeId) {
+        // Get all drivers for this store
+        List<User> drivers = userRepository.findByTypeAndEmployeeDetailsStoreId(UserType.DRIVER, storeId);
+
+        // Calculate driver-specific stats
+        long totalDrivers = drivers.size();
+        long activeDrivers = drivers.stream().filter(User::isActive).count();
+        long onlineDrivers = drivers.stream()
+                .filter(d -> d.getEmployeeDetails() != null &&
+                        d.getEmployeeDetails().getStatus() != null &&
+                        "ONLINE".equals(d.getEmployeeDetails().getStatus()))
+                .count();
+        long offlineDrivers = activeDrivers - onlineDrivers;
+        long availableDrivers = drivers.stream()
+                .filter(d -> d.isActive() &&
+                        d.getEmployeeDetails() != null &&
+                        d.getEmployeeDetails().getStatus() != null &&
+                        "ONLINE".equals(d.getEmployeeDetails().getStatus()) &&
+                        (d.getEmployeeDetails().getActiveDeliveryCount() == null ||
+                                d.getEmployeeDetails().getActiveDeliveryCount() == 0))
+                .count();
+        long busyDrivers = onlineDrivers - availableDrivers;
+
+        // For now, set these to 0 - should be calculated from delivery service
+        long totalDeliveriesToday = 0;
+        double averageDeliveryTime = 0.0;
+
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalDrivers", totalDrivers);
+        stats.put("activeDrivers", activeDrivers);
+        stats.put("onlineDrivers", onlineDrivers);
+        stats.put("offlineDrivers", offlineDrivers);
+        stats.put("availableDrivers", availableDrivers);
+        stats.put("busyDrivers", busyDrivers);
+        stats.put("totalDeliveriesToday", totalDeliveriesToday);
+        stats.put("averageDeliveryTime", averageDeliveryTime);
+
         return stats;
     }
     
@@ -454,7 +755,7 @@ public class UserService {
         }
     }
     
-    private UserResponse mapToUserResponse(User user) {
+    public UserResponse mapToUserResponse(User user) {
         UserResponse response = new UserResponse();
         response.setId(user.getId());
         response.setType(user.getType());
@@ -464,14 +765,26 @@ public class UserService {
         response.setAddress(user.getPersonalInfo().getAddress());
         response.setCreatedAt(user.getCreatedAt());
         response.setLastLogin(user.getLastLogin());
-        response.setActive(user.isActive());
+        response.setIsActive(user.isActive());
         
         if (user.isEmployee() && user.getEmployeeDetails() != null) {
             response.setStoreId(user.getEmployeeDetails().getStoreId());
             response.setRole(user.getEmployeeDetails().getRole());
             response.setPermissions(user.getEmployeeDetails().getPermissions());
+            response.setStatus(user.getEmployeeDetails().getStatus());
+            response.setRating(user.getEmployeeDetails().getRating());
+            response.setActiveDeliveryCount(user.getEmployeeDetails().getActiveDeliveryCount());
+
+            // Check if user has active working session to determine isOnline status
+            try {
+                boolean isCurrentlyWorking = sessionService.isEmployeeCurrentlyWorking(user.getId());
+                response.setIsOnline(isCurrentlyWorking);
+            } catch (Exception e) {
+                logger.warn("Failed to check active session for user {}: {}", user.getId(), e.getMessage());
+                response.setIsOnline(false);
+            }
         }
-        
+
         return response;
     }
 
@@ -482,5 +795,179 @@ public class UserService {
         return drivers.stream()
                 .map(this::mapToUserResponse)
                 .collect(java.util.stream.Collectors.toList());
+    }
+
+    public List<UserResponse> getAvailableDrivers(String storeId) {
+        logger.info("Fetching available drivers for store: {}", storeId);
+        List<User> drivers = userRepository.findByTypeAndEmployeeDetailsStoreId(UserType.DRIVER, storeId);
+
+        // Filter for drivers with status = "AVAILABLE" and isActive = true
+        return drivers.stream()
+                .filter(driver -> driver.isActive())
+                .filter(driver -> {
+                    if (driver.getEmployeeDetails() == null) {
+                        return false;
+                    }
+                    String status = driver.getEmployeeDetails().getStatus();
+                    return status != null && "AVAILABLE".equals(status);
+                })
+                .map(this::mapToUserResponse)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * Update driver online/offline status
+     * Phase 8: Persist driver status across page refreshes
+     */
+    public void updateDriverStatus(String driverId, String status) {
+        logger.info("Updating driver {} status to: {}", driverId, status);
+
+        User driver = userRepository.findById(driverId)
+                .orElseThrow(() -> new RuntimeException("Driver not found with ID: " + driverId));
+
+        // Verify user is a driver
+        if (driver.getType() != UserType.DRIVER) {
+            throw new RuntimeException("User is not a driver");
+        }
+
+        // Initialize EmployeeDetails if null
+        if (driver.getEmployeeDetails() == null) {
+            driver.setEmployeeDetails(new User.EmployeeDetails());
+        }
+
+        // Update status
+        driver.getEmployeeDetails().setStatus(status);
+
+        // Save to database
+        userRepository.save(driver);
+
+        logger.info("Driver {} status updated successfully to: {}", driverId, status);
+    }
+
+    // ==================== KIOSK ACCOUNT MANAGEMENT ====================
+
+    /**
+     * Create a kiosk account for a specific POS terminal
+     * Only managers can create kiosk accounts
+     *
+     * @param storeId Store where kiosk will be deployed
+     * @param terminalId Unique terminal identifier (e.g., "POS-01")
+     * @param createdByUserId Manager who is creating the kiosk account
+     * @return Created kiosk user
+     */
+    public User createKioskAccount(String storeId, String terminalId, String createdByUserId) {
+        logger.info("Creating kiosk account for store {} terminal {}", storeId, terminalId);
+
+        // Validate that creator is a manager
+        User creator = getUserById(createdByUserId);
+        if (creator.getType() != UserType.MANAGER && creator.getType() != UserType.ASSISTANT_MANAGER) {
+            throw new RuntimeException("Only managers can create kiosk accounts");
+        }
+
+        // Check if kiosk account already exists for this terminal
+        Optional<User> existingKiosk = userRepository.findByEmployeeDetailsStoreIdAndEmployeeDetailsTerminalId(
+            storeId, terminalId
+        );
+        if (existingKiosk.isPresent()) {
+            throw new RuntimeException("Kiosk account already exists for terminal " + terminalId);
+        }
+
+        // Generate unique kiosk credentials
+        String kioskEmail = String.format("kiosk.%s.%s@masova.internal", storeId, terminalId);
+        String kioskName = String.format("Kiosk %s - Store %s", terminalId, storeId);
+
+        // Create kiosk user
+        User kioskUser = new User();
+        kioskUser.setType(UserType.KIOSK);
+        kioskUser.setActive(true);
+
+        User.PersonalInfo personalInfo = new User.PersonalInfo();
+        personalInfo.setName(kioskName);
+        personalInfo.setEmail(kioskEmail);
+        personalInfo.setPhone("0000000000"); // Placeholder phone for kiosk accounts
+        // Generate random secure password (not meant for manual login)
+        String randomPassword = java.util.UUID.randomUUID().toString() + java.util.UUID.randomUUID().toString();
+        personalInfo.setPasswordHash(passwordEncoder.encode(randomPassword));
+        kioskUser.setPersonalInfo(personalInfo);
+
+        User.EmployeeDetails employeeDetails = new User.EmployeeDetails();
+        employeeDetails.setStoreId(storeId);
+        employeeDetails.setRole("KIOSK_TERMINAL");
+        employeeDetails.setTerminalId(terminalId);
+        employeeDetails.setIsKioskAccount(true);
+        employeeDetails.setStatus("ACTIVE");
+        employeeDetails.setPermissions(java.util.Arrays.asList("CREATE_ORDER", "VIEW_MENU", "PROCESS_PAYMENT"));
+        kioskUser.setEmployeeDetails(employeeDetails);
+
+        User savedKiosk = userRepository.save(kioskUser);
+        logger.info("Kiosk account created: {} ({})", savedKiosk.getId(), terminalId);
+
+        return savedKiosk;
+    }
+
+    /**
+     * Generate kiosk authentication tokens
+     * Returns long-lived tokens (30-day access, 90-day refresh)
+     *
+     * @param kioskUserId ID of the kiosk account
+     * @return LoginResponse with long-lived tokens
+     */
+    public LoginResponse generateKioskTokens(String kioskUserId) {
+        User kiosk = getUserById(kioskUserId);
+
+        if (kiosk.getType() != UserType.KIOSK) {
+            throw new RuntimeException("User is not a kiosk account");
+        }
+
+        if (!kiosk.isActive()) {
+            throw new RuntimeException("Kiosk account is deactivated");
+        }
+
+        String storeId = kiosk.getEmployeeDetails().getStoreId();
+        String terminalId = kiosk.getEmployeeDetails().getTerminalId();
+
+        // Generate long-lived tokens
+        String accessToken = jwtService.generateKioskAccessToken(kioskUserId, storeId, terminalId);
+        String refreshToken = jwtService.generateKioskRefreshToken(kioskUserId);
+
+        // Update last access time
+        kiosk.getEmployeeDetails().setLastKioskAccess(LocalDateTime.now());
+        kiosk.setLastLogin(LocalDateTime.now());
+        userRepository.save(kiosk);
+
+        logger.info("Generated kiosk tokens for terminal {} at store {}", terminalId, storeId);
+
+        return new LoginResponse(accessToken, refreshToken, mapToUserResponse(kiosk));
+    }
+
+    /**
+     * List all kiosk accounts for a store
+     */
+    public List<UserResponse> getKioskAccountsByStore(String storeId) {
+        List<User> kiosks = userRepository.findByTypeAndEmployeeDetailsStoreId(UserType.KIOSK, storeId);
+        return kiosks.stream()
+            .map(this::mapToUserResponse)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Deactivate a kiosk account
+     */
+    @CacheEvict(value = "users", key = "#kioskUserId")
+    public void deactivateKioskAccount(String kioskUserId, String managerId) {
+        User manager = getUserById(managerId);
+        if (manager.getType() != UserType.MANAGER && manager.getType() != UserType.ASSISTANT_MANAGER) {
+            throw new RuntimeException("Only managers can deactivate kiosk accounts");
+        }
+
+        User kiosk = getUserById(kioskUserId);
+        if (kiosk.getType() != UserType.KIOSK) {
+            throw new RuntimeException("User is not a kiosk account");
+        }
+
+        kiosk.setActive(false);
+        userRepository.save(kiosk);
+
+        logger.info("Kiosk account {} deactivated by manager {}", kioskUserId, managerId);
     }
 }

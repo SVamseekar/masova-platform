@@ -29,7 +29,7 @@ spring:
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-512-bits-for-HS512-algorithm-security-requirement}
+  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-256-bits-for-production-security}
   access-token-expiration: 3600000
   refresh-token-expiration: 604800000
 server:
@@ -70,3 +70,36 @@ management:
 scheduling:
   enabled: true
   auto-po-cron: "0 0 2 * * *" # Run at 2 AM every day
+
+---
+# Production Profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+      auto-index-creation: false
+  redis:
+    host: ${REDIS_HOST}
+    password: ${REDIS_PASSWORD}
+    ssl: true
+    lettuce:
+      pool:
+        max-active: 100
+
+logging:
+  level:
+    root: WARN
+    com.MaSoVa: INFO
+    org.springframework: WARN
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
+  endpoint:
+    health:
+      show-details: when-authorized

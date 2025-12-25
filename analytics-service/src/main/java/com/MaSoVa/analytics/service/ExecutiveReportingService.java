@@ -1,7 +1,6 @@
 package com.MaSoVa.analytics.service;
 
 import com.MaSoVa.analytics.client.OrderServiceClient;
-import com.MaSoVa.analytics.client.CustomerServiceClient;
 import com.MaSoVa.analytics.dto.ExecutiveSummaryResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,15 +21,9 @@ public class ExecutiveReportingService {
     private static final Logger log = LoggerFactory.getLogger(ExecutiveReportingService.class);
 
     private final OrderServiceClient orderServiceClient;
-    private final CustomerServiceClient customerServiceClient;
-    private final CostAnalysisService costAnalysisService;
 
-    public ExecutiveReportingService(OrderServiceClient orderServiceClient,
-                                     CustomerServiceClient customerServiceClient,
-                                     CostAnalysisService costAnalysisService) {
+    public ExecutiveReportingService(OrderServiceClient orderServiceClient) {
         this.orderServiceClient = orderServiceClient;
-        this.customerServiceClient = customerServiceClient;
-        this.costAnalysisService = costAnalysisService;
     }
 
     /**
@@ -336,12 +329,16 @@ public class ExecutiveReportingService {
         // Top product by sales
         Map<String, BigDecimal> productSales = new HashMap<>();
         for (Map<String, Object> order : orders) {
-            List<Map<String, Object>> items = (List<Map<String, Object>>) order.get("items");
-            if (items != null) {
-                for (Map<String, Object> item : items) {
-                    String itemName = (String) item.get("itemName");
-                    BigDecimal price = BigDecimal.valueOf(((Number) item.get("price")).doubleValue());
-                    int qty = ((Number) item.get("quantity")).intValue();
+            Object itemsObj = order.get("items");
+            if (itemsObj instanceof List<?> itemsList) {
+                for (Object itemObj : itemsList) {
+                    if (!(itemObj instanceof Map<?, ?>)) continue;
+                    Map<?, ?> itemMap = (Map<?, ?>) itemObj;
+                    String itemName = (String) itemMap.get("itemName");
+                    Object priceObj = itemMap.get("price");
+                    BigDecimal price = priceObj instanceof Number ? BigDecimal.valueOf(((Number) priceObj).doubleValue()) : BigDecimal.ZERO;
+                    Object qtyObj = itemMap.get("quantity");
+                    int qty = qtyObj instanceof Number ? ((Number) qtyObj).intValue() : 0;
                     productSales.merge(itemName, price.multiply(BigDecimal.valueOf(qty)), BigDecimal::add);
                 }
             }

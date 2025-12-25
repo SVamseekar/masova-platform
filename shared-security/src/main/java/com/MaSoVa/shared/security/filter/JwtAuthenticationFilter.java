@@ -38,9 +38,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String storeId = tokenProvider.getStoreIdFromToken(jwt);
 
                 // Handle null roles - use empty list if roles claim is missing
+                // Spring Security's hasAnyRole() expects authorities with ROLE_ prefix
                 List<SimpleGrantedAuthority> authorities = roles != null
                     ? roles.stream()
-                        .map(SimpleGrantedAuthority::new)
+                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
                         .collect(Collectors.toList())
                     : List.of();
 

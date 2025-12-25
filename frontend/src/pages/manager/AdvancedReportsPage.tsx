@@ -3,12 +3,23 @@ import SalesTrendChart from '../../components/charts/SalesTrendChart';
 import RevenueBreakdownChart from '../../components/charts/RevenueBreakdownChart';
 import PeakHoursHeatmap from '../../components/charts/PeakHoursHeatmap';
 import { colors } from '../../styles/design-tokens';
+import AppHeader from '../../components/common/AppHeader';
+import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
+import { withPageStoreContext } from '../../hoc/withPageStoreContext';
+import { usePageStore } from '../../contexts/PageStoreContext';
+import { useAppSelector } from '../../store/hooks';
+import { selectCurrentUser } from '../../store/slices/authSlice';
 
-export default function AdvancedReportsPage() {
-  const storeId = 'store-001'; // TODO: Get from auth context
+function AdvancedReportsPage() {
+  const currentUser = useAppSelector(selectCurrentUser);
+  const { selectedStoreId } = usePageStore();
+  const { handleBack } = useSmartBackNavigation();
+  const storeId = selectedStoreId || currentUser?.storeId || '';
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <>
+      <AppHeader title="Advanced Reports" showBackButton={true} onBack={handleBack} showManagerNav={true} />
+      <Container maxWidth="xl" sx={{ mt: 4, mb: 4, paddingTop: '80px' }}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, color: colors.text.primary }}>
           Advanced Reports
@@ -34,5 +45,8 @@ export default function AdvancedReportsPage() {
         </Grid>
       </Grid>
     </Container>
+    </>
   );
 }
+
+export default withPageStoreContext(AdvancedReportsPage, 'advanced-reports');

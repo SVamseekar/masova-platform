@@ -1,8 +1,8 @@
-import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+import axios from 'axios';
 import API_CONFIG from '../config/api.config';
 
 // Create axios instance
-const axiosInstance: AxiosInstance = axios.create({
+const axiosInstance = axios.create({
   baseURL: API_CONFIG.BASE_URL,
   timeout: API_CONFIG.TIMEOUT,
   headers: {
@@ -12,7 +12,7 @@ const axiosInstance: AxiosInstance = axios.create({
 
 // Request interceptor - Add JWT token to requests
 axiosInstance.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
+  (config: any) => {
     const token = localStorage.getItem('accessToken');
 
     if (token && config.headers) {
@@ -21,18 +21,18 @@ axiosInstance.interceptors.request.use(
 
     return config;
   },
-  (error: AxiosError) => {
+  (error: any) => {
     return Promise.reject(error);
   }
 );
 
 // Response interceptor - Handle token refresh
 axiosInstance.interceptors.response.use(
-  (response) => {
+  (response: any) => {
     return response;
   },
-  async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+  async (error: any) => {
+    const originalRequest = error.config as any & { _retry?: boolean };
 
     // If error is 401 and we haven't retried yet
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -44,11 +44,11 @@ axiosInstance.interceptors.response.use(
         if (refreshToken) {
           // Try to refresh the token
           const response = await axios.post(
-            `${API_CONFIG.BASE_URL}${API_CONFIG.USER_SERVICE}/refresh-token`,
+            `${API_CONFIG.USER_SERVICE_URL}/refresh-token`,
             { refreshToken }
           );
 
-          const { accessToken, refreshToken: newRefreshToken } = response.data;
+          const { accessToken, refreshToken: newRefreshToken } = response.data as any;
 
           // Update tokens in localStorage
           localStorage.setItem('accessToken', accessToken);

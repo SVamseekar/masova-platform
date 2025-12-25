@@ -100,7 +100,7 @@ public class TestDataController {
         }
     }
     
-    private void createStoreIfNotExists(String code, String name, String city, String pincode, 
+    private void createStoreIfNotExists(String code, String name, String city, String pincode,
                                       double latitude, double longitude) {
         try {
             Store store = new Store();
@@ -110,7 +110,7 @@ public class TestDataController {
             store.setRegionId("SOUTH");
             store.setStatus(StoreStatus.ACTIVE);
             store.setOpeningDate(LocalDateTime.now());
-            
+
             Address address = new Address();
             address.setStreet("Commercial Area");
             address.setCity(city);
@@ -119,16 +119,64 @@ public class TestDataController {
             address.setLatitude(latitude);
             address.setLongitude(longitude);
             store.setAddress(address);
-            
+
             Store.StoreConfiguration config = new Store.StoreConfiguration();
             config.setDeliveryRadiusKm(5.0);
             config.setMaxConcurrentOrders(50);
             config.setAcceptsOnlineOrders(true);
             store.setConfiguration(config);
-            
+
             storeService.saveStore(store);
         } catch (Exception e) {
             // Store might already exist, which is fine
+        }
+    }
+
+    @Autowired
+    private com.MaSoVa.user.repository.UserRepository userRepository;
+
+    @PostMapping("/migrate-users-to-storecode")
+    @Operation(summary = "Migrate all users from MongoDB store IDs to store codes")
+    public ResponseEntity<Map<String, Object>> migrateUsersToStoreCode() {
+        try {
+            // Get all stores
+            java.util.List<Store> stores = storeService.getActiveStores();
+            java.util.Map<String, String> storeIdToCodeMap = new java.util.HashMap<>();
+
+            // Build mapping: MongoDB ID -> storeCode
+            for (Store store : stores) {
+                storeIdToCodeMap.put(store.getId(), store.getCode());
+            }
+
+            // Get all users with employee details
+            java.util.List<com.MaSoVa.shared.entity.User> allUsers = userRepository.findAll();
+            int updatedCount = 0;
+
+            for (com.MaSoVa.shared.entity.User user : allUsers) {
+                if (user.getEmployeeDetails() != null && user.getEmployeeDetails().getStoreId() != null) {
+                    String currentStoreId = user.getEmployeeDetails().getStoreId();
+                    String storeCode = storeIdToCodeMap.get(currentStoreId);
+
+                    if (storeCode != null && !storeCode.equals(currentStoreId)) {
+                        // Update storeId to storeCode
+                        user.getEmployeeDetails().setStoreId(storeCode);
+                        userRepository.save(user);
+                        updatedCount++;
+                    }
+                }
+            }
+
+            return ResponseEntity.ok(Map.of(
+                "message", "User migration completed",
+                "totalUsers", allUsers.size(),
+                "updatedUsers", updatedCount,
+                "storeMapping", storeIdToCodeMap
+            ));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "Migration failed: " + e.getMessage()
+            ));
         }
     }
 }

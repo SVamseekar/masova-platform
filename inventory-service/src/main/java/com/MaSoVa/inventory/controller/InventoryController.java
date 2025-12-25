@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
@@ -21,6 +23,8 @@ import java.util.Map;
  * REST Controller for Inventory Management
  */
 @RestController
+@Tag(name = "InventoryController", description = "Inventory management and stock control")
+@SecurityRequirement(name = "bearerAuth")
 @RequestMapping("/api/inventory")
 public class InventoryController {
 

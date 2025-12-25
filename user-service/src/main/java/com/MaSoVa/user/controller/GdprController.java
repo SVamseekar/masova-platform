@@ -6,6 +6,7 @@ import com.MaSoVa.shared.entity.GdprAuditLog;
 import com.MaSoVa.shared.enums.ConsentType;
 import com.MaSoVa.user.dto.GdprConsentRequest;
 import com.MaSoVa.user.dto.GdprDataRequestDto;
+import com.MaSoVa.user.dto.GdprExportPackage;
 import com.MaSoVa.user.repository.GdprAuditLogRepository;
 import com.MaSoVa.user.service.GdprConsentService;
 import com.MaSoVa.user.service.GdprDataRequestService;
@@ -241,6 +242,66 @@ public class GdprController {
         privacyPolicy.put("gdprCompliant", true);
 
         return ResponseEntity.ok(privacyPolicy);
+    }
+
+    /**
+     * GDPR-004: Comprehensive data export endpoint.
+     * Exports all customer data from all services for GDPR Article 15 compliance.
+     */
+    @GetMapping("/export/{userId}")
+    public ResponseEntity<?> exportAllCustomerData(
+            @PathVariable String userId,
+            HttpServletRequest httpRequest) {
+
+        try {
+            // Get auth token from request for cross-service calls
+            String authToken = extractAuthToken(httpRequest);
+
+            GdprExportPackage exportPackage = dataRequestService.exportAllCustomerData(userId, authToken);
+
+            return ResponseEntity.ok(exportPackage);
+        } catch (Exception e) {
+            logger.error("Error exporting customer data for user {}", userId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * GDPR-004: Comprehensive data erasure endpoint.
+     * Anonymizes all customer data across all services for GDPR Article 17 compliance.
+     */
+    @DeleteMapping("/erase/{userId}")
+    public ResponseEntity<?> eraseAllCustomerData(
+            @PathVariable String userId,
+            HttpServletRequest httpRequest) {
+
+        try {
+            String authToken = extractAuthToken(httpRequest);
+
+            dataRequestService.anonymizeAllCustomerData(userId, authToken);
+
+            return ResponseEntity.ok(Map.of(
+                "message", "Customer data anonymized across all services",
+                "userId", userId,
+                "timestamp", java.time.LocalDateTime.now()
+            ));
+        } catch (Exception e) {
+            logger.error("Error erasing customer data for user {}", userId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Extract auth token from request header
+     */
+    private String extractAuthToken(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        return null;
     }
 
     private String getClientIP(HttpServletRequest request) {

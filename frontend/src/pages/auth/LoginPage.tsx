@@ -5,6 +5,8 @@ import { colors, spacing, typography } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 import { useLoginMutation } from '../../store/api/authApi';
 import { useAppSelector } from '../../store/hooks';
+import { useToast } from '../../hooks/useToast';
+import { getSavedReturnUrl, clearReturnUrl } from '../../utils/security';
 
 interface DemoAccount {
   type: string;
@@ -21,6 +23,7 @@ const LoginPage: React.FC = () => {
   const { isAuthenticated, user } = useAppSelector(state => state.auth);
   const [error, setError] = useState<string>('');
   const [activeDemo, setActiveDemo] = useState<string>('');
+  const toast = useToast(); // Phase 2: Toast notifications
 
   const [formData, setFormData] = useState({
     email: '',
@@ -31,18 +34,27 @@ const LoginPage: React.FC = () => {
   // Redirect if already authenticated (staff login only)
   useEffect(() => {
     if (isAuthenticated && user) {
+      // Phase 12: Check for saved return URL first
+      const returnUrl = getSavedReturnUrl();
+      if (returnUrl) {
+        clearReturnUrl();
+        navigate(returnUrl, { replace: true });
+        return;
+      }
+
+      // Default redirect based on user type
       const userType = user.type?.toLowerCase();
       if (userType?.includes('manager')) {
-        navigate('/manager');
+        navigate('/manager', { replace: true });
       } else if (userType?.includes('staff')) {
-        navigate('/kitchen');
+        navigate('/kitchen', { replace: true });
       } else if (userType?.includes('driver')) {
-        navigate('/driver');
+        navigate('/driver', { replace: true });
       } else if (userType?.includes('customer')) {
         // Customers shouldn't use this login page, redirect to checkout
-        navigate('/checkout');
+        navigate('/checkout', { replace: true });
       } else {
-        navigate('/');
+        navigate('/', { replace: true });
       }
     }
   }, [isAuthenticated, user, navigate]);
@@ -98,6 +110,10 @@ const LoginPage: React.FC = () => {
         }, 2000);
         return;
       }
+
+      // DISABLED: Auto clock-in notification
+      // All employees must use POS clock-in feature to record sessions
+      // This ensures accurate time tracking for all staff members
 
       // Redux will handle token storage via extraReducers in authSlice
       // Navigation will happen via useEffect when isAuthenticated changes

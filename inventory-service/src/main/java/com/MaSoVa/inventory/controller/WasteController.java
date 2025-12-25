@@ -11,6 +11,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
@@ -22,6 +24,8 @@ import java.util.Map;
  * REST Controller for Waste Tracking and Analysis
  */
 @RestController
+@Tag(name = "WasteController", description = "Waste tracking and analysis")
+@SecurityRequirement(name = "bearerAuth")
 @RequestMapping("/api/inventory/waste")
 public class WasteController {
 

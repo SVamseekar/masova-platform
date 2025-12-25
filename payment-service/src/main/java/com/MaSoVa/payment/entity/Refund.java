@@ -2,6 +2,7 @@ package com.MaSoVa.payment.entity;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -15,11 +16,17 @@ public class Refund {
     @Id
     private String id;
 
+    @Version
+    private Long version;
+
     @Indexed
     private String transactionId;
 
     @Indexed
     private String orderId;
+
+    @Indexed
+    private String storeId;
 
     @Indexed(unique = true)
     private String razorpayRefundId;
@@ -72,6 +79,9 @@ public class Refund {
 
     public String getOrderId() { return orderId; }
     public void setOrderId(String orderId) { this.orderId = orderId; }
+
+    public String getStoreId() { return storeId; }
+    public void setStoreId(String storeId) { this.storeId = storeId; }
 
     public String getRazorpayRefundId() { return razorpayRefundId; }
     public void setRazorpayRefundId(String razorpayRefundId) { this.razorpayRefundId = razorpayRefundId; }
@@ -133,6 +143,11 @@ public class Refund {
 
         public Builder orderId(String orderId) {
             refund.orderId = orderId;
+            return this;
+        }
+
+        public Builder storeId(String storeId) {
+            refund.storeId = storeId;
             return this;
         }
 

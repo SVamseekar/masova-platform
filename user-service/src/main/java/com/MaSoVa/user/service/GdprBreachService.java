@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,7 +27,6 @@ public class GdprBreachService {
     @Autowired
     private GdprAuditLogRepository auditLogRepository;
 
-    @Transactional
     public GdprDataBreach reportBreach(String title, String description, BreachSeverity severity,
                                         String detectedBy, List<String> affectedUserIds,
                                         List<String> affectedDataTypes) {
@@ -43,9 +41,11 @@ public class GdprBreachService {
 
         GdprDataBreach saved = breachRepository.save(breach);
 
-        for (String userId : affectedUserIds) {
-            createAuditLog(userId, GdprActionType.BREACH_DETECTED, "SYSTEM",
-                "Data breach detected: " + title);
+        if (affectedUserIds != null) {
+            for (String userId : affectedUserIds) {
+                createAuditLog(userId, GdprActionType.BREACH_DETECTED, "SYSTEM",
+                    "Data breach detected: " + title);
+            }
         }
 
         if (saved.requiresAuthorityNotification()) {
@@ -59,7 +59,6 @@ public class GdprBreachService {
         return saved;
     }
 
-    @Transactional
     public GdprDataBreach updateBreachStatus(String breachId, BreachStatus status, String notes) {
         logger.info("Updating breach status: {} to {}", breachId, status);
 
@@ -82,7 +81,6 @@ public class GdprBreachService {
         return breachRepository.save(breach);
     }
 
-    @Transactional
     public GdprDataBreach notifyAuthority(String breachId, String authorityReference) {
         logger.info("Recording authority notification for breach: {}", breachId);
 
@@ -103,7 +101,6 @@ public class GdprBreachService {
         return saved;
     }
 
-    @Transactional
     public GdprDataBreach notifyUsers(String breachId) {
         logger.info("Recording user notification for breach: {}", breachId);
 
@@ -129,9 +126,9 @@ public class GdprBreachService {
     public void checkOverdueNotifications() {
         logger.info("Checking for overdue breach notifications");
 
-        List<GdprDataBreach> overdueBreaches = breachRepository.findAll().stream()
-            .filter(GdprDataBreach::isAuthorityNotificationOverdue)
-            .toList();
+        // Use dedicated query instead of findAll() + filter
+        LocalDateTime overdueThreshold = java.time.LocalDateTime.now().minusHours(72);
+        List<GdprDataBreach> overdueBreaches = breachRepository.findOverdueAuthorityNotifications(overdueThreshold);
 
         if (!overdueBreaches.isEmpty()) {
             logger.error("CRITICAL: {} breaches have overdue authority notifications (>72 hours)",

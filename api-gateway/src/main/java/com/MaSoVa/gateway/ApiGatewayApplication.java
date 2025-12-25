@@ -18,14 +18,21 @@ public class ApiGatewayApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(ApiGatewayApplication.class, args);
-        logger.info("========================================");
+        logger.info("================================================================================");
         logger.info("MaSoVa API Gateway Started Successfully!");
         logger.info("Gateway running on port: 8080");
-        logger.info("Routing to:");
-        logger.info("  - User Service: http://localhost:8081");
-        logger.info("  - Menu Service: http://localhost:8082");
-        logger.info("  - Order Service: http://localhost:8083");
-        logger.info("========================================");
+        logger.info("Routing to 10 microservices:");
+        logger.info("  1. User Service         → http://localhost:8081");
+        logger.info("  2. Menu Service         → http://localhost:8082");
+        logger.info("  3. Order Service        → http://localhost:8083");
+        logger.info("  4. Analytics Service    → http://localhost:8085");
+        logger.info("  5. Payment Service      → http://localhost:8086");
+        logger.info("  6. Inventory Service    → http://localhost:8088");
+        logger.info("  7. Review Service       → http://localhost:8089");
+        logger.info("  8. Delivery Service     → http://localhost:8090");
+        logger.info("  9. Customer Service     → http://localhost:8091");
+        logger.info(" 10. Notification Service → http://localhost:8092");
+        logger.info("================================================================================");
     }
 
     @GetMapping("/health")

@@ -67,18 +67,18 @@ export const equipmentApi = createApi({
     }),
 
     // Get equipment by store
-    getEquipmentByStore: builder.query<KitchenEquipment[], void>({
-      query: () => `/kitchen-equipment/store`,
-      providesTags: (result) =>
+    getEquipmentByStore: builder.query<KitchenEquipment[], string | undefined>({
+      query: () => '/kitchen-equipment/store',
+      providesTags: (result, _error, storeId) =>
         result
-          ? [...result.map(({ id }) => ({ type: 'Equipment' as const, id })), { type: 'Equipment', id: 'LIST' }]
-          : [{ type: 'Equipment', id: 'LIST' }],
+          ? [...result.map(({ id }) => ({ type: 'Equipment' as const, id })), { type: 'Equipment', id: storeId || 'DEFAULT' }]
+          : [{ type: 'Equipment', id: storeId || 'DEFAULT' }],
     }),
 
     // Get equipment by ID
     getEquipmentById: builder.query<KitchenEquipment, string>({
       query: (equipmentId) => `/kitchen-equipment/${equipmentId}`,
-      providesTags: (result, error, id) => [{ type: 'Equipment', id }],
+      providesTags: (_result, _error, id) => [{ type: 'Equipment', id }],
     }),
 
     // Update equipment status
@@ -88,7 +88,7 @@ export const equipmentApi = createApi({
         method: 'PATCH',
         body: { status, staffId, notes },
       }),
-      invalidatesTags: (result, error, { equipmentId }) => [
+      invalidatesTags: (_result, _error, { equipmentId }) => [
         { type: 'Equipment', id: equipmentId },
         { type: 'Equipment', id: 'LIST' },
       ],
@@ -101,7 +101,7 @@ export const equipmentApi = createApi({
         method: 'PATCH',
         body: { isOn, staffId },
       }),
-      invalidatesTags: (result, error, { equipmentId }) => [
+      invalidatesTags: (_result, _error, { equipmentId }) => [
         { type: 'Equipment', id: equipmentId },
         { type: 'Equipment', id: 'LIST' },
       ],
@@ -114,7 +114,7 @@ export const equipmentApi = createApi({
         method: 'PATCH',
         body: { temperature },
       }),
-      invalidatesTags: (result, error, { equipmentId }) => [
+      invalidatesTags: (_result, _error, { equipmentId }) => [
         { type: 'Equipment', id: equipmentId },
         { type: 'Equipment', id: 'LIST' },
       ],
@@ -127,7 +127,7 @@ export const equipmentApi = createApi({
         method: 'POST',
         body: { nextMaintenanceDate, notes },
       }),
-      invalidatesTags: (result, error, { equipmentId }) => [
+      invalidatesTags: (_result, _error, { equipmentId }) => [
         { type: 'Equipment', id: equipmentId },
         { type: 'Equipment', id: 'LIST' },
       ],
@@ -140,9 +140,9 @@ export const equipmentApi = createApi({
     }),
 
     // Get equipment needing maintenance
-    getEquipmentNeedingMaintenance: builder.query<KitchenEquipment[], void>({
-      query: () => `/kitchen-equipment/store/maintenance-needed`,
-      providesTags: ['Equipment'],
+    getEquipmentNeedingMaintenance: builder.query<KitchenEquipment[], string | undefined>({
+      query: () => '/kitchen-equipment/store/maintenance-needed',
+      providesTags: (_result, _error, storeId) => [{ type: 'Equipment', id: storeId || 'DEFAULT' }],
     }),
 
     // Delete equipment

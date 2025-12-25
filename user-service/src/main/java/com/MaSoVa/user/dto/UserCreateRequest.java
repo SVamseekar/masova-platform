@@ -34,7 +34,11 @@ public class UserCreateRequest {
     private String role;
     private List<String> permissions;
     private WorkSchedule schedule;
-    
+
+    // Driver-specific fields
+    private String vehicleType;     // e.g., Bike, Car, Scooter
+    private String licenseNumber;   // Driver's license number
+
     public UserCreateRequest() {}
     
     public UserType getType() { return type; }
@@ -63,7 +67,13 @@ public class UserCreateRequest {
     
     public List<String> getPermissions() { return permissions; }
     public void setPermissions(List<String> permissions) { this.permissions = permissions; }
-    
+
     public WorkSchedule getSchedule() { return schedule; }
     public void setSchedule(WorkSchedule schedule) { this.schedule = schedule; }
+
+    public String getVehicleType() { return vehicleType; }
+    public void setVehicleType(String vehicleType) { this.vehicleType = vehicleType; }
+
+    public String getLicenseNumber() { return licenseNumber; }
+    public void setLicenseNumber(String licenseNumber) { this.licenseNumber = licenseNumber; }
 }

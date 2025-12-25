@@ -8,6 +8,7 @@ export interface Address {
   city: string;
   state: string;
   pincode: string;
+  landmark?: string;
   latitude?: number;
   longitude?: number;
 }
@@ -49,10 +50,12 @@ export interface Store {
   address: Address;
   phoneNumber?: string;
   regionId?: string;
-  status: 'OPEN' | 'CLOSED' | 'MAINTENANCE';
+  areaManagerId?: string;
+  status: 'ACTIVE' | 'TEMPORARILY_CLOSED' | 'PERMANENTLY_CLOSED' | 'UNDER_RENOVATION' | 'PENDING_APPROVAL';
   operatingConfig: StoreOperatingConfig;
+  openingDate?: string;
   createdAt?: string;
-  updatedAt?: string;
+  lastModified?: string;
 }
 
 export interface CreateStoreRequest {
@@ -61,11 +64,13 @@ export interface CreateStoreRequest {
   address: Address;
   phoneNumber?: string;
   regionId?: string;
+  areaManagerId?: string;
   operatingConfig: StoreOperatingConfig;
+  openingDate?: string;
 }
 
 export interface UpdateStoreRequest extends Partial<CreateStoreRequest> {
-  status?: 'OPEN' | 'CLOSED' | 'MAINTENANCE';
+  status?: 'ACTIVE' | 'TEMPORARILY_CLOSED' | 'PERMANENTLY_CLOSED' | 'UNDER_RENOVATION' | 'PENDING_APPROVAL';
 }
 
 export interface StoreMetrics {
@@ -122,8 +127,17 @@ export const storeApi = createApi({
       providesTags: (result) => result ? [{ type: 'Store', id: result.id }] : [],
     }),
 
-    // Get all active stores
+    // Get all active stores (public - no auth required)
     getActiveStores: builder.query<Store[], void>({
+      query: () => `/stores/public`,
+      providesTags: (result) =>
+        result
+          ? [...result.map(({ id }) => ({ type: 'Store' as const, id })), { type: 'Stores', id: 'LIST' }]
+          : [{ type: 'Stores', id: 'LIST' }],
+    }),
+
+    // Get all active stores (protected - auth required)
+    getActiveStoresProtected: builder.query<Store[], void>({
       query: () => `/stores`,
       providesTags: (result) =>
         result
@@ -176,10 +190,11 @@ export const storeApi = createApi({
       providesTags: [{ type: 'Store', id: 'CURRENT' }],
     }),
 
-    // Get store metrics (uses header-based store filtering)
-    getStoreMetrics: builder.query<StoreMetrics, void>({
-      query: () => `/stores/metrics`,
-      providesTags: [{ type: 'Store', id: 'CURRENT' }],
+    // Get store metrics
+    // Takes storeId as parameter to ensure refetch when store changes
+    getStoreMetrics: builder.query<StoreMetrics, string | undefined>({
+      query: (storeId) => `/stores/metrics${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (_result, _error, storeId) => [{ type: 'Store', id: storeId || 'DEFAULT' }],
     }),
   }),
 });
@@ -188,6 +203,7 @@ export const {
   useGetStoreQuery,
   useGetStoreByCodeQuery,
   useGetActiveStoresQuery,
+  useGetActiveStoresProtectedQuery,
   useGetStoresByRegionQuery,
   useGetNearbyStoresQuery,
   useCreateStoreMutation,

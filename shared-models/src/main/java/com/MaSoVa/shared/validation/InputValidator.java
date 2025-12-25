@@ -232,7 +232,7 @@ public class InputValidator {
             return false;
         }
         try {
-            new java.net.URL(url);
+            java.net.URI.create(url).toURL();
             return true;
         } catch (Exception e) {
             return false;

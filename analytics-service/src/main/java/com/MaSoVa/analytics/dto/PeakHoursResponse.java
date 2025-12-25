@@ -106,7 +106,9 @@ public class PeakHoursResponse implements Serializable {
         }
     }
 
-    public static class HourData {
+    public static class HourData implements Serializable {
+        private static final long serialVersionUID = 1L;
+
         private int hour; // 0-23
         private String label; // "12 AM", "1 PM", etc.
         private int orderCount;

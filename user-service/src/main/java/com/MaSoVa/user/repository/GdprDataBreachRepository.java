@@ -23,4 +23,10 @@ public interface GdprDataBreachRepository extends MongoRepository<GdprDataBreach
     List<GdprDataBreach> findByNotifiedAuthorityAtIsNull();
 
     List<GdprDataBreach> findByNotifiedUsersAtIsNull();
+
+    // Find breaches where authority notification is overdue (detected >72h ago, not yet notified, high/critical severity)
+    @org.springframework.data.mongodb.repository.Query(
+        "{ 'notifiedAuthorityAt': null, 'severity': { $in: ['HIGH', 'CRITICAL'] }, 'detectedAt': { $lt: ?0 } }"
+    )
+    List<GdprDataBreach> findOverdueAuthorityNotifications(LocalDateTime overdueThreshold);
 }

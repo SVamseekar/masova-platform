@@ -3,7 +3,7 @@ import { CreateReviewRequest } from '../../store/api/reviewApi';
 import StarRating from './StarRating';
 import { Card } from '../ui/neumorphic/Card';
 import { Button } from '../ui/neumorphic/Button';
-import { Input } from '../ui/neumorphic/Input';
+import Input from '../ui/neumorphic/Input';
 
 interface ReviewFormProps {
   orderId: string;

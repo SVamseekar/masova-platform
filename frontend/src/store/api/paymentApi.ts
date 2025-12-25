@@ -4,11 +4,13 @@ import { API_CONFIG } from '../../config/api.config';
 
 export interface InitiatePaymentRequest {
   orderId: string;
-  amount: number;
+  amount: number; // Amount in rupees - will be converted to string for BigDecimal precision
   customerId: string;
   customerEmail?: string;
   customerPhone?: string;
   storeId: string;
+  orderType?: string; // For payment analytics categorization
+  paymentMethod?: string; // For payment analytics categorization
   notes?: string;
 }
 
@@ -120,7 +122,25 @@ export const paymentApi = createApi({
       query: (request) => ({
         url: '/initiate',
         method: 'POST',
-        body: request,
+        body: {
+          ...request,
+          // Convert amount to string with 2 decimal places for BigDecimal precision
+          amount: request.amount.toFixed(2),
+        },
+      }),
+      invalidatesTags: ['Payment'],
+    }),
+
+    // Record cash payment
+    recordCashPayment: builder.mutation<PaymentResponse, InitiatePaymentRequest>({
+      query: (request) => ({
+        url: '/cash',
+        method: 'POST',
+        body: {
+          ...request,
+          // Convert amount to string with 2 decimal places for BigDecimal precision
+          amount: request.amount.toFixed(2),
+        },
       }),
       invalidatesTags: ['Payment'],
     }),
@@ -157,12 +177,12 @@ export const paymentApi = createApi({
     }),
 
     // Get transactions by store ID
-    getTransactionsByStoreId: builder.query<PaymentResponse[], void>({
-      query: () => `/store`,
-      providesTags: (result) =>
+    getTransactionsByStoreId: builder.query<PaymentResponse[], string | undefined>({
+      query: (storeId) => `/store${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) =>
         result
-          ? [...result.map(({ transactionId }) => ({ type: 'Payment' as const, id: transactionId })), 'Payment']
-          : ['Payment'],
+          ? [...result.map(({ transactionId }) => ({ type: 'Payment' as const, id: transactionId })), { type: 'Payment', id: storeId || 'DEFAULT' }]
+          : [{ type: 'Payment', id: storeId || 'DEFAULT' }],
     }),
 
     // Get reconciliation report
@@ -225,6 +245,7 @@ export const paymentApi = createApi({
 
 export const {
   useInitiatePaymentMutation,
+  useRecordCashPaymentMutation,
   useVerifyPaymentMutation,
   useGetTransactionQuery,
   useGetTransactionByOrderIdQuery,

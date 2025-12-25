@@ -17,11 +17,13 @@ import java.util.List;
 import java.util.Map;
 
 @Document(collection = "users")
+// Note: store_pin_unique index removed - was causing issues with null PINs for CUSTOMER/KIOSK users
+// PIN uniqueness is enforced at application level in UserService
 public class User {
-    
+
     @Id
     private String id;
-    
+
     @NotNull
     @Field("type")
     @Indexed
@@ -82,12 +84,18 @@ public class User {
     
     // Helper methods
     public boolean isEmployee() {
-        return type == UserType.STAFF || type == UserType.DRIVER || 
-               type == UserType.MANAGER || type == UserType.ASSISTANT_MANAGER;
+        return type == UserType.STAFF || type == UserType.DRIVER ||
+               type == UserType.MANAGER || type == UserType.ASSISTANT_MANAGER ||
+               type == UserType.KIOSK;
     }
-    
+
     public boolean canTakeOrders() {
-        return type == UserType.MANAGER || type == UserType.ASSISTANT_MANAGER;
+        return type == UserType.MANAGER || type == UserType.ASSISTANT_MANAGER ||
+               type == UserType.KIOSK;
+    }
+
+    public boolean isKiosk() {
+        return type == UserType.KIOSK;
     }
     
     // Nested classes
@@ -153,20 +161,68 @@ public class User {
         private String role;
         private List<String> permissions;
         private WorkSchedule schedule;
-        
+        private String status; // AVAILABLE, ON_DUTY, OFF_DUTY, BUSY
+        private Double rating;
+        private Integer activeDeliveryCount;
+
+        // Driver-specific fields
+        private String vehicleType;     // e.g., Bike, Car, Scooter
+        private String licenseNumber;   // Driver's license number
+
+        @JsonIgnore
+        private String employeePINHash; // BCrypt hashed 5-digit PIN for clock-in (store-unique)
+
+        @Indexed // For fast PIN lookup optimization
+        private String pinSuffix; // Last 2 digits of PIN (plaintext) for indexed queries
+
+        // Kiosk-specific fields
+        private boolean isKioskAccount = false;  // Flag to identify kiosk accounts
+        private String terminalId;                // Unique terminal identifier (e.g., "POS-01", "POS-02")
+        private LocalDateTime lastKioskAccess;    // Track last kiosk access for security
+
         // Constructors, getters and setters
         public EmployeeDetails() {}
-        
+
         public String getStoreId() { return storeId; }
         public void setStoreId(String storeId) { this.storeId = storeId; }
-        
+
         public String getRole() { return role; }
         public void setRole(String role) { this.role = role; }
-        
+
         public List<String> getPermissions() { return permissions; }
         public void setPermissions(List<String> permissions) { this.permissions = permissions; }
-        
+
         public WorkSchedule getSchedule() { return schedule; }
         public void setSchedule(WorkSchedule schedule) { this.schedule = schedule; }
+
+        public String getStatus() { return status; }
+        public void setStatus(String status) { this.status = status; }
+
+        public Double getRating() { return rating; }
+        public void setRating(Double rating) { this.rating = rating; }
+
+        public Integer getActiveDeliveryCount() { return activeDeliveryCount; }
+        public void setActiveDeliveryCount(Integer activeDeliveryCount) { this.activeDeliveryCount = activeDeliveryCount; }
+
+        public String getVehicleType() { return vehicleType; }
+        public void setVehicleType(String vehicleType) { this.vehicleType = vehicleType; }
+
+        public String getLicenseNumber() { return licenseNumber; }
+        public void setLicenseNumber(String licenseNumber) { this.licenseNumber = licenseNumber; }
+
+        public String getEmployeePINHash() { return employeePINHash; }
+        public void setEmployeePINHash(String employeePINHash) { this.employeePINHash = employeePINHash; }
+
+        public String getPinSuffix() { return pinSuffix; }
+        public void setPinSuffix(String pinSuffix) { this.pinSuffix = pinSuffix; }
+
+        public boolean getIsKioskAccount() { return isKioskAccount; }
+        public void setIsKioskAccount(boolean isKioskAccount) { this.isKioskAccount = isKioskAccount; }
+
+        public String getTerminalId() { return terminalId; }
+        public void setTerminalId(String terminalId) { this.terminalId = terminalId; }
+
+        public LocalDateTime getLastKioskAccess() { return lastKioskAccess; }
+        public void setLastKioskAccess(LocalDateTime lastKioskAccess) { this.lastKioskAccess = lastKioskAccess; }
     }
 }
