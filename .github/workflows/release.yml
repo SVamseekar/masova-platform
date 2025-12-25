@@ -160,12 +160,8 @@ jobs:
           # Copy monolith JARs
           cp -r masova-monolith/*.jar release/masova-$VERSION/
 
-          # Copy startup scripts
-          cp masova-monolith/*.sh release/masova-$VERSION/
-          cp masova-monolith/*.bat release/masova-$VERSION/ 2>/dev/null || true
-
-          # Copy configuration
-          cp masova-monolith/application.properties release/masova-$VERSION/
+          # Copy configuration files (if they exist)
+          cp masova-monolith/application.properties release/masova-$VERSION/ 2>/dev/null || echo "No application.properties found"
 
           # Copy docker-compose.yml from docs
           cp imp_docs/DEPLOYMENT_STRATEGY_INSTALLABLE_SOFTWARE.md release/masova-$VERSION/DEPLOYMENT_GUIDE.md
