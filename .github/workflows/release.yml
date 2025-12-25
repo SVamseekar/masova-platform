@@ -7,6 +7,11 @@ on:
     tags:
       - 'v*.*.*'
 
+# Permissions for GitHub token
+permissions:
+  contents: write
+  packages: write
+
 # Environment variables
 env:
   DOCKER_IMAGE: souravamseekar/masova-backend
