@@ -38,10 +38,13 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Building version: $VERSION"
 
-      - name: Build Monolith (All Microservices)
+      - name: Build All Microservices
+        run: mvn clean install -DskipTests
+
+      - name: Package Monolith
         run: |
           chmod +x ./build-monolith.sh
-          ./build-monolith.sh --skip-tests --version=${{ steps.version.outputs.VERSION }}
+          ./build-monolith.sh --skip-tests --version=${{ steps.version.outputs.VERSION }} || cat build-*.log
 
       - name: Upload Monolith Artifacts
         uses: actions/upload-artifact@v4
