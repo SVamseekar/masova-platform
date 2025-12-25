@@ -99,8 +99,8 @@ jobs:
       - name: Build and Push Backend
         uses: docker/build-push-action@v5
         with:
-          context: ./masova-monolith
-          file: ./masova-monolith/Dockerfile
+          context: .
+          file: ./Dockerfile
           push: true
           tags: |
             ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.VERSION }}
