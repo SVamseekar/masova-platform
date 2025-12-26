@@ -26,6 +26,10 @@ public class SecurityConfig extends SecurityConfigurationBase {
             "/api/orders/kitchen",
             "/api/orders/kitchen/**",
 
+            // Public order tracking (for email links - no auth required)
+            "/api/orders/track/**",
+            "/orders/track/**",
+
             // Payment status updates (called by payment-service after verification)
             "/api/orders/*/payment",
 

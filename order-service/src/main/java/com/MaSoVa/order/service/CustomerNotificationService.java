@@ -578,8 +578,8 @@ public class CustomerNotificationService {
                 return;
             }
 
-            // Build tracking URL
-            String trackingUrl = String.format("%s/customer/order-tracking/%s",
+            // Build tracking URL (public page, no auth required)
+            String trackingUrl = String.format("%s/tracking/%s",
                     frontendUrl, order.getId());
 
             // Build order confirmation message
@@ -751,8 +751,8 @@ public class CustomerNotificationService {
                 return;
             }
 
-            // Build tracking URL
-            String trackingUrl = String.format("%s/customer/order-tracking/%s",
+            // Build tracking URL (public page, no auth required)
+            String trackingUrl = String.format("%s/tracking/%s",
                     frontendUrl, order.getId());
 
             // Build status update email content

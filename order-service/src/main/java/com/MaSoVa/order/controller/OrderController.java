@@ -101,6 +101,21 @@ public class OrderController {
         return ResponseEntity.ok(order);
     }
 
+    // Public endpoint for order tracking (no authentication required)
+    // Used by email tracking links for POS customers
+    @GetMapping("/track/{orderId}")
+    @Operation(summary = "Track order (public)", description = "Public endpoint to track order status using order ID - no authentication required")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Order tracking info retrieved successfully"),
+        @ApiResponse(responseCode = "404", description = "Order not found")
+    })
+    public ResponseEntity<Order> trackOrder(
+            @Parameter(description = "Order ID", required = true) @PathVariable String orderId) {
+        log.info("Public order tracking request for orderId: {}", orderId);
+        Order order = orderService.getOrderById(orderId);
+        return ResponseEntity.ok(order);
+    }
+
     @GetMapping("/number/{orderNumber}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF', 'DRIVER')")
     public ResponseEntity<Order> getOrderByNumber(@PathVariable String orderNumber) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useGetOrderQuery } from '../../store/api/orderApi';
+import { useTrackOrderQuery } from '../../store/api/orderApi';
 import { Button, Card } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
@@ -34,9 +34,9 @@ const TrackingPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const currentUser = useAppSelector((state) => state.auth.user);
 
-  // For logged-in customers: Backend validates order belongs to customer via JWT token
-  // For guests: Anyone with order ID can track (temporary, not saved to profile)
-  const { data: order, isLoading, error, refetch } = useGetOrderQuery(orderId || '', {
+  // Public tracking endpoint - no authentication required
+  // Anyone with the order ID can track (used for email tracking links)
+  const { data: order, isLoading, error, refetch } = useTrackOrderQuery(orderId || '', {
     skip: !orderId,
     pollingInterval: 10000, // Poll every 10 seconds for real-time updates
   });

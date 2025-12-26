@@ -159,9 +159,16 @@ export const orderApi = createApi({
           : [{ type: 'Orders', id: 'LIST' }],
     }),
 
-    // Get order by ID
+    // Get order by ID (requires authentication)
     getOrder: builder.query<Order, string>({
       query: (orderId) => `/orders/${orderId}`,
+      providesTags: (result, error, orderId) => [{ type: 'Order', id: orderId }],
+    }),
+
+    // Track order by ID (public endpoint, no authentication required)
+    // Used for email tracking links
+    trackOrder: builder.query<Order, string>({
+      query: (orderId) => `/orders/track/${orderId}`,
       providesTags: (result, error, orderId) => [{ type: 'Order', id: orderId }],
     }),
 
@@ -461,4 +468,5 @@ export const {
   useGetKitchenStaffPerformanceQuery,
   useGetPosStaffPerformanceQuery,
   useGetPreparationTimeDistributionQuery,
+  useTrackOrderQuery,
 } = orderApi;
