@@ -236,7 +236,7 @@ const KitchenDisplayPage: React.FC = () => {
         <div className="order-number">#{order.orderNumber}</div>
         <div className="order-meta">
           <span className={`order-type ${order.orderType.toLowerCase()}`}>
-            {order.orderType === 'DELIVERY' ? '🚚' : order.orderType === 'COLLECTION' ? '🏪' : '🍽️'} {order.orderType}
+            {order.orderType}
           </span>
           <span className="elapsed-time">{getElapsedTime(order.receivedAt)}</span>
         </div>
@@ -247,7 +247,6 @@ const KitchenDisplayPage: React.FC = () => {
         <div className="customer-name">{order.customer}</div>
         {order.priority === 'URGENT' && (
           <div className="priority-badge">
-            <span className="priority-icon">⚡</span>
             URGENT
           </div>
         )}
@@ -269,7 +268,7 @@ const KitchenDisplayPage: React.FC = () => {
                 }}
                 title="View Recipe"
               >
-                👨‍🍳
+                Recipe
               </button>
             </div>
             {item.toppings.length > 0 && (
@@ -282,7 +281,6 @@ const KitchenDisplayPage: React.FC = () => {
       {/* Oven Timer */}
       {order.status === 'OVEN' && order.ovenStartTime && (
         <div className="oven-timer">
-          <div className="timer-icon">🔥</div>
           <div className="timer-text">
             <span className="timer-label">Oven Timer</span>
             <span className="timer-value">{getOvenTimer(order.ovenStartTime)}</span>
@@ -322,11 +320,11 @@ const KitchenDisplayPage: React.FC = () => {
   );
 
   const statusColumns: StatusColumn[] = [
-    { status: 'RECEIVED', title: 'New Orders', icon: '📋', color: '#3b82f6' },
-    { status: 'PREPARING', title: 'Preparing', icon: '👨‍🍳', color: '#f59e0b' },
-    { status: 'OVEN', title: 'In Oven', icon: '🔥', color: '#e53e3e' },
-    { status: 'BAKED', title: 'Ready', icon: '✅', color: '#10b981' },
-    { status: 'DISPATCHED', title: 'Completed', icon: '✅', color: '#8b5cf6' }
+    { status: 'RECEIVED', title: 'New Orders', icon: '', color: '#3b82f6' },
+    { status: 'PREPARING', title: 'Preparing', icon: '', color: '#f59e0b' },
+    { status: 'OVEN', title: 'In Oven', icon: '', color: '#e53e3e' },
+    { status: 'BAKED', title: 'Ready', icon: '', color: '#10b981' },
+    { status: 'DISPATCHED', title: 'Completed', icon: '', color: '#8b5cf6' }
   ];
 
   const getOrdersByStatus = (status: string): Order[] => {
@@ -438,7 +436,8 @@ const KitchenDisplayPage: React.FC = () => {
           display: grid;
           grid-template-columns: repeat(5, 1fr);
           gap: 20px;
-          min-height: calc(100vh - 120px);
+          height: calc(100vh - 120px);
+          overflow-x: auto;
         }
 
         .status-column {
@@ -449,6 +448,9 @@ const KitchenDisplayPage: React.FC = () => {
             12px 12px 24px rgba(163, 163, 163, 0.3),
             -12px -12px 24px rgba(255, 255, 255, 0.8);
           position: relative;
+          display: flex;
+          flex-direction: column;
+          min-height: 0;
         }
 
         .column-header {
@@ -494,11 +496,12 @@ const KitchenDisplayPage: React.FC = () => {
           display: flex;
           flex-direction: column;
           gap: 16px;
-          max-height: calc(100vh - 280px);
+          flex: 1;
           overflow-y: auto;
           padding-right: 4px;
           scrollbar-width: thin;
           scrollbar-color: rgba(163, 163, 163, 0.3) transparent;
+          min-height: 0;
         }
 
         .orders-list::-webkit-scrollbar {
@@ -918,9 +921,9 @@ const KitchenDisplayPage: React.FC = () => {
         }
 
         /* Responsive Design */
-        @media (max-width: 1400px) {
+        @media (max-width: 1200px) {
           .kitchen-board {
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 16px;
           }
 
@@ -939,7 +942,7 @@ const KitchenDisplayPage: React.FC = () => {
 
         @media (max-width: 900px) {
           .kitchen-board {
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 12px;
             padding: 16px;
           }
@@ -1020,49 +1023,15 @@ const KitchenDisplayPage: React.FC = () => {
 
       <AppHeader title={`Kitchen Display - ${storeId.toUpperCase() || 'NO STORE'}`} hideStaffLogin={true} />
 
-      {/* WebSocket Connection Status */}
-      <div style={{
-        position: 'fixed',
-        top: '80px',
-        right: '20px',
-        zIndex: 1000,
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        padding: '8px 16px',
-        borderRadius: '20px',
-        background: '#f0f0f0',
-        boxShadow: '4px 4px 8px rgba(163, 163, 163, 0.3), -4px -4px 8px rgba(255, 255, 255, 0.8)',
-        fontSize: '12px',
-        fontWeight: 600,
-      }}>
-        <div style={{
-          width: '10px',
-          height: '10px',
-          borderRadius: '50%',
-          background: wsConnected ? '#10b981' : '#ef4444',
-          animation: wsConnected ? 'none' : 'pulse 2s infinite',
-        }} />
-        <span style={{ color: wsConnected ? '#10b981' : '#ef4444' }}>
-          {wsConnected ? 'Live Updates' : 'Polling Mode'}
-        </span>
-        {wsError && (
-          <span style={{ color: '#f59e0b', marginLeft: '4px' }} title={wsError}>
-            ⚠️
-          </span>
-        )}
-      </div>
 
       {/* Main Board */}
       <main className="kitchen-board">
         {isLoading ? (
           <div className="loading-state" style={{ gridColumn: '1 / -1' }}>
-            <div className="empty-icon">⏳</div>
             <div className="empty-text">Loading orders...</div>
           </div>
         ) : error ? (
           <div className="error-state" style={{ gridColumn: '1 / -1' }}>
-            <div className="empty-icon">⚠️</div>
             <div className="empty-text">Error loading orders. Please check if Order Service is running.</div>
           </div>
         ) : (
@@ -1073,7 +1042,6 @@ const KitchenDisplayPage: React.FC = () => {
               <div key={column.status} className="status-column">
                 <div className="column-header">
                   <div className="column-title-section">
-                    <span className="column-icon">{column.icon}</span>
                     <h3 className="column-title">{column.title}</h3>
                   </div>
                   <div className="column-count">{columnOrders.length}</div>
@@ -1082,7 +1050,6 @@ const KitchenDisplayPage: React.FC = () => {
                 <div className="orders-list">
                   {columnOrders.length === 0 ? (
                     <div className="empty-column">
-                      <div className="empty-icon">📭</div>
                       <div className="empty-text">No orders</div>
                     </div>
                   ) : (
