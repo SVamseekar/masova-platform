@@ -20,8 +20,8 @@ public class SmsService {
 
     public boolean sendSms(Notification notification) {
         if (!twilioConfig.isEnabled()) {
-            logger.warn("Twilio is disabled, SMS not sent");
-            return false;
+            logger.warn("Twilio is disabled, SMS not sent - marking as skipped");
+            return true; // Return true to prevent retries when service is intentionally disabled
         }
 
         try {
@@ -53,8 +53,8 @@ public class SmsService {
 
     public boolean sendBulkSms(String[] phoneNumbers, String message) {
         if (!twilioConfig.isEnabled()) {
-            logger.warn("Twilio is disabled, bulk SMS not sent");
-            return false;
+            logger.warn("Twilio is disabled, bulk SMS not sent - marking as skipped");
+            return true; // Return true to prevent retries when service is intentionally disabled
         }
 
         int successCount = 0;

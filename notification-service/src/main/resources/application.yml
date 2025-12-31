@@ -33,10 +33,10 @@ twilio:
 
 # Brevo Email Configuration (Transactional Email Service)
 brevo:
-  api-key: ${BREVO_API_KEY:}
-  from-email: ${BREVO_FROM_EMAIL:noreply@masova.com}
+  api-key: ${BREVO_API_KEY:REDACTED_BREVO_API_KEY}
+  from-email: ${BREVO_FROM_EMAIL:vamseesoura56@gmail.com}
   from-name: ${BREVO_FROM_NAME:MaSoVa Restaurant}
-  enabled: ${BREVO_ENABLED:false}
+  enabled: ${BREVO_ENABLED:true}
   api-url: ${BREVO_API_URL:https://api.brevo.com/v3/smtp/email}
   rate-limit:
     daily: ${BREVO_DAILY_LIMIT:300}  # Free tier: 300 emails/day
@@ -115,5 +115,5 @@ app:
   rating:
     enabled: true  # Enable/disable rating requests
   frontend:
-    base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
+    base-url: ${FRONTEND_BASE_URL:https://masova-restaurant.vercel.app}
 

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { logout, selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartItemCount } from '../../store/slices/cartSlice';
-import { colors, spacing, typography, shadows, borderRadius } from '../../styles/design-tokens';
+import { colors, spacing, typography, shadows, borderRadius, components } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 import StoreSelector from '../StoreSelector';
 import ManagementHubSidebar from './ManagementHubSidebar';

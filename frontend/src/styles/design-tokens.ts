@@ -52,14 +52,32 @@ export const colors = {
   
   // Shadow colors for neumorphic effects
   shadow: {
-    light: 'rgba(255, 255, 255, 0.8)',
-    dark: 'rgba(163, 163, 163, 0.3)',
-    darkIntense: 'rgba(163, 163, 163, 0.4)',
+    light: 'rgba(255, 255, 255, 1)',      // Enhanced for more prominent effects
+    lightStrong: 'rgba(255, 255, 255, 0.9)',
+    dark: 'rgba(163, 163, 163, 0.5)',     // Enhanced from 0.3 for visibility
+    darkIntense: 'rgba(163, 163, 163, 0.6)',
+    darkStrong: 'rgba(100, 100, 100, 0.7)', // NEW - for deep inset shadows
     brand: 'rgba(229, 62, 62, 0.3)',
     primary: 'rgba(229, 62, 62, 0.3)',
     success: 'rgba(16, 185, 129, 0.3)',
     warning: 'rgba(245, 158, 11, 0.3)',
     error: 'rgba(239, 68, 68, 0.3)',
+  },
+
+  // Management theme for professional pages
+  management: {
+    header: {
+      background: '#ffffff',
+      backgroundDark: '#1a1a1a',
+      border: '#e5e7eb',
+      shadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+    },
+    button: {
+      primary: '#2563eb',
+      primaryHover: '#1d4ed8',
+      ghost: 'transparent',
+      ghostHover: '#f3f4f6',
+    }
   },
 
   // Backward-compatible aliases (for components using old structure)
@@ -108,6 +126,8 @@ export const typography = {
     '3xl': '1.875rem', // 30px
     '4xl': '2.25rem', // 36px
     '5xl': '3rem',    // 48px
+    '6xl': '3.75rem', // 60px - Uber Eats hero titles
+    '7xl': '4.5rem',  // 72px - Large landing pages
   },
   
   fontWeight: {
@@ -146,10 +166,14 @@ export const spacing = {
   8: '2rem',     // 32px
   10: '2.5rem',  // 40px
   12: '3rem',    // 48px
+  14: '3.5rem',  // 56px - Uber Eats hero sections
   16: '4rem',    // 64px
+  18: '4.5rem',  // 72px - Large gaps
   20: '5rem',    // 80px
   24: '6rem',    // 96px
+  28: '7rem',    // 112px - Section spacing
   32: '8rem',    // 128px
+  36: '9rem',    // 144px - Hero padding
 } as const;
 
 // Border Radius - Soft, rounded aesthetic
@@ -165,24 +189,24 @@ export const borderRadius = {
   full: '9999px',
 } as const;
 
-// Neumorphic Shadow Presets
+// Neumorphic Shadow Presets - ENHANCED for prominent visibility
 export const shadows = {
   // Outset (raised) shadows - for buttons, cards
   raised: {
-    sm: `4px 4px 8px ${colors.shadow.dark}, -4px -4px 8px ${colors.shadow.light}`,
-    base: `6px 6px 12px ${colors.shadow.dark}, -6px -6px 12px ${colors.shadow.light}`,
-    md: `8px 8px 16px ${colors.shadow.dark}, -8px -8px 16px ${colors.shadow.light}`,
-    lg: `12px 12px 24px ${colors.shadow.dark}, -12px -12px 24px ${colors.shadow.light}`,
-    xl: `20px 20px 40px ${colors.shadow.darkIntense}, -20px -20px 40px ${colors.shadow.light}`,
+    sm: `6px 6px 12px ${colors.shadow.dark}, -6px -6px 12px ${colors.shadow.light}`,
+    base: `8px 8px 16px ${colors.shadow.dark}, -8px -8px 16px ${colors.shadow.light}`,
+    md: `12px 12px 24px ${colors.shadow.darkStrong}, -12px -12px 24px ${colors.shadow.lightStrong}`,
+    lg: `16px 16px 32px ${colors.shadow.darkStrong}, -16px -16px 32px ${colors.shadow.lightStrong}`,
+    xl: `24px 24px 48px ${colors.shadow.darkStrong}, -24px -24px 48px ${colors.shadow.lightStrong}`,
   },
-  
-  // Inset (pressed) shadows - for active states, inputs
+
+  // Inset (pressed) shadows - DEEP for inputs, toggles, pressed buttons
   inset: {
-    sm: `inset 3px 3px 6px ${colors.shadow.dark}, inset -3px -3px 6px ${colors.shadow.light}`,
-    base: `inset 4px 4px 8px ${colors.shadow.dark}, inset -4px -4px 8px ${colors.shadow.light}`,
-    md: `inset 6px 6px 12px ${colors.shadow.dark}, inset -6px -6px 12px ${colors.shadow.light}`,
-    lg: `inset 8px 8px 16px ${colors.shadow.dark}, inset -8px -8px 16px ${colors.shadow.light}`,
-    xl: `inset 10px 10px 20px ${colors.shadow.dark}, inset -10px -10px 20px ${colors.shadow.light}`,
+    sm: `inset 4px 4px 8px ${colors.shadow.dark}, inset -4px -4px 8px ${colors.shadow.light}`,
+    base: `inset 6px 6px 12px ${colors.shadow.darkStrong}, inset -6px -6px 12px ${colors.shadow.lightStrong}`,
+    md: `inset 8px 8px 16px ${colors.shadow.darkStrong}, inset -8px -8px 16px ${colors.shadow.lightStrong}`,
+    lg: `inset 12px 12px 24px ${colors.shadow.darkStrong}, inset -12px -12px 24px ${colors.shadow.lightStrong}`,
+    xl: `inset 16px 16px 32px ${colors.shadow.darkStrong}, inset -16px -16px 32px ${colors.shadow.lightStrong}`,
   },
   
   // Floating shadows - for modals, tooltips
@@ -253,6 +277,17 @@ export const zIndex = {
 
 // Component-specific tokens
 export const components = {
+  header: {
+    height: {
+      compact: '60px',
+      comfortable: '72px',
+    },
+    padding: {
+      horizontal: '1.5rem',
+      vertical: '1rem',
+    }
+  },
+
   button: {
     height: {
       sm: '2rem',     // 32px
@@ -267,7 +302,7 @@ export const components = {
       xl: '1.25rem 2.5rem',
     }
   },
-  
+
   input: {
     height: {
       sm: '2rem',
@@ -280,7 +315,7 @@ export const components = {
       lg: '1rem 1.25rem',
     }
   },
-  
+
   card: {
     padding: {
       sm: '1rem',

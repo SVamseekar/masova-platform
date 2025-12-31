@@ -20,7 +20,10 @@ public class CorsConfig {
         corsConfig.setAllowedOrigins(Arrays.asList(
                 "http://localhost:3000",  // React development server
                 "http://localhost:5173",  // Vite development server
-                "http://localhost:8080"   // Production (if served from gateway)
+                "http://localhost:8080",  // Production (if served from gateway)
+                "https://masova-restaurant.vercel.app",  // Vercel production
+                "https://masova-restaurant-git-main-martisoura-5934s-projects.vercel.app",  // Vercel preview
+                "https://*.vercel.app"  // All Vercel deployments
         ));
 
         // Allow all standard HTTP methods

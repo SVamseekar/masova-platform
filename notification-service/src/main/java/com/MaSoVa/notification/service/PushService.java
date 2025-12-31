@@ -22,8 +22,8 @@ public class PushService {
 
     public boolean sendPushNotification(Notification notification) {
         if (!firebaseConfig.isEnabled()) {
-            logger.warn("Firebase is disabled, push notification not sent");
-            return false;
+            logger.warn("Firebase is disabled, push notification not sent - marking as skipped");
+            return true; // Return true to prevent retries when service is intentionally disabled
         }
 
         try {
@@ -53,8 +53,8 @@ public class PushService {
 
     public boolean sendBulkPushNotification(List<String> deviceTokens, String title, String body) {
         if (!firebaseConfig.isEnabled()) {
-            logger.warn("Firebase is disabled, bulk push notification not sent");
-            return false;
+            logger.warn("Firebase is disabled, bulk push notification not sent - marking as skipped");
+            return true; // Return true to prevent retries when service is intentionally disabled
         }
 
         try {
@@ -92,8 +92,8 @@ public class PushService {
     public boolean sendPushWithData(String deviceToken, String title, String body,
                                    java.util.Map<String, String> data) {
         if (!firebaseConfig.isEnabled()) {
-            logger.warn("Firebase is disabled, push notification not sent");
-            return false;
+            logger.warn("Firebase is disabled, push notification not sent - marking as skipped");
+            return true; // Return true to prevent retries when service is intentionally disabled
         }
 
         try {

@@ -142,13 +142,16 @@ export const createButtonVariant = (
   return variants[variant];
 };
 
-// Input field styling
+// Input field styling - ENHANCED for prominent inset effects
 export const createInputField = (
   size: 'sm' | 'base' | 'lg' = 'base',
   state: 'default' | 'error' | 'success' = 'default'
 ) => {
+  // Enhanced shadow size for more visible inset
+  const shadowSize = size === 'sm' ? 'base' : size === 'lg' ? 'lg' : 'md';
+
   const baseField = {
-    ...createNeumorphicSurface('inset', 'base', 'md'),
+    ...createNeumorphicSurface('inset', shadowSize, 'lg'),
     width: '100%',
     fontFamily: 'inherit',
     fontSize: size === 'sm' ? '0.875rem' : size === 'lg' ? '1.125rem' : '1rem',
@@ -156,21 +159,21 @@ export const createInputField = (
     color: colors.text.primary,
     padding: size === 'sm' ? '0.5rem 0.75rem' : size === 'lg' ? '1rem 1.25rem' : '0.75rem 1rem',
     transition: `all ${animation.duration.normal} ${animation.easing.smooth}`,
-    
+
     '&::placeholder': {
       color: colors.text.tertiary,
       fontWeight: 400,
     },
-    
+
     '&:focus': {
-      boxShadow: `${shadows.inset.base}, 0 0 0 3px ${
+      boxShadow: `${shadows.inset[shadowSize]}, 0 0 0 4px ${
         state === 'error' ? colors.shadow.error :
         state === 'success' ? colors.shadow.success :
         colors.shadow.brand
       }`,
     }
   };
-  
+
   return baseField;
 };
 
@@ -332,10 +335,10 @@ export const createResponsive = (styles: Record<string, any>) => {
     xl: '1280px',
     '2xl': '1536px',
   };
-  
+
   const breakpointKeys = ['xs', 'sm', 'md', 'lg', 'xl', '2xl'] as const;
   const result: Record<string, any> = {};
-  
+
   breakpointKeys.forEach(bp => {
     if (styles[bp]) {
       if (bp === 'xs') {
@@ -345,8 +348,68 @@ export const createResponsive = (styles: Record<string, any>) => {
       }
     }
   });
-  
+
   return result;
+};
+
+// Prominent pressed button - for customer-facing pages with VISIBLE neumorphic effects
+export const createPressedButton = (
+  variant: 'primary' | 'secondary' = 'primary',
+  size: 'sm' | 'base' | 'lg' | 'xl' = 'base'
+): {
+  base: React.CSSProperties;
+  hover: React.CSSProperties;
+  active: React.CSSProperties;
+  disabled: React.CSSProperties;
+} => {
+  const paddingMap = {
+    sm: `${spacing[2]} ${spacing[4]}`,
+    base: `${spacing[4]} ${spacing[6]}`,
+    lg: `${spacing[4]} ${spacing[8]}`,
+    xl: `${spacing[5]} ${spacing[10]}`,
+  };
+
+  const fontSizeMap = {
+    sm: '0.875rem',
+    base: '1rem',
+    lg: '1.125rem',
+    xl: '1.25rem',
+  };
+
+  const shadowSize: 'sm' | 'base' | 'md' | 'lg' | 'xl' =
+    size === 'sm' ? 'base' :
+    size === 'xl' ? 'xl' :
+    'lg';
+
+  return {
+    base: {
+      ...createNeumorphicSurface('raised', shadowSize, 'xl'),
+      background: variant === 'primary'
+        ? `linear-gradient(135deg, ${colors.brand.primary}, ${colors.brand.primaryLight})`
+        : `linear-gradient(135deg, ${colors.brand.secondary}, ${colors.brand.secondaryLight})`,
+      color: colors.text.inverse,
+      padding: paddingMap[size],
+      fontSize: fontSizeMap[size],
+      fontWeight: 700,
+      border: 'none',
+      cursor: 'pointer',
+      transition: `all ${animation.duration.normal} ${animation.easing.smooth}`,
+      fontFamily: 'inherit',
+    },
+    hover: {
+      transform: 'translateY(-4px)',
+      boxShadow: shadows.raised.xl,
+    },
+    active: {
+      transform: 'scale(0.96)',
+      boxShadow: shadows.inset.lg, // DEEP press effect
+    },
+    disabled: {
+      opacity: 0.6,
+      cursor: 'not-allowed',
+      transform: 'none',
+    }
+  };
 };
 
 // Animation keyframes

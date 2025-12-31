@@ -147,8 +147,15 @@ public class GatewayConfig {
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8082"))
 
-                // Order Service - All Routes Protected (higher limit for high-traffic)
+                // Order Service - Public Tracking (no auth required for email links)
+                .route("orders_tracking_public", r -> r.path("/api/orders/track/**")
+                        .and().method("GET")
+                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(100, "tracking_public"))))
+                        .uri("http://localhost:8083"))
+
+                // Order Service - All Other Routes Protected (higher limit for high-traffic)
                 .route("orders_protected", r -> r.path("/api/orders/**")
+                        .and().not(p -> p.path("/api/orders/track/**"))
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(200, "orders")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))

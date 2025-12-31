@@ -47,7 +47,7 @@ rate:
       requests-per-minute: 1000  # Increased to 1000 for development (POS makes many concurrent requests)
     login:
       max-attempts: 5
-      lockout-minutes: 15
+      lockout-minutes: 1
 
 # Service URLs
 services:

@@ -98,8 +98,8 @@ masova:
 # Application Configuration
 app:
   frontend:
-    url: ${FRONTEND_URL:http://localhost:3000}  # For generating tracking links in emails
-    base-url: ${FRONTEND_BASE_URL:http://localhost:3000}  # For generating rating URLs
+    url: ${FRONTEND_URL:https://masova-restaurant.vercel.app}  # For generating tracking links in emails
+    base-url: ${FRONTEND_BASE_URL:https://masova-restaurant.vercel.app}  # For generating rating URLs
   rating:
     token-validity-days: 30  # Rating links expire after 30 days
 

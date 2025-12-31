@@ -157,7 +157,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                   fontSize: '1rem',
                 }}
               >
-                🔍
+                ⌕
               </span>
             </div>
           </div>
@@ -215,7 +215,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
       case 'dateRange':
         const dateValue = (value as { from?: string; to?: string }) || {};
         return (
-          <div key={filter.field} style={{ flex: 1, minWidth: '250px' }}>
+          <div key={filter.field} style={{ flex: '1 1 auto', minWidth: '280px', maxWidth: '380px' }}>
             <label
               style={{
                 display: 'block',
@@ -229,7 +229,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             >
               {filter.label}
             </label>
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
               <input
                 type="date"
                 value={dateValue.from || ''}
@@ -241,10 +241,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 disabled={isLoading}
                 style={{
                   flex: 1,
-                  padding: '0.75rem',
+                  minWidth: '120px',
+                  padding: '0.5rem',
                   border: `2px solid ${dateError ? '#ef4444' : '#e2e8f0'}`,
                   borderRadius: '12px',
-                  fontSize: '0.875rem',
+                  fontSize: '0.8rem',
                   backgroundColor: isLoading ? '#f8fafc' : '#ffffff',
                   boxShadow: 'inset 2px 2px 4px rgba(0,0,0,0.05)',
                   transition: 'all 0.2s',
@@ -274,10 +275,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 disabled={isLoading}
                 style={{
                   flex: 1,
-                  padding: '0.75rem',
+                  minWidth: '120px',
+                  padding: '0.5rem',
                   border: `2px solid ${dateError ? '#ef4444' : '#e2e8f0'}`,
                   borderRadius: '12px',
-                  fontSize: '0.875rem',
+                  fontSize: '0.8rem',
                   backgroundColor: isLoading ? '#f8fafc' : '#ffffff',
                   boxShadow: 'inset 2px 2px 4px rgba(0,0,0,0.05)',
                   transition: 'all 0.2s',
@@ -374,10 +376,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     <div
       style={{
         ...surface,
-        padding: '1.5rem',
+        padding: '1rem',
         marginBottom: '1.5rem',
-        maxWidth: '1400px',
-        margin: '0 auto 1.5rem auto',
+        maxWidth: 'calc(100vw - 3rem)',
+        margin: '0 1.5rem 1.5rem 1.5rem',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
       }}
     >
       {/* Filters Row */}
@@ -508,7 +512,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 e.currentTarget.style.backgroundColor = '#d1fae5';
               }}
             >
-              📥 Export CSV
+              ⬇ Export CSV
             </button>
           )}
         </div>

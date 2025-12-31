@@ -43,8 +43,8 @@ public class EmailService {
 
     public boolean sendEmail(Notification notification) {
         if (!brevoConfig.isEnabled()) {
-            logger.warn("Brevo is disabled, email not sent");
-            return false;
+            logger.warn("Brevo is disabled, email not sent - marking as skipped");
+            return true; // Return true to prevent retries when service is intentionally disabled
         }
 
         try {
@@ -85,8 +85,8 @@ public class EmailService {
 
     public boolean sendBulkEmail(String[] emails, String subject, String content) {
         if (!brevoConfig.isEnabled()) {
-            logger.warn("Brevo is disabled, bulk email not sent");
-            return false;
+            logger.warn("Brevo is disabled, bulk email not sent - marking as skipped");
+            return true; // Return true to prevent retries when service is intentionally disabled
         }
 
         int successCount = 0;
@@ -125,8 +125,8 @@ public class EmailService {
 
     public boolean sendTemplateEmail(String toEmail, String subject, String htmlContent) {
         if (!brevoConfig.isEnabled()) {
-            logger.warn("Brevo is disabled, template email not sent");
-            return false;
+            logger.warn("Brevo is disabled, template email not sent - marking as skipped");
+            return true; // Return true to prevent retries when service is intentionally disabled
         }
 
         try {

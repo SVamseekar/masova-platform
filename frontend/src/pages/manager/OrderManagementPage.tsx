@@ -58,6 +58,8 @@ const OrderManagementPage: React.FC = () => {
 
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
 
   // Filter and sort state
   const [filterValues, setFilterValues] = useState<FilterValues>({
@@ -285,13 +287,20 @@ const OrderManagementPage: React.FC = () => {
     }
   };
 
-  const handleCancelOrder = async (orderId: string) => {
-    const reason = prompt('Enter cancellation reason:');
-    if (!reason) return;
+  const handleCancelOrder = (orderId: string) => {
+    setCancelOrderId(orderId);
+    setCancelReason('');
+  };
+
+  const confirmCancelOrder = async () => {
+    if (!cancelOrderId || !cancelReason.trim()) return;
 
     try {
-      await cancelOrder({ orderId, reason }).unwrap();
-      alert('Order cancelled successfully');
+      await cancelOrder({ orderId: cancelOrderId, reason: cancelReason }).unwrap();
+      setCancelOrderId(null);
+      setCancelReason('');
+      refetch();
+      refetchAnalytics();
     } catch (error) {
       console.error('Failed to cancel order:', error);
       alert('Failed to cancel order');
@@ -715,6 +724,16 @@ const OrderManagementPage: React.FC = () => {
                       inset -4px -4px 8px rgba(16, 185, 129, 0.3);
         }
 
+        .action-btn.info {
+          color: ${colors.semantic.info};
+          border-color: ${colors.semantic.info}44;
+        }
+
+        .action-btn.info:hover {
+          border-color: ${colors.semantic.info};
+          background: ${colors.semantic.infoLight}11;
+        }
+
         .empty-state {
           text-align: center;
           padding: ${spacing[10]} ${spacing[5]};
@@ -820,13 +839,13 @@ const OrderManagementPage: React.FC = () => {
                   <div className="order-number">#{order.orderNumber}</div>
                   <div className="order-badges">
                     <span className="badge badge-status" style={{ color: ORDER_STATUS_CONFIG[order.status].color }}>
-                      {ORDER_STATUS_CONFIG[order.status].icon} {ORDER_STATUS_CONFIG[order.status].label}
+                      {ORDER_STATUS_CONFIG[order.status].label}
                     </span>
                     <span className="badge badge-type" style={{ color: ORDER_TYPE_CONFIG[order.orderType].color }}>
-                      {ORDER_TYPE_CONFIG[order.orderType].icon} {ORDER_TYPE_CONFIG[order.orderType].label}
+                      {ORDER_TYPE_CONFIG[order.orderType].label}
                     </span>
                     <span className="badge badge-payment" style={{ color: PAYMENT_STATUS_CONFIG[order.paymentStatus].color }}>
-                      {PAYMENT_STATUS_CONFIG[order.paymentStatus].icon} {PAYMENT_STATUS_CONFIG[order.paymentStatus].label}
+                      {PAYMENT_STATUS_CONFIG[order.paymentStatus].label}
                     </span>
                     {/* Payment Method Badge */}
                     {order.paymentMethod && (
@@ -845,13 +864,11 @@ const OrderManagementPage: React.FC = () => {
                           fontWeight: 600,
                         }}
                       >
-                        {order.paymentMethod === 'CASH' ? '💵' :
-                         order.paymentMethod === 'CARD' ? '💳' :
-                         order.paymentMethod === 'UPI' ? '📱' : '💰'} {order.paymentMethod}
+                        {order.paymentMethod}
                       </span>
                     )}
                     {order.priority === 'URGENT' && (
-                      <span className="badge badge-priority"> URGENT</span>
+                      <span className="badge badge-priority">⚠ URGENT</span>
                     )}
                   </div>
                 </div>
@@ -874,7 +891,7 @@ const OrderManagementPage: React.FC = () => {
                   </div>
                   {order.createdByStaffName && (
                     <div className="info-item">
-                      <div className="info-label">👤 Taken By</div>
+                      <div className="info-label">Taken By</div>
                       <div className="info-value" style={{ fontWeight: 600, color: '#2563eb' }}>
                         {order.createdByStaffName}
                       </div>
@@ -941,23 +958,23 @@ const OrderManagementPage: React.FC = () => {
                         className="action-btn warning"
                         onClick={() => handlePriorityChange(order.id, order.priority === 'URGENT' ? 'NORMAL' : 'URGENT')}
                       >
-                        {order.priority === 'URGENT' ? ' Normal' : ' Mark Urgent'}
+                        {order.priority === 'URGENT' ? 'Normal Priority' : '⚠ Mark Urgent'}
                       </button>
 
                       {order.orderType === 'DELIVERY' && !order.assignedDriverId && (
                         <button className="action-btn primary" onClick={() => handleAssignDriver(order.id)}>
-                          🚚 Assign Driver
+                          → Assign Driver
                         </button>
                       )}
 
                       <button className="action-btn danger" onClick={() => handleCancelOrder(order.id)}>
-                        ❌ Cancel Order
+                        × Cancel Order
                       </button>
                     </>
                   )}
 
-                  <button className="action-btn" onClick={() => setSelectedOrder(order)}>
-                    =A View Details
+                  <button className="action-btn info" onClick={() => setSelectedOrder(order)}>
+                    ⓘ View Details
                   </button>
                 </div>
 
@@ -972,6 +989,453 @@ const OrderManagementPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Order Details Modal */}
+      {selectedOrder && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: spacing[4],
+          }}
+          onClick={() => setSelectedOrder(null)}
+        >
+          <div
+            style={{
+              background: colors.surface.primary,
+              borderRadius: '16px',
+              padding: spacing[6],
+              maxWidth: '600px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              border: `2px solid ${colors.surface.border}`,
+              boxShadow: '12px 12px 24px rgba(163, 163, 163, 0.3), -12px -12px 24px rgba(255, 255, 255, 0.9)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[5] }}>
+              <h2 style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold, color: colors.brand.primary, margin: 0 }}>
+                Order Details
+              </h2>
+              <button
+                onClick={() => setSelectedOrder(null)}
+                style={{
+                  background: colors.surface.primary,
+                  border: `2px solid ${colors.surface.border}`,
+                  borderRadius: '10px',
+                  fontSize: '20px',
+                  cursor: 'pointer',
+                  color: colors.text.secondary,
+                  padding: spacing[2],
+                  width: '36px',
+                  height: '36px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '4px 4px 8px rgba(163, 163, 163, 0.25), -4px -4px 8px rgba(255, 255, 255, 0.5)',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '6px 6px 12px rgba(163, 163, 163, 0.3), -6px -6px 12px rgba(255, 255, 255, 0.6)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '4px 4px 8px rgba(163, 163, 163, 0.25), -4px -4px 8px rgba(255, 255, 255, 0.9)';
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Order Info */}
+            <div style={{ marginBottom: spacing[4] }}>
+              <div style={{ fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.bold, color: colors.brand.primary, marginBottom: spacing[3] }}>
+                #{selectedOrder.orderNumber}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: spacing[3], fontSize: typography.fontSize.sm }}>
+                <div style={{ fontWeight: typography.fontWeight.semibold, color: colors.text.secondary }}>Customer:</div>
+                <div style={{ color: colors.text.primary }}>{selectedOrder.customerName}</div>
+
+                {selectedOrder.customerPhone && (
+                  <>
+                    <div style={{ fontWeight: typography.fontWeight.semibold, color: colors.text.secondary }}>Phone:</div>
+                    <div style={{ color: colors.text.primary }}>{selectedOrder.customerPhone}</div>
+                  </>
+                )}
+
+                {selectedOrder.customerEmail && (
+                  <>
+                    <div style={{ fontWeight: typography.fontWeight.semibold, color: colors.text.secondary }}>Email:</div>
+                    <div style={{ color: colors.text.primary }}>{selectedOrder.customerEmail}</div>
+                  </>
+                )}
+
+                <div style={{ fontWeight: typography.fontWeight.semibold, color: colors.text.secondary }}>Status:</div>
+                <div style={{ color: ORDER_STATUS_CONFIG[selectedOrder.status].color, fontWeight: typography.fontWeight.bold }}>
+                  {ORDER_STATUS_CONFIG[selectedOrder.status].label}
+                </div>
+
+                <div style={{ fontWeight: typography.fontWeight.semibold, color: colors.text.secondary }}>Order Type:</div>
+                <div style={{ color: colors.text.primary }}>{ORDER_TYPE_CONFIG[selectedOrder.orderType].label}</div>
+
+                <div style={{ fontWeight: typography.fontWeight.semibold, color: colors.text.secondary }}>Payment Status:</div>
+                <div style={{ color: PAYMENT_STATUS_CONFIG[selectedOrder.paymentStatus].color, fontWeight: typography.fontWeight.bold }}>
+                  {PAYMENT_STATUS_CONFIG[selectedOrder.paymentStatus].label}
+                </div>
+
+                <div style={{ fontWeight: typography.fontWeight.semibold, color: colors.text.secondary }}>Payment Method:</div>
+                <div style={{ color: colors.text.primary }}>{selectedOrder.paymentMethod || 'N/A'}</div>
+
+                <div style={{ fontWeight: typography.fontWeight.semibold, color: colors.text.secondary }}>Created:</div>
+                <div style={{ color: colors.text.primary }}>{formatDate(selectedOrder.createdAt)}</div>
+
+                {selectedOrder.createdByStaffName && (
+                  <>
+                    <div style={{ fontWeight: typography.fontWeight.semibold, color: colors.text.secondary }}>Taken By:</div>
+                    <div style={{ color: colors.text.primary }}>{selectedOrder.createdByStaffName}</div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Order Items */}
+            <div style={{ marginBottom: spacing[4] }}>
+              <h3 style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, marginBottom: spacing[3], color: colors.text.primary }}>
+                Items
+              </h3>
+              <div style={{
+                background: colors.surface.primary,
+                borderRadius: '12px',
+                padding: spacing[3],
+                boxShadow: 'inset 4px 4px 8px rgba(163, 163, 163, 0.2), inset -4px -4px 8px rgba(255, 255, 255, 0.4)',
+                border: `1px solid ${colors.surface.border}`
+              }}>
+                {selectedOrder.items.map((item, idx) => (
+                  <div key={idx} style={{ padding: spacing[2], borderBottom: idx < selectedOrder.items.length - 1 ? `1px solid ${colors.surface.border}` : 'none' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <span style={{ fontWeight: typography.fontWeight.bold, marginRight: spacing[2] }}>{item.quantity}x</span>
+                        <span style={{ color: colors.text.primary }}>{item.name}</span>
+                        {item.variant && <span style={{ fontSize: typography.fontSize.xs, color: colors.text.tertiary, marginLeft: spacing[2] }}>({item.variant})</span>}
+                      </div>
+                      <div style={{ fontWeight: typography.fontWeight.bold, color: colors.brand.primary }}>
+                        ₹{formatCurrency(item.price * item.quantity)}
+                      </div>
+                    </div>
+                    {item.customizations && item.customizations.length > 0 && (
+                      <div style={{ fontSize: typography.fontSize.xs, color: colors.text.tertiary, marginTop: spacing[1], marginLeft: '48px' }}>
+                        {item.customizations.join(', ')}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Order Total */}
+            <div style={{ borderTop: `2px solid ${colors.surface.border}`, paddingTop: spacing[4], marginBottom: spacing[4] }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[2] }}>
+                <span style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>Subtotal:</span>
+                <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold }}>₹{formatCurrency(selectedOrder.subtotal || 0)}</span>
+              </div>
+              {selectedOrder.deliveryFee > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[2] }}>
+                  <span style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>Delivery Fee:</span>
+                  <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold }}>₹{formatCurrency(selectedOrder.deliveryFee)}</span>
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[2] }}>
+                <span style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>Tax:</span>
+                <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold }}>₹{formatCurrency(selectedOrder.tax || 0)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: spacing[3], borderTop: `1px solid ${colors.surface.border}` }}>
+                <span style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold }}>Total:</span>
+                <span style={{ fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.extrabold, color: colors.brand.primary }}>₹{formatCurrency(selectedOrder.total)}</span>
+              </div>
+            </div>
+
+            {/* Delivery Address */}
+            {selectedOrder.deliveryAddress && (
+              <div style={{
+                marginBottom: spacing[4],
+                padding: spacing[3],
+                background: colors.surface.primary,
+                borderRadius: '12px',
+                boxShadow: 'inset 4px 4px 8px rgba(163, 163, 163, 0.2), inset -4px -4px 8px rgba(255, 255, 255, 0.4)',
+                border: `1px solid ${colors.surface.border}`
+              }}>
+                <h3 style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, marginBottom: spacing[2], color: colors.text.primary }}>
+                  Delivery Address
+                </h3>
+                <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
+                  {selectedOrder.deliveryAddress.street}, {selectedOrder.deliveryAddress.city}, {selectedOrder.deliveryAddress.state} {selectedOrder.deliveryAddress.pincode}
+                  {selectedOrder.deliveryAddress.landmark && <div style={{ marginTop: spacing[1] }}>Landmark: {selectedOrder.deliveryAddress.landmark}</div>}
+                </div>
+              </div>
+            )}
+
+            {/* Special Instructions */}
+            {selectedOrder.specialInstructions && (
+              <div style={{
+                padding: spacing[3],
+                background: colors.surface.primary,
+                borderRadius: '12px',
+                marginBottom: spacing[4],
+                boxShadow: 'inset 4px 4px 8px rgba(245, 158, 11, 0.15), inset -4px -4px 8px rgba(255, 255, 255, 0.8)',
+                border: `2px solid ${colors.semantic.warning}33`,
+              }}>
+                <h3 style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, marginBottom: spacing[2], color: colors.semantic.warning }}>
+                  Special Instructions
+                </h3>
+                <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
+                  {selectedOrder.specialInstructions}
+                </div>
+              </div>
+            )}
+
+            {/* Close Button */}
+            <button
+              onClick={() => setSelectedOrder(null)}
+              style={{
+                width: '100%',
+                padding: spacing[3],
+                background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.primaryDark} 100%)`,
+                color: colors.text.inverse,
+                border: `2px solid ${colors.brand.primary}`,
+                borderRadius: '12px',
+                fontSize: typography.fontSize.sm,
+                fontWeight: typography.fontWeight.extrabold,
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: `6px 6px 12px ${colors.brand.primary}44, -2px -2px 8px rgba(255, 255, 255, 0.3)`,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = `linear-gradient(135deg, ${colors.brand.primaryDark} 0%, ${colors.brand.primary} 100%)`;
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = `8px 8px 16px ${colors.brand.primary}66, -3px -3px 10px rgba(255, 255, 255, 0.4)`;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.primaryDark} 100%)`;
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = `6px 6px 12px ${colors.brand.primary}44, -2px -2px 8px rgba(255, 255, 255, 0.3)`;
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Order Modal */}
+      {cancelOrderId && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: spacing[4],
+          }}
+          onClick={() => {
+            setCancelOrderId(null);
+            setCancelReason('');
+          }}
+        >
+          <div
+            style={{
+              background: colors.surface.primary,
+              borderRadius: '16px',
+              padding: spacing[6],
+              maxWidth: '500px',
+              width: '100%',
+              border: `2px solid ${colors.surface.border}`,
+              boxShadow: '12px 12px 24px rgba(163, 163, 163, 0.3), -12px -12px 24px rgba(255, 255, 255, 0.5)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[5] }}>
+              <h2 style={{ fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.bold, color: colors.semantic.error, margin: 0 }}>
+                Cancel Order
+              </h2>
+              <button
+                onClick={() => {
+                  setCancelOrderId(null);
+                  setCancelReason('');
+                }}
+                style={{
+                  background: colors.surface.primary,
+                  border: `2px solid ${colors.surface.border}`,
+                  borderRadius: '10px',
+                  fontSize: '20px',
+                  cursor: 'pointer',
+                  color: colors.text.secondary,
+                  padding: spacing[2],
+                  width: '36px',
+                  height: '36px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '4px 4px 8px rgba(163, 163, 163, 0.25), -4px -4px 8px rgba(255, 255, 255, 0.5)',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '6px 6px 12px rgba(163, 163, 163, 0.3), -6px -6px 12px rgba(255, 255, 255, 0.6)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '4px 4px 8px rgba(163, 163, 163, 0.25), -4px -4px 8px rgba(255, 255, 255, 0.9)';
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Warning Message */}
+            <div style={{
+              padding: spacing[3],
+              background: colors.surface.primary,
+              borderRadius: '12px',
+              marginBottom: spacing[4],
+              boxShadow: 'inset 4px 4px 8px rgba(239, 68, 68, 0.15), inset -4px -4px 8px rgba(255, 255, 255, 0.8)',
+              border: `2px solid ${colors.semantic.error}33`,
+            }}>
+              <p style={{ margin: 0, fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
+                Please provide a reason for canceling this order. This action cannot be undone.
+              </p>
+            </div>
+
+            {/* Reason Input */}
+            <div style={{ marginBottom: spacing[5] }}>
+              <label style={{
+                display: 'block',
+                fontSize: typography.fontSize.sm,
+                fontWeight: typography.fontWeight.semibold,
+                color: colors.text.primary,
+                marginBottom: spacing[2],
+              }}>
+                Cancellation Reason *
+              </label>
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="e.g., Customer requested, Out of stock, etc."
+                rows={4}
+                style={{
+                  width: '100%',
+                  padding: spacing[3],
+                  border: `2px solid ${colors.surface.border}`,
+                  borderRadius: '12px',
+                  fontSize: typography.fontSize.sm,
+                  fontFamily: typography.fontFamily.primary,
+                  color: colors.text.primary,
+                  background: colors.surface.primary,
+                  boxShadow: 'inset 4px 4px 8px rgba(163, 163, 163, 0.2), inset -4px -4px 8px rgba(255, 255, 255, 0.4)',
+                  resize: 'vertical',
+                  transition: 'all 0.2s ease',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = colors.brand.primary;
+                  e.currentTarget.style.boxShadow = `inset 4px 4px 8px rgba(163, 163, 163, 0.2), inset -4px -4px 8px rgba(255, 255, 255, 0.4), 0 0 0 3px ${colors.brand.primary}22`;
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = colors.surface.border;
+                  e.currentTarget.style.boxShadow = 'inset 4px 4px 8px rgba(163, 163, 163, 0.2), inset -4px -4px 8px rgba(255, 255, 255, 0.4)';
+                }}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: spacing[3] }}>
+              <button
+                onClick={() => {
+                  setCancelOrderId(null);
+                  setCancelReason('');
+                }}
+                style={{
+                  flex: 1,
+                  padding: spacing[3],
+                  background: colors.surface.primary,
+                  color: colors.text.primary,
+                  border: `2px solid ${colors.surface.border}`,
+                  borderRadius: '12px',
+                  fontSize: typography.fontSize.sm,
+                  fontWeight: typography.fontWeight.bold,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '6px 6px 12px rgba(163, 163, 163, 0.25), -6px -6px 12px rgba(255, 255, 255, 0.5)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '8px 8px 16px rgba(163, 163, 163, 0.3), -8px -8px 16px rgba(255, 255, 255, 0.6)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '6px 6px 12px rgba(163, 163, 163, 0.25), -6px -6px 12px rgba(255, 255, 255, 0.9)';
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmCancelOrder}
+                disabled={!cancelReason.trim()}
+                style={{
+                  flex: 1,
+                  padding: spacing[3],
+                  background: cancelReason.trim()
+                    ? `linear-gradient(135deg, ${colors.semantic.error} 0%, #b91c1c 100%)`
+                    : colors.surface.border,
+                  color: cancelReason.trim() ? colors.text.inverse : colors.text.tertiary,
+                  border: `2px solid ${cancelReason.trim() ? colors.semantic.error : colors.surface.border}`,
+                  borderRadius: '12px',
+                  fontSize: typography.fontSize.sm,
+                  fontWeight: typography.fontWeight.extrabold,
+                  cursor: cancelReason.trim() ? 'pointer' : 'not-allowed',
+                  transition: 'all 0.3s ease',
+                  boxShadow: cancelReason.trim()
+                    ? `6px 6px 12px ${colors.semantic.error}44, -2px -2px 8px rgba(255, 255, 255, 0.3)`
+                    : '6px 6px 12px rgba(163, 163, 163, 0.25), -6px -6px 12px rgba(255, 255, 255, 0.9)',
+                }}
+                onMouseEnter={(e) => {
+                  if (cancelReason.trim()) {
+                    e.currentTarget.style.background = `linear-gradient(135deg, #b91c1c 0%, ${colors.semantic.error} 100%)`;
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = `8px 8px 16px ${colors.semantic.error}66, -3px -3px 10px rgba(255, 255, 255, 0.4)`;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (cancelReason.trim()) {
+                    e.currentTarget.style.background = `linear-gradient(135deg, ${colors.semantic.error} 0%, #b91c1c 100%)`;
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = `6px 6px 12px ${colors.semantic.error}44, -2px -2px 8px rgba(255, 255, 255, 0.3)`;
+                  }
+                }}
+              >
+                Confirm Cancellation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
