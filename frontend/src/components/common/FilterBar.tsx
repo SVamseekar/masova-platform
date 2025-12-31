@@ -127,24 +127,23 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 style={{
                   width: '100%',
                   padding: '0.75rem 1rem 0.75rem 2.5rem',
-                  border: '2px solid #e2e8f0',
+                  border: 'none',
                   borderRadius: '12px',
                   fontSize: '0.875rem',
-                  backgroundColor: isLoading ? '#f8fafc' : '#ffffff',
-                  boxShadow: 'inset 2px 2px 4px rgba(0,0,0,0.05)',
+                  backgroundColor: '#f0f0f0',
+                  boxShadow: 'inset 4px 4px 8px rgba(163, 163, 163, 0.2), inset -4px -4px 8px rgba(255, 255, 255, 0.8)',
                   transition: 'all 0.2s',
                   cursor: isLoading ? 'not-allowed' : 'text',
                   opacity: isLoading ? 0.6 : 1,
+                  color: '#333',
                 }}
                 onFocus={(e) => {
                   if (!isLoading) {
-                    e.target.style.borderColor = '#3b82f6';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                    e.target.style.boxShadow = 'inset 4px 4px 8px rgba(163, 163, 163, 0.25), inset -4px -4px 8px rgba(255, 255, 255, 0.9), 0 0 0 3px rgba(59, 130, 246, 0.1)';
                   }
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = '#e2e8f0';
-                  e.target.style.boxShadow = 'inset 2px 2px 4px rgba(0,0,0,0.05)';
+                  e.target.style.boxShadow = 'inset 4px 4px 8px rgba(163, 163, 163, 0.2), inset -4px -4px 8px rgba(255, 255, 255, 0.8)';
                 }}
               />
               <span
@@ -185,21 +184,20 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               style={{
                 width: '100%',
                 padding: '0.75rem 1rem',
-                border: '2px solid #e2e8f0',
+                border: 'none',
                 borderRadius: '12px',
                 fontSize: '0.875rem',
-                backgroundColor: '#ffffff',
-                boxShadow: 'inset 2px 2px 4px rgba(0,0,0,0.05)',
+                backgroundColor: '#f0f0f0',
+                boxShadow: 'inset 4px 4px 8px rgba(163, 163, 163, 0.2), inset -4px -4px 8px rgba(255, 255, 255, 0.8)',
                 transition: 'all 0.2s',
                 cursor: 'pointer',
+                color: '#333',
               }}
               onFocus={(e) => {
-                e.target.style.borderColor = '#3b82f6';
-                e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                e.target.style.boxShadow = 'inset 4px 4px 8px rgba(163, 163, 163, 0.25), inset -4px -4px 8px rgba(255, 255, 255, 0.9), 0 0 0 3px rgba(59, 130, 246, 0.1)';
               }}
               onBlur={(e) => {
-                e.target.style.borderColor = '#e2e8f0';
-                e.target.style.boxShadow = 'inset 2px 2px 4px rgba(0,0,0,0.05)';
+                e.target.style.boxShadow = 'inset 4px 4px 8px rgba(163, 163, 163, 0.2), inset -4px -4px 8px rgba(255, 255, 255, 0.8)';
               }}
             >
               <option value="">All {filter.label}</option>
@@ -243,24 +241,29 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                   flex: 1,
                   minWidth: '120px',
                   padding: '0.5rem',
-                  border: `2px solid ${dateError ? '#ef4444' : '#e2e8f0'}`,
+                  border: 'none',
                   borderRadius: '12px',
                   fontSize: '0.8rem',
-                  backgroundColor: isLoading ? '#f8fafc' : '#ffffff',
-                  boxShadow: 'inset 2px 2px 4px rgba(0,0,0,0.05)',
+                  backgroundColor: '#f0f0f0',
+                  boxShadow: dateError
+                    ? 'inset 4px 4px 8px rgba(239, 68, 68, 0.15), inset -4px -4px 8px rgba(255, 255, 255, 0.8)'
+                    : 'inset 4px 4px 8px rgba(163, 163, 163, 0.2), inset -4px -4px 8px rgba(255, 255, 255, 0.8)',
                   transition: 'all 0.2s',
                   cursor: isLoading ? 'not-allowed' : 'text',
                   opacity: isLoading ? 0.6 : 1,
+                  color: '#333',
                 }}
                 onFocus={(e) => {
                   if (!isLoading) {
-                    e.target.style.borderColor = dateError ? '#ef4444' : '#3b82f6';
-                    e.target.style.boxShadow = `0 0 0 3px rgba(${dateError ? '239, 68, 68' : '59, 130, 246'}, 0.1)`;
+                    e.target.style.boxShadow = dateError
+                      ? 'inset 4px 4px 8px rgba(239, 68, 68, 0.2), inset -4px -4px 8px rgba(255, 255, 255, 0.9), 0 0 0 3px rgba(239, 68, 68, 0.1)'
+                      : 'inset 4px 4px 8px rgba(163, 163, 163, 0.25), inset -4px -4px 8px rgba(255, 255, 255, 0.9), 0 0 0 3px rgba(59, 130, 246, 0.1)';
                   }
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = dateError ? '#ef4444' : '#e2e8f0';
-                  e.target.style.boxShadow = 'inset 2px 2px 4px rgba(0,0,0,0.05)';
+                  e.target.style.boxShadow = dateError
+                    ? 'inset 4px 4px 8px rgba(239, 68, 68, 0.15), inset -4px -4px 8px rgba(255, 255, 255, 0.8)'
+                    : 'inset 4px 4px 8px rgba(163, 163, 163, 0.2), inset -4px -4px 8px rgba(255, 255, 255, 0.8)';
                 }}
               />
               <span style={{ color: '#94a3b8' }}>→</span>
@@ -277,24 +280,29 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                   flex: 1,
                   minWidth: '120px',
                   padding: '0.5rem',
-                  border: `2px solid ${dateError ? '#ef4444' : '#e2e8f0'}`,
+                  border: 'none',
                   borderRadius: '12px',
                   fontSize: '0.8rem',
-                  backgroundColor: isLoading ? '#f8fafc' : '#ffffff',
-                  boxShadow: 'inset 2px 2px 4px rgba(0,0,0,0.05)',
+                  backgroundColor: '#f0f0f0',
+                  boxShadow: dateError
+                    ? 'inset 4px 4px 8px rgba(239, 68, 68, 0.15), inset -4px -4px 8px rgba(255, 255, 255, 0.8)'
+                    : 'inset 4px 4px 8px rgba(163, 163, 163, 0.2), inset -4px -4px 8px rgba(255, 255, 255, 0.8)',
                   transition: 'all 0.2s',
                   cursor: isLoading ? 'not-allowed' : 'text',
                   opacity: isLoading ? 0.6 : 1,
+                  color: '#333',
                 }}
                 onFocus={(e) => {
                   if (!isLoading) {
-                    e.target.style.borderColor = dateError ? '#ef4444' : '#3b82f6';
-                    e.target.style.boxShadow = `0 0 0 3px rgba(${dateError ? '239, 68, 68' : '59, 130, 246'}, 0.1)`;
+                    e.target.style.boxShadow = dateError
+                      ? 'inset 4px 4px 8px rgba(239, 68, 68, 0.2), inset -4px -4px 8px rgba(255, 255, 255, 0.9), 0 0 0 3px rgba(239, 68, 68, 0.1)'
+                      : 'inset 4px 4px 8px rgba(163, 163, 163, 0.25), inset -4px -4px 8px rgba(255, 255, 255, 0.9), 0 0 0 3px rgba(59, 130, 246, 0.1)';
                   }
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = dateError ? '#ef4444' : '#e2e8f0';
-                  e.target.style.boxShadow = 'inset 2px 2px 4px rgba(0,0,0,0.05)';
+                  e.target.style.boxShadow = dateError
+                    ? 'inset 4px 4px 8px rgba(239, 68, 68, 0.15), inset -4px -4px 8px rgba(255, 255, 255, 0.8)'
+                    : 'inset 4px 4px 8px rgba(163, 163, 163, 0.2), inset -4px -4px 8px rgba(255, 255, 255, 0.8)';
                 }}
               />
             </div>
@@ -331,11 +339,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             <div
               style={{
                 padding: '0.5rem',
-                border: '2px solid #e2e8f0',
+                border: 'none',
                 borderRadius: '12px',
-                backgroundColor: '#ffffff',
+                backgroundColor: '#f0f0f0',
                 maxHeight: '120px',
                 overflowY: 'auto',
+                boxShadow: 'inset 4px 4px 8px rgba(163, 163, 163, 0.2), inset -4px -4px 8px rgba(255, 255, 255, 0.8)',
               }}
             >
               {filter.options?.map((opt) => (
@@ -427,28 +436,29 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                   onClick={() => onSortChange(opt.field)}
                   style={{
                     padding: '0.5rem 1rem',
-                    border: '2px solid #e2e8f0',
+                    border: 'none',
                     borderRadius: '8px',
                     fontSize: '0.875rem',
-                    fontWeight: 500,
-                    backgroundColor:
-                      sortConfig?.field === opt.field ? '#3b82f6' : '#ffffff',
-                    color: sortConfig?.field === opt.field ? '#ffffff' : '#475569',
+                    fontWeight: 600,
+                    backgroundColor: '#f0f0f0',
+                    color: sortConfig?.field === opt.field ? '#3b82f6' : '#475569',
                     cursor: 'pointer',
                     transition: 'all 0.2s',
                     boxShadow:
                       sortConfig?.field === opt.field
-                        ? '0 4px 6px rgba(59, 130, 246, 0.3)'
-                        : 'none',
+                        ? 'inset 4px 4px 8px rgba(163, 163, 163, 0.25), inset -4px -4px 8px rgba(255, 255, 255, 0.9)'
+                        : '6px 6px 12px rgba(163, 163, 163, 0.25), -6px -6px 12px rgba(255, 255, 255, 0.9)',
                   }}
                   onMouseEnter={(e) => {
                     if (sortConfig?.field !== opt.field) {
-                      e.currentTarget.style.backgroundColor = '#f8fafc';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '8px 8px 16px rgba(163, 163, 163, 0.3), -8px -8px 16px rgba(255, 255, 255, 1)';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (sortConfig?.field !== opt.field) {
-                      e.currentTarget.style.backgroundColor = '#ffffff';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '6px 6px 12px rgba(163, 163, 163, 0.25), -6px -6px 12px rgba(255, 255, 255, 0.9)';
                     }
                   }}
                 >
@@ -471,20 +481,23 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               onClick={onClearFilters}
               style={{
                 padding: '0.5rem 1.25rem',
-                border: '2px solid #f59e0b',
+                border: 'none',
                 borderRadius: '8px',
                 fontSize: '0.875rem',
                 fontWeight: 600,
-                backgroundColor: '#fffbeb',
+                backgroundColor: '#f0f0f0',
                 color: '#f59e0b',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
+                boxShadow: '6px 6px 12px rgba(163, 163, 163, 0.25), -6px -6px 12px rgba(255, 255, 255, 0.9)',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#fef3c7';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '8px 8px 16px rgba(163, 163, 163, 0.3), -8px -8px 16px rgba(255, 255, 255, 1)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#fffbeb';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '6px 6px 12px rgba(163, 163, 163, 0.25), -6px -6px 12px rgba(255, 255, 255, 0.9)';
               }}
             >
               Clear Filters
@@ -496,20 +509,23 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               onClick={onExport}
               style={{
                 padding: '0.5rem 1.25rem',
-                border: '2px solid #10b981',
+                border: 'none',
                 borderRadius: '8px',
                 fontSize: '0.875rem',
                 fontWeight: 600,
-                backgroundColor: '#d1fae5',
+                backgroundColor: '#f0f0f0',
                 color: '#10b981',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
+                boxShadow: '6px 6px 12px rgba(163, 163, 163, 0.25), -6px -6px 12px rgba(255, 255, 255, 0.9)',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#a7f3d0';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '8px 8px 16px rgba(163, 163, 163, 0.3), -8px -8px 16px rgba(255, 255, 255, 1)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#d1fae5';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '6px 6px 12px rgba(163, 163, 163, 0.25), -6px -6px 12px rgba(255, 255, 255, 0.9)';
               }}
             >
               ⬇ Export CSV
