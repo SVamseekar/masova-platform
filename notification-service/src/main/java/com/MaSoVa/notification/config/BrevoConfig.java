@@ -15,7 +15,7 @@ public class BrevoConfig {
     @Value("${brevo.from-name}")
     private String fromName;
 
-    @Value("${brevo.enabled:false}")
+    @Value("${brevo.enabled:true}")
     private boolean enabled;
 
     @Value("${brevo.api-url:https://api.brevo.com/v3/smtp/email}")

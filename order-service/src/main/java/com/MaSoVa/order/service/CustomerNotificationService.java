@@ -2,6 +2,7 @@ package com.MaSoVa.order.service;
 
 import com.MaSoVa.order.entity.Order;
 import com.MaSoVa.order.entity.Order.OrderStatus;
+import com.MaSoVa.order.entity.OrderItem;
 import com.MaSoVa.order.websocket.OrderWebSocketController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -629,6 +630,55 @@ public class CustomerNotificationService {
                 order.getPreparationTime() + " minutes" : "20-30 minutes";
         String orderType = order.getOrderType().toString().replace("_", " ");
 
+        // Build order items HTML
+        StringBuilder itemsHtml = new StringBuilder();
+        itemsHtml.append("<div style='background-color: #F7F7F7; border-radius: 8px; padding: 20px; margin: 24px 0;'>");
+        itemsHtml.append("<h3 style='margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #333;'>Order Items</h3>");
+
+        if (order.getItems() != null && !order.getItems().isEmpty()) {
+            for (OrderItem item : order.getItems()) {
+                double itemTotal = item.getPrice() * item.getQuantity();
+                itemsHtml.append("<div style='display: flex; justify-content: space-between; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #E5E5E5;'>");
+                itemsHtml.append("<div style='flex: 1;'>");
+                itemsHtml.append("<div style='font-weight: 600; color: #000; margin-bottom: 4px;'>");
+                itemsHtml.append(item.getQuantity()).append("x ").append(item.getName());
+                itemsHtml.append("</div>");
+
+                // Add variant if present
+                if (item.getVariant() != null && !item.getVariant().isEmpty()) {
+                    itemsHtml.append("<div style='font-size: 13px; color: #666; margin-bottom: 4px;'>");
+                    itemsHtml.append("Size: ").append(item.getVariant());
+                    itemsHtml.append("</div>");
+                }
+
+                // Add customizations if present
+                if (item.getCustomizations() != null && !item.getCustomizations().isEmpty()) {
+                    itemsHtml.append("<div style='font-size: 13px; color: #666;'>");
+                    itemsHtml.append("Customizations: ").append(String.join(", ", item.getCustomizations()));
+                    itemsHtml.append("</div>");
+                }
+
+                itemsHtml.append("</div>");
+                itemsHtml.append("<div style='font-weight: 600; color: #FF6B35; font-size: 15px;'>");
+                itemsHtml.append("₹").append(String.format("%.2f", itemTotal));
+                itemsHtml.append("</div>");
+                itemsHtml.append("</div>");
+            }
+        }
+        itemsHtml.append("</div>");
+
+        // Build store information section
+        String storeInfo = "";
+        if (order.getStoreId() != null && !order.getStoreId().isEmpty()) {
+            storeInfo = String.format(
+                    "<div style='background-color: #FFF8F5; border-left: 4px solid #FF6B35; padding: 16px; margin: 0 0 24px 0; border-radius: 4px;'>" +
+                    "  <div style='font-size: 14px; color: #666;'>Order from:</div>" +
+                    "  <div style='font-size: 16px; font-weight: 600; color: #333; margin-top: 4px;'>MaSoVa - Store %s</div>" +
+                    "</div>",
+                    order.getStoreId()
+            );
+        }
+
         return buildHtmlEmail(
                 "Order Confirmed",
                 String.format(
@@ -636,6 +686,9 @@ public class CustomerNotificationService {
                         "<p style='font-size: 16px; line-height: 24px; margin: 0 0 16px 0; color: #333;'>" +
                         "Thank you for your order. We're getting it ready for you!" +
                         "</p>" +
+
+                        "%s" + // Store information section
+                        "%s" + // Order items section
 
                         "<div style='background-color: #F7F7F7; border-radius: 8px; padding: 24px; margin: 24px 0;'>" +
                         "  <div style='display: flex; justify-content: space-between; margin-bottom: 16px;'>" +
@@ -663,6 +716,8 @@ public class CustomerNotificationService {
                         "<div style='background-color: #FFF8F5; border-left: 4px solid #FF6B35; padding: 16px; margin: 24px 0; border-radius: 4px;'>" +
                         "  <p style='margin: 0; color: #666; font-size: 14px;'>You'll receive another email once your payment is confirmed. Track your order in real-time using the button above.</p>" +
                         "</div>",
+                        storeInfo,
+                        itemsHtml.toString(),
                         order.getOrderNumber(),
                         orderType,
                         formattedAmount,
