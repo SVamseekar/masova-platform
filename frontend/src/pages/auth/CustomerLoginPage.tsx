@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
 import { Button, Card, Input, Checkbox } from '../../components/ui/neumorphic';
 import { colors, spacing, typography } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
-import { useLoginMutation } from '../../store/api/authApi';
+import { useLoginMutation, useGoogleLoginMutation } from '../../store/api/authApi';
 import { useAppSelector } from '../../store/hooks';
 import { getSavedReturnUrl, clearReturnUrl } from '../../utils/security';
 
@@ -11,6 +12,7 @@ const CustomerLoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [login, { isLoading }] = useLoginMutation();
+  const [googleLogin, { isLoading: isGoogleLoading }] = useGoogleLoginMutation();
   const { isAuthenticated, user } = useAppSelector(state => state.auth);
   const [error, setError] = useState<string>('');
 
@@ -88,6 +90,17 @@ const CustomerLoginPage: React.FC = () => {
     }
 
     await handleLogin(formData.email, formData.password, formData.rememberMe);
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
+    if (!credentialResponse.credential) return;
+    try {
+      setError('');
+      await googleLogin({ idToken: credentialResponse.credential }).unwrap();
+      // Redirect handled by useEffect
+    } catch (err: any) {
+      setError(err?.data?.message || 'Google sign-in failed. Please try again.');
+    }
   };
 
   const containerStyles: React.CSSProperties = {
@@ -207,6 +220,31 @@ const CustomerLoginPage: React.FC = () => {
               {isLoading ? 'Signing In...' : 'Login & Continue'}
             </Button>
           </form>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing[4],
+            margin: `${spacing[6]} 0 ${spacing[4]}`,
+          }}>
+            <div style={{ flex: 1, height: '1px', backgroundColor: colors.surface.tertiary }} />
+            <span style={{ fontSize: typography.fontSize.xs, color: colors.text.secondary, whiteSpace: 'nowrap' }}>
+              or continue with
+            </span>
+            <div style={{ flex: 1, height: '1px', backgroundColor: colors.surface.tertiary }} />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'center', opacity: isGoogleLoading ? 0.6 : 1 }}>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('Google sign-in was cancelled or failed.')}
+              text="signin_with"
+              shape="rectangular"
+              theme="outline"
+              size="large"
+              width="340"
+            />
+          </div>
 
           <div style={{
             marginTop: spacing[6],

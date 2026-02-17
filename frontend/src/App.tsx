@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider, CssBaseline, CircularProgress, Box } from '@mui/material';
 import { Provider } from 'react-redux';
 import { SnackbarProvider } from 'notistack';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { store } from './store/store';
 import { MaSoVaTheme } from './styles/theme';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
@@ -30,34 +31,13 @@ const PublicRatingPage = React.lazy(() => import('./pages/PublicRatingPage'));
 const CustomerDashboard = React.lazy(() => import('./pages/customer/CustomerDashboard'));
 const ProfilePage = React.lazy(() => import('./pages/customer/ProfilePage'));
 const NotificationSettingsPage = React.lazy(() => import('./pages/customer/NotificationSettingsPage'));
-const PaymentDashboardPage = React.lazy(() => import('./pages/manager/PaymentDashboardPage'));
-const RefundManagementPage = React.lazy(() => import('./pages/manager/RefundManagementPage'));
-const RecipeManagementPage = React.lazy(() => import('./pages/manager/RecipeManagementPage'));
-const StoreManagementPage = React.lazy(() => import('./pages/manager/StoreManagementPage'));
-const InventoryDashboardPage = React.lazy(() => import('./pages/manager/InventoryDashboardPage'));
-const SupplierManagementPage = React.lazy(() => import('./pages/manager/SupplierManagementPage'));
-const PurchaseOrdersPage = React.lazy(() => import('./pages/manager/PurchaseOrdersPage'));
-const WasteAnalysisPage = React.lazy(() => import('./pages/manager/WasteAnalysisPage'));
-const CustomerManagementPage = React.lazy(() => import('./pages/manager/CustomerManagementPage'));
-const StaffManagementPage = React.lazy(() => import('./pages/manager/StaffManagementPage'));
-const StaffSchedulingPage = React.lazy(() => import('./pages/manager/StaffSchedulingPage'));
+const ManagerShell = React.lazy(() => import('./pages/manager/ManagerShell'));
 const StaffProfilePage = React.lazy(() => import('./pages/staff/StaffProfilePage'));
-const DriverManagementPage = React.lazy(() => import('./pages/manager/DriverManagementPage'));
-const DeliveryManagementPage = React.lazy(() => import('./pages/manager/DeliveryManagementPage'));
-const CampaignManagementPage = React.lazy(() => import('./pages/manager/CampaignManagementPage'));
-const ManagerDashboard = React.lazy(() => import('./pages/manager/DashboardPage'));
-const ReviewManagementPage = React.lazy(() => import('./pages/manager/ReviewManagementPage'));
-const OrderManagementPage = React.lazy(() => import('./pages/manager/OrderManagementPage'));
 const KitchenDisplayPage = React.lazy(() => import('./pages/kitchen/KitchenDisplayPage'));
 const DriverDashboard = React.lazy(() => import('./pages/driver/DriverDashboard'));
 const POSSystem = React.lazy(() => import('./apps/POSSystem/POSSystem'));
-const KioskManagementPage = React.lazy(() => import('./pages/manager/KioskManagementPage'));
 const KioskSetupPage = React.lazy(() => import('./pages/kiosk/KioskSetupPage'));
-const KitchenAnalyticsPage = React.lazy(() => import('./pages/manager/KitchenAnalyticsPage'));
-const ProductAnalyticsPage = React.lazy(() => import('./pages/manager/ProductAnalyticsPage'));
-const AdvancedReportsPage = React.lazy(() => import('./pages/manager/AdvancedReportsPage'));
-const StaffLeaderboardPage = React.lazy(() => import('./pages/manager/StaffLeaderboardPage'));
-const EquipmentMonitoringPage = React.lazy(() => import('./pages/manager/EquipmentMonitoringPage'));
+const GdprRequests = React.lazy(() => import('./pages/GdprRequests').then(m => ({ default: m.GdprRequests })));
 
 // Kiosk mode hook
 import { useKioskMode } from './hooks/useKioskMode';
@@ -88,6 +68,7 @@ const KioskModeInitializer: React.FC = () => {
 
 const App: React.FC = () => {
   return (
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID ?? ''}>
     <Provider store={store}>
       <TokenRefreshManager />
       <KioskModeInitializer />
@@ -158,116 +139,55 @@ const App: React.FC = () => {
                       </ProtectedRoute>
                     }
                   />
+                  <Route
+                    path="/customer/gdpr"
+                    element={
+                      <ProtectedRoute allowedRoles={['CUSTOMER']} requireAuth={true}>
+                        <GdprRequests />
+                      </ProtectedRoute>
+                    }
+                  />
 
                   {/* Kitchen Display - Public Access (No Login Required) */}
                   <Route path="/kitchen" element={<KitchenDisplayPage />} />
                   <Route path="/kitchen/:storeId" element={<KitchenDisplayPage />} />
 
-                  {/* Staff Routes - Login Required */}
+                  {/* Manager Dashboard - Consolidated Shell */}
                   <Route
                     path="/manager"
                     element={
                       <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <ManagerDashboard />
+                        <ManagerShell />
                       </ProtectedRoute>
                     }
                   />
-                  <Route
-                    path="/manager/payments"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <PaymentDashboardPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/manager/refunds"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <RefundManagementPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/manager/recipes"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <RecipeManagementPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/manager/stores"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <StoreManagementPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/manager/kiosk"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <KioskManagementPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/manager/inventory"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <InventoryDashboardPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/manager/suppliers"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <SupplierManagementPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/manager/purchase-orders"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <PurchaseOrdersPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/manager/waste-analysis"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <WasteAnalysisPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/manager/customers"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <CustomerManagementPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/manager/staff"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <StaffManagementPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/manager/staff-scheduling"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <StaffSchedulingPage />
-                      </ProtectedRoute>
-                    }
-                  />
+
+                  {/* Legacy manager URL redirects */}
+                  <Route path="/manager/payments" element={<Navigate to="/manager?section=orders&tab=payments" replace />} />
+                  <Route path="/manager/refunds" element={<Navigate to="/manager?section=orders&tab=refunds" replace />} />
+                  <Route path="/manager/orders" element={<Navigate to="/manager?section=orders&tab=orders" replace />} />
+                  <Route path="/manager/consolidated-orders" element={<Navigate to="/manager?section=orders&tab=orders" replace />} />
+                  <Route path="/manager/deliveries" element={<Navigate to="/manager?section=orders&tab=deliveries" replace />} />
+                  <Route path="/manager/inventory" element={<Navigate to="/manager?section=inventory&tab=stock" replace />} />
+                  <Route path="/manager/suppliers" element={<Navigate to="/manager?section=inventory&tab=suppliers" replace />} />
+                  <Route path="/manager/purchase-orders" element={<Navigate to="/manager?section=inventory&tab=purchase-orders" replace />} />
+                  <Route path="/manager/waste-analysis" element={<Navigate to="/manager?section=inventory&tab=waste" replace />} />
+                  <Route path="/manager/recipes" element={<Navigate to="/manager?section=operations&tab=recipes" replace />} />
+                  <Route path="/manager/drivers" element={<Navigate to="/manager?section=operations&tab=drivers" replace />} />
+                  <Route path="/manager/stores" element={<Navigate to="/manager?section=operations&tab=stores" replace />} />
+                  <Route path="/manager/kiosk" element={<Navigate to="/manager?section=operations&tab=kiosks" replace />} />
+                  <Route path="/manager/staff" element={<Navigate to="/manager?section=people&tab=staff" replace />} />
+                  <Route path="/manager/staff-scheduling" element={<Navigate to="/manager?section=people&tab=scheduling" replace />} />
+                  <Route path="/manager/staff-leaderboard" element={<Navigate to="/manager?section=people&tab=leaderboard" replace />} />
+                  <Route path="/manager/customers" element={<Navigate to="/manager?section=people&tab=customers" replace />} />
+                  <Route path="/manager/campaigns" element={<Navigate to="/manager?section=people&tab=campaigns" replace />} />
+                  <Route path="/manager/reviews" element={<Navigate to="/manager?section=people&tab=reviews" replace />} />
+                  <Route path="/manager/kitchen-analytics" element={<Navigate to="/manager?section=analytics&tab=kitchen" replace />} />
+                  <Route path="/manager/product-analytics" element={<Navigate to="/manager?section=analytics&tab=products" replace />} />
+                  <Route path="/manager/advanced-reports" element={<Navigate to="/manager?section=analytics&tab=reports" replace />} />
+                  <Route path="/manager/equipment-monitoring" element={<Navigate to="/manager?section=analytics&tab=equipment" replace />} />
+
+                  {/* Staff Profile - stays as separate route */}
                   <Route
                     path="/manager/staff/:staffId/profile"
                     element={
@@ -281,86 +201,6 @@ const App: React.FC = () => {
                     element={
                       <ProtectedRoute allowedRoles={['STAFF', 'MANAGER', 'ASSISTANT_MANAGER']}>
                         <StaffProfilePage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/manager/drivers"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <DriverManagementPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/manager/deliveries"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <DeliveryManagementPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/manager/campaigns"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <CampaignManagementPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/manager/reviews"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <ReviewManagementPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/manager/orders"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <OrderManagementPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/manager/kitchen-analytics"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <KitchenAnalyticsPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/manager/product-analytics"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <ProductAnalyticsPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/manager/advanced-reports"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <AdvancedReportsPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/manager/staff-leaderboard"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <StaffLeaderboardPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/manager/equipment-monitoring"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <EquipmentMonitoringPage />
                       </ProtectedRoute>
                     }
                   />
@@ -396,6 +236,7 @@ const App: React.FC = () => {
       </ThemeProvider>
       </ConnectionMonitorProvider>
     </Provider>
+    </GoogleOAuthProvider>
   );
 };
 

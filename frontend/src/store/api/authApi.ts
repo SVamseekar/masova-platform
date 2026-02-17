@@ -84,6 +84,14 @@ export const authApi = createApi({
       query: () => '/users/profile',
       providesTags: ['User'],
     }),
+    googleLogin: builder.mutation<AuthResponse, { idToken: string }>({
+      query: (body) => ({
+        url: '/users/auth/google',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Auth'],
+    }),
   }),
 });
 
@@ -93,4 +101,5 @@ export const {
   useRefreshTokenMutation,
   useLogoutMutation,
   useGetProfileQuery,
+  useGoogleLoginMutation,
 } = authApi;
