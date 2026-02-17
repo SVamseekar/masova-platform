@@ -4,6 +4,10 @@
   "description": "",
   "main": "cleanup-database.js",
   "scripts": {
+    "seed": "node seed-database.js",
+    "seed:clear": "node clear-database.js",
+    "migrate:ttl": "node migrations/add-ttl-indexes.js",
+    "migrate:indexes": "node migrations/add-compound-indexes.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
