@@ -8,6 +8,10 @@ import AnimatedBackground from '../../components/backgrounds/AnimatedBackground'
 import { Button, Card } from '../../components/ui/neumorphic';
 import { colors, spacing, typography, shadows, borderRadius } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
+import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
+import DeliveryDiningIcon from '@mui/icons-material/DeliveryDining';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import StorefrontIcon from '@mui/icons-material/Storefront';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -60,22 +64,22 @@ const HomePage: React.FC = () => {
   // Why choose us features
   const features = [
     {
-      icon: '🍽️',
+      Icon: RestaurantMenuIcon,
       title: 'Multi-Cuisine Menu',
       description: 'Pizzas, Biryani, Chinese, and more - something for everyone'
     },
     {
-      icon: '🚀',
+      Icon: DeliveryDiningIcon,
       title: 'Fast Delivery',
       description: 'Hot food delivered to your doorstep in 30 minutes or less'
     },
     {
-      icon: '🎁',
+      Icon: LocalOfferIcon,
       title: 'Great Offers',
       description: 'Weekly deals and combo offers to save you money'
     },
     {
-      icon: '🏪',
+      Icon: StorefrontIcon,
       title: 'Dine-In & Takeaway',
       description: 'Multiple ordering options - choose what works for you'
     }
@@ -289,7 +293,7 @@ const HomePage: React.FC = () => {
           {features.map((feature, index) => (
             <Card key={index} elevation="md" padding="lg" interactive>
               <div style={featureCardContentStyles}>
-                <div style={featureIconStyles}>{feature.icon}</div>
+                <feature.Icon style={{ fontSize: '48px', color: colors.brand.primary, marginBottom: spacing[4], display: 'block', margin: `0 auto ${spacing[4]}` }} />
                 <h3 style={featureTitleStyles}>{feature.title}</h3>
                 <p style={featureDescriptionStyles}>{feature.description}</p>
               </div>

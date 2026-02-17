@@ -218,18 +218,13 @@ const MenuPage: React.FC<MenuPageProps> = ({
     }
   };
 
-  const getSpiceLevelEmoji = (spiceLevel?: SpiceLevel) => {
+  const getSpiceLevelDots = (spiceLevel?: SpiceLevel): { count: number; label: string } => {
     switch (spiceLevel) {
-      case SpiceLevel.MILD:
-        return '🌶️';
-      case SpiceLevel.MEDIUM:
-        return '🌶️🌶️';
-      case SpiceLevel.HOT:
-        return '🌶️🌶️🌶️';
-      case SpiceLevel.EXTRA_HOT:
-        return '🌶️🌶️🌶️🌶️';
-      default:
-        return '';
+      case SpiceLevel.MILD: return { count: 1, label: 'Mild' };
+      case SpiceLevel.MEDIUM: return { count: 2, label: 'Medium' };
+      case SpiceLevel.HOT: return { count: 3, label: 'Hot' };
+      case SpiceLevel.EXTRA_HOT: return { count: 4, label: 'Extra Hot' };
+      default: return { count: 0, label: '' };
     }
   };
 
@@ -270,10 +265,11 @@ const MenuPage: React.FC<MenuPageProps> = ({
     marginBottom: spacing[8],
   };
 
+  // DEEP inset search input for prominent concave effect
   const searchInputStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('inset', 'base', 'lg'),
+    ...createNeumorphicSurface('inset', 'lg', 'xl'),  // Enhanced from 'base', 'lg'
     width: '100%',
-    padding: `${spacing[4]} ${spacing[5]}`,
+    padding: `${spacing[5]} ${spacing[6]}`,  // More generous padding
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.medium,
     color: colors.text.primary,
@@ -283,10 +279,12 @@ const MenuPage: React.FC<MenuPageProps> = ({
     fontFamily: typography.fontFamily.primary,
   };
 
+  // More prominent filter section
   const filterSectionStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('raised', 'lg', '2xl'),
-    padding: spacing[6],
+    ...createNeumorphicSurface('raised', 'xl', '2xl'),  // Enhanced from 'lg'
+    padding: spacing[8],  // More generous
     marginBottom: spacing[8],
+    border: `1px solid ${colors.surface.border}`,  // Add definition
   };
 
   const filterGroupStyles: React.CSSProperties = {
@@ -328,10 +326,12 @@ const MenuPage: React.FC<MenuPageProps> = ({
     gap: spacing[6],
   };
 
+  // Larger elevation menu cards
   const menuCardStyles: React.CSSProperties = {
-    ...createCard('md', 'base', true),
+    ...createCard('xl', 'lg', true),  // Enhanced from 'md', 'base'
     display: 'flex',
     flexDirection: 'column',
+    border: `1px solid ${colors.surface.border}`,  // Add definition
     height: '100%',
   };
 
@@ -428,10 +428,11 @@ const MenuPage: React.FC<MenuPageProps> = ({
     alignItems: 'center',
   };
 
+  // PROMINENT quantity buttons - larger touch targets with deep press
   const quantityButtonStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('raised', 'sm', 'md'),
-    width: '36px',
-    height: '36px',
+    ...createNeumorphicSurface('raised', 'md', 'lg'),  // Enhanced from 'sm', 'md'
+    width: '44px',  // Larger from 36px
+    height: '44px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -646,7 +647,7 @@ const MenuPage: React.FC<MenuPageProps> = ({
                 <div style={menuHeaderStyles}>
                   <h3 style={menuNameStyles}>{item.name}</h3>
                   {item.isRecommended && (
-                    <span style={recommendedBadgeStyles}>⭐ Recommended</span>
+                    <span style={recommendedBadgeStyles}>Recommended</span>
                   )}
                 </div>
 
@@ -660,13 +661,21 @@ const MenuPage: React.FC<MenuPageProps> = ({
                       {dietary}
                     </span>
                   ))}
-                  {item.spiceLevel && item.spiceLevel !== SpiceLevel.NONE && (
-                    <span style={spiceBadgeStyles}>{getSpiceLevelEmoji(item.spiceLevel)}</span>
-                  )}
+                  {item.spiceLevel && item.spiceLevel !== SpiceLevel.NONE && (() => {
+                    const { count, label } = getSpiceLevelDots(item.spiceLevel);
+                    return count > 0 ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', fontSize: typography.fontSize.xs, color: '#e53e3e', fontWeight: '600' }}>
+                        {Array.from({ length: count }).map((_, i) => (
+                          <span key={i} style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#e53e3e', display: 'inline-block' }} />
+                        ))}
+                        <span style={{ marginLeft: '4px' }}>{label}</span>
+                      </span>
+                    ) : null;
+                  })()}
                 </div>
 
                 {item.preparationTime && (
-                  <div style={prepTimeStyles}>⏱️ {item.preparationTime} mins</div>
+                  <div style={prepTimeStyles}>{item.preparationTime} min prep</div>
                 )}
 
                 {/* View Recipe Button */}
@@ -682,7 +691,6 @@ const MenuPage: React.FC<MenuPageProps> = ({
                     e.currentTarget.style.boxShadow = shadows.raised.sm;
                   }}
                 >
-                  <span>👨‍🍳</span>
                   <span>View Recipe & Ingredients</span>
                 </button>
 
@@ -715,11 +723,17 @@ const MenuPage: React.FC<MenuPageProps> = ({
                         onClick={() => decrementQuantity(item.id)}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.transform = 'translateY(-2px)';
-                          e.currentTarget.style.boxShadow = shadows.raised.md;
+                          e.currentTarget.style.boxShadow = shadows.raised.lg;
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = shadows.raised.sm;
+                          e.currentTarget.style.boxShadow = shadows.raised.md;
+                        }}
+                        onMouseDown={(e) => {
+                          e.currentTarget.style.boxShadow = shadows.inset.lg;  // DEEP press
+                        }}
+                        onMouseUp={(e) => {
+                          e.currentTarget.style.boxShadow = shadows.raised.lg;
                         }}
                       >
                         −
@@ -730,11 +744,17 @@ const MenuPage: React.FC<MenuPageProps> = ({
                         onClick={() => incrementQuantity(item.id)}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.transform = 'translateY(-2px)';
-                          e.currentTarget.style.boxShadow = shadows.raised.md;
+                          e.currentTarget.style.boxShadow = shadows.raised.lg;
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = shadows.raised.sm;
+                          e.currentTarget.style.boxShadow = shadows.raised.md;
+                        }}
+                        onMouseDown={(e) => {
+                          e.currentTarget.style.boxShadow = shadows.inset.lg;  // DEEP press
+                        }}
+                        onMouseUp={(e) => {
+                          e.currentTarget.style.boxShadow = shadows.raised.lg;
                         }}
                       >
                         +
