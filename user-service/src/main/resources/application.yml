@@ -84,6 +84,11 @@ jwt:
   issuer: MaSoVa-restaurant-system
   audience: MaSoVa-users
 
+# GOOGLE OAUTH CONFIGURATION
+google:
+  oauth:
+    client-id: ${GOOGLE_OAUTH_CLIENT_ID:}
+
 # LOGGING CONFIGURATION
 logging:
   level:
@@ -156,23 +161,6 @@ management:
       enabled: true
     env:
       enabled: true
-
-# API DOCUMENTATION
-springdoc:
-  api-docs:
-    path: /v3/api-docs
-    enabled: true
-  swagger-ui:
-    path: /swagger-ui.html
-    enabled: true
-    try-it-out-enabled: true
-    operations-sorter: method
-    tags-sorter: alpha
-    doc-expansion: none
-    disable-swagger-default-url: true
-  show-actuator: true
-  default-consumes-media-type: application/json
-  default-produces-media-type: application/json
 
 # Resilience4j Circuit Breaker and Retry Configuration
 resilience4j:

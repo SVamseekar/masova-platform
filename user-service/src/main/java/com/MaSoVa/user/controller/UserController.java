@@ -8,6 +8,7 @@ import com.MaSoVa.shared.entity.User;
 import com.MaSoVa.shared.enums.UserType;
 import com.MaSoVa.shared.util.StoreContextUtil;
 import com.MaSoVa.user.dto.*;
+import com.MaSoVa.user.dto.GoogleLoginRequest;
 import com.MaSoVa.user.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,6 +41,9 @@ public class UserController {
     @Autowired
     private com.MaSoVa.user.service.JwtService jwtService;
 
+    @Autowired
+    private com.MaSoVa.user.service.WorkingSessionService workingSessionService;
+
     // Rate limiting cache: IP -> failed attempt count
     // Expires after 15 minutes
     private final LoadingCache<String, Integer> pinAttempts = CacheBuilder.newBuilder()
@@ -71,6 +75,13 @@ public class UserController {
     @Operation(summary = "User login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         LoginResponse response = userService.authenticate(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/auth/google")
+    @Operation(summary = "Sign in or register via Google OAuth ID token")
+    public ResponseEntity<LoginResponse> googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
+        LoginResponse response = userService.loginWithGoogle(request.getIdToken());
         return ResponseEntity.ok(response);
     }
 
@@ -479,7 +490,8 @@ public class UserController {
         logger.info("GET /api/users/{}/status", userId);
 
         try {
-            User user = userService.getUserById(userId);
+            // Bypass cache to avoid LinkedHashMap casting issue - call repository directly
+            User user = userService.getUserByIdUncached(userId);
 
             if (user == null) {
                 return ResponseEntity.notFound().build();
@@ -502,14 +514,23 @@ public class UserController {
                 status = "OFF_DUTY";
             }
 
+            // Check if driver has an active working session
+            // If there's an active session, they should be considered online
+            boolean hasActiveSession = workingSessionService.isEmployeeCurrentlyWorking(userId);
+            boolean isOnline = "AVAILABLE".equals(status) || hasActiveSession;
+
+            logger.info("Driver status check: userId={}, status={}, hasActiveSession={}, isOnline={}",
+                userId, status, hasActiveSession, isOnline);
+
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "userId", userId,
                     "status", status,
-                    "isOnline", "AVAILABLE".equals(status)
+                    "isOnline", isOnline,
+                    "hasActiveSession", hasActiveSession
             ));
         } catch (Exception e) {
-            logger.error("Error fetching driver status: {}", e.getMessage());
+            logger.error("Error fetching driver status: {}", e.getMessage(), e);
             // Return default status on error
             return ResponseEntity.ok(Map.of(
                     "success", true,

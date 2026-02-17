@@ -13,6 +13,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -48,6 +49,9 @@ public class User {
     
     @Field("isActive")
     private boolean isActive = true;
+
+    @Field("authProviders")
+    private List<AuthProvider> authProviders = new ArrayList<>();
     
     // Constructors
     public User() {}
@@ -81,6 +85,9 @@ public class User {
     
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
+
+    public List<AuthProvider> getAuthProviders() { return authProviders; }
+    public void setAuthProviders(List<AuthProvider> authProviders) { this.authProviders = authProviders; }
     
     // Helper methods
     public boolean isEmployee() {
@@ -155,6 +162,29 @@ public class User {
         public void setDietaryRestrictions(Map<String, Object> dietaryRestrictions) { this.dietaryRestrictions = dietaryRestrictions; }
     }
     
+    public static class AuthProvider {
+        private String provider;  // e.g., "GOOGLE"
+        private String providerId; // Google sub/uid
+        private String email;
+
+        public AuthProvider() {}
+
+        public AuthProvider(String provider, String providerId, String email) {
+            this.provider = provider;
+            this.providerId = providerId;
+            this.email = email;
+        }
+
+        public String getProvider() { return provider; }
+        public void setProvider(String provider) { this.provider = provider; }
+
+        public String getProviderId() { return providerId; }
+        public void setProviderId(String providerId) { this.providerId = providerId; }
+
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+    }
+
     public static class EmployeeDetails {
         @Indexed
         private String storeId;

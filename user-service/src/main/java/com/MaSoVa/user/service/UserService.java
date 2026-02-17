@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -57,6 +58,9 @@ public class UserService {
 
     @Value("${customer.service.url:http://localhost:8082}")
     private String customerServiceUrl;
+
+    @Value("${google.oauth.client-id:}")
+    private String googleOAuthClientId;
     
     public LoginResponse registerUser(UserCreateRequest request) {
         validateUserCreation(request);
@@ -292,7 +296,105 @@ public class UserService {
         logger.info("Authentication successful for user: {}", user.getId());
         return new LoginResponse(accessToken, refreshToken, mapToUserResponse(user));
     }
-    
+
+    /**
+     * Authenticate or register a user via Google ID token.
+     * Validates the token with Google's tokeninfo endpoint, then finds or creates
+     * a CUSTOMER user linked to the Google account.
+     */
+    public LoginResponse loginWithGoogle(String idToken) {
+        logger.info("Google Sign-In attempt");
+
+        // Verify the ID token with Google
+        Map<String, Object> tokenInfo = verifyGoogleIdToken(idToken);
+        String googleSub = (String) tokenInfo.get("sub");
+        String email = (String) tokenInfo.get("email");
+        String name = (String) tokenInfo.get("name");
+
+        if (googleSub == null || email == null) {
+            throw new RuntimeException("Invalid Google ID token: missing sub or email");
+        }
+
+        // If client-id is configured, verify the audience
+        if (googleOAuthClientId != null && !googleOAuthClientId.isEmpty()) {
+            String aud = (String) tokenInfo.get("aud");
+            if (!googleOAuthClientId.equals(aud)) {
+                throw new RuntimeException("Google ID token audience mismatch");
+            }
+        }
+
+        // Look up user by email
+        Optional<User> existingByEmail = userRepository.findByPersonalInfoEmail(email);
+        User user;
+
+        if (existingByEmail.isPresent()) {
+            user = existingByEmail.get();
+            // Link Google provider if not already linked
+            boolean alreadyLinked = user.getAuthProviders().stream()
+                    .anyMatch(p -> "GOOGLE".equals(p.getProvider()) && googleSub.equals(p.getProviderId()));
+            if (!alreadyLinked) {
+                user.getAuthProviders().add(new User.AuthProvider("GOOGLE", googleSub, email));
+                userRepository.save(user);
+            }
+        } else {
+            // Create new CUSTOMER user
+            user = new User();
+            user.setType(UserType.CUSTOMER);
+
+            User.PersonalInfo personalInfo = new User.PersonalInfo();
+            personalInfo.setName(name != null ? name : email.split("@")[0]);
+            personalInfo.setEmail(email);
+            // Google users don't have a phone or password — set placeholder
+            personalInfo.setPhone("0000000000"); // placeholder; user must update
+            personalInfo.setPasswordHash(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));
+            user.setPersonalInfo(personalInfo);
+
+            List<User.AuthProvider> providers = new ArrayList<>();
+            providers.add(new User.AuthProvider("GOOGLE", googleSub, email));
+            user.setAuthProviders(providers);
+
+            user = userRepository.save(user);
+            logger.info("Created new user via Google Sign-In: {}", user.getId());
+
+            // Create customer profile
+            try {
+                createCustomerProfile(user);
+            } catch (Exception e) {
+                logger.warn("Customer profile creation failed for Google user {}: {}", user.getId(), e.getMessage());
+            }
+        }
+
+        if (!user.isActive()) {
+            throw new RuntimeException("Account is deactivated");
+        }
+
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
+
+        String storeId = user.isEmployee() && user.getEmployeeDetails() != null
+                ? user.getEmployeeDetails().getStoreId() : null;
+        String accessToken = jwtService.generateAccessToken(user.getId(), user.getType().name(), storeId);
+        String refreshToken = jwtService.generateRefreshToken(user.getId());
+
+        logger.info("Google Sign-In successful for user: {}", user.getId());
+        return new LoginResponse(accessToken, refreshToken, mapToUserResponse(user));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> verifyGoogleIdToken(String idToken) {
+        String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken;
+        try {
+            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                throw new RuntimeException("Google token verification failed");
+            }
+            return response.getBody();
+        } catch (org.springframework.web.client.RestClientException e) {
+            logger.error("Google tokeninfo request failed: {}", e.getMessage());
+            throw new RuntimeException("Google token verification failed: " + e.getMessage());
+        }
+    }
+
     public void logout(String userId) {
         User user = getUserById(userId);
         if (user.isEmployee()) {
@@ -311,7 +413,16 @@ public class UserService {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
-    
+
+    /**
+     * Get user by ID without using cache
+     * Use this to avoid LinkedHashMap casting issues with cache deserialization
+     */
+    public User getUserByIdUncached(String userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
     public UserResponse getUserResponseById(String userId) {
         return mapToUserResponse(getUserById(userId));
     }
