@@ -1,6 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { StandaloneSearchBox, useJsApiLoader } from '@react-google-maps/api';
 import { useGeocoding } from '../../hooks/useGeocoding';
 import { colors, spacing, typography, shadows } from '../../styles/design-tokens';
+
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? '';
+const LIBRARIES: ('places')[] = ['places'];
 
 interface AddressAutocompleteProps {
   onSelect: (address: string, lat: number, lon: number) => void;
@@ -9,50 +13,89 @@ interface AddressAutocompleteProps {
   disabled?: boolean;
 }
 
-interface Suggestion {
+interface NominatimSuggestion {
   displayName: string;
   lat: number;
   lon: number;
   placeId: string;
 }
 
-/**
- * Address Autocomplete Component using Nominatim (OpenStreetMap)
- * - Free geocoding API
- * - No API key required
- * - Dropdown suggestions
- */
-export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
+// ─── Google Places variant ───────────────────────────────────────────────────
+
+const GooglePlacesAutocomplete: React.FC<AddressAutocompleteProps> = ({
   onSelect,
-  placeholder = "Enter delivery address...",
+  placeholder = 'Enter delivery address...',
+  initialValue = '',
+  disabled = false,
+}) => {
+  const [inputValue, setInputValue] = useState(initialValue);
+  const searchBoxRef = useRef<google.maps.places.SearchBox | null>(null);
+
+  const handlePlacesChanged = useCallback(() => {
+    const places = searchBoxRef.current?.getPlaces();
+    if (!places || places.length === 0) return;
+    const place = places[0];
+    const address = place.formatted_address ?? place.name ?? '';
+    const lat = place.geometry?.location?.lat() ?? 0;
+    const lon = place.geometry?.location?.lng() ?? 0;
+    setInputValue(address);
+    onSelect(address, lat, lon);
+  }, [onSelect]);
+
+  return (
+    <StandaloneSearchBox
+      onLoad={(ref) => { searchBoxRef.current = ref; }}
+      onPlacesChanged={handlePlacesChanged}
+    >
+      <input
+        type="text"
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        placeholder={placeholder}
+        disabled={disabled}
+        style={{
+          width: '100%',
+          padding: `${spacing[3]} ${spacing[4]}`,
+          borderRadius: '10px',
+          border: `2px solid ${colors.surface.border}`,
+          outline: 'none',
+          backgroundColor: disabled ? colors.surface.secondary : colors.surface.primary,
+          fontSize: typography.fontSize.sm,
+          color: colors.text.primary,
+          fontFamily: typography.fontFamily.primary,
+          boxShadow: shadows.inset.sm,
+          transition: 'all 0.2s ease',
+          boxSizing: 'border-box',
+        }}
+      />
+    </StandaloneSearchBox>
+  );
+};
+
+// ─── Nominatim fallback variant ──────────────────────────────────────────────
+
+const NominatimAutocomplete: React.FC<AddressAutocompleteProps> = ({
+  onSelect,
+  placeholder = 'Enter delivery address...',
   initialValue = '',
   disabled = false,
 }) => {
   const [inputValue, setInputValue] = useState(initialValue);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [suggestions, setSuggestions] = useState<NominatimSuggestion[]>([]);
   const { geocode, loading } = useGeocoding();
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const searchTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  // Handle input change with debouncing
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setInputValue(value);
-
-    // Clear previous timeout
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    // Debounce search
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     searchTimeoutRef.current = setTimeout(async () => {
       if (value.length >= 3) {
         try {
           const result = await geocode(value);
           if (result) {
-            // For now, we only get one result from geocode
-            // In a full implementation, you'd call Nominatim search endpoint directly
             setSuggestions([{
               displayName: result.displayName,
               lat: result.latitude,
@@ -61,46 +104,33 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
             }]);
             setShowSuggestions(true);
           }
-        } catch (error) {
-          console.error('Geocoding error:', error);
+        } catch {
           setSuggestions([]);
         }
       } else {
         setSuggestions([]);
         setShowSuggestions(false);
       }
-    }, 500); // 500ms debounce
+    }, 500);
   };
 
-  // Handle suggestion selection
-  const handleSelect = (suggestion: Suggestion) => {
-    setInputValue(suggestion.displayName);
+  const handleSelect = (s: NominatimSuggestion) => {
+    setInputValue(s.displayName);
     setShowSuggestions(false);
-    onSelect(suggestion.displayName, suggestion.lat, suggestion.lon);
+    onSelect(s.displayName, s.lat, s.lon);
   };
 
-  // Close suggestions when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+    const handler = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setShowSuggestions(false);
       }
     };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, []);
+  useEffect(() => () => { if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current); }, []);
 
   return (
     <div ref={wrapperRef} style={{ position: 'relative', width: '100%' }}>
@@ -127,8 +157,6 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
             transition: 'all 0.2s ease',
           }}
         />
-
-        {/* Loading indicator */}
         {loading && (
           <div style={{
             position: 'absolute',
@@ -136,13 +164,10 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
             top: '50%',
             transform: 'translateY(-50%)',
             fontSize: typography.fontSize.base,
-          }}>
-            ⏳
-          </div>
+            color: colors.text.secondary,
+          }}>...</div>
         )}
       </div>
-
-      {/* Suggestions dropdown */}
       {showSuggestions && suggestions.length > 0 && !disabled && (
         <ul style={{
           position: 'absolute',
@@ -160,27 +185,22 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           zIndex: 1000,
           boxShadow: shadows.raised.lg,
         }}>
-          {suggestions.map((suggestion) => (
+          {suggestions.map((s) => (
             <li
-              key={suggestion.placeId}
-              onClick={() => handleSelect(suggestion)}
+              key={s.placeId}
+              onClick={() => handleSelect(s)}
               style={{
                 padding: spacing[3],
                 cursor: 'pointer',
                 borderBottom: `1px solid ${colors.surface.border}`,
                 fontSize: typography.fontSize.sm,
                 color: colors.text.primary,
-                transition: 'background-color 0.2s ease',
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = colors.surface.secondary;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-              }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.surface.secondary; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
             >
               <div style={{ fontWeight: typography.fontWeight.medium }}>
-                📍 {suggestion.displayName}
+                {s.displayName}
               </div>
             </li>
           ))}
@@ -188,6 +208,24 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       )}
     </div>
   );
+};
+
+// ─── Wrapper: use Google Places when API key present, else Nominatim ─────────
+
+export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = (props) => {
+  const hasGoogleKey = !!GOOGLE_MAPS_API_KEY;
+
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+    libraries: LIBRARIES,
+    // If no key, the hook still works but won't load Google Maps
+  });
+
+  if (hasGoogleKey && isLoaded) {
+    return <GooglePlacesAutocomplete {...props} />;
+  }
+
+  return <NominatimAutocomplete {...props} />;
 };
 
 export default AddressAutocomplete;
