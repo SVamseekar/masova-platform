@@ -28,6 +28,7 @@ import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 import NewReleasesIcon from '@mui/icons-material/NewReleases';
 import { createCard } from '../../styles/neumorphic-utils';
 import { colors } from '../../styles/design-tokens';
+import ManagerMetricTemplate, { KPICardData } from './ManagerMetricTemplate';
 import AppHeader from '../../components/common/AppHeader';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 
@@ -99,7 +100,7 @@ function ProductAnalyticsPage() {
   return (
     <>
       <AppHeader title="Product Analytics" showBackButton={true} onBack={handleBack} showManagerNav={true} />
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4, paddingTop: '80px' }}>
+      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Box>
           <Typography variant="h4" gutterBottom>
@@ -134,54 +135,33 @@ function ProductAnalyticsPage() {
         </Box>
       </Box>
 
-      {/* Summary Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={4}>
-          <Card sx={{ ...createCard('md', 'base') }}>
-            <CardContent>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Top Seller
-              </Typography>
-              <Typography variant="h5" gutterBottom>
-                {topProduct?.itemName || 'N/A'}
-              </Typography>
-              <Typography variant="body2">
-                {topProduct?.quantitySold} sold • {formatCurrency(topProduct?.revenue || 0)}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <Card sx={{ ...createCard('md', 'base') }}>
-            <CardContent>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Total Revenue (Top 20)
-              </Typography>
-              <Typography variant="h5" gutterBottom>
-                {formatCurrency(totalRevenue)}
-              </Typography>
-              <Typography variant="body2">
-                From {data.topProducts.length} products
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <Card sx={{ ...createCard('md', 'base') }}>
-            <CardContent>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Total Items Sold (Top 20)
-              </Typography>
-              <Typography variant="h5" gutterBottom>
-                {totalQuantity}
-              </Typography>
-              <Typography variant="body2">
-                Across all categories
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      {/* Summary KPIs */}
+      {(() => {
+        const productKPIs: KPICardData[] = [
+          {
+            label: 'Top Seller',
+            value: topProduct?.itemName || 'N/A',
+            sub: topProduct ? `${topProduct.quantitySold} sold · ${formatCurrency(topProduct.revenue)}` : '',
+            trend: 'up',
+            accentColor: '#e53e3e',
+          },
+          {
+            label: 'Total Revenue (Top 20)',
+            value: formatCurrency(totalRevenue),
+            sub: `From ${data.topProducts.length} products`,
+            trend: 'up',
+            accentColor: '#7B1FA2',
+          },
+          {
+            label: 'Total Items Sold (Top 20)',
+            value: totalQuantity,
+            sub: 'Across all categories',
+            trend: 'neutral',
+            accentColor: '#00B14F',
+          },
+        ];
+        return <ManagerMetricTemplate kpis={productKPIs} />;
+      })()}
 
       {/* Products Table */}
       <TableContainer component={Paper} sx={{ ...createCard('md', 'lg') }}>

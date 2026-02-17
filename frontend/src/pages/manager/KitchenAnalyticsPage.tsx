@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import AppHeader from '../../components/common/AppHeader';
+import ManagerMetricTemplate, { KPICardData } from './ManagerMetricTemplate';
 import { colors, spacing, typography, shadows, borderRadius } from '../../styles/design-tokens';
 import { createNeumorphicSurface, createCard } from '../../styles/neumorphic-utils';
 import { useAppSelector } from '../../store/hooks';
@@ -84,7 +85,7 @@ const KitchenAnalyticsPage: React.FC = () => {
     backgroundColor: colors.surface.background,
     minHeight: '100vh',
     fontFamily: typography.fontFamily.primary,
-    paddingTop: '80px',
+    
   };
 
   const headerStyles: React.CSSProperties = {
@@ -210,44 +211,17 @@ const KitchenAnalyticsPage: React.FC = () => {
       </div>
 
       {/* Prep Time Distribution Summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: spacing[4], marginBottom: spacing[6] }}>
-        <div style={statCardStyles(colors.brand.primary)}>
-          <div style={statValueStyles(colors.brand.primary)}>
-            {prepTimeDistribution.average.toFixed(1)}
-          </div>
-          <div style={statLabelStyles}>Avg Prep Time (min)</div>
-        </div>
-        <div style={statCardStyles(colors.semantic.warning)}>
-          <div style={statValueStyles(colors.semantic.warning)}>
-            {prepTimeDistribution.median}
-          </div>
-          <div style={statLabelStyles}>Median (min)</div>
-        </div>
-        <div style={statCardStyles(colors.brand.secondary)}>
-          <div style={statValueStyles(colors.brand.secondary)}>
-            {prepTimeDistribution.p90}
-          </div>
-          <div style={statLabelStyles}>90th Percentile</div>
-        </div>
-        <div style={statCardStyles(colors.semantic.error)}>
-          <div style={statValueStyles(colors.semantic.error)}>
-            {prepTimeDistribution.p95}
-          </div>
-          <div style={statLabelStyles}>95th Percentile</div>
-        </div>
-        <div style={statCardStyles(colors.semantic.success)}>
-          <div style={statValueStyles(colors.semantic.success)}>
-            {prepTimeDistribution.min}
-          </div>
-          <div style={statLabelStyles}>Fastest (min)</div>
-        </div>
-        <div style={statCardStyles(colors.brand.primaryLight)}>
-          <div style={statValueStyles(colors.brand.primary)}>
-            {prepTimeDistribution.max}
-          </div>
-          <div style={statLabelStyles}>Slowest (min)</div>
-        </div>
-      </div>
+      {(() => {
+        const kitchenKPIs: KPICardData[] = [
+          { label: 'Avg Prep Time (min)', value: prepTimeDistribution.average.toFixed(1), accentColor: colors.brand.primary },
+          { label: 'Median (min)', value: prepTimeDistribution.median, accentColor: colors.semantic.warning },
+          { label: '90th Percentile', value: prepTimeDistribution.p90, accentColor: colors.brand.secondary },
+          { label: '95th Percentile', value: prepTimeDistribution.p95, accentColor: colors.semantic.error },
+          { label: 'Fastest (min)', value: prepTimeDistribution.min, accentColor: colors.semantic.success },
+          { label: 'Slowest (min)', value: prepTimeDistribution.max, accentColor: colors.brand.primary },
+        ];
+        return <ManagerMetricTemplate kpis={kitchenKPIs} />;
+      })()}
 
       {/* Main Content Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: spacing[6], marginBottom: spacing[6] }}>

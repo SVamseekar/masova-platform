@@ -479,7 +479,7 @@ const LoginPage: React.FC = () => {
                 If <strong>{forgotEmail}</strong> has an account, a reset link has been sent.
               </p>
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={() => { setShowForgotPassword(false); setForgotSubmitted(false); setForgotEmail(''); }}
               >
                 Back to login
@@ -523,7 +523,7 @@ const LoginPage: React.FC = () => {
 
               <div style={{ display: 'flex', gap: spacing[3], marginTop: spacing[6] }}>
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   onClick={() => { setShowForgotPassword(false); setError(''); }}
                 >
                   Cancel

@@ -9,6 +9,7 @@ import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import { usePageStore } from '../../contexts/PageStoreContext';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import ManagerMetricTemplate, { KPICardData } from './ManagerMetricTemplate';
 
 function AdvancedReportsPage() {
   const currentUser = useAppSelector(selectCurrentUser);
@@ -16,10 +17,16 @@ function AdvancedReportsPage() {
   const { handleBack } = useSmartBackNavigation();
   const storeId = selectedStoreId || currentUser?.storeId || '';
 
+  const reportKPIs: KPICardData[] = [
+    { label: 'Sales Trend', value: '7-Day', sub: 'Weekly comparison', accentColor: '#e53e3e' },
+    { label: 'Revenue Breakdown', value: 'By Type', sub: 'Dine-in / Delivery / Takeaway', accentColor: '#7B1FA2' },
+    { label: 'Peak Hours', value: 'Heatmap', sub: 'Busiest time slots', accentColor: '#FF6B35' },
+  ];
+
   return (
     <>
       <AppHeader title="Advanced Reports" showBackButton={true} onBack={handleBack} showManagerNav={true} />
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4, paddingTop: '80px' }}>
+      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, color: colors.text.primary }}>
           Advanced Reports
@@ -29,6 +36,9 @@ function AdvancedReportsPage() {
         </Typography>
       </Box>
 
+      <ManagerMetricTemplate kpis={reportKPIs} />
+
+      <Box sx={{ mt: 3 }}>
       <Grid container spacing={3}>
         {/* Sales Trend - Full Width */}
         <Grid item xs={12}>
@@ -44,6 +54,7 @@ function AdvancedReportsPage() {
           <PeakHoursHeatmap storeId={storeId} />
         </Grid>
       </Grid>
+      </Box>
     </Container>
     </>
   );

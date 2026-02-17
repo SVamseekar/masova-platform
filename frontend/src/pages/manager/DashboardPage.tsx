@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ManagerMetricTemplate, { KPICardData } from './ManagerMetricTemplate';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AppHeader from '../../components/common/AppHeader';
 import Card from '../../components/ui/neumorphic/Card';
@@ -17,6 +18,22 @@ import {
 import { useGetStoreMetricsQuery } from '../../store/api/storeApi';
 import { useGetStoreOrdersQuery } from '../../store/api/orderApi';
 import { useCheckWeeklyScheduleExistsQuery } from '../../store/api/shiftApi';
+import {
+  useGetTodaySalesMetricsQuery,
+  useGetAverageOrderValueQuery,
+  useGetDriverStatusQuery,
+  useGetSalesTrendsQuery,
+  useGetOrderTypeBreakdownQuery,
+  useGetPeakHoursQuery,
+  useGetStaffLeaderboardQuery,
+  useGetTopProductsQuery,
+  useGetSalesForecastQuery,
+  useGetChurnPredictionQuery,
+  useGetExecutiveSummaryQuery,
+  useGetCustomerBehaviorAnalysisQuery,
+  useGetDemandForecastQuery,
+  useGetCostAnalysisQuery,
+} from '../../store/api/analyticsApi';
 import { pushNotificationService } from '../../services/pushNotificationService';
 import { colors, shadows, spacing, typography } from '../../styles/design-tokens';
 
@@ -87,6 +104,78 @@ const DashboardPage: React.FC = () => {
     pollingInterval: 10000, // Poll every 10 seconds for live updates
   });
 
+  // Analytics API queries
+  const { data: todaySalesMetrics, isLoading: loadingSales } = useGetTodaySalesMetricsQuery(storeId, {
+    skip: !storeId,
+    pollingInterval: 60000, // Poll every minute
+  });
+
+  const { data: avgOrderValue } = useGetAverageOrderValueQuery(storeId, {
+    skip: !storeId,
+    pollingInterval: 60000,
+  });
+
+  const { data: driverStatus } = useGetDriverStatusQuery(storeId, {
+    skip: !storeId,
+    pollingInterval: 30000, // Poll every 30 seconds
+  });
+
+  const { data: salesTrends } = useGetSalesTrendsQuery(
+    { period: 'WEEKLY', storeId },
+    { skip: !storeId, pollingInterval: 300000 } // Poll every 5 minutes
+  );
+
+  const { data: orderTypeBreakdown } = useGetOrderTypeBreakdownQuery(storeId, {
+    skip: !storeId,
+    pollingInterval: 300000,
+  });
+
+  const { data: peakHours } = useGetPeakHoursQuery(storeId, {
+    skip: !storeId,
+    pollingInterval: 300000,
+  });
+
+  const { data: staffLeaderboard } = useGetStaffLeaderboardQuery(
+    { storeId, period: 'TODAY' },
+    { skip: !storeId, pollingInterval: 120000 } // Poll every 2 minutes
+  );
+
+  const { data: topProducts } = useGetTopProductsQuery(
+    { storeId, period: 'TODAY', sortBy: 'REVENUE' },
+    { skip: !storeId, pollingInterval: 300000 }
+  );
+
+  // BI Analytics
+  const { data: salesForecast } = useGetSalesForecastQuery(
+    { storeId, days: 7 },
+    { skip: !storeId, pollingInterval: 3600000 } // Refresh hourly
+  );
+
+  const { data: churnPrediction } = useGetChurnPredictionQuery(
+    { storeId, threshold: 0.5 },
+    { skip: !storeId, pollingInterval: 3600000 }
+  );
+
+  const { data: executiveSummary } = useGetExecutiveSummaryQuery(storeId, {
+    skip: !storeId,
+    pollingInterval: 600000, // Refresh every 10 minutes
+  });
+
+  const { data: customerBehavior } = useGetCustomerBehaviorAnalysisQuery(storeId, {
+    skip: !storeId,
+    pollingInterval: 3600000, // Refresh every hour
+  });
+
+  const { data: demandForecast } = useGetDemandForecastQuery(
+    { storeId, days: 7 },
+    { skip: !storeId, pollingInterval: 3600000 }
+  );
+
+  const { data: costAnalysis } = useGetCostAnalysisQuery(
+    { storeId, period: 'MONTH' },
+    { skip: !storeId, pollingInterval: 3600000 }
+  );
+
   // Refetch all data when store changes
   useEffect(() => {
     if (storeId) {
@@ -142,13 +231,13 @@ const DashboardPage: React.FC = () => {
     }
   }, [showScheduleBanner, nextMondayDate, scheduleCheck]);
 
-  // Calculate sales data from metrics (placeholder until analytics API is fully connected)
+  // Real sales data from analytics API
   const salesData: SalesData = {
-    today: storeMetrics?.totalRevenue || 0,
-    lastYear: Math.floor((storeMetrics?.totalRevenue || 0) * 0.85), // Estimate
-    percentageChange: 18.4, // Will be calculated from analytics API
-    yesterday: Math.floor((storeMetrics?.totalRevenue || 0) * 0.93), // Estimate
-    weeklyTotal: (storeMetrics?.totalRevenue || 0) * 6.2 // Estimate
+    today: todaySalesMetrics?.todaySales || 0,
+    lastYear: todaySalesMetrics?.lastYearSameDaySales || 0,
+    percentageChange: todaySalesMetrics?.percentChangeFromLastYear || 0,
+    yesterday: todaySalesMetrics?.yesterdaySalesAtSameTime || 0,
+    weeklyTotal: salesTrends?.totalSales || 0
   };
 
   // Get active orders from API
@@ -201,126 +290,42 @@ const DashboardPage: React.FC = () => {
 
 
 
-  const OverviewTab: React.FC = () => (
+  const OverviewTab: React.FC = () => {
+    const dashboardKPIs: KPICardData[] = [
+      {
+        label: "Today's Sales",
+        value: loadingMetrics ? '...' : `₹${salesData.today.toLocaleString('en-IN')}`,
+        sub: `+${salesData.percentageChange}% vs Last Year`,
+        trend: salesData.percentageChange >= 0 ? 'up' : 'down',
+        accentColor: '#e53e3e',
+      },
+      {
+        label: 'Weekly Total',
+        value: loadingMetrics ? '...' : `₹${salesData.weeklyTotal.toLocaleString('en-IN')}`,
+        sub: 'Last 7 days',
+        trend: 'neutral',
+        accentColor: '#7B1FA2',
+      },
+      {
+        label: 'Active Staff',
+        value: loadingSessions ? '...' : (storeMetrics?.activeEmployees || sessions.filter(s => s.isActive).length),
+        sub: 'Currently working',
+        trend: 'neutral',
+        accentColor: '#00B14F',
+      },
+      {
+        label: 'Pending Orders',
+        value: loadingMetrics ? '...' : (storeMetrics?.activeOrders || orderQueue.filter(o => o.status !== 'DISPATCHED').length),
+        sub: `${orderQueue.filter(o => o.priority === 'urgent').length} urgent`,
+        trend: orderQueue.filter(o => o.priority === 'urgent').length > 0 ? 'down' : 'neutral',
+        accentColor: '#FF6B35',
+      },
+    ];
+
+    return (
     <div>
-      {/* Stats Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-        gap: spacing[5],
-        marginBottom: spacing[8]
-      }}>
-        <Card
-          elevation="md"
-          padding="lg"
-          style={{
-            background: `linear-gradient(135deg, ${colors.brand.secondary} 0%, ${colors.brand.secondaryDark} 100%)`,
-            color: colors.text.inverse,
-            boxShadow: shadows.brand.secondary
-          }}
-        >
-          <h3 style={{
-            fontSize: typography.fontSize.sm,
-            fontWeight: typography.fontWeight.semibold,
-            margin: '0 0 8px 0',
-            opacity: 0.9
-          }}>
-            Today's Sales
-          </h3>
-          <p style={{
-            fontSize: typography.fontSize['4xl'],
-            fontWeight: typography.fontWeight.bold,
-            margin: '0'
-          }}>
-            {loadingMetrics ? '...' : `₹${salesData.today.toLocaleString('en-IN')}`}
-          </p>
-          <p style={{
-            fontSize: typography.fontSize.sm,
-            margin: '8px 0 0 0',
-            opacity: 0.8
-          }}>
-            +{salesData.percentageChange}% vs Last Year
-          </p>
-        </Card>
-
-        <Card elevation="md" padding="lg">
-          <h3 style={{
-            color: colors.brand.secondary,
-            fontSize: typography.fontSize.sm,
-            fontWeight: typography.fontWeight.semibold,
-            margin: '0 0 8px 0'
-          }}>
-            Weekly Total
-          </h3>
-          <p style={{
-            fontSize: typography.fontSize['4xl'],
-            fontWeight: typography.fontWeight.bold,
-            margin: '0',
-            color: colors.text.primary
-          }}>
-            {loadingMetrics ? '...' : `₹${salesData.weeklyTotal.toLocaleString('en-IN')}`}
-          </p>
-          <p style={{
-            fontSize: typography.fontSize.sm,
-            color: colors.semantic.success,
-            margin: '8px 0 0 0'
-          }}>
-            Last 7 days
-          </p>
-        </Card>
-
-        <Card elevation="md" padding="lg">
-          <h3 style={{
-            color: colors.brand.secondary,
-            fontSize: typography.fontSize.sm,
-            fontWeight: typography.fontWeight.semibold,
-            margin: '0 0 8px 0'
-          }}>
-            Active Staff
-          </h3>
-          <p style={{
-            fontSize: typography.fontSize['4xl'],
-            fontWeight: typography.fontWeight.bold,
-            margin: '0',
-            color: colors.text.primary
-          }}>
-            {loadingSessions ? '...' : storeMetrics?.activeEmployees || sessions.filter(s => s.isActive).length}
-          </p>
-          <p style={{
-            fontSize: typography.fontSize.sm,
-            color: colors.text.secondary,
-            margin: '8px 0 0 0'
-          }}>
-            Currently working
-          </p>
-        </Card>
-
-        <Card elevation="md" padding="lg">
-          <h3 style={{
-            color: colors.brand.secondary,
-            fontSize: typography.fontSize.sm,
-            fontWeight: typography.fontWeight.semibold,
-            margin: '0 0 8px 0'
-          }}>
-            Pending Orders
-          </h3>
-          <p style={{
-            fontSize: typography.fontSize['4xl'],
-            fontWeight: typography.fontWeight.bold,
-            margin: '0',
-            color: colors.text.primary
-          }}>
-            {loadingMetrics ? '...' : storeMetrics?.activeOrders || orderQueue.filter(o => o.status !== 'DISPATCHED').length}
-          </p>
-          <p style={{
-            fontSize: typography.fontSize.sm,
-            color: colors.semantic.error,
-            margin: '8px 0 0 0'
-          }}>
-            {orderQueue.filter(o => o.priority === 'urgent').length} urgent
-          </p>
-        </Card>
-      </div>
+      <ManagerMetricTemplate kpis={dashboardKPIs} isLoading={loadingMetrics && loadingSessions} />
+      <div style={{ marginTop: spacing[6] }}>
 
       {/* Dashboard Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[5] }}>
@@ -490,8 +495,10 @@ const DashboardPage: React.FC = () => {
           </div>
         </Card>
       </div>
+      </div>
     </div>
   );
+  };
 
   const StaffTab: React.FC = () => (
     <div>
@@ -933,6 +940,236 @@ const DashboardPage: React.FC = () => {
           )}
         </Card>
       </div>
+
+      {/* Staff Leaderboard */}
+      {staffLeaderboard && staffLeaderboard.rankings && staffLeaderboard.rankings.length > 0 && (
+        <div style={{ marginTop: spacing[5] }}>
+          <Card elevation="lg" padding="lg">
+            <h3 style={{
+              margin: `0 0 ${spacing[4]} 0`,
+              fontSize: typography.fontSize.xl,
+              fontWeight: typography.fontWeight.bold,
+              color: colors.text.primary
+            }}>
+              Staff Leaderboard - {staffLeaderboard.period}
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: spacing[4] }}>
+              {staffLeaderboard.rankings.slice(0, 6).map((staff: any, idx: number) => (
+                <Card key={staff.staffId} elevation="sm" padding="base">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2], marginBottom: spacing[2] }}>
+                    <div style={{
+                      fontSize: typography.fontSize.lg,
+                      fontWeight: typography.fontWeight.extrabold,
+                      color: idx < 3 ? colors.semantic.warning : colors.text.tertiary
+                    }}>
+                      #{staff.rank}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold }}>
+                        {staff.staffName}
+                      </div>
+                      <div style={{ fontSize: typography.fontSize.xs, color: colors.text.secondary }}>
+                        {staff.performanceLevel}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: typography.fontSize.xs, color: colors.text.secondary }}>
+                    Orders: {staff.ordersProcessed} | Sales: ₹{staff.salesGenerated.toLocaleString('en-IN')}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Top Products */}
+      {topProducts && topProducts.topProducts && topProducts.topProducts.length > 0 && (
+        <div style={{ marginTop: spacing[5] }}>
+          <Card elevation="lg" padding="lg">
+            <h3 style={{
+              margin: `0 0 ${spacing[4]} 0`,
+              fontSize: typography.fontSize.xl,
+              fontWeight: typography.fontWeight.bold,
+              color: colors.text.primary
+            }}>
+              Top Selling Products - {topProducts.period}
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
+              {topProducts.topProducts.slice(0, 5).map((product: any) => (
+                <div key={product.itemId} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: spacing[3],
+                  padding: spacing[3],
+                  backgroundColor: colors.surface.secondary,
+                  borderRadius: '12px'
+                }}>
+                  <div style={{
+                    fontSize: typography.fontSize.lg,
+                    fontWeight: typography.fontWeight.extrabold,
+                    color: product.rank === 1 ? colors.semantic.warning : colors.text.tertiary
+                  }}>
+                    #{product.rank}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.semibold }}>
+                      {product.itemName}
+                    </div>
+                    <div style={{ fontSize: typography.fontSize.xs, color: colors.text.secondary }}>
+                      {product.category} | Sold: {product.quantitySold} units
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold }}>
+                      ₹{product.revenue.toLocaleString('en-IN')}
+                    </div>
+                    <div style={{ fontSize: typography.fontSize.xs, color: colors.text.secondary }}>
+                      {product.percentOfTotalRevenue.toFixed(1)}% of total
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Executive Summary - BI */}
+      {executiveSummary && (
+        <div style={{ marginTop: spacing[5] }}>
+          <Card elevation="lg" padding="lg">
+            <h3 style={{
+              margin: `0 0 ${spacing[4]} 0`,
+              fontSize: typography.fontSize.xl,
+              fontWeight: typography.fontWeight.bold,
+              color: colors.text.primary
+            }}>
+              Executive Summary
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: spacing[4], marginBottom: spacing[4] }}>
+              <div>
+                <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>Revenue</div>
+                <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>
+                  ₹{executiveSummary.revenue.total.toLocaleString('en-IN')}
+                </div>
+                <div style={{ fontSize: typography.fontSize.xs, color: executiveSummary.revenue.change >= 0 ? colors.semantic.success : colors.semantic.error }}>
+                  {executiveSummary.revenue.change >= 0 ? '↑' : '↓'} {Math.abs(executiveSummary.revenue.change)}%
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>Orders</div>
+                <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>
+                  {executiveSummary.orders.total}
+                </div>
+                <div style={{ fontSize: typography.fontSize.xs, color: executiveSummary.orders.change >= 0 ? colors.semantic.success : colors.semantic.error }}>
+                  {executiveSummary.orders.change >= 0 ? '↑' : '↓'} {Math.abs(executiveSummary.orders.change)}%
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>Customers At Risk</div>
+                <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold, color: colors.semantic.warning }}>
+                  {executiveSummary.customers.atRisk}
+                </div>
+              </div>
+            </div>
+            {executiveSummary.topInsights && executiveSummary.topInsights.length > 0 && (
+              <div>
+                <div style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold, marginBottom: spacing[2] }}>
+                  Key Insights
+                </div>
+                {executiveSummary.topInsights.slice(0, 3).map((insight: string, idx: number) => (
+                  <div key={idx} style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary, marginBottom: spacing[1] }}>
+                    • {insight}
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
+
+      {/* Churn Prediction - BI */}
+      {churnPrediction && churnPrediction.predictions && churnPrediction.predictions.length > 0 && (
+        <div style={{ marginTop: spacing[5] }}>
+          <Card elevation="lg" padding="lg">
+            <h3 style={{
+              margin: `0 0 ${spacing[4]} 0`,
+              fontSize: typography.fontSize.xl,
+              fontWeight: typography.fontWeight.bold,
+              color: colors.text.primary
+            }}>
+              At-Risk Customers ({churnPrediction.totalAtRisk})
+            </h3>
+            <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary, marginBottom: spacing[4] }}>
+              High Risk: {churnPrediction.highRiskCount} | Medium: {churnPrediction.mediumRiskCount} | Low: {churnPrediction.lowRiskCount}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
+              {churnPrediction.predictions.slice(0, 5).map((pred: any) => (
+                <div key={pred.customerId} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: spacing[3],
+                  backgroundColor: colors.surface.secondary,
+                  borderRadius: '12px'
+                }}>
+                  <div>
+                    <div style={{ fontWeight: typography.fontWeight.semibold }}>{pred.customerName}</div>
+                    <div style={{ fontSize: typography.fontSize.xs, color: colors.text.secondary }}>
+                      Last order: {pred.daysSinceLastOrder} days ago
+                    </div>
+                  </div>
+                  <div style={{
+                    padding: `${spacing[1]} ${spacing[3]}`,
+                    borderRadius: '8px',
+                    fontSize: typography.fontSize.xs,
+                    fontWeight: typography.fontWeight.bold,
+                    backgroundColor: pred.riskLevel === 'HIGH' ? colors.semantic.error : pred.riskLevel === 'MEDIUM' ? colors.semantic.warning : colors.semantic.info,
+                    color: '#ffffff'
+                  }}>
+                    {pred.riskLevel}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Sales Forecast - BI */}
+      {salesForecast && salesForecast.forecasts && salesForecast.forecasts.length > 0 && (
+        <div style={{ marginTop: spacing[5] }}>
+          <Card elevation="lg" padding="lg">
+            <h3 style={{
+              margin: `0 0 ${spacing[4]} 0`,
+              fontSize: typography.fontSize.xl,
+              fontWeight: typography.fontWeight.bold,
+              color: colors.text.primary
+            }}>
+              7-Day Sales Forecast
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
+              {salesForecast.forecasts.map((forecast: any) => (
+                <div key={forecast.date} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: spacing[3],
+                  backgroundColor: colors.surface.secondary,
+                  borderRadius: '12px'
+                }}>
+                  <div style={{ fontWeight: typography.fontWeight.semibold }}>
+                    {new Date(forecast.date).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })}
+                  </div>
+                  <div style={{ fontWeight: typography.fontWeight.bold }}>
+                    ₹{forecast.forecastedSales.toLocaleString('en-IN')}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 
@@ -1015,7 +1252,7 @@ const DashboardPage: React.FC = () => {
       {/* Navigation Tabs */}
       <div style={{
         position: 'sticky',
-        top: '110px',
+        top: '64px',
         left: 0,
         right: 0,
         width: '100%',
