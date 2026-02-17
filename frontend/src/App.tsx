@@ -11,6 +11,7 @@ import { NotificationSystem } from './components/common/NotificationSystem';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { TokenRefreshManager } from './components/auth/TokenRefreshManager';
 import { ConnectionMonitorProvider } from './components/common/ConnectionMonitorProvider';
+import { ChatWidget } from './components/chat/ChatWidget';
 
 // Lazy load components
 const HomePage = React.lazy(() => import('./apps/PublicWebsite/HomePage'));
@@ -229,6 +230,7 @@ const App: React.FC = () => {
                   </Routes>
                 </Suspense>
                 <NotificationSystem />
+                <ChatWidget />
               </div>
             </Router>
           </ErrorBoundary>
