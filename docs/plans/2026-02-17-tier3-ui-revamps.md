@@ -2,11 +2,11 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Revamp the staff login page, KDS, customer web pages, customer mobile app, and create a reusable manager metrics template.
+**Goal:** Revamp the staff login page, KDS, POS system, customer web pages, customer mobile app, and create a reusable manager metrics template.
 
 **Architecture:** Four independent revamp streams — all frontend-only changes. No API changes. All web revamps use existing neumorphic design tokens and inline styles. Mobile revamps apply the existing glassmorphism theme system consistently.
 
-**Tech Stack:** React 19, TypeScript, MUI icons (`@mui/icons-material`), browser Audio API, browser Fullscreen API, browser Geolocation API, Recharts v3.2.1 (already installed), React Native 0.81 + Expo 54, react-navigation CardStyleInterpolators, React Native Animated API.
+**Tech Stack:** React 19, TypeScript, MUI icons (`@mui/icons-material`), browser Audio API, browser Fullscreen API, browser Geolocation API, Recharts v3.2.1 (already installed), React Native 0.81.5 + Expo ~54.0.30, `@expo/vector-icons` (Ionicons), `expo-haptics`, `expo-blur`, react-navigation CardStyleInterpolators, React Native core Animated API (Reanimated NOT installed — do not add without testing build pipeline).
 
 **Depends on:** Tier 1 complete (seed data provides realistic content for UI testing). Tier 2 not required.
 
@@ -60,7 +60,7 @@ const demoAccounts: DemoAccount[] = [
   { type: 'Manager', email: 'suresh.manager@masova.com', password: 'manager123', Icon: ManageAccountsIcon, description: 'Store Management Dashboard', route: '/manager', accentColor: '#7B1FA2' },
   { type: 'Kitchen Staff', email: 'rahul.staff@masova.com', password: 'staff123', Icon: RestaurantIcon, description: 'Kitchen Display System', route: '/kitchen', accentColor: '#FF6B35' },
   { type: 'Driver', email: 'ravi.driver@masova.com', password: 'driver123', Icon: LocalShippingIcon, description: 'Delivery Management', route: '/driver', accentColor: '#00B14F' },
-  { type: 'Cashier', email: 'deepa.cashier@masova.com', password: 'cashier123', Icon: PointOfSaleIcon, description: 'Point of Sale', route: '/pos', accentColor: '#2196F3' },
+  { type: 'Kiosk (POS)', email: 'kiosk.pos@masova.com', password: 'kiosk123', Icon: PointOfSaleIcon, description: 'Point of Sale Terminal', route: '/pos', accentColor: '#2196F3' },
   { type: 'Asst. Manager', email: 'rohan.asst@masova.com', password: 'asst123', Icon: SupervisorAccountIcon, description: 'Operations Support', route: '/manager', accentColor: '#FF9800' },
 ];
 ```
@@ -640,13 +640,232 @@ git commit -m "feat: customer web revamp — food grid menu, clean hero, remove 
 
 ## Task 4: Customer Mobile App Revamp (masova-mobile)
 
+**Audit findings (confirmed before writing this plan):**
+- 6 food emojis in `HomeScreen.tsx` category chips: `🍕 Pizza`, `🍔 Burgers`, `🍚 Rice`, `🥞 Breakfast`, `🍜 Noodles`, `🥤 Drinks`
+- 7 cuisine emojis in `MenuScreen.tsx` filter bar: `🇮🇳 North Indian`, `🫓 South Indian`, `🍕 Italian`, etc.
+- 15+ spice level peppers `🌶️` as spice indicators on menu item cards in `MenuScreen.tsx`
+- Social login buttons in `AuthScreen.tsx` render `G` and `f` as text characters (placeholders)
+- No `react-native-reanimated` installed — only core `Animated` API is available
+- `expo-haptics` is installed and ready for touch feedback
+
+**Tech Stack for this task:** React Native 0.81.5, Expo ~54.0.30, `expo-vector-icons` (Ionicons), `expo-blur`, `expo-haptics`, core `Animated` API (no Reanimated — do NOT add it without testing build pipeline).
+
 **Files:**
+- Modify: `masova-mobile/src/screens/home/HomeScreen.tsx`
 - Modify: `masova-mobile/src/screens/menu/MenuScreen.tsx`
+- Modify: `masova-mobile/src/screens/auth/AuthScreen.tsx` (or equivalent login screen)
 - Create: `masova-mobile/src/components/SkeletonLoader.tsx`
 - Modify: `masova-mobile/src/navigation/` (add transition interpolators)
-- Modify: multiple screens (token audit — replace hardcoded hex colors)
 
-**Step 1: Create SkeletonLoader component**
+---
+
+**Step 1: Read all target files before editing**
+
+Read each of these fully before making any changes:
+- `masova-mobile/src/screens/home/HomeScreen.tsx`
+- `masova-mobile/src/screens/menu/MenuScreen.tsx`
+- Find the auth/login screen: `masova-mobile/src/screens/auth/` (check directory listing)
+
+---
+
+**Step 2: Replace HomeScreen category emojis with Ionicons**
+
+Find the category chips array in `HomeScreen.tsx`. It looks approximately like:
+
+```typescript
+const categories = [
+  { id: 'pizza', label: '🍕 Pizza', icon: '🍕' },
+  { id: 'burgers', label: '🍔 Burgers', icon: '🍔' },
+  { id: 'rice', label: '🍚 Rice', icon: '🍚' },
+  { id: 'breakfast', label: '🥞 Breakfast', icon: '🥞' },
+  { id: 'noodles', label: '🍜 Noodles', icon: '🍜' },
+  { id: 'drinks', label: '🥤 Drinks', icon: '🥤' },
+];
+```
+
+Replace with Ionicons:
+
+```typescript
+import { Ionicons } from '@expo/vector-icons';
+
+const CATEGORIES = [
+  { id: 'pizza',     label: 'Pizza',     iconName: 'pizza-outline' as const },
+  { id: 'burgers',   label: 'Burgers',   iconName: 'fast-food-outline' as const },
+  { id: 'rice',      label: 'Rice',      iconName: 'restaurant-outline' as const },
+  { id: 'breakfast', label: 'Breakfast', iconName: 'cafe-outline' as const },
+  { id: 'noodles',   label: 'Noodles',   iconName: 'nutrition-outline' as const },
+  { id: 'drinks',    label: 'Drinks',    iconName: 'wine-outline' as const },
+];
+```
+
+Update the chip render to use `<Ionicons name={cat.iconName} size={16} color={isSelected ? '#fff' : theme.colors.textSecondary} />` instead of the emoji.
+
+Category chip JSX pattern:
+```tsx
+{CATEGORIES.map(cat => {
+  const isSelected = selectedCategory === cat.id;
+  return (
+    <TouchableOpacity
+      key={cat.id}
+      onPress={() => setSelectedCategory(cat.id)}
+      style={[
+        styles.categoryChip,
+        isSelected && { backgroundColor: theme.colors.brand.primary }
+      ]}
+      activeOpacity={0.8}
+    >
+      <Ionicons
+        name={cat.iconName}
+        size={16}
+        color={isSelected ? '#fff' : theme.colors.textSecondary}
+      />
+      <Text style={[
+        styles.categoryLabel,
+        { color: isSelected ? '#fff' : theme.colors.textSecondary }
+      ]}>
+        {cat.label}
+      </Text>
+    </TouchableOpacity>
+  );
+})}
+```
+
+---
+
+**Step 3: Replace MenuScreen cuisine emojis with Ionicons**
+
+Find the cuisine filter array in `MenuScreen.tsx`. It has entries like:
+```typescript
+{ id: 'NORTH_INDIAN', label: '🇮🇳 North Indian' }
+```
+
+Replace with Ionicons. The cuisine filter doesn't need custom icons per cuisine — use a generic food icon for all, with selection state making it clear:
+
+```typescript
+import { Ionicons } from '@expo/vector-icons';
+
+// Replace emoji labels with clean text labels only:
+const CUISINES = [
+  { id: 'ALL',          label: 'All' },
+  { id: 'NORTH_INDIAN', label: 'North Indian' },
+  { id: 'SOUTH_INDIAN', label: 'South Indian' },
+  { id: 'ITALIAN',      label: 'Italian' },
+  { id: 'CHINESE',      label: 'Chinese' },
+  { id: 'FAST_FOOD',    label: 'Fast Food' },
+  { id: 'BEVERAGES',    label: 'Beverages' },
+];
+```
+
+Pill-style filter chip (no icon needed — clean text is fine for cuisines):
+```tsx
+{CUISINES.map(cuisine => {
+  const isActive = activeCuisine === cuisine.id;
+  return (
+    <TouchableOpacity
+      key={cuisine.id}
+      onPress={() => setActiveCuisine(cuisine.id)}
+      style={[
+        styles.cuisineChip,
+        isActive && { backgroundColor: theme.colors.brand.primary, borderColor: theme.colors.brand.primary }
+      ]}
+    >
+      <Text style={[
+        styles.cuisineLabel,
+        { color: isActive ? '#fff' : theme.colors.textSecondary }
+      ]}>
+        {cuisine.label}
+      </Text>
+    </TouchableOpacity>
+  );
+})}
+```
+
+Chip style:
+```typescript
+cuisineChip: {
+  paddingHorizontal: 14,
+  paddingVertical: 7,
+  borderRadius: 20,
+  borderWidth: 1,
+  borderColor: theme.colors.border,   // use theme token
+  marginRight: 8,
+  backgroundColor: theme.colors.surface,
+},
+cuisineLabel: { fontSize: 13, fontWeight: '500' },
+```
+
+---
+
+**Step 4: Replace spice level peppers in MenuScreen item cards**
+
+Find the spice level renderer in `MenuScreen.tsx` (or a shared `MenuItemCard` component). It likely looks like:
+
+```tsx
+{Array(item.spiceLevel).fill(0).map((_, i) => (
+  <Text key={i}>🌶️</Text>
+))}
+```
+
+Replace with solid red dot indicators:
+
+```tsx
+{item.spiceLevel > 0 && (
+  <View style={styles.spiceContainer}>
+    {Array(Math.min(item.spiceLevel, 3)).fill(0).map((_, i) => (
+      <View
+        key={i}
+        style={[
+          styles.spiceDot,
+          { opacity: i < item.spiceLevel ? 1 : 0.25 }
+        ]}
+      />
+    ))}
+  </View>
+)}
+```
+
+Add to StyleSheet:
+```typescript
+spiceContainer: { flexDirection: 'row', gap: 3, marginTop: 4 },
+spiceDot: {
+  width: 6,
+  height: 6,
+  borderRadius: 3,
+  backgroundColor: '#ef4444',
+},
+```
+
+---
+
+**Step 5: Fix social login button placeholders in AuthScreen**
+
+Find the Google and Facebook login buttons in the auth screen. They currently render a text letter `G` and `f`. Replace with Ionicons:
+
+```typescript
+import { Ionicons } from '@expo/vector-icons';
+```
+
+Replace Google button content:
+```tsx
+{/* Before: <Text style={styles.socialText}>G</Text> */}
+{/* After: */}
+<Ionicons name="logo-google" size={20} color="#DB4437" />
+<Text style={styles.socialText}>Continue with Google</Text>
+```
+
+Replace Facebook button content:
+```tsx
+{/* Before: <Text style={styles.socialText}>f</Text> */}
+{/* After: */}
+<Ionicons name="logo-facebook" size={20} color="#4267B2" />
+<Text style={styles.socialText}>Continue with Facebook</Text>
+```
+
+Note: these buttons are placeholders (no OAuth logic yet — that's Tier 4 Point 1). Just make them look professional.
+
+---
+
+**Step 6: Create SkeletonLoader component**
 
 ```typescript
 // masova-mobile/src/components/SkeletonLoader.tsx
@@ -654,7 +873,7 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, View, StyleSheet, ViewStyle } from 'react-native';
 
 interface SkeletonLoaderProps {
-  width?: number | string;
+  width?: number | `${number}%`;
   height?: number;
   borderRadius?: number;
   style?: ViewStyle;
@@ -671,132 +890,208 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(shimmer, { toValue: 1, duration: 800, useNativeDriver: true }),
-        Animated.timing(shimmer, { toValue: 0, duration: 800, useNativeDriver: true }),
+        Animated.timing(shimmer, { toValue: 1, duration: 900, useNativeDriver: true }),
+        Animated.timing(shimmer, { toValue: 0, duration: 900, useNativeDriver: true }),
       ])
     ).start();
-  }, []);
+    return () => shimmer.stopAnimation();
+  }, [shimmer]);
 
-  const opacity = shimmer.interpolate({ inputRange: [0, 1], outputRange: [0.4, 0.9] });
+  const opacity = shimmer.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0.75] });
 
   return (
     <Animated.View
-      style={[
-        styles.base,
-        { width: width as any, height, borderRadius, opacity },
-        style,
-      ]}
+      style={[styles.base, { width: width as any, height, borderRadius, opacity }, style]}
     />
   );
 };
 
 const styles = StyleSheet.create({
-  base: { backgroundColor: '#E0E0E0' },
+  base: { backgroundColor: '#D1D5DB' },
 });
 
 export default SkeletonLoader;
 ```
 
-**Step 2: Add SkeletonLoader to MenuScreen**
+---
 
-Read `masova-mobile/src/screens/menu/MenuScreen.tsx` fully. Find the loading state (likely `ActivityIndicator`). Replace it with skeleton cards:
+**Step 7: Replace ActivityIndicator with skeleton cards in MenuScreen**
+
+Find the loading state in `MenuScreen.tsx` (likely `ActivityIndicator`). Replace with skeleton grid:
 
 ```tsx
-// In the loading branch, replace ActivityIndicator with:
+import SkeletonLoader from '../../components/SkeletonLoader';
+
+// In the loading branch:
 {isLoading ? (
-  <View style={styles.skeletonContainer}>
-    {[1, 2, 3, 4].map(i => (
+  <View style={styles.skeletonGrid}>
+    {[1, 2, 3, 4, 5, 6].map(i => (
       <View key={i} style={styles.skeletonCard}>
-        <SkeletonLoader height={160} borderRadius={12} style={{ marginBottom: 8 }} />
-        <SkeletonLoader height={20} width="70%" style={{ marginBottom: 6 }} />
-        <SkeletonLoader height={16} width="40%" />
+        <SkeletonLoader height={150} borderRadius={12} style={{ marginBottom: 8 }} />
+        <SkeletonLoader height={16} width="75%" style={{ marginBottom: 6 }} />
+        <SkeletonLoader height={14} width="45%" />
       </View>
     ))}
   </View>
 ) : (
-  // existing content
+  // existing FlatList / grid
 )}
 ```
 
 Add to StyleSheet:
 ```typescript
-skeletonContainer: { flexDirection: 'row', flexWrap: 'wrap', padding: 8 },
-skeletonCard: { width: '48%', margin: '1%', padding: 8 },
+skeletonGrid: { flexDirection: 'row', flexWrap: 'wrap', padding: 8 },
+skeletonCard: { width: '47%', margin: '1.5%', padding: 8 },
 ```
 
-**Step 3: Improve food item card styling in MenuScreen**
+---
 
-Find the `FlatList` or `ScrollView` item renderer. Update the card style to use theme tokens and show a larger image:
+**Step 8: Improve food item card — larger image, better typography**
+
+In `MenuScreen.tsx`, find the `renderItem` function for the menu FlatList. Update card to use a taller image container and better spacing:
 
 ```tsx
-// Replace individual menu item card with:
-<TouchableOpacity
-  style={[styles.itemCard, { backgroundColor: theme.colors.surface, borderRadius: theme.borderRadius.lg }]}
-  onPress={() => navigateToDetail(item)}
-  activeOpacity={0.85}
->
-  <View style={styles.itemImageContainer}>
-    <Image
-      source={{ uri: item.imageUrl || '' }}
-      style={styles.itemImage}
-      resizeMode="cover"
-    />
-    {!item.isAvailable && (
-      <View style={styles.unavailableOverlay}>
-        <Text style={styles.unavailableText}>Unavailable</Text>
-      </View>
-    )}
-  </View>
-  <View style={styles.itemContent}>
-    <Text style={[styles.itemName, { color: theme.colors.textPrimary }]}>{item.name}</Text>
-    <Text style={[styles.itemPrice, { color: theme.colors.brand.primary }]}>₹{item.basePrice ?? item.price}</Text>
-  </View>
-</TouchableOpacity>
+const renderMenuItem = ({ item }: { item: MenuItem }) => (
+  <TouchableOpacity
+    style={[styles.menuCard, { backgroundColor: theme.colors.surface, borderRadius: 14 }]}
+    onPress={() => handleItemPress(item)}
+    activeOpacity={0.85}
+  >
+    {/* Image area */}
+    <View style={styles.menuCardImage}>
+      {item.imageUrl ? (
+        <Image
+          source={{ uri: item.imageUrl }}
+          style={StyleSheet.absoluteFillObject}
+          resizeMode="cover"
+        />
+      ) : (
+        <View style={[styles.menuCardImagePlaceholder, { backgroundColor: getCategoryPlaceholderColor(item.category) }]}>
+          <Ionicons name="restaurant-outline" size={32} color="rgba(255,255,255,0.7)" />
+        </View>
+      )}
+      {!item.isAvailable && (
+        <View style={styles.unavailableOverlay}>
+          <Text style={styles.unavailableText}>Unavailable</Text>
+        </View>
+      )}
+    </View>
+    {/* Content */}
+    <View style={styles.menuCardContent}>
+      <Text style={[styles.menuCardName, { color: theme.colors.textPrimary }]} numberOfLines={2}>
+        {item.name}
+      </Text>
+      {item.spiceLevel > 0 && (
+        <View style={styles.spiceContainer}>
+          {Array(Math.min(item.spiceLevel, 3)).fill(0).map((_, i) => (
+            <View key={i} style={styles.spiceDot} />
+          ))}
+        </View>
+      )}
+      <Text style={[styles.menuCardPrice, { color: theme.colors.brand.primary }]}>
+        ₹{item.basePrice ?? item.price}
+      </Text>
+    </View>
+  </TouchableOpacity>
+);
+
+// Helper for category placeholder colors
+const getCategoryPlaceholderColor = (category: string): string => {
+  const map: Record<string, string> = {
+    PIZZA: '#ef4444', BURGER: '#f97316', BIRYANI: '#a855f7',
+    DOSA: '#eab308', CURRY_GRAVY: '#8b5cf6', HOT_DRINKS: '#6366f1',
+    COLD_DRINKS: '#3b82f6', ICE_CREAM: '#ec4899',
+  };
+  return map[category] ?? '#6b7280';
+};
 ```
 
-Add to StyleSheet:
+Styles to add:
 ```typescript
-itemCard: { margin: 6, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 3, overflow: 'hidden' },
-itemImageContainer: { height: 160, overflow: 'hidden' },
-itemImage: { width: '100%', height: '100%' },
-unavailableOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
-unavailableText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-itemContent: { padding: 10 },
-itemName: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
-itemPrice: { fontSize: 16, fontWeight: '800' },
+menuCard: {
+  margin: 6,
+  elevation: 2,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.08,
+  shadowRadius: 4,
+  overflow: 'hidden',
+},
+menuCardImage: { height: 140, width: '100%', overflow: 'hidden', position: 'relative' },
+menuCardImagePlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+unavailableOverlay: {
+  ...StyleSheet.absoluteFillObject,
+  backgroundColor: 'rgba(0,0,0,0.45)',
+  alignItems: 'center',
+  justifyContent: 'center',
+},
+unavailableText: { color: '#fff', fontWeight: '700', fontSize: 12 },
+menuCardContent: { padding: 10 },
+menuCardName: { fontSize: 13, fontWeight: '600', marginBottom: 4, lineHeight: 18 },
+menuCardPrice: { fontSize: 15, fontWeight: '800', marginTop: 4 },
+spiceContainer: { flexDirection: 'row', gap: 3, marginBottom: 2 },
+spiceDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#ef4444' },
 ```
 
-**Step 4: Add screen transition interpolators to stack navigators**
+---
 
-Read `masova-mobile/src/navigation/` directory listing, then read the main stack navigator file.
+**Step 9: Add haptic feedback to cart add button**
 
-Find all `Stack.Navigator` components. Add `screenOptions` with card transition:
+In the "Add to Cart" button `onPress`:
+
+```typescript
+import * as Haptics from 'expo-haptics';
+
+// In the add-to-cart handler:
+const handleAddToCart = async (item: MenuItem) => {
+  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  dispatch(addToCart(item));
+};
+```
+
+---
+
+**Step 10: Add screen transition interpolators**
+
+Read `masova-mobile/src/navigation/` to find the main stack navigator. Find all `createStackNavigator()` usages.
 
 ```typescript
 import { CardStyleInterpolators } from '@react-navigation/stack';
 
-// Add to Stack.Navigator screenOptions:
+// Add to each Stack.Navigator screenOptions:
 screenOptions={{
   cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
   gestureEnabled: true,
-  // ... existing options
+  gestureDirection: 'horizontal',
+  headerStyle: { elevation: 0, shadowOpacity: 0 }, // clean header
 }}
 ```
 
-**Step 5: Token audit — find hardcoded hex colors**
+---
+
+**Step 11: Verify in Expo**
 
 ```bash
-grep -rn "#[0-9a-fA-F]\{3,6\}" /Users/souravamseekarmarti/Projects/masova-mobile/src/screens/ --include="*.tsx" | grep -v "//.*#" | head -30
+cd /Users/souravamseekarmarti/Projects/masova-mobile
+npx expo start
 ```
 
-For each hardcoded color found that maps to a theme token, replace it with `theme.colors.*`. Use the `useTheme()` hook that should already exist in the codebase. Focus on the most common ones (background colors, text colors, brand colors).
+Open in emulator or Expo Go. Check:
+- HomeScreen category chips: Ionicons appear, no emoji characters anywhere
+- MenuScreen cuisine filters: clean text-only pills, no emoji
+- MenuScreen menu cards: 140px tall image area, spice dots (not peppers), larger price font
+- MenuScreen loading: skeleton shimmer cards appear before data loads
+- Auth screen: Google/Facebook icons visible (not `G`/`f` text)
+- Navigate between screens: horizontal slide animation visible
 
-**Step 6: Commit**
+---
+
+**Step 12: Commit**
 
 ```bash
 cd /Users/souravamseekarmarti/Projects/masova-mobile
 git add src/components/SkeletonLoader.tsx src/screens/ src/navigation/
-git commit -m "feat: mobile revamp — skeleton loaders, larger food cards, screen transitions, theme token audit"
+git commit -m "feat: mobile revamp — replace all emojis with Ionicons, skeleton loaders, improved menu cards, haptics"
 ```
 
 ---
@@ -986,6 +1281,359 @@ git commit -m "feat: add ManagerMetricTemplate, apply to 4 manager pages"
 
 ---
 
+---
+
+## Task 6: POS System Revamp
+
+**Files:**
+- Modify: `frontend/src/apps/POSSystem/POSDashboard.tsx`
+- Modify: `frontend/src/apps/POSSystem/components/MenuPanel.tsx`
+- Modify: `frontend/src/apps/POSSystem/components/OrderPanel.tsx`
+- Modify: `frontend/src/apps/POSSystem/components/CustomerPanel.tsx`
+- Modify: `frontend/src/apps/POSSystem/components/PINAuthModal.tsx`
+
+**What exists now (important — read before touching):**
+- `POSDashboard.tsx` — dark header (`#1a1a1a`), 2 tabs (Orders / Analytics), 3-column POS layout (Menu 40%, Order 30%, Checkout 30%), keyboard shortcuts (F1/F2/Escape/Ctrl+Enter), Clock In/Out buttons for managers only
+- `MenuPanel.tsx` — cuisine tabs → category tabs → dietary filter → grid of compact cards (140px min-width), popular quick-add strip
+- `OrderPanel.tsx` — item list with quantity controls, order type toggle (PICKUP / DELIVERY), totals
+- `CustomerPanel.tsx` — phone lookup → customer loyalty info, 4 payment methods (CASH/CARD/UPI/WALLET), delivery address fields, order submission
+- `PINAuthModal.tsx` — 4-digit PIN entry for public/kiosk access (no login required)
+
+**Problems to fix:**
+1. Heavy emoji usage throughout — `🍽️`, `🔍`, `🔥`, `📊`, `🌿`, `🌱`, `🍖`, `🌶️`, `⭐`, `👑`, `📜`, `👥`, `🏆`, `💰`, `❌`, `ℹ️`
+2. Menu grid cards (140px min-width) are too small — text truncates badly on 1080p POS screens
+3. Header is very busy with manager Clock In/Out buttons — non-managers see almost nothing in the header
+4. Analytics tab "Top Sellers" and "Recent Orders" section titles use emojis `🔥` and `📜`
+5. PINAuthModal needs to match the neumorphic design system (currently likely plain/basic)
+6. No visual distinction between PICKUP and DELIVERY order types in the order panel
+7. The debug `console.log` calls in `MenuPanel.tsx` should be removed from production code
+8. No empty-state illustration for when no store is selected
+
+**Revamp goals:**
+1. Remove ALL emojis — replace with MUI icons throughout
+2. Expand menu cards to 160px min-width with item image support (show `item.image` if available, else color-coded placeholder by category)
+3. Add a clear "No Store Selected" empty state to `MenuPanel` and `CustomerPanel` when `storeId` is null
+4. Improve order type toggle — pill toggle with color: green for PICKUP, blue for DELIVERY, and a small icon per type
+5. Make PINAuthModal fully neumorphic — use neumorphic Card, Input, Button components
+6. Remove all debug `console.log` statements from `MenuPanel.tsx`
+7. Analytics tab: replace emoji section headers with MUI icons (`TrendingUp`, `Receipt`, `People`)
+8. Consistent font sizes — POS is used on 1080p wall displays; bump `MenuPanel` footer text from `xs` to `sm`
+
+---
+
+**Step 1: Remove debug console.logs from MenuPanel.tsx**
+
+In `MenuPanel.tsx`, delete lines 29-44 (the two `useEffect` blocks that call `console.log`):
+
+```typescript
+// DELETE these two useEffect blocks:
+useEffect(() => {
+  console.log('[MenuPanel] Menu data:', { ... });
+}, [menuItems, isLoading, error, selectedStoreId]);
+
+useEffect(() => {
+  if (selectedStoreId) {
+    console.log('[MenuPanel] Store changed, refetching menu for store:', selectedStoreId);
+    refetch();
+  }
+}, [selectedStoreId, refetch]);
+```
+
+Keep the `refetch` call but move it into a `useEffect` WITHOUT the console.log:
+
+```typescript
+// Keep only:
+useEffect(() => {
+  if (selectedStoreId) {
+    refetch();
+  }
+}, [selectedStoreId, refetch]);
+```
+
+**Step 2: Run tests to make sure nothing breaks**
+
+```bash
+cd frontend && npx vitest run src/apps/POSSystem/components/MenuPanel.test.tsx
+```
+Expected: all pass (removing console.logs doesn't change behavior).
+
+**Step 3: Replace emojis with MUI icons in MenuPanel.tsx**
+
+Import icons at top of `MenuPanel.tsx`:
+```typescript
+import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
+import SearchIcon from '@mui/icons-material/Search';
+import StarIcon from '@mui/icons-material/Star';
+import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
+import SpaIcon from '@mui/icons-material/Spa'; // vegetarian
+import GrassIcon from '@mui/icons-material/Grass'; // vegan
+import SetMealIcon from '@mui/icons-material/SetMeal'; // non-veg
+import LocalDiningIcon from '@mui/icons-material/LocalDining'; // spicy
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+```
+
+Replace:
+- `🍽️` header → `<RestaurantMenuIcon fontSize="small" />`
+- `🔍` search prefix div → `<SearchIcon fontSize="small" style={{ color: colors.text.tertiary }} />`
+- `⭐` on recommended badge → `<StarIcon style={{ fontSize: 12, color: colors.semantic.warning }} />`
+- `🔥 Popular Items` header → `<LocalFireDepartmentIcon fontSize="small" style={{ color: '#ef4444' }} /> Popular Items`
+- `🥬` dietary → `<SpaIcon style={{ fontSize: 10, color: '#16a34a' }} />`
+- `🌱` dietary → `<GrassIcon style={{ fontSize: 10, color: '#15803d' }} />`
+- `🍖` dietary → `<SetMealIcon style={{ fontSize: 10, color: '#b91c1c' }} />`
+- `🌶️` spicy → `<LocalDiningIcon style={{ fontSize: 10, color: '#dc2626' }} />`
+- `📊` footer → `<InfoOutlinedIcon style={{ fontSize: 12 }} />`
+- `ℹ️` empty state card → `<InfoOutlinedIcon style={{ fontSize: 20 }} />`
+- `❌` error card → remove, use red border + text "Failed to load menu. Please try again."
+
+**Step 4: Expand menu card width and add image support**
+
+Change the grid in `MenuPanel.tsx` line 499:
+```typescript
+// Before:
+gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+// After:
+gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+```
+
+Add image support inside each menu card (before the item name div):
+```typescript
+{/* Item image or colored placeholder */}
+<div style={{
+  width: '100%',
+  height: '72px',
+  borderRadius: '8px',
+  marginBottom: spacing[2],
+  overflow: 'hidden',
+  backgroundColor: item.image ? 'transparent' : getCategoryColor(item.category),
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0
+}}>
+  {item.image ? (
+    <img
+      src={item.image}
+      alt={item.name}
+      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+    />
+  ) : (
+    <RestaurantMenuIcon style={{ fontSize: 28, color: '#ffffff88' }} />
+  )}
+</div>
+```
+
+Add this helper function before the return statement in `MenuPanel`:
+```typescript
+const getCategoryColor = (category: string): string => {
+  const colorMap: Record<string, string> = {
+    PIZZA: '#ef4444',
+    BURGER: '#f97316',
+    DOSA: '#eab308',
+    CURRY_GRAVY: '#a855f7',
+    FRIED_RICE: '#14b8a6',
+    NOODLES: '#06b6d4',
+    HOT_DRINKS: '#8b5cf6',
+    COLD_DRINKS: '#3b82f6',
+    ICE_CREAM: '#ec4899',
+  };
+  return colorMap[category] || colors.brand.primary;
+};
+```
+
+**Step 5: Run tests**
+
+```bash
+cd frontend && npx vitest run src/apps/POSSystem/components/MenuPanel.test.tsx
+```
+Expected: pass.
+
+**Step 6: Commit MenuPanel changes**
+
+```bash
+git add frontend/src/apps/POSSystem/components/MenuPanel.tsx
+git commit -m "$(cat <<'EOF'
+refactor: remove emojis and expand menu cards in POS MenuPanel
+
+Replace all emoji usage with MUI icons, remove debug console.log
+calls, expand menu card min-width to 160px with image/placeholder
+support per category.
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+EOF
+)"
+```
+
+---
+
+**Step 7: Replace emojis in POSDashboard.tsx analytics tab**
+
+Import icons in `POSDashboard.tsx`:
+```typescript
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import PeopleIcon from '@mui/icons-material/People';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'; // for #1 crown
+import PaidIcon from '@mui/icons-material/Paid'; // for "Mark Paid" button
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+```
+
+Replace in POSDashboard analytics section:
+- `🔥 Top Sellers Today` h3 → `<TrendingUpIcon fontSize="small" /> Top Sellers Today`
+- `👑` rank-1 icon → `<EmojiEventsIcon style={{ fontSize: 16, color: '#fff' }} />`
+- `📜 Recent Orders` h3 → `<ReceiptLongIcon fontSize="small" /> Recent Orders`
+- `💰 Mark Paid` button text → `<PaidIcon style={{ fontSize: 12 }} /> Mark Paid`
+- `👥 Staff Leaderboard` h3 → `<PeopleIcon fontSize="small" /> Staff Leaderboard`
+- `🏆` rank-1 staff icon → `<EmojiEventsIcon style={{ fontSize: 20, color: '#fff' }} />`
+
+**Step 8: Improve order type toggle in OrderPanel.tsx**
+
+Import icons in `OrderPanel.tsx`:
+```typescript
+import StoreIcon from '@mui/icons-material/Store'; // pickup
+import DeliveryDiningIcon from '@mui/icons-material/DeliveryDining'; // delivery
+```
+
+Replace the existing order type buttons with a pill toggle:
+```typescript
+{/* Order Type Toggle */}
+<div style={{
+  display: 'flex',
+  gap: 0,
+  backgroundColor: colors.surface.secondary,
+  borderRadius: '12px',
+  padding: '3px',
+  border: `1px solid ${colors.surface.border}`,
+  marginBottom: spacing[3]
+}}>
+  {(['PICKUP', 'DELIVERY'] as const).map((type) => (
+    <button
+      key={type}
+      onClick={() => onOrderTypeChange(type)}
+      style={{
+        flex: 1,
+        padding: `${spacing[2]} ${spacing[3]}`,
+        borderRadius: '10px',
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: typography.fontSize.xs,
+        fontWeight: typography.fontWeight.bold,
+        fontFamily: typography.fontFamily.primary,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing[1],
+        transition: 'all 0.2s ease',
+        ...(orderType === type ? {
+          backgroundColor: type === 'PICKUP' ? '#16a34a' : '#2563eb',
+          color: '#ffffff',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+        } : {
+          backgroundColor: 'transparent',
+          color: colors.text.secondary
+        })
+      }}
+    >
+      {type === 'PICKUP'
+        ? <StoreIcon style={{ fontSize: 14 }} />
+        : <DeliveryDiningIcon style={{ fontSize: 14 }} />
+      }
+      {type}
+    </button>
+  ))}
+</div>
+```
+
+**Step 9: Add "No Store Selected" empty state to MenuPanel**
+
+After the `isLoading` guard and before the filter logic in `MenuPanel`, add a guard at the top of the returned JSX (just before the `{isLoading && ...}` block):
+
+```typescript
+{!selectedStoreId && !isLoading && (
+  <div style={{
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing[4],
+    padding: spacing[10],
+    color: colors.text.tertiary
+  }}>
+    <StoreIcon style={{ fontSize: 48, color: colors.surface.border }} />
+    <div style={{
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.semibold,
+      color: colors.text.secondary
+    }}>
+      No Store Selected
+    </div>
+    <div style={{
+      fontSize: typography.fontSize.sm,
+      textAlign: 'center',
+      maxWidth: '200px'
+    }}>
+      Select a store from the header to view menu items
+    </div>
+  </div>
+)}
+```
+
+Import `StoreIcon` in MenuPanel:
+```typescript
+import StoreIcon from '@mui/icons-material/Store';
+```
+
+**Step 10: Revamp PINAuthModal to use neumorphic design**
+
+Read `PINAuthModal.tsx` fully first, then replace inline button/input styles with neumorphic components.
+
+The PIN grid should use 12 large neumorphic `Button` components (1-9, clear, 0, backspace) in a 3×4 grid. Each button: `size="lg"`, variant `"secondary"`.
+
+The 4-digit display should use a row of 4 neumorphic `Input`-like circles showing filled vs empty state:
+```typescript
+{/* PIN display */}
+<div style={{ display: 'flex', gap: spacing[4], justifyContent: 'center', marginBottom: spacing[6] }}>
+  {[0, 1, 2, 3].map((i) => (
+    <div key={i} style={{
+      width: '16px',
+      height: '16px',
+      borderRadius: '50%',
+      backgroundColor: pin.length > i ? colors.brand.primary : colors.surface.border,
+      transition: 'background-color 0.15s ease',
+      boxShadow: pin.length > i ? `0 0 8px ${colors.brand.primary}44` : shadows.inset.sm
+    }} />
+  ))}
+</div>
+```
+
+**Step 11: Run all POS tests**
+
+```bash
+cd frontend && npx vitest run src/apps/POSSystem/
+```
+Expected: all pass (no behavior changes, only visual).
+
+**Step 12: Commit all remaining POS changes**
+
+```bash
+git add frontend/src/apps/POSSystem/
+git commit -m "$(cat <<'EOF'
+refactor: revamp POS system UI - remove emojis, improve layout
+
+- Replace all emoji usage across POSDashboard, OrderPanel with MUI icons
+- Add pill-style order type toggle (green Pickup / blue Delivery)
+- Add No Store Selected empty state to MenuPanel
+- Revamp PINAuthModal to use neumorphic design components
+- Bump MenuPanel footer font to sm for 1080p POS displays
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+EOF
+)"
+```
+
+---
+
 ## Tier 3 Verification
 
 ```bash
@@ -994,7 +1642,7 @@ cd frontend && npm run dev
 
 # Login page
 # → Navigate to /login
-# → 5 role cards visible (Manager, Kitchen Staff, Driver, Cashier, Asst. Manager)
+# → 5 role cards visible (Manager, Kitchen Staff, Driver, Kiosk (POS), Asst. Manager)
 # → No emojis
 # → Click "Forgot password?" → form appears → submit → success message
 # → Resize window < 768px → single column layout
@@ -1018,8 +1666,22 @@ cd frontend && npm run dev
 # Mobile (masova-mobile)
 cd /Users/souravamseekarmarti/Projects/masova-mobile
 npx expo start
-# → Open in emulator → MenuScreen
-# → Shows shimmer skeleton while loading
-# → Food cards show 160px image, name, price
-# → Navigate between screens → horizontal swipe transition visible
+# → Open in emulator → HomeScreen
+# → Category chips show Ionicons (pizza/fast-food/cafe/wine icons) — NO emoji characters
+# → Open MenuScreen → cuisine filter pills are clean text, no emoji flags
+# → Menu cards show 140px image area, spice dots (red circles, NOT 🌶️ pepper emoji)
+# → Menu loading state → shimmer skeleton cards appear before data loads
+# → Auth screen → Google button has logo-google icon, Facebook has logo-facebook icon
+# → Navigate between screens → horizontal slide transition visible
+# → Tap "Add to Cart" → subtle haptic vibration felt on device
+
+# POS System
+# → Navigate to /pos
+# → No emojis visible anywhere in the UI
+# → Menu panel: cards are 160px wide, categories show colored placeholder when no image
+# → With no storeId: "No Store Selected" empty state shows in menu panel
+# → Order type: pill toggle — green PICKUP / blue DELIVERY with icons
+# → Analytics tab: section headers use MUI icons (not emojis)
+# → Click "New Order" with no user logged in → PIN modal opens → neumorphic design with dot display
+# → console: no [MenuPanel] debug logs appear
 ```

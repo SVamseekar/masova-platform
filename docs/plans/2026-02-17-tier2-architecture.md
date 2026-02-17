@@ -15,7 +15,7 @@
 ## Critical Context
 
 - `MaSoVaDriverApp/src/screens/LoginScreen.tsx` line 159: currently blocks login if `data.user.type !== 'DRIVER'` — this check must be removed/replaced with role routing.
-- `MaSoVaDriverApp/src/types/user.ts` line 3: User.type is `'CUSTOMER' | 'STAFF' | 'DRIVER' | 'MANAGER' | 'ASSISTANT_MANAGER' | 'KIOSK'` — CASHIER is not in this union yet. Add it.
+- `MaSoVaDriverApp/src/types/user.ts` line 3: User.type is `'CUSTOMER' | 'STAFF' | 'DRIVER' | 'MANAGER' | 'ASSISTANT_MANAGER' | 'KIOSK'` — the actual backend `UserType` enum is `STAFF | DRIVER | MANAGER | ASSISTANT_MANAGER | KIOSK`. No CASHIER exists; POS staff use `KIOSK` type.
 - `MaSoVaDriverApp/src/navigation/AppNavigator.tsx` — currently: unauthenticated → LoginScreen, authenticated → driver bottom tab. Replace with RoleRouter.
 - `frontend/src/components/StoreSelector.tsx` — 160+ lines of neumorphic dropdown. No geolocation. Extend in-place.
 - Root project is Maven. `docker/` directory for RabbitMQ interview assignment is a sibling to `docker-compose.yml` at the monorepo root.
@@ -28,19 +28,9 @@
 - Modify: `MaSoVaDriverApp/src/screens/LoginScreen.tsx` (around line 159)
 - Modify: `MaSoVaDriverApp/src/types/user.ts` (line 3)
 
-**Step 1: Add CASHIER to User type union**
+**Step 1: No user type changes needed**
 
-In `MaSoVaDriverApp/src/types/user.ts`, find:
-```typescript
-type: 'CUSTOMER' | 'STAFF' | 'DRIVER' | 'MANAGER' | 'ASSISTANT_MANAGER' | 'KIOSK';
-```
-
-Replace with:
-```typescript
-type: 'CUSTOMER' | 'STAFF' | 'DRIVER' | 'MANAGER' | 'ASSISTANT_MANAGER' | 'CASHIER' | 'KIOSK';
-```
-
-Do the same for the `userType` field on the same interface if it also lists the union.
+The `MaSoVaDriverApp/src/types/user.ts` already includes all valid types matching the backend `UserType` enum: `STAFF | DRIVER | MANAGER | ASSISTANT_MANAGER | KIOSK`. No new types to add.
 
 **Step 2: Remove the DRIVER-only check in LoginScreen**
 
@@ -54,8 +44,8 @@ if (data.user.type !== 'DRIVER') {
 Replace with a comment explaining routing is now handled by AppNavigator:
 ```typescript
 // Role-based routing is handled by AppNavigator's RoleRouter.
-// All staff types (DRIVER, STAFF, MANAGER, CASHIER, ASSISTANT_MANAGER) are accepted.
-const allowedTypes = ['DRIVER', 'STAFF', 'MANAGER', 'ASSISTANT_MANAGER', 'CASHIER'];
+// All staff types are accepted: DRIVER, STAFF, MANAGER, ASSISTANT_MANAGER, KIOSK.
+const allowedTypes = ['DRIVER', 'STAFF', 'MANAGER', 'ASSISTANT_MANAGER', 'KIOSK'];
 if (!allowedTypes.includes(data.user.type)) {
   Alert.alert('Access Denied', 'This app is for MaSoVa staff only.');
   return;
@@ -66,8 +56,8 @@ if (!allowedTypes.includes(data.user.type)) {
 
 ```bash
 cd /Users/souravamseekarmarti/Projects/MaSoVaDriverApp
-git add src/screens/LoginScreen.tsx src/types/user.ts
-git commit -m "feat: allow all staff roles in login, add CASHIER user type"
+git add src/screens/LoginScreen.tsx
+git commit -m "feat: allow all staff roles in login (DRIVER, STAFF, MANAGER, ASSISTANT_MANAGER, KIOSK)"
 ```
 
 ---
@@ -77,7 +67,7 @@ git commit -m "feat: allow all staff roles in login, add CASHIER user type"
 **Files:**
 - Modify: `MaSoVaDriverApp/src/navigation/AppNavigator.tsx`
 - Create: `MaSoVaDriverApp/src/navigation/KitchenNavigator.tsx`
-- Create: `MaSoVaDriverApp/src/navigation/CashierNavigator.tsx`
+- Create: `MaSoVaDriverApp/src/navigation/KioskNavigator.tsx`
 - Create: `MaSoVaDriverApp/src/navigation/ManagerNavigator.tsx`
 
 **Step 1: Create KitchenNavigator**
@@ -123,10 +113,10 @@ export const KitchenNavigator = () => (
 export default KitchenNavigator;
 ```
 
-**Step 2: Create CashierNavigator**
+**Step 2: Create KioskNavigator (for KIOSK-type users — POS staff)**
 
 ```typescript
-// MaSoVaDriverApp/src/navigation/CashierNavigator.tsx
+// MaSoVaDriverApp/src/navigation/KioskNavigator.tsx
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -135,12 +125,12 @@ import QuickOrderScreen from '../screens/pos/QuickOrderScreen';
 import DriverProfileScreen from '../screens/DriverProfileScreen';
 
 const Tab = createBottomTabNavigator();
-const CASHIER_COLOR = '#2196F3';
+const KIOSK_COLOR = '#2196F3';
 
-export const CashierNavigator = () => (
+export const KioskNavigator = () => (
   <Tab.Navigator
     screenOptions={{
-      tabBarActiveTintColor: CASHIER_COLOR,
+      tabBarActiveTintColor: KIOSK_COLOR,
       tabBarInactiveTintColor: colors.text.secondary,
       tabBarStyle: { backgroundColor: colors.surface.background, borderTopColor: colors.surface.border, borderTopWidth: 1 },
       headerStyle: { backgroundColor: colors.surface.background, elevation: 0, shadowOpacity: 0 },
@@ -153,14 +143,14 @@ export const CashierNavigator = () => (
       options={{ title: 'New Order', tabBarLabel: 'Order', tabBarIcon: ({ color, size }) => <Icon name="point-of-sale" size={size} color={color} /> }}
     />
     <Tab.Screen
-      name="CashierProfile"
+      name="KioskProfile"
       component={DriverProfileScreen}
       options={{ title: 'Profile', tabBarLabel: 'Profile', tabBarIcon: ({ color, size }) => <Icon name="person" size={size} color={color} /> }}
     />
   </Tab.Navigator>
 );
 
-export default CashierNavigator;
+export default KioskNavigator;
 ```
 
 **Step 3: Create ManagerNavigator**
@@ -205,7 +195,11 @@ export default ManagerNavigator;
 
 **Step 4: Update AppNavigator to use RoleRouter**
 
-Replace the entire authenticated section of `AppNavigator.tsx` with a RoleRouter:
+Replace the entire authenticated section of `AppNavigator.tsx` with a RoleRouter. Role mapping against the actual backend `UserType` enum:
+- `DRIVER` → delivery screens
+- `STAFF` → kitchen queue
+- `KIOSK` → POS quick order (kiosk terminal / POS staff)
+- `MANAGER` / `ASSISTANT_MANAGER` → manager dashboard
 
 ```typescript
 // MaSoVaDriverApp/src/navigation/AppNavigator.tsx
@@ -218,7 +212,7 @@ import { selectIsAuthenticated, selectCurrentUser } from '../store/slices/authSl
 // Role navigators
 import DriverTabNavigator from './DriverTabNavigator'; // rename existing Tab.Navigator block to this
 import KitchenNavigator from './KitchenNavigator';
-import CashierNavigator from './CashierNavigator';
+import KioskNavigator from './KioskNavigator';
 import ManagerNavigator from './ManagerNavigator';
 
 const RoleRouter = () => {
@@ -227,7 +221,7 @@ const RoleRouter = () => {
 
   if (type === 'DRIVER') return <DriverTabNavigator />;
   if (type === 'STAFF') return <KitchenNavigator />;
-  if (type === 'CASHIER') return <CashierNavigator />;
+  if (type === 'KIOSK') return <KioskNavigator />;
   if (type === 'MANAGER' || type === 'ASSISTANT_MANAGER') return <ManagerNavigator />;
 
   // Fallback: show kitchen queue for unknown staff types
@@ -959,14 +953,194 @@ git commit -m "feat: RabbitMQ interview assignment + pattern docs + optional ser
 
 ---
 
+---
+
+## Task 6: MaSoVaDriverApp UI Quality Pass
+
+**Audit findings (confirmed before writing this plan):**
+- `react-native-paper` v5 is installed but used nowhere — it is dead weight that inflates the APK
+- LoginScreen uses no animation — just a static form with no entrance effect
+- Empty states across all new screens (KitchenQueueScreen, QuickDashboardScreen) show no loading feedback beyond `ActivityIndicator`
+- Two emoji characters exist: `🎯` in empty-state copy and `💡` in a tip card
+- No micro-interactions on card press (tap feedback is default RN gray)
+- Design tokens file `driverDesignTokens.ts` has no `roles` color set — needed for role-colored header accents
+
+**Files:**
+- Modify: `MaSoVaDriverApp/src/styles/driverDesignTokens.ts`
+- Modify: `MaSoVaDriverApp/src/screens/LoginScreen.tsx`
+- Modify: `MaSoVaDriverApp/src/screens/kitchen/KitchenQueueScreen.tsx`
+- Modify: `MaSoVaDriverApp/src/screens/manager/QuickDashboardScreen.tsx`
+- Modify: `MaSoVaDriverApp/package.json` (remove react-native-paper)
+
+---
+
+**Step 1: Add role colors to driverDesignTokens.ts**
+
+Read `MaSoVaDriverApp/src/styles/driverDesignTokens.ts`. Find the `colors` export. Add a `roles` block:
+
+```typescript
+roles: {
+  driver:           '#00B14F',  // Uber delivery green
+  kitchen:          '#FF6B35',  // Warm orange — heat/fire of the kitchen
+  kiosk:            '#2196F3',  // Calm blue — POS/cashier
+  manager:          '#7B1FA2',  // Deep purple — authority
+  assistantManager: '#FF9800',  // Amber — support role
+},
+```
+
+---
+
+**Step 2: Remove react-native-paper from package.json**
+
+In `MaSoVaDriverApp/package.json`, find and remove the `"react-native-paper"` dependency line entirely. Then run:
+
+```bash
+cd /Users/souravamseekarmarti/Projects/MaSoVaDriverApp
+npm uninstall react-native-paper
+```
+
+Search for any actual imports of react-native-paper in the codebase before removing:
+```bash
+grep -r "react-native-paper" /Users/souravamseekarmarti/Projects/MaSoVaDriverApp/src/ --include="*.tsx" --include="*.ts"
+```
+
+If there are any imports found, replace them with equivalents from react-native core or react-native-vector-icons.
+
+---
+
+**Step 3: Add LoginScreen entrance animation**
+
+Read `MaSoVaDriverApp/src/screens/LoginScreen.tsx` fully.
+
+Add a fade-in + slide-up entrance for the form card using `Animated` API:
+
+```typescript
+import { Animated } from 'react-native';
+import { useEffect, useRef } from 'react';
+
+// Inside the component:
+const fadeAnim = useRef(new Animated.Value(0)).current;
+const slideAnim = useRef(new Animated.Value(24)).current;
+
+useEffect(() => {
+  Animated.parallel([
+    Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+    Animated.timing(slideAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
+  ]).start();
+}, []);
+
+// Wrap the form card with:
+<Animated.View style={[styles.formCard, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+  {/* existing form content */}
+</Animated.View>
+```
+
+---
+
+**Step 4: Replace emojis in KitchenQueueScreen and QuickDashboardScreen**
+
+Search for emoji characters in the new screen files:
+```bash
+grep -n "🎯\|💡\|🍽️\|📊" \
+  /Users/souravamseekarmarti/Projects/MaSoVaDriverApp/src/screens/kitchen/KitchenQueueScreen.tsx \
+  /Users/souravamseekarmarti/Projects/MaSoVaDriverApp/src/screens/manager/QuickDashboardScreen.tsx
+```
+
+For each found:
+- `🎯` empty state icon → use `<Icon name="track-changes" size={48} color={colors.text.tertiary} />` (MaterialIcons)
+- `💡` tip text → remove the emoji, keep the text as-is with bold formatting
+- `🍽️` any food icon → `<Icon name="restaurant" size={24} color={...} />`
+- `📊` analytics icon → `<Icon name="bar-chart" size={24} color={...} />`
+
+All screens already import `Icon from 'react-native-vector-icons/MaterialIcons'` — use that.
+
+---
+
+**Step 5: Add role-color accent to navigator headers**
+
+In `KitchenNavigator.tsx`, `KioskNavigator.tsx`, and `ManagerNavigator.tsx`, update the header style to include a role-colored left border accent:
+
+```typescript
+import { colors } from '../styles/driverDesignTokens';
+
+// In KitchenNavigator screenOptions:
+headerStyle: {
+  backgroundColor: colors.surface.background,
+  elevation: 0,
+  shadowOpacity: 0,
+  borderBottomWidth: 3,
+  borderBottomColor: colors.roles.kitchen,   // '#FF6B35'
+},
+
+// In KioskNavigator screenOptions:
+headerStyle: {
+  // ... same but borderBottomColor: colors.roles.kiosk '#2196F3'
+},
+
+// In ManagerNavigator screenOptions:
+headerStyle: {
+  // ... same but borderBottomColor: colors.roles.manager '#7B1FA2'
+},
+```
+
+---
+
+**Step 6: Improve KitchenQueueScreen card press feedback**
+
+In `KitchenQueueScreen.tsx`, each order card is currently a plain `View`. Wrap it in a `TouchableOpacity` with `activeOpacity={0.75}` so tapping the card gives tactile feedback (useful on touchscreen POS displays):
+
+```tsx
+// Change <View style={styles.card}> to:
+<TouchableOpacity
+  style={styles.card}
+  activeOpacity={0.75}
+  onPress={() => {/* future: expand card detail */}}
+>
+  {/* existing card content */}
+</TouchableOpacity>
+```
+
+---
+
+**Step 7: Verify app**
+
+```bash
+cd /Users/souravamseekarmarti/Projects/MaSoVaDriverApp
+npx react-native start --reset-cache &
+# In a second terminal:
+npx react-native run-android
+```
+
+Check:
+- LoginScreen fades in with slide-up animation on load
+- No `react-native-paper` import errors in Metro bundler
+- Login as STAFF → KitchenQueueScreen header has orange bottom border
+- Login as MANAGER → QuickDashboardScreen header has purple bottom border
+- No emoji characters visible anywhere in the app
+- Tap an order card in KitchenQueueScreen → card darkens briefly (activeOpacity)
+
+---
+
+**Step 8: Commit**
+
+```bash
+cd /Users/souravamseekarmarti/Projects/MaSoVaDriverApp
+git add src/styles/driverDesignTokens.ts src/screens/ src/navigation/ package.json package-lock.json
+git commit -m "refactor: driver app UI quality pass — role colors, login animation, remove paper dep, replace emojis"
+```
+
+---
+
 ## Tier 2 Verification
 
 ```bash
 # MaSoVaDriverApp: verify role routing
 # (requires Android emulator or device)
-# Login as STAFF user → should see KitchenQueueScreen
+# Login as STAFF user → should see KitchenQueueScreen with orange header border
 # Login as DRIVER user → should see DeliveryHomeScreen (existing)
-# Login as MANAGER user → should see QuickDashboardScreen
+# Login as MANAGER user → should see QuickDashboardScreen with purple header border
+# LoginScreen: form should fade+slide in on load
+# No emojis anywhere in app
 
 # StoreSelector: open in browser at localhost:5173
 # Allow location → nearest store should auto-select
