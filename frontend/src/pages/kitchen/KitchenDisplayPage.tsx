@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import AppHeader from '../../components/common/AppHeader';
@@ -14,6 +14,11 @@ import {
 import { useGetAllMenuItemsQuery, MenuItem } from '../../store/api/menuApi';
 import { useKitchenWebSocket } from '../../hooks/useKitchenWebSocket';
 import { KitchenOrder } from '../../services/websocketService';
+import FiberNewIcon from '@mui/icons-material/FiberNew';
+import BuildIcon from '@mui/icons-material/Build';
+import WhatshotIcon from '@mui/icons-material/Whatshot';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 
 // TypeScript interfaces
 interface OrderItem {
@@ -26,7 +31,7 @@ interface OrderItem {
 interface Order {
   id: string;
   orderNumber: string;
-  status: 'RECEIVED' | 'PREPARING' | 'OVEN' | 'BAKED' | 'DISPATCHED';
+  status: 'RECEIVED' | 'PREPARING' | 'OVEN' | 'BAKED' | 'DISPATCHED' | 'COMPLETED' | 'SERVED';
   items: OrderItem[];
   receivedAt: Date;
   estimatedPrepTime: number;
@@ -40,7 +45,7 @@ interface Order {
 interface StatusColumn {
   status: string;
   title: string;
-  icon: string;
+  Icon: React.ComponentType<{ style?: React.CSSProperties }>;
   color: string;
 }
 
@@ -48,6 +53,9 @@ const KitchenDisplayPage: React.FC = () => {
   const dispatch = useDispatch();
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [selectedRecipeItem, setSelectedRecipeItem] = useState<MenuItem | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const prevOrderCountRef = useRef(0);
   const currentUser = useAppSelector(selectCurrentUser);
   const selectedStoreIdFromRedux = useAppSelector(selectSelectedStoreId);
 
@@ -153,6 +161,64 @@ const KitchenDisplayPage: React.FC = () => {
   const { data: menuItems = [] } = useGetAllMenuItemsQuery(undefined);
   const [updateOrderStatus, { isLoading: isUpdating }] = useUpdateOrderStatusMutation();
 
+  // Sound alert via Web Audio API
+  const playNewOrderChime = useCallback(() => {
+    if (isMuted) return;
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+      const audioCtx = new AudioContext();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+      gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+      oscillator.start(audioCtx.currentTime);
+      oscillator.stop(audioCtx.currentTime + 0.5);
+    } catch (e) {
+      console.warn('Audio not available:', e);
+    }
+  }, [isMuted]);
+
+  // Trigger chime when new RECEIVED orders arrive (uses localOrders, declared above)
+  useEffect(() => {
+    const receivedCount = localOrders.filter(o => o.status === 'RECEIVED').length;
+    if (receivedCount > prevOrderCountRef.current) {
+      playNewOrderChime();
+    }
+    prevOrderCountRef.current = receivedCount;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localOrders.length, isMuted]);
+
+  // Full-screen toggle
+  const toggleFullScreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => setIsFullScreen(true)).catch(() => {});
+    } else {
+      document.exitFullscreen().then(() => setIsFullScreen(false)).catch(() => {});
+    }
+  }, []);
+
+  // F key listener for full-screen
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'f' || e.key === 'F') toggleFullScreen();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [toggleFullScreen]);
+
+  // Color urgency based on order age
+  const getUrgencyStyle = (receivedAt: Date): React.CSSProperties => {
+    const mins = Math.floor((currentTime.getTime() - new Date(receivedAt).getTime()) / 60000);
+    if (mins >= 10) return { borderLeft: '4px solid #ef4444' };
+    if (mins >= 5) return { borderLeft: '4px solid #f59e0b' };
+    return { borderLeft: '4px solid #10b981' };
+  };
+
   const findMenuItemByName = (itemName: string): MenuItem | null => {
     return menuItems.find(menuItem =>
       menuItem.name.toLowerCase() === itemName.toLowerCase()
@@ -197,19 +263,28 @@ const KitchenDisplayPage: React.FC = () => {
   };
 
   const moveOrderToNext = async (orderId: string, currentStatus: Order['status']): Promise<void> => {
-    // Kitchen flow: RECEIVED -> PREPARING -> OVEN -> BAKED -> DISPATCHED
-    // DISPATCHED is the final state - order stays there as "Completed"
-    const statusFlow: Order['status'][] = ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED', 'DISPATCHED'];
+    // Kitchen flow varies by order type:
+    // DELIVERY: RECEIVED -> PREPARING -> OVEN -> BAKED -> DISPATCHED -> DELIVERED
+    // TAKEAWAY/COLLECTION: RECEIVED -> PREPARING -> OVEN -> BAKED (BAKED = Ready for Pickup, final stage)
+    // DINE_IN: RECEIVED -> PREPARING -> OVEN -> BAKED -> SERVED (manual)
+    const order = orders.find(o => o.id === orderId);
+    const orderType = order?.orderType;
+
+    // Define status flow based on order type
+    const statusFlow: string[] = orderType === 'DELIVERY'
+      ? ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED', 'DISPATCHED']
+      : ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED']; // TAKEAWAY & DINE_IN end at BAKED (Ready)
+
     const currentIndex = statusFlow.indexOf(currentStatus);
     const nextStatus = statusFlow[currentIndex + 1];
 
     if (!nextStatus) {
-      // Already at final stage (DISPATCHED = Completed)
+      // Already at final stage
       return;
     }
 
     try {
-      await updateOrderStatus({ orderId, status: nextStatus }).unwrap();
+      await updateOrderStatus({ orderId, status: nextStatus as ApiOrder['status'] }).unwrap();
       // Trigger a refetch to update the order list and metrics
       refetch();
     } catch (error) {
@@ -220,7 +295,21 @@ const KitchenDisplayPage: React.FC = () => {
 
   const markAsCompleted = async (orderId: string): Promise<void> => {
     try {
-      await updateOrderStatus({ orderId, status: 'DELIVERED' }).unwrap();
+      // Determine the correct terminal status based on order type
+      const order = orders.find(o => o.id === orderId);
+      const orderType = order?.orderType;
+
+      let terminalStatus: string;
+      if (orderType === 'DELIVERY') {
+        terminalStatus = 'DELIVERED';
+      } else if (orderType === 'DINE_IN') {
+        terminalStatus = 'SERVED';
+      } else {
+        // COLLECTION/TAKEAWAY
+        terminalStatus = 'COMPLETED';
+      }
+
+      await updateOrderStatus({ orderId, status: terminalStatus as ApiOrder['status'] }).unwrap();
       // Trigger a refetch to update the order list and metrics
       refetch();
     } catch (error) {
@@ -230,7 +319,10 @@ const KitchenDisplayPage: React.FC = () => {
   };
 
   const OrderCard: React.FC<{ order: Order }> = ({ order }) => (
-    <div className={`order-card status-${order.status.toLowerCase()} ${order.priority === 'URGENT' ? 'urgent' : ''}`}>
+    <div
+      className={`order-card status-${order.status.toLowerCase()} ${order.priority === 'URGENT' ? 'urgent' : ''}`}
+      style={getUrgencyStyle(order.receivedAt)}
+    >
       {/* Order Header */}
       <div className="order-header">
         <div className="order-number">#{order.orderNumber}</div>
@@ -294,25 +386,58 @@ const KitchenDisplayPage: React.FC = () => {
           <div className="status-dot"></div>
           <span>{order.status.replace('_', ' ')}</span>
         </div>
-        {order.status !== 'DISPATCHED' && (
+        {/* Show Next Stage button based on order type and status */}
+        {/* DELIVERY: show until DISPATCHED */}
+        {/* DINE_IN: show until BAKED (then Mark Served button) */}
+        {/* TAKEAWAY: show until BAKED (BAKED is final - Ready for Pickup) */}
+        {!(
+          order.status === 'DISPATCHED' ||
+          (order.status === 'BAKED' && order.orderType !== 'DELIVERY')
+        ) && (
           <button
             className="next-btn"
             onClick={() => moveOrderToNext(order.id, order.status)}
             disabled={isUpdating}
+            style={{ minHeight: '48px', minWidth: '48px', padding: '12px 20px' }}
           >
             <span>{isUpdating ? 'Updating...' : 'Next Stage'}</span>
             <span className="next-icon">→</span>
           </button>
         )}
-        {order.status === 'DISPATCHED' && (
+        {/* Show Mark as Delivered for DELIVERY orders at DISPATCHED */}
+        {order.status === 'DISPATCHED' && order.orderType === 'DELIVERY' && (
           <button
             className="complete-btn"
             onClick={() => markAsCompleted(order.id)}
             disabled={isUpdating}
-            title="Mark this order as completed and delivered"
+            title="Mark as delivered"
           >
             <span>✓</span>
-            <span>{isUpdating ? 'Updating...' : 'Mark as Completed'}</span>
+            <span>{isUpdating ? 'Updating...' : 'Mark Delivered'}</span>
+          </button>
+        )}
+        {/* Show Mark as Served for DINE_IN orders at BAKED */}
+        {order.status === 'BAKED' && order.orderType === 'DINE_IN' && (
+          <button
+            className="complete-btn"
+            onClick={() => markAsCompleted(order.id)}
+            disabled={isUpdating}
+            title="Mark as served"
+          >
+            <span>✓</span>
+            <span>{isUpdating ? 'Updating...' : 'Mark Served'}</span>
+          </button>
+        )}
+        {/* Show Mark Picked Up for TAKEAWAY/COLLECTION orders at BAKED */}
+        {order.status === 'BAKED' && (order.orderType === 'COLLECTION' || order.orderType !== 'DELIVERY' && order.orderType !== 'DINE_IN') && (
+          <button
+            className="complete-btn"
+            onClick={() => markAsCompleted(order.id)}
+            disabled={isUpdating}
+            title="Customer picked up the order"
+          >
+            <span>✓</span>
+            <span>{isUpdating ? 'Updating...' : 'Mark Picked Up'}</span>
           </button>
         )}
       </div>
@@ -320,11 +445,11 @@ const KitchenDisplayPage: React.FC = () => {
   );
 
   const statusColumns: StatusColumn[] = [
-    { status: 'RECEIVED', title: 'New Orders', icon: '', color: '#3b82f6' },
-    { status: 'PREPARING', title: 'Preparing', icon: '', color: '#f59e0b' },
-    { status: 'OVEN', title: 'In Oven', icon: '', color: '#e53e3e' },
-    { status: 'BAKED', title: 'Ready', icon: '', color: '#10b981' },
-    { status: 'DISPATCHED', title: 'Completed', icon: '', color: '#8b5cf6' }
+    { status: 'RECEIVED', title: 'New Orders', Icon: FiberNewIcon, color: '#3b82f6' },
+    { status: 'PREPARING', title: 'Preparing', Icon: BuildIcon, color: '#f59e0b' },
+    { status: 'OVEN', title: 'In Oven', Icon: WhatshotIcon, color: '#e53e3e' },
+    { status: 'BAKED', title: 'Ready', Icon: CheckCircleIcon, color: '#10b981' },
+    { status: 'DISPATCHED', title: 'Dispatched', Icon: LocalShippingIcon, color: '#8b5cf6' }
   ];
 
   const getOrdersByStatus = (status: string): Order[] => {
@@ -428,6 +553,11 @@ const KitchenDisplayPage: React.FC = () => {
             -12px -12px 24px rgba(255, 255, 255, 0.8);
         }
 
+        @keyframes pulse-red {
+          0%, 100% { border-left-color: #ef4444; }
+          50% { border-left-color: #fca5a5; }
+        }
+
         /* Main Board */
         .kitchen-board {
           max-width: 1600px;
@@ -436,7 +566,7 @@ const KitchenDisplayPage: React.FC = () => {
           display: grid;
           grid-template-columns: repeat(5, 1fr);
           gap: 20px;
-          height: calc(100vh - 120px);
+          height: calc(100vh - 160px);
           overflow-x: auto;
         }
 
@@ -564,7 +694,7 @@ const KitchenDisplayPage: React.FC = () => {
         }
 
         .order-number {
-          font-size: 22px;
+          font-size: 24px;
           font-weight: 800;
           color: #e53e3e;
         }
@@ -672,7 +802,7 @@ const KitchenDisplayPage: React.FC = () => {
         .item-name {
           font-weight: 600;
           color: #333;
-          font-size: 14px;
+          font-size: 15px;
         }
 
         .item-size {
@@ -1023,6 +1153,45 @@ const KitchenDisplayPage: React.FC = () => {
 
       <AppHeader title={`Kitchen Display - ${storeId.toUpperCase() || 'NO STORE'}`} hideStaffLogin={true} />
 
+      {/* Summary Bar */}
+      {(() => {
+        const activeOrders = orders.filter(o => !['DELIVERED', 'CANCELLED', 'SERVED', 'COMPLETED'].includes(o.status));
+        const waitTimes = activeOrders.map(o => Math.floor((currentTime.getTime() - new Date(o.receivedAt).getTime()) / 60000));
+        const avgWait = waitTimes.length > 0 ? Math.round(waitTimes.reduce((a, b) => a + b, 0) / waitTimes.length) : 0;
+        const maxWait = waitTimes.length > 0 ? Math.max(...waitTimes) : 0;
+        return (
+          <div style={{ display: 'flex', gap: '16px', padding: '10px 20px', background: '#1a1a1a', borderBottom: '1px solid #333', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '28px', flex: 1 }}>
+              {[
+                { label: 'Active', value: String(activeOrders.length), color: '#3b82f6' },
+                { label: 'Avg Wait', value: `${avgWait}m`, color: avgWait > 10 ? '#ef4444' : avgWait > 5 ? '#f59e0b' : '#10b981' },
+                { label: 'Longest', value: `${maxWait}m`, color: maxWait > 10 ? '#ef4444' : maxWait > 5 ? '#f59e0b' : '#10b981' },
+              ].map(kpi => (
+                <div key={kpi.label} style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '22px', fontWeight: '800', color: kpi.color, lineHeight: 1 }}>{kpi.value}</div>
+                  <div style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '2px' }}>{kpi.label}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => setIsMuted(m => !m)}
+                style={{ background: isMuted ? '#374151' : '#1f2937', border: '1px solid #374151', borderRadius: '6px', padding: '6px 12px', color: isMuted ? '#9ca3af' : '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}
+                title={isMuted ? 'Unmute alerts' : 'Mute alerts'}
+              >
+                {isMuted ? 'MUTED' : 'SOUND ON'}
+              </button>
+              <button
+                onClick={toggleFullScreen}
+                style={{ background: '#1f2937', border: '1px solid #374151', borderRadius: '6px', padding: '6px 12px', color: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}
+                title="Toggle full screen (F)"
+              >
+                {isFullScreen ? 'EXIT FS' : 'FULL SCREEN'}
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Main Board */}
       <main className="kitchen-board">
@@ -1042,6 +1211,7 @@ const KitchenDisplayPage: React.FC = () => {
               <div key={column.status} className="status-column">
                 <div className="column-header">
                   <div className="column-title-section">
+                    <column.Icon style={{ fontSize: '20px', color: column.color }} />
                     <h3 className="column-title">{column.title}</h3>
                   </div>
                   <div className="column-count">{columnOrders.length}</div>
