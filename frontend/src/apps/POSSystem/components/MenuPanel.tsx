@@ -7,6 +7,10 @@ import { CURRENCY } from '../../../config/business-config';
 import Card from '../../../components/ui/neumorphic/Card';
 import Badge from '../../../components/ui/neumorphic/Badge';
 import { colors, shadows, spacing, typography } from '../../../styles/design-tokens';
+import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
+import SearchIcon from '@mui/icons-material/Search';
+import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
+import BarChartIcon from '@mui/icons-material/BarChart';
 
 interface MenuPanelProps {
   onAddItem: (item: any, quantity?: number) => void;
@@ -127,7 +131,7 @@ const MenuPanel: React.FC<MenuPanelProps> = ({ onAddItem }) => {
           alignItems: 'center',
           gap: spacing[2]
         }}>
-          <span style={{ fontSize: typography.fontSize.lg }}>🍽️</span>
+          <RestaurantMenuIcon style={{ fontSize: '20px', color: colors.brand.primary }} />
           Menu Items
         </h3>
 
@@ -141,7 +145,7 @@ const MenuPanel: React.FC<MenuPanelProps> = ({ onAddItem }) => {
             fontSize: typography.fontSize.sm,
             color: colors.text.tertiary
           }}>
-            🔍
+            <SearchIcon style={{ fontSize: '16px' }} />
           </div>
           <input
             type="text"
@@ -338,7 +342,7 @@ const MenuPanel: React.FC<MenuPanelProps> = ({ onAddItem }) => {
               })
             }}
           >
-            🌿 Veg
+            Veg
           </button>
           <button
             onClick={() => setSelectedDietary(DietaryType.VEGAN)}
@@ -360,7 +364,7 @@ const MenuPanel: React.FC<MenuPanelProps> = ({ onAddItem }) => {
               })
             }}
           >
-            🌱 Vegan
+            Vegan
           </button>
           <button
             onClick={() => setSelectedDietary(DietaryType.NON_VEGETARIAN)}
@@ -382,7 +386,7 @@ const MenuPanel: React.FC<MenuPanelProps> = ({ onAddItem }) => {
               })
             }}
           >
-            🍖 Non-Veg
+            Non-Veg
           </button>
         </div>
       </div>
@@ -400,7 +404,8 @@ const MenuPanel: React.FC<MenuPanelProps> = ({ onAddItem }) => {
             fontWeight: typography.fontWeight.semibold,
             color: colors.text.primary
           }}>
-            🔥 Popular Items
+            <LocalFireDepartmentIcon style={{ fontSize: '16px', color: colors.semantic.error, marginRight: '4px' }} />
+            Popular Items
           </p>
           <div style={{ display: 'flex', gap: spacing[2], flexWrap: 'wrap' }}>
             {popularItems.map((item: any) => (
@@ -473,7 +478,7 @@ const MenuPanel: React.FC<MenuPanelProps> = ({ onAddItem }) => {
               textAlign: 'center'
             }}
           >
-            ❌ Failed to load menu items. Please try again.
+            Failed to load menu items. Please try again.
           </Card>
         )}
 
@@ -488,7 +493,7 @@ const MenuPanel: React.FC<MenuPanelProps> = ({ onAddItem }) => {
               textAlign: 'center'
             }}
           >
-            ℹ️ {searchTerm
+            {searchTerm
               ? 'No menu items found matching your search.'
               : 'No available items in this category.'}
           </Card>
@@ -562,10 +567,10 @@ const MenuPanel: React.FC<MenuPanelProps> = ({ onAddItem }) => {
                 marginBottom: spacing[1],
                 fontSize: '10px'
               }}>
-                {item.dietaryInfo?.includes(DietaryType.VEGETARIAN) && <span title="Vegetarian">🥬</span>}
-                {item.dietaryInfo?.includes(DietaryType.VEGAN) && <span title="Vegan">🌱</span>}
-                {item.dietaryInfo?.includes(DietaryType.NON_VEGETARIAN) && <span title="Non-Veg">🍖</span>}
-                {item.spiceLevel && item.spiceLevel !== 'NONE' && <span title={item.spiceLevel}>🌶️</span>}
+                {item.dietaryInfo?.includes(DietaryType.VEGETARIAN) && <span style={{ background: '#e8f5e9', color: '#388e3c', borderRadius: '3px', padding: '1px 4px', fontSize: '9px', fontWeight: 600 }}>VEG</span>}
+                {item.dietaryInfo?.includes(DietaryType.VEGAN) && <span style={{ background: '#f1f8e9', color: '#558b2f', borderRadius: '3px', padding: '1px 4px', fontSize: '9px', fontWeight: 600 }}>VEGAN</span>}
+                {item.dietaryInfo?.includes(DietaryType.NON_VEGETARIAN) && <span style={{ background: '#fce4ec', color: '#c62828', borderRadius: '3px', padding: '1px 4px', fontSize: '9px', fontWeight: 600 }}>NON-VEG</span>}
+                {item.spiceLevel && item.spiceLevel !== 'NONE' && <span style={{ background: '#fff3e0', color: '#e65100', borderRadius: '3px', padding: '1px 4px', fontSize: '9px', fontWeight: 600 }}>SPICY</span>}
               </div>
 
               {/* Price */}
@@ -624,7 +629,8 @@ const MenuPanel: React.FC<MenuPanelProps> = ({ onAddItem }) => {
         fontWeight: typography.fontWeight.medium,
         textAlign: 'center'
       }}>
-        📊 {filteredItems.length} items available • {selectedCuisine.replace(/_/g, ' ')}
+        <BarChartIcon style={{ fontSize: '14px', marginRight: '4px' }} />
+        {filteredItems.length} items available • {selectedCuisine.replace(/_/g, ' ')}
         {selectedCategory && ` • ${selectedCategory.replace(/_/g, ' ')}`}
         {selectedDietary && ` • ${selectedDietary}`}
       </div>

@@ -1,6 +1,14 @@
 // src/apps/POSSystem/OrderHistory.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import SearchIcon from '@mui/icons-material/Search';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import MoneyOffIcon from '@mui/icons-material/MoneyOff';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import PrintIcon from '@mui/icons-material/Print';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useGetStoreOrdersQuery } from '../../store/api/orderApi';
 import { useRecordCashPaymentMutation } from '../../store/api/paymentApi';
 import { useAppSelector } from '../../store/hooks';
@@ -53,10 +61,10 @@ const OrderHistory: React.FC = () => {
         notes: `Cash payment recorded for Order #${order.orderNumber}`,
       }).unwrap();
 
-      alert(`✅ Order #${order.orderNumber} marked as PAID!\n\n💵 Cash payment of ${CURRENCY.format(order.total)} recorded.`);
+      alert(`Order #${order.orderNumber} marked as PAID!\n\nCash payment of ${CURRENCY.format(order.total)} recorded.`);
     } catch (error: any) {
       console.error('Failed to record cash payment:', error);
-      alert(`❌ Failed to mark order as paid.\n\n${error?.data?.message || 'Please try again.'}`);
+      alert(`Failed to mark order as paid.\n\n${error?.data?.message || 'Please try again.'}`);
     }
   };
 
@@ -168,10 +176,11 @@ const OrderHistory: React.FC = () => {
               left: spacing[3],
               top: '50%',
               transform: 'translateY(-50%)',
-              fontSize: typography.fontSize.base,
-              color: colors.text.tertiary
+              color: colors.text.tertiary,
+              display: 'flex',
+              alignItems: 'center'
             }}>
-              🔍
+              <SearchIcon style={{ fontSize: '18px' }} />
             </div>
             <input
               type="text"
@@ -239,7 +248,8 @@ const OrderHistory: React.FC = () => {
               textAlign: 'center'
             }}
           >
-            ❌ Failed to load orders. Please try again.
+            <ErrorOutlineIcon style={{ fontSize: '16px', marginRight: '6px', verticalAlign: 'middle' }} />
+            Failed to load orders. Please try again.
           </Card>
         )}
 
@@ -254,7 +264,8 @@ const OrderHistory: React.FC = () => {
               textAlign: 'center'
             }}
           >
-            ℹ️ {searchTerm ? 'No orders found matching your search' : 'No orders today yet'}
+            <InfoOutlinedIcon style={{ fontSize: '16px', marginRight: '6px', verticalAlign: 'middle' }} />
+            {searchTerm ? 'No orders found matching your search' : 'No orders today yet'}
           </Card>
         )}
 
@@ -328,11 +339,13 @@ const OrderHistory: React.FC = () => {
                   </Badge>
                   {order.paymentStatus === 'PAID' ? (
                     <Badge variant="success" size="sm">
-                      ✓ Paid
+                      <CheckCircleOutlineIcon style={{ fontSize: '12px', marginRight: '3px', verticalAlign: 'middle' }} />
+                      Paid
                     </Badge>
                   ) : order.paymentStatus === 'PENDING' ? (
                     <Badge variant="warning" size="sm">
-                      💰 Unpaid
+                      <MoneyOffIcon style={{ fontSize: '12px', marginRight: '3px', verticalAlign: 'middle' }} />
+                      Unpaid
                     </Badge>
                   ) : null}
                 </div>
@@ -365,7 +378,8 @@ const OrderHistory: React.FC = () => {
                         fontWeight: 600,
                       }}
                     >
-                      💰 Mark as Paid
+                      <AttachMoneyIcon style={{ fontSize: '14px', marginRight: '4px', verticalAlign: 'middle' }} />
+                      Mark as Paid
                     </Button>
                   )}
                   <Button
@@ -373,14 +387,16 @@ const OrderHistory: React.FC = () => {
                     variant="ghost"
                     onClick={() => handlePrintOrder(order.id)}
                   >
-                    🖨️ Print
+                    <PrintIcon style={{ fontSize: '14px', marginRight: '4px', verticalAlign: 'middle' }} />
+                    Print
                   </Button>
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => navigate(`/manager/orders/${order.id}`)}
                   >
-                    👁️ View Details
+                    <VisibilityIcon style={{ fontSize: '14px', marginRight: '4px', verticalAlign: 'middle' }} />
+                    View Details
                   </Button>
                 </div>
               </Card>

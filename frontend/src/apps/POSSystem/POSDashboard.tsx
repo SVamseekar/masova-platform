@@ -13,6 +13,12 @@ import { PINAuthModal } from './components/PINAuthModal';
 import Button from '../../components/ui/neumorphic/Button';
 import Badge from '../../components/ui/neumorphic/Badge';
 import { colors, shadows, spacing, typography } from '../../styles/design-tokens';
+import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import PeopleIcon from '@mui/icons-material/People';
+import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import { CURRENCY } from '../../config/business-config';
 import {
   useGetTodaySalesMetricsQuery,
@@ -306,10 +312,10 @@ const POSDashboard: React.FC = () => {
         notes: `Cash payment recorded for Order #${order.orderNumber}`,
       }).unwrap();
 
-      enqueueSnackbar(`✅ Order #${order.orderNumber} marked as PAID! 💵 Cash payment of ${CURRENCY.format(order.total)} recorded.`, { variant: 'success' });
+      enqueueSnackbar(`Order #${order.orderNumber} marked as PAID — Cash payment of ${CURRENCY.format(order.total)} recorded.`, { variant: 'success' });
     } catch (error: any) {
       console.error('Failed to record cash payment:', error);
-      enqueueSnackbar(`❌ Failed to mark order as paid. ${error?.data?.message || 'Please try again.'}`, { variant: 'error' });
+      enqueueSnackbar(`Failed to mark order as paid. ${error?.data?.message || 'Please try again.'}`, { variant: 'error' });
     }
   };
 
@@ -860,7 +866,8 @@ const POSDashboard: React.FC = () => {
                   fontWeight: typography.fontWeight.bold,
                   color: '#1a1a1a'
                 }}>
-                  🔥 Top Sellers Today
+                  <LocalFireDepartmentIcon style={{ fontSize: '20px', color: colors.semantic.error, marginRight: '6px', verticalAlign: 'middle' }} />
+                  Top Sellers Today
                 </h3>
                 {isManager && (
                   <Button
@@ -900,7 +907,7 @@ const POSDashboard: React.FC = () => {
                           fontWeight: typography.fontWeight.bold,
                           fontSize: typography.fontSize.sm
                         }}>
-                          {index === 0 ? '👑' : `#${index + 1}`}
+                          {index === 0 ? <EmojiEventsIcon style={{ fontSize: '18px' }} /> : `#${index + 1}`}
                         </div>
                         <div>
                           <div style={{
@@ -954,7 +961,8 @@ const POSDashboard: React.FC = () => {
                 fontWeight: typography.fontWeight.bold,
                 color: '#1a1a1a'
               }}>
-                📜 Recent Orders
+                <ReceiptLongIcon style={{ fontSize: '20px', marginRight: '6px', verticalAlign: 'middle' }} />
+                Recent Orders
               </h3>
               {filteredOrders.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
@@ -1054,7 +1062,8 @@ const POSDashboard: React.FC = () => {
                               e.currentTarget.style.backgroundColor = '#10b981';
                             }}
                           >
-                            💰 Mark Paid
+                            <AttachMoneyIcon style={{ fontSize: '14px', marginRight: '4px', verticalAlign: 'middle' }} />
+                            Mark Paid
                           </button>
                         )}
                       </div>
@@ -1094,7 +1103,8 @@ const POSDashboard: React.FC = () => {
                   fontWeight: typography.fontWeight.bold,
                   color: '#1a1a1a'
                 }}>
-                  👥 Staff Leaderboard
+                  <PeopleIcon style={{ fontSize: '20px', marginRight: '6px', verticalAlign: 'middle' }} />
+                  Staff Leaderboard
                 </h3>
                 <Button
                   size="sm"
@@ -1136,7 +1146,7 @@ const POSDashboard: React.FC = () => {
                         color: '#FFFFFF',
                         fontWeight: typography.fontWeight.bold
                       }}>
-                        {index === 0 ? '🏆' : `#${index + 1}`}
+                        {index === 0 ? <WorkspacePremiumIcon style={{ fontSize: '20px' }} /> : `#${index + 1}`}
                       </div>
                       <div>
                         <div style={{

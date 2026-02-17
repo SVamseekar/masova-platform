@@ -9,6 +9,13 @@ import Button from '../../../components/ui/neumorphic/Button';
 import { colors, shadows, spacing, typography } from '../../../styles/design-tokens';
 import { useGeocoding, buildAddressString } from '../../../hooks/useGeocoding';
 import { PINAuthModal } from './PINAuthModal';
+import PersonIcon from '@mui/icons-material/Person';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import PaymentIcon from '@mui/icons-material/Payment';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import SyncIcon from '@mui/icons-material/Sync';
 
 interface CustomerPanelProps {
   items: any[];
@@ -313,10 +320,10 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
       // Staff will mark as paid after collecting cash
       if (paymentMethod === 'CASH') {
         alert(
-          `✅ Order #${result.orderNumber} created successfully!\n\n` +
-          `💵 Payment Method: CASH\n` +
-          `💰 Amount: ${CURRENCY.format(total)}\n\n` +
-          `⚠️ Remember to collect cash and mark as paid in Order Management!`
+          `Order #${result.orderNumber} created successfully!\n\n` +
+          `Payment Method: CASH\n` +
+          `Amount: ${CURRENCY.format(total)}\n\n` +
+          `Remember to collect cash and mark as paid in Order Management!`
         );
         resetForm();
         onOrderComplete();
@@ -445,7 +452,7 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
           alignItems: 'center',
           gap: spacing[2]
         }}>
-          <span style={{ fontSize: typography.fontSize.lg }}>👤</span>
+          <PersonIcon style={{ fontSize: '20px', color: colors.brand.primary }} />
           Customer & Payment
         </h3>
       </div>
@@ -473,7 +480,8 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
             fontWeight: typography.fontWeight.bold,
             color: colors.text.primary
           }}>
-            📋 Customer Information
+            <AssignmentIcon style={{ fontSize: '16px', marginRight: '6px', verticalAlign: 'middle' }} />
+            Customer Information
           </p>
 
           <input
@@ -541,7 +549,7 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
               fontSize: typography.fontSize.xs,
               color: colors.semantic.error
             }}>
-              ⚠️ {phoneError}
+              <WarningAmberIcon style={{ fontSize: '12px', marginRight: '4px', verticalAlign: 'middle' }} />{phoneError}
             </p>
           )}
 
@@ -585,7 +593,7 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
               fontSize: typography.fontSize.xs,
               color: colors.semantic.error
             }}>
-              ⚠️ {emailError}
+              <WarningAmberIcon style={{ fontSize: '12px', marginRight: '4px', verticalAlign: 'middle' }} />{emailError}
             </p>
           )}
 
@@ -718,17 +726,17 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
                     ? colors.semantic.error
                     : colors.semantic.info
                 }}>
-                  {geocoding && <span>🔄 Finding location...</span>}
+                  {geocoding && <span><SyncIcon style={{ fontSize: '14px', marginRight: '4px', verticalAlign: 'middle' }} />Finding location...</span>}
                   {!geocoding && geocodingStatus === 'success' && deliveryLatitude && (
                     <span>
-                      ✅ Location found: {deliveryLatitude.toFixed(4)}, {deliveryLongitude?.toFixed(4)}
+                      <CheckCircleOutlineIcon style={{ fontSize: '14px', marginRight: '4px', verticalAlign: 'middle' }} />Location found: {deliveryLatitude.toFixed(4)}, {deliveryLongitude?.toFixed(4)}
                     </span>
                   )}
                   {!geocoding && geocodingStatus === 'error' && (
-                    <span>⚠️ {geocodingError || 'Could not find location - will use test coordinates in dev mode'}</span>
+                    <span><WarningAmberIcon style={{ fontSize: '14px', marginRight: '4px', verticalAlign: 'middle' }} />{geocodingError || 'Could not find location - will use test coordinates in dev mode'}</span>
                   )}
                   {!geocoding && geocodingStatus === 'idle' && (
-                    <span>📍 Enter city & pincode to find GPS coordinates</span>
+                    <span><LocationOnIcon style={{ fontSize: '14px', marginRight: '4px', verticalAlign: 'middle' }} />Enter city & pincode to find GPS coordinates</span>
                   )}
                 </div>
               )}
@@ -769,7 +777,7 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
                   fontSize: typography.fontSize.xs,
                   color: colors.semantic.error
                 }}>
-                  ⚠️ {addressError}
+                  <WarningAmberIcon style={{ fontSize: '12px', marginRight: '4px', verticalAlign: 'middle' }} />{addressError}
                 </p>
               )}
             </>
@@ -792,7 +800,8 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
             fontWeight: typography.fontWeight.bold,
             color: colors.text.primary
           }}>
-            💳 Payment Method
+            <PaymentIcon style={{ fontSize: '16px', marginRight: '6px', verticalAlign: 'middle' }} />
+            Payment Method
           </p>
 
           <div style={{
@@ -859,7 +868,7 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
               fontSize: typography.fontSize.xs,
               color: colors.text.primary
             }}>
-              ℹ️ Cash payment - collect at delivery/pickup
+              Cash payment - collect at delivery/pickup
             </div>
           )}
         </Card>
@@ -880,7 +889,8 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
               fontWeight: typography.fontWeight.bold,
               color: colors.text.primary
             }}>
-              ✅ Order Summary
+              <CheckCircleOutlineIcon style={{ fontSize: '16px', marginRight: '6px', verticalAlign: 'middle', color: colors.semantic.success }} />
+              Order Summary
             </p>
             <div style={{
               display: 'flex',
@@ -989,7 +999,8 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
               textAlign: 'center'
             }}
           >
-            ⚠️ Please add items to create an order
+            <WarningAmberIcon style={{ fontSize: '16px', marginRight: '6px', verticalAlign: 'middle' }} />
+            Please add items to create an order
           </Card>
         )}
 

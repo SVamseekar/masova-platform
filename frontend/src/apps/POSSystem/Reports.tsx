@@ -1,6 +1,13 @@
 // src/apps/POSSystem/Reports.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import LockIcon from '@mui/icons-material/Lock';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import PeopleIcon from '@mui/icons-material/People';
+import InventoryIcon from '@mui/icons-material/Inventory';
+import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import { useAppSelector } from '../../store/hooks';
 import { CURRENCY } from '../../config/business-config';
 import {
@@ -62,7 +69,7 @@ const Reports: React.FC = () => {
             fontSize: typography.fontSize['2xl'],
             marginBottom: spacing[4]
           }}>
-            🔒
+            <LockIcon style={{ fontSize: '40px', color: colors.semantic.error }} />
           </div>
           <h2 style={{
             margin: `0 0 ${spacing[3]} 0`,
@@ -126,9 +133,9 @@ const Reports: React.FC = () => {
           gap: spacing[2]
         }}>
           {[
-            { key: 'sales', label: '📊 Sales', icon: '📊' },
-            { key: 'staff', label: '👥 Staff', icon: '👥' },
-            { key: 'inventory', label: '📦 Inventory', icon: '📦' }
+            { key: 'sales', label: 'Sales', Icon: BarChartIcon },
+            { key: 'staff', label: 'Staff', Icon: PeopleIcon },
+            { key: 'inventory', label: 'Inventory', Icon: InventoryIcon }
           ].map((tab) => (
             <button
               key={tab.key}
@@ -165,6 +172,7 @@ const Reports: React.FC = () => {
                 }
               }}
             >
+              <tab.Icon style={{ fontSize: '16px', marginRight: '6px', verticalAlign: 'middle' }} />
               {tab.label}
             </button>
           ))}
@@ -307,7 +315,8 @@ const Reports: React.FC = () => {
                       fontWeight: typography.fontWeight.bold,
                       color: colors.text.primary
                     }}>
-                      🔥 Top Selling Items (Today)
+                      <LocalFireDepartmentIcon style={{ fontSize: '18px', color: colors.semantic.error, marginRight: '6px', verticalAlign: 'middle' }} />
+                      Top Selling Items (Today)
                     </h3>
                     <Button
                       size="sm"
@@ -385,7 +394,8 @@ const Reports: React.FC = () => {
                   onClick={() => navigate('/manager/advanced-reports')}
                   style={{ width: '100%' }}
                 >
-                  📈 View Advanced Reports (Charts & Trends)
+                  <TrendingUpIcon style={{ fontSize: '16px', marginRight: '6px', verticalAlign: 'middle' }} />
+                  View Advanced Reports (Charts & Trends)
                 </Button>
               </div>
             )}
@@ -405,7 +415,8 @@ const Reports: React.FC = () => {
                     fontWeight: typography.fontWeight.bold,
                     color: colors.text.primary
                   }}>
-                    👥 Staff Performance (Today)
+                    <PeopleIcon style={{ fontSize: '18px', marginRight: '6px', verticalAlign: 'middle' }} />
+                    Staff Performance (Today)
                   </h3>
                   <Button
                     size="sm"
@@ -449,7 +460,7 @@ const Reports: React.FC = () => {
                             color: colors.text.primary,
                             marginBottom: spacing[1]
                           }}>
-                            {index === 0 && '🏆 '}#{index + 1} {staff.staffName}
+                            {index === 0 && <WorkspacePremiumIcon style={{ fontSize: '14px', color: colors.semantic.warning, marginRight: '4px', verticalAlign: 'middle' }} />}#{index + 1} {staff.staffName}
                           </div>
                           <div style={{
                             fontSize: typography.fontSize.xs,
@@ -492,10 +503,9 @@ const Reports: React.FC = () => {
                 }}
               >
                 <div style={{
-                  fontSize: typography.fontSize['4xl'],
                   marginBottom: spacing[4]
                 }}>
-                  📦
+                  <InventoryIcon style={{ fontSize: '48px', color: colors.semantic.info }} />
                 </div>
                 <h3 style={{
                   margin: `0 0 ${spacing[3]} 0`,

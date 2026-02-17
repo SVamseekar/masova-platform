@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useValidatePINMutation } from '../../../store/api/userApi';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
 interface PINAuthModalProps {
   isOpen: boolean;
@@ -165,7 +166,7 @@ export const PINAuthModal: React.FC<PINAuthModalProps> = ({
 
         {error && (
           <div style={styles.errorContainer}>
-            <span style={styles.errorIcon}>⚠</span>
+            <WarningAmberIcon style={{ fontSize: '18px', color: '#d32f2f' }} />
             <span style={styles.errorText}>{error}</span>
           </div>
         )}

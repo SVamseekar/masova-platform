@@ -8,6 +8,13 @@ import {
 } from '../../../store/api/analyticsApi';
 import Card from '../../../components/ui/neumorphic/Card';
 import { colors, shadows, spacing, typography } from '../../../styles/design-tokens';
+import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
 interface MetricsTilesProps {
   storeId?: string;
@@ -58,7 +65,8 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
           textAlign: 'center'
         }}
       >
-        ⚠️ Unable to load metrics. Using offline mode.
+        <WarningAmberIcon style={{ fontSize: '16px', marginRight: '6px', verticalAlign: 'middle' }} />
+        Unable to load metrics. Using offline mode.
       </Card>
     );
   }
@@ -155,7 +163,7 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
               fontSize: typography.fontSize.base,
               color: trendValue >= 0 ? colors.semantic.success : colors.semantic.error
             }}>
-              {trendValue >= 0 ? '📈' : '📉'}
+              {trendValue >= 0 ? <TrendingUpIcon style={{ fontSize: '16px' }} /> : <TrendingDownIcon style={{ fontSize: '16px' }} />}
             </span>
             <span style={{
               fontSize: typography.fontSize.xs,
@@ -197,7 +205,7 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
         title="Today's Sales"
         value={salesMetrics ? CURRENCY.format(salesMetrics.todaySales) : '-'}
         subtitle={salesMetrics ? `${salesMetrics.todayOrderCount} orders` : 'Loading...'}
-        icon="💰"
+        icon={<CurrencyRupeeIcon style={{ fontSize: '28px' }} />}
         trend="vs yesterday"
         trendValue={salesMetrics?.percentChangeFromYesterday}
         bgColor={colors.semantic.success}
@@ -208,7 +216,7 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
         title="Avg Order Value"
         value={avgOrderValue ? CURRENCY.format(avgOrderValue.averageOrderValue) : '-'}
         subtitle={avgOrderValue ? `${avgOrderValue.totalOrders} orders` : 'Loading...'}
-        icon="🛒"
+        icon={<ShoppingCartIcon style={{ fontSize: '28px' }} />}
         trend={avgOrderValue ? 'vs yesterday' : undefined}
         trendValue={avgOrderValue?.percentChange}
         bgColor={colors.semantic.info}
@@ -220,7 +228,7 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
         value={salesMetrics ? CURRENCY.format(salesMetrics.lastYearSameDaySales) : '-'}
         trend="YoY growth"
         trendValue={salesMetrics?.percentChangeFromLastYear}
-        icon="📊"
+        icon={<BarChartIcon style={{ fontSize: '28px' }} />}
         bgColor={colors.semantic.warning}
       />
 
@@ -229,7 +237,7 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
         title="Active Deliveries"
         value={driverStatus?.activeDeliveries ?? '-'}
         subtitle={driverStatus ? `${driverStatus.availableDrivers}/${driverStatus.totalDrivers} drivers available` : 'Loading...'}
-        icon="🚚"
+        icon={<LocalShippingIcon style={{ fontSize: '28px' }} />}
         bgColor={colors.brand.secondary}
       />
     </div>

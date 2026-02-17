@@ -5,6 +5,11 @@ import Card from '../../../components/ui/neumorphic/Card';
 import Badge from '../../../components/ui/neumorphic/Badge';
 import Button from '../../../components/ui/neumorphic/Button';
 import { colors, shadows, spacing, typography } from '../../../styles/design-tokens';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import InventoryIcon from '@mui/icons-material/Inventory';
 
 interface OrderPanelProps {
   items: any[];
@@ -61,7 +66,7 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
             alignItems: 'center',
             gap: spacing[2]
           }}>
-            <span style={{ fontSize: typography.fontSize.lg }}>🛒</span>
+            <ShoppingCartIcon style={{ fontSize: '20px', color: colors.brand.primary }} />
             Current Order
           </h3>
           {items.length > 0 && (
@@ -70,7 +75,7 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
               variant="danger"
               onClick={onNewOrder}
             >
-              🗑️ Clear
+              Clear
             </Button>
           )}
         </div>
@@ -82,8 +87,8 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
           marginBottom: spacing[3]
         }}>
           {[
-            { value: 'PICKUP', label: 'Pickup', icon: '🛍️' },
-            { value: 'DELIVERY', label: 'Delivery', icon: '🚚' }
+            { value: 'PICKUP', label: 'Pickup', Icon: ShoppingBagIcon },
+            { value: 'DELIVERY', label: 'Delivery', Icon: LocalShippingIcon }
           ].map(type => (
             <button
               key={type.value}
@@ -125,7 +130,7 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
                 }
               }}
             >
-              <span style={{ fontSize: typography.fontSize.base }}>{type.icon}</span>
+              <type.Icon style={{ fontSize: '18px' }} />
               <span>{type.label}</span>
             </button>
           ))}
@@ -146,7 +151,7 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
               marginTop: spacing[6]
             }}
           >
-            ℹ️ No items in order. Select items from the menu to get started.
+            No items in order. Select items from the menu to get started.
           </Card>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
@@ -285,7 +290,7 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
                       e.currentTarget.style.boxShadow = shadows.raised.sm;
                     }}
                   >
-                    🗑️
+                    <DeleteOutlineIcon style={{ fontSize: '16px' }} />
                   </button>
                 </div>
 
@@ -402,7 +407,8 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
             textAlign: 'center',
             fontWeight: typography.fontWeight.medium
           }}>
-            📦 {items.length} item{items.length !== 1 ? 's' : ''} • {items.reduce((sum, item) => sum + item.quantity, 0)} qty
+            <InventoryIcon style={{ fontSize: '14px', marginRight: '4px' }} />
+            {items.length} item{items.length !== 1 ? 's' : ''} • {items.reduce((sum, item) => sum + item.quantity, 0)} qty
           </div>
         </div>
       )}

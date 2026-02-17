@@ -1,5 +1,8 @@
 // src/apps/POSSystem/components/ClockInModal.tsx
 import React, { useState, useRef, useEffect } from 'react';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { colors, shadows, spacing } from '../../../styles/design-tokens';
 import Button from '../../../components/ui/neumorphic/Button';
 import { useValidatePINMutation } from '../../../store/api/userApi';
@@ -225,7 +228,10 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
       <div style={styles.modal}>
         <div style={styles.header}>
           <h2 style={styles.title}>
-            {step === 'employee' ? '🔐 Clock In' : '🔑 Manager Authorization'}
+            {step === 'employee'
+              ? <><AccessTimeIcon style={{ fontSize: '22px', marginRight: '8px', verticalAlign: 'middle' }} />Clock In</>
+              : <><AdminPanelSettingsIcon style={{ fontSize: '22px', marginRight: '8px', verticalAlign: 'middle' }} />Manager Authorization</>
+            }
           </h2>
           <button onClick={onClose} style={styles.closeButton} disabled={isLoading}>×</button>
         </div>
@@ -293,7 +299,7 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
 
           {error && (
             <div style={styles.errorMessage}>
-              <span style={styles.errorIcon}>⚠</span>
+              <WarningAmberIcon style={{ fontSize: '18px' }} />
               <span>{error}</span>
             </div>
           )}
