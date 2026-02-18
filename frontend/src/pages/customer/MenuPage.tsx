@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { colors, spacing, typography, shadows, borderRadius } from '../../styles/design-tokens';
-import { createNeumorphicSurface, createCard, createBadge } from '../../styles/neumorphic-utils';
 import {
   useGetAvailableMenuQuery,
   Cuisine,
@@ -12,7 +10,6 @@ import {
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { addToCart, updateItemQuantity, selectCartItems, selectSelectedStoreId } from '../../store/slices/cartSlice';
 import AppHeader from '../../components/common/AppHeader';
-import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
 import RecipeViewer from '../../components/RecipeViewer';
 import StoreSelector from '../../components/StoreSelector';
 
@@ -203,18 +200,12 @@ const MenuPage: React.FC<MenuPageProps> = ({
 
   const getDietaryColor = (dietary: DietaryType): string => {
     switch (dietary) {
-      case DietaryType.VEGETARIAN:
-        return colors.semantic.success;
-      case DietaryType.VEGAN:
-        return colors.semantic.successLight;
-      case DietaryType.NON_VEGETARIAN:
-        return colors.semantic.error;
-      case DietaryType.JAIN:
-        return colors.semantic.warning;
-      case DietaryType.HALAL:
-        return colors.brand.secondary;
-      default:
-        return colors.text.secondary;
+      case DietaryType.VEGETARIAN: return '#2e7d32';
+      case DietaryType.VEGAN: return '#1b5e20';
+      case DietaryType.NON_VEGETARIAN: return 'var(--red)';
+      case DietaryType.JAIN: return '#f57f17';
+      case DietaryType.HALAL: return '#1565c0';
+      default: return 'var(--text-3)';
     }
   };
 
@@ -228,409 +219,332 @@ const MenuPage: React.FC<MenuPageProps> = ({
     }
   };
 
-  // Styles
-  const containerStyles: React.CSSProperties = {
-    fontFamily: typography.fontFamily.primary,
-    position: 'relative',
-    minHeight: '100vh',
-    padding: spacing[8],
-    zIndex: 1,
-  };
-
-  const headerStyles: React.CSSProperties = {
-    textAlign: 'center',
-    marginBottom: spacing[10],
-  };
-
-  const titleStyles: React.CSSProperties = {
-    fontSize: typography.fontSize['5xl'],
-    fontWeight: typography.fontWeight.extrabold,
-    color: colors.text.primary,
-    marginBottom: spacing[3],
-    background: `linear-gradient(135deg, ${colors.brand.primary}, ${colors.brand.secondary})`,
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-  };
-
-  const subtitleStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.xl,
-    color: colors.text.secondary,
-    fontWeight: typography.fontWeight.medium,
-  };
-
-  const searchContainerStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('raised', 'lg', '2xl'),
-    padding: spacing[6],
-    marginBottom: spacing[8],
-  };
-
-  // DEEP inset search input for prominent concave effect
+  // ── Dark design styles ──────────────────────────────────────
   const searchInputStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('inset', 'lg', 'xl'),  // Enhanced from 'base', 'lg'
     width: '100%',
-    padding: `${spacing[5]} ${spacing[6]}`,  // More generous padding
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.primary,
-    backgroundColor: colors.surface.primary,
-    border: 'none',
+    padding: '12px 20px',
+    fontSize: '0.95rem',
+    color: 'var(--text-1)',
+    background: 'var(--surface)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-pill)',
     outline: 'none',
-    fontFamily: typography.fontFamily.primary,
+    fontFamily: 'var(--font-body)',
   };
 
-  // More prominent filter section
   const filterSectionStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('raised', 'xl', '2xl'),  // Enhanced from 'lg'
-    padding: spacing[8],  // More generous
-    marginBottom: spacing[8],
-    border: `1px solid ${colors.surface.border}`,  // Add definition
+    padding: '24px',
+    marginBottom: '24px',
+    background: 'var(--surface)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-card)',
   };
 
-  const filterGroupStyles: React.CSSProperties = {
-    marginBottom: spacing[6],
-  };
+  const filterGroupStyles: React.CSSProperties = { marginBottom: '20px' };
 
   const filterLabelStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-    marginBottom: spacing[3],
+    fontSize: '0.7rem',
+    fontWeight: 600,
+    color: 'var(--text-3)',
+    marginBottom: '10px',
     display: 'block',
-    textTransform: 'uppercase',
-    letterSpacing: typography.letterSpacing.wide,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.1em',
   };
 
-  const filterButtonContainerStyles: React.CSSProperties = {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: spacing[3],
-  };
+  const filterButtonContainerStyles: React.CSSProperties = { display: 'flex', flexWrap: 'wrap' as const, gap: '8px' };
 
   const getFilterButtonStyles = (isActive: boolean): React.CSSProperties => ({
-    ...createNeumorphicSurface(isActive ? 'inset' : 'raised', 'base', 'lg'),
-    padding: `${spacing[3]} ${spacing[5]}`,
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold,
-    color: isActive ? colors.brand.primary : colors.text.primary,
-    backgroundColor: isActive ? colors.brand.primaryLight + '20' : colors.surface.primary,
-    border: 'none',
+    padding: '6px 14px',
+    fontSize: '0.8rem',
+    fontWeight: 500,
+    color: isActive ? 'var(--gold)' : 'var(--text-2)',
+    background: isActive ? 'rgba(212,168,67,0.12)' : 'var(--surface-2)',
+    border: `1px solid ${isActive ? 'var(--gold)' : 'var(--border)'}`,
+    borderRadius: 'var(--radius-pill)',
     cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    fontFamily: typography.fontFamily.primary,
+    transition: 'var(--transition)',
+    fontFamily: 'var(--font-body)',
   });
 
   const menuGridStyles: React.CSSProperties = {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-    gap: spacing[6],
+    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+    gap: '20px',
   };
 
-  // Larger elevation menu cards
   const menuCardStyles: React.CSSProperties = {
-    ...createCard('xl', 'lg', true),  // Enhanced from 'md', 'base'
     display: 'flex',
-    flexDirection: 'column',
-    border: `1px solid ${colors.surface.border}`,  // Add definition
+    flexDirection: 'column' as const,
+    background: 'var(--surface)',
+    borderRadius: 'var(--radius-card)',
+    border: '1px solid var(--border)',
+    overflow: 'hidden',
     height: '100%',
+    transition: 'var(--transition)',
   };
 
   const menuImageStyles: React.CSSProperties = {
     width: '100%',
-    height: '200px',
-    objectFit: 'cover',
-    backgroundColor: colors.surface.secondary,
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing[4],
+    height: '180px',
+    objectFit: 'cover' as const,
+    backgroundColor: 'var(--surface-2)',
   };
 
-  const menuContentStyles: React.CSSProperties = {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-  };
+  const menuContentStyles: React.CSSProperties = { flex: 1, display: 'flex', flexDirection: 'column' as const, padding: '16px' };
 
   const menuHeaderStyles: React.CSSProperties = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: spacing[3],
+    marginBottom: '8px',
   };
 
   const menuNameStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
+    fontSize: '0.95rem',
+    fontWeight: 700,
+    color: 'var(--text-1)',
     margin: 0,
+    fontFamily: 'var(--font-body)',
   };
 
   const recommendedBadgeStyles: React.CSSProperties = {
-    ...createBadge('warning', 'sm'),
-    fontSize: typography.fontSize.xs,
+    fontSize: '0.7rem',
+    fontWeight: 700,
+    background: 'rgba(212,168,67,0.15)',
+    color: 'var(--gold)',
+    border: '1px solid var(--gold)',
+    borderRadius: 'var(--radius-pill)',
+    padding: '2px 8px',
+    flexShrink: 0,
   };
 
   const descriptionStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-    marginBottom: spacing[4],
-    lineHeight: typography.lineHeight.relaxed,
+    fontSize: '0.78rem',
+    color: 'var(--text-3)',
+    marginBottom: '12px',
+    lineHeight: 1.5,
+    overflow: 'hidden',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical' as const,
   };
 
-  const tagsContainerStyles: React.CSSProperties = {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: spacing[2],
-    marginBottom: spacing[3],
-  };
+  const tagsContainerStyles: React.CSSProperties = { display: 'flex', flexWrap: 'wrap' as const, gap: '6px', marginBottom: '10px' };
 
   const getDietaryBadgeStyles = (dietary: DietaryType): React.CSSProperties => ({
     display: 'inline-flex',
-    padding: `${spacing[1]} ${spacing[2]}`,
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.semibold,
+    padding: '2px 8px',
+    fontSize: '0.7rem',
+    fontWeight: 600,
     backgroundColor: getDietaryColor(dietary),
-    color: colors.text.inverse,
-    borderRadius: borderRadius.base,
-    boxShadow: shadows.raised.sm,
+    color: '#fff',
+    borderRadius: 'var(--radius-pill)',
   });
 
-  const spiceBadgeStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.sm,
-  };
-
-  const prepTimeStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-    marginBottom: spacing[3],
-  };
+  const prepTimeStyles: React.CSSProperties = { fontSize: '0.75rem', color: 'var(--text-3)', marginBottom: '10px' };
 
   const priceRowStyles: React.CSSProperties = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 'auto',
-    paddingTop: spacing[4],
-    borderTop: `1px solid ${colors.surface.tertiary}`,
+    paddingTop: '12px',
+    borderTop: '1px solid var(--border)',
   };
 
   const priceStyles: React.CSSProperties = {
-    fontSize: typography.fontSize['2xl'],
-    fontWeight: typography.fontWeight.extrabold,
-    background: `linear-gradient(135deg, ${colors.brand.primary}, ${colors.brand.secondary})`,
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
+    fontSize: '1.1rem',
+    fontWeight: 700,
+    color: 'var(--gold)',
+    fontFamily: 'var(--font-body)',
   };
 
-  const quantityControlStyles: React.CSSProperties = {
-    display: 'flex',
-    gap: spacing[2],
-    alignItems: 'center',
-  };
+  const quantityControlStyles: React.CSSProperties = { display: 'flex', gap: '6px', alignItems: 'center' };
 
-  // PROMINENT quantity buttons - larger touch targets with deep press
   const quantityButtonStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('raised', 'md', 'lg'),  // Enhanced from 'sm', 'md'
-    width: '44px',  // Larger from 36px
-    height: '44px',
+    width: '28px',
+    height: '28px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    border: 'none',
+    border: '1px solid var(--border)',
+    borderRadius: '50%',
     cursor: 'pointer',
-    fontWeight: typography.fontWeight.bold,
-    fontSize: typography.fontSize.lg,
-    color: colors.brand.primary,
-    backgroundColor: colors.surface.primary,
-    transition: 'all 0.2s ease',
+    fontWeight: 700,
+    fontSize: '1rem',
+    color: 'var(--text-1)',
+    background: 'var(--surface-2)',
+    transition: 'var(--transition)',
   };
 
   const quantityDisplayStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('inset', 'sm', 'md'),
-    minWidth: '50px',
-    padding: `${spacing[2]} ${spacing[3]}`,
-    textAlign: 'center',
-    fontWeight: typography.fontWeight.bold,
-    fontSize: typography.fontSize.base,
-    color: colors.text.primary,
+    minWidth: '24px',
+    textAlign: 'center' as const,
+    fontWeight: 700,
+    fontSize: '0.875rem',
+    color: 'var(--text-1)',
   };
 
-  const getAddButtonStyles = (inCart: boolean, disabled: boolean): React.CSSProperties => ({
-    ...createNeumorphicSurface('raised', 'base', 'lg'),
-    background: disabled
-      ? colors.surface.tertiary
-      : inCart
-        ? `linear-gradient(135deg, ${colors.semantic.success} 0%, ${colors.semantic.successLight} 100%)`
-        : `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.primaryLight} 100%)`,
-    padding: `${spacing[3]} ${spacing[6]}`,
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.bold,
-    color: disabled ? colors.text.tertiary : colors.text.inverse,
+  const getAddButtonStyles = (inCart: boolean, _disabled: boolean): React.CSSProperties => ({
+    background: inCart ? '#2e7d32' : 'var(--red)',
+    padding: '6px 14px',
+    fontSize: '0.8rem',
+    fontWeight: 600,
+    color: '#fff',
     border: 'none',
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    fontFamily: typography.fontFamily.primary,
-    transition: 'all 0.3s ease',
-    opacity: disabled ? 0.5 : 1,
+    borderRadius: 'var(--radius-pill)',
+    cursor: 'pointer',
+    fontFamily: 'var(--font-body)',
+    transition: 'var(--transition)',
   });
 
   const recipeButtonStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('raised', 'sm', 'lg'),
-    padding: `${spacing[2]} ${spacing[4]}`,
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.brand.secondary,
-    backgroundColor: colors.surface.primary,
-    border: 'none',
+    padding: '6px 12px',
+    fontSize: '0.75rem',
+    fontWeight: 500,
+    color: 'var(--text-2)',
+    background: 'none',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-pill)',
     cursor: 'pointer',
-    fontFamily: typography.fontFamily.primary,
-    transition: 'all 0.2s ease',
-    marginBottom: spacing[3],
+    fontFamily: 'var(--font-body)',
+    transition: 'var(--transition)',
+    marginBottom: '10px',
     display: 'flex',
     alignItems: 'center',
-    gap: spacing[2],
+    gap: '6px',
     width: '100%',
     justifyContent: 'center',
   };
 
   const variantsNoteStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.tertiary,
+    fontSize: '0.72rem',
+    color: 'var(--text-3)',
     fontStyle: 'italic',
-    marginTop: spacing[2],
+    marginTop: '6px',
   };
 
   const loadingStyles: React.CSSProperties = {
-    textAlign: 'center',
-    padding: spacing[16],
-    fontSize: typography.fontSize.xl,
-    color: colors.text.secondary,
+    textAlign: 'center' as const,
+    padding: '64px',
+    fontSize: '1.1rem',
+    color: 'var(--text-2)',
   };
 
   const emptyStateStyles: React.CSSProperties = {
-    textAlign: 'center',
-    padding: spacing[16],
-    fontSize: typography.fontSize.xl,
-    color: colors.text.secondary,
+    textAlign: 'center' as const,
+    padding: '64px',
+    fontSize: '1.1rem',
+    color: 'var(--text-2)',
   };
 
   return (
-    <>
-      {/* Animated Background */}
-      <AnimatedBackground variant="default" />
+    <div style={{ background: 'var(--bg)', minHeight: '100vh', fontFamily: 'var(--font-body)' }}>
+      <AppHeader
+        hideStaffLogin={hideStaffLogin}
+        showPublicNav={showPublicNav}
+        onCartClick={onCartClick}
+      />
 
-      <div style={containerStyles}>
-        <AppHeader
-          title="Browse Our Menu"
-          hideStaffLogin={hideStaffLogin}
-          showPublicNav={showPublicNav}
-          onCartClick={onCartClick}
-        />
-
-      {/* Store Selector and Search Bar */}
-      <div style={{ display: 'flex', gap: spacing[4], marginBottom: spacing[6], alignItems: 'center', justifyContent: 'space-between' }}>
-        <StoreSelector />
-        <div style={{ flex: 1 }}>
-          <input
-            type="text"
-            placeholder="Search for dishes..."
-            value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
-            style={searchInputStyles}
-          />
-        </div>
-      </div>
-
-      {/* Original Search Container Removed - Replaced above */}
-      <div style={{ ...searchContainerStyles, display: 'none' }}>
-        <input
-          type="text"
-          placeholder="Search for dishes..."
-          value={searchTerm}
-          onChange={(e) => handleSearch(e.target.value)}
-          style={searchInputStyles}
-        />
-      </div>
-
-      {/* Filters */}
-      <div style={filterSectionStyles}>
-        {/* Cuisine Filter */}
-        <div style={filterGroupStyles}>
-          <label style={filterLabelStyles}>Cuisine:</label>
-          <div style={filterButtonContainerStyles}>
-            {Object.values(Cuisine).map((cuisine) => (
-              <button
-                key={cuisine}
-                style={getFilterButtonStyles(selectedCuisine === cuisine)}
-                onClick={() => {
-                  setSelectedCuisine(cuisine);
-                  setSelectedCategory(null);
-                }}
-              >
-                {cuisine.replace(/_/g, ' ')}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Category Filter */}
-        {availableCategories.length > 0 && (
+      <div style={{ display: 'flex' }}>
+        {/* Left sidebar */}
+        <div style={{
+          width: '260px',
+          flexShrink: 0,
+          background: 'var(--surface)',
+          borderRight: '1px solid var(--border)',
+          padding: '24px 20px',
+          position: 'sticky',
+          top: '64px',
+          height: 'calc(100vh - 64px)',
+          overflowY: 'auto',
+        }}>
+          <StoreSelector />
+          <div style={{ height: '1px', background: 'var(--border)', margin: '16px 0' }} />
           <div style={filterGroupStyles}>
-            <label style={filterLabelStyles}>
-              Category ({selectedCuisine.replace(/_/g, ' ')}):
-            </label>
-            <div style={filterButtonContainerStyles}>
-              {availableCategories.map((category) => (
+            <label style={filterLabelStyles}>Cuisine</label>
+            <div style={{ ...filterButtonContainerStyles, flexDirection: 'column', gap: '6px' }}>
+              {Object.values(Cuisine).map((cuisine) => (
                 <button
-                  key={category}
-                  style={getFilterButtonStyles(selectedCategory === category)}
-                  onClick={() => setSelectedCategory(category)}
+                  key={cuisine}
+                  style={{ ...getFilterButtonStyles(selectedCuisine === cuisine), textAlign: 'left', width: '100%', borderRadius: '8px' }}
+                  onClick={() => { setSelectedCuisine(cuisine); setSelectedCategory(null); }}
                 >
-                  {category.replace(/_/g, ' ')}
+                  {cuisine.replace(/_/g, ' ')}
                 </button>
               ))}
             </div>
           </div>
-        )}
 
-        {/* Dietary Filter */}
-        <div style={{ ...filterGroupStyles, marginBottom: 0 }}>
-          <label style={filterLabelStyles}>Dietary:</label>
-          <div style={filterButtonContainerStyles}>
-            <button
-              style={getFilterButtonStyles(selectedDietary === null)}
-              onClick={() => setSelectedDietary(null)}
-            >
-              All
-            </button>
-            <button
-              style={getFilterButtonStyles(selectedDietary === DietaryType.VEGETARIAN)}
-              onClick={() => setSelectedDietary(DietaryType.VEGETARIAN)}
-            >
-              Vegetarian
-            </button>
-            <button
-              style={getFilterButtonStyles(selectedDietary === DietaryType.VEGAN)}
-              onClick={() => setSelectedDietary(DietaryType.VEGAN)}
-            >
-              Vegan
-            </button>
-            <button
-              style={getFilterButtonStyles(selectedDietary === DietaryType.NON_VEGETARIAN)}
-              onClick={() => setSelectedDietary(DietaryType.NON_VEGETARIAN)}
-            >
-              Non-Veg
-            </button>
-            <button
-              style={getFilterButtonStyles(selectedDietary === DietaryType.JAIN)}
-              onClick={() => setSelectedDietary(DietaryType.JAIN)}
-            >
-              Jain
-            </button>
+          {availableCategories.length > 0 && (
+            <div style={filterGroupStyles}>
+              <label style={filterLabelStyles}>Category</label>
+              <div style={{ ...filterButtonContainerStyles, flexDirection: 'column', gap: '6px' }}>
+                {availableCategories.map((category) => (
+                  <button
+                    key={category}
+                    style={{ ...getFilterButtonStyles(selectedCategory === category), textAlign: 'left', width: '100%', borderRadius: '8px' }}
+                    onClick={() => setSelectedCategory(category)}
+                  >
+                    {category.replace(/_/g, ' ')}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div style={filterGroupStyles}>
+            <label style={filterLabelStyles}>Dietary</label>
+            <div style={{ ...filterButtonContainerStyles, flexDirection: 'column', gap: '6px' }}>
+              {[
+                { label: 'All', value: null },
+                { label: 'Vegetarian', value: DietaryType.VEGETARIAN },
+                { label: 'Vegan', value: DietaryType.VEGAN },
+                { label: 'Non-Veg', value: DietaryType.NON_VEGETARIAN },
+                { label: 'Jain', value: DietaryType.JAIN },
+              ].map(opt => (
+                <button
+                  key={opt.label}
+                  style={{ ...getFilterButtonStyles(selectedDietary === opt.value), textAlign: 'left', width: '100%', borderRadius: '8px' }}
+                  onClick={() => setSelectedDietary(opt.value)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Menu Items */}
+        {/* Main content */}
+        <div style={{ flex: 1, padding: '24px 28px' }}>
+          {/* Search bar */}
+          <div style={{ marginBottom: '24px' }}>
+            <input
+              type="text"
+              placeholder="Search for dishes..."
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              style={searchInputStyles}
+              onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)'; }}
+              onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; }}
+            />
+          </div>
+
+          {/* Section heading */}
+          <h2 style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 700,
+            fontSize: '1.5rem',
+            color: 'var(--text-1)',
+            marginBottom: '4px',
+          }}>
+            {selectedCuisine.replace(/_/g, ' ')}
+            {selectedCategory ? ` — ${selectedCategory.replace(/_/g, ' ')}` : ''}
+          </h2>
+          <div style={{ height: '1px', background: 'linear-gradient(to right, var(--gold), transparent)', marginBottom: '20px' }} />
+
+          {/* Menu Items */}
       {isLoading ? (
         <div style={loadingStyles}>Loading delicious menu...</div>
       ) : filteredMenu.length === 0 ? (
@@ -638,10 +552,19 @@ const MenuPage: React.FC<MenuPageProps> = ({
       ) : (
         <div style={menuGridStyles}>
           {filteredMenu.map((item) => (
-            <div key={item.id} style={menuCardStyles}>
-              {item.imageUrl && (
-                <img src={item.imageUrl} alt={item.name} style={menuImageStyles} />
-              )}
+            <div
+              key={item.id}
+              style={menuCardStyles}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-card-hover)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+            >
+              {/* Image area */}
+              <div style={{ height: '180px', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '4rem', position: 'relative', overflow: 'hidden' }}>
+                {item.imageUrl
+                  ? <img src={item.imageUrl} alt={item.name} style={menuImageStyles} />
+                  : <span>🍽️</span>
+                }
+              </div>
 
               <div style={menuContentStyles}>
                 <div style={menuHeaderStyles}>
@@ -664,7 +587,7 @@ const MenuPage: React.FC<MenuPageProps> = ({
                   {item.spiceLevel && item.spiceLevel !== SpiceLevel.NONE && (() => {
                     const { count, label } = getSpiceLevelDots(item.spiceLevel);
                     return count > 0 ? (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', fontSize: typography.fontSize.xs, color: '#e53e3e', fontWeight: '600' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', fontSize: '0.7rem', color: 'var(--red-light)', fontWeight: '600' }}>
                         {Array.from({ length: count }).map((_, i) => (
                           <span key={i} style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#e53e3e', display: 'inline-block' }} />
                         ))}
@@ -682,14 +605,8 @@ const MenuPage: React.FC<MenuPageProps> = ({
                 <button
                   style={recipeButtonStyles}
                   onClick={() => setSelectedRecipeItem(item)}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = shadows.raised.md;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = shadows.raised.sm;
-                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-strong)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-1)'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-2)'; }}
                 >
                   <span>View Recipe & Ingredients</span>
                 </button>
@@ -700,20 +617,15 @@ const MenuPage: React.FC<MenuPageProps> = ({
                   </div>
                 )}
 
-                {/* Price on left, Quantity controls below */}
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: spacing[3],
-                }}>
+                {/* Price + controls */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <div style={priceRowStyles}>
                     <span style={priceStyles}>{formatPrice(item.basePrice)}</span>
                   </div>
 
-                  {/* Quantity controls and Add to Cart side by side */}
                   <div style={{
                     display: 'flex',
-                    gap: spacing[3],
+                    gap: '8px',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                   }}>
@@ -721,66 +633,28 @@ const MenuPage: React.FC<MenuPageProps> = ({
                       <button
                         style={quantityButtonStyles}
                         onClick={() => decrementQuantity(item.id)}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-2px)';
-                          e.currentTarget.style.boxShadow = shadows.raised.lg;
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = shadows.raised.md;
-                        }}
-                        onMouseDown={(e) => {
-                          e.currentTarget.style.boxShadow = shadows.inset.lg;  // DEEP press
-                        }}
-                        onMouseUp={(e) => {
-                          e.currentTarget.style.boxShadow = shadows.raised.lg;
-                        }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)'; (e.currentTarget as HTMLElement).style.color = 'var(--gold)'; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-1)'; }}
                       >
                         −
                       </button>
                       <div style={quantityDisplayStyles}>{getQuantity(item.id)}</div>
                       <button
-                        style={quantityButtonStyles}
+                        style={{ ...quantityButtonStyles, background: 'var(--red)', border: '1px solid var(--red)', color: '#fff' }}
                         onClick={() => incrementQuantity(item.id)}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-2px)';
-                          e.currentTarget.style.boxShadow = shadows.raised.lg;
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = shadows.raised.md;
-                        }}
-                        onMouseDown={(e) => {
-                          e.currentTarget.style.boxShadow = shadows.inset.lg;  // DEEP press
-                        }}
-                        onMouseUp={(e) => {
-                          e.currentTarget.style.boxShadow = shadows.raised.lg;
-                        }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--red-light)'; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--red)'; }}
                       >
                         +
                       </button>
                     </div>
                     <button
-                      style={{
-                        ...getAddButtonStyles(isItemInCart(item.id), false),
-                        flex: '0 1 auto',
-                        whiteSpace: 'nowrap',
-                      }}
+                      style={{ ...getAddButtonStyles(isItemInCart(item.id), false), flex: '0 1 auto', whiteSpace: 'nowrap' as const }}
                       onClick={() => handleAddToCart(item)}
-                      onMouseEnter={(e) => {
-                        if (!isItemInCart(item.id)) {
-                          e.currentTarget.style.transform = 'translateY(-2px)';
-                          e.currentTarget.style.boxShadow = shadows.raised.lg;
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isItemInCart(item.id)) {
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = shadows.raised.base;
-                        }
-                      }}
+                      onMouseEnter={(e) => { if (!isItemInCart(item.id)) (e.currentTarget as HTMLElement).style.background = 'var(--red-light)'; }}
+                      onMouseLeave={(e) => { if (!isItemInCart(item.id)) (e.currentTarget as HTMLElement).style.background = 'var(--red)'; }}
                     >
-                      {isItemInCart(item.id) ? '✓ In Cart' : 'Add to Cart'}
+                      {isItemInCart(item.id) ? '✓ In Cart' : 'Add'}
                     </button>
                   </div>
                 </div>
@@ -790,15 +664,17 @@ const MenuPage: React.FC<MenuPageProps> = ({
           </div>
         )}
 
-        {/* Recipe Viewer Modal */}
-        {selectedRecipeItem && (
-          <RecipeViewer
-            menuItem={selectedRecipeItem}
-            onClose={() => setSelectedRecipeItem(null)}
-          />
-        )}
-      </div>
-    </>
+        </div>{/* end main content */}
+      </div>{/* end flex row */}
+
+      {/* Recipe Viewer Modal */}
+      {selectedRecipeItem && (
+        <RecipeViewer
+          menuItem={selectedRecipeItem}
+          onClose={() => setSelectedRecipeItem(null)}
+        />
+      )}
+    </div>
   );
 };
 
