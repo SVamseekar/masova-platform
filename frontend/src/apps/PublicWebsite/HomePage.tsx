@@ -10,15 +10,15 @@ const MENU_ITEMS = [
     name: 'Masala Dosa',
     cuisine: 'South Indian',
     price: '₹149',
-    gradient: 'radial-gradient(circle at 40% 35%, #d97706 0%, #92400e 45%, #1c0a00 100%)',
+    imageUrl: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=400&q=80',
     ring: '#d97706',
-    tag: 'Chef\'s Pick',
+    tag: "Chef's Pick",
   },
   {
     name: 'Chicken Biryani',
     cuisine: 'North Indian',
     price: '₹299',
-    gradient: 'radial-gradient(circle at 35% 30%, #f59e0b 0%, #b45309 40%, #1a0a00 100%)',
+    imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&q=80',
     ring: '#f59e0b',
     tag: 'Bestseller',
   },
@@ -26,31 +26,31 @@ const MENU_ITEMS = [
     name: 'Margherita Pizza',
     cuisine: 'Italian',
     price: '₹349',
-    gradient: 'radial-gradient(circle at 45% 40%, #ef4444 0%, #991b1b 40%, #0f0000 100%)',
+    imageUrl: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400&q=80',
     ring: '#ef4444',
     tag: 'New',
   },
   {
-    name: 'Veg Hakka Noodles',
-    cuisine: 'Chinese',
+    name: 'Hakka Noodles',
+    cuisine: 'Indo-Chinese',
     price: '₹199',
-    gradient: 'radial-gradient(circle at 40% 35%, #84cc16 0%, #3f6212 45%, #0a0f00 100%)',
+    imageUrl: 'https://images.unsplash.com/photo-1617622141675-d3005b9067c5?w=400&q=80',
     ring: '#84cc16',
     tag: '',
   },
   {
-    name: 'Classic Burger',
+    name: 'Chicken Burger',
     cuisine: 'American',
     price: '₹249',
-    gradient: 'radial-gradient(circle at 40% 35%, #fb923c 0%, #9a3412 45%, #150500 100%)',
+    imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&q=80',
     ring: '#fb923c',
     tag: 'Popular',
   },
   {
-    name: 'Choco Lava Cake',
+    name: 'Chocolate Lava Cake',
     cuisine: 'Desserts',
     price: '₹199',
-    gradient: 'radial-gradient(circle at 35% 30%, #a78bfa 0%, #5b21b6 40%, #0f0020 100%)',
+    imageUrl: 'https://images.unsplash.com/photo-1633981823231-2a2a7c9b014c?w=400&q=80',
     ring: '#a78bfa',
     tag: '',
   },
@@ -99,7 +99,7 @@ const FEATURES = [
   },
   {
     title: 'Easy Reordering',
-    desc: 'One tap to reorder your favourites. No fuss, no fuss.',
+    desc: 'One tap to reorder your favourites. No fuss, no wait.',
     icon: (
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="1 4 1 10 7 10"/>
@@ -114,37 +114,53 @@ const FOOTER_LINKS = {
   Support: ['Contact Us', 'FAQs', 'Privacy Policy'],
 };
 
-/* ─────────────────── Plate component — dark CSS food photography ─────────────────── */
+/* ─────────────────── Food image circle ─────────────────── */
 
-const FoodPlate: React.FC<{ item: typeof MENU_ITEMS[0]; size?: number }> = ({ item, size = 140 }) => (
-  <div style={{
-    width: size, height: size,
-    borderRadius: '50%',
-    background: item.gradient,
-    border: `3px solid ${item.ring}44`,
-    boxShadow: `0 0 0 1px ${item.ring}22, 0 8px 32px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1)`,
-    position: 'relative',
-    flexShrink: 0,
-  }}>
-    {/* Inner rim */}
+interface FoodCircleProps {
+  src: string;
+  alt: string;
+  size: number;
+  ring?: string;
+  shadow?: string;
+  border?: string;
+}
+
+const FoodCircle: React.FC<FoodCircleProps> = ({ src, alt, size, ring = 'rgba(212,168,67,0.3)', shadow, border }) => {
+  const [errored, setErrored] = useState(false);
+  return (
     <div style={{
-      position: 'absolute',
-      inset: '8px',
+      width: size,
+      height: size,
       borderRadius: '50%',
-      border: `1px solid rgba(255,255,255,0.08)`,
-    }} />
-    {/* Highlight */}
-    <div style={{
-      position: 'absolute',
-      top: '18%', left: '22%',
-      width: '28%', height: '18%',
-      borderRadius: '50%',
-      background: 'rgba(255,255,255,0.12)',
-      filter: 'blur(4px)',
-      transform: 'rotate(-30deg)',
-    }} />
-  </div>
-);
+      overflow: 'hidden',
+      flexShrink: 0,
+      border: border ?? `2px solid ${ring}`,
+      boxShadow: shadow ?? `0 0 0 1px ${ring}44, 0 8px 32px rgba(0,0,0,0.7)`,
+      position: 'relative',
+      background: '#1C1916',
+    }}>
+      {!errored ? (
+        <img
+          src={src}
+          alt={alt}
+          onError={() => setErrored(true)}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
+      ) : (
+        /* Fallback: dark gradient circle if image fails */
+        <div style={{
+          width: '100%', height: '100%',
+          background: 'radial-gradient(circle at 38% 30%, rgba(212,168,67,0.3) 0%, rgba(212,168,67,0.05) 55%, transparent 100%)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <svg width={size * 0.3} height={size * 0.3} viewBox="0 0 24 24" fill="none" stroke="rgba(212,168,67,0.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>
+          </svg>
+        </div>
+      )}
+    </div>
+  );
+};
 
 /* ─────────────────── Component ─────────────────── */
 
@@ -298,57 +314,76 @@ const HomePage: React.FC = () => {
 
           </div>
 
-          {/* RIGHT ── Large food plate hero + floating cards */}
+          {/* RIGHT ── Hero food image composition */}
           <div style={{ flexShrink: 0, position: 'relative', width: '480px', height: '540px' }}>
 
-            {/* Main large plate — breaks out of the section */}
+            {/* Main large hero dish — Chicken Biryani */}
             <div style={{
               position: 'absolute',
               top: '50%', left: '50%',
               transform: 'translate(-50%, -50%)',
-              width: '360px', height: '360px',
-              borderRadius: '50%',
-              background: 'radial-gradient(circle at 38% 30%, #f59e0b 0%, #b45309 30%, #7c2d12 55%, #0a0200 100%)',
-              boxShadow: '0 0 0 2px rgba(245,158,11,0.2), 0 0 80px rgba(245,158,11,0.15), 0 40px 80px rgba(0,0,0,0.7)',
-              border: '2px solid rgba(245,158,11,0.15)',
             }}>
-              {/* Inner rim */}
-              <div style={{
-                position: 'absolute', inset: '14px', borderRadius: '50%',
-                border: '1px solid rgba(255,255,255,0.07)',
-              }} />
-              {/* Specular highlight */}
-              <div style={{
-                position: 'absolute',
-                top: '16%', left: '24%',
-                width: '30%', height: '20%',
-                borderRadius: '50%',
-                background: 'rgba(255,255,255,0.13)',
-                filter: 'blur(6px)',
-                transform: 'rotate(-30deg)',
-              }} />
-              {/* Center text overlay */}
-              <div style={{
-                position: 'absolute', inset: 0,
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center',
-              }}>
-                <div style={{
-                  fontFamily: 'var(--font-display)',
-                  fontSize: '2.2rem', fontWeight: 900,
-                  color: 'rgba(255,255,255,0.08)',
-                  letterSpacing: '-0.02em',
-                  textAlign: 'center',
-                  lineHeight: 1.1,
-                }}>
-                  MaSoVa
-                </div>
-              </div>
+              <FoodCircle
+                src="https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600&q=85"
+                alt="Chicken Biryani"
+                size={360}
+                ring="rgba(245,158,11,0.35)"
+                border="3px solid rgba(245,158,11,0.25)"
+                shadow="0 0 0 2px rgba(245,158,11,0.12), 0 0 80px rgba(245,158,11,0.18), 0 40px 80px rgba(0,0,0,0.75)"
+              />
+            </div>
+
+            {/* Floating small dish — top-left: Masala Dosa */}
+            <div style={{
+              position: 'absolute',
+              top: '4%', left: '-2%',
+              filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.6))',
+            }}>
+              <FoodCircle
+                src="https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=200&q=80"
+                alt="Masala Dosa"
+                size={110}
+                ring="rgba(217,119,6,0.4)"
+                border="2px solid rgba(217,119,6,0.35)"
+                shadow="0 4px 16px rgba(0,0,0,0.6)"
+              />
+            </div>
+
+            {/* Floating small dish — bottom-left: Margherita Pizza */}
+            <div style={{
+              position: 'absolute',
+              bottom: '8%', left: '0%',
+              filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.6))',
+            }}>
+              <FoodCircle
+                src="https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=200&q=80"
+                alt="Margherita Pizza"
+                size={100}
+                ring="rgba(239,68,68,0.4)"
+                border="2px solid rgba(239,68,68,0.35)"
+                shadow="0 4px 16px rgba(0,0,0,0.6)"
+              />
+            </div>
+
+            {/* Floating small dish — top-right: Chocolate Lava Cake */}
+            <div style={{
+              position: 'absolute',
+              top: '12%', right: '0%',
+              filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.6))',
+            }}>
+              <FoodCircle
+                src="https://images.unsplash.com/photo-1633981823231-2a2a7c9b014c?w=200&q=80"
+                alt="Chocolate Lava Cake"
+                size={95}
+                ring="rgba(167,139,250,0.4)"
+                border="2px solid rgba(167,139,250,0.3)"
+                shadow="0 4px 16px rgba(0,0,0,0.6)"
+              />
             </div>
 
             {/* "Live Now" badge */}
             <div style={{
-              position: 'absolute', top: '6%', right: '-2%',
+              position: 'absolute', top: '6%', right: '12%',
               background: 'var(--red)',
               color: '#fff', padding: '8px 16px',
               borderRadius: 'var(--radius-pill)',
@@ -357,6 +392,7 @@ const HomePage: React.FC = () => {
               textTransform: 'uppercase',
               boxShadow: '0 8px 24px rgba(198,42,9,0.5)',
               display: 'flex', alignItems: 'center', gap: '6px',
+              zIndex: 10,
             }}>
               <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff', opacity: 0.85 }} />
               Live Now
@@ -400,15 +436,15 @@ const HomePage: React.FC = () => {
                 style={{
                   padding: '10px 22px',
                   background: active ? 'rgba(212,168,67,0.15)' : 'var(--surface)',
-                  border: `1px solid ${active ? 'var(--gold)' : 'var(--border)'}`,
+                  border: `1px solid ${active ? 'var(--gold)' : 'rgba(255,255,255,0.08)'}`,
                   borderRadius: 'var(--radius-pill)',
                   color: active ? 'var(--gold)' : 'var(--text-2)',
                   fontFamily: 'var(--font-body)', fontWeight: 500,
                   fontSize: '0.875rem', cursor: 'pointer',
                   transition: 'var(--transition)',
                 }}
-                onMouseEnter={(e) => { if (!active) { const el = e.currentTarget as HTMLElement; el.style.background = 'var(--surface-2)'; el.style.borderColor = 'var(--border-strong)'; el.style.color = 'var(--text-1)'; el.style.transform = 'translateY(-2px)'; } }}
-                onMouseLeave={(e) => { if (!active) { const el = e.currentTarget as HTMLElement; el.style.background = 'var(--surface)'; el.style.borderColor = 'var(--border)'; el.style.color = 'var(--text-2)'; el.style.transform = 'translateY(0)'; } }}
+                onMouseEnter={(e) => { if (!active) { const el = e.currentTarget as HTMLElement; el.style.background = 'var(--surface-2)'; el.style.borderColor = 'rgba(255,255,255,0.15)'; el.style.color = 'var(--text-1)'; el.style.transform = 'translateY(-2px)'; } }}
+                onMouseLeave={(e) => { if (!active) { const el = e.currentTarget as HTMLElement; el.style.background = 'var(--surface)'; el.style.borderColor = 'rgba(255,255,255,0.08)'; el.style.color = 'var(--text-2)'; el.style.transform = 'translateY(0)'; } }}
               >
                 {cat.label}
               </button>
@@ -418,7 +454,7 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* ══════════════════════════════════════════
-          MENU CAROUSEL — circular food plates
+          MENU CAROUSEL — real food photos
       ══════════════════════════════════════════ */}
       <section style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', padding: '64px 0' }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 48px' }}>
@@ -440,7 +476,7 @@ const HomePage: React.FC = () => {
                   style={{
                     width: '44px', height: '44px', borderRadius: '50%',
                     background: dir === 'right' ? 'var(--gold)' : 'var(--surface-2)',
-                    border: `1px solid ${dir === 'right' ? 'transparent' : 'var(--border)'}`,
+                    border: `1px solid ${dir === 'right' ? 'transparent' : 'rgba(255,255,255,0.08)'}`,
                     color: dir === 'right' ? '#0a0a0a' : 'var(--text-2)',
                     cursor: 'pointer', transition: 'var(--transition)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -483,7 +519,7 @@ const HomePage: React.FC = () => {
                 width: '210px',
                 background: 'var(--surface-2)',
                 borderRadius: 'var(--radius-card)',
-                border: '1px solid var(--border)',
+                border: '1px solid rgba(255,255,255,0.06)',
                 paddingTop: '80px',
                 paddingBottom: '20px',
                 paddingLeft: '20px',
@@ -494,17 +530,24 @@ const HomePage: React.FC = () => {
                 transition: 'var(--transition)',
                 textAlign: 'center',
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = item.ring + '66'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-6px)'; (e.currentTarget as HTMLElement).style.boxShadow = `0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px ${item.ring}22`; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = item.ring + '55'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-6px)'; (e.currentTarget as HTMLElement).style.boxShadow = `0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px ${item.ring}22`; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
             >
-              {/* Plate breaking out of top */}
+              {/* Food photo breaking out of top */}
               <div style={{
                 position: 'absolute',
                 top: '-70px',
                 left: '50%',
                 transform: 'translateX(-50%)',
               }}>
-                <FoodPlate item={item} size={140} />
+                <FoodCircle
+                  src={item.imageUrl}
+                  alt={item.name}
+                  size={140}
+                  ring={item.ring + '55'}
+                  border={`3px solid ${item.ring}44`}
+                  shadow={`0 0 0 1px ${item.ring}22, 0 8px 32px rgba(0,0,0,0.8)`}
+                />
                 {/* Gold + button on plate */}
                 <button
                   onClick={(e) => { e.stopPropagation(); navigate('/menu'); }}
@@ -596,30 +639,40 @@ const HomePage: React.FC = () => {
       ══════════════════════════════════════════ */}
       <section style={{ padding: '80px 48px', maxWidth: '1400px', margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '64px', flexWrap: 'wrap' }}>
-          {/* Left: Big hero plate + delivery text */}
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            {/* Large plate */}
+          {/* Left: food image composition */}
+          <div style={{ position: 'relative', flexShrink: 0, width: '340px', height: '340px' }}>
+            {/* Main dish — Butter Chicken */}
+            <FoodCircle
+              src="https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=500&q=85"
+              alt="Butter Chicken"
+              size={320}
+              ring="rgba(198,42,9,0.3)"
+              border="3px solid rgba(198,42,9,0.2)"
+              shadow="0 0 0 2px rgba(198,42,9,0.12), 0 0 80px rgba(198,42,9,0.12), 0 40px 80px rgba(0,0,0,0.7)"
+            />
+            {/* Discount sticker */}
             <div style={{
-              width: '320px', height: '320px', borderRadius: '50%',
-              background: 'radial-gradient(circle at 38% 30%, #c62a09 0%, #7c0a02 35%, #1a0000 100%)',
-              boxShadow: '0 0 0 2px rgba(198,42,9,0.25), 0 0 80px rgba(198,42,9,0.12), 0 40px 80px rgba(0,0,0,0.7)',
-              border: '2px solid rgba(198,42,9,0.2)',
-              position: 'relative',
+              position: 'absolute', top: '-10px', right: '-10px',
+              width: '80px', height: '80px', borderRadius: '50%',
+              background: 'var(--gold)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 8px 24px rgba(212,168,67,0.5)',
+              border: '2px solid rgba(255,255,255,0.1)',
+              zIndex: 2,
             }}>
-              <div style={{ position: 'absolute', inset: '12px', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.06)' }} />
-              <div style={{ position: 'absolute', top: '18%', left: '22%', width: '28%', height: '18%', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', filter: 'blur(5px)', transform: 'rotate(-30deg)' }} />
-              {/* Discount sticker */}
-              <div style={{
-                position: 'absolute', top: '-10px', right: '-10px',
-                width: '80px', height: '80px', borderRadius: '50%',
-                background: 'var(--gold)',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 8px 24px rgba(212,168,67,0.5)',
-                border: '2px solid rgba(255,255,255,0.1)',
-              }}>
-                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '1.1rem', color: '#0a0a0a', lineHeight: 1 }}>30%</span>
-                <span style={{ fontSize: '0.6rem', fontWeight: 700, color: '#0a0a0a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>OFF</span>
-              </div>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '1.1rem', color: '#0a0a0a', lineHeight: 1 }}>30%</span>
+              <span style={{ fontSize: '0.6rem', fontWeight: 700, color: '#0a0a0a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>OFF</span>
+            </div>
+            {/* Small floating dish — Mango Lassi */}
+            <div style={{ position: 'absolute', bottom: '-10px', right: '-20px', zIndex: 1 }}>
+              <FoodCircle
+                src="https://images.unsplash.com/photo-1546173159-315724a31696?w=200&q=80"
+                alt="Mango Lassi"
+                size={90}
+                ring="rgba(251,146,60,0.4)"
+                border="2px solid rgba(251,146,60,0.35)"
+                shadow="0 4px 16px rgba(0,0,0,0.6)"
+              />
             </div>
           </div>
 
@@ -652,11 +705,11 @@ const HomePage: React.FC = () => {
                     padding: '20px',
                     background: 'var(--surface)',
                     borderRadius: '16px',
-                    border: '1px solid var(--border)',
+                    border: '1px solid rgba(255,255,255,0.06)',
                     transition: 'var(--transition)',
                   }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(212,168,67,0.35)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(212,168,67,0.25)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
                 >
                   <div style={{
                     width: '44px', height: '44px', borderRadius: '12px',
@@ -688,18 +741,16 @@ const HomePage: React.FC = () => {
         padding: '64px 48px',
       }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '48px', flexWrap: 'wrap' }}>
-          {/* Plate + sticker */}
+          {/* Food image + sticker */}
           <div style={{ position: 'relative', flexShrink: 0 }}>
-            <div style={{
-              width: '280px', height: '280px', borderRadius: '50%',
-              background: 'radial-gradient(circle at 40% 35%, #84cc16 0%, #3f6212 40%, #0a0f00 100%)',
-              boxShadow: '0 0 0 2px rgba(132,204,22,0.2), 0 0 60px rgba(132,204,22,0.1), 0 30px 60px rgba(0,0,0,0.7)',
-              border: '2px solid rgba(132,204,22,0.18)',
-              position: 'relative',
-            }}>
-              <div style={{ position: 'absolute', inset: '12px', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.06)' }} />
-              <div style={{ position: 'absolute', top: '18%', left: '22%', width: '28%', height: '18%', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', filter: 'blur(5px)', transform: 'rotate(-30deg)' }} />
-            </div>
+            <FoodCircle
+              src="https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=500&q=85"
+              alt="Margherita Pizza"
+              size={280}
+              ring="rgba(239,68,68,0.3)"
+              border="2px solid rgba(239,68,68,0.2)"
+              shadow="0 0 0 2px rgba(239,68,68,0.1), 0 0 60px rgba(239,68,68,0.1), 0 30px 60px rgba(0,0,0,0.7)"
+            />
             {/* Offer sticker */}
             <div style={{
               position: 'absolute', top: '-16px', left: '-16px',
@@ -709,6 +760,7 @@ const HomePage: React.FC = () => {
               boxShadow: '0 8px 24px rgba(198,42,9,0.5)',
               border: '2px solid rgba(255,255,255,0.08)',
               transform: 'rotate(-15deg)',
+              zIndex: 2,
             }}>
               <span style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '1.1rem', color: '#fff', lineHeight: 1 }}>20%</span>
               <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>OFF</span>
@@ -789,9 +841,9 @@ const HomePage: React.FC = () => {
               <div style={{ display: 'flex', gap: '8px' }}>
                 <input
                   type="email" placeholder="Your email"
-                  style={{ flex: 1, padding: '10px 16px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', color: 'var(--text-1)', fontFamily: 'var(--font-body)', fontSize: '0.875rem', outline: 'none' }}
+                  style={{ flex: 1, padding: '10px 16px', background: 'var(--surface-2)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--radius-pill)', color: 'var(--text-1)', fontFamily: 'var(--font-body)', fontSize: '0.875rem', outline: 'none' }}
                   onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)'; }}
-                  onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; }}
+                  onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
                 />
                 <button
                   style={{ padding: '10px 20px', background: 'var(--red)', color: '#fff', border: 'none', borderRadius: 'var(--radius-pill)', fontFamily: 'var(--font-body)', fontWeight: 600, cursor: 'pointer', fontSize: '0.875rem', transition: 'var(--transition)' }}
