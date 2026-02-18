@@ -454,14 +454,20 @@ const MenuPage: React.FC<MenuPageProps> = ({
           flexShrink: 0,
           background: 'var(--surface)',
           borderRight: '1px solid var(--border)',
-          padding: '24px 20px',
           position: 'sticky',
           top: '64px',
           height: 'calc(100vh - 64px)',
-          overflowY: 'auto',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
         }}>
-          <StoreSelector />
-          <div style={{ height: '1px', background: 'var(--border)', margin: '16px 0' }} />
+          {/* Store selector — pinned at top, never scrolls */}
+          <div style={{ padding: '20px 20px 0', flexShrink: 0 }}>
+            <StoreSelector />
+            <div style={{ height: '1px', background: 'var(--border)', margin: '16px 0 0' }} />
+          </div>
+          {/* Scrollable filter area */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px 24px' }}>
           <div style={filterGroupStyles}>
             <label style={filterLabelStyles}>Cuisine</label>
             <div style={{ ...filterButtonContainerStyles, flexDirection: 'column', gap: '6px' }}>
@@ -514,6 +520,7 @@ const MenuPage: React.FC<MenuPageProps> = ({
               ))}
             </div>
           </div>
+          </div>{/* end scrollable filter area */}
         </div>
 
         {/* Main content */}
@@ -559,10 +566,26 @@ const MenuPage: React.FC<MenuPageProps> = ({
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
             >
               {/* Image area */}
-              <div style={{ height: '180px', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '4rem', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ height: '180px', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
                 {item.imageUrl
                   ? <img src={item.imageUrl} alt={item.name} style={menuImageStyles} />
-                  : <span>🍽️</span>
+                  : (
+                    <div style={{
+                      width: '88px', height: '88px', borderRadius: '50%',
+                      background: 'radial-gradient(circle at 38% 32%, rgba(212,168,67,0.22) 0%, rgba(212,168,67,0.06) 50%, transparent 100%)',
+                      border: '2px solid rgba(212,168,67,0.18)',
+                      boxShadow: '0 0 0 1px rgba(212,168,67,0.08), 0 8px 24px rgba(0,0,0,0.5)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(212,168,67,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+                        <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+                        <line x1="6" y1="1" x2="6" y2="4"/>
+                        <line x1="10" y1="1" x2="10" y2="4"/>
+                        <line x1="14" y1="1" x2="14" y2="4"/>
+                      </svg>
+                    </div>
+                  )
                 }
               </div>
 
