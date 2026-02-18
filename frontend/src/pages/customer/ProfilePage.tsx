@@ -15,141 +15,122 @@ import {
   AddAddressRequest,
   UpdatePreferencesRequest,
 } from '../../store/api/customerApi';
-import { Button, Checkbox } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
-import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
-import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
-import { createNeumorphicSurface, createCard, createBadge } from '../../styles/neumorphic-utils';
 
+// ─── Nav items ───────────────────────────────────────────────────────────────
+const NAV_ITEMS = [
+  {
+    id: 'overview',
+    label: 'Overview',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+      </svg>
+    ),
+  },
+  {
+    id: 'personal',
+    label: 'Personal Info',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+      </svg>
+    ),
+  },
+  {
+    id: 'addresses',
+    label: 'Addresses',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+      </svg>
+    ),
+  },
+  {
+    id: 'preferences',
+    label: 'Food Preferences',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+        <line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>
+      </svg>
+    ),
+  },
+  {
+    id: 'notifications',
+    label: 'Notifications',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+      </svg>
+    ),
+  },
+];
+
+// ─── Tier config ──────────────────────────────────────────────────────────────
+const TIER_CONFIG = {
+  BRONZE:   { gradient: 'linear-gradient(135deg, #2A1A0A 0%, #3D2410 50%, #1A0E05 100%)', accent: '#CD7F32', accentLight: '#E8A96A', label: 'Bronze', next: 'SILVER', threshold: 1000 },
+  SILVER:   { gradient: 'linear-gradient(135deg, #1A1A24 0%, #2A2A38 50%, #12121C 100%)', accent: '#C0C0C0', accentLight: '#E8E8F0', label: 'Silver', next: 'GOLD', threshold: 5000 },
+  GOLD:     { gradient: 'linear-gradient(135deg, #1C1600 0%, #2E2200 50%, #100D00 100%)', accent: '#D4A843', accentLight: '#E8C860', label: 'Gold', next: 'PLATINUM', threshold: 10000 },
+  PLATINUM: { gradient: 'linear-gradient(135deg, #0D0D14 0%, #1A1A28 50%, #06060C 100%)', accent: '#E8E4FF', accentLight: '#FFFFFF', label: 'Platinum', next: null, threshold: null },
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const currentUser = useAppSelector(selectCurrentUser);
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeSection, setActiveSection] = useState('overview');
   const [editing, setEditing] = useState(false);
   const [addressDialogOpen, setAddressDialogOpen] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [editingPreferences, setEditingPreferences] = useState(false);
 
-  // Form states
   const [profileForm, setProfileForm] = useState<UpdateCustomerRequest>({});
   const [addressForm, setAddressForm] = useState<AddAddressRequest>({
-    label: 'HOME',
-    addressLine1: '',
-    city: '',
-    state: '',
-    postalCode: '',
-    country: 'India',
+    label: 'HOME', addressLine1: '', city: '', state: '', postalCode: '', country: 'India',
   });
   const [preferencesForm, setPreferencesForm] = useState<UpdatePreferencesRequest>({});
+  const [notifForm, setNotifForm] = useState({ notifyOnOffers: true, notifyOnOrderStatus: true, marketingOptIn: false, smsOptIn: false });
 
-  // API queries
-  const { data: customer, isLoading, error, refetch } = useGetCustomerByUserIdQuery(currentUser?.id || '', {
-    skip: !currentUser?.id,
-  });
-
+  const { data: customer, isLoading, error, refetch } = useGetCustomerByUserIdQuery(currentUser?.id || '', { skip: !currentUser?.id });
   const [createCustomer, { isLoading: isCreating }] = useCreateCustomerMutation();
   const [updateCustomer] = useUpdateCustomerMutation();
-
-  // Auto-create customer profile if not found (use ref to prevent re-runs)
-  const hasAttemptedCreate = React.useRef(false);
-  const [creatingProfile, setCreatingProfile] = React.useState(false);
-  const [creationError, setCreationError] = React.useState<string | null>(null);
-
-  useEffect(() => {
-    const autoCreateProfile = async () => {
-      // Only attempt once per user session
-      if (error && currentUser && !hasAttemptedCreate.current && !customer) {
-        hasAttemptedCreate.current = true;
-        setCreatingProfile(true);
-        console.log('Customer profile not found, auto-creating...', {
-          userId: currentUser.id,
-          name: currentUser.name,
-          email: currentUser.email,
-          phone: currentUser.phone,
-          error: error,
-        });
-
-        // Clean phone number - remove any spaces, dashes, or special characters
-        const cleanPhone = currentUser.phone?.replace(/\D/g, '') || '';
-
-        console.log('Phone validation:', {
-          original: currentUser.phone,
-          cleaned: cleanPhone,
-          length: cleanPhone.length,
-          startsWithValid: /^[6-9]/.test(cleanPhone),
-          isValid: /^[6-9]\d{9}$/.test(cleanPhone)
-        });
-
-        // Validate phone is 10 digits and starts with 6-9
-        if (!cleanPhone.match(/^[6-9]\d{9}$/)) {
-          console.error('Invalid phone number format! Cannot create customer profile.');
-          console.error('Expected: 10 digits starting with 6-9');
-          console.error('Got:', { original: currentUser.phone, cleaned: cleanPhone });
-          setCreatingProfile(false);
-          return;
-        }
-
-        const requestData = {
-          userId: currentUser.id,
-          name: currentUser.name,
-          email: currentUser.email,
-          phone: cleanPhone,
-          marketingOptIn: false,
-          smsOptIn: false,
-        };
-
-        console.log('Sending create customer request:', requestData);
-
-        try {
-          const newCustomer = await createCustomer(requestData).unwrap();
-          console.log('Customer profile created successfully:', newCustomer);
-          // Small delay to ensure backend has processed the creation
-          setTimeout(async () => {
-            // Refetch to get the newly created customer
-            await refetch();
-            setCreatingProfile(false);
-          }, 500);
-        } catch (err: any) {
-          console.error('Failed to auto-create customer profile:', err);
-          console.error('Error details:', {
-            message: err?.message,
-            data: err?.data,
-            status: err?.status,
-          });
-
-          // Check if it's a duplicate phone/email error
-          const errorMsg = err?.data?.message || '';
-          if (errorMsg.includes('already exists')) {
-            console.warn('Customer profile with this phone/email already exists');
-            setCreationError('A customer profile with your phone number or email already exists. Please contact support for assistance.');
-          } else {
-            setCreationError('Unable to create customer profile. Please try again or contact support.');
-          }
-
-          setCreatingProfile(false);
-          // Don't reset flag - we tried once, that's enough
-        }
-      }
-    };
-
-    autoCreateProfile();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [error, currentUser?.id]); // Only run when error state or userId changes
   const [addAddress] = useAddAddressMutation();
   const [updateAddress] = useUpdateAddressMutation();
   const [removeAddress] = useRemoveAddressMutation();
   const [setDefaultAddress] = useSetDefaultAddressMutation();
   const [updatePreferences] = useUpdatePreferencesMutation();
 
+  const hasAttemptedCreate = React.useRef(false);
+  const [creatingProfile, setCreatingProfile] = React.useState(false);
+  const [creationError, setCreationError] = React.useState<string | null>(null);
+
+  useEffect(() => {
+    const autoCreate = async () => {
+      if (error && currentUser && !hasAttemptedCreate.current && !customer) {
+        hasAttemptedCreate.current = true;
+        setCreatingProfile(true);
+        const cleanPhone = currentUser.phone?.replace(/\D/g, '') || '';
+        if (!cleanPhone.match(/^[6-9]\d{9}$/)) { setCreatingProfile(false); return; }
+        try {
+          await createCustomer({ userId: currentUser.id, name: currentUser.name, email: currentUser.email, phone: cleanPhone, marketingOptIn: false, smsOptIn: false }).unwrap();
+          setTimeout(async () => { await refetch(); setCreatingProfile(false); }, 500);
+        } catch (err: any) {
+          const msg = err?.data?.message || '';
+          setCreationError(msg.includes('already exists') ? 'A profile with your phone/email already exists. Contact support.' : 'Unable to create profile. Please try again.');
+          setCreatingProfile(false);
+        }
+      }
+    };
+    autoCreate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error, currentUser?.id]);
+
   useEffect(() => {
     if (customer && !editing) {
-      setProfileForm({
-        name: customer.name,
-        email: customer.email,
-        phone: customer.phone,
-        dateOfBirth: customer.dateOfBirth,
-        gender: customer.gender,
-      });
+      setProfileForm({ name: customer.name, email: customer.email, phone: customer.phone, dateOfBirth: customer.dateOfBirth, gender: customer.gender });
     }
   }, [customer, editing]);
 
@@ -164,1075 +145,663 @@ const ProfilePage: React.FC = () => {
         notifyOnOffers: customer.preferences?.notifyOnOffers !== false,
         notifyOnOrderStatus: customer.preferences?.notifyOnOrderStatus !== false,
       });
+      setNotifForm({
+        notifyOnOffers: customer.preferences?.notifyOnOffers !== false,
+        notifyOnOrderStatus: customer.preferences?.notifyOnOrderStatus !== false,
+        marketingOptIn: customer.marketingOptIn || false,
+        smsOptIn: customer.smsOptIn || false,
+      });
     }
   }, [customer, editingPreferences]);
 
   const handleUpdateProfile = async () => {
     if (!customer) return;
+    try { await updateCustomer({ id: customer.id, data: profileForm }).unwrap(); setEditing(false); }
+    catch { alert('Failed to update profile. Please try again.'); }
+  };
+
+  const handleSaveNotifications = async () => {
+    if (!customer) return;
     try {
-      await updateCustomer({ id: customer.id, data: profileForm }).unwrap();
-      setEditing(false);
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      alert('Failed to update profile. Please try again.');
-    }
+      await updateCustomer({ id: customer.id, data: { marketingOptIn: notifForm.marketingOptIn, smsOptIn: notifForm.smsOptIn } }).unwrap();
+      await updatePreferences({ customerId: customer.id, data: { ...preferencesForm, notifyOnOffers: notifForm.notifyOnOffers, notifyOnOrderStatus: notifForm.notifyOnOrderStatus } }).unwrap();
+    } catch { alert('Failed to save notification settings.'); }
   };
 
   const handleAddOrUpdateAddress = async () => {
     if (!customer) return;
     try {
-      if (editingAddressId) {
-        await updateAddress({ customerId: customer.id, addressId: editingAddressId, data: addressForm }).unwrap();
-      } else {
-        await addAddress({ customerId: customer.id, data: addressForm }).unwrap();
-      }
-      setAddressForm({
-        label: 'HOME',
-        addressLine1: '',
-        city: '',
-        state: '',
-        postalCode: '',
-        country: 'India',
-      });
-      setAddressDialogOpen(false);
-      setEditingAddressId(null);
-    } catch (error) {
-      console.error('Error saving address:', error);
-      alert('Failed to save address. Please try again.');
-    }
+      if (editingAddressId) await updateAddress({ customerId: customer.id, addressId: editingAddressId, data: addressForm }).unwrap();
+      else await addAddress({ customerId: customer.id, data: addressForm }).unwrap();
+      setAddressForm({ label: 'HOME', addressLine1: '', city: '', state: '', postalCode: '', country: 'India' });
+      setAddressDialogOpen(false); setEditingAddressId(null);
+    } catch { alert('Failed to save address.'); }
   };
 
   const handleEditAddress = (address: any) => {
-    setAddressForm({
-      label: address.label,
-      addressLine1: address.addressLine1,
-      addressLine2: address.addressLine2,
-      city: address.city,
-      state: address.state,
-      postalCode: address.postalCode,
-      country: address.country,
-      landmark: address.landmark,
-    });
-    setEditingAddressId(address.id);
-    setAddressDialogOpen(true);
+    setAddressForm({ label: address.label, addressLine1: address.addressLine1, addressLine2: address.addressLine2, city: address.city, state: address.state, postalCode: address.postalCode, country: address.country, landmark: address.landmark });
+    setEditingAddressId(address.id); setAddressDialogOpen(true);
   };
 
   const handleRemoveAddress = async (addressId: string) => {
-    if (!customer || !window.confirm('Are you sure you want to remove this address?')) return;
-    try {
-      await removeAddress({ customerId: customer.id, addressId }).unwrap();
-    } catch (error) {
-      console.error('Error removing address:', error);
-      alert('Failed to remove address. Please try again.');
-    }
+    if (!customer || !window.confirm('Remove this address?')) return;
+    try { await removeAddress({ customerId: customer.id, addressId }).unwrap(); }
+    catch { alert('Failed to remove address.'); }
   };
 
   const handleSetDefaultAddress = async (addressId: string) => {
     if (!customer) return;
-    try {
-      await setDefaultAddress({ customerId: customer.id, addressId }).unwrap();
-    } catch (error) {
-      console.error('Error setting default address:', error);
-      alert('Failed to set default address. Please try again.');
-    }
+    try { await setDefaultAddress({ customerId: customer.id, addressId }).unwrap(); }
+    catch { alert('Failed to set default address.'); }
   };
 
   const handleUpdatePreferences = async () => {
     if (!customer) return;
-    try {
-      await updatePreferences({ customerId: customer.id, data: preferencesForm }).unwrap();
-      setEditingPreferences(false);
-    } catch (error) {
-      console.error('Error updating preferences:', error);
-      alert('Failed to update preferences. Please try again.');
-    }
+    try { await updatePreferences({ customerId: customer.id, data: preferencesForm }).unwrap(); setEditingPreferences(false); }
+    catch { alert('Failed to update preferences.'); }
   };
 
-  const getLoyaltyTierColor = (tier: string) => {
-    switch (tier) {
-      case 'PLATINUM': return '#E5E4E2';
-      case 'GOLD': return '#FFD700';
-      case 'SILVER': return '#C0C0C0';
-      default: return '#CD7F32';
-    }
-  };
+  const toggleArrayItem = (arr: string[], item: string) => arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item];
 
-  const getNextTierInfo = (currentTier: string, currentPoints: number) => {
-    const tiers = {
-      BRONZE: { next: 'SILVER', threshold: 1000 },
-      SILVER: { next: 'GOLD', threshold: 5000 },
-      GOLD: { next: 'PLATINUM', threshold: 10000 },
-      PLATINUM: { next: null, threshold: null },
-    };
-    const tierInfo = tiers[currentTier as keyof typeof tiers];
-    if (!tierInfo.next) return null;
-
-    const pointsNeeded = (tierInfo.threshold || 0) - currentPoints;
-    const progress = (currentPoints / (tierInfo.threshold || 1)) * 100;
-
-    return { nextTier: tierInfo.next, pointsNeeded, progress: Math.min(progress, 100) };
-  };
-
-  // Styles
-  const containerStyles: React.CSSProperties = {
-    position: 'relative',
-    minHeight: '100vh',
-    fontFamily: typography.fontFamily.primary,
-    padding: spacing[6],
-    backgroundColor: colors.surface.background,
-  };
-
-  const titleStyles: React.CSSProperties = {
-    fontSize: typography.fontSize['4xl'],
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-    marginBottom: spacing[2],
-  };
-
-  const tabsContainerStyles: React.CSSProperties = {
-    display: 'flex',
-    gap: spacing[2],
-    marginBottom: spacing[6],
-    ...createNeumorphicSurface('inset', 'md', 'xl'),
-    padding: spacing[2],
-    backgroundColor: colors.surface.secondary,
-  };
-
-  const tabButtonStyles = (isActive: boolean): React.CSSProperties => ({
-    flex: 1,
-    padding: `${spacing[3]} ${spacing[4]}`,
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold,
-    color: isActive ? colors.text.primary : colors.text.secondary,
-    backgroundColor: isActive ? colors.surface.primary : 'transparent',
-    border: 'none',
-    borderRadius: borderRadius.lg,
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    ...(isActive ? createNeumorphicSurface('raised', 'md', 'lg') : {}),
-  });
-
-  const formGroupStyles: React.CSSProperties = {
-    marginBottom: spacing[4],
-  };
-
-  const labelStyles: React.CSSProperties = {
-    display: 'block',
-    marginBottom: spacing[2],
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.secondary,
-  };
-
-  const inputStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('inset', 'sm', 'base'),
-    width: '100%',
-    padding: spacing[3],
-    fontSize: typography.fontSize.base,
-    border: 'none',
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.surface.background,
-    color: colors.text.primary,
-  };
-
-  const modalOverlayStyles: React.CSSProperties = {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-  };
-
-  const modalStyles: React.CSSProperties = {
-    ...createCard('lg', 'xl'),
-    backgroundColor: colors.surface.background,
-    maxWidth: '600px',
-    width: '90%',
-    maxHeight: '90vh',
-    overflow: 'auto',
-    padding: spacing[6],
-  };
-
-  const badgeStyles = (color: string): React.CSSProperties => ({
-    ...createBadge(),
-    backgroundColor: color,
-    color: '#000',
-    padding: `${spacing[1]} ${spacing[3]}`,
-    borderRadius: borderRadius.full,
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    display: 'inline-block',
-  });
-
-  const checkboxContainerStyles: React.CSSProperties = {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: spacing[3],
-    marginTop: spacing[2],
-  };
-
-  const infoCardStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('inset', 'sm', 'lg'),
-    padding: spacing[4],
-    marginBottom: spacing[4],
-    backgroundColor: colors.surface.secondary,
-    borderRadius: borderRadius.xl,
-  };
-
-  const infoLabelStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.secondary,
-    marginBottom: spacing[2],
-  };
-
-  const infoValueStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.primary,
-  };
-
-  const handleCartClick = () => {
-    navigate('/menu');
-  };
-
-  // Show loading state while creating profile or loading data
+  // ─── Loading / error states ────────────────────────────────────────────────
   if (isLoading || isCreating || creatingProfile) {
     return (
-      <>
-        <AnimatedBackground variant="default" />
-        <div style={containerStyles}>
-          <AppHeader
-            showPublicNav={true}
-            onCartClick={handleCartClick}
-          />
-          <div style={{
-            textAlign: 'center',
-            padding: spacing[8],
-            maxWidth: '600px',
-            margin: '0 auto',
-          }}>
-            <div style={{
-              ...createNeumorphicSurface('raised', 'lg', 'xl'),
-              padding: spacing[8],
-              backgroundColor: colors.surface.primary,
-            }}>
-              <div style={{ fontSize: '64px', marginBottom: spacing[4] }}>
-                {isCreating || creatingProfile ? '🔧' : '⏳'}
-              </div>
-              <h2 style={{
-                fontSize: typography.fontSize['2xl'],
-                fontWeight: typography.fontWeight.bold,
-                color: colors.text.primary,
-                marginBottom: spacing[4],
-              }}>
-                {isCreating || creatingProfile ? 'Setting Up Your Profile...' : 'Loading...'}
-              </h2>
-              <p style={{
-                fontSize: typography.fontSize.base,
-                color: colors.text.secondary,
-              }}>
-                {isCreating || creatingProfile ? 'Just a moment while we create your customer profile' : 'Please wait'}
-              </p>
-            </div>
+      <div style={{ background: 'var(--bg)', minHeight: '100vh', fontFamily: 'var(--font-body)' }}>
+        <AppHeader showPublicNav onCartClick={() => navigate('/menu')} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 'calc(100vh - 64px)' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', border: '2px solid var(--gold)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite', margin: '0 auto 20px' }} />
+            <p style={{ color: 'var(--text-3)', fontFamily: 'var(--font-body)', fontSize: '0.9rem' }}>
+              {isCreating || creatingProfile ? 'Setting up your profile…' : 'Loading…'}
+            </p>
           </div>
         </div>
-      </>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
     );
   }
 
   if (!customer && !isLoading && !creatingProfile && !isCreating) {
     return (
-      <>
-        <AnimatedBackground variant="default" />
-        <div style={containerStyles}>
-          <AppHeader
-            showPublicNav={true}
-            onCartClick={handleCartClick}
-          />
-          <div style={{
-            textAlign: 'center',
-            padding: spacing[8],
-            maxWidth: '600px',
-            margin: '0 auto',
-          }}>
-            <div style={{
-              ...createNeumorphicSurface('raised', 'lg', 'xl'),
-              padding: spacing[8],
-              backgroundColor: colors.surface.primary,
-            }}>
-              <div style={{ fontSize: '64px', marginBottom: spacing[4] }}>
-                ⚠️
-              </div>
-              <h2 style={{
-                fontSize: typography.fontSize['2xl'],
-                fontWeight: typography.fontWeight.bold,
-                color: colors.text.primary,
-                marginBottom: spacing[4],
-              }}>
-                Unable to Load Profile
-              </h2>
-              <p style={{
-                fontSize: typography.fontSize.base,
-                color: colors.text.secondary,
-                marginBottom: spacing[6],
-              }}>
-                {creationError || 'We couldn\'t load your customer profile. This might be a temporary issue.'}
-              </p>
-              <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'center' }}>
-                <Button variant="primary" onClick={() => window.location.reload()}>
-                  Refresh Page
-                </Button>
-                <Button variant="secondary" onClick={() => navigate('/menu')}>
-                  Back to Menu
-                </Button>
-              </div>
+      <div style={{ background: 'var(--bg)', minHeight: '100vh', fontFamily: 'var(--font-body)' }}>
+        <AppHeader showPublicNav onCartClick={() => navigate('/menu')} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 'calc(100vh - 64px)' }}>
+          <div style={{ textAlign: 'center', maxWidth: 400, padding: '0 24px' }}>
+            <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--surface)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </div>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: 12 }}>Unable to Load Profile</h2>
+            <p style={{ color: 'var(--text-3)', fontSize: '0.9rem', marginBottom: 28 }}>{creationError || "We couldn't load your customer profile."}</p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <button onClick={() => window.location.reload()} style={{ background: 'var(--red)', color: '#fff', border: 'none', borderRadius: 'var(--radius-pill)', padding: '10px 24px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>Retry</button>
+              <button onClick={() => navigate('/menu')} style={{ background: 'transparent', color: 'var(--text-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '10px 24px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}>Back to Menu</button>
             </div>
           </div>
         </div>
-      </>
+      </div>
     );
   }
 
-  // Type guard: customer is guaranteed to be defined here
-  if (!customer) {
-    return null; // This should never happen due to the check above
-  }
+  if (!customer) return null;
 
-  const nextTierInfo = customer.loyaltyInfo
-    ? getNextTierInfo(customer.loyaltyInfo.tier, customer.loyaltyInfo.totalPoints)
-    : null;
+  // ─── Computed values ───────────────────────────────────────────────────────
+  const tier = customer.loyaltyInfo?.tier || 'BRONZE';
+  const tierCfg = TIER_CONFIG[tier as keyof typeof TIER_CONFIG];
+  const totalPoints = customer.loyaltyInfo?.totalPoints || 0;
+  const nextThreshold = tierCfg.threshold;
+  const progress = nextThreshold ? Math.min((totalPoints / nextThreshold) * 100, 100) : 100;
+  const pointsToNext = nextThreshold ? Math.max(nextThreshold - totalPoints, 0) : 0;
 
   const cuisineOptions = ['Indian', 'Chinese', 'Italian', 'Mexican', 'Thai', 'Japanese', 'Continental', 'Mediterranean'];
-  const dietaryOptions = ['Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free', 'Nut-Free', 'Low-Carb', 'Keto', 'Halal', 'Kosher'];
+  const dietaryOptions = ['Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free', 'Nut-Free', 'Low-Carb', 'Keto', 'Halal'];
   const allergenOptions = ['Peanuts', 'Tree Nuts', 'Milk', 'Eggs', 'Wheat', 'Soy', 'Fish', 'Shellfish', 'Sesame'];
 
-  const toggleArrayItem = (array: string[], item: string) => {
-    if (array.includes(item)) {
-      return array.filter(i => i !== item);
-    }
-    return [...array, item];
-  };
+  // ─── Shared micro-components ───────────────────────────────────────────────
+  const Field = ({ label, value, verified }: { label: string; value: string; verified?: boolean }) => (
+    <div style={{ padding: '16px 0', borderBottom: '1px solid var(--border)' }}>
+      <div style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: '0.95rem', color: 'var(--text-1)', fontWeight: 500 }}>{value || '—'}</span>
+        {verified && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.7rem', color: '#4ade80', fontWeight: 600, background: 'rgba(74,222,128,0.1)', padding: '2px 8px', borderRadius: 99 }}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Verified
+          </span>
+        )}
+      </div>
+    </div>
+  );
 
-  return (
-    <>
-      <AnimatedBackground variant="default" />
+  const Input = ({ label, type = 'text', value, onChange, placeholder }: { label: string; type?: string; value: string; onChange: (v: string) => void; placeholder?: string }) => (
+    <div style={{ marginBottom: 16 }}>
+      <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 8 }}>{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        style={{ width: '100%', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 14px', fontSize: '0.9rem', color: 'var(--text-1)', fontFamily: 'var(--font-body)', outline: 'none', boxSizing: 'border-box' }}
+        onFocus={e => { e.currentTarget.style.borderColor = 'var(--gold)'; }}
+        onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)'; }}
+      />
+    </div>
+  );
 
-      <div style={containerStyles}>
-        <AppHeader
-          showPublicNav={true}
-          onCartClick={handleCartClick}
-        />
+  const Select = ({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: { label: string; value: string }[] }) => (
+    <div style={{ marginBottom: 16 }}>
+      <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 8 }}>{label}</label>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        style={{ width: '100%', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 14px', fontSize: '0.9rem', color: 'var(--text-1)', fontFamily: 'var(--font-body)', outline: 'none', cursor: 'pointer' }}
+      >
+        {options.map(o => <option key={o.value} value={o.value} style={{ background: 'var(--surface-2)' }}>{o.label}</option>)}
+      </select>
+    </div>
+  );
 
-        <h1 style={titleStyles}>My Profile</h1>
+  const PillToggle = ({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) => (
+    <button
+      onClick={onClick}
+      style={{
+        padding: '7px 16px', borderRadius: 99, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
+        border: selected ? '1px solid var(--gold)' : '1px solid var(--border)',
+        background: selected ? 'rgba(212,168,67,0.12)' : 'var(--surface-2)',
+        color: selected ? 'var(--gold)' : 'var(--text-3)',
+        transition: 'all 0.15s ease',
+        fontFamily: 'var(--font-body)',
+      }}
+    >{label}</button>
+  );
 
-        {/* Loyalty Card - Clean Professional Design */}
-        {customer.loyaltyInfo && customer.orderStats && (
-          <div style={{
-            ...createNeumorphicSurface('raised', 'lg', 'xl'),
-            padding: spacing[6],
-            marginBottom: spacing[6],
-            background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.primaryDark} 100%)`,
-            color: '#fff',
-          }}>
-            {/* Header Section */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: spacing[6],
-              paddingBottom: spacing[4],
-              borderBottom: '1px solid rgba(255,255,255,0.2)',
-            }}>
-              <div>
-                <div style={{ fontSize: typography.fontSize.sm, opacity: 0.8, marginBottom: spacing[1] }}>
-                  Loyalty Points
-                </div>
-                <div style={{ fontSize: typography.fontSize['4xl'], fontWeight: typography.fontWeight.bold }}>
-                  {customer.loyaltyInfo?.totalPoints || 0}
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{
-                  display: 'inline-block',
-                  padding: `${spacing[2]} ${spacing[4]}`,
-                  borderRadius: borderRadius.full,
-                  backgroundColor: getLoyaltyTierColor(customer.loyaltyInfo?.tier || 'BRONZE'),
-                  color: '#000',
-                  fontSize: typography.fontSize.sm,
-                  fontWeight: typography.fontWeight.bold,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                }}>
-                  {customer.loyaltyInfo?.tier || 'BRONZE'}
-                </div>
-                <div style={{ fontSize: typography.fontSize.xs, marginTop: spacing[2], opacity: 0.8 }}>
-                  Member since {new Date(customer.createdAt).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
-                </div>
-              </div>
+  const Toggle = ({ label, description, checked, onChange }: { label: string; description: string; checked: boolean; onChange: (v: boolean) => void }) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderBottom: '1px solid var(--border)' }}>
+      <div>
+        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-1)', marginBottom: 3 }}>{label}</div>
+        <div style={{ fontSize: '0.78rem', color: 'var(--text-3)' }}>{description}</div>
+      </div>
+      <button
+        onClick={() => onChange(!checked)}
+        style={{
+          flexShrink: 0, width: 48, height: 26, borderRadius: 99, border: 'none', cursor: 'pointer',
+          background: checked ? 'var(--gold)' : 'var(--surface-3)',
+          position: 'relative', transition: 'background 0.2s ease',
+        }}
+      >
+        <span style={{
+          position: 'absolute', top: 3, left: checked ? 24 : 3, width: 20, height: 20,
+          borderRadius: '50%', background: '#fff', transition: 'left 0.2s ease',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
+        }} />
+      </button>
+    </div>
+  );
+
+  // ─── Sections ──────────────────────────────────────────────────────────────
+  const renderOverview = () => (
+    <div>
+      {/* Loyalty card */}
+      <div style={{
+        borderRadius: 20, padding: '28px 32px', marginBottom: 24, position: 'relative', overflow: 'hidden',
+        background: tierCfg.gradient,
+        border: `1px solid ${tierCfg.accent}28`,
+        boxShadow: `0 16px 48px rgba(0,0,0,0.7), 0 0 0 1px ${tierCfg.accent}18`,
+      }}>
+        {/* Holographic shimmer overlay */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.03) 50%, transparent 70%)', pointerEvents: 'none' }} />
+        {/* Decorative circle */}
+        <div style={{ position: 'absolute', right: -40, top: -40, width: 180, height: 180, borderRadius: '50%', border: `1px solid ${tierCfg.accent}18`, pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', right: -20, top: -20, width: 120, height: 120, borderRadius: '50%', border: `1px solid ${tierCfg.accent}10`, pointerEvents: 'none' }} />
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, position: 'relative' }}>
+          <div>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.14em', color: `${tierCfg.accent}99`, textTransform: 'uppercase', marginBottom: 8 }}>Loyalty Balance</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '3rem', fontWeight: 700, color: tierCfg.accentLight, lineHeight: 1, letterSpacing: '-0.02em' }}>
+              {totalPoints.toLocaleString()}
             </div>
-
-            {/* Progress Section */}
-            <div style={{ marginBottom: spacing[6] }}>
-              <div style={{
-                fontSize: typography.fontSize.sm,
-                marginBottom: spacing[3],
-                opacity: 0.9,
-                fontWeight: typography.fontWeight.medium,
-              }}>
-                {nextTierInfo
-                  ? `${nextTierInfo.pointsNeeded} points until ${nextTierInfo.nextTier} tier`
-                  : 'Maximum tier achieved!'}
-              </div>
-
-              {/* Simple clean progress bar */}
-              <div style={{
-                width: '100%',
-                height: '8px',
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                borderRadius: borderRadius.full,
-                overflow: 'hidden',
-                position: 'relative',
-              }}>
-                <div style={{
-                  width: `${Math.min((customer.loyaltyInfo.totalPoints / 10000) * 100, 100)}%`,
-                  height: '100%',
-                  background: 'linear-gradient(90deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,1) 100%)',
-                  transition: 'width 0.5s ease',
-                  borderRadius: borderRadius.full,
-                }}></div>
-              </div>
-
-              {/* Milestone labels below bar */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                marginTop: spacing[2],
-              }}>
-                <div style={{ fontSize: typography.fontSize.xs, opacity: 0.7 }}>
-                  <div style={{ fontWeight: typography.fontWeight.semibold }}>Bronze</div>
-                  <div>0</div>
-                </div>
-                <div style={{ fontSize: typography.fontSize.xs, opacity: 0.7, textAlign: 'center' }}>
-                  <div style={{ fontWeight: typography.fontWeight.semibold }}>Silver</div>
-                  <div>1,000</div>
-                </div>
-                <div style={{ fontSize: typography.fontSize.xs, opacity: 0.7, textAlign: 'center' }}>
-                  <div style={{ fontWeight: typography.fontWeight.semibold }}>Gold</div>
-                  <div>5,000</div>
-                </div>
-                <div style={{ fontSize: typography.fontSize.xs, opacity: 0.7, textAlign: 'right' }}>
-                  <div style={{ fontWeight: typography.fontWeight.semibold }}>Platinum</div>
-                  <div>10,000</div>
-                </div>
-              </div>
+            <div style={{ fontSize: '0.75rem', color: `${tierCfg.accent}88`, marginTop: 4 }}>points</div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ display: 'inline-block', padding: '6px 18px', borderRadius: 99, border: `1px solid ${tierCfg.accent}55`, background: `${tierCfg.accent}18`, marginBottom: 8 }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', color: tierCfg.accentLight, textTransform: 'uppercase' }}>{tierCfg.label}</span>
             </div>
+            <div style={{ fontSize: '0.72rem', color: `${tierCfg.accent}66` }}>
+              Since {new Date(customer.createdAt).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
+            </div>
+          </div>
+        </div>
 
-            {/* Stats Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: spacing[3] }}>
-              <div style={{
-                padding: spacing[4],
-                borderRadius: borderRadius.lg,
-                backgroundColor: 'rgba(255,255,255,0.1)',
-                backdropFilter: 'blur(10px)',
-                textAlign: 'center',
-              }}>
-                <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>
-                  {customer.orderStats?.totalOrders || 0}
-                </div>
-                <div style={{ fontSize: typography.fontSize.xs, opacity: 0.8, marginTop: spacing[1] }}>Total Orders</div>
-              </div>
-              <div style={{
-                padding: spacing[4],
-                borderRadius: borderRadius.lg,
-                backgroundColor: 'rgba(255,255,255,0.1)',
-                backdropFilter: 'blur(10px)',
-                textAlign: 'center',
-              }}>
-                <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>
-                  ₹{Math.round(customer.orderStats?.totalSpent || 0)}
-                </div>
-                <div style={{ fontSize: typography.fontSize.xs, opacity: 0.8, marginTop: spacing[1] }}>Total Spent</div>
-              </div>
-              <div style={{
-                padding: spacing[4],
-                borderRadius: borderRadius.lg,
-                backgroundColor: 'rgba(255,255,255,0.1)',
-                backdropFilter: 'blur(10px)',
-                textAlign: 'center',
-              }}>
-                <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>
-                  ₹{Math.round(customer.orderStats?.averageOrderValue || 0)}
-                </div>
-                <div style={{ fontSize: typography.fontSize.xs, opacity: 0.8, marginTop: spacing[1] }}>Avg Order</div>
-              </div>
+        {/* Progress bar */}
+        {tierCfg.next && (
+          <div style={{ position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: '0.72rem', color: `${tierCfg.accent}88`, fontWeight: 600 }}>{pointsToNext.toLocaleString()} pts to {tierCfg.next}</span>
+              <span style={{ fontSize: '0.72rem', color: `${tierCfg.accent}66` }}>{Math.round(progress)}%</span>
+            </div>
+            <div style={{ height: 6, background: `${tierCfg.accent}20`, borderRadius: 99, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${progress}%`, background: `linear-gradient(90deg, ${tierCfg.accent}, ${tierCfg.accentLight})`, borderRadius: 99, transition: 'width 0.8s ease' }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+              {['Bronze', 'Silver', 'Gold', 'Platinum'].map((t) => (
+                <span key={t} style={{ fontSize: '0.65rem', color: t === tierCfg.label ? tierCfg.accentLight : `${tierCfg.accent}55`, fontWeight: t === tierCfg.label ? 700 : 400 }}>{t}</span>
+              ))}
             </div>
           </div>
         )}
+        {!tierCfg.next && (
+          <div style={{ fontSize: '0.8rem', color: tierCfg.accentLight, fontWeight: 600, textAlign: 'center', padding: '8px 0' }}>Maximum tier achieved</div>
+        )}
+      </div>
 
-        {/* Tabs */}
-        <div style={tabsContainerStyles}>
-          {['Personal Info', 'Addresses', 'Preferences'].map((tab, index) => (
-            <button
-              key={tab}
-              onClick={() => {
-                setActiveTab(index);
-                setEditing(false);
-                setEditingPreferences(false);
-              }}
-              style={tabButtonStyles(activeTab === index)}
-            >
-              {tab}
-            </button>
+      {/* Stats row */}
+      {customer.orderStats && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
+          {[
+            { label: 'Total Orders', value: customer.orderStats.totalOrders, format: (v: number) => v.toString() },
+            { label: 'Total Spent', value: customer.orderStats.totalSpent, format: (v: number) => `₹${Math.round(v).toLocaleString()}` },
+            { label: 'Avg Order', value: customer.orderStats.averageOrderValue, format: (v: number) => `₹${Math.round(v)}` },
+          ].map((stat) => (
+            <div key={stat.label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '18px 16px' }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', fontWeight: 700, color: 'var(--gold)', marginBottom: 4, letterSpacing: '-0.02em' }}>{stat.format(stat.value)}</div>
+              <div style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.06em', color: 'var(--text-3)', textTransform: 'uppercase' }}>{stat.label}</div>
+            </div>
           ))}
         </div>
+      )}
 
-        {/* Tab Content */}
-        <div style={{ ...createNeumorphicSurface('raised', 'md', 'xl'), padding: spacing[6], backgroundColor: colors.surface.primary }}>
-          {activeTab === 0 && (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[6] }}>
-                <h2 style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold, color: colors.text.primary }}>Personal Information</h2>
-                {!editing ? (
-                  <Button variant="primary" size="sm" onClick={() => setEditing(true)}>Edit</Button>
-                ) : (
-                  <div style={{ display: 'flex', gap: spacing[2] }}>
-                    <Button variant="secondary" size="sm" onClick={() => setEditing(false)}>Cancel</Button>
-                    <Button variant="primary" size="sm" onClick={handleUpdateProfile}>Save</Button>
-                  </div>
-                )}
+      {/* Quick info */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 24px', marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <span style={{ fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.06em', color: 'var(--text-3)', textTransform: 'uppercase' }}>Account</span>
+          <button onClick={() => setActiveSection('personal')} style={{ fontSize: '0.75rem', color: 'var(--gold)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 600 }}>Edit →</button>
+        </div>
+        <Field label="Name" value={customer.name} />
+        <Field label="Email" value={customer.email} verified={customer.emailVerified} />
+        <Field label="Phone" value={customer.phone} verified={customer.phoneVerified} />
+      </div>
+
+      {/* Point history */}
+      {customer.loyaltyInfo?.pointHistory?.length > 0 && (
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 24px' }}>
+          <div style={{ fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.06em', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 16 }}>Recent Points Activity</div>
+          {customer.loyaltyInfo.pointHistory.slice(0, 5).map((tx) => (
+            <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+              <div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-1)', fontWeight: 500, marginBottom: 2 }}>{tx.description}</div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-3)' }}>{new Date(tx.timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
               </div>
+              <span style={{
+                fontSize: '0.9rem', fontWeight: 700,
+                color: tx.type === 'EARNED' || tx.type === 'BONUS' ? '#4ade80' : tx.type === 'REDEEMED' ? 'var(--red-light)' : 'var(--text-3)',
+              }}>
+                {tx.type === 'EARNED' || tx.type === 'BONUS' ? '+' : '−'}{Math.abs(tx.points)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
-              {editing ? (
-                // Edit mode - show inputs
-                <div>
-                  <div style={formGroupStyles}>
-                    <label style={labelStyles}>Name</label>
-                    <input
-                      type="text"
-                      value={profileForm.name || ''}
-                      onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                      style={inputStyles}
-                    />
-                  </div>
+  const renderPersonal = () => (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-1)', margin: 0 }}>Personal Info</h2>
+          <p style={{ color: 'var(--text-3)', fontSize: '0.8rem', margin: '4px 0 0' }}>Manage your account details</p>
+        </div>
+        {!editing ? (
+          <button onClick={() => setEditing(true)} style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-1)', borderRadius: 'var(--radius-pill)', padding: '8px 20px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>Edit</button>
+        ) : (
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => setEditing(false)} style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-2)', borderRadius: 'var(--radius-pill)', padding: '8px 18px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>Cancel</button>
+            <button onClick={handleUpdateProfile} style={{ background: 'var(--red)', border: 'none', color: '#fff', borderRadius: 'var(--radius-pill)', padding: '8px 20px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>Save Changes</button>
+          </div>
+        )}
+      </div>
 
-                  <div style={formGroupStyles}>
-                    <label style={labelStyles}>Email</label>
-                    <input
-                      type="email"
-                      value={profileForm.email || ''}
-                      onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                      style={inputStyles}
-                    />
-                  </div>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '24px' }}>
+        {editing ? (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <Input label="Full Name" value={profileForm.name || ''} onChange={v => setProfileForm(p => ({ ...p, name: v }))} />
+              <Input label="Email" type="email" value={profileForm.email || ''} onChange={v => setProfileForm(p => ({ ...p, email: v }))} />
+              <Input label="Phone" type="tel" value={profileForm.phone || ''} onChange={v => setProfileForm(p => ({ ...p, phone: v }))} />
+              <Input label="Date of Birth" type="date" value={profileForm.dateOfBirth || ''} onChange={v => setProfileForm(p => ({ ...p, dateOfBirth: v }))} />
+            </div>
+            <Select
+              label="Gender"
+              value={profileForm.gender || ''}
+              onChange={v => setProfileForm(p => ({ ...p, gender: v }))}
+              options={[
+                { label: 'Select gender', value: '' },
+                { label: 'Male', value: 'MALE' },
+                { label: 'Female', value: 'FEMALE' },
+                { label: 'Other', value: 'OTHER' },
+                { label: 'Prefer not to say', value: 'PREFER_NOT_TO_SAY' },
+              ]}
+            />
+          </div>
+        ) : (
+          <div>
+            <Field label="Full Name" value={customer.name} />
+            <Field label="Email" value={customer.email} verified={customer.emailVerified} />
+            <Field label="Phone" value={customer.phone} verified={customer.phoneVerified} />
+            <Field label="Date of Birth" value={customer.dateOfBirth ? new Date(customer.dateOfBirth).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : ''} />
+            <div style={{ padding: '16px 0' }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 6 }}>Gender</div>
+              <span style={{ fontSize: '0.95rem', color: 'var(--text-1)', fontWeight: 500 }}>{customer.gender?.replace(/_/g, ' ') || '—'}</span>
+            </div>
+          </div>
+        )}
+      </div>
 
-                  <div style={formGroupStyles}>
-                    <label style={labelStyles}>Phone</label>
-                    <input
-                      type="tel"
-                      value={profileForm.phone || ''}
-                      onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-                      style={inputStyles}
-                    />
-                  </div>
+      {/* Member since */}
+      <div style={{ marginTop: 16, padding: '14px 20px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <div style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 4 }}>Member Since</div>
+          <div style={{ fontSize: '0.9rem', color: 'var(--text-1)', fontWeight: 500 }}>{new Date(customer.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+        </div>
+        {customer.lastOrderDate && (
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 4 }}>Last Order</div>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-1)', fontWeight: 500 }}>{new Date(customer.lastOrderDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
-                  <div style={formGroupStyles}>
-                    <label style={labelStyles}>Date of Birth</label>
-                    <input
-                      type="date"
-                      value={profileForm.dateOfBirth || ''}
-                      onChange={(e) => setProfileForm({ ...profileForm, dateOfBirth: e.target.value })}
-                      style={inputStyles}
-                    />
-                  </div>
+  const renderAddresses = () => (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-1)', margin: 0 }}>Saved Addresses</h2>
+          <p style={{ color: 'var(--text-3)', fontSize: '0.8rem', margin: '4px 0 0' }}>Manage your delivery locations</p>
+        </div>
+        <button
+          onClick={() => { setEditingAddressId(null); setAddressForm({ label: 'HOME', addressLine1: '', city: '', state: '', postalCode: '', country: 'India' }); setAddressDialogOpen(true); }}
+          style={{ background: 'var(--red)', border: 'none', color: '#fff', borderRadius: 'var(--radius-pill)', padding: '8px 20px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
+        >
+          + Add Address
+        </button>
+      </div>
 
-                  <div style={formGroupStyles}>
-                    <label style={labelStyles}>Gender</label>
-                    <select
-                      value={profileForm.gender || ''}
-                      onChange={(e) => setProfileForm({ ...profileForm, gender: e.target.value })}
-                      style={inputStyles}
-                    >
-                      <option value="">Select</option>
-                      <option value="MALE">Male</option>
-                      <option value="FEMALE">Female</option>
-                      <option value="OTHER">Other</option>
-                      <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
-                    </select>
-                  </div>
-                </div>
-              ) : (
-                // View mode - show neumorphic cards
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: spacing[4] }}>
-                  <div style={infoCardStyles}>
-                    <div style={infoLabelStyles}>Name</div>
-                    <div style={infoValueStyles}>{customer.name}</div>
-                  </div>
-
-                  <div style={infoCardStyles}>
-                    <div style={infoLabelStyles}>Email</div>
-                    <div style={infoValueStyles}>
-                      {customer.email}
-                      {customer.emailVerified && (
-                        <span style={{ color: colors.semantic.success, fontSize: typography.fontSize.sm, marginLeft: spacing[2] }}>
-                          ✓ Verified
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div style={infoCardStyles}>
-                    <div style={infoLabelStyles}>Phone</div>
-                    <div style={infoValueStyles}>
-                      {customer.phone}
-                      {customer.phoneVerified && (
-                        <span style={{ color: colors.semantic.success, fontSize: typography.fontSize.sm, marginLeft: spacing[2] }}>
-                          ✓ Verified
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div style={infoCardStyles}>
-                    <div style={infoLabelStyles}>Date of Birth</div>
-                    <div style={infoValueStyles}>{customer.dateOfBirth || 'Not set'}</div>
-                  </div>
-
-                  <div style={{ ...infoCardStyles, gridColumn: 'span 2' }}>
-                    <div style={infoLabelStyles}>Gender</div>
-                    <div style={infoValueStyles}>{customer.gender || 'Not set'}</div>
-                  </div>
-                </div>
+      {customer.addresses.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '48px 24px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14 }}>
+          <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+            </svg>
+          </div>
+          <p style={{ color: 'var(--text-3)', fontSize: '0.9rem', marginBottom: 20 }}>No addresses saved yet. Add one for faster checkout.</p>
+          <button
+            onClick={() => { setAddressDialogOpen(true); }}
+            style={{ background: 'rgba(198,42,9,0.1)', border: '1px solid rgba(198,42,9,0.3)', color: 'var(--red-light)', borderRadius: 'var(--radius-pill)', padding: '9px 22px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
+          >
+            Add First Address
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {customer.addresses.map((address) => (
+            <div key={address.id} style={{ background: 'var(--surface)', border: address.isDefault ? '1px solid rgba(212,168,67,0.35)' : '1px solid var(--border)', borderRadius: 14, padding: '20px 24px', position: 'relative' }}>
+              {address.isDefault && (
+                <span style={{ position: 'absolute', top: 16, right: 20, fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.08em', color: 'var(--gold)', background: 'rgba(212,168,67,0.12)', padding: '3px 10px', borderRadius: 99, textTransform: 'uppercase' }}>Default</span>
               )}
-            </div>
-          )}
-
-          {activeTab === 1 && (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[4] }}>
-                <h2 style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>My Addresses</h2>
-                <Button variant="primary" size="sm" onClick={() => {
-                  setEditingAddressId(null);
-                  setAddressForm({
-                    label: 'HOME',
-                    addressLine1: '',
-                    city: '',
-                    state: '',
-                    postalCode: '',
-                    country: 'India',
-                  });
-                  setAddressDialogOpen(true);
-                }}>Add Address</Button>
-              </div>
-
-              {customer.addresses.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: spacing[8], color: colors.text.tertiary }}>
-                  No addresses saved. Add your first address to make ordering easier!
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                  </svg>
                 </div>
-              ) : (
-                <div style={{ display: 'grid', gap: spacing[4] }}>
-                  {customer.addresses.map((address) => (
-                    <div key={address.id} style={{ ...createNeumorphicSurface('inset', 'sm', 'lg'), padding: spacing[4], backgroundColor: colors.surface.secondary }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing[2] }}>
-                        <div>
-                          <span style={{ fontWeight: typography.fontWeight.semibold, fontSize: typography.fontSize.lg }}>
-                            {address.label}
-                          </span>
-                          {address.isDefault && (
-                            <span style={{ ...badgeStyles(colors.brand.primary), marginLeft: spacing[2] }}>Default</span>
-                          )}
-                        </div>
-                        <div style={{ display: 'flex', gap: spacing[2] }}>
-                          <Button variant="secondary" size="sm" onClick={() => handleEditAddress(address)}>
-                            Edit
-                          </Button>
-                          {!address.isDefault && (
-                            <Button variant="secondary" size="sm" onClick={() => handleSetDefaultAddress(address.id)}>
-                              Set Default
-                            </Button>
-                          )}
-                          <Button variant="danger" size="sm" onClick={() => handleRemoveAddress(address.id)}>
-                            Remove
-                          </Button>
-                        </div>
-                      </div>
-                      <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary, lineHeight: 1.6 }}>
-                        {address.addressLine1}{address.addressLine2 && `, ${address.addressLine2}`}<br />
-                        {address.city}, {address.state} - {address.postalCode}<br />
-                        {address.country}
-                        {address.landmark && <><br />Landmark: {address.landmark}</>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 2 && (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[4] }}>
-                <h2 style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>
-                  My Preferences
-                </h2>
-                {!editingPreferences ? (
-                  <Button variant="primary" size="sm" onClick={() => setEditingPreferences(true)}>Edit</Button>
-                ) : (
-                  <div style={{ display: 'flex', gap: spacing[2] }}>
-                    <Button variant="secondary" size="sm" onClick={() => setEditingPreferences(false)}>Cancel</Button>
-                    <Button variant="primary" size="sm" onClick={handleUpdatePreferences}>Save</Button>
-                  </div>
-                )}
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-2)', letterSpacing: '0.06em' }}>{address.label}</span>
               </div>
-
-              <div style={formGroupStyles}>
-                <label style={labelStyles}>Spice Level</label>
-                {editingPreferences ? (
-                  <select
-                    value={preferencesForm.spiceLevel || 'MEDIUM'}
-                    onChange={(e) => setPreferencesForm({ ...preferencesForm, spiceLevel: e.target.value })}
-                    style={inputStyles}
-                  >
-                    <option value="MILD">Mild</option>
-                    <option value="MEDIUM">Medium</option>
-                    <option value="HOT">Hot</option>
-                    <option value="EXTRA_HOT">Extra Hot</option>
-                  </select>
-                ) : (
-                  <div style={infoCardStyles}>
-                    <div style={infoValueStyles}>{customer.preferences?.spiceLevel || 'MEDIUM'}</div>
-                  </div>
-                )}
+              <div style={{ fontSize: '0.9rem', color: 'var(--text-1)', lineHeight: 1.6, marginBottom: 14 }}>
+                {address.addressLine1}{address.addressLine2 ? `, ${address.addressLine2}` : ''}<br />
+                {address.city}, {address.state} — {address.postalCode}<br />
+                {address.country}
+                {address.landmark && <><br /><span style={{ color: 'var(--text-3)', fontSize: '0.8rem' }}>Near {address.landmark}</span></>}
               </div>
-
-              <div style={formGroupStyles}>
-                <label style={labelStyles}>Cuisine Preferences</label>
-                {editingPreferences ? (
-                  <div style={checkboxContainerStyles}>
-                    {cuisineOptions.map((cuisine) => (
-                      <Checkbox
-                        key={cuisine}
-                        label={cuisine}
-                        checked={(preferencesForm.cuisinePreferences || []).includes(cuisine)}
-                        onChange={() => setPreferencesForm({
-                          ...preferencesForm,
-                          cuisinePreferences: toggleArrayItem(preferencesForm.cuisinePreferences || [], cuisine)
-                        })}
-                      />
-                    ))}
-                  </div>
-                ) : customer.preferences?.cuisinePreferences?.length ? (
-                  <div style={infoCardStyles}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: spacing[2] }}>
-                      {customer.preferences.cuisinePreferences.map((cuisine, idx) => (
-                        <span key={idx} style={{
-                          ...createNeumorphicSurface('raised', 'sm', 'md'),
-                          padding: `${spacing[2]} ${spacing[3]}`,
-                          fontSize: typography.fontSize.sm,
-                          fontWeight: typography.fontWeight.medium,
-                          color: colors.text.primary,
-                          backgroundColor: colors.surface.primary,
-                          borderRadius: borderRadius.full,
-                        }}>
-                          {cuisine}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div style={infoCardStyles}>
-                    <div style={{ fontSize: typography.fontSize.base, color: colors.text.tertiary }}>No preferences set</div>
-                  </div>
-                )}
-              </div>
-
-              <div style={formGroupStyles}>
-                <label style={labelStyles}>Dietary Restrictions</label>
-                {editingPreferences ? (
-                  <div style={checkboxContainerStyles}>
-                    {dietaryOptions.map((restriction) => (
-                      <Checkbox
-                        key={restriction}
-                        label={restriction}
-                        checked={(preferencesForm.dietaryRestrictions || []).includes(restriction)}
-                        onChange={() => setPreferencesForm({
-                          ...preferencesForm,
-                          dietaryRestrictions: toggleArrayItem(preferencesForm.dietaryRestrictions || [], restriction)
-                        })}
-                      />
-                    ))}
-                  </div>
-                ) : customer.preferences?.dietaryRestrictions?.length ? (
-                  <div style={infoCardStyles}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: spacing[2] }}>
-                      {customer.preferences.dietaryRestrictions.map((restriction, idx) => (
-                        <span key={idx} style={{
-                          ...createNeumorphicSurface('raised', 'sm', 'md'),
-                          padding: `${spacing[2]} ${spacing[3]}`,
-                          fontSize: typography.fontSize.sm,
-                          fontWeight: typography.fontWeight.medium,
-                          color: colors.text.primary,
-                          backgroundColor: colors.surface.primary,
-                          borderRadius: borderRadius.full,
-                        }}>
-                          {restriction}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div style={infoCardStyles}>
-                    <div style={{ fontSize: typography.fontSize.base, color: colors.text.tertiary }}>No restrictions set</div>
-                  </div>
-                )}
-              </div>
-
-              <div style={formGroupStyles}>
-                <label style={labelStyles}>Allergens</label>
-                {editingPreferences ? (
-                  <div style={checkboxContainerStyles}>
-                    {allergenOptions.map((allergen) => (
-                      <Checkbox
-                        key={allergen}
-                        label={allergen}
-                        checked={(preferencesForm.allergens || []).includes(allergen)}
-                        onChange={() => setPreferencesForm({
-                          ...preferencesForm,
-                          allergens: toggleArrayItem(preferencesForm.allergens || [], allergen)
-                        })}
-                      />
-                    ))}
-                  </div>
-                ) : customer.preferences?.allergens?.length ? (
-                  <div style={infoCardStyles}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: spacing[2] }}>
-                      {customer.preferences.allergens.map((allergen, idx) => (
-                        <span key={idx} style={{
-                          ...createNeumorphicSurface('raised', 'sm', 'md'),
-                          padding: `${spacing[2]} ${spacing[3]}`,
-                          fontSize: typography.fontSize.sm,
-                          fontWeight: typography.fontWeight.semibold,
-                          color: '#FFFFFF',
-                          backgroundColor: colors.semantic.error,
-                          borderRadius: borderRadius.full,
-                          boxShadow: `0 2px 8px ${colors.semantic.error}40`,
-                        }}>
-                          ⚠ {allergen}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div style={infoCardStyles}>
-                    <div style={{ fontSize: typography.fontSize.base, color: colors.text.tertiary }}>No allergens set</div>
-                  </div>
-                )}
-              </div>
-
-              <div style={formGroupStyles}>
-                <label style={labelStyles}>Preferred Payment Method</label>
-                {editingPreferences ? (
-                  <select
-                    value={preferencesForm.preferredPaymentMethod || ''}
-                    onChange={(e) => setPreferencesForm({ ...preferencesForm, preferredPaymentMethod: e.target.value })}
-                    style={inputStyles}
-                  >
-                    <option value="">Select</option>
-                    <option value="CASH">Cash</option>
-                    <option value="CARD">Card</option>
-                    <option value="UPI">UPI</option>
-                    <option value="WALLET">Wallet</option>
-                  </select>
-                ) : (
-                  <div style={infoCardStyles}>
-                    <div style={infoValueStyles}>{customer.preferences?.preferredPaymentMethod || 'Not set'}</div>
-                  </div>
-                )}
-              </div>
-
-              <div style={formGroupStyles}>
-                <label style={labelStyles}>Notifications</label>
-                {editingPreferences ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
-                    <Checkbox
-                      label="Notify me about special offers and promotions"
-                      checked={preferencesForm.notifyOnOffers !== false}
-                      onChange={(e) => setPreferencesForm({ ...preferencesForm, notifyOnOffers: e.target.checked })}
-                    />
-                    <Checkbox
-                      label="Notify me about order status updates"
-                      checked={preferencesForm.notifyOnOrderStatus !== false}
-                      onChange={(e) => setPreferencesForm({ ...preferencesForm, notifyOnOrderStatus: e.target.checked })}
-                    />
-                  </div>
-                ) : (
-                  <div style={infoCardStyles}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
-                        <span style={{
-                          display: 'inline-flex',
-                          width: '20px',
-                          height: '20px',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          borderRadius: '50%',
-                          backgroundColor: customer.preferences?.notifyOnOffers !== false ? colors.semantic.success : colors.surface.tertiary,
-                          color: '#fff',
-                          fontSize: typography.fontSize.xs,
-                          fontWeight: typography.fontWeight.bold,
-                        }}>
-                          {customer.preferences?.notifyOnOffers !== false ? '✓' : '✗'}
-                        </span>
-                        <span style={{ fontSize: typography.fontSize.base, color: colors.text.primary }}>Special Offers</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
-                        <span style={{
-                          display: 'inline-flex',
-                          width: '20px',
-                          height: '20px',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          borderRadius: '50%',
-                          backgroundColor: customer.preferences?.notifyOnOrderStatus !== false ? colors.semantic.success : colors.surface.tertiary,
-                          color: '#fff',
-                          fontSize: typography.fontSize.xs,
-                          fontWeight: typography.fontWeight.bold,
-                        }}>
-                          {customer.preferences?.notifyOnOrderStatus !== false ? '✓' : '✗'}
-                        </span>
-                        <span style={{ fontSize: typography.fontSize.base, color: colors.text.primary }}>Order Updates</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => handleEditAddress(address)} style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-2)', borderRadius: 8, padding: '6px 16px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer' }}>Edit</button>
+                {!address.isDefault && <button onClick={() => handleSetDefaultAddress(address.id)} style={{ background: 'rgba(212,168,67,0.08)', border: '1px solid rgba(212,168,67,0.25)', color: 'var(--gold)', borderRadius: 8, padding: '6px 16px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer' }}>Set Default</button>}
+                <button onClick={() => handleRemoveAddress(address.id)} style={{ background: 'rgba(198,42,9,0.07)', border: '1px solid rgba(198,42,9,0.2)', color: 'var(--red-light)', borderRadius: 8, padding: '6px 16px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer' }}>Remove</button>
               </div>
             </div>
-          )}
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderPreferences = () => (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-1)', margin: 0 }}>Food Preferences</h2>
+          <p style={{ color: 'var(--text-3)', fontSize: '0.8rem', margin: '4px 0 0' }}>We'll personalize your experience</p>
+        </div>
+        {!editingPreferences ? (
+          <button onClick={() => setEditingPreferences(true)} style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-1)', borderRadius: 'var(--radius-pill)', padding: '8px 20px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>Edit</button>
+        ) : (
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => setEditingPreferences(false)} style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-2)', borderRadius: 'var(--radius-pill)', padding: '8px 18px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>Cancel</button>
+            <button onClick={handleUpdatePreferences} style={{ background: 'var(--red)', border: 'none', color: '#fff', borderRadius: 'var(--radius-pill)', padding: '8px 20px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>Save</button>
+          </div>
+        )}
+      </div>
+
+      {/* Spice level */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 24px', marginBottom: 12 }}>
+        <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 14 }}>Spice Level</div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {['MILD', 'MEDIUM', 'HOT', 'EXTRA_HOT'].map(level => (
+            <PillToggle key={level} label={level.replace('_', ' ')} selected={(preferencesForm.spiceLevel || 'MEDIUM') === level} onClick={() => editingPreferences && setPreferencesForm(p => ({ ...p, spiceLevel: level }))} />
+          ))}
         </div>
       </div>
 
-      {/* Add/Edit Address Modal */}
-      {addressDialogOpen && (
-        <div style={modalOverlayStyles} onClick={() => {
-          setAddressDialogOpen(false);
-          setEditingAddressId(null);
-        }}>
-          <div style={modalStyles} onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.bold, marginBottom: spacing[4] }}>
-              {editingAddressId ? 'Edit Address' : 'Add New Address'}
-            </h3>
-
-            <div style={formGroupStyles}>
-              <label style={labelStyles}>Label</label>
-              <select
-                value={addressForm.label}
-                onChange={(e) => setAddressForm({ ...addressForm, label: e.target.value })}
-                style={inputStyles}
-              >
-                <option value="HOME">Home</option>
-                <option value="WORK">Work</option>
-                <option value="OTHER">Other</option>
-              </select>
-            </div>
-
-            <div style={formGroupStyles}>
-              <label style={labelStyles}>Address Line 1 *</label>
-              <input
-                type="text"
-                value={addressForm.addressLine1}
-                onChange={(e) => setAddressForm({ ...addressForm, addressLine1: e.target.value })}
-                style={inputStyles}
-                placeholder="House/Flat number, Building name"
-              />
-            </div>
-
-            <div style={formGroupStyles}>
-              <label style={labelStyles}>Address Line 2</label>
-              <input
-                type="text"
-                value={addressForm.addressLine2 || ''}
-                onChange={(e) => setAddressForm({ ...addressForm, addressLine2: e.target.value })}
-                style={inputStyles}
-                placeholder="Street, Area"
-              />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[4] }}>
-              <div style={formGroupStyles}>
-                <label style={labelStyles}>City *</label>
-                <input
-                  type="text"
-                  value={addressForm.city}
-                  onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
-                  style={inputStyles}
-                />
-              </div>
-
-              <div style={formGroupStyles}>
-                <label style={labelStyles}>State *</label>
-                <input
-                  type="text"
-                  value={addressForm.state}
-                  onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })}
-                  style={inputStyles}
-                />
-              </div>
-            </div>
-
-            <div style={formGroupStyles}>
-              <label style={labelStyles}>Postal Code *</label>
-              <input
-                type="text"
-                value={addressForm.postalCode}
-                onChange={(e) => setAddressForm({ ...addressForm, postalCode: e.target.value })}
-                style={inputStyles}
-                placeholder="6 digit PIN code"
-              />
-            </div>
-
-            <div style={formGroupStyles}>
-              <label style={labelStyles}>Country *</label>
-              <input
-                type="text"
-                value={addressForm.country}
-                onChange={(e) => setAddressForm({ ...addressForm, country: e.target.value })}
-                style={inputStyles}
-                placeholder="Country"
-              />
-            </div>
-
-            <div style={formGroupStyles}>
-              <label style={labelStyles}>Landmark</label>
-              <input
-                type="text"
-                value={addressForm.landmark || ''}
-                onChange={(e) => setAddressForm({ ...addressForm, landmark: e.target.value })}
-                style={inputStyles}
-                placeholder="Nearby landmark for easy delivery"
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: spacing[2], justifyContent: 'flex-end', marginTop: spacing[6] }}>
-              <Button variant="secondary" onClick={() => {
-                setAddressDialogOpen(false);
-                setEditingAddressId(null);
-              }}>Cancel</Button>
-              <Button
-                variant="primary"
-                onClick={handleAddOrUpdateAddress}
-                disabled={!addressForm.addressLine1 || !addressForm.city || !addressForm.state || !addressForm.postalCode || !addressForm.country}
-              >
-                {editingAddressId ? 'Update Address' : 'Add Address'}
-              </Button>
-            </div>
-          </div>
+      {/* Preferred payment */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 24px', marginBottom: 12 }}>
+        <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 14 }}>Preferred Payment</div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {[{ v: 'CASH', l: 'Cash' }, { v: 'CARD', l: 'Card' }, { v: 'UPI', l: 'UPI' }, { v: 'WALLET', l: 'Wallet' }].map(opt => (
+            <PillToggle key={opt.v} label={opt.l} selected={preferencesForm.preferredPaymentMethod === opt.v} onClick={() => editingPreferences && setPreferencesForm(p => ({ ...p, preferredPaymentMethod: opt.v }))} />
+          ))}
         </div>
-      )}
-    </>
+      </div>
+
+      {/* Cuisines */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 24px', marginBottom: 12 }}>
+        <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 14 }}>Cuisine Preferences</div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {cuisineOptions.map(c => (
+            <PillToggle key={c} label={c} selected={(preferencesForm.cuisinePreferences || []).includes(c)} onClick={() => editingPreferences && setPreferencesForm(p => ({ ...p, cuisinePreferences: toggleArrayItem(p.cuisinePreferences || [], c) }))} />
+          ))}
+        </div>
+      </div>
+
+      {/* Dietary */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 24px', marginBottom: 12 }}>
+        <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 14 }}>Dietary Restrictions</div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {dietaryOptions.map(d => (
+            <PillToggle key={d} label={d} selected={(preferencesForm.dietaryRestrictions || []).includes(d)} onClick={() => editingPreferences && setPreferencesForm(p => ({ ...p, dietaryRestrictions: toggleArrayItem(p.dietaryRestrictions || [], d) }))} />
+          ))}
+        </div>
+      </div>
+
+      {/* Allergens */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 24px' }}>
+        <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', color: 'var(--red-light)', textTransform: 'uppercase', marginBottom: 6 }}>Allergens</div>
+        <p style={{ fontSize: '0.78rem', color: 'var(--text-3)', marginBottom: 14 }}>We'll warn you if any item contains these</p>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {allergenOptions.map(a => {
+            const sel = (preferencesForm.allergens || []).includes(a);
+            return (
+              <button
+                key={a}
+                onClick={() => editingPreferences && setPreferencesForm(p => ({ ...p, allergens: toggleArrayItem(p.allergens || [], a) }))}
+                style={{
+                  padding: '7px 16px', borderRadius: 99, fontSize: '0.8rem', fontWeight: 600, cursor: editingPreferences ? 'pointer' : 'default',
+                  border: sel ? '1px solid rgba(229,62,62,0.5)' : '1px solid var(--border)',
+                  background: sel ? 'rgba(229,62,62,0.1)' : 'var(--surface-2)',
+                  color: sel ? 'var(--red-light)' : 'var(--text-3)',
+                  fontFamily: 'var(--font-body)',
+                }}
+              >{a}</button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderNotifications = () => (
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-1)', margin: 0 }}>Notifications</h2>
+        <p style={{ color: 'var(--text-3)', fontSize: '0.8rem', margin: '4px 0 0' }}>Control what we send you and how</p>
+      </div>
+
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 24px', marginBottom: 12 }}>
+        <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 4 }}>Order Updates</div>
+        <p style={{ fontSize: '0.78rem', color: 'var(--text-3)', marginBottom: 16 }}>Real-time notifications about your orders</p>
+        <Toggle label="Order Status Alerts" description="Confirmations, prep updates, out for delivery, delivered" checked={notifForm.notifyOnOrderStatus} onChange={v => setNotifForm(p => ({ ...p, notifyOnOrderStatus: v }))} />
+      </div>
+
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 24px', marginBottom: 12 }}>
+        <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 4 }}>Promotions & Offers</div>
+        <p style={{ fontSize: '0.78rem', color: 'var(--text-3)', marginBottom: 16 }}>Deals, discounts and loyalty rewards</p>
+        <Toggle label="Email Offers" description="Special deals and promotions sent to your email" checked={notifForm.notifyOnOffers} onChange={v => setNotifForm(p => ({ ...p, notifyOnOffers: v }))} />
+        <Toggle label="Marketing Emails" description="News, new menu items, and seasonal campaigns" checked={notifForm.marketingOptIn} onChange={v => setNotifForm(p => ({ ...p, marketingOptIn: v }))} />
+        <Toggle label="SMS Alerts" description="Text messages for offers and order updates" checked={notifForm.smsOptIn} onChange={v => setNotifForm(p => ({ ...p, smsOptIn: v }))} />
+      </div>
+
+      <button
+        onClick={handleSaveNotifications}
+        style={{ width: '100%', background: 'var(--red)', border: 'none', color: '#fff', borderRadius: 'var(--radius-pill)', padding: '13px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer' }}
+      >
+        Save Notification Settings
+      </button>
+    </div>
+  );
+
+  const SECTION_RENDERERS: Record<string, () => React.ReactNode> = {
+    overview: renderOverview,
+    personal: renderPersonal,
+    addresses: renderAddresses,
+    preferences: renderPreferences,
+    notifications: renderNotifications,
+  };
+
+  // ─── Address modal ─────────────────────────────────────────────────────────
+  const AddressModal = () => (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'var(--overlay)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: 24 }}
+      onClick={() => { setAddressDialogOpen(false); setEditingAddressId(null); }}
+    >
+      <div
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: '28px 32px', width: '100%', maxWidth: 540, maxHeight: '90vh', overflowY: 'auto' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-1)', margin: 0 }}>{editingAddressId ? 'Edit Address' : 'Add New Address'}</h3>
+          <button onClick={() => { setAddressDialogOpen(false); setEditingAddressId(null); }} style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-2)' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <Select label="Label" value={addressForm.label} onChange={v => setAddressForm(p => ({ ...p, label: v }))} options={[{ label: 'Home', value: 'HOME' }, { label: 'Work', value: 'WORK' }, { label: 'Other', value: 'OTHER' }]} />
+        <Input label="Address Line 1 *" value={addressForm.addressLine1} onChange={v => setAddressForm(p => ({ ...p, addressLine1: v }))} placeholder="House/Flat, Building name" />
+        <Input label="Address Line 2" value={addressForm.addressLine2 || ''} onChange={v => setAddressForm(p => ({ ...p, addressLine2: v }))} placeholder="Street, Area" />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <Input label="City *" value={addressForm.city} onChange={v => setAddressForm(p => ({ ...p, city: v }))} />
+          <Input label="State *" value={addressForm.state} onChange={v => setAddressForm(p => ({ ...p, state: v }))} />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <Input label="Postal Code *" value={addressForm.postalCode} onChange={v => setAddressForm(p => ({ ...p, postalCode: v }))} placeholder="6-digit PIN" />
+          <Input label="Country *" value={addressForm.country} onChange={v => setAddressForm(p => ({ ...p, country: v }))} />
+        </div>
+        <Input label="Landmark" value={addressForm.landmark || ''} onChange={v => setAddressForm(p => ({ ...p, landmark: v }))} placeholder="Nearby landmark" />
+
+        <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+          <button onClick={() => { setAddressDialogOpen(false); setEditingAddressId(null); }} style={{ flex: 1, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-2)', borderRadius: 'var(--radius-pill)', padding: '12px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}>Cancel</button>
+          <button
+            onClick={handleAddOrUpdateAddress}
+            disabled={!addressForm.addressLine1 || !addressForm.city || !addressForm.state || !addressForm.postalCode}
+            style={{ flex: 2, background: 'var(--red)', border: 'none', color: '#fff', borderRadius: 'var(--radius-pill)', padding: '12px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', opacity: (!addressForm.addressLine1 || !addressForm.city || !addressForm.state || !addressForm.postalCode) ? 0.5 : 1 }}
+          >
+            {editingAddressId ? 'Update Address' : 'Save Address'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ─── Main render ───────────────────────────────────────────────────────────
+  return (
+    <div style={{ background: 'var(--bg)', minHeight: '100vh', fontFamily: 'var(--font-body)', color: 'var(--text-1)' }}>
+      <AppHeader showPublicNav onCartClick={() => navigate('/menu')} />
+
+      <div style={{ display: 'flex', maxWidth: 1160, margin: '0 auto', padding: '32px 24px', gap: 24, alignItems: 'flex-start' }}>
+
+        {/* Left sidebar */}
+        <div style={{ width: 240, flexShrink: 0, position: 'sticky', top: 88 }}>
+          {/* Avatar */}
+          <div style={{ textAlign: 'center', marginBottom: 24, padding: '20px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16 }}>
+            <div style={{
+              width: 64, height: 64, borderRadius: '50%', margin: '0 auto 12px',
+              background: `linear-gradient(135deg, ${tierCfg.accent}40 0%, ${tierCfg.accent}15 100%)`,
+              border: `2px solid ${tierCfg.accent}55`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={tierCfg.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', color: 'var(--text-1)', marginBottom: 2 }}>{customer.name}</div>
+            <div style={{ fontSize: '0.72rem', color: tierCfg.accent, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{tierCfg.label} Member</div>
+          </div>
+
+          {/* Nav */}
+          <nav style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
+            {NAV_ITEMS.map((item, i) => {
+              const active = activeSection === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveSection(item.id)}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '13px 18px',
+                    background: active ? 'rgba(212,168,67,0.08)' : 'transparent',
+                    border: 'none',
+                    borderLeft: active ? '2px solid var(--gold)' : '2px solid transparent',
+                    borderBottom: i < NAV_ITEMS.length - 1 ? '1px solid var(--border)' : 'none',
+                    color: active ? 'var(--gold)' : 'var(--text-3)',
+                    cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: active ? 700 : 500,
+                    fontSize: '0.85rem', textAlign: 'left', transition: 'all 0.15s ease',
+                  }}
+                >
+                  <span style={{ opacity: active ? 1 : 0.6 }}>{item.icon}</span>
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Main content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {SECTION_RENDERERS[activeSection]?.()}
+        </div>
+      </div>
+
+      {addressDialogOpen && <AddressModal />}
+    </div>
   );
 };
 
