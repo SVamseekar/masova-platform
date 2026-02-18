@@ -3,6 +3,40 @@
  * Following the soft UI philosophy with systematic approach
  */
 
+// ============================================
+// WorldPlate Dark — Customer EU Design Tokens
+// ============================================
+export const darkColors = {
+  bg: '#0A0908',
+  surface: '#141210',
+  surface2: '#1C1916',
+  surface3: '#242018',
+  gold: '#D4A843',
+  goldLight: '#E8C060',
+  red: '#C62A09',
+  redLight: '#E53E3E',
+  border: 'rgba(212, 168, 67, 0.15)',
+  borderStrong: 'rgba(212, 168, 67, 0.35)',
+  text1: '#FDFCF8',
+  text2: '#B0A898',
+  text3: '#6C6458',
+  overlay: 'rgba(10, 9, 8, 0.85)',
+};
+
+export const darkFonts = {
+  display: "'Playfair Display', Georgia, serif",
+  body: "'DM Sans', system-ui, sans-serif",
+};
+
+export const darkRadii = {
+  card: '16px',
+  pill: '999px',
+};
+
+// ============================================
+// Legacy: Neumorphic (kept for staff/manager pages)
+// ============================================
+
 // Core Color Palette - Neumorphic Base
 export const colors = {
   // Primary neumorphic surface
@@ -52,8 +86,8 @@ export const colors = {
   
   // Shadow colors for neumorphic effects
   shadow: {
-    light: 'rgba(255, 255, 255, 1)',      // Enhanced for more prominent effects
-    lightStrong: 'rgba(255, 255, 255, 0.9)',
+    light: 'rgba(255, 255, 255, 0.6)',      // Reduced white light intensity
+    lightStrong: 'rgba(255, 255, 255, 0.7)',
     dark: 'rgba(163, 163, 163, 0.5)',     // Enhanced from 0.3 for visibility
     darkIntense: 'rgba(163, 163, 163, 0.6)',
     darkStrong: 'rgba(100, 100, 100, 0.7)', // NEW - for deep inset shadows
@@ -200,13 +234,13 @@ export const shadows = {
     xl: `24px 24px 48px ${colors.shadow.darkStrong}, -24px -24px 48px ${colors.shadow.lightStrong}`,
   },
 
-  // Inset (pressed) shadows - DEEP for inputs, toggles, pressed buttons
+  // Inset (pressed) shadows - Moderate depth for visible but not excessive effect
   inset: {
-    sm: `inset 4px 4px 8px ${colors.shadow.dark}, inset -4px -4px 8px ${colors.shadow.light}`,
-    base: `inset 6px 6px 12px ${colors.shadow.darkStrong}, inset -6px -6px 12px ${colors.shadow.lightStrong}`,
-    md: `inset 8px 8px 16px ${colors.shadow.darkStrong}, inset -8px -8px 16px ${colors.shadow.lightStrong}`,
-    lg: `inset 12px 12px 24px ${colors.shadow.darkStrong}, inset -12px -12px 24px ${colors.shadow.lightStrong}`,
-    xl: `inset 16px 16px 32px ${colors.shadow.darkStrong}, inset -16px -16px 32px ${colors.shadow.lightStrong}`,
+    sm: `inset 3px 3px 6px ${colors.shadow.dark}, inset -3px -3px 6px ${colors.shadow.light}`,
+    base: `inset 4px 4px 8px ${colors.shadow.dark}, inset -4px -4px 8px ${colors.shadow.light}`,
+    md: `inset 5px 5px 10px ${colors.shadow.dark}, inset -5px -5px 10px ${colors.shadow.light}`,
+    lg: `inset 6px 6px 12px ${colors.shadow.dark}, inset -6px -6px 12px ${colors.shadow.light}`,
+    xl: `inset 8px 8px 16px ${colors.shadow.darkStrong}, inset -8px -8px 16px ${colors.shadow.lightStrong}`,
   },
   
   // Floating shadows - for modals, tooltips
