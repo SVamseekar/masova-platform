@@ -125,7 +125,7 @@ const StoreSelector: React.FC<StoreSelectorProps> = ({ variant = 'customer', onS
     padding: '7px 14px',
     background: 'var(--surface-2)',
     color: 'var(--text-1)',
-    border: '1px solid var(--border)',
+    border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: '10px',
     cursor: 'pointer',
     fontSize: '0.85rem',
@@ -173,8 +173,8 @@ const StoreSelector: React.FC<StoreSelectorProps> = ({ variant = 'customer', onS
         onClick={() => setIsOpen(!isOpen)}
         style={buttonStyles}
         disabled={isLoading}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-strong)'; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.18)'; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '7px', overflow: 'hidden' }}>
           {/* Pin icon */}
