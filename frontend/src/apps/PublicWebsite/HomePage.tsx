@@ -314,76 +314,110 @@ const HomePage: React.FC = () => {
 
           </div>
 
-          {/* RIGHT ── Hero food image composition */}
-          <div style={{ flexShrink: 0, position: 'relative', width: '480px', height: '540px' }}>
+          {/* RIGHT ── Chef photo + floating food circles */}
+          <div style={{ flexShrink: 0, position: 'relative', width: '520px', height: '580px' }}>
 
-            {/* Main large hero dish — Chicken Biryani */}
+            {/* Warm glow behind chef */}
             <div style={{
               position: 'absolute',
-              top: '50%', left: '50%',
-              transform: 'translate(-50%, -50%)',
-            }}>
-              <FoodCircle
-                src="https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600&q=85"
-                alt="Chicken Biryani"
-                size={360}
-                ring="rgba(245,158,11,0.35)"
-                border="3px solid rgba(245,158,11,0.25)"
-                shadow="0 0 0 2px rgba(245,158,11,0.12), 0 0 80px rgba(245,158,11,0.18), 0 40px 80px rgba(0,0,0,0.75)"
-              />
-            </div>
+              bottom: 0, left: '50%',
+              transform: 'translateX(-50%)',
+              width: '420px', height: '420px',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle at 50% 60%, rgba(212,168,67,0.07) 0%, rgba(198,42,9,0.04) 50%, transparent 75%)',
+              pointerEvents: 'none',
+            }} />
 
-            {/* Floating small dish — top-left: Masala Dosa */}
+            {/* Chef photo — full body, transparent-bg style via object-fit + dark bg removal */}
+            <img
+              src="https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=700&q=90"
+              alt="Chef"
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                left: '50%',
+                transform: 'translateX(-48%)',
+                height: '92%',
+                width: 'auto',
+                objectFit: 'cover',
+                objectPosition: 'top center',
+                filter: 'drop-shadow(0 32px 64px rgba(0,0,0,0.85))',
+                zIndex: 5,
+                borderRadius: '0 0 0 0',
+              }}
+            />
+
+            {/* Floating food circle — top-left: Masala Dosa */}
             <div style={{
               position: 'absolute',
-              top: '4%', left: '-2%',
-              filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.6))',
+              top: '6%', left: '0%',
+              zIndex: 10,
+              filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.7))',
             }}>
               <FoodCircle
-                src="https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=200&q=80"
+                src="https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=220&q=85"
                 alt="Masala Dosa"
-                size={110}
-                ring="rgba(217,119,6,0.4)"
-                border="2px solid rgba(217,119,6,0.35)"
-                shadow="0 4px 16px rgba(0,0,0,0.6)"
+                size={108}
+                ring="rgba(217,119,6,0.5)"
+                border="3px solid rgba(217,119,6,0.4)"
+                shadow="0 6px 24px rgba(0,0,0,0.7)"
               />
             </div>
 
-            {/* Floating small dish — bottom-left: Margherita Pizza */}
+            {/* Floating food circle — mid-left: Biryani */}
             <div style={{
               position: 'absolute',
-              bottom: '8%', left: '0%',
-              filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.6))',
+              top: '42%', left: '-4%',
+              zIndex: 10,
+              filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.7))',
             }}>
               <FoodCircle
-                src="https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=200&q=80"
+                src="https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=220&q=85"
+                alt="Chicken Biryani"
+                size={96}
+                ring="rgba(245,158,11,0.5)"
+                border="3px solid rgba(245,158,11,0.4)"
+                shadow="0 6px 24px rgba(0,0,0,0.7)"
+              />
+            </div>
+
+            {/* Floating food circle — top-right: Pizza */}
+            <div style={{
+              position: 'absolute',
+              top: '10%', right: '0%',
+              zIndex: 10,
+              filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.7))',
+            }}>
+              <FoodCircle
+                src="https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=220&q=85"
                 alt="Margherita Pizza"
                 size={100}
-                ring="rgba(239,68,68,0.4)"
-                border="2px solid rgba(239,68,68,0.35)"
-                shadow="0 4px 16px rgba(0,0,0,0.6)"
+                ring="rgba(239,68,68,0.5)"
+                border="3px solid rgba(239,68,68,0.4)"
+                shadow="0 6px 24px rgba(0,0,0,0.7)"
               />
             </div>
 
-            {/* Floating small dish — top-right: Chocolate Lava Cake */}
+            {/* Floating food circle — mid-right: Lava Cake */}
             <div style={{
               position: 'absolute',
-              top: '12%', right: '0%',
-              filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.6))',
+              top: '46%', right: '0%',
+              zIndex: 10,
+              filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.7))',
             }}>
               <FoodCircle
-                src="https://images.unsplash.com/photo-1633981823231-2a2a7c9b014c?w=200&q=80"
+                src="https://images.unsplash.com/photo-1633981823231-2a2a7c9b014c?w=220&q=85"
                 alt="Chocolate Lava Cake"
-                size={95}
-                ring="rgba(167,139,250,0.4)"
-                border="2px solid rgba(167,139,250,0.3)"
-                shadow="0 4px 16px rgba(0,0,0,0.6)"
+                size={88}
+                ring="rgba(167,139,250,0.5)"
+                border="3px solid rgba(167,139,250,0.4)"
+                shadow="0 6px 24px rgba(0,0,0,0.7)"
               />
             </div>
 
             {/* "Live Now" badge */}
             <div style={{
-              position: 'absolute', top: '6%', right: '12%',
+              position: 'absolute', top: '4%', right: '20%',
               background: 'var(--red)',
               color: '#fff', padding: '8px 16px',
               borderRadius: 'var(--radius-pill)',
@@ -392,7 +426,7 @@ const HomePage: React.FC = () => {
               textTransform: 'uppercase',
               boxShadow: '0 8px 24px rgba(198,42,9,0.5)',
               display: 'flex', alignItems: 'center', gap: '6px',
-              zIndex: 10,
+              zIndex: 20,
             }}>
               <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff', opacity: 0.85 }} />
               Live Now

@@ -112,13 +112,13 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           borderBottom: '1px solid var(--border)',
-          display: 'flex',
+          display: 'grid',
+          gridTemplateColumns: '1fr auto 1fr',
           alignItems: 'center',
-          justifyContent: 'space-between',
           padding: '0 48px',
           height: '64px',
         }}>
-          {/* Logo */}
+          {/* Logo — left column */}
           <div
             onClick={handleGoHome}
             style={{
@@ -129,12 +129,13 @@ const AppHeader: React.FC<AppHeaderProps> = ({
               letterSpacing: '-0.02em',
               cursor: 'pointer',
               userSelect: 'none',
+              justifySelf: 'start',
             }}
           >
             MaSoVa
           </div>
 
-          {/* Centre nav */}
+          {/* Centre nav — middle column, perfectly centred */}
           <nav style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
             {[
               { label: 'Menu', path: '/menu' },
@@ -164,8 +165,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({
             ))}
           </nav>
 
-          {/* Right: cart + user */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {/* Right: cart + user — right column, pinned to the far right */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', justifySelf: 'end' }}>
             {/* Cart button — not for staff */}
             {!isStaff && (
               <button
