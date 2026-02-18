@@ -17,9 +17,6 @@ import {
   useSetDefaultAddressMutation,
   CustomerAddress,
 } from '../../store/api/customerApi';
-import { Button, Card, Input } from '../../components/ui/neumorphic';
-import { colors, spacing, typography } from '../../styles/design-tokens';
-import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 
 interface GuestFormData {
   firstName: string;
@@ -34,6 +31,40 @@ interface GuestFormData {
   specialInstructions: string;
   addressLabel: string;
 }
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '11px 14px',
+  background: 'var(--surface-2)',
+  border: '1px solid var(--border)',
+  borderRadius: '10px',
+  color: 'var(--text-1)',
+  fontFamily: 'var(--font-body)',
+  fontSize: '0.9rem',
+  outline: 'none',
+  transition: 'var(--transition)',
+  boxSizing: 'border-box',
+};
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  color: 'var(--text-3)',
+  fontSize: '0.72rem',
+  fontWeight: 600,
+  marginBottom: '5px',
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+};
+
+const sectionHeadingStyle: React.CSSProperties = {
+  fontFamily: 'var(--font-display)',
+  fontSize: '1.1rem',
+  fontWeight: 700,
+  color: 'var(--text-1)',
+  margin: '0 0 16px 0',
+  paddingBottom: '10px',
+  borderBottom: '1px solid var(--border)',
+};
 
 const GuestCheckoutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -50,7 +81,6 @@ const GuestCheckoutPage: React.FC = () => {
   const tax = subtotal * 0.05;
   const total = subtotal + (itemCount > 0 ? deliveryFee : 0) + tax;
 
-  // Redirect staff/managers to their respective dashboards - they shouldn't access customer checkout
   useEffect(() => {
     if (isLoggedIn && !isCustomer) {
       const userType = currentUser?.type;
@@ -64,23 +94,17 @@ const GuestCheckoutPage: React.FC = () => {
     }
   }, [isLoggedIn, isCustomer, currentUser, navigate]);
 
-  // Fetch customer data for logged-in CUSTOMER users only
   const { data: customerData, isLoading: isLoadingCustomer, error: customerError } = useGetCustomerByUserIdQuery(
     currentUser?.id || '',
     { skip: !isLoggedIn || !isCustomer }
   );
 
-  // Debug logging for customer data
   React.useEffect(() => {
     console.log('GuestCheckoutPage Debug:', {
-      isLoggedIn,
-      isCustomer,
-      currentUser,
-      customerData,
+      isLoggedIn, isCustomer, currentUser, customerData,
       addresses: customerData?.addresses,
       addressCount: customerData?.addresses?.length,
-      isLoadingCustomer,
-      customerError,
+      isLoadingCustomer, customerError,
     });
   }, [isLoggedIn, isCustomer, currentUser, customerData, isLoadingCustomer, customerError]);
 
@@ -88,11 +112,9 @@ const GuestCheckoutPage: React.FC = () => {
   const [removeAddress] = useRemoveAddressMutation();
   const [setDefaultAddress] = useSetDefaultAddressMutation();
 
-  // Address selection state
   const [selectedAddressId, setSelectedAddressId] = useState<string | 'new'>('new');
   const [saveNewAddress, setSaveNewAddress] = useState(true);
 
-  // Parse name into first and last name
   const nameParts = currentUser?.name?.split(' ') || [];
   const defaultFirstName = nameParts[0] || '';
   const defaultLastName = nameParts.slice(1).join(' ') || '';
@@ -117,48 +139,33 @@ const GuestCheckoutPage: React.FC = () => {
   const [addressToDelete, setAddressToDelete] = useState<string | null>(null);
   const [deletingAddress, setDeletingAddress] = useState(false);
 
-  // Set default address if customer has one
   useEffect(() => {
     if (customerData?.addresses && customerData.addresses.length > 0) {
       const validAddresses = customerData.addresses.filter(a => a && a.id && a.addressLine1);
-      console.log('Valid addresses found:', validAddresses.length, validAddresses);
       if (validAddresses.length > 0) {
         const defaultAddr = validAddresses.find(a => a.isDefault) || validAddresses[0];
         if (defaultAddr && defaultAddr.id) {
-          console.log('Setting default address:', defaultAddr);
           setSelectedAddressId(defaultAddr.id);
         }
       }
     }
   }, [customerData]);
 
-  // Populate form fields when a saved address is selected
   useEffect(() => {
-    console.log('Populating form from selected address:', {
-      selectedAddressId,
-      hasAddresses: !!customerData?.addresses,
-      addressCount: customerData?.addresses?.length,
-    });
-
     if (selectedAddressId && selectedAddressId !== 'new' && customerData?.addresses) {
       const selectedAddress = customerData.addresses.find(a => a.id === selectedAddressId);
-      console.log('Found selected address:', selectedAddress);
-
       if (selectedAddress) {
-        const newFormData = {
-          ...formData,
+        setFormData(prev => ({
+          ...prev,
           addressLine1: selectedAddress.addressLine1 || '',
           addressLine2: selectedAddress.addressLine2 || '',
           city: selectedAddress.city || '',
           state: selectedAddress.state || '',
           zipCode: selectedAddress.postalCode || '',
           addressLabel: selectedAddress.label || 'HOME',
-        };
-        console.log('Setting form data:', newFormData);
-        setFormData(newFormData);
+        }));
       }
     } else if (selectedAddressId === 'new') {
-      // Reset address fields when "new" is selected
       setFormData(prev => ({
         ...prev,
         addressLine1: '',
@@ -185,23 +192,13 @@ const GuestCheckoutPage: React.FC = () => {
   };
 
   const handleDeleteAddress = async (addressId: string) => {
-    if (!customerData?.id) {
-      console.error('No customer ID found');
-      return;
-    }
-
-    console.log('Deleting address:', { customerId: customerData.id, addressId });
+    if (!customerData?.id) return;
     setDeletingAddress(true);
     try {
-      const result = await removeAddress({ customerId: customerData.id, addressId }).unwrap();
-      console.log('Address deleted successfully:', result);
-      // If the deleted address was selected, switch to 'new'
-      if (selectedAddressId === addressId) {
-        setSelectedAddressId('new');
-      }
+      await removeAddress({ customerId: customerData.id, addressId }).unwrap();
+      if (selectedAddressId === addressId) setSelectedAddressId('new');
       setAddressToDelete(null);
     } catch (err: any) {
-      console.error('Failed to delete address:', err);
       setError(err?.data?.message || 'Failed to delete address. Please try again.');
     } finally {
       setDeletingAddress(false);
@@ -210,60 +207,35 @@ const GuestCheckoutPage: React.FC = () => {
 
   const handleSetDefaultAddress = async (addressId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!customerData?.id) {
-      console.error('No customer ID found');
-      return;
-    }
-
-    console.log('Setting default address:', { customerId: customerData.id, addressId });
+    if (!customerData?.id) return;
     try {
-      const result = await setDefaultAddress({ customerId: customerData.id, addressId }).unwrap();
-      console.log('Default address set successfully:', result);
+      await setDefaultAddress({ customerId: customerData.id, addressId }).unwrap();
     } catch (err: any) {
-      console.error('Failed to set default address:', err);
       setError(err?.data?.message || 'Failed to set default address. Please try again.');
     }
   };
 
   const validateForm = (): boolean => {
     const errors: Partial<GuestFormData> = {};
-
-    // Always validate phone for logged-in customer users
     if (isCustomer) {
-      if (!formData.phone.trim()) {
-        errors.phone = 'Phone number is required';
-      } else if (!/^[6-9][0-9]{9}$/.test(formData.phone.replace(/\s/g, ''))) {
-        errors.phone = 'Enter valid 10-digit Indian mobile number';
-      }
+      if (!formData.phone.trim()) errors.phone = 'Phone number is required';
+      else if (!/^[6-9][0-9]{9}$/.test(formData.phone.replace(/\s/g, ''))) errors.phone = 'Enter valid 10-digit Indian mobile number';
     }
-
-    // If using saved address, skip other validation
     if (isCustomer && selectedAddressId !== 'new') {
       setValidationErrors(errors);
       return Object.keys(errors).length === 0;
     }
-
     if (!formData.firstName.trim()) errors.firstName = 'First name is required';
     if (!formData.lastName.trim()) errors.lastName = 'Last name is required';
-    if (!formData.email.trim()) {
-      errors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = 'Invalid email format';
-    }
-    if (!formData.phone.trim()) {
-      errors.phone = 'Phone number is required';
-    } else if (!/^[6-9][0-9]{9}$/.test(formData.phone.replace(/\s/g, ''))) {
-      errors.phone = 'Enter valid 10-digit Indian mobile number';
-    }
+    if (!formData.email.trim()) errors.email = 'Email is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errors.email = 'Invalid email format';
+    if (!formData.phone.trim()) errors.phone = 'Phone number is required';
+    else if (!/^[6-9][0-9]{9}$/.test(formData.phone.replace(/\s/g, ''))) errors.phone = 'Enter valid 10-digit Indian mobile number';
     if (!formData.addressLine1.trim()) errors.addressLine1 = 'Address is required';
     if (!formData.city.trim()) errors.city = 'City is required';
     if (!formData.state.trim()) errors.state = 'State is required';
-    if (!formData.zipCode.trim()) {
-      errors.zipCode = 'ZIP code is required';
-    } else if (!/^[0-9]{6}$/.test(formData.zipCode)) {
-      errors.zipCode = 'ZIP code must be 6 digits';
-    }
-
+    if (!formData.zipCode.trim()) errors.zipCode = 'ZIP code is required';
+    else if (!/^[0-9]{6}$/.test(formData.zipCode)) errors.zipCode = 'ZIP code must be 6 digits';
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -271,22 +243,17 @@ const GuestCheckoutPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
     if (!validateForm()) return;
-
     setLoading(true);
-
     try {
       let guestInfo;
-
-      // If using a saved address (for logged-in customers only)
       if (isCustomer && selectedAddressId !== 'new' && customerData?.addresses) {
         const savedAddress = customerData.addresses.find(a => a.id === selectedAddressId);
         if (savedAddress) {
           guestInfo = {
             name: currentUser?.name || '',
             email: currentUser?.email || '',
-            phone: formData.phone, // Use phone from form (editable)
+            phone: formData.phone,
             street: `${savedAddress.addressLine1}${savedAddress.addressLine2 ? ', ' + savedAddress.addressLine2 : ''}`,
             city: savedAddress.city,
             state: savedAddress.state,
@@ -295,7 +262,6 @@ const GuestCheckoutPage: React.FC = () => {
           };
         }
       } else {
-        // Using new address
         guestInfo = {
           name: `${formData.firstName} ${formData.lastName}`,
           email: formData.email,
@@ -306,8 +272,6 @@ const GuestCheckoutPage: React.FC = () => {
           pincode: formData.zipCode,
           deliveryInstructions: formData.specialInstructions,
         };
-
-        // Save new address for logged-in customer users if checkbox is checked
         if (isCustomer && saveNewAddress && customerData?.id) {
           try {
             await addAddress({
@@ -325,15 +289,10 @@ const GuestCheckoutPage: React.FC = () => {
             }).unwrap();
           } catch (err) {
             console.error('Failed to save address:', err);
-            // Continue with checkout even if address save fails
           }
         }
       }
-
-      // Navigate to PaymentPage with guest info
-      navigate('/payment', {
-        state: { guestInfo }
-      });
+      navigate('/payment', { state: { guestInfo } });
     } catch (err: any) {
       console.error('Checkout error:', err);
       setError('An error occurred. Please try again.');
@@ -342,495 +301,249 @@ const GuestCheckoutPage: React.FC = () => {
     }
   };
 
-  // Filter to only show valid addresses
-  const savedAddresses = (customerData?.addresses || []).filter(a =>
-    a && a.id && a.addressLine1
+  const savedAddresses = (customerData?.addresses || []).filter(a => a && a.id && a.addressLine1);
+
+  const Field = ({
+    label, name, type = 'text', placeholder, error: fieldError, disabled: fieldDisabled, value: fieldValue, helperText,
+  }: { label: string; name: keyof GuestFormData; type?: string; placeholder?: string; error?: string; disabled?: boolean; value?: string; helperText?: string }) => (
+    <div>
+      <label style={labelStyle}>{label}</label>
+      <input
+        type={type}
+        name={name}
+        placeholder={placeholder}
+        value={fieldValue !== undefined ? fieldValue : formData[name]}
+        onChange={handleChange}
+        disabled={fieldDisabled ?? loading}
+        style={{ ...inputStyle, borderColor: fieldError ? 'var(--red)' : 'var(--border)' }}
+        onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = fieldError ? 'var(--red)' : 'var(--gold)'; }}
+        onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = fieldError ? 'var(--red)' : 'var(--border)'; }}
+      />
+      {(fieldError || helperText) && (
+        <p style={{ color: fieldError ? 'var(--red-light)' : 'var(--text-3)', fontSize: '0.72rem', marginTop: '4px' }}>
+          {fieldError || helperText}
+        </p>
+      )}
+    </div>
   );
 
-  const containerStyles: React.CSSProperties = {
-    minHeight: '100vh',
-    backgroundColor: colors.surface.background,
-    padding: `${spacing[8]} ${spacing[4]}`,
-    fontFamily: typography.fontFamily.primary,
-  };
-
-  const addressCardStyles = (isSelected: boolean): React.CSSProperties => ({
-    ...createNeumorphicSurface(isSelected ? 'inset' : 'raised', 'base', 'lg'),
-    padding: spacing[4],
-    marginBottom: spacing[3],
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    backgroundColor: isSelected ? colors.brand.primaryLight + '20' : colors.surface.primary,
-    border: isSelected ? `2px solid ${colors.brand.primary}` : '2px solid transparent',
-  });
-
-  const labelBadgeStyles: React.CSSProperties = {
-    display: 'inline-block',
-    padding: `${spacing[1]} ${spacing[2]}`,
-    backgroundColor: colors.brand.primary,
-    color: colors.text.inverse,
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    borderRadius: '4px',
-    textTransform: 'uppercase',
-    marginBottom: spacing[2],
-  };
-
   return (
-    <div style={containerStyles}>
-      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-        <div style={{ marginBottom: spacing[6] }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: '48px 16px', fontFamily: 'var(--font-body)', color: 'var(--text-1)' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+
+        {/* Page heading */}
+        <div style={{ marginBottom: '32px' }}>
           <button
             onClick={() => navigate(isCustomer ? '/menu' : '/checkout')}
-            style={{
-              ...createNeumorphicSurface('raised', 'sm', 'base'),
-              padding: spacing[2],
-              marginBottom: spacing[4],
-              cursor: 'pointer',
-              border: 'none',
-              fontSize: typography.fontSize.lg,
-            }}
+            style={{ background: 'none', border: 'none', color: 'var(--text-3)', fontSize: '0.85rem', cursor: 'pointer', marginBottom: '16px', padding: 0 }}
           >
             ← {isCustomer ? 'Back to Menu' : 'Back'}
           </button>
-          <h1 style={{
-            fontSize: typography.fontSize['4xl'],
-            fontWeight: typography.fontWeight.extrabold,
-            color: colors.text.primary,
-            margin: `${spacing[4]} 0 ${spacing[2]} 0`,
-          }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2.2rem', fontWeight: 900, color: 'var(--text-1)', margin: '0 0 6px 0' }}>
             {isCustomer ? 'Delivery Details' : 'Guest Checkout'}
           </h1>
-          <p style={{
-            fontSize: typography.fontSize.lg,
-            color: colors.text.secondary,
-            margin: 0,
-          }}>
+          <p style={{ color: 'var(--text-3)', fontSize: '0.9rem', margin: 0 }}>
             {isCustomer
-              ? (savedAddresses.length > 0
-                  ? 'Select a saved address or add a new one'
-                  : 'Enter your delivery address to complete your order')
+              ? (savedAddresses.length > 0 ? 'Select a saved address or add a new one' : 'Enter your delivery address to complete your order')
               : 'Complete your order without creating an account'}
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: spacing[8] }}>
-          <Card elevation="lg" padding="xl">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '32px', alignItems: 'start' }}>
+
+          {/* Left — Form */}
+          <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border)', padding: '32px' }}>
+
             {error && (
-              <div style={{
-                ...createNeumorphicSurface('inset', 'base', 'base'),
-                backgroundColor: colors.semantic.errorLight,
-                border: `1px solid ${colors.semantic.error}`,
-                color: colors.semantic.errorDark,
-                padding: spacing[4],
-                marginBottom: spacing[5],
-                fontSize: typography.fontSize.sm,
-                fontWeight: typography.fontWeight.semibold,
-                borderLeft: `4px solid ${colors.semantic.error}`,
-              }}>
+              <div style={{ background: 'rgba(198,42,9,0.12)', border: '1px solid var(--red)', borderLeft: '3px solid var(--red)', borderRadius: '8px', padding: '12px 16px', color: 'var(--red-light)', fontSize: '0.875rem', marginBottom: '24px' }}>
                 {error}
               </div>
             )}
 
             {isLoadingCustomer && isCustomer && (
-              <div style={{ textAlign: 'center', padding: spacing[8] }}>
+              <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-3)' }}>
                 Loading your saved addresses...
               </div>
             )}
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: spacing[6] }}>
-              {/* Contact Phone - Always show for logged-in customers */}
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+
+              {/* Contact phone — logged-in customer only */}
               {isCustomer && (
                 <div>
-                  <h3 style={{
-                    fontSize: typography.fontSize.xl,
-                    fontWeight: typography.fontWeight.extrabold,
-                    color: colors.text.primary,
-                    margin: `0 0 ${spacing[4]} 0`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: spacing[2],
-                  }}>
-                    <span>📞</span> Contact Number
-                  </h3>
-                  <Input
+                  <h3 style={sectionHeadingStyle}>Contact Number</h3>
+                  <Field
                     label="Phone Number"
                     name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    state={validationErrors.phone ? 'error' : 'default'}
-                    helperText={validationErrors.phone || 'For delivery updates'}
+                    type="tel"
                     placeholder="10-digit mobile number"
-                    disabled={loading}
-                    size="lg"
-                    leftIcon="📱"
-                    required
+                    error={validationErrors.phone}
+                    helperText={!validationErrors.phone ? 'For delivery updates' : undefined}
                   />
                 </div>
               )}
 
-              {/* Saved Addresses Section - Only for logged-in customer users */}
+              {/* Saved addresses — logged-in customer with existing addresses */}
               {isCustomer && savedAddresses.length > 0 && (
                 <div>
-                  <h3 style={{
-                    fontSize: typography.fontSize.xl,
-                    fontWeight: typography.fontWeight.extrabold,
-                    color: colors.text.primary,
-                    margin: `0 0 ${spacing[4]} 0`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: spacing[2],
-                  }}>
-                    <span>📍</span> Saved Addresses
-                  </h3>
-
-                  {savedAddresses.map((addr: CustomerAddress) => (
-                    <div
-                      key={addr.id}
-                      style={addressCardStyles(selectedAddressId === addr.id)}
-                      onClick={() => setSelectedAddressId(addr.id)}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div style={{ flex: 1 }}>
-                          <span style={labelBadgeStyles}>
-                            {addr.label} {addr.isDefault && '(Default)'}
-                          </span>
-                          <div style={{
-                            fontSize: typography.fontSize.base,
-                            color: colors.text.primary,
-                            fontWeight: typography.fontWeight.medium,
-                          }}>
-                            {addr.addressLine1}
-                            {addr.addressLine2 && `, ${addr.addressLine2}`}
-                          </div>
-                          <div style={{
-                            fontSize: typography.fontSize.sm,
-                            color: colors.text.secondary,
-                            marginTop: spacing[1],
-                          }}>
-                            {addr.city}, {addr.state} - {addr.postalCode}<br />
-                            {addr.country}
-                          </div>
-                          {addr.landmark && (
-                            <div style={{
-                              fontSize: typography.fontSize.xs,
-                              color: colors.text.tertiary,
-                              marginTop: spacing[1],
-                            }}>
-                              Landmark: {addr.landmark}
+                  <h3 style={sectionHeadingStyle}>Saved Addresses</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {savedAddresses.map((addr: CustomerAddress) => (
+                      <div
+                        key={addr.id}
+                        onClick={() => setSelectedAddressId(addr.id)}
+                        style={{
+                          background: selectedAddressId === addr.id ? 'rgba(212,168,67,0.08)' : 'var(--surface-2)',
+                          border: `1px solid ${selectedAddressId === addr.id ? 'var(--gold)' : 'var(--border)'}`,
+                          borderRadius: '12px',
+                          padding: '16px',
+                          cursor: 'pointer',
+                          transition: 'var(--transition)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                              <span style={{
+                                background: 'var(--gold)',
+                                color: '#000',
+                                fontSize: '0.65rem',
+                                fontWeight: 700,
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                              }}>
+                                {addr.label} {addr.isDefault && '· Default'}
+                              </span>
                             </div>
-                          )}
-
-                          {/* Action buttons */}
-                          <div style={{
-                            display: 'flex',
-                            gap: spacing[2],
-                            marginTop: spacing[3],
-                          }}>
-                            {!addr.isDefault && (
-                              <Button
+                            <p style={{ margin: '0 0 2px', fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-1)' }}>
+                              {addr.addressLine1}{addr.addressLine2 && `, ${addr.addressLine2}`}
+                            </p>
+                            <p style={{ margin: '0 0 10px', fontSize: '0.8rem', color: 'var(--text-3)' }}>
+                              {addr.city}, {addr.state} – {addr.postalCode}
+                            </p>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              {!addr.isDefault && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleSetDefaultAddress(addr.id, e)}
+                                  style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text-2)', fontSize: '0.75rem', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer' }}
+                                >
+                                  Set Default
+                                </button>
+                              )}
+                              <button
                                 type="button"
-                                variant="secondary"
-                                size="sm"
-                                onClick={(e) => handleSetDefaultAddress(addr.id, e)}
+                                onClick={(e) => { e.stopPropagation(); setAddressToDelete(addr.id); }}
+                                style={{ background: 'none', border: '1px solid rgba(198,42,9,0.4)', color: 'var(--red-light)', fontSize: '0.75rem', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer' }}
                               >
-                                Set as Default
-                              </Button>
-                            )}
-                            <Button
-                              type="button"
-                              variant="danger"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setAddressToDelete(addr.id);
-                              }}
-                            >
-                              Delete
-                            </Button>
+                                Delete
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                        <div style={{
-                          width: '24px',
-                          height: '24px',
-                          borderRadius: '50%',
-                          border: `2px solid ${selectedAddressId === addr.id ? colors.brand.primary : colors.surface.tertiary}`,
-                          backgroundColor: selectedAddressId === addr.id ? colors.brand.primary : 'transparent',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                          marginLeft: spacing[3],
-                        }}>
-                          {selectedAddressId === addr.id && (
-                            <span style={{ color: colors.text.inverse, fontSize: '14px' }}>✓</span>
-                          )}
+                          {/* Radio indicator */}
+                          <div style={{
+                            width: '20px', height: '20px', borderRadius: '50%', flexShrink: 0,
+                            border: `2px solid ${selectedAddressId === addr.id ? 'var(--gold)' : 'var(--border)'}`,
+                            background: selectedAddressId === addr.id ? 'var(--gold)' : 'transparent',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            {selectedAddressId === addr.id && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#000' }} />}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
 
-                  {/* Add New Address Option */}
-                  <div
-                    style={addressCardStyles(selectedAddressId === 'new')}
-                    onClick={() => setSelectedAddressId('new')}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3] }}>
-                      <span style={{ fontSize: '24px' }}>➕</span>
+                    {/* New address option */}
+                    <div
+                      onClick={() => setSelectedAddressId('new')}
+                      style={{
+                        background: selectedAddressId === 'new' ? 'rgba(212,168,67,0.08)' : 'var(--surface-2)',
+                        border: `1px solid ${selectedAddressId === 'new' ? 'var(--gold)' : 'var(--border)'}`,
+                        borderRadius: '12px',
+                        padding: '14px 16px',
+                        cursor: 'pointer',
+                        transition: 'var(--transition)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                      }}
+                    >
+                      <span style={{ fontSize: '1.2rem' }}>+</span>
                       <div>
-                        <div style={{
-                          fontSize: typography.fontSize.base,
-                          fontWeight: typography.fontWeight.semibold,
-                          color: colors.text.primary,
-                        }}>
-                          Use a New Address
-                        </div>
-                        <div style={{
-                          fontSize: typography.fontSize.sm,
-                          color: colors.text.secondary,
-                        }}>
-                          Enter a different delivery address
-                        </div>
+                        <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-1)' }}>Use a New Address</p>
+                        <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-3)' }}>Enter a different delivery address</p>
                       </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Address Form - Always show to allow viewing and editing */}
-              {/* Contact Information - Only for guests (non-logged-in users) */}
+              {/* Contact info — guests only */}
               {!isCustomer && (
-                    <>
-                      <div>
-                        <h3 style={{
-                          fontSize: typography.fontSize.xl,
-                          fontWeight: typography.fontWeight.extrabold,
-                          color: colors.text.primary,
-                          margin: `0 0 ${spacing[4]} 0`,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: spacing[2],
-                        }}>
-                          <span>📞</span> Contact Information
-                        </h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[4] }}>
-                            <Input
-                              label="First Name"
-                              name="firstName"
-                              value={formData.firstName}
-                              onChange={handleChange}
-                              state={validationErrors.firstName ? 'error' : 'default'}
-                              helperText={validationErrors.firstName}
-                              disabled={loading}
-                              size="lg"
-                              required
-                            />
-                            <Input
-                              label="Last Name"
-                              name="lastName"
-                              value={formData.lastName}
-                              onChange={handleChange}
-                              state={validationErrors.lastName ? 'error' : 'default'}
-                              helperText={validationErrors.lastName}
-                              disabled={loading}
-                              size="lg"
-                              required
-                            />
-                          </div>
-                          <Input
-                            label="Email Address"
-                            name="email"
-                            type="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            state={validationErrors.email ? 'error' : 'default'}
-                            helperText={validationErrors.email || 'For order confirmation'}
-                            disabled={loading}
-                            size="lg"
-                            leftIcon="📧"
-                            required
-                          />
-                          <Input
-                            label="Phone Number"
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleChange}
-                            state={validationErrors.phone ? 'error' : 'default'}
-                            helperText={validationErrors.phone || 'For delivery updates'}
-                            placeholder="10-digit mobile number"
-                            disabled={loading}
-                            size="lg"
-                            leftIcon="📱"
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div style={{ height: '1px', backgroundColor: colors.surface.tertiary }} />
-                    </>
-                  )}
-
-                  {/* Delivery Address */}
-                  <div>
-                    <h3 style={{
-                      fontSize: typography.fontSize.xl,
-                      fontWeight: typography.fontWeight.extrabold,
-                      color: colors.text.primary,
-                      margin: `0 0 ${spacing[4]} 0`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: spacing[2],
-                    }}>
-                      <span>📍</span> {isCustomer ? 'New Address' : 'Delivery Address'}
-                    </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
-                      {/* Address Label - Only for logged-in customer users */}
-                      {isCustomer && (
-                        <div>
-                          <label style={{
-                            display: 'block',
-                            fontSize: typography.fontSize.sm,
-                            fontWeight: typography.fontWeight.semibold,
-                            color: colors.text.secondary,
-                            marginBottom: spacing[2],
-                            textTransform: 'uppercase',
-                            letterSpacing: typography.letterSpacing.wide,
-                          }}>
-                            Address Label
-                          </label>
-                          <select
-                            name="addressLabel"
-                            value={formData.addressLabel}
-                            onChange={handleChange}
-                            style={{
-                              ...createNeumorphicSurface('inset', 'base', 'md'),
-                              width: '100%',
-                              padding: `${spacing[3]} ${spacing[4]}`,
-                              fontSize: typography.fontSize.base,
-                              fontWeight: typography.fontWeight.medium,
-                              color: colors.text.primary,
-                              border: 'none',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            <option value="HOME">Home</option>
-                            <option value="WORK">Work</option>
-                            <option value="OTHER">Other</option>
-                          </select>
-                        </div>
-                      )}
-
-                      <Input
-                        label="Address Line 1"
-                        name="addressLine1"
-                        value={formData.addressLine1}
-                        onChange={handleChange}
-                        state={validationErrors.addressLine1 ? 'error' : 'default'}
-                        helperText={validationErrors.addressLine1 || 'House/Flat number, Building name'}
-                        disabled={loading}
-                        size="lg"
-                        required
-                      />
-                      <Input
-                        label="Address Line 2"
-                        name="addressLine2"
-                        value={formData.addressLine2}
-                        onChange={handleChange}
-                        helperText="Street, Area, Landmark (optional)"
-                        disabled={loading}
-                        size="lg"
-                      />
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[4] }}>
-                        <Input
-                          label="City"
-                          name="city"
-                          value={formData.city}
-                          onChange={handleChange}
-                          state={validationErrors.city ? 'error' : 'default'}
-                          helperText={validationErrors.city}
-                          disabled={loading}
-                          size="lg"
-                          required
-                        />
-                        <Input
-                          label="State"
-                          name="state"
-                          value={formData.state}
-                          onChange={handleChange}
-                          state={validationErrors.state ? 'error' : 'default'}
-                          helperText={validationErrors.state}
-                          disabled={loading}
-                          size="lg"
-                          required
-                        />
-                      </div>
-                      <Input
-                        label="ZIP Code"
-                        name="zipCode"
-                        value={formData.zipCode}
-                        onChange={handleChange}
-                        state={validationErrors.zipCode ? 'error' : 'default'}
-                        helperText={validationErrors.zipCode}
-                        placeholder="6-digit PIN code"
-                        disabled={loading}
-                        size="lg"
-                        required
-                      />
-                      <Input
-                        label="Country"
-                        name="country"
-                        value="India"
-                        disabled
-                        size="lg"
-                        helperText="Currently serving India only"
-                      />
-
-                      {/* Save Address Checkbox - Only for logged-in customer users */}
-                      {isCustomer && (
-                        <label style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: spacing[3],
-                          cursor: 'pointer',
-                          padding: spacing[3],
-                          backgroundColor: colors.surface.secondary,
-                          borderRadius: '8px',
-                        }}>
-                          <input
-                            type="checkbox"
-                            checked={saveNewAddress}
-                            onChange={(e) => setSaveNewAddress(e.target.checked)}
-                            style={{
-                              width: '20px',
-                              height: '20px',
-                              cursor: 'pointer',
-                            }}
-                          />
-                          <span style={{
-                            fontSize: typography.fontSize.sm,
-                            color: colors.text.primary,
-                            fontWeight: typography.fontWeight.medium,
-                          }}>
-                            Save this address for future orders
-                          </span>
-                        </label>
-                      )}
+                <div>
+                  <h3 style={sectionHeadingStyle}>Contact Information</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <Field label="First Name" name="firstName" error={validationErrors.firstName} />
+                      <Field label="Last Name" name="lastName" error={validationErrors.lastName} />
                     </div>
+                    <Field label="Email Address" name="email" type="email" placeholder="For order confirmation" error={validationErrors.email} />
+                    <Field label="Phone Number" name="phone" type="tel" placeholder="10-digit mobile number" error={validationErrors.phone} helperText={!validationErrors.phone ? 'For delivery updates' : undefined} />
                   </div>
+                </div>
+              )}
 
-              {/* Special Instructions - Always show */}
+              {/* Address form — new address or guest */}
+              {(selectedAddressId === 'new' || !isCustomer) && (
+                <div>
+                  <h3 style={sectionHeadingStyle}>
+                    {isCustomer ? 'New Delivery Address' : 'Delivery Address'}
+                  </h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    {isCustomer && (
+                      <div>
+                        <label style={labelStyle}>Address Label</label>
+                        <select
+                          name="addressLabel"
+                          value={formData.addressLabel}
+                          onChange={handleChange}
+                          style={{ ...inputStyle, cursor: 'pointer' }}
+                        >
+                          <option value="HOME">Home</option>
+                          <option value="WORK">Work</option>
+                          <option value="OTHER">Other</option>
+                        </select>
+                      </div>
+                    )}
+                    <Field label="Address Line 1" name="addressLine1" placeholder="House/Flat number, Building name" error={validationErrors.addressLine1} />
+                    <Field label="Address Line 2 (Optional)" name="addressLine2" placeholder="Street, Area, Landmark" />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <Field label="City" name="city" error={validationErrors.city} />
+                      <Field label="State" name="state" error={validationErrors.state} />
+                    </div>
+                    <Field label="ZIP / PIN Code" name="zipCode" placeholder="6-digit PIN code" error={validationErrors.zipCode} />
+
+                    {/* Save address checkbox — logged-in customers */}
+                    {isCustomer && (
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '10px 12px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                        <input
+                          type="checkbox"
+                          checked={saveNewAddress}
+                          onChange={(e) => setSaveNewAddress(e.target.checked)}
+                          style={{ width: '16px', height: '16px', accentColor: 'var(--gold)', cursor: 'pointer' }}
+                        />
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>Save this address for future orders</span>
+                      </label>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Special instructions */}
               <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: typography.fontSize.sm,
-                  fontWeight: typography.fontWeight.semibold,
-                  color: colors.text.secondary,
-                  marginBottom: spacing[2],
-                  textTransform: 'uppercase',
-                  letterSpacing: typography.letterSpacing.wide,
-                }}>
-                  Special Instructions (Optional)
-                </label>
+                <label style={labelStyle}>Special Instructions (Optional)</label>
                 <textarea
                   name="specialInstructions"
                   value={formData.specialInstructions}
@@ -839,194 +552,156 @@ const GuestCheckoutPage: React.FC = () => {
                   disabled={loading}
                   rows={3}
                   style={{
-                    ...createNeumorphicSurface('inset', 'base', 'md'),
-                    width: '100%',
-                    fontFamily: 'inherit',
-                    fontSize: typography.fontSize.base,
-                    fontWeight: 500,
-                    color: colors.text.primary,
-                    padding: `${spacing[3]} ${spacing[4]}`,
+                    ...inputStyle,
                     resize: 'vertical',
+                    fontFamily: 'var(--font-body)',
                   }}
+                  onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)'; }}
+                  onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; }}
                 />
               </div>
 
-              <Button
+              <button
                 type="submit"
-                variant="primary"
-                size="xl"
-                fullWidth
-                isLoading={loading}
                 disabled={loading || isLoadingCustomer}
+                style={{
+                  width: '100%',
+                  background: loading ? 'var(--surface-2)' : 'var(--red)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 'var(--radius-pill)',
+                  padding: '14px',
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 700,
+                  fontSize: '1rem',
+                  cursor: loading || isLoadingCustomer ? 'not-allowed' : 'pointer',
+                  transition: 'var(--transition)',
+                  letterSpacing: '0.01em',
+                }}
+                onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.background = 'var(--red-light)'; }}
+                onMouseLeave={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.background = 'var(--red)'; }}
               >
-                Proceed to Payment
-              </Button>
+                {loading ? 'Processing...' : 'Proceed to Payment →'}
+              </button>
             </form>
-          </Card>
+          </div>
 
-          {/* Order Summary */}
-          <div>
-            <Card elevation="lg" padding="lg" style={{ position: 'sticky', top: spacing[4] }}>
-              <h3 style={{
-                fontSize: typography.fontSize.xl,
-                fontWeight: typography.fontWeight.extrabold,
-                color: colors.text.primary,
-                margin: `0 0 ${spacing[4]} 0`,
+          {/* Right — Order Summary */}
+          <div style={{ position: 'sticky', top: '24px', background: 'var(--surface)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border)', padding: '24px' }}>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-1)', margin: '0 0 16px 0' }}>
+              Order Summary
+            </h3>
+
+            {/* Store */}
+            {selectedStoreName && (
+              <div style={{
+                background: 'var(--surface-2)',
+                borderLeft: '3px solid var(--gold)',
+                borderRadius: '8px',
+                padding: '10px 12px',
+                marginBottom: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
               }}>
-                Order Summary
-              </h3>
-
-              {/* Store Info */}
-              {selectedStoreName && (
-                <div style={{
-                  ...createNeumorphicSurface('inset', 'sm', 'base'),
-                  padding: spacing[3],
-                  marginBottom: spacing[4],
-                  backgroundColor: colors.brand.primaryLight + '10',
-                  borderLeft: `3px solid ${colors.brand.primary}`,
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: spacing[2],
-                  }}>
-                    <span style={{ fontSize: '18px' }}>🏪</span>
-                    <div>
-                      <div style={{
-                        fontSize: typography.fontSize.sm,
-                        fontWeight: typography.fontWeight.bold,
-                        color: colors.text.primary,
-                      }}>
-                        {selectedStoreName}
-                      </div>
-                      <div style={{
-                        fontSize: typography.fontSize.xs,
-                        color: colors.text.secondary,
-                      }}>
-                        Store ID: {selectedStoreId}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div style={{ height: '1px', backgroundColor: colors.surface.tertiary, margin: `${spacing[4]} 0` }} />
-
-              <div style={{ marginBottom: spacing[4], maxHeight: '300px', overflowY: 'auto' }}>
-                {cartItems.map((item) => (
-                  <div key={item.id} style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    marginBottom: spacing[3],
-                    paddingBottom: spacing[3],
-                    borderBottom: `1px solid ${colors.surface.secondary}`,
-                  }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{
-                        fontSize: typography.fontSize.sm,
-                        fontWeight: typography.fontWeight.bold,
-                        color: colors.text.primary,
-                        marginBottom: spacing[1],
-                      }}>
-                        {item.name}
-                      </div>
-                      <div style={{
-                        fontSize: typography.fontSize.xs,
-                        color: colors.text.tertiary,
-                      }}>
-                        Qty: {item.quantity} × ₹{item.price.toFixed(2)}
-                      </div>
-                    </div>
-                    <div style={{
-                      fontSize: typography.fontSize.sm,
-                      fontWeight: typography.fontWeight.bold,
-                      color: colors.text.primary,
-                    }}>
-                      ₹{(item.price * item.quantity).toFixed(2)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ height: '1px', backgroundColor: colors.surface.tertiary, margin: `${spacing[4]} 0` }} />
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3], marginBottom: spacing[4] }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
-                  <span>Subtotal ({itemCount} items)</span>
-                  <span style={{ fontWeight: typography.fontWeight.semibold, color: colors.text.primary }}>₹{subtotal.toFixed(2)}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
-                  <span>Delivery Fee</span>
-                  <span style={{ fontWeight: typography.fontWeight.semibold, color: colors.semantic.success }}>₹{deliveryFee.toFixed(2)}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
-                  <span>Tax (5%)</span>
-                  <span style={{ fontWeight: typography.fontWeight.semibold, color: colors.text.primary }}>₹{tax.toFixed(2)}</span>
-                </div>
-                <div style={{ height: '1px', backgroundColor: colors.surface.tertiary, margin: `${spacing[2]} 0` }} />
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.extrabold, color: colors.text.primary }}>
-                    Total Amount
-                  </span>
-                  <span style={{ fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.extrabold, color: colors.brand.primary }}>
-                    ₹{total.toFixed(2)}
-                  </span>
+                <div>
+                  <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-1)' }}>{selectedStoreName}</p>
+                  <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-3)' }}>Store #{selectedStoreId}</p>
                 </div>
               </div>
-            </Card>
+            )}
+
+            <div style={{ height: '1px', background: 'var(--border)', margin: '0 0 16px 0' }} />
+
+            {/* Items */}
+            <div style={{ maxHeight: '280px', overflowY: 'auto', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {cartItems.map((item) => (
+                <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: '0 0 2px', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-1)' }}>{item.name}</p>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-3)' }}>Qty: {item.quantity} × ₹{item.price.toFixed(2)}</p>
+                  </div>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-1)', flexShrink: 0 }}>₹{(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ height: '1px', background: 'var(--border)', margin: '0 0 14px 0' }} />
+
+            {/* Totals */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {[
+                { label: `Subtotal (${itemCount} items)`, value: `₹${subtotal.toFixed(2)}` },
+                { label: 'Delivery Fee', value: `₹${deliveryFee.toFixed(2)}` },
+                { label: 'Tax (5%)', value: `₹${tax.toFixed(2)}` },
+              ].map(row => (
+                <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-3)' }}>{row.label}</span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-2)', fontWeight: 500 }}>{row.value}</span>
+                </div>
+              ))}
+              <div style={{ height: '1px', background: 'var(--border)', margin: '6px 0' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--text-1)', fontSize: '1.05rem' }}>Total</span>
+                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--gold)', fontSize: '1.35rem' }}>₹{total.toFixed(2)}</span>
+              </div>
+            </div>
+
+            {/* Auth nudge for guests */}
+            {!isLoggedIn && (
+              <div style={{ marginTop: '20px', padding: '14px', background: 'var(--surface-2)', borderRadius: '10px', border: '1px solid var(--border)' }}>
+                <p style={{ margin: '0 0 8px', fontSize: '0.8rem', color: 'var(--text-2)', fontWeight: 600 }}>Have an account?</p>
+                <button
+                  type="button"
+                  onClick={() => navigate('/customer-login', { state: { from: '/checkout' } })}
+                  style={{ background: 'none', border: '1px solid var(--gold)', color: 'var(--gold)', borderRadius: 'var(--radius-pill)', padding: '7px 16px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', width: '100%' }}
+                >
+                  Sign In for faster checkout
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Delete Address Confirmation Modal */}
+      {/* Delete address confirmation modal */}
       {addressToDelete && (
         <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
+          position: 'fixed', inset: 0,
+          background: 'rgba(0,0,0,0.7)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 2000,
         }}>
-          <Card elevation="lg" padding="lg" style={{ maxWidth: '400px', width: '90%' }}>
-            <h3 style={{
-              fontSize: typography.fontSize.xl,
-              fontWeight: typography.fontWeight.extrabold,
-              color: colors.text.primary,
-              margin: `0 0 ${spacing[3]} 0`,
-            }}>
-              Delete Address
-            </h3>
-            <p style={{
-              fontSize: typography.fontSize.base,
-              color: colors.text.secondary,
-              margin: `0 0 ${spacing[5]} 0`,
-            }}>
+          <div style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-card)',
+            padding: '32px',
+            maxWidth: '400px',
+            width: '90%',
+          }}>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-1)', margin: '0 0 10px 0' }}>Delete Address</h3>
+            <p style={{ color: 'var(--text-2)', fontSize: '0.875rem', margin: '0 0 24px 0' }}>
               Are you sure you want to delete this address? This action cannot be undone.
             </p>
-            <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
-              <Button
-                variant="ghost"
-                size="base"
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button
                 onClick={() => setAddressToDelete(null)}
                 disabled={deletingAddress}
+                style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-2)', borderRadius: 'var(--radius-pill)', padding: '9px 20px', fontSize: '0.875rem', cursor: 'pointer' }}
               >
                 Cancel
-              </Button>
-              <Button
-                variant="danger"
-                size="base"
+              </button>
+              <button
                 onClick={() => handleDeleteAddress(addressToDelete)}
-                isLoading={deletingAddress}
+                disabled={deletingAddress}
+                style={{ background: 'var(--red)', border: 'none', color: '#fff', borderRadius: 'var(--radius-pill)', padding: '9px 20px', fontSize: '0.875rem', fontWeight: 700, cursor: deletingAddress ? 'not-allowed' : 'pointer' }}
               >
-                Delete
-              </Button>
+                {deletingAddress ? 'Deleting...' : 'Delete'}
+              </button>
             </div>
-          </Card>
+          </div>
         </div>
       )}
     </div>
