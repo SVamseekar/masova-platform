@@ -296,25 +296,6 @@ const HomePage: React.FC = () => {
               </button>
             </div>
 
-            {/* Trust row */}
-            <div style={{
-              display: 'flex', gap: '28px',
-              paddingTop: '32px',
-              borderTop: '1px solid var(--border)',
-            }}>
-              {[
-                { val: '30', unit: 'min', label: 'Avg Delivery' },
-                { val: '4.9', unit: '', label: 'Rating' },
-                { val: '2.4K+', unit: '', label: 'Happy Customers' },
-              ].map(s => (
-                <div key={s.label}>
-                  <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '1.4rem', color: 'var(--gold)', lineHeight: 1 }}>
-                    {s.val}<span style={{ fontSize: '0.75rem', opacity: 0.65, marginLeft: '1px' }}>{s.unit}</span>
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-3)', marginTop: '3px', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{s.label}</div>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* RIGHT ── Large food plate hero + floating cards */}
@@ -362,41 +343,6 @@ const HomePage: React.FC = () => {
                 }}>
                   MaSoVa
                 </div>
-              </div>
-            </div>
-
-            {/* Orbiting mini plates */}
-            {[
-              { item: MENU_ITEMS[0], top: '2%', left: '60%', size: 110 },
-              { item: MENU_ITEMS[2], top: '62%', left: '72%', size: 100 },
-              { item: MENU_ITEMS[5], top: '72%', left: '5%', size: 95 },
-              { item: MENU_ITEMS[3], top: '4%', left: '4%', size: 105 },
-            ].map(({ item, top, left, size }) => (
-              <div key={item.name} style={{ position: 'absolute', top, left }}>
-                <FoodPlate item={item} size={size} />
-              </div>
-            ))}
-
-            {/* Floating order status card */}
-            <div style={{
-              position: 'absolute', bottom: '4%', left: '-8%',
-              background: 'var(--surface-2)',
-              border: '1px solid var(--border)',
-              borderRadius: '16px',
-              padding: '14px 18px',
-              boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
-              minWidth: '200px',
-              backdropFilter: 'blur(12px)',
-            }}>
-              <div style={{ fontSize: '0.62rem', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '7px' }}>
-                Latest Order
-              </div>
-              <div style={{ fontWeight: 700, color: 'var(--text-1)', fontSize: '0.9rem', marginBottom: '6px' }}>
-                Chicken Biryani
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 6px #4ade80' }} />
-                <span style={{ fontSize: '0.75rem', color: '#4ade80', fontWeight: 600 }}>Out for delivery</span>
               </div>
             </div>
 

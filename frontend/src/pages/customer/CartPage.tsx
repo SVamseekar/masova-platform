@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import { removeFromCart, updateItemQuantity } from '../../store/slices/cartSlice';
+import { removeFromCart, updateItemQuantity, clearCart } from '../../store/slices/cartSlice';
 
 interface CartPageProps {
   onContinueShopping: () => void;
@@ -17,6 +17,7 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
   const total = subtotal + deliveryFee + tax;
 
   const handleRemove = (id: string) => dispatch(removeFromCart(id));
+  const handleClearAll = () => dispatch(clearCart());
 
   const handleUpdateQuantity = (id: string, quantity: number) => {
     if (quantity > 0) dispatch(updateItemQuantity({ id, quantity }));
@@ -34,7 +35,18 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
         padding: '48px 24px',
       }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '5rem', marginBottom: '20px', opacity: 0.4 }}>🛒</div>
+          <div style={{
+            width: '80px', height: '80px', borderRadius: '50%',
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 20px', opacity: 0.5,
+          }}>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+          </div>
           <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: '8px' }}>
             Your Cart is Empty
           </h3>
@@ -59,9 +71,24 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
   return (
     <div style={{ background: 'var(--bg)', padding: '32px 24px', fontFamily: 'var(--font-body)', color: 'var(--text-1)' }}>
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 900, color: 'var(--text-1)', margin: '0 0 4px 0' }}>
-          Your Cart
-        </h2>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '4px' }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 900, color: 'var(--text-1)', margin: 0 }}>
+            Your Cart
+          </h2>
+          <button
+            onClick={handleClearAll}
+            style={{
+              background: 'rgba(198,42,9,0.08)', border: '1px solid rgba(198,42,9,0.25)',
+              color: 'var(--red-light)', fontFamily: 'var(--font-body)',
+              fontWeight: 600, fontSize: '0.8rem', padding: '6px 14px',
+              borderRadius: 'var(--radius-pill)', cursor: 'pointer', transition: 'var(--transition)',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(198,42,9,0.15)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(198,42,9,0.08)'; }}
+          >
+            Clear All
+          </button>
+        </div>
         <p style={{ color: 'var(--text-3)', fontSize: '0.9rem', margin: '0 0 32px 0' }}>
           {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'}
         </p>
@@ -79,14 +106,21 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
                 alignItems: 'center',
                 gap: '16px',
               }}>
-                {/* Thumbnail */}
+                {/* Plate thumbnail */}
                 <div style={{
-                  width: '52px', height: '52px', borderRadius: '10px',
-                  background: 'var(--surface-2)', flexShrink: 0,
+                  width: '52px', height: '52px', borderRadius: '50%',
+                  background: 'radial-gradient(circle at 38% 32%, rgba(212,168,67,0.25) 0%, rgba(212,168,67,0.05) 50%, transparent 100%)',
+                  border: '1px solid rgba(212,168,67,0.2)',
+                  flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '1.4rem',
                 }}>
-                  🍽️
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(212,168,67,0.55)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+                    <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+                    <line x1="6" y1="1" x2="6" y2="4"/>
+                    <line x1="10" y1="1" x2="10" y2="4"/>
+                    <line x1="14" y1="1" x2="14" y2="4"/>
+                  </svg>
                 </div>
 
                 {/* Name + price */}

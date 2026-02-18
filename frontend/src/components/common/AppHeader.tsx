@@ -260,9 +260,22 @@ const AppHeader: React.FC<AppHeaderProps> = ({
                   onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-strong)'; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; }}
                 >
-                  <span>👤</span>
+                  <div style={{
+                    width: '28px', height: '28px', borderRadius: '50%',
+                    background: 'rgba(212,168,67,0.15)',
+                    border: '1px solid rgba(212,168,67,0.3)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                      <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                  </div>
                   <span>{currentUser.name}</span>
-                  <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>{isDropdownOpen ? '▲' : '▼'}</span>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
                 </button>
 
                 {/* Dropdown */}
@@ -279,16 +292,49 @@ const AppHeader: React.FC<AppHeaderProps> = ({
                     overflow: 'hidden',
                     zIndex: 1300,
                   }}>
+                    {/* User name header */}
+                    <div style={{ padding: '12px 16px 8px', borderBottom: '1px solid var(--border)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-3)', fontFamily: 'var(--font-body)', marginBottom: '2px' }}>Signed in as</div>
+                      <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-1)', fontFamily: 'var(--font-body)' }}>{currentUser.name}</div>
+                    </div>
                     {[
-                      { icon: '📦', label: 'My Orders', path: '/customer/orders' },
-                      ...(activeOrderId ? [{ icon: '🚚', label: 'Track Order', path: `/tracking/${activeOrderId}` }] : []),
-                      { icon: '👤', label: 'My Profile', path: '/customer/profile' },
+                      {
+                        label: 'My Orders',
+                        path: '/customer/orders',
+                        icon: (
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                            <line x1="3" y1="6" x2="21" y2="6"/>
+                            <path d="M16 10a4 4 0 0 1-8 0"/>
+                          </svg>
+                        ),
+                      },
+                      ...(activeOrderId ? [{
+                        label: 'Track Order',
+                        path: `/tracking/${activeOrderId}`,
+                        icon: (
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                          </svg>
+                        ),
+                      }] : []),
+                      {
+                        label: 'My Profile',
+                        path: '/customer/profile',
+                        icon: (
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                          </svg>
+                        ),
+                      },
                     ].map(item => (
                       <div
                         key={item.label}
                         onClick={() => handleMenuItemClick(item.path)}
                         style={{
-                          padding: '12px 16px',
+                          padding: '11px 16px',
                           display: 'flex',
                           alignItems: 'center',
                           gap: '10px',
@@ -307,7 +353,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
                           (e.currentTarget as HTMLElement).style.color = 'var(--text-2)';
                         }}
                       >
-                        <span>{item.icon}</span>
+                        {item.icon}
                         <span>{item.label}</span>
                       </div>
                     ))}
@@ -315,7 +361,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
                     <div
                       onClick={handleLogout}
                       style={{
-                        padding: '12px 16px',
+                        padding: '11px 16px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '10px',
@@ -326,11 +372,15 @@ const AppHeader: React.FC<AppHeaderProps> = ({
                         cursor: 'pointer',
                         transition: 'var(--transition)',
                       }}
-                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--surface-3)'; }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(198,42,9,0.08)'; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                     >
-                      <span>🚪</span>
-                      <span>Logout</span>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                      </svg>
+                      <span>Sign Out</span>
                     </div>
                   </div>
                 )}
