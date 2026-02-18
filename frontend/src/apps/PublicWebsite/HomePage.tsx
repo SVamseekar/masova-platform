@@ -1,116 +1,109 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppHeader from '../../components/common/AppHeader';
 import CartDrawer from '../../components/cart/CartDrawer';
 
-const CATEGORIES = [
-  { label: 'South Indian', icon: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
-      <path d="M8 12h8M12 8v8"/>
-    </svg>
-  )},
-  { label: 'North Indian', icon: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
-      <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
-      <line x1="6" y1="1" x2="6" y2="4"/>
-      <line x1="10" y1="1" x2="10" y2="4"/>
-      <line x1="14" y1="1" x2="14" y2="4"/>
-    </svg>
-  )},
-  { label: 'Pizza', icon: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2L2 19.5h20L12 2z"/>
-      <path d="M12 2v17.5"/>
-    </svg>
-  )},
-  { label: 'Chinese', icon: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 11l19-9-9 19-2-8-8-2z"/>
-    </svg>
-  )},
-  { label: 'Burgers', icon: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="3" y1="12" x2="21" y2="12"/>
-      <path d="M3 6h18"/>
-      <path d="M3 18h18"/>
-    </svg>
-  )},
-  { label: 'Desserts', icon: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
-      <path d="M5 8H4a4 4 0 0 0 0 8h1"/>
-      <line x1="8" y1="8" x2="8" y2="16"/>
-      <line x1="12" y1="8" x2="12" y2="16"/>
-      <line x1="16" y1="8" x2="16" y2="16"/>
-    </svg>
-  )},
-  { label: 'Beverages', icon: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 8h1a4 4 0 1 1 0 8h-1"/>
-      <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"/>
-    </svg>
-  )},
-];
+/* ─────────────────── Data ─────────────────── */
 
-const POPULAR_ITEMS = [
+const MENU_ITEMS = [
   {
     name: 'Masala Dosa',
-    desc: 'Crispy crepe with spiced potato filling',
+    cuisine: 'South Indian',
     price: '₹149',
-    accent: 'rgba(212,168,67,0.15)',
-    accentBorder: 'rgba(212,168,67,0.4)',
+    gradient: 'radial-gradient(circle at 40% 35%, #d97706 0%, #92400e 45%, #1c0a00 100%)',
+    ring: '#d97706',
+    tag: 'Chef\'s Pick',
   },
   {
     name: 'Chicken Biryani',
-    desc: 'Aromatic basmati rice with tender chicken',
+    cuisine: 'North Indian',
     price: '₹299',
-    accent: 'rgba(198,42,9,0.15)',
-    accentBorder: 'rgba(198,42,9,0.4)',
+    gradient: 'radial-gradient(circle at 35% 30%, #f59e0b 0%, #b45309 40%, #1a0a00 100%)',
+    ring: '#f59e0b',
+    tag: 'Bestseller',
   },
   {
     name: 'Margherita Pizza',
-    desc: 'San Marzano tomato, fresh mozzarella',
+    cuisine: 'Italian',
     price: '₹349',
-    accent: 'rgba(74,222,128,0.1)',
-    accentBorder: 'rgba(74,222,128,0.3)',
+    gradient: 'radial-gradient(circle at 45% 40%, #ef4444 0%, #991b1b 40%, #0f0000 100%)',
+    ring: '#ef4444',
+    tag: 'New',
   },
   {
-    name: 'Chocolate Lava Cake',
-    desc: 'Warm molten centre, vanilla ice cream',
+    name: 'Veg Hakka Noodles',
+    cuisine: 'Chinese',
     price: '₹199',
-    accent: 'rgba(139,92,246,0.12)',
-    accentBorder: 'rgba(139,92,246,0.35)',
+    gradient: 'radial-gradient(circle at 40% 35%, #84cc16 0%, #3f6212 45%, #0a0f00 100%)',
+    ring: '#84cc16',
+    tag: '',
   },
+  {
+    name: 'Classic Burger',
+    cuisine: 'American',
+    price: '₹249',
+    gradient: 'radial-gradient(circle at 40% 35%, #fb923c 0%, #9a3412 45%, #150500 100%)',
+    ring: '#fb923c',
+    tag: 'Popular',
+  },
+  {
+    name: 'Choco Lava Cake',
+    cuisine: 'Desserts',
+    price: '₹199',
+    gradient: 'radial-gradient(circle at 35% 30%, #a78bfa 0%, #5b21b6 40%, #0f0020 100%)',
+    ring: '#a78bfa',
+    tag: '',
+  },
+];
+
+const CATEGORIES = [
+  { label: 'South Indian', filter: 'SOUTH_INDIAN' },
+  { label: 'North Indian', filter: 'NORTH_INDIAN' },
+  { label: 'Pizza', filter: 'PIZZA' },
+  { label: 'Chinese', filter: 'CHINESE' },
+  { label: 'Burgers', filter: 'BURGERS' },
+  { label: 'Desserts', filter: 'DESSERTS' },
+  { label: 'Beverages', filter: 'BEVERAGES' },
 ];
 
 const FEATURES = [
   {
-    title: 'Fresh Every Day',
-    desc: 'Ingredients sourced daily from local markets — no frozen shortcuts.',
+    title: 'Quality Ingredients',
+    desc: 'Sourced fresh every morning from local farms and markets.',
     icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
       </svg>
     ),
   },
   {
     title: '30-Min Delivery',
-    desc: 'Real-time tracking. Your food arrives hot, every time.',
+    desc: 'GPS-tracked riders. Your food arrives hot, guaranteed.',
     icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <polyline points="12 6 12 12 16 14"/>
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="1" y="3" width="15" height="13"/>
+        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+        <circle cx="5.5" cy="18.5" r="2.5"/>
+        <circle cx="18.5" cy="18.5" r="2.5"/>
       </svg>
     ),
   },
   {
-    title: 'Easy Ordering',
-    desc: 'Browse, customise, checkout in under 2 minutes. No fuss.',
+    title: 'Live Order Tracking',
+    desc: 'Watch your order go from kitchen to your door in real time.',
     icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+    ),
+  },
+  {
+    title: 'Easy Reordering',
+    desc: 'One tap to reorder your favourites. No fuss, no fuss.',
+    icon: (
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="1 4 1 10 7 10"/>
+        <path d="M3.51 15a9 9 0 1 0 .49-3.1"/>
       </svg>
     ),
   },
@@ -121,18 +114,58 @@ const FOOTER_LINKS = {
   Support: ['Contact Us', 'FAQs', 'Privacy Policy'],
 };
 
+/* ─────────────────── Plate component — dark CSS food photography ─────────────────── */
+
+const FoodPlate: React.FC<{ item: typeof MENU_ITEMS[0]; size?: number }> = ({ item, size = 140 }) => (
+  <div style={{
+    width: size, height: size,
+    borderRadius: '50%',
+    background: item.gradient,
+    border: `3px solid ${item.ring}44`,
+    boxShadow: `0 0 0 1px ${item.ring}22, 0 8px 32px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1)`,
+    position: 'relative',
+    flexShrink: 0,
+  }}>
+    {/* Inner rim */}
+    <div style={{
+      position: 'absolute',
+      inset: '8px',
+      borderRadius: '50%',
+      border: `1px solid rgba(255,255,255,0.08)`,
+    }} />
+    {/* Highlight */}
+    <div style={{
+      position: 'absolute',
+      top: '18%', left: '22%',
+      width: '28%', height: '18%',
+      borderRadius: '50%',
+      background: 'rgba(255,255,255,0.12)',
+      filter: 'blur(4px)',
+      transform: 'rotate(-30deg)',
+    }} />
+  </div>
+);
+
+/* ─────────────────── Component ─────────────────── */
+
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('');
+  const carouselRef = useRef<HTMLDivElement>(null);
+
+  const scrollCarousel = (dir: 'left' | 'right') => {
+    if (!carouselRef.current) return;
+    carouselRef.current.scrollBy({ left: dir === 'right' ? 300 : -300, behavior: 'smooth' });
+  };
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', color: 'var(--text-1)', fontFamily: 'var(--font-body)' }}>
-      <AppHeader
-        showPublicNav
-        onCartClick={() => setCartDrawerOpen(true)}
-      />
+      <AppHeader showPublicNav onCartClick={() => setCartDrawerOpen(true)} />
 
-      {/* ── Hero ── */}
+      {/* ══════════════════════════════════════════
+          HERO
+      ══════════════════════════════════════════ */}
       <section style={{
         minHeight: 'calc(100vh - 64px)',
         display: 'flex',
@@ -141,89 +174,106 @@ const HomePage: React.FC = () => {
         position: 'relative',
         overflow: 'hidden',
       }}>
-        {/* Grain texture overlay */}
+        {/* Background textures */}
         <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E")`,
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E")`,
+        }} />
+        {/* Left gold glow */}
+        <div style={{
+          position: 'absolute', top: '20%', left: '-5%',
+          width: '500px', height: '500px', borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(212,168,67,0.05) 0%, transparent 70%)',
           pointerEvents: 'none',
         }} />
-        {/* Radial gold glow */}
+        {/* Right red glow */}
         <div style={{
-          position: 'absolute',
-          top: '30%',
-          right: '10%',
-          width: '600px',
-          height: '600px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(212,168,67,0.06) 0%, transparent 70%)',
+          position: 'absolute', top: '10%', right: '-10%',
+          width: '700px', height: '700px', borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(198,42,9,0.06) 0%, transparent 70%)',
           pointerEvents: 'none',
         }} />
 
-        <div style={{ maxWidth: '1400px', margin: '0 auto', width: '100%', display: 'flex', alignItems: 'center', gap: '64px' }}>
-          {/* Left — editorial text column */}
-          <div style={{ flex: 1 }}>
-            {/* Eyebrow */}
+        <div style={{ maxWidth: '1400px', margin: '0 auto', width: '100%', display: 'flex', alignItems: 'center', gap: '40px' }}>
+
+          {/* LEFT ── Text content */}
+          <div style={{ flex: 1, zIndex: 1 }}>
+            {/* Eyebrow badge */}
             <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
+              display: 'inline-flex', alignItems: 'center', gap: '8px',
               padding: '6px 14px',
               background: 'rgba(212,168,67,0.1)',
-              border: '1px solid rgba(212,168,67,0.25)',
+              border: '1px solid rgba(212,168,67,0.3)',
               borderRadius: 'var(--radius-pill)',
-              marginBottom: '24px',
+              marginBottom: '28px',
             }}>
-              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--gold)' }} />
-              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--gold)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--gold)', boxShadow: '0 0 6px var(--gold)' }} />
+              <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--gold)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
                 Hyderabad's Finest Delivery
               </span>
             </div>
 
             <h1 style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(2.5rem, 5vw, 5rem)',
+              fontSize: 'clamp(2.8rem, 5.5vw, 5.5rem)',
               fontWeight: 900,
-              lineHeight: 1.05,
+              lineHeight: 1.0,
               color: 'var(--text-1)',
-              marginBottom: '12px',
+              marginBottom: '0',
             }}>
-              It's not just Food,
+              Your Go-To Spot
             </h1>
             <h1 style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(2.5rem, 5vw, 5rem)',
+              fontSize: 'clamp(2.8rem, 5.5vw, 5.5rem)',
               fontWeight: 900,
-              lineHeight: 1.05,
-              color: 'var(--gold)',
-              fontStyle: 'italic',
-              marginBottom: '28px',
+              lineHeight: 1.0,
+              color: 'var(--text-1)',
+              marginBottom: '8px',
             }}>
-              It's an Experience.
+              for <span style={{ color: 'var(--gold)', fontStyle: 'italic' }}>Quick</span> and
             </h1>
-            <p style={{ color: 'var(--text-2)', fontSize: '1.1rem', marginBottom: '36px', maxWidth: '480px', lineHeight: 1.7 }}>
-              Fresh ingredients, bold flavours, delivered to your door in 30 minutes or less.
+            <h1 style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(2.8rem, 5.5vw, 5.5rem)',
+              fontWeight: 900,
+              lineHeight: 1.0,
+              color: 'var(--red)',
+              marginBottom: '28px',
+              fontStyle: 'italic',
+            }}>
+              Tasty Eats!
+            </h1>
+
+            <p style={{ color: 'var(--text-2)', fontSize: '1.05rem', marginBottom: '36px', maxWidth: '440px', lineHeight: 1.75 }}>
+              Fresh ingredients, bold flavours, delivered to your door in 30 minutes or less. No compromises.
             </p>
 
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            {/* CTA row */}
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '40px' }}>
               <button
                 onClick={() => navigate('/menu')}
                 style={{
-                  background: 'var(--red)',
-                  color: '#fff',
+                  background: 'var(--gold)',
+                  color: '#0a0a0a',
                   fontFamily: 'var(--font-body)',
                   fontWeight: 700,
-                  fontSize: '1rem',
-                  padding: '15px 36px',
+                  fontSize: '0.95rem',
+                  padding: '14px 32px',
                   borderRadius: 'var(--radius-pill)',
                   border: 'none',
                   cursor: 'pointer',
                   transition: 'var(--transition)',
+                  display: 'flex', alignItems: 'center', gap: '8px',
                   letterSpacing: '0.02em',
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--red-light)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--red)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--gold-light)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--gold)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
               >
                 Order Now
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                </svg>
               </button>
               <button
                 onClick={() => navigate('/promotions')}
@@ -233,8 +283,8 @@ const HomePage: React.FC = () => {
                   color: 'var(--text-1)',
                   fontFamily: 'var(--font-body)',
                   fontWeight: 500,
-                  fontSize: '1rem',
-                  padding: '15px 36px',
+                  fontSize: '0.95rem',
+                  padding: '14px 32px',
                   borderRadius: 'var(--radius-pill)',
                   cursor: 'pointer',
                   transition: 'var(--transition)',
@@ -246,402 +296,529 @@ const HomePage: React.FC = () => {
               </button>
             </div>
 
-            {/* Social proof */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '40px', paddingTop: '40px', borderTop: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex' }}>
-                {['#c62a09', '#d4a843', '#2d6a4f'].map((c, i) => (
-                  <div key={i} style={{
-                    width: '38px', height: '38px', borderRadius: '50%',
-                    background: c, border: '2px solid var(--bg)',
-                    marginLeft: i > 0 ? '-12px' : '0',
-                  }} />
-                ))}
-              </div>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '2px' }}>
-                  {[1,2,3,4,5].map(s => (
-                    <svg key={s} width="12" height="12" viewBox="0 0 24 24" fill="var(--gold)" stroke="none">
-                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                    </svg>
-                  ))}
-                  <span style={{ color: 'var(--gold)', fontWeight: 700, fontSize: '0.85rem', marginLeft: '4px' }}>4.9</span>
+            {/* Trust row */}
+            <div style={{
+              display: 'flex', gap: '28px',
+              paddingTop: '32px',
+              borderTop: '1px solid var(--border)',
+            }}>
+              {[
+                { val: '30', unit: 'min', label: 'Avg Delivery' },
+                { val: '4.9', unit: '', label: 'Rating' },
+                { val: '2.4K+', unit: '', label: 'Happy Customers' },
+              ].map(s => (
+                <div key={s.label}>
+                  <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '1.4rem', color: 'var(--gold)', lineHeight: 1 }}>
+                    {s.val}<span style={{ fontSize: '0.75rem', opacity: 0.65, marginLeft: '1px' }}>{s.unit}</span>
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-3)', marginTop: '3px', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{s.label}</div>
                 </div>
-                <span style={{ color: 'var(--text-3)', fontSize: '0.8rem' }}>2,400+ happy customers</span>
-              </div>
+              ))}
             </div>
           </div>
 
-          {/* Right: abstract food visual — dark editorial panel */}
-          <div style={{ flexShrink: 0, position: 'relative' }}>
-            {/* Main panel */}
+          {/* RIGHT ── Large food plate hero + floating cards */}
+          <div style={{ flexShrink: 0, position: 'relative', width: '480px', height: '540px' }}>
+
+            {/* Main large plate — breaks out of the section */}
             <div style={{
-              width: '420px',
-              height: '520px',
-              borderRadius: '200px 200px 120px 120px',
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              overflow: 'hidden',
-              position: 'relative',
-              boxShadow: '0 0 80px rgba(212,168,67,0.1), 0 40px 80px rgba(0,0,0,0.5)',
+              position: 'absolute',
+              top: '50%', left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: '360px', height: '360px',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle at 38% 30%, #f59e0b 0%, #b45309 30%, #7c2d12 55%, #0a0200 100%)',
+              boxShadow: '0 0 0 2px rgba(245,158,11,0.2), 0 0 80px rgba(245,158,11,0.15), 0 40px 80px rgba(0,0,0,0.7)',
+              border: '2px solid rgba(245,158,11,0.15)',
             }}>
-              {/* Gold gradient top sweep */}
+              {/* Inner rim */}
               <div style={{
-                position: 'absolute',
-                top: 0, left: 0, right: 0,
-                height: '50%',
-                background: 'linear-gradient(180deg, rgba(212,168,67,0.12) 0%, transparent 100%)',
+                position: 'absolute', inset: '14px', borderRadius: '50%',
+                border: '1px solid rgba(255,255,255,0.07)',
               }} />
-              {/* Decorative circles */}
+              {/* Specular highlight */}
               <div style={{
                 position: 'absolute',
-                top: '30px', left: '50%', transform: 'translateX(-50%)',
-                width: '180px', height: '180px',
+                top: '16%', left: '24%',
+                width: '30%', height: '20%',
                 borderRadius: '50%',
-                border: '1px solid rgba(212,168,67,0.2)',
+                background: 'rgba(255,255,255,0.13)',
+                filter: 'blur(6px)',
+                transform: 'rotate(-30deg)',
               }} />
+              {/* Center text overlay */}
               <div style={{
-                position: 'absolute',
-                top: '50px', left: '50%', transform: 'translateX(-50%)',
-                width: '120px', height: '120px',
-                borderRadius: '50%',
-                background: 'rgba(212,168,67,0.06)',
-                border: '1px solid rgba(212,168,67,0.15)',
-              }} />
-              {/* MaSoVa wordmark overlay */}
-              <div style={{
-                position: 'absolute',
-                top: '50%', left: '50%',
-                transform: 'translate(-50%, -50%)',
-                textAlign: 'center',
+                position: 'absolute', inset: 0,
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
               }}>
                 <div style={{
                   fontFamily: 'var(--font-display)',
-                  fontSize: '3.5rem',
-                  fontWeight: 900,
-                  color: 'var(--gold)',
-                  lineHeight: 1,
-                  opacity: 0.15,
+                  fontSize: '2.2rem', fontWeight: 900,
+                  color: 'rgba(255,255,255,0.08)',
                   letterSpacing: '-0.02em',
+                  textAlign: 'center',
+                  lineHeight: 1.1,
                 }}>
                   MaSoVa
                 </div>
               </div>
-              {/* Bottom stats strip */}
-              <div style={{
-                position: 'absolute',
-                bottom: 0, left: 0, right: 0,
-                padding: '24px',
-                background: 'linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 100%)',
-                display: 'flex',
-                justifyContent: 'space-around',
-              }}>
-                {[{ val: '30', unit: 'min', label: 'Avg Delivery' }, { val: '50+', unit: '', label: 'Menu Items' }, { val: '5', unit: '', label: 'Locations' }].map(stat => (
-                  <div key={stat.label} style={{ textAlign: 'center' }}>
-                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '1.5rem', color: 'var(--gold)', lineHeight: 1 }}>
-                      {stat.val}<span style={{ fontSize: '0.8rem', opacity: 0.7 }}>{stat.unit}</span>
-                    </div>
-                    <div style={{ fontSize: '0.65rem', color: 'var(--text-3)', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{stat.label}</div>
-                  </div>
-                ))}
+            </div>
+
+            {/* Orbiting mini plates */}
+            {[
+              { item: MENU_ITEMS[0], top: '2%', left: '60%', size: 110 },
+              { item: MENU_ITEMS[2], top: '62%', left: '72%', size: 100 },
+              { item: MENU_ITEMS[5], top: '72%', left: '5%', size: 95 },
+              { item: MENU_ITEMS[3], top: '4%', left: '4%', size: 105 },
+            ].map(({ item, top, left, size }) => (
+              <div key={item.name} style={{ position: 'absolute', top, left }}>
+                <FoodPlate item={item} size={size} />
               </div>
-            </div>
+            ))}
 
-            {/* Floating badge */}
+            {/* Floating order status card */}
             <div style={{
-              position: 'absolute',
-              top: '-20px',
-              right: '-24px',
-              background: 'var(--red)',
-              color: '#fff',
-              padding: '10px 18px',
-              borderRadius: 'var(--radius-pill)',
-              fontFamily: 'var(--font-body)',
-              fontWeight: 700,
-              fontSize: '0.78rem',
-              boxShadow: '0 8px 24px rgba(198,42,9,0.4)',
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase',
-            }}>
-              Live Now
-            </div>
-
-            {/* Floating order card */}
-            <div style={{
-              position: 'absolute',
-              bottom: '-20px',
-              left: '-32px',
+              position: 'absolute', bottom: '4%', left: '-8%',
               background: 'var(--surface-2)',
               border: '1px solid var(--border)',
               borderRadius: '16px',
-              padding: '14px 20px',
-              boxShadow: '0 16px 40px rgba(0,0,0,0.5)',
-              minWidth: '190px',
+              padding: '14px 18px',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
+              minWidth: '200px',
+              backdropFilter: 'blur(12px)',
             }}>
-              <div style={{ fontSize: '0.65rem', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
+              <div style={{ fontSize: '0.62rem', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '7px' }}>
                 Latest Order
               </div>
-              <div style={{ fontWeight: 700, color: 'var(--text-1)', fontSize: '0.875rem', marginBottom: '4px' }}>
+              <div style={{ fontWeight: 700, color: 'var(--text-1)', fontSize: '0.9rem', marginBottom: '6px' }}>
                 Chicken Biryani
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4ade80' }} />
-                <span style={{ fontSize: '0.75rem', color: '#4ade80' }}>Out for delivery</span>
+                <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 6px #4ade80' }} />
+                <span style={{ fontSize: '0.75rem', color: '#4ade80', fontWeight: 600 }}>Out for delivery</span>
               </div>
+            </div>
+
+            {/* "Live Now" badge */}
+            <div style={{
+              position: 'absolute', top: '6%', right: '-2%',
+              background: 'var(--red)',
+              color: '#fff', padding: '8px 16px',
+              borderRadius: 'var(--radius-pill)',
+              fontFamily: 'var(--font-body)', fontWeight: 700,
+              fontSize: '0.75rem', letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              boxShadow: '0 8px 24px rgba(198,42,9,0.5)',
+              display: 'flex', alignItems: 'center', gap: '6px',
+            }}>
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff', opacity: 0.85 }} />
+              Live Now
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Category Pills ── */}
-      <section style={{ padding: '64px 48px', maxWidth: '1400px', margin: '0 auto' }}>
-        <h2 style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: 'clamp(1.75rem, 3vw, 2.75rem)',
-          fontWeight: 700,
-          marginBottom: '8px',
-          color: 'var(--text-1)',
-        }}>
-          What are you <span style={{ color: 'var(--gold)' }}>craving?</span>
-        </h2>
-        <p style={{ color: 'var(--text-2)', marginBottom: '32px', fontSize: '1rem' }}>
-          Browse by cuisine — something for every mood
-        </p>
+      {/* ══════════════════════════════════════════
+          CATEGORY PILLS
+      ══════════════════════════════════════════ */}
+      <section style={{ padding: '60px 48px 40px', maxWidth: '1400px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.6rem, 2.5vw, 2.4rem)', fontWeight: 700, color: 'var(--text-1)', marginBottom: '4px' }}>
+              What are you <span style={{ color: 'var(--gold)' }}>craving?</span>
+            </h2>
+            <p style={{ color: 'var(--text-3)', fontSize: '0.875rem' }}>Browse by cuisine</p>
+          </div>
+          <button
+            onClick={() => navigate('/menu')}
+            style={{
+              background: 'transparent', border: '1px solid var(--border-strong)',
+              color: 'var(--text-2)', fontFamily: 'var(--font-body)', fontWeight: 500,
+              fontSize: '0.85rem', padding: '9px 22px', borderRadius: 'var(--radius-pill)',
+              cursor: 'pointer', transition: 'var(--transition)',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--gold)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text-2)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-strong)'; }}
+          >
+            View All
+          </button>
+        </div>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.label}
-              onClick={() => navigate(`/menu?cuisine=${cat.label.toUpperCase().replace(' ', '_')}`)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 20px',
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-pill)',
-                color: 'var(--text-2)',
-                fontFamily: 'var(--font-body)',
-                fontWeight: 500,
-                fontSize: '0.875rem',
-                cursor: 'pointer',
-                transition: 'var(--transition)',
-              }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.background = 'var(--surface-2)';
-                el.style.borderColor = 'var(--gold)';
-                el.style.color = 'var(--gold)';
-                el.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.background = 'var(--surface)';
-                el.style.borderColor = 'var(--border)';
-                el.style.color = 'var(--text-2)';
-                el.style.transform = 'translateY(0)';
-              }}
-            >
-              {cat.icon}
-              {cat.label}
-            </button>
-          ))}
+          {CATEGORIES.map((cat) => {
+            const active = activeCategory === cat.filter;
+            return (
+              <button
+                key={cat.label}
+                onClick={() => { setActiveCategory(active ? '' : cat.filter); navigate(`/menu${active ? '' : `?cuisine=${cat.filter}`}`); }}
+                style={{
+                  padding: '10px 22px',
+                  background: active ? 'rgba(212,168,67,0.15)' : 'var(--surface)',
+                  border: `1px solid ${active ? 'var(--gold)' : 'var(--border)'}`,
+                  borderRadius: 'var(--radius-pill)',
+                  color: active ? 'var(--gold)' : 'var(--text-2)',
+                  fontFamily: 'var(--font-body)', fontWeight: 500,
+                  fontSize: '0.875rem', cursor: 'pointer',
+                  transition: 'var(--transition)',
+                }}
+                onMouseEnter={(e) => { if (!active) { const el = e.currentTarget as HTMLElement; el.style.background = 'var(--surface-2)'; el.style.borderColor = 'var(--border-strong)'; el.style.color = 'var(--text-1)'; el.style.transform = 'translateY(-2px)'; } }}
+                onMouseLeave={(e) => { if (!active) { const el = e.currentTarget as HTMLElement; el.style.background = 'var(--surface)'; el.style.borderColor = 'var(--border)'; el.style.color = 'var(--text-2)'; el.style.transform = 'translateY(0)'; } }}
+              >
+                {cat.label}
+              </button>
+            );
+          })}
         </div>
       </section>
 
-      {/* ── Popular Items ── */}
+      {/* ══════════════════════════════════════════
+          MENU CAROUSEL — circular food plates
+      ══════════════════════════════════════════ */}
+      <section style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', padding: '64px 0' }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 48px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '56px', flexWrap: 'wrap', gap: '16px' }}>
+            <div>
+              <p style={{ color: 'var(--gold)', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '8px' }}>
+                Delicious Food Category Items
+              </p>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.75rem, 3vw, 2.75rem)', fontWeight: 700, color: 'var(--text-1)' }}>
+                Our <span style={{ color: 'var(--gold)', fontStyle: 'italic' }}>Popular</span> Menu
+              </h2>
+            </div>
+            {/* Carousel arrows */}
+            <div style={{ display: 'flex', gap: '10px' }}>
+              {(['left', 'right'] as const).map(dir => (
+                <button
+                  key={dir}
+                  onClick={() => scrollCarousel(dir)}
+                  style={{
+                    width: '44px', height: '44px', borderRadius: '50%',
+                    background: dir === 'right' ? 'var(--gold)' : 'var(--surface-2)',
+                    border: `1px solid ${dir === 'right' ? 'transparent' : 'var(--border)'}`,
+                    color: dir === 'right' ? '#0a0a0a' : 'var(--text-2)',
+                    cursor: 'pointer', transition: 'var(--transition)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.08)'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    {dir === 'left'
+                      ? <><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></>
+                      : <><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></>
+                    }
+                  </svg>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Scrollable carousel — no scrollbar */}
+        <div
+          ref={carouselRef}
+          style={{
+            display: 'flex',
+            gap: '24px',
+            overflowX: 'auto',
+            paddingLeft: '48px',
+            paddingRight: '48px',
+            paddingBottom: '16px',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+          }}
+        >
+          {MENU_ITEMS.map((item) => (
+            <div
+              key={item.name}
+              onClick={() => navigate('/menu')}
+              style={{
+                flexShrink: 0,
+                width: '210px',
+                background: 'var(--surface-2)',
+                borderRadius: 'var(--radius-card)',
+                border: '1px solid var(--border)',
+                paddingTop: '80px',
+                paddingBottom: '20px',
+                paddingLeft: '20px',
+                paddingRight: '20px',
+                position: 'relative',
+                marginTop: '70px',
+                cursor: 'pointer',
+                transition: 'var(--transition)',
+                textAlign: 'center',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = item.ring + '66'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-6px)'; (e.currentTarget as HTMLElement).style.boxShadow = `0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px ${item.ring}22`; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+            >
+              {/* Plate breaking out of top */}
+              <div style={{
+                position: 'absolute',
+                top: '-70px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+              }}>
+                <FoodPlate item={item} size={140} />
+                {/* Gold + button on plate */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); navigate('/menu'); }}
+                  style={{
+                    position: 'absolute',
+                    bottom: '-2px', right: '-2px',
+                    width: '34px', height: '34px',
+                    borderRadius: '50%',
+                    background: 'var(--gold)',
+                    border: '2px solid var(--surface-2)',
+                    color: '#0a0a0a',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'var(--transition)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--gold-light)'; (e.currentTarget as HTMLElement).style.transform = 'scale(1.1)'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--gold)'; (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                </button>
+              </div>
+
+              {/* Tag badge */}
+              {item.tag && (
+                <div style={{
+                  position: 'absolute',
+                  top: '16px', right: '14px',
+                  background: item.ring + '22',
+                  border: `1px solid ${item.ring}55`,
+                  color: item.ring,
+                  padding: '3px 9px',
+                  borderRadius: 'var(--radius-pill)',
+                  fontSize: '0.62rem', fontWeight: 700,
+                  letterSpacing: '0.06em', textTransform: 'uppercase',
+                }}>
+                  {item.tag}
+                </div>
+              )}
+
+              {/* Text */}
+              <p style={{ fontWeight: 700, color: 'var(--text-1)', marginBottom: '2px', fontFamily: 'var(--font-body)', fontSize: '0.95rem' }}>
+                {item.name}
+              </p>
+              <p style={{ color: 'var(--text-3)', fontSize: '0.75rem', marginBottom: '14px' }}>
+                {item.cuisine}
+              </p>
+              {/* Stars */}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '2px', marginBottom: '10px' }}>
+                {[1,2,3,4,5].map(s => (
+                  <svg key={s} width="10" height="10" viewBox="0 0 24 24" fill="var(--gold)" stroke="none">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                ))}
+              </div>
+              <p style={{ fontWeight: 700, color: 'var(--gold)', fontSize: '1.1rem' }}>
+                {item.price}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: '48px' }}>
+          <button
+            onClick={() => navigate('/menu')}
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--border-strong)',
+              color: 'var(--text-1)',
+              fontFamily: 'var(--font-body)',
+              fontWeight: 500, fontSize: '0.9rem',
+              padding: '12px 28px',
+              borderRadius: 'var(--radius-pill)',
+              cursor: 'pointer', transition: 'var(--transition)',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)'; (e.currentTarget as HTMLElement).style.color = 'var(--gold)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-strong)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-1)'; }}
+          >
+            Explore Full Menu →
+          </button>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          YOUR FOOD AT YOUR DOOR
+      ══════════════════════════════════════════ */}
+      <section style={{ padding: '80px 48px', maxWidth: '1400px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '64px', flexWrap: 'wrap' }}>
+          {/* Left: Big hero plate + delivery text */}
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            {/* Large plate */}
+            <div style={{
+              width: '320px', height: '320px', borderRadius: '50%',
+              background: 'radial-gradient(circle at 38% 30%, #c62a09 0%, #7c0a02 35%, #1a0000 100%)',
+              boxShadow: '0 0 0 2px rgba(198,42,9,0.25), 0 0 80px rgba(198,42,9,0.12), 0 40px 80px rgba(0,0,0,0.7)',
+              border: '2px solid rgba(198,42,9,0.2)',
+              position: 'relative',
+            }}>
+              <div style={{ position: 'absolute', inset: '12px', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.06)' }} />
+              <div style={{ position: 'absolute', top: '18%', left: '22%', width: '28%', height: '18%', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', filter: 'blur(5px)', transform: 'rotate(-30deg)' }} />
+              {/* Discount sticker */}
+              <div style={{
+                position: 'absolute', top: '-10px', right: '-10px',
+                width: '80px', height: '80px', borderRadius: '50%',
+                background: 'var(--gold)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 8px 24px rgba(212,168,67,0.5)',
+                border: '2px solid rgba(255,255,255,0.1)',
+              }}>
+                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '1.1rem', color: '#0a0a0a', lineHeight: 1 }}>30%</span>
+                <span style={{ fontSize: '0.6rem', fontWeight: 700, color: '#0a0a0a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>OFF</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Text + feature list */}
+          <div style={{ flex: 1, minWidth: '300px' }}>
+            <p style={{ color: 'var(--gold)', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '12px' }}>
+              Fast & Reliable
+            </p>
+            <h2 style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(1.8rem, 3vw, 3rem)',
+              fontWeight: 700,
+              lineHeight: 1.1,
+              color: 'var(--text-1)',
+              marginBottom: '16px',
+            }}>
+              Your food, at your door{' '}
+              <span style={{ color: 'var(--gold)', fontStyle: 'italic' }}>in just 30 minutes</span>
+            </h2>
+            <p style={{ color: 'var(--text-2)', fontSize: '0.95rem', lineHeight: 1.7, marginBottom: '36px', maxWidth: '460px' }}>
+              We take food seriously. That means real-time GPS tracking, insulated packaging, and riders who care about your order as much as you do.
+            </p>
+
+            {/* Feature cards — horizontal */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+              {FEATURES.map(feat => (
+                <div
+                  key={feat.title}
+                  style={{
+                    padding: '20px',
+                    background: 'var(--surface)',
+                    borderRadius: '16px',
+                    border: '1px solid var(--border)',
+                    transition: 'var(--transition)',
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(212,168,67,0.35)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
+                >
+                  <div style={{
+                    width: '44px', height: '44px', borderRadius: '12px',
+                    background: 'rgba(212,168,67,0.08)',
+                    border: '1px solid rgba(212,168,67,0.18)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    marginBottom: '14px',
+                  }}>
+                    {feat.icon}
+                  </div>
+                  <h4 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-1)', marginBottom: '6px' }}>
+                    {feat.title}
+                  </h4>
+                  <p style={{ color: 'var(--text-3)', fontSize: '0.78rem', lineHeight: 1.6 }}>{feat.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          HOT OFFER BANNER
+      ══════════════════════════════════════════ */}
       <section style={{
         background: 'var(--surface)',
         borderTop: '1px solid var(--border)',
         borderBottom: '1px solid var(--border)',
         padding: '64px 48px',
       }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '40px', flexWrap: 'wrap', gap: '16px' }}>
-            <div>
-              <h2 style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 'clamp(1.75rem, 3vw, 2.75rem)',
-                fontWeight: 700,
-                color: 'var(--text-1)',
-                marginBottom: '6px',
-              }}>
-                Our Best <span style={{ color: 'var(--gold)', fontStyle: 'italic' }}>Delivered</span>
-              </h2>
-              <p style={{ color: 'var(--text-2)', fontSize: '0.9rem' }}>Crowd favourites, made fresh daily</p>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '48px', flexWrap: 'wrap' }}>
+          {/* Plate + sticker */}
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <div style={{
+              width: '280px', height: '280px', borderRadius: '50%',
+              background: 'radial-gradient(circle at 40% 35%, #84cc16 0%, #3f6212 40%, #0a0f00 100%)',
+              boxShadow: '0 0 0 2px rgba(132,204,22,0.2), 0 0 60px rgba(132,204,22,0.1), 0 30px 60px rgba(0,0,0,0.7)',
+              border: '2px solid rgba(132,204,22,0.18)',
+              position: 'relative',
+            }}>
+              <div style={{ position: 'absolute', inset: '12px', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.06)' }} />
+              <div style={{ position: 'absolute', top: '18%', left: '22%', width: '28%', height: '18%', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', filter: 'blur(5px)', transform: 'rotate(-30deg)' }} />
             </div>
+            {/* Offer sticker */}
+            <div style={{
+              position: 'absolute', top: '-16px', left: '-16px',
+              width: '88px', height: '88px', borderRadius: '50%',
+              background: 'var(--red)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 8px 24px rgba(198,42,9,0.5)',
+              border: '2px solid rgba(255,255,255,0.08)',
+              transform: 'rotate(-15deg)',
+            }}>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '1.1rem', color: '#fff', lineHeight: 1 }}>20%</span>
+              <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>OFF</span>
+            </div>
+          </div>
+
+          {/* Text */}
+          <div style={{ flex: 1, minWidth: '280px' }}>
+            <p style={{ color: 'var(--red)', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '12px' }}>
+              Weekend Special
+            </p>
+            <h2 style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(1.8rem, 3vw, 3rem)',
+              fontWeight: 700, lineHeight: 1.1,
+              color: 'var(--text-1)', marginBottom: '16px',
+            }}>
+              <span style={{ color: 'var(--gold)', fontStyle: 'italic' }}>Hot Offer</span>{' '}
+              of the Week —{' '}
+              <br />Grab it before it's gone!
+            </h2>
+            <p style={{ color: 'var(--text-2)', fontSize: '0.95rem', lineHeight: 1.7, marginBottom: '28px', maxWidth: '420px' }}>
+              This weekend, enjoy 20% off on all pizzas. Use code <span style={{ fontWeight: 700, color: 'var(--gold)' }}>PIZZA20</span> at checkout.
+            </p>
             <button
-              onClick={() => navigate('/menu')}
+              onClick={() => navigate('/promotions')}
               style={{
-                background: 'transparent',
-                border: '1px solid var(--border-strong)',
-                color: 'var(--text-2)',
-                fontFamily: 'var(--font-body)',
-                fontWeight: 500,
-                fontSize: '0.875rem',
-                padding: '10px 24px',
+                background: 'var(--gold)',
+                color: '#0a0a0a', fontFamily: 'var(--font-body)',
+                fontWeight: 700, fontSize: '0.9rem',
+                padding: '13px 32px',
                 borderRadius: 'var(--radius-pill)',
-                cursor: 'pointer',
+                border: 'none', cursor: 'pointer',
                 transition: 'var(--transition)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
+                display: 'inline-flex', alignItems: 'center', gap: '8px',
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)'; (e.currentTarget as HTMLElement).style.color = 'var(--gold)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-strong)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-2)'; }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--gold-light)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--gold)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
             >
-              Full Menu
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"/>
-                <polyline points="12 5 19 12 12 19"/>
+              Claim Offer
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
               </svg>
             </button>
           </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px' }}>
-            {POPULAR_ITEMS.map((item) => (
-              <div
-                key={item.name}
-                style={{
-                  background: 'var(--surface-2)',
-                  borderRadius: 'var(--radius-card)',
-                  border: '1px solid var(--border)',
-                  overflow: 'hidden',
-                  transition: 'var(--transition)',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-card-hover)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-strong)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; }}
-                onClick={() => navigate('/menu')}
-              >
-                {/* Color-accented image area */}
-                <div style={{
-                  height: '120px',
-                  background: item.accent,
-                  borderBottom: `1px solid ${item.accentBorder}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  position: 'relative',
-                }}>
-                  {/* Abstract plate graphic */}
-                  <div style={{
-                    width: '72px', height: '72px', borderRadius: '50%',
-                    border: `2px solid ${item.accentBorder}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <div style={{
-                      width: '48px', height: '48px', borderRadius: '50%',
-                      background: item.accentBorder,
-                      opacity: 0.5,
-                    }} />
-                  </div>
-                </div>
-
-                <div style={{ padding: '16px 18px 18px' }}>
-                  <p style={{ fontWeight: 700, color: 'var(--text-1)', marginBottom: '4px', fontFamily: 'var(--font-body)', fontSize: '0.95rem' }}>
-                    {item.name}
-                  </p>
-                  <p style={{ color: 'var(--text-3)', fontSize: '0.78rem', marginBottom: '14px', lineHeight: 1.5 }}>
-                    {item.desc}
-                  </p>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontWeight: 700, color: 'var(--gold)', fontFamily: 'var(--font-body)', fontSize: '1.05rem' }}>
-                      {item.price}
-                    </span>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); navigate('/menu'); }}
-                      style={{
-                        width: '32px', height: '32px',
-                        borderRadius: '50%',
-                        background: 'var(--red)',
-                        border: 'none',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'var(--transition)',
-                      }}
-                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--red-light)'; }}
-                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--red)'; }}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19"/>
-                        <line x1="5" y1="12" x2="19" y2="12"/>
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
-      {/* ── Why MaSoVa ── */}
-      <section style={{ padding: '80px 48px', maxWidth: '1400px', margin: '0 auto' }}>
-        <h2 style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: 'clamp(1.75rem, 3vw, 2.75rem)',
-          fontWeight: 700,
-          textAlign: 'center',
-          marginBottom: '48px',
-          color: 'var(--text-1)',
-        }}>
-          Why <span style={{ color: 'var(--gold)' }}>MaSoVa?</span>
-        </h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
-          {FEATURES.map((feat) => (
-            <div
-              key={feat.title}
-              style={{
-                padding: '32px',
-                background: 'var(--surface)',
-                borderRadius: 'var(--radius-card)',
-                border: '1px solid var(--border)',
-                transition: 'var(--transition)',
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(212,168,67,0.35)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; }}
-            >
-              <div style={{
-                width: '52px', height: '52px', borderRadius: '14px',
-                background: 'rgba(212,168,67,0.08)',
-                border: '1px solid rgba(212,168,67,0.2)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                marginBottom: '20px',
-              }}>
-                {feat.icon}
-              </div>
-              <h3 style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 700,
-                fontSize: '1.15rem',
-                color: 'var(--text-1)',
-                marginBottom: '8px',
-              }}>
-                {feat.title}
-              </h3>
-              <p style={{ color: 'var(--text-2)', lineHeight: 1.7, fontSize: '0.9rem' }}>
-                {feat.desc}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Footer ── */}
-      <footer style={{
-        background: 'var(--surface)',
-        borderTop: '1px solid var(--border)',
-        padding: '48px 48px 24px',
-      }}>
+      {/* ══════════════════════════════════════════
+          FOOTER
+      ══════════════════════════════════════════ */}
+      <footer style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', padding: '48px 48px 24px' }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 2fr', gap: '32px', marginBottom: '40px' }}>
             <div>
-              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.5rem', color: 'var(--gold)', marginBottom: '8px' }}>
-                MaSoVa
-              </div>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.5rem', color: 'var(--gold)', marginBottom: '8px' }}>MaSoVa</div>
               <p style={{ color: 'var(--text-3)', fontSize: '0.875rem', maxWidth: '260px', lineHeight: 1.6 }}>
                 Modern flavours, timeless quality. Delivered to your door.
               </p>
@@ -655,9 +832,7 @@ const HomePage: React.FC = () => {
                   <div key={link} style={{ color: 'var(--text-3)', marginBottom: '8px', fontSize: '0.875rem', cursor: 'pointer', transition: 'var(--transition)' }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--gold)'; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text-3)'; }}
-                  >
-                    {link}
-                  </div>
+                  >{link}</div>
                 ))}
               </div>
             ))}
@@ -667,34 +842,13 @@ const HomePage: React.FC = () => {
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <input
-                  type="email"
-                  placeholder="Your email"
-                  style={{
-                    flex: 1, padding: '10px 16px',
-                    background: 'var(--surface-2)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-pill)',
-                    color: 'var(--text-1)',
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '0.875rem',
-                    outline: 'none',
-                  }}
+                  type="email" placeholder="Your email"
+                  style={{ flex: 1, padding: '10px 16px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', color: 'var(--text-1)', fontFamily: 'var(--font-body)', fontSize: '0.875rem', outline: 'none' }}
                   onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)'; }}
                   onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; }}
                 />
                 <button
-                  style={{
-                    padding: '10px 20px',
-                    background: 'var(--red)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 'var(--radius-pill)',
-                    fontFamily: 'var(--font-body)',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    fontSize: '0.875rem',
-                    transition: 'var(--transition)',
-                  }}
+                  style={{ padding: '10px 20px', background: 'var(--red)', color: '#fff', border: 'none', borderRadius: 'var(--radius-pill)', fontFamily: 'var(--font-body)', fontWeight: 600, cursor: 'pointer', fontSize: '0.875rem', transition: 'var(--transition)' }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--red-light)'; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--red)'; }}
                 >
@@ -703,7 +857,6 @@ const HomePage: React.FC = () => {
               </div>
             </div>
           </div>
-
           <div style={{ borderTop: '1px solid var(--border)', paddingTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ color: 'var(--text-3)', fontSize: '0.8rem' }}>© 2026 MaSoVa. All rights reserved.</span>
             <span style={{ color: 'var(--text-3)', fontSize: '0.8rem' }}>Crafted with care for food lovers</span>
@@ -711,11 +864,7 @@ const HomePage: React.FC = () => {
         </div>
       </footer>
 
-      <CartDrawer
-        open={cartDrawerOpen}
-        onClose={() => setCartDrawerOpen(false)}
-        onCheckout={() => navigate('/checkout')}
-      />
+      <CartDrawer open={cartDrawerOpen} onClose={() => setCartDrawerOpen(false)} onCheckout={() => navigate('/checkout')} />
     </div>
   );
 };
