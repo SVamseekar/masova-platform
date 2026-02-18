@@ -12,12 +12,12 @@ interface AppHeaderProps {
   title?: string;
   showBackButton?: boolean;
   backRoute?: string;
-  onBack?: () => void; // Custom back handler (if not provided, uses backRoute)
-  hideStaffLogin?: boolean;  // Hide staff login button for public pages
-  showPublicNav?: boolean; // Show Home, Offers, Cart buttons
-  showManagerNav?: boolean; // Show Store Selector + Management Hub for manager pages
-  onCartClick?: () => void; // Handler for cart button
-  storeSelectorContextKey?: string; // For tab-specific store selection
+  onBack?: () => void;
+  hideStaffLogin?: boolean;
+  showPublicNav?: boolean;
+  showManagerNav?: boolean;
+  onCartClick?: () => void;
+  storeSelectorContextKey?: string;
 }
 
 const AppHeader: React.FC<AppHeaderProps> = ({
@@ -37,48 +37,36 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   const currentUser = useAppSelector(selectCurrentUser);
   const cartItemCount = useAppSelector(selectCartItemCount);
 
-  // Auto-generate contextKey from current route if not provided
-  // This ensures each manager page has independent store selection
   const effectiveContextKey = storeSelectorContextKey ||
     (showManagerNav ? location.pathname.replace(/^\/manager\//, '').replace(/\//g, '-') : undefined);
 
-  // Dropdown menu state
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isManagementHubOpen, setIsManagementHubOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Check for active order in sessionStorage
-  // Works for both guests (temporary tracking) and logged-in customers (saved to profile)
   const activeOrderId = sessionStorage.getItem('activeOrderId');
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Check if user is customer or staff/manager
   const isCustomer = currentUser?.type === 'CUSTOMER';
   const isStaff = currentUser && !isCustomer;
 
   const handleLogout = () => {
-    // Save current location for return after re-login (for staff only)
     if (isStaff && location.pathname !== '/staff-login' && location.pathname !== '/login') {
       const returnUrl = location.pathname + location.search;
       sessionStorage.setItem('returnUrl', returnUrl);
     }
-
-    // Clear active order from sessionStorage on logout
     sessionStorage.removeItem('activeOrderId');
     setIsDropdownOpen(false);
     dispatch(logout());
-    // Customers go to home, staff go to staff login
     navigate(isCustomer ? '/' : '/staff-login');
   };
 
@@ -88,51 +76,324 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   };
 
   const handleBack = () => {
-    if (onBack) {
-      onBack();
-    } else {
-      navigate(backRoute);
-    }
+    if (onBack) { onBack(); } else { navigate(backRoute); }
   };
 
-  const handleGoHome = () => {
-    navigate('/');
-  };
+  const handleGoHome = () => navigate('/');
 
-  // Styles
+  // ──────────────────────────────────────────────────────────────────────────
+  // PUBLIC NAV — Dark Glassmorphic (customer-facing pages)
+  // ──────────────────────────────────────────────────────────────────────────
+  if (showPublicNav) {
+    const navLinkStyle: React.CSSProperties = {
+      color: 'var(--text-2)',
+      fontFamily: 'var(--font-body)',
+      fontSize: '0.9rem',
+      fontWeight: 500,
+      textDecoration: 'none',
+      paddingBottom: '2px',
+      borderBottom: '2px solid transparent',
+      cursor: 'pointer',
+      transition: 'var(--transition)',
+      background: 'none',
+      border: 'none',
+      borderBottomWidth: '2px',
+      borderBottomStyle: 'solid',
+      borderBottomColor: 'transparent',
+    };
+
+    return (
+      <>
+        <header style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 1200,
+          background: 'rgba(10, 9, 8, 0.92)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: '1px solid var(--border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 48px',
+          height: '64px',
+        }}>
+          {/* Logo */}
+          <div
+            onClick={handleGoHome}
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 700,
+              fontSize: '1.5rem',
+              color: 'var(--gold)',
+              letterSpacing: '-0.02em',
+              cursor: 'pointer',
+              userSelect: 'none',
+            }}
+          >
+            MaSoVa
+          </div>
+
+          {/* Centre nav */}
+          <nav style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+            {[
+              { label: 'Menu', path: '/menu' },
+              { label: 'Promotions', path: '/promotions' },
+              ...(activeOrderId ? [{ label: 'Track Order', path: `/tracking/${activeOrderId}` }] : []),
+            ].map(link => (
+              <button
+                key={link.label}
+                style={{
+                  ...navLinkStyle,
+                  color: location.pathname === link.path ? 'var(--gold)' : 'var(--text-2)',
+                  borderBottomColor: location.pathname === link.path ? 'var(--gold)' : 'transparent',
+                }}
+                onClick={() => navigate(link.path)}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.color = 'var(--text-1)';
+                  (e.currentTarget as HTMLElement).style.borderBottomColor = 'var(--gold)';
+                }}
+                onMouseLeave={(e) => {
+                  const isActive = location.pathname === link.path;
+                  (e.currentTarget as HTMLElement).style.color = isActive ? 'var(--gold)' : 'var(--text-2)';
+                  (e.currentTarget as HTMLElement).style.borderBottomColor = isActive ? 'var(--gold)' : 'transparent';
+                }}
+              >
+                {link.label}
+              </button>
+            ))}
+          </nav>
+
+          {/* Right: cart + user */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            {/* Cart button — not for staff */}
+            {!isStaff && (
+              <button
+                onClick={onCartClick}
+                style={{
+                  position: 'relative',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--text-2)',
+                  fontSize: '1.35rem',
+                  transition: 'var(--transition)',
+                  padding: '4px',
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--gold)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text-2)'; }}
+                aria-label="Open cart"
+              >
+                🛒
+                {cartItemCount > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-4px',
+                    background: 'var(--red)',
+                    color: '#fff',
+                    borderRadius: '999px',
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    minWidth: '18px',
+                    height: '18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: 'var(--font-body)',
+                    padding: '0 4px',
+                  }}>
+                    {cartItemCount}
+                  </span>
+                )}
+              </button>
+            )}
+
+            {/* Staff users on public pages */}
+            {isStaff ? (
+              <button
+                style={{
+                  background: 'rgba(212,168,67,0.15)',
+                  border: '1px solid var(--border-strong)',
+                  color: 'var(--gold)',
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  padding: '8px 20px',
+                  borderRadius: 'var(--radius-pill)',
+                  cursor: 'pointer',
+                  transition: 'var(--transition)',
+                }}
+                onClick={() => {
+                  const userType = currentUser?.type;
+                  if (userType === 'MANAGER' || userType === 'ASSISTANT_MANAGER') navigate('/manager');
+                  else if (userType === 'STAFF') navigate('/staff');
+                  else if (userType === 'DRIVER') navigate('/driver');
+                }}
+              >
+                {currentUser?.name} → Dashboard
+              </button>
+            ) : currentUser ? (
+              /* Customer dropdown */
+              <div ref={dropdownRef} style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  style={{
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text-1)',
+                    fontFamily: 'var(--font-body)',
+                    fontWeight: 500,
+                    fontSize: '0.875rem',
+                    padding: '8px 16px',
+                    borderRadius: 'var(--radius-pill)',
+                    cursor: 'pointer',
+                    transition: 'var(--transition)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-strong)'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; }}
+                >
+                  <span>👤</span>
+                  <span>{currentUser.name}</span>
+                  <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>{isDropdownOpen ? '▲' : '▼'}</span>
+                </button>
+
+                {/* Dropdown */}
+                {isDropdownOpen && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 8px)',
+                    right: 0,
+                    minWidth: '200px',
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-card)',
+                    boxShadow: 'var(--shadow-card)',
+                    overflow: 'hidden',
+                    zIndex: 1300,
+                  }}>
+                    {[
+                      { icon: '📦', label: 'My Orders', path: '/customer/orders' },
+                      ...(activeOrderId ? [{ icon: '🚚', label: 'Track Order', path: `/tracking/${activeOrderId}` }] : []),
+                      { icon: '👤', label: 'My Profile', path: '/customer/profile' },
+                    ].map(item => (
+                      <div
+                        key={item.label}
+                        onClick={() => handleMenuItemClick(item.path)}
+                        style={{
+                          padding: '12px 16px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          color: 'var(--text-2)',
+                          fontFamily: 'var(--font-body)',
+                          fontSize: '0.875rem',
+                          cursor: 'pointer',
+                          transition: 'var(--transition)',
+                        }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLElement).style.background = 'var(--surface-3)';
+                          (e.currentTarget as HTMLElement).style.color = 'var(--text-1)';
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.currentTarget as HTMLElement).style.background = 'transparent';
+                          (e.currentTarget as HTMLElement).style.color = 'var(--text-2)';
+                        }}
+                      >
+                        <span>{item.icon}</span>
+                        <span>{item.label}</span>
+                      </div>
+                    ))}
+                    <div style={{ height: '1px', background: 'var(--border)', margin: '4px 0' }} />
+                    <div
+                      onClick={handleLogout}
+                      style={{
+                        padding: '12px 16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        color: 'var(--red-light)',
+                        fontFamily: 'var(--font-body)',
+                        fontSize: '0.875rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'var(--transition)',
+                      }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--surface-3)'; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                    >
+                      <span>🚪</span>
+                      <span>Logout</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Sign In pill */
+              <button
+                onClick={() => navigate('/checkout')}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--border-strong)',
+                  color: 'var(--text-1)',
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 500,
+                  fontSize: '0.875rem',
+                  padding: '8px 20px',
+                  borderRadius: 'var(--radius-pill)',
+                  cursor: 'pointer',
+                  transition: 'var(--transition)',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)';
+                  (e.currentTarget as HTMLElement).style.color = 'var(--gold)';
+                  (e.currentTarget as HTMLElement).style.background = 'var(--surface)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-strong)';
+                  (e.currentTarget as HTMLElement).style.color = 'var(--text-1)';
+                  (e.currentTarget as HTMLElement).style.background = 'transparent';
+                }}
+              >
+                Sign In
+              </button>
+            )}
+          </div>
+        </header>
+
+        <ManagementHubSidebar
+          isOpen={isManagementHubOpen}
+          onClose={() => setIsManagementHubOpen(false)}
+        />
+      </>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // STAFF / MANAGER NAV — unchanged neumorphic styling
+  // ──────────────────────────────────────────────────────────────────────────
+  const headerHeight = showManagerNav ? '64px' : components.header.height.compact;
+
   const headerStyles: React.CSSProperties = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: `${spacing[5]} ${spacing[6]}`,
-    marginBottom: showManagerNav ? spacing[3] : spacing[6],
-    marginTop: showManagerNav ? spacing[2] : '0',
-    marginLeft: showManagerNav ? spacing[4] : '0',
-    marginRight: showManagerNav ? spacing[4] : '0',
-    background: showManagerNav
-      ? `linear-gradient(135deg, #2a2a2a 0%, #1e1e1e 100%)`
-      : colors.surface.primary,
-    border: showManagerNav
-      ? `1px solid rgba(255, 255, 255, 0.1)`
-      : 'none',
-    boxShadow: showManagerNav
-      ? `
-        inset 0 2px 0 rgba(255, 255, 255, 0.1),
-        inset 0 -2px 0 rgba(0, 0, 0, 0.4),
-        0 0 0 1px ${colors.brand.primary}44,
-        0 0 40px ${colors.brand.primary}22,
-        0 8px 20px rgba(0, 0, 0, 0.4),
-        0 4px 10px rgba(0, 0, 0, 0.3)
-      `
-      : shadows.raised.lg,
-    position: showManagerNav ? 'fixed' : 'sticky',
-    top: showManagerNav ? spacing[2] : 0,
-    left: showManagerNav ? spacing[4] : 0,
-    right: showManagerNav ? spacing[4] : 0,
+    height: headerHeight,
+    padding: showManagerNav ? `0 ${spacing[6]}` : `${components.header.padding.vertical} ${components.header.padding.horizontal}`,
+    background: showManagerNav ? colors.surface.background : colors.surface.primary,
+    borderBottom: showManagerNav ? `1px solid ${colors.surface.border}` : 'none',
+    boxShadow: showManagerNav ? '0 1px 3px rgba(0, 0, 0, 0.05)' : shadows.raised.lg,
+    position: 'sticky',
+    top: 0,
+    left: 0,
+    right: 0,
     zIndex: 1000,
-    borderRadius: showManagerNav ? '16px' : borderRadius.xl,
-    overflow: 'visible',
-    animation: 'slideDown 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+    backdropFilter: showManagerNav ? 'blur(8px)' : 'none',
+    backgroundColor: showManagerNav ? colors.surface.background : colors.surface.primary,
+    transition: 'all 0.3s ease',
   };
 
   const leftSectionStyles: React.CSSProperties = {
@@ -154,9 +415,9 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   };
 
   const titleStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
-    color: showManagerNav ? '#ffffff' : colors.text.primary,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
     letterSpacing: '-0.3px',
   };
 
@@ -209,33 +470,22 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   };
 
   const backButtonStyles: React.CSSProperties = {
-    padding: `${spacing[2]} ${spacing[4]}`,
+    ...createNeumorphicSurface('raised', 'base', 'md'),
+    padding: `${spacing[2]} ${spacing[3]}`,
     fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    color: showManagerNav ? '#ffffff' : colors.text.primary,
-    background: showManagerNav
-      ? `linear-gradient(145deg, #2d2d2d, #1f1f1f)`
-      : colors.surface.primary,
-    border: showManagerNav ? `1px solid ${colors.brand.primary}55` : 'none',
-    borderRadius: '8px',
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+    background: colors.surface.primary,
+    border: 'none',
     cursor: 'pointer',
     fontFamily: typography.fontFamily.primary,
     transition: 'all 0.2s ease',
     display: 'flex',
     alignItems: 'center',
     gap: spacing[2],
-    height: '40px',
-    boxShadow: showManagerNav
-      ? `
-        inset 0 1px 0 rgba(255, 255, 255, 0.08),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.4),
-        0 4px 8px rgba(0, 0, 0, 0.3),
-        0 2px 4px rgba(0, 0, 0, 0.2)
-      `
-      : '0 2px 4px rgba(0,0,0,0.08)',
+    height: '36px',
   };
 
-  // Dropdown menu styles
   const dropdownContainerStyles: React.CSSProperties = {
     position: 'relative',
     display: 'inline-block',
@@ -290,51 +540,28 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   return (
     <>
       <header style={headerStyles}>
-        {/* Background wrapper with overflow hidden for glossy effect */}
         {showManagerNav && (
           <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            overflow: 'hidden',
-            borderRadius: '16px',
-            pointerEvents: 'none',
-            zIndex: 0,
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            overflow: 'hidden', borderRadius: '16px', pointerEvents: 'none', zIndex: 0,
           }}>
-            {/* Mirror/Glossy overlay effect */}
             <div style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              height: '50%',
+              position: 'absolute', top: 0, left: 0, right: 0, height: '50%',
               background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, transparent 100%)',
               borderRadius: '16px 16px 0 0',
             }} />
           </div>
         )}
         <div style={{...leftSectionStyles, position: 'relative', zIndex: 2}}>
-          <div style={logoStyles} onClick={handleGoHome}>
-            MaSoVa
-          </div>
+          <div style={logoStyles} onClick={handleGoHome}>MaSoVa</div>
           {showBackButton && (
             <button
               style={backButtonStyles}
               onClick={handleBack}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.boxShadow = showManagerNav
-                  ? '0 3px 8px rgba(0,0,0,0.2)'
-                  : shadows.raised.md;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = showManagerNav
-                  ? '0 2px 6px rgba(0,0,0,0.15)'
-                  : shadows.raised.sm;
-              }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = shadows.raised.md; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = shadows.raised.base; }}
+              onMouseDown={(e) => { e.currentTarget.style.boxShadow = shadows.inset.base; e.currentTarget.style.transform = 'scale(0.98)'; }}
+              onMouseUp={(e) => { e.currentTarget.style.boxShadow = shadows.raised.base; e.currentTarget.style.transform = 'scale(1)'; }}
             >
               ← Back
             </button>
@@ -342,346 +569,73 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           {title && <h1 style={titleStyles}>{title}</h1>}
         </div>
 
-      <div style={{...rightSectionStyles, position: 'relative', zIndex: 2}}>
-        {showManagerNav ? (
-          <>
-            <StoreSelector contextKey={effectiveContextKey} variant="manager" />
-            <button
-              style={{
-                position: 'relative',
-                padding: `${spacing[2]} ${spacing[4]}`,
-                fontSize: typography.fontSize.sm,
-                fontWeight: typography.fontWeight.bold,
-                color: '#ffffff',
-                background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.secondary} 100%)`,
-                border: `2px solid ${colors.brand.primary}`,
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontFamily: typography.fontFamily.primary,
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: spacing[2],
-                boxShadow: `
-                  inset 0 1px 0 rgba(255, 255, 255, 0.2),
-                  inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-                  0 4px 16px ${colors.brand.primary}44,
-                  0 2px 8px rgba(0,0,0,0.2)
-                `,
-                letterSpacing: '0.3px',
-                overflow: 'hidden',
-                height: '40px',
-              }}
-              onClick={() => setIsManagementHubOpen(true)}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = `
-                  inset 0 1px 0 rgba(255, 255, 255, 0.25),
-                  inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-                  0 6px 20px ${colors.brand.primary}55,
-                  0 3px 10px rgba(0,0,0,0.25)
-                `;
-                e.currentTarget.style.background = `linear-gradient(135deg, ${colors.brand.primaryLight} 0%, ${colors.brand.secondary} 100%)`;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = `
-                  inset 0 1px 0 rgba(255, 255, 255, 0.2),
-                  inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-                  0 4px 16px ${colors.brand.primary}44,
-                  0 2px 8px rgba(0,0,0,0.2)
-                `;
-                e.currentTarget.style.background = `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.secondary} 100%)`;
-              }}
-              onMouseDown={(e) => {
-                e.currentTarget.style.transform = 'translateY(0) scale(0.98)';
-                e.currentTarget.style.boxShadow = `
-                  inset 0 2px 4px rgba(0, 0, 0, 0.4),
-                  inset 0 -1px 0 rgba(255, 255, 255, 0.1),
-                  0 2px 6px ${colors.brand.primary}55
-                `;
-              }}
-              onMouseUp={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-            >
-              <span>Management Hub</span>
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.1) 100%)',
-                pointerEvents: 'none',
-              }} />
-            </button>
-            <ManagementHubSidebar
-              isOpen={isManagementHubOpen}
-              onClose={() => setIsManagementHubOpen(false)}
-            />
-          </>
-        ) : showPublicNav ? (
-          <>
-            <button
-              style={buttonStyles}
-              onClick={() => navigate('/')}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = shadows.raised.md;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = shadows.raised.sm;
-              }}
-            >
-              🏠 Home
-            </button>
-            <button
-              style={buttonStyles}
-              onClick={() => navigate('/promotions')}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = shadows.raised.md;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = shadows.raised.sm;
-              }}
-            >
-              🎁 Offers
-            </button>
-
-            {/* Only show cart for customers and guests, NOT for staff/managers/drivers */}
-            {!isStaff && (
+        <div style={{...rightSectionStyles, position: 'relative', zIndex: 2}}>
+          {showManagerNav ? (
+            <>
+              <StoreSelector contextKey={effectiveContextKey} variant="manager" />
               <button
                 style={{
-                  ...buttonStyles,
-                  background: cartItemCount > 0
-                    ? `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.primaryLight} 100%)`
-                    : buttonStyles.background,
-                  color: cartItemCount > 0 ? colors.text.inverse : colors.text.primary,
-                  position: 'relative',
+                  ...createNeumorphicSurface('raised', 'base', 'md'),
+                  padding: `${spacing[2]} ${spacing[4]}`,
+                  fontSize: typography.fontSize.sm,
+                  fontWeight: typography.fontWeight.semibold,
+                  color: colors.text.primary,
+                  background: colors.surface.primary,
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontFamily: typography.fontFamily.primary,
+                  transition: 'all 0.2s ease',
+                  display: 'flex', alignItems: 'center', gap: spacing[2], height: '36px',
                 }}
-                onClick={onCartClick}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = shadows.raised.lg;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = cartItemCount > 0 ? shadows.raised.base : shadows.raised.sm;
-                }}
+                onClick={() => setIsManagementHubOpen(true)}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = shadows.raised.md; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = shadows.raised.base; }}
+                onMouseDown={(e) => { e.currentTarget.style.boxShadow = shadows.inset.base; e.currentTarget.style.transform = 'scale(0.98)'; }}
+                onMouseUp={(e) => { e.currentTarget.style.boxShadow = shadows.raised.base; e.currentTarget.style.transform = 'scale(1)'; }}
               >
-                🛒 Cart
-                {cartItemCount > 0 && (
-                  <span style={{
-                    position: 'absolute',
-                    top: '-8px',
-                    right: '-8px',
-                    background: colors.semantic.error,
-                    color: colors.text.inverse,
-                    borderRadius: borderRadius.full,
-                    padding: `${spacing[1]} ${spacing[2]}`,
-                    fontSize: typography.fontSize.xs,
-                    fontWeight: typography.fontWeight.bold,
-                    minWidth: '20px',
-                    textAlign: 'center',
-                  }}>
-                    {cartItemCount}
-                  </span>
-                )}
+                <span>☰</span><span>Management</span>
               </button>
-            )}
-
-            {/* Show different UI for staff vs customers on public pages */}
-            {isStaff ? (
-              /* Staff users see Go to Dashboard button instead of customer dropdown */
-              <button
-                style={{
-                  ...buttonStyles,
-                  background: `linear-gradient(135deg, ${colors.semantic.warning}, ${colors.semantic.warningLight})`,
-                  color: colors.text.inverse,
-                }}
-                onClick={() => {
-                  const userType = currentUser?.type;
-                  if (userType === 'MANAGER' || userType === 'ASSISTANT_MANAGER') {
-                    navigate('/manager');
-                  } else if (userType === 'STAFF') {
-                    navigate('/staff');
-                  } else if (userType === 'DRIVER') {
-                    navigate('/driver');
-                  }
-                }}
-              >
-                <span>👨‍💼</span>
-                <span>{currentUser?.name} ({currentUser?.type})</span>
-                <span style={{ marginLeft: spacing[2] }}>→ Go to Dashboard</span>
-              </button>
-            ) : currentUser ? (
-              /* Regular customer dropdown */
-              <div ref={dropdownRef} style={dropdownContainerStyles}>
-                <button
-                  style={userButtonStyles}
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = shadows.raised.md;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = shadows.raised.sm;
-                  }}
-                >
-                  <span>👤</span>
-                  <span>{currentUser.name}</span>
-                  <span style={{ fontSize: typography.fontSize.xs }}>
-                    {isDropdownOpen ? '▲' : '▼'}
-                  </span>
-                </button>
-
-                {/* Dropdown Menu */}
-                <div style={dropdownMenuStyles}>
-                  {/* My Orders */}
-                  <div
-                    style={dropdownItemStyles}
-                    onClick={() => handleMenuItemClick('/customer/orders')}
-                    onMouseEnter={(e) => {
-                      Object.assign(e.currentTarget.style, dropdownItemHoverStyles);
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.boxShadow = '';
-                      e.currentTarget.style.backgroundColor = '';
-                    }}
-                  >
-                    <span>📦</span>
-                    <span>My Orders</span>
-                  </div>
-
-                  {/* Track Order - only if active order exists */}
-                  {activeOrderId && (
-                    <div
-                      style={dropdownItemStyles}
-                      onClick={() => handleMenuItemClick(`/tracking/${activeOrderId}`)}
-                      onMouseEnter={(e) => {
-                        Object.assign(e.currentTarget.style, dropdownItemHoverStyles);
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.boxShadow = '';
-                        e.currentTarget.style.backgroundColor = '';
-                      }}
-                    >
-                      <span>🚚</span>
-                      <span>Track Order</span>
-                    </div>
-                  )}
-
-                  {/* My Profile */}
-                  <div
-                    style={dropdownItemStyles}
-                    onClick={() => handleMenuItemClick('/customer/profile')}
-                    onMouseEnter={(e) => {
-                      Object.assign(e.currentTarget.style, dropdownItemHoverStyles);
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.boxShadow = '';
-                      e.currentTarget.style.backgroundColor = '';
-                    }}
-                  >
-                    <span>👤</span>
-                    <span>My Profile</span>
-                  </div>
-
-                  {/* Logout */}
-                  <div
-                    style={logoutItemStyles}
-                    onClick={handleLogout}
-                    onMouseEnter={(e) => {
-                      Object.assign(e.currentTarget.style, dropdownItemHoverStyles);
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.boxShadow = '';
-                      e.currentTarget.style.backgroundColor = '';
-                    }}
-                  >
-                    <span>🚪</span>
-                    <span>Logout</span>
-                  </div>
+            </>
+          ) : (
+            <>
+              {currentUser && (
+                <div style={userInfoStyles}>
+                  <span style={userNameStyles}>{currentUser.name}</span>
+                  <span style={userRoleStyles}>{currentUser.type}</span>
                 </div>
-              </div>
-            ) : (
-              <button
-                style={{
-                  ...buttonStyles,
-                  background: `linear-gradient(135deg, ${colors.brand.secondary} 0%, ${colors.brand.secondaryLight} 100%)`,
-                  color: colors.text.inverse,
-                }}
-                onClick={() => navigate('/checkout')}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = shadows.raised.lg;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = shadows.raised.base;
-                }}
-              >
-                👤 Login
-              </button>
-            )}
-          </>
-        ) : (
-          <>
-            {currentUser && (
-              <div style={userInfoStyles}>
-                <span style={userNameStyles}>{currentUser.name}</span>
-                <span style={userRoleStyles}>{currentUser.type}</span>
-              </div>
-            )}
+              )}
+              {currentUser ? (
+                <button
+                  style={logoutButtonStyles}
+                  onClick={handleLogout}
+                  onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = shadows.raised.lg; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = shadows.raised.base; }}
+                >
+                  Logout →
+                </button>
+              ) : !hideStaffLogin && (
+                <button
+                  style={{
+                    ...buttonStyles,
+                    background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.primaryLight} 100%)`,
+                    color: colors.text.inverse,
+                  }}
+                  onClick={() => navigate('/login')}
+                  onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = shadows.raised.lg; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = shadows.raised.base; }}
+                >
+                  Staff Login →
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </header>
 
-            {currentUser ? (
-              <button
-                style={logoutButtonStyles}
-                onClick={handleLogout}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = shadows.raised.lg;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = shadows.raised.base;
-                }}
-              >
-                Logout →
-              </button>
-            ) : !hideStaffLogin && (
-              <button
-                style={{
-                  ...buttonStyles,
-                  background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.primaryLight} 100%)`,
-                  color: colors.text.inverse,
-                }}
-                onClick={() => navigate('/login')}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = shadows.raised.lg;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = shadows.raised.base;
-                }}
-              >
-                Staff Login →
-              </button>
-            )}
-          </>
-        )}
-      </div>
-    </header>
-    {/* Spacer div to prevent content from going under fixed header */}
-    {showManagerNav && (
-      <div style={{ height: '110px' }} />
-    )}
+      <ManagementHubSidebar
+        isOpen={isManagementHubOpen}
+        onClose={() => setIsManagementHubOpen(false)}
+      />
     </>
   );
 };
