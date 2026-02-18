@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 import {
@@ -8,9 +8,6 @@ import {
   selectDeliveryFee,
 } from '../../store/slices/cartSlice';
 import { selectIsAuthenticated, selectCurrentUser } from '../../store/slices/authSlice';
-import { Button, Card } from '../../components/ui/neumorphic';
-import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
-import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -24,305 +21,189 @@ const CheckoutPage: React.FC = () => {
   const tax = subtotal * 0.05;
   const total = subtotal + (itemCount > 0 ? deliveryFee : 0) + tax;
 
-  // Redirect staff/managers to their respective dashboards - they shouldn't access customer checkout
   useEffect(() => {
     if (isAuthenticated && currentUser) {
       const userType = currentUser.type;
-      if (userType === 'MANAGER' || userType === 'ASSISTANT_MANAGER') {
-        navigate('/manager', { replace: true });
-        return;
-      } else if (userType === 'STAFF') {
-        navigate('/pos', { replace: true });
-        return;
-      } else if (userType === 'DRIVER') {
-        navigate('/driver', { replace: true });
-        return;
-      }
+      if (userType === 'MANAGER' || userType === 'ASSISTANT_MANAGER') { navigate('/manager', { replace: true }); return; }
+      if (userType === 'STAFF') { navigate('/pos', { replace: true }); return; }
+      if (userType === 'DRIVER') { navigate('/driver', { replace: true }); return; }
     }
   }, [isAuthenticated, currentUser, navigate]);
 
-  // Note: We allow empty cart on checkout page so users can see login options
-  // Users clicking "Login" button should be able to access this page even without items
-
-  // If user is already logged in as a customer, go to guest-checkout to select/add address
-  // Guest checkout page will handle both selecting existing addresses and adding new ones
   useEffect(() => {
     if (isAuthenticated && currentUser?.type === 'CUSTOMER') {
       navigate('/guest-checkout', { replace: true });
     }
   }, [isAuthenticated, currentUser, navigate]);
 
-  const checkoutOptions = [
+  const options = [
     {
       id: 'login',
-      title: 'Login',
-      icon: '🔐',
-      description: 'Already have an account? Sign in to continue',
-      benefits: [
-        'Access your saved addresses',
-        'View order history',
-        'Track your orders',
-        'Earn loyalty points',
-      ],
-      buttonText: 'Login to Continue',
-      buttonVariant: 'primary' as const,
-      action: () => {
-        console.log('Login button clicked');
-        navigate('/customer-login', { state: { from: '/checkout' } });
-      },
+      title: 'Sign In',
+      subtitle: 'Already have an account? Sign in to continue',
+      benefits: ['Access saved addresses', 'View order history', 'Track orders live', 'Earn loyalty points'],
+      buttonText: 'Login & Continue →',
+      accent: 'var(--gold)',
+      primary: true,
+      action: () => navigate('/customer-login', { state: { from: '/checkout' } }),
     },
     {
       id: 'register',
       title: 'Create Account',
-      icon: '✨',
-      description: 'New to MaSoVa? Create an account for faster checkout',
-      benefits: [
-        'Save delivery addresses',
-        'Faster future checkouts',
-        'Exclusive member deals',
-        'Order tracking & history',
-      ],
-      buttonText: 'Create Account',
-      buttonVariant: 'secondary' as const,
-      action: () => {
-        console.log('Create Account button clicked');
-        navigate('/register', { state: { from: '/checkout' } });
-      },
+      subtitle: "New to MaSoVa? Sign up for a better experience",
+      benefits: ['Save delivery addresses', 'Faster future checkouts', 'Exclusive member deals', 'Order tracking & history'],
+      buttonText: 'Create Account →',
+      accent: 'var(--red)',
+      primary: false,
+      action: () => navigate('/register', { state: { from: '/checkout' } }),
     },
     {
       id: 'guest',
       title: 'Guest Checkout',
-      icon: '👤',
-      description: 'No account needed. Quick and easy checkout',
-      benefits: [
-        'No registration required',
-        'Quick checkout process',
-        'Enter delivery details once',
-        'Track order with order ID',
-      ],
-      buttonText: 'Continue as Guest',
-      buttonVariant: 'ghost' as const,
-      action: () => {
-        console.log('Guest Checkout button clicked');
-        navigate('/guest-checkout');
-      },
+      subtitle: 'No account needed. Quick and easy',
+      benefits: ['No registration required', 'Quick checkout process', 'Enter delivery details once', 'Track with order ID'],
+      buttonText: 'Continue as Guest →',
+      accent: 'var(--border-strong)',
+      primary: false,
+      action: () => navigate('/guest-checkout'),
     },
   ];
 
-  const containerStyles: React.CSSProperties = {
-    minHeight: '100vh',
-    backgroundColor: colors.surface.background,
-    padding: `${spacing[8]} ${spacing[4]}`,
-    fontFamily: typography.fontFamily.primary,
-  };
-
-  const headerStyles: React.CSSProperties = {
-    marginBottom: spacing[8],
-  };
-
-  const gridStyles: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-    gap: spacing[6],
-    maxWidth: '1200px',
-    margin: '0 auto',
-  };
-
-  const sidebarStyles: React.CSSProperties = {
-    maxWidth: '400px',
-    margin: '0 auto',
-  };
-
   return (
-    <div style={containerStyles}>
-      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: '48px 16px', fontFamily: 'var(--font-body)', color: 'var(--text-1)' }}>
+      <div style={{ maxWidth: '1300px', margin: '0 auto' }}>
+
         {/* Header */}
-        <div style={headerStyles}>
+        <div style={{ marginBottom: '40px' }}>
           <button
             onClick={() => navigate('/menu')}
-            style={{
-              ...createNeumorphicSurface('raised', 'sm', 'base'),
-              padding: spacing[2],
-              marginBottom: spacing[4],
-              cursor: 'pointer',
-              border: 'none',
-              fontSize: typography.fontSize.lg,
-            }}
+            style={{ background: 'none', border: 'none', color: 'var(--text-3)', fontSize: '0.85rem', cursor: 'pointer', marginBottom: '16px', padding: 0 }}
           >
-            ← Back
+            ← Back to Menu
           </button>
-          <h1 style={{
-            fontSize: typography.fontSize['4xl'],
-            fontWeight: typography.fontWeight.extrabold,
-            color: colors.text.primary,
-            margin: `${spacing[4]} 0 ${spacing[2]} 0`,
-          }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2.5rem', fontWeight: 900, color: 'var(--text-1)', margin: '0 0 6px 0' }}>
             Checkout
           </h1>
-          <p style={{
-            fontSize: typography.fontSize.lg,
-            color: colors.text.secondary,
-            margin: 0,
-          }}>
+          <p style={{ color: 'var(--text-3)', fontSize: '0.9rem', margin: 0 }}>
             Choose how you'd like to continue with your order
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: spacing[8], maxWidth: '1400px' }}>
-          {/* Checkout Options */}
-          <div style={gridStyles}>
-            {checkoutOptions.map((option) => (
-              <Card key={option.id} elevation="md" padding="lg" interactive>
-                <div style={{ textAlign: 'center', marginBottom: spacing[4] }}>
-                  <div style={{
-                    fontSize: '60px',
-                    marginBottom: spacing[3],
-                  }}>
-                    {option.icon}
-                  </div>
-                  <h2 style={{
-                    fontSize: typography.fontSize['2xl'],
-                    fontWeight: typography.fontWeight.extrabold,
-                    color: colors.text.primary,
-                    margin: `0 0 ${spacing[2]} 0`,
-                  }}>
-                    {option.title}
-                  </h2>
-                  <p style={{
-                    fontSize: typography.fontSize.base,
-                    color: colors.text.secondary,
-                    margin: 0,
-                  }}>
-                    {option.description}
-                  </p>
-                </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '32px', alignItems: 'start' }}>
 
-                <div style={{ marginBottom: spacing[5] }}>
-                  {option.benefits.map((benefit, index) => (
-                    <div key={index} style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      marginBottom: spacing[2],
-                      fontSize: typography.fontSize.sm,
-                      color: colors.text.secondary,
-                    }}>
-                      <div style={{
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        backgroundColor: colors.brand.primary,
-                        marginRight: spacing[3],
-                      }} />
-                      {benefit}
-                    </div>
+          {/* Option cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+            {options.map((opt) => (
+              <div
+                key={opt.id}
+                style={{
+                  background: 'var(--surface)',
+                  borderRadius: 'var(--radius-card)',
+                  border: '1px solid var(--border)',
+                  borderTop: `3px solid ${opt.accent}`,
+                  padding: '28px 24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  transition: 'var(--transition)',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)';
+                  (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-card-hover)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                  (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                }}
+              >
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 700, color: opt.accent, margin: '0 0 6px 0' }}>
+                  {opt.title}
+                </h2>
+                <p style={{ color: 'var(--text-3)', fontSize: '0.85rem', margin: '0 0 20px 0', lineHeight: 1.5 }}>
+                  {opt.subtitle}
+                </p>
+
+                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px 0', display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                  {opt.benefits.map((b, i) => (
+                    <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: 'var(--text-2)' }}>
+                      <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: opt.accent, flexShrink: 0 }} />
+                      {b}
+                    </li>
                   ))}
-                </div>
+                </ul>
 
-                <Button
-                  variant={option.buttonVariant}
-                  size="lg"
-                  fullWidth
-                  onClick={option.action}
+                <button
+                  onClick={opt.action}
+                  style={{
+                    width: '100%',
+                    background: opt.primary ? opt.accent : 'transparent',
+                    color: opt.primary ? '#000' : opt.accent,
+                    border: `1px solid ${opt.accent}`,
+                    borderRadius: 'var(--radius-pill)',
+                    padding: '12px',
+                    fontFamily: 'var(--font-body)',
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                    transition: 'var(--transition)',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = opt.accent;
+                    (e.currentTarget as HTMLElement).style.color = opt.id === 'login' ? '#000' : '#fff';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = opt.primary ? opt.accent : 'transparent';
+                    (e.currentTarget as HTMLElement).style.color = opt.primary ? '#000' : opt.accent;
+                  }}
                 >
-                  {option.buttonText}
-                </Button>
-              </Card>
+                  {opt.buttonText}
+                </button>
+              </div>
             ))}
           </div>
 
-          {/* Order Summary Sidebar */}
-          <div style={sidebarStyles}>
-            <Card elevation="lg" padding="lg">
-              <h3 style={{
-                fontSize: typography.fontSize.xl,
-                fontWeight: typography.fontWeight.extrabold,
-                color: colors.text.primary,
-                margin: `0 0 ${spacing[4]} 0`,
-              }}>
-                Order Summary
-              </h3>
+          {/* Order summary sidebar */}
+          <div style={{ position: 'sticky', top: '24px', background: 'var(--surface)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border)', padding: '24px' }}>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-1)', margin: '0 0 16px 0' }}>
+              Order Summary
+            </h3>
 
-              <div style={{ height: '1px', backgroundColor: colors.surface.tertiary, margin: `${spacing[4]} 0` }} />
+            <div style={{ height: '1px', background: 'var(--border)', margin: '0 0 16px 0' }} />
 
-              {/* Cart Items */}
-              <div style={{ marginBottom: spacing[4], maxHeight: '300px', overflowY: 'auto' }}>
-                {cartItems.map((item) => (
-                  <div key={item.id} style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    marginBottom: spacing[3],
-                    paddingBottom: spacing[3],
-                    borderBottom: `1px solid ${colors.surface.secondary}`,
-                  }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{
-                        fontSize: typography.fontSize.sm,
-                        fontWeight: typography.fontWeight.bold,
-                        color: colors.text.primary,
-                        marginBottom: spacing[1],
-                      }}>
-                        {item.name}
-                      </div>
-                      <div style={{
-                        fontSize: typography.fontSize.xs,
-                        color: colors.text.tertiary,
-                      }}>
-                        Qty: {item.quantity} × ₹{item.price.toFixed(2)}
-                      </div>
-                    </div>
-                    <div style={{
-                      fontSize: typography.fontSize.sm,
-                      fontWeight: typography.fontWeight.bold,
-                      color: colors.text.primary,
-                    }}>
-                      ₹{(item.price * item.quantity).toFixed(2)}
-                    </div>
+            <div style={{ maxHeight: '280px', overflowY: 'auto', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {cartItems.map((item) => (
+                <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: '0 0 2px', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-1)' }}>{item.name}</p>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-3)' }}>Qty: {item.quantity} × ₹{item.price.toFixed(2)}</p>
                   </div>
-                ))}
+                  <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-1)', flexShrink: 0 }}>₹{(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ height: '1px', background: 'var(--border)', margin: '0 0 14px 0' }} />
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {[
+                { label: `Subtotal (${itemCount} items)`, value: `₹${subtotal.toFixed(2)}` },
+                { label: 'Delivery Fee', value: `₹${deliveryFee.toFixed(2)}` },
+                { label: 'Tax (5%)', value: `₹${tax.toFixed(2)}` },
+              ].map(row => (
+                <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-3)' }}>{row.label}</span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-2)', fontWeight: 500 }}>{row.value}</span>
+                </div>
+              ))}
+              <div style={{ height: '1px', background: 'var(--border)', margin: '6px 0' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--text-1)', fontSize: '1.05rem' }}>Total</span>
+                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--gold)', fontSize: '1.35rem' }}>₹{total.toFixed(2)}</span>
               </div>
+            </div>
 
-              <div style={{ height: '1px', backgroundColor: colors.surface.tertiary, margin: `${spacing[4]} 0` }} />
-
-              {/* Bill Details */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3], marginBottom: spacing[4] }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
-                  <span>Subtotal ({itemCount} items)</span>
-                  <span style={{ fontWeight: typography.fontWeight.semibold, color: colors.text.primary }}>₹{subtotal.toFixed(2)}</span>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
-                  <span>Delivery Fee</span>
-                  <span style={{ fontWeight: typography.fontWeight.semibold, color: colors.semantic.success }}>₹{deliveryFee.toFixed(2)}</span>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
-                  <span>Tax (5%)</span>
-                  <span style={{ fontWeight: typography.fontWeight.semibold, color: colors.text.primary }}>₹{tax.toFixed(2)}</span>
-                </div>
-
-                <div style={{ height: '1px', backgroundColor: colors.surface.tertiary, margin: `${spacing[2]} 0` }} />
-
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.extrabold, color: colors.text.primary }}>
-                    Total Amount
-                  </span>
-                  <span style={{ fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.extrabold, color: colors.brand.primary }}>
-                    ₹{total.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-
-              <div style={{
-                padding: spacing[3],
-                backgroundColor: colors.surface.secondary,
-                borderRadius: borderRadius.base,
-                border: `1px solid ${colors.surface.tertiary}`,
-              }}>
-                <p style={{ fontSize: typography.fontSize.xs, color: colors.text.secondary, textAlign: 'center', margin: 0 }}>
-                  🕒 Your items are reserved for 15 minutes
-                </p>
-              </div>
-            </Card>
+            <div style={{ marginTop: '16px', padding: '10px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border)', textAlign: 'center' }}>
+              <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-3)' }}>Items reserved for 15 minutes</p>
+            </div>
           </div>
         </div>
       </div>
