@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useGetActiveStoresQuery } from '../store/api/storeApi';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { setSelectedStore, selectSelectedStoreId, selectSelectedStoreName } from '../store/slices/cartSlice';
-import { colors, spacing, typography } from '../styles/design-tokens';
-import { createNeumorphicSurface } from '../styles/neumorphic-utils';
 import { getTabStore, setTabStore } from '../utils/tabStorage';
 
 // Haversine formula — returns distance in km between two lat/lng points
@@ -124,22 +122,22 @@ const StoreSelector: React.FC<StoreSelectorProps> = ({ variant = 'customer', onS
   }, [stores.length]); // run once when stores load
 
   const buttonStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('raised', 'base', 'md'),
-    padding: `${spacing[2]} ${spacing[4]}`,
-    background: colors.surface.primary,
-    color: colors.text.primary,
-    border: 'none',
+    padding: '7px 14px',
+    background: 'var(--surface-2)',
+    color: 'var(--text-1)',
+    border: '1px solid var(--border)',
+    borderRadius: '10px',
     cursor: 'pointer',
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    fontFamily: typography.fontFamily.primary,
+    fontSize: '0.85rem',
+    fontWeight: 500,
+    fontFamily: 'var(--font-body)',
     display: 'flex',
     alignItems: 'center',
-    gap: spacing[2],
+    gap: '8px',
     position: 'relative',
-    minWidth: variant === 'manager' ? '180px' : '180px',
+    minWidth: '180px',
     justifyContent: 'space-between',
-    transition: 'all 0.2s ease',
+    transition: 'border-color 0.2s ease',
     height: '36px',
   };
 
@@ -147,22 +145,26 @@ const StoreSelector: React.FC<StoreSelectorProps> = ({ variant = 'customer', onS
     position: 'absolute',
     top: '100%',
     left: 0,
-    marginTop: spacing[2],
+    marginTop: '6px',
     minWidth: '320px',
-    ...createNeumorphicSurface('raised', 'lg', 'xl'),
-    backgroundColor: colors.surface.primary,
+    background: 'var(--surface-2)',
+    border: '1px solid var(--border)',
+    borderRadius: '12px',
     maxHeight: '360px',
     overflowY: 'auto',
     zIndex: 9999,
+    boxShadow: 'var(--shadow-card)',
+    padding: '6px',
   };
 
   const storeItemStyles = (isSelected: boolean): React.CSSProperties => ({
-    ...createNeumorphicSurface(isSelected ? 'inset' : 'flat', 'sm', 'md'),
-    padding: `${spacing[3]} ${spacing[4]}`,
-    margin: `${spacing[2]} ${spacing[3]}`,
+    padding: '10px 12px',
+    borderRadius: '8px',
     cursor: 'pointer',
-    backgroundColor: isSelected ? colors.surface.secondary : colors.surface.primary,
-    transition: 'all 0.2s ease',
+    background: isSelected ? 'rgba(212,168,67,0.1)' : 'transparent',
+    border: `1px solid ${isSelected ? 'var(--border-strong)' : 'transparent'}`,
+    transition: 'all 0.15s ease',
+    marginBottom: '2px',
   });
 
   return (
@@ -171,30 +173,32 @@ const StoreSelector: React.FC<StoreSelectorProps> = ({ variant = 'customer', onS
         onClick={() => setIsOpen(!isOpen)}
         style={buttonStyles}
         disabled={isLoading}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-strong)'; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
-          <div style={{ textAlign: 'left' }}>
-            <div style={{
-              fontWeight: typography.fontWeight.medium,
-              fontSize: typography.fontSize.sm,
-              color: selectedStoreId ? colors.text.primary : colors.text.secondary,
-            }}>
-              {isLoading ? 'Loading...' : selectedStoreName || 'Select Store'}
-            </div>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '7px', overflow: 'hidden' }}>
+          {/* Pin icon */}
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          <span style={{
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            color: selectedStoreId ? 'var(--text-1)' : 'var(--text-3)',
+            maxWidth: '130px',
+          }}>
+            {isLoading ? 'Loading...' : selectedStoreName || 'Select Store'}
+          </span>
         </div>
-        <span style={{ fontSize: '10px', color: colors.text.tertiary }}>{isOpen ? '▲' : '▼'}</span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
       </button>
 
       {isOpen && !isLoading && (
         <div style={dropdownStyles}>
           {stores.length === 0 ? (
-            <div style={{
-              padding: spacing[4],
-              textAlign: 'center',
-              color: colors.text.secondary,
-              fontSize: typography.fontSize.sm,
-            }}>
+            <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-3)', fontSize: '0.85rem' }}>
               No stores available
             </div>
           ) : (
@@ -203,104 +207,59 @@ const StoreSelector: React.FC<StoreSelectorProps> = ({ variant = 'customer', onS
               const da = a.address?.latitude ? haversineKm(userLocation.lat, userLocation.lon, a.address.latitude, a.address.longitude) : 999;
               const db = b.address?.latitude ? haversineKm(userLocation.lat, userLocation.lon, b.address.latitude, b.address.longitude) : 999;
               return da - db;
-            })).map((store) => (
-              <div
-                key={store.id}
-                onClick={() => handleStoreSelect(store.storeCode, store.name)}
-                style={storeItemStyles(selectedStoreId === store.storeCode)}
-                onMouseEnter={(e) => {
-                  if (selectedStoreId !== store.storeCode) {
-                    (e.currentTarget as HTMLElement).style.backgroundColor = colors.surface.secondary;
-                    (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedStoreId !== store.storeCode) {
-                    (e.currentTarget as HTMLElement).style.backgroundColor = colors.surface.primary;
-                    (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-                  }
-                }}
-              >
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: spacing[3],
-                }}>
-                  <div style={{
-                    flex: 1,
-                    minWidth: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: spacing[3],
-                  }}>
-                    {selectedStoreId === store.storeCode && (
-                      <div style={{
-                        width: '16px',
-                        height: '16px',
-                        borderRadius: '50%',
-                        backgroundColor: colors.brand.primary,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '10px',
-                        color: '#ffffff',
-                        flexShrink: 0,
-                      }}>
-                        ✓
-                      </div>
-                    )}
-                    {!selectedStoreId || selectedStoreId !== store.storeCode ? (
-                      <div style={{ width: '16px', flexShrink: 0 }} />
-                    ) : null}
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2], flexWrap: 'wrap', marginBottom: '2px' }}>
-                        <span style={{
-                          fontSize: typography.fontSize.sm,
-                          fontWeight: typography.fontWeight.semibold,
-                          color: colors.text.primary,
-                        }}>
+            })).map((store) => {
+              const isSelected = selectedStoreId === store.storeCode;
+              const open = isStoreOpen(store);
+              const dist = userLocation && (store as any).address?.latitude
+                ? haversineKm(userLocation.lat, userLocation.lon, (store as any).address.latitude, (store as any).address.longitude)
+                : null;
+              return (
+                <div
+                  key={store.id}
+                  onClick={() => handleStoreSelect(store.storeCode, store.name)}
+                  style={storeItemStyles(isSelected)}
+                  onMouseEnter={(e) => {
+                    if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'rgba(212,168,67,0.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent';
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {/* Selected indicator */}
+                    <div style={{
+                      width: '16px', height: '16px', borderRadius: '50%', flexShrink: 0,
+                      border: `2px solid ${isSelected ? 'var(--gold)' : 'var(--border)'}`,
+                      background: isSelected ? 'var(--gold)' : 'transparent',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {isSelected && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#000' }} />}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '7px', flexWrap: 'wrap', marginBottom: '2px' }}>
+                        <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-1)' }}>
                           {store.name}
                         </span>
-                        {userLocation && (store as any).address?.latitude && (
-                          <span style={{ fontSize: '11px', color: colors.text.tertiary }}>
-                            {haversineKm(userLocation.lat, userLocation.lon, (store as any).address.latitude, (store as any).address.longitude).toFixed(1)} km
-                          </span>
+                        {dist !== null && (
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-3)' }}>{dist.toFixed(1)} km</span>
                         )}
                         <span style={{
-                          fontSize: '10px',
-                          fontWeight: '700',
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                          backgroundColor: isStoreOpen(store) ? '#dcfce7' : '#fee2e2',
-                          color: isStoreOpen(store) ? '#16a34a' : '#dc2626',
+                          fontSize: '0.65rem', fontWeight: 700, padding: '1px 6px', borderRadius: '4px',
+                          background: open ? 'rgba(74,222,128,0.15)' : 'rgba(248,113,113,0.15)',
+                          color: open ? '#4ade80' : '#f87171',
+                          border: `1px solid ${open ? 'rgba(74,222,128,0.3)' : 'rgba(248,113,113,0.3)'}`,
                         }}>
-                          {isStoreOpen(store) ? 'OPEN' : 'CLOSED'}
+                          {open ? 'OPEN' : 'CLOSED'}
                         </span>
                       </div>
-                      <div style={{
-                        fontSize: typography.fontSize.xs,
-                        color: colors.text.tertiary,
-                      }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>
                         {store.address.city}, {store.address.state}
                       </div>
                     </div>
                   </div>
-                  <span style={{
-                    fontSize: typography.fontSize.xs,
-                    padding: `4px ${spacing[3]}`,
-                    borderRadius: '12px',
-                    backgroundColor: store.status === 'ACTIVE' ? '#d1fae5' : colors.semantic.errorLight,
-                    color: store.status === 'ACTIVE' ? '#065f46' : colors.semantic.error,
-                    fontWeight: typography.fontWeight.bold,
-                    flexShrink: 0,
-                    textTransform: 'capitalize',
-                  }}>
-                    {store.status.toLowerCase()}
-                  </span>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}

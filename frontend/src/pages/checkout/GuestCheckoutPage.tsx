@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AddressAutocomplete from '../../components/common/AddressAutocomplete';
 import { useAppSelector } from '../../store/hooks';
 import {
   selectCartItems,
@@ -517,7 +518,31 @@ const GuestCheckoutPage: React.FC = () => {
                         </select>
                       </div>
                     )}
-                    <Field label="Address Line 1" name="addressLine1" placeholder="House/Flat number, Building name" error={validationErrors.addressLine1} />
+                    {/* Address Line 1 — Google Places autocomplete */}
+                    <div>
+                      <label style={labelStyle}>Address Line 1</label>
+                      <AddressAutocomplete
+                        placeholder="House/Flat number, Building name..."
+                        initialValue={formData.addressLine1}
+                        disabled={loading}
+                        onSelect={(address, _lat, _lon) => {
+                          // Parse the Google Places result into form fields
+                          const parts = address.split(',').map(s => s.trim());
+                          setFormData(prev => ({
+                            ...prev,
+                            addressLine1: parts[0] || address,
+                            addressLine2: parts[1] || prev.addressLine2,
+                            city: parts[parts.length - 3] || prev.city,
+                            state: parts[parts.length - 2]?.replace(/\d+/g, '').trim() || prev.state,
+                            zipCode: (parts[parts.length - 2]?.match(/\d{6}/) || parts[parts.length - 1]?.match(/\d{6}/) || [''])[0] || prev.zipCode,
+                          }));
+                          setValidationErrors(prev => ({ ...prev, addressLine1: '' }));
+                        }}
+                      />
+                      {validationErrors.addressLine1 && (
+                        <p style={{ color: 'var(--red-light)', fontSize: '0.72rem', marginTop: '4px' }}>{validationErrors.addressLine1}</p>
+                      )}
+                    </div>
                     <Field label="Address Line 2 (Optional)" name="addressLine2" placeholder="Street, Area, Landmark" />
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                       <Field label="City" name="city" error={validationErrors.city} />

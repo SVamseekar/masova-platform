@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAppSelector } from '../../store/hooks';
-import { useRegisterMutation } from '../../store/api/authApi';
+import { GoogleLogin } from '@react-oauth/google';
+import { useRegisterMutation, useGoogleLoginMutation } from '../../store/api/authApi';
 import { useCreateCustomerMutation } from '../../store/api/customerApi';
 
 interface RegisterFormData {
@@ -42,6 +42,7 @@ const RegisterPage: React.FC = () => {
   const location = useLocation();
   const from = (location.state as any)?.from || '/checkout';
   const [register, { isLoading }] = useRegisterMutation();
+  const [googleLogin, { isLoading: isGoogleLoading }] = useGoogleLoginMutation();
   const [createCustomer] = useCreateCustomerMutation();
 
   const [formData, setFormData] = useState<RegisterFormData>({
@@ -50,6 +51,17 @@ const RegisterPage: React.FC = () => {
 
   const [error, setError] = useState('');
   const [validationErrors, setValidationErrors] = useState<Partial<RegisterFormData>>({});
+
+  const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
+    if (!credentialResponse.credential) return;
+    try {
+      setError('');
+      await googleLogin({ idToken: credentialResponse.credential }).unwrap();
+      navigate(from);
+    } catch (err: any) {
+      setError(err?.data?.message || 'Google sign-up failed. Please try again.');
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -199,7 +211,27 @@ const RegisterPage: React.FC = () => {
             </button>
           </form>
 
-          <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
+          {/* Divider */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '20px 0 0' }}>
+            <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+            <span style={{ color: 'var(--text-3)', fontSize: '0.75rem' }}>or continue with</span>
+            <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+          </div>
+
+          {/* Google Sign-Up */}
+          <div style={{ display: 'flex', justifyContent: 'center', margin: '16px 0', opacity: isGoogleLoading ? 0.6 : 1 }}>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('Google sign-up was cancelled or failed.')}
+              text="signup_with"
+              shape="rectangular"
+              theme="filled_black"
+              size="large"
+              width="340"
+            />
+          </div>
+
+          <div style={{ marginTop: '0', paddingTop: '16px', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
             <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-3)' }}>
               Already have an account?{' '}
               <button
