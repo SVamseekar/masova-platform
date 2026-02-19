@@ -170,23 +170,20 @@ The existing REST endpoints remain unchanged. RabbitMQ is additive. During trans
 | Before (11 services) | After (6 services) | Rationale |
 |---|---|---|
 | api-gateway | api-gateway | Must stay separate — traffic routing layer |
-| user-service + customer-service | core-service | User management and customer profiles are tightly coupled (same customer entity, shared JWT context) |
-| menu-service + inventory-service | commerce-service | Menu items reference inventory; recipe management lives in both |
-| order-service + analytics-service | order-service | Analytics queries directly over order data — embedded is faster and simpler |
+| user-service + customer-service + notification-service + review-service | core-service | All deal with people data, same JWT context, notification naturally owned by core since it has user preferences |
+| menu-service + order-service | commerce-service | Menu availability is checked on every order — co-location eliminates the most frequent cross-service call |
 | payment-service | payment-service | **MUST stay standalone** — PCI DSS scope isolation, Razorpay webhook receiver, GDPR financial data |
-| delivery-service | logistics-service | Currently standalone but small — keep separate for GPS/WebSocket concerns |
-| notification-service | notification-service | Cross-cutting concern; all services publish to it via RabbitMQ; stays separate |
-| review-service | → core-service | Review entities link to orders and customers; fold into core |
+| delivery-service + inventory-service | logistics-service | Both deal with physical movement of goods; inventory depletion fires when orders are dispatched |
+| analytics-service | intelligence-service | Rename + make fully event-driven (no more REST queries to order-service) |
 
 **Final architecture:**
 ```
-api-gateway        (port 8080) — Spring Cloud Gateway
-core-service       (port 8081) — users, customers, reviews, GDPR
-commerce-service   (port 8082) — menu, inventory, recipes, suppliers
-order-service      (port 8083) — orders, kitchen workflow, analytics
-payment-service    (port 8086) — payments, refunds, Razorpay
-logistics-service  (port 8085) — delivery, driver tracking, dispatch
-notification-svc   (port 8089) — email (Brevo), SMS, push, campaigns
+api-gateway          (port 8080) — Spring Cloud Gateway
+core-service         (port 8085) — users, customers, reviews, notifications, GDPR
+commerce-service     (port 8084) — menu, orders, pricing, kitchen workflow
+payment-service      (port 8089) — payments, refunds, Razorpay (standalone)
+logistics-service    (port 8086) — delivery, driver tracking, inventory, zones
+intelligence-service (port 8087) — analytics (fully event-driven, no REST reads)
 ```
 
 ### 1.2 Migration Strategy (Zero Downtime)
@@ -226,24 +223,43 @@ com.MaSoVa.core/
 **Keep separate MongoDB databases per logical domain** — do not merge into one database. The benefit of consolidation is fewer JVM processes, not fewer databases.
 
 ```
-masova_core_db     (users, customers, reviews, GDPR logs)
-masova_commerce_db (menu items, inventory, recipes, suppliers)
-masova_orders_db   (orders, kitchen queue)
-masova_payment_db  (payments, refunds — restricted access)
-masova_logistics_db (delivery trackings, driver locations)
-masova_notification_db (notification logs, campaigns)
+masova_core        (users, customers, reviews, notifications, templates, campaigns, GDPR logs)
+masova_commerce    (menu items, orders, order items, rating tokens, pricing rules)
+masova_payment     (transactions, refunds — restricted access, separate credentials)
+masova_logistics   (delivery trackings, driver locations, inventory, waste records, zones)
+masova_analytics   (events TTL 90d, hourly_metrics, daily_metrics, reports)
 ```
 
 ### 1.4 Gateway Route Updates
 
 Update `api-gateway/src/main/resources/application.yml` routes:
-- `/api/users/**` → `core-service`
-- `/api/customers/**` → `core-service`
-- `/api/reviews/**` → `core-service`
-- `/api/menu/**` → `commerce-service`
-- `/api/inventory/**` → `commerce-service`
+- `/api/users/**` → `core-service:8085`
+- `/api/customers/**` → `core-service:8085`
+- `/api/reviews/**` → `core-service:8085`
+- `/api/notifications/**` → `core-service:8085`
+- `/api/menu/**` → `commerce-service:8084`
+- `/api/orders/**` → `commerce-service:8084`
+- `/api/delivery/**` → `logistics-service:8086`
+- `/api/inventory/**` → `logistics-service:8086`
+- `/api/analytics/**` → `intelligence-service:8087`
+- `/api/payments/**` → `payment-service:8089`
 
-### 1.5 Verification
+### 1.5 Effort Estimate
+
+| Task | Days |
+|---|---|
+| Shared messaging module (events, config, publishers) | 6 |
+| commerce-service merge (menu + order) | 8 |
+| core-service merge (user + customer + notification + review) | 11 |
+| logistics-service merge (delivery + inventory) | 8 |
+| payment-service event publishers | 3 |
+| intelligence-service event listeners + pre-aggregation | 7 |
+| Database migration scripts | 2 |
+| Integration testing + chaos testing | 7 |
+| CI/CD + deployment updates | 2 |
+| **Total** | **~55 days (3 months with 2 backend devs, 6 months solo)** |
+
+### 1.6 Verification
 
 - All 6 services start with `mvn spring-boot:run`
 - All existing Swagger UI endpoints respond correctly
