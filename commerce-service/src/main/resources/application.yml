@@ -7,8 +7,8 @@ spring:
 
   data:
     mongodb:
-      # Menu items database (was: MaSoVa in menu-service)
-      uri: ${MENU_MONGODB_URI:mongodb://localhost:27017/MaSoVa}
+      # Menu items database (unified masova_commerce)
+      uri: ${MENU_MONGODB_URI:mongodb://localhost:27017/masova_commerce}
       auto-index-creation: true
 
   redis:
@@ -39,11 +39,11 @@ spring:
       write-dates-as-timestamps: false
     time-zone: Asia/Kolkata
 
-# Secondary MongoDB for orders (masova_orders database)
+# Secondary MongoDB for orders (unified into masova_commerce)
 # Configured via MongoConfig using @Qualifier beans
 orders:
   mongodb:
-    uri: ${ORDERS_MONGODB_URI:mongodb://localhost:27017/masova_orders}
+    uri: ${ORDERS_MONGODB_URI:mongodb://localhost:27017/masova_commerce}
 
 # MongoDB connection pool settings
 mongo:
@@ -64,13 +64,13 @@ jwt:
 # Service URLs for outbound calls (delivery, customer, user, notification)
 services:
   delivery:
-    url: ${DELIVERY_SERVICE_URL:http://localhost:8095}
+    url: ${DELIVERY_SERVICE_URL:http://localhost:8086}
   customer-service:
-    url: ${CUSTOMER_SERVICE_URL:http://localhost:8096}
+    url: ${CUSTOMER_SERVICE_URL:http://localhost:8085}
   notification:
-    url: ${NOTIFICATION_SERVICE_URL:http://localhost:8096}
+    url: ${NOTIFICATION_SERVICE_URL:http://localhost:8085}
   user:
-    url: ${USER_SERVICE_URL:http://localhost:8096}
+    url: ${USER_SERVICE_URL:http://localhost:8085}
   # menu URL is no longer needed — menu is in-process in commerce-service
 
 # Tax Configuration

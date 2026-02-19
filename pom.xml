@@ -28,16 +28,7 @@
         <module>shared-models</module>
         <module>shared-security</module>
         <module>api-gateway</module>
-        <module>user-service</module>
-        <module>menu-service</module>
-        <module>order-service</module>
         <module>payment-service</module>
-        <module>analytics-service</module>
-        <module>inventory-service</module>
-        <module>customer-service</module>
-        <module>delivery-service</module>
-        <module>review-service</module>
-        <module>notification-service</module>
         <module>commerce-service</module>
         <module>logistics-service</module>
         <module>intelligence-service</module>

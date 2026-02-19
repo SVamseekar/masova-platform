@@ -1,5 +1,5 @@
 server:
-  port: 8095
+  port: 8086
 
 spring:
   application:
@@ -7,7 +7,7 @@ spring:
 
   data:
     mongodb:
-      uri: ${LOGISTICS_MONGODB_URI:mongodb://localhost:27017/logistics_db}
+      uri: ${LOGISTICS_MONGODB_URI:mongodb://localhost:27017/masova_logistics}
       auto-index-creation: true
 
   redis:
@@ -66,7 +66,7 @@ routing:
 # Outbound service URLs
 services:
   user-service:
-    url: ${USER_SERVICE_URL:http://localhost:8096}
+    url: ${USER_SERVICE_URL:http://localhost:8085}
   order-service:
     url: ${ORDER_SERVICE_URL:http://localhost:8084}
 

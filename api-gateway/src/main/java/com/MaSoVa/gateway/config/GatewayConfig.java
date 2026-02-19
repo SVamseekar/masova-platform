@@ -12,11 +12,11 @@ import org.springframework.context.annotation.Configuration;
  * API Gateway route configuration — Phase 1 consolidated architecture (6 services).
  *
  * Service map:
- *   core-service         port 8096  — users, customers, notifications, campaigns, reviews
+ *   core-service         port 8085  — users, customers, notifications, campaigns, reviews
  *   commerce-service     port 8084  — menu, orders, kitchen, kitchen-equipment
- *   payment-service      port 8087  — payments, refunds (standalone for PCI DSS)
- *   logistics-service    port 8095  — delivery, dispatch, tracking, inventory, suppliers, waste
- *   intelligence-service port 8086  — analytics, BI, reports
+ *   payment-service      port 8089  — payments, refunds (standalone for PCI DSS)
+ *   logistics-service    port 8086  — delivery, dispatch, tracking, inventory, suppliers, waste
+ *   intelligence-service port 8087  — analytics, BI, reports
  *   api-gateway          port 8080  — this service
  */
 @Configuration
@@ -41,108 +41,108 @@ public class GatewayConfig {
                 .route("core_auth_login", r -> r.path("/api/users/login")
                         .and().method("POST")
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(10, "auth"))))
-                        .uri("http://localhost:8096"))
+                        .uri("http://localhost:8085"))
 
                 .route("core_auth_register", r -> r.path("/api/users/register")
                         .and().method("POST")
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(5, "register"))))
-                        .uri("http://localhost:8096"))
+                        .uri("http://localhost:8085"))
 
                 .route("core_auth_refresh", r -> r.path("/api/users/refresh")
                         .and().method("POST")
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(20, "refresh"))))
-                        .uri("http://localhost:8096"))
+                        .uri("http://localhost:8085"))
 
                 .route("core_auth_logout", r -> r.path("/api/users/logout")
                         .and().method("POST")
                         .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8096"))
+                        .uri("http://localhost:8085"))
 
                 .route("core_auth_google", r -> r.path("/api/auth/google", "/api/users/google")
                         .and().method("POST")
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(20, "google_auth"))))
-                        .uri("http://localhost:8096"))
+                        .uri("http://localhost:8085"))
 
                 .route("core_kiosk_public", r -> r.path("/api/users/kiosk/**")
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(20, "kiosk"))))
-                        .uri("http://localhost:8096"))
+                        .uri("http://localhost:8085"))
 
                 // Stores — public info served by core-service (store entity lives in user domain)
                 .route("core_stores_public", r -> r.path("/api/stores/public/**")
-                        .uri("http://localhost:8096"))
+                        .uri("http://localhost:8085"))
 
                 // Reviews — public rating display (no auth for customer-facing pages)
                 .route("core_reviews_public", r -> r.path("/api/reviews/public/**")
                         .and().method("GET")
-                        .uri("http://localhost:8096"))
+                        .uri("http://localhost:8085"))
 
                 // Customers — public get-or-create for guest checkout
                 .route("core_customers_public", r -> r.path("/api/customers/get-or-create")
                         .and().method("POST")
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(50, "customer_create"))))
-                        .uri("http://localhost:8096"))
+                        .uri("http://localhost:8085"))
 
                 // Users — all other protected user/store/session/shift operations
                 .route("core_users", r -> r.path("/api/users/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(200, "core_users")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8096"))
+                        .uri("http://localhost:8085"))
 
                 .route("core_stores", r -> r.path("/api/stores/**")
                         .and().not(p -> p.path("/api/stores/public/**"))
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(100, "core_stores")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8096"))
+                        .uri("http://localhost:8085"))
 
                 .route("core_sessions", r -> r.path("/api/sessions/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(50, "core_sessions")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8096"))
+                        .uri("http://localhost:8085"))
 
                 .route("core_shifts", r -> r.path("/api/shifts/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(60, "core_shifts")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8096"))
+                        .uri("http://localhost:8085"))
 
                 .route("core_customers", r -> r.path("/api/customers/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(200, "core_customers")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8096"))
+                        .uri("http://localhost:8085"))
 
                 .route("core_notifications", r -> r.path("/api/notifications/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(150, "core_notifications")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8096"))
+                        .uri("http://localhost:8085"))
 
                 .route("core_campaigns", r -> r.path("/api/campaigns/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(100, "core_campaigns")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8096"))
+                        .uri("http://localhost:8085"))
 
                 .route("core_reviews", r -> r.path("/api/reviews/**")
                         .and().not(p -> p.path("/api/reviews/public/**"))
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(150, "core_reviews")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8096"))
+                        .uri("http://localhost:8085"))
 
                 .route("core_responses", r -> r.path("/api/responses/**", "/api/ratings/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(60, "core_responses")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8096"))
+                        .uri("http://localhost:8085"))
 
                 // Core: Swagger docs proxy
                 .route("core_api_docs", r -> r.path("/core-service/v3/api-docs")
                         .filters(f -> f.rewritePath("/core-service(?<segment>.*)", "${segment}"))
-                        .uri("http://localhost:8096"))
+                        .uri("http://localhost:8085"))
 
                 // ============================================================
                 // COMMERCE SERVICE (port 8084) — menu, orders, kitchen
@@ -207,7 +207,7 @@ public class GatewayConfig {
                 // Webhook — public (Razorpay callbacks, no auth)
                 .route("payment_webhook", r -> r.path("/api/payments/webhook")
                         .and().method("POST")
-                        .uri("http://localhost:8087"))
+                        .uri("http://localhost:8089"))
 
                 // Payments — protected
                 .route("payments_protected", r -> r.path("/api/payments/**")
@@ -215,12 +215,12 @@ public class GatewayConfig {
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(50, "payments")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8087"))
+                        .uri("http://localhost:8089"))
 
                 // Payment: Swagger docs proxy
                 .route("payment_api_docs", r -> r.path("/payment-service/v3/api-docs")
                         .filters(f -> f.rewritePath("/payment-service(?<segment>.*)", "${segment}"))
-                        .uri("http://localhost:8087"))
+                        .uri("http://localhost:8089"))
 
                 // ============================================================
                 // LOGISTICS SERVICE (port 8095) — delivery, inventory
@@ -231,54 +231,54 @@ public class GatewayConfig {
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(150, "logistics_delivery")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8095"))
+                        .uri("http://localhost:8086"))
 
                 .route("logistics_dispatch", r -> r.path("/api/dispatch/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(100, "logistics_dispatch")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8095"))
+                        .uri("http://localhost:8086"))
 
                 .route("logistics_tracking", r -> r.path("/api/tracking/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(200, "logistics_tracking")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8095"))
+                        .uri("http://localhost:8086"))
 
                 // Inventory, suppliers, purchase orders, waste
                 .route("logistics_inventory", r -> r.path("/api/inventory/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(60, "logistics_inventory")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8095"))
+                        .uri("http://localhost:8086"))
 
                 .route("logistics_suppliers", r -> r.path("/api/suppliers/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(60, "logistics_suppliers")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8095"))
+                        .uri("http://localhost:8086"))
 
                 .route("logistics_purchase_orders", r -> r.path("/api/purchase-orders/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(60, "logistics_purchase_orders")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8095"))
+                        .uri("http://localhost:8086"))
 
                 .route("logistics_waste", r -> r.path("/api/waste/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(60, "logistics_waste")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8095"))
+                        .uri("http://localhost:8086"))
 
                 // WebSocket — delivery location updates
                 .route("logistics_websocket", r -> r.path("/api/ws/delivery", "/api/ws/delivery/**")
                         .filters(f -> f.rewritePath("/api(?<segment>.*)", "${segment}"))
-                        .uri("ws://localhost:8095"))
+                        .uri("ws://localhost:8086"))
 
                 // Logistics: Swagger docs proxy
                 .route("logistics_api_docs", r -> r.path("/logistics-service/v3/api-docs")
                         .filters(f -> f.rewritePath("/logistics-service(?<segment>.*)", "${segment}"))
-                        .uri("http://localhost:8095"))
+                        .uri("http://localhost:8086"))
 
                 // ============================================================
                 // INTELLIGENCE SERVICE (port 8086) — analytics, BI, reports
@@ -288,12 +288,12 @@ public class GatewayConfig {
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(100, "intelligence_analytics")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8086"))
+                        .uri("http://localhost:8087"))
 
                 // Intelligence: Swagger docs proxy
                 .route("intelligence_api_docs", r -> r.path("/intelligence-service/v3/api-docs")
                         .filters(f -> f.rewritePath("/intelligence-service(?<segment>.*)", "${segment}"))
-                        .uri("http://localhost:8086"))
+                        .uri("http://localhost:8087"))
 
                 // ============================================================
                 // HEALTH CHECKS (per new service)
@@ -301,21 +301,21 @@ public class GatewayConfig {
 
                 .route("health_core", r -> r.path("/api/health/core", "/api/health/user",
                                                    "/api/health/customer", "/api/health/notification")
-                        .uri("http://localhost:8096"))
+                        .uri("http://localhost:8085"))
 
                 .route("health_commerce", r -> r.path("/api/health/commerce", "/api/health/menu",
                                                        "/api/health/order")
                         .uri("http://localhost:8084"))
 
                 .route("health_payment", r -> r.path("/api/health/payment")
-                        .uri("http://localhost:8087"))
+                        .uri("http://localhost:8089"))
 
                 .route("health_logistics", r -> r.path("/api/health/logistics", "/api/health/delivery",
                                                         "/api/health/inventory")
-                        .uri("http://localhost:8095"))
+                        .uri("http://localhost:8086"))
 
                 .route("health_intelligence", r -> r.path("/api/health/intelligence", "/api/health/analytics")
-                        .uri("http://localhost:8086"))
+                        .uri("http://localhost:8087"))
 
                 // Default fallback
                 .route("fallback", r -> r.path("/**")

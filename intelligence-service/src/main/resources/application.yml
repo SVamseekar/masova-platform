@@ -1,5 +1,5 @@
 server:
-  port: 8086
+  port: 8087
 
 spring:
   application:
@@ -41,18 +41,18 @@ intelligence:
     order-service:
       url: ${ORDER_SERVICE_URL:http://localhost:8084}
     customer-service:
-      url: ${CUSTOMER_SERVICE_URL:http://localhost:8096}
+      url: ${CUSTOMER_SERVICE_URL:http://localhost:8085}
     user-service:
-      url: ${USER_SERVICE_URL:http://localhost:8096}
+      url: ${USER_SERVICE_URL:http://localhost:8085}
     inventory-service:
-      url: ${INVENTORY_SERVICE_URL:http://localhost:8095}
+      url: ${INVENTORY_SERVICE_URL:http://localhost:8086}
 
 # Legacy key aliases for client beans that haven't been renamed yet
 services:
   customer:
-    url: ${CUSTOMER_SERVICE_URL:http://localhost:8096}
+    url: ${CUSTOMER_SERVICE_URL:http://localhost:8085}
   inventory:
-    url: ${INVENTORY_SERVICE_URL:http://localhost:8095}
+    url: ${INVENTORY_SERVICE_URL:http://localhost:8086}
 
 logging:
   level:

@@ -24,14 +24,14 @@ This document defines the complete evolution roadmap ordered by technical depend
 
 ### Critical Gaps (Ordered by Impact)
 
-| Gap | Impact | Effort |
-|-----|--------|--------|
-| No async messaging (all HTTP sync) | High coupling, cascading failures | Medium |
-| 11 services → operational overhead | Deployment complexity, resource cost | High |
-| No Redis JWT blacklist | Logout doesn't invalidate tokens | Low |
-| No CI/CD pipeline | Manual deploys, regression risk | Medium |
-| TrackingPage TypeScript errors | Customer feature broken | Low |
-| Session bugs (refresh = logout) | Customer UX broken everywhere | Medium |
+| Gap                                | Impact                               | Effort |
+| ---------------------------------- | ------------------------------------ | ------ |
+| No async messaging (all HTTP sync) | High coupling, cascading failures    | Medium |
+| 11 services → operational overhead | Deployment complexity, resource cost | High   |
+| No Redis JWT blacklist             | Logout doesn't invalidate tokens     | Low    |
+| No CI/CD pipeline                  | Manual deploys, regression risk      | Medium |
+| TrackingPage TypeScript errors     | Customer feature broken              | Low    |
+| Session bugs (refresh = logout)    | Customer UX broken everywhere        | Medium |
 
 ---
 
@@ -43,42 +43,42 @@ This document defines the complete evolution roadmap ordered by technical depend
 
 **Actual ports (confirmed from application.yml files):**
 
-| Service | Port |
-|---|---|
-| api-gateway | 8080 |
-| user-service | 8081 |
-| menu-service | 8082 |
-| order-service | 8083 |
-| analytics-service | 8085 |
-| payment-service | 8086 |
-| inventory-service | 8088 |
-| review-service | 8089 |
-| delivery-service | 8090 |
-| customer-service | 8091 |
+| Service              | Port |
+| -------------------- | ---- |
+| api-gateway          | 8080 |
+| user-service         | 8081 |
+| menu-service         | 8082 |
+| order-service        | 8083 |
+| analytics-service    | 8085 |
+| payment-service      | 8086 |
+| inventory-service    | 8088 |
+| review-service       | 8089 |
+| delivery-service     | 8090 |
+| customer-service     | 8091 |
 | notification-service | 8092 |
 
 **Complete synchronous HTTP call map (all calls confirmed from source code):**
 
-| Caller | Target | Endpoint | Circuit Breaker? | Fail Behavior |
-|---|---|---|---|---|
-| order-service | customer-service:8091 | `POST /api/customers/{id}/update-email` | No | Exception swallowed |
-| order-service | customer-service:8091 | `POST /api/customers/{id}/order-stats` | No | Exception swallowed |
-| order-service | delivery-service:8090 | `GET /api/delivery/zone/fee` | Yes + Retry | Fail-open (allow order) |
-| order-service | delivery-service:8090 | `GET /api/delivery/zone/validate` | Yes + Retry | Fail-open (allow order) |
-| order-service | menu-service:8082 | `GET /api/menu/public/{id}` | Yes + Retry | Fail-open (allow order) |
-| order-service | user-service:8081 | `GET /api/users/{driverId}` | No | Exception propagates |
-| order-service | notification-service:8092 | `POST /api/notifications/send` | No | Exception swallowed |
-| delivery-service | order-service:8083 | `GET /api/orders/{id}` | Yes + Retry | Exception propagates |
-| delivery-service | order-service:8083 | `PUT /api/orders/{id}/delivery-status` | Yes + Retry | Exception propagates |
-| delivery-service | order-service:8083 | `PATCH /api/orders/{id}/assign-driver` | Yes + Retry | Exception propagates |
-| delivery-service | order-service:8083 | `PUT /api/orders/{id}/delivery-otp` | Yes + Retry | Exception propagates |
-| delivery-service | order-service:8083 | `PUT /api/orders/{id}/delivery-proof` | Yes + Retry | Exception propagates |
-| delivery-service | order-service:8083 | `PUT /api/orders/{id}/mark-delivered` | Yes + Retry | Exception propagates |
-| delivery-service | user-service:8081 | `GET /api/users/drivers/available` | No | Exception propagates |
-| delivery-service | user-service:8081 | `GET /api/users/{driverId}` | No | Exception propagates |
-| delivery-service | user-service:8081 | `PUT /api/users/{driverId}/status` | No | Exception propagates |
-| payment-service | order-service:8083 | `GET /api/orders/track/{id}` | No | Exception swallowed |
-| payment-service | notification-service:8092 | `POST /api/notifications/send` | No | Exception swallowed |
+| Caller           | Target                    | Endpoint                                | Circuit Breaker? | Fail Behavior           |
+| ---------------- | ------------------------- | --------------------------------------- | ---------------- | ----------------------- |
+| order-service    | customer-service:8091     | `POST /api/customers/{id}/update-email` | No               | Exception swallowed     |
+| order-service    | customer-service:8091     | `POST /api/customers/{id}/order-stats`  | No               | Exception swallowed     |
+| order-service    | delivery-service:8090     | `GET /api/delivery/zone/fee`            | Yes + Retry      | Fail-open (allow order) |
+| order-service    | delivery-service:8090     | `GET /api/delivery/zone/validate`       | Yes + Retry      | Fail-open (allow order) |
+| order-service    | menu-service:8082         | `GET /api/menu/public/{id}`             | Yes + Retry      | Fail-open (allow order) |
+| order-service    | user-service:8081         | `GET /api/users/{driverId}`             | No               | Exception propagates    |
+| order-service    | notification-service:8092 | `POST /api/notifications/send`          | No               | Exception swallowed     |
+| delivery-service | order-service:8083        | `GET /api/orders/{id}`                  | Yes + Retry      | Exception propagates    |
+| delivery-service | order-service:8083        | `PUT /api/orders/{id}/delivery-status`  | Yes + Retry      | Exception propagates    |
+| delivery-service | order-service:8083        | `PATCH /api/orders/{id}/assign-driver`  | Yes + Retry      | Exception propagates    |
+| delivery-service | order-service:8083        | `PUT /api/orders/{id}/delivery-otp`     | Yes + Retry      | Exception propagates    |
+| delivery-service | order-service:8083        | `PUT /api/orders/{id}/delivery-proof`   | Yes + Retry      | Exception propagates    |
+| delivery-service | order-service:8083        | `PUT /api/orders/{id}/mark-delivered`   | Yes + Retry      | Exception propagates    |
+| delivery-service | user-service:8081         | `GET /api/users/drivers/available`      | No               | Exception propagates    |
+| delivery-service | user-service:8081         | `GET /api/users/{driverId}`             | No               | Exception propagates    |
+| delivery-service | user-service:8081         | `PUT /api/users/{driverId}/status`      | No               | Exception propagates    |
+| payment-service  | order-service:8083        | `GET /api/orders/track/{id}`            | No               | Exception swallowed     |
+| payment-service  | notification-service:8092 | `POST /api/notifications/send`          | No               | Exception swallowed     |
 
 **The worst chain:** placing a delivery order hits 7 services synchronously (gateway → order → menu → delivery/zone → customer → notification → user). Any one slow service blocks the response.
 
@@ -112,19 +112,19 @@ masova.dlx              (topic exchange — dead letter)
 
 **Routing Key Convention:** `{domain}.{event}[.{qualifier}]`
 
-| Routing Key | Producer | Consumers | Replaces |
-|---|---|---|---|
-| `order.created` | order-service | core-service, logistics-service, intelligence-service | POST /customers/{id}/order-stats (fire-and-forget) |
-| `order.status.dispatched` | order-service | core-service (notify), intelligence-service | POST /notifications/send |
-| `order.status.*` | order-service | intelligence-service | analytics REST queries |
-| `order.cancelled` | order-service | logistics-service, payment-service | manual refund trigger |
-| `payment.completed` | payment-service | order-service (status update), core-service (notify), intelligence-service | PUT /orders/{id}/delivery-status |
-| `payment.failed` | payment-service | core-service (notify) | POST /notifications/send |
-| `payment.refund.completed` | payment-service | core-service (notify), intelligence-service | POST /notifications/send |
-| `delivery.assigned` | logistics-service | order-service (driver assignment), core-service (notify) | PATCH /orders/{id}/assign-driver |
-| `delivery.completed` | logistics-service | order-service (mark delivered), payment-service (verify), core-service (notify) | PUT /orders/{id}/mark-delivered |
-| `delivery.failed` | logistics-service | order-service, payment-service (refund), core-service (notify) | — |
-| `driver.status.*` | core-service | logistics-service (availability cache) | GET /users/drivers/available (polling) |
+| Routing Key                | Producer          | Consumers                                                                       | Replaces                                           |
+| -------------------------- | ----------------- | ------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `order.created`            | order-service     | core-service, logistics-service, intelligence-service                           | POST /customers/{id}/order-stats (fire-and-forget) |
+| `order.status.dispatched`  | order-service     | core-service (notify), intelligence-service                                     | POST /notifications/send                           |
+| `order.status.*`           | order-service     | intelligence-service                                                            | analytics REST queries                             |
+| `order.cancelled`          | order-service     | logistics-service, payment-service                                              | manual refund trigger                              |
+| `payment.completed`        | payment-service   | order-service (status update), core-service (notify), intelligence-service      | PUT /orders/{id}/delivery-status                   |
+| `payment.failed`           | payment-service   | core-service (notify)                                                           | POST /notifications/send                           |
+| `payment.refund.completed` | payment-service   | core-service (notify), intelligence-service                                     | POST /notifications/send                           |
+| `delivery.assigned`        | logistics-service | order-service (driver assignment), core-service (notify)                        | PATCH /orders/{id}/assign-driver                   |
+| `delivery.completed`       | logistics-service | order-service (mark delivered), payment-service (verify), core-service (notify) | PUT /orders/{id}/mark-delivered                    |
+| `delivery.failed`          | logistics-service | order-service, payment-service (refund), core-service (notify)                  | —                                                  |
+| `driver.status.*`          | core-service      | logistics-service (availability cache)                                          | GET /users/drivers/available (polling)             |
 
 **Queue Bindings:**
 
@@ -202,6 +202,7 @@ Failed messages → `masova.dlq` → logged to MongoDB `failed_events` collectio
 
 ### 0.4 Backward Compatibility
 
+
 The existing REST endpoints remain unchanged. RabbitMQ is additive. During transition, both the synchronous call AND the async event fire — once consumers are verified stable, remove the synchronous fallback calls one by one.
 
 ### 0.5 Verification
@@ -218,14 +219,14 @@ The existing REST endpoints remain unchanged. RabbitMQ is additive. During trans
 
 ### 1.1 Consolidation Map
 
-| Before (11 services) | After (6 services) | Rationale |
-|---|---|---|
-| api-gateway | api-gateway | Must stay separate — traffic routing layer |
-| user-service + customer-service + notification-service + review-service | core-service | All deal with people data, same JWT context, notification naturally owned by core since it has user preferences |
-| menu-service + order-service | commerce-service | Menu availability is checked on every order — co-location eliminates the most frequent cross-service call |
-| payment-service | payment-service | **MUST stay standalone** — PCI DSS scope isolation, Razorpay webhook receiver, GDPR financial data |
-| delivery-service + inventory-service | logistics-service | Both deal with physical movement of goods; inventory depletion fires when orders are dispatched |
-| analytics-service | intelligence-service | Rename + make fully event-driven (no more REST queries to order-service) |
+| Before (11 services)                                                    | After (6 services)   | Rationale                                                                                                       |
+| ----------------------------------------------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------- |
+| api-gateway                                                             | api-gateway          | Must stay separate — traffic routing layer                                                                      |
+| user-service + customer-service + notification-service + review-service | core-service         | All deal with people data, same JWT context, notification naturally owned by core since it has user preferences |
+| menu-service + order-service                                            | commerce-service     | Menu availability is checked on every order — co-location eliminates the most frequent cross-service call       |
+| payment-service                                                         | payment-service      | **MUST stay standalone** — PCI DSS scope isolation, Razorpay webhook receiver, GDPR financial data              |
+| delivery-service + inventory-service                                    | logistics-service    | Both deal with physical movement of goods; inventory depletion fires when orders are dispatched                 |
+| analytics-service                                                       | intelligence-service | Rename + make fully event-driven (no more REST queries to order-service)                                        |
 
 **Final architecture:**
 ```
@@ -297,18 +298,18 @@ Update `api-gateway/src/main/resources/application.yml` routes:
 
 ### 1.5 Effort Estimate
 
-| Task | Days |
-|---|---|
-| Shared messaging module (events, config, publishers) | 6 |
-| commerce-service merge (menu + order) | 8 |
-| core-service merge (user + customer + notification + review) | 11 |
-| logistics-service merge (delivery + inventory) | 8 |
-| payment-service event publishers | 3 |
-| intelligence-service event listeners + pre-aggregation | 7 |
-| Database migration scripts | 2 |
-| Integration testing + chaos testing | 7 |
-| CI/CD + deployment updates | 2 |
-| **Total** | **~55 days (3 months with 2 backend devs, 6 months solo)** |
+| Task                                                         | Days                                                       |
+| ------------------------------------------------------------ | ---------------------------------------------------------- |
+| Shared messaging module (events, config, publishers)         | 6                                                          |
+| commerce-service merge (menu + order)                        | 8                                                          |
+| core-service merge (user + customer + notification + review) | 11                                                         |
+| logistics-service merge (delivery + inventory)               | 8                                                          |
+| payment-service event publishers                             | 3                                                          |
+| intelligence-service event listeners + pre-aggregation       | 7                                                          |
+| Database migration scripts                                   | 2                                                          |
+| Integration testing + chaos testing                          | 7                                                          |
+| CI/CD + deployment updates                                   | 2                                                          |
+| **Total**                                                    | **~55 days (3 months with 2 backend devs, 6 months solo)** |
 
 ### 1.6 Verification
 
@@ -429,16 +430,16 @@ jobs:
 
 **Recommended for MaSoVa (with ₹917/month Google AI Pro credit):**
 
-| Component | Service | Cost |
-|---|---|---|
-| Backend (6 services) | Google Cloud Run | ~$0 with GCP credit (scale-to-zero) |
-| Web Frontend | Firebase Hosting | Free tier (10GB/month) |
-| MongoDB | MongoDB Atlas M0 | Free (512MB) — upgrade to M10 ($57/mo) for production |
-| RabbitMQ | CloudAMQP Little Lemur | Free (1M messages/month) |
-| Redis | Upstash Redis | Free (10K commands/day) |
-| Customer Mobile | Expo EAS Build | $0 for small teams |
-| Driver App | Google Play Store | $25 one-time |
-| AI Agent | Cloud Run (same project) | ~$0 with credit |
+| Component            | Service                  | Cost                                                  |
+| -------------------- | ------------------------ | ----------------------------------------------------- |
+| Backend (6 services) | Google Cloud Run         | ~$0 with GCP credit (scale-to-zero)                   |
+| Web Frontend         | Firebase Hosting         | Free tier (10GB/month)                                |
+| MongoDB              | MongoDB Atlas M0         | Free (512MB) — upgrade to M10 ($57/mo) for production |
+| RabbitMQ             | CloudAMQP Little Lemur   | Free (1M messages/month)                              |
+| Redis                | Upstash Redis            | Free (10K commands/day)                               |
+| Customer Mobile      | Expo EAS Build           | $0 for small teams                                    |
+| Driver App           | Google Play Store        | $25 one-time                                          |
+| AI Agent             | Cloud Run (same project) | ~$0 with credit                                       |
 
 **Domain setup:** `masova.app` (web), `api.masova.app` (gateway), `agent.masova.app` (AI)
 
@@ -636,15 +637,15 @@ After each successful payment, update preferences in customer-service. Pre-popul
 
 Items that should be fixed opportunistically:
 
-| Item | File | Effort |
-|---|---|---|
-| `review-service` not in parent pom.xml | `pom.xml` | 5 min |
-| `notification-service` port conflict (8089 vs 8092) | `application.yml` | 5 min |
-| `analytics-service` port conflict (8085 vs 8090) | `application.yml` | 5 min |
-| Remove `.bak` files from manager pages | `frontend/src/pages/manager/` | 10 min |
-| `start-services.sh` deleted but referenced | `README.md` | 15 min |
-| `docs_backup_2025/` staged for deletion | git | `git rm -r docs_backup_2025/` |
-| `imp_docs/` staged for deletion | git | `git rm -r imp_docs/` |
+| Item                                                | File                          | Effort                        |
+| --------------------------------------------------- | ----------------------------- | ----------------------------- |
+| `review-service` not in parent pom.xml              | `pom.xml`                     | 5 min                         |
+| `notification-service` port conflict (8089 vs 8092) | `application.yml`             | 5 min                         |
+| `analytics-service` port conflict (8085 vs 8090)    | `application.yml`             | 5 min                         |
+| Remove `.bak` files from manager pages              | `frontend/src/pages/manager/` | 10 min                        |
+| `start-services.sh` deleted but referenced          | `README.md`                   | 15 min                        |
+| `docs_backup_2025/` staged for deletion             | git                           | `git rm -r docs_backup_2025/` |
+| `imp_docs/` staged for deletion                     | git                           | `git rm -r imp_docs/`         |
 
 ---
 
@@ -699,21 +700,21 @@ WEEK 19–20: AI voice calls (Gemini + Twilio)
 
 ## Appendix: Key File Locations
 
-| Topic | Files |
-|---|---|
-| API Gateway routes | `api-gateway/src/main/resources/application.yml` |
-| Service ports | Each `*/src/main/resources/application.yml` |
-| JWT handling | `user-service/.../service/JwtService.java` |
-| Order status flow | `order-service/.../entity/Order.java` (enum comments) |
-| Delivery types | `delivery-service/.../entity/DeliveryTracking.java` |
-| Notification channels | `notification-service/.../service/` (EmailService✅, SmsService⚠️, PushService⚠️) |
-| Email provider | `notification-service/.../config/BrevoConfig.java` (Brevo — **enabled**, 300/day free tier) |
-| SMS provider | `notification-service/.../config/TwilioConfig.java` (Twilio — **disabled** by default) |
-| Push provider | `notification-service/.../config/FirebaseConfig.java` (FCM — **disabled** by default) |
-| Frontend design tokens | `frontend/src/styles/design-tokens.ts` |
-| Neumorphic components | `frontend/src/components/ui/neumorphic/` |
-| RTK Query APIs | `frontend/src/store/api/` |
-| AI agent | `/Users/souravamseekarmarti/Projects/masova-support/src/masova_agent/` |
-| Mobile app | `/Users/souravamseekarmarti/Projects/masova-mobile/src/` |
-| Driver app | `/Users/souravamseekarmarti/Projects/MaSoVaDriverApp/src/` |
-| DB seed script | `scripts/seed-database.js` |
+| Topic                  | Files                                                                                       |
+| ---------------------- | ------------------------------------------------------------------------------------------- |
+| API Gateway routes     | `api-gateway/src/main/resources/application.yml`                                            |
+| Service ports          | Each `*/src/main/resources/application.yml`                                                 |
+| JWT handling           | `user-service/.../service/JwtService.java`                                                  |
+| Order status flow      | `order-service/.../entity/Order.java` (enum comments)                                       |
+| Delivery types         | `delivery-service/.../entity/DeliveryTracking.java`                                         |
+| Notification channels  | `notification-service/.../service/` (EmailService✅, SmsService⚠️, PushService⚠️)              |
+| Email provider         | `notification-service/.../config/BrevoConfig.java` (Brevo — **enabled**, 300/day free tier) |
+| SMS provider           | `notification-service/.../config/TwilioConfig.java` (Twilio — **disabled** by default)      |
+| Push provider          | `notification-service/.../config/FirebaseConfig.java` (FCM — **disabled** by default)       |
+| Frontend design tokens | `frontend/src/styles/design-tokens.ts`                                                      |
+| Neumorphic components  | `frontend/src/components/ui/neumorphic/`                                                    |
+| RTK Query APIs         | `frontend/src/store/api/`                                                                   |
+| AI agent               | `/Users/souravamseekarmarti/Projects/masova-support/src/masova_agent/`                      |
+| Mobile app             | `/Users/souravamseekarmarti/Projects/masova-mobile/src/`                                    |
+| Driver app             | `/Users/souravamseekarmarti/Projects/MaSoVaDriverApp/src/`                                  |
+| DB seed script         | `scripts/seed-database.js`                                                                  |

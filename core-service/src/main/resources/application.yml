@@ -1,5 +1,5 @@
 server:
-  port: 8096
+  port: 8085
 
 spring:
   application:
@@ -7,7 +7,7 @@ spring:
 
   data:
     mongodb:
-      uri: ${CORE_MONGODB_URI:mongodb://localhost:27017/masova_db}
+      uri: ${CORE_MONGODB_URI:mongodb://localhost:27017/masova_core}
       auto-index-creation: true
 
   redis:
@@ -53,22 +53,22 @@ services:
   order-service:
     url: ${ORDER_SERVICE_URL:http://localhost:8084}
   delivery-service:
-    url: ${DELIVERY_SERVICE_URL:http://localhost:8095}
+    url: ${DELIVERY_SERVICE_URL:http://localhost:8086}
   payment-service:
-    url: ${PAYMENT_SERVICE_URL:http://localhost:8087}
+    url: ${PAYMENT_SERVICE_URL:http://localhost:8089}
   # Flat key aliases for @Value("${services.order.url}") etc.
   order:
     url: ${ORDER_SERVICE_URL:http://localhost:8084}
   delivery:
-    url: ${DELIVERY_SERVICE_URL:http://localhost:8095}
+    url: ${DELIVERY_SERVICE_URL:http://localhost:8086}
   payment:
-    url: ${PAYMENT_SERVICE_URL:http://localhost:8087}
+    url: ${PAYMENT_SERVICE_URL:http://localhost:8089}
   customer:
-    url: ${CORE_SERVICE_URL:http://localhost:8096}
+    url: ${CORE_SERVICE_URL:http://localhost:8085}
 
 customer:
   service:
-    url: ${CORE_SERVICE_URL:http://localhost:8096}
+    url: ${CORE_SERVICE_URL:http://localhost:8085}
 
 firebase:
   credentials-path: ${FIREBASE_CREDENTIALS_PATH:}

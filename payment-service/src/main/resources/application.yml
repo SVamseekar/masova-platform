@@ -1,5 +1,5 @@
 server:
-  port: 8086
+  port: 8089
 
 spring:
   application:
@@ -7,7 +7,7 @@ spring:
 
   data:
     mongodb:
-      uri: ${MONGODB_URI:mongodb://localhost:27017/masova_payments}
+      uri: ${MONGODB_URI:mongodb://localhost:27017/masova_payment}
       auto-index-creation: true
 
 # JWT Configuration
@@ -26,12 +26,12 @@ razorpay:
 # Service URLs
 services:
   order-service:
-    url: ${ORDER_SERVICE_URL:http://localhost:8083}
+    url: ${ORDER_SERVICE_URL:http://localhost:8084}
 
-# Notification Service Configuration
+# Notification Service Configuration (now part of core-service)
 notification:
   service:
-    url: ${NOTIFICATION_SERVICE_URL:http://localhost:8092}
+    url: ${NOTIFICATION_SERVICE_URL:http://localhost:8085}
   enabled: true
 
 # Logging

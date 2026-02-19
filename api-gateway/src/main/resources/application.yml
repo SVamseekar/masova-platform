@@ -52,15 +52,15 @@ rate:
 # Service URLs
 services:
   core-service:
-    url: ${CORE_SERVICE_URL:http://localhost:8096}
+    url: ${CORE_SERVICE_URL:http://localhost:8085}
   commerce-service:
     url: ${COMMERCE_SERVICE_URL:http://localhost:8084}
   payment-service:
-    url: ${PAYMENT_SERVICE_URL:http://localhost:8087}
+    url: ${PAYMENT_SERVICE_URL:http://localhost:8089}
   logistics-service:
-    url: ${LOGISTICS_SERVICE_URL:http://localhost:8095}
+    url: ${LOGISTICS_SERVICE_URL:http://localhost:8086}
   intelligence-service:
-    url: ${INTELLIGENCE_SERVICE_URL:http://localhost:8086}
+    url: ${INTELLIGENCE_SERVICE_URL:http://localhost:8087}
 
 logging:
   level:
