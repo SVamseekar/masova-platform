@@ -19,6 +19,8 @@
         <maven.compiler.target>21</maven.compiler.target>
         <spring-boot.version>3.2.0</spring-boot.version>
         <spring-cloud.version>2023.0.0</spring-cloud.version>
+        <springdoc-openapi.version>2.3.0</springdoc-openapi.version>
+        <smart-doc.version>3.0.5</smart-doc.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     
@@ -34,6 +36,9 @@
         <module>inventory-service</module>
         <module>customer-service</module>
         <module>delivery-service</module>
+        <module>review-service</module>
+        <module>notification-service</module>
+        <module>commerce-service</module>
     </modules>
     
     <dependencyManagement>
@@ -51,6 +56,11 @@
                 <version>${spring-cloud.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc-openapi.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -79,6 +89,28 @@
                             <arg>1000</arg>
                         </compilerArgs>
                     </configuration>
+                </plugin>
+                <!-- Smart-doc Maven Plugin for API Documentation -->
+                <plugin>
+                    <groupId>com.ly.smart-doc</groupId>
+                    <artifactId>smart-doc-maven-plugin</artifactId>
+                    <version>${smart-doc.version}</version>
+                    <configuration>
+                        <configFile>./smart-doc.json</configFile>
+                        <excludes>
+                            <exclude>com.MaSoVa:shared-models</exclude>
+                            <exclude>com.MaSoVa:shared-security</exclude>
+                        </excludes>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>generate-docs</id>
+                            <phase>compile</phase>
+                            <goals>
+                                <goal>html</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>

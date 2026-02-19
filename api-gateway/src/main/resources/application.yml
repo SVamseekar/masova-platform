@@ -57,6 +57,8 @@ services:
     url: ${MENU_SERVICE_URL:http://localhost:8082}
   order-service:
     url: ${ORDER_SERVICE_URL:http://localhost:8083}
+  commerce-service:
+    url: ${COMMERCE_SERVICE_URL:http://localhost:8084}
   payment-service:
     url: ${PAYMENT_SERVICE_URL:http://localhost:8086}
   review-service:
@@ -84,3 +86,41 @@ management:
   health:
     defaults:
       enabled: false
+
+# Swagger/OpenAPI Configuration for API Gateway
+# Aggregates all microservice APIs in one place
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    urls:
+      - name: User Service
+        url: /user-service/v3/api-docs
+      - name: Menu Service
+        url: /menu-service/v3/api-docs
+      - name: Order Service
+        url: /order-service/v3/api-docs
+      - name: Payment Service
+        url: /payment-service/v3/api-docs
+      - name: Customer Service
+        url: /customer-service/v3/api-docs
+      - name: Delivery Service
+        url: /delivery-service/v3/api-docs
+      - name: Inventory Service
+        url: /inventory-service/v3/api-docs
+      - name: Analytics Service
+        url: /analytics-service/v3/api-docs
+      - name: Notification Service
+        url: /notification-service/v3/api-docs
+      - name: Review Service
+        url: /review-service/v3/api-docs
+      - name: Commerce Service
+        url: /commerce-service/v3/api-docs
+    operations-sorter: method
+    tags-sorter: alpha
+    try-it-out-enabled: true
+    filter: true
+    display-request-duration: true

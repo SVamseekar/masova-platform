@@ -1,0 +1,193 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: commerce-service
+
+  data:
+    mongodb:
+      # Menu items database (was: MaSoVa in menu-service)
+      uri: ${MENU_MONGODB_URI:mongodb://localhost:27017/MaSoVa}
+      auto-index-creation: true
+
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 50
+        max-idle: 25
+        min-idle: 10
+        max-wait: 5000ms
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: ${RABBITMQ_VHOST:/}
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: Asia/Kolkata
+
+# Secondary MongoDB for orders (masova_orders database)
+# Configured via MongoConfig using @Qualifier beans
+orders:
+  mongodb:
+    uri: ${ORDERS_MONGODB_URI:mongodb://localhost:27017/masova_orders}
+
+# MongoDB connection pool settings
+mongo:
+  pool:
+    min-size: ${MONGO_POOL_MIN_SIZE:10}
+    max-size: ${MONGO_POOL_MAX_SIZE:100}
+    max-wait-ms: ${MONGO_POOL_MAX_WAIT_MS:30000}
+    max-connection-idle-ms: ${MONGO_POOL_MAX_IDLE_MS:60000}
+    max-connection-life-ms: ${MONGO_POOL_MAX_LIFE_MS:0}
+    maintenance-initial-delay-ms: 0
+    maintenance-frequency-ms: 10000
+
+jwt:
+  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-256-bits-for-production-security}
+  access-token-expiration: 3600000
+  refresh-token-expiration: 604800000
+
+# Service URLs for outbound calls (delivery, customer, user, notification)
+services:
+  delivery:
+    url: ${DELIVERY_SERVICE_URL:http://localhost:8090}
+  customer-service:
+    url: ${CUSTOMER_SERVICE_URL:http://localhost:8091}
+  notification:
+    url: ${NOTIFICATION_SERVICE_URL:http://localhost:8092}
+  user:
+    url: ${USER_SERVICE_URL:http://localhost:8081}
+
+# Tax Configuration
+tax:
+  default-gst-percent: ${TAX_DEFAULT_GST:5.0}
+  ac-restaurant-gst-percent: ${TAX_AC_RESTAURANT:5.0}
+  non-ac-restaurant-gst-percent: ${TAX_NON_AC_RESTAURANT:5.0}
+  delivery-service-tax-percent: ${TAX_DELIVERY_SERVICE:0.0}
+  packaging-tax-percent: ${TAX_PACKAGING:18.0}
+  state-rates:
+    Maharashtra: 5.0
+    Karnataka: 5.0
+    Delhi: 5.0
+    Tamil Nadu: 5.0
+    Gujarat: 5.0
+  category-rates:
+    FOOD: 5.0
+    BEVERAGE: 12.0
+    ALCOHOL: 28.0
+    PACKAGED: 18.0
+    ICE_CREAM: 18.0
+
+# Preparation Time Configuration
+preparation:
+  base-time-minutes: ${PREP_BASE_TIME:15}
+  per-item-minutes: ${PREP_PER_ITEM:5}
+  rush-hour-multiplier: ${PREP_RUSH_MULTIPLIER:1.5}
+  max-time-minutes: ${PREP_MAX_TIME:120}
+  min-time-minutes: ${PREP_MIN_TIME:10}
+  rush-hour-start-hour: ${PREP_RUSH_START:12}
+  rush-hour-end-hour: ${PREP_RUSH_END:14}
+  evening-rush-start-hour: ${PREP_EVENING_RUSH_START:19}
+  evening-rush-end-hour: ${PREP_EVENING_RUSH_END:21}
+
+# Delivery Fee Configuration
+masova:
+  delivery:
+    base-fee: ${DELIVERY_BASE_FEE:50.0}
+    free-delivery-threshold: ${DELIVERY_FREE_THRESHOLD:500.0}
+    per-km-charge: ${DELIVERY_PER_KM:5.0}
+    base-distance-km: ${DELIVERY_BASE_DISTANCE:3.0}
+
+# Application Configuration
+app:
+  frontend:
+    url: ${FRONTEND_URL:https://masova-restaurant.vercel.app}
+    base-url: ${FRONTEND_BASE_URL:https://masova-restaurant.vercel.app}
+  rating:
+    token-validity-days: 30
+
+# Menu caching (from menu-service)
+menu:
+  cache:
+    ttl: 300  # 5 minutes
+
+logging:
+  level:
+    com.MaSoVa.commerce: DEBUG
+    org.springframework.data.mongodb: INFO
+    org.springframework.security: INFO
+    io.github.resilience4j: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} [correlationId=%X{correlationId:-N/A}] - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,circuitbreakers
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
+
+# Resilience4j Circuit Breaker Configuration
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        failure-rate-threshold: 50
+        slow-call-rate-threshold: 80
+        slow-call-duration-threshold: 3s
+        minimum-number-of-calls: 10
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 20
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 5
+        automatic-transition-from-open-to-half-open-enabled: true
+    instances:
+      deliveryService:
+        base-config: default
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 15s
+      customerService:
+        base-config: default
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 15s
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 5s
+        cancel-running-future: true
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 500ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - org.springframework.web.client.RestClientException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+    instances:
+      deliveryService:
+        base-config: default
+      customerService:
+        base-config: default
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

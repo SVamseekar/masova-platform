@@ -277,6 +277,70 @@ public class GatewayConfig {
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8092"))
 
+                // ============================================
+                // COMMERCE SERVICE (port 8084 — menu + orders unified)
+                // These routes shadow menu-service and order-service during migration.
+                // Once validated, the old service routes above can be removed.
+                // ============================================
+
+                // Commerce: Public menu browsing
+                .route("commerce_menu_public", r -> r.path("/api/menu/public", "/api/menu/public/**")
+                        .and().method("GET")
+                        .uri("http://localhost:8084"))
+
+                .route("commerce_menu_items_get", r -> r.path("/api/menu/items", "/api/menu/items/**")
+                        .and().method("GET")
+                        .uri("http://localhost:8084"))
+
+                .route("commerce_menu_category", r -> r.path("/api/menu/cuisine/**", "/api/menu/category/**")
+                        .and().method("GET")
+                        .uri("http://localhost:8084"))
+
+                // Commerce: Protected menu admin
+                .route("commerce_menu_admin", r -> r.path("/api/menu/admin/**")
+                        .filters(f -> f
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(30, "commerce_menu_admin")))
+                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8084"))
+
+                .route("commerce_menu_modify", r -> r.path("/api/menu/items/**")
+                        .and().method("POST", "PUT", "DELETE", "PATCH")
+                        .filters(f -> f
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(30, "commerce_menu_modify")))
+                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8084"))
+
+                // Commerce: Public order tracking
+                .route("commerce_orders_track", r -> r.path("/api/orders/track/**")
+                        .and().method("GET")
+                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(100, "commerce_track"))))
+                        .uri("http://localhost:8084"))
+
+                // Commerce: Protected orders
+                .route("commerce_orders_protected", r -> r.path("/api/orders/**")
+                        .and().not(p -> p.path("/api/orders/track/**"))
+                        .filters(f -> f
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(200, "commerce_orders")))
+                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8084"))
+
+                // Commerce: Kitchen routes
+                .route("commerce_kitchen", r -> r.path("/api/kitchen/**", "/api/kitchen-equipment/**")
+                        .filters(f -> f
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(150, "commerce_kitchen")))
+                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8084"))
+
+                // Commerce: WebSocket
+                .route("commerce_websocket", r -> r.path("/api/ws/orders", "/api/ws/orders/**")
+                        .filters(f -> f.rewritePath("/api(?<segment>.*)", "${segment}"))
+                        .uri("ws://localhost:8084"))
+
+                // Commerce: Swagger docs proxy
+                .route("commerce_api_docs", r -> r.path("/commerce-service/v3/api-docs")
+                        .filters(f -> f.rewritePath("/commerce-service(?<segment>.*)", "${segment}"))
+                        .uri("http://localhost:8084"))
+
                 // Default fallback
                 .route("fallback", r -> r.path("/**")
                         .uri("http://localhost:8080/fallback"))
