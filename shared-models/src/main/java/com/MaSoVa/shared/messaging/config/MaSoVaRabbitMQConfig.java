@@ -17,12 +17,22 @@ public class MaSoVaRabbitMQConfig {
     public static final String DELIVERY_EXCHANGE = "masova.delivery.events";
     public static final String DLX = "masova.dlx";
 
-    // Routing keys
+    // Routing keys — orders
     public static final String ORDER_CREATED_KEY = "order.created";
     public static final String ORDER_STATUS_CHANGED_KEY = "order.status.changed";
 
+    // Routing keys — payments
+    public static final String PAYMENT_COMPLETED_KEY = "payment.completed";
+    public static final String PAYMENT_FAILED_KEY = "payment.failed";
+
+    // Routing keys — delivery
+    public static final String DELIVERY_ASSIGNED_KEY = "delivery.assigned";
+    public static final String DELIVERY_COMPLETED_KEY = "delivery.completed";
+
     // Queue names
     public static final String NOTIFICATION_ORDER_QUEUE = "masova.notification.order-events";
+    public static final String ANALYTICS_PAYMENT_QUEUE = "masova.analytics.payment-events";
+    public static final String ANALYTICS_ORDER_QUEUE = "masova.analytics.order-events";
     public static final String DLQ = "masova.dlq";
 
     @Bean
@@ -61,6 +71,32 @@ public class MaSoVaRabbitMQConfig {
     @Bean
     public Binding notificationOrderCreatedBinding(Queue notificationOrderQueue, TopicExchange ordersExchange) {
         return BindingBuilder.bind(notificationOrderQueue).to(ordersExchange).with("order.#");
+    }
+
+    @Bean
+    public Queue analyticsPaymentQueue() {
+        return QueueBuilder.durable(ANALYTICS_PAYMENT_QUEUE)
+                .withArgument("x-dead-letter-exchange", DLX)
+                .withArgument("x-dead-letter-routing-key", "dlq")
+                .build();
+    }
+
+    @Bean
+    public Queue analyticsOrderQueue() {
+        return QueueBuilder.durable(ANALYTICS_ORDER_QUEUE)
+                .withArgument("x-dead-letter-exchange", DLX)
+                .withArgument("x-dead-letter-routing-key", "dlq")
+                .build();
+    }
+
+    @Bean
+    public Binding analyticsPaymentBinding(Queue analyticsPaymentQueue, TopicExchange paymentsExchange) {
+        return BindingBuilder.bind(analyticsPaymentQueue).to(paymentsExchange).with("payment.#");
+    }
+
+    @Bean
+    public Binding analyticsOrderBinding(Queue analyticsOrderQueue, TopicExchange ordersExchange) {
+        return BindingBuilder.bind(analyticsOrderQueue).to(ordersExchange).with("order.#");
     }
 
     @Bean

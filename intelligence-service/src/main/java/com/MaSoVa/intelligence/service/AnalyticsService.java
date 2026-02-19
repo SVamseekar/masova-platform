@@ -714,4 +714,21 @@ public class AnalyticsService {
         if (hour == 12) return "12 PM";
         return (hour - 12) + " PM";
     }
+
+    // ---------------------------------------------------------------
+    // Event-driven ingestion (Phase 0 — called by AnalyticsEventListener)
+    // Currently logs only; Phase 3 will persist to masova_analytics DB
+    // ---------------------------------------------------------------
+
+    public void recordOrderEvent(String orderId, String storeId, String customerId,
+                                  String orderType, BigDecimal amount, String status) {
+        log.info("Analytics event-ingest: order orderId={} storeId={} status={} amount={}",
+                orderId, storeId, status, amount);
+    }
+
+    public void recordPaymentEvent(String paymentId, String orderId,
+                                    BigDecimal amount, String paymentMethod, boolean success) {
+        log.info("Analytics event-ingest: payment paymentId={} orderId={} method={} success={} amount={}",
+                paymentId, orderId, paymentMethod, success, amount);
+    }
 }

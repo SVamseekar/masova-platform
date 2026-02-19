@@ -15,6 +15,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.MaSoVa.shared.messaging.events.PaymentCompletedEvent;
+import com.MaSoVa.shared.messaging.events.PaymentFailedEvent;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -43,17 +45,20 @@ public class PaymentService {
     private final RazorpayConfig razorpayConfig;
     private final PiiEncryptionService encryptionService;
     private final PaymentNotificationService paymentNotificationService;
+    private final com.MaSoVa.payment.messaging.PaymentEventPublisher paymentEventPublisher;
 
     public PaymentService(TransactionRepository transactionRepository, RazorpayService razorpayService,
                          OrderServiceClient orderServiceClient, RazorpayConfig razorpayConfig,
                          PiiEncryptionService encryptionService,
-                         PaymentNotificationService paymentNotificationService) {
+                         PaymentNotificationService paymentNotificationService,
+                         com.MaSoVa.payment.messaging.PaymentEventPublisher paymentEventPublisher) {
         this.transactionRepository = transactionRepository;
         this.razorpayService = razorpayService;
         this.orderServiceClient = orderServiceClient;
         this.razorpayConfig = razorpayConfig;
         this.encryptionService = encryptionService;
         this.paymentNotificationService = paymentNotificationService;
+        this.paymentEventPublisher = paymentEventPublisher;
     }
 
     /**
@@ -179,6 +184,10 @@ public class PaymentService {
                 paymentNotificationService.sendPaymentFailureNotification(
                         transaction, customerEmail, customerPhone, "Payment verification failed");
 
+                paymentEventPublisher.publishPaymentFailed(new PaymentFailedEvent(
+                        transaction.getId(), transaction.getOrderId(), transaction.getCustomerId(),
+                        transaction.getAmount(), "Payment signature verification failed"));
+
                 throw new RuntimeException("Payment signature verification failed");
             }
 
@@ -231,6 +240,13 @@ public class PaymentService {
             String customerPhone = encryptionService.decrypt(transaction.getCustomerPhone());
             paymentNotificationService.sendPaymentSuccessNotification(
                     transaction, customerEmail, customerPhone);
+
+            // Publish payment.completed event for analytics + downstream consumers
+            String methodName = transaction.getPaymentMethod() != null
+                    ? transaction.getPaymentMethod().name() : "UNKNOWN";
+            paymentEventPublisher.publishPaymentCompleted(new PaymentCompletedEvent(
+                    transaction.getId(), transaction.getOrderId(), transaction.getCustomerId(),
+                    transaction.getAmount(), "INR", methodName, transaction.getRazorpayPaymentId()));
 
             return buildPaymentResponse(transaction);
 
@@ -426,6 +442,11 @@ public class PaymentService {
             } catch (Exception e) {
                 log.warn("Failed to update order payment status, but cash transaction recorded: {}", e.getMessage());
             }
+
+            // Publish payment.completed event for analytics
+            paymentEventPublisher.publishPaymentCompleted(new PaymentCompletedEvent(
+                    transaction.getId(), transaction.getOrderId(), transaction.getCustomerId(),
+                    transaction.getAmount(), "INR", "CASH", transaction.getId()));
 
             return buildPaymentResponse(transaction);
 
