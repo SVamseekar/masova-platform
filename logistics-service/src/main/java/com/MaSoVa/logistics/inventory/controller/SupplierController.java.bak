@@ -1,0 +1,228 @@
+package com.MaSoVa.inventory.controller;
+
+import com.MaSoVa.inventory.dto.request.PerformanceUpdateRequest;
+import com.MaSoVa.inventory.dto.request.PreferredUpdateRequest;
+import com.MaSoVa.inventory.dto.request.StatusUpdateRequest;
+import com.MaSoVa.inventory.dto.response.MessageResponse;
+import com.MaSoVa.inventory.entity.Supplier;
+import com.MaSoVa.inventory.service.SupplierService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * REST Controller for Supplier Management
+ */
+@RestController
+@RequestMapping("/api/inventory/suppliers")
+public class SupplierController {
+
+    private static final Logger logger = LoggerFactory.getLogger(SupplierController.class);
+
+    private final SupplierService supplierService;
+
+    public SupplierController(SupplierService supplierService) {
+        this.supplierService = supplierService;
+    }
+
+    /**
+     * Create a new supplier
+     * POST /api/inventory/suppliers
+     */
+    @PostMapping
+    public ResponseEntity<Supplier> createSupplier(@RequestBody Supplier supplier) {
+        logger.info("Creating supplier: {}", supplier.getSupplierName());
+        Supplier created = supplierService.createSupplier(supplier);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    /**
+     * Get all suppliers
+     * GET /api/inventory/suppliers
+     */
+    @GetMapping
+    public ResponseEntity<List<Supplier>> getAllSuppliers() {
+        logger.info("Getting all suppliers");
+        List<Supplier> suppliers = supplierService.getAllSuppliers();
+        return ResponseEntity.ok(suppliers);
+    }
+
+    /**
+     * Get supplier by ID
+     * GET /api/inventory/suppliers/{id}
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<Supplier> getSupplierById(@PathVariable String id) {
+        logger.info("Getting supplier: {}", id);
+        Supplier supplier = supplierService.getSupplierById(id);
+        return ResponseEntity.ok(supplier);
+    }
+
+    /**
+     * Get supplier by code
+     * GET /api/inventory/suppliers/code/{code}
+     */
+    @GetMapping("/code/{code}")
+    public ResponseEntity<Supplier> getSupplierByCode(@PathVariable String code) {
+        logger.info("Getting supplier by code: {}", code);
+        Supplier supplier = supplierService.getSupplierByCode(code);
+        return ResponseEntity.ok(supplier);
+    }
+
+    /**
+     * Get active suppliers
+     * GET /api/inventory/suppliers/active
+     */
+    @GetMapping("/active")
+    public ResponseEntity<List<Supplier>> getActiveSuppliers() {
+        logger.info("Getting active suppliers");
+        List<Supplier> suppliers = supplierService.getActiveSuppliers();
+        return ResponseEntity.ok(suppliers);
+    }
+
+    /**
+     * Get preferred suppliers
+     * GET /api/inventory/suppliers/preferred
+     */
+    @GetMapping("/preferred")
+    public ResponseEntity<List<Supplier>> getPreferredSuppliers() {
+        logger.info("Getting preferred suppliers");
+        List<Supplier> suppliers = supplierService.getPreferredSuppliers();
+        return ResponseEntity.ok(suppliers);
+    }
+
+    /**
+     * Get reliable suppliers
+     * GET /api/inventory/suppliers/reliable
+     */
+    @GetMapping("/reliable")
+    public ResponseEntity<List<Supplier>> getReliableSuppliers() {
+        logger.info("Getting reliable suppliers");
+        List<Supplier> suppliers = supplierService.getReliableSuppliers();
+        return ResponseEntity.ok(suppliers);
+    }
+
+    /**
+     * Get suppliers by category
+     * GET /api/inventory/suppliers/category/{category}
+     */
+    @GetMapping("/category/{category}")
+    public ResponseEntity<List<Supplier>> getSuppliersByCategory(@PathVariable String category) {
+        logger.info("Getting suppliers for category: {}", category);
+        List<Supplier> suppliers = supplierService.getSuppliersByCategory(category);
+        return ResponseEntity.ok(suppliers);
+    }
+
+    /**
+     * Search suppliers by name
+     * GET /api/inventory/suppliers/search?q=xxx
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<Supplier>> searchSuppliers(@RequestParam String q) {
+        logger.info("Searching suppliers: {}", q);
+        List<Supplier> suppliers = supplierService.searchSuppliers(q);
+        return ResponseEntity.ok(suppliers);
+    }
+
+    /**
+     * Get suppliers by city
+     * GET /api/inventory/suppliers/city/{city}
+     */
+    @GetMapping("/city/{city}")
+    public ResponseEntity<List<Supplier>> getSuppliersByCity(@PathVariable String city) {
+        logger.info("Getting suppliers in city: {}", city);
+        List<Supplier> suppliers = supplierService.getSuppliersByCity(city);
+        return ResponseEntity.ok(suppliers);
+    }
+
+    /**
+     * Compare suppliers by category
+     * GET /api/inventory/suppliers/compare/category/{category}
+     */
+    @GetMapping("/compare/category/{category}")
+    public ResponseEntity<List<Supplier>> compareSuppliersByCategory(@PathVariable String category) {
+        logger.info("Comparing suppliers for category: {}", category);
+        List<Supplier> suppliers = supplierService.compareSuppliersByCategory(category);
+        return ResponseEntity.ok(suppliers);
+    }
+
+    /**
+     * Update supplier
+     * PUT /api/inventory/suppliers/{id}
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<Supplier> updateSupplier(
+            @PathVariable String id,
+            @RequestBody Supplier supplier) {
+        logger.info("Updating supplier: {}", id);
+        supplier.setId(id);
+        Supplier updated = supplierService.updateSupplier(supplier);
+        return ResponseEntity.ok(updated);
+    }
+
+    /**
+     * Update supplier status
+     * PATCH /api/inventory/suppliers/{id}/status
+     * Body: { "status": "ACTIVE" }
+     */
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<Supplier> updateSupplierStatus(
+            @PathVariable String id,
+            @RequestBody StatusUpdateRequest request) {
+        logger.info("Updating supplier {} status to: {}", id, request.getStatus());
+        Supplier updated = supplierService.updateSupplierStatus(id, request.getStatus());
+        return ResponseEntity.ok(updated);
+    }
+
+    /**
+     * Mark supplier as preferred
+     * PATCH /api/inventory/suppliers/{id}/preferred
+     * Body: { "isPreferred": true }
+     */
+    @PatchMapping("/{id}/preferred")
+    public ResponseEntity<Supplier> markAsPreferred(
+            @PathVariable String id,
+            @RequestBody PreferredUpdateRequest request) {
+        logger.info("Setting supplier {} preferred status to: {}", id, request.getIsPreferred());
+        Supplier updated = supplierService.markAsPreferred(id, request.getIsPreferred());
+        return ResponseEntity.ok(updated);
+    }
+
+    /**
+     * Update supplier performance metrics
+     * PATCH /api/inventory/suppliers/{id}/performance
+     * Body: { "completedOrders": 1, "cancelledOrders": 0, "onTimeDeliveryRate": 95.0, "qualityRating": 4.5 }
+     */
+    @PatchMapping("/{id}/performance")
+    public ResponseEntity<Supplier> updatePerformanceMetrics(
+            @PathVariable String id,
+            @RequestBody PerformanceUpdateRequest request) {
+        logger.info("Updating performance metrics for supplier: {}", id);
+
+        Supplier updated = supplierService.updatePerformanceMetrics(
+            id,
+            request.getCompletedOrders(),
+            request.getCancelledOrders(),
+            request.getOnTimeDeliveryRate(),
+            request.getQualityRating()
+        );
+
+        return ResponseEntity.ok(updated);
+    }
+
+    /**
+     * Delete supplier
+     * DELETE /api/inventory/suppliers/{id}
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<MessageResponse> deleteSupplier(@PathVariable String id) {
+        logger.info("Deleting supplier: {}", id);
+        supplierService.deleteSupplier(id);
+
+        return ResponseEntity.ok(new MessageResponse("Supplier deleted successfully"));
+    }
+}

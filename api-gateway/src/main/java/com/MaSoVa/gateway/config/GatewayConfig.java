@@ -172,10 +172,10 @@ public class GatewayConfig {
                         .filters(f -> f.rewritePath("/api(?<segment>.*)", "${segment}"))
                         .uri("ws://localhost:8083"))
 
-                // WebSocket Routes - Delivery Service (No JWT filter for WebSocket handshake)
+                // WebSocket Routes - Delivery Service → logistics-service (port 8095)
                 .route("websocket_delivery", r -> r.path("/api/ws/delivery", "/api/ws/delivery/**")
                         .filters(f -> f.rewritePath("/api(?<segment>.*)", "${segment}"))
-                        .uri("ws://localhost:8090"))
+                        .uri("ws://localhost:8095"))
 
                 // Analytics Routes - Protected (increased limit for dashboard concurrent requests)
                 .route("analytics_protected", r -> r.path("/api/analytics/**")
@@ -192,30 +192,30 @@ public class GatewayConfig {
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8086"))
 
-                // Inventory Service - Protected Routes
+                // Inventory routes → logistics-service (port 8095)
                 .route("inventory_protected", r -> r.path("/api/inventory/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(60, "inventory")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8088"))
+                        .uri("http://localhost:8095"))
 
                 .route("suppliers_protected", r -> r.path("/api/suppliers/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(60, "suppliers")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8088"))
+                        .uri("http://localhost:8095"))
 
                 .route("purchase_orders_protected", r -> r.path("/api/purchase-orders/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(60, "purchase_orders")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8088"))
+                        .uri("http://localhost:8095"))
 
                 .route("waste_protected", r -> r.path("/api/waste/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(60, "waste")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8088"))
+                        .uri("http://localhost:8095"))
 
                 // Customer Service - Protected Routes
                 .route("customers_protected", r -> r.path("/api/customers/**")
@@ -245,24 +245,24 @@ public class GatewayConfig {
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8089"))
 
-                // Delivery Service - Protected Routes (higher limit for tracking updates)
+                // Delivery routes → logistics-service (port 8095)
                 .route("delivery_protected", r -> r.path("/api/delivery/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(150, "delivery")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8090"))
+                        .uri("http://localhost:8095"))
 
                 .route("dispatch_protected", r -> r.path("/api/dispatch/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(100, "dispatch")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8090"))
+                        .uri("http://localhost:8095"))
 
                 .route("tracking_protected", r -> r.path("/api/tracking/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(200, "tracking")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8090"))
+                        .uri("http://localhost:8095"))
 
                 // Notification Service - Protected Routes
                 .route("notifications_protected", r -> r.path("/api/notifications/**")
@@ -340,6 +340,11 @@ public class GatewayConfig {
                 .route("commerce_api_docs", r -> r.path("/commerce-service/v3/api-docs")
                         .filters(f -> f.rewritePath("/commerce-service(?<segment>.*)", "${segment}"))
                         .uri("http://localhost:8084"))
+
+                // Logistics: Swagger docs proxy
+                .route("logistics_api_docs", r -> r.path("/logistics-service/v3/api-docs")
+                        .filters(f -> f.rewritePath("/logistics-service(?<segment>.*)", "${segment}"))
+                        .uri("http://localhost:8095"))
 
                 // Default fallback
                 .route("fallback", r -> r.path("/**")

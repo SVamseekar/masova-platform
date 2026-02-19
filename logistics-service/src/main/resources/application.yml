@@ -1,0 +1,140 @@
+server:
+  port: 8095
+
+spring:
+  application:
+    name: logistics-service
+
+  data:
+    mongodb:
+      uri: ${LOGISTICS_MONGODB_URI:mongodb://localhost:27017/logistics_db}
+      auto-index-creation: true
+
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 50
+        max-idle: 25
+        min-idle: 10
+        max-wait: 5000ms
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000  # 10 minutes
+      cache-null-values: false
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: Asia/Kolkata
+
+jwt:
+  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-256-bits-for-production-security}
+  access-token-expiration: 3600000
+  refresh-token-expiration: 604800000
+
+google:
+  maps:
+    api-key: ${GOOGLE_MAPS_API_KEY:}
+
+routing:
+  osrm:
+    base-url: ${OSRM_URL:https://router.project-osrm.org}
+  nominatim:
+    base-url: ${NOMINATIM_URL:https://nominatim.openstreetmap.org}
+    rate-limit-ms: 1000
+  eta:
+    pickup-buffer-minutes: 5
+    traffic-buffer-percent: 15
+    rush-hours:
+      morning-start: 8
+      morning-end: 10
+      evening-start: 17
+      evening-end: 20
+
+# Outbound service URLs
+services:
+  user-service:
+    url: ${USER_SERVICE_URL:http://localhost:8081}
+  order-service:
+    url: ${ORDER_SERVICE_URL:http://localhost:8084}
+
+# Inventory scheduling
+scheduling:
+  enabled: true
+  auto-po-cron: "0 0 2 * * *"
+
+logging:
+  level:
+    com.MaSoVa.logistics: DEBUG
+    org.springframework.data.mongodb: INFO
+    org.springframework.security: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} [correlationId=%X{correlationId:-N/A}] - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        failure-rate-threshold: 50
+        slow-call-rate-threshold: 80
+        slow-call-duration-threshold: 3s
+        minimum-number-of-calls: 10
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 20
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 5
+        automatic-transition-from-open-to-half-open-enabled: true
+    instances:
+      orderService:
+        base-config: default
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 15s
+      userService:
+        base-config: default
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 15s
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 5s
+        cancel-running-future: true
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 500ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - org.springframework.web.client.RestClientException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+    instances:
+      orderService:
+        base-config: default
+      userService:
+        base-config: default
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

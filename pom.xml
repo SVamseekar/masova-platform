@@ -39,6 +39,7 @@
         <module>review-service</module>
         <module>notification-service</module>
         <module>commerce-service</module>
+        <module>logistics-service</module>
     </modules>
     
     <dependencyManagement>

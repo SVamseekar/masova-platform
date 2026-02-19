@@ -59,6 +59,8 @@ services:
     url: ${ORDER_SERVICE_URL:http://localhost:8083}
   commerce-service:
     url: ${COMMERCE_SERVICE_URL:http://localhost:8084}
+  logistics-service:
+    url: ${LOGISTICS_SERVICE_URL:http://localhost:8095}
   payment-service:
     url: ${PAYMENT_SERVICE_URL:http://localhost:8086}
   review-service:
@@ -119,6 +121,8 @@ springdoc:
         url: /review-service/v3/api-docs
       - name: Commerce Service
         url: /commerce-service/v3/api-docs
+      - name: Logistics Service
+        url: /logistics-service/v3/api-docs
     operations-sorter: method
     tags-sorter: alpha
     try-it-out-enabled: true
