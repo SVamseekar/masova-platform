@@ -41,51 +41,102 @@ This document defines the complete evolution roadmap ordered by technical depend
 
 ### 0.1 Current Synchronous Call Chain (The Problem)
 
+**Actual ports (confirmed from application.yml files):**
+
+| Service | Port |
+|---|---|
+| api-gateway | 8080 |
+| user-service | 8081 |
+| menu-service | 8082 |
+| order-service | 8083 |
+| analytics-service | 8085 |
+| payment-service | 8086 |
+| inventory-service | 8088 |
+| review-service | 8089 |
+| delivery-service | 8090 |
+| customer-service | 8091 |
+| notification-service | 8092 |
+
+**Complete synchronous HTTP call map (all calls confirmed from source code):**
+
+| Caller | Target | Endpoint | Circuit Breaker? | Fail Behavior |
+|---|---|---|---|---|
+| order-service | customer-service:8091 | `POST /api/customers/{id}/update-email` | No | Exception swallowed |
+| order-service | customer-service:8091 | `POST /api/customers/{id}/order-stats` | No | Exception swallowed |
+| order-service | delivery-service:8090 | `GET /api/delivery/zone/fee` | Yes + Retry | Fail-open (allow order) |
+| order-service | delivery-service:8090 | `GET /api/delivery/zone/validate` | Yes + Retry | Fail-open (allow order) |
+| order-service | menu-service:8082 | `GET /api/menu/public/{id}` | Yes + Retry | Fail-open (allow order) |
+| order-service | user-service:8081 | `GET /api/users/{driverId}` | No | Exception propagates |
+| order-service | notification-service:8092 | `POST /api/notifications/send` | No | Exception swallowed |
+| delivery-service | order-service:8083 | `GET /api/orders/{id}` | Yes + Retry | Exception propagates |
+| delivery-service | order-service:8083 | `PUT /api/orders/{id}/delivery-status` | Yes + Retry | Exception propagates |
+| delivery-service | order-service:8083 | `PATCH /api/orders/{id}/assign-driver` | Yes + Retry | Exception propagates |
+| delivery-service | order-service:8083 | `PUT /api/orders/{id}/delivery-otp` | Yes + Retry | Exception propagates |
+| delivery-service | order-service:8083 | `PUT /api/orders/{id}/delivery-proof` | Yes + Retry | Exception propagates |
+| delivery-service | order-service:8083 | `PUT /api/orders/{id}/mark-delivered` | Yes + Retry | Exception propagates |
+| delivery-service | user-service:8081 | `GET /api/users/drivers/available` | No | Exception propagates |
+| delivery-service | user-service:8081 | `GET /api/users/{driverId}` | No | Exception propagates |
+| delivery-service | user-service:8081 | `PUT /api/users/{driverId}/status` | No | Exception propagates |
+| payment-service | order-service:8083 | `GET /api/orders/track/{id}` | No | Exception swallowed |
+| payment-service | notification-service:8092 | `POST /api/notifications/send` | No | Exception swallowed |
+
+**The worst chain:** placing a delivery order hits 7 services synchronously (gateway → order → menu → delivery/zone → customer → notification → user). Any one slow service blocks the response.
+
 Today, when an order is placed, this synchronous chain fires:
 
 ```
 Customer → API Gateway → Order Service
-                              ↓ HTTP (sync)
-                         Customer Service (update stats)
-                              ↓ HTTP (sync)
-                         Notification Service (send email)
-                              ↓ HTTP (sync)
-                         Delivery Service (create tracking record)
+                              ↓ HTTP (sync, no CB)
+                         customer-service:8091 (update stats)
+                              ↓ HTTP (sync, CB fail-open)
+                         menu-service:8082 (validate items)
+                              ↓ HTTP (sync, CB fail-open)
+                         delivery-service:8090 (validate zone)
+                              ↓ HTTP (sync, no CB)
+                         notification-service:8092 (send email)
 ```
 
-If Notification Service is slow, the order placement request hangs. If Delivery Service is down, order placement fails entirely. This is the core architectural weakness.
+If Notification Service is slow, the order placement request hangs. If Delivery Service is down, zone validation fails open (order allowed) but the call still adds latency. This is the core architectural weakness.
 
 ### 0.2 RabbitMQ Topology Design
 
 **Exchange Architecture:**
 
 ```
-masova.orders.topic    (topic exchange)
-masova.payments.topic  (topic exchange)
-masova.delivery.topic  (topic exchange)
-masova.dlx            (dead letter exchange — fanout)
+masova.orders.events    (topic exchange — durable)
+masova.payments.events  (topic exchange — durable)
+masova.delivery.events  (topic exchange — durable)
+masova.notifications.events (topic exchange — durable)
+masova.dlx              (topic exchange — dead letter)
 ```
 
-**Routing Key Convention:** `{service}.{entity}.{event}`
+**Routing Key Convention:** `{domain}.{event}[.{qualifier}]`
 
-| Routing Key | Producer | Consumers |
-|---|---|---|
-| `order.order.placed` | order-service | notification-service, customer-service, delivery-service |
-| `order.order.status_changed` | order-service | notification-service, analytics-service |
-| `order.order.dispatched` | order-service | delivery-service, notification-service |
-| `payment.payment.completed` | payment-service | order-service, notification-service, analytics-service |
-| `payment.payment.refunded` | payment-service | order-service, notification-service |
-| `delivery.driver.location_updated` | delivery-service | (future: real-time push via WebSocket bridge) |
+| Routing Key | Producer | Consumers | Replaces |
+|---|---|---|---|
+| `order.created` | order-service | core-service, logistics-service, intelligence-service | POST /customers/{id}/order-stats (fire-and-forget) |
+| `order.status.dispatched` | order-service | core-service (notify), intelligence-service | POST /notifications/send |
+| `order.status.*` | order-service | intelligence-service | analytics REST queries |
+| `order.cancelled` | order-service | logistics-service, payment-service | manual refund trigger |
+| `payment.completed` | payment-service | order-service (status update), core-service (notify), intelligence-service | PUT /orders/{id}/delivery-status |
+| `payment.failed` | payment-service | core-service (notify) | POST /notifications/send |
+| `payment.refund.completed` | payment-service | core-service (notify), intelligence-service | POST /notifications/send |
+| `delivery.assigned` | logistics-service | order-service (driver assignment), core-service (notify) | PATCH /orders/{id}/assign-driver |
+| `delivery.completed` | logistics-service | order-service (mark delivered), payment-service (verify), core-service (notify) | PUT /orders/{id}/mark-delivered |
+| `delivery.failed` | logistics-service | order-service, payment-service (refund), core-service (notify) | — |
+| `driver.status.*` | core-service | logistics-service (availability cache) | GET /users/drivers/available (polling) |
 
 **Queue Bindings:**
 
 ```
-notification.order.queue    → binds masova.orders.topic   with order.order.*
-notification.payment.queue  → binds masova.payments.topic with payment.payment.*
-customer.stats.queue        → binds masova.orders.topic   with order.order.placed
-delivery.dispatch.queue     → binds masova.orders.topic   with order.order.dispatched
-analytics.events.queue      → binds masova.orders.topic   with order.order.*
-                             + binds masova.payments.topic with payment.payment.*
+masova.order-created.queue      → masova.orders.events   # order.created
+masova.order-status.queue       → masova.orders.events   # order.status.*
+masova.delivery-assigned.queue  → masova.delivery.events # delivery.assigned
+masova.delivery-completed.queue → masova.delivery.events # delivery.completed
+masova.payment-completed.queue  → masova.payments.events # payment.completed
+masova.payment-failed.queue     → masova.payments.events # payment.failed
+masova.send-notification.queue  → masova.notifications.events # notification.send.*
+masova.dlx.queue                → masova.dlx             # # (catch-all, 3-day TTL)
 ```
 
 ### 0.3 Implementation Plan
@@ -655,8 +706,10 @@ WEEK 19–20: AI voice calls (Gemini + Twilio)
 | JWT handling | `user-service/.../service/JwtService.java` |
 | Order status flow | `order-service/.../entity/Order.java` (enum comments) |
 | Delivery types | `delivery-service/.../entity/DeliveryTracking.java` |
-| Notification channels | `notification-service/.../service/` (EmailService, SmsService, PushService) |
-| Email provider | `notification-service/.../config/BrevoConfig.java` (Brevo/SendInBlue) |
+| Notification channels | `notification-service/.../service/` (EmailService✅, SmsService⚠️, PushService⚠️) |
+| Email provider | `notification-service/.../config/BrevoConfig.java` (Brevo — **enabled**, 300/day free tier) |
+| SMS provider | `notification-service/.../config/TwilioConfig.java` (Twilio — **disabled** by default) |
+| Push provider | `notification-service/.../config/FirebaseConfig.java` (FCM — **disabled** by default) |
 | Frontend design tokens | `frontend/src/styles/design-tokens.ts` |
 | Neumorphic components | `frontend/src/components/ui/neumorphic/` |
 | RTK Query APIs | `frontend/src/store/api/` |
