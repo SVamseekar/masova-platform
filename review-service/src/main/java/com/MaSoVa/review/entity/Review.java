@@ -6,12 +6,20 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Document(collection = "reviews")
+@CompoundIndexes({
+    @CompoundIndex(def = "{'orderId': 1, 'customerId': 1}", unique = true),
+    @CompoundIndex(def = "{'storeId': 1, 'status': 1}"),
+    @CompoundIndex(def = "{'storeId': 1, 'createdAt': -1}"),
+    @CompoundIndex(def = "{'status': 1, 'createdAt': -1}")
+})
 public class Review {
 
     @Id

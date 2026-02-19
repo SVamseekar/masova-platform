@@ -4,6 +4,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.GeoSpatialIndexType;
 import org.springframework.data.mongodb.core.index.GeoSpatialIndexed;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -12,6 +14,9 @@ import java.time.LocalDateTime;
  * Entity to store driver real-time location updates
  */
 @Document(collection = "driver_locations")
+@CompoundIndexes({
+    @CompoundIndex(def = "{'driverId': 1, 'timestamp': -1}")
+})
 public class DriverLocation {
 
     @Id
@@ -29,7 +34,7 @@ public class DriverLocation {
     private Double speed; // Speed in km/h
     private Double heading; // Direction in degrees (0-360)
 
-    @Indexed
+    @Indexed(expireAfterSeconds = 604800) // TTL: auto-delete after 7 days
     private LocalDateTime timestamp;
 
     private LocalDateTime createdAt;

@@ -21,6 +21,7 @@ import java.util.ArrayList;
 @CompoundIndex(def = "{'storeId': 1, 'date': -1}")
 @CompoundIndex(def = "{'employeeId': 1, 'isActive': 1}")
 @CompoundIndex(def = "{'status': 1}")
+@CompoundIndex(def = "{'storeId': 1, 'status': 1, 'date': -1}")
 public class WorkingSession {
     
     @Id

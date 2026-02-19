@@ -3,6 +3,8 @@ package com.MaSoVa.delivery.entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
@@ -12,6 +14,13 @@ import java.time.LocalDateTime;
  * Entity to track delivery assignments and status
  */
 @Document(collection = "delivery_trackings")
+@CompoundIndexes({
+    @CompoundIndex(def = "{'driverId': 1, 'status': 1}"),
+    @CompoundIndex(def = "{'storeId': 1, 'status': 1}"),
+    @CompoundIndex(def = "{'driverId': 1, 'createdAt': -1}"),
+    @CompoundIndex(def = "{'storeId': 1, 'createdAt': -1}"),
+    @CompoundIndex(def = "{'driverId': 1, 'storeId': 1, 'createdAt': -1}")
+})
 public class DeliveryTracking {
 
     @Id

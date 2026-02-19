@@ -10,6 +10,8 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import jakarta.validation.constraints.*;
 import org.springframework.data.annotation.*;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serializable;
@@ -21,6 +23,13 @@ import java.util.List;
 import java.util.Set;
 
 @Document(collection = "customers")
+@CompoundIndexes({
+    @CompoundIndex(def = "{'storeId': 1, 'active': 1}"),
+    @CompoundIndex(def = "{'storeIds': 1, 'active': 1}"),
+    @CompoundIndex(def = "{'storeId': 1, 'createdAt': -1}"),
+    @CompoundIndex(def = "{'storeId': 1, 'email': 1}"),
+    @CompoundIndex(def = "{'storeId': 1, 'phone': 1}")
+})
 public class Customer implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -46,11 +55,11 @@ public class Customer implements Serializable {
     private String name;
 
     @Email(message = "Invalid email format")
-    @Indexed(unique = true)
+    @Indexed
     private String email;
 
     @Pattern(regexp = "^[6-9]\\d{9}$", message = "Invalid Indian phone number")
-    @Indexed(unique = true)
+    @Indexed
     private String phone;
 
     @JsonSerialize(using = LocalDateSerializer.class)

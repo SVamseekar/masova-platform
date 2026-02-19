@@ -4,6 +4,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.MaSoVa.shared.enums.UserType;
 import com.MaSoVa.shared.model.Address;
@@ -20,6 +22,10 @@ import java.util.Map;
 @Document(collection = "users")
 // Note: store_pin_unique index removed - was causing issues with null PINs for CUSTOMER/KIOSK users
 // PIN uniqueness is enforced at application level in UserService
+@CompoundIndexes({
+    @CompoundIndex(def = "{'employeeDetails.storeId': 1, 'employeeDetails.status': 1}"),
+    @CompoundIndex(def = "{'type': 1, 'isActive': 1}")
+})
 public class User {
 
     @Id

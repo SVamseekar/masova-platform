@@ -6,12 +6,22 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Document(collection = "orders")
+@CompoundIndexes({
+    @CompoundIndex(def = "{'storeId': 1, 'status': 1}"),
+    @CompoundIndex(def = "{'storeId': 1, 'createdAt': -1}"),
+    @CompoundIndex(def = "{'customerId': 1, 'createdAt': -1}"),
+    @CompoundIndex(def = "{'assignedDriverId': 1, 'status': 1}"),
+    @CompoundIndex(def = "{'customerId': 1, 'status': 1}"),
+    @CompoundIndex(def = "{'storeId': 1, 'orderType': 1, 'status': 1}")
+})
 public class Order {
 
     @Id
@@ -55,6 +65,11 @@ public class Order {
     private DeliveryAddress deliveryAddress;
 
     private String assignedDriverId;
+
+    // Driver details - populated when needed (not persisted in DB)
+    // Used for frontend display without additional API calls
+    @org.springframework.data.annotation.Transient
+    private DriverInfo assignedDriver;
 
     private String specialInstructions;
 
@@ -175,6 +190,9 @@ public class Order {
 
     public String getAssignedDriverId() { return assignedDriverId; }
     public void setAssignedDriverId(String assignedDriverId) { this.assignedDriverId = assignedDriverId; }
+
+    public DriverInfo getAssignedDriver() { return assignedDriver; }
+    public void setAssignedDriver(DriverInfo assignedDriver) { this.assignedDriver = assignedDriver; }
 
     public String getSpecialInstructions() { return specialInstructions; }
     public void setSpecialInstructions(String specialInstructions) { this.specialInstructions = specialInstructions; }
@@ -339,5 +357,51 @@ public class Order {
     public enum Priority {
         NORMAL,
         URGENT
+    }
+
+    // Nested class for driver information (not persisted, populated on-demand)
+    public static class DriverInfo {
+        private String id;
+        private String firstName;
+        private String lastName;
+        private String phone;
+        private String phoneNumber; // Alias for compatibility
+        private String email;
+
+        public DriverInfo() {}
+
+        public DriverInfo(String id, String firstName, String lastName, String phone, String email) {
+            this.id = id;
+            this.firstName = firstName;
+            this.lastName = lastName;
+            this.phone = phone;
+            this.phoneNumber = phone;
+            this.email = email;
+        }
+
+        // Getters and setters
+        public String getId() { return id; }
+        public void setId(String id) { this.id = id; }
+
+        public String getFirstName() { return firstName; }
+        public void setFirstName(String firstName) { this.firstName = firstName; }
+
+        public String getLastName() { return lastName; }
+        public void setLastName(String lastName) { this.lastName = lastName; }
+
+        public String getPhone() { return phone; }
+        public void setPhone(String phone) {
+            this.phone = phone;
+            this.phoneNumber = phone;
+        }
+
+        public String getPhoneNumber() { return phoneNumber; }
+        public void setPhoneNumber(String phoneNumber) {
+            this.phoneNumber = phoneNumber;
+            this.phone = phoneNumber;
+        }
+
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
     }
 }

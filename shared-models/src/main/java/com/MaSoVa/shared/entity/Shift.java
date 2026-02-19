@@ -15,6 +15,8 @@ import java.time.Duration;
 @Document(collection = "shifts")
 @CompoundIndex(def = "{'storeId': 1, 'scheduledStart': 1}")
 @CompoundIndex(def = "{'employeeId': 1, 'scheduledStart': 1}")
+@CompoundIndex(def = "{'status': 1}")
+@CompoundIndex(def = "{'storeId': 1, 'status': 1}")
 public class Shift {
     
     @Id

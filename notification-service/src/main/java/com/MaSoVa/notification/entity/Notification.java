@@ -3,16 +3,26 @@ package com.MaSoVa.notification.entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 import java.util.Map;
 
 @Document(collection = "notifications")
+@CompoundIndexes({
+    @CompoundIndex(def = "{'userId': 1, 'status': 1}"),
+    @CompoundIndex(def = "{'userId': 1, 'createdAt': -1}"),
+    @CompoundIndex(def = "{'scheduledFor': 1, 'status': 1}"),
+    @CompoundIndex(def = "{'status': 1, 'retryCount': 1}")
+})
 public class Notification {
     @Id
     private String id;
 
+    @Indexed
     private String userId;
     private String title;
     private String message;

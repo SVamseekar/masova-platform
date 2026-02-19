@@ -5,6 +5,8 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 
 import com.MaSoVa.shared.enums.Cuisine;
 import com.MaSoVa.shared.enums.MenuCategory;
@@ -26,6 +28,11 @@ import java.util.List;
  * Menu Item Entity - Represents a dish/item in the restaurant menu
  */
 @Document(collection = "menu_items")
+@CompoundIndexes({
+    @CompoundIndex(def = "{'storeId': 1, 'category': 1}"),
+    @CompoundIndex(def = "{'storeId': 1, 'isAvailable': 1}"),
+    @CompoundIndex(def = "{'storeId': 1, 'isRecommended': 1}")
+})
 public class MenuItem implements Serializable {
 
     private static final long serialVersionUID = 1L;
