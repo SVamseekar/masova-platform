@@ -1,0 +1,94 @@
+server:
+  port: 8096
+
+spring:
+  application:
+    name: core-service
+
+  data:
+    mongodb:
+      uri: ${CORE_MONGODB_URI:mongodb://localhost:27017/masova_db}
+      auto-index-creation: true
+
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 50
+        max-idle: 25
+        min-idle: 10
+        max-wait: 5000ms
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 300000
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: ${RABBITMQ_VHOST:/}
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: Asia/Kolkata
+
+jwt:
+  secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-256-bits-for-production-security}
+  access-token-expiration: 3600000
+  refresh-token-expiration: 604800000
+
+google:
+  oauth:
+    client-id: ${GOOGLE_OAUTH_CLIENT_ID:}
+
+services:
+  order-service:
+    url: ${ORDER_SERVICE_URL:http://localhost:8084}
+  delivery-service:
+    url: ${DELIVERY_SERVICE_URL:http://localhost:8095}
+  payment-service:
+    url: ${PAYMENT_SERVICE_URL:http://localhost:8087}
+
+app:
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:3000}
+    base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
+  rating:
+    token-validity-days: 30
+
+brevo:
+  api:
+    key: ${BREVO_API_KEY:}
+  sender:
+    email: ${BREVO_SENDER_EMAIL:noreply@masova.com}
+    name: ${BREVO_SENDER_NAME:MaSoVa Restaurant}
+
+logging:
+  level:
+    com.MaSoVa.core: DEBUG
+    org.springframework.data.mongodb: INFO
+    org.springframework.security: INFO
+    org.springframework.amqp: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} [correlationId=%X{correlationId:-N/A}] - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

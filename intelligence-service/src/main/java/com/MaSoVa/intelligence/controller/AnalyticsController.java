@@ -1,0 +1,259 @@
+package com.MaSoVa.intelligence.controller;
+
+import com.MaSoVa.intelligence.dto.*;
+import com.MaSoVa.intelligence.service.AnalyticsService;
+import com.MaSoVa.shared.util.StoreContextUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cache.CacheManager;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.Map;
+import java.util.HashMap;
+
+/**
+ * REST API endpoints for analytics and reporting
+ * CRIT-002: All analytics endpoints require MANAGER or ASSISTANT_MANAGER role
+ */
+@RestController
+@Tag(name = "AnalyticsController", description = "Analytics and reporting")
+@SecurityRequirement(name = "bearerAuth")
+@RequestMapping("/api/analytics")
+public class AnalyticsController {
+
+    private static final Logger log = LoggerFactory.getLogger(AnalyticsController.class);
+
+    private final AnalyticsService analyticsService;
+    private final CacheManager cacheManager;
+
+    public AnalyticsController(AnalyticsService analyticsService, CacheManager cacheManager) {
+        this.analyticsService = analyticsService;
+        this.cacheManager = cacheManager;
+    }
+
+    /**
+     * Get today's sales metrics with comparisons
+     * GET /api/analytics/sales/today
+     */
+    @GetMapping("/sales/today")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    public ResponseEntity<SalesMetricsResponse> getTodaySalesMetrics(HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        log.info("GET /api/analytics/sales/today for store: {}", storeId);
+        SalesMetricsResponse metrics = analyticsService.getTodaySalesMetrics(storeId);
+        return ResponseEntity.ok(metrics);
+    }
+
+    /**
+     * Get average order value for today
+     * GET /api/analytics/avgOrderValue/today
+     */
+    @GetMapping("/avgOrderValue/today")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    public ResponseEntity<AverageOrderValueResponse> getAverageOrderValue(HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        log.info("GET /api/analytics/avgOrderValue/today for store: {}", storeId);
+        AverageOrderValueResponse aov = analyticsService.getAverageOrderValue(storeId);
+        return ResponseEntity.ok(aov);
+    }
+
+    /**
+     * Get driver status for a store
+     * GET /api/analytics/drivers/status
+     */
+    @GetMapping("/drivers/status")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    public ResponseEntity<DriverStatusResponse> getDriverStatus(HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        log.info("GET /api/analytics/drivers/status for store: {}", storeId);
+        DriverStatusResponse status = analyticsService.getDriverStatus(storeId);
+        return ResponseEntity.ok(status);
+    }
+
+    /**
+     * Get staff performance metrics
+     * GET /api/analytics/staff/{staffId}/performance/today
+     */
+    @GetMapping("/staff/{staffId}/performance/today")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    public ResponseEntity<StaffPerformanceResponse> getStaffPerformance(@PathVariable String staffId) {
+        log.info("GET /api/analytics/staff/{}/performance/today", staffId);
+        StaffPerformanceResponse performance = analyticsService.getStaffPerformance(staffId);
+        return ResponseEntity.ok(performance);
+    }
+
+    /**
+     * Get sales trends (weekly or monthly)
+     * GET /api/analytics/sales/trends/{period}
+     * @param period "WEEKLY" or "MONTHLY"
+     */
+    @GetMapping("/sales/trends/{period}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    public ResponseEntity<SalesTrendResponse> getSalesTrends(
+            @PathVariable String period,
+            HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        log.info("GET /api/analytics/sales/trends/{} for store {}", period, storeId);
+        SalesTrendResponse trends = analyticsService.getSalesTrends(storeId, period);
+        return ResponseEntity.ok(trends);
+    }
+
+    /**
+     * Get order type breakdown
+     * GET /api/analytics/sales/breakdown/order-type
+     */
+    @GetMapping("/sales/breakdown/order-type")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    public ResponseEntity<OrderTypeBreakdownResponse> getOrderTypeBreakdown(HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        log.info("GET /api/analytics/sales/breakdown/order-type for store {}", storeId);
+        OrderTypeBreakdownResponse breakdown = analyticsService.getOrderTypeBreakdown(storeId);
+        return ResponseEntity.ok(breakdown);
+    }
+
+    /**
+     * Get peak hours analysis
+     * GET /api/analytics/sales/peak-hours
+     */
+    @GetMapping("/sales/peak-hours")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    public ResponseEntity<PeakHoursResponse> getPeakHours(HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        log.info("GET /api/analytics/sales/peak-hours for store {}", storeId);
+        PeakHoursResponse peakHours = analyticsService.getPeakHours(storeId);
+        return ResponseEntity.ok(peakHours);
+    }
+
+    /**
+     * Get staff leaderboard
+     * GET /api/analytics/staff/leaderboard?period={period}
+     * @param period "TODAY", "WEEK", or "MONTH"
+     */
+    @GetMapping("/staff/leaderboard")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    public ResponseEntity<StaffLeaderboardResponse> getStaffLeaderboard(
+            HttpServletRequest request,
+            @RequestParam(name = "period", defaultValue = "TODAY") String period) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        log.info("GET /api/analytics/staff/leaderboard for store {}, period {}", storeId, period);
+        StaffLeaderboardResponse leaderboard = analyticsService.getStaffLeaderboard(storeId, period);
+        return ResponseEntity.ok(leaderboard);
+    }
+
+    /**
+     * Get top selling products
+     * GET /api/analytics/products/top-selling?period={period}&sortBy={sortBy}
+     * @param period "TODAY", "WEEK", or "MONTH"
+     * @param sortBy "QUANTITY" or "REVENUE"
+     */
+    @GetMapping("/products/top-selling")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    public ResponseEntity<TopProductsResponse> getTopProducts(
+            HttpServletRequest request,
+            @RequestParam(name = "period", defaultValue = "TODAY") String period,
+            @RequestParam(name = "sortBy", defaultValue = "QUANTITY") String sortBy) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        log.info("GET /api/analytics/products/top-selling for store {}, period {}, sortBy {}", storeId, period, sortBy);
+        TopProductsResponse topProducts = analyticsService.getTopProducts(storeId, period, sortBy);
+        return ResponseEntity.ok(topProducts);
+    }
+
+    /**
+     * Clear all analytics caches for the current store
+     * POST /api/analytics/cache/clear
+     * Purpose: Manual cache invalidation for troubleshooting analytics update issues
+     */
+    @PostMapping("/cache/clear")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    public ResponseEntity<Map<String, String>> clearAllCaches(HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (storeId == null || storeId.isEmpty()) {
+            Map<String, String> error = new HashMap<>();
+            error.put("status", "error");
+            error.put("message", "Store ID not found in request headers");
+            return ResponseEntity.badRequest().body(error);
+        }
+
+        log.info("Clearing all analytics caches for store: {}", storeId);
+
+        // Clear all analytics caches
+        try {
+            if (cacheManager.getCache("salesMetrics") != null) {
+                cacheManager.getCache("salesMetrics").clear();
+            }
+            if (cacheManager.getCache("staffLeaderboard") != null) {
+                cacheManager.getCache("staffLeaderboard").clear();
+            }
+            if (cacheManager.getCache("staffPerformance") != null) {
+                cacheManager.getCache("staffPerformance").clear();
+            }
+            if (cacheManager.getCache("driverStatus") != null) {
+                cacheManager.getCache("driverStatus").clear();
+            }
+            if (cacheManager.getCache("salesTrends") != null) {
+                cacheManager.getCache("salesTrends").clear();
+            }
+            if (cacheManager.getCache("orderTypeBreakdown") != null) {
+                cacheManager.getCache("orderTypeBreakdown").clear();
+            }
+            if (cacheManager.getCache("peakHours") != null) {
+                cacheManager.getCache("peakHours").clear();
+            }
+            if (cacheManager.getCache("topProducts") != null) {
+                cacheManager.getCache("topProducts").clear();
+            }
+
+            log.info("Successfully cleared all analytics caches for store: {}", storeId);
+
+            Map<String, String> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "All analytics caches cleared for store: " + storeId);
+            response.put("storeId", storeId);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error clearing analytics caches for store {}: {}", storeId, e.getMessage(), e);
+            Map<String, String> error = new HashMap<>();
+            error.put("status", "error");
+            error.put("message", "Failed to clear caches: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+    /**
+     * Health check endpoint
+     */
+    @GetMapping("/health")
+    public ResponseEntity<String> health() {
+        return ResponseEntity.ok("Analytics Service is running");
+    }
+}

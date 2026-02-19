@@ -1,0 +1,31 @@
+package com.MaSoVa.core.notification.repository;
+
+import com.MaSoVa.core.notification.entity.Campaign;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Repository
+public interface CampaignRepository extends MongoRepository<Campaign, String> {
+
+    Page<Campaign> findByCreatedBy(String createdBy, Pageable pageable);
+
+    // Store-aware queries for proper data isolation
+    List<Campaign> findByStoreId(String storeId);
+
+    List<Campaign> findByStoreIdAndStatus(String storeId, Campaign.CampaignStatus status);
+
+    Page<Campaign> findByStoreIdOrderByCreatedAtDesc(String storeId, Pageable pageable);
+
+    List<Campaign> findByStoreIdAndStatusAndScheduledForBefore(
+            String storeId,
+            Campaign.CampaignStatus status,
+            LocalDateTime dateTime
+    );
+
+    Page<Campaign> findByStoreIdAndCreatedBy(String storeId, String createdBy, Pageable pageable);
+}

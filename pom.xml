@@ -40,6 +40,8 @@
         <module>notification-service</module>
         <module>commerce-service</module>
         <module>logistics-service</module>
+        <module>intelligence-service</module>
+        <module>core-service</module>
     </modules>
     
     <dependencyManagement>
