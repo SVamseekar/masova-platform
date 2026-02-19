@@ -133,8 +133,7 @@ class WebSocketService {
     return new Promise((resolve, reject) => {
       try {
         // Connect directly to delivery service WebSocket (not through API Gateway)
-        const deliveryServiceUrl = 'http://localhost:8090';
-        const socket = new SockJS(`${deliveryServiceUrl}/ws/delivery`);
+        const socket = new SockJS(`${API_CONFIG.WS_URL}/delivery`);
 
         this.client = new Client({
           webSocketFactory: () => socket as any,

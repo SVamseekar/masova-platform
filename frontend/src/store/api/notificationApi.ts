@@ -179,23 +179,23 @@ export const notificationApi = createApi({
 
     getUserNotifications: builder.query<PageResponse<Notification>, { userId: string; page?: number; size?: number }>({
       query: ({ userId, page = 0, size = 20 }) =>
-        `/notifications/user/${userId}?page=${page}&size=${size}`,
+        `/api/notifications/user/${userId}?page=${page}&size=${size}`,
       providesTags: ['Notification'],
     }),
 
     getUnreadNotifications: builder.query<Notification[], string>({
-      query: (userId) => `/notifications/user/${userId}/unread`,
+      query: (userId) => `/api/notifications/user/${userId}/unread`,
       providesTags: ['Notification'],
     }),
 
     getUnreadCount: builder.query<number, string>({
-      query: (userId) => `/notifications/user/${userId}/unread-count`,
+      query: (userId) => `/api/notifications/user/${userId}/unread-count`,
       providesTags: ['Notification'],
     }),
 
     markAsRead: builder.mutation<Notification, string>({
       query: (id) => ({
-        url: `/notifications/${id}/read`,
+        url: `/api/notifications/${id}/read`,
         method: 'PATCH',
       }),
       invalidatesTags: ['Notification'],
@@ -203,7 +203,7 @@ export const notificationApi = createApi({
 
     markAllAsRead: builder.mutation<void, string>({
       query: (userId) => ({
-        url: `/notifications/user/${userId}/read-all`,
+        url: `/api/notifications/user/${userId}/read-all`,
         method: 'PATCH',
       }),
       invalidatesTags: ['Notification'],
@@ -211,7 +211,7 @@ export const notificationApi = createApi({
 
     deleteNotification: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/notifications/${id}`,
+        url: `/api/notifications/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Notification'],
@@ -219,13 +219,13 @@ export const notificationApi = createApi({
 
     // Preferences endpoints
     getUserPreferences: builder.query<UserPreferences, string>({
-      query: (userId) => `/preferences/user/${userId}`,
+      query: (userId) => `/api/preferences/user/${userId}`,
       providesTags: ['Preferences'],
     }),
 
     updateUserPreferences: builder.mutation<UserPreferences, { userId: string; preferences: Partial<UserPreferences> }>({
       query: ({ userId, preferences }) => ({
-        url: `/preferences/user/${userId}`,
+        url: `/api/preferences/user/${userId}`,
         method: 'PUT',
         body: preferences,
       }),
@@ -234,7 +234,7 @@ export const notificationApi = createApi({
 
     updateChannelPreference: builder.mutation<UserPreferences, { userId: string; channel: string; enabled: boolean }>({
       query: ({ userId, channel, enabled }) => ({
-        url: `/preferences/user/${userId}/channel/${channel}?enabled=${enabled}`,
+        url: `/api/preferences/user/${userId}/channel/${channel}?enabled=${enabled}`,
         method: 'PATCH',
       }),
       invalidatesTags: ['Preferences'],
@@ -242,7 +242,7 @@ export const notificationApi = createApi({
 
     updateDeviceToken: builder.mutation<UserPreferences, { userId: string; deviceToken: string }>({
       query: ({ userId, deviceToken }) => ({
-        url: `/preferences/user/${userId}/device-token`,
+        url: `/api/preferences/user/${userId}/device-token`,
         method: 'PATCH',
         body: { deviceToken },
       }),
@@ -261,7 +261,7 @@ export const notificationApi = createApi({
 
     updateCampaign: builder.mutation<Campaign, { id: string; campaign: Partial<Campaign> }>({
       query: ({ id, campaign }) => ({
-        url: `/campaigns/${id}`,
+        url: `/api/campaigns/${id}`,
         method: 'PUT',
         body: campaign,
       }),
@@ -270,7 +270,7 @@ export const notificationApi = createApi({
 
     scheduleCampaign: builder.mutation<void, { id: string; scheduledFor: string }>({
       query: ({ id, scheduledFor }) => ({
-        url: `/campaigns/${id}/schedule`,
+        url: `/api/campaigns/${id}/schedule`,
         method: 'POST',
         body: { scheduledFor },
       }),
@@ -279,7 +279,7 @@ export const notificationApi = createApi({
 
     executeCampaign: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/campaigns/${id}/execute`,
+        url: `/api/campaigns/${id}/execute`,
         method: 'POST',
       }),
       invalidatesTags: ['Campaign'],
@@ -287,7 +287,7 @@ export const notificationApi = createApi({
 
     cancelCampaign: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/campaigns/${id}/cancel`,
+        url: `/api/campaigns/${id}/cancel`,
         method: 'POST',
       }),
       invalidatesTags: ['Campaign'],
@@ -299,19 +299,19 @@ export const notificationApi = createApi({
         params.append('page', page.toString());
         params.append('size', size.toString());
         if (storeId) params.append('storeId', storeId);
-        return `/campaigns?${params.toString()}`;
+        return `/api/campaigns?${params.toString()}`;
       },
       providesTags: (result, error, { storeId }) => [{ type: 'Campaign', id: storeId || 'DEFAULT' }],
     }),
 
     getCampaign: builder.query<Campaign, string>({
-      query: (id) => `/campaigns/${id}`,
+      query: (id) => `/api/campaigns/${id}`,
       providesTags: ['Campaign'],
     }),
 
     deleteCampaign: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/campaigns/${id}`,
+        url: `/api/campaigns/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Campaign'],

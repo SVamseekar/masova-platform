@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import API_CONFIG from '../../config/api.config';
 
 interface SalesMetricsResponse {
   todaySales: number;
@@ -122,10 +123,114 @@ interface TopProductsResponse {
   sortBy: string;
 }
 
+// BI (Business Intelligence) types
+interface SalesForecast {
+  date: string;
+  forecastedSales: number;
+  confidence: number;
+  upperBound: number;
+  lowerBound: number;
+}
+
+interface SalesForecastResponse {
+  forecasts: SalesForecast[];
+  algorithm: string;
+  accuracy: number;
+  period: string;
+}
+
+interface CustomerBehaviorPattern {
+  pattern: string;
+  frequency: number;
+  averageOrderValue: number;
+  peakTime: string;
+  segment: string;
+}
+
+interface CustomerBehaviorResponse {
+  patterns: CustomerBehaviorPattern[];
+  totalCustomers: number;
+  segmentation: Record<string, number>;
+}
+
+interface ChurnPrediction {
+  customerId: string;
+  customerName: string;
+  churnProbability: number;
+  riskLevel: 'HIGH' | 'MEDIUM' | 'LOW';
+  lastOrderDate: string;
+  daysSinceLastOrder: number;
+  totalOrders: number;
+  totalSpent: number;
+}
+
+interface ChurnPredictionResponse {
+  predictions: ChurnPrediction[];
+  totalAtRisk: number;
+  highRiskCount: number;
+  mediumRiskCount: number;
+  lowRiskCount: number;
+}
+
+interface DemandForecast {
+  itemId: string;
+  itemName: string;
+  forecastedDemand: number;
+  currentStock: number;
+  recommendedReorder: number;
+  confidence: number;
+}
+
+interface DemandForecastResponse {
+  forecasts: DemandForecast[];
+  period: string;
+  accuracy: number;
+}
+
+interface CostAnalysis {
+  category: string;
+  totalCost: number;
+  percentage: number;
+  trend: 'UP' | 'DOWN' | 'STABLE';
+  monthlyAverage: number;
+}
+
+interface CostAnalysisResponse {
+  breakdown: CostAnalysis[];
+  totalCosts: number;
+  profitMargin: number;
+  period: string;
+}
+
+interface ExecutiveSummary {
+  revenue: {
+    total: number;
+    change: number;
+    trend: 'UP' | 'DOWN' | 'STABLE';
+  };
+  orders: {
+    total: number;
+    change: number;
+    trend: 'UP' | 'DOWN' | 'STABLE';
+  };
+  customers: {
+    new: number;
+    returning: number;
+    atRisk: number;
+  };
+  performance: {
+    avgOrderValue: number;
+    customerSatisfaction: number;
+    deliveryOnTime: number;
+  };
+  topInsights: string[];
+  alerts: string[];
+}
+
 export const analyticsApi = createApi({
   reducerPath: 'analyticsApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: '/api/analytics',
+    baseUrl: `${API_CONFIG.BASE_URL}/analytics`,
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as any;
       const token = state.auth.accessToken;
@@ -223,6 +328,57 @@ export const analyticsApi = createApi({
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: storeId || 'DEFAULT' }],
     }),
 
+    // BI (Business Intelligence) endpoints
+    getSalesForecast: builder.query<SalesForecastResponse, { storeId?: string; days?: number }>({
+      query: ({ storeId, days = 7 }) => {
+        const params = new URLSearchParams();
+        params.append('days', days.toString());
+        if (storeId) params.append('storeId', storeId);
+        return `/api/bi/forecast/sales?${params.toString()}`;
+      },
+      providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: `FORECAST_${storeId || 'DEFAULT'}` }],
+    }),
+
+    getCustomerBehaviorAnalysis: builder.query<CustomerBehaviorResponse, string | undefined>({
+      query: (storeId) => `/api/bi/analysis/customer-behavior${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'Analytics', id: `BEHAVIOR_${storeId || 'DEFAULT'}` }],
+    }),
+
+    getChurnPrediction: builder.query<ChurnPredictionResponse, { storeId?: string; threshold?: number }>({
+      query: ({ storeId, threshold = 0.5 }) => {
+        const params = new URLSearchParams();
+        params.append('threshold', threshold.toString());
+        if (storeId) params.append('storeId', storeId);
+        return `/api/bi/prediction/churn?${params.toString()}`;
+      },
+      providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: `CHURN_${storeId || 'DEFAULT'}` }],
+    }),
+
+    getDemandForecast: builder.query<DemandForecastResponse, { storeId?: string; days?: number }>({
+      query: ({ storeId, days = 7 }) => {
+        const params = new URLSearchParams();
+        params.append('days', days.toString());
+        if (storeId) params.append('storeId', storeId);
+        return `/api/bi/forecast/demand?${params.toString()}`;
+      },
+      providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: `DEMAND_${storeId || 'DEFAULT'}` }],
+    }),
+
+    getCostAnalysis: builder.query<CostAnalysisResponse, { storeId?: string; period?: string }>({
+      query: ({ storeId, period = 'MONTHLY' }) => {
+        const params = new URLSearchParams();
+        params.append('period', period);
+        if (storeId) params.append('storeId', storeId);
+        return `/api/bi/cost-analysis?${params.toString()}`;
+      },
+      providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: `COST_${storeId || 'DEFAULT'}` }],
+    }),
+
+    getExecutiveSummary: builder.query<ExecutiveSummary, string | undefined>({
+      query: (storeId) => `/api/bi/executive-summary${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: (result, error, storeId) => [{ type: 'Analytics', id: `EXECUTIVE_${storeId || 'DEFAULT'}` }],
+    }),
+
     // Mutations
     clearAnalyticsCache: builder.mutation<{ status: string; message: string; storeId: string }, void>({
       query: () => ({
@@ -244,5 +400,11 @@ export const {
   useGetPeakHoursQuery,
   useGetStaffLeaderboardQuery,
   useGetTopProductsQuery,
+  useGetSalesForecastQuery,
+  useGetCustomerBehaviorAnalysisQuery,
+  useGetChurnPredictionQuery,
+  useGetDemandForecastQuery,
+  useGetCostAnalysisQuery,
+  useGetExecutiveSummaryQuery,
   useClearAnalyticsCacheMutation,
 } = analyticsApi;
