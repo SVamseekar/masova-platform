@@ -226,4 +226,14 @@ public class NotificationService {
         LocalDateTime since = LocalDateTime.now().minusDays(days);
         return notificationRepository.findByUserIdAndCreatedAtAfter(userId, since);
     }
+
+    public void handleOrderCreatedEvent(com.MaSoVa.shared.messaging.events.OrderCreatedEvent event) {
+        logger.info("[AMQP] Received OrderCreatedEvent orderId={} customerId={}", event.getOrderId(), event.getCustomerId());
+        // Future: trigger email/push notification here
+    }
+
+    public void handleOrderStatusChangedEvent(com.MaSoVa.shared.messaging.events.OrderStatusChangedEvent event) {
+        logger.info("[AMQP] Received OrderStatusChangedEvent orderId={} newStatus={}", event.getOrderId(), event.getNewStatus());
+        // Future: trigger status update notification here
+    }
 }
