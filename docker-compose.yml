@@ -23,30 +23,30 @@ services:
     networks:
       - masova-network
 
-  # ─── OPTIONAL: RabbitMQ for async event messaging ───────────────────────────
-  # Uncomment to enable async notification fanout pattern.
-  # See docs/development/RABBITMQ_PATTERNS.md for integration design.
-  # rabbitmq:
-  #   image: rabbitmq:3.10-management
-  #   container_name: masova-rabbitmq
-  #   restart: unless-stopped
-  #   ports:
-  #     - "5672:5672"
-  #     - "15672:15672"
-  #   environment:
-  #     RABBITMQ_DEFAULT_USER: masova
-  #     RABBITMQ_DEFAULT_PASS: masova_secret
-  #   networks:
-  #     - masova-network
-  #   healthcheck:
-  #     test: rabbitmq-diagnostics -q ping
-  #     interval: 15s
-  #     timeout: 5s
-  #     retries: 5
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: masova-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: masova
+      RABBITMQ_DEFAULT_PASS: masova_secret
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - masova-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
 volumes:
   mongodb_data:
   redis_data:
+  rabbitmq_data:
 
 networks:
   masova-network:
