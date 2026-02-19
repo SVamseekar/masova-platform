@@ -5,12 +5,19 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Document(collection = "refunds")
+@CompoundIndexes({
+    @CompoundIndex(def = "{'storeId': 1, 'status': 1}"),
+    @CompoundIndex(def = "{'storeId': 1, 'createdAt': -1}"),
+    @CompoundIndex(def = "{'transactionId': 1, 'createdAt': -1}")
+})
 public class Refund {
 
     @Id

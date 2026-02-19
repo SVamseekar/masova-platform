@@ -5,6 +5,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
@@ -19,6 +21,12 @@ import java.util.List;
  * Tracks stock levels, costs, and reorder information
  */
 @Document(collection = "inventory_items")
+@CompoundIndexes({
+    @CompoundIndex(def = "{'storeId': 1, 'status': 1}"),
+    @CompoundIndex(def = "{'storeId': 1, 'itemName': 1}"),
+    @CompoundIndex(def = "{'storeId': 1, 'status': 1, 'currentStock': 1}"),
+    @CompoundIndex(def = "{'isPerishable': 1, 'expiryDate': 1}")
+})
 public class InventoryItem {
 
     @Id

@@ -3,6 +3,8 @@ package com.MaSoVa.inventory.entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
@@ -15,6 +17,10 @@ import java.time.LocalDateTime;
  * Tracks inventory waste for analysis and cost control
  */
 @Document(collection = "waste_records")
+@CompoundIndexes({
+    @CompoundIndex(def = "{'storeId': 1, 'wasteCategory': 1}"),
+    @CompoundIndex(def = "{'storeId': 1, 'wasteDate': -1}")
+})
 public class WasteRecord {
 
     @Id
