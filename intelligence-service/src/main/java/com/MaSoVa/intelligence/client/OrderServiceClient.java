@@ -32,7 +32,7 @@ public class OrderServiceClient {
     private final String orderServiceUrl;
 
     public OrderServiceClient(RestTemplate restTemplate,
-                             @Value("${analytics.external-services.order-service.url}") String orderServiceUrl) {
+                             @Value("${intelligence.external-services.order-service.url}") String orderServiceUrl) {
         this.restTemplate = restTemplate;
         this.orderServiceUrl = orderServiceUrl;
     }

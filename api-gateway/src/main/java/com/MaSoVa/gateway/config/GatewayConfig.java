@@ -346,6 +346,60 @@ public class GatewayConfig {
                         .filters(f -> f.rewritePath("/logistics-service(?<segment>.*)", "${segment}"))
                         .uri("http://localhost:8095"))
 
+                // Intelligence Service (Analytics) routes — port 8086
+                .route("intelligence_analytics", r -> r.path("/api/analytics/**", "/api/bi/**", "/api/reports/**")
+                        .filters(f -> f
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(100, "intelligence_analytics")))
+                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8086"))
+
+                // Intelligence: Swagger docs proxy
+                .route("intelligence_api_docs", r -> r.path("/intelligence-service/v3/api-docs")
+                        .filters(f -> f.rewritePath("/intelligence-service(?<segment>.*)", "${segment}"))
+                        .uri("http://localhost:8086"))
+
+                // Core Service (User + Customer + Notification + Review) routes — port 8096
+                .route("core_auth", r -> r.path("/api/auth/**", "/api/users/login", "/api/users/register",
+                                                "/api/users/refresh", "/api/users/logout", "/api/users/google")
+                        .filters(f -> f
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(30, "core_auth"))))
+                        .uri("http://localhost:8096"))
+
+                .route("core_users", r -> r.path("/api/users/**")
+                        .filters(f -> f
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(200, "core_users")))
+                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8096"))
+
+                .route("core_customers", r -> r.path("/api/customers/**")
+                        .filters(f -> f
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(200, "core_customers")))
+                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8096"))
+
+                .route("core_notifications", r -> r.path("/api/notifications/**")
+                        .filters(f -> f
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(150, "core_notifications")))
+                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8096"))
+
+                .route("core_campaigns", r -> r.path("/api/campaigns/**")
+                        .filters(f -> f
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(100, "core_campaigns")))
+                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8096"))
+
+                .route("core_reviews", r -> r.path("/api/reviews/**", "/api/responses/**", "/api/ratings/**")
+                        .filters(f -> f
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(150, "core_reviews")))
+                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8096"))
+
+                // Core: Swagger docs proxy
+                .route("core_api_docs", r -> r.path("/core-service/v3/api-docs")
+                        .filters(f -> f.rewritePath("/core-service(?<segment>.*)", "${segment}"))
+                        .uri("http://localhost:8096"))
+
                 // Default fallback
                 .route("fallback", r -> r.path("/**")
                         .uri("http://localhost:8080/fallback"))

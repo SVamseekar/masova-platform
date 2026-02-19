@@ -61,8 +61,12 @@ services:
     url: ${COMMERCE_SERVICE_URL:http://localhost:8084}
   logistics-service:
     url: ${LOGISTICS_SERVICE_URL:http://localhost:8095}
+  intelligence-service:
+    url: ${INTELLIGENCE_SERVICE_URL:http://localhost:8086}
+  core-service:
+    url: ${CORE_SERVICE_URL:http://localhost:8096}
   payment-service:
-    url: ${PAYMENT_SERVICE_URL:http://localhost:8086}
+    url: ${PAYMENT_SERVICE_URL:http://localhost:8087}
   review-service:
     url: ${REVIEW_SERVICE_URL:http://localhost:8089}
 
@@ -123,6 +127,10 @@ springdoc:
         url: /commerce-service/v3/api-docs
       - name: Logistics Service
         url: /logistics-service/v3/api-docs
+      - name: Intelligence Service
+        url: /intelligence-service/v3/api-docs
+      - name: Core Service
+        url: /core-service/v3/api-docs
     operations-sorter: method
     tags-sorter: alpha
     try-it-out-enabled: true

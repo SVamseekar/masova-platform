@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 
-@Service
+@Service("userNotificationService")
 public class NotificationService {
     
     private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);

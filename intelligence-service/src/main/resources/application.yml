@@ -36,14 +36,22 @@ jwt:
   access-token-expiration: 3600000
   refresh-token-expiration: 604800000
 
+intelligence:
+  external-services:
+    order-service:
+      url: ${ORDER_SERVICE_URL:http://localhost:8084}
+    customer-service:
+      url: ${CUSTOMER_SERVICE_URL:http://localhost:8096}
+    user-service:
+      url: ${USER_SERVICE_URL:http://localhost:8096}
+    inventory-service:
+      url: ${INVENTORY_SERVICE_URL:http://localhost:8095}
+
+# Legacy key aliases for client beans that haven't been renamed yet
 services:
-  order-service:
-    url: ${ORDER_SERVICE_URL:http://localhost:8084}
-  customer-service:
+  customer:
     url: ${CUSTOMER_SERVICE_URL:http://localhost:8096}
-  user-service:
-    url: ${USER_SERVICE_URL:http://localhost:8096}
-  inventory-service:
+  inventory:
     url: ${INVENTORY_SERVICE_URL:http://localhost:8095}
 
 logging:

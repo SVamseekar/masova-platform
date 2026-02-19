@@ -42,6 +42,8 @@ jwt:
   secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-256-bits-for-production-security}
   access-token-expiration: 3600000
   refresh-token-expiration: 604800000
+  kiosk-access-token-expiration: 28800000
+  kiosk-refresh-token-expiration: 86400000
 
 google:
   oauth:
@@ -54,17 +56,68 @@ services:
     url: ${DELIVERY_SERVICE_URL:http://localhost:8095}
   payment-service:
     url: ${PAYMENT_SERVICE_URL:http://localhost:8087}
+  # Flat key aliases for @Value("${services.order.url}") etc.
+  order:
+    url: ${ORDER_SERVICE_URL:http://localhost:8084}
+  delivery:
+    url: ${DELIVERY_SERVICE_URL:http://localhost:8095}
+  payment:
+    url: ${PAYMENT_SERVICE_URL:http://localhost:8087}
+  customer:
+    url: ${CORE_SERVICE_URL:http://localhost:8096}
+
+customer:
+  service:
+    url: ${CORE_SERVICE_URL:http://localhost:8096}
+
+firebase:
+  credentials-path: ${FIREBASE_CREDENTIALS_PATH:}
+  enabled: ${FIREBASE_ENABLED:false}
+
+twilio:
+  account-sid: ${TWILIO_ACCOUNT_SID:}
+  auth-token: ${TWILIO_AUTH_TOKEN:}
+  phone-number: ${TWILIO_PHONE_NUMBER:}
+  enabled: ${TWILIO_ENABLED:false}
+
+retention:
+  enabled: ${RETENTION_ENABLED:false}
+  dry-run: ${RETENTION_DRY_RUN:true}
 
 app:
   frontend:
     url: ${FRONTEND_URL:http://localhost:3000}
     base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
   rating:
+    enabled: ${RATING_ENABLED:true}
     token-validity-days: 30
 
+MaSoVa:
+  customer:
+    loyalty:
+      signup-bonus-points: 100
+      birthday-bonus-points: 200
+      rupees-per-point: 10
+      rupees-per-redemption: 50
+      points-redemption-rate: 100
+      min-points-to-redeem: 100
+      max-redemption-percent: 50
+      tier-thresholds:
+        silver: 1000
+        gold: 5000
+        platinum: 10000
+      tier-multipliers:
+        bronze: 1.0
+        silver: 1.25
+        gold: 1.5
+        platinum: 2.0
+
 brevo:
+  api-key: ${BREVO_API_KEY:}
   api:
     key: ${BREVO_API_KEY:}
+  from-email: ${BREVO_SENDER_EMAIL:noreply@masova.com}
+  from-name: ${BREVO_SENDER_NAME:MaSoVa Restaurant}
   sender:
     email: ${BREVO_SENDER_EMAIL:noreply@masova.com}
     name: ${BREVO_SENDER_NAME:MaSoVa Restaurant}

@@ -31,7 +31,7 @@ public class UserServiceClient {
     private final String userServiceUrl;
 
     public UserServiceClient(RestTemplate restTemplate,
-                            @Value("${analytics.external-services.user-service.url}") String userServiceUrl) {
+                            @Value("${intelligence.external-services.user-service.url}") String userServiceUrl) {
         this.restTemplate = restTemplate;
         this.userServiceUrl = userServiceUrl;
     }
