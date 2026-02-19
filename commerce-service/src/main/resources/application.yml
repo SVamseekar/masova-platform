@@ -25,8 +25,8 @@ spring:
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
+    username: ${RABBITMQ_USERNAME:masova}
+    password: ${RABBITMQ_PASSWORD:masova_secret}
     virtual-host: ${RABBITMQ_VHOST:/}
 
   cache:
