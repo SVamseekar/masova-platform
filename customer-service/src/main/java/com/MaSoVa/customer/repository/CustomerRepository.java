@@ -18,6 +18,8 @@ public interface CustomerRepository extends MongoRepository<Customer, String> {
     Optional<Customer> findByUserId(String userId);
     Optional<Customer> findByEmail(String email);
     Optional<Customer> findByPhone(String phone);
+    boolean existsByStoreIdAndEmail(String storeId, String email);
+    boolean existsByStoreIdAndPhone(String storeId, String phone);
 
     // Active customers
     List<Customer> findByActiveTrue();

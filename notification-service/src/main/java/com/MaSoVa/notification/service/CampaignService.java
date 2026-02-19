@@ -160,7 +160,7 @@ public class CampaignService {
     }
 
     public Page<Campaign> getAllCampaigns(Pageable pageable) {
-        return campaignRepository.findAllByOrderByCreatedAtDesc(pageable);
+        return campaignRepository.findAll(pageable);
     }
 
     public Optional<Campaign> getCampaignById(String id) {

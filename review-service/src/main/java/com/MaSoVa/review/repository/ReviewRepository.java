@@ -46,32 +46,12 @@ public interface ReviewRepository extends MongoRepository<Review, String> {
     @Query("{ 'responseId': null, 'overallRating': { $lte: 3 }, 'status': 'APPROVED', 'isDeleted': false }")
     Page<Review> findReviewsNeedingResponse(Pageable pageable);
 
-    // Date range queries
-    /**
-     * @deprecated Use findByStoreIdAndCreatedAtBetweenAndIsDeletedFalse for store data isolation
-     */
-    @Deprecated
-    List<Review> findByCreatedAtBetweenAndIsDeletedFalse(LocalDateTime startDate, LocalDateTime endDate);
-
     // Count queries
     Long countByDriverIdAndIsDeletedFalseAndDriverRatingIsNotNull(String driverId);
     Long countByCustomerIdAndIsDeletedFalse(String customerId);
 
     @Query(value = "{ 'itemReviews.menuItemId': ?0, 'isDeleted': false }", count = true)
     Long countByMenuItemId(String menuItemId);
-
-    // Sentiment queries
-    /**
-     * @deprecated Use findByStoreIdAndSentimentAndIsDeletedFalse for store data isolation
-     */
-    @Deprecated
-    List<Review> findBySentimentAndIsDeletedFalse(Review.SentimentType sentiment);
-
-    /**
-     * @deprecated Use countByStoreIdAndSentimentAndIsDeletedFalse for store data isolation
-     */
-    @Deprecated
-    Long countBySentimentAndIsDeletedFalse(Review.SentimentType sentiment);
 
     // Verified purchases
     Page<Review> findByIsVerifiedPurchaseTrueAndIsDeletedFalseOrderByCreatedAtDesc(Pageable pageable);

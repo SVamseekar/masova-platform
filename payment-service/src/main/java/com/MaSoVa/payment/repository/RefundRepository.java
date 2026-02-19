@@ -22,13 +22,6 @@ public interface RefundRepository extends MongoRepository<Refund, String> {
 
     List<Refund> findByStatus(Refund.RefundStatus status);
 
-    /**
-     * @deprecated Use findByStoreIdAndCreatedAtBetween instead for store data isolation
-     */
-    @Deprecated
-    @Query("{ 'createdAt' : { $gte: ?0, $lte: ?1 } }")
-    List<Refund> findRefundsBetweenDates(LocalDateTime startDate, LocalDateTime endDate);
-
     List<Refund> findByInitiatedBy(String userId);
 
     // Week 4: Store-aware queries for proper data isolation

@@ -140,11 +140,21 @@ public class CustomerService {
         if (customerRepository.findByUserId(request.getUserId()).isPresent()) {
             throw new IllegalArgumentException("Customer with userId " + request.getUserId() + " already exists");
         }
-        if (customerRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Customer with email " + request.getEmail() + " already exists");
-        }
-        if (customerRepository.findByPhone(request.getPhone()).isPresent()) {
-            throw new IllegalArgumentException("Customer with phone " + request.getPhone() + " already exists");
+        String storeId = request.getStoreId();
+        if (storeId != null && !storeId.isEmpty()) {
+            if (customerRepository.existsByStoreIdAndEmail(storeId, request.getEmail())) {
+                throw new IllegalArgumentException("Customer with email already exists in this store");
+            }
+            if (customerRepository.existsByStoreIdAndPhone(storeId, request.getPhone())) {
+                throw new IllegalArgumentException("Customer with phone already exists in this store");
+            }
+        } else {
+            if (customerRepository.findByEmail(request.getEmail()).isPresent()) {
+                throw new IllegalArgumentException("Customer with email " + request.getEmail() + " already exists");
+            }
+            if (customerRepository.findByPhone(request.getPhone()).isPresent()) {
+                throw new IllegalArgumentException("Customer with phone " + request.getPhone() + " already exists");
+            }
         }
 
         Customer customer = new Customer();
@@ -170,6 +180,7 @@ public class CustomerService {
 
         PointTransaction signupBonus = new PointTransaction(signupBonusPoints, "BONUS", "Signup bonus");
         loyaltyInfo.getPointHistory().add(signupBonus);
+        capPointHistory(loyaltyInfo);
 
         customer.setLoyaltyInfo(loyaltyInfo);
 
@@ -532,6 +543,7 @@ public class CustomerService {
             transaction.setOrderId(request.getOrderId());
         }
         loyalty.getPointHistory().add(transaction);
+        capPointHistory(loyalty);
 
         // Update tier based on total points
         updateLoyaltyTier(customer);
@@ -560,6 +572,16 @@ public class CustomerService {
             loyalty.setTierExpiryDate(LocalDate.now().plusYears(1));
         }
     }
+
+    private static final int MAX_POINT_HISTORY = 100;
+
+    private void capPointHistory(LoyaltyInfo loyalty) {
+        List<PointTransaction> history = loyalty.getPointHistory();
+        if (history != null && history.size() > MAX_POINT_HISTORY) {
+            loyalty.setPointHistory(history.subList(history.size() - MAX_POINT_HISTORY, history.size()));
+        }
+    }
+
 
     private double getTierMultiplier(String tier) {
         return switch (tier.toUpperCase()) {
@@ -633,6 +655,7 @@ public class CustomerService {
         );
         transaction.setOrderId(orderId);
         loyalty.getPointHistory().add(transaction);
+        capPointHistory(loyalty);
 
         logger.info("Redeemed {} points for ₹{} discount", pointsToRedeem, discountAmount);
         return customerRepository.save(customer);
@@ -687,30 +710,51 @@ public class CustomerService {
     public Customer updateOrderStats(String customerId, UpdateOrderStatsRequest request) {
         logger.info("Updating order stats for customer: {}", customerId);
 
-        Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new NoSuchElementException("Customer not found with id: " + customerId));
+        // Look up by userId (which is what the order service stores as customerId)
+        Customer customer = customerRepository.findByUserId(customerId)
+                .orElseThrow(() -> new NoSuchElementException("Customer not found with userId: " + customerId));
 
         OrderStats stats = customer.getOrderStats();
         LocalDateTime now = LocalDateTime.now();
 
-        stats.setTotalOrders(stats.getTotalOrders() + 1);
+        // Only increment totalOrders when order is first received (not on subsequent status updates)
+        if ("RECEIVED".equals(request.getStatus())) {
+            stats.setTotalOrders(stats.getTotalOrders() + 1);
+        }
 
-        if ("COMPLETED".equals(request.getStatus())) {
+        // Treat COMPLETED, DELIVERED, and SERVED as order finished statuses
+        // COMPLETED = TAKEAWAY pickup, DELIVERED = DELIVERY finished, SERVED = DINE_IN finished
+        if ("COMPLETED".equals(request.getStatus()) || "DELIVERED".equals(request.getStatus()) || "SERVED".equals(request.getStatus())) {
             stats.setCompletedOrders(stats.getCompletedOrders() + 1);
             stats.setTotalSpent(stats.getTotalSpent() + request.getOrderTotal());
             stats.setAverageOrderValue(stats.getTotalSpent() / stats.getCompletedOrders());
             stats.setLastOrderDate(now);
             customer.setLastOrderDate(now);
 
-            // Award loyalty points with tier multiplier
+            // Award loyalty points with tier multiplier - update directly on same customer object
+            // to avoid refetching and losing stats updates
             int basePoints = (int) (request.getOrderTotal() / rupeesPerPoint);
             double tierMultiplier = getTierMultiplier(customer.getLoyaltyInfo().getTier());
             int pointsToAdd = (int) (basePoints * tierMultiplier);
 
-            AddLoyaltyPointsRequest loyaltyRequest = new AddLoyaltyPointsRequest(
-                    pointsToAdd, "EARNED", "Order #" + request.getOrderId() + " (" + basePoints + " base × " + tierMultiplier + "x tier bonus)");
-            loyaltyRequest.setOrderId(request.getOrderId());
-            addLoyaltyPoints(customerId, loyaltyRequest);
+            LoyaltyInfo loyalty = customer.getLoyaltyInfo();
+            loyalty.setPointsEarned(loyalty.getPointsEarned() + pointsToAdd);
+            loyalty.setTotalPoints(loyalty.getTotalPoints() + pointsToAdd);
+            loyalty.setLastPointsUpdate(now);
+
+            // Add transaction to history
+            PointTransaction transaction = new PointTransaction(
+                    pointsToAdd, "EARNED",
+                    "Order #" + request.getOrderId() + " (" + basePoints + " base × " + tierMultiplier + "x tier bonus)");
+            transaction.setOrderId(request.getOrderId());
+            loyalty.getPointHistory().add(transaction);
+            capPointHistory(loyalty);
+
+            // Update tier based on total points
+            updateLoyaltyTier(customer);
+
+            logger.info("Awarded {} loyalty points for order {}. Total spent: {}, Avg order: {}",
+                    pointsToAdd, request.getOrderId(), stats.getTotalSpent(), stats.getAverageOrderValue());
         } else if ("CANCELLED".equals(request.getStatus())) {
             stats.setCancelledOrders(stats.getCancelledOrders() + 1);
 
@@ -742,6 +786,7 @@ public class CustomerService {
                     );
                     reversalTransaction.setOrderId(request.getOrderId());
                     loyalty.getPointHistory().add(reversalTransaction);
+                    capPointHistory(loyalty);
 
                     logger.info("Loyalty points reversed. New total: {}", newTotal);
                 }

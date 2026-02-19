@@ -155,10 +155,6 @@ public class ReviewService {
         return reviewRepository.save(review);
     }
 
-    public List<Review> getReviewsInDateRange(LocalDateTime startDate, LocalDateTime endDate) {
-        return reviewRepository.findByCreatedAtBetweenAndIsDeletedFalse(startDate, endDate);
-    }
-
     public Long countReviewsByDriver(String driverId) {
         return reviewRepository.countByDriverIdAndIsDeletedFalseAndDriverRatingIsNotNull(driverId);
     }

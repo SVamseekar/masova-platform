@@ -39,35 +39,14 @@ public interface OrderRepository extends MongoRepository<Order, String> {
 
     // Analytics queries - ALL queries MUST filter by storeId for data isolation
 
-    /**
-     * @deprecated Use findByStoreIdAndCreatedAtBetween instead for store data isolation
-     */
-    @Deprecated
-    @Query("{ 'createdAt': { $gte: ?0, $lte: ?1 } }")
-    List<Order> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
-
     @Query("{ 'storeId': ?0, 'createdAt': { $gte: ?1, $lte: ?2 } }")
     List<Order> findByStoreIdAndCreatedAtBetween(String storeId, LocalDateTime start, LocalDateTime end);
 
     @Query("{ 'storeId': ?0, 'createdByStaffId': ?1, 'createdAt': { $gte: ?2, $lte: ?3 } }")
     List<Order> findByStoreIdAndCreatedByAndCreatedAtBetween(String storeId, String createdBy, LocalDateTime start, LocalDateTime end);
 
-    /**
-     * @deprecated Use findByStoreIdAndCreatedByAndCreatedAtBetween instead for store data isolation
-     */
-    @Deprecated
-    @Query("{ 'createdByStaffId': ?0, 'createdAt': { $gte: ?1, $lte: ?2 } }")
-    List<Order> findByCreatedByAndCreatedAtBetween(String createdBy, LocalDateTime start, LocalDateTime end);
-
     @Query("{ 'storeId': ?0, 'orderType': 'DELIVERY', 'status': { $in: ['PREPARING', 'OVEN', 'BAKED', 'DISPATCHED'] } }")
     List<Order> findActiveDeliveriesByStoreId(String storeId);
-
-    /**
-     * @deprecated Use findActiveDeliveriesByStoreId instead for store data isolation
-     */
-    @Deprecated
-    @Query("{ 'orderType': 'DELIVERY', 'status': { $in: ['PREPARING', 'OVEN', 'BAKED', 'DISPATCHED'] } }")
-    List<Order> findActiveDeliveries();
 
     // Kitchen staff performance queries
     @Query("{ 'assignedKitchenStaffId': ?0, 'createdAt': { $gte: ?1, $lte: ?2 } }")

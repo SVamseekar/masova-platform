@@ -41,14 +41,7 @@ public interface WasteRecordRepository extends MongoRepository<WasteRecord, Stri
     List<WasteRecord> findByStoreIdAndPreventable(String storeId, Boolean preventable);
 
     /**
-     * Find waste records reported by user
-     * @deprecated Use findByStoreIdAndReportedBy for store data isolation
-     */
-    @Deprecated
-    List<WasteRecord> findByReportedBy(String userId);
-
-    /**
-     * Week 4: Store-aware query for waste records by reporter
+     * Find waste records reported by user within a store
      */
     List<WasteRecord> findByStoreIdAndReportedBy(String storeId, String userId);
 

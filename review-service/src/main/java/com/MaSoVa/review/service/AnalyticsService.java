@@ -208,9 +208,9 @@ public class AnalyticsService {
                 .average()
                 .orElse(0.0);
 
-        long positiveReviews = reviewRepository.countBySentimentAndIsDeletedFalse(Review.SentimentType.POSITIVE);
-        long neutralReviews = reviewRepository.countBySentimentAndIsDeletedFalse(Review.SentimentType.NEUTRAL);
-        long negativeReviews = reviewRepository.countBySentimentAndIsDeletedFalse(Review.SentimentType.NEGATIVE);
+        long positiveReviews = reviews.stream().filter(r -> Review.SentimentType.POSITIVE.equals(r.getSentiment())).count();
+        long neutralReviews = reviews.stream().filter(r -> Review.SentimentType.NEUTRAL.equals(r.getSentiment())).count();
+        long negativeReviews = reviews.stream().filter(r -> Review.SentimentType.NEGATIVE.equals(r.getSentiment())).count();
 
         // Calculate trend
         LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
