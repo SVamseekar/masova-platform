@@ -14,6 +14,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import com.MaSoVa.shared.messaging.events.OrderCreatedEvent;
+import com.MaSoVa.shared.messaging.events.OrderStatusChangedEvent;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +41,7 @@ public class CustomerNotificationService {
     private final String customerServiceUrl;
     private final String userServiceUrl;
     private final String frontendUrl;
+    private final OrderEventPublisher orderEventPublisher;
 
     public CustomerNotificationService(
             OrderWebSocketController webSocketController,
@@ -46,7 +49,8 @@ public class CustomerNotificationService {
             @Value("${services.notification.url}") String notificationServiceUrl,
             @Value("${services.customer-service.url}") String customerServiceUrl,
             @Value("${services.user.url}") String userServiceUrl,
-            @Value("${app.frontend.url}") String frontendUrl
+            @Value("${app.frontend.url}") String frontendUrl,
+            OrderEventPublisher orderEventPublisher
     ) {
         this.webSocketController = webSocketController;
         this.restTemplate = restTemplate;
@@ -54,6 +58,7 @@ public class CustomerNotificationService {
         this.customerServiceUrl = customerServiceUrl;
         this.userServiceUrl = userServiceUrl;
         this.frontendUrl = frontendUrl;
+        this.orderEventPublisher = orderEventPublisher;
     }
 
     /**
@@ -75,17 +80,27 @@ public class CustomerNotificationService {
             // Send via WebSocket for real-time updates
             sendWebSocketNotification(order.getCustomerId(), notification);
 
-            // Send email for order confirmation (RECEIVED) and important status updates
-            // This provides better customer experience similar to Uber
-            if (order.getStatus() == OrderStatus.RECEIVED) {
-                sendOrderConfirmationEmail(order);
-            } else if (shouldSendStatusUpdateEmail(order.getStatus())) {
+            // Send email only for important status updates (not RECEIVED)
+            // Payment confirmation email from payment-service will handle initial order confirmation
+            if (shouldSendStatusUpdateEmail(order.getStatus())) {
                 sendOrderStatusUpdateEmail(order, notification);
             }
 
             // Log for audit
             log.info("Customer notification sent: orderId={}, customerId={}, status={}, message={}",
                     order.getId(), order.getCustomerId(), order.getStatus(), notification.getMessage());
+
+            // [AMQP] Dual-publish status change event
+            try {
+                orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
+                    order.getId(), order.getCustomerId(),
+                    previousStatus != null ? previousStatus.name() : null,
+                    order.getStatus() != null ? order.getStatus().name() : null,
+                    order.getStoreId()
+                ));
+            } catch (Exception e) {
+                log.warn("[AMQP] dual-publish status change failed for order {}: {}", order.getId(), e.getMessage());
+            }
 
         } catch (Exception e) {
             log.error("Failed to send customer notification for order: {}", order.getOrderNumber(), e);
@@ -722,6 +737,157 @@ public class CustomerNotificationService {
                         orderType,
                         formattedAmount,
                         estimatedTime,
+                        trackingUrl
+                )
+        );
+    }
+
+    /**
+     * Send payment confirmation email with order items
+     */
+    public void sendPaymentConfirmationEmail(Order order, String transactionId) {
+        try {
+            String customerEmail = fetchCustomerEmailFromOrder(order);
+            if (customerEmail == null || customerEmail.isEmpty()) {
+                log.debug("No email found for order {}, skipping payment confirmation email", order.getOrderNumber());
+                return;
+            }
+
+            String trackingUrl = String.format("%s/tracking/%s", frontendUrl, order.getId());
+            String message = buildPaymentConfirmationMessage(order, transactionId, trackingUrl);
+
+            Map<String, Object> request = new HashMap<>();
+            request.put("userId", order.getCustomerId());
+            request.put("title", "Payment Confirmed");
+            request.put("message", message);
+            request.put("type", "PAYMENT_CONFIRMED");
+            request.put("channel", "EMAIL");
+            request.put("priority", "HIGH");
+            request.put("recipientEmail", customerEmail);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
+
+            String url = notificationServiceUrl + "/api/notifications/send";
+            restTemplate.postForEntity(url, entity, Map.class);
+
+            log.info("Payment confirmation email sent for order: {}", order.getOrderNumber());
+
+            // [AMQP] Dual-publish order created event
+            try {
+                orderEventPublisher.publishOrderCreated(new OrderCreatedEvent(
+                    order.getId(), order.getCustomerId(), order.getStoreId(),
+                    order.getOrderType() != null ? order.getOrderType().name() : "UNKNOWN",
+                    order.getTotal(), "INR"
+                ));
+            } catch (Exception e) {
+                log.warn("[AMQP] dual-publish failed for order {}: {}", order.getId(), e.getMessage());
+            }
+        } catch (Exception e) {
+            log.error("Failed to send payment confirmation email for order: {}", order.getOrderNumber(), e);
+        }
+    }
+
+    /**
+     * Build payment confirmation message with order items
+     */
+    private String buildPaymentConfirmationMessage(Order order, String transactionId, String trackingUrl) {
+        String formattedAmount = String.format("%.2f", order.getTotal());
+        String orderType = order.getOrderType().toString().replace("_", " ");
+        String paymentMethod = order.getPaymentMethod() != null ? order.getPaymentMethod().toString() : "CASH";
+
+        // Build order items HTML
+        StringBuilder itemsHtml = new StringBuilder();
+        itemsHtml.append("<div style='background-color: #F7F7F7; border-radius: 8px; padding: 20px; margin: 24px 0;'>");
+        itemsHtml.append("<h3 style='margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #333;'>Order Items</h3>");
+
+        if (order.getItems() != null && !order.getItems().isEmpty()) {
+            for (OrderItem item : order.getItems()) {
+                double itemTotal = item.getPrice() * item.getQuantity();
+                itemsHtml.append("<div style='display: flex; justify-content: space-between; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #E5E5E5;'>");
+                itemsHtml.append("<div style='flex: 1;'>");
+                itemsHtml.append("<div style='font-weight: 600; color: #000; margin-bottom: 4px;'>");
+                itemsHtml.append(item.getQuantity()).append("x ").append(item.getName());
+                itemsHtml.append("</div>");
+
+                if (item.getVariant() != null && !item.getVariant().isEmpty()) {
+                    itemsHtml.append("<div style='font-size: 13px; color: #666; margin-bottom: 4px;'>");
+                    itemsHtml.append("Size: ").append(item.getVariant());
+                    itemsHtml.append("</div>");
+                }
+
+                if (item.getCustomizations() != null && !item.getCustomizations().isEmpty()) {
+                    itemsHtml.append("<div style='font-size: 13px; color: #666;'>");
+                    itemsHtml.append("Customizations: ").append(String.join(", ", item.getCustomizations()));
+                    itemsHtml.append("</div>");
+                }
+
+                itemsHtml.append("</div>");
+                itemsHtml.append("<div style='font-weight: 600; color: #FF6B35; font-size: 15px;'>");
+                itemsHtml.append("₹").append(String.format("%.2f", itemTotal));
+                itemsHtml.append("</div>");
+                itemsHtml.append("</div>");
+            }
+        }
+        itemsHtml.append("</div>");
+
+        // Build store information
+        String storeInfo = "";
+        if (order.getStoreId() != null && !order.getStoreId().isEmpty()) {
+            storeInfo = String.format(
+                    "<div style='background-color: #FFF8F5; border-left: 4px solid #FF6B35; padding: 16px; margin: 0 0 24px 0; border-radius: 4px;'>" +
+                    "  <div style='font-size: 14px; color: #666;'>Order from:</div>" +
+                    "  <div style='font-size: 16px; font-weight: 600; color: #333; margin-top: 4px;'>MaSoVa - Store %s</div>" +
+                    "</div>",
+                    order.getStoreId()
+            );
+        }
+
+        return buildHtmlEmail(
+                "Payment Confirmed",
+                String.format(
+                        "<h2 style='color: #00B14F; margin: 0 0 24px 0;'>Payment Confirmed!</h2>" +
+                        "<p style='font-size: 16px; line-height: 24px; margin: 0 0 16px 0; color: #333;'>" +
+                        "Your payment has been successfully processed. We're preparing your order now!" +
+                        "</p>" +
+
+                        "%s" + // Store information
+                        "%s" + // Order items section
+
+                        "<div style='background-color: #F7F7F7; border-radius: 8px; padding: 24px; margin: 24px 0;'>" +
+                        "  <div style='display: flex; justify-content: space-between; margin-bottom: 16px;'>" +
+                        "    <span style='color: #666;'>Order Number</span>" +
+                        "    <span style='font-weight: 600; color: #000; font-family: monospace;'>%s</span>" +
+                        "  </div>" +
+                        "  <div style='display: flex; justify-content: space-between; margin-bottom: 16px;'>" +
+                        "    <span style='color: #666;'>Order Type</span>" +
+                        "    <span style='color: #000;'>%s</span>" +
+                        "  </div>" +
+                        "  <div style='display: flex; justify-content: space-between; margin-bottom: 16px;'>" +
+                        "    <span style='color: #666;'>Amount Paid</span>" +
+                        "    <span style='font-weight: 600; color: #000; font-size: 18px;'>₹%s</span>" +
+                        "  </div>" +
+                        "  <div style='display: flex; justify-content: space-between; margin-bottom: 16px;'>" +
+                        "    <span style='color: #666;'>Payment Method</span>" +
+                        "    <span style='color: #000;'>%s</span>" +
+                        "  </div>" +
+                        "  <div style='display: flex; justify-content: space-between;'>" +
+                        "    <span style='color: #666;'>Transaction ID</span>" +
+                        "    <span style='color: #000; font-family: monospace; font-size: 12px;'>%s</span>" +
+                        "  </div>" +
+                        "</div>" +
+
+                        "<div style='text-align: center; margin: 32px 0;'>" +
+                        "  <a href='%s' style='display: inline-block; padding: 14px 32px; background-color: #FF6B35; color: #FFFFFF; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;'>Track Your Order</a>" +
+                        "</div>",
+                        storeInfo,
+                        itemsHtml.toString(),
+                        order.getOrderNumber(),
+                        orderType,
+                        formattedAmount,
+                        paymentMethod,
+                        transactionId != null ? transactionId : "N/A",
                         trackingUrl
                 )
         );
