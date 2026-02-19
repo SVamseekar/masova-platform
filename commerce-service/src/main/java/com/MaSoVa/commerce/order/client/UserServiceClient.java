@@ -26,7 +26,7 @@ public class UserServiceClient {
         this.restTemplate = restTemplate;
     }
 
-    @Value("${services.user.url:http://localhost:8081}")
+    @Value("${services.user.url:http://localhost:8085}")
     private String userServiceUrl;
 
     /**

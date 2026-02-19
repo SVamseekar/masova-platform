@@ -25,7 +25,7 @@ public class DeliveryServiceClient {
 
     private final RestTemplate restTemplate;
 
-    @Value("${services.delivery.url:http://localhost:8090}")
+    @Value("${services.delivery.url:http://localhost:8086}")
     private String deliveryServiceUrl;
 
     // Default delivery fee if service call fails

@@ -21,7 +21,7 @@ public class DeliveryServiceClient {
 
     private static final Logger logger = LoggerFactory.getLogger(DeliveryServiceClient.class);
 
-    @Value("${services.delivery.url:http://localhost:8090}")
+    @Value("${services.delivery.url:http://localhost:8086}")
     private String deliveryServiceUrl;
 
     private final RestTemplate restTemplate;

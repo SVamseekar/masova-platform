@@ -46,9 +46,9 @@ public class CustomerNotificationService {
     public CustomerNotificationService(
             OrderWebSocketController webSocketController,
             RestTemplate restTemplate,
-            @Value("${services.notification.url:http://localhost:8092}") String notificationServiceUrl,
-            @Value("${services.customer-service.url:http://localhost:8091}") String customerServiceUrl,
-            @Value("${services.user.url:http://localhost:8081}") String userServiceUrl,
+            @Value("${services.notification.url:http://localhost:8085}") String notificationServiceUrl,
+            @Value("${services.customer-service.url:http://localhost:8085}") String customerServiceUrl,
+            @Value("${services.user.url:http://localhost:8085}") String userServiceUrl,
             @Value("${app.frontend.url:http://localhost:3000}") String frontendUrl,
             OrderEventPublisher orderEventPublisher
     ) {

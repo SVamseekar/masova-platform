@@ -24,7 +24,7 @@ public class CustomerServiceClient {
 
     private static final Logger logger = LoggerFactory.getLogger(CustomerServiceClient.class);
 
-    @Value("${services.customer.url:http://localhost:8091}")
+    @Value("${services.customer.url:http://localhost:8085}")
     private String customerServiceUrl;
 
     private final RestTemplate restTemplate;

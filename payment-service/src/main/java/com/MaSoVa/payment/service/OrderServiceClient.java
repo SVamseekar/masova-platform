@@ -28,7 +28,7 @@ public class OrderServiceClient {
 
     private final RestTemplate restTemplate;
 
-    @Value("${services.order-service.url}")
+    @Value("${services.order-service.url:http://localhost:8084}")
     private String orderServiceUrl;
 
     public OrderServiceClient(RestTemplate restTemplate) {

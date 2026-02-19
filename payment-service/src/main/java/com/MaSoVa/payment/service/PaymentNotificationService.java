@@ -35,10 +35,10 @@ public class PaymentNotificationService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${notification.service.url:http://localhost:8092}")
+    @Value("${notification.service.url:http://localhost:8085}")
     private String notificationServiceUrl;
 
-    @Value("${services.order.url:http://localhost:8083}")
+    @Value("${services.order.url:http://localhost:8084}")
     private String orderServiceUrl;
 
     @Value("${notification.enabled:true}")
@@ -303,7 +303,7 @@ public class PaymentNotificationService {
      */
     private String fetchOrderItems(String orderId) {
         try {
-            String url = orderServiceUrl + "/api/orders/" + orderId;
+            String url = orderServiceUrl + "/api/orders/track/" + orderId;
             @SuppressWarnings("unchecked")
             Map<String, Object> orderResponse = restTemplate.getForObject(url, Map.class);
 

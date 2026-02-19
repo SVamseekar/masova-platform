@@ -25,7 +25,7 @@ public class OrderServiceClient {
 
     private static final Logger logger = LoggerFactory.getLogger(OrderServiceClient.class);
 
-    @Value("${services.order.url:http://localhost:8083}")
+    @Value("${services.order.url:http://localhost:8084}")
     private String orderServiceUrl;
 
     private final RestTemplate restTemplate;
