@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
+import org.springframework.data.mongodb.core.mapping.MongoMappingContext;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
 /**
@@ -42,6 +43,11 @@ public class MongoConfig {
     @Bean(name = "ordersMongoDatabaseFactory")
     public MongoDatabaseFactory ordersMongoDatabaseFactory() {
         return new SimpleMongoClientDatabaseFactory(ordersMongoClient(), extractDbName(ordersMongoUri));
+    }
+
+    @Bean(name = "mongoMappingContext")
+    public MongoMappingContext mongoMappingContext() {
+        return new MongoMappingContext();
     }
 
     @Primary

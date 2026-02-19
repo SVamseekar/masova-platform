@@ -29,6 +29,11 @@ spring:
     password: ${RABBITMQ_PASSWORD:guest}
     virtual-host: ${RABBITMQ_VHOST:/}
 
+  cache:
+    type: redis
+    redis:
+      time-to-live: 300000  # 5 minutes (matches menu.cache.ttl)
+
   jackson:
     serialization:
       write-dates-as-timestamps: false
@@ -66,6 +71,7 @@ services:
     url: ${NOTIFICATION_SERVICE_URL:http://localhost:8092}
   user:
     url: ${USER_SERVICE_URL:http://localhost:8081}
+  # menu URL is no longer needed — menu is in-process in commerce-service
 
 # Tax Configuration
 tax:
