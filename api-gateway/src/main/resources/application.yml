@@ -51,24 +51,16 @@ rate:
 
 # Service URLs
 services:
-  user-service:
-    url: ${USER_SERVICE_URL:http://localhost:8081}
-  menu-service:
-    url: ${MENU_SERVICE_URL:http://localhost:8082}
-  order-service:
-    url: ${ORDER_SERVICE_URL:http://localhost:8083}
+  core-service:
+    url: ${CORE_SERVICE_URL:http://localhost:8096}
   commerce-service:
     url: ${COMMERCE_SERVICE_URL:http://localhost:8084}
+  payment-service:
+    url: ${PAYMENT_SERVICE_URL:http://localhost:8087}
   logistics-service:
     url: ${LOGISTICS_SERVICE_URL:http://localhost:8095}
   intelligence-service:
     url: ${INTELLIGENCE_SERVICE_URL:http://localhost:8086}
-  core-service:
-    url: ${CORE_SERVICE_URL:http://localhost:8096}
-  payment-service:
-    url: ${PAYMENT_SERVICE_URL:http://localhost:8087}
-  review-service:
-    url: ${REVIEW_SERVICE_URL:http://localhost:8089}
 
 logging:
   level:
@@ -103,34 +95,16 @@ springdoc:
     enabled: true
     path: /swagger-ui.html
     urls:
-      - name: User Service
-        url: /user-service/v3/api-docs
-      - name: Menu Service
-        url: /menu-service/v3/api-docs
-      - name: Order Service
-        url: /order-service/v3/api-docs
+      - name: Core Service (Users, Customers, Reviews, Notifications)
+        url: /core-service/v3/api-docs
+      - name: Commerce Service (Menu, Orders, Kitchen)
+        url: /commerce-service/v3/api-docs
       - name: Payment Service
         url: /payment-service/v3/api-docs
-      - name: Customer Service
-        url: /customer-service/v3/api-docs
-      - name: Delivery Service
-        url: /delivery-service/v3/api-docs
-      - name: Inventory Service
-        url: /inventory-service/v3/api-docs
-      - name: Analytics Service
-        url: /analytics-service/v3/api-docs
-      - name: Notification Service
-        url: /notification-service/v3/api-docs
-      - name: Review Service
-        url: /review-service/v3/api-docs
-      - name: Commerce Service
-        url: /commerce-service/v3/api-docs
-      - name: Logistics Service
+      - name: Logistics Service (Delivery, Inventory)
         url: /logistics-service/v3/api-docs
-      - name: Intelligence Service
+      - name: Intelligence Service (Analytics, BI)
         url: /intelligence-service/v3/api-docs
-      - name: Core Service
-        url: /core-service/v3/api-docs
     operations-sorter: method
     tags-sorter: alpha
     try-it-out-enabled: true

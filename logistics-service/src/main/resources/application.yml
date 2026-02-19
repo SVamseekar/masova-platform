@@ -21,6 +21,13 @@ spring:
         min-idle: 10
         max-wait: 5000ms
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: ${RABBITMQ_VHOST:/}
+
   cache:
     type: redis
     redis:
@@ -59,7 +66,7 @@ routing:
 # Outbound service URLs
 services:
   user-service:
-    url: ${USER_SERVICE_URL:http://localhost:8081}
+    url: ${USER_SERVICE_URL:http://localhost:8096}
   order-service:
     url: ${ORDER_SERVICE_URL:http://localhost:8084}
 

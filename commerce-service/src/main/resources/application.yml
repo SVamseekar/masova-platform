@@ -64,13 +64,13 @@ jwt:
 # Service URLs for outbound calls (delivery, customer, user, notification)
 services:
   delivery:
-    url: ${DELIVERY_SERVICE_URL:http://localhost:8090}
+    url: ${DELIVERY_SERVICE_URL:http://localhost:8095}
   customer-service:
-    url: ${CUSTOMER_SERVICE_URL:http://localhost:8091}
+    url: ${CUSTOMER_SERVICE_URL:http://localhost:8096}
   notification:
-    url: ${NOTIFICATION_SERVICE_URL:http://localhost:8092}
+    url: ${NOTIFICATION_SERVICE_URL:http://localhost:8096}
   user:
-    url: ${USER_SERVICE_URL:http://localhost:8081}
+    url: ${USER_SERVICE_URL:http://localhost:8096}
   # menu URL is no longer needed — menu is in-process in commerce-service
 
 # Tax Configuration
