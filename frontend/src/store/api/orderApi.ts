@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import API_CONFIG from '../../config/api.config';
 import type { RootState } from '../store';
+import type { DeliveryAddress } from '../../types/order';
 
 // Types
 export interface OrderItem {
@@ -22,15 +23,7 @@ export interface QualityCheckpoint {
   notes?: string;
 }
 
-export interface DeliveryAddress {
-  street: string;
-  city: string;
-  state?: string;
-  pincode: string;
-  latitude?: number;
-  longitude?: number;
-  landmark?: string;
-}
+export type { DeliveryAddress };
 
 export interface Order {
   id: string;
@@ -436,6 +429,33 @@ export const orderApi = createApi({
     }, { date: string }>({
       query: ({ date }) => `/orders/store/analytics/prep-time-distribution?date=${date}`,
     }),
+
+    // Date-based order queries
+    getOrdersByDate: builder.query<Order[], string>({
+      query: (date) => `/orders/date/${date}`,
+      providesTags: (result, error, date) => [{ type: 'Orders', id: `DATE_${date}` }],
+    }),
+
+    getOrdersByDateRange: builder.query<Order[], { startDate: string; endDate: string; storeId?: string }>({
+      query: ({ startDate, endDate, storeId }) => {
+        const params = new URLSearchParams();
+        params.append('startDate', startDate);
+        params.append('endDate', endDate);
+        if (storeId) params.append('storeId', storeId);
+        return `/orders/range?${params.toString()}`;
+      },
+      providesTags: ['Orders'],
+    }),
+
+    getStaffOrdersByDate: builder.query<Order[], { staffId: string; date: string }>({
+      query: ({ staffId, date }) => `/orders/staff/${staffId}/date/${date}`,
+      providesTags: (result, error, { staffId, date }) => [{ type: 'Orders', id: `STAFF_${staffId}_${date}` }],
+    }),
+
+    getActiveDeliveriesCount: builder.query<{ count: number }, string | undefined>({
+      query: (storeId) => `/orders/active-deliveries/count${storeId ? `?storeId=${storeId}` : ''}`,
+      providesTags: ['Orders'],
+    }),
   }),
 });
 
@@ -469,4 +489,8 @@ export const {
   useGetPosStaffPerformanceQuery,
   useGetPreparationTimeDistributionQuery,
   useTrackOrderQuery,
+  useGetOrdersByDateQuery,
+  useGetOrdersByDateRangeQuery,
+  useGetStaffOrdersByDateQuery,
+  useGetActiveDeliveriesCountQuery,
 } = orderApi;

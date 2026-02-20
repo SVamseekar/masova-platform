@@ -48,7 +48,9 @@ export interface OrderItem {
 export interface DeliveryAddress {
   street: string;
   city: string;
+  state?: string;
   pincode: string;
+  landmark?: string;
   latitude?: number;
   longitude?: number;
 }
