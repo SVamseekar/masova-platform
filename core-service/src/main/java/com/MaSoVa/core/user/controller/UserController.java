@@ -181,6 +181,9 @@ public class UserController {
         String accessToken = (authHeader != null && authHeader.startsWith("Bearer "))
             ? authHeader.substring(7)
             : null;
+        if (accessToken == null || accessToken.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Authorization header with Bearer token required"));
+        }
         userService.logout(userId, accessToken);
         return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }
