@@ -38,6 +38,25 @@ const SendIcon = () => (
   </svg>
 );
 
+// Inline SVG mic icons — avoids MUI icon-material dependency on this widget
+const MicIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+  </svg>
+);
+
+const MicOffIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02.17c0-.06.02-.11.02-.17V5c0-1.66-1.34-3-3-3-1.66 0-3 1.34-3 3v.18l5.98 5.99zM4.27 3L3 4.27l6.01 6.01V11c0 1.66 1.34 3 3 3 .23 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.52-2.31.52-2.76 0-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c.57-.08 1.12-.24 1.64-.46L19.73 21 21 19.73 4.27 3z"/>
+  </svg>
+);
+
+const VoiceModeIcon = ({ active }: { active: boolean }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill={active ? 'var(--red)' : 'currentColor'}>
+    <path d="M12 3c-4.97 0-9 4.03-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7c0-4.97-4.03-9-9-9z"/>
+  </svg>
+);
+
 export const ChatWidget: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -49,9 +68,16 @@ export const ChatWidget: React.FC = () => {
       ts: Date.now(),
     },
   ]);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceMode, setVoiceMode] = useState(false);
+
   const sessionId = useRef(getOrCreateSessionId());
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  // Keep a ref to voiceMode so callbacks inside recognition handlers see the current value
+  const voiceModeRef = useRef(voiceMode);
+  useEffect(() => { voiceModeRef.current = voiceMode; }, [voiceMode]);
 
   const customerId = useAppSelector((s) => (s.auth as any)?.user?.id as string | undefined);
   const [sendChat, { isLoading }] = useChatMutation();
@@ -64,8 +90,70 @@ export const ChatWidget: React.FC = () => {
     if (open) setTimeout(() => inputRef.current?.focus(), 100);
   }, [open]);
 
-  const handleSend = useCallback(async () => {
-    const text = input.trim();
+  // ── Speech helpers ─────────────────────────────────────────────────────────
+
+  const getSpeechRecognitionAPI = (): typeof SpeechRecognition | null => {
+    const w = window as Window & {
+      SpeechRecognition?: typeof SpeechRecognition;
+      webkitSpeechRecognition?: typeof SpeechRecognition;
+    };
+    return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
+  };
+
+  const speakResponse = useCallback((text: string) => {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-IN';
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.onend = () => {
+      // Re-listen only if still in voice mode (read current value via ref)
+      if (voiceModeRef.current) {
+        setTimeout(() => startListeningFn(), 500);
+      }
+    };
+    window.speechSynthesis.speak(utterance);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // handleSend needs to be declared before startListeningFn because startListeningFn
+  // calls it, but handleSend also calls speakResponse. We forward-declare via a ref.
+  const handleSendRef = useRef<((textOverride?: string) => Promise<void>) | undefined>(undefined);
+
+  const startListeningFn = useCallback(() => {
+    const SpeechRecognitionAPI = getSpeechRecognitionAPI();
+    if (!SpeechRecognitionAPI) {
+      alert('Voice input is not supported in this browser. Please use Chrome or Edge.');
+      return;
+    }
+    const recognition = new SpeechRecognitionAPI();
+    recognition.lang = 'en-IN';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(transcript);
+      if (voiceModeRef.current) {
+        setTimeout(() => handleSendRef.current?.(transcript), 300);
+      }
+    };
+    recognition.start();
+    recognitionRef.current = recognition;
+  }, []);
+
+  const stopListening = useCallback(() => {
+    recognitionRef.current?.stop();
+    setIsListening(false);
+  }, []);
+
+  // ── Core send handler ──────────────────────────────────────────────────────
+
+  const handleSend = useCallback(async (textOverride?: string) => {
+    const text = (textOverride ?? input).trim();
     if (!text || isLoading) return;
 
     setInput('');
@@ -76,20 +164,50 @@ export const ChatWidget: React.FC = () => {
       const res = await sendChat({ message: text, sessionId: sessionId.current, customerId }).unwrap();
       sessionId.current = res.sessionId;
       sessionStorage.setItem(SESSION_KEY, res.sessionId);
-      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'agent', text: res.reply, ts: Date.now() }]);
+      const reply = res.reply;
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'agent', text: reply, ts: Date.now() }]);
+      // Speak the reply if voice mode is active
+      if (voiceModeRef.current) {
+        speakResponse(reply);
+      }
     } catch {
+      const errorText = "Sorry, I'm having trouble connecting right now. Please try again or email support@masova.com.";
       setMessages((prev) => [...prev, {
         id: crypto.randomUUID(),
         role: 'agent',
-        text: "Sorry, I'm having trouble connecting right now. Please try again or email support@masova.com.",
+        text: errorText,
         ts: Date.now(),
       }]);
+      if (voiceModeRef.current) {
+        speakResponse(errorText);
+      }
     }
-  }, [input, isLoading, sendChat, customerId]);
+  }, [input, isLoading, sendChat, customerId, speakResponse]);
+
+  // Keep the ref in sync so recognition callbacks can call the latest handleSend
+  useEffect(() => { handleSendRef.current = handleSend; }, [handleSend]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
+
+  const toggleVoiceMode = () => {
+    const next = !voiceMode;
+    setVoiceMode(next);
+    if (next) {
+      startListeningFn();
+    } else {
+      stopListening();
+      window.speechSynthesis?.cancel();
+    }
+  };
+
+  // ── Derived style values (extracted from JSX to avoid IIFE in JSX) ─────────
+  const listeningColor = isListening ? '#ef4444' : 'rgba(255,255,255,0.55)';
+  const listeningAnimation = isListening ? 'micPulse 1s ease-in-out infinite' : 'none';
+  const voiceModeColor = voiceMode ? 'var(--gold)' : 'rgba(255,255,255,0.55)';
+  const sendBg = input.trim() && !isLoading ? 'var(--red)' : 'var(--surface-3)';
+  const sendCursor = input.trim() && !isLoading ? 'pointer' : 'not-allowed';
 
   return (
     <>
@@ -125,7 +243,9 @@ export const ChatWidget: React.FC = () => {
               </div>
               <div>
                 <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.875rem' }}>MaSoVa Support</div>
-                <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.72rem' }}>AI assistant · usually instant</div>
+                <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.72rem' }}>
+                  {voiceMode ? '🎙 Voice mode active' : 'AI assistant · usually instant'}
+                </div>
               </div>
             </div>
             <button onClick={() => setOpen(false)} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff' }}>
@@ -168,14 +288,29 @@ export const ChatWidget: React.FC = () => {
             <div ref={bottomRef} />
           </div>
 
-          {/* Input */}
-          <div style={{ display: 'flex', gap: 8, padding: '12px 14px', borderTop: '1px solid var(--border)', background: 'var(--surface)' }}>
+          {/* Input row */}
+          <div style={{ display: 'flex', gap: 6, padding: '12px 14px', borderTop: '1px solid var(--border)', background: 'var(--surface)', alignItems: 'center' }}>
+            {/* Voice mode toggle (full conversation mode) */}
+            <button
+              onClick={toggleVoiceMode}
+              title={voiceMode ? 'Exit voice mode' : 'Start voice conversation'}
+              style={{
+                width: 32, height: 32, borderRadius: '50%', border: '1px solid var(--border)',
+                background: voiceMode ? 'rgba(198,42,9,0.15)' : 'var(--surface-2)',
+                color: voiceModeColor,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0, transition: 'background 0.2s, color 0.2s',
+              }}
+            >
+              <VoiceModeIcon active={voiceMode} />
+            </button>
+
             <input
               ref={inputRef}
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask me anything…"
+              placeholder={isListening ? 'Listening…' : 'Ask me anything…'}
               disabled={isLoading}
               style={{
                 flex: 1, padding: '9px 14px', borderRadius: 99,
@@ -187,13 +322,31 @@ export const ChatWidget: React.FC = () => {
               onFocus={e => { e.currentTarget.style.borderColor = 'var(--gold)'; }}
               onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)'; }}
             />
+
+            {/* Tap-to-talk mic button */}
             <button
-              onClick={handleSend}
+              onClick={isListening ? stopListening : startListeningFn}
+              title={isListening ? 'Stop listening' : 'Voice input'}
+              style={{
+                width: 32, height: 32, borderRadius: '50%', border: '1px solid var(--border)',
+                background: isListening ? 'rgba(239,68,68,0.15)' : 'var(--surface-2)',
+                color: listeningColor,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0, transition: 'background 0.2s',
+                animation: listeningAnimation,
+              }}
+            >
+              {isListening ? <MicOffIcon /> : <MicIcon />}
+            </button>
+
+            {/* Send button */}
+            <button
+              onClick={() => handleSend()}
               disabled={isLoading || !input.trim()}
               style={{
                 width: 38, height: 38, borderRadius: '50%', border: 'none', flexShrink: 0,
-                background: input.trim() && !isLoading ? 'var(--red)' : 'var(--surface-3)',
-                color: '#fff', cursor: input.trim() && !isLoading ? 'pointer' : 'not-allowed',
+                background: sendBg,
+                color: '#fff', cursor: sendCursor,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'background 0.2s',
               }}
@@ -228,6 +381,10 @@ export const ChatWidget: React.FC = () => {
         @keyframes pulse {
           0%, 100% { opacity: 0.3; transform: scale(0.8); }
           50% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes micPulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
         }
       `}</style>
     </>
