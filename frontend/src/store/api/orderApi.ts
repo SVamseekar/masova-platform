@@ -79,15 +79,7 @@ export interface CreateOrderRequest {
   }>;
   orderType: 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY';
   paymentMethod?: 'CASH' | 'CARD' | 'UPI' | 'WALLET';
-  deliveryAddress?: {
-    street: string;
-    city: string;
-    state?: string;
-    pincode: string;
-    latitude?: number;
-    longitude?: number;
-    landmark?: string;
-  };
+  deliveryAddress?: DeliveryAddress;
   specialInstructions?: string;
   // POS staff attribution - tracks which staff member created the order
   createdByStaffId?: string;
