@@ -633,6 +633,266 @@ After each successful payment, update preferences in customer-service. Pre-popul
 
 ---
 
+## Phase 5: GCP Deployment (Week 21–23)
+
+Deploy the entire MaSoVa platform to Google Cloud Platform within the AI Pro subscription ($10/month Cloud credits) and free tiers. Zero new paid services required for dev/staging. Production at real scale fits within the $10 credit.
+
+### 5.1 Infrastructure Map
+
+| Component | GCP Service | Free Tier | Notes |
+|-----------|------------|-----------|-------|
+| 6 Spring Boot services | Cloud Run | 2M req/month + 180K vCPU-sec/month | Scale-to-zero, cold start ~10s |
+| masova-support (FastAPI) | Cloud Run | Same free tier | Python container |
+| Web frontend | Firebase Hosting | 10GB/month bandwidth | Static Vite build |
+| MongoDB | Atlas M0 (free) | 512MB storage | 1 cluster per project |
+| Redis | Upstash Redis | 10K commands/day free | JWT blacklist + chat sessions |
+| RabbitMQ | CloudAMQP Little Lemur | 1M messages/month free | Async event bus |
+| Container images | Artifact Registry | 0.5GB free/month | All Docker images stored here |
+| CI/CD | GitHub Actions | 2000 min/month free | Auto-deploy on push to main |
+| Domains | Cloud DNS | ~$0.20/month | `masova.app`, `api.masova.app` |
+| SSL | Cloud Run managed | Free | Auto-provisioned |
+| Gemini Live API (voice) | Vertex AI / AI Studio | Free tier + $10 credit | ~$0.0002 per conversation |
+| Mobile app builds | Expo EAS | Free for small teams | OTA updates free |
+
+**Estimated monthly cost:** $0 dev/staging · $5–10 production (within $10 credit) · $20–50 at scale (small overage)
+
+### 5.2 Domain Architecture
+
+```
+masova.app              → Firebase Hosting (web frontend)
+api.masova.app          → Cloud Run (api-gateway:8080)
+agent.masova.app        → Cloud Run (masova-support:8000)
+```
+
+### 5.3 Dockerfiles
+
+Each Spring Boot service needs a `Dockerfile`. Standard multi-stage build:
+
+```dockerfile
+# Stage 1: build
+FROM eclipse-temurin:21-jdk-alpine AS build
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN ./mvnw package -DskipTests
+
+# Stage 2: runtime (smaller image)
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+
+Services needing Dockerfiles: `api-gateway`, `core-service`, `commerce-service`, `payment-service`, `logistics-service`, `intelligence-service`.
+
+masova-support Python Dockerfile:
+```dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+EXPOSE 8000
+CMD ["uvicorn", "masova_agent.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+Frontend Dockerfile (for optional containerized deploy — Firebase Hosting is preferred):
+```dockerfile
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY package*.json .
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 80
+```
+
+### 5.4 Environment Variables per Service (Cloud Run)
+
+All secrets injected as Cloud Run environment variables (never baked into images):
+
+```
+# All backend services
+SPRING_DATA_MONGODB_URI=mongodb+srv://<user>:<pass>@cluster0.xxxxx.mongodb.net/masova_<db>
+SPRING_REDIS_HOST=<upstash-endpoint>
+SPRING_REDIS_PORT=6380
+SPRING_REDIS_SSL=true
+SPRING_REDIS_PASSWORD=<upstash-token>
+SPRING_RABBITMQ_HOST=<cloudamqp-host>
+SPRING_RABBITMQ_USERNAME=<cloudamqp-user>
+SPRING_RABBITMQ_PASSWORD=<cloudamqp-pass>
+JWT_SECRET=<64-char-secret>
+
+# commerce-service + logistics-service
+CORE_SERVICE_URL=https://api.masova.app
+
+# api-gateway
+CORE_SERVICE_URL=https://api.masova.app
+COMMERCE_SERVICE_URL=https://api.masova.app
+PAYMENT_SERVICE_URL=https://api.masova.app
+LOGISTICS_SERVICE_URL=https://api.masova.app
+INTELLIGENCE_SERVICE_URL=https://api.masova.app
+
+# masova-support
+GOOGLE_API_KEY=<gemini-api-key>
+REDIS_URL=rediss://<upstash-token>@<upstash-endpoint>:6380
+MASOVA_BACKEND_URL=https://api.masova.app
+```
+
+### 5.5 GitHub Actions CI/CD Pipeline
+
+`.github/workflows/deploy.yml` — triggers on push to `main`, builds and deploys all services:
+
+```yaml
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [main]
+
+env:
+  PROJECT_ID: masova-app
+  REGION: asia-south1   # Mumbai — closest to Hyderabad
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [api-gateway, core-service, commerce-service, payment-service, logistics-service, intelligence-service]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Build and push
+        run: |
+          gcloud builds submit ${{ matrix.service }} \
+            --tag asia-south1-docker.pkg.dev/$PROJECT_ID/masova/${{ matrix.service }}:$GITHUB_SHA
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ matrix.service }} \
+            --image asia-south1-docker.pkg.dev/$PROJECT_ID/masova/${{ matrix.service }}:$GITHUB_SHA \
+            --region $REGION \
+            --platform managed \
+            --allow-unauthenticated \
+            --min-instances 0 \
+            --max-instances 3 \
+            --memory 512Mi \
+            --set-env-vars-file .env.${{ matrix.service }}.yaml
+
+  deploy-agent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: souravamseekar/masova-support
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - name: Build and deploy masova-support
+        run: |
+          gcloud builds submit . \
+            --tag asia-south1-docker.pkg.dev/$PROJECT_ID/masova/masova-support:$GITHUB_SHA
+          gcloud run deploy masova-support \
+            --image asia-south1-docker.pkg.dev/$PROJECT_ID/masova/masova-support:$GITHUB_SHA \
+            --region $REGION --platform managed --allow-unauthenticated
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - run: cd frontend && npm ci && npm run build
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: live
+          projectId: masova-app
+```
+
+### 5.6 One-Time Setup Steps
+
+1. **Create GCP project** — `masova-app` in Google Cloud Console
+2. **Enable APIs** — Cloud Run, Cloud Build, Artifact Registry, Cloud DNS
+3. **Create service account** — `masova-deploy@masova-app.iam.gserviceaccount.com` with roles: Cloud Run Admin, Cloud Build Editor, Artifact Registry Writer
+4. **MongoDB Atlas** — Create M0 free cluster, whitelist `0.0.0.0/0` for Cloud Run (dynamic IPs), create DB user
+5. **Upstash Redis** — Create free database, note endpoint + token, enable TLS
+6. **CloudAMQP** — Create Little Lemur free instance, note AMQP URL
+7. **Firebase project** — Same `masova-app` project ID, enable Hosting, run `firebase init hosting` in `frontend/`
+8. **GitHub Secrets** — Add `GCP_SA_KEY` (service account JSON), `FIREBASE_SERVICE_ACCOUNT`, all env var secrets
+9. **Domain** — Point `masova.app` A record to Firebase Hosting IP, `api.masova.app` CNAME to Cloud Run URL
+10. **Warm instances** — Set `--min-instances 1` on `api-gateway` and `core-service` to avoid cold starts for critical path
+
+### 5.7 Mobile App Deployment
+
+**masova-mobile (Expo):**
+```bash
+# Install EAS CLI
+npm install -g eas-cli
+eas login
+
+# Configure
+eas build:configure
+
+# Build for production
+eas build --platform android --profile production
+eas build --platform ios --profile production
+
+# Submit to stores
+eas submit --platform android
+eas submit --platform ios
+```
+
+Update `app.json`:
+```json
+{
+  "expo": {
+    "extra": {
+      "apiUrl": "https://api.masova.app",
+      "agentUrl": "https://agent.masova.app"
+    }
+  }
+}
+```
+
+**MaSoVaDriverApp (RN 0.83):**
+- Same EAS build process
+- Separate app entry in Play Store / App Store
+- Bundle identifier: `com.masova.driver`
+
+### 5.8 Verification Checklist
+
+- [ ] `https://masova.app` loads the web frontend
+- [ ] `https://api.masova.app/actuator/health` returns `{"status":"UP"}` for all 6 services
+- [ ] `https://agent.masova.app/health` returns `{"status":"ok"}`
+- [ ] Place a test order end-to-end: web → payment → kitchen → delivery tracking
+- [ ] RabbitMQ events flowing (check CloudAMQP dashboard)
+- [ ] Redis JWT blacklist working (logout → token invalidated)
+- [ ] Mobile app connects to `api.masova.app` (check network requests)
+- [ ] GitHub Actions deploy pipeline green on push to main
+- [ ] SSL certificates auto-provisioned on all domains
+
+### 5.9 Cost Monitoring
+
+Set up GCP budget alert at $8/month (80% of $10 credit) to get notified before overage:
+```
+Google Cloud Console → Billing → Budgets & alerts → Create budget → $10/month → Alert at 80%
+```
+
+---
+
 ## Technical Debt Register
 
 Items that should be fixed opportunistically:
@@ -660,8 +920,9 @@ WEEK 9–10:  KDS revamp + Login revamp
 WEEK 11–12: Customer web + mobile UI revamps
 WEEK 13–14: Staff app conversion + Google Sign-In
 WEEK 15–16: Manager metrics + Store selector + Maps
-WEEK 17–18: AI chatbot enhancements
-WEEK 19–20: AI voice calls (Gemini + Twilio)
+WEEK 17–18: AI chatbot enhancements + Redis sessions + new tools
+WEEK 19–20: AI voice (Gemini Live API — browser + mobile, free via AI Pro credits)
+WEEK 21–23: Phase 5 — GCP deployment (Cloud Run + Firebase + Atlas + Upstash + CloudAMQP)
 ```
 
 ---
@@ -693,8 +954,16 @@ WEEK 19–20: AI voice calls (Gemini + Twilio)
 
 **Phase 4 (AI):**
 - Chat widget: conversation memory maintained across 10 turns, responses <2s
-- Voice: customer can ask "What's on the menu today?" and hear a spoken response
+- Voice: customer can speak to the AI and hear a spoken response (Gemini Live API, free via AI Pro)
 - Payment preferences: returning customer checkout is 2 clicks
+
+**Phase 5 (Deployment):**
+- `https://masova.app` serves the web frontend via Firebase Hosting
+- `https://api.masova.app/actuator/health` returns UP for all 6 services on Cloud Run
+- `https://agent.masova.app/health` returns ok for masova-support
+- End-to-end order flow works in production (web → payment → kitchen → tracking)
+- GitHub Actions auto-deploys on push to main
+- Total monthly GCP cost stays within $10 AI Pro credit
 
 ---
 
