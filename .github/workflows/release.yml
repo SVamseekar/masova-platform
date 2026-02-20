@@ -1,36 +1,30 @@
 name: Build and Release MaSoVa
 
-# Trigger on version tags (e.g., v1.0.2)
-# Usage: git tag v1.0.2 && git push origin v1.0.2
+# Trigger on version tags (e.g., v2.1.0)
 on:
   push:
     tags:
       - 'v*.*.*'
 
-# Permissions for GitHub token
 permissions:
   contents: write
   packages: write
 
-# Environment variables
 env:
   DOCKER_IMAGE: souravamseekar/masova-backend
   DOCKER_FRONTEND_IMAGE: souravamseekar/masova-frontend
 
 jobs:
-  # ============================================================================
-  # Job 1: Build Monolith from Microservices
-  # ============================================================================
-  build-monolith:
-    name: Build Monolith
+  # ============================================================
+  # Job 1: Build all 6 services
+  # ============================================================
+  build:
+    name: Build All Services
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -41,108 +35,85 @@ jobs:
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "Building version: $VERSION"
 
-      - name: Build All Microservices
+      - name: Build all modules (skip tests — tests run in CI job)
         run: mvn clean install -DskipTests
 
-      - name: Package Monolith
+      - name: Collect service JARs
         run: |
-          mkdir -p masova-monolith
-          cp api-gateway/target/*.jar masova-monolith/ || true
-          cp user-service/target/*.jar masova-monolith/ || true
-          cp menu-service/target/*.jar masova-monolith/ || true
-          cp order-service/target/*.jar masova-monolith/ || true
-          cp payment-service/target/*.jar masova-monolith/ || true
-          cp analytics-service/target/*.jar masova-monolith/ || true
-          cp inventory-service/target/*.jar masova-monolith/ || true
-          cp customer-service/target/*.jar masova-monolith/ || true
-          cp delivery-service/target/*.jar masova-monolith/ || true
-          ls -lh masova-monolith/
+          mkdir -p masova-release
+          for svc in api-gateway core-service commerce-service payment-service logistics-service intelligence-service; do
+            cp $svc/target/*.jar masova-release/ 2>/dev/null || echo "No JAR for $svc"
+          done
+          ls -lh masova-release/
 
-      - name: Upload Monolith Artifacts
+      - name: Upload JARs as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: masova-monolith-${{ steps.version.outputs.VERSION }}
-          path: masova-monolith/
-          retention-days: 90
+          name: masova-jars-${{ steps.version.outputs.VERSION }}
+          path: masova-release/
 
-  # ============================================================================
-  # Job 2: Build and Push Docker Images (FREE - Docker Hub)
-  # ============================================================================
-  build-docker:
+  # ============================================================
+  # Job 2: Build and push Docker images
+  # ============================================================
+  docker:
     name: Build Docker Images
+    needs: build
     runs-on: ubuntu-latest
-    needs: build-monolith
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Extract version
-        id: version
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Download Monolith Artifacts
+      - name: Download JARs
         uses: actions/download-artifact@v4
         with:
-          name: masova-monolith-${{ steps.version.outputs.VERSION }}
-          path: masova-monolith/
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+          name: masova-jars-${{ needs.build.outputs.VERSION }}
+          path: masova-release/
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Build Backend Docker Image
-      - name: Build and Push Backend
+      - name: Build and push backend image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
+          file: api-gateway/Dockerfile
           push: true
           tags: |
-            ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.VERSION }}
+            ${{ env.DOCKER_IMAGE }}:${{ github.ref_name }}
             ${{ env.DOCKER_IMAGE }}:latest
-          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
-          cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
 
-      # Build Frontend Docker Image
-      - name: Build Frontend
-        working-directory: frontend
-        run: |
-          npm ci
-          npm run build
+      - name: Set up Node for frontend build
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
 
-      - name: Build and Push Frontend
+      - name: Build frontend
+        run: cd frontend && npm ci && npm run build
+
+      - name: Build and push frontend image
         uses: docker/build-push-action@v5
         with:
-          context: ./frontend
-          file: ./frontend/Dockerfile.production
+          context: frontend
+          file: frontend/Dockerfile.production
           push: true
           tags: |
-            ${{ env.DOCKER_FRONTEND_IMAGE }}:${{ steps.version.outputs.VERSION }}
+            ${{ env.DOCKER_FRONTEND_IMAGE }}:${{ github.ref_name }}
             ${{ env.DOCKER_FRONTEND_IMAGE }}:latest
-          cache-from: type=registry,ref=${{ env.DOCKER_FRONTEND_IMAGE }}:buildcache
-          cache-to: type=registry,ref=${{ env.DOCKER_FRONTEND_IMAGE }}:buildcache,mode=max
 
-  # ============================================================================
-  # Job 3: Create GitHub Release (FREE)
-  # ============================================================================
-  create-release:
-    name: Create GitHub Release
+  # ============================================================
+  # Job 3: Create GitHub Release
+  # ============================================================
+  release:
+    name: Create Release
+    needs: [build, docker]
     runs-on: ubuntu-latest
-    needs: [build-monolith, build-docker]
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Extract version
         id: version
@@ -150,228 +121,35 @@ jobs:
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Download Monolith Artifacts
+      - name: Download JARs
         uses: actions/download-artifact@v4
         with:
-          name: masova-monolith-${{ steps.version.outputs.VERSION }}
-          path: masova-monolith/
+          name: masova-jars-${{ steps.version.outputs.VERSION }}
+          path: masova-release/
 
-      - name: Create Distribution Package
+      - name: Package release archive
         run: |
-          VERSION=${{ steps.version.outputs.VERSION }}
-
-          # Create installer package
-          mkdir -p release/masova-$VERSION
-
-          # Copy monolith JARs
-          cp -r masova-monolith/*.jar release/masova-$VERSION/
-
-          # Copy configuration files (if they exist)
-          cp masova-monolith/application.properties release/masova-$VERSION/ 2>/dev/null || echo "No application.properties found"
-
-          # Create .env.example
-          cat > release/masova-$VERSION/.env.example << 'EOF'
-          # MaSoVa Configuration
-          # Copy this file to .env and update with your values
-
-          # Security
-          JWT_SECRET=your-secure-jwt-secret-here
-
-          # Frontend URL (for email tracking links)
-          FRONTEND_URL=http://localhost:3000
-          FRONTEND_BASE_URL=http://localhost:3000
-
-          # Restaurant Information
-          RESTAURANT_NAME=Your Restaurant Name
-          ADMIN_EMAIL=admin@yourrestaurant.com
-
-          # Payment Gateway (Razorpay)
-          RAZORPAY_KEY_ID=your-razorpay-key
-          RAZORPAY_KEY_SECRET=your-razorpay-secret
-
-          # Email Service (Brevo)
-          BREVO_API_KEY=your-brevo-api-key
-          BREVO_FROM_EMAIL=noreply@yourrestaurant.com
-          BREVO_FROM_NAME=Your Restaurant Name
-          BREVO_ENABLED=true
-
-          # Database
-          MONGODB_URI=mongodb://localhost:27017/masova
-
-          # Cache
-          REDIS_HOST=localhost
-          REDIS_PORT=6379
-          EOF
-
-          # Create README
-          cat > release/masova-$VERSION/README.md << 'EOF'
-          # MaSoVa Restaurant Management System
-
-          Version: $VERSION
-
-          ## Quick Start
-
-          1. Make sure Docker is installed
-          2. Run the installer:
-             - Mac/Linux: `./install-masova.sh`
-             - Windows: `install-masova.bat`
-          3. Access at http://localhost:3000
-
-          ## Documentation
-
-          See DEPLOYMENT_GUIDE.md for complete installation instructions.
-
-          ## Support
-
-          - Email: support@masova.com
-          - Documentation: https://docs.masova.com
-          EOF
-
-          sed -i "s/\$VERSION/$VERSION/g" release/masova-$VERSION/README.md
-
-          # Create tarball
-          cd release
-          tar -czf masova-$VERSION.tar.gz masova-$VERSION/
-          zip -r masova-$VERSION.zip masova-$VERSION/
-
+          cd masova-release
+          tar -czf ../masova-v${{ steps.version.outputs.VERSION }}.tar.gz .
           cd ..
-
-      - name: Extract Changelog
-        id: changelog
-        run: |
-          VERSION=${{ steps.version.outputs.VERSION }}
-
-          # Extract changelog for this version
-          if [ -f CHANGELOG.md ]; then
-            CHANGELOG=$(sed -n "/## $VERSION/,/## /p" CHANGELOG.md | head -n -1)
-          else
-            CHANGELOG="No changelog available"
-          fi
-
-          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGELOG" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          zip -r masova-v${{ steps.version.outputs.VERSION }}.zip masova-release/
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          name: MaSoVa v${{ steps.version.outputs.VERSION }}
-          body: |
-            # MaSoVa Restaurant Management System v${{ steps.version.outputs.VERSION }}
-
-            ${{ steps.changelog.outputs.CHANGELOG }}
-
-            ## Installation
-
-            ### Option 1: Docker (Recommended)
-            ```bash
-            docker pull masova/backend:${{ steps.version.outputs.VERSION }}
-            docker pull masova/frontend:${{ steps.version.outputs.VERSION }}
-            ```
-
-            ### Option 2: Standalone
-            Download `masova-${{ steps.version.outputs.VERSION }}.tar.gz` below
-
-            ## Upgrade Instructions
-
-            If you have an existing MaSoVa installation:
-
-            ```bash
-            cd ~/MaSoVa
-            ./update-masova.sh --version=${{ steps.version.outputs.VERSION }}
-            ```
-
-            ## Docker Images
-            - Backend: `masova/backend:${{ steps.version.outputs.VERSION }}`
-            - Frontend: `masova/frontend:${{ steps.version.outputs.VERSION }}`
-
-            ## What's Included
-            - ✅ All 13 microservices (packaged as monolith)
-            - ✅ Frontend application
-            - ✅ Installation scripts (Mac/Linux/Windows)
-            - ✅ Update and rollback scripts
-            - ✅ Complete documentation
-
-            ## Requirements
-            - Docker Desktop (for Docker installation)
-            - OR Java 17+ (for standalone installation)
-            - 8GB RAM minimum
-            - 50GB disk space
-
-            ## Support
-            - 📧 Email: support@masova.com
-            - 📖 Docs: https://docs.masova.com
-            - 🐛 Issues: https://github.com/yourusername/masova/issues
-
-            ---
-
-            **Full Changelog**: https://github.com/yourusername/masova/blob/main/CHANGELOG.md
           files: |
-            release/masova-${{ steps.version.outputs.VERSION }}.tar.gz
-            release/masova-${{ steps.version.outputs.VERSION }}.zip
-            version.properties
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            masova-v${{ steps.version.outputs.VERSION }}.tar.gz
+            masova-v${{ steps.version.outputs.VERSION }}.zip
+          body: |
+            ## MaSoVa v${{ steps.version.outputs.VERSION }}
 
-  # ============================================================================
-  # Job 4: Update Version File (for UpdateService to check)
-  # ============================================================================
-  update-version-file:
-    name: Update Version File
-    runs-on: ubuntu-latest
-    needs: create-release
+            ### Services
+            - api-gateway (port 8080)
+            - core-service (port 8085)
+            - commerce-service (port 8084)
+            - payment-service (port 8089)
+            - logistics-service (port 8095)
+            - intelligence-service (port 8087)
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: main
-
-      - name: Extract version
-        id: version
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Update version.properties
-        run: |
-          VERSION=${{ steps.version.outputs.VERSION }}
-          cat > version.properties << EOF
-          version=$VERSION
-          buildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          releaseUrl=https://github.com/yourusername/masova/releases/tag/v$VERSION
-          EOF
-
-      - name: Commit and Push
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add version.properties
-          git commit -m "Update version to ${{ steps.version.outputs.VERSION }}"
-          git push origin main
-
-  # ============================================================================
-  # Job 5: Notify Success (Optional)
-  # ============================================================================
-  notify:
-    name: Notify Release
-    runs-on: ubuntu-latest
-    needs: [build-docker, create-release, update-version-file]
-    if: success()
-
-    steps:
-      - name: Extract version
-        id: version
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Send Success Notification
-        run: |
-          echo "✅ MaSoVa v${{ steps.version.outputs.VERSION }} released successfully!"
-          echo "Docker images: masova/backend:${{ steps.version.outputs.VERSION }}"
-          echo "GitHub Release: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.VERSION }}"
-
-          # TODO: Add Slack/Discord/Email notification here if needed
+            ### Infrastructure
+            Run `docker-compose up -d` to start MongoDB, Redis, and RabbitMQ.
