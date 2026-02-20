@@ -81,6 +81,14 @@ export interface StoreMetrics {
   activeEmployees: number;
 }
 
+export interface DeliveryRadiusCheckResult {
+  withinRadius: boolean;
+  storeId: string;
+  deliveryRadiusKm: number;
+  latitude: number;
+  longitude: number;
+}
+
 export const storeApi = createApi({
   reducerPath: 'storeApi',
   baseQuery: fetchBaseQuery({
@@ -161,6 +169,12 @@ export const storeApi = createApi({
       providesTags: [{ type: 'Stores', id: 'LIST' }],
     }),
 
+    // Check if a location is within a store's delivery radius
+    checkDeliveryRadius: builder.query<DeliveryRadiusCheckResult, { storeId: string; latitude: number; longitude: number }>({
+      query: ({ storeId, latitude, longitude }) =>
+        `/stores/${storeId}/delivery-radius-check?latitude=${latitude}&longitude=${longitude}`,
+    }),
+
     // Create new store
     createStore: builder.mutation<Store, CreateStoreRequest>({
       query: (data) => ({
@@ -206,6 +220,7 @@ export const {
   useGetActiveStoresProtectedQuery,
   useGetStoresByRegionQuery,
   useGetNearbyStoresQuery,
+  useCheckDeliveryRadiusQuery,
   useCreateStoreMutation,
   useUpdateStoreMutation,
   useGetOperationalStatusQuery,
