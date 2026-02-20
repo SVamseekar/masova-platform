@@ -79,7 +79,7 @@ export const ChatWidget: React.FC = () => {
   const voiceModeRef = useRef(voiceMode);
   useEffect(() => { voiceModeRef.current = voiceMode; }, [voiceMode]);
 
-  const customerId = useAppSelector((s) => (s.auth as any)?.user?.id as string | undefined);
+  const customerId = useAppSelector((s) => s.auth.user?.id as string | undefined);
   const [sendChat, { isLoading }] = useChatMutation();
 
   useEffect(() => {
