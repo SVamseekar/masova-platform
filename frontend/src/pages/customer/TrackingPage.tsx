@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useTrackOrderQuery } from '../../store/api/orderApi';
+import { useTrackOrderQuery, OrderItem } from '../../store/api/orderApi';
 import { useTrackOrderQuery as useDeliveryTrackQuery } from '../../store/api/deliveryApi';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { clearCart } from '../../store/slices/cartSlice';
@@ -490,7 +490,7 @@ const TrackingPage: React.FC = () => {
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '18px 22px' }}>
               <p style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 14 }}>Items</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
-                {order.items?.map((item: any, idx: number) => (
+                {order.items?.map((item: OrderItem, idx: number) => (
                   <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ width: 22, height: 22, borderRadius: 6, background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.68rem', fontWeight: 700, color: 'var(--gold)', flexShrink: 0 }}>{item.quantity}</span>
