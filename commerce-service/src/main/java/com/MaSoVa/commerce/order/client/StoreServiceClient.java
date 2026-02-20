@@ -31,10 +31,11 @@ public class StoreServiceClient {
     public boolean isWithinDeliveryRadius(String storeId, double latitude, double longitude) {
         try {
             String url = UriComponentsBuilder
-                .fromHttpUrl(coreServiceUrl + "/api/stores/{storeId}/delivery-radius-check")
+                .fromHttpUrl(coreServiceUrl)
+                .pathSegment("api", "stores", storeId, "delivery-radius-check")
                 .queryParam("latitude", latitude)
                 .queryParam("longitude", longitude)
-                .buildAndExpand(storeId)
+                .build()
                 .toUriString();
 
             Map<String, Object> result = restTemplate.getForObject(url, Map.class);
