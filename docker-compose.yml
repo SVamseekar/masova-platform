@@ -43,6 +43,147 @@ services:
       timeout: 5s
       retries: 5
 
+  # ============================================================
+  # Backend Services
+  # ============================================================
+  core-service:
+    build:
+      context: core-service
+      dockerfile: Dockerfile
+    container_name: masova-core
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://masova-mongodb:27017/masova_core
+      - SPRING_REDIS_HOST=masova-redis
+      - SPRING_RABBITMQ_HOST=masova-rabbitmq
+      - SPRING_RABBITMQ_USERNAME=masova
+      - SPRING_RABBITMQ_PASSWORD=masova_secret
+      - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+    networks:
+      - masova-network
+    restart: unless-stopped
+
+  commerce-service:
+    build:
+      context: commerce-service
+      dockerfile: Dockerfile
+    container_name: masova-commerce
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://masova-mongodb:27017/masova_commerce
+      - SPRING_REDIS_HOST=masova-redis
+      - SPRING_RABBITMQ_HOST=masova-rabbitmq
+      - SPRING_RABBITMQ_USERNAME=masova
+      - SPRING_RABBITMQ_PASSWORD=masova_secret
+      - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
+      - CORE_SERVICE_URL=http://masova-core:8085
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+      - core-service
+    networks:
+      - masova-network
+    restart: unless-stopped
+
+  payment-service:
+    build:
+      context: payment-service
+      dockerfile: Dockerfile
+    container_name: masova-payment
+    ports:
+      - "8089:8089"
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://masova-mongodb:27017/masova_payment
+      - SPRING_REDIS_HOST=masova-redis
+      - SPRING_RABBITMQ_HOST=masova-rabbitmq
+      - SPRING_RABBITMQ_USERNAME=masova
+      - SPRING_RABBITMQ_PASSWORD=masova_secret
+      - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+    networks:
+      - masova-network
+    restart: unless-stopped
+
+  logistics-service:
+    build:
+      context: logistics-service
+      dockerfile: Dockerfile
+    container_name: masova-logistics
+    ports:
+      - "8095:8095"
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://masova-mongodb:27017/masova_logistics
+      - SPRING_REDIS_HOST=masova-redis
+      - SPRING_RABBITMQ_HOST=masova-rabbitmq
+      - SPRING_RABBITMQ_USERNAME=masova
+      - SPRING_RABBITMQ_PASSWORD=masova_secret
+      - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
+      - CORE_SERVICE_URL=http://masova-core:8085
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+      - core-service
+    networks:
+      - masova-network
+    restart: unless-stopped
+
+  intelligence-service:
+    build:
+      context: intelligence-service
+      dockerfile: Dockerfile
+    container_name: masova-intelligence
+    ports:
+      - "8087:8087"
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://masova-mongodb:27017/masova_analytics
+      - SPRING_REDIS_HOST=masova-redis
+      - SPRING_RABBITMQ_HOST=masova-rabbitmq
+      - SPRING_RABBITMQ_USERNAME=masova
+      - SPRING_RABBITMQ_PASSWORD=masova_secret
+      - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+    networks:
+      - masova-network
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: api-gateway
+      dockerfile: Dockerfile
+    container_name: masova-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - CORE_SERVICE_URL=http://masova-core:8085
+      - COMMERCE_SERVICE_URL=http://masova-commerce:8084
+      - PAYMENT_SERVICE_URL=http://masova-payment:8089
+      - LOGISTICS_SERVICE_URL=http://masova-logistics:8095
+      - INTELLIGENCE_SERVICE_URL=http://masova-intelligence:8087
+      - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
+    depends_on:
+      - core-service
+      - commerce-service
+      - payment-service
+      - logistics-service
+      - intelligence-service
+    networks:
+      - masova-network
+    restart: unless-stopped
+
 volumes:
   mongodb_data:
   redis_data:
