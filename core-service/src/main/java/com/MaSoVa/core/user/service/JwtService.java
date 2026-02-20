@@ -6,7 +6,9 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
@@ -15,6 +17,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 @Service
@@ -49,6 +52,11 @@ public class JwtService {
 
     @Value("${jwt.kiosk-refresh-token-expiration:7776000000}") // 90 days
     private Long kioskRefreshTokenExpiration;
+
+    private static final String BLACKLIST_PREFIX = "jwt:blacklist:";
+
+    @Autowired
+    private StringRedisTemplate redisTemplate;
 
     /**
      * Validates JWT secret key on application startup.
@@ -146,6 +154,38 @@ public class JwtService {
         logger.info("Generating kiosk refresh token for user {}", userId);
 
         return createToken(claims, userId, kioskRefreshTokenExpiration);
+    }
+
+    /**
+     * Blacklist a token in Redis until its natural expiry.
+     * Called on logout. Fail-open: if Redis is down, log the error but don't block logout.
+     */
+    public void invalidateToken(String token) {
+        try {
+            Date expiration = extractExpiration(token);
+            long remainingMs = expiration.getTime() - System.currentTimeMillis();
+            if (remainingMs > 0) {
+                redisTemplate.opsForValue().set(
+                    BLACKLIST_PREFIX + token, "1", remainingMs, TimeUnit.MILLISECONDS
+                );
+                logger.debug("Token blacklisted, expires in {}ms", remainingMs);
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to blacklist token (Redis may be down): {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Check whether a token has been blacklisted (i.e., user logged out).
+     * Fail-open: if Redis is down, returns false (allow the request) to prevent lockouts.
+     */
+    public boolean isBlacklisted(String token) {
+        try {
+            return Boolean.TRUE.equals(redisTemplate.hasKey(BLACKLIST_PREFIX + token));
+        } catch (Exception e) {
+            logger.warn("Redis blacklist check failed (fail-open): {}", e.getMessage());
+            return false;
+        }
     }
 
     /**
