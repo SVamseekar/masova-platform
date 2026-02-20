@@ -73,6 +73,7 @@ const ManagementHubSidebar: React.FC<ManagementHubSidebarProps> = ({ isOpen, onC
       icon: '📈',
       color: colors.brand.primary,
       items: [
+        { path: '/manager/analytics', label: 'Analytics Dashboard', icon: '📈', description: 'Revenue trend & top products' },
         { path: '/manager/kitchen-analytics', label: 'Kitchen Analytics', icon: '🍳', description: 'Prep times & staff performance' },
         { path: '/manager/product-analytics', label: 'Product Analytics', icon: '📊', description: 'Menu item performance & trends' },
         { path: '/manager/advanced-reports', label: 'Advanced Reports', icon: '📑', description: 'Comprehensive business reports' },
@@ -145,11 +146,6 @@ const ManagementHubSidebar: React.FC<ManagementHubSidebarProps> = ({ isOpen, onC
     )
   })).filter(category => category.items.length > 0);
 
-  // Don't render the sidebar at all when closed to prevent flash on page load
-  if (!isOpen) {
-    return null;
-  }
-
   return (
     <>
       {/* Overlay */}
@@ -161,46 +157,46 @@ const ManagementHubSidebar: React.FC<ManagementHubSidebarProps> = ({ isOpen, onC
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
-          backdropFilter: 'blur(4px)',
-          zIndex: 1000,
-          opacity: 1,
-          pointerEvents: 'auto',
-          transition: 'opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), backdrop-filter 0.4s ease'
+          backgroundColor: 'rgba(0, 0, 0, 0.4)',
+          backdropFilter: isOpen ? 'blur(4px)' : 'blur(0px)',
+          zIndex: 9998,
+          opacity: isOpen ? 1 : 0,
+          pointerEvents: isOpen ? 'auto' : 'none',
+          transition: 'opacity 0.3s ease, backdrop-filter 0.3s ease',
+          visibility: isOpen ? 'visible' : 'hidden'
         }}
       />
 
-      {/* Management Pages Sidebar */}
+      {/* Management Pages Sidebar - Professional Design */}
       <div style={{
         position: 'fixed',
         top: 0,
         right: 0,
         bottom: 0,
-        width: '520px',
+        width: '400px',
         maxWidth: '90vw',
-        backgroundColor: colors.surface.background,
-        boxShadow: '-8px 0 32px rgba(0, 0, 0, 0.3)',
-        zIndex: 1001,
-        transform: 'translateX(0)',
-        transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.5s ease',
+        backgroundColor: '#ffffff',
+        boxShadow: isOpen ? '-2px 0 20px rgba(0, 0, 0, 0.1)' : '-2px 0 10px rgba(0, 0, 0, 0.05)',
+        zIndex: 9999,
+        transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+        transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
         willChange: 'transform',
-        borderTopLeftRadius: '32px',
-        borderBottomLeftRadius: '32px',
-        animation: 'slideInFromRight 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
+        borderLeft: `1px solid ${colors.surface.border}`,
+        borderTopLeftRadius: '24px',
+        borderBottomLeftRadius: '24px',
+        pointerEvents: isOpen ? 'auto' : 'none'
       }}>
-        {/* Sidebar Header */}
+        {/* Sidebar Header - Professional */}
         <div style={{
-          padding: `${spacing[6]} ${spacing[6]} ${spacing[5]} ${spacing[6]}`,
-          background: `linear-gradient(135deg, ${colors.brand.primary}11 0%, ${colors.brand.secondary}11 100%)`,
-          borderBottom: `2px solid ${colors.surface.border}`,
+          padding: `${spacing[5]} ${spacing[6]}`,
+          borderBottom: `1px solid ${colors.surface.border}`,
+          backgroundColor: '#ffffff',
           position: 'sticky',
           top: 0,
-          zIndex: 10,
-          backdropFilter: 'blur(10px)',
-          borderTopLeftRadius: '32px'
+          zIndex: 10
         }}>
           <div style={{
             display: 'flex',
@@ -209,45 +205,15 @@ const ManagementHubSidebar: React.FC<ManagementHubSidebarProps> = ({ isOpen, onC
             marginBottom: spacing[4]
           }}>
             <div>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: spacing[3],
-                marginBottom: spacing[2]
+              <h3 style={{
+                margin: '0 0 4px 0',
+                fontSize: typography.fontSize.xl,
+                fontWeight: typography.fontWeight.semibold,
+                color: colors.text.primary,
+                letterSpacing: '-0.02em'
               }}>
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '10px',
-                  background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.secondary} 100%)`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: shadows.brand.primary
-                }}>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(2, 1fr)',
-                    gap: '3px',
-                    width: '20px',
-                    height: '20px'
-                  }}>
-                    <div style={{ width: '8px', height: '8px', backgroundColor: colors.text.inverse, borderRadius: '2px' }} />
-                    <div style={{ width: '8px', height: '8px', backgroundColor: colors.text.inverse, borderRadius: '2px' }} />
-                    <div style={{ width: '8px', height: '8px', backgroundColor: colors.text.inverse, borderRadius: '2px' }} />
-                    <div style={{ width: '8px', height: '8px', backgroundColor: colors.text.inverse, borderRadius: '2px' }} />
-                  </div>
-                </div>
-                <h3 style={{
-                  margin: '0',
-                  fontSize: typography.fontSize['2xl'],
-                  fontWeight: typography.fontWeight.extrabold,
-                  color: colors.text.primary,
-                  letterSpacing: '-0.02em'
-                }}>
-                  Management Hub
-                </h3>
-              </div>
+                Management
+              </h3>
               <p style={{
                 margin: '0',
                 fontSize: typography.fontSize.sm,
@@ -260,41 +226,25 @@ const ManagementHubSidebar: React.FC<ManagementHubSidebarProps> = ({ isOpen, onC
             <button
               onClick={onClose}
               style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '12px',
-                backgroundColor: colors.surface.primary,
-                border: 'none',
+                width: '32px',
+                height: '32px',
+                borderRadius: borderRadius.md,
+                backgroundColor: 'transparent',
+                border: `1px solid ${colors.surface.border}`,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '20px',
-                fontWeight: typography.fontWeight.bold,
+                fontSize: '18px',
                 color: colors.text.secondary,
-                boxShadow: shadows.raised.md,
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                transition: 'all 0.2s ease',
                 flexShrink: 0
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = colors.semantic.error;
-                e.currentTarget.style.color = colors.text.inverse;
-                e.currentTarget.style.boxShadow = shadows.floating.lg;
-                e.currentTarget.style.transform = 'scale(1.05) rotate(90deg)';
+                e.currentTarget.style.backgroundColor = colors.surface.secondary;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = colors.surface.primary;
-                e.currentTarget.style.color = colors.text.secondary;
-                e.currentTarget.style.boxShadow = shadows.raised.md;
-                e.currentTarget.style.transform = 'scale(1) rotate(0deg)';
-              }}
-              onMouseDown={(e) => {
-                e.currentTarget.style.boxShadow = shadows.inset.md;
-                e.currentTarget.style.transform = 'scale(0.95)';
-              }}
-              onMouseUp={(e) => {
-                e.currentTarget.style.boxShadow = shadows.floating.lg;
-                e.currentTarget.style.transform = 'scale(1.05) rotate(90deg)';
+                e.currentTarget.style.backgroundColor = 'transparent';
               }}
             >
               ✕

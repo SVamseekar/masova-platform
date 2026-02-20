@@ -31,7 +31,6 @@ const OrderTrackingPage = React.lazy(() => import('./pages/customer/OrderTrackin
 const PublicRatingPage = React.lazy(() => import('./pages/PublicRatingPage'));
 const CustomerDashboard = React.lazy(() => import('./pages/customer/CustomerDashboard'));
 const ProfilePage = React.lazy(() => import('./pages/customer/ProfilePage'));
-const NotificationSettingsPage = React.lazy(() => import('./pages/customer/NotificationSettingsPage'));
 const ManagerShell = React.lazy(() => import('./pages/manager/ManagerShell'));
 const StaffProfilePage = React.lazy(() => import('./pages/staff/StaffProfilePage'));
 const KitchenDisplayPage = React.lazy(() => import('./pages/kitchen/KitchenDisplayPage'));
@@ -39,6 +38,7 @@ const DriverDashboard = React.lazy(() => import('./pages/driver/DriverDashboard'
 const POSSystem = React.lazy(() => import('./apps/POSSystem/POSSystem'));
 const KioskSetupPage = React.lazy(() => import('./pages/kiosk/KioskSetupPage'));
 const GdprRequests = React.lazy(() => import('./pages/GdprRequests').then(m => ({ default: m.GdprRequests })));
+const AnalyticsDashboard = React.lazy(() => import('./pages/manager/AnalyticsDashboard'));
 
 // Kiosk mode hook
 import { useKioskMode } from './hooks/useKioskMode';
@@ -134,11 +134,7 @@ const App: React.FC = () => {
                   />
                   <Route
                     path="/customer/notifications"
-                    element={
-                      <ProtectedRoute allowedRoles={['CUSTOMER']} requireAuth={true}>
-                        <NotificationSettingsPage />
-                      </ProtectedRoute>
-                    }
+                    element={<Navigate to="/customer/profile?section=notifications" replace />}
                   />
                   <Route
                     path="/customer/gdpr"
@@ -187,6 +183,16 @@ const App: React.FC = () => {
                   <Route path="/manager/product-analytics" element={<Navigate to="/manager?section=analytics&tab=products" replace />} />
                   <Route path="/manager/advanced-reports" element={<Navigate to="/manager?section=analytics&tab=reports" replace />} />
                   <Route path="/manager/equipment-monitoring" element={<Navigate to="/manager?section=analytics&tab=equipment" replace />} />
+
+                  {/* Analytics Dashboard - standalone Recharts page */}
+                  <Route
+                    path="/manager/analytics"
+                    element={
+                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
+                        <AnalyticsDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
 
                   {/* Staff Profile - stays as separate route */}
                   <Route
