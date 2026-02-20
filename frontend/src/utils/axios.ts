@@ -13,7 +13,7 @@ const axiosInstance = axios.create({
 // Request interceptor - Add JWT token to requests
 axiosInstance.interceptors.request.use(
   (config: any) => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem('auth_accessToken') || sessionStorage.getItem('auth_accessToken');
 
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -26,55 +26,10 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Response interceptor - Handle token refresh
+// Response interceptor - pass through; RTK Query baseQueryWithAuth handles token refresh
 axiosInstance.interceptors.response.use(
-  (response: any) => {
-    return response;
-  },
-  async (error: any) => {
-    const originalRequest = error.config as any & { _retry?: boolean };
-
-    // If error is 401 and we haven't retried yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        const refreshToken = localStorage.getItem('refreshToken');
-
-        if (refreshToken) {
-          // Try to refresh the token
-          const response = await axios.post(
-            `${API_CONFIG.USER_SERVICE_URL}/refresh-token`,
-            { refreshToken }
-          );
-
-          const { accessToken, refreshToken: newRefreshToken } = response.data as any;
-
-          // Update tokens in localStorage
-          localStorage.setItem('accessToken', accessToken);
-          if (newRefreshToken) {
-            localStorage.setItem('refreshToken', newRefreshToken);
-          }
-
-          // Retry the original request with new token
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          }
-
-          return axiosInstance(originalRequest);
-        }
-      } catch (refreshError) {
-        // Refresh failed - clear tokens and redirect to login
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
-      }
-    }
-
-    return Promise.reject(error);
-  }
+  (response: any) => response,
+  (error: any) => Promise.reject(error)
 );
 
 export default axiosInstance;
