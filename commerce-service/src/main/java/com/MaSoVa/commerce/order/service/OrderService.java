@@ -11,6 +11,7 @@ import com.MaSoVa.commerce.order.websocket.OrderWebSocketController;
 import com.MaSoVa.commerce.order.client.MenuServiceClient;
 import com.MaSoVa.commerce.order.client.CustomerServiceClient;
 import com.MaSoVa.commerce.order.client.DeliveryServiceClient;
+import com.MaSoVa.commerce.order.client.StoreServiceClient;
 import com.MaSoVa.commerce.order.config.TaxConfiguration;
 import com.MaSoVa.commerce.order.config.PreparationTimeConfiguration;
 import com.MaSoVa.commerce.order.config.DeliveryFeeConfiguration;
@@ -38,6 +39,7 @@ public class OrderService {
     private final CustomerServiceClient customerServiceClient;
     private final CustomerNotificationService customerNotificationService;
     private final DeliveryServiceClient deliveryServiceClient;
+    private final StoreServiceClient storeServiceClient;
     private final TaxConfiguration taxConfiguration;
     private final PreparationTimeConfiguration preparationTimeConfiguration;
     private final DeliveryFeeConfiguration deliveryFeeConfiguration;
@@ -47,6 +49,7 @@ public class OrderService {
                        MenuServiceClient menuServiceClient, CustomerServiceClient customerServiceClient,
                        CustomerNotificationService customerNotificationService,
                        DeliveryServiceClient deliveryServiceClient,
+                       StoreServiceClient storeServiceClient,
                        TaxConfiguration taxConfiguration,
                        PreparationTimeConfiguration preparationTimeConfiguration,
                        DeliveryFeeConfiguration deliveryFeeConfiguration) {
@@ -56,6 +59,7 @@ public class OrderService {
         this.customerServiceClient = customerServiceClient;
         this.customerNotificationService = customerNotificationService;
         this.deliveryServiceClient = deliveryServiceClient;
+        this.storeServiceClient = storeServiceClient;
         this.taxConfiguration = taxConfiguration;
         this.preparationTimeConfiguration = preparationTimeConfiguration;
         this.deliveryFeeConfiguration = deliveryFeeConfiguration;
@@ -93,6 +97,18 @@ public class OrderService {
             if (request.getDeliveryAddress() != null &&
                 request.getDeliveryAddress().getLatitude() != null &&
                 request.getDeliveryAddress().getLongitude() != null) {
+
+                // Validate delivery address is within store's delivery radius
+                boolean withinRadius = storeServiceClient.isWithinDeliveryRadius(
+                    request.getStoreId(),
+                    request.getDeliveryAddress().getLatitude(),
+                    request.getDeliveryAddress().getLongitude()
+                );
+                if (!withinRadius) {
+                    throw new IllegalArgumentException(
+                        "Delivery address is outside this store's delivery radius. Please choose a different store or select Takeaway."
+                    );
+                }
 
                 DeliveryServiceClient.DeliveryFeeResult feeResult = deliveryServiceClient.calculateDeliveryFee(
                     request.getStoreId(),

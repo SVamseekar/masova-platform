@@ -71,6 +71,8 @@ services:
     url: ${NOTIFICATION_SERVICE_URL:http://localhost:8085}
   user:
     url: ${USER_SERVICE_URL:http://localhost:8085}
+  core:
+    url: ${CORE_SERVICE_URL:http://localhost:8085}
   # menu URL is no longer needed — menu is in-process in commerce-service
 
 # Tax Configuration
