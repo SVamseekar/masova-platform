@@ -395,15 +395,19 @@ public class UserService {
         }
     }
 
-    public void logout(String userId) {
+    public void logout(String userId, String authHeader) {
         User user = getUserById(userId);
         if (user.isEmployee()) {
             try {
                 sessionService.endSession(userId);
             } catch (Exception e) {
-                // Log the error but don't fail the logout
                 logger.error("Failed to end working session for user {}: {}", userId, e.getMessage(), e);
             }
+        }
+        // Blacklist the access token so it cannot be reused after logout
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            jwtService.invalidateToken(token);
         }
     }
     

@@ -174,8 +174,10 @@ public class UserController {
     @PostMapping("/logout")
     @Operation(summary = "User logout")
     @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<Map<String, String>> logout(@RequestHeader("X-User-Id") String userId) {
-        userService.logout(userId);
+    public ResponseEntity<Map<String, String>> logout(
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        userService.logout(userId, authHeader);
         return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }
     

@@ -6,7 +6,9 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
@@ -15,12 +17,17 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 @Service
 public class JwtService {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtService.class);
+    private static final String BLACKLIST_PREFIX = "jwt:blacklist:";
+
+    @Autowired
+    private StringRedisTemplate redisTemplate;
 
     /**
      * JWT secret key - MUST be configured via environment variable or application properties.
@@ -167,6 +174,37 @@ public class JwtService {
         return extractClaim(token, claims -> claims.get("terminalId", String.class));
     }
     
+    /**
+     * Blacklist a token in Redis until it would naturally expire.
+     * Called on logout so the token cannot be reused even if stolen.
+     */
+    public void invalidateToken(String token) {
+        try {
+            Date expiration = extractExpiration(token);
+            long remainingMs = expiration.getTime() - System.currentTimeMillis();
+            if (remainingMs > 0) {
+                redisTemplate.opsForValue().set(
+                    BLACKLIST_PREFIX + token, "1", remainingMs, TimeUnit.MILLISECONDS
+                );
+                logger.debug("Token blacklisted for {}ms", remainingMs);
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to blacklist token: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Check if a token has been blacklisted (i.e. the user logged out).
+     */
+    public boolean isBlacklisted(String token) {
+        try {
+            return Boolean.TRUE.equals(redisTemplate.hasKey(BLACKLIST_PREFIX + token));
+        } catch (Exception e) {
+            logger.warn("Redis blacklist check failed, allowing token: {}", e.getMessage());
+            return false; // fail-open: don't lock users out if Redis is down
+        }
+    }
+
     private String createToken(Map<String, Object> claims, String subject, Long expiration) {
         return Jwts.builder()
                 .claims(claims)

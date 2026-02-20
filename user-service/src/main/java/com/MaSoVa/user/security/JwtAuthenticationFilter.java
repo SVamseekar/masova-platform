@@ -40,7 +40,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String storeId = jwtService.extractStoreId(token);
             
             if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                if (jwtService.validateToken(token, userId)) {
+                if (!jwtService.isBlacklisted(token) && jwtService.validateToken(token, userId)) {
                     List<SimpleGrantedAuthority> authorities = List.of(
                         new SimpleGrantedAuthority("ROLE_" + userType)
                     );
