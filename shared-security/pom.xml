@@ -64,6 +64,13 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Spring Data Redis (optional — only wired in services that configure Redis) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <!-- Jakarta Servlet API -->
         <dependency>
             <groupId>jakarta.servlet</groupId>
