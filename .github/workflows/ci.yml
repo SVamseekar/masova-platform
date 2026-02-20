@@ -39,6 +39,11 @@ jobs:
         env:
           RABBITMQ_DEFAULT_USER: masova
           RABBITMQ_DEFAULT_PASS: masova_secret
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - uses: actions/checkout@v4
