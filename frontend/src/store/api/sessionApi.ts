@@ -170,6 +170,23 @@ export const sessionApi = createApi({
       }),
       invalidatesTags: ['WorkingSessions'],
     }),
+
+    // Get employee session report (hours summary) - Phase 3
+    getEmployeeSessionReport: builder.query<WorkingSession[], { employeeId: string; startDate: string; endDate: string }>({
+      query: ({ employeeId, startDate, endDate }) => {
+        const params = new URLSearchParams();
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        return `/users/sessions/${employeeId}/report?${params.toString()}`;
+      },
+      providesTags: (result, error, { employeeId }) => [{ type: 'Session', id: employeeId }],
+    }),
+
+    // Get employee session status (current clock-in state) - Phase 3
+    getEmployeeSessionStatus: builder.query<WorkingSession | null, string>({
+      query: (employeeId) => `/users/sessions/${employeeId}/status`,
+      providesTags: (result, error, employeeId) => [{ type: 'Session', id: employeeId }],
+    }),
   }),
 });
 
@@ -186,6 +203,8 @@ export const {
   useRejectSessionMutation,
   useClockInWithPinMutation,
   useClockOutEmployeeMutation,
+  useGetEmployeeSessionReportQuery,
+  useGetEmployeeSessionStatusQuery,
 } = sessionApi;
 
 // Phase 3: Alias for break recording (same as addBreakTime)

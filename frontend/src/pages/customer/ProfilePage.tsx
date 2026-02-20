@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import {
@@ -80,8 +80,9 @@ const TIER_CONFIG = {
 // ─── Component ────────────────────────────────────────────────────────────────
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const currentUser = useAppSelector(selectCurrentUser);
-  const [activeSection, setActiveSection] = useState('overview');
+  const [activeSection, setActiveSection] = useState(() => searchParams.get('section') || 'overview');
   const [editing, setEditing] = useState(false);
   const [addressDialogOpen, setAddressDialogOpen] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
@@ -92,7 +93,21 @@ const ProfilePage: React.FC = () => {
     label: 'HOME', addressLine1: '', city: '', state: '', postalCode: '', country: 'India',
   });
   const [preferencesForm, setPreferencesForm] = useState<UpdatePreferencesRequest>({});
-  const [notifForm, setNotifForm] = useState({ notifyOnOffers: true, notifyOnOrderStatus: true, marketingOptIn: false, smsOptIn: false });
+  const [notifForm, setNotifForm] = useState({
+    notifyOnOffers: true,
+    notifyOnOrderStatus: true,
+    marketingOptIn: false,
+    smsOptIn: false,
+    // Channels
+    pushEnabled: true,
+    emailEnabled: true,
+    inAppEnabled: true,
+    // Quiet hours
+    quietHoursEnabled: false,
+    quietStart: '22:00',
+    quietEnd: '08:00',
+  });
+  const [notifSaved, setNotifSaved] = useState(false);
 
   const { data: customer, isLoading, error, refetch } = useGetCustomerByUserIdQuery(currentUser?.id || '', { skip: !currentUser?.id });
   const [createCustomer, { isLoading: isCreating }] = useCreateCustomerMutation();
@@ -145,12 +160,13 @@ const ProfilePage: React.FC = () => {
         notifyOnOffers: customer.preferences?.notifyOnOffers !== false,
         notifyOnOrderStatus: customer.preferences?.notifyOnOrderStatus !== false,
       });
-      setNotifForm({
+      setNotifForm((prev) => ({
+        ...prev,
         notifyOnOffers: customer.preferences?.notifyOnOffers !== false,
         notifyOnOrderStatus: customer.preferences?.notifyOnOrderStatus !== false,
         marketingOptIn: customer.marketingOptIn || false,
         smsOptIn: customer.smsOptIn || false,
-      });
+      }));
     }
   }, [customer, editingPreferences]);
 
@@ -165,6 +181,8 @@ const ProfilePage: React.FC = () => {
     try {
       await updateCustomer({ id: customer.id, data: { marketingOptIn: notifForm.marketingOptIn, smsOptIn: notifForm.smsOptIn } }).unwrap();
       await updatePreferences({ customerId: customer.id, data: { ...preferencesForm, notifyOnOffers: notifForm.notifyOnOffers, notifyOnOrderStatus: notifForm.notifyOnOrderStatus } }).unwrap();
+      setNotifSaved(true);
+      setTimeout(() => setNotifSaved(false), 2500);
     } catch { alert('Failed to save notification settings.'); }
   };
 
@@ -660,35 +678,189 @@ const ProfilePage: React.FC = () => {
     </div>
   );
 
-  const renderNotifications = () => (
-    <div>
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-1)', margin: 0 }}>Notifications</h2>
-        <p style={{ color: 'var(--text-3)', fontSize: '0.8rem', margin: '4px 0 0' }}>Control what we send you and how</p>
-      </div>
+  const renderNotifications = () => {
+    const ChannelCard = ({ icon, label, sublabel, field }: { icon: React.ReactNode; label: string; sublabel: string; field: 'pushEnabled' | 'emailEnabled' | 'inAppEnabled' | 'smsOptIn' }) => {
+      const on = notifForm[field] as boolean;
+      return (
+        <div
+          onClick={() => setNotifForm(p => ({ ...p, [field]: !p[field] }))}
+          style={{
+            padding: '16px 18px', borderRadius: 12, cursor: 'pointer',
+            border: on ? '1px solid rgba(212,168,67,0.4)' : '1px solid var(--border)',
+            background: on ? 'rgba(212,168,67,0.06)' : 'var(--surface-2)',
+            transition: 'all 0.15s ease',
+            display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8,
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: on ? 'rgba(212,168,67,0.12)' : 'var(--surface)', border: `1px solid ${on ? 'rgba(212,168,67,0.3)' : 'var(--border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: on ? 'var(--gold)' : 'var(--text-3)' }}>
+              {icon}
+            </div>
+            <div style={{ width: 38, height: 22, borderRadius: 99, background: on ? 'var(--gold)' : 'var(--surface-3)', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+              <span style={{ position: 'absolute', top: 3, left: on ? 18 : 3, width: 16, height: 16, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.4)' }} />
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: '0.875rem', fontWeight: 700, color: on ? 'var(--text-1)' : 'var(--text-2)', marginBottom: 2 }}>{label}</div>
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-3)', lineHeight: 1.4 }}>{sublabel}</div>
+          </div>
+        </div>
+      );
+    };
 
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 24px', marginBottom: 12 }}>
-        <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 4 }}>Order Updates</div>
-        <p style={{ fontSize: '0.78rem', color: 'var(--text-3)', marginBottom: 16 }}>Real-time notifications about your orders</p>
-        <Toggle label="Order Status Alerts" description="Confirmations, prep updates, out for delivery, delivered" checked={notifForm.notifyOnOrderStatus} onChange={v => setNotifForm(p => ({ ...p, notifyOnOrderStatus: v }))} />
-      </div>
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
+          <div>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-1)', margin: 0 }}>Notifications</h2>
+            <p style={{ color: 'var(--text-3)', fontSize: '0.8rem', margin: '4px 0 0' }}>Control what we send you and how</p>
+          </div>
+          {notifSaved && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 99, background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.25)', color: '#4ade80', fontSize: '0.8rem', fontWeight: 700 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Saved
+            </div>
+          )}
+        </div>
 
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 24px', marginBottom: 12 }}>
-        <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 4 }}>Promotions & Offers</div>
-        <p style={{ fontSize: '0.78rem', color: 'var(--text-3)', marginBottom: 16 }}>Deals, discounts and loyalty rewards</p>
-        <Toggle label="Email Offers" description="Special deals and promotions sent to your email" checked={notifForm.notifyOnOffers} onChange={v => setNotifForm(p => ({ ...p, notifyOnOffers: v }))} />
-        <Toggle label="Marketing Emails" description="News, new menu items, and seasonal campaigns" checked={notifForm.marketingOptIn} onChange={v => setNotifForm(p => ({ ...p, marketingOptIn: v }))} />
-        <Toggle label="SMS Alerts" description="Text messages for offers and order updates" checked={notifForm.smsOptIn} onChange={v => setNotifForm(p => ({ ...p, smsOptIn: v }))} />
-      </div>
+        {/* Delivery channels */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-3)', textTransform: 'uppercase' }}>Delivery Channels</div>
+          </div>
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-3)', marginBottom: 18, lineHeight: 1.5 }}>Choose how you receive notifications. You can enable multiple channels.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+            <ChannelCard
+              field="pushEnabled"
+              label="Push Notifications"
+              sublabel="Instant alerts on your device"
+              icon={
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+              }
+            />
+            <ChannelCard
+              field="emailEnabled"
+              label="Email"
+              sublabel="Receipts, updates to your inbox"
+              icon={
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+              }
+            />
+            <ChannelCard
+              field="smsOptIn"
+              label="SMS"
+              sublabel="Text messages to your phone"
+              icon={
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              }
+            />
+            <ChannelCard
+              field="inAppEnabled"
+              label="In-App"
+              sublabel="Notification bell while browsing"
+              icon={
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+              }
+            />
+          </div>
+        </div>
 
-      <button
-        onClick={handleSaveNotifications}
-        style={{ width: '100%', background: 'var(--red)', border: 'none', color: '#fff', borderRadius: 'var(--radius-pill)', padding: '13px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer' }}
-      >
-        Save Notification Settings
-      </button>
-    </div>
-  );
+        {/* Order updates */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px', marginBottom: 12 }}>
+          <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 4 }}>Order Updates</div>
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-3)', marginBottom: 18 }}>Stay informed about your orders in real time</p>
+          <Toggle
+            label="Order Status Alerts"
+            description="Confirmations, prep updates, out for delivery, delivered"
+            checked={notifForm.notifyOnOrderStatus}
+            onChange={v => setNotifForm(p => ({ ...p, notifyOnOrderStatus: v }))}
+          />
+        </div>
+
+        {/* Promotions & marketing */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px', marginBottom: 12 }}>
+          <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 4 }}>Promotions & Offers</div>
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-3)', marginBottom: 18 }}>Deals, discounts, loyalty rewards, and campaign news</p>
+          <Toggle
+            label="Email Offers"
+            description="Special deals and promotions sent to your email"
+            checked={notifForm.notifyOnOffers}
+            onChange={v => setNotifForm(p => ({ ...p, notifyOnOffers: v }))}
+          />
+          <Toggle
+            label="Marketing Emails"
+            description="New menu items, seasonal specials, and brand news"
+            checked={notifForm.marketingOptIn}
+            onChange={v => setNotifForm(p => ({ ...p, marketingOptIn: v }))}
+          />
+        </div>
+
+        {/* Quiet hours */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px', marginBottom: 24 }}>
+          <Toggle
+            label="Quiet Hours"
+            description="Pause non-critical notifications during selected hours"
+            checked={notifForm.quietHoursEnabled}
+            onChange={v => setNotifForm(p => ({ ...p, quietHoursEnabled: v }))}
+          />
+          {notifForm.quietHoursEnabled && (
+            <div style={{ marginTop: 16, padding: '16px 18px', background: 'var(--surface-2)', borderRadius: 10, border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>Quiet window</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-3)', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>From</label>
+                  <input
+                    type="time"
+                    value={notifForm.quietStart}
+                    onChange={e => setNotifForm(p => ({ ...p, quietStart: e.target.value }))}
+                    style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontSize: '0.9rem', color: 'var(--text-1)', fontFamily: 'var(--font-body)', outline: 'none', boxSizing: 'border-box', colorScheme: 'dark' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-3)', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Until</label>
+                  <input
+                    type="time"
+                    value={notifForm.quietEnd}
+                    onChange={e => setNotifForm(p => ({ ...p, quietEnd: e.target.value }))}
+                    style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontSize: '0.9rem', color: 'var(--text-1)', fontFamily: 'var(--font-body)', outline: 'none', boxSizing: 'border-box', colorScheme: 'dark' }}
+                  />
+                </div>
+              </div>
+              <p style={{ fontSize: '0.74rem', color: 'var(--text-3)', marginTop: 12 }}>
+                Notifications paused from {notifForm.quietStart} to {notifForm.quietEnd}. Order status alerts are always delivered.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={handleSaveNotifications}
+          style={{
+            width: '100%', background: 'linear-gradient(135deg, #c0392b, #e74c3c)', border: 'none',
+            color: '#fff', borderRadius: 'var(--radius-pill)', padding: '14px',
+            fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.95rem',
+            cursor: 'pointer', letterSpacing: '0.02em', transition: 'opacity 0.2s',
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.88'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
+        >
+          Save Notification Settings
+        </button>
+      </div>
+    );
+  };
 
   const SECTION_RENDERERS: Record<string, () => React.ReactNode> = {
     overview: renderOverview,

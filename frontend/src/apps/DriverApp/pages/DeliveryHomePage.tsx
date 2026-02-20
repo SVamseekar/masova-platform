@@ -20,8 +20,10 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../../store/store';
 import { useStartSessionMutation, useEndSessionMutation } from '../../../store/api/sessionApi';
 import { useGetDriverPerformanceQuery, useUpdateDriverStatusMutation } from '../../../store/api/driverApi';
+import { useUpdateLocationMutation } from '../../../store/api/deliveryApi';
 import { websocketService } from '../../../services/websocketService';
 import { MetricCard, ActionButton, StatsChart } from '../components/shared';
+import LocationMapModal from '../components/LocationMapModal';
 import { colors, spacing, borderRadius, typography, shadows, animations, createNeumorphicSurface } from '../../../styles/driver-design-tokens';
 
 interface DeliveryHomePageProps {
@@ -35,6 +37,7 @@ const DeliveryHomePage: React.FC<DeliveryHomePageProps> = ({ isOnline, setIsOnli
   const [startSession] = useStartSessionMutation();
   const [endSession] = useEndSessionMutation();
   const [updateDriverStatus] = useUpdateDriverStatusMutation();
+  const [updateLocation] = useUpdateLocationMutation();
 
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
@@ -45,6 +48,7 @@ const DeliveryHomePage: React.FC<DeliveryHomePageProps> = ({ isOnline, setIsOnli
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [elapsedTime, setElapsedTime] = useState('00:00:00');
   const [chartPeriod, setChartPeriod] = useState<'day' | 'week' | 'month'>('day');
+  const [showLocationMap, setShowLocationMap] = useState(false);
 
   // Fetch real driver performance data
   const today = new Date().toISOString().split('T')[0];
@@ -192,6 +196,13 @@ const DeliveryHomePage: React.FC<DeliveryHomePageProps> = ({ isOnline, setIsOnli
     let watchId: number | null = null;
     let updateInterval: NodeJS.Timeout | null = null;
 
+    console.log('🔧 Location tracking init:', {
+      locationMode,
+      hasGeolocation: !!navigator.geolocation,
+      isOnline,
+      userId: user?.id
+    });
+
     const connectWebSocket = async () => {
       if (websocketService.isConnected()) return;
       try {
@@ -204,6 +215,7 @@ const DeliveryHomePage: React.FC<DeliveryHomePageProps> = ({ isOnline, setIsOnli
     connectWebSocket();
 
     if (locationMode === 'auto' && navigator.geolocation) {
+      console.log('🎯 Starting GPS auto-tracking...');
       watchId = navigator.geolocation.watchPosition(
         (position) => {
           const coords = {
@@ -219,27 +231,66 @@ const DeliveryHomePage: React.FC<DeliveryHomePageProps> = ({ isOnline, setIsOnli
           setIsUsingFallback(false);
           setLocationError('');
 
-          if (websocketService.isConnected()) {
-            websocketService.sendLocationUpdate(user.id, coords);
+          // Only send location updates when we have real GPS coordinates
+          // Don't send if accuracy is too poor (> 100 meters)
+          if (coords.accuracy && coords.accuracy > 100) {
+            console.warn('⚠️ GPS accuracy too poor:', coords.accuracy, 'meters. Not sending update.');
+            setLocationError('GPS signal weak. Accuracy: ' + coords.accuracy.toFixed(0) + 'm');
+            return;
           }
+
+          // Send location update via REST API to delivery service
+          console.log('📍 Sending location update:', {
+            driverId: user.id,
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            accuracy: coords.accuracy
+          });
+
+          updateLocation({
+            driverId: user.id,
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            timestamp: coords.timestamp,
+            speed: coords.speed,
+            heading: coords.heading,
+            accuracy: coords.accuracy
+          })
+          .unwrap()
+          .then(() => {
+            console.log('✅ Location update successful');
+          })
+          .catch((error) => {
+            console.error('❌ Failed to update location:', error);
+          });
         },
         (error) => {
-          const fallbackCoords = getDefaultLocation();
-          setLocation(fallbackCoords);
-          setIsUsingFallback(true);
+          console.warn('⚠️ GPS error:', error.code, error.message);
+
           let errorMsg = 'GPS signal lost. ';
           switch (error.code) {
             case error.PERMISSION_DENIED:
+              // Permanent failure - use fallback
               errorMsg += 'Enable location permissions.';
+              const fallbackCoords = getDefaultLocation();
+              setLocation(fallbackCoords);
+              setIsUsingFallback(true);
               break;
             case error.POSITION_UNAVAILABLE:
-              errorMsg += 'Enable location services.';
+              // Temporary failure - keep last known location, don't send updates
+              errorMsg += 'GPS signal unavailable.';
+              setIsUsingFallback(true);
               break;
             case error.TIMEOUT:
+              // Temporary failure - keep last known location, don't send updates
               errorMsg += 'GPS signal weak.';
+              setIsUsingFallback(true);
               break;
           }
           setLocationError(errorMsg);
+
+          // Log but don't change location for temporary errors
+          // This prevents sending fallback coordinates to backend
         },
         {
           enableHighAccuracy: true,
@@ -250,25 +301,35 @@ const DeliveryHomePage: React.FC<DeliveryHomePageProps> = ({ isOnline, setIsOnli
     }
 
     if (locationMode === 'manual' || !navigator.geolocation) {
-      updateInterval = setInterval(() => {
+      console.log('📱 Using manual location mode (fallback)');
+      const sendManualLocation = () => {
         const coords = location || getDefaultLocation();
-        if (websocketService.isConnected()) {
-          websocketService.sendLocationUpdate(user.id, {
-            latitude: coords.latitude,
-            longitude: coords.longitude,
-            timestamp: new Date().toISOString()
-          });
-        }
-      }, 30000);
+        console.log('📍 Sending manual location update:', {
+          driverId: user.id,
+          latitude: coords.latitude,
+          longitude: coords.longitude
+        });
 
-      const coords = location || getDefaultLocation();
-      if (websocketService.isConnected()) {
-        websocketService.sendLocationUpdate(user.id, {
+        updateLocation({
+          driverId: user.id,
           latitude: coords.latitude,
           longitude: coords.longitude,
           timestamp: new Date().toISOString()
+        })
+        .unwrap()
+        .then(() => {
+          console.log('✅ Manual location update successful');
+        })
+        .catch((error) => {
+          console.error('❌ Failed to update manual location:', error);
         });
-      }
+      };
+
+      // Send initial location
+      sendManualLocation();
+
+      // Send location updates every 30 seconds
+      updateInterval = setInterval(sendManualLocation, 30000);
     }
 
     return () => {
@@ -429,12 +490,14 @@ const DeliveryHomePage: React.FC<DeliveryHomePageProps> = ({ isOnline, setIsOnli
             fullWidth
             startIcon={<NavigationIcon />}
             onClick={() => {
+              alert('Button clicked! Location: ' + (location ? `${location.latitude}, ${location.longitude}` : 'null'));
+              console.log('My Location clicked, location:', location);
+              console.log('showLocationMap state before:', showLocationMap);
               if (location) {
-                // Open OpenStreetMap with current location (using OSRM for routing)
-                const osmUrl = `https://www.openstreetmap.org/?mlat=${location.latitude}&mlon=${location.longitude}&zoom=16#map=16/${location.latitude}/${location.longitude}`;
-                window.open(osmUrl, '_blank');
+                setShowLocationMap(true);
+                console.log('Setting showLocationMap to true');
               } else {
-                alert('Location not available. Please go online first.');
+                alert('Location not available. Please enable GPS tracking first.');
               }
             }}
           >
@@ -524,6 +587,16 @@ const DeliveryHomePage: React.FC<DeliveryHomePageProps> = ({ isOnline, setIsOnli
           </Box>
         </Box>
       </Container>
+
+      {/* Location Map Modal */}
+      <LocationMapModal
+        open={showLocationMap && !!location}
+        onClose={() => {
+          console.log('Closing modal');
+          setShowLocationMap(false);
+        }}
+        location={location || { latitude: 0, longitude: 0 }}
+      />
     </Box>
   );
 };
