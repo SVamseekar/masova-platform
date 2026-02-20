@@ -109,6 +109,16 @@ public class StoreController {
         return ResponseEntity.ok(stores);
     }
 
+    @GetMapping("/{storeId}/delivery-radius-check")
+    @Operation(summary = "Check if coordinates are within store's delivery radius")
+    public ResponseEntity<Map<String, Object>> checkDeliveryRadius(
+            @PathVariable("storeId") String storeId,
+            @RequestParam double latitude,
+            @RequestParam double longitude) {
+        Map<String, Object> result = storeService.checkDeliveryRadius(storeId, latitude, longitude);
+        return ResponseEntity.ok(result);
+    }
+
     @PostMapping
     @Operation(summary = "Create new store")
     @SecurityRequirement(name = "bearerAuth")

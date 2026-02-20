@@ -48,6 +48,21 @@ public class StoreService {
                 .toList();
     }
     
+    public Map<String, Object> checkDeliveryRadius(String storeId, double latitude, double longitude) {
+        Store store = getStore(storeId);
+        boolean within = store.isWithinDeliveryRadius(latitude, longitude);
+        double radiusKm = store.getConfiguration() != null
+            ? store.getConfiguration().getDeliveryRadiusKm()
+            : 5.0;
+        return Map.of(
+            "withinRadius", within,
+            "storeId", storeId,
+            "deliveryRadiusKm", radiusKm,
+            "latitude", latitude,
+            "longitude", longitude
+        );
+    }
+
     // @CacheEvict(value = "stores", key = "#p0.id")
     public Store saveStore(Store store) {
         store.setLastModified(LocalDateTime.now());
