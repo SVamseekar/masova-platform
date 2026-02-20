@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAppSelector, useAppDispatch } from '../../store/hooks';
+import { useAppSelector } from '../../store/hooks';
+import CustomerPageHeader from '../../components/common/CustomerPageHeader';
 import { useCreateOrderMutation } from '../../store/api/orderApi';
 import { useInitiatePaymentMutation } from '../../store/api/paymentApi';
 import { useGetCustomerByUserIdQuery, useGetOrCreateCustomerMutation } from '../../store/api/customerApi';
-import { clearCart, selectCartItems, selectCartSubtotal, selectDeliveryFee, selectSelectedStoreId, selectSelectedStoreName } from '../../store/slices/cartSlice';
+import { useCheckDeliveryRadiusQuery } from '../../store/api/storeApi';
+import { selectCartItems, selectCartSubtotal, selectDeliveryFee, selectSelectedStoreId } from '../../store/slices/cartSlice';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { Button, Card, Input } from '../../components/ui/neumorphic';
-import AppHeader from '../../components/common/AppHeader';
-import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
-import { colors, spacing, typography, shadows, borderRadius } from '../../styles/design-tokens';
-import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
+import { colors } from '../../styles/design-tokens';
 
 // Razorpay is declared in types/razorpay.d.ts - no need to redeclare
 
@@ -28,32 +26,33 @@ interface GuestInfo {
 const PaymentPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const dispatch = useAppDispatch();
 
   const cartItems = useAppSelector(selectCartItems);
   const subtotal = useAppSelector(selectCartSubtotal);
   const baseDeliveryFee = useAppSelector(selectDeliveryFee);
   const currentUser = useAppSelector(selectCurrentUser);
   const selectedStoreId = useAppSelector(selectSelectedStoreId);
-  const selectedStoreName = useAppSelector(selectSelectedStoreName);
 
   // Get guest info from navigation state (passed from GuestCheckoutPage)
   const guestInfo = location.state?.guestInfo as GuestInfo | undefined;
 
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'UPI'>('CARD'); // Changed default to CARD
-  const [orderType, setOrderType] = useState<'DELIVERY' | 'TAKEAWAY'>('DELIVERY'); // Removed DINE_IN
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'UPI'>('CARD');
+  const [orderType, setOrderType] = useState<'DELIVERY' | 'TAKEAWAY'>('DELIVERY');
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
 
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
   const [initiatePayment, { isLoading: isInitiatingPayment }] = useInitiatePaymentMutation();
   const [getOrCreateCustomer] = useGetOrCreateCustomerMutation();
 
-  // Check if customer profile exists
   const { data: customerProfile } = useGetCustomerByUserIdQuery(currentUser?.id || '', {
     skip: !currentUser?.id,
   });
 
-  // Auto-select default address for logged-in customers
+  // Get selected address object for radius check
+  const selectedAddress = customerProfile?.addresses?.find(a => a.id === selectedAddressId) ?? null;
+  const selectedLat = selectedAddress?.latitude ?? null;
+  const selectedLng = selectedAddress?.longitude ?? null;
+
   useEffect(() => {
     if (customerProfile?.addresses && customerProfile.addresses.length > 0) {
       const defaultAddress = customerProfile.addresses.find(addr => addr.isDefault);
@@ -65,43 +64,54 @@ const PaymentPage: React.FC = () => {
     }
   }, [customerProfile]);
 
-  const isLoading = isCreatingOrder || isInitiatingPayment;
+  const { data: radiusCheck } = useCheckDeliveryRadiusQuery(
+    {
+      storeId: selectedStoreId || '',
+      latitude: selectedLat ?? 0,
+      longitude: selectedLng ?? 0,
+    },
+    {
+      skip:
+        orderType !== 'DELIVERY' ||
+        !selectedStoreId ||
+        selectedLat === null ||
+        selectedLng === null,
+    }
+  );
 
-  // Track if order was placed to prevent redirect after successful order
+  const isOutsideDeliveryRadius =
+    orderType === 'DELIVERY' &&
+    selectedLat !== null &&
+    selectedLng !== null &&
+    radiusCheck !== undefined &&
+    radiusCheck.withinRadius === false;
+
+  const isLoading = isCreatingOrder || isInitiatingPayment;
   const [orderPlaced, setOrderPlaced] = React.useState(false);
 
-  // Redirect if cart is empty (but not if order was just placed)
   useEffect(() => {
     if (cartItems.length === 0 && !orderPlaced) {
       navigate('/menu');
     }
   }, [cartItems, navigate, orderPlaced]);
 
-  // Auto-switch payment method when order type changes
   useEffect(() => {
-    // If DELIVERY order, cannot use CASH - switch to CARD
     if (orderType === 'DELIVERY' && paymentMethod === 'CASH') {
       setPaymentMethod('CARD');
     }
   }, [orderType, paymentMethod]);
 
-  // Calculate totals - consistent with CartDrawer, CheckoutPage, and GuestCheckoutPage
   const deliveryFee = orderType === 'DELIVERY' ? baseDeliveryFee : 0;
-  const tax = subtotal * 0.05; // 5% tax
+  const tax = subtotal * 0.05;
   const total = subtotal + deliveryFee + tax;
 
   const handlePlaceOrder = async () => {
     try {
-      // If user is logged in, ensure they have a customer profile (get or create)
       let customerId = customerProfile?.id;
       if (currentUser && !customerId) {
         try {
-          console.log('Getting or creating customer profile for user:', currentUser.id);
-
-          // Clean phone number - remove any spaces, dashes, or special characters
           const phoneToUse = currentUser.phone || guestInfo?.phone || '';
           const cleanPhone = phoneToUse.replace(/\D/g, '');
-
           const customer = await getOrCreateCustomer({
             userId: currentUser.id,
             storeId: selectedStoreId || undefined,
@@ -110,32 +120,23 @@ const PaymentPage: React.FC = () => {
             phone: cleanPhone,
           }).unwrap();
           customerId = customer.id;
-          console.log('Customer profile ready:', customerId);
         } catch (err: any) {
-          console.error('Failed to get or create customer profile:', err);
-
-          // Show specific error message
           const errorMessage = err?.data?.message || 'Unable to retrieve customer profile';
           alert(`Unable to retrieve your customer profile. Please try again or contact support.\n\nError: ${errorMessage}`);
-
-          return; // Don't proceed with order if customer profile retrieval fails
+          return;
         }
       }
 
-      // For logged-in users, ensure customerId is set
       if (currentUser && !customerId) {
-        console.error('Customer ID is missing for logged-in user');
         alert('Unable to retrieve your customer information. Please refresh the page and try again.');
         return;
       }
 
-      // Get delivery address based on user type
       let deliveryAddress = undefined;
       let specialInstructions = undefined;
 
       if (orderType === 'DELIVERY') {
         if (guestInfo) {
-          // Guest checkout - use guest info
           deliveryAddress = {
             street: guestInfo.street,
             city: guestInfo.city,
@@ -145,7 +146,6 @@ const PaymentPage: React.FC = () => {
           };
           specialInstructions = guestInfo.deliveryInstructions;
         } else if (customerProfile && selectedAddressId) {
-          // Logged-in customer - use selected address
           const selectedAddress = customerProfile.addresses.find(addr => addr.id === selectedAddressId);
           if (selectedAddress) {
             deliveryAddress = {
@@ -159,18 +159,17 @@ const PaymentPage: React.FC = () => {
         }
       }
 
-      // Prepare order data - matching backend CreateOrderRequest structure
       const orderData = {
-        storeId: selectedStoreId || currentUser?.storeId || '', // Use selected store from cart
+        storeId: selectedStoreId || currentUser?.storeId || '',
         customerName: currentUser?.name || guestInfo?.name || 'Guest',
         customerPhone: guestInfo?.phone || currentUser?.phone || '',
-        customerEmail: currentUser?.email || guestInfo?.email || '', // Include email for notifications
-        customerId: customerId, // Use customer ID from profile or newly created
+        customerEmail: currentUser?.email || guestInfo?.email || '',
+        customerId: customerId,
         items: cartItems.map(item => ({
           menuItemId: item.id,
           name: item.name,
           quantity: item.quantity,
-          price: item.price, // Backend expects price in rupees (Double)
+          price: item.price,
           variant: (item as any).variant,
           customizations: (item as any).customizations,
         })),
@@ -180,46 +179,32 @@ const PaymentPage: React.FC = () => {
         specialInstructions,
       };
 
-      console.log('Creating order with data:', orderData);
-
-      // Create order first
       const orderResult = await createOrder(orderData).unwrap();
-      console.log('Order created successfully:', orderResult);
-      const orderId = orderResult.id; // Backend returns 'id' not 'orderId'
+      const orderId = orderResult.id;
 
-      // If payment method is CASH, just redirect to tracking
       if (paymentMethod === 'CASH') {
-        console.log('Cash payment - redirecting to tracking page:', orderId);
-        setOrderPlaced(true); // Prevent redirect to menu
-
-        // Navigate to tracking page (cart will be cleared there)
+        setOrderPlaced(true);
         navigate(`/tracking/${orderId}`, {
           state: { orderData: orderResult },
-          replace: true // Replace history to prevent back navigation issues
+          replace: true,
         });
-
         return;
       }
 
-      // For CARD/UPI, initiate Razorpay payment
-      // IMPORTANT: Use the total from orderResult, not the frontend-calculated total
-      // Backend calculates dynamic delivery fees and state-based taxes
       const paymentResult = await initiatePayment({
         orderId: orderId,
-        amount: orderResult.total, // Use backend-calculated total
+        amount: orderResult.total,
         customerId: currentUser?.id || 'guest',
         customerEmail: guestInfo?.email || currentUser?.email,
         customerPhone: guestInfo?.phone || currentUser?.phone,
         storeId: selectedStoreId || currentUser?.storeId || '',
-        orderType: orderType, // For payment analytics
-        paymentMethod: paymentMethod, // For payment analytics
+        orderType: orderType,
+        paymentMethod: paymentMethod,
       }).unwrap();
 
-      // Open Razorpay checkout
       openRazorpayCheckout(paymentResult, orderId);
 
     } catch (err: any) {
-      console.error('Failed to create order:', err);
       const errorMessage = err?.data?.message || err?.message || 'Failed to create order. Please try again.';
       alert(errorMessage);
     }
@@ -233,19 +218,13 @@ const PaymentPage: React.FC = () => {
 
     const options = {
       key: paymentData.razorpayKeyId,
-      amount: paymentData.amount * 100, // Convert to paise
+      amount: paymentData.amount * 100,
       currency: 'INR',
       name: 'MaSoVa Restaurant',
       description: `Order #${orderId}`,
       order_id: paymentData.razorpayOrderId,
       handler: function (response: any) {
-        // Payment successful
-        console.log('Payment successful:', response);
-
-        // Set order placed flag to prevent redirect to menu
         setOrderPlaced(true);
-
-        // Navigate to success page (cart will be cleared there)
         navigate(`/payment/success?razorpay_payment_id=${response.razorpay_payment_id}&razorpay_order_id=${response.razorpay_order_id}&razorpay_signature=${response.razorpay_signature}&order_id=${orderId}`);
       },
       prefill: {
@@ -253,490 +232,443 @@ const PaymentPage: React.FC = () => {
         email: guestInfo?.email || currentUser?.email || '',
         contact: guestInfo?.phone || currentUser?.phone || '',
       },
-      notes: {
-        order_id: orderId,
-      },
-      theme: {
-        color: colors.brand.primary,
-      },
+      notes: { order_id: orderId },
+      theme: { color: colors.brand.primary },
       modal: {
         ondismiss: function() {
-          // Payment cancelled/closed
-          console.log('Payment cancelled');
           navigate(`/payment/failed?order_id=${orderId}&error=Payment cancelled by user`);
         }
       }
     };
 
     const razorpay = new window.Razorpay(options);
-
-    razorpay.on('payment.failed', function (response) {
-      console.error('Payment failed:', response.error);
+    razorpay.on('payment.failed', function (response: any) {
       navigate(`/payment/failed?order_id=${orderId}&error=${response.error.description || 'Payment failed'}`);
     });
-
     razorpay.open();
   };
 
-  // Styles
-  const containerStyles: React.CSSProperties = {
-    position: 'relative',
-    minHeight: '100vh',
-    fontFamily: typography.fontFamily.primary,
-    padding: spacing[6],
-    zIndex: 1,
-  };
-
-  const contentStyles: React.CSSProperties = {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    display: 'grid',
-    gridTemplateColumns: '1fr 400px',
-    gap: spacing[8],
-    marginTop: spacing[6],
-  };
-
-  const titleStyles: React.CSSProperties = {
-    fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.extrabold,
-    color: colors.text.primary,
-    marginBottom: spacing[6],
-  };
-
-  const sectionTitleStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-    marginBottom: spacing[4],
-  };
-
-  const paymentOptionStyles = (isSelected: boolean): React.CSSProperties => ({
-    ...createNeumorphicSurface(isSelected ? 'inset' : 'raised', 'base', 'lg'),
-    padding: spacing[4],
-    marginBottom: spacing[3],
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    backgroundColor: isSelected ? colors.brand.primaryLight + '20' : colors.surface.primary,
-    border: isSelected ? `2px solid ${colors.brand.primary}` : 'none',
-  });
-
-  const orderTypeOptionStyles = (isSelected: boolean): React.CSSProperties => ({
-    ...createNeumorphicSurface(isSelected ? 'inset' : 'raised', 'base', 'lg'),
-    padding: spacing[4],
-    marginBottom: spacing[3],
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    backgroundColor: isSelected ? colors.brand.primaryLight + '20' : colors.surface.primary,
-    border: isSelected ? `2px solid ${colors.brand.primary}` : 'none',
-    textAlign: 'center',
-  });
-
-  const optionLabelStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.primary,
-    display: 'flex',
-    alignItems: 'center',
-    gap: spacing[3],
-  };
-
-  const optionIconStyles: React.CSSProperties = {
-    fontSize: '32px',
-  };
-
-  const summaryRowStyles: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginBottom: spacing[3],
-  };
-
-  const summaryLabelStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.base,
-    color: colors.text.secondary,
-  };
-
-  const summaryValueStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.primary,
-  };
-
-  const totalRowStyles: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    paddingTop: spacing[4],
-    borderTop: `2px solid ${colors.surface.tertiary}`,
-    marginBottom: spacing[6],
-  };
-
-  const totalLabelStyles: React.CSSProperties = {
-    fontSize: typography.fontSize['2xl'],
-    fontWeight: typography.fontWeight.extrabold,
-    color: colors.text.primary,
-  };
-
-  const totalValueStyles: React.CSSProperties = {
-    fontSize: typography.fontSize['2xl'],
-    fontWeight: typography.fontWeight.extrabold,
-    background: `linear-gradient(135deg, ${colors.brand.primary}, ${colors.brand.secondary})`,
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-  };
-
-  const customerInfoStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('inset', 'sm', 'lg'),
-    padding: spacing[4],
-    marginBottom: spacing[4],
-    backgroundColor: colors.surface.secondary,
-  };
-
-  const infoRowStyles: React.CSSProperties = {
-    marginBottom: spacing[2],
-    fontSize: typography.fontSize.base,
-    color: colors.text.secondary,
-  };
-
-  const infoLabelStyles: React.CSSProperties = {
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.primary,
-  };
-
-  const itemStyles: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginBottom: spacing[3],
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-  };
-
-  const responsiveStyles: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-    gap: spacing[3],
-  };
-
-  const paymentInfoBadgeStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('inset', 'sm', 'lg'),
-    padding: spacing[3],
-    marginTop: spacing[3],
-    backgroundColor: colors.semantic.infoLight + '20',
-    border: `2px solid ${colors.semantic.info}`,
-    fontSize: typography.fontSize.sm,
-    color: colors.semantic.info,
-    borderRadius: borderRadius.lg,
-  };
+  const isPlaceOrderDisabled = isLoading || (orderType === 'DELIVERY' && !guestInfo && (!customerProfile || !selectedAddressId)) || isOutsideDeliveryRadius;
 
   return (
-    <>
-      <AnimatedBackground variant="minimal" />
+    <div style={{ background: 'var(--bg)', minHeight: '100vh', fontFamily: 'var(--font-body)' }}>
+      <CustomerPageHeader onBack={() => navigate('/checkout')} breadcrumb="Checkout" />
 
-      <div style={containerStyles}>
-        <AppHeader
-          title="Payment & Checkout"
-          showBackButton
-          backRoute="/checkout"
-          hideStaffLogin
-        />
+      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '32px 24px', display: 'grid', gridTemplateColumns: '1fr 380px', gap: '28px', alignItems: 'start' }}>
 
-        <h1 style={titleStyles}>Complete Your Order</h1>
+        {/* LEFT COLUMN */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-        <div style={contentStyles}>
-          {/* Left Column: Payment Options */}
+          {/* Page title */}
           <div>
-            {/* Customer Info - Guest */}
-            {guestInfo && (
-              <Card elevation="md" padding="lg" style={{ marginBottom: spacing[6] }}>
-                <h2 style={sectionTitleStyles}>Delivery Information</h2>
-                <div style={customerInfoStyles}>
-                  <div style={infoRowStyles}>
-                    <span style={infoLabelStyles}>Name:</span> {guestInfo.name}
-                  </div>
-                  <div style={infoRowStyles}>
-                    <span style={infoLabelStyles}>Email:</span> {guestInfo.email}
-                  </div>
-                  <div style={infoRowStyles}>
-                    <span style={infoLabelStyles}>Phone:</span> {guestInfo.phone}
-                  </div>
-                  <div style={infoRowStyles}>
-                    <span style={infoLabelStyles}>Address:</span> {guestInfo.street}, {guestInfo.city}, {guestInfo.state} - {guestInfo.pincode}
-                  </div>
-                  {guestInfo.deliveryInstructions && (
-                    <div style={infoRowStyles}>
-                      <span style={infoLabelStyles}>Instructions:</span> {guestInfo.deliveryInstructions}
-                    </div>
-                  )}
-                </div>
-              </Card>
-            )}
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-1)', margin: 0 }}>
+              Complete Your Order
+            </h1>
+            <div style={{ height: '2px', width: '60px', background: 'var(--gold)', marginTop: '10px', borderRadius: '2px' }} />
+          </div>
 
-            {/* Customer Info - Logged In */}
-            {currentUser && !guestInfo && customerProfile && (
-              <Card elevation="md" padding="lg" style={{ marginBottom: spacing[6] }}>
-                <h2 style={sectionTitleStyles}>Customer Information</h2>
-                <div style={customerInfoStyles}>
-                  <div style={infoRowStyles}>
-                    <span style={infoLabelStyles}>Name:</span> {currentUser.name}
-                  </div>
-                  <div style={infoRowStyles}>
-                    <span style={infoLabelStyles}>Email:</span> {currentUser.email}
-                  </div>
-                  <div style={infoRowStyles}>
-                    <span style={infoLabelStyles}>Phone:</span> {currentUser.phone}
-                  </div>
-                </div>
+          {/* Guest delivery info */}
+          {guestInfo && (
+            <div style={cardStyle}>
+              <SectionLabel>Delivery Information</SectionLabel>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <InfoRow label="Name" value={guestInfo.name} />
+                <InfoRow label="Email" value={guestInfo.email} />
+                <InfoRow label="Phone" value={guestInfo.phone} />
+                <InfoRow label="Address" value={`${guestInfo.street}, ${guestInfo.city}, ${guestInfo.state} — ${guestInfo.pincode}`} />
+                {guestInfo.deliveryInstructions && (
+                  <InfoRow label="Instructions" value={guestInfo.deliveryInstructions} />
+                )}
+              </div>
+            </div>
+          )}
 
-                {/* Address Selection for Delivery */}
-                {orderType === 'DELIVERY' && (
-                  <>
-                    <h3 style={{ ...sectionTitleStyles, marginTop: spacing[4], fontSize: typography.fontSize.lg }}>
-                      Delivery Address
-                    </h3>
-                    {customerProfile.addresses.length > 0 ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
-                        {customerProfile.addresses.map((address) => (
+          {/* Logged-in customer info + address */}
+          {currentUser && !guestInfo && customerProfile && (
+            <div style={cardStyle}>
+              <SectionLabel>Customer Information</SectionLabel>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: orderType === 'DELIVERY' ? '20px' : '0' }}>
+                <InfoRow label="Name" value={currentUser.name} />
+                <InfoRow label="Email" value={currentUser.email || ''} />
+                <InfoRow label="Phone" value={currentUser.phone || ''} />
+              </div>
+
+              {orderType === 'DELIVERY' && (
+                <>
+                  <div style={{ height: '1px', background: 'var(--border)', marginBottom: '16px' }} />
+                  <SectionLabel>Delivery Address</SectionLabel>
+                  {customerProfile.addresses.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {customerProfile.addresses.map((address) => {
+                        const isSelected = selectedAddressId === address.id;
+                        return (
                           <div
                             key={address.id}
                             onClick={() => setSelectedAddressId(address.id)}
                             style={{
-                              ...createNeumorphicSurface(selectedAddressId === address.id ? 'inset' : 'raised', 'sm', 'lg'),
-                              padding: spacing[3],
+                              padding: '14px 16px',
+                              borderRadius: '10px',
+                              border: isSelected ? '1.5px solid var(--gold)' : '1px solid var(--border)',
+                              background: isSelected ? 'rgba(212,175,55,0.07)' : 'var(--surface-2)',
                               cursor: 'pointer',
-                              backgroundColor: selectedAddressId === address.id ? colors.brand.primaryLight + '20' : colors.surface.primary,
-                              border: selectedAddressId === address.id ? `2px solid ${colors.brand.primary}` : 'none',
+                              transition: 'all 0.2s',
                             }}
                           >
-                            <div style={{ fontWeight: typography.fontWeight.semibold, marginBottom: spacing[1] }}>
-                              {address.label}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                              <div style={{
+                                width: '16px', height: '16px', borderRadius: '50%',
+                                border: isSelected ? '4px solid var(--gold)' : '2px solid var(--text-3)',
+                                flexShrink: 0,
+                              }} />
+                              <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-1)' }}>
+                                {address.label}
+                              </span>
                               {address.isDefault && (
-                                <span style={{ marginLeft: spacing[2], fontSize: typography.fontSize.xs, color: colors.brand.primary }}>
-                                  (Default)
+                                <span style={{ fontSize: '0.7rem', color: 'var(--gold)', border: '1px solid var(--gold)', padding: '1px 6px', borderRadius: '20px' }}>
+                                  Default
                                 </span>
                               )}
                             </div>
-                            <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
-                              {address.addressLine1}
-                              {address.addressLine2 && `, ${address.addressLine2}`}
-                              <br />
-                              {address.city}, {address.state} - {address.postalCode}
-                              <br />
-                              {address.country}
+                            <div style={{ fontSize: '0.82rem', color: 'var(--text-2)', paddingLeft: '24px', lineHeight: 1.6 }}>
+                              {address.addressLine1}{address.addressLine2 && `, ${address.addressLine2}`}<br />
+                              {address.city}, {address.state} — {address.postalCode}
                               {address.landmark && <><br />Landmark: {address.landmark}</>}
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div style={{ ...customerInfoStyles, textAlign: 'center', color: colors.text.tertiary }}>
-                        No saved addresses. Please add an address from your profile page.
-                      </div>
-                    )}
-                  </>
-                )}
-              </Card>
-            )}
-
-            {/* Order Type Selection */}
-            <Card elevation="md" padding="lg" style={{ marginBottom: spacing[6] }}>
-              <h2 style={sectionTitleStyles}>Order Type</h2>
-              <div style={responsiveStyles}>
-                <div
-                  style={orderTypeOptionStyles(orderType === 'DELIVERY')}
-                  onClick={() => setOrderType('DELIVERY')}
-                >
-                  <div style={optionIconStyles}>🚚</div>
-                  <div style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.semibold, marginTop: spacing[2] }}>
-                    Delivery
-                  </div>
-                  <div style={{ fontSize: typography.fontSize.xs, color: colors.text.tertiary, marginTop: spacing[1] }}>
-                    +₹{baseDeliveryFee.toFixed(2)}
-                  </div>
-                </div>
-
-                <div
-                  style={orderTypeOptionStyles(orderType === 'TAKEAWAY')}
-                  onClick={() => setOrderType('TAKEAWAY')}
-                >
-                  <div style={optionIconStyles}>🛍️</div>
-                  <div style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.semibold, marginTop: spacing[2] }}>
-                    Takeaway
-                  </div>
-                  <div style={{ fontSize: typography.fontSize.xs, color: colors.text.tertiary, marginTop: spacing[1] }}>
-                    No delivery fee
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Payment Method Selection */}
-            <Card elevation="md" padding="lg">
-              <h2 style={sectionTitleStyles}>Payment Method</h2>
-
-              {/* Cash payment only available for TAKEAWAY orders */}
-              {orderType === 'TAKEAWAY' && (
-                <div
-                  style={paymentOptionStyles(paymentMethod === 'CASH')}
-                  onClick={() => setPaymentMethod('CASH')}
-                >
-                  <div style={optionLabelStyles}>
-                    <span style={optionIconStyles}>💵</span>
-                    <div>
-                      <div>Cash on Pickup</div>
-                      <div style={{ fontSize: typography.fontSize.sm, color: colors.text.tertiary }}>
-                        Pay with cash when you collect your order
-                      </div>
+                        );
+                      })}
                     </div>
-                  </div>
-                </div>
+                  ) : (
+                    <div style={{ padding: '16px', background: 'var(--surface-2)', borderRadius: '10px', textAlign: 'center', color: 'var(--text-3)', fontSize: '0.85rem' }}>
+                      No saved addresses. Add one from your profile page.
+                    </div>
+                  )}
+                  {isOutsideDeliveryRadius && (
+                    <div style={{
+                      backgroundColor: '#fff3cd',
+                      border: '1px solid #ffc107',
+                      borderRadius: '8px',
+                      padding: '12px 16px',
+                      color: '#856404',
+                      fontSize: '14px',
+                      marginTop: '8px',
+                    }}>
+                      &#9888; Your delivery address is outside this store's delivery area ({radiusCheck?.deliveryRadiusKm} km radius).
+                      Please choose a closer address or switch to Takeaway.
+                    </div>
+                  )}
+                </>
               )}
+            </div>
+          )}
 
-              <div
-                style={paymentOptionStyles(paymentMethod === 'CARD')}
-                onClick={() => setPaymentMethod('CARD')}
-              >
-                <div style={optionLabelStyles}>
-                  <span style={optionIconStyles}>💳</span>
-                  <div>
-                    <div>Credit/Debit Card</div>
-                    <div style={{ fontSize: typography.fontSize.sm, color: colors.text.tertiary }}>
-                      Pay securely with your card (Razorpay)
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                style={paymentOptionStyles(paymentMethod === 'UPI')}
-                onClick={() => setPaymentMethod('UPI')}
-              >
-                <div style={optionLabelStyles}>
-                  <span style={optionIconStyles}>📱</span>
-                  <div>
-                    <div>UPI Payment</div>
-                    <div style={{ fontSize: typography.fontSize.sm, color: colors.text.tertiary }}>
-                      Pay using Google Pay, PhonePe, Paytm, etc.
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {(paymentMethod === 'CARD' || paymentMethod === 'UPI') && (
-                <div style={paymentInfoBadgeStyles}>
-                  ℹ️ You will be redirected to Razorpay's secure payment gateway to complete your payment.
-                </div>
-              )}
-            </Card>
+          {/* Order Type */}
+          <div style={cardStyle}>
+            <SectionLabel>Order Type</SectionLabel>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <OrderTypeCard
+                active={orderType === 'DELIVERY'}
+                onClick={() => setOrderType('DELIVERY')}
+                icon={
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3" />
+                    <rect x="9" y="11" width="14" height="10" rx="2" />
+                    <circle cx="12" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+                  </svg>
+                }
+                title="Delivery"
+                sub={`+₹${baseDeliveryFee.toFixed(0)} delivery`}
+              />
+              <OrderTypeCard
+                active={orderType === 'TAKEAWAY'}
+                onClick={() => setOrderType('TAKEAWAY')}
+                icon={
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <path d="M16 10a4 4 0 0 1-8 0" />
+                  </svg>
+                }
+                title="Takeaway"
+                sub="No delivery fee"
+              />
+            </div>
           </div>
 
-          {/* Right Column: Order Summary */}
-          <div style={{ position: 'sticky', top: spacing[6], height: 'fit-content' }}>
-            <Card elevation="lg" padding="lg">
-              <h2 style={sectionTitleStyles}>Order Summary</h2>
-
-              {/* Cart Items */}
-              <div style={{ marginBottom: spacing[4] }}>
-                {cartItems.map((item) => (
-                  <div key={item.id} style={itemStyles}>
-                    <span>
-                      {item.quantity}x {item.name}
-                    </span>
-                    <span style={{ fontWeight: typography.fontWeight.semibold }}>
-                      ₹{(item.price * item.quantity).toFixed(2)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Breakdown */}
-              <div style={{ marginBottom: spacing[4] }}>
-                <div style={summaryRowStyles}>
-                  <span style={summaryLabelStyles}>Subtotal ({cartItems.length} items)</span>
-                  <span style={summaryValueStyles}>₹{subtotal.toFixed(2)}</span>
-                </div>
-
-                {orderType === 'DELIVERY' && (
-                  <div style={summaryRowStyles}>
-                    <span style={summaryLabelStyles}>Delivery Fee (estimated)</span>
-                    <span style={summaryValueStyles}>₹{deliveryFee.toFixed(2)}</span>
-                  </div>
-                )}
-
-                <div style={summaryRowStyles}>
-                  <span style={summaryLabelStyles}>Tax (estimated)</span>
-                  <span style={summaryValueStyles}>₹{tax.toFixed(2)}</span>
-                </div>
-              </div>
-
-              {/* Total */}
-              <div style={totalRowStyles}>
-                <span style={totalLabelStyles}>Total (estimated)</span>
-                <span style={totalValueStyles}>₹{total.toFixed(2)}</span>
-              </div>
-
-              {/* Note about dynamic pricing */}
-              <div style={{
-                fontSize: typography.fontSize.xs,
-                color: colors.text.secondary,
-                fontStyle: 'italic',
-                marginBottom: spacing[4],
-                textAlign: 'center',
-              }}>
-                Final amount may vary based on delivery distance and state taxes
-              </div>
-
-              {/* Action Buttons */}
-              <Button
-                variant="primary"
-                size="lg"
-                fullWidth
-                onClick={handlePlaceOrder}
-                disabled={isLoading || (orderType === 'DELIVERY' && !guestInfo && (!customerProfile || !selectedAddressId))}
-                style={{ marginBottom: spacing[3] }}
-              >
-                {isLoading
-                  ? 'Processing...'
-                  : paymentMethod === 'CASH'
-                    ? `Place Order - ₹${total.toFixed(2)}`
-                    : `Pay ₹${total.toFixed(2)} via Razorpay`
+          {/* Payment Method */}
+          <div style={cardStyle}>
+            <SectionLabel>Payment Method</SectionLabel>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {orderType === 'TAKEAWAY' && (
+                <PaymentOption
+                  active={paymentMethod === 'CASH'}
+                  onClick={() => setPaymentMethod('CASH')}
+                  icon={
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="6" width="20" height="12" rx="2" />
+                      <circle cx="12" cy="12" r="2" />
+                      <path d="M6 12h.01M18 12h.01" />
+                    </svg>
+                  }
+                  title="Cash on Pickup"
+                  desc="Pay with cash when you collect your order"
+                />
+              )}
+              <PaymentOption
+                active={paymentMethod === 'CARD'}
+                onClick={() => setPaymentMethod('CARD')}
+                icon={
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="1" y="4" width="22" height="16" rx="2" />
+                    <line x1="1" y1="10" x2="23" y2="10" />
+                  </svg>
                 }
-              </Button>
+                title="Credit / Debit Card"
+                desc="Pay securely via Razorpay"
+              />
+              <PaymentOption
+                active={paymentMethod === 'UPI'}
+                onClick={() => setPaymentMethod('UPI')}
+                icon={
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="5" y="2" width="14" height="20" rx="2" />
+                    <line x1="12" y1="18" x2="12.01" y2="18" />
+                  </svg>
+                }
+                title="UPI Payment"
+                desc="Google Pay, PhonePe, Paytm & more"
+              />
+            </div>
 
-              {orderType === 'DELIVERY' && !guestInfo && customerProfile && customerProfile.addresses.length === 0 && (
-                <div style={{
-                  padding: spacing[3],
-                  backgroundColor: colors.semantic.warningLight + '20',
-                  border: `2px solid ${colors.semantic.warning}`,
-                  borderRadius: borderRadius.lg,
-                  fontSize: typography.fontSize.sm,
-                  color: colors.semantic.warning,
-                  textAlign: 'center',
-                  marginBottom: spacing[3],
-                }}>
-                  ⚠️ Please add a delivery address in your profile to continue
+            {(paymentMethod === 'CARD' || paymentMethod === 'UPI') && (
+              <div style={{
+                marginTop: '14px',
+                padding: '12px 14px',
+                background: 'rgba(212,175,55,0.06)',
+                border: '1px solid rgba(212,175,55,0.2)',
+                borderRadius: '10px',
+                fontSize: '0.8rem',
+                color: 'var(--text-3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                You will be redirected to Razorpay's secure payment gateway to complete your payment.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN — Order Summary */}
+        <div style={{ position: 'sticky', top: '84px' }}>
+          <div style={{ ...cardStyle, padding: '24px' }}>
+            <SectionLabel>Order Summary</SectionLabel>
+
+            {/* Items list */}
+            <div style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {cartItems.map((item) => (
+                <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>
+                    <span style={{ color: 'var(--gold)', fontWeight: 600, marginRight: '6px' }}>{item.quantity}×</span>
+                    {item.name}
+                  </div>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-1)' }}>
+                    ₹{(item.price * item.quantity).toFixed(2)}
+                  </span>
                 </div>
-              )}
+              ))}
+            </div>
 
-              <Button
-                variant="secondary"
-                size="base"
-                fullWidth
-                onClick={() => navigate('/checkout')}
-                disabled={isLoading}
-              >
-                Back to Checkout
-              </Button>
+            <div style={{ height: '1px', background: 'var(--border)', marginBottom: '16px' }} />
 
-              {paymentMethod !== 'CASH' && (
-                <div style={{ marginTop: spacing[4], fontSize: typography.fontSize.xs, color: colors.text.tertiary, textAlign: 'center' }}>
-                  🔒 Secured by Razorpay • 256-bit SSL Encrypted
-                </div>
+            {/* Breakdown */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+              <SummaryRow label={`Subtotal (${cartItems.length} items)`} value={`₹${subtotal.toFixed(2)}`} />
+              {orderType === 'DELIVERY' && (
+                <SummaryRow label="Delivery fee" value={`₹${deliveryFee.toFixed(2)}`} />
               )}
-            </Card>
+              <SummaryRow label="Tax (5%)" value={`₹${tax.toFixed(2)}`} />
+            </div>
+
+            <div style={{ height: '1px', background: 'var(--border)', marginBottom: '16px' }} />
+
+            {/* Total */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-1)' }}>Total</span>
+              <span style={{ fontWeight: 800, fontSize: '1.4rem', color: 'var(--gold)' }}>₹{total.toFixed(2)}</span>
+            </div>
+            <p style={{ fontSize: '0.72rem', color: 'var(--text-3)', marginBottom: '20px', lineHeight: 1.4 }}>
+              Delivery charges may vary based on distance.
+            </p>
+
+            {/* Warning: no addresses */}
+            {orderType === 'DELIVERY' && !guestInfo && customerProfile && customerProfile.addresses.length === 0 && (
+              <div style={{
+                padding: '12px 14px',
+                background: 'rgba(234,179,8,0.08)',
+                border: '1px solid rgba(234,179,8,0.35)',
+                borderRadius: '10px',
+                fontSize: '0.8rem',
+                color: '#fbbf24',
+                marginBottom: '16px',
+                display: 'flex',
+                gap: '8px',
+                alignItems: 'flex-start',
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '1px' }}>
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                Please add a delivery address in your profile to continue.
+              </div>
+            )}
+
+            {/* CTA */}
+            <button
+              onClick={handlePlaceOrder}
+              disabled={isPlaceOrderDisabled}
+              style={{
+                width: '100%',
+                padding: '15px',
+                borderRadius: '10px',
+                border: 'none',
+                background: isPlaceOrderDisabled ? 'var(--border)' : 'linear-gradient(135deg, #c0392b, #e74c3c)',
+                color: isPlaceOrderDisabled ? 'var(--text-3)' : '#fff',
+                fontSize: '0.95rem',
+                fontWeight: 700,
+                cursor: isPlaceOrderDisabled ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s',
+                letterSpacing: '0.02em',
+                marginBottom: '10px',
+              }}
+            >
+              {isLoading
+                ? 'Processing...'
+                : paymentMethod === 'CASH'
+                  ? `Place Order — ₹${total.toFixed(2)}`
+                  : `Pay ₹${total.toFixed(2)} via Razorpay`}
+            </button>
+
+            <button
+              onClick={() => navigate('/checkout')}
+              disabled={isLoading}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '10px',
+                border: '1px solid var(--border)',
+                background: 'transparent',
+                color: 'var(--text-2)',
+                fontSize: '0.85rem',
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              Back to Checkout
+            </button>
+
+            {paymentMethod !== 'CASH' && (
+              <div style={{ marginTop: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.72rem', color: 'var(--text-3)' }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                Secured by Razorpay · 256-bit SSL Encrypted
+              </div>
+            )}
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
+
+// ─── Small helper components ─────────────────────────────────────────────────
+
+const cardStyle: React.CSSProperties = {
+  background: 'var(--surface)',
+  border: '1px solid var(--border)',
+  borderRadius: '14px',
+  padding: '22px 24px',
+};
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: '14px' }}>
+      {children}
+    </p>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ display: 'flex', gap: '8px', fontSize: '0.85rem' }}>
+      <span style={{ color: 'var(--text-3)', minWidth: '80px' }}>{label}:</span>
+      <span style={{ color: 'var(--text-1)', fontWeight: 500 }}>{value}</span>
+    </div>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <span style={{ fontSize: '0.83rem', color: 'var(--text-2)' }}>{label}</span>
+      <span style={{ fontSize: '0.83rem', fontWeight: 600, color: 'var(--text-1)' }}>{value}</span>
+    </div>
+  );
+}
+
+function OrderTypeCard({ active, onClick, icon, title, sub }: { active: boolean; onClick: () => void; icon: React.ReactNode; title: string; sub: string }) {
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        padding: '18px 14px',
+        borderRadius: '12px',
+        border: active ? '1.5px solid var(--gold)' : '1px solid var(--border)',
+        background: active ? 'rgba(212,175,55,0.07)' : 'var(--surface-2)',
+        cursor: 'pointer',
+        textAlign: 'center',
+        transition: 'all 0.2s',
+      }}
+    >
+      <div style={{ color: active ? 'var(--gold)' : 'var(--text-2)', marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>{icon}</div>
+      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: active ? 'var(--text-1)' : 'var(--text-2)', marginBottom: '4px' }}>{title}</div>
+      <div style={{ fontSize: '0.72rem', color: 'var(--text-3)' }}>{sub}</div>
+    </div>
+  );
+}
+
+function PaymentOption({ active, onClick, icon, title, desc }: { active: boolean; onClick: () => void; icon: React.ReactNode; title: string; desc: string }) {
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '14px',
+        padding: '14px 16px',
+        borderRadius: '10px',
+        border: active ? '1.5px solid var(--gold)' : '1px solid var(--border)',
+        background: active ? 'rgba(212,175,55,0.07)' : 'var(--surface-2)',
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+      }}
+    >
+      <div style={{
+        width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0,
+        border: active ? '5px solid var(--gold)' : '2px solid var(--text-3)',
+      }} />
+      <div style={{ color: active ? 'var(--gold)' : 'var(--text-2)', display: 'flex', alignItems: 'center' }}>{icon}</div>
+      <div>
+        <div style={{ fontWeight: 600, fontSize: '0.88rem', color: active ? 'var(--text-1)' : 'var(--text-2)' }}>{title}</div>
+        <div style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>{desc}</div>
+      </div>
+    </div>
+  );
+}
 
 export default PaymentPage;
