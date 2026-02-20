@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Skeleton } from '@mui/material';
 import {
   useGetAvailableMenuQuery,
   Cuisine,
@@ -10,7 +11,6 @@ import {
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { addToCart, updateItemQuantity, selectCartItems, selectSelectedStoreId } from '../../store/slices/cartSlice';
 import AppHeader from '../../components/common/AppHeader';
-import RecipeViewer from '../../components/RecipeViewer';
 import StoreSelector from '../../components/StoreSelector';
 
 interface MenuPageProps {
@@ -29,7 +29,6 @@ const MenuPage: React.FC<MenuPageProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDietary, setSelectedDietary] = useState<DietaryType | null>(null);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [selectedRecipeItem, setSelectedRecipeItem] = useState<MenuItem | null>(null);
 
   const cartItems = useAppSelector(selectCartItems);
   const selectedStoreId = useAppSelector(selectSelectedStoreId);
@@ -399,25 +398,6 @@ const MenuPage: React.FC<MenuPageProps> = ({
     transition: 'var(--transition)',
   });
 
-  const recipeButtonStyles: React.CSSProperties = {
-    padding: '6px 12px',
-    fontSize: '0.75rem',
-    fontWeight: 500,
-    color: 'var(--text-2)',
-    background: 'none',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius-pill)',
-    cursor: 'pointer',
-    fontFamily: 'var(--font-body)',
-    transition: 'var(--transition)',
-    marginBottom: '10px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    width: '100%',
-    justifyContent: 'center',
-  };
-
   const variantsNoteStyles: React.CSSProperties = {
     fontSize: '0.72rem',
     color: 'var(--text-3)',
@@ -447,17 +427,14 @@ const MenuPage: React.FC<MenuPageProps> = ({
         onCartClick={onCartClick}
       />
 
-      <div style={{ display: 'flex' }}>
+      <div style={{ display: 'flex', height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
         {/* Left sidebar */}
         <div style={{
           width: '260px',
           flexShrink: 0,
           background: 'var(--surface)',
           borderRight: '1px solid var(--border)',
-          position: 'sticky',
-          top: '64px',
-          height: 'calc(100vh - 64px)',
-          overflow: 'hidden',
+          height: '100%',
           display: 'flex',
           flexDirection: 'column',
         }}>
@@ -524,9 +501,16 @@ const MenuPage: React.FC<MenuPageProps> = ({
         </div>
 
         {/* Main content */}
-        <div style={{ flex: 1, padding: '24px 28px' }}>
-          {/* Search bar */}
-          <div style={{ marginBottom: '24px' }}>
+        <div style={{ flex: 1, padding: '24px 28px', overflowY: 'auto', height: '100%' }}>
+          {/* Search bar — sticky within the scrollable pane */}
+          <div style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 10,
+            background: 'var(--bg)',
+            paddingBottom: '16px',
+            marginBottom: '8px',
+          }}>
             <input
               type="text"
               placeholder="Search for dishes..."
@@ -553,7 +537,19 @@ const MenuPage: React.FC<MenuPageProps> = ({
 
           {/* Menu Items */}
       {isLoading ? (
-        <div style={loadingStyles}>Loading delicious menu...</div>
+        <div style={menuGridStyles}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} style={{ background: 'var(--surface)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+              <Skeleton variant="rectangular" height={180} sx={{ bgcolor: 'rgba(255,255,255,0.06)' }} />
+              <div style={{ padding: '16px' }}>
+                <Skeleton variant="text" height={24} sx={{ bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 1, mb: 1 }} />
+                <Skeleton variant="text" height={16} sx={{ bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 1, mb: 0.5 }} />
+                <Skeleton variant="text" width="60%" height={16} sx={{ bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 1, mb: 1 }} />
+                <Skeleton variant="text" width="40%" height={28} sx={{ bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 1, mt: 1 }} />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : filteredMenu.length === 0 ? (
         <div style={emptyStateStyles}>No items found. Try adjusting your filters.</div>
       ) : (
@@ -624,16 +620,6 @@ const MenuPage: React.FC<MenuPageProps> = ({
                   <div style={prepTimeStyles}>{item.preparationTime} min prep</div>
                 )}
 
-                {/* View Recipe Button */}
-                <button
-                  style={recipeButtonStyles}
-                  onClick={() => setSelectedRecipeItem(item)}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-strong)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-1)'; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-2)'; }}
-                >
-                  <span>View Recipe & Ingredients</span>
-                </button>
-
                 {item.variants && item.variants.length > 0 && (
                   <div style={variantsNoteStyles}>
                     + {item.variants.length} size options available
@@ -690,13 +676,6 @@ const MenuPage: React.FC<MenuPageProps> = ({
         </div>{/* end main content */}
       </div>{/* end flex row */}
 
-      {/* Recipe Viewer Modal */}
-      {selectedRecipeItem && (
-        <RecipeViewer
-          menuItem={selectedRecipeItem}
-          onClose={() => setSelectedRecipeItem(null)}
-        />
-      )}
     </div>
   );
 };
