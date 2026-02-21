@@ -4,7 +4,7 @@ import { useAppSelector } from '../../store/hooks';
 import CustomerPageHeader from '../../components/common/CustomerPageHeader';
 import { useCreateOrderMutation } from '../../store/api/orderApi';
 import { useInitiatePaymentMutation } from '../../store/api/paymentApi';
-import { useGetCustomerByUserIdQuery, useGetOrCreateCustomerMutation } from '../../store/api/customerApi';
+import { useGetCustomerByUserIdQuery, useGetOrCreateCustomerMutation, useUpdatePreferencesMutation } from '../../store/api/customerApi';
 import { useCheckDeliveryRadiusQuery } from '../../store/api/storeApi';
 import { selectCartItems, selectCartSubtotal, selectDeliveryFee, selectSelectedStoreId } from '../../store/slices/cartSlice';
 import { selectCurrentUser } from '../../store/slices/authSlice';
@@ -43,6 +43,7 @@ const PaymentPage: React.FC = () => {
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
   const [initiatePayment, { isLoading: isInitiatingPayment }] = useInitiatePaymentMutation();
   const [getOrCreateCustomer] = useGetOrCreateCustomerMutation();
+  const [updatePreferences] = useUpdatePreferencesMutation();
 
   const { data: customerProfile } = useGetCustomerByUserIdQuery(currentUser?.id || '', {
     skip: !currentUser?.id,
@@ -100,6 +101,17 @@ const PaymentPage: React.FC = () => {
       setPaymentMethod('CARD');
     }
   }, [orderType, paymentMethod]);
+
+  useEffect(() => {
+    const preferred = customerProfile?.preferences?.preferredPaymentMethod;
+    if (preferred && (['CASH', 'CARD', 'UPI'] as string[]).includes(preferred)) {
+      if (preferred === 'CASH' && orderType === 'DELIVERY') {
+        setPaymentMethod('CARD');
+      } else {
+        setPaymentMethod(preferred as 'CASH' | 'CARD' | 'UPI');
+      }
+    }
+  }, [customerProfile?.preferences?.preferredPaymentMethod, orderType]);
 
   const deliveryFee = orderType === 'DELIVERY' ? baseDeliveryFee : 0;
   const tax = subtotal * 0.05;
@@ -183,6 +195,12 @@ const PaymentPage: React.FC = () => {
       const orderId = orderResult.id;
 
       if (paymentMethod === 'CASH') {
+        if (customerProfile?.id) {
+          updatePreferences({
+            customerId: customerProfile.id,
+            data: { preferredPaymentMethod: paymentMethod },
+          }).catch(() => undefined);
+        }
         setOrderPlaced(true);
         navigate(`/tracking/${orderId}`, {
           state: { orderData: orderResult },
@@ -224,6 +242,12 @@ const PaymentPage: React.FC = () => {
       description: `Order #${orderId}`,
       order_id: paymentData.razorpayOrderId,
       handler: function (response: any) {
+        if (customerProfile?.id) {
+          updatePreferences({
+            customerId: customerProfile.id,
+            data: { preferredPaymentMethod: paymentMethod },
+          }).catch(() => undefined);
+        }
         setOrderPlaced(true);
         navigate(`/payment/success?razorpay_payment_id=${response.razorpay_payment_id}&razorpay_order_id=${response.razorpay_order_id}&razorpay_signature=${response.razorpay_signature}&order_id=${orderId}`);
       },
