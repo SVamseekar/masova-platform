@@ -31,6 +31,7 @@ export interface Order {
   customerId?: string;
   customerName: string;
   customerPhone?: string;
+  customerEmail?: string;
   storeId: string;
   items: OrderItem[];
   subtotal: number;
