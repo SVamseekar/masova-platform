@@ -1,0 +1,196 @@
+name: Deploy to GCP Cloud Run
+
+on:
+  push:
+    branches: [main]
+
+env:
+  PROJECT_ID: masova-app
+  REGION: asia-south1
+  REGISTRY: asia-south1-docker.pkg.dev
+
+jobs:
+  # ============================================================
+  # Job 1: Build backend images in parallel
+  # ============================================================
+  build-backend:
+    name: Build ${{ matrix.service.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - { name: api-gateway,          port: 8080 }
+          - { name: core-service,          port: 8085 }
+          - { name: commerce-service,      port: 8084 }
+          - { name: payment-service,       port: 8089 }
+          - { name: logistics-service,     port: 8095 }
+          - { name: intelligence-service,  port: 8087 }
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build JAR (skip tests — CI already ran them)
+        run: mvn package -DskipTests -pl ${{ matrix.service.name }} -am --no-transfer-progress
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
+
+      - name: Build and push ${{ matrix.service.name }}
+        run: |
+          IMAGE=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/masova/${{ matrix.service.name }}
+          docker build \
+            -t ${IMAGE}:${{ github.sha }} \
+            -t ${IMAGE}:latest \
+            ${{ matrix.service.name }}/
+          docker push ${IMAGE}:${{ github.sha }}
+          docker push ${IMAGE}:latest
+
+  # ============================================================
+  # Job 2: Deploy backend services to Cloud Run
+  # ============================================================
+  deploy-backend:
+    name: Deploy ${{ matrix.service.name }}
+    needs: build-backend
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - { name: api-gateway,         port: 8080, memory: 256Mi, min: 1, mongo_secret: "" }
+          - { name: core-service,         port: 8085, memory: 512Mi, min: 1, mongo_secret: "MONGODB_URI_CORE_SERVICE" }
+          - { name: commerce-service,     port: 8084, memory: 512Mi, min: 0, mongo_secret: "MONGODB_URI_COMMERCE_SERVICE" }
+          - { name: payment-service,      port: 8089, memory: 512Mi, min: 0, mongo_secret: "MONGODB_URI_PAYMENT_SERVICE" }
+          - { name: logistics-service,    port: 8095, memory: 512Mi, min: 0, mongo_secret: "MONGODB_URI_LOGISTICS_SERVICE" }
+          - { name: intelligence-service, port: 8087, memory: 256Mi, min: 0, mongo_secret: "MONGODB_URI_INTELLIGENCE_SERVICE" }
+    steps:
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy ${{ matrix.service.name }} to Cloud Run
+        run: |
+          IMAGE=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/masova/${{ matrix.service.name }}:${{ github.sha }}
+          gcloud run deploy ${{ matrix.service.name }} \
+            --image ${IMAGE} \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --port ${{ matrix.service.port }} \
+            --memory ${{ matrix.service.memory }} \
+            --cpu 1 \
+            --min-instances ${{ matrix.service.min }} \
+            --max-instances 3 \
+            --timeout 60 \
+            --set-env-vars "\
+          JWT_SECRET=${{ secrets.JWT_SECRET }},\
+          REDIS_HOST=${{ secrets.UPSTASH_REDIS_HOST }},\
+          REDIS_PORT=6380,\
+          REDIS_PASSWORD=${{ secrets.UPSTASH_REDIS_TOKEN }},\
+          RABBITMQ_HOST=${{ secrets.CLOUDAMQP_HOST }},\
+          RABBITMQ_PORT=5671,\
+          RABBITMQ_USERNAME=${{ secrets.CLOUDAMQP_USERNAME }},\
+          RABBITMQ_PASSWORD=${{ secrets.CLOUDAMQP_PASSWORD }},\
+          RABBITMQ_VHOST=${{ secrets.CLOUDAMQP_VHOST }},\
+          CORE_SERVICE_URL=https://core-service-${{ env.PROJECT_ID }}.run.app,\
+          COMMERCE_SERVICE_URL=https://commerce-service-${{ env.PROJECT_ID }}.run.app,\
+          LOGISTICS_SERVICE_URL=https://logistics-service-${{ env.PROJECT_ID }}.run.app,\
+          INTELLIGENCE_SERVICE_URL=https://intelligence-service-${{ env.PROJECT_ID }}.run.app,\
+          PAYMENT_SERVICE_URL=https://payment-service-${{ env.PROJECT_ID }}.run.app,\
+          FRONTEND_URL=https://masova-app.web.app,\
+          RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID }},\
+          RAZORPAY_KEY_SECRET=${{ secrets.RAZORPAY_KEY_SECRET }},\
+          GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }},\
+          BREVO_API_KEY=${{ secrets.BREVO_API_KEY }},\
+          GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}"
+
+  # ============================================================
+  # Job 3: Deploy masova-support AI agent to Cloud Run
+  # ============================================================
+  deploy-agent:
+    name: Deploy masova-support
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/masova-support
+          token: ${{ secrets.AGENT_REPO_TOKEN }}
+          path: masova-support
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
+
+      - name: Build and push masova-support
+        run: |
+          IMAGE=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/masova/masova-support
+          docker build -t ${IMAGE}:${{ github.sha }} -t ${IMAGE}:latest masova-support/
+          docker push ${IMAGE}:${{ github.sha }}
+          docker push ${IMAGE}:latest
+
+      - name: Deploy masova-support to Cloud Run
+        run: |
+          IMAGE=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/masova/masova-support:${{ github.sha }}
+          gcloud run deploy masova-support \
+            --image ${IMAGE} \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --port 8000 \
+            --memory 512Mi \
+            --cpu 1 \
+            --min-instances 0 \
+            --max-instances 2 \
+            --timeout 60 \
+            --set-env-vars "\
+          GOOGLE_GENAI_API_KEY=${{ secrets.GOOGLE_GENAI_API_KEY }},\
+          REDIS_URL=${{ secrets.UPSTASH_REDIS_URL }},\
+          BACKEND_BASE_URL=https://api-gateway-${{ env.PROJECT_ID }}.run.app"
+
+  # ============================================================
+  # Job 4: Build and deploy frontend to Firebase Hosting
+  # ============================================================
+  deploy-frontend:
+    name: Deploy Frontend to Firebase
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: cd frontend && npm ci
+
+      - name: Build
+        run: cd frontend && npm run build
+        env:
+          VITE_API_BASE_URL: https://api.masova.app
+          VITE_AGENT_URL: https://agent.masova.app
+
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: live
+          projectId: masova-app
+          entryPoint: frontend

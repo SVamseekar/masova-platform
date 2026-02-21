@@ -90,4 +90,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Staging deploy placeholder
-        run: echo "Deploy to staging — configure Cloud Run or SSH target here"
+        run: echo "Deploy triggered — see deploy.yml workflow for Cloud Run deployment"
