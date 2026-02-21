@@ -1,0 +1,11 @@
+.git/
+node_modules/
+frontend/node_modules/
+*/target/
+*.md
+docs/
+backups/
+.env
+.env.*
+*.bak
+*.test.*
