@@ -53,7 +53,7 @@ const OrderHistory: React.FC = () => {
         orderId: order.id,
         amount: order.total,
         customerId: order.customerId || 'walk-in',
-        customerEmail: `${order.customerId || 'walkin'}@cash.local`,
+        customerEmail: order.customerEmail || undefined,
         customerPhone: order.customerPhone || '0000000000',
         storeId: order.storeId,
         orderType: order.orderType,

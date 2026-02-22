@@ -272,7 +272,7 @@ public class CustomerNotificationService {
     }
 
     /**
-     * Send delivery OTP notification to customer (DELIV-002)
+     * Send delivery OTP notification to customer via WebSocket + Email (DELIV-002)
      */
     @Async
     public void sendDeliveryOtpNotification(Order order, String otp) {
@@ -282,15 +282,18 @@ public class CustomerNotificationService {
 
         try {
             String message = String.format(
-                    "Your delivery OTP for order #%s is: %s. Please share this code with the driver to confirm delivery.",
+                    "Your delivery OTP for order #%s is: <strong>%s</strong>. " +
+                    "Please share this code with the driver to confirm delivery. " +
+                    "This code expires in 15 minutes.",
                     order.getOrderNumber(), otp
             );
 
+            // WebSocket push
             CustomerNotification notification = CustomerNotification.builder()
                     .orderId(order.getId())
                     .orderNumber(order.getOrderNumber())
                     .customerId(order.getCustomerId())
-                    .title("Delivery OTP")
+                    .title("Delivery OTP: " + otp)
                     .message(message)
                     .status(order.getStatus())
                     .priority(NotificationPriority.HIGH)
@@ -300,11 +303,32 @@ public class CustomerNotificationService {
 
             sendWebSocketNotification(order.getCustomerId(), notification);
 
+            // Email via core-service notification endpoint
+            if (order.getCustomerEmail() != null && !order.getCustomerEmail().isEmpty()) {
+                try {
+                    Map<String, Object> emailPayload = new HashMap<>();
+                    emailPayload.put("userId", order.getCustomerId());
+                    emailPayload.put("title", "Your MaSoVa Delivery OTP for Order #" + order.getOrderNumber());
+                    emailPayload.put("message", message);
+                    emailPayload.put("type", "OTP");
+                    emailPayload.put("channel", "EMAIL");
+                    emailPayload.put("priority", "HIGH");
+                    emailPayload.put("recipientEmail", order.getCustomerEmail());
+
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.APPLICATION_JSON);
+                    HttpEntity<Map<String, Object>> entity = new HttpEntity<>(emailPayload, headers);
+
+                    restTemplate.postForObject(notificationServiceUrl + "/api/notifications/send", entity, Object.class);
+                    log.info("Delivery OTP email sent to customer {} for order {}",
+                            order.getCustomerId(), order.getOrderNumber());
+                } catch (Exception emailEx) {
+                    log.warn("Failed to send OTP email for order {}: {}", order.getOrderNumber(), emailEx.getMessage());
+                }
+            }
+
             log.info("Delivery OTP notification sent: orderId={}, customerId={}",
                     order.getId(), order.getCustomerId());
-
-            // TODO: In production, also send via SMS
-            // smsService.sendOtp(order.getCustomerPhone(), otp);
 
         } catch (Exception e) {
             log.error("Failed to send delivery OTP notification for order: {}", order.getOrderNumber(), e);

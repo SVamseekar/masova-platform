@@ -9,6 +9,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import TableRestaurantIcon from '@mui/icons-material/TableRestaurant';
 import InventoryIcon from '@mui/icons-material/Inventory';
 
 interface OrderPanelProps {
@@ -17,8 +18,8 @@ interface OrderPanelProps {
   onRemoveItem: (menuItemId: string) => void;
   onUpdateInstructions: (menuItemId: string, instructions: string) => void;
   onNewOrder: () => void;
-  orderType: 'PICKUP' | 'DELIVERY'; // Removed DINE_IN
-  onOrderTypeChange: (type: 'PICKUP' | 'DELIVERY') => void;
+  orderType: 'PICKUP' | 'DELIVERY' | 'DINE_IN';
+  onOrderTypeChange: (type: 'PICKUP' | 'DELIVERY' | 'DINE_IN') => void;
   selectedTable?: string | null;
   onTableSelect: (table: string | null) => void;
 }
@@ -39,8 +40,8 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  const tax = subtotal * 0.05; // 5% tax
-  const deliveryFee = orderType === 'DELIVERY' && subtotal > 0 ? 40 : 0;
+  const tax = subtotal * 0.05; // 5% GST (estimate; actual calculated by backend)
+  const deliveryFee = orderType === 'DELIVERY' && subtotal > 0 ? 50 : 0; // Estimate; actual fee from backend
   const total = subtotal + tax + deliveryFee;
 
   return (
@@ -88,7 +89,8 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
         }}>
           {[
             { value: 'PICKUP', label: 'Pickup', Icon: ShoppingBagIcon },
-            { value: 'DELIVERY', label: 'Delivery', Icon: LocalShippingIcon }
+            { value: 'DELIVERY', label: 'Delivery', Icon: LocalShippingIcon },
+            { value: 'DINE_IN', label: 'Dine In', Icon: TableRestaurantIcon }
           ].map(type => (
             <button
               key={type.value}

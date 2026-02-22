@@ -21,7 +21,7 @@ interface CustomerPanelProps {
   items: any[];
   customer: any;
   onCustomerChange: (customer: any) => void;
-  orderType: 'PICKUP' | 'DELIVERY'; // Removed DINE_IN
+  orderType: 'PICKUP' | 'DELIVERY' | 'DINE_IN';
   selectedTable?: string | null;
   onOrderComplete: () => void;
   userId?: string;

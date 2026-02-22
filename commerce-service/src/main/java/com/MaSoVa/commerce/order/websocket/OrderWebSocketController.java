@@ -52,4 +52,9 @@ public class OrderWebSocketController {
         log.info("Sending order update to customer {}: {}", customerId, order.getOrderNumber());
         messagingTemplate.convertAndSend("/queue/customer/" + customerId + "/orders", order);
     }
+
+    public void sendOrderUpdateToDriver(String driverId, Order order) {
+        log.info("Sending order assignment to driver {}: {}", driverId, order.getOrderNumber());
+        messagingTemplate.convertAndSend("/topic/driver/" + driverId + "/orders", order);
+    }
 }

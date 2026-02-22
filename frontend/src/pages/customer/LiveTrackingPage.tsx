@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTrackOrderQuery } from '../../store/api/deliveryApi';
+import { useCreateReviewMutation } from '../../store/api/reviewApi';
 import AppHeader from '../../components/common/AppHeader';
 import { DriverTrackingMap } from '../../components/delivery/DriverTrackingMap';
 import RatingDialog from '../../components/delivery/RatingDialog';
@@ -11,6 +12,7 @@ const LiveTrackingPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
   const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
+  const [createReview] = useCreateReviewMutation();
   const [localStatus, setLocalStatus] = useState<string | null>(null);
   const [localDriverLocation, setLocalDriverLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
@@ -33,7 +35,19 @@ const LiveTrackingPage: React.FC = () => {
   const effectiveDriverLocation = localDriverLocation || trackingData?.currentLocation;
 
   const handleSubmitRating = async (rating: number, feedback: string) => {
-    console.log('Rating submitted:', { orderId, rating, feedback });
+    if (!orderId) return;
+    try {
+      await createReview({
+        orderId,
+        overallRating: rating,
+        comment: feedback,
+        deliveryRating: rating,
+        driverId: trackingData?.driverId,
+      }).unwrap();
+      setRatingDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to submit rating:', error);
+    }
   };
 
   const callDriver = () => {

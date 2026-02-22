@@ -31,7 +31,7 @@ interface OrderItem {
 interface Order {
   id: string;
   orderNumber: string;
-  status: 'RECEIVED' | 'PREPARING' | 'OVEN' | 'BAKED' | 'DISPATCHED' | 'COMPLETED' | 'SERVED';
+  status: 'RECEIVED' | 'PREPARING' | 'OVEN' | 'BAKED' | 'READY' | 'DISPATCHED' | 'COMPLETED' | 'SERVED' | 'CANCELLED';
   items: OrderItem[];
   receivedAt: Date;
   estimatedPrepTime: number;
@@ -271,9 +271,12 @@ const KitchenDisplayPage: React.FC = () => {
     const orderType = order?.orderType;
 
     // Define status flow based on order type
+    // Backend flow: BAKED -> READY -> DISPATCHED/COMPLETED/SERVED
     const statusFlow: string[] = orderType === 'DELIVERY'
-      ? ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED', 'DISPATCHED']
-      : ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED']; // TAKEAWAY & DINE_IN end at BAKED (Ready)
+      ? ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED', 'READY', 'DISPATCHED']
+      : orderType === 'DINE_IN'
+        ? ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED', 'READY']
+        : ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED', 'READY']; // TAKEAWAY
 
     const currentIndex = statusFlow.indexOf(currentStatus);
     const nextStatus = statusFlow[currentIndex + 1];
@@ -448,7 +451,8 @@ const KitchenDisplayPage: React.FC = () => {
     { status: 'RECEIVED', title: 'New Orders', Icon: FiberNewIcon, color: '#3b82f6' },
     { status: 'PREPARING', title: 'Preparing', Icon: BuildIcon, color: '#f59e0b' },
     { status: 'OVEN', title: 'In Oven', Icon: WhatshotIcon, color: '#e53e3e' },
-    { status: 'BAKED', title: 'Ready', Icon: CheckCircleIcon, color: '#10b981' },
+    { status: 'BAKED', title: 'Baked', Icon: CheckCircleIcon, color: '#10b981' },
+    { status: 'READY', title: 'Ready', Icon: CheckCircleIcon, color: '#22c55e' },
     { status: 'DISPATCHED', title: 'Dispatched', Icon: LocalShippingIcon, color: '#8b5cf6' }
   ];
 
@@ -564,7 +568,7 @@ const KitchenDisplayPage: React.FC = () => {
           margin: 0 auto;
           padding: 24px;
           display: grid;
-          grid-template-columns: repeat(5, 1fr);
+          grid-template-columns: repeat(6, 1fr);
           gap: 20px;
           height: calc(100vh - 160px);
           overflow-x: auto;

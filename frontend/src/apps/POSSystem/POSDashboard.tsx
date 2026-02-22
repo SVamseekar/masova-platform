@@ -88,7 +88,7 @@ const POSDashboard: React.FC = () => {
   // Current order state
   const [orderItems, setOrderItems] = useState<any[]>([]);
   const [customer, setCustomer] = useState<any>(null);
-  const [orderType, setOrderType] = useState<'PICKUP' | 'DELIVERY'>('PICKUP'); // Removed DINE_IN
+  const [orderType, setOrderType] = useState<'PICKUP' | 'DELIVERY' | 'DINE_IN'>('PICKUP');
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -304,7 +304,7 @@ const POSDashboard: React.FC = () => {
         orderId: order.id,
         amount: order.total,
         customerId: order.customerId || 'walk-in',
-        customerEmail: `${order.customerId || 'walkin'}@cash.local`,
+        customerEmail: order.customerEmail || undefined,
         customerPhone: order.customerPhone || '0000000000',
         storeId: order.storeId,
         orderType: order.orderType,

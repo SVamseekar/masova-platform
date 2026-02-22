@@ -15,6 +15,8 @@ import com.MaSoVa.commerce.order.client.StoreServiceClient;
 import com.MaSoVa.commerce.order.config.TaxConfiguration;
 import com.MaSoVa.commerce.order.config.PreparationTimeConfiguration;
 import com.MaSoVa.commerce.order.config.DeliveryFeeConfiguration;
+import com.MaSoVa.shared.messaging.events.OrderCreatedEvent;
+import com.MaSoVa.shared.messaging.events.OrderStatusChangedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
@@ -43,6 +45,7 @@ public class OrderService {
     private final TaxConfiguration taxConfiguration;
     private final PreparationTimeConfiguration preparationTimeConfiguration;
     private final DeliveryFeeConfiguration deliveryFeeConfiguration;
+    private final OrderEventPublisher orderEventPublisher;
     private final Random random = new Random();
 
     public OrderService(OrderRepository orderRepository, OrderWebSocketController webSocketController,
@@ -52,7 +55,8 @@ public class OrderService {
                        StoreServiceClient storeServiceClient,
                        TaxConfiguration taxConfiguration,
                        PreparationTimeConfiguration preparationTimeConfiguration,
-                       DeliveryFeeConfiguration deliveryFeeConfiguration) {
+                       DeliveryFeeConfiguration deliveryFeeConfiguration,
+                       OrderEventPublisher orderEventPublisher) {
         this.orderRepository = orderRepository;
         this.webSocketController = webSocketController;
         this.menuServiceClient = menuServiceClient;
@@ -63,6 +67,7 @@ public class OrderService {
         this.taxConfiguration = taxConfiguration;
         this.preparationTimeConfiguration = preparationTimeConfiguration;
         this.deliveryFeeConfiguration = deliveryFeeConfiguration;
+        this.orderEventPublisher = orderEventPublisher;
     }
 
     @Transactional
@@ -196,6 +201,15 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
         log.info("Order created successfully: {}", savedOrder.getOrderNumber());
 
+        // Publish order created event to RabbitMQ
+        try {
+            orderEventPublisher.publishOrderCreated(new OrderCreatedEvent(
+                savedOrder.getId(), savedOrder.getCustomerId(), savedOrder.getStoreId(),
+                savedOrder.getOrderType().toString(), savedOrder.getTotal(), "INR"));
+        } catch (Exception e) {
+            log.warn("Failed to publish order created event for {}: {}", savedOrder.getOrderNumber(), e.getMessage());
+        }
+
         // Update customer stats immediately after order creation
         if (savedOrder.getCustomerId() != null && !savedOrder.getCustomerId().isEmpty()) {
             customerServiceClient.updateOrderStats(
@@ -287,6 +301,15 @@ public class OrderService {
         log.info("Order status updated: {} → {} - Analytics cache evicted",
                  updatedOrder.getOrderNumber(), updatedOrder.getStatus());
 
+        // Publish status changed event to RabbitMQ
+        try {
+            orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
+                updatedOrder.getId(), updatedOrder.getCustomerId(),
+                currentStatus.toString(), newStatus.toString(), updatedOrder.getStoreId()));
+        } catch (Exception e) {
+            log.warn("Failed to publish status changed event for {}: {}", updatedOrder.getOrderNumber(), e.getMessage());
+        }
+
         // Update customer stats when order is delivered (completed)
         if (newStatus == OrderStatus.DELIVERED && updatedOrder.getCustomerId() != null && !updatedOrder.getCustomerId().isEmpty()) {
             customerServiceClient.updateOrderStats(
@@ -340,7 +363,26 @@ public class OrderService {
             order.setCompletedAt(LocalDateTime.now());
         }
 
+        // Auto-generate delivery OTP when DELIVERY order is dispatched (Gap #12)
+        if (nextStatus == OrderStatus.DISPATCHED && order.getOrderType() == Order.OrderType.DELIVERY) {
+            String otp = String.format("%04d", new java.util.Random().nextInt(10000));
+            LocalDateTime now = LocalDateTime.now();
+            order.setDeliveryOtp(otp);
+            order.setDeliveryOtpGeneratedAt(now);
+            order.setDeliveryOtpExpiresAt(now.plusMinutes(15));
+            log.info("Auto-generated delivery OTP for order {}", order.getOrderNumber());
+        }
+
         Order updatedOrder = orderRepository.save(order);
+
+        // Publish status changed event to RabbitMQ
+        try {
+            orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
+                updatedOrder.getId(), updatedOrder.getCustomerId(),
+                currentStatus.toString(), nextStatus.toString(), updatedOrder.getStoreId()));
+        } catch (Exception e) {
+            log.warn("Failed to publish status changed event for {}: {}", updatedOrder.getOrderNumber(), e.getMessage());
+        }
 
         // Update customer stats when order reaches terminal status
         if ((nextStatus == OrderStatus.DELIVERED || nextStatus == OrderStatus.COMPLETED || nextStatus == OrderStatus.SERVED)
@@ -366,6 +408,11 @@ public class OrderService {
         // Send customer notification for status change
         customerNotificationService.sendOrderStatusNotification(updatedOrder, currentStatus);
 
+        // Send OTP email when dispatched (Gap #12)
+        if (nextStatus == OrderStatus.DISPATCHED && updatedOrder.getDeliveryOtp() != null) {
+            customerNotificationService.sendDeliveryOtpNotification(updatedOrder, updatedOrder.getDeliveryOtp());
+        }
+
         return updatedOrder;
     }
 
@@ -386,6 +433,15 @@ public class OrderService {
         order.setCancellationReason(reason);
 
         Order cancelledOrder = orderRepository.save(order);
+
+        // Publish status changed event to RabbitMQ
+        try {
+            orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
+                cancelledOrder.getId(), cancelledOrder.getCustomerId(),
+                previousStatus.toString(), "CANCELLED", cancelledOrder.getStoreId()));
+        } catch (Exception e) {
+            log.warn("Failed to publish cancel event for {}: {}", cancelledOrder.getOrderNumber(), e.getMessage());
+        }
 
         // Broadcast cancellation via WebSocket
         webSocketController.sendKitchenQueueUpdate(cancelledOrder.getStoreId(), cancelledOrder);
@@ -418,6 +474,9 @@ public class OrderService {
 
         // Send driver assignment notification to customer
         customerNotificationService.sendDriverAssignmentNotification(updatedOrder, driverName, driverPhone);
+
+        // Notify driver via WebSocket
+        webSocketController.sendOrderUpdateToDriver(driverId, updatedOrder);
 
         log.info("Driver {} assigned to order {}", driverId, order.getOrderNumber());
 

@@ -31,7 +31,7 @@ const loadCartFromStorage = (): CartState => {
         items: savedCart.items || [],
         total: savedCart.total || 0,
         itemCount: savedCart.itemCount || 0,
-        deliveryFee: 29,
+        deliveryFee: 50, // Estimated; actual fee calculated by backend on order creation
         isLoading: false,
         selectedStoreId: savedCart.selectedStoreId || null,
         selectedStoreName: savedCart.selectedStoreName || null,
