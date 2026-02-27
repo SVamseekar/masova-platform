@@ -87,7 +87,6 @@ export default function Footer() {
                   {links.map(link => {
                     const href = FOOTER_LINK_MAP[link] ?? '#'
                     const isExternal = href.startsWith('http')
-                    const isEmail = href.startsWith('mailto:')
                     return (
                       <li key={link}>
                         <a
