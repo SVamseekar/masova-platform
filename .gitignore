@@ -85,3 +85,13 @@ mvn21
 smart-doc.json
 generate-docs.sh
 stop-all.sh
+
+# Archive (historical old services, not needed in repo)
+archive/
+
+# Root node_modules
+/node_modules/
+
+# Config snapshots
+.masova-config
+.masova-config.bak
