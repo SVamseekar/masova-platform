@@ -6,6 +6,7 @@ import ProblemSection from './components/ProblemSection'
 import ProductTour from './components/ProductTour'
 import FeaturesGrid from './components/FeaturesGrid'
 import AIAgentsSection from './components/AIAgentsSection'
+import OrderFlowSection from './components/OrderFlowSection'
 import PricingSection from './components/PricingSection'
 import TestimonialsSection from './components/TestimonialsSection'
 import FAQSection from './components/FAQSection'
@@ -21,6 +22,7 @@ export default function ProductSitePage() {
       <ProductTour />
       <FeaturesGrid />
       <AIAgentsSection />
+      <OrderFlowSection />
       <PricingSection />
       <TestimonialsSection />
       <FAQSection />
