@@ -1,5 +1,15 @@
 import type { ComponentType, CSSProperties } from 'react'
 import { goldGradientText } from './tokens'
+import {
+  ShoppingCart, ChefHat, Truck, BarChart3, Bot, Store,
+  Shield, Globe, Zap, Users, Package, Leaf, Star,
+  CheckCircle2, Clock, MapPin, Bell, CreditCard,
+  TrendingUp, AlertCircle, Cpu, Receipt,
+  Building2, Layers, Lock, HeartHandshake, Phone,
+  LayoutDashboard, Utensils, Navigation, PieChart, Sparkles,
+  Smartphone,
+} from 'lucide-react'
+
 export { goldGradientText as GOLD_GRADIENT_TEXT }
 
 interface Feature {
@@ -9,15 +19,6 @@ interface Feature {
   size: 'large' | 'small'
   screenshot: string | null
 }
-import {
-  ShoppingCart, ChefHat, Truck, BarChart3, Bot, Store,
-  Shield, Globe, Zap, Users, Package, Leaf, Star,
-  CheckCircle2, Clock, MapPin, Bell, CreditCard,
-  TrendingUp, AlertCircle, Cpu, MessageSquare, Receipt,
-  Building2, Layers, Lock, HeartHandshake, Phone,
-  LayoutDashboard, Utensils, Navigation, PieChart, Sparkles,
-  Smartphone,
-} from 'lucide-react'
 
 export const NAV_LINKS = [
   { label: 'About', href: '#about' },
