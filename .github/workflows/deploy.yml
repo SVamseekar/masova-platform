@@ -23,7 +23,7 @@ jobs:
           - { name: core-service,          port: 8085 }
           - { name: commerce-service,      port: 8084 }
           - { name: payment-service,       port: 8089 }
-          - { name: logistics-service,     port: 8095 }
+          - { name: logistics-service,     port: 8086 }
           - { name: intelligence-service,  port: 8087 }
     steps:
       - uses: actions/checkout@v4
@@ -70,7 +70,7 @@ jobs:
           - { name: core-service,         port: 8085, memory: 512Mi, min: 1, mongo_secret: "MONGODB_URI_CORE_SERVICE" }
           - { name: commerce-service,     port: 8084, memory: 512Mi, min: 0, mongo_secret: "MONGODB_URI_COMMERCE_SERVICE" }
           - { name: payment-service,      port: 8089, memory: 512Mi, min: 0, mongo_secret: "MONGODB_URI_PAYMENT_SERVICE" }
-          - { name: logistics-service,    port: 8095, memory: 512Mi, min: 0, mongo_secret: "MONGODB_URI_LOGISTICS_SERVICE" }
+          - { name: logistics-service,    port: 8086, memory: 512Mi, min: 0, mongo_secret: "MONGODB_URI_LOGISTICS_SERVICE" }
           - { name: intelligence-service, port: 8087, memory: 256Mi, min: 0, mongo_secret: "MONGODB_URI_INTELLIGENCE_SERVICE" }
     steps:
       - uses: google-github-actions/auth@v2
