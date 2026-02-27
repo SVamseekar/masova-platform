@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, BookOpen, Mail } from 'lucide-react'
+import { Sparkles, BookOpen, Mail, LucideIcon } from 'lucide-react'
 
 const glassStyle: React.CSSProperties = {
   background: 'rgba(20, 20, 20, 0.85)',
@@ -10,8 +10,25 @@ const glassStyle: React.CSSProperties = {
   borderRadius: 12,
 }
 
+const LINK_STYLE: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  color: '#D4AF37',
+  fontSize: 13,
+  textDecoration: 'none',
+  fontFamily: 'Inter, system-ui, sans-serif',
+  transition: 'color 0.2s',
+}
+
+const LINKS: { href: string; icon: LucideIcon; label: string }[] = [
+  { href: '/api-docs', icon: BookOpen, label: 'View Documentation' },
+  { href: 'mailto:hello@masova.com', icon: Mail, label: 'Contact Support' },
+]
+
 export default function SupportFAB() {
   const [open, setOpen] = useState(false)
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
   return (
     <div style={{ position: 'fixed', bottom: 32, right: 32, zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 12 }}>
@@ -34,42 +51,21 @@ export default function SupportFAB() {
               How can we help?
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <a
-                href="/api-docs"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  color: '#D4AF37',
-                  fontSize: 13,
-                  textDecoration: 'none',
-                  fontFamily: 'Inter, system-ui, sans-serif',
-                  transition: 'color 0.2s',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.color = '#f0cc6a')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#D4AF37')}
-              >
-                <BookOpen size={14} />
-                View Documentation
-              </a>
-              <a
-                href="mailto:hello@masova.com"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  color: '#D4AF37',
-                  fontSize: 13,
-                  textDecoration: 'none',
-                  fontFamily: 'Inter, system-ui, sans-serif',
-                  transition: 'color 0.2s',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.color = '#f0cc6a')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#D4AF37')}
-              >
-                <Mail size={14} />
-                Contact Support
-              </a>
+              {LINKS.map(({ href, icon: Icon, label }, i) => (
+                <a
+                  key={href}
+                  href={href}
+                  style={{
+                    ...LINK_STYLE,
+                    color: hoveredIndex === i ? '#f0cc6a' : '#D4AF37',
+                  }}
+                  onMouseEnter={() => setHoveredIndex(i)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                >
+                  <Icon size={14} />
+                  {label}
+                </a>
+              ))}
             </div>
           </motion.div>
         )}
@@ -77,6 +73,7 @@ export default function SupportFAB() {
 
       {/* FAB Button */}
       <motion.button
+        type="button"
         onClick={() => setOpen(v => !v)}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
