@@ -110,13 +110,13 @@ export default function HeroSection() {
             <div className="w-3 h-3 rounded-full bg-green-500/50" />
           </div>
           <div className="flex-1 mx-4 bg-white/5 rounded-md h-6 flex items-center px-3">
-            <span className="text-xs text-gray-500">app.masova.eu/manager/dashboard</span>
+            <span className="text-xs text-gray-500">app.masova.eu/order</span>
           </div>
         </div>
         {/* Dashboard screenshot */}
         <img
           src="/screenshots/customer-home.png"
-          alt="MaSoVa customer app"
+          alt="MaSoVa online ordering"
           style={{
             width: '100%',
             display: 'block',
