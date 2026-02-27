@@ -17,18 +17,18 @@ export default function HeroSection() {
     <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-24 pb-16 overflow-hidden bg-[#080808]">
       {/* Radial glow */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-[120px]" style={{ background: 'rgba(229,62,62,0.08)' }} />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-[120px]" style={{ background: 'rgba(212,175,55,0.06)' }} />
       </div>
 
       {/* Badge */}
       <motion.div
         className="mb-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium"
-        style={{ borderColor: 'rgba(229,62,62,0.3)', background: 'rgba(229,62,62,0.1)', color: '#E53E3E' }}
+        style={{ borderColor: 'rgba(212,175,55,0.3)', background: 'rgba(212,175,55,0.08)', color: '#D4AF37' }}
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <span className="w-1.5 h-1.5 rounded-full bg-[#E53E3E] animate-pulse" />
+        <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#D4AF37' }} />
         Now available in Europe
       </motion.div>
 
@@ -45,7 +45,7 @@ export default function HeroSection() {
         >
           The Restaurant OS
           <br />
-          <span style={{ color: '#E53E3E' }}>Built for Growth.</span>
+          <span style={{ color: '#D4AF37' }}>Built for Growth.</span>
         </motion.h1>
 
         <motion.p
@@ -59,10 +59,10 @@ export default function HeroSection() {
         <motion.div variants={item} className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <a
             href="#pricing"
-            className="group flex items-center gap-2 text-white px-6 py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 hover:gap-3"
-            style={{ background: '#E53E3E' }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#C0392B')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#E53E3E')}
+            className="group flex items-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 hover:gap-3"
+            style={{ background: '#ffffff', color: '#0d0d0d' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#e8e8e8' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#ffffff' }}
           >
             Start free trial
             <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
@@ -87,7 +87,7 @@ export default function HeroSection() {
       >
         {STATS.map(({ value, label, icon: Icon }) => (
           <div key={label} className="bg-[#080808] px-6 py-5 flex flex-col items-center gap-1">
-            <Icon size={18} style={{ color: '#E53E3E' }} className="mb-1" />
+            <Icon size={18} style={{ color: '#D4AF37' }} className="mb-1" />
             <span className="text-2xl font-bold text-white">{value}</span>
             <span className="text-xs text-gray-500 text-center">{label}</span>
           </div>

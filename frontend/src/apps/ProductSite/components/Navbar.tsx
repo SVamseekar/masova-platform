@@ -54,7 +54,10 @@ export default function Navbar() {
           </a>
           <a
             href="#pricing"
-            className="text-sm bg-[#E53E3E] hover:bg-[#C0392B] text-white px-4 py-2 rounded-lg transition-colors duration-200 font-medium"
+            className="text-sm px-4 py-2 rounded-lg font-medium transition-all duration-200"
+            style={{ background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.5)', color: '#D4AF37' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(212,175,55,0.8)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(212,175,55,0.5)' }}
           >
             Book a Demo
           </a>
@@ -88,7 +91,8 @@ export default function Navbar() {
           ))}
           <a
             href="#pricing"
-            className="text-sm bg-[#E53E3E] text-white px-4 py-2 rounded-lg text-center font-medium"
+            className="text-sm px-4 py-2 rounded-lg text-center font-medium"
+            style={{ background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.5)', color: '#D4AF37' }}
             onClick={() => setMobileOpen(false)}
           >
             Book a Demo
