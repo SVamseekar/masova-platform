@@ -4,11 +4,11 @@ import { CheckCircle2, AlertCircle, Clock } from 'lucide-react'
 
 const chaosOrders = [
   { id: '#1042', label: 'MISSED', color: '#E53E3E', bg: 'rgba(229,62,62,0.15)', icon: AlertCircle },
-  { id: '#1043', label: 'DELAYED 23min', color: '#DD6B20', bg: 'rgba(221,107,32,0.15)', icon: Clock },
-  { id: '#1044', label: 'Wrong address', color: '#E53E3E', bg: 'rgba(229,62,62,0.15)', icon: AlertCircle },
-  { id: '#1045', label: 'Kitchen bottleneck', color: '#DD6B20', bg: 'rgba(221,107,32,0.15)', icon: Clock },
-  { id: '#1046', label: 'Driver unreachable', color: '#E53E3E', bg: 'rgba(229,62,62,0.15)', icon: AlertCircle },
-  { id: '#1047', label: 'Refund requested', color: '#E53E3E', bg: 'rgba(229,62,62,0.15)', icon: AlertCircle },
+  { id: '#1043', label: 'DELAYED', color: '#DD6B20', bg: 'rgba(221,107,32,0.15)', icon: Clock },
+  { id: '#1044', label: 'WRONG ADDRESS', color: '#E53E3E', bg: 'rgba(229,62,62,0.15)', icon: AlertCircle },
+  { id: '#1045', label: 'BOTTLENECK', color: '#DD6B20', bg: 'rgba(221,107,32,0.15)', icon: Clock },
+  { id: '#1046', label: 'UNREACHABLE', color: '#E53E3E', bg: 'rgba(229,62,62,0.15)', icon: AlertCircle },
+  { id: '#1047', label: 'REFUND REQUESTED', color: '#E53E3E', bg: 'rgba(229,62,62,0.15)', icon: AlertCircle },
 ]
 
 const pipeline = [
@@ -66,12 +66,12 @@ export default function ProblemSection() {
             {/* Scrolling order list */}
             <div className="p-6 overflow-hidden" style={{ height: '360px' }}>
               <motion.div
-                animate={{ y: [0, -20, 0] }}
-                transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+                animate={{ y: [0, -168, 0] }}
+                transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
               >
                 {chaosOrders.map(({ id, label, color, bg, icon: Icon }, i) => (
                   <div
-                    key={i}
+                    key={id}
                     className="flex items-center gap-4 mb-4 rounded-xl px-4 py-3"
                     style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
                   >
@@ -128,7 +128,7 @@ export default function ProblemSection() {
             {/* Pipeline steps */}
             <div className="p-6 flex flex-col gap-0" style={{ height: '360px', justifyContent: 'center' }}>
               {pipeline.map(({ step, desc }, i) => (
-                <div key={i} className="flex items-stretch gap-4">
+                <div key={step} className="flex items-stretch gap-4">
                   {/* Icon + connecting line column */}
                   <div className="flex flex-col items-center flex-shrink-0">
                     <motion.div
