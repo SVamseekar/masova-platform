@@ -1,0 +1,74 @@
+{
+  "timestamp": "2026-01-18T15:55:55.669Z",
+  "summary": {
+    "totalServices": 10,
+    "servicesOnline": 8,
+    "criticalServicesOnline": 6,
+    "contractTestsGenerated": 7,
+    "integrationTestsGenerated": 2
+  },
+  "services": [
+    {
+      "service": "user-service",
+      "status": "success",
+      "specPath": "./frontend/src/types/generated/user-service-openapi.json",
+      "port": 8081
+    },
+    {
+      "service": "menu-service",
+      "status": "success",
+      "specPath": "./frontend/src/types/generated/menu-service-openapi.json",
+      "port": 8082
+    },
+    {
+      "service": "order-service",
+      "status": "success",
+      "specPath": "./frontend/src/types/generated/order-service-openapi.json",
+      "port": 8083
+    },
+    {
+      "service": "inventory-service",
+      "status": "offline",
+      "port": 8084
+    },
+    {
+      "service": "analytics-service",
+      "status": "success",
+      "specPath": "./frontend/src/types/generated/analytics-service-openapi.json",
+      "port": 8085
+    },
+    {
+      "service": "payment-service",
+      "status": "success",
+      "specPath": "./frontend/src/types/generated/payment-service-openapi.json",
+      "port": 8086
+    },
+    {
+      "service": "review-service",
+      "status": "offline",
+      "port": 8087
+    },
+    {
+      "service": "delivery-service",
+      "status": "success",
+      "specPath": "./frontend/src/types/generated/delivery-service-openapi.json",
+      "port": 8090
+    },
+    {
+      "service": "customer-service",
+      "status": "success",
+      "specPath": "./frontend/src/types/generated/customer-service-openapi.json",
+      "port": 8091
+    },
+    {
+      "service": "notification-service",
+      "status": "success",
+      "specPath": "./frontend/src/types/generated/notification-service-openapi.json",
+      "port": 8092
+    }
+  ],
+  "criticalFlows": [
+    "Order Creation Flow",
+    "Delivery Dispatch Flow"
+  ]
+}

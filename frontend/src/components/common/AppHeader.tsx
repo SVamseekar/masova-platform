@@ -389,7 +389,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
             ) : (
               /* Sign In pill */
               <button
-                onClick={() => navigate('/checkout')}
+                onClick={() => navigate('/login')}
                 style={{
                   background: 'transparent',
                   border: '1px solid var(--border-strong)',

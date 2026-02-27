@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["vitest/globals", "node", "@pact-foundation/pact"],
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
+  },
+  "include": [
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.pact.test.ts",
+    "src/pact/**/*",
+    "src/test/**/*"
+  ],
+  "exclude": ["node_modules"]
+}

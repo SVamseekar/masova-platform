@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
-import { useRegisterMutation, useGoogleLoginMutation } from '../../store/api/authApi';
+import { useRegisterMutation, useGoogleRegisterMutation } from '../../store/api/authApi';
 import { useCreateCustomerMutation } from '../../store/api/customerApi';
 
 interface RegisterFormData {
@@ -42,7 +42,7 @@ const RegisterPage: React.FC = () => {
   const location = useLocation();
   const from = (location.state as any)?.from || '/checkout';
   const [register, { isLoading }] = useRegisterMutation();
-  const [googleLogin, { isLoading: isGoogleLoading }] = useGoogleLoginMutation();
+  const [googleRegister, { isLoading: isGoogleLoading }] = useGoogleRegisterMutation();
   const [createCustomer] = useCreateCustomerMutation();
 
   const [formData, setFormData] = useState<RegisterFormData>({
@@ -56,7 +56,7 @@ const RegisterPage: React.FC = () => {
     if (!credentialResponse.credential) return;
     try {
       setError('');
-      await googleLogin({ idToken: credentialResponse.credential }).unwrap();
+      await googleRegister({ idToken: credentialResponse.credential }).unwrap();
       navigate(from);
     } catch (err: any) {
       setError(err?.data?.message || 'Google sign-up failed. Please try again.');

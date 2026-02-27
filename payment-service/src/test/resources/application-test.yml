@@ -1,0 +1,38 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/masova-test
+  mail:
+    host: localhost
+    port: 1025
+
+server:
+  port: 0
+
+logging:
+  level:
+    com.MaSoVa: DEBUG
+    org.springframework.security: DEBUG
+
+# Disable external service calls in tests
+services:
+  order-service:
+    url: http://localhost:0
+  user-service:
+    url: http://localhost:0
+  menu-service:
+    url: http://localhost:0
+  delivery-service:
+    url: http://localhost:0
+  payment-service:
+    url: http://localhost:0
+  notification-service:
+    url: http://localhost:0
+  customer-service:
+    url: http://localhost:0
+  inventory-service:
+    url: http://localhost:0
+  analytics-service:
+    url: http://localhost:0
+  review-service:
+    url: http://localhost:0

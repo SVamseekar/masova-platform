@@ -298,18 +298,19 @@ Update `api-gateway/src/main/resources/application.yml` routes:
 
 ### 1.5 Effort Estimate
 
-| Task                                                         | Days                                                       |
-| ------------------------------------------------------------ | ---------------------------------------------------------- |
-| Shared messaging module (events, config, publishers)         | 6                                                          |
-| commerce-service merge (menu + order)                        | 8                                                          |
-| core-service merge (user + customer + notification + review) | 11                                                         |
-| logistics-service merge (delivery + inventory)               | 8                                                          |
-| payment-service event publishers                             | 3                                                          |
-| intelligence-service event listeners + pre-aggregation       | 7                                                          |
-| Database migration scripts                                   | 2                                                          |
-| Integration testing + chaos testing                          | 7                                                          |
-| CI/CD + deployment updates                                   | 2                                                          |
-| **Total**                                                    | **~55 days (3 months with 2 backend devs, 6 months solo)** |
+| Task                                                         | Days |
+| ------------------------------------------------------------ | ---- |
+| Shared messaging module (events, config, publishers)         | 6    |
+| commerce-service merge (menu + order)                        | 8    |
+| core-service merge (user + customer + notification + review) | 11   |
+| logistics-service merge (delivery + inventory)               | 8    |
+| payment-service event publishers                             | 3    |
+| intelligence-service event listeners + pre-aggregation       | 7    |
+| Database migration scripts                                   | 2    |
+| Integration testing + chaos testing                          | 7    |
+| CI/CD + deployment updates                                   | 2    |
+
+tail -f /tmp/masova-logs/<service-name>.log| **Total**                                                    | **~55 days (3 months with 2 backend devs, 6 months solo)** |
 
 ### 1.6 Verification
 
@@ -639,20 +640,20 @@ Deploy the entire MaSoVa platform to Google Cloud Platform within the AI Pro sub
 
 ### 5.1 Infrastructure Map
 
-| Component | GCP Service | Free Tier | Notes |
-|-----------|------------|-----------|-------|
-| 6 Spring Boot services | Cloud Run | 2M req/month + 180K vCPU-sec/month | Scale-to-zero, cold start ~10s |
-| masova-support (FastAPI) | Cloud Run | Same free tier | Python container |
-| Web frontend | Firebase Hosting | 10GB/month bandwidth | Static Vite build |
-| MongoDB | Atlas M0 (free) | 512MB storage | 1 cluster per project |
-| Redis | Upstash Redis | 10K commands/day free | JWT blacklist + chat sessions |
-| RabbitMQ | CloudAMQP Little Lemur | 1M messages/month free | Async event bus |
-| Container images | Artifact Registry | 0.5GB free/month | All Docker images stored here |
-| CI/CD | GitHub Actions | 2000 min/month free | Auto-deploy on push to main |
-| Domains | Cloud DNS | ~$0.20/month | `masova.app`, `api.masova.app` |
-| SSL | Cloud Run managed | Free | Auto-provisioned |
-| Gemini Live API (voice) | Vertex AI / AI Studio | Free tier + $10 credit | ~$0.0002 per conversation |
-| Mobile app builds | Expo EAS | Free for small teams | OTA updates free |
+| Component                | GCP Service            | Free Tier                          | Notes                          |
+| ------------------------ | ---------------------- | ---------------------------------- | ------------------------------ |
+| 6 Spring Boot services   | Cloud Run              | 2M req/month + 180K vCPU-sec/month | Scale-to-zero, cold start ~10s |
+| masova-support (FastAPI) | Cloud Run              | Same free tier                     | Python container               |
+| Web frontend             | Firebase Hosting       | 10GB/month bandwidth               | Static Vite build              |
+| MongoDB                  | Atlas M0 (free)        | 512MB storage                      | 1 cluster per project          |
+| Redis                    | Upstash Redis          | 10K commands/day free              | JWT blacklist + chat sessions  |
+| RabbitMQ                 | CloudAMQP Little Lemur | 1M messages/month free             | Async event bus                |
+| Container images         | Artifact Registry      | 0.5GB free/month                   | All Docker images stored here  |
+| CI/CD                    | GitHub Actions         | 2000 min/month free                | Auto-deploy on push to main    |
+| Domains                  | Cloud DNS              | ~$0.20/month                       | `masova.app`, `api.masova.app` |
+| SSL                      | Cloud Run managed      | Free                               | Auto-provisioned               |
+| Gemini Live API (voice)  | Vertex AI / AI Studio  | Free tier + $10 credit             | ~$0.0002 per conversation      |
+| Mobile app builds        | Expo EAS               | Free for small teams               | OTA updates free               |
 
 **Estimated monthly cost:** $0 dev/staging · $5–10 production (within $10 credit) · $20–50 at scale (small overage)
 

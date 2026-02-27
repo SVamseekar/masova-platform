@@ -1,0 +1,5574 @@
+{
+  "timestamp": "2026-01-18T10:14:31.471Z",
+  "summary": {
+    "totalBackend": 385,
+    "totalFrontend": 65,
+    "totalMismatches": 207,
+    "highSeverity": 0,
+    "mediumSeverity": 0,
+    "lowSeverity": 207
+  },
+  "backendAPIs": {
+    "analytics-service": [
+      {
+        "controller": "AnalyticsController",
+        "method": "GET",
+        "path": "/api/analytics/sales/today",
+        "methodName": "getTodaySalesMetrics",
+        "returnType": "ResponseEntity<SalesMetricsResponse>"
+      },
+      {
+        "controller": "AnalyticsController",
+        "method": "GET",
+        "path": "/api/analytics/avgOrderValue/today",
+        "methodName": "getAverageOrderValue",
+        "returnType": "ResponseEntity<AverageOrderValueResponse>"
+      },
+      {
+        "controller": "AnalyticsController",
+        "method": "GET",
+        "path": "/api/analytics/drivers/status",
+        "methodName": "getDriverStatus",
+        "returnType": "ResponseEntity<DriverStatusResponse>"
+      },
+      {
+        "controller": "AnalyticsController",
+        "method": "GET",
+        "path": "/api/analytics/staff/{staffId}/performance/today",
+        "methodName": "getStaffPerformance",
+        "returnType": "ResponseEntity<StaffPerformanceResponse>"
+      },
+      {
+        "controller": "AnalyticsController",
+        "method": "GET",
+        "path": "/api/analytics/sales/trends/{period}",
+        "methodName": "getSalesTrends",
+        "returnType": "ResponseEntity<SalesTrendResponse>"
+      },
+      {
+        "controller": "AnalyticsController",
+        "method": "GET",
+        "path": "/api/analytics/sales/breakdown/order-type",
+        "methodName": "getOrderTypeBreakdown",
+        "returnType": "ResponseEntity<OrderTypeBreakdownResponse>"
+      },
+      {
+        "controller": "AnalyticsController",
+        "method": "GET",
+        "path": "/api/analytics/sales/peak-hours",
+        "methodName": "getPeakHours",
+        "returnType": "ResponseEntity<PeakHoursResponse>"
+      },
+      {
+        "controller": "AnalyticsController",
+        "method": "GET",
+        "path": "/api/analytics/staff/leaderboard",
+        "methodName": "getStaffLeaderboard",
+        "returnType": "ResponseEntity<StaffLeaderboardResponse>"
+      },
+      {
+        "controller": "AnalyticsController",
+        "method": "GET",
+        "path": "/api/analytics/products/top-selling",
+        "methodName": "getTopProducts",
+        "returnType": "ResponseEntity<TopProductsResponse>"
+      },
+      {
+        "controller": "AnalyticsController",
+        "method": "POST",
+        "path": "/api/analytics/cache/clear",
+        "methodName": "clearAllCaches",
+        "returnType": "ResponseEntity<Map<String, String>>"
+      },
+      {
+        "controller": "AnalyticsController",
+        "method": "GET",
+        "path": "/api/analytics/health",
+        "methodName": "health",
+        "returnType": "ResponseEntity<String>"
+      },
+      {
+        "controller": "BIController",
+        "method": "GET",
+        "path": "/api/bi/forecast/sales",
+        "methodName": "getSalesForecast",
+        "returnType": "ResponseEntity<SalesForecastResponse>"
+      },
+      {
+        "controller": "BIController",
+        "method": "GET",
+        "path": "/api/bi/analysis/customer-behavior",
+        "methodName": "getCustomerBehaviorAnalysis",
+        "returnType": "ResponseEntity<CustomerBehaviorResponse>"
+      },
+      {
+        "controller": "BIController",
+        "method": "GET",
+        "path": "/api/bi/prediction/churn",
+        "methodName": "getChurnPrediction",
+        "returnType": "ResponseEntity<ChurnPredictionResponse>"
+      },
+      {
+        "controller": "BIController",
+        "method": "GET",
+        "path": "/api/bi/forecast/demand",
+        "methodName": "getDemandForecast",
+        "returnType": "ResponseEntity<DemandForecastResponse>"
+      },
+      {
+        "controller": "BIController",
+        "method": "GET",
+        "path": "/api/bi/cost-analysis",
+        "methodName": "getCostAnalysis",
+        "returnType": "ResponseEntity<CostAnalysisResponse>"
+      },
+      {
+        "controller": "BIController",
+        "method": "GET",
+        "path": "/api/bi/benchmarking/stores",
+        "methodName": "getStoreBenchmarking",
+        "returnType": "ResponseEntity<BenchmarkingResponse>"
+      },
+      {
+        "controller": "BIController",
+        "method": "GET",
+        "path": "/api/bi/executive-summary",
+        "methodName": "getExecutiveSummary",
+        "returnType": "ResponseEntity<ExecutiveSummaryResponse>"
+      },
+      {
+        "controller": "BIController",
+        "method": "GET",
+        "path": "/api/bi/health",
+        "methodName": "health",
+        "returnType": "ResponseEntity<String>"
+      }
+    ],
+    "customer-service": [
+      {
+        "controller": "CustomerController",
+        "method": "POST",
+        "path": "",
+        "methodName": "getAllCustomers",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "POST",
+        "path": "/get-or-create",
+        "methodName": "getAllCustomers",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/{id}",
+        "methodName": "getAllCustomers",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/user/{userId}",
+        "methodName": "getAllCustomers",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/email/{email}",
+        "methodName": "getAllCustomers",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/phone/{phone}",
+        "methodName": "getAllCustomers",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "",
+        "methodName": "getAllCustomers",
+        "returnType": "ResponseEntity<List<Customer>>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/active",
+        "methodName": "getActiveCustomers",
+        "returnType": "ResponseEntity<List<Customer>>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/search",
+        "methodName": "searchCustomers",
+        "returnType": "ResponseEntity<Page<Customer>>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "PUT",
+        "path": "/{id}",
+        "methodName": "getCustomersByTier",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "PATCH",
+        "path": "/{id}/deactivate",
+        "methodName": "getCustomersByTier",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "PATCH",
+        "path": "/{id}/activate",
+        "methodName": "getCustomersByTier",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "POST",
+        "path": "/{id}/addresses",
+        "methodName": "getCustomersByTier",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "PATCH",
+        "path": "/{customerId}/addresses/{addressId}",
+        "methodName": "getCustomersByTier",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "DELETE",
+        "path": "/{customerId}/addresses/{addressId}",
+        "methodName": "getCustomersByTier",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "PATCH",
+        "path": "/{customerId}/addresses/{addressId}/set-default",
+        "methodName": "getCustomersByTier",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "POST",
+        "path": "/{id}/loyalty/points",
+        "methodName": "getCustomersByTier",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "POST",
+        "path": "/{id}/loyalty/redeem",
+        "methodName": "getCustomersByTier",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/{id}/loyalty/max-redeemable",
+        "methodName": "getCustomersByTier",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/loyalty/tier/{tier}",
+        "methodName": "getCustomersByTier",
+        "returnType": "ResponseEntity<List<Customer>>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "PUT",
+        "path": "/{id}/preferences",
+        "methodName": "getCustomersByTags",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "POST",
+        "path": "/{id}/order-stats",
+        "methodName": "getCustomersByTags",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "POST",
+        "path": "/{id}/update-email",
+        "methodName": "getCustomersByTags",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "POST",
+        "path": "/{id}/notes",
+        "methodName": "getCustomersByTags",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "PATCH",
+        "path": "/{id}/verify-email",
+        "methodName": "getCustomersByTags",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "PATCH",
+        "path": "/{id}/verify-phone",
+        "methodName": "getCustomersByTags",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "POST",
+        "path": "/{id}/tags",
+        "methodName": "getCustomersByTags",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "DELETE",
+        "path": "/{id}/tags",
+        "methodName": "getCustomersByTags",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/tags",
+        "methodName": "getCustomersByTags",
+        "returnType": "ResponseEntity<List<Customer>>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/high-value",
+        "methodName": "getHighValueCustomers",
+        "returnType": "ResponseEntity<List<Customer>>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/top-spenders",
+        "methodName": "getTopSpenders",
+        "returnType": "ResponseEntity<List<Customer>>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/recently-active",
+        "methodName": "getRecentlyActiveCustomers",
+        "returnType": "ResponseEntity<List<Customer>>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/inactive",
+        "methodName": "getInactiveCustomers",
+        "returnType": "ResponseEntity<List<Customer>>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/birthdays/today",
+        "methodName": "getBirthdayCustomersToday",
+        "returnType": "ResponseEntity<List<Customer>>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/marketing-opt-in",
+        "methodName": "getMarketingOptInCustomers",
+        "returnType": "ResponseEntity<List<Customer>>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/sms-opt-in",
+        "methodName": "getSmsOptInCustomers",
+        "returnType": "ResponseEntity<List<Customer>>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/stats",
+        "methodName": "getCustomerStats",
+        "returnType": "ResponseEntity<CustomerStatsResponse>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "DELETE",
+        "path": "/{id}/gdpr",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "DELETE",
+        "path": "/{id}/hard",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "CustomerController",
+        "method": "DELETE",
+        "path": "/{id}",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      }
+    ],
+    "delivery-service": [
+      {
+        "controller": "DispatchController",
+        "method": "POST",
+        "path": "/api/delivery/auto-dispatch",
+        "methodName": "autoDispatch",
+        "returnType": "ResponseEntity<AutoDispatchResponse>"
+      },
+      {
+        "controller": "DispatchController",
+        "method": "POST",
+        "path": "/api/delivery/route-optimize",
+        "methodName": "optimizeRoute",
+        "returnType": "ResponseEntity<RouteOptimizationResponse>"
+      },
+      {
+        "controller": "DispatchController",
+        "method": "GET",
+        "path": "/api/delivery/health",
+        "methodName": "health",
+        "returnType": "ResponseEntity<String>"
+      },
+      {
+        "controller": "DispatchController",
+        "method": "GET",
+        "path": "/api/delivery/drivers/available",
+        "methodName": "getAvailableDrivers",
+        "returnType": "ResponseEntity<List<Map<String, Object>>>"
+      },
+      {
+        "controller": "DispatchController",
+        "method": "GET",
+        "path": "/api/delivery/zone/check",
+        "methodName": "checkDeliveryZone",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "DispatchController",
+        "method": "GET",
+        "path": "/api/delivery/zone/fee",
+        "methodName": "calculateDeliveryFee",
+        "returnType": "ResponseEntity<DeliveryFeeResponse>"
+      },
+      {
+        "controller": "DispatchController",
+        "method": "GET",
+        "path": "/api/delivery/zone/list",
+        "methodName": "getDeliveryZones",
+        "returnType": "ResponseEntity<List<Map<String, Object>>>"
+      },
+      {
+        "controller": "DispatchController",
+        "method": "GET",
+        "path": "/api/delivery/zone/validate",
+        "methodName": "updateDriverStatus",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "DispatchController",
+        "method": "PUT",
+        "path": "/api/delivery/driver/status",
+        "methodName": "updateDriverStatus",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "DispatchController",
+        "method": "GET",
+        "path": "/api/delivery/driver/{driverId}/status",
+        "methodName": "getDriverStatus",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "PerformanceController",
+        "method": "GET",
+        "path": "/api/delivery/driver/{driverId}/performance",
+        "methodName": "getDriverPerformance",
+        "returnType": "ResponseEntity<DriverPerformanceResponse>"
+      },
+      {
+        "controller": "PerformanceController",
+        "method": "GET",
+        "path": "/api/delivery/driver/{driverId}/performance/today",
+        "methodName": "getTodayPerformance",
+        "returnType": "ResponseEntity<DriverPerformanceResponse>"
+      },
+      {
+        "controller": "PerformanceController",
+        "method": "GET",
+        "path": "/api/delivery/metrics/today",
+        "methodName": "getTodayMetrics",
+        "returnType": "ResponseEntity<DeliveryMetricsResponse>"
+      },
+      {
+        "controller": "TrackingController",
+        "method": "POST",
+        "path": "/api/delivery/location-update",
+        "methodName": "updateLocation",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "TrackingController",
+        "method": "GET",
+        "path": "/api/delivery/track/{orderId}",
+        "methodName": "trackOrder",
+        "returnType": "ResponseEntity<TrackingResponse>"
+      },
+      {
+        "controller": "TrackingController",
+        "method": "GET",
+        "path": "/api/delivery/eta/{orderId}",
+        "methodName": "getETA",
+        "returnType": "ResponseEntity<ETAResponse>"
+      },
+      {
+        "controller": "TrackingController",
+        "method": "POST",
+        "path": "/api/delivery/{orderId}/generate-otp",
+        "methodName": "generateDeliveryOtp",
+        "returnType": "ResponseEntity<String>"
+      },
+      {
+        "controller": "TrackingController",
+        "method": "POST",
+        "path": "/api/delivery/verify-otp",
+        "methodName": "verifyDeliveryOtp",
+        "returnType": "ResponseEntity<DeliveryVerificationResponse>"
+      },
+      {
+        "controller": "TrackingController",
+        "method": "POST",
+        "path": "/api/delivery/verify-photo",
+        "methodName": "verifyDeliveryWithPhoto",
+        "returnType": "ResponseEntity<DeliveryVerificationResponse>"
+      },
+      {
+        "controller": "TrackingController",
+        "method": "POST",
+        "path": "/api/delivery/verify-signature",
+        "methodName": "verifyDeliveryWithSignature",
+        "returnType": "ResponseEntity<DeliveryVerificationResponse>"
+      },
+      {
+        "controller": "TrackingController",
+        "method": "POST",
+        "path": "/api/delivery/contactless",
+        "methodName": "markContactlessDelivery",
+        "returnType": "ResponseEntity<DeliveryVerificationResponse>"
+      },
+      {
+        "controller": "TrackingController",
+        "method": "POST",
+        "path": "/api/delivery/{orderId}/regenerate-otp",
+        "methodName": "regenerateOtp",
+        "returnType": "ResponseEntity<String>"
+      },
+      {
+        "controller": "TrackingController",
+        "method": "POST",
+        "path": "/api/delivery/accept",
+        "methodName": "acceptDelivery",
+        "returnType": "ResponseEntity<DriverAcceptanceResponse>"
+      },
+      {
+        "controller": "TrackingController",
+        "method": "POST",
+        "path": "/api/delivery/reject",
+        "methodName": "rejectDelivery",
+        "returnType": "ResponseEntity<DriverAcceptanceResponse>"
+      },
+      {
+        "controller": "TrackingController",
+        "method": "GET",
+        "path": "/api/delivery/driver/{driverId}/pending",
+        "methodName": "getPendingDeliveries",
+        "returnType": "ResponseEntity<List<DeliveryTracking>>"
+      },
+      {
+        "controller": "TrackingController",
+        "method": "POST",
+        "path": "/api/delivery/{trackingId}/pickup",
+        "methodName": "markAsPickedUp",
+        "returnType": "ResponseEntity<DeliveryTracking>"
+      },
+      {
+        "controller": "TrackingController",
+        "method": "POST",
+        "path": "/api/delivery/{trackingId}/in-transit",
+        "methodName": "markAsInTransit",
+        "returnType": "ResponseEntity<DeliveryTracking>"
+      },
+      {
+        "controller": "TrackingController",
+        "method": "POST",
+        "path": "/api/delivery/{trackingId}/arrived",
+        "methodName": "markAsArrived",
+        "returnType": "ResponseEntity<DeliveryTracking>"
+      },
+      {
+        "controller": "TrackingController",
+        "method": "POST",
+        "path": "/api/delivery/{trackingId}/deliver",
+        "methodName": "markAsDelivered",
+        "returnType": "ResponseEntity<DeliveryTracking>"
+      }
+    ],
+    "inventory-service": [
+      {
+        "controller": "InventoryController",
+        "method": "POST",
+        "path": "/api/inventory/items",
+        "methodName": "createInventoryItem",
+        "returnType": "ResponseEntity<InventoryItem>"
+      },
+      {
+        "controller": "InventoryController",
+        "method": "GET",
+        "path": "/api/inventory/items",
+        "methodName": "getAllInventoryItems",
+        "returnType": "ResponseEntity<List<InventoryItem>>"
+      },
+      {
+        "controller": "InventoryController",
+        "method": "GET",
+        "path": "/api/inventory/items/{id}",
+        "methodName": "getInventoryItemById",
+        "returnType": "ResponseEntity<InventoryItem>"
+      },
+      {
+        "controller": "InventoryController",
+        "method": "GET",
+        "path": "/api/inventory/items/category/{category}",
+        "methodName": "getItemsByCategory",
+        "returnType": "ResponseEntity<List<InventoryItem>>"
+      },
+      {
+        "controller": "InventoryController",
+        "method": "GET",
+        "path": "/api/inventory/items/search",
+        "methodName": "searchInventoryItems",
+        "returnType": "ResponseEntity<List<InventoryItem>>"
+      },
+      {
+        "controller": "InventoryController",
+        "method": "PUT",
+        "path": "/api/inventory/items/{id}",
+        "methodName": "updateInventoryItem",
+        "returnType": "ResponseEntity<InventoryItem>"
+      },
+      {
+        "controller": "InventoryController",
+        "method": "PATCH",
+        "path": "/api/inventory/items/{id}/adjust",
+        "methodName": "adjustStock",
+        "returnType": "ResponseEntity<InventoryItem>"
+      },
+      {
+        "controller": "InventoryController",
+        "method": "PATCH",
+        "path": "/api/inventory/items/{id}/reserve",
+        "methodName": "reserveStock",
+        "returnType": "ResponseEntity<MessageResponse>"
+      },
+      {
+        "controller": "InventoryController",
+        "method": "PATCH",
+        "path": "/api/inventory/items/{id}/release",
+        "methodName": "releaseReservedStock",
+        "returnType": "ResponseEntity<MessageResponse>"
+      },
+      {
+        "controller": "InventoryController",
+        "method": "PATCH",
+        "path": "/api/inventory/items/{id}/consume",
+        "methodName": "consumeReservedStock",
+        "returnType": "ResponseEntity<MessageResponse>"
+      },
+      {
+        "controller": "InventoryController",
+        "method": "GET",
+        "path": "/api/inventory/low-stock",
+        "methodName": "getItemsNeedingReorder",
+        "returnType": "ResponseEntity<List<InventoryItem>>"
+      },
+      {
+        "controller": "InventoryController",
+        "method": "GET",
+        "path": "/api/inventory/out-of-stock",
+        "methodName": "getOutOfStockItems",
+        "returnType": "ResponseEntity<List<InventoryItem>>"
+      },
+      {
+        "controller": "InventoryController",
+        "method": "GET",
+        "path": "/api/inventory/expiring-soon",
+        "methodName": "getItemsExpiringSoon",
+        "returnType": "ResponseEntity<List<InventoryItem>>"
+      },
+      {
+        "controller": "InventoryController",
+        "method": "GET",
+        "path": "/api/inventory/alerts/low-stock",
+        "methodName": "getLowStockAlerts",
+        "returnType": "ResponseEntity<List<InventoryItem>>"
+      },
+      {
+        "controller": "InventoryController",
+        "method": "GET",
+        "path": "/api/inventory/value",
+        "methodName": "getTotalInventoryValue",
+        "returnType": "ResponseEntity<InventoryValueResponse>"
+      },
+      {
+        "controller": "InventoryController",
+        "method": "GET",
+        "path": "/api/inventory/value/by-category",
+        "methodName": "getInventoryValueByCategory",
+        "returnType": "ResponseEntity<Map<String, BigDecimal>>"
+      },
+      {
+        "controller": "InventoryController",
+        "method": "DELETE",
+        "path": "/api/inventory/items/{id}",
+        "methodName": "deleteInventoryItem",
+        "returnType": "ResponseEntity<MessageResponse>"
+      },
+      {
+        "controller": "PurchaseOrderController",
+        "method": "POST",
+        "path": "/api/inventory/purchase-orders",
+        "methodName": "createPurchaseOrder",
+        "returnType": "ResponseEntity<PurchaseOrder>"
+      },
+      {
+        "controller": "PurchaseOrderController",
+        "method": "GET",
+        "path": "/api/inventory/purchase-orders",
+        "methodName": "getAllPurchaseOrders",
+        "returnType": "ResponseEntity<List<PurchaseOrder>>"
+      },
+      {
+        "controller": "PurchaseOrderController",
+        "method": "GET",
+        "path": "/api/inventory/purchase-orders/{id}",
+        "methodName": "getPurchaseOrderById",
+        "returnType": "ResponseEntity<PurchaseOrder>"
+      },
+      {
+        "controller": "PurchaseOrderController",
+        "method": "GET",
+        "path": "/api/inventory/purchase-orders/number/{orderNumber}",
+        "methodName": "getPurchaseOrderByNumber",
+        "returnType": "ResponseEntity<PurchaseOrder>"
+      },
+      {
+        "controller": "PurchaseOrderController",
+        "method": "GET",
+        "path": "/api/inventory/purchase-orders/status/{status}",
+        "methodName": "getPurchaseOrdersByStatus",
+        "returnType": "ResponseEntity<List<PurchaseOrder>>"
+      },
+      {
+        "controller": "PurchaseOrderController",
+        "method": "GET",
+        "path": "/api/inventory/purchase-orders/pending-approval",
+        "methodName": "getPendingApprovalOrders",
+        "returnType": "ResponseEntity<List<PurchaseOrder>>"
+      },
+      {
+        "controller": "PurchaseOrderController",
+        "method": "GET",
+        "path": "/api/inventory/purchase-orders/overdue",
+        "methodName": "getOverdueOrders",
+        "returnType": "ResponseEntity<List<PurchaseOrder>>"
+      },
+      {
+        "controller": "PurchaseOrderController",
+        "method": "GET",
+        "path": "/api/inventory/purchase-orders/date-range",
+        "methodName": "getPurchaseOrdersByDateRange",
+        "returnType": "ResponseEntity<List<PurchaseOrder>>"
+      },
+      {
+        "controller": "PurchaseOrderController",
+        "method": "PUT",
+        "path": "/api/inventory/purchase-orders/{id}",
+        "methodName": "updatePurchaseOrder",
+        "returnType": "ResponseEntity<PurchaseOrder>"
+      },
+      {
+        "controller": "PurchaseOrderController",
+        "method": "PATCH",
+        "path": "/api/inventory/purchase-orders/{id}/approve",
+        "methodName": "approvePurchaseOrder",
+        "returnType": "ResponseEntity<PurchaseOrder>"
+      },
+      {
+        "controller": "PurchaseOrderController",
+        "method": "PATCH",
+        "path": "/api/inventory/purchase-orders/{id}/reject",
+        "methodName": "rejectPurchaseOrder",
+        "returnType": "ResponseEntity<PurchaseOrder>"
+      },
+      {
+        "controller": "PurchaseOrderController",
+        "method": "PATCH",
+        "path": "/api/inventory/purchase-orders/{id}/send",
+        "methodName": "markAsSent",
+        "returnType": "ResponseEntity<PurchaseOrder>"
+      },
+      {
+        "controller": "PurchaseOrderController",
+        "method": "PATCH",
+        "path": "/api/inventory/purchase-orders/{id}/receive",
+        "methodName": "receivePurchaseOrder",
+        "returnType": "ResponseEntity<PurchaseOrder>"
+      },
+      {
+        "controller": "PurchaseOrderController",
+        "method": "PATCH",
+        "path": "/api/inventory/purchase-orders/{id}/cancel",
+        "methodName": "cancelPurchaseOrder",
+        "returnType": "ResponseEntity<PurchaseOrder>"
+      },
+      {
+        "controller": "PurchaseOrderController",
+        "method": "POST",
+        "path": "/api/inventory/purchase-orders/auto-generate",
+        "methodName": "autoGeneratePurchaseOrders",
+        "returnType": "ResponseEntity<MessageResponse>"
+      },
+      {
+        "controller": "PurchaseOrderController",
+        "method": "DELETE",
+        "path": "/api/inventory/purchase-orders/{id}",
+        "methodName": "deletePurchaseOrder",
+        "returnType": "ResponseEntity<MessageResponse>"
+      },
+      {
+        "controller": "SupplierController",
+        "method": "POST",
+        "path": "/api/inventory/suppliers",
+        "methodName": "createSupplier",
+        "returnType": "ResponseEntity<Supplier>"
+      },
+      {
+        "controller": "SupplierController",
+        "method": "GET",
+        "path": "/api/inventory/suppliers",
+        "methodName": "getAllSuppliers",
+        "returnType": "ResponseEntity<List<Supplier>>"
+      },
+      {
+        "controller": "SupplierController",
+        "method": "GET",
+        "path": "/api/inventory/suppliers/{id}",
+        "methodName": "getSupplierById",
+        "returnType": "ResponseEntity<Supplier>"
+      },
+      {
+        "controller": "SupplierController",
+        "method": "GET",
+        "path": "/api/inventory/suppliers/code/{code}",
+        "methodName": "getSupplierByCode",
+        "returnType": "ResponseEntity<Supplier>"
+      },
+      {
+        "controller": "SupplierController",
+        "method": "GET",
+        "path": "/api/inventory/suppliers/active",
+        "methodName": "getActiveSuppliers",
+        "returnType": "ResponseEntity<List<Supplier>>"
+      },
+      {
+        "controller": "SupplierController",
+        "method": "GET",
+        "path": "/api/inventory/suppliers/preferred",
+        "methodName": "getPreferredSuppliers",
+        "returnType": "ResponseEntity<List<Supplier>>"
+      },
+      {
+        "controller": "SupplierController",
+        "method": "GET",
+        "path": "/api/inventory/suppliers/reliable",
+        "methodName": "getReliableSuppliers",
+        "returnType": "ResponseEntity<List<Supplier>>"
+      },
+      {
+        "controller": "SupplierController",
+        "method": "GET",
+        "path": "/api/inventory/suppliers/category/{category}",
+        "methodName": "getSuppliersByCategory",
+        "returnType": "ResponseEntity<List<Supplier>>"
+      },
+      {
+        "controller": "SupplierController",
+        "method": "GET",
+        "path": "/api/inventory/suppliers/search",
+        "methodName": "searchSuppliers",
+        "returnType": "ResponseEntity<List<Supplier>>"
+      },
+      {
+        "controller": "SupplierController",
+        "method": "GET",
+        "path": "/api/inventory/suppliers/city/{city}",
+        "methodName": "getSuppliersByCity",
+        "returnType": "ResponseEntity<List<Supplier>>"
+      },
+      {
+        "controller": "SupplierController",
+        "method": "GET",
+        "path": "/api/inventory/suppliers/compare/category/{category}",
+        "methodName": "compareSuppliersByCategory",
+        "returnType": "ResponseEntity<List<Supplier>>"
+      },
+      {
+        "controller": "SupplierController",
+        "method": "PUT",
+        "path": "/api/inventory/suppliers/{id}",
+        "methodName": "updateSupplier",
+        "returnType": "ResponseEntity<Supplier>"
+      },
+      {
+        "controller": "SupplierController",
+        "method": "PATCH",
+        "path": "/api/inventory/suppliers/{id}/status",
+        "methodName": "updateSupplierStatus",
+        "returnType": "ResponseEntity<Supplier>"
+      },
+      {
+        "controller": "SupplierController",
+        "method": "PATCH",
+        "path": "/api/inventory/suppliers/{id}/preferred",
+        "methodName": "markAsPreferred",
+        "returnType": "ResponseEntity<Supplier>"
+      },
+      {
+        "controller": "SupplierController",
+        "method": "PATCH",
+        "path": "/api/inventory/suppliers/{id}/performance",
+        "methodName": "updatePerformanceMetrics",
+        "returnType": "ResponseEntity<Supplier>"
+      },
+      {
+        "controller": "SupplierController",
+        "method": "DELETE",
+        "path": "/api/inventory/suppliers/{id}",
+        "methodName": "deleteSupplier",
+        "returnType": "ResponseEntity<MessageResponse>"
+      },
+      {
+        "controller": "WasteController",
+        "method": "POST",
+        "path": "/api/inventory/waste",
+        "methodName": "recordWaste",
+        "returnType": "ResponseEntity<WasteRecord>"
+      },
+      {
+        "controller": "WasteController",
+        "method": "GET",
+        "path": "/api/inventory/waste",
+        "methodName": "getAllWasteRecords",
+        "returnType": "ResponseEntity<List<WasteRecord>>"
+      },
+      {
+        "controller": "WasteController",
+        "method": "GET",
+        "path": "/api/inventory/waste/{id}",
+        "methodName": "getWasteRecordById",
+        "returnType": "ResponseEntity<WasteRecord>"
+      },
+      {
+        "controller": "WasteController",
+        "method": "GET",
+        "path": "/api/inventory/waste/date-range",
+        "methodName": "getWasteRecordsByDateRange",
+        "returnType": "ResponseEntity<List<WasteRecord>>"
+      },
+      {
+        "controller": "WasteController",
+        "method": "GET",
+        "path": "/api/inventory/waste/category/{category}",
+        "methodName": "getWasteRecordsByCategory",
+        "returnType": "ResponseEntity<List<WasteRecord>>"
+      },
+      {
+        "controller": "WasteController",
+        "method": "PUT",
+        "path": "/api/inventory/waste/{id}",
+        "methodName": "updateWasteRecord",
+        "returnType": "ResponseEntity<WasteRecord>"
+      },
+      {
+        "controller": "WasteController",
+        "method": "PATCH",
+        "path": "/api/inventory/waste/{id}/approve",
+        "methodName": "approveWasteRecord",
+        "returnType": "ResponseEntity<WasteRecord>"
+      },
+      {
+        "controller": "WasteController",
+        "method": "DELETE",
+        "path": "/api/inventory/waste/{id}",
+        "methodName": "deleteWasteRecord",
+        "returnType": "ResponseEntity<MessageResponse>"
+      },
+      {
+        "controller": "WasteController",
+        "method": "GET",
+        "path": "/api/inventory/waste/total-cost",
+        "methodName": "getTotalWasteCost",
+        "returnType": "ResponseEntity<WasteSummaryResponse>"
+      },
+      {
+        "controller": "WasteController",
+        "method": "GET",
+        "path": "/api/inventory/waste/cost-by-category",
+        "methodName": "getWasteCostByCategory",
+        "returnType": "ResponseEntity<Map<String, BigDecimal>>"
+      },
+      {
+        "controller": "WasteController",
+        "method": "GET",
+        "path": "/api/inventory/waste/top-items",
+        "methodName": "getTopWastedItems",
+        "returnType": "ResponseEntity<List<Map<String, Object>>>"
+      },
+      {
+        "controller": "WasteController",
+        "method": "GET",
+        "path": "/api/inventory/waste/preventable-analysis",
+        "methodName": "getPreventableWasteAnalysis",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "WasteController",
+        "method": "GET",
+        "path": "/api/inventory/waste/trend",
+        "methodName": "getWasteTrend",
+        "returnType": "ResponseEntity<List<Map<String, Object>>>"
+      }
+    ],
+    "menu-service": [
+      {
+        "controller": "MenuController",
+        "method": "GET",
+        "path": "/api/menu/public",
+        "methodName": "getAvailableMenu",
+        "returnType": "ResponseEntity<List<MenuItem>>"
+      },
+      {
+        "controller": "MenuController",
+        "method": "GET",
+        "path": "/api/menu/public/{id}",
+        "methodName": "getMenuItem",
+        "returnType": "ResponseEntity<MenuItem>"
+      },
+      {
+        "controller": "MenuController",
+        "method": "GET",
+        "path": "/api/menu/public/cuisine/{cuisine}",
+        "methodName": "getMenuByCuisine",
+        "returnType": "ResponseEntity<List<MenuItem>>"
+      },
+      {
+        "controller": "MenuController",
+        "method": "GET",
+        "path": "/api/menu/public/category/{category}",
+        "methodName": "getMenuByCategory",
+        "returnType": "ResponseEntity<List<MenuItem>>"
+      },
+      {
+        "controller": "MenuController",
+        "method": "GET",
+        "path": "/api/menu/public/dietary/{dietaryType}",
+        "methodName": "getMenuByDietaryType",
+        "returnType": "ResponseEntity<List<MenuItem>>"
+      },
+      {
+        "controller": "MenuController",
+        "method": "GET",
+        "path": "/api/menu/public/recommended",
+        "methodName": "getRecommendedItems",
+        "returnType": "ResponseEntity<List<MenuItem>>"
+      },
+      {
+        "controller": "MenuController",
+        "method": "GET",
+        "path": "/api/menu/public/search",
+        "methodName": "searchMenu",
+        "returnType": "ResponseEntity<List<MenuItem>>"
+      },
+      {
+        "controller": "MenuController",
+        "method": "GET",
+        "path": "/api/menu/public/tag/{tag}",
+        "methodName": "getMenuByTag",
+        "returnType": "ResponseEntity<List<MenuItem>>"
+      },
+      {
+        "controller": "MenuController",
+        "method": "GET",
+        "path": "/api/menu/items",
+        "methodName": "getAllMenuItems",
+        "returnType": "ResponseEntity<List<MenuItem>>"
+      },
+      {
+        "controller": "MenuController",
+        "method": "POST",
+        "path": "/api/menu/items",
+        "methodName": "createMenuItem",
+        "returnType": "ResponseEntity<MenuItem>"
+      },
+      {
+        "controller": "MenuController",
+        "method": "POST",
+        "path": "/api/menu/items/bulk",
+        "methodName": "createMultipleMenuItems",
+        "returnType": "ResponseEntity<List<MenuItem>>"
+      },
+      {
+        "controller": "MenuController",
+        "method": "PUT",
+        "path": "/api/menu/items/{id}",
+        "methodName": "updateMenuItem",
+        "returnType": "ResponseEntity<MenuItem>"
+      },
+      {
+        "controller": "MenuController",
+        "method": "PATCH",
+        "path": "/api/menu/items/{id}/availability",
+        "methodName": "toggleAvailability",
+        "returnType": "ResponseEntity<MenuItem>"
+      },
+      {
+        "controller": "MenuController",
+        "method": "PATCH",
+        "path": "/api/menu/items/{id}/availability/{status}",
+        "methodName": "setAvailability",
+        "returnType": "ResponseEntity<MenuItem>"
+      },
+      {
+        "controller": "MenuController",
+        "method": "DELETE",
+        "path": "/api/menu/items/{id}",
+        "methodName": "deleteMenuItem",
+        "returnType": "ResponseEntity<Void>"
+      },
+      {
+        "controller": "MenuController",
+        "method": "DELETE",
+        "path": "/api/menu/items",
+        "methodName": "deleteAllMenuItems",
+        "returnType": "ResponseEntity<Void>"
+      },
+      {
+        "controller": "MenuController",
+        "method": "POST",
+        "path": "/api/menu/copy-menu",
+        "methodName": "copyMenuBetweenStores",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "MenuController",
+        "method": "GET",
+        "path": "/api/menu/stats",
+        "methodName": "getMenuStatistics",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      }
+    ],
+    "notification-service": [
+      {
+        "controller": "CampaignController",
+        "method": "POST",
+        "path": "/api/campaigns",
+        "methodName": "createCampaign",
+        "returnType": "ResponseEntity<Campaign>"
+      },
+      {
+        "controller": "CampaignController",
+        "method": "PUT",
+        "path": "/api/campaigns/{id}",
+        "methodName": "updateCampaign",
+        "returnType": "ResponseEntity<Campaign>"
+      },
+      {
+        "controller": "CampaignController",
+        "method": "POST",
+        "path": "/api/campaigns/{id}/schedule",
+        "methodName": "scheduleCampaign",
+        "returnType": "ResponseEntity<Void>"
+      },
+      {
+        "controller": "CampaignController",
+        "method": "POST",
+        "path": "/api/campaigns/{id}/execute",
+        "methodName": "executeCampaign",
+        "returnType": "ResponseEntity<Void>"
+      },
+      {
+        "controller": "CampaignController",
+        "method": "POST",
+        "path": "/api/campaigns/{id}/cancel",
+        "methodName": "cancelCampaign",
+        "returnType": "ResponseEntity<Void>"
+      },
+      {
+        "controller": "CampaignController",
+        "method": "GET",
+        "path": "/api/campaigns",
+        "methodName": "getAllCampaigns",
+        "returnType": "ResponseEntity<Page<Campaign>>"
+      },
+      {
+        "controller": "CampaignController",
+        "method": "GET",
+        "path": "/api/campaigns/{id}",
+        "methodName": "getCampaign",
+        "returnType": "ResponseEntity<Campaign>"
+      },
+      {
+        "controller": "CampaignController",
+        "method": "DELETE",
+        "path": "/api/campaigns/{id}",
+        "methodName": "deleteCampaign",
+        "returnType": "ResponseEntity<Void>"
+      },
+      {
+        "controller": "NotificationController",
+        "method": "POST",
+        "path": "/api/notifications/send",
+        "methodName": "sendNotification",
+        "returnType": "ResponseEntity<Notification>"
+      },
+      {
+        "controller": "NotificationController",
+        "method": "GET",
+        "path": "/api/notifications/user/{userId}",
+        "methodName": "getUserNotifications",
+        "returnType": "ResponseEntity<Page<Notification>>"
+      },
+      {
+        "controller": "NotificationController",
+        "method": "GET",
+        "path": "/api/notifications/user/{userId}/unread",
+        "methodName": "getUnreadNotifications",
+        "returnType": "ResponseEntity<List<Notification>>"
+      },
+      {
+        "controller": "NotificationController",
+        "method": "GET",
+        "path": "/api/notifications/user/{userId}/unread-count",
+        "methodName": "getUnreadCount",
+        "returnType": "ResponseEntity<Long>"
+      },
+      {
+        "controller": "NotificationController",
+        "method": "PATCH",
+        "path": "/api/notifications/{id}/read",
+        "methodName": "markAsRead",
+        "returnType": "ResponseEntity<Notification>"
+      },
+      {
+        "controller": "NotificationController",
+        "method": "PATCH",
+        "path": "/api/notifications/user/{userId}/read-all",
+        "methodName": "markAllAsRead",
+        "returnType": "ResponseEntity<Void>"
+      },
+      {
+        "controller": "NotificationController",
+        "method": "DELETE",
+        "path": "/api/notifications/{id}",
+        "methodName": "deleteNotification",
+        "returnType": "ResponseEntity<Void>"
+      },
+      {
+        "controller": "NotificationController",
+        "method": "GET",
+        "path": "/api/notifications/user/{userId}/recent",
+        "methodName": "getRecentNotifications",
+        "returnType": "ResponseEntity<List<Notification>>"
+      },
+      {
+        "controller": "RatingController",
+        "method": "POST",
+        "path": "/api/notifications/rating/send",
+        "methodName": "sendRatingRequest",
+        "returnType": "ResponseEntity<Map<String, String>>"
+      },
+      {
+        "controller": "UserPreferencesController",
+        "method": "GET",
+        "path": "/api/preferences/user/{userId}",
+        "methodName": "getPreferences",
+        "returnType": "ResponseEntity<UserPreferences>"
+      },
+      {
+        "controller": "UserPreferencesController",
+        "method": "PUT",
+        "path": "/api/preferences/user/{userId}",
+        "methodName": "updatePreferences",
+        "returnType": "ResponseEntity<UserPreferences>"
+      },
+      {
+        "controller": "UserPreferencesController",
+        "method": "PATCH",
+        "path": "/api/preferences/user/{userId}/channel/{channel}",
+        "methodName": "updateChannelPreference",
+        "returnType": "ResponseEntity<UserPreferences>"
+      },
+      {
+        "controller": "UserPreferencesController",
+        "method": "PATCH",
+        "path": "/api/preferences/user/{userId}/device-token",
+        "methodName": "updateDeviceToken",
+        "returnType": "ResponseEntity<UserPreferences>"
+      },
+      {
+        "controller": "UserPreferencesController",
+        "method": "PATCH",
+        "path": "/api/preferences/user/{userId}/contact",
+        "methodName": "updateContactInfo",
+        "returnType": "ResponseEntity<UserPreferences>"
+      },
+      {
+        "controller": "UserPreferencesController",
+        "method": "DELETE",
+        "path": "/api/preferences/user/{userId}",
+        "methodName": "deletePreferences",
+        "returnType": "ResponseEntity<Void>"
+      }
+    ],
+    "order-service": [
+      {
+        "controller": "KitchenEquipmentController",
+        "method": "POST",
+        "path": "/api/kitchen-equipment",
+        "methodName": "createEquipment",
+        "returnType": "ResponseEntity<KitchenEquipment>"
+      },
+      {
+        "controller": "KitchenEquipmentController",
+        "method": "GET",
+        "path": "/api/kitchen-equipment/store",
+        "methodName": "getEquipmentByStore",
+        "returnType": "ResponseEntity<List<KitchenEquipment>>"
+      },
+      {
+        "controller": "KitchenEquipmentController",
+        "method": "GET",
+        "path": "/api/kitchen-equipment/{equipmentId}",
+        "methodName": "getEquipmentById",
+        "returnType": "ResponseEntity<KitchenEquipment>"
+      },
+      {
+        "controller": "KitchenEquipmentController",
+        "method": "PATCH",
+        "path": "/api/kitchen-equipment/{equipmentId}/status",
+        "methodName": "updateEquipmentStatus",
+        "returnType": "ResponseEntity<KitchenEquipment>"
+      },
+      {
+        "controller": "KitchenEquipmentController",
+        "method": "PATCH",
+        "path": "/api/kitchen-equipment/{equipmentId}/power",
+        "methodName": "togglePower",
+        "returnType": "ResponseEntity<KitchenEquipment>"
+      },
+      {
+        "controller": "KitchenEquipmentController",
+        "method": "PATCH",
+        "path": "/api/kitchen-equipment/{equipmentId}/temperature",
+        "methodName": "updateTemperature",
+        "returnType": "ResponseEntity<KitchenEquipment>"
+      },
+      {
+        "controller": "KitchenEquipmentController",
+        "method": "POST",
+        "path": "/api/kitchen-equipment/{equipmentId}/maintenance",
+        "methodName": "recordMaintenance",
+        "returnType": "ResponseEntity<KitchenEquipment>"
+      },
+      {
+        "controller": "KitchenEquipmentController",
+        "method": "GET",
+        "path": "/api/kitchen-equipment/store/status/{status}",
+        "methodName": "getEquipmentByStatus",
+        "returnType": "ResponseEntity<List<KitchenEquipment>>"
+      },
+      {
+        "controller": "KitchenEquipmentController",
+        "method": "GET",
+        "path": "/api/kitchen-equipment/store/maintenance-needed",
+        "methodName": "getEquipmentNeedingMaintenance",
+        "returnType": "ResponseEntity<List<KitchenEquipment>>"
+      },
+      {
+        "controller": "KitchenEquipmentController",
+        "method": "DELETE",
+        "path": "/api/kitchen-equipment/{equipmentId}",
+        "methodName": "deleteEquipment",
+        "returnType": "ResponseEntity<Void>"
+      },
+      {
+        "controller": "KitchenEquipmentController",
+        "method": "POST",
+        "path": "/api/kitchen-equipment/store/reset-usage",
+        "methodName": "resetUsageCounts",
+        "returnType": "ResponseEntity<Void>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "POST",
+        "path": "",
+        "methodName": "createOrder",
+        "returnType": "ResponseEntity<Order>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/{orderId}",
+        "methodName": "getOrder",
+        "returnType": "ResponseEntity<Order>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/track/{orderId}",
+        "methodName": "trackOrder",
+        "returnType": "ResponseEntity<Order>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/number/{orderNumber}",
+        "methodName": "getOrderByNumber",
+        "returnType": "ResponseEntity<Order>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/kitchen",
+        "methodName": "getKitchenQueue",
+        "returnType": "ResponseEntity<List<Order>>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/store",
+        "methodName": "getStoreOrders",
+        "returnType": "ResponseEntity<List<Order>>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/status/{status}",
+        "methodName": "getOrdersByStatus",
+        "returnType": "ResponseEntity<List<Order>>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/customer/{customerId}",
+        "methodName": "getCustomerOrders",
+        "returnType": "ResponseEntity<List<Order>>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "PATCH",
+        "path": "/{orderId}/status",
+        "methodName": "updateOrderStatus",
+        "returnType": "ResponseEntity<Order>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "PATCH",
+        "path": "/{orderId}/next-stage",
+        "methodName": "moveToNextStage",
+        "returnType": "ResponseEntity<Order>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "DELETE",
+        "path": "/{orderId}",
+        "methodName": "cancelOrder",
+        "returnType": "ResponseEntity<Order>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "PATCH",
+        "path": "/{orderId}/assign-driver",
+        "methodName": "assignDriver",
+        "returnType": "ResponseEntity<Order>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "PATCH",
+        "path": "/{orderId}/payment",
+        "methodName": "updatePaymentStatus",
+        "returnType": "ResponseEntity<Order>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/search",
+        "methodName": "searchOrders",
+        "returnType": "ResponseEntity<List<Order>>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "PATCH",
+        "path": "/{orderId}/items",
+        "methodName": "updateOrderItems",
+        "returnType": "ResponseEntity<Order>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "PATCH",
+        "path": "/{orderId}/priority",
+        "methodName": "updateOrderPriority",
+        "returnType": "ResponseEntity<Order>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/date/{date}",
+        "methodName": "getOrdersByDate",
+        "returnType": "ResponseEntity<List<Order>>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/range",
+        "methodName": "getOrdersByDateRange",
+        "returnType": "ResponseEntity<List<Order>>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/staff/{staffId}/date/{date}",
+        "methodName": "getOrdersByStaffAndDate",
+        "returnType": "ResponseEntity<List<Order>>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/active-deliveries/count",
+        "methodName": "getActiveDeliveryCount",
+        "returnType": "ResponseEntity<Integer>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "POST",
+        "path": "/{orderId}/quality-checkpoint",
+        "methodName": "addQualityCheckpoint",
+        "returnType": "ResponseEntity<Order>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "PATCH",
+        "path": "/{orderId}/quality-checkpoint/{checkpointName}",
+        "methodName": "updateQualityCheckpoint",
+        "returnType": "ResponseEntity<Order>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/{orderId}/quality-checkpoints",
+        "methodName": "getOrdersWithFailedQualityChecks",
+        "returnType": "ResponseEntity<List<Order>>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/store/failed-quality-checks",
+        "methodName": "getOrdersWithFailedQualityChecks",
+        "returnType": "ResponseEntity<List<Order>>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/store/avg-prep-time",
+        "methodName": "getAveragePreparationTime",
+        "returnType": "ResponseEntity<Double>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "PATCH",
+        "path": "/{orderId}/assign-make-table",
+        "methodName": "assignToMakeTable",
+        "returnType": "ResponseEntity<Order>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/store/make-table/{station}",
+        "methodName": "getOrdersByMakeTableStation",
+        "returnType": "ResponseEntity<List<Order>>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/store/analytics/prep-time-by-item",
+        "methodName": "getAveragePreparationTimeByItem",
+        "returnType": "ResponseEntity<Map<String, Double>>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/analytics/kitchen-staff/{staffId}/performance",
+        "methodName": "getKitchenStaffPerformance",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/analytics/pos-staff/{staffId}/performance",
+        "methodName": "getPreparationTimeDistribution",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/store/analytics/prep-time-distribution",
+        "methodName": "getPreparationTimeDistribution",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "PUT",
+        "path": "/{orderId}/delivery-otp",
+        "methodName": "setDeliveryOtp",
+        "returnType": "ResponseEntity<Order>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "PUT",
+        "path": "/{orderId}/delivery-proof",
+        "methodName": "setDeliveryProof",
+        "returnType": "ResponseEntity<Order>"
+      },
+      {
+        "controller": "OrderController",
+        "method": "PUT",
+        "path": "/{orderId}/mark-delivered",
+        "methodName": "markOrderDelivered",
+        "returnType": "ResponseEntity<Order>"
+      },
+      {
+        "controller": "RatingController",
+        "method": "GET",
+        "path": "/api/orders/rating/token/{token}",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "RatingController",
+        "method": "POST",
+        "path": "/api/orders/rating/token/{token}/mark-used",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      }
+    ],
+    "payment-service": [
+      {
+        "controller": "PaymentController",
+        "method": "POST",
+        "path": "/initiate",
+        "methodName": "initiatePayment",
+        "returnType": "ResponseEntity<PaymentResponse>"
+      },
+      {
+        "controller": "PaymentController",
+        "method": "POST",
+        "path": "/verify",
+        "methodName": "verifyPayment",
+        "returnType": "ResponseEntity<PaymentResponse>"
+      },
+      {
+        "controller": "PaymentController",
+        "method": "GET",
+        "path": "/{transactionId}",
+        "methodName": "getTransaction",
+        "returnType": "ResponseEntity<PaymentResponse>"
+      },
+      {
+        "controller": "PaymentController",
+        "method": "GET",
+        "path": "/order/{orderId}",
+        "methodName": "getTransactionByOrderId",
+        "returnType": "ResponseEntity<PaymentResponse>"
+      },
+      {
+        "controller": "PaymentController",
+        "method": "GET",
+        "path": "/customer/{customerId}",
+        "methodName": "getTransactionsByCustomerId",
+        "returnType": "ResponseEntity<List<PaymentResponse>>"
+      },
+      {
+        "controller": "PaymentController",
+        "method": "GET",
+        "path": "/store",
+        "methodName": "getTransactionsByStoreId",
+        "returnType": "ResponseEntity<List<PaymentResponse>>"
+      },
+      {
+        "controller": "PaymentController",
+        "method": "GET",
+        "path": "/reconciliation",
+        "methodName": "getDailyReconciliation",
+        "returnType": "ResponseEntity<ReconciliationReportResponse>"
+      },
+      {
+        "controller": "PaymentController",
+        "method": "POST",
+        "path": "/{transactionId}/reconcile",
+        "methodName": "markAsReconciled",
+        "returnType": "ResponseEntity<Void>"
+      },
+      {
+        "controller": "PaymentController",
+        "method": "POST",
+        "path": "/cash",
+        "methodName": "recordCashPayment",
+        "returnType": "ResponseEntity<PaymentResponse>"
+      },
+      {
+        "controller": "RefundController",
+        "method": "POST",
+        "path": "/api/payments/refund",
+        "methodName": "initiateRefund",
+        "returnType": "ResponseEntity<Refund>"
+      },
+      {
+        "controller": "RefundController",
+        "method": "GET",
+        "path": "/api/payments/refund/{refundId}",
+        "methodName": "getRefund",
+        "returnType": "ResponseEntity<Refund>"
+      },
+      {
+        "controller": "RefundController",
+        "method": "GET",
+        "path": "/api/payments/refund/transaction/{transactionId}",
+        "methodName": "getRefundsByTransactionId",
+        "returnType": "ResponseEntity<List<Refund>>"
+      },
+      {
+        "controller": "RefundController",
+        "method": "GET",
+        "path": "/api/payments/refund/order/{orderId}",
+        "methodName": "getRefundsByOrderId",
+        "returnType": "ResponseEntity<List<Refund>>"
+      },
+      {
+        "controller": "RefundController",
+        "method": "GET",
+        "path": "/api/payments/refund/customer/{customerId}",
+        "methodName": "getRefundsByCustomerId",
+        "returnType": "ResponseEntity<List<Refund>>"
+      },
+      {
+        "controller": "WebhookController",
+        "method": "POST",
+        "path": "/api/payments/webhook",
+        "methodName": "handleWebhook",
+        "returnType": "ResponseEntity<String>"
+      }
+    ],
+    "review-service": [
+      {
+        "controller": "ResponseController",
+        "method": "POST",
+        "path": "/api/responses/review/{reviewId}",
+        "methodName": "getResponsesByManagerId",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "ResponseController",
+        "method": "GET",
+        "path": "/api/responses/{responseId}",
+        "methodName": "getResponsesByManagerId",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "ResponseController",
+        "method": "GET",
+        "path": "/api/responses/review/{reviewId}",
+        "methodName": "getResponsesByManagerId",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "ResponseController",
+        "method": "GET",
+        "path": "/api/responses/manager/{managerId}",
+        "methodName": "getResponsesByManagerId",
+        "returnType": "ResponseEntity<Page<ReviewResponse>>"
+      },
+      {
+        "controller": "ResponseController",
+        "method": "GET",
+        "path": "/api/responses",
+        "methodName": "getAllResponses",
+        "returnType": "ResponseEntity<Page<ReviewResponse>>"
+      },
+      {
+        "controller": "ResponseController",
+        "method": "PUT",
+        "path": "/api/responses/{responseId}",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "ResponseController",
+        "method": "DELETE",
+        "path": "/api/responses/{responseId}",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "ResponseController",
+        "method": "GET",
+        "path": "/api/responses/templates",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "ResponseController",
+        "method": "GET",
+        "path": "/api/responses/templates/{responseType}",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "POST",
+        "path": "/api/reviews",
+        "methodName": "getReviewsByOrderId",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "POST",
+        "path": "/api/reviews/public/submit",
+        "methodName": "getReviewsByOrderId",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "GET",
+        "path": "/api/reviews/public/token/{token}",
+        "methodName": "getReviewsByOrderId",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "GET",
+        "path": "/api/reviews/{reviewId}",
+        "methodName": "getReviewsByOrderId",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "GET",
+        "path": "/api/reviews/order/{orderId}",
+        "methodName": "getReviewsByOrderId",
+        "returnType": "ResponseEntity<List<Review>>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "GET",
+        "path": "/api/reviews/customer/{customerId}",
+        "methodName": "getReviewsByCustomerId",
+        "returnType": "ResponseEntity<Page<Review>>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "GET",
+        "path": "/api/reviews/driver/{driverId}",
+        "methodName": "getReviewsByDriverId",
+        "returnType": "ResponseEntity<Page<Review>>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "GET",
+        "path": "/api/reviews/staff/{staffId}",
+        "methodName": "getReviewsByStaffId",
+        "returnType": "ResponseEntity<Page<Review>>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "GET",
+        "path": "/api/reviews/staff/{staffId}/rating",
+        "methodName": "getReviewsByMenuItemId",
+        "returnType": "ResponseEntity<Page<Review>>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "GET",
+        "path": "/api/reviews/item/{menuItemId}",
+        "methodName": "getReviewsByMenuItemId",
+        "returnType": "ResponseEntity<Page<Review>>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "GET",
+        "path": "/api/reviews/recent",
+        "methodName": "getRecentReviews",
+        "returnType": "ResponseEntity<Page<Review>>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "GET",
+        "path": "/api/reviews/rating",
+        "methodName": "getReviewsByRating",
+        "returnType": "ResponseEntity<Page<Review>>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "GET",
+        "path": "/api/reviews/needs-response",
+        "methodName": "getReviewsNeedingResponse",
+        "returnType": "ResponseEntity<Page<Review>>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "PATCH",
+        "path": "/api/reviews/{reviewId}/flag",
+        "methodName": "getOverallStats",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "PATCH",
+        "path": "/api/reviews/{reviewId}/status",
+        "methodName": "getOverallStats",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "DELETE",
+        "path": "/api/reviews/{reviewId}",
+        "methodName": "getOverallStats",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "GET",
+        "path": "/api/reviews/stats/overall",
+        "methodName": "getOverallStats",
+        "returnType": "ResponseEntity<ReviewStatsResponse>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "GET",
+        "path": "/api/reviews/stats/driver/{driverId}",
+        "methodName": "getDriverRating",
+        "returnType": "ResponseEntity<DriverRatingResponse>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "GET",
+        "path": "/api/reviews/stats/item/{menuItemId}",
+        "methodName": "getItemRating",
+        "returnType": "ResponseEntity<ItemRatingResponse>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "GET",
+        "path": "/api/reviews/pending",
+        "methodName": "getPendingReviews",
+        "returnType": "ResponseEntity<Page<Review>>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "GET",
+        "path": "/api/reviews/flagged",
+        "methodName": "getFlaggedReviews",
+        "returnType": "ResponseEntity<Page<Review>>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "POST",
+        "path": "/api/reviews/{reviewId}/approve",
+        "methodName": "getPublicItemRating",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "POST",
+        "path": "/api/reviews/{reviewId}/reject",
+        "methodName": "getPublicItemRating",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "ReviewController",
+        "method": "GET",
+        "path": "/api/reviews/public/item/{menuItemId}/average",
+        "methodName": "getPublicItemRating",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      }
+    ],
+    "user-service": [
+      {
+        "controller": "GdprController",
+        "method": "POST",
+        "path": "/api/gdpr/consent/grant",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "GdprController",
+        "method": "POST",
+        "path": "/api/gdpr/consent/revoke",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "GdprController",
+        "method": "GET",
+        "path": "/api/gdpr/consent/user/{userId}",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "GdprController",
+        "method": "GET",
+        "path": "/api/gdpr/consent/check",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "GdprController",
+        "method": "POST",
+        "path": "/api/gdpr/request",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "GdprController",
+        "method": "POST",
+        "path": "/api/gdpr/request/{requestId}/verify",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "GdprController",
+        "method": "POST",
+        "path": "/api/gdpr/request/{requestId}/access",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "GdprController",
+        "method": "POST",
+        "path": "/api/gdpr/request/{requestId}/erasure",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "GdprController",
+        "method": "POST",
+        "path": "/api/gdpr/request/{requestId}/portability",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "GdprController",
+        "method": "POST",
+        "path": "/api/gdpr/request/{requestId}/rectification",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "GdprController",
+        "method": "GET",
+        "path": "/api/gdpr/request/user/{userId}",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "GdprController",
+        "method": "GET",
+        "path": "/api/gdpr/audit/{userId}",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "GdprController",
+        "method": "GET",
+        "path": "/api/gdpr/privacy-policy",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "GdprController",
+        "method": "GET",
+        "path": "/api/gdpr/export/{userId}",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "GdprController",
+        "method": "DELETE",
+        "path": "/api/gdpr/erase/{userId}",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "ShiftController",
+        "method": "POST",
+        "path": "/api/shifts",
+        "methodName": "createShift",
+        "returnType": "ResponseEntity<Shift>"
+      },
+      {
+        "controller": "ShiftController",
+        "method": "GET",
+        "path": "/api/shifts/{shiftId}",
+        "methodName": "getShift",
+        "returnType": "ResponseEntity<Shift>"
+      },
+      {
+        "controller": "ShiftController",
+        "method": "PUT",
+        "path": "/api/shifts/{shiftId}",
+        "methodName": "updateShift",
+        "returnType": "ResponseEntity<Shift>"
+      },
+      {
+        "controller": "ShiftController",
+        "method": "DELETE",
+        "path": "/api/shifts/{shiftId}",
+        "methodName": "cancelShift",
+        "returnType": "ResponseEntity<Void>"
+      },
+      {
+        "controller": "ShiftController",
+        "method": "GET",
+        "path": "/api/shifts/employee/{employeeId}",
+        "methodName": "getEmployeeShifts",
+        "returnType": "ResponseEntity<List<Shift>>"
+      },
+      {
+        "controller": "ShiftController",
+        "method": "GET",
+        "path": "/api/shifts/store",
+        "methodName": "getStoreShifts",
+        "returnType": "ResponseEntity<List<Shift>>"
+      },
+      {
+        "controller": "ShiftController",
+        "method": "GET",
+        "path": "/api/shifts/employee/{employeeId}/current",
+        "methodName": "getCurrentShift",
+        "returnType": "ResponseEntity<Shift>"
+      },
+      {
+        "controller": "ShiftController",
+        "method": "POST",
+        "path": "/api/shifts/{shiftId}/confirm",
+        "methodName": "confirmShift",
+        "returnType": "ResponseEntity<Shift>"
+      },
+      {
+        "controller": "ShiftController",
+        "method": "POST",
+        "path": "/api/shifts/{shiftId}/start",
+        "methodName": "startShift",
+        "returnType": "ResponseEntity<Shift>"
+      },
+      {
+        "controller": "ShiftController",
+        "method": "POST",
+        "path": "/api/shifts/{shiftId}/complete",
+        "methodName": "completeShift",
+        "returnType": "ResponseEntity<Shift>"
+      },
+      {
+        "controller": "ShiftController",
+        "method": "GET",
+        "path": "/api/shifts/store/coverage",
+        "methodName": "getShiftCoverage",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "ShiftController",
+        "method": "POST",
+        "path": "/api/shifts/bulk-create",
+        "methodName": "bulkCreateShifts",
+        "returnType": "ResponseEntity<List<Shift>>"
+      },
+      {
+        "controller": "ShiftController",
+        "method": "GET",
+        "path": "/api/shifts/store/{storeId}/week",
+        "methodName": "getWeeklySchedule",
+        "returnType": "ResponseEntity<List<Shift>>"
+      },
+      {
+        "controller": "ShiftController",
+        "method": "GET",
+        "path": "/api/shifts/store/{storeId}/week/exists",
+        "methodName": "checkWeeklyScheduleExists",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "ShiftController",
+        "method": "POST",
+        "path": "/api/shifts/copy-previous-week",
+        "methodName": "copyPreviousWeekSchedule",
+        "returnType": "ResponseEntity<List<Shift>>"
+      },
+      {
+        "controller": "StoreController",
+        "method": "GET",
+        "path": "/api/stores/public",
+        "methodName": "getPublicActiveStores",
+        "returnType": "ResponseEntity<List<Store>>"
+      },
+      {
+        "controller": "StoreController",
+        "method": "GET",
+        "path": "/api/stores/public/{storeId}",
+        "methodName": "getPublicStore",
+        "returnType": "ResponseEntity<Store>"
+      },
+      {
+        "controller": "StoreController",
+        "method": "GET",
+        "path": "/api/stores/public/code/{storeCode}",
+        "methodName": "getPublicStoreByCode",
+        "returnType": "ResponseEntity<Store>"
+      },
+      {
+        "controller": "StoreController",
+        "method": "GET",
+        "path": "/api/stores/{storeId}",
+        "methodName": "getStore",
+        "returnType": "ResponseEntity<Store>"
+      },
+      {
+        "controller": "StoreController",
+        "method": "GET",
+        "path": "/api/stores/code/{storeCode}",
+        "methodName": "getStoreByCode",
+        "returnType": "ResponseEntity<Store>"
+      },
+      {
+        "controller": "StoreController",
+        "method": "GET",
+        "path": "/api/stores",
+        "methodName": "getActiveStores",
+        "returnType": "ResponseEntity<List<Store>>"
+      },
+      {
+        "controller": "StoreController",
+        "method": "GET",
+        "path": "/api/stores/region/{regionId}",
+        "methodName": "getStoresByRegion",
+        "returnType": "ResponseEntity<List<Store>>"
+      },
+      {
+        "controller": "StoreController",
+        "method": "GET",
+        "path": "/api/stores/nearby",
+        "methodName": "getNearbyStores",
+        "returnType": "ResponseEntity<List<Store>>"
+      },
+      {
+        "controller": "StoreController",
+        "method": "POST",
+        "path": "/api/stores",
+        "methodName": "createStore",
+        "returnType": "ResponseEntity<Store>"
+      },
+      {
+        "controller": "StoreController",
+        "method": "PUT",
+        "path": "/api/stores/{storeId}",
+        "methodName": "updateStore",
+        "returnType": "ResponseEntity<Store>"
+      },
+      {
+        "controller": "StoreController",
+        "method": "GET",
+        "path": "/api/stores/operational-status",
+        "methodName": "getOperationalStatus",
+        "returnType": "ResponseEntity<Map<String, Boolean>>"
+      },
+      {
+        "controller": "StoreController",
+        "method": "GET",
+        "path": "/api/stores/metrics",
+        "methodName": "getStoreMetrics",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "StoreController",
+        "method": "POST",
+        "path": "/api/stores/access-check",
+        "methodName": "unknown",
+        "returnType": "void"
+      },
+      {
+        "controller": "SystemInfoController",
+        "method": "GET",
+        "path": "/api/system/version",
+        "methodName": "getVersion",
+        "returnType": "ResponseEntity<VersionInfo>"
+      },
+      {
+        "controller": "SystemInfoController",
+        "method": "GET",
+        "path": "/api/system/updates/check",
+        "methodName": "checkForUpdates",
+        "returnType": "ResponseEntity<UpdateStatus>"
+      },
+      {
+        "controller": "SystemInfoController",
+        "method": "GET",
+        "path": "/api/system/updates/status",
+        "methodName": "getUpdateStatus",
+        "returnType": "ResponseEntity<UpdateStatus>"
+      },
+      {
+        "controller": "SystemInfoController",
+        "method": "GET",
+        "path": "/api/system/health",
+        "methodName": "health",
+        "returnType": "ResponseEntity<HealthStatus>"
+      },
+      {
+        "controller": "SystemInfoController",
+        "method": "GET",
+        "path": "/api/system/info",
+        "methodName": "getSystemInfo",
+        "returnType": "ResponseEntity<SystemInfo>"
+      },
+      {
+        "controller": "TestDataController",
+        "method": "POST",
+        "path": "/api/test-data/create-default-store",
+        "methodName": "createDefaultStore",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "TestDataController",
+        "method": "POST",
+        "path": "/api/test-data/create-test-stores",
+        "methodName": "createTestStores",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "TestDataController",
+        "method": "POST",
+        "path": "/api/test-data/migrate-users-to-storecode",
+        "methodName": "migrateUsersToStoreCode",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/register",
+        "methodName": "register",
+        "returnType": "ResponseEntity<LoginResponse>"
+      },
+      {
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/create",
+        "methodName": "createUser",
+        "returnType": "ResponseEntity<UserResponse>"
+      },
+      {
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/login",
+        "methodName": "login",
+        "returnType": "ResponseEntity<LoginResponse>"
+      },
+      {
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/validate-pin",
+        "methodName": "logout",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/logout",
+        "methodName": "logout",
+        "returnType": "ResponseEntity<Map<String, String>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/refresh",
+        "methodName": "refreshToken",
+        "returnType": "ResponseEntity<Map<String, String>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/{userId}",
+        "methodName": "getUser",
+        "returnType": "ResponseEntity<UserResponse>"
+      },
+      {
+        "controller": "UserController",
+        "method": "PUT",
+        "path": "/api/users/{userId}",
+        "methodName": "updateUser",
+        "returnType": "ResponseEntity<UserResponse>"
+      },
+      {
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/{userId}/activate",
+        "methodName": "activateUser",
+        "returnType": "ResponseEntity<Map<String, String>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/{userId}/deactivate",
+        "methodName": "deactivateUserPost",
+        "returnType": "ResponseEntity<Map<String, String>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "DELETE",
+        "path": "/api/users/{userId}",
+        "methodName": "deactivateUser",
+        "returnType": "ResponseEntity<Map<String, String>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users",
+        "methodName": "getAllUsers",
+        "returnType": "ResponseEntity<List<UserResponse>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/type/{type}",
+        "methodName": "getUsersByType",
+        "returnType": "ResponseEntity<List<UserResponse>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/store",
+        "methodName": "getStoreEmployees",
+        "returnType": "ResponseEntity<List<UserResponse>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/managers",
+        "methodName": "getActiveManagers",
+        "returnType": "ResponseEntity<List<UserResponse>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/{userId}/can-take-orders",
+        "methodName": "canTakeOrders",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/profile",
+        "methodName": "getCurrentUserProfile",
+        "returnType": "ResponseEntity<UserResponse>"
+      },
+      {
+        "controller": "UserController",
+        "method": "PUT",
+        "path": "/api/users/profile",
+        "methodName": "updateCurrentUserProfile",
+        "returnType": "ResponseEntity<UserResponse>"
+      },
+      {
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/change-password",
+        "methodName": "changePassword",
+        "returnType": "ResponseEntity<Map<String, String>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/search",
+        "methodName": "searchUsers",
+        "returnType": "ResponseEntity<List<UserResponse>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/stats",
+        "methodName": "getUserStats",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/drivers/store",
+        "methodName": "getDriversByStore",
+        "returnType": "ResponseEntity<List<UserResponse>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/drivers/available",
+        "methodName": "getAvailableDrivers",
+        "returnType": "ResponseEntity<List<UserResponse>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "PUT",
+        "path": "/api/users/{userId}/status",
+        "methodName": "updateDriverStatus",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/{userId}/status",
+        "methodName": "getDriverStatus",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/{userId}/generate-pin",
+        "methodName": "generateEmployeePIN",
+        "returnType": "ResponseEntity<Map<String, String>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/generate-all-pins",
+        "methodName": "generateAllEmployeePINs",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/kiosk/create",
+        "methodName": "createKioskAccount",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/kiosk/list",
+        "methodName": "listKioskAccounts",
+        "returnType": "ResponseEntity<List<UserResponse>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/kiosk/{kioskUserId}/regenerate-tokens",
+        "methodName": "regenerateKioskTokens",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/kiosk/{kioskUserId}/deactivate",
+        "methodName": "deactivateKiosk",
+        "returnType": "ResponseEntity<Map<String, String>>"
+      },
+      {
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/kiosk/auto-login",
+        "methodName": "kioskAutoLogin",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "WorkingSessionController",
+        "method": "POST",
+        "path": "/api/users/sessions/start",
+        "methodName": "startSession",
+        "returnType": "ResponseEntity<WorkingSessionResponse>"
+      },
+      {
+        "controller": "WorkingSessionController",
+        "method": "POST",
+        "path": "/api/users/sessions/end",
+        "methodName": "endSession",
+        "returnType": "ResponseEntity<WorkingSessionResponse>"
+      },
+      {
+        "controller": "WorkingSessionController",
+        "method": "POST",
+        "path": "/api/users/sessions/{employeeId}/break",
+        "methodName": "addBreakTime",
+        "returnType": "ResponseEntity<WorkingSessionResponse>"
+      },
+      {
+        "controller": "WorkingSessionController",
+        "method": "POST",
+        "path": "/api/users/sessions/start-with-location",
+        "methodName": "startSessionWithLocation",
+        "returnType": "ResponseEntity<WorkingSessionResponse>"
+      },
+      {
+        "controller": "WorkingSessionController",
+        "method": "POST",
+        "path": "/api/users/sessions/end-with-location",
+        "methodName": "endSessionWithLocation",
+        "returnType": "ResponseEntity<WorkingSessionResponse>"
+      },
+      {
+        "controller": "WorkingSessionController",
+        "method": "GET",
+        "path": "/api/users/sessions/pending-approval",
+        "methodName": "getSessionsPendingApproval",
+        "returnType": "ResponseEntity<List<WorkingSessionResponse>>"
+      },
+      {
+        "controller": "WorkingSessionController",
+        "method": "POST",
+        "path": "/api/users/sessions/{sessionId}/approve",
+        "methodName": "approveSession",
+        "returnType": "ResponseEntity<Map<String, String>>"
+      },
+      {
+        "controller": "WorkingSessionController",
+        "method": "POST",
+        "path": "/api/users/sessions/{sessionId}/reject",
+        "methodName": "rejectSession",
+        "returnType": "ResponseEntity<Map<String, String>>"
+      },
+      {
+        "controller": "WorkingSessionController",
+        "method": "GET",
+        "path": "/api/users/sessions/current",
+        "methodName": "getCurrentSession",
+        "returnType": "ResponseEntity<WorkingSessionResponse>"
+      },
+      {
+        "controller": "WorkingSessionController",
+        "method": "GET",
+        "path": "/api/users/sessions/{employeeId}",
+        "methodName": "getEmployeeSessions",
+        "returnType": "ResponseEntity<List<WorkingSessionResponse>>"
+      },
+      {
+        "controller": "WorkingSessionController",
+        "method": "GET",
+        "path": "/api/users/sessions/store",
+        "methodName": "getStoreSessions",
+        "returnType": "ResponseEntity<List<WorkingSessionResponse>>"
+      },
+      {
+        "controller": "WorkingSessionController",
+        "method": "GET",
+        "path": "/api/users/sessions/{employeeId}/report",
+        "methodName": "getWorkingHoursReport",
+        "returnType": "ResponseEntity<WorkingHoursReport>"
+      },
+      {
+        "controller": "WorkingSessionController",
+        "method": "GET",
+        "path": "/api/users/sessions/store/active",
+        "methodName": "getActiveStoreSessions",
+        "returnType": "ResponseEntity<List<WorkingSessionResponse>>"
+      },
+      {
+        "controller": "WorkingSessionController",
+        "method": "GET",
+        "path": "/api/users/sessions/{employeeId}/status",
+        "methodName": "getEmployeeWorkingStatus",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      {
+        "controller": "WorkingSessionController",
+        "method": "POST",
+        "path": "/api/users/sessions/clock-in-with-pin",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      {
+        "controller": "WorkingSessionController",
+        "method": "POST",
+        "path": "/api/users/sessions/clock-out-employee",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      }
+    ]
+  },
+  "frontendAPIs": {
+    "analyticsApi": [],
+    "authApi": [
+      {
+        "endpointName": "login",
+        "method": "POST",
+        "url": "/users/login"
+      },
+      {
+        "endpointName": "register",
+        "method": "POST",
+        "url": "/users/register"
+      },
+      {
+        "endpointName": "refreshToken",
+        "method": "POST",
+        "url": "/users/refresh-token"
+      },
+      {
+        "endpointName": "logout",
+        "method": "POST",
+        "url": "/users/logout"
+      }
+    ],
+    "customerApi": [
+      {
+        "endpointName": "getOrCreateCustomer",
+        "method": "POST",
+        "url": "/get-or-create"
+      },
+      {
+        "endpointName": "deactivateCustomer",
+        "method": "PATCH",
+        "url": "/{param}/deactivate"
+      },
+      {
+        "endpointName": "activateCustomer",
+        "method": "PATCH",
+        "url": "/{param}/activate"
+      },
+      {
+        "endpointName": "verifyEmail",
+        "method": "PATCH",
+        "url": "/{param}/verify-email"
+      },
+      {
+        "endpointName": "verifyPhone",
+        "method": "PATCH",
+        "url": "/{param}/verify-phone"
+      },
+      {
+        "endpointName": "deleteCustomer",
+        "method": "DELETE",
+        "url": "/{param}"
+      }
+    ],
+    "deliveryApi": [
+      {
+        "endpointName": "autoDispatch",
+        "method": "POST",
+        "url": "/delivery/auto-dispatch"
+      },
+      {
+        "endpointName": "getOptimizedRoute",
+        "method": "POST",
+        "url": "/delivery/route-optimize"
+      },
+      {
+        "endpointName": "updateLocation",
+        "method": "POST",
+        "url": "/delivery/location-update"
+      }
+    ],
+    "driverApi": [
+      {
+        "endpointName": "updateDriverLocation",
+        "method": "POST",
+        "url": "/delivery/location-update"
+      },
+      {
+        "endpointName": "activateDriver",
+        "method": "POST",
+        "url": "/users/{param}/activate"
+      },
+      {
+        "endpointName": "deactivateDriver",
+        "method": "POST",
+        "url": "/users/{param}/deactivate"
+      }
+    ],
+    "equipmentApi": [
+      {
+        "endpointName": "createEquipment",
+        "method": "POST",
+        "url": "/kitchen-equipment"
+      },
+      {
+        "endpointName": "deleteEquipment",
+        "method": "DELETE",
+        "url": "/kitchen-equipment/{param}"
+      },
+      {
+        "endpointName": "resetUsageCounts",
+        "method": "POST",
+        "url": "/kitchen-equipment/store/reset-usage"
+      }
+    ],
+    "inventoryApi": [
+      {
+        "endpointName": "createInventoryItem",
+        "method": "POST",
+        "url": "/items"
+      },
+      {
+        "endpointName": "deleteInventoryItem",
+        "method": "DELETE",
+        "url": "/items/{param}"
+      },
+      {
+        "endpointName": "createSupplier",
+        "method": "POST",
+        "url": "/suppliers"
+      },
+      {
+        "endpointName": "createPurchaseOrder",
+        "method": "POST",
+        "url": "/purchase-orders"
+      },
+      {
+        "endpointName": "deletePurchaseOrder",
+        "method": "DELETE",
+        "url": "/purchase-orders/{param}"
+      },
+      {
+        "endpointName": "recordWaste",
+        "method": "POST",
+        "url": "/waste"
+      },
+      {
+        "endpointName": "deleteWasteRecord",
+        "method": "DELETE",
+        "url": "/waste/{param}"
+      }
+    ],
+    "kioskApi": [
+      {
+        "endpointName": "createKiosk",
+        "method": "POST",
+        "url": "/users/kiosk/create"
+      },
+      {
+        "endpointName": "regenerateKioskTokens",
+        "method": "POST",
+        "url": "/users/kiosk/{param}/regenerate-tokens"
+      }
+    ],
+    "menuApi": [
+      {
+        "endpointName": "createMenuItem",
+        "method": "POST",
+        "url": "/menu/items"
+      },
+      {
+        "endpointName": "createMultipleMenuItems",
+        "method": "POST",
+        "url": "/menu/items/bulk"
+      },
+      {
+        "endpointName": "toggleAvailability",
+        "method": "PATCH",
+        "url": "/menu/items/{param}/availability"
+      },
+      {
+        "endpointName": "deleteMenuItem",
+        "method": "DELETE",
+        "url": "/menu/items/{param}"
+      },
+      {
+        "endpointName": "deleteAllMenuItems",
+        "method": "DELETE",
+        "url": "/menu/items"
+      }
+    ],
+    "notificationApi": [
+      {
+        "endpointName": "sendNotification",
+        "method": "POST",
+        "url": "/notifications/send"
+      },
+      {
+        "endpointName": "markAsRead",
+        "method": "PATCH",
+        "url": "/notifications/{param}/read"
+      },
+      {
+        "endpointName": "markAllAsRead",
+        "method": "PATCH",
+        "url": "/notifications/user/{param}/read-all"
+      },
+      {
+        "endpointName": "deleteNotification",
+        "method": "DELETE",
+        "url": "/notifications/{param}"
+      },
+      {
+        "endpointName": "createCampaign",
+        "method": "POST",
+        "url": "/campaigns"
+      },
+      {
+        "endpointName": "executeCampaign",
+        "method": "POST",
+        "url": "/campaigns/{param}/execute"
+      },
+      {
+        "endpointName": "cancelCampaign",
+        "method": "POST",
+        "url": "/campaigns/{param}/cancel"
+      },
+      {
+        "endpointName": "deleteCampaign",
+        "method": "DELETE",
+        "url": "/campaigns/{param}"
+      }
+    ],
+    "orderApi": [
+      {
+        "endpointName": "createOrder",
+        "method": "POST",
+        "url": "/orders"
+      },
+      {
+        "endpointName": "updateOrderStatus",
+        "method": "PATCH",
+        "url": "/orders/{param}/status"
+      },
+      {
+        "endpointName": "moveToNextStage",
+        "method": "PATCH",
+        "url": "/orders/{param}/next-stage"
+      }
+    ],
+    "paymentApi": [
+      {
+        "endpointName": "initiatePayment",
+        "method": "POST",
+        "url": "/initiate"
+      },
+      {
+        "endpointName": "recordCashPayment",
+        "method": "POST",
+        "url": "/cash"
+      },
+      {
+        "endpointName": "verifyPayment",
+        "method": "POST",
+        "url": "/verify"
+      },
+      {
+        "endpointName": "initiateRefund",
+        "method": "POST",
+        "url": "/refund"
+      }
+    ],
+    "reviewApi": [
+      {
+        "endpointName": "createReview",
+        "method": "POST",
+        "url": "/reviews"
+      },
+      {
+        "endpointName": "approveReview",
+        "method": "POST",
+        "url": "/reviews/{param}/approve"
+      }
+    ],
+    "sessionApi": [
+      {
+        "endpointName": "startSession",
+        "method": "POST",
+        "url": "/users/sessions/start"
+      },
+      {
+        "endpointName": "endSession",
+        "method": "POST",
+        "url": "/users/sessions/end"
+      },
+      {
+        "endpointName": "approveSession",
+        "method": "POST",
+        "url": "/users/sessions/{param}/approve"
+      }
+    ],
+    "shiftApi": [
+      {
+        "endpointName": "createShift",
+        "method": "POST",
+        "url": "/shifts"
+      },
+      {
+        "endpointName": "deleteShift",
+        "method": "DELETE",
+        "url": "/shifts/{param}"
+      },
+      {
+        "endpointName": "confirmShift",
+        "method": "POST",
+        "url": "/shifts/{param}/confirm"
+      },
+      {
+        "endpointName": "startShift",
+        "method": "POST",
+        "url": "/shifts/{param}/start"
+      },
+      {
+        "endpointName": "completeShift",
+        "method": "POST",
+        "url": "/shifts/{param}/complete"
+      },
+      {
+        "endpointName": "bulkCreateShifts",
+        "method": "POST",
+        "url": "/shifts/bulk-create"
+      }
+    ],
+    "storeApi": [
+      {
+        "endpointName": "createStore",
+        "method": "POST",
+        "url": "/stores"
+      }
+    ],
+    "userApi": [
+      {
+        "endpointName": "updateProfile",
+        "method": "PUT",
+        "url": "/users/profile"
+      },
+      {
+        "endpointName": "changePassword",
+        "method": "POST",
+        "url": "/users/change-password"
+      },
+      {
+        "endpointName": "activateUser",
+        "method": "POST",
+        "url": "/users/{param}/activate"
+      },
+      {
+        "endpointName": "deactivateUser",
+        "method": "POST",
+        "url": "/users/{param}/deactivate"
+      },
+      {
+        "endpointName": "createUser",
+        "method": "POST",
+        "url": "/users/create"
+      }
+    ]
+  },
+  "mismatches": [
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "analytics-service",
+        "controller": "AnalyticsController",
+        "method": "GET",
+        "path": "/api/analytics/sales/today",
+        "methodName": "getTodaySalesMetrics",
+        "returnType": "ResponseEntity<SalesMetricsResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "analytics-service",
+        "controller": "AnalyticsController",
+        "method": "GET",
+        "path": "/api/analytics/avgOrderValue/today",
+        "methodName": "getAverageOrderValue",
+        "returnType": "ResponseEntity<AverageOrderValueResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "analytics-service",
+        "controller": "AnalyticsController",
+        "method": "GET",
+        "path": "/api/analytics/drivers/status",
+        "methodName": "getDriverStatus",
+        "returnType": "ResponseEntity<DriverStatusResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "analytics-service",
+        "controller": "AnalyticsController",
+        "method": "GET",
+        "path": "/api/analytics/staff/{staffId}/performance/today",
+        "methodName": "getStaffPerformance",
+        "returnType": "ResponseEntity<StaffPerformanceResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "analytics-service",
+        "controller": "AnalyticsController",
+        "method": "GET",
+        "path": "/api/analytics/sales/trends/{period}",
+        "methodName": "getSalesTrends",
+        "returnType": "ResponseEntity<SalesTrendResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "analytics-service",
+        "controller": "AnalyticsController",
+        "method": "GET",
+        "path": "/api/analytics/sales/breakdown/order-type",
+        "methodName": "getOrderTypeBreakdown",
+        "returnType": "ResponseEntity<OrderTypeBreakdownResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "analytics-service",
+        "controller": "AnalyticsController",
+        "method": "GET",
+        "path": "/api/analytics/sales/peak-hours",
+        "methodName": "getPeakHours",
+        "returnType": "ResponseEntity<PeakHoursResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "analytics-service",
+        "controller": "AnalyticsController",
+        "method": "GET",
+        "path": "/api/analytics/staff/leaderboard",
+        "methodName": "getStaffLeaderboard",
+        "returnType": "ResponseEntity<StaffLeaderboardResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "analytics-service",
+        "controller": "AnalyticsController",
+        "method": "GET",
+        "path": "/api/analytics/products/top-selling",
+        "methodName": "getTopProducts",
+        "returnType": "ResponseEntity<TopProductsResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "analytics-service",
+        "controller": "AnalyticsController",
+        "method": "POST",
+        "path": "/api/analytics/cache/clear",
+        "methodName": "clearAllCaches",
+        "returnType": "ResponseEntity<Map<String, String>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "analytics-service",
+        "controller": "AnalyticsController",
+        "method": "GET",
+        "path": "/api/analytics/health",
+        "methodName": "health",
+        "returnType": "ResponseEntity<String>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "analytics-service",
+        "controller": "BIController",
+        "method": "GET",
+        "path": "/api/bi/forecast/sales",
+        "methodName": "getSalesForecast",
+        "returnType": "ResponseEntity<SalesForecastResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "analytics-service",
+        "controller": "BIController",
+        "method": "GET",
+        "path": "/api/bi/analysis/customer-behavior",
+        "methodName": "getCustomerBehaviorAnalysis",
+        "returnType": "ResponseEntity<CustomerBehaviorResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "analytics-service",
+        "controller": "BIController",
+        "method": "GET",
+        "path": "/api/bi/prediction/churn",
+        "methodName": "getChurnPrediction",
+        "returnType": "ResponseEntity<ChurnPredictionResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "analytics-service",
+        "controller": "BIController",
+        "method": "GET",
+        "path": "/api/bi/forecast/demand",
+        "methodName": "getDemandForecast",
+        "returnType": "ResponseEntity<DemandForecastResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "analytics-service",
+        "controller": "BIController",
+        "method": "GET",
+        "path": "/api/bi/cost-analysis",
+        "methodName": "getCostAnalysis",
+        "returnType": "ResponseEntity<CostAnalysisResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "analytics-service",
+        "controller": "BIController",
+        "method": "GET",
+        "path": "/api/bi/executive-summary",
+        "methodName": "getExecutiveSummary",
+        "returnType": "ResponseEntity<ExecutiveSummaryResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "analytics-service",
+        "controller": "BIController",
+        "method": "GET",
+        "path": "/api/bi/health",
+        "methodName": "health",
+        "returnType": "ResponseEntity<String>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/{id}",
+        "methodName": "getAllCustomers",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/user/{userId}",
+        "methodName": "getAllCustomers",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/email/{email}",
+        "methodName": "getAllCustomers",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/phone/{phone}",
+        "methodName": "getAllCustomers",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/active",
+        "methodName": "getActiveCustomers",
+        "returnType": "ResponseEntity<List<Customer>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/search",
+        "methodName": "searchOrders",
+        "returnType": "ResponseEntity<List<Order>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "PUT",
+        "path": "/{id}",
+        "methodName": "getCustomersByTier",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "PATCH",
+        "path": "/{id}/deactivate",
+        "methodName": "getCustomersByTier",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "PATCH",
+        "path": "/{id}/activate",
+        "methodName": "getCustomersByTier",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "POST",
+        "path": "/{id}/addresses",
+        "methodName": "getCustomersByTier",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "PATCH",
+        "path": "/{customerId}/addresses/{addressId}",
+        "methodName": "getCustomersByTier",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "DELETE",
+        "path": "/{customerId}/addresses/{addressId}",
+        "methodName": "getCustomersByTier",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "PATCH",
+        "path": "/{customerId}/addresses/{addressId}/set-default",
+        "methodName": "getCustomersByTier",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "POST",
+        "path": "/{id}/loyalty/points",
+        "methodName": "getCustomersByTier",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "POST",
+        "path": "/{id}/loyalty/redeem",
+        "methodName": "getCustomersByTier",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/{id}/loyalty/max-redeemable",
+        "methodName": "getCustomersByTier",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/loyalty/tier/{tier}",
+        "methodName": "getCustomersByTier",
+        "returnType": "ResponseEntity<List<Customer>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "PUT",
+        "path": "/{id}/preferences",
+        "methodName": "getCustomersByTags",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "POST",
+        "path": "/{id}/order-stats",
+        "methodName": "getCustomersByTags",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "POST",
+        "path": "/{id}/update-email",
+        "methodName": "getCustomersByTags",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "POST",
+        "path": "/{id}/notes",
+        "methodName": "getCustomersByTags",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "POST",
+        "path": "/{id}/tags",
+        "methodName": "getCustomersByTags",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "DELETE",
+        "path": "/{id}/tags",
+        "methodName": "getCustomersByTags",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/tags",
+        "methodName": "getCustomersByTags",
+        "returnType": "ResponseEntity<List<Customer>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/high-value",
+        "methodName": "getHighValueCustomers",
+        "returnType": "ResponseEntity<List<Customer>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/top-spenders",
+        "methodName": "getTopSpenders",
+        "returnType": "ResponseEntity<List<Customer>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/recently-active",
+        "methodName": "getRecentlyActiveCustomers",
+        "returnType": "ResponseEntity<List<Customer>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/inactive",
+        "methodName": "getInactiveCustomers",
+        "returnType": "ResponseEntity<List<Customer>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/birthdays/today",
+        "methodName": "getBirthdayCustomersToday",
+        "returnType": "ResponseEntity<List<Customer>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/marketing-opt-in",
+        "methodName": "getMarketingOptInCustomers",
+        "returnType": "ResponseEntity<List<Customer>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/sms-opt-in",
+        "methodName": "getSmsOptInCustomers",
+        "returnType": "ResponseEntity<List<Customer>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "GET",
+        "path": "/stats",
+        "methodName": "getCustomerStats",
+        "returnType": "ResponseEntity<CustomerStatsResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "DELETE",
+        "path": "/{id}/gdpr",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "DELETE",
+        "path": "/{id}/hard",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "customer-service",
+        "controller": "CustomerController",
+        "method": "DELETE",
+        "path": "/{id}",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "DispatchController",
+        "method": "GET",
+        "path": "/api/delivery/health",
+        "methodName": "health",
+        "returnType": "ResponseEntity<String>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "DispatchController",
+        "method": "GET",
+        "path": "/api/delivery/drivers/available",
+        "methodName": "getAvailableDrivers",
+        "returnType": "ResponseEntity<List<Map<String, Object>>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "DispatchController",
+        "method": "GET",
+        "path": "/api/delivery/zone/check",
+        "methodName": "checkDeliveryZone",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "DispatchController",
+        "method": "GET",
+        "path": "/api/delivery/zone/fee",
+        "methodName": "calculateDeliveryFee",
+        "returnType": "ResponseEntity<DeliveryFeeResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "DispatchController",
+        "method": "GET",
+        "path": "/api/delivery/zone/list",
+        "methodName": "getDeliveryZones",
+        "returnType": "ResponseEntity<List<Map<String, Object>>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "DispatchController",
+        "method": "GET",
+        "path": "/api/delivery/zone/validate",
+        "methodName": "updateDriverStatus",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "DispatchController",
+        "method": "PUT",
+        "path": "/api/delivery/driver/status",
+        "methodName": "updateDriverStatus",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "DispatchController",
+        "method": "GET",
+        "path": "/api/delivery/driver/{driverId}/status",
+        "methodName": "getDriverStatus",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "PerformanceController",
+        "method": "GET",
+        "path": "/api/delivery/driver/{driverId}/performance",
+        "methodName": "getDriverPerformance",
+        "returnType": "ResponseEntity<DriverPerformanceResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "PerformanceController",
+        "method": "GET",
+        "path": "/api/delivery/driver/{driverId}/performance/today",
+        "methodName": "getTodayPerformance",
+        "returnType": "ResponseEntity<DriverPerformanceResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "PerformanceController",
+        "method": "GET",
+        "path": "/api/delivery/metrics/today",
+        "methodName": "getTodayMetrics",
+        "returnType": "ResponseEntity<DeliveryMetricsResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "TrackingController",
+        "method": "GET",
+        "path": "/api/delivery/track/{orderId}",
+        "methodName": "trackOrder",
+        "returnType": "ResponseEntity<TrackingResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "TrackingController",
+        "method": "GET",
+        "path": "/api/delivery/eta/{orderId}",
+        "methodName": "getETA",
+        "returnType": "ResponseEntity<ETAResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "TrackingController",
+        "method": "POST",
+        "path": "/api/delivery/{orderId}/generate-otp",
+        "methodName": "generateDeliveryOtp",
+        "returnType": "ResponseEntity<String>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "TrackingController",
+        "method": "POST",
+        "path": "/api/delivery/contactless",
+        "methodName": "markContactlessDelivery",
+        "returnType": "ResponseEntity<DeliveryVerificationResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "TrackingController",
+        "method": "POST",
+        "path": "/api/delivery/{orderId}/regenerate-otp",
+        "methodName": "regenerateOtp",
+        "returnType": "ResponseEntity<String>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "TrackingController",
+        "method": "POST",
+        "path": "/api/delivery/accept",
+        "methodName": "acceptDelivery",
+        "returnType": "ResponseEntity<DriverAcceptanceResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "TrackingController",
+        "method": "POST",
+        "path": "/api/delivery/reject",
+        "methodName": "rejectDelivery",
+        "returnType": "ResponseEntity<DriverAcceptanceResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "TrackingController",
+        "method": "GET",
+        "path": "/api/delivery/driver/{driverId}/pending",
+        "methodName": "getPendingDeliveries",
+        "returnType": "ResponseEntity<List<DeliveryTracking>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "TrackingController",
+        "method": "POST",
+        "path": "/api/delivery/{trackingId}/pickup",
+        "methodName": "markAsPickedUp",
+        "returnType": "ResponseEntity<DeliveryTracking>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "TrackingController",
+        "method": "POST",
+        "path": "/api/delivery/{trackingId}/in-transit",
+        "methodName": "markAsInTransit",
+        "returnType": "ResponseEntity<DeliveryTracking>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "TrackingController",
+        "method": "POST",
+        "path": "/api/delivery/{trackingId}/arrived",
+        "methodName": "markAsArrived",
+        "returnType": "ResponseEntity<DeliveryTracking>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "delivery-service",
+        "controller": "TrackingController",
+        "method": "POST",
+        "path": "/api/delivery/{trackingId}/deliver",
+        "methodName": "markAsDelivered",
+        "returnType": "ResponseEntity<DeliveryTracking>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "inventory-service",
+        "controller": "InventoryController",
+        "method": "GET",
+        "path": "/api/inventory/low-stock",
+        "methodName": "getItemsNeedingReorder",
+        "returnType": "ResponseEntity<List<InventoryItem>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "inventory-service",
+        "controller": "InventoryController",
+        "method": "GET",
+        "path": "/api/inventory/out-of-stock",
+        "methodName": "getOutOfStockItems",
+        "returnType": "ResponseEntity<List<InventoryItem>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "inventory-service",
+        "controller": "InventoryController",
+        "method": "GET",
+        "path": "/api/inventory/expiring-soon",
+        "methodName": "getItemsExpiringSoon",
+        "returnType": "ResponseEntity<List<InventoryItem>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "inventory-service",
+        "controller": "InventoryController",
+        "method": "GET",
+        "path": "/api/inventory/alerts/low-stock",
+        "methodName": "getLowStockAlerts",
+        "returnType": "ResponseEntity<List<InventoryItem>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "inventory-service",
+        "controller": "InventoryController",
+        "method": "GET",
+        "path": "/api/inventory/value",
+        "methodName": "getTotalInventoryValue",
+        "returnType": "ResponseEntity<InventoryValueResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "inventory-service",
+        "controller": "InventoryController",
+        "method": "GET",
+        "path": "/api/inventory/value/by-category",
+        "methodName": "getInventoryValueByCategory",
+        "returnType": "ResponseEntity<Map<String, BigDecimal>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "menu-service",
+        "controller": "MenuController",
+        "method": "GET",
+        "path": "/api/menu/public",
+        "methodName": "getAvailableMenu",
+        "returnType": "ResponseEntity<List<MenuItem>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "menu-service",
+        "controller": "MenuController",
+        "method": "GET",
+        "path": "/api/menu/public/{id}",
+        "methodName": "getMenuItem",
+        "returnType": "ResponseEntity<MenuItem>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "menu-service",
+        "controller": "MenuController",
+        "method": "GET",
+        "path": "/api/menu/public/cuisine/{cuisine}",
+        "methodName": "getMenuByCuisine",
+        "returnType": "ResponseEntity<List<MenuItem>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "menu-service",
+        "controller": "MenuController",
+        "method": "GET",
+        "path": "/api/menu/public/category/{category}",
+        "methodName": "getMenuByCategory",
+        "returnType": "ResponseEntity<List<MenuItem>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "menu-service",
+        "controller": "MenuController",
+        "method": "GET",
+        "path": "/api/menu/public/dietary/{dietaryType}",
+        "methodName": "getMenuByDietaryType",
+        "returnType": "ResponseEntity<List<MenuItem>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "menu-service",
+        "controller": "MenuController",
+        "method": "GET",
+        "path": "/api/menu/public/recommended",
+        "methodName": "getRecommendedItems",
+        "returnType": "ResponseEntity<List<MenuItem>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "menu-service",
+        "controller": "MenuController",
+        "method": "GET",
+        "path": "/api/menu/public/search",
+        "methodName": "searchMenu",
+        "returnType": "ResponseEntity<List<MenuItem>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "menu-service",
+        "controller": "MenuController",
+        "method": "GET",
+        "path": "/api/menu/public/tag/{tag}",
+        "methodName": "getMenuByTag",
+        "returnType": "ResponseEntity<List<MenuItem>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "menu-service",
+        "controller": "MenuController",
+        "method": "POST",
+        "path": "/api/menu/copy-menu",
+        "methodName": "copyMenuBetweenStores",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "menu-service",
+        "controller": "MenuController",
+        "method": "GET",
+        "path": "/api/menu/stats",
+        "methodName": "getMenuStatistics",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "notification-service",
+        "controller": "NotificationController",
+        "method": "GET",
+        "path": "/api/notifications/user/{userId}",
+        "methodName": "getUserNotifications",
+        "returnType": "ResponseEntity<Page<Notification>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "notification-service",
+        "controller": "NotificationController",
+        "method": "GET",
+        "path": "/api/notifications/user/{userId}/unread",
+        "methodName": "getUnreadNotifications",
+        "returnType": "ResponseEntity<List<Notification>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "notification-service",
+        "controller": "NotificationController",
+        "method": "GET",
+        "path": "/api/notifications/user/{userId}/unread-count",
+        "methodName": "getUnreadCount",
+        "returnType": "ResponseEntity<Long>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "notification-service",
+        "controller": "NotificationController",
+        "method": "PATCH",
+        "path": "/api/notifications/{id}/read",
+        "methodName": "markAsRead",
+        "returnType": "ResponseEntity<Notification>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "notification-service",
+        "controller": "NotificationController",
+        "method": "PATCH",
+        "path": "/api/notifications/user/{userId}/read-all",
+        "methodName": "markAllAsRead",
+        "returnType": "ResponseEntity<Void>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "notification-service",
+        "controller": "NotificationController",
+        "method": "DELETE",
+        "path": "/api/notifications/{id}",
+        "methodName": "deleteNotification",
+        "returnType": "ResponseEntity<Void>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "notification-service",
+        "controller": "NotificationController",
+        "method": "GET",
+        "path": "/api/notifications/user/{userId}/recent",
+        "methodName": "getRecentNotifications",
+        "returnType": "ResponseEntity<List<Notification>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "notification-service",
+        "controller": "RatingController",
+        "method": "POST",
+        "path": "/api/notifications/rating/send",
+        "methodName": "sendRatingRequest",
+        "returnType": "ResponseEntity<Map<String, String>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "notification-service",
+        "controller": "UserPreferencesController",
+        "method": "GET",
+        "path": "/api/preferences/user/{userId}",
+        "methodName": "getPreferences",
+        "returnType": "ResponseEntity<UserPreferences>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "notification-service",
+        "controller": "UserPreferencesController",
+        "method": "PUT",
+        "path": "/api/preferences/user/{userId}",
+        "methodName": "updatePreferences",
+        "returnType": "ResponseEntity<UserPreferences>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "notification-service",
+        "controller": "UserPreferencesController",
+        "method": "PATCH",
+        "path": "/api/preferences/user/{userId}/channel/{channel}",
+        "methodName": "updateChannelPreference",
+        "returnType": "ResponseEntity<UserPreferences>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "notification-service",
+        "controller": "UserPreferencesController",
+        "method": "PATCH",
+        "path": "/api/preferences/user/{userId}/device-token",
+        "methodName": "updateDeviceToken",
+        "returnType": "ResponseEntity<UserPreferences>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "notification-service",
+        "controller": "UserPreferencesController",
+        "method": "PATCH",
+        "path": "/api/preferences/user/{userId}/contact",
+        "methodName": "updateContactInfo",
+        "returnType": "ResponseEntity<UserPreferences>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "notification-service",
+        "controller": "UserPreferencesController",
+        "method": "DELETE",
+        "path": "/api/preferences/user/{userId}",
+        "methodName": "deletePreferences",
+        "returnType": "ResponseEntity<Void>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/{orderId}",
+        "methodName": "getOrder",
+        "returnType": "ResponseEntity<Order>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/track/{orderId}",
+        "methodName": "trackOrder",
+        "returnType": "ResponseEntity<Order>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/number/{orderNumber}",
+        "methodName": "getOrderByNumber",
+        "returnType": "ResponseEntity<Order>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/status/{status}",
+        "methodName": "getOrdersByStatus",
+        "returnType": "ResponseEntity<List<Order>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "payment-service",
+        "controller": "PaymentController",
+        "method": "GET",
+        "path": "/customer/{customerId}",
+        "methodName": "getTransactionsByCustomerId",
+        "returnType": "ResponseEntity<List<PaymentResponse>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "PATCH",
+        "path": "/{orderId}/status",
+        "methodName": "updateOrderStatus",
+        "returnType": "ResponseEntity<Order>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "PATCH",
+        "path": "/{orderId}/next-stage",
+        "methodName": "moveToNextStage",
+        "returnType": "ResponseEntity<Order>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "DELETE",
+        "path": "/{orderId}",
+        "methodName": "cancelOrder",
+        "returnType": "ResponseEntity<Order>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "PATCH",
+        "path": "/{orderId}/assign-driver",
+        "methodName": "assignDriver",
+        "returnType": "ResponseEntity<Order>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "PATCH",
+        "path": "/{orderId}/payment",
+        "methodName": "updatePaymentStatus",
+        "returnType": "ResponseEntity<Order>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "PATCH",
+        "path": "/{orderId}/priority",
+        "methodName": "updateOrderPriority",
+        "returnType": "ResponseEntity<Order>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/date/{date}",
+        "methodName": "getOrdersByDate",
+        "returnType": "ResponseEntity<List<Order>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/range",
+        "methodName": "getOrdersByDateRange",
+        "returnType": "ResponseEntity<List<Order>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/staff/{staffId}/date/{date}",
+        "methodName": "getOrdersByStaffAndDate",
+        "returnType": "ResponseEntity<List<Order>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/active-deliveries/count",
+        "methodName": "getActiveDeliveryCount",
+        "returnType": "ResponseEntity<Integer>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "POST",
+        "path": "/{orderId}/quality-checkpoint",
+        "methodName": "addQualityCheckpoint",
+        "returnType": "ResponseEntity<Order>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "PATCH",
+        "path": "/{orderId}/quality-checkpoint/{checkpointName}",
+        "methodName": "updateQualityCheckpoint",
+        "returnType": "ResponseEntity<Order>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/{orderId}/quality-checkpoints",
+        "methodName": "getOrdersWithFailedQualityChecks",
+        "returnType": "ResponseEntity<List<Order>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/store/failed-quality-checks",
+        "methodName": "getOrdersWithFailedQualityChecks",
+        "returnType": "ResponseEntity<List<Order>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/store/avg-prep-time",
+        "methodName": "getAveragePreparationTime",
+        "returnType": "ResponseEntity<Double>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "PATCH",
+        "path": "/{orderId}/assign-make-table",
+        "methodName": "assignToMakeTable",
+        "returnType": "ResponseEntity<Order>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/store/make-table/{station}",
+        "methodName": "getOrdersByMakeTableStation",
+        "returnType": "ResponseEntity<List<Order>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/store/analytics/prep-time-by-item",
+        "methodName": "getAveragePreparationTimeByItem",
+        "returnType": "ResponseEntity<Map<String, Double>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/analytics/kitchen-staff/{staffId}/performance",
+        "methodName": "getKitchenStaffPerformance",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/analytics/pos-staff/{staffId}/performance",
+        "methodName": "getPreparationTimeDistribution",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "GET",
+        "path": "/store/analytics/prep-time-distribution",
+        "methodName": "getPreparationTimeDistribution",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "PUT",
+        "path": "/{orderId}/delivery-otp",
+        "methodName": "setDeliveryOtp",
+        "returnType": "ResponseEntity<Order>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "PUT",
+        "path": "/{orderId}/delivery-proof",
+        "methodName": "setDeliveryProof",
+        "returnType": "ResponseEntity<Order>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "order-service",
+        "controller": "OrderController",
+        "method": "PUT",
+        "path": "/{orderId}/mark-delivered",
+        "methodName": "markOrderDelivered",
+        "returnType": "ResponseEntity<Order>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "payment-service",
+        "controller": "PaymentController",
+        "method": "GET",
+        "path": "/{transactionId}",
+        "methodName": "getTransaction",
+        "returnType": "ResponseEntity<PaymentResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "payment-service",
+        "controller": "PaymentController",
+        "method": "GET",
+        "path": "/order/{orderId}",
+        "methodName": "getTransactionByOrderId",
+        "returnType": "ResponseEntity<PaymentResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "payment-service",
+        "controller": "PaymentController",
+        "method": "GET",
+        "path": "/reconciliation",
+        "methodName": "getDailyReconciliation",
+        "returnType": "ResponseEntity<ReconciliationReportResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "payment-service",
+        "controller": "PaymentController",
+        "method": "POST",
+        "path": "/{transactionId}/reconcile",
+        "methodName": "markAsReconciled",
+        "returnType": "ResponseEntity<Void>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "payment-service",
+        "controller": "WebhookController",
+        "method": "POST",
+        "path": "/api/payments/webhook",
+        "methodName": "handleWebhook",
+        "returnType": "ResponseEntity<String>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "review-service",
+        "controller": "ResponseController",
+        "method": "POST",
+        "path": "/api/responses/review/{reviewId}",
+        "methodName": "getResponsesByManagerId",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "review-service",
+        "controller": "ResponseController",
+        "method": "GET",
+        "path": "/api/responses/{responseId}",
+        "methodName": "getResponsesByManagerId",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "review-service",
+        "controller": "ResponseController",
+        "method": "GET",
+        "path": "/api/responses/review/{reviewId}",
+        "methodName": "getResponsesByManagerId",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "review-service",
+        "controller": "ResponseController",
+        "method": "GET",
+        "path": "/api/responses/manager/{managerId}",
+        "methodName": "getResponsesByManagerId",
+        "returnType": "ResponseEntity<Page<ReviewResponse>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "review-service",
+        "controller": "ResponseController",
+        "method": "GET",
+        "path": "/api/responses",
+        "methodName": "getAllResponses",
+        "returnType": "ResponseEntity<Page<ReviewResponse>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "review-service",
+        "controller": "ResponseController",
+        "method": "PUT",
+        "path": "/api/responses/{responseId}",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "review-service",
+        "controller": "ResponseController",
+        "method": "DELETE",
+        "path": "/api/responses/{responseId}",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "review-service",
+        "controller": "ResponseController",
+        "method": "GET",
+        "path": "/api/responses/templates",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "review-service",
+        "controller": "ResponseController",
+        "method": "GET",
+        "path": "/api/responses/templates/{responseType}",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "GdprController",
+        "method": "POST",
+        "path": "/api/gdpr/consent/grant",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "GdprController",
+        "method": "POST",
+        "path": "/api/gdpr/consent/revoke",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "GdprController",
+        "method": "GET",
+        "path": "/api/gdpr/consent/user/{userId}",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "GdprController",
+        "method": "GET",
+        "path": "/api/gdpr/consent/check",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "GdprController",
+        "method": "POST",
+        "path": "/api/gdpr/request",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "GdprController",
+        "method": "POST",
+        "path": "/api/gdpr/request/{requestId}/access",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "GdprController",
+        "method": "POST",
+        "path": "/api/gdpr/request/{requestId}/erasure",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "GdprController",
+        "method": "POST",
+        "path": "/api/gdpr/request/{requestId}/portability",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "GdprController",
+        "method": "POST",
+        "path": "/api/gdpr/request/{requestId}/rectification",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "GdprController",
+        "method": "GET",
+        "path": "/api/gdpr/request/user/{userId}",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "GdprController",
+        "method": "GET",
+        "path": "/api/gdpr/audit/{userId}",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "GdprController",
+        "method": "GET",
+        "path": "/api/gdpr/privacy-policy",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "GdprController",
+        "method": "GET",
+        "path": "/api/gdpr/export/{userId}",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "GdprController",
+        "method": "DELETE",
+        "path": "/api/gdpr/erase/{userId}",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "SystemInfoController",
+        "method": "GET",
+        "path": "/api/system/version",
+        "methodName": "getVersion",
+        "returnType": "ResponseEntity<VersionInfo>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "SystemInfoController",
+        "method": "GET",
+        "path": "/api/system/updates/check",
+        "methodName": "checkForUpdates",
+        "returnType": "ResponseEntity<UpdateStatus>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "SystemInfoController",
+        "method": "GET",
+        "path": "/api/system/updates/status",
+        "methodName": "getUpdateStatus",
+        "returnType": "ResponseEntity<UpdateStatus>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "SystemInfoController",
+        "method": "GET",
+        "path": "/api/system/health",
+        "methodName": "health",
+        "returnType": "ResponseEntity<HealthStatus>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "SystemInfoController",
+        "method": "GET",
+        "path": "/api/system/info",
+        "methodName": "getSystemInfo",
+        "returnType": "ResponseEntity<SystemInfo>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "TestDataController",
+        "method": "POST",
+        "path": "/api/test-data/create-default-store",
+        "methodName": "createDefaultStore",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "TestDataController",
+        "method": "POST",
+        "path": "/api/test-data/create-test-stores",
+        "methodName": "createTestStores",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "TestDataController",
+        "method": "POST",
+        "path": "/api/test-data/migrate-users-to-storecode",
+        "methodName": "migrateUsersToStoreCode",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/validate-pin",
+        "methodName": "logout",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/refresh",
+        "methodName": "refreshToken",
+        "returnType": "ResponseEntity<Map<String, String>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/{userId}",
+        "methodName": "getUser",
+        "returnType": "ResponseEntity<UserResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "PUT",
+        "path": "/api/users/{userId}",
+        "methodName": "updateUser",
+        "returnType": "ResponseEntity<UserResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/{userId}/activate",
+        "methodName": "activateUser",
+        "returnType": "ResponseEntity<Map<String, String>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/{userId}/deactivate",
+        "methodName": "deactivateUserPost",
+        "returnType": "ResponseEntity<Map<String, String>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "DELETE",
+        "path": "/api/users/{userId}",
+        "methodName": "deactivateUser",
+        "returnType": "ResponseEntity<Map<String, String>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users",
+        "methodName": "getAllUsers",
+        "returnType": "ResponseEntity<List<UserResponse>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/type/{type}",
+        "methodName": "getUsersByType",
+        "returnType": "ResponseEntity<List<UserResponse>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/store",
+        "methodName": "getStoreEmployees",
+        "returnType": "ResponseEntity<List<UserResponse>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/managers",
+        "methodName": "getActiveManagers",
+        "returnType": "ResponseEntity<List<UserResponse>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/{userId}/can-take-orders",
+        "methodName": "canTakeOrders",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/search",
+        "methodName": "searchUsers",
+        "returnType": "ResponseEntity<List<UserResponse>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/stats",
+        "methodName": "getUserStats",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/drivers/store",
+        "methodName": "getDriversByStore",
+        "returnType": "ResponseEntity<List<UserResponse>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/drivers/available",
+        "methodName": "getAvailableDrivers",
+        "returnType": "ResponseEntity<List<UserResponse>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "PUT",
+        "path": "/api/users/{userId}/status",
+        "methodName": "updateDriverStatus",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/{userId}/status",
+        "methodName": "getDriverStatus",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/{userId}/generate-pin",
+        "methodName": "generateEmployeePIN",
+        "returnType": "ResponseEntity<Map<String, String>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/generate-all-pins",
+        "methodName": "generateAllEmployeePINs",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "GET",
+        "path": "/api/users/kiosk/list",
+        "methodName": "listKioskAccounts",
+        "returnType": "ResponseEntity<List<UserResponse>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/kiosk/{kioskUserId}/regenerate-tokens",
+        "methodName": "regenerateKioskTokens",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/kiosk/{kioskUserId}/deactivate",
+        "methodName": "deactivateKiosk",
+        "returnType": "ResponseEntity<Map<String, String>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "UserController",
+        "method": "POST",
+        "path": "/api/users/kiosk/auto-login",
+        "methodName": "kioskAutoLogin",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "WorkingSessionController",
+        "method": "POST",
+        "path": "/api/users/sessions/{employeeId}/break",
+        "methodName": "addBreakTime",
+        "returnType": "ResponseEntity<WorkingSessionResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "WorkingSessionController",
+        "method": "GET",
+        "path": "/api/users/sessions/pending-approval",
+        "methodName": "getSessionsPendingApproval",
+        "returnType": "ResponseEntity<List<WorkingSessionResponse>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "WorkingSessionController",
+        "method": "POST",
+        "path": "/api/users/sessions/{sessionId}/approve",
+        "methodName": "approveSession",
+        "returnType": "ResponseEntity<Map<String, String>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "WorkingSessionController",
+        "method": "POST",
+        "path": "/api/users/sessions/{sessionId}/reject",
+        "methodName": "rejectSession",
+        "returnType": "ResponseEntity<Map<String, String>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "WorkingSessionController",
+        "method": "GET",
+        "path": "/api/users/sessions/current",
+        "methodName": "getCurrentSession",
+        "returnType": "ResponseEntity<WorkingSessionResponse>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "WorkingSessionController",
+        "method": "GET",
+        "path": "/api/users/sessions/{employeeId}",
+        "methodName": "getEmployeeSessions",
+        "returnType": "ResponseEntity<List<WorkingSessionResponse>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "WorkingSessionController",
+        "method": "GET",
+        "path": "/api/users/sessions/store",
+        "methodName": "getStoreSessions",
+        "returnType": "ResponseEntity<List<WorkingSessionResponse>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "WorkingSessionController",
+        "method": "GET",
+        "path": "/api/users/sessions/{employeeId}/report",
+        "methodName": "getWorkingHoursReport",
+        "returnType": "ResponseEntity<WorkingHoursReport>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "WorkingSessionController",
+        "method": "GET",
+        "path": "/api/users/sessions/store/active",
+        "methodName": "getActiveStoreSessions",
+        "returnType": "ResponseEntity<List<WorkingSessionResponse>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "WorkingSessionController",
+        "method": "GET",
+        "path": "/api/users/sessions/{employeeId}/status",
+        "methodName": "getEmployeeWorkingStatus",
+        "returnType": "ResponseEntity<Map<String, Object>>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "WorkingSessionController",
+        "method": "POST",
+        "path": "/api/users/sessions/clock-in-with-pin",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    },
+    {
+      "type": "UNUSED_BACKEND",
+      "backend": {
+        "service": "user-service",
+        "controller": "WorkingSessionController",
+        "method": "POST",
+        "path": "/api/users/sessions/clock-out-employee",
+        "methodName": "unknown",
+        "returnType": "ResponseEntity<?>"
+      },
+      "severity": "LOW"
+    }
+  ]
+}

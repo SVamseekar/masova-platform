@@ -298,24 +298,19 @@ public class UserService {
     }
 
     /**
-     * Authenticate or register a user via Google ID token.
-     * Validates the token with Google's tokeninfo endpoint, then finds or creates
-     * a CUSTOMER user linked to the Google account.
+     * Sign in via Google — existing accounts only. Errors if no account found.
      */
     public LoginResponse loginWithGoogle(String idToken) {
         logger.info("Google Sign-In attempt");
 
-        // Verify the ID token with Google
         Map<String, Object> tokenInfo = verifyGoogleIdToken(idToken);
         String googleSub = (String) tokenInfo.get("sub");
         String email = (String) tokenInfo.get("email");
-        String name = (String) tokenInfo.get("name");
 
         if (googleSub == null || email == null) {
             throw new RuntimeException("Invalid Google ID token: missing sub or email");
         }
 
-        // If client-id is configured, verify the audience
         if (googleOAuthClientId != null && !googleOAuthClientId.isEmpty()) {
             String aud = (String) tokenInfo.get("aud");
             if (!googleOAuthClientId.equals(aud)) {
@@ -323,45 +318,19 @@ public class UserService {
             }
         }
 
-        // Look up user by email
         Optional<User> existingByEmail = userRepository.findByPersonalInfoEmail(email);
-        User user;
+        if (existingByEmail.isEmpty()) {
+            throw new RuntimeException("No account found for this Google email. Please register first.");
+        }
 
-        if (existingByEmail.isPresent()) {
-            user = existingByEmail.get();
-            // Link Google provider if not already linked
-            boolean alreadyLinked = user.getAuthProviders().stream()
-                    .anyMatch(p -> "GOOGLE".equals(p.getProvider()) && googleSub.equals(p.getProviderId()));
-            if (!alreadyLinked) {
-                user.getAuthProviders().add(new User.AuthProvider("GOOGLE", googleSub, email));
-                userRepository.save(user);
-            }
-        } else {
-            // Create new CUSTOMER user
-            user = new User();
-            user.setType(UserType.CUSTOMER);
+        User user = existingByEmail.get();
 
-            User.PersonalInfo personalInfo = new User.PersonalInfo();
-            personalInfo.setName(name != null ? name : email.split("@")[0]);
-            personalInfo.setEmail(email);
-            // Google users don't have a phone or password — set placeholder
-            personalInfo.setPhone("0000000000"); // placeholder; user must update
-            personalInfo.setPasswordHash(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));
-            user.setPersonalInfo(personalInfo);
-
-            List<User.AuthProvider> providers = new ArrayList<>();
-            providers.add(new User.AuthProvider("GOOGLE", googleSub, email));
-            user.setAuthProviders(providers);
-
-            user = userRepository.save(user);
-            logger.info("Created new user via Google Sign-In: {}", user.getId());
-
-            // Create customer profile
-            try {
-                createCustomerProfile(user);
-            } catch (Exception e) {
-                logger.warn("Customer profile creation failed for Google user {}: {}", user.getId(), e.getMessage());
-            }
+        // Link Google provider if not already linked
+        boolean alreadyLinked = user.getAuthProviders().stream()
+                .anyMatch(p -> "GOOGLE".equals(p.getProvider()) && googleSub.equals(p.getProviderId()));
+        if (!alreadyLinked) {
+            user.getAuthProviders().add(new User.AuthProvider("GOOGLE", googleSub, email));
+            userRepository.save(user);
         }
 
         if (!user.isActive()) {
@@ -377,6 +346,71 @@ public class UserService {
         String refreshToken = jwtService.generateRefreshToken(user.getId());
 
         logger.info("Google Sign-In successful for user: {}", user.getId());
+        return new LoginResponse(accessToken, refreshToken, mapToUserResponse(user));
+    }
+
+    /**
+     * Register via Google — new accounts only. Errors if account already exists.
+     */
+    public LoginResponse registerWithGoogle(String idToken) {
+        logger.info("Google Register attempt");
+
+        Map<String, Object> tokenInfo = verifyGoogleIdToken(idToken);
+        String googleSub = (String) tokenInfo.get("sub");
+        String email = (String) tokenInfo.get("email");
+        String name = (String) tokenInfo.get("name");
+
+        if (googleSub == null || email == null) {
+            throw new RuntimeException("Invalid Google ID token: missing sub or email");
+        }
+
+        if (googleOAuthClientId != null && !googleOAuthClientId.isEmpty()) {
+            String aud = (String) tokenInfo.get("aud");
+            if (!googleOAuthClientId.equals(aud)) {
+                throw new RuntimeException("Google ID token audience mismatch");
+            }
+        }
+
+        Optional<User> existingByEmail = userRepository.findByPersonalInfoEmail(email);
+        if (existingByEmail.isPresent()) {
+            throw new RuntimeException("An account already exists for this Google email. Please sign in instead.");
+        }
+
+        User user = new User();
+        user.setType(UserType.CUSTOMER);
+
+        User.PersonalInfo personalInfo = new User.PersonalInfo();
+        personalInfo.setName(name != null ? name : email.split("@")[0]);
+        personalInfo.setEmail(email);
+        personalInfo.setPhone("0000000000"); // placeholder; user must update in profile
+        personalInfo.setPasswordHash(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));
+        user.setPersonalInfo(personalInfo);
+
+        List<User.AuthProvider> providers = new ArrayList<>();
+        providers.add(new User.AuthProvider("GOOGLE", googleSub, email));
+        user.setAuthProviders(providers);
+
+        user = userRepository.save(user);
+        logger.info("Created new user via Google Register: {}", user.getId());
+
+        try {
+            createCustomerProfile(user);
+        } catch (Exception e) {
+            logger.warn("Customer profile creation failed for Google user {}: {}", user.getId(), e.getMessage());
+        }
+
+        if (!user.isActive()) {
+            throw new RuntimeException("Account is deactivated");
+        }
+
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
+
+        String storeId = null;
+        String accessToken = jwtService.generateAccessToken(user.getId(), user.getType().name(), storeId);
+        String refreshToken = jwtService.generateRefreshToken(user.getId());
+
+        logger.info("Google Register successful for user: {}", user.getId());
         return new LoginResponse(accessToken, refreshToken, mapToUserResponse(user));
     }
 
