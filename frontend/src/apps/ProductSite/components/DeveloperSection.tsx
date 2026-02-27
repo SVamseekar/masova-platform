@@ -42,7 +42,7 @@ function DevCard({ icon, title, description, accentColor, children }: DevCardPro
       >
         {icon}
       </div>
-      <div>
+      <div style={{ flex: 1 }}>
         <h3
           style={{
             fontSize: 18,
