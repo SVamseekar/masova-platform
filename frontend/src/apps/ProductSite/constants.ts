@@ -142,6 +142,8 @@ export const FEATURES = [
   },
 ]
 
+export type AgentIconKey = 'MessageCircle' | 'BarChart3' | 'ChefHat' | 'Navigation' | 'MapPin'
+
 export const AI_AGENTS = [
   {
     lucideIcon: 'MessageCircle' as const,

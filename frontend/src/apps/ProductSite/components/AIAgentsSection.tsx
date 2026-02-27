@@ -1,14 +1,15 @@
+import React from 'react'
 import { motion } from 'framer-motion'
-import { MessageCircle, BarChart3, ChefHat, Navigation, MapPin, type LucideIcon } from 'lucide-react'
+import { MessageCircle, BarChart3, ChefHat, Navigation, MapPin } from 'lucide-react'
 import { AI_AGENTS } from '../constants'
 
-const ICON_MAP: Record<string, LucideIcon> = {
+const ICON_MAP = {
   MessageCircle,
   BarChart3,
   ChefHat,
   Navigation,
   MapPin,
-}
+} as const satisfies Record<string, React.ComponentType<{ size?: number; style?: React.CSSProperties }>>
 
 export default function AIAgentsSection() {
   const topRow = AI_AGENTS.slice(0, 2)
@@ -53,13 +54,12 @@ export default function AIAgentsSection() {
 type Agent = (typeof AI_AGENTS)[number]
 
 function AgentCard({ agent, index }: { agent: Agent; index: number }) {
-  const Icon = ICON_MAP[agent.lucideIcon]
+  const Icon = ICON_MAP[agent.lucideIcon as keyof typeof ICON_MAP]
 
   return (
     <motion.div
-      className="flex flex-col rounded-2xl relative overflow-hidden"
+      className="w-[300px] max-w-full flex flex-col rounded-2xl relative overflow-hidden"
       style={{
-        width: '300px',
         background: '#111111',
         border: '1px solid rgba(255,255,255,0.08)',
         borderTop: `3px solid ${agent.color}`,
