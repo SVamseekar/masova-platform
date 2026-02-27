@@ -13,7 +13,7 @@ import Footer from './components/Footer'
 
 export default function ProductSitePage() {
   return (
-    <div style={{ background: '#080808', minHeight: '100vh' }}>
+    <div id="product-site" style={{ background: '#080808', minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
       <Navbar />
       <HeroSection />
       <MarqueeStrip />

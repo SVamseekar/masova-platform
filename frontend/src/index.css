@@ -1,8 +1,9 @@
+/* Import neumorphic design system globals first (must precede @tailwind) */
+@import './styles/neumorphic-globals.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 /* ============================================
    WorldPlate Dark — Customer UI Design Tokens
@@ -31,8 +32,7 @@
   --transition: 0.2s ease;
 }
 
-/* Import neumorphic design system globals */
-@import './styles/neumorphic-globals.css';
+/* neumorphic globals imported at top of file */
 
 /* ── Scrollbar layout-shift fix ──────────────────────────────────────────────
    overflow-y: scroll forces the browser to ALWAYS reserve scrollbar gutter
