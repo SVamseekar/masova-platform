@@ -10,6 +10,13 @@ spring:
       uri: ${MONGODB_URI:mongodb://localhost:27017/masova_payment}
       auto-index-creation: true
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:masova}
+    password: ${RABBITMQ_PASSWORD:masova_secret}
+    virtual-host: ${RABBITMQ_VHOST:/}
+
 # JWT Configuration
 jwt:
   secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-256-bits-for-production-security}
@@ -22,13 +29,6 @@ razorpay:
   key-id: ${RAZORPAY_KEY_ID:rzp_test_RjYYkXMmoArj4C}
   key-secret: ${RAZORPAY_KEY_SECRET:Asbe0hf12kZn0VSX4ykn3Nvq}
   webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:whsec_YOUR_WEBHOOK_SECRET_HERE}
-
-  rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:masova}
-    password: ${RABBITMQ_PASSWORD:masova_secret}
-    virtual-host: ${RABBITMQ_VHOST:/}
 
 # Service URLs
 services:
