@@ -1,4 +1,12 @@
-import type { CSSProperties } from 'react'
+import type { ComponentType, CSSProperties } from 'react'
+
+interface Feature {
+  icon: ComponentType<{ size?: number; style?: CSSProperties }>
+  title: string
+  desc: string
+  size: 'large' | 'small'
+  screenshot: string | null
+}
 import {
   ShoppingCart, ChefHat, Truck, BarChart3, Bot, Store,
   Shield, Globe, Zap, Users, Package, Leaf, Star,
@@ -104,7 +112,7 @@ export const PRODUCT_TOUR_TABS = [
   },
 ]
 
-export const FEATURES = [
+export const FEATURES: Feature[] = [
   {
     icon: LayoutDashboard,
     title: 'Unified Manager Dashboard',

@@ -41,6 +41,7 @@ export default function FeaturesGrid() {
                 <img
                   src={screenshot}
                   alt={title}
+                  loading="lazy"
                   style={{
                     width: '100%',
                     display: 'block',
