@@ -6,6 +6,7 @@ import {
   TrendingUp, AlertCircle, Cpu, MessageSquare, Receipt,
   Building2, Layers, Lock, HeartHandshake, Phone,
   LayoutDashboard, Utensils, Navigation, PieChart, Sparkles,
+  Smartphone,
 } from 'lucide-react'
 
 export const NAV_LINKS = [
@@ -109,36 +110,56 @@ export const FEATURES = [
     title: 'Unified Manager Dashboard',
     desc: '6 sections covering every aspect of your operation — orders, inventory, staff, analytics, marketing, and delivery — in one place.',
     size: 'large',
+    screenshot: '/screenshots/customer-home.png',
   },
   {
     icon: Utensils,
     title: 'POS + Kiosk',
     desc: 'Full POS system with PIN auth for staff. Self-service kiosk mode for walk-in customers.',
     size: 'small',
+    screenshot: null,
   },
   {
     icon: Package,
     title: 'Inventory & Suppliers',
     desc: 'Track stock levels, raise purchase orders, manage suppliers, and analyse waste — all automated.',
     size: 'small',
+    screenshot: null,
   },
   {
     icon: Users,
     title: 'Staff & Shift Management',
     desc: 'Schedule shifts, track working sessions, monitor performance, and build leaderboards.',
     size: 'large',
+    screenshot: '/screenshots/customer-ordering.png',
   },
   {
     icon: Star,
     title: 'Loyalty & Reviews',
     desc: 'Built-in loyalty tiers (Bronze → Platinum), review management, and sentiment analysis.',
     size: 'small',
+    screenshot: null,
   },
   {
     icon: Shield,
     title: 'GDPR Compliant',
     desc: 'Full GDPR toolkit — consent management, data export, right to erasure, breach logging.',
     size: 'small',
+    screenshot: null,
+  },
+  {
+    icon: MapPin,
+    title: 'Store Selection Engine',
+    desc: 'Distance-aware store routing assigns every order to the nearest location with capacity — no manual zones.',
+    size: 'small',
+    screenshot: null,
+  },
+  {
+    icon: Smartphone,
+    title: 'Android Driver App',
+    desc: 'Native Android app for delivery drivers. Turn-by-turn navigation, live order updates, earnings dashboard.',
+    size: 'small',
+    screenshot: '/screenshots/customer-menu.png',
   },
 ]
 
