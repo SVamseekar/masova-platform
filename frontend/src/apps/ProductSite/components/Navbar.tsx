@@ -25,10 +25,10 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <a href="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 bg-[#E53E3E] rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">M</span>
+          <div style={{ width: 32, height: 32, background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.4)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 16, background: 'linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>M</span>
           </div>
-          <span className="text-white font-semibold text-lg tracking-tight">MaSoVa</span>
+          <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 22, background: 'linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>MaSoVa</span>
         </a>
 
         {/* Desktop Nav */}

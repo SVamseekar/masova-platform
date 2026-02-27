@@ -8,10 +8,12 @@ import {
 } from 'lucide-react'
 
 export const NAV_LINKS = [
+  { label: 'About', href: '#about' },
   { label: 'Features', href: '#features' },
   { label: 'AI Agents', href: '#ai-agents' },
   { label: 'Pricing', href: '#pricing' },
   { label: 'FAQ', href: '#faq' },
+  { label: 'API Reference', href: '/api-docs' },
 ]
 
 export const STATS = [

@@ -44,10 +44,10 @@ export default function Footer() {
             {/* Brand */}
             <div className="col-span-2 md:col-span-1">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#E53E3E' }}>
-                  <span className="text-white font-bold text-xs">M</span>
+                <div style={{ width: 28, height: 28, background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.4)', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 14, background: 'linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>M</span>
                 </div>
-                <span className="text-white font-semibold">MaSoVa</span>
+                <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 18, background: 'linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>MaSoVa</span>
               </div>
               <p className="text-gray-600 text-xs leading-relaxed">
                 The complete restaurant operating system built for European multi-location restaurants.
