@@ -8,7 +8,7 @@ export default function ProductTour() {
   const tab = PRODUCT_TOUR_TABS[active]
 
   return (
-    <section id="features" className="bg-[#080808] py-32 px-6">
+    <section id="product-tour" className="bg-[#080808] py-32 px-6">
       <div className="max-w-7xl mx-auto">
         <motion.div
           className="text-center mb-16"

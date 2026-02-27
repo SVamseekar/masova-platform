@@ -1,4 +1,6 @@
 import type { ComponentType, CSSProperties } from 'react'
+import { goldGradientText } from './tokens'
+export { goldGradientText as GOLD_GRADIENT_TEXT }
 
 interface Feature {
   icon: ComponentType<{ size?: number; style?: CSSProperties }>
@@ -19,7 +21,7 @@ import {
 
 export const NAV_LINKS = [
   { label: 'About', href: '#about' },
-  { label: 'Features', href: '#features' },
+  { label: 'Features', href: '#product-tour' },
   { label: 'AI Agents', href: '#ai-agents' },
   { label: 'Pricing', href: '#pricing' },
   { label: 'FAQ', href: '#faq' },
@@ -317,14 +319,6 @@ export const FAQS = [
   },
 ]
 
-export const GOLD_GRADIENT_TEXT: CSSProperties = {
-  fontFamily: "'Playfair Display', serif",
-  fontWeight: 700,
-  background: 'linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%)',
-  WebkitBackgroundClip: 'text' as const,
-  WebkitTextFillColor: 'transparent',
-  backgroundClip: 'text' as const,
-}
 
 export const TESTIMONIALS = [
   {
