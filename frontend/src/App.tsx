@@ -14,6 +14,7 @@ import { ConnectionMonitorProvider } from './components/common/ConnectionMonitor
 import { ChatWidget } from './components/chat/ChatWidget';
 
 // Lazy load components
+const ProductSitePage = React.lazy(() => import('./apps/ProductSite/ProductSitePage'))
 const HomePage = React.lazy(() => import('./apps/PublicWebsite/HomePage'));
 const PromotionsPage = React.lazy(() => import('./apps/PublicWebsite/PromotionsPage'));
 const PublicMenuPage = React.lazy(() => import('./apps/PublicWebsite/PublicMenuPage'));
@@ -89,7 +90,8 @@ const App: React.FC = () => {
                   <Suspense fallback={<AppLoader />}>
                     <Routes>
                   {/* Public Routes - No Login Required */}
-                  <Route path="/" element={<HomePage />} />
+                  <Route path="/" element={<ProductSitePage />} />
+                  <Route path="/order" element={<HomePage />} />
                   <Route path="/menu" element={<PublicMenuPage />} />
                   <Route path="/promotions" element={<PromotionsPage />} />
 
