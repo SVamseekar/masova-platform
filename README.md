@@ -75,8 +75,8 @@ A full-stack restaurant operating system built for multi-store operations — co
 
 ### 1. Clone and configure environment
 ```bash
-git clone https://github.com/SVamseekar/dominos-management-system.git
-cd dominos-management-system
+git clone https://github.com/SVamseekar/masova-platform.git
+cd masova-platform
 cp .env.example .env
 # Fill in your values in .env
 ```
