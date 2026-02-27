@@ -79,9 +79,16 @@ public class UserController {
     }
 
     @PostMapping("/auth/google")
-    @Operation(summary = "Sign in or register via Google OAuth ID token")
+    @Operation(summary = "Sign in via Google — existing accounts only")
     public ResponseEntity<LoginResponse> googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
         LoginResponse response = userService.loginWithGoogle(request.getIdToken());
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/auth/google/register")
+    @Operation(summary = "Register via Google — new accounts only")
+    public ResponseEntity<LoginResponse> googleRegister(@Valid @RequestBody GoogleLoginRequest request) {
+        LoginResponse response = userService.registerWithGoogle(request.getIdToken());
         return ResponseEntity.ok(response);
     }
 

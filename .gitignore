@@ -55,3 +55,33 @@ yarn-error.log*
 *.tmp
 *.temp
 error*.txt
+
+# Backup files
+*.bak
+backups/node_modules/
+backups/pre-consolidation-testing/
+backups/pre-phase1-monolith/
+backups/pre-phase1-services/
+
+# Frontend build/test artifacts
+frontend/playwright-report/
+frontend/test-results/
+frontend/tsconfig.tsbuildinfo
+
+# Media / binary assets (add back individually if needed)
+*.pdf
+*.png
+*.webp
+*.jpg
+*.jpeg
+
+# Claude AI tooling
+.claude-context.md
+.playwright-mcp/
+.VSCodeCounter/
+
+# Scripts/tooling artifacts
+mvn21
+smart-doc.json
+generate-docs.sh
+stop-all.sh

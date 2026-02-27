@@ -314,43 +314,71 @@ const HomePage: React.FC = () => {
 
           </div>
 
-          {/* RIGHT ── Gemini chef image — black bg knocked out with mix-blend-mode */}
+          {/* RIGHT ── Chef photo + floating food circles */}
           <div style={{ flexShrink: 0, position: 'relative', width: '560px', height: '580px' }}>
 
-            {/* Chef image — mix-blend-mode:screen makes black bg invisible on dark background */}
+            {/* Warm glow behind chef */}
+            <div style={{
+              position: 'absolute', bottom: '0', left: '50%', transform: 'translateX(-50%)',
+              width: '380px', height: '380px', borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(212,168,67,0.12) 0%, transparent 70%)',
+              zIndex: 1,
+            }} />
+
+            {/* Chef photo */}
             <img
-              src="/chef-hero.png"
-              alt="Chef holding food"
+              src="https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=700&q=90"
+              alt="Chef"
               style={{
-                position: 'absolute',
-                bottom: 0,
-                left: '50%',
+                position: 'absolute', bottom: 0, left: '50%',
                 transform: 'translateX(-50%)',
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain',
-                objectPosition: 'bottom center',
-                mixBlendMode: 'screen',
+                width: '340px', height: '460px',
+                objectFit: 'cover', objectPosition: 'top center',
+                borderRadius: '180px 180px 0 0',
                 zIndex: 5,
               }}
             />
 
-            {/* "Live Now" badge */}
+            {/* Floating food circle — top left */}
             <div style={{
-              position: 'absolute', top: '4%', right: '8%',
-              background: 'var(--red)',
-              color: '#fff', padding: '8px 16px',
-              borderRadius: 'var(--radius-pill)',
-              fontFamily: 'var(--font-body)', fontWeight: 700,
-              fontSize: '0.75rem', letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              boxShadow: '0 8px 24px rgba(198,42,9,0.5)',
-              display: 'flex', alignItems: 'center', gap: '6px',
-              zIndex: 20,
+              position: 'absolute', top: '6%', left: '2%',
+              width: '130px', height: '130px', borderRadius: '50%',
+              overflow: 'hidden', border: '3px solid rgba(212,168,67,0.3)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5)', zIndex: 10,
             }}>
-              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff', opacity: 0.85 }} />
-              Live Now
+              <img src="https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=220&q=85" alt="Dosa" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
+
+            {/* Floating food circle — top right */}
+            <div style={{
+              position: 'absolute', top: '3%', right: '4%',
+              width: '110px', height: '110px', borderRadius: '50%',
+              overflow: 'hidden', border: '3px solid rgba(198,42,9,0.3)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5)', zIndex: 10,
+            }}>
+              <img src="https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=220&q=85" alt="Biryani" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+
+            {/* Floating food circle — mid right */}
+            <div style={{
+              position: 'absolute', top: '38%', right: '0%',
+              width: '120px', height: '120px', borderRadius: '50%',
+              overflow: 'hidden', border: '3px solid rgba(212,168,67,0.25)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5)', zIndex: 10,
+            }}>
+              <img src="https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=220&q=85" alt="Pizza" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+
+            {/* Floating food circle — bottom left */}
+            <div style={{
+              position: 'absolute', bottom: '12%', left: '0%',
+              width: '100px', height: '100px', borderRadius: '50%',
+              overflow: 'hidden', border: '3px solid rgba(212,168,67,0.2)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5)', zIndex: 10,
+            }}>
+              <img src="https://images.unsplash.com/photo-1633981823231-2a2a7c9b014c?w=220&q=85" alt="Burger" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+
           </div>
         </div>
       </section>

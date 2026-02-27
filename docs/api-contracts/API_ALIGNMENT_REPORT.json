@@ -1,0 +1,3028 @@
+{
+  "timestamp": "2026-01-18T15:55:34.213Z",
+  "summary": {
+    "total": 207,
+    "likelyMatches": 4,
+    "possibleMatches": 4,
+    "trulyUnused": 196,
+    "namingMismatches": 3
+  },
+  "categorized": {
+    "likelyMatches": [
+      {
+        "backend": {
+          "service": "customer-service",
+          "method": "PATCH",
+          "path": "/{id}/deactivate",
+          "controller": "CustomerController",
+          "methodName": "getCustomersByTier"
+        },
+        "frontend": {
+          "apiFile": "customerApi",
+          "method": "PATCH",
+          "url": "/{param}/deactivate",
+          "endpointName": "deactivateCustomer"
+        },
+        "matchScore": 111,
+        "pathSimilarity": 100,
+        "semanticScore": 100
+      },
+      {
+        "backend": {
+          "service": "customer-service",
+          "method": "PATCH",
+          "path": "/{id}/activate",
+          "controller": "CustomerController",
+          "methodName": "getCustomersByTier"
+        },
+        "frontend": {
+          "apiFile": "customerApi",
+          "method": "PATCH",
+          "url": "/{param}/activate",
+          "endpointName": "activateCustomer"
+        },
+        "matchScore": 111,
+        "pathSimilarity": 100,
+        "semanticScore": 100
+      },
+      {
+        "backend": {
+          "service": "customer-service",
+          "method": "DELETE",
+          "path": "/{id}",
+          "controller": "CustomerController",
+          "methodName": "unknown"
+        },
+        "frontend": {
+          "apiFile": "customerApi",
+          "method": "DELETE",
+          "url": "/{param}",
+          "endpointName": "deleteCustomer"
+        },
+        "matchScore": 85,
+        "pathSimilarity": 100,
+        "semanticScore": 0
+      },
+      {
+        "backend": {
+          "service": "order-service",
+          "method": "DELETE",
+          "path": "/{orderId}",
+          "controller": "OrderController",
+          "methodName": "cancelOrder"
+        },
+        "frontend": {
+          "apiFile": "customerApi",
+          "method": "DELETE",
+          "url": "/{param}",
+          "endpointName": "deleteCustomer"
+        },
+        "matchScore": 85,
+        "pathSimilarity": 100,
+        "semanticScore": 0
+      }
+    ],
+    "possibleMatches": [
+      {
+        "backend": {
+          "service": "notification-service",
+          "method": "PATCH",
+          "path": "/api/notifications/{id}/read",
+          "controller": "NotificationController",
+          "methodName": "markAsRead"
+        },
+        "frontend": {
+          "apiFile": "notificationApi",
+          "method": "PATCH",
+          "url": "/notifications/{param}/read",
+          "endpointName": "markAsRead"
+        },
+        "matchScore": 64,
+        "pathSimilarity": 87,
+        "semanticScore": 100
+      },
+      {
+        "backend": {
+          "service": "notification-service",
+          "method": "PATCH",
+          "path": "/api/notifications/user/{userId}/read-all",
+          "controller": "NotificationController",
+          "methodName": "markAllAsRead"
+        },
+        "frontend": {
+          "apiFile": "notificationApi",
+          "method": "PATCH",
+          "url": "/notifications/user/{param}/read-all",
+          "endpointName": "markAllAsRead"
+        },
+        "matchScore": 60,
+        "pathSimilarity": 90,
+        "semanticScore": 80
+      },
+      {
+        "backend": {
+          "service": "notification-service",
+          "method": "DELETE",
+          "path": "/api/notifications/{id}",
+          "controller": "NotificationController",
+          "methodName": "deleteNotification"
+        },
+        "frontend": {
+          "apiFile": "notificationApi",
+          "method": "DELETE",
+          "url": "/notifications/{param}",
+          "endpointName": "deleteNotification"
+        },
+        "matchScore": 63,
+        "pathSimilarity": 85,
+        "semanticScore": 100
+      },
+      {
+        "backend": {
+          "service": "user-service",
+          "method": "POST",
+          "path": "/api/users/kiosk/{kioskUserId}/regenerate-tokens",
+          "controller": "UserController",
+          "methodName": "regenerateKioskTokens"
+        },
+        "frontend": {
+          "apiFile": "kioskApi",
+          "method": "POST",
+          "url": "/users/kiosk/{param}/regenerate-tokens",
+          "endpointName": "regenerateKioskTokens"
+        },
+        "matchScore": 60,
+        "pathSimilarity": 90,
+        "semanticScore": 80
+      }
+    ],
+    "namingMismatches": [
+      {
+        "backend": {
+          "service": "user-service",
+          "method": "POST",
+          "path": "/api/users/{userId}/activate",
+          "controller": "UserController",
+          "methodName": "activateUser"
+        },
+        "frontend": {
+          "apiFile": "driverApi",
+          "method": "POST",
+          "url": "/users/{param}/activate",
+          "endpointName": "activateDriver"
+        },
+        "matchScore": 55,
+        "pathSimilarity": 85,
+        "semanticScore": 67
+      },
+      {
+        "backend": {
+          "service": "user-service",
+          "method": "POST",
+          "path": "/api/users/{userId}/deactivate",
+          "controller": "UserController",
+          "methodName": "deactivateUserPost"
+        },
+        "frontend": {
+          "apiFile": "driverApi",
+          "method": "POST",
+          "url": "/users/{param}/deactivate",
+          "endpointName": "deactivateDriver"
+        },
+        "matchScore": 55,
+        "pathSimilarity": 86,
+        "semanticScore": 67
+      },
+      {
+        "backend": {
+          "service": "user-service",
+          "method": "POST",
+          "path": "/api/users/sessions/{sessionId}/approve",
+          "controller": "WorkingSessionController",
+          "methodName": "approveSession"
+        },
+        "frontend": {
+          "apiFile": "sessionApi",
+          "method": "POST",
+          "url": "/users/sessions/{param}/approve",
+          "endpointName": "approveSession"
+        },
+        "matchScore": 58,
+        "pathSimilarity": 89,
+        "semanticScore": 75
+      }
+    ],
+    "trulyUnused": [
+      {
+        "service": "analytics-service",
+        "method": "GET",
+        "path": "/api/analytics/sales/today",
+        "controller": "AnalyticsController",
+        "methodName": "getTodaySalesMetrics"
+      },
+      {
+        "service": "analytics-service",
+        "method": "GET",
+        "path": "/api/analytics/avgOrderValue/today",
+        "controller": "AnalyticsController",
+        "methodName": "getAverageOrderValue"
+      },
+      {
+        "service": "analytics-service",
+        "method": "GET",
+        "path": "/api/analytics/drivers/status",
+        "controller": "AnalyticsController",
+        "methodName": "getDriverStatus"
+      },
+      {
+        "service": "analytics-service",
+        "method": "GET",
+        "path": "/api/analytics/staff/{staffId}/performance/today",
+        "controller": "AnalyticsController",
+        "methodName": "getStaffPerformance"
+      },
+      {
+        "service": "analytics-service",
+        "method": "GET",
+        "path": "/api/analytics/sales/trends/{period}",
+        "controller": "AnalyticsController",
+        "methodName": "getSalesTrends"
+      },
+      {
+        "service": "analytics-service",
+        "method": "GET",
+        "path": "/api/analytics/sales/breakdown/order-type",
+        "controller": "AnalyticsController",
+        "methodName": "getOrderTypeBreakdown"
+      },
+      {
+        "service": "analytics-service",
+        "method": "GET",
+        "path": "/api/analytics/sales/peak-hours",
+        "controller": "AnalyticsController",
+        "methodName": "getPeakHours"
+      },
+      {
+        "service": "analytics-service",
+        "method": "GET",
+        "path": "/api/analytics/staff/leaderboard",
+        "controller": "AnalyticsController",
+        "methodName": "getStaffLeaderboard"
+      },
+      {
+        "service": "analytics-service",
+        "method": "GET",
+        "path": "/api/analytics/products/top-selling",
+        "controller": "AnalyticsController",
+        "methodName": "getTopProducts"
+      },
+      {
+        "service": "analytics-service",
+        "method": "POST",
+        "path": "/api/analytics/cache/clear",
+        "controller": "AnalyticsController",
+        "methodName": "clearAllCaches"
+      },
+      {
+        "service": "analytics-service",
+        "method": "GET",
+        "path": "/api/analytics/health",
+        "controller": "AnalyticsController",
+        "methodName": "health"
+      },
+      {
+        "service": "analytics-service",
+        "method": "GET",
+        "path": "/api/bi/forecast/sales",
+        "controller": "BIController",
+        "methodName": "getSalesForecast"
+      },
+      {
+        "service": "analytics-service",
+        "method": "GET",
+        "path": "/api/bi/analysis/customer-behavior",
+        "controller": "BIController",
+        "methodName": "getCustomerBehaviorAnalysis"
+      },
+      {
+        "service": "analytics-service",
+        "method": "GET",
+        "path": "/api/bi/prediction/churn",
+        "controller": "BIController",
+        "methodName": "getChurnPrediction"
+      },
+      {
+        "service": "analytics-service",
+        "method": "GET",
+        "path": "/api/bi/forecast/demand",
+        "controller": "BIController",
+        "methodName": "getDemandForecast"
+      },
+      {
+        "service": "analytics-service",
+        "method": "GET",
+        "path": "/api/bi/cost-analysis",
+        "controller": "BIController",
+        "methodName": "getCostAnalysis"
+      },
+      {
+        "service": "analytics-service",
+        "method": "GET",
+        "path": "/api/bi/executive-summary",
+        "controller": "BIController",
+        "methodName": "getExecutiveSummary"
+      },
+      {
+        "service": "analytics-service",
+        "method": "GET",
+        "path": "/api/bi/health",
+        "controller": "BIController",
+        "methodName": "health"
+      },
+      {
+        "service": "customer-service",
+        "method": "GET",
+        "path": "/{id}",
+        "controller": "CustomerController",
+        "methodName": "getAllCustomers"
+      },
+      {
+        "service": "customer-service",
+        "method": "GET",
+        "path": "/user/{userId}",
+        "controller": "CustomerController",
+        "methodName": "getAllCustomers"
+      },
+      {
+        "service": "customer-service",
+        "method": "GET",
+        "path": "/email/{email}",
+        "controller": "CustomerController",
+        "methodName": "getAllCustomers"
+      },
+      {
+        "service": "customer-service",
+        "method": "GET",
+        "path": "/phone/{phone}",
+        "controller": "CustomerController",
+        "methodName": "getAllCustomers"
+      },
+      {
+        "service": "customer-service",
+        "method": "GET",
+        "path": "/active",
+        "controller": "CustomerController",
+        "methodName": "getActiveCustomers"
+      },
+      {
+        "service": "order-service",
+        "method": "GET",
+        "path": "/search",
+        "controller": "OrderController",
+        "methodName": "searchOrders"
+      },
+      {
+        "service": "customer-service",
+        "method": "PUT",
+        "path": "/{id}",
+        "controller": "CustomerController",
+        "methodName": "getCustomersByTier"
+      },
+      {
+        "service": "customer-service",
+        "method": "POST",
+        "path": "/{id}/addresses",
+        "controller": "CustomerController",
+        "methodName": "getCustomersByTier"
+      },
+      {
+        "service": "customer-service",
+        "method": "PATCH",
+        "path": "/{customerId}/addresses/{addressId}",
+        "controller": "CustomerController",
+        "methodName": "getCustomersByTier"
+      },
+      {
+        "service": "customer-service",
+        "method": "DELETE",
+        "path": "/{customerId}/addresses/{addressId}",
+        "controller": "CustomerController",
+        "methodName": "getCustomersByTier"
+      },
+      {
+        "service": "customer-service",
+        "method": "PATCH",
+        "path": "/{customerId}/addresses/{addressId}/set-default",
+        "controller": "CustomerController",
+        "methodName": "getCustomersByTier"
+      },
+      {
+        "service": "customer-service",
+        "method": "POST",
+        "path": "/{id}/loyalty/points",
+        "controller": "CustomerController",
+        "methodName": "getCustomersByTier"
+      },
+      {
+        "service": "customer-service",
+        "method": "POST",
+        "path": "/{id}/loyalty/redeem",
+        "controller": "CustomerController",
+        "methodName": "getCustomersByTier"
+      },
+      {
+        "service": "customer-service",
+        "method": "GET",
+        "path": "/{id}/loyalty/max-redeemable",
+        "controller": "CustomerController",
+        "methodName": "getCustomersByTier"
+      },
+      {
+        "service": "customer-service",
+        "method": "GET",
+        "path": "/loyalty/tier/{tier}",
+        "controller": "CustomerController",
+        "methodName": "getCustomersByTier"
+      },
+      {
+        "service": "customer-service",
+        "method": "PUT",
+        "path": "/{id}/preferences",
+        "controller": "CustomerController",
+        "methodName": "getCustomersByTags"
+      },
+      {
+        "service": "customer-service",
+        "method": "POST",
+        "path": "/{id}/order-stats",
+        "controller": "CustomerController",
+        "methodName": "getCustomersByTags"
+      },
+      {
+        "service": "customer-service",
+        "method": "POST",
+        "path": "/{id}/update-email",
+        "controller": "CustomerController",
+        "methodName": "getCustomersByTags"
+      },
+      {
+        "service": "customer-service",
+        "method": "POST",
+        "path": "/{id}/notes",
+        "controller": "CustomerController",
+        "methodName": "getCustomersByTags"
+      },
+      {
+        "service": "customer-service",
+        "method": "POST",
+        "path": "/{id}/tags",
+        "controller": "CustomerController",
+        "methodName": "getCustomersByTags"
+      },
+      {
+        "service": "customer-service",
+        "method": "DELETE",
+        "path": "/{id}/tags",
+        "controller": "CustomerController",
+        "methodName": "getCustomersByTags"
+      },
+      {
+        "service": "customer-service",
+        "method": "GET",
+        "path": "/tags",
+        "controller": "CustomerController",
+        "methodName": "getCustomersByTags"
+      },
+      {
+        "service": "customer-service",
+        "method": "GET",
+        "path": "/high-value",
+        "controller": "CustomerController",
+        "methodName": "getHighValueCustomers"
+      },
+      {
+        "service": "customer-service",
+        "method": "GET",
+        "path": "/top-spenders",
+        "controller": "CustomerController",
+        "methodName": "getTopSpenders"
+      },
+      {
+        "service": "customer-service",
+        "method": "GET",
+        "path": "/recently-active",
+        "controller": "CustomerController",
+        "methodName": "getRecentlyActiveCustomers"
+      },
+      {
+        "service": "customer-service",
+        "method": "GET",
+        "path": "/inactive",
+        "controller": "CustomerController",
+        "methodName": "getInactiveCustomers"
+      },
+      {
+        "service": "customer-service",
+        "method": "GET",
+        "path": "/birthdays/today",
+        "controller": "CustomerController",
+        "methodName": "getBirthdayCustomersToday"
+      },
+      {
+        "service": "customer-service",
+        "method": "GET",
+        "path": "/marketing-opt-in",
+        "controller": "CustomerController",
+        "methodName": "getMarketingOptInCustomers"
+      },
+      {
+        "service": "customer-service",
+        "method": "GET",
+        "path": "/sms-opt-in",
+        "controller": "CustomerController",
+        "methodName": "getSmsOptInCustomers"
+      },
+      {
+        "service": "customer-service",
+        "method": "GET",
+        "path": "/stats",
+        "controller": "CustomerController",
+        "methodName": "getCustomerStats"
+      },
+      {
+        "service": "customer-service",
+        "method": "DELETE",
+        "path": "/{id}/gdpr",
+        "controller": "CustomerController",
+        "methodName": "unknown"
+      },
+      {
+        "service": "customer-service",
+        "method": "DELETE",
+        "path": "/{id}/hard",
+        "controller": "CustomerController",
+        "methodName": "unknown"
+      },
+      {
+        "service": "delivery-service",
+        "method": "GET",
+        "path": "/api/delivery/health",
+        "controller": "DispatchController",
+        "methodName": "health"
+      },
+      {
+        "service": "delivery-service",
+        "method": "GET",
+        "path": "/api/delivery/drivers/available",
+        "controller": "DispatchController",
+        "methodName": "getAvailableDrivers"
+      },
+      {
+        "service": "delivery-service",
+        "method": "GET",
+        "path": "/api/delivery/zone/check",
+        "controller": "DispatchController",
+        "methodName": "checkDeliveryZone"
+      },
+      {
+        "service": "delivery-service",
+        "method": "GET",
+        "path": "/api/delivery/zone/fee",
+        "controller": "DispatchController",
+        "methodName": "calculateDeliveryFee"
+      },
+      {
+        "service": "delivery-service",
+        "method": "GET",
+        "path": "/api/delivery/zone/list",
+        "controller": "DispatchController",
+        "methodName": "getDeliveryZones"
+      },
+      {
+        "service": "delivery-service",
+        "method": "GET",
+        "path": "/api/delivery/zone/validate",
+        "controller": "DispatchController",
+        "methodName": "updateDriverStatus"
+      },
+      {
+        "service": "delivery-service",
+        "method": "PUT",
+        "path": "/api/delivery/driver/status",
+        "controller": "DispatchController",
+        "methodName": "updateDriverStatus"
+      },
+      {
+        "service": "delivery-service",
+        "method": "GET",
+        "path": "/api/delivery/driver/{driverId}/status",
+        "controller": "DispatchController",
+        "methodName": "getDriverStatus"
+      },
+      {
+        "service": "delivery-service",
+        "method": "GET",
+        "path": "/api/delivery/driver/{driverId}/performance",
+        "controller": "PerformanceController",
+        "methodName": "getDriverPerformance"
+      },
+      {
+        "service": "delivery-service",
+        "method": "GET",
+        "path": "/api/delivery/driver/{driverId}/performance/today",
+        "controller": "PerformanceController",
+        "methodName": "getTodayPerformance"
+      },
+      {
+        "service": "delivery-service",
+        "method": "GET",
+        "path": "/api/delivery/metrics/today",
+        "controller": "PerformanceController",
+        "methodName": "getTodayMetrics"
+      },
+      {
+        "service": "delivery-service",
+        "method": "GET",
+        "path": "/api/delivery/track/{orderId}",
+        "controller": "TrackingController",
+        "methodName": "trackOrder"
+      },
+      {
+        "service": "delivery-service",
+        "method": "GET",
+        "path": "/api/delivery/eta/{orderId}",
+        "controller": "TrackingController",
+        "methodName": "getETA"
+      },
+      {
+        "service": "delivery-service",
+        "method": "POST",
+        "path": "/api/delivery/{orderId}/generate-otp",
+        "controller": "TrackingController",
+        "methodName": "generateDeliveryOtp"
+      },
+      {
+        "service": "delivery-service",
+        "method": "POST",
+        "path": "/api/delivery/contactless",
+        "controller": "TrackingController",
+        "methodName": "markContactlessDelivery"
+      },
+      {
+        "service": "delivery-service",
+        "method": "POST",
+        "path": "/api/delivery/{orderId}/regenerate-otp",
+        "controller": "TrackingController",
+        "methodName": "regenerateOtp"
+      },
+      {
+        "service": "delivery-service",
+        "method": "POST",
+        "path": "/api/delivery/accept",
+        "controller": "TrackingController",
+        "methodName": "acceptDelivery"
+      },
+      {
+        "service": "delivery-service",
+        "method": "POST",
+        "path": "/api/delivery/reject",
+        "controller": "TrackingController",
+        "methodName": "rejectDelivery"
+      },
+      {
+        "service": "delivery-service",
+        "method": "GET",
+        "path": "/api/delivery/driver/{driverId}/pending",
+        "controller": "TrackingController",
+        "methodName": "getPendingDeliveries"
+      },
+      {
+        "service": "delivery-service",
+        "method": "POST",
+        "path": "/api/delivery/{trackingId}/pickup",
+        "controller": "TrackingController",
+        "methodName": "markAsPickedUp"
+      },
+      {
+        "service": "delivery-service",
+        "method": "POST",
+        "path": "/api/delivery/{trackingId}/in-transit",
+        "controller": "TrackingController",
+        "methodName": "markAsInTransit"
+      },
+      {
+        "service": "delivery-service",
+        "method": "POST",
+        "path": "/api/delivery/{trackingId}/arrived",
+        "controller": "TrackingController",
+        "methodName": "markAsArrived"
+      },
+      {
+        "service": "delivery-service",
+        "method": "POST",
+        "path": "/api/delivery/{trackingId}/deliver",
+        "controller": "TrackingController",
+        "methodName": "markAsDelivered"
+      },
+      {
+        "service": "inventory-service",
+        "method": "GET",
+        "path": "/api/inventory/low-stock",
+        "controller": "InventoryController",
+        "methodName": "getItemsNeedingReorder"
+      },
+      {
+        "service": "inventory-service",
+        "method": "GET",
+        "path": "/api/inventory/out-of-stock",
+        "controller": "InventoryController",
+        "methodName": "getOutOfStockItems"
+      },
+      {
+        "service": "inventory-service",
+        "method": "GET",
+        "path": "/api/inventory/expiring-soon",
+        "controller": "InventoryController",
+        "methodName": "getItemsExpiringSoon"
+      },
+      {
+        "service": "inventory-service",
+        "method": "GET",
+        "path": "/api/inventory/alerts/low-stock",
+        "controller": "InventoryController",
+        "methodName": "getLowStockAlerts"
+      },
+      {
+        "service": "inventory-service",
+        "method": "GET",
+        "path": "/api/inventory/value",
+        "controller": "InventoryController",
+        "methodName": "getTotalInventoryValue"
+      },
+      {
+        "service": "inventory-service",
+        "method": "GET",
+        "path": "/api/inventory/value/by-category",
+        "controller": "InventoryController",
+        "methodName": "getInventoryValueByCategory"
+      },
+      {
+        "service": "menu-service",
+        "method": "GET",
+        "path": "/api/menu/public",
+        "controller": "MenuController",
+        "methodName": "getAvailableMenu"
+      },
+      {
+        "service": "menu-service",
+        "method": "GET",
+        "path": "/api/menu/public/{id}",
+        "controller": "MenuController",
+        "methodName": "getMenuItem"
+      },
+      {
+        "service": "menu-service",
+        "method": "GET",
+        "path": "/api/menu/public/cuisine/{cuisine}",
+        "controller": "MenuController",
+        "methodName": "getMenuByCuisine"
+      },
+      {
+        "service": "menu-service",
+        "method": "GET",
+        "path": "/api/menu/public/category/{category}",
+        "controller": "MenuController",
+        "methodName": "getMenuByCategory"
+      },
+      {
+        "service": "menu-service",
+        "method": "GET",
+        "path": "/api/menu/public/dietary/{dietaryType}",
+        "controller": "MenuController",
+        "methodName": "getMenuByDietaryType"
+      },
+      {
+        "service": "menu-service",
+        "method": "GET",
+        "path": "/api/menu/public/recommended",
+        "controller": "MenuController",
+        "methodName": "getRecommendedItems"
+      },
+      {
+        "service": "menu-service",
+        "method": "GET",
+        "path": "/api/menu/public/search",
+        "controller": "MenuController",
+        "methodName": "searchMenu"
+      },
+      {
+        "service": "menu-service",
+        "method": "GET",
+        "path": "/api/menu/public/tag/{tag}",
+        "controller": "MenuController",
+        "methodName": "getMenuByTag"
+      },
+      {
+        "service": "menu-service",
+        "method": "POST",
+        "path": "/api/menu/copy-menu",
+        "controller": "MenuController",
+        "methodName": "copyMenuBetweenStores"
+      },
+      {
+        "service": "menu-service",
+        "method": "GET",
+        "path": "/api/menu/stats",
+        "controller": "MenuController",
+        "methodName": "getMenuStatistics"
+      },
+      {
+        "service": "notification-service",
+        "method": "GET",
+        "path": "/api/notifications/user/{userId}",
+        "controller": "NotificationController",
+        "methodName": "getUserNotifications"
+      },
+      {
+        "service": "notification-service",
+        "method": "GET",
+        "path": "/api/notifications/user/{userId}/unread",
+        "controller": "NotificationController",
+        "methodName": "getUnreadNotifications"
+      },
+      {
+        "service": "notification-service",
+        "method": "GET",
+        "path": "/api/notifications/user/{userId}/unread-count",
+        "controller": "NotificationController",
+        "methodName": "getUnreadCount"
+      },
+      {
+        "service": "notification-service",
+        "method": "GET",
+        "path": "/api/notifications/user/{userId}/recent",
+        "controller": "NotificationController",
+        "methodName": "getRecentNotifications"
+      },
+      {
+        "service": "notification-service",
+        "method": "POST",
+        "path": "/api/notifications/rating/send",
+        "controller": "RatingController",
+        "methodName": "sendRatingRequest"
+      },
+      {
+        "service": "notification-service",
+        "method": "GET",
+        "path": "/api/preferences/user/{userId}",
+        "controller": "UserPreferencesController",
+        "methodName": "getPreferences"
+      },
+      {
+        "service": "notification-service",
+        "method": "PUT",
+        "path": "/api/preferences/user/{userId}",
+        "controller": "UserPreferencesController",
+        "methodName": "updatePreferences"
+      },
+      {
+        "service": "notification-service",
+        "method": "PATCH",
+        "path": "/api/preferences/user/{userId}/channel/{channel}",
+        "controller": "UserPreferencesController",
+        "methodName": "updateChannelPreference"
+      },
+      {
+        "service": "notification-service",
+        "method": "PATCH",
+        "path": "/api/preferences/user/{userId}/device-token",
+        "controller": "UserPreferencesController",
+        "methodName": "updateDeviceToken"
+      },
+      {
+        "service": "notification-service",
+        "method": "PATCH",
+        "path": "/api/preferences/user/{userId}/contact",
+        "controller": "UserPreferencesController",
+        "methodName": "updateContactInfo"
+      },
+      {
+        "service": "notification-service",
+        "method": "DELETE",
+        "path": "/api/preferences/user/{userId}",
+        "controller": "UserPreferencesController",
+        "methodName": "deletePreferences"
+      },
+      {
+        "service": "order-service",
+        "method": "GET",
+        "path": "/{orderId}",
+        "controller": "OrderController",
+        "methodName": "getOrder"
+      },
+      {
+        "service": "order-service",
+        "method": "GET",
+        "path": "/track/{orderId}",
+        "controller": "OrderController",
+        "methodName": "trackOrder"
+      },
+      {
+        "service": "order-service",
+        "method": "GET",
+        "path": "/number/{orderNumber}",
+        "controller": "OrderController",
+        "methodName": "getOrderByNumber"
+      },
+      {
+        "service": "order-service",
+        "method": "GET",
+        "path": "/status/{status}",
+        "controller": "OrderController",
+        "methodName": "getOrdersByStatus"
+      },
+      {
+        "service": "payment-service",
+        "method": "GET",
+        "path": "/customer/{customerId}",
+        "controller": "PaymentController",
+        "methodName": "getTransactionsByCustomerId"
+      },
+      {
+        "service": "order-service",
+        "method": "PATCH",
+        "path": "/{orderId}/status",
+        "controller": "OrderController",
+        "methodName": "updateOrderStatus"
+      },
+      {
+        "service": "order-service",
+        "method": "PATCH",
+        "path": "/{orderId}/next-stage",
+        "controller": "OrderController",
+        "methodName": "moveToNextStage"
+      },
+      {
+        "service": "order-service",
+        "method": "PATCH",
+        "path": "/{orderId}/assign-driver",
+        "controller": "OrderController",
+        "methodName": "assignDriver"
+      },
+      {
+        "service": "order-service",
+        "method": "PATCH",
+        "path": "/{orderId}/payment",
+        "controller": "OrderController",
+        "methodName": "updatePaymentStatus"
+      },
+      {
+        "service": "order-service",
+        "method": "PATCH",
+        "path": "/{orderId}/priority",
+        "controller": "OrderController",
+        "methodName": "updateOrderPriority"
+      },
+      {
+        "service": "order-service",
+        "method": "GET",
+        "path": "/date/{date}",
+        "controller": "OrderController",
+        "methodName": "getOrdersByDate"
+      },
+      {
+        "service": "order-service",
+        "method": "GET",
+        "path": "/range",
+        "controller": "OrderController",
+        "methodName": "getOrdersByDateRange"
+      },
+      {
+        "service": "order-service",
+        "method": "GET",
+        "path": "/staff/{staffId}/date/{date}",
+        "controller": "OrderController",
+        "methodName": "getOrdersByStaffAndDate"
+      },
+      {
+        "service": "order-service",
+        "method": "GET",
+        "path": "/active-deliveries/count",
+        "controller": "OrderController",
+        "methodName": "getActiveDeliveryCount"
+      },
+      {
+        "service": "order-service",
+        "method": "POST",
+        "path": "/{orderId}/quality-checkpoint",
+        "controller": "OrderController",
+        "methodName": "addQualityCheckpoint"
+      },
+      {
+        "service": "order-service",
+        "method": "PATCH",
+        "path": "/{orderId}/quality-checkpoint/{checkpointName}",
+        "controller": "OrderController",
+        "methodName": "updateQualityCheckpoint"
+      },
+      {
+        "service": "order-service",
+        "method": "GET",
+        "path": "/{orderId}/quality-checkpoints",
+        "controller": "OrderController",
+        "methodName": "getOrdersWithFailedQualityChecks"
+      },
+      {
+        "service": "order-service",
+        "method": "GET",
+        "path": "/store/failed-quality-checks",
+        "controller": "OrderController",
+        "methodName": "getOrdersWithFailedQualityChecks"
+      },
+      {
+        "service": "order-service",
+        "method": "GET",
+        "path": "/store/avg-prep-time",
+        "controller": "OrderController",
+        "methodName": "getAveragePreparationTime"
+      },
+      {
+        "service": "order-service",
+        "method": "PATCH",
+        "path": "/{orderId}/assign-make-table",
+        "controller": "OrderController",
+        "methodName": "assignToMakeTable"
+      },
+      {
+        "service": "order-service",
+        "method": "GET",
+        "path": "/store/make-table/{station}",
+        "controller": "OrderController",
+        "methodName": "getOrdersByMakeTableStation"
+      },
+      {
+        "service": "order-service",
+        "method": "GET",
+        "path": "/store/analytics/prep-time-by-item",
+        "controller": "OrderController",
+        "methodName": "getAveragePreparationTimeByItem"
+      },
+      {
+        "service": "order-service",
+        "method": "GET",
+        "path": "/analytics/kitchen-staff/{staffId}/performance",
+        "controller": "OrderController",
+        "methodName": "getKitchenStaffPerformance"
+      },
+      {
+        "service": "order-service",
+        "method": "GET",
+        "path": "/analytics/pos-staff/{staffId}/performance",
+        "controller": "OrderController",
+        "methodName": "getPreparationTimeDistribution"
+      },
+      {
+        "service": "order-service",
+        "method": "GET",
+        "path": "/store/analytics/prep-time-distribution",
+        "controller": "OrderController",
+        "methodName": "getPreparationTimeDistribution"
+      },
+      {
+        "service": "order-service",
+        "method": "PUT",
+        "path": "/{orderId}/delivery-otp",
+        "controller": "OrderController",
+        "methodName": "setDeliveryOtp"
+      },
+      {
+        "service": "order-service",
+        "method": "PUT",
+        "path": "/{orderId}/delivery-proof",
+        "controller": "OrderController",
+        "methodName": "setDeliveryProof"
+      },
+      {
+        "service": "order-service",
+        "method": "PUT",
+        "path": "/{orderId}/mark-delivered",
+        "controller": "OrderController",
+        "methodName": "markOrderDelivered"
+      },
+      {
+        "service": "payment-service",
+        "method": "GET",
+        "path": "/{transactionId}",
+        "controller": "PaymentController",
+        "methodName": "getTransaction"
+      },
+      {
+        "service": "payment-service",
+        "method": "GET",
+        "path": "/order/{orderId}",
+        "controller": "PaymentController",
+        "methodName": "getTransactionByOrderId"
+      },
+      {
+        "service": "payment-service",
+        "method": "GET",
+        "path": "/reconciliation",
+        "controller": "PaymentController",
+        "methodName": "getDailyReconciliation"
+      },
+      {
+        "service": "payment-service",
+        "method": "POST",
+        "path": "/{transactionId}/reconcile",
+        "controller": "PaymentController",
+        "methodName": "markAsReconciled"
+      },
+      {
+        "service": "payment-service",
+        "method": "POST",
+        "path": "/api/payments/webhook",
+        "controller": "WebhookController",
+        "methodName": "handleWebhook"
+      },
+      {
+        "service": "review-service",
+        "method": "POST",
+        "path": "/api/responses/review/{reviewId}",
+        "controller": "ResponseController",
+        "methodName": "getResponsesByManagerId"
+      },
+      {
+        "service": "review-service",
+        "method": "GET",
+        "path": "/api/responses/{responseId}",
+        "controller": "ResponseController",
+        "methodName": "getResponsesByManagerId"
+      },
+      {
+        "service": "review-service",
+        "method": "GET",
+        "path": "/api/responses/review/{reviewId}",
+        "controller": "ResponseController",
+        "methodName": "getResponsesByManagerId"
+      },
+      {
+        "service": "review-service",
+        "method": "GET",
+        "path": "/api/responses/manager/{managerId}",
+        "controller": "ResponseController",
+        "methodName": "getResponsesByManagerId"
+      },
+      {
+        "service": "review-service",
+        "method": "GET",
+        "path": "/api/responses",
+        "controller": "ResponseController",
+        "methodName": "getAllResponses"
+      },
+      {
+        "service": "review-service",
+        "method": "PUT",
+        "path": "/api/responses/{responseId}",
+        "controller": "ResponseController",
+        "methodName": "unknown"
+      },
+      {
+        "service": "review-service",
+        "method": "DELETE",
+        "path": "/api/responses/{responseId}",
+        "controller": "ResponseController",
+        "methodName": "unknown"
+      },
+      {
+        "service": "review-service",
+        "method": "GET",
+        "path": "/api/responses/templates",
+        "controller": "ResponseController",
+        "methodName": "unknown"
+      },
+      {
+        "service": "review-service",
+        "method": "GET",
+        "path": "/api/responses/templates/{responseType}",
+        "controller": "ResponseController",
+        "methodName": "unknown"
+      },
+      {
+        "service": "user-service",
+        "method": "POST",
+        "path": "/api/gdpr/consent/grant",
+        "controller": "GdprController",
+        "methodName": "unknown"
+      },
+      {
+        "service": "user-service",
+        "method": "POST",
+        "path": "/api/gdpr/consent/revoke",
+        "controller": "GdprController",
+        "methodName": "unknown"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/gdpr/consent/user/{userId}",
+        "controller": "GdprController",
+        "methodName": "unknown"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/gdpr/consent/check",
+        "controller": "GdprController",
+        "methodName": "unknown"
+      },
+      {
+        "service": "user-service",
+        "method": "POST",
+        "path": "/api/gdpr/request",
+        "controller": "GdprController",
+        "methodName": "unknown"
+      },
+      {
+        "service": "user-service",
+        "method": "POST",
+        "path": "/api/gdpr/request/{requestId}/access",
+        "controller": "GdprController",
+        "methodName": "unknown"
+      },
+      {
+        "service": "user-service",
+        "method": "POST",
+        "path": "/api/gdpr/request/{requestId}/erasure",
+        "controller": "GdprController",
+        "methodName": "unknown"
+      },
+      {
+        "service": "user-service",
+        "method": "POST",
+        "path": "/api/gdpr/request/{requestId}/portability",
+        "controller": "GdprController",
+        "methodName": "unknown"
+      },
+      {
+        "service": "user-service",
+        "method": "POST",
+        "path": "/api/gdpr/request/{requestId}/rectification",
+        "controller": "GdprController",
+        "methodName": "unknown"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/gdpr/request/user/{userId}",
+        "controller": "GdprController",
+        "methodName": "unknown"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/gdpr/audit/{userId}",
+        "controller": "GdprController",
+        "methodName": "unknown"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/gdpr/privacy-policy",
+        "controller": "GdprController",
+        "methodName": "unknown"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/gdpr/export/{userId}",
+        "controller": "GdprController",
+        "methodName": "unknown"
+      },
+      {
+        "service": "user-service",
+        "method": "DELETE",
+        "path": "/api/gdpr/erase/{userId}",
+        "controller": "GdprController",
+        "methodName": "unknown"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/system/version",
+        "controller": "SystemInfoController",
+        "methodName": "getVersion"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/system/updates/check",
+        "controller": "SystemInfoController",
+        "methodName": "checkForUpdates"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/system/updates/status",
+        "controller": "SystemInfoController",
+        "methodName": "getUpdateStatus"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/system/health",
+        "controller": "SystemInfoController",
+        "methodName": "health"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/system/info",
+        "controller": "SystemInfoController",
+        "methodName": "getSystemInfo"
+      },
+      {
+        "service": "user-service",
+        "method": "POST",
+        "path": "/api/test-data/create-default-store",
+        "controller": "TestDataController",
+        "methodName": "createDefaultStore"
+      },
+      {
+        "service": "user-service",
+        "method": "POST",
+        "path": "/api/test-data/create-test-stores",
+        "controller": "TestDataController",
+        "methodName": "createTestStores"
+      },
+      {
+        "service": "user-service",
+        "method": "POST",
+        "path": "/api/test-data/migrate-users-to-storecode",
+        "controller": "TestDataController",
+        "methodName": "migrateUsersToStoreCode"
+      },
+      {
+        "service": "user-service",
+        "method": "POST",
+        "path": "/api/users/validate-pin",
+        "controller": "UserController",
+        "methodName": "logout"
+      },
+      {
+        "service": "user-service",
+        "method": "POST",
+        "path": "/api/users/refresh",
+        "controller": "UserController",
+        "methodName": "refreshToken"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/users/{userId}",
+        "controller": "UserController",
+        "methodName": "getUser"
+      },
+      {
+        "service": "user-service",
+        "method": "PUT",
+        "path": "/api/users/{userId}",
+        "controller": "UserController",
+        "methodName": "updateUser"
+      },
+      {
+        "service": "user-service",
+        "method": "DELETE",
+        "path": "/api/users/{userId}",
+        "controller": "UserController",
+        "methodName": "deactivateUser"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/users",
+        "controller": "UserController",
+        "methodName": "getAllUsers"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/users/type/{type}",
+        "controller": "UserController",
+        "methodName": "getUsersByType"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/users/store",
+        "controller": "UserController",
+        "methodName": "getStoreEmployees"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/users/managers",
+        "controller": "UserController",
+        "methodName": "getActiveManagers"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/users/{userId}/can-take-orders",
+        "controller": "UserController",
+        "methodName": "canTakeOrders"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/users/search",
+        "controller": "UserController",
+        "methodName": "searchUsers"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/users/stats",
+        "controller": "UserController",
+        "methodName": "getUserStats"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/users/drivers/store",
+        "controller": "UserController",
+        "methodName": "getDriversByStore"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/users/drivers/available",
+        "controller": "UserController",
+        "methodName": "getAvailableDrivers"
+      },
+      {
+        "service": "user-service",
+        "method": "PUT",
+        "path": "/api/users/{userId}/status",
+        "controller": "UserController",
+        "methodName": "updateDriverStatus"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/users/{userId}/status",
+        "controller": "UserController",
+        "methodName": "getDriverStatus"
+      },
+      {
+        "service": "user-service",
+        "method": "POST",
+        "path": "/api/users/{userId}/generate-pin",
+        "controller": "UserController",
+        "methodName": "generateEmployeePIN"
+      },
+      {
+        "service": "user-service",
+        "method": "POST",
+        "path": "/api/users/generate-all-pins",
+        "controller": "UserController",
+        "methodName": "generateAllEmployeePINs"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/users/kiosk/list",
+        "controller": "UserController",
+        "methodName": "listKioskAccounts"
+      },
+      {
+        "service": "user-service",
+        "method": "POST",
+        "path": "/api/users/kiosk/{kioskUserId}/deactivate",
+        "controller": "UserController",
+        "methodName": "deactivateKiosk"
+      },
+      {
+        "service": "user-service",
+        "method": "POST",
+        "path": "/api/users/kiosk/auto-login",
+        "controller": "UserController",
+        "methodName": "kioskAutoLogin"
+      },
+      {
+        "service": "user-service",
+        "method": "POST",
+        "path": "/api/users/sessions/{employeeId}/break",
+        "controller": "WorkingSessionController",
+        "methodName": "addBreakTime"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/users/sessions/pending-approval",
+        "controller": "WorkingSessionController",
+        "methodName": "getSessionsPendingApproval"
+      },
+      {
+        "service": "user-service",
+        "method": "POST",
+        "path": "/api/users/sessions/{sessionId}/reject",
+        "controller": "WorkingSessionController",
+        "methodName": "rejectSession"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/users/sessions/current",
+        "controller": "WorkingSessionController",
+        "methodName": "getCurrentSession"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/users/sessions/{employeeId}",
+        "controller": "WorkingSessionController",
+        "methodName": "getEmployeeSessions"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/users/sessions/store",
+        "controller": "WorkingSessionController",
+        "methodName": "getStoreSessions"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/users/sessions/{employeeId}/report",
+        "controller": "WorkingSessionController",
+        "methodName": "getWorkingHoursReport"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/users/sessions/store/active",
+        "controller": "WorkingSessionController",
+        "methodName": "getActiveStoreSessions"
+      },
+      {
+        "service": "user-service",
+        "method": "GET",
+        "path": "/api/users/sessions/{employeeId}/status",
+        "controller": "WorkingSessionController",
+        "methodName": "getEmployeeWorkingStatus"
+      },
+      {
+        "service": "user-service",
+        "method": "POST",
+        "path": "/api/users/sessions/clock-in-with-pin",
+        "controller": "WorkingSessionController",
+        "methodName": "unknown"
+      },
+      {
+        "service": "user-service",
+        "method": "POST",
+        "path": "/api/users/sessions/clock-out-employee",
+        "controller": "WorkingSessionController",
+        "methodName": "unknown"
+      }
+    ]
+  },
+  "fixes": [
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/analytics/sales/today",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/analytics/avgOrderValue/today",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/analytics/drivers/status",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/analytics/staff/{staffId}/performance/today",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/analytics/sales/trends/{period}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/analytics/sales/breakdown/order-type",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/analytics/sales/peak-hours",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/analytics/staff/leaderboard",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/analytics/products/top-selling",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/analytics/cache/clear",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/analytics/health",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/bi/forecast/sales",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/bi/analysis/customer-behavior",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/bi/prediction/churn",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/bi/forecast/demand",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/bi/cost-analysis",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/bi/executive-summary",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/bi/health",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{id}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/user/{userId}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/email/{email}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/phone/{phone}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/active",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/search",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{id}",
+      "method": "PUT"
+    },
+    {
+      "type": "RENAME_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Rename frontend endpoint 'deactivateCustomer' in customerApi to match backend path",
+      "backend": "/{id}/deactivate",
+      "frontend": "/{param}/deactivate",
+      "matchScore": 111
+    },
+    {
+      "type": "RENAME_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Rename frontend endpoint 'activateCustomer' in customerApi to match backend path",
+      "backend": "/{id}/activate",
+      "frontend": "/{param}/activate",
+      "matchScore": 111
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{id}/addresses",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{customerId}/addresses/{addressId}",
+      "method": "PATCH"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{customerId}/addresses/{addressId}",
+      "method": "DELETE"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{customerId}/addresses/{addressId}/set-default",
+      "method": "PATCH"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{id}/loyalty/points",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{id}/loyalty/redeem",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{id}/loyalty/max-redeemable",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/loyalty/tier/{tier}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{id}/preferences",
+      "method": "PUT"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{id}/order-stats",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{id}/update-email",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{id}/notes",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{id}/tags",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{id}/tags",
+      "method": "DELETE"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/tags",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/high-value",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/top-spenders",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/recently-active",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/inactive",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/birthdays/today",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/marketing-opt-in",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/sms-opt-in",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/stats",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{id}/gdpr",
+      "method": "DELETE"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{id}/hard",
+      "method": "DELETE"
+    },
+    {
+      "type": "RENAME_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Rename frontend endpoint 'deleteCustomer' in customerApi to match backend path",
+      "backend": "/{id}",
+      "frontend": "/{param}",
+      "matchScore": 85
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/health",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/drivers/available",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/zone/check",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/zone/fee",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/zone/list",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/zone/validate",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/driver/status",
+      "method": "PUT"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/driver/{driverId}/status",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/driver/{driverId}/performance",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/driver/{driverId}/performance/today",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/metrics/today",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/track/{orderId}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/eta/{orderId}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/{orderId}/generate-otp",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/contactless",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/{orderId}/regenerate-otp",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/accept",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/reject",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/driver/{driverId}/pending",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/{trackingId}/pickup",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/{trackingId}/in-transit",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/{trackingId}/arrived",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/delivery/{trackingId}/deliver",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/inventory/low-stock",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/inventory/out-of-stock",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/inventory/expiring-soon",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/inventory/alerts/low-stock",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/inventory/value",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/inventory/value/by-category",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/menu/public",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/menu/public/{id}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/menu/public/cuisine/{cuisine}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/menu/public/category/{category}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/menu/public/dietary/{dietaryType}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/menu/public/recommended",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/menu/public/search",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/menu/public/tag/{tag}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/menu/copy-menu",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/menu/stats",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/notifications/user/{userId}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/notifications/user/{userId}/unread",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/notifications/user/{userId}/unread-count",
+      "method": "GET"
+    },
+    {
+      "type": "REVIEW_MATCH",
+      "confidence": "MEDIUM",
+      "suggestion": "Review if 'markAsRead' (notificationApi) matches backend 'markAsRead'",
+      "backend": "/api/notifications/{id}/read",
+      "frontend": "/notifications/{param}/read",
+      "matchScore": 64
+    },
+    {
+      "type": "REVIEW_MATCH",
+      "confidence": "MEDIUM",
+      "suggestion": "Review if 'markAllAsRead' (notificationApi) matches backend 'markAllAsRead'",
+      "backend": "/api/notifications/user/{userId}/read-all",
+      "frontend": "/notifications/user/{param}/read-all",
+      "matchScore": 60
+    },
+    {
+      "type": "REVIEW_MATCH",
+      "confidence": "MEDIUM",
+      "suggestion": "Review if 'deleteNotification' (notificationApi) matches backend 'deleteNotification'",
+      "backend": "/api/notifications/{id}",
+      "frontend": "/notifications/{param}",
+      "matchScore": 63
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/notifications/user/{userId}/recent",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/notifications/rating/send",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/preferences/user/{userId}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/preferences/user/{userId}",
+      "method": "PUT"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/preferences/user/{userId}/channel/{channel}",
+      "method": "PATCH"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/preferences/user/{userId}/device-token",
+      "method": "PATCH"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/preferences/user/{userId}/contact",
+      "method": "PATCH"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/preferences/user/{userId}",
+      "method": "DELETE"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{orderId}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/track/{orderId}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/number/{orderNumber}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/status/{status}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/customer/{customerId}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{orderId}/status",
+      "method": "PATCH"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{orderId}/next-stage",
+      "method": "PATCH"
+    },
+    {
+      "type": "RENAME_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Rename frontend endpoint 'deleteCustomer' in customerApi to match backend path",
+      "backend": "/{orderId}",
+      "frontend": "/{param}",
+      "matchScore": 85
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{orderId}/assign-driver",
+      "method": "PATCH"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{orderId}/payment",
+      "method": "PATCH"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{orderId}/priority",
+      "method": "PATCH"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/date/{date}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/range",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/staff/{staffId}/date/{date}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/active-deliveries/count",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{orderId}/quality-checkpoint",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{orderId}/quality-checkpoint/{checkpointName}",
+      "method": "PATCH"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{orderId}/quality-checkpoints",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/store/failed-quality-checks",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/store/avg-prep-time",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{orderId}/assign-make-table",
+      "method": "PATCH"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/store/make-table/{station}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/store/analytics/prep-time-by-item",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/analytics/kitchen-staff/{staffId}/performance",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/analytics/pos-staff/{staffId}/performance",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/store/analytics/prep-time-distribution",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{orderId}/delivery-otp",
+      "method": "PUT"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{orderId}/delivery-proof",
+      "method": "PUT"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{orderId}/mark-delivered",
+      "method": "PUT"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{transactionId}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/order/{orderId}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/reconciliation",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/{transactionId}/reconcile",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/payments/webhook",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/responses/review/{reviewId}",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/responses/{responseId}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/responses/review/{reviewId}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/responses/manager/{managerId}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/responses",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/responses/{responseId}",
+      "method": "PUT"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/responses/{responseId}",
+      "method": "DELETE"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/responses/templates",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/responses/templates/{responseType}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/gdpr/consent/grant",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/gdpr/consent/revoke",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/gdpr/consent/user/{userId}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/gdpr/consent/check",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/gdpr/request",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/gdpr/request/{requestId}/access",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/gdpr/request/{requestId}/erasure",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/gdpr/request/{requestId}/portability",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/gdpr/request/{requestId}/rectification",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/gdpr/request/user/{userId}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/gdpr/audit/{userId}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/gdpr/privacy-policy",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/gdpr/export/{userId}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/gdpr/erase/{userId}",
+      "method": "DELETE"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/system/version",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/system/updates/check",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/system/updates/status",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/system/health",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/system/info",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/test-data/create-default-store",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/test-data/create-test-stores",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/test-data/migrate-users-to-storecode",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/validate-pin",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/refresh",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/{userId}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/{userId}",
+      "method": "PUT"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/{userId}",
+      "method": "DELETE"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/type/{type}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/store",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/managers",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/{userId}/can-take-orders",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/search",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/stats",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/drivers/store",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/drivers/available",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/{userId}/status",
+      "method": "PUT"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/{userId}/status",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/{userId}/generate-pin",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/generate-all-pins",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/kiosk/list",
+      "method": "GET"
+    },
+    {
+      "type": "REVIEW_MATCH",
+      "confidence": "MEDIUM",
+      "suggestion": "Review if 'regenerateKioskTokens' (kioskApi) matches backend 'regenerateKioskTokens'",
+      "backend": "/api/users/kiosk/{kioskUserId}/regenerate-tokens",
+      "frontend": "/users/kiosk/{param}/regenerate-tokens",
+      "matchScore": 60
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/kiosk/{kioskUserId}/deactivate",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/kiosk/auto-login",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/sessions/{employeeId}/break",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/sessions/pending-approval",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/sessions/{sessionId}/reject",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/sessions/current",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/sessions/{employeeId}",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/sessions/store",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/sessions/{employeeId}/report",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/sessions/store/active",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/sessions/{employeeId}/status",
+      "method": "GET"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/sessions/clock-in-with-pin",
+      "method": "POST"
+    },
+    {
+      "type": "GENERATE_FRONTEND",
+      "confidence": "HIGH",
+      "suggestion": "Generate frontend API call for unused backend endpoint",
+      "backend": "/api/users/sessions/clock-out-employee",
+      "method": "POST"
+    }
+  ]
+}

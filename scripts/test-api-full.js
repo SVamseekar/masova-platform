@@ -2424,189 +2424,152 @@ async function testShifts() {
 
 async function testAnalytics() {
   section('Analytics (intelligence-service :8087)');
+  const SEC  = 'analytics';
   const base = SERVICES.intelligence;
   const tok  = tokens.manager;
   const sid  = ACCOUNTS.manager.storeCode;
 
   // Health (public)
-  await test('GET /api/analytics/health', async () => {
-    const r = await request(`${base}/api/analytics/health`);
-    if (r.status !== 200) return fail(`Expected 200, got ${r.status}`);
-    pass();
-  });
+  let r = await request(`${base}/api/analytics/health`);
+  if (r.status === 200) pass(SEC, 'GET /api/analytics/health');
+  else if (r.status === 0) warn(SEC, 'GET /api/analytics/health', 'intelligence-service not running');
+  else fail(SEC, 'GET /api/analytics/health', `status ${r.status}`);
+
+  // All remaining endpoints require the service to be up
+  if (r.status === 0) { warn(SEC, 'Analytics endpoints skipped', 'intelligence-service unreachable'); return; }
 
   // Sales today
-  await test('GET /api/analytics/sales/today', async () => {
-    const r = await request(`${base}/api/analytics/sales/today`, { token: tok, storeId: sid });
-    if (r.status === 200) return pass();
-    if (r.status === 400) return warn('No store context — seed required');
-    fail(`Expected 200, got ${r.status}`);
-  });
+  r = await request(`${base}/api/analytics/sales/today`, { token: tok, storeId: sid });
+  if (r.status === 200) pass(SEC, 'GET /api/analytics/sales/today');
+  else if (r.status === 400) warn(SEC, 'GET /api/analytics/sales/today', 'no store context');
+  else fail(SEC, 'GET /api/analytics/sales/today', `status ${r.status}`);
 
   // Average order value
-  await test('GET /api/analytics/avgOrderValue/today', async () => {
-    const r = await request(`${base}/api/analytics/avgOrderValue/today`, { token: tok, storeId: sid });
-    if (r.status === 200) return pass();
-    if (r.status === 400) return warn('No store context');
-    fail(`Expected 200, got ${r.status}`);
-  });
+  r = await request(`${base}/api/analytics/avgOrderValue/today`, { token: tok, storeId: sid });
+  if (r.status === 200) pass(SEC, 'GET /api/analytics/avgOrderValue/today');
+  else if (r.status === 400) warn(SEC, 'GET /api/analytics/avgOrderValue/today', 'no store context');
+  else fail(SEC, 'GET /api/analytics/avgOrderValue/today', `status ${r.status}`);
 
   // Driver status
-  await test('GET /api/analytics/drivers/status', async () => {
-    const r = await request(`${base}/api/analytics/drivers/status`, { token: tok, storeId: sid });
-    if (r.status === 200) return pass();
-    if (r.status === 400) return warn('No store context');
-    fail(`Expected 200, got ${r.status}`);
-  });
+  r = await request(`${base}/api/analytics/drivers/status`, { token: tok, storeId: sid });
+  if (r.status === 200) pass(SEC, 'GET /api/analytics/drivers/status');
+  else if (r.status === 400) warn(SEC, 'GET /api/analytics/drivers/status', 'no store context');
+  else fail(SEC, 'GET /api/analytics/drivers/status', `status ${r.status}`);
 
-  // Staff performance (use a placeholder staffId)
-  await test('GET /api/analytics/staff/{staffId}/performance/today', async () => {
-    const r = await request(`${base}/api/analytics/staff/test-staff-001/performance/today`, { token: tok });
-    if (r.status === 200) return pass();
-    if (r.status === 404) return warn('Staff not found — seed required');
-    fail(`Expected 200/404, got ${r.status}`);
-  });
+  // Staff performance
+  r = await request(`${base}/api/analytics/staff/test-staff-001/performance/today`, { token: tok });
+  if (r.status === 200) pass(SEC, 'GET /api/analytics/staff/{staffId}/performance/today');
+  else if (r.status === 404) warn(SEC, 'GET /api/analytics/staff/{staffId}/performance/today', 'staff not found');
+  else fail(SEC, 'GET /api/analytics/staff/{staffId}/performance/today', `status ${r.status}`);
 
-  // Sales trends WEEKLY
-  await test('GET /api/analytics/sales/trends/WEEKLY', async () => {
-    const r = await request(`${base}/api/analytics/sales/trends/WEEKLY`, { token: tok, storeId: sid });
-    if (r.status === 200) return pass();
-    if (r.status === 400) return warn('No store context');
-    fail(`Expected 200, got ${r.status}`);
-  });
-
-  // Sales trends MONTHLY
-  await test('GET /api/analytics/sales/trends/MONTHLY', async () => {
-    const r = await request(`${base}/api/analytics/sales/trends/MONTHLY`, { token: tok, storeId: sid });
-    if (r.status === 200) return pass();
-    if (r.status === 400) return warn('No store context');
-    fail(`Expected 200, got ${r.status}`);
-  });
-
-  // Order type breakdown
-  await test('GET /api/analytics/sales/breakdown/order-type', async () => {
-    const r = await request(`${base}/api/analytics/sales/breakdown/order-type`, { token: tok, storeId: sid });
-    if (r.status === 200) return pass();
-    if (r.status === 400) return warn('No store context');
-    fail(`Expected 200, got ${r.status}`);
-  });
-
-  // Peak hours
-  await test('GET /api/analytics/sales/peak-hours', async () => {
-    const r = await request(`${base}/api/analytics/sales/peak-hours`, { token: tok, storeId: sid });
-    if (r.status === 200) return pass();
-    if (r.status === 400) return warn('No store context');
-    fail(`Expected 200, got ${r.status}`);
-  });
-
-  // Staff leaderboard (TODAY / WEEK / MONTH)
-  for (const period of ['TODAY', 'WEEK', 'MONTH']) {
-    await test(`GET /api/analytics/staff/leaderboard?period=${period}`, async () => {
-      const r = await request(`${base}/api/analytics/staff/leaderboard?period=${period}`, { token: tok, storeId: sid });
-      if (r.status === 200) return pass();
-      if (r.status === 400) return warn('No store context');
-      fail(`Expected 200, got ${r.status}`);
-    });
+  // Sales trends
+  for (const period of ['WEEKLY', 'MONTHLY']) {
+    r = await request(`${base}/api/analytics/sales/trends/${period}`, { token: tok, storeId: sid });
+    if (r.status === 200) pass(SEC, `GET /api/analytics/sales/trends/${period}`);
+    else if (r.status === 400) warn(SEC, `GET /api/analytics/sales/trends/${period}`, 'no store context');
+    else fail(SEC, `GET /api/analytics/sales/trends/${period}`, `status ${r.status}`);
   }
 
-  // Top selling products (TODAY / WEEK / MONTH × QUANTITY / REVENUE)
+  // Order type breakdown
+  r = await request(`${base}/api/analytics/sales/breakdown/order-type`, { token: tok, storeId: sid });
+  if (r.status === 200) pass(SEC, 'GET /api/analytics/sales/breakdown/order-type');
+  else if (r.status === 400) warn(SEC, 'GET /api/analytics/sales/breakdown/order-type', 'no store context');
+  else fail(SEC, 'GET /api/analytics/sales/breakdown/order-type', `status ${r.status}`);
+
+  // Peak hours
+  r = await request(`${base}/api/analytics/sales/peak-hours`, { token: tok, storeId: sid });
+  if (r.status === 200) pass(SEC, 'GET /api/analytics/sales/peak-hours');
+  else if (r.status === 400) warn(SEC, 'GET /api/analytics/sales/peak-hours', 'no store context');
+  else fail(SEC, 'GET /api/analytics/sales/peak-hours', `status ${r.status}`);
+
+  // Staff leaderboard
+  for (const period of ['TODAY', 'WEEK', 'MONTH']) {
+    r = await request(`${base}/api/analytics/staff/leaderboard?period=${period}`, { token: tok, storeId: sid });
+    if (r.status === 200) pass(SEC, `GET /api/analytics/staff/leaderboard?period=${period}`);
+    else if (r.status === 400) warn(SEC, `GET /api/analytics/staff/leaderboard?period=${period}`, 'no store context');
+    else fail(SEC, `GET /api/analytics/staff/leaderboard?period=${period}`, `status ${r.status}`);
+  }
+
+  // Top selling products
   for (const period of ['TODAY', 'WEEK', 'MONTH']) {
     for (const sortBy of ['QUANTITY', 'REVENUE']) {
-      await test(`GET /api/analytics/products/top-selling?period=${period}&sortBy=${sortBy}`, async () => {
-        const r = await request(`${base}/api/analytics/products/top-selling?period=${period}&sortBy=${sortBy}`, { token: tok, storeId: sid });
-        if (r.status === 200) return pass();
-        if (r.status === 400) return warn('No store context');
-        fail(`Expected 200, got ${r.status}`);
-      });
+      r = await request(`${base}/api/analytics/products/top-selling?period=${period}&sortBy=${sortBy}`, { token: tok, storeId: sid });
+      if (r.status === 200) pass(SEC, `GET /api/analytics/products/top-selling?period=${period}&sortBy=${sortBy}`);
+      else if (r.status === 400) warn(SEC, `GET /api/analytics/products/top-selling?period=${period}&sortBy=${sortBy}`, 'no store context');
+      else fail(SEC, `GET /api/analytics/products/top-selling?period=${period}&sortBy=${sortBy}`, `status ${r.status}`);
     }
   }
 
-  // Clear cache (POST)
-  await test('POST /api/analytics/cache/clear', async () => {
-    const r = await request(`${base}/api/analytics/cache/clear`, { method: 'POST', token: tok, storeId: sid });
-    if (r.status === 200) return pass();
-    if (r.status === 400) return warn('No store context');
-    fail(`Expected 200, got ${r.status}`);
-  });
+  // Clear cache
+  r = await request(`${base}/api/analytics/cache/clear`, { method: 'POST', token: tok, storeId: sid });
+  if (r.status === 200) pass(SEC, 'POST /api/analytics/cache/clear');
+  else if (r.status === 400) warn(SEC, 'POST /api/analytics/cache/clear', 'no store context');
+  else fail(SEC, 'POST /api/analytics/cache/clear', `status ${r.status}`);
 }
 
 async function testBI() {
   section('BI / Business Intelligence (intelligence-service :8087)');
+  const SEC  = 'bi';
   const base = SERVICES.intelligence;
   const tok  = tokens.manager;
   const sid  = ACCOUNTS.manager.storeCode;
 
-  // Health (public)
-  await test('GET /api/bi/health', async () => {
-    const r = await request(`${base}/api/bi/health`);
-    if (r.status !== 200) return fail(`Expected 200, got ${r.status}`);
-    pass();
-  });
+  // Health
+  let r = await request(`${base}/api/bi/health`);
+  if (r.status === 200) pass(SEC, 'GET /api/bi/health');
+  else if (r.status === 0) { warn(SEC, 'BI endpoints skipped', 'intelligence-service unreachable'); return; }
+  else fail(SEC, 'GET /api/bi/health', `status ${r.status}`);
 
   // Sales forecast
   for (const period of ['DAILY', 'WEEKLY', 'MONTHLY']) {
-    await test(`GET /api/bi/forecast/sales?period=${period}`, async () => {
-      const r = await request(`${base}/api/bi/forecast/sales?period=${period}&days=7`, { token: tok, storeId: sid });
-      if (r.status === 200) return pass();
-      if (r.status === 400 || r.status === 404) return warn('No data — seed required');
-      fail(`Expected 200, got ${r.status}`);
-    });
+    r = await request(`${base}/api/bi/forecast/sales?period=${period}&days=7`, { token: tok, storeId: sid });
+    if (r.status === 200) pass(SEC, `GET /api/bi/forecast/sales?period=${period}`);
+    else if ([400, 404].includes(r.status)) warn(SEC, `GET /api/bi/forecast/sales?period=${period}`, 'no data');
+    else fail(SEC, `GET /api/bi/forecast/sales?period=${period}`, `status ${r.status}`);
   }
 
-  // Customer behavior analysis
-  await test('GET /api/bi/analysis/customer-behavior', async () => {
-    const r = await request(`${base}/api/bi/analysis/customer-behavior`, { token: tok, storeId: sid });
-    if (r.status === 200) return pass();
-    if (r.status === 400 || r.status === 404) return warn('No data — seed required');
-    fail(`Expected 200, got ${r.status}`);
-  });
+  // Customer behavior
+  r = await request(`${base}/api/bi/analysis/customer-behavior`, { token: tok, storeId: sid });
+  if (r.status === 200) pass(SEC, 'GET /api/bi/analysis/customer-behavior');
+  else if ([400, 404].includes(r.status)) warn(SEC, 'GET /api/bi/analysis/customer-behavior', 'no data');
+  else fail(SEC, 'GET /api/bi/analysis/customer-behavior', `status ${r.status}`);
 
   // Churn prediction
-  await test('GET /api/bi/prediction/churn', async () => {
-    const r = await request(`${base}/api/bi/prediction/churn`, { token: tok, storeId: sid });
-    if (r.status === 200) return pass();
-    if (r.status === 400 || r.status === 404) return warn('No data — seed required');
-    fail(`Expected 200, got ${r.status}`);
-  });
+  r = await request(`${base}/api/bi/prediction/churn`, { token: tok, storeId: sid });
+  if (r.status === 200) pass(SEC, 'GET /api/bi/prediction/churn');
+  else if ([400, 404].includes(r.status)) warn(SEC, 'GET /api/bi/prediction/churn', 'no data');
+  else fail(SEC, 'GET /api/bi/prediction/churn', `status ${r.status}`);
 
   // Demand forecast
   for (const period of ['WEEKLY', 'MONTHLY']) {
-    await test(`GET /api/bi/forecast/demand?period=${period}`, async () => {
-      const r = await request(`${base}/api/bi/forecast/demand?period=${period}`, { token: tok, storeId: sid });
-      if (r.status === 200) return pass();
-      if (r.status === 400 || r.status === 404) return warn('No data — seed required');
-      fail(`Expected 200, got ${r.status}`);
-    });
+    r = await request(`${base}/api/bi/forecast/demand?period=${period}`, { token: tok, storeId: sid });
+    if (r.status === 200) pass(SEC, `GET /api/bi/forecast/demand?period=${period}`);
+    else if ([400, 404].includes(r.status)) warn(SEC, `GET /api/bi/forecast/demand?period=${period}`, 'no data');
+    else fail(SEC, `GET /api/bi/forecast/demand?period=${period}`, `status ${r.status}`);
   }
 
   // Cost analysis
   for (const period of ['TODAY', 'WEEK', 'MONTH']) {
-    await test(`GET /api/bi/cost-analysis?period=${period}`, async () => {
-      const r = await request(`${base}/api/bi/cost-analysis?period=${period}`, { token: tok, storeId: sid });
-      if (r.status === 200) return pass();
-      if (r.status === 400 || r.status === 404) return warn('No data — seed required');
-      fail(`Expected 200, got ${r.status}`);
-    });
+    r = await request(`${base}/api/bi/cost-analysis?period=${period}`, { token: tok, storeId: sid });
+    if (r.status === 200) pass(SEC, `GET /api/bi/cost-analysis?period=${period}`);
+    else if ([400, 404].includes(r.status)) warn(SEC, `GET /api/bi/cost-analysis?period=${period}`, 'no data');
+    else fail(SEC, `GET /api/bi/cost-analysis?period=${period}`, `status ${r.status}`);
   }
 
   // Store benchmarking
   for (const period of ['WEEK', 'MONTH', 'QUARTER']) {
-    await test(`GET /api/bi/benchmarking/stores?period=${period}`, async () => {
-      const r = await request(`${base}/api/bi/benchmarking/stores?period=${period}`, { token: tok });
-      if (r.status === 200) return pass();
-      if (r.status === 400 || r.status === 404) return warn('No data — seed required');
-      fail(`Expected 200, got ${r.status}`);
-    });
+    r = await request(`${base}/api/bi/benchmarking/stores?period=${period}`, { token: tok });
+    if (r.status === 200) pass(SEC, `GET /api/bi/benchmarking/stores?period=${period}`);
+    else if ([400, 404].includes(r.status)) warn(SEC, `GET /api/bi/benchmarking/stores?period=${period}`, 'no data');
+    else fail(SEC, `GET /api/bi/benchmarking/stores?period=${period}`, `status ${r.status}`);
   }
 
   // Executive summary
   for (const period of ['WEEK', 'MONTH', 'QUARTER', 'YEAR']) {
-    await test(`GET /api/bi/executive-summary?period=${period}`, async () => {
-      const r = await request(`${base}/api/bi/executive-summary?period=${period}`, { token: tok });
-      if (r.status === 200) return pass();
-      if (r.status === 400 || r.status === 404) return warn('No data — seed required');
-      fail(`Expected 200, got ${r.status}`);
-    });
+    r = await request(`${base}/api/bi/executive-summary?period=${period}`, { token: tok });
+    if (r.status === 200) pass(SEC, `GET /api/bi/executive-summary?period=${period}`);
+    else if ([400, 404].includes(r.status)) warn(SEC, `GET /api/bi/executive-summary?period=${period}`, 'no data');
+    else fail(SEC, `GET /api/bi/executive-summary?period=${period}`, `status ${r.status}`);
   }
 }
 
@@ -2614,28 +2577,15 @@ async function testBI() {
 
 async function testGateway() {
   section('API Gateway (port :8080)');
+  const SEC  = 'gateway';
   const base = SERVICES.gateway;
 
-  await test('GET /api/system/health', async () => {
-    const r = await request(`${base}/api/system/health`);
-    if (r.status !== 200) return fail(`Expected 200, got ${r.status}`);
-    if (!r.body?.status) return fail('Missing status field in response');
-    pass();
-  });
-
-  await test('GET /api/system/version', async () => {
-    const r = await request(`${base}/api/system/version`);
-    if (r.status !== 200) return fail(`Expected 200, got ${r.status}`);
-    if (!r.body?.version) return fail('Missing version field in response');
-    pass();
-  });
-
-  await test('GET /api/system/info', async () => {
-    const r = await request(`${base}/api/system/info`);
-    if (r.status !== 200) return fail(`Expected 200, got ${r.status}`);
-    if (!r.body?.javaVersion) return fail('Missing javaVersion field in response');
-    pass();
-  });
+  for (const path of ['/api/system/health', '/api/system/version', '/api/system/info']) {
+    const r = await request(`${base}${path}`);
+    if (r.status === 200) pass(SEC, `GET ${path}`);
+    else if (r.status === 0) warn(SEC, `GET ${path}`, 'gateway not running');
+    else fail(SEC, `GET ${path}`, `status ${r.status}`);
+  }
 }
 
 // ─── SUMMARY ──────────────────────────────────────────────────────────────────

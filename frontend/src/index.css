@@ -25,20 +25,32 @@
   --transition: 0.2s ease;
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--surface); }
-::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--gold); }
-
 /* Import neumorphic design system globals */
 @import './styles/neumorphic-globals.css';
 
-/* Additional global styles */
+/* ── Scrollbar layout-shift fix ──────────────────────────────────────────────
+   overflow-y: scroll forces the browser to ALWAYS reserve scrollbar gutter
+   space, so the layout width never changes when content height changes.
+   The scrollbar is made invisible (0px wide) — scrolling still works via
+   trackpad/mouse wheel — so there's no visible bar cluttering short pages.
+   This fixes the "bounce" on ALL browsers (Safari, Chrome, Firefox).
+   ────────────────────────────────────────────────────────────────────────── */
+html {
+  overflow-y: scroll;
+  scrollbar-width: none;        /* Firefox: hide scrollbar visually */
+  overscroll-behavior-y: none;  /* Prevent elastic bounce at page boundaries */
+}
+
+html::-webkit-scrollbar {
+  width: 0px;                   /* Chrome/Safari: hide scrollbar visually */
+  background: transparent;
+}
+
 #root {
   width: 100%;
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh; /* Safari: uses dynamic viewport height, avoids bounce from address bar show/hide */
 }
 
 /* Ensure consistent font rendering across browsers */
@@ -48,6 +60,9 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
 }
 
 /* Remove default margins and paddings from common elements */
@@ -133,32 +148,14 @@ img {
   display: block;
 }
 
-/* Scrollbar: hidden by default, thin on hover */
+/* Hide all scrollbars visually — scrolling still works via trackpad/wheel */
 * {
-  scrollbar-width: none; /* Firefox */
+  scrollbar-width: none;
 }
-*:hover {
-  scrollbar-width: thin; /* Firefox: show on hover */
-  scrollbar-color: rgba(0,0,0,0.15) transparent;
-}
-
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 3px;
-  transition: background 0.2s;
-}
-*:hover::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.12);
-}
-*:hover::-webkit-scrollbar-thumb:hover {
-  background: rgba(0,0,0,0.25);
+*::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 /* Selection styling */

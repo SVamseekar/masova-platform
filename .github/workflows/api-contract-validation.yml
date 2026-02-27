@@ -1,0 +1,265 @@
+name: API Contract Validation
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  validate-contracts:
+    name: Validate API Contracts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: cd frontend && npm ci
+
+      - name: Install OpenAPI Generator
+        run: npm install -g @openapitools/openapi-generator-cli
+
+      - name: Start MongoDB (for services)
+        uses: supercharge/mongodb-github-action@1.10.0
+        with:
+          mongodb-version: '7.0'
+
+      - name: Start Redis (for services)
+        uses: supercharge/redis-github-action@1.8.0
+        with:
+          redis-version: '7'
+
+      - name: Build all backend services
+        run: mvn clean install -DskipTests -T 4
+
+      - name: Start all microservices in background
+        run: |
+          # Start services in background - use absolute paths and nohup
+          PROJECT_ROOT=$(pwd)
+
+          nohup mvn -f "$PROJECT_ROOT/user-service/pom.xml" spring-boot:run > /tmp/user-service.log 2>&1 &
+          nohup mvn -f "$PROJECT_ROOT/menu-service/pom.xml" spring-boot:run > /tmp/menu-service.log 2>&1 &
+          nohup mvn -f "$PROJECT_ROOT/order-service/pom.xml" spring-boot:run > /tmp/order-service.log 2>&1 &
+          nohup mvn -f "$PROJECT_ROOT/payment-service/pom.xml" spring-boot:run > /tmp/payment-service.log 2>&1 &
+          nohup mvn -f "$PROJECT_ROOT/delivery-service/pom.xml" spring-boot:run > /tmp/delivery-service.log 2>&1 &
+          nohup mvn -f "$PROJECT_ROOT/customer-service/pom.xml" spring-boot:run > /tmp/customer-service.log 2>&1 &
+          nohup mvn -f "$PROJECT_ROOT/inventory-service/pom.xml" spring-boot:run > /tmp/inventory-service.log 2>&1 &
+          nohup mvn -f "$PROJECT_ROOT/analytics-service/pom.xml" spring-boot:run > /tmp/analytics-service.log 2>&1 &
+          nohup mvn -f "$PROJECT_ROOT/notification-service/pom.xml" spring-boot:run > /tmp/notification-service.log 2>&1 &
+          nohup mvn -f "$PROJECT_ROOT/review-service/pom.xml" spring-boot:run > /tmp/review-service.log 2>&1 &
+          sleep 10
+
+      - name: Wait for services to be ready
+        run: |
+          echo "Waiting for services to start..."
+          timeout=300
+          elapsed=0
+
+          services=(
+            "user-service:8081"
+            "menu-service:8082"
+            "order-service:8083"
+            "payment-service:8084"
+            "inventory-service:8085"
+            "analytics-service:8086"
+            "delivery-service:8090"
+            "customer-service:8091"
+            "notification-service:8092"
+            "review-service:8093"
+          )
+
+          for service in "${services[@]}"; do
+            IFS=':' read -r name port <<< "$service"
+            while ! curl -s "http://localhost:$port/actuator/health" > /dev/null; do
+              if [ $elapsed -ge $timeout ]; then
+                echo "❌ Timeout waiting for $name"
+                cat /tmp/$name.log
+                exit 1
+              fi
+              echo "Waiting for $name on port $port..."
+              sleep 5
+              ((elapsed+=5))
+            done
+            echo "✅ $name is ready"
+          done
+
+      - name: Generate TypeScript types from OpenAPI specs
+        run: bash scripts/sync-api-contracts.sh
+
+      - name: Check for uncommitted type changes
+        run: |
+          if ! git diff --quiet frontend/src/types/generated/; then
+            echo "❌ Generated API types are out of sync!"
+            echo ""
+            echo "The following files have changed:"
+            git diff --name-only frontend/src/types/generated/
+            echo ""
+            echo "This means backend APIs have changed but types weren't regenerated."
+            echo ""
+            echo "To fix:"
+            echo "  1. Run: npm run sync-api-types"
+            echo "  2. Commit the changes: git add frontend/src/types/generated"
+            echo "  3. Push again"
+            exit 1
+          else
+            echo "✅ Generated API types are in sync with backend"
+          fi
+
+      - name: Run TypeScript compilation check
+        run: cd frontend && npm run build
+
+      - name: Upload type generation artifacts
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: type-generation-logs
+          path: /tmp/masova-openapi/
+
+  pact-tests:
+    name: Pact Contract Tests
+    runs-on: ubuntu-latest
+    needs: validate-contracts
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: cd frontend && npm ci
+
+      - name: Install Pact CLI
+        run: npm install -g @pact-foundation/pact-node
+
+      - name: Run Pact consumer tests
+        run: cd frontend && npm run test:pact
+        continue-on-error: true
+
+      - name: Publish Pact contracts
+        if: success()
+        run: |
+          # Publish to Pact Broker (configure PACT_BROKER_URL in secrets)
+          cd frontend
+          npx pact-broker publish pacts \
+            --consumer-app-version=${{ github.sha }} \
+            --branch=${{ github.ref_name }} \
+            --broker-base-url=${{ secrets.PACT_BROKER_URL }} \
+            --broker-token=${{ secrets.PACT_BROKER_TOKEN }}
+
+      - name: Upload Pact contracts
+        uses: actions/upload-artifact@v3
+        with:
+          name: pact-contracts
+          path: frontend/pacts/
+
+  backend-contract-verification:
+    name: Backend Pact Verification
+    runs-on: ubuntu-latest
+    needs: pact-tests
+
+    strategy:
+      matrix:
+        service: [order-service, delivery-service, payment-service]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
+
+      - name: Download Pact contracts
+        uses: actions/download-artifact@v3
+        with:
+          name: pact-contracts
+          path: pacts/
+
+      - name: Run Pact provider verification
+        run: |
+          cd ${{ matrix.service }}
+          mvn test -Dtest=PactProviderTest
+
+  api-breaking-change-detection:
+    name: Detect Breaking Changes
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v3
+        with:
+          path: current
+
+      - name: Checkout main branch
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          path: main
+
+      - name: Install OpenAPI Diff
+        run: npm install -g openapi-diff
+
+      - name: Compare OpenAPI specs
+        run: |
+          services=(user menu order payment delivery customer inventory analytics notification review)
+
+          for service in "${services[@]}"; do
+            echo "Checking $service-service for breaking changes..."
+
+            # Compare main vs current branch
+            if [ -f "main/$service-service/openapi.yaml" ] && [ -f "current/$service-service/openapi.yaml" ]; then
+              openapi-diff \
+                main/$service-service/openapi.yaml \
+                current/$service-service/openapi.yaml \
+                --format markdown > /tmp/$service-diff.md
+
+              # Check if there are breaking changes
+              if grep -q "BREAKING" /tmp/$service-diff.md; then
+                echo "❌ BREAKING CHANGES detected in $service-service!"
+                cat /tmp/$service-diff.md
+                exit 1
+              else
+                echo "✅ No breaking changes in $service-service"
+              fi
+            fi
+          done
+
+      - name: Comment PR with breaking changes
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const diff = fs.readFileSync('/tmp/diff.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## ⚠️ Breaking API Changes Detected\n\n${diff}\n\nPlease create a new API version (v2) for breaking changes.`
+            });

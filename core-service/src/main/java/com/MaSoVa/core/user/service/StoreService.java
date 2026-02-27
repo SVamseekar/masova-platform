@@ -69,8 +69,8 @@ public class StoreService {
         return storeRepository.save(store);
     }
     
-    public boolean validateStoreOperational(String storeId) {
-        Store store = getStore(storeId);
+    public boolean validateStoreOperational(String storeCode) {
+        Store store = getStoreByCode(storeCode);
         return store.isOperational(LocalDateTime.now());
     }
     

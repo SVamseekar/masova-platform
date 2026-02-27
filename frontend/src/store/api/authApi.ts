@@ -92,6 +92,14 @@ export const authApi = createApi({
       }),
       invalidatesTags: ['Auth'],
     }),
+    googleRegister: builder.mutation<AuthResponse, { idToken: string }>({
+      query: (body) => ({
+        url: '/users/auth/google/register',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Auth'],
+    }),
   }),
 });
 
@@ -102,4 +110,5 @@ export const {
   useLogoutMutation,
   useGetProfileQuery,
   useGoogleLoginMutation,
+  useGoogleRegisterMutation,
 } = authApi;
