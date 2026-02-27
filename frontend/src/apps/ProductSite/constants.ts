@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import {
   ShoppingCart, ChefHat, Truck, BarChart3, Bot, Store,
   Shield, Globe, Zap, Users, Package, Leaf, Star,
@@ -287,6 +288,15 @@ export const FAQS = [
     a: 'You can add extra locations at €99/location/month on Growth, or upgrade to Enterprise for unlimited locations with a custom price.',
   },
 ]
+
+export const GOLD_GRADIENT_TEXT: CSSProperties = {
+  fontFamily: "'Playfair Display', serif",
+  fontWeight: 700,
+  background: 'linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%)',
+  WebkitBackgroundClip: 'text' as const,
+  WebkitTextFillColor: 'transparent',
+  backgroundClip: 'text' as const,
+}
 
 export const TESTIMONIALS = [
   {

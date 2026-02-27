@@ -1,6 +1,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, Shield, Globe } from 'lucide-react'
+import { GOLD_GRADIENT_TEXT } from '../constants'
 
 const FOOTER_LINKS = {
   Product: ['Features', 'AI Agents', 'Pricing', 'Changelog'],
@@ -44,10 +45,10 @@ export default function Footer() {
             {/* Brand */}
             <div className="col-span-2 md:col-span-1">
               <div className="flex items-center gap-2 mb-4">
-                <div style={{ width: 28, height: 28, background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.4)', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 14, background: 'linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>M</span>
+                <div style={{ width: 28, height: 28, background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.4)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ ...GOLD_GRADIENT_TEXT, fontSize: 14 }}>M</span>
                 </div>
-                <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 18, background: 'linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>MaSoVa</span>
+                <span style={{ ...GOLD_GRADIENT_TEXT, fontSize: 18 }}>MaSoVa</span>
               </div>
               <p className="text-gray-600 text-xs leading-relaxed">
                 The complete restaurant operating system built for European multi-location restaurants.

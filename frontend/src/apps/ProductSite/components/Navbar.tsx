@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
-import { NAV_LINKS } from '../constants'
+import { NAV_LINKS, GOLD_GRADIENT_TEXT } from '../constants'
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
@@ -26,9 +26,9 @@ export default function Navbar() {
         {/* Logo */}
         <a href="/" className="flex items-center gap-2 group">
           <div style={{ width: 32, height: 32, background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.4)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 16, background: 'linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>M</span>
+            <span style={{ ...GOLD_GRADIENT_TEXT, fontSize: 16 }}>M</span>
           </div>
-          <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 22, background: 'linear-gradient(135deg, #D4AF37 0%, #F5E6A3 50%, #D4AF37 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>MaSoVa</span>
+          <span style={{ ...GOLD_GRADIENT_TEXT, fontSize: 22 }}>MaSoVa</span>
         </a>
 
         {/* Desktop Nav */}
