@@ -113,10 +113,18 @@ export default function HeroSection() {
             <span className="text-xs text-gray-500">app.masova.eu/manager/dashboard</span>
           </div>
         </div>
-        {/* Dashboard image placeholder */}
-        <div className="bg-[#0D0D0D] aspect-[16/9] flex items-center justify-center">
-          <p className="text-gray-600 text-sm">[ Manager Dashboard Screenshot ]</p>
-        </div>
+        {/* Dashboard screenshot */}
+        <img
+          src="/screenshots/customer-home.png"
+          alt="MaSoVa customer app"
+          style={{
+            width: '100%',
+            display: 'block',
+            borderRadius: 12,
+            border: '1px solid rgba(255,255,255,0.1)',
+            boxShadow: '0 0 60px rgba(212,175,55,0.15)',
+          }}
+        />
       </motion.div>
     </section>
   )
