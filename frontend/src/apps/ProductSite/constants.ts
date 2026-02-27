@@ -97,9 +97,9 @@ export const PRODUCT_TOUR_TABS = [
     label: 'AI Agents',
     icon: Bot,
     headline: 'Your restaurant runs itself.',
-    desc: 'Three AI agents work 24/7 — handling customer queries, monitoring the kitchen, and alerting managers before problems happen.',
+    desc: 'Five AI agents work 24/7 — handling customers, optimising the kitchen, dispatching drivers, routing orders, and surfacing insights for managers.',
     image: '/screenshots/ai-agent.png',
-    bullets: ['Customer support agent', 'Kitchen monitor agent', 'Manager insights agent'],
+    bullets: ['Customer support agent', 'Kitchen prep agent', 'Manager insights agent', 'Driver logistics agent', 'Store selection agent'],
   },
 ]
 
@@ -144,45 +144,42 @@ export const FEATURES = [
 
 export const AI_AGENTS = [
   {
-    icon: MessageSquare,
+    lucideIcon: 'MessageCircle' as const,
     name: 'Customer Agent',
-    tagline: 'Always on. Always helpful.',
-    desc: 'Handles order status, menu questions, complaints, refunds, and cancellations via chat — 24/7, in any language.',
-    messages: [
-      { role: 'user', text: 'Where is my order #4521?' },
-      { role: 'agent', text: 'Your order is being prepared in the kitchen. Estimated delivery: 18 minutes. 🍕' },
-      { role: 'user', text: 'Can I cancel it?' },
-      { role: 'agent', text: "I've cancelled order #4521 and initiated a full refund. You'll see it in 3–5 days." },
-    ],
-    alerts: undefined as undefined | { type: string; text: string }[],
-    queries: undefined as undefined | { q: string; a: string }[],
+    role: 'Real-Time Support',
+    description: 'Handles order status, complaints, refund requests, and live tracking — 24/7, in plain language.',
+    color: '#3B82F6',
   },
   {
-    icon: ChefHat,
-    name: 'Kitchen Agent',
-    tagline: 'Sees the bottleneck before you do.',
-    desc: 'Monitors order queue in real time, predicts prep time overruns, and alerts kitchen staff before delays cascade.',
-    messages: undefined as undefined | { role: string; text: string }[],
-    alerts: [
-      { type: 'warning', text: '⚠️ 14 active orders — wait time rising to 38 min' },
-      { type: 'info', text: '📦 Margherita Pizza is your slowest item today (+12 min avg)' },
-      { type: 'success', text: '✅ Queue cleared — kitchen back to normal pace' },
-    ],
-    queries: undefined as undefined | { q: string; a: string }[],
-  },
-  {
-    icon: PieChart,
+    lucideIcon: 'BarChart3' as const,
     name: 'Manager Agent',
-    tagline: 'Ask anything. Get answers instantly.',
-    desc: 'Natural language analytics — ask any question about your business and get a precise answer with context.',
-    messages: undefined as undefined | { role: string; text: string }[],
-    alerts: undefined as undefined | { type: string; text: string }[],
-    queries: [
-      { q: 'What were my top 5 items last week?', a: 'Chicken Biryani (142), Margherita (98), Masala Dosa (87), Hakka Noodles (76), Lava Cake (61)' },
-      { q: 'Which store had the highest waste this month?', a: 'Store Amsterdam-Noord — €340 waste, mainly from Bread (31%) and Salads (24%).' },
-    ],
+    role: 'Business Intelligence',
+    description: 'Surfaces revenue anomalies, inventory alerts, and staff performance — before you even ask.',
+    color: '#8B5CF6',
+  },
+  {
+    lucideIcon: 'ChefHat' as const,
+    name: 'Kitchen Agent',
+    role: 'Prep Intelligence',
+    description: 'Predicts rush periods, optimises prep queue, and flags equipment issues before they stall service.',
+    color: '#F59E0B',
+  },
+  {
+    lucideIcon: 'Navigation' as const,
+    name: 'Driver Agent',
+    role: 'Logistics Optimisation',
+    description: 'Assigns routes in real-time, reroutes around traffic, and ensures on-time delivery across the fleet.',
+    color: '#10B981',
+  },
+  {
+    lucideIcon: 'MapPin' as const,
+    name: 'Store Selection Agent',
+    role: 'Smart Routing',
+    description: 'Selects the nearest store with capacity and assigns delivery zones dynamically — no manual config needed.',
+    color: '#EC4899',
   },
 ]
+
 
 export const PRICING_TIERS = [
   {
