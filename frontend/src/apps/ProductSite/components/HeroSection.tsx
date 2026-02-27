@@ -209,15 +209,15 @@ function PrimaryButton() {
     e.currentTarget.style.background = '#f0f0f0'
   }
   const handleLeave = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.currentTarget.style.background = '#ffffff'
+    e.currentTarget.style.background = colors.textPrimary
   }
 
   return (
     <a
       href="#pricing"
       style={{
-        background: '#ffffff',
-        color: '#080808',
+        background: colors.textPrimary,
+        color: colors.bg,
         fontWeight: 600,
         fontSize: 15,
         padding: '14px 28px',
@@ -320,7 +320,7 @@ function BrowserChrome() {
         <span
           style={{
             fontSize: 12,
-            color: '#555555',
+            color: colors.textSubtle,
             fontFamily: "'Inter', system-ui, sans-serif",
           }}
         >
