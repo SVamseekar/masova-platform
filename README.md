@@ -1,151 +1,180 @@
-# MaSoVa Restaurant Management System
+# MaSoVa Restaurant OS
 
-**A comprehensive, production-ready restaurant management platform built with Java 21, Spring Boot, MongoDB, and React.**
-
----
-
-## 📚 Documentation Index
-
-This project has comprehensive documentation organized by purpose. Start here:
-
-### 🚀 Getting Started
-- **[Project Instructions](MaSoVa_project_instructions.md)** - Setup, installation, quick start guides
-- **[Navigation Guide](NAVIGATION_GUIDE.md)** - How to navigate the codebase
-
-### 📋 Planning & Development
-- **[Project Roadmap](MaSoVa_project_roadmap.md)** - High-level timeline and milestones
-- **[Project Phases](MaSoVa_project_phases.md)** - Detailed phase-by-phase development history
-- **[Phase 4.5 Complete Plan](PHASE_4.5_COMPLETE_SEGREGATION_PLAN.md)** - Detailed Phase 4.5 breakdown
-
-### 🔧 Technical Documentation
-- **[API Documentation](API_DOCUMENTATION.md)** - Complete API reference for all services
-- **[Frontend-Backend Connection](FRONTEND_BACKEND_CONNECTION.md)** - Integration guide and testing
-- **[Deployment Guide](DEPLOYMENT_GUIDE.md)** - Production deployment instructions
-
-### 👥 User Guides
-- **[User Manuals](USER_MANUALS.md)** - End-user documentation for all applications
+A full-stack restaurant operating system built for multi-store operations — covering everything from customer ordering to kitchen display, driver delivery, POS, and manager analytics.
 
 ---
 
-## ⚡ Quick Start
+## Architecture
 
+```
+                        ┌─────────────────┐
+                        │   API Gateway   │  :8080
+                        │  (JWT + Rate    │
+                        │   Limiting)     │
+                        └────────┬────────┘
+                                 │
+          ┌──────────────────────┼──────────────────────┐
+          │                      │                      │
+   ┌──────▼──────┐       ┌──────▼──────┐       ┌──────▼──────┐
+   │    Core     │       │  Commerce   │       │   Payment   │
+   │  Service   │       │   Service   │       │   Service   │
+   │   :8085    │       │   :8084    │       │   :8089    │
+   │  Auth/Users │       │ Orders/Menu │       │  Payments   │
+   └─────────────┘       └─────────────┘       └─────────────┘
+          │                      │                      │
+   ┌──────▼──────┐       ┌──────▼──────┐
+   │  Logistics  │       │Intelligence │
+   │   Service   │       │   Service   │
+   │   :8086    │       │   :8087    │
+   │  Delivery   │       │ Analytics   │
+   └─────────────┘       └─────────────┘
+          │
+   ┌──────▼──────────────────────────────────┐
+   │         Infrastructure                   │
+   │  MongoDB :27017 · Redis :6379            │
+   │  RabbitMQ :5672 · Firebase Hosting       │
+   └──────────────────────────────────────────┘
+```
+
+**6 Frontend Apps** (all in `/frontend`):
+
+| App | Audience | Key Features |
+|---|---|---|
+| Public Website | Customers | Landing page, menu browse, promotions |
+| Customer App | Customers | Online ordering, live tracking, cart |
+| POS System | In-store staff | Touch ordering, PIN auth, receipts |
+| Kitchen Display | Kitchen staff | Order queue, timer, status updates |
+| Driver App | Delivery drivers | Active delivery, navigation, history |
+| Manager Dashboard | Managers | Analytics, staff, inventory, reports |
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Backend | Java 21, Spring Boot 3.x, Spring Security 6 |
+| Database | MongoDB 7, Redis 7 |
+| Messaging | RabbitMQ 3.12 |
+| Frontend | React 19, TypeScript, Vite, MUI + Neumorphic UI |
+| Mobile | React Native 0.81 (Customer), React Native 0.83 (Driver) |
+| AI Agent | Python, Google ADK, FastAPI |
+| Deployment | GCP Cloud Run, Firebase Hosting, Docker |
+
+---
+
+## Quick Start
+
+### Prerequisites
+- Java 21
+- Node.js 20+
+- MongoDB 7
+- Redis 7
+- RabbitMQ 3.12
+- Maven 3.9+
+
+### 1. Clone and configure environment
 ```bash
-# 1. Start infrastructure
-docker-compose up -d mongodb redis
+git clone https://github.com/SVamseekar/dominos-management-system.git
+cd dominos-management-system
+cp .env.example .env
+# Fill in your values in .env
+```
 
-# 2. Start backend services (separate terminals)
-cd api-gateway && mvn spring-boot:run      # Port 8080
-cd user-service && mvn spring-boot:run     # Port 8081
-cd menu-service && mvn spring-boot:run     # Port 8082
-cd order-service && mvn spring-boot:run    # Port 8083
-cd analytics-service && mvn spring-boot:run # Port 8085
+### 2. Start infrastructure
+```bash
+docker-compose up -d mongodb redis rabbitmq
+```
 
-# 3. Start frontend
-cd frontend && npm install && npm run dev   # Port 5173
+### 3. Start backend services
+```bash
+./start-all.sh
+# Or individually:
+cd api-gateway     && mvn spring-boot:run   # :8080
+cd core-service    && mvn spring-boot:run   # :8085
+cd commerce-service && mvn spring-boot:run  # :8084
+cd payment-service && mvn spring-boot:run   # :8089
+cd logistics-service && mvn spring-boot:run # :8086
+cd intelligence-service && mvn spring-boot:run # :8087
+```
+
+### 4. Start frontend
+```bash
+cd frontend && npm install && npm run dev   # :5173
+```
+
+### 5. Seed the database (first time only)
+```bash
+node scripts/db/seed-database.js
 ```
 
 Access at: **http://localhost:5173**
 
-**Test Credentials:**
-- Manager: `manager@masova.com` / `Manager@123`
-- Staff: `staff@masova.com` / `Staff@123`
-- Driver: `driver@masova.com` / `Driver@123`
+**Default credentials:**
+| Role | Email | Password |
+|---|---|---|
+| Manager | manager@masova.com | Manager@123 |
+| Staff | staff@masova.com | Staff@123 |
+| Driver | driver@masova.com | Driver@123 |
+
+For full setup details see [docs/STARTUP-GUIDE.md](docs/STARTUP-GUIDE.md).
 
 ---
 
-## 🏗️ System Architecture
+## Project Structure
 
-**Backend (5 Microservices):**
-- API Gateway (8080) - Routing, auth, rate limiting
-- User Service (8081) - Authentication, sessions
-- Menu Service (8082) - Menu management
-- Order Service (8083) - Order processing
-- Analytics Service (8085) - Real-time metrics
-
-**Frontend (6 Applications):**
-- Public Website - Landing page, promotions
-- Customer App - Online ordering
-- POS System - In-store operations
-- Kitchen Display - Order management
-- Driver App - Delivery management
-- Manager Dashboard - Analytics & reports
-
-**Infrastructure:**
-- MongoDB - Data storage
-- Redis - Caching layer
-- WebSocket - Real-time updates
-
----
-
-## 📊 Current Status
-
-**Completed:** Phases 1-4.5 (75% of Phase 4.5)
-- ✅ User Management & Authentication
-- ✅ Session Tracking & Working Hours
-- ✅ Multi-Cuisine Menu System
-- ✅ Complete Order Management (6-stage lifecycle)
-- ✅ Real-time WebSocket Updates
-- ✅ API Gateway with JWT Auth
-- ✅ POS System Frontend
-- ✅ Kitchen Display System
-- ✅ Driver Application
-- ✅ Public Website
-- ✅ Analytics Service
-
-**Next:** Phase 5 (Payment Integration with Razorpay)
+```
+masova/
+├── api-gateway/           # Spring Cloud Gateway — routing, JWT, rate limiting
+├── core-service/          # Auth, users, stores, sessions
+├── commerce-service/      # Orders, menu, cart, inventory
+├── payment-service/       # Payment processing, refunds
+├── logistics-service/     # Delivery, drivers, tracking
+├── intelligence-service/  # Analytics, reports, AI recommendations
+├── shared-models/         # Shared DTOs and domain models
+├── shared-security/       # JWT utilities, security config
+├── frontend/              # React 19 — all 6 web apps
+├── infrastructure/        # Docker, CI/CD configs
+├── scripts/
+│   ├── db/                # Database seeding and maintenance
+│   ├── dev/               # Development utilities
+│   ├── ci/                # CI/CD helpers
+│   └── deploy/            # Deployment scripts
+└── docs/                  # Plans, API contracts, architecture docs
+```
 
 ---
 
-## 🛠️ Technology Stack
+## Key Features
 
-| Layer | Technologies |
-|-------|-------------|
-| Backend | Java 21, Spring Boot 3.x, Spring Security, MongoDB, Redis |
-| Frontend | React 18, TypeScript, Redux Toolkit, Material-UI, Vite |
-| Real-time | WebSocket (STOMP + SockJS) |
-| Build | Maven, npm |
-| Deployment | Docker, Docker Compose |
-
----
-
-## 📖 Key Features
-
-- **Multi-role System** - Customer, Staff, Driver, Manager
-- **Real-time Updates** - WebSocket for live order tracking
-- **6-Stage Order Lifecycle** - RECEIVED → PREPARING → OVEN → BAKED → DISPATCHED → DELIVERED
-- **GPS Tracking** - Driver location and delivery management
-- **Analytics Dashboard** - Real-time sales metrics
-- **Indian Market Focus** - INR currency, local phone validation
-- **Keyboard Shortcuts** - Efficient POS operations (F1-F3, Ctrl+Enter)
-- **Mobile-Optimized** - Driver app with bottom navigation
+- **Multi-store** — store-level filtering, per-store menus and staff
+- **Real-time** — WebSocket order updates across all frontends
+- **6-stage order lifecycle** — RECEIVED → PREPARING → READY → DISPATCHED → DELIVERED
+- **JWT + Redis blacklist** — secure logout, token invalidation
+- **Delivery radius validation** — distance-based delivery eligibility
+- **AI support agent** — customer chat powered by Google ADK
+- **Multi-role** — Customer, Staff, Driver, Manager, Admin
 
 ---
 
-## 🎯 For Developers
+## Documentation
 
-Start with these documents in order:
-
-1. **[Navigation Guide](NAVIGATION_GUIDE.md)** - Understand the codebase structure
-2. **[Project Instructions](MaSoVa_project_instructions.md)** - Set up your dev environment
-3. **[API Documentation](API_DOCUMENTATION.md)** - Explore available endpoints
-4. **[Frontend-Backend Connection](FRONTEND_BACKEND_CONNECTION.md)** - Integration patterns
-
----
-
-## 🎯 For Project Managers
-
-Review these documents:
-
-1. **[Project Roadmap](MaSoVa_project_roadmap.md)** - Overall timeline
-2. **[Project Phases](MaSoVa_project_phases.md)** - Detailed progress
-3. **[Phase 4.5 Plan](PHASE_4.5_COMPLETE_SEGREGATION_PLAN.md)** - Current work
+| Document | Description |
+|---|---|
+| [STARTUP-GUIDE.md](docs/STARTUP-GUIDE.md) | Full local setup walkthrough |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Service design and data flows |
+| [GITHUB_REVAMP_PLAN.md](GITHUB_REVAMP_PLAN.md) | Repository structure and branching strategy |
+| [docs/plans/](docs/plans/) | Implementation plans per feature |
+| [docs/api-contracts/](docs/api-contracts/) | Frontend–backend API alignment |
 
 ---
 
-## 📄 License
+## Contributing
 
-MIT License - See LICENSE file for details
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
-**Built with real-world restaurant management experience** 🍕
+## License
+
+MIT
