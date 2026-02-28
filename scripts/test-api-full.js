@@ -193,18 +193,7 @@ async function testHealth() {
     else        fail(sec, `${name} — unreachable`, `status ${r.status}`);
   }
 
-  const sysEndpoints = [
-    ['GET /api/system/health',         `${S.core}/api/system/health`],
-    ['GET /api/system/info',           `${S.core}/api/system/info`],
-    ['GET /api/system/version',        `${S.core}/api/system/version`],
-    ['GET /api/system/updates/check',  `${S.core}/api/system/updates/check`],
-    ['GET /api/system/updates/status', `${S.core}/api/system/updates/status`],
-  ];
-  for (const [label, url] of sysEndpoints) {
-    const r = await req(url);
-    if (ok(r)) pass(sec, label);
-    else        warn(sec, label, `status ${r.status}`);
-  }
+  // system/* endpoints need manager auth — tested after auth section via testSystemHealth()
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -244,7 +233,8 @@ async function testAuth() {
   const regEmail = `test.reg.${Date.now()}@masova.com`;
   const rReg = await req(`${S.core}/api/users/register`, {
     method: 'POST',
-    body: { type: 'CUSTOMER', name: 'Test Register', email: regEmail, password: 'Test@12345', phone: '9000000001' },
+    body: { type: 'CUSTOMER', name: 'Test Register', email: regEmail, password: 'Test@12345',
+      personalInfo: { name: 'Test Register', email: regEmail, phone: '9876543210', passwordHash: 'Test@12345' } },
   });
   if (ok(rReg)) { pass(sec, 'POST /api/users/register'); D.regUserId = id(rReg.body); }
   else            warn(sec, 'POST /api/users/register', `status ${rReg.status}`);
@@ -274,7 +264,7 @@ async function testAuth() {
   if (tok.customer && D.customerId) {
     const rCP = await req(`${S.core}/api/users/change-password`, {
       method: 'POST', token: tok.customer, userId: D.customerId,
-      body: { currentPassword: 'Customer@123', newPassword: 'Customer@123' },
+      body: { currentPassword: A.customer.password, newPassword: A.customer.password },
     });
     if (ok(rCP)) pass(sec, 'POST /api/users/change-password');
     else          warn(sec, 'POST /api/users/change-password', `status ${rCP.status}`);
@@ -347,7 +337,7 @@ async function testUsers() {
 
     const rPut = await req(`${S.core}/api/users/profile`, {
       method: 'PUT', token: tok.manager, userId: D.managerId,
-      body: { name: 'Vijay Manager Updated' },
+      body: { name: 'Vijay Manager Updated', email: A.manager.email, phone: '9000000001', type: 'MANAGER' },
     });
     if (ok(rPut)) pass(sec, 'PUT /api/users/profile');
     else           warn(sec, 'PUT /api/users/profile', `status ${rPut.status}`);
@@ -395,7 +385,8 @@ async function testUsers() {
 
   if (D.managerId) {
     const rFullUp = await req(`${S.core}/api/users/${D.managerId}`, {
-      method: 'PUT', token: tok.manager, body: { name: 'Manager Updated Name' },
+      method: 'PUT', token: tok.manager,
+      body: { name: 'Manager Updated Name', email: A.manager.email, phone: '9000000001', type: 'MANAGER' },
     });
     if (ok(rFullUp)) pass(sec, 'PUT /api/users/{userId}');
     else              warn(sec, 'PUT /api/users/{userId}', `status ${rFullUp.status}`);
@@ -404,7 +395,7 @@ async function testUsers() {
   const newEmail = `test.staff.${Date.now()}@masova.com`;
   const rCreate = await req(`${S.core}/api/users/create`, {
     method: 'POST', token: tok.manager,
-    body: { type: 'STAFF', name: 'Test Staff', email: newEmail, password: 'Staff@12345', phone: '9111222333', storeCode: 'DOM001' },
+    body: { type: 'STAFF', name: 'Test Staff', email: newEmail, password: 'Staff@12345', phone: '9111222333', storeId: D.storeId001 || 'DOM001' },
   });
   if (ok(rCreate)) {
     D.newUserId = id(rCreate.body);
@@ -433,7 +424,7 @@ async function testUsers() {
   if (D.managerId) {
     const rKC = await req(`${S.core}/api/users/kiosk/create`, {
       method: 'POST', token: tok.manager, userId: D.managerId,
-      body: { storeId: 'DOM001', terminalId: `terminal-${Date.now()}` },
+      body: { storeId: D.storeId001 || 'DOM001', terminalId: `POS-${Date.now().toString().slice(-4)}` },
     });
     if (ok(rKC)) { D.kioskId = id(rKC.body); pass(sec, 'POST /api/users/kiosk/create', D.kioskId); }
     else           warn(sec, 'POST /api/users/kiosk/create', `status ${rKC.status}`);
@@ -511,14 +502,14 @@ async function testStores() {
 
   // operational-status and access-check need auth — deferred until after manager token is available
   if (D.storeId001) {
-    const rDR = await req(`${S.core}/api/stores/${D.storeId001}/delivery-radius-check?latitude=17.385&longitude=78.4867`);
+    const rDR = await req(`${S.core}/api/stores/${D.storeId001}/delivery-radius-check?latitude=17.385&longitude=78.4867`, { token: tok.manager });
     if (ok(rDR)) pass(sec, 'GET /api/stores/{storeId}/delivery-radius-check');
     else          warn(sec, 'GET /api/stores/{storeId}/delivery-radius-check', `status ${rDR.status}`);
   }
 
   const rAC = await req(`${S.core}/api/stores/access-check`, {
-    method: 'POST',
-    headers: { 'X-User-Id': D.managerId || 'test', 'X-User-Store-Id': 'DOM001' },
+    method: 'POST', token: tok.manager,
+    headers: { 'X-User-Id': D.managerId || 'test', 'X-User-Store-Id': 'DOM001', 'X-Selected-Store-Id': 'DOM001' },
   });
   if (ok(rAC)) pass(sec, 'POST /api/stores/access-check');
   else          warn(sec, 'POST /api/stores/access-check', `status ${rAC.status}`);
@@ -1310,8 +1301,9 @@ async function testShifts() {
   const sec = 'shifts';
   if (!tok.manager) { warn(sec, 'Shifts skipped', 'no manager token'); return; }
 
-  const shiftStart = new Date(); shiftStart.setHours(9, 0, 0, 0);
-  const shiftEnd   = new Date(); shiftEnd.setHours(17, 0, 0, 0);
+  // Use 2 days from now to avoid overlapping with existing today's shifts
+  const shiftStart = new Date(Date.now() + 2 * 86400000); shiftStart.setHours(9, 0, 0, 0);
+  const shiftEnd   = new Date(Date.now() + 2 * 86400000); shiftEnd.setHours(17, 0, 0, 0);
   const rCreate = await req(`${S.core}/api/shifts`, {
     method: 'POST', token: tok.manager,
     body: {
@@ -1434,19 +1426,34 @@ async function testWorkingSessions() {
   const sec = 'sessions';
   if (!tok.manager || !D.staffId) { warn(sec, 'Sessions skipped', 'missing manager token or staffId'); return; }
 
+  // End any existing session first to avoid conflicts
+  await req(`${S.core}/api/users/sessions/end`, {
+    method: 'POST', token: tok.staff,
+    headers: { 'X-User-Id': D.staffId },
+  });
+
   const rCIPin = await req(`${S.core}/api/users/sessions/clock-in-with-pin`, {
     method: 'POST',
     body: { employeeId: D.staffId, pin: A.staff.pin },
-    headers: { 'X-User-Store-Id': 'DOM001' },
+    headers: { 'X-User-Store-Id': D.storeId001 || 'DOM001', 'X-Selected-Store-Id': D.storeId001 || 'DOM001' },
   });
   if (ok(rCIPin)) { D.workSessionId = id(rCIPin.body); pass(sec, 'POST /api/users/sessions/clock-in-with-pin'); }
-  else              warn(sec, 'POST clock-in-with-pin', `status ${rCIPin.status}`);
+  else              warn(sec, 'POST clock-in-with-pin', `status ${rCIPin.status} — ${JSON.stringify(rCIPin.body)?.slice(0,120)}`);
+
+  // End pin-based session before starting token-based one
+  if (D.workSessionId) {
+    await req(`${S.core}/api/users/sessions/end`, {
+      method: 'POST', token: tok.staff,
+      headers: { 'X-User-Id': D.staffId },
+    });
+  }
 
   const rStart = await req(`${S.core}/api/users/sessions/start`, {
-    method: 'POST', token: tok.staff, userId: D.staffId, storeCode: 'DOM001',
+    method: 'POST', token: tok.staff,
+    headers: { 'X-User-Id': D.staffId, 'X-User-Store-Id': D.storeId001 || 'DOM001', 'X-Selected-Store-Id': D.storeId001 || 'DOM001' },
   });
   if (ok(rStart)) { D.workSessionId = id(rStart.body); pass(sec, 'POST /api/users/sessions/start'); }
-  else              warn(sec, 'POST /api/users/sessions/start', `status ${rStart.status}`);
+  else              warn(sec, 'POST /api/users/sessions/start', `status ${rStart.status} — ${JSON.stringify(rStart.body)?.slice(0,120)}`);
 
   const rCurrent = await req(`${S.core}/api/users/sessions/current`, {
     token: tok.staff, userId: D.staffId,
@@ -1493,27 +1500,32 @@ async function testWorkingSessions() {
   else             warn(sec, 'POST /api/users/sessions/{employeeId}/break', `status ${rBreak.status}`);
 
   const rEnd = await req(`${S.core}/api/users/sessions/end`, {
-    method: 'POST', token: tok.staff, userId: D.staffId,
+    method: 'POST', token: tok.staff,
+    headers: { 'X-User-Id': D.staffId },
   });
   if (ok(rEnd)) pass(sec, 'POST /api/users/sessions/end');
   else           warn(sec, 'POST /api/users/sessions/end', `status ${rEnd.status}`);
 
   const rCO = await req(`${S.core}/api/users/sessions/clock-out-employee`, {
-    method: 'POST', token: tok.manager, userId: D.managerId,
+    method: 'POST', token: tok.manager,
+    headers: { 'X-User-Id': D.managerId },
     body: { employeeId: D.staffId },
   });
   if (ok(rCO)) pass(sec, 'POST /api/users/sessions/clock-out-employee');
   else          warn(sec, 'POST clock-out-employee', `status ${rCO.status}`);
 
+  // Start fresh session for location-based tests
   const rStartLoc = await req(`${S.core}/api/users/sessions/start-with-location`, {
-    method: 'POST', token: tok.staff, userId: D.staffId, storeCode: 'DOM001',
+    method: 'POST', token: tok.staff,
+    headers: { 'X-User-Id': D.staffId, 'X-User-Store-Id': D.storeId001 || 'DOM001', 'X-Selected-Store-Id': D.storeId001 || 'DOM001' },
     body: { latitude: 17.385, longitude: 78.4867 },
   });
   if (ok(rStartLoc)) { D.workSessionId2 = id(rStartLoc.body); pass(sec, 'POST /api/users/sessions/start-with-location'); }
   else                 warn(sec, 'POST /api/users/sessions/start-with-location', `status ${rStartLoc.status}`);
 
   const rEndLoc = await req(`${S.core}/api/users/sessions/end-with-location`, {
-    method: 'POST', token: tok.staff, userId: D.staffId,
+    method: 'POST', token: tok.staff,
+    headers: { 'X-User-Id': D.staffId },
     body: { latitude: 17.385, longitude: 78.4867 },
   });
   if (ok(rEndLoc)) pass(sec, 'POST /api/users/sessions/end-with-location');
@@ -1584,7 +1596,7 @@ async function testInventory() {
 
     const rUpdate = await req(`${S.logistics}/api/inventory/items/${D.inventoryItemId}`, {
       method: 'PUT', ...mgrOpts,
-      body: { name: 'Test Rice Updated', currentStock: 55, minimumStock: 10, unitCost: 65 },
+      body: { itemName: 'Test Rice Updated', currentStock: 55, minimumStock: 10, maximumStock: 200, reorderQuantity: 50, unitCost: 65, storeId: D.storeId001 || 'DOM001', category: 'INGREDIENT', unit: 'KG' },
     });
     if (ok(rUpdate)) pass(sec, 'PUT /api/inventory/items/{id}');
     else              warn(sec, 'PUT /api/inventory/items/{id}', `status ${rUpdate.status}`);
@@ -1631,6 +1643,7 @@ async function testInventory() {
   });
   if (ok(rSupCreate)) {
     D.supplierId = id(rSupCreate.body);
+    D.supplierCode = rSupCreate.body?.supplierCode;
     pass(sec, 'POST /api/inventory/suppliers', D.supplierId);
   } else warn(sec, 'POST /api/inventory/suppliers', `status ${rSupCreate.status}`);
 
@@ -1650,7 +1663,7 @@ async function testInventory() {
     else        warn(sec, label, `status ${r.status}`);
   }
 
-  const rSupByCode = await req(`${S.logistics}/api/inventory/suppliers/code/TEST001`, mgrOpts);
+  const rSupByCode = await req(`${S.logistics}/api/inventory/suppliers/code/${D.supplierCode || 'NONEXISTENT'}`, mgrOpts);
   if (ok(rSupByCode) || rSupByCode.status === 404)
     pass(sec, 'GET /api/inventory/suppliers/code/{code} — handled');
   else warn(sec, 'GET /api/inventory/suppliers/code/{code}', `status ${rSupByCode.status}`);
@@ -1661,7 +1674,7 @@ async function testInventory() {
     else              warn(sec, 'GET /api/inventory/suppliers/{id}', `status ${rGetSup.status}`);
 
     const rUpSup = await req(`${S.logistics}/api/inventory/suppliers/${D.supplierId}`, {
-      method: 'PUT', ...mgrOpts, body: { name: 'Updated Supplier' },
+      method: 'PUT', ...mgrOpts, body: { supplierName: 'Updated Supplier', email: `supplier.upd.${Date.now()}@test.com`, phoneNumber: '9000111444', supplierCode: `SUP-UPD-${Date.now()}` },
     });
     if (ok(rUpSup)) pass(sec, 'PUT /api/inventory/suppliers/{id}');
     else             warn(sec, 'PUT /api/inventory/suppliers/{id}', `status ${rUpSup.status}`);
@@ -1957,7 +1970,7 @@ async function testOrders() {
     body: {
       customerName: 'Dine In Test', customerPhone: '9000000001',
       storeId, items: orderItems, orderType: 'DINE_IN',
-      paymentMethod: 'CASH', tableNumber: 5,
+      paymentMethod: 'CASH', specialInstructions: 'Table 5',
     },
   });
   if (ok(rDI)) {
@@ -2046,8 +2059,8 @@ async function testOrders() {
     ['GET /api/orders/kitchen',             `${S.commerce}/api/orders/kitchen`],
     ['GET /api/v1/orders/store',            `${S.commerce}/api/v1/orders/store`],
     ['GET /api/orders/store',               `${S.commerce}/api/orders/store`],
-    ['GET /api/v1/orders/status/{status}',  `${S.commerce}/api/v1/orders/status/PENDING`],
-    ['GET /api/orders/status/{status}',     `${S.commerce}/api/orders/status/PENDING`],
+    ['GET /api/v1/orders/status/{status}',  `${S.commerce}/api/v1/orders/status/RECEIVED`],
+    ['GET /api/orders/status/{status}',     `${S.commerce}/api/orders/status/RECEIVED`],
     ['GET /api/v1/orders/search',           `${S.commerce}/api/v1/orders/search?query=test`],
     ['GET /api/orders/search',              `${S.commerce}/api/orders/search?query=test`],
     ['GET /api/v1/orders/date/{date}',      `${S.commerce}/api/v1/orders/date/${TODAY}`],
@@ -2220,14 +2233,14 @@ async function testOrders() {
   if (orderId2) {
     const rStatus = await req(`${S.commerce}/api/v1/orders/${orderId2}/status`, {
       method: 'PATCH', ...mgrOpts,
-      body: { status: 'PREPARING', notes: 'API test status update' },
+      body: { status: 'PREPARING', updatedBy: D.staffId || D.managerId, notes: 'API test status update' },
     });
     if (ok(rStatus)) pass(sec, 'PATCH /api/v1/orders/{orderId}/status');
     else              warn(sec, 'PATCH v1 /orders/{orderId}/status', `status ${rStatus.status}`);
 
     const rStatusNV = await req(`${S.commerce}/api/orders/${orderId2}/status`, {
       method: 'PATCH', ...mgrOpts,
-      body: { status: 'PREPARING', notes: 'API test status update (no-v1)' },
+      body: { status: 'READY', updatedBy: D.staffId || D.managerId, notes: 'API test status update (no-v1)' },
     });
     if (ok(rStatusNV)) pass(sec, 'PATCH /api/orders/{orderId}/status');
     else                warn(sec, 'PATCH /orders/{orderId}/status (no-v1)', `status ${rStatusNV.status}`);
@@ -2263,13 +2276,13 @@ async function testOrders() {
 
   if (D.deliveryOrderId) {
     const rDelOtp = await req(`${S.commerce}/api/v1/orders/${D.deliveryOrderId}/delivery-otp`, {
-      method: 'PUT', ...mgrOpts, body: { otp: '123456' },
+      method: 'PUT', ...mgrOpts, body: { otp: '1234' },
     });
     if (ok(rDelOtp)) pass(sec, 'PUT /api/v1/orders/{orderId}/delivery-otp');
     else              warn(sec, 'PUT v1 delivery-otp', `status ${rDelOtp.status}`);
 
     const rDelOtpNV = await req(`${S.commerce}/api/orders/${D.deliveryOrderId}/delivery-otp`, {
-      method: 'PUT', ...mgrOpts, body: { otp: '654321' },
+      method: 'PUT', ...mgrOpts, body: { otp: '5678' },
     });
     if (ok(rDelOtpNV)) pass(sec, 'PUT /api/orders/{orderId}/delivery-otp');
     else                warn(sec, 'PUT delivery-otp (no-v1)', `status ${rDelOtpNV.status}`);
@@ -2386,16 +2399,16 @@ async function testReviews() {
     if (ok(rFlag)) pass(sec, 'PATCH /api/reviews/{reviewId}/flag');
     else            warn(sec, 'PATCH flag review', `status ${rFlag.status}`);
 
-    const rRevStatus = await req(`${S.core}/api/reviews/${D.reviewId}/status`, {
-      method: 'PATCH', token: tok.manager, body: { status: 'APPROVED' },
+    const rRevStatus = await req(`${S.core}/api/reviews/${D.reviewId}/status?status=APPROVED`, {
+      method: 'PATCH', token: tok.manager,
+      headers: { 'X-User-ID': D.managerId || 'test' },
     });
     if (ok(rRevStatus)) pass(sec, 'PATCH /api/reviews/{reviewId}/status');
     else                 warn(sec, 'PATCH /api/reviews/{reviewId}/status', `status ${rRevStatus.status}`);
 
-    const rRevReject = await req(`${S.core}/api/reviews/${D.reviewId}/reject`, {
+    const rRevReject = await req(`${S.core}/api/reviews/${D.reviewId}/reject?reason=API+test+rejection`, {
       method: 'POST', token: tok.manager,
       headers: { 'X-User-ID': D.managerId || 'test' },
-      body: { reason: 'API test rejection' },
     });
     if (ok(rRevReject)) pass(sec, 'POST /api/reviews/{reviewId}/reject');
     else                 warn(sec, 'POST /api/reviews/{reviewId}/reject', `status ${rRevReject.status}`);
@@ -3008,6 +3021,19 @@ function printCoverageReport() {
 (async () => {
   await testHealth();
   await testAuth();
+  // system/* endpoints require manager token — run after auth
+  const sysEndpoints = [
+    ['GET /api/system/health',         `${S.core}/api/system/health`],
+    ['GET /api/system/info',           `${S.core}/api/system/info`],
+    ['GET /api/system/version',        `${S.core}/api/system/version`],
+    ['GET /api/system/updates/check',  `${S.core}/api/system/updates/check`],
+    ['GET /api/system/updates/status', `${S.core}/api/system/updates/status`],
+  ];
+  for (const [label, url] of sysEndpoints) {
+    const r = await req(url, { token: tok.manager });
+    if (ok(r)) pass('health', label);
+    else        warn('health', label, `status ${r.status}`);
+  }
   await testUsers();
   await testStores();
   await testMenu();
