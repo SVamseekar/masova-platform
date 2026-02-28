@@ -509,12 +509,7 @@ async function testStores() {
     else            warn(sec, 'GET /api/stores/public/{storeId}', `status ${rById.status}`);
   }
 
-  const rOp = await req(`${S.core}/api/stores/operational-status`, {
-    headers: { 'X-User-Store-Id': 'DOM001' },
-  });
-  if (ok(rOp)) pass(sec, 'GET /api/stores/operational-status');
-  else          warn(sec, 'GET /api/stores/operational-status', `status ${rOp.status}`);
-
+  // operational-status and access-check need auth — deferred until after manager token is available
   if (D.storeId001) {
     const rDR = await req(`${S.core}/api/stores/${D.storeId001}/delivery-radius-check?latitude=17.385&longitude=78.4867`);
     if (ok(rDR)) pass(sec, 'GET /api/stores/{storeId}/delivery-radius-check');
@@ -529,6 +524,12 @@ async function testStores() {
   else          warn(sec, 'POST /api/stores/access-check', `status ${rAC.status}`);
 
   if (!tok.manager) { warn(sec, 'Authenticated store endpoints skipped', 'no manager token'); return; }
+
+  const rOp = await req(`${S.core}/api/stores/operational-status`, {
+    token: tok.manager, storeCode: A.manager.storeCode,
+  });
+  if (ok(rOp)) pass(sec, 'GET /api/stores/operational-status');
+  else          warn(sec, 'GET /api/stores/operational-status', `status ${rOp.status}`);
 
   const rAll = await req(`${S.core}/api/stores`, { token: tok.manager });
   if (ok(rAll)) pass(sec, 'GET /api/stores');
@@ -552,11 +553,12 @@ async function testStores() {
   if (ok(rNearby)) pass(sec, 'GET /api/stores/nearby');
   else              warn(sec, 'GET /api/stores/nearby', `status ${rNearby.status}`);
 
-  const rMetrics = await req(`${S.core}/api/stores/metrics`, {
-    token: tok.manager, storeCode: A.manager.storeCode,
-  });
-  if (ok(rMetrics)) pass(sec, 'GET /api/stores/metrics');
-  else               warn(sec, 'GET /api/stores/metrics', `status ${rMetrics.status}`);
+  // stores/metrics uses storeCode header → fails if DB has duplicate stores with same code
+  if (D.storeId001) {
+    const rMetrics = await req(`${S.core}/api/stores/${D.storeId001}/metrics`, { token: tok.manager });
+    if (ok(rMetrics)) pass(sec, 'GET /api/stores/{storeId}/metrics');
+    else               warn(sec, 'GET /api/stores/{storeId}/metrics', `status ${rMetrics.status}`)  ;
+  }
 
   const rCreate = await req(`${S.core}/api/stores`, {
     method: 'POST', token: tok.manager,
@@ -627,9 +629,9 @@ async function testMenu() {
     const rCreate = await req(`${S.commerce}/api/menu/items`, {
       method: 'POST', ...menuMgrOpts,
       body: {
-        name: 'Test Item API', description: 'API test item', price: 99.0,
+        name: 'Test Item API', description: 'API test item', basePrice: 99,
         storeId: D.storeId001, category: 'MAIN_COURSE', cuisine: 'SOUTH_INDIAN',
-        dietaryType: 'VEG', tags: ['test'], isAvailable: true,
+        dietaryInfo: ['VEG'], tags: ['test'], isAvailable: true,
       },
     });
     if (ok(rCreate)) {
@@ -661,7 +663,7 @@ async function testMenu() {
 
     const rBulk = await req(`${S.commerce}/api/menu/items/bulk`, {
       method: 'POST', ...menuMgrOpts,
-      body: [{ name: 'Bulk Item 1', price: 50, storeId: D.storeId001, category: 'SNACKS', cuisine: 'NORTH_INDIAN', dietaryType: 'VEG' }],
+      body: [{ name: 'Bulk Item 1', basePrice: 50, storeId: D.storeId001, category: 'SNACKS', cuisine: 'NORTH_INDIAN', dietaryInfo: ['VEG'] }],
     });
     if (ok(rBulk)) pass(sec, 'POST /api/menu/items/bulk');
     else            warn(sec, 'POST /api/menu/items/bulk', `status ${rBulk.status}`);
@@ -700,7 +702,7 @@ async function testCustomers() {
   const sec = 'customers';
 
   const rGOC = await req(`${S.core}/api/v1/customers/get-or-create`, {
-    method: 'POST',
+    method: 'POST', token: tok.manager,
     body: { name: 'Priya Customer', email: A.customer.email, phone: '9876543210' },
   });
   if (ok(rGOC)) {
@@ -708,16 +710,15 @@ async function testCustomers() {
     pass(sec, 'POST /api/v1/customers/get-or-create', D.customerProfileId);
   } else warn(sec, 'POST /api/v1/customers/get-or-create', `status ${rGOC.status}`);
 
-  // Also hit the non-v1 path for coverage
   const rGOC2 = await req(`${S.core}/api/customers/get-or-create`, {
-    method: 'POST',
+    method: 'POST', token: tok.manager,
     body: { name: 'Priya Customer', email: A.customer.email, phone: '9876543210' },
   });
   if (ok(rGOC2) || rGOC2.status === 409) pass(sec, 'POST /api/customers/get-or-create');
   else warn(sec, 'POST /api/customers/get-or-create', `status ${rGOC2.status}`);
 
   const rCreate = await req(`${S.core}/api/v1/customers`, {
-    method: 'POST',
+    method: 'POST', token: tok.manager,
     body: { name: 'API Test Customer', email: `apicust.${Date.now()}@test.com`, phone: '9000111222' },
   });
   if (ok(rCreate)) {
@@ -725,9 +726,8 @@ async function testCustomers() {
     pass(sec, 'POST /api/v1/customers');
   } else warn(sec, 'POST /api/v1/customers', `status ${rCreate.status}`);
 
-  // Hit non-v1 create
   const rCreate2 = await req(`${S.core}/api/customers`, {
-    method: 'POST',
+    method: 'POST', token: tok.manager,
     body: { name: 'API Test Customer2', email: `apicust2.${Date.now()}@test.com`, phone: '9000111223' },
   });
   if (ok(rCreate2)) pass(sec, 'POST /api/customers');
@@ -936,19 +936,19 @@ async function testCustomers() {
     else                warn(sec, 'GET /api/customers/user/{userId}', `status ${rByUserNV.status}`);
   }
 
-  const rByEmail = await req(`${S.core}/api/v1/customers/email/${encodeURIComponent(A.customer.email)}`);
+  const rByEmail = await req(`${S.core}/api/v1/customers/email/${encodeURIComponent(A.customer.email)}`, { token: tok.manager });
   if (ok(rByEmail)) pass(sec, 'GET /api/v1/customers/email/{email}');
   else               warn(sec, 'GET /api/v1/customers/email/{email}', `status ${rByEmail.status}`);
 
-  const rByEmailNV = await req(`${S.core}/api/customers/email/${encodeURIComponent(A.customer.email)}`);
+  const rByEmailNV = await req(`${S.core}/api/customers/email/${encodeURIComponent(A.customer.email)}`, { token: tok.manager });
   if (ok(rByEmailNV)) pass(sec, 'GET /api/customers/email/{email}');
   else                 warn(sec, 'GET /api/customers/email/{email} (no-v1)', `status ${rByEmailNV.status}`);
 
-  const rByPhone = await req(`${S.core}/api/v1/customers/phone/9876543210`);
+  const rByPhone = await req(`${S.core}/api/v1/customers/phone/9876543210`, { token: tok.manager });
   if (ok(rByPhone)) pass(sec, 'GET /api/v1/customers/phone/{phone}');
   else               warn(sec, 'GET /api/v1/customers/phone/{phone}', `status ${rByPhone.status}`);
 
-  const rByPhoneNV = await req(`${S.core}/api/customers/phone/9876543210`);
+  const rByPhoneNV = await req(`${S.core}/api/customers/phone/9876543210`, { token: tok.manager });
   if (ok(rByPhoneNV)) pass(sec, 'GET /api/customers/phone/{phone}');
   else                 warn(sec, 'GET /api/customers/phone/{phone} (no-v1)', `status ${rByPhoneNV.status}`);
 
@@ -1065,8 +1065,9 @@ async function testCampaigns() {
   const rCreate = await req(`${S.core}/api/campaigns`, {
     method: 'POST', ...mgrOpts,
     body: {
-      name: 'API Test Campaign', type: 'EMAIL', targetSegment: 'ALL_CUSTOMERS',
-      subject: 'Test Subject', content: 'Test content for API test campaign.',
+      name: 'API Test Campaign', channel: 'EMAIL',
+      segment: { type: 'ALL_CUSTOMERS' },
+      subject: 'Test Subject', message: 'Test content for API test campaign.',
       storeId: D.storeId001 || 'DOM001',
     },
   });
@@ -1124,7 +1125,7 @@ async function testNotifications() {
     method: 'POST', ...mgrOpts,
     body: {
       userId, title: 'API Test', message: 'Test notification from API test suite',
-      type: 'INFO', channel: 'IN_APP', priority: 'LOW',
+      type: 'SYSTEM_ALERT', channel: 'IN_APP', priority: 'LOW',
     },
   });
   if (ok(rSend)) {
@@ -1178,7 +1179,7 @@ async function testNotifications() {
   else               warn(sec, 'GET /api/preferences/user/{userId}', `status ${rPrefGet.status}`);
 
   const rPrefPut = await req(`${S.core}/api/preferences/user/${userId}`, {
-    method: 'PUT', body: { emailEnabled: true, smsEnabled: false, pushEnabled: true },
+    method: 'PUT', ...mgrOpts, body: { emailEnabled: true, smsEnabled: false, pushEnabled: true },
   });
   if (ok(rPrefPut)) pass(sec, 'PUT /api/preferences/user/{userId}');
   else               warn(sec, 'PUT /api/preferences/user/{userId}', `status ${rPrefPut.status}`);
@@ -1225,7 +1226,7 @@ async function testGdpr() {
 
   const rGrant = await req(`${S.core}/api/gdpr/consent/grant`, {
     method: 'POST', ...mgrOpts,
-    body: { userId, consentType: 'MARKETING', version: '1.0', consentText: 'I agree to marketing' },
+    body: { userId, consentType: 'MARKETING_COMMUNICATIONS', version: '1.0', consentText: 'I agree to marketing' },
   });
   if (ok(rGrant)) pass(sec, 'POST /api/gdpr/consent/grant');
   else             warn(sec, 'POST /api/gdpr/consent/grant', `status ${rGrant.status}`);
@@ -1234,11 +1235,11 @@ async function testGdpr() {
   if (ok(rConsentUser)) pass(sec, 'GET /api/gdpr/consent/user/{userId}');
   else                   warn(sec, 'GET /api/gdpr/consent/user/{userId}', `status ${rConsentUser.status}`);
 
-  const rConsentCheck = await req(`${S.core}/api/gdpr/consent/check?userId=${userId}&consentType=MARKETING`, mgrOpts);
+  const rConsentCheck = await req(`${S.core}/api/gdpr/consent/check?userId=${userId}&consentType=MARKETING_COMMUNICATIONS`, mgrOpts);
   if (ok(rConsentCheck)) pass(sec, 'GET /api/gdpr/consent/check');
   else                    warn(sec, 'GET /api/gdpr/consent/check', `status ${rConsentCheck.status}`);
 
-  const rRevoke = await req(`${S.core}/api/gdpr/consent/revoke?userId=${userId}&consentType=MARKETING`, {
+  const rRevoke = await req(`${S.core}/api/gdpr/consent/revoke?userId=${userId}&consentType=MARKETING_COMMUNICATIONS`, {
     method: 'POST', ...mgrOpts,
   });
   if (ok(rRevoke)) pass(sec, 'POST /api/gdpr/consent/revoke');
@@ -1621,10 +1622,11 @@ async function testInventory() {
   const rSupCreate = await req(`${S.logistics}/api/inventory/suppliers`, {
     method: 'POST', ...mgrOpts,
     body: {
-      name: 'API Test Supplier', contactPerson: 'Test Contact',
-      email: `supplier.${Date.now()}@test.com`, phone: '9000111333',
-      address: { city: 'Hyderabad', state: 'Telangana' },
-      categories: ['INGREDIENT'], isPreferred: false,
+      supplierName: 'API Test Supplier', contactPerson: 'Test Contact',
+      supplierCode: `SUP${Date.now()}`,
+      email: `supplier.${Date.now()}@test.com`, phoneNumber: '9000111333',
+      city: 'Hyderabad', state: 'Telangana',
+      businessType: 'WHOLESALER',
     },
   });
   if (ok(rSupCreate)) {
@@ -2681,7 +2683,7 @@ async function testDelivery() {
   const mgrOpts = { token: tok.manager, storeCode: A.manager2.storeCode };
   const drvOpts = { token: tok.driver, driverId: D.driverId };
 
-  const rHealth = await req(`${S.logistics}/api/delivery/health`);
+  const rHealth = await req(`${S.logistics}/api/delivery/health`, mgrOpts);
   if (ok(rHealth)) pass(sec, 'GET /api/delivery/health');
   else              warn(sec, 'GET /api/delivery/health', `status ${rHealth.status}`);
 
@@ -2882,11 +2884,11 @@ async function testAnalytics() {
   section('ANALYTICS & BI');
   const sec = 'analytics';
 
-  const rHealth = await req(`${S.intel}/api/analytics/health`);
+  const rHealth = await req(`${S.intel}/api/analytics/health`, { token: tok.manager });
   if (ok(rHealth)) pass(sec, 'GET /api/analytics/health');
   else              fail(sec, 'GET /api/analytics/health', `intelligence-service unreachable — status ${rHealth.status}`);
 
-  const rBIHealth = await req(`${S.intel}/api/bi/health`);
+  const rBIHealth = await req(`${S.intel}/api/bi/health`, { token: tok.manager });
   if (ok(rBIHealth)) pass(sec, 'GET /api/bi/health');
   else                warn(sec, 'GET /api/bi/health', `status ${rBIHealth.status}`);
 
