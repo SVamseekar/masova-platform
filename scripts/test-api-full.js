@@ -282,7 +282,7 @@ async function testAuth() {
 
   if (D.staffId) {
     const rV = await req(`${S.core}/api/users/validate-pin`, {
-      method: 'POST', body: { pin: '20197' },
+      method: 'POST', body: { pin: A.staff.pin },
       headers: { 'X-User-Id': D.staffId },
     });
     if (ok(rV)) pass(sec, 'POST /api/users/validate-pin');
@@ -565,7 +565,7 @@ async function testStores() {
     body: {
       name: 'Test Store API', code: `TST${Date.now().toString().slice(-4)}`,
       phoneNumber: '9000000099', regionId: 'south',
-      address: { street: '1 Test Rd', city: 'Hyderabad', pincode: '500001', state: 'TS' },
+      address: { street: '1 Test Rd', city: 'Hyderabad', postalCode: '500001', state: 'TS' },
     },
   });
   if (ok(rCreate)) {
@@ -603,8 +603,8 @@ async function testMenu() {
 
   const pubFilters = [
     ['GET /api/menu/public/cuisine/{cuisine}',       `${S.commerce}/api/menu/public/cuisine/SOUTH_INDIAN?storeCode=DOM001`],
-    ['GET /api/menu/public/category/{category}',    `${S.commerce}/api/menu/public/category/MAIN_COURSE?storeCode=DOM001`],
-    ['GET /api/menu/public/dietary/{dietaryType}',  `${S.commerce}/api/menu/public/dietary/VEG?storeCode=DOM001`],
+    ['GET /api/menu/public/category/{category}',    `${S.commerce}/api/menu/public/category/DOSA?storeCode=DOM001`],
+    ['GET /api/menu/public/dietary/{dietaryType}',  `${S.commerce}/api/menu/public/dietary/VEGETARIAN?storeCode=DOM001`],
     ['GET /api/menu/public/recommended',            `${S.commerce}/api/menu/public/recommended?storeCode=DOM001`],
     ['GET /api/menu/public/search',                 `${S.commerce}/api/menu/public/search?q=dosa&storeCode=DOM001`],
     ['GET /api/menu/public/tag/{tag}',              `${S.commerce}/api/menu/public/tag/bestseller?storeCode=DOM001`],
@@ -630,8 +630,8 @@ async function testMenu() {
       method: 'POST', ...menuMgrOpts,
       body: {
         name: 'Test Item API', description: 'API test item', basePrice: 99,
-        storeId: D.storeId001, category: 'MAIN_COURSE', cuisine: 'SOUTH_INDIAN',
-        dietaryInfo: ['VEG'], tags: ['test'], isAvailable: true,
+        storeId: D.storeId001, category: 'DOSA', cuisine: 'SOUTH_INDIAN',
+        dietaryInfo: ['VEGETARIAN'], tags: ['test'], isAvailable: true,
       },
     });
     if (ok(rCreate)) {
@@ -643,7 +643,7 @@ async function testMenu() {
     if (D.newMenuItemId) {
       const rUp = await req(`${S.commerce}/api/menu/items/${D.newMenuItemId}`, {
         method: 'PUT', ...menuMgrOpts,
-        body: { name: 'Test Item Updated', price: 109.0, storeId: D.storeId001, category: 'MAIN_COURSE' },
+        body: { name: 'Test Item Updated', basePrice: 109, storeId: D.storeId001, category: 'DOSA', cuisine: 'SOUTH_INDIAN' },
       });
       if (ok(rUp)) pass(sec, 'PUT /api/menu/items/{id}');
       else          warn(sec, 'PUT /api/menu/items/{id}', `status ${rUp.status}`);
@@ -663,7 +663,7 @@ async function testMenu() {
 
     const rBulk = await req(`${S.commerce}/api/menu/items/bulk`, {
       method: 'POST', ...menuMgrOpts,
-      body: [{ name: 'Bulk Item 1', basePrice: 50, storeId: D.storeId001, category: 'SNACKS', cuisine: 'NORTH_INDIAN', dietaryInfo: ['VEG'] }],
+      body: [{ name: 'Bulk Item 1', basePrice: 50, storeId: D.storeId001, category: 'SIDES', cuisine: 'NORTH_INDIAN', dietaryInfo: ['VEGETARIAN'] }],
     });
     if (ok(rBulk)) pass(sec, 'POST /api/menu/items/bulk');
     else            warn(sec, 'POST /api/menu/items/bulk', `status ${rBulk.status}`);
@@ -759,7 +759,7 @@ async function testCustomers() {
     // Addresses
     const rAddr = await req(`${S.core}/api/v1/customers/${cpid}/addresses`, {
       method: 'POST', token: tok.manager,
-      body: { street: '12 MG Road', city: 'Hyderabad', pincode: '500001', state: 'Telangana', isDefault: true },
+      body: { addressLine1: '12 MG Road', city: 'Hyderabad', postalCode: '500001', state: 'Telangana', isDefault: true, label: 'HOME' },
     });
     if (ok(rAddr)) {
       D.addressId = id(rAddr.body);
@@ -768,7 +768,7 @@ async function testCustomers() {
 
     const rAddrNV = await req(`${S.core}/api/customers/${cpid}/addresses`, {
       method: 'POST', token: tok.manager,
-      body: { street: '13 MG Road', city: 'Hyderabad', pincode: '500001', state: 'Telangana', isDefault: false },
+      body: { addressLine1: '13 MG Road', city: 'Hyderabad', postalCode: '500001', state: 'Telangana', isDefault: false, label: 'WORK' },
     });
     if (ok(rAddrNV)) pass(sec, 'POST /api/customers/{id}/addresses');
     else              warn(sec, 'POST /api/customers/{id}/addresses', `status ${rAddrNV.status}`);
@@ -1436,7 +1436,7 @@ async function testWorkingSessions() {
 
   const rCIPin = await req(`${S.core}/api/users/sessions/clock-in-with-pin`, {
     method: 'POST',
-    body: { employeeId: D.staffId, pin: '20197' },
+    body: { employeeId: D.staffId, pin: A.staff.pin },
     headers: { 'X-User-Store-Id': 'DOM001' },
   });
   if (ok(rCIPin)) { D.workSessionId = id(rCIPin.body); pass(sec, 'POST /api/users/sessions/clock-in-with-pin'); }
@@ -1988,7 +1988,7 @@ async function testOrders() {
       customerName: 'Delivery Test', customerPhone: '9000000003',
       customerId: D.customerId,
       storeId, items: orderItems, orderType: 'DELIVERY', paymentMethod: 'CASH',
-      deliveryAddress: { street: '12 MG Road', city: 'Hyderabad', pincode: '500001', state: 'Telangana' },
+      deliveryAddress: { street: '12 MG Road', city: 'Hyderabad', zipCode: '500001', state: 'Telangana' },
     },
   });
   if (ok(rDelOrd)) {
@@ -2331,7 +2331,8 @@ async function testReviews() {
     headers: { 'X-User-ID': D.customerId || 'test', 'X-User-Name': 'Priya Customer' },
     body: {
       orderId: D.takeawayOrderId || D.dineInOrderId || 'test-order-id',
-      rating: 4, comment: 'API test review — great food!',
+      overallRating: 4, comment: 'API test review — great food!',
+      foodQualityRating: 4, serviceRating: 5,
     },
   });
   if (ok(rCreate)) {
@@ -2342,7 +2343,7 @@ async function testReviews() {
   const rPubSub = await req(`${S.core}/api/reviews/public/submit?token=fake-rating-token`, {
     method: 'POST', body: { orderId: 'test', rating: 5, comment: 'Public submit test' },
   });
-  if (ok(rPubSub) || rPubSub.status === 404 || rPubSub.status === 400)
+  if (ok(rPubSub) || rPubSub.status === 404 || rPubSub.status === 400 || rPubSub.status === 401)
     pass(sec, 'POST /api/reviews/public/submit — handled');
   else warn(sec, 'POST /api/reviews/public/submit', `status ${rPubSub.status}`);
 
@@ -2732,7 +2733,7 @@ async function testDelivery() {
       method: 'POST', ...mgrOpts,
       body: {
         orderId: D.deliveryOrderId, storeId: D.storeId001,
-        deliveryAddress: { street: '12 MG Road', city: 'Hyderabad', pincode: '500001' },
+        deliveryAddress: { street: '12 MG Road', city: 'Hyderabad', zipCode: '500001', state: 'Telangana' },
         pickupLocation: { type: 'Point', coordinates: [78.4867, 17.385] },
         deliveryLocation: { type: 'Point', coordinates: [78.491, 17.395] },
       },
