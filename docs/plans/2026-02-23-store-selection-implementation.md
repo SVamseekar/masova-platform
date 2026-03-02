@@ -955,7 +955,7 @@ npx tsc --noEmit 2>&1 | head -20
 
 **Step 6: Test in browser**
 
-Start the frontend (`npm run dev` in `/frontend`), navigate to `http://localhost:5173/` — the AddressGate modal should appear. Entering an address and confirming should dismiss it.
+Start the frontend (`npm run dev` in `/frontend`), navigate to `http://localhost:3000/` — the AddressGate modal should appear. Entering an address and confirming should dismiss it.
 
 **Step 7: Commit**
 

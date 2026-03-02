@@ -28,6 +28,9 @@ buildNumber.properties
 .DS_Store
 .DS_Store?
 ._*
+
+# Git worktrees
+.worktrees/
 .Spotlight-V100
 .Trashes
 ehthumbs.db

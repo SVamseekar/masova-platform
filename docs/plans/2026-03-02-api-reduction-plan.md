@@ -23,7 +23,7 @@ Services run on Dell at `192.168.50.88`. Ports:
 
 Key files to understand before starting:
 - `shared-models/src/main/java/com/MaSoVa/shared/config/ApiVersionConfig.java` — defines `/api/v1` and `/api` constants
-- `api-gateway/src/main/java/com/MaSoVa/gateway/config/GatewayConfig.java` — all 46 gateway routes
+- `api-gateway/src/main/java/com/MaSoVa/gateway/config/GatewayConfig.java` — all 47 gateway routes (confirmed)
 
 ---
 
@@ -157,6 +157,8 @@ Remove these methods:
 - `GET /api/stores/public/{storeId}` — same as `GET /api/stores/{storeId}`
 - `GET /api/stores/public/code/{storeCode}` — use `GET /api/stores?code={storeCode}`
 - `GET /api/stores/code/{storeCode}` — use `GET /api/stores?code={storeCode}`
+
+> ⚠️ **DO NOT remove `GET /api/stores/public/find-by-location`** — this endpoint is ADDED by the store selection feature (feat/store-selection). It must be preserved when consolidating the public endpoints.
 - `GET /api/stores/region/{regionId}` — use `GET /api/stores?region={regionId}`
 - `GET /api/stores/operational-status` — field on `GET /api/stores/{storeId}`
 - `GET /api/stores/metrics` — moved to analytics
@@ -201,6 +203,8 @@ git commit -m "feat: consolidate StoreController filter endpoints into query par
 - Modify: `core-service/src/main/java/com/MaSoVa/core/user/controller/WorkingSessionController.java`
 
 **Step 1: Rename controller base path**
+
+> ✅ **Gateway already done:** `GatewayConfig.java` already has a `core_sessions` route for `/api/sessions/**` (confirmed by codebase audit). The controller `@RequestMapping` change below is the ONLY remaining step — no gateway route update needed for this task.
 
 Change `@RequestMapping("/api/users/sessions")` to `@RequestMapping("/api/sessions")`.
 
