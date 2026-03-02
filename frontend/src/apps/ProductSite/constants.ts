@@ -67,7 +67,20 @@ export const PAIN_POINTS = [
   },
 ]
 
-export const PRODUCT_TOUR_TABS = [
+export interface ProductTourTab {
+  id: string
+  label: string
+  icon: ComponentType<{ size?: number; style?: CSSProperties }>
+  headline: string
+  desc: string
+  image: string
+  screenshot: string | null
+  accentColor: string
+  featureDesc: string
+  bullets: string[]
+}
+
+export const PRODUCT_TOUR_TABS: ProductTourTab[] = [
   {
     id: 'orders',
     label: 'Online Ordering',
@@ -75,6 +88,9 @@ export const PRODUCT_TOUR_TABS = [
     headline: 'Orders flow in. Zero friction.',
     desc: 'Customers order from your branded web app or mobile app. Orders land instantly on the kitchen display — no calls, no paper, no chaos.',
     image: '/screenshots/customer-ordering.png',
+    screenshot: '/screenshots/customer-ordering.png',
+    accentColor: '#3B82F6',
+    featureDesc: 'From browsing to checkout in under a minute. Orders land on the KDS the moment payment clears.',
     bullets: ['Branded customer app', 'Real-time order confirmation', 'SMS + push notifications', 'Guest checkout'],
   },
   {
@@ -84,6 +100,9 @@ export const PRODUCT_TOUR_TABS = [
     headline: 'Your kitchen, fully in control.',
     desc: 'Every order appears on the Kitchen Display System the moment it is placed. Colour-coded urgency, prep time tracking, quality checkpoints.',
     image: '/screenshots/kitchen-display.png',
+    screenshot: null,
+    accentColor: '#F59E0B',
+    featureDesc: 'Live order queue on any screen. No printers, no paper, no missed tickets.',
     bullets: ['9-stage order pipeline', 'Prep time analytics', 'Quality checkpoints', 'Make-table workflow'],
   },
   {
@@ -93,6 +112,9 @@ export const PRODUCT_TOUR_TABS = [
     headline: 'Dispatched in under 8 seconds.',
     desc: 'MaSoVa auto-assigns the nearest available driver the moment an order is ready. Customers track their delivery live on a map.',
     image: '/screenshots/live-tracking.png',
+    screenshot: null,
+    accentColor: '#10B981',
+    featureDesc: 'From dispatch to doorstep. Real-time tracking for operators and customers.',
     bullets: ['Auto-dispatch engine', 'Live GPS tracking', 'Driver app (iOS + Android)', 'Proof of delivery'],
   },
   {
@@ -102,6 +124,9 @@ export const PRODUCT_TOUR_TABS = [
     headline: 'Every number that matters.',
     desc: 'Sales trends, peak hour analysis, staff leaderboards, waste tracking, demand forecasting — all in one dashboard updated in real time.',
     image: '/screenshots/manager-dashboard.png',
+    screenshot: null,
+    accentColor: '#8B5CF6',
+    featureDesc: 'Revenue, waste, staff performance — surfaced automatically, no dashboards to build.',
     bullets: ['Sales forecasting', 'Staff performance', 'Waste analysis', 'Multi-store benchmarking'],
   },
   {
@@ -111,6 +136,9 @@ export const PRODUCT_TOUR_TABS = [
     headline: 'Your restaurant runs itself.',
     desc: 'Five AI agents work 24/7 — handling customers, optimising the kitchen, dispatching drivers, routing orders, and surfacing insights for managers.',
     image: '/screenshots/ai-agent.png',
+    screenshot: null,
+    accentColor: '#D4AF37',
+    featureDesc: 'Five specialised agents. One restaurant that runs itself.',
     bullets: ['Customer support agent', 'Kitchen prep agent', 'Manager insights agent', 'Driver logistics agent', 'Store selection agent'],
   },
 ]
