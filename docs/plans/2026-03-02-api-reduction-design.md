@@ -1,8 +1,9 @@
-# API Reduction Design: 471 → 76 Endpoints
+# API Reduction Design: 471 → 116 Endpoints
 **Date:** 2026-03-02
 **Author:** Architecture Review
-**Status:** Approved — implement after Pact contract tests
-**Goal:** Reduce from 471 to ~76 endpoints with zero feature loss
+**Reviewed:** 2026-03-02 (Google Solutions Architect consultation)
+**Status:** Revised — implement after DB migration
+**Goal:** Reduce from 471 to ~106 endpoints with zero feature loss
 
 ---
 
@@ -13,6 +14,23 @@
 3. **CRUD is 5 endpoints max** — list, get, create, update, delete
 4. **Dev-only endpoints removed from production** — moved to Spring profile `dev` only
 5. **No feature removed** — every capability preserved, just fewer paths
+6. **State transitions are explicit POST actions** — never buried in a generic PATCH body
+7. **No DELETE with body** — use POST for actions requiring a payload
+8. **Internal service calls ≠ public API** — service-to-service endpoints not exposed via API Gateway
+
+## Architect Review Notes (2026-03-02)
+Issues corrected from first draft:
+- `DELETE /sessions/current` → `POST /sessions/current/end` (HTTP clients strip DELETE bodies)
+- `/api/analytics/insights?type=x` split back into individual endpoints (different latency, cache, auth per report type)
+- `PATCH /orders/{id}` doing too much — split state transitions to `POST /orders/{id}/status`
+- `GET /stores/{id}/nearby` removed (duplicate of `GET /stores?near=lat,lng`)
+- `POST /customers/get-or-create` marked internal-only, not exposed via gateway
+- `/api/sessions` path change flagged as breaking change for mobile apps
+- `POST /delivery/{orderId}/otp` renamed to `POST /delivery/{orderId}/otp/generate`
+- Added missing `GET /api/health` at gateway level
+- Working hours report moved to analytics service
+- Fixed campaign count (8 endpoints, not 5)
+- Fixed GDPR count (8 endpoints, not 5)
 
 ---
 
@@ -63,7 +81,7 @@ Consolidations:
 | POST | `/api/users/kiosk/{kioskId}/deactivate` | Deactivate kiosk |
 | POST | `/api/users/kiosk/{kioskId}/regenerate-tokens` | Regenerate kiosk tokens |
 
-#### 1.3 Stores — 6 endpoints (was 13)
+#### 1.3 Stores — 5 endpoints (was 13)
 Consolidations:
 - Remove `GET /public` + `GET /` — same thing, keep `GET /api/stores` (public by default, auth gives more fields)
 - Remove `GET /public/{storeId}` — same as `GET /api/stores/{storeId}`
@@ -73,15 +91,15 @@ Consolidations:
 - Remove `GET /operational-status` — field on `GET /api/stores/{storeId}`
 - Remove `GET /metrics` — merge into analytics
 - Remove `POST /access-check` — logic in middleware, not a dedicated endpoint
+- Remove `GET /{storeId}/nearby` — **duplicate** of `GET /api/stores?near={lat,lng}`
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/stores` | List stores (query: code, region, near=lat,lng) |
-| GET | `/api/stores/{storeId}` | Get store (public + auth fields) |
+| GET | `/api/stores` | List stores (query: code, region, near=lat,lng radius=km) |
+| GET | `/api/stores/{storeId}` | Get store (public fields + auth-gated operational fields) |
 | POST | `/api/stores` | Create store |
 | PATCH | `/api/stores/{storeId}` | Update store |
-| GET | `/api/stores/{storeId}/delivery-radius` | Check delivery radius for coordinates |
-| GET | `/api/stores/{storeId}/nearby` | Get nearby stores within radius |
+| GET | `/api/stores/{storeId}/delivery-radius` | Check if coordinates are within delivery radius |
 
 #### 1.4 Shifts — 9 endpoints (was 16)
 Consolidations:
@@ -102,19 +120,22 @@ Consolidations:
 | POST | `/api/shifts/{shiftId}/start` | Start shift |
 | POST | `/api/shifts/{shiftId}/complete` | Complete shift |
 
-#### 1.5 Working Sessions — 8 endpoints (was 18)
+#### 1.5 Working Sessions — 9 endpoints (was 18)
 Consolidations:
 - Merge `POST /start` + `POST /start-with-location` → `POST /api/sessions` (body has optional location)
-- Merge `POST /end` + `POST /end-with-location` → `DELETE /api/sessions/current` (body has optional location)
+- Merge `POST /end` + `POST /end-with-location` → `POST /api/sessions/current/end` (body has optional location) — **not DELETE**, HTTP clients strip DELETE bodies
 - Remove `GET /store/active` — use `GET /api/sessions?storeId={id}&active=true`
 - Remove `GET /store` — use `GET /api/sessions?storeId={id}`
 - Remove `GET /{employeeId}` — use `GET /api/sessions?employeeId={id}`
 - Remove `GET /{employeeId}/status` — check `GET /api/sessions?employeeId={id}&active=true`
+- Remove `GET /{employeeId}/report` — moved to `GET /api/analytics/staff/{staffId}/hours`
+
+> ⚠️ **Breaking change for mobile apps** — path changes from `/api/users/sessions` to `/api/sessions`. Requires coordinated release with Driver App and Staff App updates.
 
 | Method | Path | Description |
 |--------|------|-------------|
 | POST | `/api/sessions` | Start session (body: optional location) |
-| DELETE | `/api/sessions/current` | End session (body: optional location) |
+| POST | `/api/sessions/current/end` | End session (body: optional location) |
 | GET | `/api/sessions` | List sessions (query: storeId, employeeId, active, date) |
 | GET | `/api/sessions/pending` | Sessions pending approval |
 | POST | `/api/sessions/clock-in` | Clock in with PIN |
@@ -122,9 +143,8 @@ Consolidations:
 | POST | `/api/sessions/{sessionId}/approve` | Approve session |
 | POST | `/api/sessions/{sessionId}/reject` | Reject session |
 | POST | `/api/sessions/{sessionId}/break` | Add break |
-| GET | `/api/sessions/{employeeId}/report` | Working hours report |
 
-#### 1.6 Customers — 12 endpoints (was 40)
+#### 1.6 Customers — 13 endpoints (was 40)
 Consolidations:
 - Remove ALL `/api/v1/customers/*` — keep only `/api/customers/*`
 - Remove individual filter endpoints (`/active`, `/inactive`, `/high-value`, `/top-spenders`, `/recently-active`, `/birthdays/today`, `/marketing-opt-in`, `/sms-opt-in`, `/loyalty/tier/{tier}`) → use `GET /api/customers?filter={value}`
@@ -136,20 +156,21 @@ Consolidations:
 - Remove `PATCH /{id}/verify-email` + `PATCH /{id}/verify-phone` — internal only, called via email link not frontend
 - Remove `POST /{id}/notes` — merge into `PATCH /{id}` body
 - Remove `DELETE /{id}` (deprecated) — keep only GDPR delete
+- `POST /get-or-create` — **internal-only**, not exposed via API Gateway (service-to-service between commerce and core)
 
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/customers` | List/search customers (query: filter, email, phone, userId, tag) |
 | GET | `/api/customers/stats` | Customer statistics |
 | POST | `/api/customers` | Create customer |
-| POST | `/api/customers/get-or-create` | Get or create customer |
-| GET | `/api/customers/{id}` | Get customer (includes loyalty info) |
-| PATCH | `/api/customers/{id}` | Update customer profile |
+| POST | `/api/customers/get-or-create` | Get or create — **internal only, not on API Gateway** |
+| GET | `/api/customers/{id}` | Get customer (includes loyalty info, max redeemable points) |
+| PATCH | `/api/customers/{id}` | Update customer profile (includes set-default-address via body) |
 | POST | `/api/customers/{id}/activate` | Activate customer |
 | POST | `/api/customers/{id}/deactivate` | Deactivate customer |
 | POST | `/api/customers/{id}/loyalty` | Add/redeem loyalty points (body: type, amount) |
 | POST | `/api/customers/{id}/addresses` | Add address |
-| PATCH | `/api/customers/{id}/addresses/{addressId}` | Update address |
+| PATCH | `/api/customers/{id}/addresses/{addressId}` | Update address (includes isDefault flag) |
 | DELETE | `/api/customers/{id}/addresses/{addressId}` | Remove address |
 | POST | `/api/customers/{id}/tags` | Add/remove tags (body: add[], remove[]) |
 | DELETE | `/api/customers/{id}` | GDPR delete (anonymise) |
@@ -168,9 +189,10 @@ Consolidations:
 | PATCH | `/api/notifications/read-all` | Mark all as read (query: userId) |
 | DELETE | `/api/notifications/{id}` | Delete notification |
 
-#### 1.8 Campaigns — 5 endpoints (was 8)
+#### 1.8 Campaigns — 8 endpoints (was 8)
 Consolidations:
 - Remove `PUT /{id}` — use `PATCH /{id}` consistently
+- Count stays at 8 — these are all genuinely distinct operations (CRUD + 3 state transitions)
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -203,7 +225,7 @@ Consolidations:
 | POST | `/api/reviews/{reviewId}/response` | Add/update response |
 | GET | `/api/reviews/response-templates` | Get response templates |
 
-#### 1.10 GDPR — 5 endpoints (was 18)
+#### 1.10 GDPR — 8 endpoints (was 18)
 Consolidations:
 - Merge all `POST /request/{id}/access|erasure|portability|rectification` into `POST /request/{id}/process` with `type` field
 - Remove `GET /privacy-policy` — serve as static file, not API
@@ -264,7 +286,7 @@ Consolidations:
 | PATCH | `/api/menu/{id}` | Update menu item (includes availability) |
 | DELETE | `/api/menu/{id}` | Delete menu item |
 
-#### 2.2 Orders — 14 endpoints (was 51)
+#### 2.2 Orders — 13 endpoints (was 51)
 Consolidations:
 - Remove ALL `/api/v1/orders/*` — keep only `/api/orders/*`
 - Remove `GET /number/{orderNumber}` → use `GET /api/orders?number={x}`
@@ -276,10 +298,10 @@ Consolidations:
 - Remove `GET /active-deliveries/count` → field in analytics
 - Remove prep-time analytics endpoints → moved to intelligence-service
 - Remove `GET /analytics/kitchen-staff` + `GET /analytics/pos-staff` → moved to intelligence-service
-- Remove `GET /store/make-table/{station}` + `PATCH /{id}/assign-make-table` → keep make-table as sub-resource
-- Merge `PUT /{id}/delivery-otp`, `PUT /{id}/delivery-proof`, `PUT /{id}/mark-delivered` → single `PATCH /{id}` with body
-- Remove `POST /{id}/quality-checkpoint` + `GET /store/failed-quality-checks` → keep as separate sub-resource
+- Remove `GET /store/make-table/{station}` + `PATCH /{id}/assign-make-table` → use `PATCH /{id}` with station field
+- Merge `PUT /{id}/delivery-otp`, `PUT /{id}/delivery-proof`, `PUT /{id}/mark-delivered` → `PATCH /{id}` mutable fields only
 - Remove `GET /rating/token/{token}` + `POST /rating/token/{token}/mark-used` → move to reviews
+- **State transitions moved to `POST /{orderId}/status`** — never buried in PATCH body (audit trail requires explicit action)
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -288,9 +310,10 @@ Consolidations:
 | GET | `/api/orders/kitchen` | Kitchen queue (KDS view) |
 | GET | `/api/orders/track/{orderId}` | Public order tracking (no auth) |
 | GET | `/api/orders/{orderId}` | Get order |
-| PATCH | `/api/orders/{orderId}` | Update order (status, items, priority, payment, driver, delivery proof, OTP, mark-delivered) |
+| PATCH | `/api/orders/{orderId}` | Update mutable fields only (items, priority, special instructions, driver assignment, make-table station, delivery proof/OTP) |
+| POST | `/api/orders/{orderId}/status` | Explicit status transition (body: status, reason) — required for audit log |
 | DELETE | `/api/orders/{orderId}` | Cancel order |
-| POST | `/api/orders/{orderId}/next-stage` | Advance to next stage |
+| POST | `/api/orders/{orderId}/next-stage` | Advance to next stage (KDS shortcut) |
 | GET | `/api/orders/{orderId}/checkpoints` | Get quality checkpoints |
 | POST | `/api/orders/{orderId}/checkpoints` | Add quality checkpoint |
 | PATCH | `/api/orders/{orderId}/checkpoints/{name}` | Update checkpoint |
@@ -340,7 +363,7 @@ Consolidations:
 | GET | `/api/delivery/track/{orderId}` | Track order (includes ETA) |
 | GET | `/api/delivery/driver/{driverId}/pending` | Driver's pending deliveries |
 | GET | `/api/delivery/driver/{driverId}/performance` | Driver performance |
-| POST | `/api/delivery/{orderId}/otp` | Generate/regenerate OTP |
+| POST | `/api/delivery/{orderId}/otp/generate` | Generate/regenerate delivery OTP |
 
 #### 3.2 Inventory — 7 endpoints (was 62)
 Consolidations:
@@ -384,24 +407,36 @@ Consolidations:
 
 ---
 
-### 5. INTELLIGENCE-SERVICE: 19 → 8 endpoints
+### 5. INTELLIGENCE-SERVICE: 19 → 12 endpoints
 
 Consolidations:
-- Merge individual analytics endpoints into parameterised calls
 - Remove `POST /analytics/cache/clear` → internal cron, not frontend-facing
-- Remove `GET /bi/health` → use global `/actuator/health`
-- Merge all BI forecasting/analysis into `GET /api/analytics/insights`
+- Remove `GET /bi/health` → use global `/api/health` at gateway level
+- **Do NOT merge BI endpoints into a single `/insights?type=x`** — each report has different latency (churn model takes 2s, sales is <100ms), different cache TTLs, and different auth scopes. Merging hides this complexity.
+- Merge `GET /analytics/sales/today` + trends into single `GET /api/analytics/sales?period=today|week|month`
+- Move working hours report here: `GET /api/analytics/staff/{staffId}/hours`
 
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/analytics/sales` | Sales data (query: period=today/week/month, breakdown=type/item) |
 | GET | `/api/analytics/products` | Top selling products |
 | GET | `/api/analytics/staff` | Staff performance (query: staffId, role=kitchen/pos, leaderboard=true) |
+| GET | `/api/analytics/staff/{staffId}/hours` | Working hours report (moved from sessions service) |
 | GET | `/api/analytics/drivers` | Driver status + performance |
 | GET | `/api/analytics/orders` | Order metrics (avg value, peak hours, prep times) |
 | GET | `/api/analytics/customers` | Customer behaviour analytics |
-| GET | `/api/analytics/insights` | BI insights (query: type=forecast/churn/demand/cost/benchmarking/executive) |
-| GET | `/api/analytics/health` | Analytics service health |
+| GET | `/api/analytics/forecast/sales` | Sales forecast (ML model — higher latency) |
+| GET | `/api/analytics/forecast/demand` | Demand forecast |
+| GET | `/api/analytics/forecast/churn` | Customer churn prediction |
+| GET | `/api/analytics/cost` | Cost analysis |
+| GET | `/api/analytics/executive` | Executive summary dashboard |
+
+---
+
+### API Gateway — 1 endpoint (new)
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/health` | Aggregated health of all 5 services — critical for monitoring/alerting |
 
 ---
 
@@ -409,15 +444,21 @@ Consolidations:
 
 | Service | Before | After | Saved |
 |---------|--------|-------|-------|
-| core-service | 238 | 58 | 180 |
-| commerce-service | 99 | 22 | 77 |
+| core-service | 238 | 61 | 177 |
+| commerce-service | 99 | 23 | 76 |
 | logistics-service | 91 | 20 | 71 |
 | payment-service | 24 | 8 | 16 |
-| intelligence-service | 19 | 8 | 11 |
-| **TOTAL** | **471** | **116** | **355** |
+| intelligence-service | 19 | 12 | 7 |
+| api-gateway | — | 1 | — |
+| **TOTAL** | **471** | **125** | **346** |
 
-> **116 endpoints** — down from 471. Every feature preserved.
-> A second pass removing less-critical reporting endpoints could reach ~90.
+> **125 endpoints** — down from 471. Every feature preserved.
+>
+> The difference from the original 116 estimate:
+> - +4 intelligence endpoints (BI forecasts kept separate, not merged into one)
+> - +3 session/order endpoints (explicit state transitions, sessions/report moved to analytics)
+> - +1 gateway health endpoint
+> - -1 stores/nearby (duplicate removed)
 
 ---
 
