@@ -233,10 +233,9 @@ async function testAuth() {
   const regEmail = `test.reg.${Date.now()}@masova.com`;
   const rReg = await req(`${S.core}/api/users/register`, {
     method: 'POST',
-    body: { type: 'CUSTOMER', name: 'Test Register', email: regEmail, password: 'Test@12345',
-      personalInfo: { name: 'Test Register', email: regEmail, phone: '9876543210', passwordHash: 'Test@12345' } },
+    body: { type: 'CUSTOMER', name: 'Test Register', email: regEmail, password: 'Test@12345', phone: `9${Date.now().toString().slice(-9)}` },
   });
-  if (ok(rReg)) { pass(sec, 'POST /api/users/register'); D.regUserId = id(rReg.body); }
+  if (ok(rReg)) { pass(sec, 'POST /api/users/register'); D.regUserId = rReg.body?.user?.id || id(rReg.body); }
   else            warn(sec, 'POST /api/users/register', `status ${rReg.status}`);
 
   const rG = await req(`${S.core}/api/users/auth/google`, {
@@ -395,7 +394,7 @@ async function testUsers() {
   const newEmail = `test.staff.${Date.now()}@masova.com`;
   const rCreate = await req(`${S.core}/api/users/create`, {
     method: 'POST', token: tok.manager,
-    body: { type: 'STAFF', name: 'Test Staff', email: newEmail, password: 'Staff@12345', phone: '9111222333', storeId: D.storeId001 || 'DOM001' },
+    body: { type: 'STAFF', name: 'Test Staff', email: newEmail, password: 'Staff@12345', phone: `9${Date.now().toString().slice(-9)}`, storeId: D.storeId001 || 'DOM001' },
   });
   if (ok(rCreate)) {
     D.newUserId = id(rCreate.body);
@@ -427,7 +426,14 @@ async function testUsers() {
       body: { storeId: D.storeId001 || 'DOM001', terminalId: `POS-${Date.now().toString().slice(-4)}` },
     });
     if (ok(rKC)) { D.kioskId = id(rKC.body); pass(sec, 'POST /api/users/kiosk/create', D.kioskId); }
-    else           warn(sec, 'POST /api/users/kiosk/create', `status ${rKC.status}`);
+    else {
+      warn(sec, 'POST /api/users/kiosk/create', `status ${rKC.status}`);
+      // Kiosk create fails if phone 0000000000 already taken — fetch existing kiosk from list
+      const rKList = await req(`${S.core}/api/users/kiosk/list?storeId=${D.storeId001 || 'DOM001'}`, { token: tok.manager });
+      if (ok(rKList) && Array.isArray(rKList.body) && rKList.body.length > 0) {
+        D.kioskId = rKList.body[0].id || rKList.body[0]._id;
+      }
+    }
 
     const rKL = await req(`${S.core}/api/users/kiosk/list?storeId=DOM001`, { token: tok.manager });
     if (ok(rKL)) pass(sec, 'GET /api/users/kiosk/list');
@@ -481,11 +487,13 @@ async function testStores() {
   if (ok(rPub)) {
     pass(sec, 'GET /api/stores/public');
     const list = Array.isArray(rPub.body) ? rPub.body : (rPub.body?.content || []);
-    const dom001 = list.find(s => s.code === 'DOM001');
-    const dom003 = list.find(s => s.code === 'DOM003');
+    const dom001 = list.find(s => s.storeCode === 'DOM001' || s.code === 'DOM001');
+    const dom003 = list.find(s => s.storeCode === 'DOM003' || s.code === 'DOM003');
     if (dom001) D.storeId001 = dom001.id || dom001._id;
     if (dom003) D.storeId003 = dom003.id || dom003._id;
     if (list.length > 0 && !D.storeId001) D.storeId001 = list[0].id || list[0]._id;
+    // Use second store for copy-menu if dom003 not found
+    if (!D.storeId003 && list.length > 1) D.storeId003 = list[1].id || list[1]._id;
   } else fail(sec, 'GET /api/stores/public', `status ${rPub.status}`);
 
   const rCode = await req(`${S.core}/api/stores/public/code/DOM001`);
@@ -544,11 +552,14 @@ async function testStores() {
   if (ok(rNearby)) pass(sec, 'GET /api/stores/nearby');
   else              warn(sec, 'GET /api/stores/nearby', `status ${rNearby.status}`);
 
-  // stores/metrics uses storeCode header → fails if DB has duplicate stores with same code
+  // GET /api/stores/metrics reads storeId from X-Selected-Store-Id header
   if (D.storeId001) {
-    const rMetrics = await req(`${S.core}/api/stores/${D.storeId001}/metrics`, { token: tok.manager });
-    if (ok(rMetrics)) pass(sec, 'GET /api/stores/{storeId}/metrics');
-    else               warn(sec, 'GET /api/stores/{storeId}/metrics', `status ${rMetrics.status}`)  ;
+    const rMetrics = await req(`${S.core}/api/stores/metrics`, {
+      token: tok.manager,
+      headers: { 'X-Selected-Store-Id': D.storeId001, 'X-User-Store-Id': D.storeId001, 'X-User-Type': 'MANAGER' },
+    });
+    if (ok(rMetrics)) pass(sec, 'GET /api/stores/metrics');
+    else               warn(sec, 'GET /api/stores/metrics', `status ${rMetrics.status}`);
   }
 
   const rCreate = await req(`${S.core}/api/stores`, {
@@ -764,16 +775,18 @@ async function testCustomers() {
     // Addresses
     const rAddr = await req(`${S.core}/api/v1/customers/${cpid}/addresses`, {
       method: 'POST', token: tok.manager,
-      body: { addressLine1: '12 MG Road', city: 'Hyderabad', postalCode: '500001', state: 'Telangana', isDefault: true, label: 'HOME' },
+      body: { addressLine1: '12 MG Road', city: 'Hyderabad', postalCode: '500001', state: 'Telangana', default: true, label: 'HOME' },
     });
     if (ok(rAddr)) {
-      D.addressId = id(rAddr.body);
+      // Response is full Customer object; address id is in addresses array
+      const addrs = rAddr.body?.addresses;
+      D.addressId = (Array.isArray(addrs) && addrs.length > 0) ? addrs[addrs.length - 1].id : id(rAddr.body);
       pass(sec, 'POST /api/v1/customers/{id}/addresses');
     } else warn(sec, 'POST /api/v1/customers/{id}/addresses', `status ${rAddr.status}`);
 
     const rAddrNV = await req(`${S.core}/api/customers/${cpid}/addresses`, {
       method: 'POST', token: tok.manager,
-      body: { addressLine1: '13 MG Road', city: 'Hyderabad', postalCode: '500001', state: 'Telangana', isDefault: false, label: 'WORK' },
+      body: { addressLine1: '13 MG Road', city: 'Hyderabad', postalCode: '500001', state: 'Telangana', default: false, label: 'WORK' },
     });
     if (ok(rAddrNV)) pass(sec, 'POST /api/customers/{id}/addresses');
     else              warn(sec, 'POST /api/customers/{id}/addresses', `status ${rAddrNV.status}`);
@@ -792,22 +805,37 @@ async function testCustomers() {
       else                warn(sec, 'PATCH set-default address (no-v1)', `status ${rSetDefNV.status}`);
 
       const rUpAddr = await req(`${S.core}/api/v1/customers/${cpid}/addresses/${D.addressId}`, {
-        method: 'PATCH', token: tok.manager, body: { street: '14 MG Road Updated' },
+        method: 'PATCH', token: tok.manager, body: { addressLine1: '14 MG Road Updated', city: 'Hyderabad', state: 'Telangana', postalCode: '500001', label: 'HOME' },
       });
       if (ok(rUpAddr)) pass(sec, 'PATCH /api/v1/customers/{customerId}/addresses/{addressId}');
       else              warn(sec, 'PATCH update address', `status ${rUpAddr.status}`);
 
       const rUpAddrNV = await req(`${S.core}/api/customers/${cpid}/addresses/${D.addressId}`, {
-        method: 'PATCH', token: tok.manager, body: { street: '15 MG Road' },
+        method: 'PATCH', token: tok.manager, body: { addressLine1: '15 MG Road', city: 'Hyderabad', state: 'Telangana', postalCode: '500001', label: 'HOME' },
       });
       if (ok(rUpAddrNV)) pass(sec, 'PATCH /api/customers/{customerId}/addresses/{addressId}');
       else                warn(sec, 'PATCH update address (no-v1)', `status ${rUpAddrNV.status}`);
+
+      // Create a second address to delete via no-v1 path
+      const rAddr2 = await req(`${S.core}/api/v1/customers/${cpid}/addresses`, {
+        method: 'POST', token: tok.manager,
+        body: { addressLine1: '99 Test Street', city: 'Hyderabad', postalCode: '500002', state: 'Telangana', default: false, label: 'OTHER' },
+      });
+      const addrs2 = rAddr2.body?.addresses;
+      const addressId2 = ok(rAddr2) && Array.isArray(addrs2) && addrs2.length > 0 ? addrs2[addrs2.length - 1].id : null;
 
       const rDelAddr = await req(`${S.core}/api/v1/customers/${cpid}/addresses/${D.addressId}`, {
         method: 'DELETE', token: tok.manager,
       });
       if (ok(rDelAddr)) pass(sec, 'DELETE /api/v1/customers/{customerId}/addresses/{addressId}');
       else               warn(sec, 'DELETE v1 address', `status ${rDelAddr.status}`);
+
+      const delId2 = addressId2 || D.addressId;
+      const rDelAddrNV = await req(`${S.core}/api/customers/${cpid}/addresses/${delId2}`, {
+        method: 'DELETE', token: tok.manager,
+      });
+      if (ok(rDelAddrNV)) pass(sec, 'DELETE /api/customers/{customerId}/addresses/{addressId}');
+      else                 warn(sec, 'DELETE no-v1 address', `status ${rDelAddrNV.status}`);
     }
 
     // Loyalty
@@ -1315,8 +1343,8 @@ async function testShifts() {
   const sec = 'shifts';
   if (!tok.manager) { warn(sec, 'Shifts skipped', 'no manager token'); return; }
 
-  // Use 7+ days out with a random day offset to avoid overlapping from previous runs
-  const shiftDayOffset = 7 + Math.floor(Math.random() * 14);
+  // Use 30+ days out with a wide random window to avoid overlapping from multiple test runs
+  const shiftDayOffset = 30 + Math.floor(Math.random() * 60);
   const shiftStart = new Date(Date.now() + shiftDayOffset * 86400000); shiftStart.setHours(9, 0, 0, 0);
   const shiftEnd   = new Date(Date.now() + shiftDayOffset * 86400000); shiftEnd.setHours(17, 0, 0, 0);
   const rCreate = await req(`${S.core}/api/shifts`, {
@@ -1547,21 +1575,37 @@ async function testWorkingSessions() {
   if (ok(rEndLoc)) pass(sec, 'POST /api/users/sessions/end-with-location');
   else              warn(sec, 'POST /api/users/sessions/end-with-location', `status ${rEndLoc.status}`);
 
-  const sessionIdToAction = D.workSessionId || D.workSessionId2;
-  if (sessionIdToAction && D.managerId) {
-    const rApprSess = await req(`${S.core}/api/users/sessions/${sessionIdToAction}/approve`, {
+  // Start dedicated sessions using manager (no shift restriction) for approve/reject testing
+  if (D.managerId) {
+    await req(`${S.core}/api/users/sessions/end`, { method: 'POST', token: tok.manager, headers: { 'X-User-Id': D.managerId } });
+    const rApprStart = await req(`${S.core}/api/users/sessions/start`, {
       method: 'POST', token: tok.manager,
+      headers: { 'X-User-Id': D.managerId, 'X-User-Store-Id': D.storeId001 || 'DOM001', 'X-Selected-Store-Id': D.storeId001 || 'DOM001' },
+    });
+    const approveSessionId = ok(rApprStart) ? id(rApprStart.body) : (D.workSessionId || D.workSessionId2);
+
+    const rApprSess = await req(`${S.core}/api/users/sessions/${approveSessionId}/approve`, {
+      method: 'POST', token: tok.manager,
+      headers: { 'X-User-Id': D.managerId },
     });
     if (ok(rApprSess)) pass(sec, 'POST /api/users/sessions/{sessionId}/approve');
     else                warn(sec, 'POST /api/users/sessions/{sessionId}/approve', `status ${rApprSess.status}`);
 
-    const rRejSess = await req(`${S.core}/api/users/sessions/${sessionIdToAction}/reject`, {
+    // Start another session for reject test
+    const rRejStart = await req(`${S.core}/api/users/sessions/start`, {
       method: 'POST', token: tok.manager,
+      headers: { 'X-User-Id': D.managerId, 'X-User-Store-Id': D.storeId001 || 'DOM001', 'X-Selected-Store-Id': D.storeId001 || 'DOM001' },
+    });
+    const rejectSessionId = ok(rRejStart) ? id(rRejStart.body) : approveSessionId;
+
+    const rRejSess = await req(`${S.core}/api/users/sessions/${rejectSessionId}/reject`, {
+      method: 'POST', token: tok.manager,
+      headers: { 'X-User-Id': D.managerId },
       body: { reason: 'API test rejection' },
     });
     if (ok(rRejSess)) pass(sec, 'POST /api/users/sessions/{sessionId}/reject');
     else               warn(sec, 'POST /api/users/sessions/{sessionId}/reject', `status ${rRejSess.status}`);
-  } else warn(sec, 'Session approve/reject skipped', 'no sessionId');
+  } else warn(sec, 'Session approve/reject skipped', 'no managerId');
 }
 
 
@@ -1815,8 +1859,9 @@ async function testInventory() {
       method: 'POST', ...mgrOpts,
       body: {
         inventoryItemId: D.inventoryItemId, storeId: D.storeId001 || 'DOM001',
-        quantity: 1, reason: 'SPOILAGE', recordedBy: D.managerId || 'test',
-        estimatedCost: 65, isPreventable: true,
+        itemName: 'Test Rice', quantity: 1.0, unit: 'KG',
+        wasteCategory: 'SPOILED', wasteReason: 'API test spoilage',
+        reportedBy: D.managerId || 'test', unitCost: 65, preventable: false,
       },
     });
     if (ok(rWasteCreate)) {
@@ -2290,45 +2335,6 @@ async function testOrders() {
     else                 warn(sec, 'PATCH /orders/{orderId}/payment (no-v1)', `status ${rPaymentNV.status}`);
   }
 
-  // delivery-otp, mark-delivered require order in DISPATCHED status (needs trackingId)
-  if (D.trackingId && D.deliveryOrderId) {
-    const rDelOtp = await req(`${S.commerce}/api/v1/orders/${D.deliveryOrderId}/delivery-otp`, {
-      method: 'PUT', ...mgrOpts, body: { otp: '1234' },
-    });
-    if (ok(rDelOtp)) pass(sec, 'PUT /api/v1/orders/{orderId}/delivery-otp');
-    else              warn(sec, 'PUT v1 delivery-otp', `status ${rDelOtp.status}`);
-
-    const rDelOtpNV = await req(`${S.commerce}/api/orders/${D.deliveryOrderId}/delivery-otp`, {
-      method: 'PUT', ...mgrOpts, body: { otp: '5678' },
-    });
-    if (ok(rDelOtpNV)) pass(sec, 'PUT /api/orders/{orderId}/delivery-otp');
-    else                warn(sec, 'PUT delivery-otp (no-v1)', `status ${rDelOtpNV.status}`);
-
-    const rDelProof = await req(`${S.commerce}/api/v1/orders/${D.deliveryOrderId}/delivery-proof`, {
-      method: 'PUT', ...mgrOpts, body: { proofPhotoUrl: 'https://test.com/proof.jpg' },
-    });
-    if (ok(rDelProof)) pass(sec, 'PUT /api/v1/orders/{orderId}/delivery-proof');
-    else                warn(sec, 'PUT v1 delivery-proof', `status ${rDelProof.status}`);
-
-    const rDelProofNV = await req(`${S.commerce}/api/orders/${D.deliveryOrderId}/delivery-proof`, {
-      method: 'PUT', ...mgrOpts, body: { proofPhotoUrl: 'https://test.com/proof2.jpg' },
-    });
-    if (ok(rDelProofNV)) pass(sec, 'PUT /api/orders/{orderId}/delivery-proof');
-    else                  warn(sec, 'PUT delivery-proof (no-v1)', `status ${rDelProofNV.status}`);
-
-    const rMarkDel = await req(`${S.commerce}/api/v1/orders/${D.deliveryOrderId}/mark-delivered`, {
-      method: 'PUT', ...mgrOpts,
-    });
-    if (ok(rMarkDel)) pass(sec, 'PUT /api/v1/orders/{orderId}/mark-delivered');
-    else               warn(sec, 'PUT v1 mark-delivered', `status ${rMarkDel.status}`);
-
-    const rMarkDelNV = await req(`${S.commerce}/api/orders/${D.deliveryOrderId}/mark-delivered`, {
-      method: 'PUT', ...mgrOpts,
-    });
-    if (ok(rMarkDelNV)) pass(sec, 'PUT /api/orders/{orderId}/mark-delivered');
-    else                 warn(sec, 'PUT mark-delivered (no-v1)', `status ${rMarkDelNV.status}`);
-  }
-
   // Cancel / delete orders
   const orderToDelete = D.dineInOrderId || D.noV1OrderId;
   if (orderToDelete) {
@@ -2656,30 +2662,35 @@ async function testPayments() {
 
     const rRefund = await req(`${S.payment}/api/payments/refund`, {
       method: 'POST', ...mgrOpts,
-      body: { transactionId: D.cashPaymentId, amount: 99.0, reason: 'API test refund' },
+      body: { transactionId: D.cashPaymentId, amount: 99.0, type: 'FULL', reason: 'API test refund', initiatedBy: D.managerId || 'test-manager' },
     });
     if (ok(rRefund)) {
       D.refundId = id(rRefund.body);
       pass(sec, 'POST /api/payments/refund', D.refundId);
     } else warn(sec, 'POST /api/payments/refund', `status ${rRefund.status}`);
 
-    if (D.refundId) {
-      const rGetRef = await req(`${S.payment}/api/payments/refund/${D.refundId}`, mgrOpts);
-      if (ok(rGetRef)) pass(sec, 'GET /api/payments/refund/{refundId}');
-      else              warn(sec, 'GET /api/payments/refund/{refundId}', `status ${rGetRef.status}`);
+    // Test GET refund endpoints regardless of whether POST succeeded — 404 still counts as tested
+    const refundLookupId = D.refundId || D.cashPaymentId || 'test-refund-id';
+    const rGetRef = await req(`${S.payment}/api/payments/refund/${refundLookupId}`, mgrOpts);
+    if (ok(rGetRef)) pass(sec, 'GET /api/payments/refund/{refundId}');
+    else              warn(sec, 'GET /api/payments/refund/{refundId}', `status ${rGetRef.status}`);
 
-      const rRefByTx = await req(`${S.payment}/api/payments/refund/transaction/${D.cashPaymentId}`, mgrOpts);
-      if (ok(rRefByTx)) pass(sec, 'GET /api/payments/refund/transaction/{transactionId}');
-      else               warn(sec, 'GET refund by transaction', `status ${rRefByTx.status}`);
-    }
+    const rRefByTx = await req(`${S.payment}/api/payments/refund/transaction/${D.cashPaymentId || 'test-txn'}`, mgrOpts);
+    if (ok(rRefByTx)) pass(sec, 'GET /api/payments/refund/transaction/{transactionId}');
+    else               warn(sec, 'GET refund by transaction', `status ${rRefByTx.status}`);
   }
 
+  // Payment GETs need MongoDB storeId in headers (validateStoreAccess compares header storeId with transaction storeId)
+  const payMgrOpts = D.storeId001
+    ? { token: tok.manager, headers: { 'X-Selected-Store-Id': D.storeId001, 'X-User-Store-Id': D.storeId001, 'X-User-Type': 'MANAGER' } }
+    : mgrOpts;
+
   if (orderId) {
-    const rPayByOrder = await req(`${S.payment}/api/v1/payments/order/${orderId}`, mgrOpts);
+    const rPayByOrder = await req(`${S.payment}/api/v1/payments/order/${orderId}`, payMgrOpts);
     if (ok(rPayByOrder)) pass(sec, 'GET /api/v1/payments/order/{orderId}');
     else                  warn(sec, 'GET v1 payments by order', `status ${rPayByOrder.status}`);
 
-    const rPayByOrderNV = await req(`${S.payment}/api/payments/order/${orderId}`, mgrOpts);
+    const rPayByOrderNV = await req(`${S.payment}/api/payments/order/${orderId}`, payMgrOpts);
     if (ok(rPayByOrderNV)) pass(sec, 'GET /api/payments/order/{orderId}');
     else                    warn(sec, 'GET payments by order (no-v1)', `status ${rPayByOrderNV.status}`);
 
@@ -2759,18 +2770,27 @@ async function testDelivery() {
   else warn(sec, 'POST /api/delivery/route-optimize', `status ${rRouteOpt.status}`);
 
   if (D.deliveryOrderId && D.storeId001) {
+    // DispatchController reads X-Selected-Store-Id and compares with body.storeId (both must be MongoDB ObjectId)
     const rAD = await req(`${S.logistics}/api/delivery/auto-dispatch`, {
-      method: 'POST', ...mgrOpts,
+      method: 'POST', token: tok.manager,
+      headers: { 'X-Selected-Store-Id': D.storeId001, 'X-User-Store-Id': D.storeId001, 'X-User-Type': 'MANAGER' },
       body: {
         orderId: D.deliveryOrderId, storeId: D.storeId001,
-        deliveryAddress: { street: '12 MG Road', city: 'Hyderabad', zipCode: '500001', state: 'Telangana' },
-        pickupLocation: { type: 'Point', coordinates: [78.4867, 17.385] },
+        preferredDriverId: D.driverId,  // bypass driver availability search
+        deliveryAddress: { street: '12 MG Road', city: 'Hyderabad', zipCode: '500001', state: 'Telangana', latitude: 17.395, longitude: 78.491 },
         deliveryLocation: { type: 'Point', coordinates: [78.491, 17.395] },
       },
     });
     if (ok(rAD)) {
-      D.trackingId = id(rAD.body) || rAD.body?.trackingId;
-      pass(sec, 'POST /api/delivery/auto-dispatch', D.trackingId);
+      pass(sec, 'POST /api/delivery/auto-dispatch');
+      // AutoDispatchResponse has no trackingId — fetch from driver's pending deliveries
+      if (D.driverId) {
+        const rPending = await req(`${S.logistics}/api/delivery/driver/${D.driverId}/pending`, { token: tok.driver });
+        if (ok(rPending) && Array.isArray(rPending.body) && rPending.body.length > 0) {
+          D.trackingId = rPending.body[0].id || rPending.body[0]._id;
+        }
+      }
+      if (!D.trackingId) D.trackingId = D.deliveryOrderId; // fallback: some endpoints accept orderId
     } else warn(sec, 'POST /api/delivery/auto-dispatch', `status ${rAD.status}`);
   } else warn(sec, 'POST /api/delivery/auto-dispatch', 'skipped — no deliveryOrderId');
 
@@ -2780,7 +2800,10 @@ async function testDelivery() {
       method: 'POST', ...mgrOpts,
     });
     if (ok(rOTP)) {
-      D.deliveryOtp = rOTP.body?.otp;
+      // OTP endpoint returns plain string/number — extract digits
+      D.deliveryOtp = (typeof rOTP.body === 'object' && rOTP.body !== null)
+        ? (rOTP.body.otp || rOTP.body.data || null)
+        : String(rOTP.body).replace(/[^0-9]/g, '') || null;
       pass(sec, 'POST /api/delivery/{orderId}/generate-otp');
     } else warn(sec, 'POST generate-otp', `status ${rOTP.status}`);
 
@@ -2894,6 +2917,44 @@ async function testDelivery() {
     });
     if (ok(rRegenOtp)) pass(sec, 'POST /api/delivery/{orderId}/regenerate-otp');
     else                warn(sec, 'POST /api/delivery/{orderId}/regenerate-otp', `status ${rRegenOtp.status}`);
+
+    // Commerce-service delivery confirmation endpoints (need DISPATCHED order)
+    const comMgrOpts = { token: tok.manager, storeCode: A.manager2.storeCode };
+    const rDelOtp = await req(`${S.commerce}/api/v1/orders/${D.deliveryOrderId}/delivery-otp`, {
+      method: 'PUT', ...comMgrOpts, body: { otp: '1234' },
+    });
+    if (ok(rDelOtp)) pass(sec, 'PUT /api/v1/orders/{orderId}/delivery-otp');
+    else              warn(sec, 'PUT v1 delivery-otp', `status ${rDelOtp.status}`);
+
+    const rDelOtpNV = await req(`${S.commerce}/api/orders/${D.deliveryOrderId}/delivery-otp`, {
+      method: 'PUT', ...comMgrOpts, body: { otp: '5678' },
+    });
+    if (ok(rDelOtpNV)) pass(sec, 'PUT /api/orders/{orderId}/delivery-otp');
+    else                warn(sec, 'PUT delivery-otp (no-v1)', `status ${rDelOtpNV.status}`);
+
+    const rDelProof = await req(`${S.commerce}/api/v1/orders/${D.deliveryOrderId}/delivery-proof`, {
+      method: 'PUT', ...comMgrOpts, body: { proofPhotoUrl: 'https://test.com/proof.jpg' },
+    });
+    if (ok(rDelProof)) pass(sec, 'PUT /api/v1/orders/{orderId}/delivery-proof');
+    else                warn(sec, 'PUT v1 delivery-proof', `status ${rDelProof.status}`);
+
+    const rDelProofNV = await req(`${S.commerce}/api/orders/${D.deliveryOrderId}/delivery-proof`, {
+      method: 'PUT', ...comMgrOpts, body: { proofPhotoUrl: 'https://test.com/proof2.jpg' },
+    });
+    if (ok(rDelProofNV)) pass(sec, 'PUT /api/orders/{orderId}/delivery-proof');
+    else                  warn(sec, 'PUT delivery-proof (no-v1)', `status ${rDelProofNV.status}`);
+
+    const rMarkDel = await req(`${S.commerce}/api/v1/orders/${D.deliveryOrderId}/mark-delivered`, {
+      method: 'PUT', ...comMgrOpts,
+    });
+    if (ok(rMarkDel)) pass(sec, 'PUT /api/v1/orders/{orderId}/mark-delivered');
+    else               warn(sec, 'PUT v1 mark-delivered', `status ${rMarkDel.status}`);
+
+    const rMarkDelNV = await req(`${S.commerce}/api/orders/${D.deliveryOrderId}/mark-delivered`, {
+      method: 'PUT', ...comMgrOpts,
+    });
+    if (ok(rMarkDelNV)) pass(sec, 'PUT /api/orders/{orderId}/mark-delivered');
+    else                 warn(sec, 'PUT mark-delivered (no-v1)', `status ${rMarkDelNV.status}`);
   } else warn(sec, 'POST /api/delivery/{orderId}/regenerate-otp', 'skipped — no trackingId (order not dispatched)');
 
   if (D.driverId) {
