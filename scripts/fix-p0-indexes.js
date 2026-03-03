@@ -16,13 +16,14 @@ const { MongoClient } = require('mongodb');
 const MONGO_URL = process.env.MONGO_URL || 'mongodb://192.168.50.88:27017';
 const DB_NAME = 'masova_db';
 
-/** Drop an index, ignoring IndexNotFound (code 27). Re-throws all other errors. */
+/** Drop an index, ignoring IndexNotFound (27) and NamespaceNotFound (26). Re-throws all other errors. */
 async function dropIndexSafe(collection, indexName) {
   try {
     await collection.dropIndex(indexName);
     console.log(`✓ Dropped index: ${indexName}`);
   } catch (e) {
-    if (e.code === 27) {
+    if (e.code === 27 || e.code === 26) {
+      // 27 = IndexNotFound, 26 = NamespaceNotFound (collection doesn't exist yet)
       console.log(`  (${indexName} not found — skipping drop)`);
     } else {
       console.error(`FATAL: Failed to drop index ${indexName}. Code: ${e.code}, Message: ${e.message}`);
