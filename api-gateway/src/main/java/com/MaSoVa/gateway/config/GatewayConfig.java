@@ -144,11 +144,13 @@ public class GatewayConfig {
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
 
-                .route("core_responses", r -> r.path("/api/responses/**", "/api/ratings/**")
+                .route("core_gdpr", r -> r.path("/api/gdpr/**")
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(60, "core_responses")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(30, "core_gdpr")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
+
+                // /api/responses and /api/ratings have been merged into /api/reviews — route removed
 
                 // Core: Swagger docs proxy
                 .route("core_api_docs", r -> r.path("/core-service/v3/api-docs")
