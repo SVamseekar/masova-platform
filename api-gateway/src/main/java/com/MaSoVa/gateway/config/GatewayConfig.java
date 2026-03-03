@@ -37,38 +37,49 @@ public class GatewayConfig {
                 //                            campaigns, reviews, responses
                 // ============================================================
 
-                // Auth: public login/register/refresh endpoints (no JWT required)
-                .route("core_auth_login", r -> r.path("/api/users/login")
+                // ── Canonical auth routes: POST /api/auth/* ──────────────────────────────
+                .route("core_auth_login", r -> r.path("/api/auth/login")
                         .and().method("POST")
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(10, "auth"))))
                         .uri("http://localhost:8085"))
 
-                .route("core_auth_register", r -> r.path("/api/users/register")
+                .route("core_auth_register", r -> r.path("/api/auth/register")
                         .and().method("POST")
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(5, "register"))))
                         .uri("http://localhost:8085"))
 
-                .route("core_auth_refresh", r -> r.path("/api/users/refresh")
+                .route("core_auth_refresh", r -> r.path("/api/auth/refresh")
                         .and().method("POST")
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(20, "refresh"))))
                         .uri("http://localhost:8085"))
 
-                .route("core_auth_logout", r -> r.path("/api/users/logout")
+                .route("core_auth_logout", r -> r.path("/api/auth/logout")
                         .and().method("POST")
                         .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
 
-                .route("core_auth_google", r -> r.path("/api/auth/google", "/api/users/google")
+                .route("core_auth_google", r -> r.path("/api/auth/google")
                         .and().method("POST")
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(20, "google_auth"))))
+                        .uri("http://localhost:8085"))
+
+                .route("core_auth_change_password", r -> r.path("/api/auth/change-password")
+                        .and().method("POST")
+                        .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8085"))
+
+                .route("core_auth_validate_pin", r -> r.path("/api/auth/validate-pin")
+                        .and().method("POST")
+                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(30, "validate_pin"))))
                         .uri("http://localhost:8085"))
 
                 .route("core_kiosk_public", r -> r.path("/api/users/kiosk/**")
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(20, "kiosk"))))
                         .uri("http://localhost:8085"))
 
-                // Stores — public info served by core-service (store entity lives in user domain)
-                .route("core_stores_public", r -> r.path("/api/stores/public/**")
+                // Stores — all stores routes served by core-service (no /public sub-path any more)
+                .route("core_stores_public", r -> r.path("/api/stores")
+                        .and().method("GET")
                         .uri("http://localhost:8085"))
 
                 // Reviews — public rating display (no auth for customer-facing pages)
@@ -183,8 +194,8 @@ public class GatewayConfig {
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8084"))
 
-                // Kitchen & equipment
-                .route("commerce_kitchen", r -> r.path("/api/kitchen/**", "/api/kitchen-equipment/**")
+                // Kitchen queue and equipment (canonical path: /api/equipment)
+                .route("commerce_kitchen", r -> r.path("/api/kitchen/**", "/api/equipment/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(150, "commerce_kitchen")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
