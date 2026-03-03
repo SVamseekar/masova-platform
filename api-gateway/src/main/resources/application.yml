@@ -68,6 +68,13 @@ logging:
     com.MaSoVa.gateway: INFO
     com.MaSoVa.gateway.filter.ForwardedHeaderFilter: WARN
     root: INFO
+    # Suppress Netty internal channel/handler noise
+    io.netty: WARN
+    io.netty.channel: WARN
+    io.netty.handler: WARN
+    io.netty.util: WARN
+    reactor.netty: WARN
+    reactor.netty.http.client: WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
 
