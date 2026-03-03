@@ -9,15 +9,17 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.Map;
 
+@Profile("dev")
 @RestController
 @RequestMapping("/api/test-data")
-@Tag(name = "Test Data", description = "Endpoints for creating test data")
+@Tag(name = "Test Data", description = "Endpoints for creating test data (dev profile only)")
 public class TestDataController {
     
     @Autowired

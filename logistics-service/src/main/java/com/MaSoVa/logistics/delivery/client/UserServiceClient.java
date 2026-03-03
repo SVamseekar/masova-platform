@@ -36,7 +36,8 @@ public class UserServiceClient {
      */
     @CircuitBreaker(name = "userService", fallbackMethod = "getAvailableDriversFallback")
     public List<Map<String, Object>> getAvailableDrivers(String storeId) {
-        String url = userServiceUrl + "/api/users/drivers/available?storeId=" + storeId;
+        // Phase 1: canonical path — /api/users/drivers/available collapsed into /api/users?type=DRIVER&available=true
+        String url = userServiceUrl + "/api/users?type=DRIVER&available=true&storeId=" + storeId;
         log.debug("Fetching available drivers from: {}", url);
 
         try {
@@ -142,7 +143,8 @@ public class UserServiceClient {
      * Phase 2: Check if employee is currently clocked in
      */
     public Map<String, Object> getEmployeeWorkingStatus(String employeeId) {
-        String url = userServiceUrl + "/api/users/sessions/" + employeeId + "/status";
+        // Phase 1: canonical sessions path — GET /api/sessions (no per-employee status sub-path)
+        String url = userServiceUrl + "/api/sessions?employeeId=" + employeeId;
         log.debug("Fetching employee working status from: {}", url);
 
         try {

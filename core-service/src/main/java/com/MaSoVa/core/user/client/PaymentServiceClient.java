@@ -23,7 +23,7 @@ public class PaymentServiceClient {
 
     private static final Logger logger = LoggerFactory.getLogger(PaymentServiceClient.class);
 
-    @Value("${services.payment.url:http://localhost:8086}")
+    @Value("${services.payment.url:http://localhost:8089}")
     private String paymentServiceUrl;
 
     private final RestTemplate restTemplate;
@@ -38,7 +38,8 @@ public class PaymentServiceClient {
     @CircuitBreaker(name = "paymentService", fallbackMethod = "getCustomerTransactionsFallback")
     public List<Map<String, Object>> getCustomerTransactions(String customerId, String authToken) {
         try {
-            String url = paymentServiceUrl + "/api/payments/customer/" + customerId;
+            // Phase 1: /api/payments/customer/{id} → /api/payments?customerId=
+            String url = paymentServiceUrl + "/api/payments?customerId=" + customerId;
 
             HttpHeaders headers = createHttpHeaders(authToken);
             HttpEntity<Void> entity = new HttpEntity<>(headers);

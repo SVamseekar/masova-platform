@@ -7,6 +7,7 @@ import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 
 /**
  * API Gateway route configuration — Phase 1 consolidated architecture (6 services).
@@ -33,8 +34,8 @@ public class GatewayConfig {
         return builder.routes()
 
                 // ============================================================
-                // CORE SERVICE (port 8096) — users, customers, notifications,
-                //                            campaigns, reviews, responses
+                // CORE SERVICE (port 8085) — users, customers, notifications,
+                //                            campaigns, reviews, preferences
                 // ============================================================
 
                 // ── Canonical auth routes: POST /api/auth/* ──────────────────────────────
@@ -87,7 +88,15 @@ public class GatewayConfig {
                         .and().method("GET")
                         .uri("http://localhost:8085"))
 
-                // POST /api/customers/get-or-create is service-to-service only — BLOCKED at gateway (internal only)
+                // POST /api/customers/get-or-create is service-to-service ONLY — deny at gateway
+                .route("core_customers_get_or_create_blocked", r -> r
+                        .path("/api/customers/get-or-create")
+                        .and().method("POST")
+                        .filters(f -> f.filter((exchange, chain) -> {
+                            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                            return exchange.getResponse().setComplete();
+                        }))
+                        .uri("http://localhost:8085"))
 
                 // Users — all other protected user/store/session/shift operations
                 .route("core_users", r -> r.path("/api/users/**")
@@ -147,6 +156,12 @@ public class GatewayConfig {
                         .uri("http://localhost:8085"))
 
                 // /api/responses and /api/ratings have been merged into /api/reviews — route removed
+
+                .route("core_preferences", r -> r.path("/api/preferences/**")
+                        .filters(f -> f
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(100, "core_preferences")))
+                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8085"))
 
                 // Core: Swagger docs proxy
                 .route("core_api_docs", r -> r.path("/core-service/v3/api-docs")
@@ -210,7 +225,7 @@ public class GatewayConfig {
                         .uri("http://localhost:8084"))
 
                 // ============================================================
-                // PAYMENT SERVICE (port 8087) — standalone PCI DSS scope
+                // PAYMENT SERVICE (port 8089) — standalone PCI DSS scope
                 // ============================================================
 
                 // Webhook — public (Razorpay callbacks, no auth)
@@ -232,7 +247,7 @@ public class GatewayConfig {
                         .uri("http://localhost:8089"))
 
                 // ============================================================
-                // LOGISTICS SERVICE (port 8095) — delivery, inventory
+                // LOGISTICS SERVICE (port 8086) — delivery, inventory
                 // ============================================================
 
                 // Delivery (merged: dispatch + tracking + performance — now all at /api/delivery)
