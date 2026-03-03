@@ -100,6 +100,15 @@ public class WasteController {
             return ResponseEntity.ok(wasteAnalysisService.approveWasteRecord(id, (String) body.get("approverId")));
         }
         WasteRecord record = wasteAnalysisService.getWasteRecordById(id);
+        // Apply body fields to the fetched record
+        if (body.containsKey("itemName")) record.setItemName((String) body.get("itemName"));
+        if (body.containsKey("quantity") && body.get("quantity") instanceof Number n) record.setQuantity(n.doubleValue());
+        if (body.containsKey("unit")) record.setUnit((String) body.get("unit"));
+        if (body.containsKey("wasteCategory")) record.setWasteCategory((String) body.get("wasteCategory"));
+        if (body.containsKey("wasteReason")) record.setWasteReason((String) body.get("wasteReason"));
+        if (body.containsKey("notes")) record.setNotes((String) body.get("notes"));
+        if (body.containsKey("preventable") && body.get("preventable") instanceof Boolean b) record.setPreventable(b);
+        if (body.containsKey("preventionNotes")) record.setPreventionNotes((String) body.get("preventionNotes"));
         record.setId(id);
         return ResponseEntity.ok(wasteAnalysisService.updateWasteRecord(record));
     }

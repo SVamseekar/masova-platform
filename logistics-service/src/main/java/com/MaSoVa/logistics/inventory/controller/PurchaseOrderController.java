@@ -118,8 +118,14 @@ public class PurchaseOrderController {
                 default -> ResponseEntity.badRequest().build();
             };
         }
-        // Plain field update
+        // Plain field update — apply body fields to the fetched record
         PurchaseOrder po = purchaseOrderService.getPurchaseOrderById(id);
+        if (body.containsKey("supplierName")) po.setSupplierName((String) body.get("supplierName"));
+        if (body.containsKey("notes")) po.setNotes((String) body.get("notes"));
+        if (body.containsKey("paymentStatus")) po.setPaymentStatus((String) body.get("paymentStatus"));
+        if (body.containsKey("expectedDeliveryDate")) {
+            po.setExpectedDeliveryDate(java.time.LocalDate.parse((String) body.get("expectedDeliveryDate")));
+        }
         po.setId(id);
         return ResponseEntity.ok(purchaseOrderService.updatePurchaseOrder(po));
     }

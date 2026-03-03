@@ -330,6 +330,25 @@ public class OrderController {
         };
     }
 
+    // ── GDPR (internal-only, called by core-service user/GDPR service) ──────────
+
+    /**
+     * POST /api/orders/gdpr/anonymize?customerId= — anonymise all orders for a customer.
+     * Internal-only: requires X-Internal-Service header. Not accessible via gateway.
+     */
+    @PostMapping("/gdpr/anonymize")
+    @Operation(summary = "Anonymise order data for customer (GDPR erasure — internal only)")
+    public ResponseEntity<Void> anonymizeCustomerOrders(
+            @RequestParam String customerId,
+            jakarta.servlet.http.HttpServletRequest request) {
+        String internalCaller = request.getHeader("X-Internal-Service");
+        if (internalCaller == null || internalCaller.isBlank()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        orderService.anonymizeCustomerOrders(customerId);
+        return ResponseEntity.ok().build();
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
         log.error("Error processing order request", ex);

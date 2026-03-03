@@ -1109,4 +1109,23 @@ public class OrderService {
 
         return savedOrder;
     }
+
+    /**
+     * Anonymise all PII in orders for a customer (GDPR erasure).
+     * Called internally by core-service GDPR service via POST /api/orders/gdpr/anonymize.
+     */
+    @Transactional
+    public void anonymizeCustomerOrders(String customerId) {
+        List<Order> orders = orderRepository.findByCustomerId(customerId);
+        for (Order order : orders) {
+            order.setCustomerName("ANONYMIZED");
+            order.setCustomerPhone("ANONYMIZED");
+            order.setCustomerEmail("ANONYMIZED");
+            if (order.getDeliveryAddress() != null) {
+                order.setDeliveryAddress(null);
+            }
+            orderRepository.save(order);
+        }
+        log.info("Anonymised {} orders for customer {}", orders.size(), customerId);
+    }
 }

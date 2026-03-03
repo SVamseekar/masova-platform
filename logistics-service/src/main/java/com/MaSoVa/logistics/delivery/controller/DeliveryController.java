@@ -112,6 +112,7 @@ public class DeliveryController {
      * Replaces: POST /route-optimize
      */
     @PostMapping("/route")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF', 'DRIVER')")
     @Operation(summary = "Optimise delivery route")
     public ResponseEntity<RouteOptimizationResponse> optimiseRoute(
             @Valid @RequestBody RouteOptimizationRequest request) {
@@ -285,6 +286,7 @@ public class DeliveryController {
      * Replaces: PUT /driver/status + GET /driver/{id}/status
      */
     @PatchMapping("/driver/{driverId}/status")
+    @PreAuthorize("hasAnyRole('DRIVER', 'MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Update driver online/offline status")
     public ResponseEntity<Map<String, Object>> updateDriverStatus(
             @PathVariable String driverId,

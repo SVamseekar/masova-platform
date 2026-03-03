@@ -41,7 +41,7 @@ public class OrderServiceClient {
     @CircuitBreaker(name = "orderService", fallbackMethod = "getOrdersByDateFallback")
     public List<Map<String, Object>> getOrdersByDate(LocalDate date) {
         try {
-            String url = orderServiceUrl + "/api/orders/date/" + date;
+            String url = orderServiceUrl + "/api/orders?date=" + date;
             ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
                 url,
                 HttpMethod.GET,
@@ -59,7 +59,7 @@ public class OrderServiceClient {
     @CircuitBreaker(name = "orderService", fallbackMethod = "getOrdersByDateRangeFallback")
     public List<Map<String, Object>> getOrdersByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
         try {
-            String url = orderServiceUrl + "/api/orders/range?start=" + startDate + "&end=" + endDate;
+            String url = orderServiceUrl + "/api/orders?startDate=" + startDate + "&endDate=" + endDate;
             ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
                 url,
                 HttpMethod.GET,
@@ -77,7 +77,8 @@ public class OrderServiceClient {
     @CircuitBreaker(name = "orderService", fallbackMethod = "getOrdersByStaffFallback")
     public List<Map<String, Object>> getOrdersByStaff(String staffId, LocalDate date) {
         try {
-            String url = orderServiceUrl + "/api/orders/staff/" + staffId + "/date/" + date;
+            // Phase 1: /api/orders/staff/{id}/date/{date} → /api/orders/analytics?type=kitchen&staffId=&date=
+            String url = orderServiceUrl + "/api/orders/analytics?type=kitchen&staffId=" + staffId + "&date=" + date;
             ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
                 url,
                 HttpMethod.GET,
@@ -95,7 +96,8 @@ public class OrderServiceClient {
     @CircuitBreaker(name = "orderService", fallbackMethod = "getActiveDeliveryCountFallback")
     public Integer getActiveDeliveryCount() {
         try {
-            String url = orderServiceUrl + "/api/orders/active-deliveries/count";
+            // Phase 1: /api/orders/active-deliveries/count → /api/orders/analytics?type=active-deliveries
+            String url = orderServiceUrl + "/api/orders/analytics?type=active-deliveries";
             return restTemplate.getForObject(url, Integer.class);
         } catch (RestClientException e) {
             log.error("Failed to fetch active delivery count", e);

@@ -172,10 +172,8 @@ public class GatewayConfig {
                 // COMMERCE SERVICE (port 8084) — menu, orders, kitchen
                 // ============================================================
 
-                // Menu — public browsing (no auth)
-                .route("commerce_menu_public", r -> r.path("/api/menu/public", "/api/menu/public/**",
-                                                            "/api/menu/items", "/api/menu/items/**",
-                                                            "/api/menu/cuisine/**", "/api/menu/category/**")
+                // Menu — public browsing (no auth) — canonical: GET /api/menu and GET /api/menu/{id}
+                .route("commerce_menu_public", r -> r.path("/api/menu", "/api/menu/{id}")
                         .and().method("GET")
                         .uri("http://localhost:8084"))
 
@@ -293,7 +291,7 @@ public class GatewayConfig {
                         .uri("http://localhost:8086"))
 
                 // ============================================================
-                // INTELLIGENCE SERVICE (port 8086) — analytics, BI, reports
+                // INTELLIGENCE SERVICE (port 8087) — analytics, BI, reports
                 // ============================================================
 
                 .route("intelligence_analytics", r -> r.path("/api/analytics/**", "/api/bi/**", "/api/reports/**")
