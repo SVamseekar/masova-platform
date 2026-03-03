@@ -1,5 +1,7 @@
 package com.MaSoVa.logistics.delivery.client;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +34,7 @@ public class UserServiceClient {
     /**
      * Get all available drivers for a store
      */
+    @CircuitBreaker(name = "userService", fallbackMethod = "getAvailableDriversFallback")
     public List<Map<String, Object>> getAvailableDrivers(String storeId) {
         String url = userServiceUrl + "/api/users/drivers/available?storeId=" + storeId;
         log.debug("Fetching available drivers from: {}", url);
@@ -53,6 +56,7 @@ public class UserServiceClient {
     /**
      * Get driver details by ID
      */
+    @CircuitBreaker(name = "userService", fallbackMethod = "getDriverDetailsFallback")
     public Map<String, Object> getDriverDetails(String driverId) {
         String url = userServiceUrl + "/api/users/" + driverId;
         log.debug("Fetching driver details from: {}", url);
@@ -153,5 +157,15 @@ public class UserServiceClient {
             log.error("Error fetching employee working status: {}", e.getMessage());
             throw new RuntimeException("Failed to check working session: " + e.getMessage());
         }
+    }
+
+    public List<Map<String, Object>> getAvailableDriversFallback(String storeId, Exception e) {
+        log.warn("user-service circuit open for available drivers (store {}): {}", storeId, e.getMessage());
+        return List.of();
+    }
+
+    public Map<String, Object> getDriverDetailsFallback(String driverId, Exception e) {
+        log.warn("user-service circuit open for driver {}: {}", driverId, e.getMessage());
+        return Map.of();
     }
 }

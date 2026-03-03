@@ -1,5 +1,7 @@
 package com.MaSoVa.core.user.client;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,6 +35,7 @@ public class DeliveryServiceClient {
     /**
      * Get all delivery tracking records for a customer (GDPR data export)
      */
+    @CircuitBreaker(name = "deliveryService", fallbackMethod = "getCustomerDeliveriesFallback")
     public List<Map<String, Object>> getCustomerDeliveries(String customerId, String authToken) {
         try {
             String url = deliveryServiceUrl + "/api/delivery/customer/" + customerId;
@@ -76,6 +79,11 @@ public class DeliveryServiceClient {
             logger.error("Error anonymizing deliveries for customer {}: {}", customerId, e.getMessage());
             return false;
         }
+    }
+
+    public List<Map<String, Object>> getCustomerDeliveriesFallback(String customerId, String authToken, Exception e) {
+        logger.warn("delivery-service circuit open for customer {} GDPR export: {}", customerId, e.getMessage());
+        return Collections.emptyList();
     }
 
     private HttpHeaders createHttpHeaders(String authToken) {

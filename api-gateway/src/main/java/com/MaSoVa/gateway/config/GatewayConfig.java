@@ -87,11 +87,7 @@ public class GatewayConfig {
                         .and().method("GET")
                         .uri("http://localhost:8085"))
 
-                // Customers — public get-or-create for guest checkout
-                .route("core_customers_public", r -> r.path("/api/customers/get-or-create")
-                        .and().method("POST")
-                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(50, "customer_create"))))
-                        .uri("http://localhost:8085"))
+                // POST /api/customers/get-or-create is service-to-service only — BLOCKED at gateway (internal only)
 
                 // Users — all other protected user/store/session/shift operations
                 .route("core_users", r -> r.path("/api/users/**")
