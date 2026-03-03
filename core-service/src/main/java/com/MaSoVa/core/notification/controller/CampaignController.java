@@ -38,7 +38,7 @@ public class CampaignController {
         return ResponseEntity.ok(created);
     }
 
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<Campaign> updateCampaign(@PathVariable String id, @RequestBody Campaign campaign) {
         Campaign updated = campaignService.updateCampaign(id, campaign);
         return ResponseEntity.ok(updated);

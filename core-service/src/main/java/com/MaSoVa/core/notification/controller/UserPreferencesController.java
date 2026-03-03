@@ -2,12 +2,22 @@ package com.MaSoVa.core.notification.controller;
 
 import com.MaSoVa.core.notification.entity.UserPreferences;
 import com.MaSoVa.core.notification.service.UserPreferencesService;
-import jakarta.servlet.http.HttpServletRequest;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * User preferences — 3 canonical endpoints at /api/preferences/{userId}.
+ * Replaces: /api/preferences/user/{userId} (wrong path), separate channel/device/contact endpoints.
+ */
 @RestController
 @RequestMapping("/api/preferences")
+@Tag(name = "User Preferences", description = "Notification channel, device token, and contact preferences")
+@SecurityRequirement(name = "bearerAuth")
 public class UserPreferencesController {
 
     private final UserPreferencesService userPreferencesService;
@@ -16,94 +26,29 @@ public class UserPreferencesController {
         this.userPreferencesService = userPreferencesService;
     }
 
-    private String getStoreIdFromHeaders(HttpServletRequest request) {
-        String userType = request.getHeader("X-User-Type");
-        String selectedStoreId = request.getHeader("X-Selected-Store-Id");
-        String userStoreId = request.getHeader("X-User-Store-Id");
-
-        if ("MANAGER".equals(userType) || "CUSTOMER".equals(userType)) {
-            return selectedStoreId != null ? selectedStoreId : userStoreId;
-        }
-        return userStoreId;
-    }
-
-    @GetMapping("/user/{userId}")
+    @GetMapping("/{userId}")
+    @Operation(summary = "Get preferences")
     public ResponseEntity<UserPreferences> getPreferences(@PathVariable String userId) {
-        UserPreferences preferences = userPreferencesService.getOrCreatePreferences(userId);
-        return ResponseEntity.ok(preferences);
+        return ResponseEntity.ok(userPreferencesService.getOrCreatePreferences(userId));
     }
 
-    @PutMapping("/user/{userId}")
+    /**
+     * PATCH /api/preferences/{userId}
+     * Body: any combination of channel, deviceToken, contact, preferredPaymentMethod fields.
+     * Replaces: separate PUT /, PATCH /channel/*, PATCH /device-token, PATCH /contact endpoints.
+     */
+    @PatchMapping("/{userId}")
+    @Operation(summary = "Update preferences (any field: channel, deviceToken, contact, preferredPaymentMethod)")
     public ResponseEntity<UserPreferences> updatePreferences(
             @PathVariable String userId,
             @RequestBody UserPreferences preferences) {
-        UserPreferences updated = userPreferencesService.updatePreferences(userId, preferences);
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(userPreferencesService.updatePreferences(userId, preferences));
     }
 
-    @PatchMapping("/user/{userId}/channel/{channel}")
-    public ResponseEntity<UserPreferences> updateChannelPreference(
-            @PathVariable String userId,
-            @PathVariable String channel,
-            @RequestParam boolean enabled) {
-        UserPreferences updated = userPreferencesService.updateChannelPreference(userId, channel, enabled);
-        return ResponseEntity.ok(updated);
-    }
-
-    @PatchMapping("/user/{userId}/device-token")
-    public ResponseEntity<UserPreferences> updateDeviceToken(
-            @PathVariable String userId,
-            @RequestBody DeviceTokenRequest request) {
-        UserPreferences updated = userPreferencesService.updateDeviceToken(userId, request.getDeviceToken());
-        return ResponseEntity.ok(updated);
-    }
-
-    @PatchMapping("/user/{userId}/contact")
-    public ResponseEntity<UserPreferences> updateContactInfo(
-            @PathVariable String userId,
-            @RequestBody ContactInfoRequest request) {
-        UserPreferences updated = userPreferencesService.updateContactInfo(
-                userId, request.getEmail(), request.getPhone());
-        return ResponseEntity.ok(updated);
-    }
-
-    @DeleteMapping("/user/{userId}")
+    @DeleteMapping("/{userId}")
+    @Operation(summary = "Delete preferences")
     public ResponseEntity<Void> deletePreferences(@PathVariable String userId) {
         userPreferencesService.deletePreferences(userId);
         return ResponseEntity.ok().build();
-    }
-
-    // Inner classes for requests
-    public static class DeviceTokenRequest {
-        private String deviceToken;
-
-        public String getDeviceToken() {
-            return deviceToken;
-        }
-
-        public void setDeviceToken(String deviceToken) {
-            this.deviceToken = deviceToken;
-        }
-    }
-
-    public static class ContactInfoRequest {
-        private String email;
-        private String phone;
-
-        public String getEmail() {
-            return email;
-        }
-
-        public void setEmail(String email) {
-            this.email = email;
-        }
-
-        public String getPhone() {
-            return phone;
-        }
-
-        public void setPhone(String phone) {
-            this.phone = phone;
-        }
     }
 }
