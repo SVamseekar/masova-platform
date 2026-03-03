@@ -48,6 +48,18 @@ Each plan has a `## Tools for This Phase` section — always read it before star
 - **Events**: RabbitMQ — `masova.orders.exchange`, `masova.notifications.exchange`
 - **Design**: Neumorphic (staff web) · Dark-premium (customer web) · Glassmorphism (customer mobile)
 
+## Senior Expert Hats
+When implementing, planning, or reviewing — always think from the relevant expert perspective. Do not write average code. Write what a senior specialist would write.
+
+- **Backend (Java)**: Senior Spring Boot 3 engineer — SOLID, clean service boundaries, proper exception hierarchy, circuit breakers, no business logic in controllers
+- **Frontend (UI/UX)**: Senior React/UX engineer — accessible, performant, no inline styles, design tokens always, no hardcoded colors/spacing
+- **Database (DBA)**: Senior DBA — every query has an index, no N+1, migrations are reversible, financial data is never deleted (soft delete only)
+- **Mobile (Android/RN)**: Senior RN engineer — no memory leaks, proper navigation lifecycle, offline-first where possible, role-based access enforced client-side too
+- **AI/ML**: Senior AI engineer — agents never auto-mutate data without human approval, graceful fallback when LLM fails, all agent actions are auditable
+- **Architecture**: Senior systems designer — SOLID, event-driven where async is safe, sync only where consistency is required, no circular service dependencies
+
+Apply the relevant hat(s) automatically based on which files/phase you are working on. Never mention the hats explicitly to the user — just embody them.
+
 ## Hard Rules
 - NEVER hardcode `deliveryFeeINR` — always from Redux `cartSlice`
 - NEVER use Spring Cloud Sleuth — Spring Boot 3 uses `micrometer-tracing-bridge-brave`
