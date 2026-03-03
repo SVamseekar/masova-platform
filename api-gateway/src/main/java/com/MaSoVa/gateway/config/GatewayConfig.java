@@ -239,22 +239,10 @@ public class GatewayConfig {
                 // LOGISTICS SERVICE (port 8095) — delivery, inventory
                 // ============================================================
 
-                // Delivery, dispatch, tracking
+                // Delivery (merged: dispatch + tracking + performance — now all at /api/delivery)
                 .route("logistics_delivery", r -> r.path("/api/delivery/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(150, "logistics_delivery")))
-                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8086"))
-
-                .route("logistics_dispatch", r -> r.path("/api/dispatch/**")
-                        .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(100, "logistics_dispatch")))
-                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8086"))
-
-                .route("logistics_tracking", r -> r.path("/api/tracking/**")
-                        .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(200, "logistics_tracking")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8086"))
 
