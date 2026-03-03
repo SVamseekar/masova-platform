@@ -10,6 +10,50 @@
 
 ---
 
+## Tools for This Phase
+
+Read this section before starting ANY task. These are the exact tools to use and when.
+
+### `jdtls-lsp` — Java Language Server (MCP tool)
+**Use it:** Automatically active when editing `.java` files in Claude Code. It gives you live compile errors as you type — do NOT wait for `mvn compile` to catch typos.
+**Specifically:** When editing `Order.java` (Task 0.1) and `Customer.java` (Task 0.5), watch the LSP diagnostics panel. If you see a red underline, fix it before moving to the next step.
+**How to invoke:** It runs automatically. If you need diagnostics explicitly, use the `mcp__ide__getDiagnostics` tool on the file path.
+
+### `context7` — Library Docs (MCP tool)
+**Use it:** Before writing any Spring Boot 3 or Google ADK code you are unsure about.
+**Specifically for this phase:**
+- Task 0.3: Before writing `RedisSessionService`, call `resolve-library-id` for `google-adk` then `query-docs` for `SessionService` to confirm the correct base class/interface signatures.
+- Task 0.4: If you are unsure about MongoDB driver `createIndex` options in Node.js, call `resolve-library-id` for `mongodb` then `query-docs` for `createIndex`.
+**How to invoke:** `mcp__plugin_context7_context7__resolve-library-id` → get the library ID → `mcp__plugin_context7_context7__query-docs` with that ID and your topic.
+
+### `systematic-debugging` (Skill)
+**Use it:** If any task's expected output does not match — BEFORE trying a fix.
+**Specifically:** If Task 0.1 builds but orders still fail to deserialize `OUT_FOR_DELIVERY` at runtime, invoke this skill to trace the root cause systematically instead of guessing.
+**How to invoke:** Type `/systematic-debugging` or ask Claude to use the `systematic-debugging` skill.
+
+### `test-driven-development` (Skill)
+**Use it:** Task 0.3 (Redis session service) requires writing a failing test FIRST. This skill enforces that discipline.
+**How to invoke:** Type `/test-driven-development` before starting Task 0.3.
+
+### `verification-before-completion` (Skill)
+**Use it:** At the end of Task 0.3 and Task 0.6 — before declaring Phase 0 done.
+**Specifically:** For Task 0.3, run the uvicorn startup and confirm the log line `Redis session service connected` appears. For Task 0.6, run the full smoke test and show actual output — not just "it should work."
+**How to invoke:** Type `/verification-before-completion` when you think a task is done.
+
+### `silent-failure-hunter` (Agent — pr-review-toolkit)
+**Use it:** After completing Task 0.4 (MongoDB index migration script). The script uses individual try/catch blocks — this agent will verify none of them silently swallow real errors.
+**How to invoke:** Use the Agent tool with `subagent_type: "pr-review-toolkit:silent-failure-hunter"` pointing at `scripts/fix-p0-indexes.js`.
+
+### `security-guidance` (Skill)
+**Use it:** Task 0.4 touches customer email/phone uniqueness constraints — these are auth-adjacent. Run this skill after the index migration to confirm no security regression.
+**How to invoke:** Type `/security-guidance` or ask Claude to use it.
+
+### `commit-commands:commit` (Skill)
+**Use it:** After EVERY task step that says "Commit". Do not batch commits.
+**How to invoke:** Type `/commit` — it stages the right files and formats the commit message correctly.
+
+---
+
 ## Task 0.1: Verify OrderStatus Enum Alignment
 
 **Files:**

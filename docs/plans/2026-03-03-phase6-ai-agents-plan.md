@@ -12,6 +12,56 @@
 
 ---
 
+## Tools for This Phase
+
+Read this section before starting ANY task. These are the exact tools to use and when.
+
+### `pyright-lsp` — Python Language Server (MCP tool)
+**Use it:** Continuously while writing Python agent code. Pyright catches type errors in ADK tool function signatures, missing async/await, and incorrect `httpx` client usage immediately.
+**Specifically:** In Task 6.2 (wire 7 tools into Agent 1), Pyright will confirm each tool function has the correct signature that ADK expects — typically `async def tool_name(param: type) -> dict`. A wrong return type causes the ADK agent to fail silently.
+**How to invoke:** Runs automatically. Use `mcp__ide__getDiagnostics` on `.py` files explicitly.
+
+### `context7` — Library Docs (MCP tool)
+**Use it:** This is CRITICAL for this phase — ADK 1.25 is relatively new and its APIs are not in Claude's training data reliably.
+**Specifically:**
+- Before Task 6.1: `resolve-library-id` for `google-adk` → `query-docs` for "APScheduler integration" or "scheduler FastAPI lifespan" to get the correct pattern for wiring AsyncIOScheduler into FastAPI startup.
+- Before Task 6.2: `query-docs` for "LlmAgent tools list" to confirm how to pass multiple tools to an LlmAgent in ADK 1.25.
+- Before Task 6.5 (Agent 5 — LLM): `query-docs` for "generate_content async" in Google Generative AI to confirm the correct Gemini API call pattern.
+- Before Task 6.5: `resolve-library-id` for `aio-pika` → `query-docs` for "consume messages async" to get the RabbitMQ consumer pattern for Python asyncio.
+**How to invoke:** `mcp__plugin_context7_context7__resolve-library-id` → `mcp__plugin_context7_context7__query-docs`.
+
+### `serena` — Semantic Code Navigation (MCP tool)
+**Use it:** Before Task 6.2 to trace the existing agent wiring in `masova-support`.
+**Specifically:** Ask Serena to show all files that import from `masova_agent.core`, all tool functions defined in `backend_tools.py`, and all places `LlmAgent` is instantiated. This gives you the complete picture of what's already wired vs what's missing.
+**How to invoke:** Use the `serena` MCP tools.
+
+### `systematic-debugging` (Skill)
+**Use it:** APScheduler jobs that fail silently are the hardest bugs in this phase. If a scheduled agent doesn't run, or runs and produces no output, use this skill immediately.
+**Specifically:** Common failure modes: event loop conflict (APScheduler AsyncIOScheduler must share the FastAPI event loop — not create its own), tool function not awaited correctly, httpx client not closed properly.
+**How to invoke:** Type `/systematic-debugging`.
+
+### `test-driven-development` (Skill)
+**Use it:** For every agent tool function (Tasks 6.2–6.5). Write a unit test for each tool before implementing it. Each tool is a pure async function — easy to unit test with mocked httpx responses.
+**How to invoke:** Type `/test-driven-development`.
+
+### `silent-failure-hunter` (Agent — pr-review-toolkit)
+**Use it:** After Task 6.5 (Agent 5 — RabbitMQ consumer). A RabbitMQ consumer that crashes and doesn't reconnect is the definition of a silent failure. This agent will find any bare `except` blocks or swallowed exceptions.
+**How to invoke:** Use the Agent tool with `subagent_type: "pr-review-toolkit:silent-failure-hunter"` on the Agent 5 implementation file.
+
+### `security-guidance` (Skill)
+**Use it:** After Task 6.2 (Agent 1 tools wired). The agent tools call backend APIs with auth tokens — verify that tokens are not logged, not hardcoded, and expire correctly.
+**How to invoke:** Type `/security-guidance`.
+
+### `verification-before-completion` (Skill)
+**Use it:** After EVERY agent task. Each agent has a `/agents/*/trigger` HTTP endpoint for manual testing. You MUST call this endpoint and show actual response output before marking the task complete.
+**How to invoke:** Type `/verification-before-completion` — it will ask you to run the trigger endpoint and show output.
+
+### `commit-commands:commit` (Skill)
+**Use it:** One commit per agent. Do not batch all agents into one commit.
+**How to invoke:** Type `/commit`.
+
+---
+
 ## Task 6.1: Install APScheduler + Wire into FastAPI
 
 **Files:**

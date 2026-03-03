@@ -12,6 +12,61 @@
 
 ---
 
+## Tools for This Phase
+
+Read this section before starting ANY task. These are the exact tools to use and when.
+
+### `firebase` — Firebase MCP (MCP tools)
+**Use it:** Task 7.3 (Firebase Hosting setup) — do NOT go to the Firebase console manually. Use these MCP tools directly.
+**Specifically:**
+- `firebase_list_projects` — check if a MaSoVa project already exists before creating a new one.
+- `firebase_create_project` — create the project if it doesn't exist.
+- `firebase_get_sdk_config` — get the Firebase config object to paste into `frontend/.env.production`.
+- `firebase_init` — initialize Firebase Hosting for the `frontend/` directory.
+- `firebase_read_resources` — verify Hosting is configured correctly after init.
+**How to invoke:** Use the `mcp__plugin_firebase_firebase__*` tools directly in your session.
+
+### `github` — GitHub MCP (MCP tool)
+**Use it:** Task 7.5 (CI pipeline) and Task 7.6 (CD pipeline). After pushing the workflow files, use GitHub MCP to check the Actions run status without leaving Claude Code.
+**Specifically:** After pushing `.github/workflows/ci.yml`, use the GitHub MCP to view the workflow run and confirm it passes. If it fails, read the job logs via GitHub MCP.
+**How to invoke:** Use the `github` MCP tools available in your session.
+
+### `context7` — Library Docs (MCP tool)
+**Use it:** Before writing Dockerfiles and GitHub Actions workflows.
+**Specifically:**
+- Task 7.1: `resolve-library-id` for `eclipse-temurin` → `query-docs` for "multi-stage build Java 21" to get the correct FROM image names for the build and runtime stages.
+- Task 7.2: `resolve-library-id` for `python` → `query-docs` for "slim Docker image uvicorn" to get the correct Python slim image and uvicorn CMD.
+- Task 7.5: `resolve-library-id` for `github-actions` → `query-docs` for "setup-java temurin maven cache" to get the correct Actions syntax for Java CI.
+**How to invoke:** `mcp__plugin_context7_context7__resolve-library-id` → `mcp__plugin_context7_context7__query-docs`.
+
+### `playwright` — Browser Automation (MCP tools)
+**Use it:** Task 7.9 (smoke test deployed URLs). After the first successful deployment, use Playwright to smoke-test the live Firebase Hosting URL.
+**Specifically:**
+- `browser_navigate` to the Firebase Hosting URL → `browser_screenshot` to confirm the frontend loads.
+- `browser_network_requests` to confirm API calls are going to the Cloud Run URLs (not localhost).
+- `browser_console_messages` to check for any JS errors on the deployed frontend.
+**How to invoke:** `mcp__plugin_playwright_playwright__browser_navigate`, `browser_screenshot`, `browser_network_requests`.
+
+### `security-guidance` (Skill)
+**Use it:** After Task 7.5 (CI) and Task 7.6 (CD). This is the most security-critical phase — production secrets in GitHub Actions, CORS configs, GCP service account permissions.
+**Specifically:** Verify: Are secrets stored in GitHub Secrets (not in yaml files)? Is the GCP service account scoped minimally (Cloud Run deploy only — not project owner)? Is CORS restricted to the Firebase Hosting domain only?
+**How to invoke:** Type `/security-guidance`.
+
+### `verification-before-completion` (Skill)
+**Use it:** After EVERY task in this phase. Deployment tasks have the highest blast radius — a broken CI pipeline or wrong Docker image can waste hours. Evidence before assertion.
+**Specifically:** For Task 7.1, build the Docker image locally and run it before pushing. For Task 7.5, confirm the GitHub Actions workflow shows green before moving to CD. For Task 7.3, confirm Firebase Hosting shows the correct site.
+**How to invoke:** Type `/verification-before-completion`.
+
+### `finishing-a-development-branch` (Skill)
+**Use it:** After Task 7.9 (smoke tests pass on production). This skill guides the final merge decision — whether to squash, merge, or rebase the deployment branch into main, and how to tag the release.
+**How to invoke:** Type `/finishing-a-development-branch`.
+
+### `commit-commands:commit-push-pr` (Skill)
+**Use it:** After Task 7.4 (GCP setup docs complete). Opening a PR at this point triggers the CI pipeline for the first time — this is intentional. Watch it run.
+**How to invoke:** Type `/commit-push-pr`.
+
+---
+
 ## Task 7.1: Multi-Stage Docker Builds for Java Services
 
 **Files:**

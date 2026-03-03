@@ -10,6 +10,57 @@
 
 ---
 
+## Tools for This Phase
+
+Read this section before starting ANY task. These are the exact tools to use and when.
+
+### `using-git-worktrees` (Skill)
+**Use it:** BEFORE starting Task 1.1. This phase deletes and rewrites controller mappings — that is destructive. Work in an isolated worktree so main is never broken.
+**How to invoke:** Type `/using-git-worktrees` and follow the instructions to create a worktree named `feat/api-reduction`.
+
+### `jdtls-lsp` — Java Language Server (MCP tool)
+**Use it:** Continuously while editing every controller file. When you remove a method or change a path, the LSP will immediately show if any other class references that method.
+**Specifically:** In Task 1.6 when you merge 3 delivery controllers into one, the LSP will flag any remaining imports of the deleted controllers in other files — fix those immediately, do not leave them for compile time.
+**How to invoke:** Runs automatically. Use `mcp__ide__getDiagnostics` on any file to get current diagnostics.
+
+### `serena` — Semantic Code Navigation (MCP tool)
+**Use it:** Before removing any endpoint method — use Serena to find all callers first.
+**Specifically:** Before deleting `GET /api/stores/nearby` in Task 1.1, ask Serena "find all references to getNearbyStores" or "find all Feign clients calling /api/stores/nearby". If any other service calls it, update the Feign client URL FIRST before removing the endpoint.
+**How to invoke:** Use the `serena` MCP tools available in your session.
+
+### `greptile` — Semantic Codebase Search (MCP tool)
+**Use it:** When Serena doesn't find something obvious. For example, in Task 1.5 before deleting `RatingController`, use Greptile to search "RatingController" or "/api/ratings" across the entire codebase.
+**Specifically:** Search "api/v1/" to find ALL v1 path duplicates across all services in one query — faster than reading every controller manually.
+**How to invoke:** Use the `mcp__plugin_greptile_greptile__*` tools available in your session.
+
+### `feature-dev:code-explorer` (Agent)
+**Use it:** At the start of each service task (1.1 through 1.8) — before touching any file. Run this agent to get a deep understanding of that service's controller structure.
+**Specifically:** Run it for logistics-service before Task 1.6 — that service has 3 delivery controllers that need merging, and you need to understand all the method signatures first.
+**How to invoke:** Use the Agent tool with `subagent_type: "feature-dev:code-explorer"`. Give it the service directory path.
+
+### `context7` — Library Docs (MCP tool)
+**Use it:** Before writing any Resilience4j circuit breaker config in Task 1.9. The Resilience4j Spring Boot 3 config differs from Boot 2.
+**How to invoke:** `resolve-library-id` for `resilience4j-spring-boot3` → `query-docs` for `CircuitBreaker annotation`.
+
+### `systematic-debugging` (Skill)
+**Use it:** If after removing an endpoint a service starts returning 500s or 404s on endpoints you did NOT touch — invoke this skill before guessing the cause.
+**How to invoke:** Type `/systematic-debugging`.
+
+### `security-guidance` (Skill)
+**Use it:** After Task 1.9 (gateway guard + circuit breakers). Verify that `POST /api/customers/get-or-create` is truly blocked at the gateway and no auth endpoints were accidentally made public.
+**How to invoke:** Type `/security-guidance` after Task 1.9.
+
+### `pr-review-toolkit:code-reviewer` (Agent)
+**Use it:** Once per service after its tasks are done — NOT after every individual task (too expensive on Pro).
+**Specifically:** After Task 1.4 (core-service complete), run this agent on all modified core-service controllers. After Task 1.6 (logistics complete), run it on the new `DeliveryController.java`.
+**How to invoke:** Use the Agent tool with `subagent_type: "pr-review-toolkit:code-reviewer"`.
+
+### `commit-commands:commit-push-pr` (Skill)
+**Use it:** At the end of Task 1.11 (smoke test passes) to create the PR for this entire phase.
+**How to invoke:** Type `/commit-push-pr`.
+
+---
+
 ## Pre-Flight: Read the API Reduction Design
 
 Before touching any controller, read the canonical 175-endpoint table in:

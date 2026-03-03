@@ -10,6 +10,54 @@
 
 ---
 
+## Tools for This Phase
+
+Read this section before starting ANY task. These are the exact tools to use and when.
+
+### `jdtls-lsp` — Java Language Server (MCP tool)
+**Use it:** Continuously while editing `OrderService.java`, `KitchenService.java`, and any Feign client files. This phase modifies the core order state machine — the LSP will catch missing method signatures, wrong enum values, and broken imports immediately.
+**Specifically:** When adding OTP generation in Task 3.7, the LSP will confirm that the Redis `StringRedisTemplate` injection is correct and the method signatures match what Spring expects.
+**How to invoke:** Runs automatically. Use `mcp__ide__getDiagnostics` on any file for explicit diagnostics.
+
+### `serena` — Semantic Code Navigation (MCP tool)
+**Use it:** Before modifying the order state machine — use Serena to trace the FULL order lifecycle first.
+**Specifically:** Before Task 3.1, ask Serena to "show all callers of updateOrderStatus in commerce-service" and "show all places OrderStatus is referenced". This gives you the complete picture before you touch anything.
+**How to invoke:** Use the `serena` MCP tools in your session.
+
+### `greptile` — Semantic Codebase Search (MCP tool)
+**Use it:** To find all RabbitMQ publishers and consumers across all services in one search.
+**Specifically:** Before Task 3.1, search "RabbitTemplate.convertAndSend" across the codebase to see every place events are published. Before Task 3.7 (OTP), search "delivery_otp" or "DELIVERY_OTP" to see if any existing OTP handling exists.
+**How to invoke:** Use the `mcp__plugin_greptile_greptile__*` tools.
+
+### `context7` — Library Docs (MCP tool)
+**Use it:** Before Task 3.7 (OTP + Redis TTL). Redis `StringRedisTemplate.opsForValue().set(key, value, duration)` has specific Spring Boot 3 syntax.
+**Specifically:** `resolve-library-id` for `spring-data-redis` → `query-docs` for "StringRedisTemplate TTL" to confirm the exact method signature with `Duration` parameter.
+**How to invoke:** `mcp__plugin_context7_context7__resolve-library-id` → `mcp__plugin_context7_context7__query-docs`.
+
+### `systematic-debugging` (Skill)
+**Use it:** If any order status transition test fails at runtime — BEFORE changing code. The order state machine has many interdependencies. Diagnose first.
+**Specifically:** If OTP verification fails in Task 3.7, use this skill to trace: Was the OTP stored in Redis? Is the TTL set correctly? Is the key format matching between store and retrieve?
+**How to invoke:** Type `/systematic-debugging`.
+
+### `test-driven-development` (Skill)
+**Use it:** For every order state transition fix in this phase. Write a failing test that demonstrates the bug, then fix the code.
+**Specifically:** For Task 3.7, write a test that calls the OTP generation endpoint, stores the OTP, calls the verify endpoint with wrong OTP (expect 400), then with correct OTP (expect 200).
+**How to invoke:** Type `/test-driven-development` before starting each task.
+
+### `silent-failure-hunter` (Agent — pr-review-toolkit)
+**Use it:** After Task 3.7 (OTP generation). OTP storage failures (Redis unavailable, key collision) must surface as errors — not silent skips. This agent hunts for exactly that.
+**How to invoke:** Use the Agent tool with `subagent_type: "pr-review-toolkit:silent-failure-hunter"` on the OTP service code.
+
+### `pr-review-toolkit:code-reviewer` (Agent)
+**Use it:** After completing Task 3.7 (OTP flow complete) and after Task 3.4 (KDS revamp). These are the two highest-complexity tasks in this phase.
+**How to invoke:** Use the Agent tool with `subagent_type: "pr-review-toolkit:code-reviewer"`.
+
+### `commit-commands:commit` (Skill)
+**Use it:** After every task. Each fix is independent — commit them separately so rollback is easy if one breaks something.
+**How to invoke:** Type `/commit`.
+
+---
+
 ## Task 3.1: Inventory Auto-Decrement on Order Status Change
 
 **Files:**

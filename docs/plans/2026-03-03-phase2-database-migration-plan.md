@@ -14,6 +14,57 @@
 
 ---
 
+## Tools for This Phase
+
+Read this section before starting ANY task. These are the exact tools to use and when.
+
+### `using-git-worktrees` (Skill)
+**Use it:** BEFORE Task 2.1. Database migration touches docker-compose, pom.xml, application.yml, and service entities across 4 services. Never do this on main.
+**How to invoke:** Type `/using-git-worktrees` and create a worktree named `feat/postgres-migration`.
+
+### `jdtls-lsp` — Java Language Server (MCP tool)
+**Use it:** Continuously while writing JPA entity classes (Tasks 2.3, 2.5, 2.7). JPA annotations are easy to get wrong — `@Column(name=...)` mismatches with the Flyway SQL table definition cause startup failures. The LSP will catch annotation syntax errors immediately.
+**Specifically:** When writing `UserEntity.java` in Task 2.3, confirm the LSP shows no errors before running the service. A missing `@Entity` or wrong `@Id` type will cause Hibernate to fail silently with a confusing error.
+**How to invoke:** Runs automatically. Use `mcp__ide__getDiagnostics` explicitly if needed.
+
+### `context7` — Library Docs (MCP tool)
+**Use it:** This is the most important phase for Context7. Spring Boot 3 JPA config differs significantly from Boot 2.
+**Specifically:**
+- Before Task 2.2: `resolve-library-id` for `spring-boot-starter-data-jpa` → `query-docs` for "dual datasource configuration" to understand how to keep MongoDB AND add PostgreSQL without conflicts.
+- Before Task 2.3: `query-docs` for "Flyway Spring Boot 3" to confirm the correct `flyway-database-postgresql` artifact name.
+- Before Task 2.5: `query-docs` for `@JdbcTypeCode SqlTypes.JSON` to confirm JSONB column mapping in Hibernate 6 (Spring Boot 3 uses Hibernate 6, not 5).
+**How to invoke:** `mcp__plugin_context7_context7__resolve-library-id` → `mcp__plugin_context7_context7__query-docs`.
+
+### `systematic-debugging` (Skill)
+**Use it:** If a service fails to start after adding JPA dependencies (Task 2.2). The most common failure is datasource autoconfiguration conflict — Spring sees two datasources and doesn't know which to use for JPA. This skill will trace the root cause.
+**How to invoke:** Type `/systematic-debugging` and paste the full Spring startup error.
+
+### `verification-before-completion` (Skill)
+**Use it:** After EVERY dual-write task (2.4, 2.6) — not just at the end of the phase. After implementing dual-write in `UserService`, you MUST run a real create-user API call and then query PostgreSQL to confirm the row was written. Do not proceed to the next task without this evidence.
+**How to invoke:** Type `/verification-before-completion`. It will ask you to show actual command output.
+
+### `silent-failure-hunter` (Agent — pr-review-toolkit)
+**Use it:** After every dual-write implementation (Tasks 2.4, 2.6). The dual-write pattern uses try/catch to make PostgreSQL writes non-blocking. This agent specifically hunts for cases where errors are swallowed without logging — which would mean you'd never know the dual-write is broken.
+**How to invoke:** Use the Agent tool with `subagent_type: "pr-review-toolkit:silent-failure-hunter"` pointing at the modified service file (e.g., `UserService.java`).
+
+### `security-guidance` (Skill)
+**Use it:** After Task 2.3 (users schema) and Task 2.7 (transactions schema). These tables contain passwords, payment data, and PII. The schema needs review for missing encryption, overly broad permissions, or missing audit columns.
+**How to invoke:** Type `/security-guidance` after each financial schema task.
+
+### `pr-review-toolkit:type-design-analyzer` (Agent)
+**Use it:** After writing each JPA entity class (Tasks 2.3, 2.5). It reviews whether the entity type design properly expresses invariants — e.g., whether `status` should be a String or an enum type, whether nullable columns are correctly mapped.
+**How to invoke:** Use the Agent tool with `subagent_type: "pr-review-toolkit:type-design-analyzer"` pointing at the new entity file.
+
+### `pr-review-toolkit:code-reviewer` (Agent)
+**Use it:** After Tasks 2.4 and 2.6 (dual-write implementations). Dual-write is the highest-risk code in this phase — two database writes in one service call.
+**How to invoke:** Use the Agent tool with `subagent_type: "pr-review-toolkit:code-reviewer"`.
+
+### `commit-commands:commit-push-pr` (Skill)
+**Use it:** At the end of each week milestone (see Execution Timeline below) — not after every task. Open a PR per milestone so the changes are reviewable in small chunks.
+**How to invoke:** Type `/commit-push-pr`.
+
+---
+
 ## Collections Migrating to PostgreSQL
 
 | MongoDB Collection | New PostgreSQL Table(s) | Which Service |

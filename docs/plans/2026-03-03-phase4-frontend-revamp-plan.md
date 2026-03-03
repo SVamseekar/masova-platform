@@ -12,6 +12,50 @@
 
 ---
 
+## Tools for This Phase
+
+Read this section before starting ANY task. These are the exact tools to use and when.
+
+### `typescript-lsp` — TypeScript Language Server (MCP tool)
+**Use it:** Continuously while editing React components. This phase creates new pages and modifies existing ones — TypeScript errors in props, missing imports, and incorrect RTK Query hook types are caught immediately by the LSP.
+**Specifically:** When adding `SpeechRecognition` types in Task 4.10 (voice input), the LSP will tell you if the Web Speech API types are available or if you need `@types/dom-speech-recognition`.
+**How to invoke:** Runs automatically in your editor. Use `mcp__ide__getDiagnostics` on any `.tsx` file for explicit diagnostics.
+
+### `frontend-design` (Skill)
+**Use it:** For Tasks 4.2 (HomePage), 4.3 (MenuPage), and 4.6 (Checkout/Tracking) where the visual design matters most. This skill guides creating distinctive, polished UI instead of generic components.
+**How to invoke:** Type `/frontend-design` before starting each of these tasks. Describe the dark-premium aesthetic (gold accents, deep blacks, red CTA) and the component you're building.
+
+### `playwright` — Browser Automation (MCP tools)
+**Use it:** After EVERY UI task in this phase to visually verify the result. Do not trust that the code is correct without seeing it in a browser.
+**Specifically:**
+- After Task 4.1 (CSS variables): `browser_navigate` to `http://localhost:3000` → `browser_screenshot` to confirm dark background is applied.
+- After Task 4.2 (HomePage): `browser_screenshot` → confirm hero section, category grid, featured items visible.
+- After Task 4.9 (Google Places): `browser_fill_form` on the address input → `browser_screenshot` to confirm autocomplete dropdown appears.
+- After any change: `browser_network_requests` to confirm RTK Query is hitting canonical API paths (not old `/api/v1/` paths).
+**How to invoke:** Use `mcp__plugin_playwright_playwright__browser_navigate`, `browser_screenshot`, `browser_network_requests` etc.
+
+### `context7` — Library Docs (MCP tool)
+**Use it:** Before any unfamiliar API usage in this phase.
+**Specifically:**
+- Task 4.9 (Google Places Autocomplete): `resolve-library-id` for `@react-google-maps/api` → `query-docs` for "Autocomplete component" to get the exact React wrapper API.
+- Task 4.10 (Voice Input): `resolve-library-id` for `web-speech-api` → `query-docs` for "SpeechRecognition" to confirm the browser API surface and TypeScript types.
+- Task 4.7 (RTK Query): If RTK Query `invalidatesTags` behavior is unclear, `resolve-library-id` for `@reduxjs/toolkit` → `query-docs`.
+**How to invoke:** `mcp__plugin_context7_context7__resolve-library-id` → `mcp__plugin_context7_context7__query-docs`.
+
+### `test-driven-development` (Skill)
+**Use it:** Before building each component. Write a Vitest component test that asserts the key behavior (renders correctly, responds to click, calls the right API) before writing the component.
+**How to invoke:** Type `/test-driven-development` before each task.
+
+### `pr-review-toolkit:comment-analyzer` (Agent)
+**Use it:** After completing Tasks 4.2, 4.3, and 4.6 — the three most complex new page components. This agent verifies JSDoc comments are accurate and will not become stale.
+**How to invoke:** Use the Agent tool with `subagent_type: "pr-review-toolkit:comment-analyzer"`.
+
+### `commit-commands:commit` (Skill)
+**Use it:** After every task. CSS variables (4.1), then each page (4.2, 4.3...) — commit them separately. If the dark theme breaks a staff page, you want to be able to revert just that commit.
+**How to invoke:** Type `/commit`.
+
+---
+
 ## Task 4.1: Dark Premium CSS Custom Properties
 
 **Files:**

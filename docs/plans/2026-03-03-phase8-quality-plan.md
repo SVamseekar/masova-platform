@@ -4,11 +4,84 @@
 
 **Goal:** Achieve 90%+ unit test pass rate, fix E2E Playwright specs, add distributed tracing, and complete the product website.
 
-**Architecture:** Vitest for frontend unit tests, Pact for contract tests between frontend + backend, Playwright for E2E, Spring Cloud Sleuth + Zipkin for distributed tracing. Product website completion in existing `frontend/src/pages/product-site/`.
+**Architecture:** Vitest for frontend unit tests, Pact for contract tests between frontend + backend, Playwright for E2E, Micrometer Tracing (Brave) + Zipkin for distributed tracing. Product website completion in existing `frontend/src/pages/product-site/`.
 
-**Tech Stack:** Vitest 2.x, Pact JS, Playwright, Spring Cloud Sleuth, Zipkin, React 19
+**Tech Stack:** Vitest 2.x, Pact JS, Playwright, Micrometer Tracing Bridge Brave, Zipkin, React 19
+
+> **NOTE:** Spring Boot 3 does NOT use Spring Cloud Sleuth. Sleuth is Boot 2 only. Use `micrometer-tracing-bridge-brave` + `zipkin-reporter-brave` instead.
 
 **Prerequisite:** All Phases 0–7 complete. Services deployed and accessible.
+
+---
+
+## Tools for This Phase
+
+Read this section before starting ANY task. These are the exact tools to use and when.
+
+### `typescript-lsp` — TypeScript Language Server (MCP tool)
+**Use it:** Before running Vitest (Task 8.1). The LSP shows TypeScript compile errors in test files — broken imports, wrong mock types, missing type assertions. Fix LSP errors first, then run Vitest. Do not run 1374 tests only to find 200 fail because of a single missing type import.
+**Specifically:** Use `mcp__ide__getDiagnostics` on the test directories `frontend/src/__tests__/` and `frontend/src/components/` to get a full error list before running the test suite.
+**How to invoke:** Runs automatically. Use `mcp__ide__getDiagnostics` explicitly for a full scan.
+
+### `pyright-lsp` — Python Language Server (MCP tool)
+**Use it:** On `masova-support` Python tests. Zero Python type errors is part of the quality gate.
+**How to invoke:** Runs automatically on `.py` files.
+
+### `jdtls-lsp` — Java Language Server (MCP tool)
+**Use it:** Zero Java compile errors is part of the quality gate. Run `mcp__ide__getDiagnostics` across all 6 service source directories at the start of this phase.
+**How to invoke:** Use `mcp__ide__getDiagnostics` on each service's `src/main/java/` directory.
+
+### `playwright` — Browser Automation (MCP tools) — HEAVY USE THIS PHASE
+**Use it:** Task 8.6 (fix 13 Playwright E2E specs) — this is the primary debugging tool for E2E failures.
+**Specifically:**
+- `browser_navigate` to the test URL → `browser_snapshot` (accessibility tree) to understand current page state.
+- `browser_console_messages` to see JS errors thrown during the test flow.
+- `browser_network_requests` to confirm API calls are hitting the right endpoints and getting correct responses.
+- `browser_take_screenshot` to visually compare before/after on UI assertion failures.
+- `browser_fill_form` + `browser_click` to manually replay failing test steps and observe behavior.
+**Workflow:** When an E2E spec fails, first run it manually step-by-step using these MCP tools before modifying the spec or the app code. Understand WHY it fails first.
+**How to invoke:** `mcp__plugin_playwright_playwright__browser_*` tools.
+
+### `context7` — Library Docs (MCP tool)
+**Use it:** Before Task 8.4 (Pact contracts) and Task 8.5 (Micrometer tracing).
+**Specifically:**
+- Task 8.4: `resolve-library-id` for `@pact-foundation/pact` → `query-docs` for "consumer test RTK Query" to confirm how to write Pact tests against an RTK Query API client.
+- Task 8.5: `resolve-library-id` for `micrometer-tracing` → `query-docs` for "Spring Boot 3 Zipkin setup" to confirm the correct dependency names (`micrometer-tracing-bridge-brave`, `zipkin-reporter-brave`) — NOT Spring Cloud Sleuth (that's Boot 2 only).
+**How to invoke:** `mcp__plugin_context7_context7__resolve-library-id` → `mcp__plugin_context7_context7__query-docs`.
+
+### `greptile` — Semantic Codebase Search (MCP tool)
+**Use it:** Task 8.1 (audit) and Task 8.2 (fix RTK Query paths). Use Greptile to find all test files that import from old `/api/v1/` paths in one search — faster than reading 104 test files manually.
+**Specifically:** Search `"/api/v1/"` across `frontend/src/` to find every test using the old path prefix. Then search `msw` handler registrations to find mock server setup files.
+**How to invoke:** Use `mcp__plugin_greptile_greptile__*` tools.
+
+### `pr-review-toolkit:pr-test-analyzer` (Agent)
+**Use it:** After Task 8.3 (component tests at 90%) and before Task 8.9 (final quality gate). This agent analyzes test coverage quality — not just pass rate but whether the tests actually test meaningful behavior.
+**How to invoke:** Use the Agent tool with `subagent_type: "pr-review-toolkit:pr-test-analyzer"`.
+
+### `pr-review-toolkit:silent-failure-hunter` (Agent)
+**Use it:** Final pass before Task 8.9 quality gate. Across all phases of code written, this agent does a final sweep for any silent failures that slipped through.
+**How to invoke:** Use the Agent tool with `subagent_type: "pr-review-toolkit:silent-failure-hunter"` on the full `src/` directory.
+
+### `pr-review-toolkit:code-reviewer` (Agent)
+**Use it:** Task 8.8 (rate limiting implementation). Rate limiting is security-adjacent — get a review before merging.
+**How to invoke:** Use the Agent tool with `subagent_type: "pr-review-toolkit:code-reviewer"`.
+
+### `verification-before-completion` (Skill)
+**Use it:** Task 8.9 (final quality gate). You must show actual numbers:
+- Run Vitest and show the pass percentage output
+- Run TypeScript compiler and show zero errors
+- Run the E2E suite and show pass count
+- Show the 175-endpoint API test result
+Do NOT claim the quality gate is passed without showing this output.
+**How to invoke:** Type `/verification-before-completion`.
+
+### `finishing-a-development-branch` (Skill)
+**Use it:** After Task 8.9 quality gate passes. This is the final merge of all work into main.
+**How to invoke:** Type `/finishing-a-development-branch`.
+
+### `commit-commands:commit-push-pr` (Skill)
+**Use it:** After Task 8.9 — create the final release PR.
+**How to invoke:** Type `/commit-push-pr`.
 
 ---
 

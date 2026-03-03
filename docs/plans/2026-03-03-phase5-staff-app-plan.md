@@ -12,6 +12,53 @@
 
 ---
 
+## Tools for This Phase
+
+Read this section before starting ANY task. These are the exact tools to use and when.
+
+### `typescript-lsp` — TypeScript Language Server (MCP tool)
+**Use it:** Continuously while writing React Native TypeScript. The `RoleRouter`, navigator files, and new screens all use TypeScript — the LSP catches navigation prop type errors, missing screen definitions in the navigator, and incorrect Redux selector types immediately.
+**Specifically:** When building `RoleRouter.tsx` in Task 5.2, the LSP will tell you if the `user.type` discriminated union is missing cases, which would cause silent routing failures for some roles.
+**How to invoke:** Runs automatically. Use `mcp__ide__getDiagnostics` on any `.tsx` file explicitly.
+
+### `feature-dev:code-explorer` (Agent)
+**Use it:** At the very start — Task 5.1 (audit). Run this agent on the `MaSoVaDriverApp/` directory before writing a single line of code. It will map the existing navigation structure, screen list, Redux store shape, and API client setup.
+**Specifically:** You need to know: What navigators already exist? What screens exist for the Driver role? Where is the JWT decoded? Where is Redux state stored? This agent answers all of it in one pass.
+**How to invoke:** Use the Agent tool with `subagent_type: "feature-dev:code-explorer"` with the path `/Users/souravamseekarmarti/Projects/MaSoVaDriverApp/`.
+
+### `feature-dev:code-architect` (Agent)
+**Use it:** After the audit (Task 5.1), before writing `RoleRouter.tsx` (Task 5.2). This agent designs the component and navigation architecture based on what already exists.
+**Specifically:** Give it the audit findings and ask it to design: the `RoleRouter` component structure, the 4 navigator files (DriverNavigator, KitchenNavigator, CashierNavigator, ManagerNavigator), the shared component API, and the Redux slice changes needed.
+**How to invoke:** Use the Agent tool with `subagent_type: "feature-dev:code-architect"`.
+
+### `frontend-design` (Skill)
+**Use it:** Before building each role-specific tab navigator UI (Tasks 5.3–5.6). Each role has a distinct color identity:
+- Driver: `#00B14F` (green)
+- Kitchen: `#FF6B35` (orange)
+- Cashier: `#2196F3` (blue)
+- Manager: `#7B1FA2` (purple)
+
+This skill guides creating distinctive, role-appropriate UI rather than generic screens.
+**How to invoke:** Type `/frontend-design` with the role name and color before each navigator task.
+
+### `context7` — Library Docs (MCP tool)
+**Use it:** Before writing navigation code — React Navigation v6 API is specific about stack vs tab navigator configuration.
+**Specifically:**
+- Before Task 5.2: `resolve-library-id` for `@react-navigation/native` → `query-docs` for "createBottomTabNavigator" to confirm tab bar option types and `tabBarIcon` configuration in RN 0.81.
+- Before Task 5.7 (OTP screen): `query-docs` for React Native `TextInput` `secureTextEntry` and numeric keyboard type — OTP must be numeric-only.
+**How to invoke:** `mcp__plugin_context7_context7__resolve-library-id` → `mcp__plugin_context7_context7__query-docs`.
+
+### `systematic-debugging` (Skill)
+**Use it:** If the RoleRouter dispatches to the wrong navigator, or if a navigator shows a blank screen.
+**Specifically:** The most common React Navigation bug is a missing screen registration in the navigator. Use this skill to trace: Is `user.type` being decoded correctly from JWT? Is the navigator receiving the right initial route? Are all screens registered?
+**How to invoke:** Type `/systematic-debugging`.
+
+### `commit-commands:commit` (Skill)
+**Use it:** After every task. Task 5.1 (audit/no code) gets a "chore" commit. Task 5.2 (RoleRouter) gets its own commit. Each screen gets its own commit.
+**How to invoke:** Type `/commit`.
+
+---
+
 ## Task 5.1: Audit Existing MaSoVaDriverApp Structure
 
 **Files:**
