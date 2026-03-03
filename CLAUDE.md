@@ -48,17 +48,52 @@ Each plan has a `## Tools for This Phase` section — always read it before star
 - **Events**: RabbitMQ — `masova.orders.exchange`, `masova.notifications.exchange`
 - **Design**: Neumorphic (staff web) · Dark-premium (customer web) · Glassmorphism (customer mobile)
 
-## Senior Expert Hats
-When implementing, planning, or reviewing — always think from the relevant expert perspective. Do not write average code. Write what a senior specialist would write.
+## Expert Behavior by Domain
+Apply automatically based on which files/phase are being worked on. Never announce it — just do it.
 
-- **Backend (Java)**: Senior Spring Boot 3 engineer — SOLID, clean service boundaries, proper exception hierarchy, circuit breakers, no business logic in controllers
-- **Frontend (UI/UX)**: Senior React/UX engineer — accessible, performant, no inline styles, design tokens always, no hardcoded colors/spacing
-- **Database (DBA)**: Senior DBA — every query has an index, no N+1, migrations are reversible, financial data is never deleted (soft delete only)
-- **Mobile (Android/RN)**: Senior RN engineer — no memory leaks, proper navigation lifecycle, offline-first where possible, role-based access enforced client-side too
-- **AI/ML**: Senior AI engineer — agents never auto-mutate data without human approval, graceful fallback when LLM fails, all agent actions are auditable
-- **Architecture**: Senior systems designer — SOLID, event-driven where async is safe, sync only where consistency is required, no circular service dependencies
+**When touching any Spring Boot service (core/commerce/logistics/payment/intel):**
+- Controllers only handle HTTP — no business logic, no repository calls directly
+- Every new endpoint needs: `@PreAuthorize` or explicit public annotation, input validation, and error response body
+- New service methods that call other services use the existing Feign clients — never raw `RestTemplate`
+- Any try/catch that swallows an exception MUST log `log.warn(...)` with order/user context
+- Before removing any endpoint, use Serena/Greptile to find all callers first
+- OrderService state transitions must publish to `masova.orders.exchange` via `OrderEventPublisher`
 
-Apply the relevant hat(s) automatically based on which files/phase you are working on. Never mention the hats explicitly to the user — just embody them.
+**When touching frontend (frontend/src):**
+- Customer pages: dark-premium CSS vars (`--dp-*`) only — never hardcode `#` colors or `px` spacing
+- Staff pages: neumorphic tokens from `design-tokens.ts` only — never mix with dark-premium vars
+- Every RTK Query endpoint uses canonical paths (175 endpoints — no `/api/v1/` prefixes)
+- `deliveryFeeINR` always from `useSelector(selectDeliveryFeeINR)` — never hardcoded
+- Every new component needs: loading state, error state, empty state — all three
+- TypeScript strict — no `any`, no `// @ts-ignore`
+
+**When touching database (migrations, entities, repositories):**
+- Every new MongoDB query field needs a corresponding `@Indexed` annotation
+- Every new PostgreSQL table needs: `created_at`, `updated_at`, `mongo_id` (migration tracking), and at least one covering index
+- Financial data (orders, payments, transactions): soft delete only — add `deleted_at`, never `DELETE`
+- Flyway migrations are append-only — never edit an existing `V*.sql` file
+- Dual-write pattern: PostgreSQL write first (synchronous), MongoDB second (async try/catch with warn log)
+
+**When touching MaSoVaDriverApp or masova-mobile:**
+- `RoleRouter` in MaSoVaDriverApp reads `user.type` from JWT — never hardcode role checks inline in screens
+- Role colors: Driver=`#00B14F`, Kitchen=`#FF6B35`, Cashier=`#2196F3`, Manager=`#7B1FA2` — never change these
+- masova-mobile is NOT Expo Go — bare RN 0.81, Metro on :8888
+- Every screen that calls an API must handle: loading spinner, network error, empty data
+- Navigation params must be typed — no untyped `route.params`
+
+**When touching masova-support (Python agents):**
+- Agents NEVER auto-write to the database — they propose actions, manager approves
+- Every agent has a `POST /agents/{name}/trigger` endpoint for manual testing
+- Tool functions must be `async def` and return `dict` — ADK requires this signature
+- APScheduler jobs share the FastAPI event loop — never create a new `asyncio.run()` inside a job
+- If Gemini/LLM call fails, fall back to rule-based response — never surface raw API errors to user
+- Every agent action logged with: agent name, trigger type (scheduled/manual), store_id, output summary
+
+**When planning cross-service changes (any phase):**
+- commerce-service never imports from logistics-service or vice versa — use RabbitMQ events
+- api-gateway is routing only — no business logic, no DB calls
+- shared-models is the single source of truth for enums (OrderStatus, etc.) — inner enums in entities must match
+- New features that touch >2 services need an event-driven design — not synchronous chained calls
 
 ## Hard Rules
 - NEVER hardcode `deliveryFeeINR` — always from Redux `cartSlice`
