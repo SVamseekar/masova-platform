@@ -247,7 +247,8 @@ public class OrderService {
                 OrderStatus.PREPARING,
                 OrderStatus.OVEN,
                 OrderStatus.BAKED,
-                OrderStatus.DISPATCHED
+                OrderStatus.DISPATCHED,
+                OrderStatus.OUT_FOR_DELIVERY
         );
 
         List<Order> orders = orderRepository.findByStoreIdAndStatusIn(storeId, kitchenStatuses);

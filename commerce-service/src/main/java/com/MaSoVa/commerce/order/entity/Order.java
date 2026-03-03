@@ -322,16 +322,17 @@ public class Order {
 
     // Enums
     public enum OrderStatus {
-        RECEIVED,      // Initial state for all orders
-        PREPARING,     // Kitchen started work
-        OVEN,          // In oven (for items that need baking)
-        BAKED,         // Finished baking
-        READY,         // Ready for pickup/serving (TAKEAWAY/DINE_IN)
-        DISPATCHED,    // Out for delivery (DELIVERY only)
-        DELIVERED,     // Delivered to customer (DELIVERY final state)
-        SERVED,        // Served to table (DINE_IN final state)
-        COMPLETED,     // Picked up by customer (TAKEAWAY final state)
-        CANCELLED      // Cancelled order
+        RECEIVED,          // Initial state for all orders
+        PREPARING,         // Kitchen started work
+        OVEN,              // In oven (for items that need baking)
+        BAKED,             // Finished baking
+        READY,             // Ready for pickup/serving/dispatch
+        DISPATCHED,        // Awaiting driver pickup
+        OUT_FOR_DELIVERY,  // Driver assigned and en route
+        DELIVERED,         // Delivered to customer (DELIVERY final state)
+        SERVED,            // Served to table (DINE_IN final state)
+        COMPLETED,         // Picked up by customer (TAKEAWAY final state)
+        CANCELLED          // Cancelled order
     }
 
     public enum OrderType {
