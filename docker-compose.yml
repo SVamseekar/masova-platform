@@ -82,7 +82,7 @@ services:
       - SPRING_RABBITMQ_USERNAME=masova
       - SPRING_RABBITMQ_PASSWORD=masova_secret
       - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://masova-postgres:5432/masova_db
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://masova-postgres:5432/masova_db?currentSchema=core_schema
       - SPRING_DATASOURCE_USERNAME=masova
       - SPRING_DATASOURCE_PASSWORD=masova_secret
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
@@ -115,7 +115,7 @@ services:
       - SPRING_RABBITMQ_PASSWORD=masova_secret
       - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
       - CORE_SERVICE_URL=http://masova-core:8085
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://masova-postgres:5432/masova_db
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://masova-postgres:5432/masova_db?currentSchema=commerce_schema
       - SPRING_DATASOURCE_USERNAME=masova
       - SPRING_DATASOURCE_PASSWORD=masova_secret
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
@@ -149,7 +149,7 @@ services:
       - SPRING_RABBITMQ_USERNAME=masova
       - SPRING_RABBITMQ_PASSWORD=masova_secret
       - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://masova-postgres:5432/masova_db
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://masova-postgres:5432/masova_db?currentSchema=payment_schema
       - SPRING_DATASOURCE_USERNAME=masova
       - SPRING_DATASOURCE_PASSWORD=masova_secret
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
@@ -182,7 +182,7 @@ services:
       - SPRING_RABBITMQ_PASSWORD=masova_secret
       - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
       - CORE_SERVICE_URL=http://masova-core:8085
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://masova-postgres:5432/masova_db
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://masova-postgres:5432/masova_db?currentSchema=logistics_schema
       - SPRING_DATASOURCE_USERNAME=masova
       - SPRING_DATASOURCE_PASSWORD=masova_secret
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver

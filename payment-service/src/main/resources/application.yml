@@ -17,6 +17,37 @@ spring:
     password: ${RABBITMQ_PASSWORD:masova_secret}
     virtual-host: ${RABBITMQ_VHOST:/}
 
+  # PostgreSQL — dual-write for transactions/refunds (Phase 2)
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/masova_db?currentSchema=payment_schema}
+    username: ${SPRING_DATASOURCE_USERNAME:masova}
+    password: ${SPRING_DATASOURCE_PASSWORD:masova_secret}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 10000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        default_schema: payment_schema
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+    schemas: payment_schema
+    table: flyway_schema_history
+
 # JWT Configuration
 jwt:
   secret: ${JWT_SECRET:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-256-bits-for-production-security}
@@ -117,6 +148,8 @@ spring:
         max-active: 100
         max-idle: 50
         min-idle: 25
+  flyway:
+    baseline-on-migrate: false
 
 logging:
   level:
