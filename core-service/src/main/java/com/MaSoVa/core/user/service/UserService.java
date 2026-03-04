@@ -7,6 +7,9 @@ import com.MaSoVa.core.user.dto.LoginRequest;
 import com.MaSoVa.core.user.dto.LoginResponse;
 import com.MaSoVa.core.user.dto.UserCreateRequest;
 import com.MaSoVa.core.user.dto.UserResponse;
+import com.MaSoVa.core.user.entity.UserAuthProviderEntity;
+import com.MaSoVa.core.user.entity.UserEntity;
+import com.MaSoVa.core.user.repository.UserJpaRepository;
 import com.MaSoVa.core.user.repository.UserRepository;
 import com.MaSoVa.core.user.repository.WorkingSessionRepository;
 
@@ -25,6 +28,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +44,10 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    /** Phase 2 dual-write: PostgreSQL secondary write (non-blocking). MongoDB remains primary. */
+    @Autowired
+    private UserJpaRepository userJpaRepository;
 
     @SuppressWarnings("unused")
     @Autowired
@@ -61,6 +70,8 @@ public class UserService {
 
     @Value("${google.oauth.client-id:}")
     private String googleOAuthClientId;
+
+    private static final ZoneId IST = ZoneId.of("Asia/Kolkata");
     
     public LoginResponse registerUser(UserCreateRequest request) {
         validateUserCreation(request);
@@ -130,6 +141,13 @@ public class UserService {
         savedUser.setLastLogin(LocalDateTime.now());
         userRepository.save(savedUser);
 
+        // Phase 2 dual-write: sync to PostgreSQL (non-blocking)
+        try {
+            userJpaRepository.save(toUserEntity(savedUser));
+        } catch (Exception e) {
+            logger.warn("PG dual-write failed for registerUser userId={}: {}", savedUser.getId(), e.getMessage());
+        }
+
         return new LoginResponse(accessToken, refreshToken, mapToUserResponse(savedUser));
     }
 
@@ -193,6 +211,13 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
 
+        // Phase 2 dual-write: sync to PostgreSQL (non-blocking)
+        try {
+            userJpaRepository.save(toUserEntity(savedUser));
+        } catch (Exception e) {
+            logger.warn("PG dual-write failed for createUser userId={}: {}", savedUser.getId(), e.getMessage());
+        }
+
         // Auto-generate 5-digit PIN for employees
         if (savedUser.isEmployee()) {
             try {
@@ -245,9 +270,17 @@ public class UserService {
         user.setEmployeeDetails(employeeDetails);
 
         User savedUser = userRepository.save(user);
+
+        // Phase 2 dual-write: sync to PostgreSQL (non-blocking)
+        try {
+            userJpaRepository.save(toUserEntity(savedUser));
+        } catch (Exception e) {
+            logger.warn("PG dual-write failed for createEmployee userId={}: {}", savedUser.getId(), e.getMessage());
+        }
+
         return mapToUserResponse(savedUser);
     }
-    
+
     public LoginResponse authenticate(LoginRequest request) {
         logger.info("Authentication attempt for email: {}", PiiMasker.maskEmail(request.getEmail()));
 
@@ -274,6 +307,17 @@ public class UserService {
 
         user.setLastLogin(LocalDateTime.now());
         userRepository.save(user);
+
+        // Phase 2 dual-write: sync lastLogin to PostgreSQL (non-blocking)
+        try {
+            final OffsetDateTime loginTime = OffsetDateTime.now(IST);
+            userJpaRepository.findByMongoId(user.getId()).ifPresentOrElse(
+                entity -> { entity.setLastLogin(loginTime); userJpaRepository.save(entity); },
+                () -> logger.warn("PG dual-write: no PG row for authenticate userId={} — row missing", user.getId())
+            );
+        } catch (Exception e) {
+            logger.warn("PG dual-write failed for authenticate lastLogin userId={}: {}", user.getId(), e.getMessage());
+        }
 
         String storeId = null;
         if (user.isEmployee() && user.getEmployeeDetails() != null) {
@@ -340,6 +384,17 @@ public class UserService {
         user.setLastLogin(LocalDateTime.now());
         userRepository.save(user);
 
+        // Phase 2 dual-write: sync lastLogin to PostgreSQL (non-blocking)
+        try {
+            final OffsetDateTime loginTime = OffsetDateTime.now(IST);
+            userJpaRepository.findByMongoId(user.getId()).ifPresentOrElse(
+                entity -> { entity.setLastLogin(loginTime); userJpaRepository.save(entity); },
+                () -> logger.warn("PG dual-write: no PG row for loginWithGoogle userId={} — row missing", user.getId())
+            );
+        } catch (Exception e) {
+            logger.warn("PG dual-write failed for loginWithGoogle lastLogin userId={}: {}", user.getId(), e.getMessage());
+        }
+
         String storeId = user.isEmployee() && user.getEmployeeDetails() != null
                 ? user.getEmployeeDetails().getStoreId() : null;
         String accessToken = jwtService.generateAccessToken(user.getId(), user.getType().name(), storeId);
@@ -405,6 +460,13 @@ public class UserService {
 
         user.setLastLogin(LocalDateTime.now());
         userRepository.save(user);
+
+        // Phase 2 dual-write: sync new user + lastLogin to PostgreSQL (non-blocking)
+        try {
+            userJpaRepository.save(toUserEntity(user));
+        } catch (Exception e) {
+            logger.warn("PG dual-write failed for registerWithGoogle userId={}: {}", user.getId(), e.getMessage());
+        }
 
         String storeId = null;
         String accessToken = jwtService.generateAccessToken(user.getId(), user.getType().name(), storeId);
@@ -523,6 +585,20 @@ public class UserService {
         }
         
         User updatedUser = userRepository.save(user);
+
+        // Phase 2 dual-write: sync to PostgreSQL (non-blocking)
+        try {
+            userJpaRepository.findByMongoId(updatedUser.getId()).ifPresentOrElse(
+                existing -> {
+                    updateUserEntityFields(existing, updatedUser);
+                    userJpaRepository.save(existing);
+                },
+                () -> userJpaRepository.save(toUserEntity(updatedUser))
+            );
+        } catch (Exception e) {
+            logger.warn("PG dual-write failed for updateUser userId={}: {}", updatedUser.getId(), e.getMessage());
+        }
+
         return mapToUserResponse(updatedUser);
     }
     
@@ -531,6 +607,18 @@ public class UserService {
         User user = getUserById(userId);
         user.setActive(true);
         userRepository.save(user);
+
+        // Phase 2 dual-write: reactivate in PostgreSQL (non-blocking)
+        try {
+            userJpaRepository.findByMongoId(userId).ifPresentOrElse(entity -> {
+                entity.setActive(true);
+                entity.setDeletedAt(null);
+                userJpaRepository.save(entity);
+            }, () -> logger.warn("PG dual-write: no PG row found for activateUser userId={}", userId));
+        } catch (Exception e) {
+            logger.warn("PG dual-write failed for activateUser userId={}: {}", userId, e.getMessage());
+        }
+
         logger.info("Activated user: {}", userId);
     }
 
@@ -540,12 +628,22 @@ public class UserService {
         user.setActive(false);
         userRepository.save(user);
 
+        // Phase 2 dual-write: soft-delete in PostgreSQL (non-blocking)
+        try {
+            userJpaRepository.findByMongoId(userId).ifPresentOrElse(entity -> {
+                entity.setActive(false);
+                entity.setDeletedAt(OffsetDateTime.now(IST));
+                userJpaRepository.save(entity);
+            }, () -> logger.warn("PG dual-write: no PG row found for deactivateUser userId={}", userId));
+        } catch (Exception e) {
+            logger.warn("PG dual-write failed for deactivateUser userId={}: {}", userId, e.getMessage());
+        }
+
         // End any active working session
         if (user.isEmployee()) {
             try {
                 sessionService.endSession(userId);
             } catch (Exception e) {
-                // Log the error but continue
                 logger.error("Failed to end session during deactivation for user {}: {}", userId, e.getMessage(), e);
             }
         }
@@ -561,7 +659,7 @@ public class UserService {
      * @param storeId Store ID for uniqueness constraint
      * @return Plain PIN string (to be shown once)
      */
-    @CacheEvict(value = "users", key = "'user:' + #userId")
+    @CacheEvict(value = "users", key = "'user:' + #p0")
     public String generateEmployeePIN(String userId, String storeId) {
         User user = getUserById(userId);
 
@@ -597,6 +695,20 @@ public class UserService {
                 user.getEmployeeDetails().setPinSuffix(pinSuffix);
 
                 userRepository.save(user);
+
+                // Phase 2 dual-write: sync PIN hash + suffix to PostgreSQL (non-blocking)
+                final String finalHashedPin = hashedPin;
+                final String finalPinSuffix = pinSuffix;
+                try {
+                    userJpaRepository.findByMongoId(userId).ifPresentOrElse(entity -> {
+                        entity.setEmployeePinHash(finalHashedPin);
+                        entity.setPinSuffix(finalPinSuffix);
+                        userJpaRepository.save(entity);
+                    }, () -> logger.warn("PG dual-write: no PG row found for generateEmployeePIN userId={}", userId));
+                } catch (Exception e) {
+                    logger.warn("PG dual-write failed for generateEmployeePIN userId={}: {}", userId, e.getMessage());
+                }
+
                 logger.info("Generated 5-digit PIN for employee {} in store {} (suffix: {})", userId, storeId, pinSuffix);
                 return pin; // Return plain PIN only once
             }
@@ -990,6 +1102,16 @@ public class UserService {
         // Save to database
         userRepository.save(driver);
 
+        // Phase 2 dual-write: sync driver status to PostgreSQL (non-blocking)
+        try {
+            userJpaRepository.findByMongoId(driverId).ifPresentOrElse(entity -> {
+                entity.setEmployeeStatus(status);
+                userJpaRepository.save(entity);
+            }, () -> logger.warn("PG dual-write: no PG row found for updateDriverStatus driverId={}", driverId));
+        } catch (Exception e) {
+            logger.warn("PG dual-write failed for updateDriverStatus driverId={}: {}", driverId, e.getMessage());
+        }
+
         logger.info("Driver {} status updated successfully to: {}", driverId, status);
     }
 
@@ -1051,6 +1173,13 @@ public class UserService {
         User savedKiosk = userRepository.save(kioskUser);
         logger.info("Kiosk account created: {} ({})", savedKiosk.getId(), terminalId);
 
+        // Phase 2 dual-write: sync to PostgreSQL (non-blocking)
+        try {
+            userJpaRepository.save(toUserEntity(savedKiosk));
+        } catch (Exception e) {
+            logger.warn("PG dual-write failed for createKioskAccount userId={}: {}", savedKiosk.getId(), e.getMessage());
+        }
+
         return savedKiosk;
     }
 
@@ -1084,6 +1213,17 @@ public class UserService {
         kiosk.setLastLogin(LocalDateTime.now());
         userRepository.save(kiosk);
 
+        // Phase 2 dual-write: update lastLogin in PostgreSQL (non-blocking)
+        final OffsetDateTime kioskLoginTime = OffsetDateTime.now(IST);
+        try {
+            userJpaRepository.findByMongoId(kioskUserId).ifPresentOrElse(entity -> {
+                entity.setLastLogin(kioskLoginTime);
+                userJpaRepository.save(entity);
+            }, () -> logger.warn("PG dual-write: no PG row found for generateKioskTokens kioskUserId={}", kioskUserId));
+        } catch (Exception e) {
+            logger.warn("PG dual-write failed for generateKioskTokens kioskUserId={}: {}", kioskUserId, e.getMessage());
+        }
+
         logger.info("Generated kiosk tokens for terminal {} at store {}", terminalId, storeId);
 
         return new LoginResponse(accessToken, refreshToken, mapToUserResponse(kiosk));
@@ -1102,7 +1242,7 @@ public class UserService {
     /**
      * Deactivate a kiosk account
      */
-    @CacheEvict(value = "users", key = "#kioskUserId")
+    @CacheEvict(value = "users", key = "'user:' + #kioskUserId")
     public void deactivateKioskAccount(String kioskUserId, String managerId) {
         User manager = getUserById(managerId);
         if (manager.getType() != UserType.MANAGER && manager.getType() != UserType.ASSISTANT_MANAGER) {
@@ -1117,6 +1257,76 @@ public class UserService {
         kiosk.setActive(false);
         userRepository.save(kiosk);
 
+        // Phase 2 dual-write: soft-delete in PostgreSQL (non-blocking)
+        try {
+            userJpaRepository.findByMongoId(kioskUserId).ifPresentOrElse(entity -> {
+                entity.setActive(false);
+                entity.setDeletedAt(OffsetDateTime.now(IST));
+                userJpaRepository.save(entity);
+            }, () -> logger.warn("PG dual-write: no PG row found for deactivateKioskAccount kioskUserId={}", kioskUserId));
+        } catch (Exception e) {
+            logger.warn("PG dual-write failed for deactivateKioskAccount kioskUserId={}: {}", kioskUserId, e.getMessage());
+        }
+
         logger.info("Kiosk account {} deactivated by manager {}", kioskUserId, managerId);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Phase 2 dual-write helpers — MongoDB User → PostgreSQL UserEntity
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private UserEntity toUserEntity(User user) {
+        if (user.getPersonalInfo() == null) {
+            throw new IllegalArgumentException("Cannot dual-write user with null personalInfo: mongoId=" + user.getId());
+        }
+
+        OffsetDateTime now = OffsetDateTime.now(IST);
+
+        UserEntity.UserEntityBuilder builder = UserEntity.builder()
+            .mongoId(user.getId())
+            .userType(user.getType() != null ? user.getType().name() : null)
+            .isActive(user.isActive())
+            .createdAt(user.getCreatedAt() != null ? user.getCreatedAt().atZone(IST).toOffsetDateTime() : now)
+            .name(user.getPersonalInfo().getName())
+            .email(user.getPersonalInfo().getEmail())
+            .phone(user.getPersonalInfo().getPhone())
+            .passwordHash(user.getPersonalInfo().getPasswordHash());
+
+        if (user.getEmployeeDetails() != null) {
+            User.EmployeeDetails emp = user.getEmployeeDetails();
+            builder.storeId(emp.getStoreId())
+                   .employeeRole(emp.getRole())
+                   .employeeStatus(emp.getStatus())
+                   .employeePinHash(emp.getEmployeePINHash())
+                   .pinSuffix(emp.getPinSuffix())
+                   .terminalId(emp.getTerminalId())
+                   .kioskAccount(emp.getIsKioskAccount());
+        }
+
+        if (user.getLastLogin() != null) {
+            builder.lastLogin(user.getLastLogin().atZone(IST).toOffsetDateTime());
+        }
+
+        return builder.build();
+    }
+
+    private void updateUserEntityFields(UserEntity entity, User user) {
+        if (user.getPersonalInfo() != null) {
+            entity.setName(user.getPersonalInfo().getName());
+            entity.setEmail(user.getPersonalInfo().getEmail());
+            entity.setPhone(user.getPersonalInfo().getPhone());
+            entity.setPasswordHash(user.getPersonalInfo().getPasswordHash());
+        }
+        if (user.getEmployeeDetails() != null) {
+            User.EmployeeDetails emp = user.getEmployeeDetails();
+            entity.setStoreId(emp.getStoreId());
+            entity.setEmployeeRole(emp.getRole());
+            entity.setEmployeeStatus(emp.getStatus());
+            entity.setEmployeePinHash(emp.getEmployeePINHash());
+            entity.setPinSuffix(emp.getPinSuffix());
+            entity.setTerminalId(emp.getTerminalId());
+            entity.setKioskAccount(emp.getIsKioskAccount());
+        }
+        entity.setActive(user.isActive());
     }
 }
