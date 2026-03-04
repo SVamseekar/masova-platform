@@ -77,24 +77,20 @@ public class UserServiceClient {
     }
 
     /**
-     * Get driver's last known GPS location
+     * Get driver's last known GPS location.
+     * Phase 1: /api/users/drivers/{id}/location removed — real-time location will be
+     * served from the WebSocket/Redis cache introduced in Phase 3.
+     * Returns empty map (fail-open) until Phase 3 wires this up.
      */
+    @CircuitBreaker(name = "userService", fallbackMethod = "getDriverLastLocationFallback")
     public Map<String, Object> getDriverLastLocation(String driverId) {
-        String url = userServiceUrl + "/api/users/drivers/" + driverId + "/location";
-        log.debug("Fetching driver location from: {}", url);
+        log.warn("getDriverLastLocation({}) — endpoint removed in Phase 1, Phase 3 will implement WS location cache", driverId);
+        return Map.of();
+    }
 
-        try {
-            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.GET,
-                    null,
-                    new ParameterizedTypeReference<Map<String, Object>>() {}
-            );
-            return response.getBody();
-        } catch (Exception e) {
-            log.error("Error fetching driver location: {}", e.getMessage());
-            return Map.of();
-        }
+    public Map<String, Object> getDriverLastLocationFallback(String driverId, Exception e) {
+        log.warn("user-service circuit open for driver location ({}): {}", driverId, e.getMessage());
+        return Map.of();
     }
 
     /**
@@ -107,7 +103,8 @@ public class UserServiceClient {
 
         try {
             Map<String, String> request = Map.of("status", status);
-            restTemplate.put(url, request);
+            // Phase 1: /{userId}/status is now PATCH, not PUT
+            restTemplate.patchForObject(url, request, Void.class);
             log.info("Driver status updated successfully");
         } catch (Exception e) {
             log.error("Error updating driver status: {}", e.getMessage());

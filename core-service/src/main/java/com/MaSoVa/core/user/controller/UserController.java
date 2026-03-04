@@ -67,7 +67,7 @@ public class UserController {
         String resolvedStore = storeId != null ? storeId : StoreContextUtil.getStoreIdFromHeaders(request);
 
         if (search != null) {
-            return ResponseEntity.ok(userService.searchUsers(null, null, null, type, resolvedStore));
+            return ResponseEntity.ok(userService.searchUsers(search, null, null, type, resolvedStore));
         }
         if (type == UserType.DRIVER && Boolean.TRUE.equals(available) && resolvedStore != null) {
             return ResponseEntity.ok(userService.getAvailableDrivers(resolvedStore));
@@ -295,7 +295,7 @@ public class UserController {
         }
     }
 
-    @PutMapping("/{userId}/status")
+    @PatchMapping("/{userId}/status")
     @Operation(summary = "Update driver status")
     @SecurityRequirement(name = "bearerAuth")
     @PreAuthorize("#userId == authentication.name or hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")

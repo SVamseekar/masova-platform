@@ -109,9 +109,11 @@ public class ReviewController {
     public ResponseEntity<?> createReview(
             @Valid @RequestBody CreateReviewRequest request,
             @RequestHeader("X-User-ID") String customerId,
-            @RequestHeader("X-User-Name") String customerName) {
+            @RequestHeader(value = "X-User-Name", required = false) String customerName) {
         try {
-            Review review = reviewService.createReview(request, customerId, customerName);
+            // X-User-Name is not injected by the gateway — fall back to customer ID as display name
+            String resolvedName = (customerName != null && !customerName.isBlank()) ? customerName : customerId;
+            Review review = reviewService.createReview(request, customerId, resolvedName);
             return ResponseEntity.status(HttpStatus.CREATED).body(review);
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -242,8 +244,9 @@ public class ReviewController {
             @PathVariable String reviewId,
             @Valid @RequestBody CreateResponseRequest request,
             @RequestHeader("X-User-ID") String managerId,
-            @RequestHeader("X-User-Name") String managerName) {
+            @RequestHeader(value = "X-User-Name", required = false) String managerName) {
         try {
+            String resolvedName = (managerName != null && !managerName.isBlank()) ? managerName : managerId;
             // Check if response already exists; update if so
             return responseService.getResponseByReviewId(reviewId)
                     .map(existing -> {
@@ -254,7 +257,7 @@ public class ReviewController {
                         return ResponseEntity.ok(updated);
                     })
                     .orElseGet(() -> {
-                        ReviewResponse created = responseService.createResponse(reviewId, request, managerId, managerName);
+                        ReviewResponse created = responseService.createResponse(reviewId, request, managerId, resolvedName);
                         return ResponseEntity.status(HttpStatus.CREATED).body(created);
                     });
         } catch (IllegalStateException e) {

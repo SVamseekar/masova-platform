@@ -195,7 +195,7 @@ public class WorkingSessionController {
 
     @PostMapping("/{sessionId}/break")
     @Operation(summary = "Add break to session")
-    @PreAuthorize("#sessionId == authentication.name or hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
+    @PreAuthorize("#employeeId == authentication.name or hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
     public ResponseEntity<WorkingSessionResponse> addBreak(
             @PathVariable String sessionId,
             @RequestHeader("X-User-Id") String employeeId,

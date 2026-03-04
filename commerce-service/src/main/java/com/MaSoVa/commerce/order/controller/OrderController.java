@@ -24,6 +24,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -54,9 +56,11 @@ public class OrderController {
     private static final Logger log = LoggerFactory.getLogger(OrderController.class);
 
     private final OrderService orderService;
+    private final ObjectMapper objectMapper;
 
-    public OrderController(OrderService orderService) {
+    public OrderController(OrderService orderService, ObjectMapper objectMapper) {
         this.orderService = orderService;
+        this.objectMapper = objectMapper;
     }
 
     private String getStoreIdFromHeaders(HttpServletRequest request) {
@@ -242,10 +246,13 @@ public class OrderController {
             return ResponseEntity.ok(orderService.updateOrderPriority(orderId, priority));
         }
 
-        // Items update
+        // Items update — body.get("items") is List<LinkedHashMap>, not List<OrderItem>
         if (body.containsKey("items")) {
             @SuppressWarnings("unchecked")
-            List<OrderItem> items = (List<OrderItem>) body.get("items");
+            List<Object> rawItems = (List<Object>) body.get("items");
+            List<OrderItem> items = rawItems.stream()
+                    .map(raw -> objectMapper.convertValue(raw, OrderItem.class))
+                    .toList();
             return ResponseEntity.ok(orderService.updateOrderItems(orderId, items));
         }
 
@@ -336,18 +343,36 @@ public class OrderController {
 
         String storeId = getStoreIdFromHeaders(request);
 
-        return switch (type != null ? type : "") {
-            case "kitchen" -> ResponseEntity.ok(orderService.getKitchenStaffPerformance(staffId, LocalDate.parse(date)));
-            case "pos" -> ResponseEntity.ok(orderService.getPosStaffPerformance(
-                    staffId, LocalDate.parse(startDate), LocalDate.parse(endDate)));
-            case "prep-time" -> ResponseEntity.ok(orderService.getAveragePreparationTime(storeId, LocalDate.parse(date)));
-            case "prep-time-by-item" -> ResponseEntity.ok(orderService.getAveragePreparationTimeByMenuItem(storeId, LocalDate.parse(date)));
-            case "prep-time-distribution" -> ResponseEntity.ok(orderService.getPreparationTimeDistribution(storeId, LocalDate.parse(date)));
-            case "failed-quality" -> ResponseEntity.ok(orderService.getOrdersWithFailedQualityChecks(storeId));
-            case "active-deliveries" -> ResponseEntity.ok(orderService.getActiveDeliveryCount(storeId));
-            case "make-table-station" -> ResponseEntity.ok(orderService.getOrdersByMakeTableStation(storeId, station));
-            default -> ResponseEntity.badRequest().body(Map.of("error", "type required: kitchen|pos|prep-time|prep-time-by-item|prep-time-distribution|failed-quality|active-deliveries|make-table-station"));
-        };
+        try {
+            return switch (type != null ? type : "") {
+                case "kitchen" -> {
+                    if (staffId == null || date == null) yield ResponseEntity.badRequest().body(Map.of("error", "staffId and date required for kitchen analytics"));
+                    yield ResponseEntity.ok(orderService.getKitchenStaffPerformance(staffId, LocalDate.parse(date)));
+                }
+                case "pos" -> {
+                    if (staffId == null || startDate == null || endDate == null) yield ResponseEntity.badRequest().body(Map.of("error", "staffId, startDate and endDate required for pos analytics"));
+                    yield ResponseEntity.ok(orderService.getPosStaffPerformance(staffId, LocalDate.parse(startDate), LocalDate.parse(endDate)));
+                }
+                case "prep-time" -> {
+                    if (date == null) yield ResponseEntity.badRequest().body(Map.of("error", "date required for prep-time analytics"));
+                    yield ResponseEntity.ok(orderService.getAveragePreparationTime(storeId, LocalDate.parse(date)));
+                }
+                case "prep-time-by-item" -> {
+                    if (date == null) yield ResponseEntity.badRequest().body(Map.of("error", "date required for prep-time-by-item analytics"));
+                    yield ResponseEntity.ok(orderService.getAveragePreparationTimeByMenuItem(storeId, LocalDate.parse(date)));
+                }
+                case "prep-time-distribution" -> {
+                    if (date == null) yield ResponseEntity.badRequest().body(Map.of("error", "date required for prep-time-distribution analytics"));
+                    yield ResponseEntity.ok(orderService.getPreparationTimeDistribution(storeId, LocalDate.parse(date)));
+                }
+                case "failed-quality" -> ResponseEntity.ok(orderService.getOrdersWithFailedQualityChecks(storeId));
+                case "active-deliveries" -> ResponseEntity.ok(orderService.getActiveDeliveryCount(storeId));
+                case "make-table-station" -> ResponseEntity.ok(orderService.getOrdersByMakeTableStation(storeId, station));
+                default -> ResponseEntity.badRequest().body(Map.of("error", "type required: kitchen|pos|prep-time|prep-time-by-item|prep-time-distribution|failed-quality|active-deliveries|make-table-station"));
+            };
+        } catch (java.time.format.DateTimeParseException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid date format. Use ISO-8601 (yyyy-MM-dd)"));
+        }
     }
 
     // ── GDPR (internal-only, called by core-service user/GDPR service) ──────────

@@ -191,6 +191,7 @@ public class CustomerController {
      * Replaces: POST /loyalty/points and POST /loyalty/redeem
      */
     @PostMapping("/{id}/loyalty")
+    @PreAuthorize("#id == authentication.name or hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "Add or redeem loyalty points (body: type=EARNED|REDEEMED, points, description)")
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<?> manageLoyalty(

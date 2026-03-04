@@ -86,13 +86,17 @@ public class AuthController {
 
     @PostMapping("/google")
     @Operation(summary = "Google sign-in — login or register (backend detects)")
-    public ResponseEntity<LoginResponse> googleSignIn(@Valid @RequestBody GoogleLoginRequest request) {
-        // Try login first; if user not found, register
+    public ResponseEntity<?> googleSignIn(@Valid @RequestBody GoogleLoginRequest request) {
+        // Try login first; if user not found (NoSuchElementException), register
         try {
             return ResponseEntity.ok(userService.loginWithGoogle(request.getIdToken()));
-        } catch (Exception e) {
-            log.info("Google login not found, attempting register: {}", e.getMessage());
+        } catch (java.util.NoSuchElementException e) {
+            log.info("Google user not found, registering: {}", e.getMessage());
             return ResponseEntity.ok(userService.registerWithGoogle(request.getIdToken()));
+        } catch (Exception e) {
+            log.error("Google sign-in failed: {}", e.getMessage());
+            return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Google sign-in failed"));
         }
     }
 

@@ -7,7 +7,10 @@ import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import reactor.core.publisher.Mono;
 
 /**
  * API Gateway route configuration — Phase 1 consolidated architecture (6 services).
@@ -94,7 +97,10 @@ public class GatewayConfig {
                         .and().method("POST")
                         .filters(f -> f.filter((exchange, chain) -> {
                             exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
-                            return exchange.getResponse().setComplete();
+                            exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+                            byte[] body = "{\"error\":\"This endpoint is not accessible externally\"}".getBytes();
+                            DataBuffer buf = exchange.getResponse().bufferFactory().wrap(body);
+                            return exchange.getResponse().writeWith(Mono.just(buf));
                         }))
                         .uri("http://localhost:8085"))
 
@@ -104,7 +110,10 @@ public class GatewayConfig {
                         .and().method("POST")
                         .filters(f -> f.filter((exchange, chain) -> {
                             exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
-                            return exchange.getResponse().setComplete();
+                            exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+                            byte[] body = "{\"error\":\"This endpoint is not accessible externally\"}".getBytes();
+                            DataBuffer buf = exchange.getResponse().bufferFactory().wrap(body);
+                            return exchange.getResponse().writeWith(Mono.just(buf));
                         }))
                         .uri("http://localhost:8084"))
 
@@ -113,7 +122,10 @@ public class GatewayConfig {
                         .and().method("POST")
                         .filters(f -> f.filter((exchange, chain) -> {
                             exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
-                            return exchange.getResponse().setComplete();
+                            exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+                            byte[] body = "{\"error\":\"This endpoint is not accessible externally\"}".getBytes();
+                            DataBuffer buf = exchange.getResponse().bufferFactory().wrap(body);
+                            return exchange.getResponse().writeWith(Mono.just(buf));
                         }))
                         .uri("http://localhost:8089"))
 
@@ -122,7 +134,10 @@ public class GatewayConfig {
                         .and().method("POST")
                         .filters(f -> f.filter((exchange, chain) -> {
                             exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
-                            return exchange.getResponse().setComplete();
+                            exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+                            byte[] body = "{\"error\":\"This endpoint is not accessible externally\"}".getBytes();
+                            DataBuffer buf = exchange.getResponse().bufferFactory().wrap(body);
+                            return exchange.getResponse().writeWith(Mono.just(buf));
                         }))
                         .uri("http://localhost:8086"))
 
@@ -205,13 +220,15 @@ public class GatewayConfig {
                         .and().method("GET")
                         .uri("http://localhost:8084"))
 
-                // Menu — admin mutations (auth required)
-                .route("commerce_menu_admin", r -> r.path("/api/menu/admin/**")
+                // Menu — protected GET sub-paths (stats, copy, bulk-availability) — auth required
+                .route("commerce_menu_get_protected", r -> r.path("/api/menu/**")
+                        .and().method("GET")
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(30, "commerce_menu_admin")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(60, "commerce_menu_get_protected")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8084"))
 
+                // Menu — mutations (auth required)
                 .route("commerce_menu_modify", r -> r.path("/api/menu/**")
                         .and().method("POST", "PUT", "DELETE", "PATCH")
                         .filters(f -> f
@@ -226,10 +243,12 @@ public class GatewayConfig {
                         .uri("http://localhost:8084"))
 
                 // Orders — protected (GDPR anonymize paths blocked above via dedicated routes)
+                // X-Internal-Service is stripped here so external callers cannot spoof it
                 .route("commerce_orders", r -> r.path("/api/orders/**")
                         .and().not(p -> p.path("/api/orders/track/**"))
                         .and().not(p -> p.path("/api/orders/gdpr/**"))
                         .filters(f -> f
+                            .removeRequestHeader("X-Internal-Service")
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(200, "commerce_orders")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8084"))
@@ -261,10 +280,12 @@ public class GatewayConfig {
                         .uri("http://localhost:8089"))
 
                 // Payments — protected (GDPR anonymize paths blocked above via dedicated routes)
+                // X-Internal-Service is stripped here so external callers cannot spoof it
                 .route("payments_protected", r -> r.path("/api/payments/**")
                         .and().not(p -> p.path("/api/payments/webhook"))
                         .and().not(p -> p.path("/api/payments/gdpr/**"))
                         .filters(f -> f
+                            .removeRequestHeader("X-Internal-Service")
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(50, "payments")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8089"))
@@ -278,11 +299,20 @@ public class GatewayConfig {
                 // LOGISTICS SERVICE (port 8086) — delivery, inventory
                 // ============================================================
 
+                // Delivery public tracking — no auth (driver app / customer tracking page)
+                .route("logistics_delivery_track", r -> r.path("/api/delivery/track/**")
+                        .and().method("GET")
+                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(100, "logistics_delivery_track"))))
+                        .uri("http://localhost:8086"))
+
                 // Delivery (merged: dispatch + tracking + performance — now all at /api/delivery)
                 // GDPR anonymize paths blocked above via dedicated routes
+                // X-Internal-Service is stripped here so external callers cannot spoof it
                 .route("logistics_delivery", r -> r.path("/api/delivery/**")
                         .and().not(p -> p.path("/api/delivery/gdpr/**"))
+                        .and().not(p -> p.path("/api/delivery/track/**"))
                         .filters(f -> f
+                            .removeRequestHeader("X-Internal-Service")
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(150, "logistics_delivery")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8086"))
