@@ -22,6 +22,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -64,6 +65,7 @@ public class ReviewController {
      *           /recent, /rating, /needs-response, /pending, /flagged
      */
     @GetMapping
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "List reviews (query: status, entityType, entityId, rating, flagged)")
     public ResponseEntity<?> getReviews(
             @RequestParam(required = false) Review.ReviewStatus status,
@@ -102,6 +104,7 @@ public class ReviewController {
     }
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Create review")
     public ResponseEntity<?> createReview(
             @Valid @RequestBody CreateReviewRequest request,
@@ -120,6 +123,7 @@ public class ReviewController {
      * Replaces: /stats/overall, /stats/driver/{id}, /stats/item/{id}
      */
     @GetMapping("/stats")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Review stats (query: entityType, entityId)")
     public ResponseEntity<?> getStats(
             @RequestParam(required = false) String entityType,
@@ -166,6 +170,7 @@ public class ReviewController {
     // ── SINGLE REVIEW ────────────────────────────────────────────────────────────
 
     @GetMapping("/{reviewId}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get review by ID")
     public ResponseEntity<?> getReview(@PathVariable String reviewId) {
         try {
@@ -181,6 +186,7 @@ public class ReviewController {
      * Replaces: /{id}/flag, /{id}/status, /{id}/approve, /{id}/reject
      */
     @PatchMapping("/{reviewId}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Update review (status, flag, approve, reject via body)")
     public ResponseEntity<?> updateReview(
             @PathVariable String reviewId,
@@ -212,6 +218,7 @@ public class ReviewController {
     }
 
     @DeleteMapping("/{reviewId}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Delete review")
     public ResponseEntity<?> deleteReview(@PathVariable String reviewId) {
         try {
@@ -229,6 +236,7 @@ public class ReviewController {
      * Replaces: POST /api/responses/review/{id} and PUT /api/responses/{id}
      */
     @PostMapping("/{reviewId}/response")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Add or update manager response")
     public ResponseEntity<?> addOrUpdateResponse(
             @PathVariable String reviewId,
@@ -259,6 +267,7 @@ public class ReviewController {
      * Replaces: GET /api/responses/templates
      */
     @GetMapping("/response-templates")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Get response templates")
     public ResponseEntity<Map<ReviewResponse.ResponseType, String>> getResponseTemplates() {
         return ResponseEntity.ok(responseService.getAllTemplates());

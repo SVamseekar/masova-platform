@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -27,6 +28,7 @@ public class UserPreferencesController {
     }
 
     @GetMapping("/{userId}")
+    @PreAuthorize("#userId == authentication.name or hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
     @Operation(summary = "Get preferences")
     public ResponseEntity<UserPreferences> getPreferences(@PathVariable String userId) {
         return ResponseEntity.ok(userPreferencesService.getOrCreatePreferences(userId));
@@ -38,6 +40,7 @@ public class UserPreferencesController {
      * Replaces: separate PUT /, PATCH /channel/*, PATCH /device-token, PATCH /contact endpoints.
      */
     @PatchMapping("/{userId}")
+    @PreAuthorize("#userId == authentication.name or hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
     @Operation(summary = "Update preferences (any field: channel, deviceToken, contact, preferredPaymentMethod)")
     public ResponseEntity<UserPreferences> updatePreferences(
             @PathVariable String userId,
@@ -46,6 +49,7 @@ public class UserPreferencesController {
     }
 
     @DeleteMapping("/{userId}")
+    @PreAuthorize("#userId == authentication.name or hasRole('MANAGER')")
     @Operation(summary = "Delete preferences")
     public ResponseEntity<Void> deletePreferences(@PathVariable String userId) {
         userPreferencesService.deletePreferences(userId);

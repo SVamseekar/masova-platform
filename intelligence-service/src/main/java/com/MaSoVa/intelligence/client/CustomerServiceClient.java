@@ -29,7 +29,7 @@ public class CustomerServiceClient {
 
     private final RestTemplate restTemplate;
 
-    @Value("${services.customer.url:http://localhost:8091}")
+    @Value("${services.customer.url:http://localhost:8085}")
     private String customerServiceUrl;
 
     public CustomerServiceClient(RestTemplate restTemplate) {

@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -37,6 +38,7 @@ public class NotificationController {
      * Replaces: /user/{userId}, /user/{userId}/unread, /user/{userId}/recent
      */
     @GetMapping
+    @PreAuthorize("#userId == authentication.name or hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
     @Operation(summary = "List notifications (query: userId, unread, recent)")
     public ResponseEntity<List<Notification>> getNotifications(
             @RequestParam String userId,
@@ -52,6 +54,7 @@ public class NotificationController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "Send notification")
     public ResponseEntity<Notification> sendNotification(@RequestBody NotificationRequest request) {
         Notification notification = new Notification(
@@ -70,6 +73,7 @@ public class NotificationController {
     }
 
     @PatchMapping("/{id}/read")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Mark notification as read")
     public ResponseEntity<Notification> markAsRead(@PathVariable String id) {
         return ResponseEntity.ok(notificationService.markAsRead(id));
@@ -80,6 +84,7 @@ public class NotificationController {
      * Replaces: PATCH /user/{userId}/read-all
      */
     @PatchMapping("/read-all")
+    @PreAuthorize("#userId == authentication.name or hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
     @Operation(summary = "Mark all as read (query: userId)")
     public ResponseEntity<Void> markAllAsRead(@RequestParam String userId) {
         notificationService.markAllAsRead(userId);
@@ -87,6 +92,7 @@ public class NotificationController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Delete notification")
     public ResponseEntity<Void> deleteNotification(@PathVariable String id) {
         notificationService.deleteNotification(id);

@@ -30,17 +30,25 @@ public class StoreServiceClient {
     @SuppressWarnings("unchecked")
     public boolean isWithinDeliveryRadius(String storeId, double latitude, double longitude) {
         try {
+            // Phase 1: /api/stores/{id}/delivery-radius-check removed →
+            //          GET /api/delivery/zones?check=true&storeId=&lat=&lng= (logistics-service :8086)
+            // Note: StoreServiceClient talks to core (:8085); this endpoint is on logistics (:8086).
+            // Using delivery zone check URL directly. coreServiceUrl is replaced with logistics URL here.
+            String logisticsUrl = coreServiceUrl.replace(":8085", ":8086");
             String url = UriComponentsBuilder
-                .fromHttpUrl(coreServiceUrl)
-                .pathSegment("api", "stores", storeId, "delivery-radius-check")
-                .queryParam("latitude", latitude)
-                .queryParam("longitude", longitude)
+                .fromHttpUrl(logisticsUrl)
+                .path("/api/delivery/zones")
+                .queryParam("check", true)
+                .queryParam("storeId", storeId)
+                .queryParam("lat", latitude)
+                .queryParam("lng", longitude)
                 .build()
                 .toUriString();
 
+            @SuppressWarnings("unchecked")
             Map<String, Object> result = restTemplate.getForObject(url, Map.class);
             if (result == null) return true;
-            Boolean within = (Boolean) result.get("withinRadius");
+            Boolean within = (Boolean) result.get("withinDeliveryZone");
             return within == null || within;
         } catch (Exception e) {
             log.warn("Delivery radius check failed for store {} — failing open: {}", storeId, e.getMessage());

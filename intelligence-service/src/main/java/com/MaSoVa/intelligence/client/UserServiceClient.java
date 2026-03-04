@@ -44,7 +44,8 @@ public class UserServiceClient {
     @CircuitBreaker(name = "userService", fallbackMethod = "getDriversByStoreFallback")
     public List<Map<String, Object>> getDriversByStore(String storeId) {
         try {
-            String url = userServiceUrl + "/api/users/drivers/store";
+            // Phase 1: /api/users/drivers/store → /api/users?type=DRIVER&storeId=
+            String url = userServiceUrl + "/api/users?type=DRIVER&storeId=" + storeId;
             ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
                 url,
                 HttpMethod.GET,
@@ -83,7 +84,8 @@ public class UserServiceClient {
     @CircuitBreaker(name = "userService", fallbackMethod = "getStaffByStoreFallback")
     public List<Map<String, Object>> getStaffByStore(String storeId) {
         try {
-            String url = userServiceUrl + "/api/users/store";
+            // Phase 1: /api/users/store → /api/users?storeId=
+            String url = userServiceUrl + "/api/users?storeId=" + storeId;
             ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
                 url,
                 HttpMethod.GET,

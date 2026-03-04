@@ -139,24 +139,31 @@ public class UserServiceClient {
     }
 
     /**
-     * Get employee's working session status
-     * Phase 2: Check if employee is currently clocked in
+     * Get employee's working session status.
+     * GET /api/sessions?employeeId= returns List<WorkingSessionResponse>.
+     * We return a summary map {active, sessionId} derived from the list.
      */
     public Map<String, Object> getEmployeeWorkingStatus(String employeeId) {
-        // Phase 1: canonical sessions path — GET /api/sessions (no per-employee status sub-path)
         String url = userServiceUrl + "/api/sessions?employeeId=" + employeeId;
         log.debug("Fetching employee working status from: {}", url);
 
         try {
-            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+            ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
                     url,
                     HttpMethod.GET,
                     null,
-                    new ParameterizedTypeReference<Map<String, Object>>() {}
+                    new ParameterizedTypeReference<List<Map<String, Object>>>() {}
             );
-            return response.getBody();
+            List<Map<String, Object>> sessions = response.getBody();
+            if (sessions == null || sessions.isEmpty()) {
+                return Map.of("active", false);
+            }
+            // Return the most recent session's data (list is ordered by date desc)
+            Map<String, Object> latest = sessions.get(0);
+            Boolean active = (Boolean) latest.getOrDefault("active", false);
+            return Map.of("active", Boolean.TRUE.equals(active), "sessionId", latest.getOrDefault("id", ""));
         } catch (Exception e) {
-            log.error("Error fetching employee working status: {}", e.getMessage());
+            log.error("Error fetching employee working status for {}: {}", employeeId, e.getMessage());
             throw new RuntimeException("Failed to check working session: " + e.getMessage());
         }
     }

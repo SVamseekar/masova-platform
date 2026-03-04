@@ -266,6 +266,7 @@ public class OrderController {
     // ── PAYMENT STATUS (inter-service, called by payment-service) ─────────────────
 
     @PatchMapping("/{orderId}/payment")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "Update payment status (inter-service, called by payment-service)")
     public ResponseEntity<Order> updatePaymentStatus(
             @PathVariable String orderId,
@@ -276,6 +277,7 @@ public class OrderController {
     // ── QUALITY CHECKPOINTS ───────────────────────────────────────────────────────
 
     @PostMapping("/{orderId}/quality-checkpoint")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "Add quality checkpoint")
     public ResponseEntity<Order> addQualityCheckpoint(
             @PathVariable String orderId,
@@ -284,6 +286,7 @@ public class OrderController {
     }
 
     @PatchMapping("/{orderId}/quality-checkpoint/{checkpointName}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "Update quality checkpoint status")
     public ResponseEntity<Order> updateQualityCheckpoint(
             @PathVariable String orderId,

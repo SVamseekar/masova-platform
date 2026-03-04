@@ -225,9 +225,10 @@ public class GatewayConfig {
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(100, "commerce_track"))))
                         .uri("http://localhost:8084"))
 
-                // Orders — protected
+                // Orders — protected (GDPR anonymize paths blocked above via dedicated routes)
                 .route("commerce_orders", r -> r.path("/api/orders/**")
                         .and().not(p -> p.path("/api/orders/track/**"))
+                        .and().not(p -> p.path("/api/orders/gdpr/**"))
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(200, "commerce_orders")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
@@ -259,9 +260,10 @@ public class GatewayConfig {
                         .and().method("POST")
                         .uri("http://localhost:8089"))
 
-                // Payments — protected
+                // Payments — protected (GDPR anonymize paths blocked above via dedicated routes)
                 .route("payments_protected", r -> r.path("/api/payments/**")
                         .and().not(p -> p.path("/api/payments/webhook"))
+                        .and().not(p -> p.path("/api/payments/gdpr/**"))
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(50, "payments")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
@@ -277,7 +279,9 @@ public class GatewayConfig {
                 // ============================================================
 
                 // Delivery (merged: dispatch + tracking + performance — now all at /api/delivery)
+                // GDPR anonymize paths blocked above via dedicated routes
                 .route("logistics_delivery", r -> r.path("/api/delivery/**")
+                        .and().not(p -> p.path("/api/delivery/gdpr/**"))
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(150, "logistics_delivery")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
