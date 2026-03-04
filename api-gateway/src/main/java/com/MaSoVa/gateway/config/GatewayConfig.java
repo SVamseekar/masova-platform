@@ -98,6 +98,34 @@ public class GatewayConfig {
                         }))
                         .uri("http://localhost:8085"))
 
+                // GDPR anonymize endpoints are service-to-service ONLY — never reachable externally
+                .route("gdpr_anonymize_orders_blocked", r -> r
+                        .path("/api/orders/gdpr/**")
+                        .and().method("POST")
+                        .filters(f -> f.filter((exchange, chain) -> {
+                            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                            return exchange.getResponse().setComplete();
+                        }))
+                        .uri("http://localhost:8084"))
+
+                .route("gdpr_anonymize_payments_blocked", r -> r
+                        .path("/api/payments/gdpr/**")
+                        .and().method("POST")
+                        .filters(f -> f.filter((exchange, chain) -> {
+                            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                            return exchange.getResponse().setComplete();
+                        }))
+                        .uri("http://localhost:8089"))
+
+                .route("gdpr_anonymize_delivery_blocked", r -> r
+                        .path("/api/delivery/gdpr/**")
+                        .and().method("POST")
+                        .filters(f -> f.filter((exchange, chain) -> {
+                            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                            return exchange.getResponse().setComplete();
+                        }))
+                        .uri("http://localhost:8086"))
+
                 // Users — all other protected user/store/session/shift operations
                 .route("core_users", r -> r.path("/api/users/**")
                         .filters(f -> f

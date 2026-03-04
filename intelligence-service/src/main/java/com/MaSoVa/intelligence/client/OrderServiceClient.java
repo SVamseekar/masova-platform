@@ -97,8 +97,14 @@ public class OrderServiceClient {
     public Integer getActiveDeliveryCount() {
         try {
             // Phase 1: /api/orders/active-deliveries/count → /api/orders/analytics?type=active-deliveries
+            // Response is a JSON object {count: N}, not a bare integer
             String url = orderServiceUrl + "/api/orders/analytics?type=active-deliveries";
-            return restTemplate.getForObject(url, Integer.class);
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> response = restTemplate.getForObject(url, java.util.Map.class);
+            if (response != null && response.containsKey("count")) {
+                return ((Number) response.get("count")).intValue();
+            }
+            return 0;
         } catch (RestClientException e) {
             log.error("Failed to fetch active delivery count", e);
             throw e;

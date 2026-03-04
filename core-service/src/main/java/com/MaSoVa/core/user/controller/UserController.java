@@ -92,6 +92,7 @@ public class UserController {
     @GetMapping("/{userId}")
     @Operation(summary = "Get user by ID")
     @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("#userId == authentication.name or hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
     public ResponseEntity<UserResponse> getUser(@PathVariable String userId) {
         return ResponseEntity.ok(userService.getUserResponseById(userId));
     }
@@ -273,6 +274,7 @@ public class UserController {
     @GetMapping("/{userId}/status")
     @Operation(summary = "Get driver status")
     @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("#userId == authentication.name or hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
     public ResponseEntity<Map<String, Object>> getDriverStatus(@PathVariable String userId) {
         try {
             User user = userService.getUserByIdUncached(userId);
@@ -296,6 +298,7 @@ public class UserController {
     @PutMapping("/{userId}/status")
     @Operation(summary = "Update driver status")
     @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("#userId == authentication.name or hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
     public ResponseEntity<Map<String, Object>> updateDriverStatus(
             @PathVariable String userId,
             @RequestBody Map<String, String> request) {
@@ -322,6 +325,7 @@ public class UserController {
     @GetMapping("/{userId}/can-take-orders")
     @Operation(summary = "Check if user can take orders")
     @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("#userId == authentication.name or hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
     public ResponseEntity<Map<String, Object>> canTakeOrders(@PathVariable String userId) {
         try {
             boolean canTakeOrders = userService.canUserTakeOrders(userId);

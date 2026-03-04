@@ -5,7 +5,6 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -33,43 +32,34 @@ public class DeliveryServiceClient {
     }
 
     /**
-     * Get all delivery tracking records for a customer (GDPR data export)
+     * Get all delivery tracking records for a customer (GDPR data export).
+     * Phase 1: DeliveryController has no per-customer delivery query endpoint.
+     * DeliveryTracking is indexed by orderId/driverId, not customerId.
+     * Returns empty list — Phase 3 will add GET /api/delivery?customerId= when needed.
      */
     @CircuitBreaker(name = "deliveryService", fallbackMethod = "getCustomerDeliveriesFallback")
     public List<Map<String, Object>> getCustomerDeliveries(String customerId, String authToken) {
-        try {
-            String url = deliveryServiceUrl + "/api/delivery/customer/" + customerId;
-
-            HttpHeaders headers = createHttpHeaders(authToken);
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
-
-            ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                entity,
-                new ParameterizedTypeReference<List<Map<String, Object>>>() {}
-            );
-
-            return response.getBody() != null ? response.getBody() : Collections.emptyList();
-        } catch (Exception e) {
-            logger.error("Error fetching deliveries for customer {}: {}", customerId, e.getMessage());
-            return Collections.emptyList();
-        }
+        // Phase 1: no canonical endpoint — DeliveryTracking stores no customer PII.
+        // Delivery records are linked via orderId; GDPR export covers this through order history.
+        logger.warn("getCustomerDeliveries: no Phase 1 endpoint for customerId={}; returning empty", customerId);
+        return Collections.emptyList();
     }
 
     /**
-     * Anonymize customer data in delivery records (for GDPR erasure)
+     * Anonymize customer data in delivery tracking records (for GDPR erasure).
+     * Phase 1: POST /api/delivery/gdpr/anonymize?customerId= (internal-only, X-Internal-Service required).
+     * DeliveryTracking stores no customer PII — endpoint is a confirmed no-op.
      */
     public boolean anonymizeCustomerData(String customerId, String authToken) {
         try {
-            String url = deliveryServiceUrl + "/api/delivery/customer/" + customerId + "/anonymize";
+            String url = deliveryServiceUrl + "/api/delivery/gdpr/anonymize?customerId=" + customerId;
 
             HttpHeaders headers = createHttpHeaders(authToken);
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
             ResponseEntity<Void> response = restTemplate.exchange(
                 url,
-                HttpMethod.PUT,
+                HttpMethod.POST,
                 entity,
                 Void.class
             );

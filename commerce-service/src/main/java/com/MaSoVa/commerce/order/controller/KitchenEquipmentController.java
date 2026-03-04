@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -60,6 +61,7 @@ public class KitchenEquipmentController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Register new equipment")
     public ResponseEntity<KitchenEquipment> createEquipment(@RequestBody KitchenEquipment equipment) {
         return ResponseEntity.ok(equipmentService.createEquipment(equipment));
@@ -79,6 +81,7 @@ public class KitchenEquipmentController {
      * Replaces: /{id}/status, /{id}/power, /{id}/temperature
      */
     @PatchMapping("/{equipmentId}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "Update equipment (status, power, or temperature)")
     public ResponseEntity<KitchenEquipment> updateEquipment(
             @PathVariable String equipmentId,
@@ -102,6 +105,7 @@ public class KitchenEquipmentController {
     }
 
     @DeleteMapping("/{equipmentId}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Delete equipment")
     public ResponseEntity<Void> deleteEquipment(@PathVariable String equipmentId) {
         equipmentService.deleteEquipment(equipmentId);
@@ -112,6 +116,7 @@ public class KitchenEquipmentController {
      * POST /api/equipment/{id}/maintenance — record maintenance and set next date
      */
     @PostMapping("/{equipmentId}/maintenance")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Record maintenance event")
     public ResponseEntity<KitchenEquipment> recordMaintenance(
             @PathVariable String equipmentId,

@@ -83,6 +83,7 @@ public class WorkingSessionController {
      * (was /api/users/sessions/clock-in-with-pin)
      */
     @PostMapping("/clock-in")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Clock in with PIN")
     public ResponseEntity<?> clockIn(
             @RequestBody Map<String, String> request,

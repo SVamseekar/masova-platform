@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -79,6 +80,7 @@ public class PurchaseOrderController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Create purchase order")
     public ResponseEntity<PurchaseOrder> create(@RequestBody PurchaseOrder purchaseOrder) {
         return ResponseEntity.status(HttpStatus.CREATED).body(purchaseOrderService.createPurchaseOrder(purchaseOrder));
@@ -97,6 +99,7 @@ public class PurchaseOrderController {
      * Replaces: PUT /{id}, PATCH /{id}/approve, /{id}/reject, /{id}/send, /{id}/receive, /{id}/cancel
      */
     @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Update or action a purchase order (body: action=APPROVE|REJECT|SEND|RECEIVE|CANCEL)")
     public ResponseEntity<PurchaseOrder> update(
             @PathVariable String id,
@@ -131,6 +134,7 @@ public class PurchaseOrderController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Delete purchase order")
     public ResponseEntity<MessageResponse> delete(@PathVariable String id, HttpServletRequest request) {
         purchaseOrderService.deletePurchaseOrder(id, getStoreIdFromHeaders(request));
@@ -141,6 +145,7 @@ public class PurchaseOrderController {
      * POST /api/purchase-orders/auto-generate — manually trigger auto-generation
      */
     @PostMapping("/auto-generate")
+    @PreAuthorize("hasRole('MANAGER')")
     @Operation(summary = "Manually trigger purchase order auto-generation")
     public ResponseEntity<MessageResponse> autoGenerate() {
         purchaseOrderService.autoGeneratePurchaseOrders();

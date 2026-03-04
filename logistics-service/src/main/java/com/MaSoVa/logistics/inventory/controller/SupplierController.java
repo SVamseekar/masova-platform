@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -64,6 +65,7 @@ public class SupplierController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Create supplier")
     public ResponseEntity<Supplier> createSupplier(@RequestBody Supplier supplier) {
         return ResponseEntity.status(HttpStatus.CREATED).body(supplierService.createSupplier(supplier));
@@ -82,6 +84,7 @@ public class SupplierController {
      * Replaces: PUT /{id}, PATCH /{id}/status, PATCH /{id}/preferred, PATCH /{id}/performance
      */
     @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Update supplier (status, preferred flag, performance metrics, or full update)")
     public ResponseEntity<Supplier> updateSupplier(
             @PathVariable String id,
@@ -110,6 +113,7 @@ public class SupplierController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Delete supplier")
     public ResponseEntity<MessageResponse> deleteSupplier(@PathVariable String id) {
         supplierService.deleteSupplier(id);

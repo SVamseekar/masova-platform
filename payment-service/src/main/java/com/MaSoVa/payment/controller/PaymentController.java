@@ -172,4 +172,23 @@ public class PaymentController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    // ── GDPR (internal-only, called by core-service GDPR service) ─────────────────
+
+    /**
+     * POST /api/payments/gdpr/anonymize?customerId= — anonymise PII in all transactions.
+     * Internal-only: requires X-Internal-Service header. Not accessible via gateway.
+     */
+    @PostMapping("/gdpr/anonymize")
+    @Operation(summary = "Anonymise payment data for customer (GDPR erasure — internal only)")
+    public ResponseEntity<Void> gdprAnonymize(
+            @RequestParam String customerId,
+            HttpServletRequest request) {
+        String internalCaller = request.getHeader("X-Internal-Service");
+        if (internalCaller == null || internalCaller.isBlank()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        paymentService.anonymizeCustomerData(customerId);
+        return ResponseEntity.ok().build();
+    }
 }

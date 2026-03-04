@@ -144,6 +144,7 @@ public class DeliveryController {
      * Replaces: POST /location-update
      */
     @PostMapping("/location")
+    @PreAuthorize("hasRole('DRIVER')")
     @Operation(summary = "Driver pushes location update")
     public ResponseEntity<Map<String, Object>> updateLocation(
             @Valid @RequestBody LocationUpdateRequest request) {
@@ -313,6 +314,7 @@ public class DeliveryController {
     }
 
     @GetMapping("/driver/{driverId}/status")
+    @PreAuthorize("hasAnyRole('DRIVER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "Get driver online/offline status")
     public ResponseEntity<Map<String, Object>> getDriverStatus(@PathVariable String driverId) {
         String status = userServiceClient.getDriverStatus(driverId);
@@ -329,6 +331,7 @@ public class DeliveryController {
      * Replaces: /metrics/today (always today for now)
      */
     @GetMapping("/metrics")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Today's delivery metrics for store")
     public ResponseEntity<DeliveryMetricsResponse> getMetrics(HttpServletRequest request) {
         return ResponseEntity.ok(performanceService.getTodayMetrics(getStoreIdFromHeaders(request)));
@@ -341,5 +344,26 @@ public class DeliveryController {
     @Operation(summary = "Get available drivers for a store")
     public ResponseEntity<List<Map<String, Object>>> getAvailableDrivers(@RequestParam String storeId) {
         return ResponseEntity.ok(userServiceClient.getAvailableDrivers(storeId));
+    }
+
+    // ── GDPR (internal-only, called by core-service GDPR service) ─────────────────
+
+    /**
+     * POST /api/delivery/gdpr/anonymize?customerId= — no-op for delivery tracking.
+     * DeliveryTracking stores no customer PII (only orderId + driverId).
+     * Internal-only: requires X-Internal-Service header.
+     */
+    @PostMapping("/gdpr/anonymize")
+    @Operation(summary = "GDPR anonymise delivery data for customer (internal only — delivery tracking has no customer PII)")
+    public ResponseEntity<Void> gdprAnonymize(
+            @RequestParam String customerId,
+            jakarta.servlet.http.HttpServletRequest request) {
+        String internalCaller = request.getHeader("X-Internal-Service");
+        if (internalCaller == null || internalCaller.isBlank()) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
+        }
+        // DeliveryTracking stores no customer PII — nothing to anonymise
+        log.info("GDPR anonymize delivery tracking for customerId={}: no PII stored, no-op", customerId);
+        return ResponseEntity.ok().build();
     }
 }

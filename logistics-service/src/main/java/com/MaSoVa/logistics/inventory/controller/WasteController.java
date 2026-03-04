@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -75,6 +76,7 @@ public class WasteController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "Record waste")
     public ResponseEntity<WasteRecord> record(@RequestBody WasteRecord wasteRecord) {
         return ResponseEntity.status(HttpStatus.CREATED).body(wasteAnalysisService.recordWaste(wasteRecord));
@@ -92,6 +94,7 @@ public class WasteController {
      * Replaces: PUT /{id}, PATCH /{id}/approve
      */
     @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Update or approve waste record (body: approverId to approve)")
     public ResponseEntity<WasteRecord> update(
             @PathVariable String id,
@@ -114,6 +117,7 @@ public class WasteController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Delete waste record")
     public ResponseEntity<MessageResponse> delete(@PathVariable String id) {
         wasteAnalysisService.deleteWasteRecord(id);

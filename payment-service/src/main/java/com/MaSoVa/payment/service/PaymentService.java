@@ -474,4 +474,19 @@ public class PaymentService {
                 .paidAt(transaction.getPaidAt())
                 .build();
     }
+
+    /**
+     * Anonymise all PII in transactions for a customer (GDPR erasure).
+     * Called internally by core-service GDPR service via POST /api/payments/gdpr/anonymize.
+     */
+    @org.springframework.transaction.annotation.Transactional
+    public void anonymizeCustomerData(String customerId) {
+        List<Transaction> transactions = transactionRepository.findByCustomerId(customerId);
+        for (Transaction tx : transactions) {
+            tx.setCustomerEmail(encryptionService.encrypt("ANONYMIZED"));
+            tx.setCustomerPhone(encryptionService.encrypt("ANONYMIZED"));
+            transactionRepository.save(tx);
+        }
+        log.info("Anonymised {} transactions for customer {}", transactions.size(), customerId);
+    }
 }

@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -101,6 +102,7 @@ public class MenuController {
     // ── ADMIN CRUD (auth required, gateway enforces) ──────────────────────────────
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Create menu item", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<MenuItem> createMenuItem(@Valid @RequestBody MenuItemRequest request) {
         MenuItem menuItem = new MenuItem();
@@ -113,6 +115,7 @@ public class MenuController {
      * Replaces: /items/bulk
      */
     @PostMapping("/bulk")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Bulk create menu items", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<List<MenuItem>> createMenuItems(@RequestBody List<MenuItemRequest> requests) {
         List<MenuItem> items = requests.stream().map(r -> {
@@ -129,6 +132,7 @@ public class MenuController {
      * Replaces: PUT /items/{id}, PATCH /items/{id}/availability, PATCH /items/{id}/availability/{status}
      */
     @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Update menu item (fields or availability)", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<MenuItem> updateMenuItem(
             @PathVariable String id,
@@ -139,6 +143,7 @@ public class MenuController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Delete menu item", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Void> deleteMenuItem(@PathVariable String id) {
         menuService.deleteMenuItem(id);
@@ -150,6 +155,7 @@ public class MenuController {
      * Replaces: POST /copy-menu (renamed to match canonical spec)
      */
     @PostMapping("/copy")
+    @PreAuthorize("hasRole('MANAGER')")
     @Operation(summary = "Copy menu between stores", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Map<String, Object>> copyMenu(
             @RequestParam String fromStoreId,
@@ -167,6 +173,7 @@ public class MenuController {
      * Replaces: GET /stats
      */
     @GetMapping("/stats")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Menu statistics", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Map<String, Object>> getMenuStats(HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);

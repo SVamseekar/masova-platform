@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -89,6 +90,7 @@ public class InventoryController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Create inventory item")
     public ResponseEntity<InventoryItem> createItem(@RequestBody InventoryItem item) {
         return ResponseEntity.status(HttpStatus.CREATED).body(inventoryService.createInventoryItem(item));
@@ -104,6 +106,7 @@ public class InventoryController {
      * PATCH /api/inventory/{id} — update item fields (replaces PUT)
      */
     @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Update inventory item")
     public ResponseEntity<InventoryItem> updateItem(@PathVariable String id, @RequestBody InventoryItem item) {
         item.setId(id);
@@ -111,6 +114,7 @@ public class InventoryController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Delete inventory item")
     public ResponseEntity<MessageResponse> deleteItem(@PathVariable String id, HttpServletRequest request) {
         inventoryService.deleteInventoryItem(id, getStoreIdFromHeaders(request));
@@ -125,6 +129,7 @@ public class InventoryController {
      * Replaces: PATCH /items/{id}/adjust, /items/{id}/reserve, /items/{id}/release, /items/{id}/consume
      */
     @PostMapping("/{id}/stock")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "Stock operation (body: operation=ADJUST|RESERVE|RELEASE|CONSUME)")
     public ResponseEntity<?> stockOperation(
             @PathVariable String id,

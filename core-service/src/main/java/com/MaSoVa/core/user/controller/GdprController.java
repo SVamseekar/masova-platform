@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -59,6 +60,7 @@ public class GdprController {
      * Replaces: /consent/user/{userId} and /consent/check
      */
     @GetMapping("/consent")
+    @PreAuthorize("hasRole('MANAGER') or #userId == authentication.name")
     @Operation(summary = "Get consents (query: userId)")
     public ResponseEntity<?> getConsents(@RequestParam String userId) {
         try {
@@ -75,6 +77,7 @@ public class GdprController {
      * Replaces: /consent/grant
      */
     @PostMapping("/consent")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Grant consent")
     public ResponseEntity<?> grantConsent(
             @Valid @RequestBody GdprConsentRequest request,
@@ -99,6 +102,7 @@ public class GdprController {
      * Replaces: /consent/revoke
      */
     @DeleteMapping("/consent")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Revoke consent (body: userId, consentType)")
     public ResponseEntity<?> revokeConsent(
             @RequestBody Map<String, String> body,
@@ -122,6 +126,7 @@ public class GdprController {
      * Replaces: /request (POST)
      */
     @PostMapping("/request")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Submit GDPR request (body: userId, requestType=access|erasure|portability|rectification, reason)")
     public ResponseEntity<?> createRequest(
             @Valid @RequestBody GdprDataRequestDto request,
@@ -145,6 +150,7 @@ public class GdprController {
      * Replaces: /request/user/{userId}
      */
     @GetMapping("/request")
+    @PreAuthorize("hasRole('MANAGER') or #userId == authentication.name")
     @Operation(summary = "Get user's GDPR requests (query: userId)")
     public ResponseEntity<?> getUserRequests(@RequestParam String userId) {
         try {
@@ -163,6 +169,7 @@ public class GdprController {
      *           /request/{id}/portability, /request/{id}/rectification
      */
     @PostMapping("/request/{requestId}/process")
+    @PreAuthorize("hasRole('MANAGER')")
     @Operation(summary = "Process GDPR request (body: type=access|erasure|portability|rectification)")
     public ResponseEntity<?> processRequest(
             @PathVariable String requestId,
@@ -193,6 +200,7 @@ public class GdprController {
     // ── EXPORT AND AUDIT ──────────────────────────────────────────────────────────
 
     @GetMapping("/export/{userId}")
+    @PreAuthorize("hasRole('MANAGER') or #userId == authentication.name")
     @Operation(summary = "Export all user data (GDPR Article 15)")
     public ResponseEntity<?> exportData(@PathVariable String userId, HttpServletRequest request) {
         try {
@@ -206,6 +214,7 @@ public class GdprController {
     }
 
     @GetMapping("/audit/{userId}")
+    @PreAuthorize("hasRole('MANAGER')")
     @Operation(summary = "Audit log for user")
     public ResponseEntity<?> getAuditLog(@PathVariable String userId) {
         try {

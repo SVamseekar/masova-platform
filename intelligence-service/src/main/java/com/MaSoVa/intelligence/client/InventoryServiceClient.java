@@ -81,7 +81,8 @@ public class InventoryServiceClient {
     @CircuitBreaker(name = "inventoryService", fallbackMethod = "getLowStockItemsFallback")
     public List<Map<String, Object>> getLowStockItems() {
         try {
-            String url = inventoryServiceUrl + "/api/inventory/low-stock";
+            // Phase 1: /api/inventory/low-stock → /api/inventory?lowStock=true
+            String url = inventoryServiceUrl + "/api/inventory?lowStock=true";
             log.info("Fetching low stock items from: {}", url);
 
             ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
