@@ -6,6 +6,8 @@ import com.MaSoVa.commerce.order.entity.Order;
 import com.MaSoVa.commerce.order.entity.Order.OrderStatus;
 import com.MaSoVa.commerce.order.entity.Order.Priority;
 import com.MaSoVa.commerce.order.entity.OrderItem;
+import com.MaSoVa.commerce.order.entity.OrderJpaEntity;
+import com.MaSoVa.commerce.order.repository.OrderJpaRepository;
 import com.MaSoVa.commerce.order.repository.OrderRepository;
 import com.MaSoVa.commerce.order.websocket.OrderWebSocketController;
 import com.MaSoVa.commerce.order.client.MenuServiceClient;
@@ -25,17 +27,25 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.Comparator;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class OrderService {
 
     private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
+    private static final ZoneId IST = ZoneId.of("Asia/Kolkata");
+
     private final OrderRepository orderRepository;
+    private final OrderJpaRepository orderJpaRepository;
+    private final OrderItemSyncService orderItemSyncService;
+    private final ObjectMapper objectMapper;
     private final OrderWebSocketController webSocketController;
     private final MenuServiceClient menuServiceClient;
     private final CustomerServiceClient customerServiceClient;
@@ -48,7 +58,11 @@ public class OrderService {
     private final OrderEventPublisher orderEventPublisher;
     private final Random random = new Random();
 
-    public OrderService(OrderRepository orderRepository, OrderWebSocketController webSocketController,
+    public OrderService(OrderRepository orderRepository,
+                       OrderJpaRepository orderJpaRepository,
+                       OrderItemSyncService orderItemSyncService,
+                       ObjectMapper objectMapper,
+                       OrderWebSocketController webSocketController,
                        MenuServiceClient menuServiceClient, CustomerServiceClient customerServiceClient,
                        CustomerNotificationService customerNotificationService,
                        DeliveryServiceClient deliveryServiceClient,
@@ -58,6 +72,9 @@ public class OrderService {
                        DeliveryFeeConfiguration deliveryFeeConfiguration,
                        OrderEventPublisher orderEventPublisher) {
         this.orderRepository = orderRepository;
+        this.orderJpaRepository = orderJpaRepository;
+        this.orderItemSyncService = orderItemSyncService;
+        this.objectMapper = objectMapper;
         this.webSocketController = webSocketController;
         this.menuServiceClient = menuServiceClient;
         this.customerServiceClient = customerServiceClient;
@@ -201,6 +218,13 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
         log.info("Order created successfully: {}", savedOrder.getOrderNumber());
 
+        // Phase 2 dual-write: sync to PostgreSQL (non-blocking)
+        try {
+            orderJpaRepository.save(toOrderJpaEntity(savedOrder));
+        } catch (Exception e) {
+            log.warn("PG dual-write failed for createOrder orderNumber={}: {}", savedOrder.getOrderNumber(), e.getMessage());
+        }
+
         // Publish order created event to RabbitMQ
         try {
             orderEventPublisher.publishOrderCreated(new OrderCreatedEvent(
@@ -301,6 +325,16 @@ public class OrderService {
         log.info("Order status updated: {} → {} - Analytics cache evicted",
                  updatedOrder.getOrderNumber(), updatedOrder.getStatus());
 
+        // Phase 2 dual-write: sync status + timestamps to PostgreSQL (non-blocking)
+        try {
+            orderJpaRepository.findByMongoId(updatedOrder.getId()).ifPresentOrElse(
+                pgOrder -> { updateOrderJpaEntityFields(pgOrder, updatedOrder); orderJpaRepository.save(pgOrder); },
+                () -> log.warn("PG dual-write: no PG row found for updateOrderStatus orderId={}", updatedOrder.getId())
+            );
+        } catch (Exception e) {
+            log.warn("PG dual-write failed for updateOrderStatus orderNumber={}: {}", updatedOrder.getOrderNumber(), e.getMessage());
+        }
+
         // Publish status changed event to RabbitMQ
         try {
             orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
@@ -375,6 +409,16 @@ public class OrderService {
 
         Order updatedOrder = orderRepository.save(order);
 
+        // Phase 2 dual-write: sync status + OTP + timestamps to PostgreSQL (non-blocking)
+        try {
+            orderJpaRepository.findByMongoId(updatedOrder.getId()).ifPresentOrElse(
+                pgOrder -> { updateOrderJpaEntityFields(pgOrder, updatedOrder); orderJpaRepository.save(pgOrder); },
+                () -> log.warn("PG dual-write: no PG row found for moveOrderToNextStage orderId={}", updatedOrder.getId())
+            );
+        } catch (Exception e) {
+            log.warn("PG dual-write failed for moveOrderToNextStage orderNumber={}: {}", updatedOrder.getOrderNumber(), e.getMessage());
+        }
+
         // Publish status changed event to RabbitMQ
         try {
             orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
@@ -434,6 +478,16 @@ public class OrderService {
 
         Order cancelledOrder = orderRepository.save(order);
 
+        // Phase 2 dual-write: sync cancellation to PostgreSQL (non-blocking)
+        try {
+            orderJpaRepository.findByMongoId(cancelledOrder.getId()).ifPresentOrElse(
+                pgOrder -> { updateOrderJpaEntityFields(pgOrder, cancelledOrder); orderJpaRepository.save(pgOrder); },
+                () -> log.warn("PG dual-write: no PG row found for cancelOrder orderId={}", cancelledOrder.getId())
+            );
+        } catch (Exception e) {
+            log.warn("PG dual-write failed for cancelOrder orderNumber={}: {}", cancelledOrder.getOrderNumber(), e.getMessage());
+        }
+
         // Publish status changed event to RabbitMQ
         try {
             orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
@@ -472,6 +526,16 @@ public class OrderService {
         order.setAssignedDriverId(driverId);
         Order updatedOrder = orderRepository.save(order);
 
+        // Phase 2 dual-write: sync driver assignment to PostgreSQL (non-blocking)
+        try {
+            orderJpaRepository.findByMongoId(updatedOrder.getId()).ifPresentOrElse(
+                pgOrder -> { pgOrder.setAssignedDriverId(driverId); orderJpaRepository.save(pgOrder); },
+                () -> log.warn("PG dual-write: no PG row found for assignDriver orderId={}", updatedOrder.getId())
+            );
+        } catch (Exception e) {
+            log.warn("PG dual-write failed for assignDriver orderNumber={}: {}", updatedOrder.getOrderNumber(), e.getMessage());
+        }
+
         // Send driver assignment notification to customer
         customerNotificationService.sendDriverAssignmentNotification(updatedOrder, driverName, driverPhone);
 
@@ -490,6 +554,20 @@ public class OrderService {
         order.setPaymentTransactionId(transactionId);
 
         Order updatedOrder = orderRepository.save(order);
+
+        // Phase 2 dual-write: sync payment status + transaction ID to PostgreSQL (non-blocking)
+        try {
+            orderJpaRepository.findByMongoId(updatedOrder.getId()).ifPresentOrElse(
+                pgOrder -> {
+                    pgOrder.setPaymentStatus(paymentStatus.name());
+                    pgOrder.setPaymentTransactionId(transactionId);
+                    orderJpaRepository.save(pgOrder);
+                },
+                () -> log.warn("PG dual-write: no PG row found for updatePaymentStatus orderId={}", updatedOrder.getId())
+            );
+        } catch (Exception e) {
+            log.warn("PG dual-write failed for updatePaymentStatus orderNumber={}: {}", updatedOrder.getOrderNumber(), e.getMessage());
+        }
 
         // Broadcast payment update via WebSocket
         if (updatedOrder.getCustomerId() != null) {
@@ -518,10 +596,8 @@ public class OrderService {
                 .mapToDouble(OrderItem::getItemTotal)
                 .sum();
 
-        // Week 3 Fix: Use configuration instead of hardcoded values
-        double deliveryFee = Order.OrderType.DELIVERY.equals(order.getOrderType())
-                ? deliveryFeeConfiguration.getBaseFee()
-                : 0.0;
+        // Preserve the zone-based delivery fee from the original order (do not flatten to base fee)
+        double deliveryFee = order.getDeliveryFee() != null ? order.getDeliveryFee().doubleValue() : 0.0;
 
         // Get state from order's delivery address or default
         String state = (order.getDeliveryAddress() != null && order.getDeliveryAddress().getState() != null)
@@ -538,6 +614,17 @@ public class OrderService {
         order.setPreparationTime(calculatePreparationTime(newItems.size()));
 
         Order updatedOrder = orderRepository.save(order);
+
+        // Phase 2 dual-write: sync recalculated totals + re-map line items to PostgreSQL (non-blocking)
+        // Uses OrderItemSyncService.syncOrderItems (REQUIRES_NEW) to atomically delete + reinsert items.
+        try {
+            orderJpaRepository.findByMongoId(updatedOrder.getId()).ifPresentOrElse(
+                pgOrder -> orderItemSyncService.syncOrderItems(pgOrder, updatedOrder),
+                () -> log.warn("PG dual-write: no PG row found for updateOrderItems orderId={}", updatedOrder.getId())
+            );
+        } catch (Exception e) {
+            log.warn("PG dual-write failed for updateOrderItems orderNumber={}: {}", updatedOrder.getOrderNumber(), e.getMessage());
+        }
 
         // Broadcast modification via WebSocket
         webSocketController.sendKitchenQueueUpdate(updatedOrder.getStoreId(), updatedOrder);
@@ -559,6 +646,16 @@ public class OrderService {
         order.setPriority(priority);
 
         Order updatedOrder = orderRepository.save(order);
+
+        // Phase 2 dual-write: sync priority to PostgreSQL (non-blocking)
+        try {
+            orderJpaRepository.findByMongoId(updatedOrder.getId()).ifPresentOrElse(
+                pgOrder -> { pgOrder.setPriority(priority.name()); orderJpaRepository.save(pgOrder); },
+                () -> log.warn("PG dual-write: no PG row found for updateOrderPriority orderId={}", updatedOrder.getId())
+            );
+        } catch (Exception e) {
+            log.warn("PG dual-write failed for updateOrderPriority orderNumber={}: {}", updatedOrder.getOrderNumber(), e.getMessage());
+        }
 
         // Broadcast priority change via WebSocket
         webSocketController.sendKitchenQueueUpdate(updatedOrder.getStoreId(), updatedOrder);
@@ -706,11 +803,10 @@ public class OrderService {
     public List<Order> getOrdersByDate(String storeId, java.time.LocalDate date) {
         // FIXED: Use IST timezone consistently with analytics service
         // Analytics service uses Asia/Kolkata for date calculations, so we must use the same timezone here
-        java.time.ZoneId istZone = java.time.ZoneId.of("Asia/Kolkata");
 
         // Convert date to IST timezone boundaries (start and end of day in IST)
-        java.time.ZonedDateTime zonedStart = date.atStartOfDay(istZone);
-        java.time.ZonedDateTime zonedEnd = date.atTime(23, 59, 59, 999_999_999).atZone(istZone);
+        java.time.ZonedDateTime zonedStart = date.atStartOfDay(IST);
+        java.time.ZonedDateTime zonedEnd = date.atTime(23, 59, 59, 999_999_999).atZone(IST);
 
         // Convert IST to UTC for MongoDB query (MongoDB stores timestamps in UTC)
         LocalDateTime startOfDay = zonedStart.withZoneSameInstant(java.time.ZoneOffset.UTC).toLocalDateTime();
@@ -727,11 +823,10 @@ public class OrderService {
 
     public List<Order> getOrdersByStaffAndDate(String storeId, String staffId, java.time.LocalDate date) {
         // FIXED: Use IST timezone consistently with analytics service
-        java.time.ZoneId istZone = java.time.ZoneId.of("Asia/Kolkata");
 
         // Convert date to IST timezone boundaries
-        java.time.ZonedDateTime zonedStart = date.atStartOfDay(istZone);
-        java.time.ZonedDateTime zonedEnd = date.atTime(23, 59, 59, 999_999_999).atZone(istZone);
+        java.time.ZonedDateTime zonedStart = date.atStartOfDay(IST);
+        java.time.ZonedDateTime zonedEnd = date.atTime(23, 59, 59, 999_999_999).atZone(IST);
 
         // Convert IST to UTC for MongoDB query
         LocalDateTime startOfDay = zonedStart.withZoneSameInstant(java.time.ZoneOffset.UTC).toLocalDateTime();
@@ -1038,6 +1133,97 @@ public class OrderService {
         );
     }
 
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Phase 2 dual-write helpers — MongoDB Order → PostgreSQL OrderJpaEntity
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    private OffsetDateTime toOdt(LocalDateTime ldt) {
+        return ldt != null ? ldt.atZone(IST).toOffsetDateTime() : null;
+    }
+
+    private OrderJpaEntity toOrderJpaEntity(Order order) {
+        String deliveryAddressJson = null;
+        if (order.getDeliveryAddress() != null) {
+            try {
+                deliveryAddressJson = objectMapper.writeValueAsString(order.getDeliveryAddress());
+            } catch (Exception e) {
+                log.warn("PG dual-write: failed to serialize deliveryAddress for order {}: {}", order.getOrderNumber(), e.getMessage());
+            }
+        }
+
+        OrderJpaEntity entity = OrderJpaEntity.builder()
+            .id(order.getId())
+            .mongoId(order.getId())
+            .orderNumber(order.getOrderNumber())
+            .customerId(order.getCustomerId())
+            .customerName(order.getCustomerName())
+            .customerPhone(order.getCustomerPhone())
+            .customerEmail(order.getCustomerEmail())
+            .storeId(order.getStoreId())
+            .status(order.getStatus() != null ? order.getStatus().name() : null)
+            .orderType(order.getOrderType() != null ? order.getOrderType().name() : null)
+            .paymentStatus(order.getPaymentStatus() != null ? order.getPaymentStatus().name() : "PENDING")
+            .paymentMethod(order.getPaymentMethod() != null ? order.getPaymentMethod().name() : null)
+            .paymentTransactionId(order.getPaymentTransactionId())
+            .priority(order.getPriority() != null ? order.getPriority().name() : "NORMAL")
+            .subtotal(order.getSubtotal())
+            .deliveryFee(order.getDeliveryFee())
+            .tax(order.getTax())
+            .total(order.getTotal())
+            .specialInstructions(order.getSpecialInstructions())
+            .tableNumber(order.getTableNumber())
+            .guestCount(order.getGuestCount())
+            .assignedDriverId(order.getAssignedDriverId())
+            .createdByStaffId(order.getCreatedByStaffId())
+            .createdByStaffName(order.getCreatedByStaffName())
+            .preparationTime(order.getPreparationTime())
+            .estimatedDeliveryTime(toOdt(order.getEstimatedDeliveryTime()))
+            .deliveryAddress(deliveryAddressJson)
+            .deliveryOtp(order.getDeliveryOtp())
+            .deliveryProofType(order.getDeliveryProofType())
+            .cancellationReason(order.getCancellationReason())
+            .receivedAt(toOdt(order.getReceivedAt()))
+            .preparingStartedAt(toOdt(order.getPreparingStartedAt()))
+            .readyAt(toOdt(order.getReadyAt()))
+            .dispatchedAt(toOdt(order.getDispatchedAt()))
+            .deliveredAt(toOdt(order.getDeliveredAt()))
+            .cancelledAt(toOdt(order.getCancelledAt()))
+            .createdAt(order.getCreatedAt() != null ? order.getCreatedAt().atZone(IST).toOffsetDateTime() : OffsetDateTime.now(IST))
+            .build();
+
+        // Map line items
+        if (order.getItems() != null) {
+            entity.setItems(orderItemSyncService.buildItemEntities(order.getItems(), entity));
+        }
+
+        return entity;
+    }
+
+    private void updateOrderJpaEntityFields(OrderJpaEntity pgOrder, Order order) {
+        pgOrder.setStatus(order.getStatus() != null ? order.getStatus().name() : pgOrder.getStatus());
+        pgOrder.setPaymentStatus(order.getPaymentStatus() != null ? order.getPaymentStatus().name() : pgOrder.getPaymentStatus());
+        pgOrder.setPaymentMethod(order.getPaymentMethod() != null ? order.getPaymentMethod().name() : pgOrder.getPaymentMethod());
+        pgOrder.setPaymentTransactionId(order.getPaymentTransactionId());
+        pgOrder.setPriority(order.getPriority() != null ? order.getPriority().name() : pgOrder.getPriority());
+        pgOrder.setAssignedDriverId(order.getAssignedDriverId());
+        pgOrder.setTableNumber(order.getTableNumber());
+        pgOrder.setGuestCount(order.getGuestCount());
+        pgOrder.setSubtotal(order.getSubtotal());
+        pgOrder.setDeliveryFee(order.getDeliveryFee());
+        pgOrder.setTax(order.getTax());
+        pgOrder.setTotal(order.getTotal());
+        pgOrder.setPreparationTime(order.getPreparationTime());
+        pgOrder.setDeliveryOtp(order.getDeliveryOtp());
+        pgOrder.setDeliveryProofType(order.getDeliveryProofType());
+        pgOrder.setCancellationReason(order.getCancellationReason());
+        pgOrder.setReceivedAt(toOdt(order.getReceivedAt()));
+        pgOrder.setPreparingStartedAt(toOdt(order.getPreparingStartedAt()));
+        pgOrder.setReadyAt(toOdt(order.getReadyAt()));
+        pgOrder.setDispatchedAt(toOdt(order.getDispatchedAt()));
+        pgOrder.setDeliveredAt(toOdt(order.getDeliveredAt()));
+        pgOrder.setCancelledAt(toOdt(order.getCancelledAt()));
+    }
+
     // ==================== PROOF OF DELIVERY METHODS (DELIV-002) ====================
 
     /**
@@ -1054,6 +1240,16 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
         log.info("Delivery OTP set for order {}. Expires at {}", orderId, expiresAt);
+
+        // Phase 2 dual-write: sync OTP to PostgreSQL (non-blocking)
+        try {
+            orderJpaRepository.findByMongoId(savedOrder.getId()).ifPresentOrElse(
+                pgOrder -> { pgOrder.setDeliveryOtp(otp); orderJpaRepository.save(pgOrder); },
+                () -> log.warn("PG dual-write: no PG row found for setDeliveryOtp orderId={}", orderId)
+            );
+        } catch (Exception e) {
+            log.warn("PG dual-write failed for setDeliveryOtp orderId={}: {}", orderId, e.getMessage());
+        }
 
         // Send OTP to customer via notification service
         customerNotificationService.sendDeliveryOtpNotification(savedOrder, otp);
@@ -1082,6 +1278,22 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
         log.info("Delivery proof set for order {}. Type: {}", orderId, proofType);
 
+        // Phase 2 dual-write: sync proof type to PostgreSQL (non-blocking)
+        try {
+            orderJpaRepository.findByMongoId(savedOrder.getId()).ifPresentOrElse(
+                pgOrder -> {
+                        pgOrder.setDeliveryProofType(proofType);
+                        // Store whichever proof URL is present (photo takes precedence; fall back to signature)
+                        String proofUrl = photoUrl != null ? photoUrl : signatureUrl;
+                        if (proofUrl != null) pgOrder.setDeliveryProofUrl(proofUrl);
+                        orderJpaRepository.save(pgOrder);
+                    },
+                () -> log.warn("PG dual-write: no PG row found for setDeliveryProof orderId={}", orderId)
+            );
+        } catch (Exception e) {
+            log.warn("PG dual-write failed for setDeliveryProof orderId={}: {}", orderId, e.getMessage());
+        }
+
         return savedOrder;
     }
 
@@ -1100,6 +1312,26 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
         log.info("Order {} marked as delivered at {} using {} verification", orderId, deliveredAt, proofType);
+
+        // Phase 2 dual-write: sync delivered status + proof type to PostgreSQL (non-blocking)
+        try {
+            orderJpaRepository.findByMongoId(savedOrder.getId()).ifPresentOrElse(
+                pgOrder -> { updateOrderJpaEntityFields(pgOrder, savedOrder); orderJpaRepository.save(pgOrder); },
+                () -> log.warn("PG dual-write: no PG row found for markOrderDelivered orderId={}", orderId)
+            );
+        } catch (Exception e) {
+            log.warn("PG dual-write failed for markOrderDelivered orderId={}: {}", orderId, e.getMessage());
+        }
+
+        // Publish status changed event to RabbitMQ
+        try {
+            orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
+                savedOrder.getId(), savedOrder.getCustomerId(),
+                OrderStatus.DISPATCHED.toString(), OrderStatus.DELIVERED.toString(),
+                savedOrder.getStoreId()));
+        } catch (Exception e) {
+            log.warn("Failed to publish delivered event for {}: {}", orderId, e.getMessage());
+        }
 
         // Send delivery confirmation notification
         customerNotificationService.sendOrderStatusNotification(savedOrder, OrderStatus.DELIVERED);
