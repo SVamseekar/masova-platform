@@ -7,7 +7,7 @@ services:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
-      - ./infrastructure/mongodb/init-simple.js:/docker-entrypoint-initdb.d/init.js:ro
+      - ./infrastructure/mongodb/init.js:/docker-entrypoint-initdb.d/init.js:ro
     networks:
       - masova-network
 
@@ -43,6 +43,28 @@ services:
       timeout: 5s
       retries: 5
 
+  postgres:
+    image: postgres:15-alpine
+    container_name: masova-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: masova
+      POSTGRES_PASSWORD: masova_secret
+      POSTGRES_DB: masova_db
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/01-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    networks:
+      - masova-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U masova -d masova_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # ============================================================
   # Backend Services
   # ============================================================
@@ -60,10 +82,20 @@ services:
       - SPRING_RABBITMQ_USERNAME=masova
       - SPRING_RABBITMQ_PASSWORD=masova_secret
       - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://masova-postgres:5432/masova_db
+      - SPRING_DATASOURCE_USERNAME=masova
+      - SPRING_DATASOURCE_PASSWORD=masova_secret
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.PostgreSQLDialect
     depends_on:
-      - mongodb
-      - redis
-      - rabbitmq
+      mongodb:
+        condition: service_started
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     networks:
       - masova-network
     restart: unless-stopped
@@ -83,11 +115,22 @@ services:
       - SPRING_RABBITMQ_PASSWORD=masova_secret
       - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
       - CORE_SERVICE_URL=http://masova-core:8085
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://masova-postgres:5432/masova_db
+      - SPRING_DATASOURCE_USERNAME=masova
+      - SPRING_DATASOURCE_PASSWORD=masova_secret
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.PostgreSQLDialect
     depends_on:
-      - mongodb
-      - redis
-      - rabbitmq
-      - core-service
+      mongodb:
+        condition: service_started
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      core-service:
+        condition: service_started
     networks:
       - masova-network
     restart: unless-stopped
@@ -106,10 +149,20 @@ services:
       - SPRING_RABBITMQ_USERNAME=masova
       - SPRING_RABBITMQ_PASSWORD=masova_secret
       - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://masova-postgres:5432/masova_db
+      - SPRING_DATASOURCE_USERNAME=masova
+      - SPRING_DATASOURCE_PASSWORD=masova_secret
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.PostgreSQLDialect
     depends_on:
-      - mongodb
-      - redis
-      - rabbitmq
+      mongodb:
+        condition: service_started
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     networks:
       - masova-network
     restart: unless-stopped
@@ -120,7 +173,7 @@ services:
       dockerfile: Dockerfile
     container_name: masova-logistics
     ports:
-      - "8095:8095"
+      - "8086:8086"
     environment:
       - SPRING_DATA_MONGODB_URI=mongodb://masova-mongodb:27017/masova_logistics
       - SPRING_REDIS_HOST=masova-redis
@@ -129,11 +182,22 @@ services:
       - SPRING_RABBITMQ_PASSWORD=masova_secret
       - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
       - CORE_SERVICE_URL=http://masova-core:8085
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://masova-postgres:5432/masova_db
+      - SPRING_DATASOURCE_USERNAME=masova
+      - SPRING_DATASOURCE_PASSWORD=masova_secret
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.PostgreSQLDialect
     depends_on:
-      - mongodb
-      - redis
-      - rabbitmq
-      - core-service
+      mongodb:
+        condition: service_started
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      core-service:
+        condition: service_started
     networks:
       - masova-network
     restart: unless-stopped
@@ -153,9 +217,12 @@ services:
       - SPRING_RABBITMQ_PASSWORD=masova_secret
       - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
     depends_on:
-      - mongodb
-      - redis
-      - rabbitmq
+      mongodb:
+        condition: service_started
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     networks:
       - masova-network
     restart: unless-stopped
@@ -171,7 +238,7 @@ services:
       - CORE_SERVICE_URL=http://masova-core:8085
       - COMMERCE_SERVICE_URL=http://masova-commerce:8084
       - PAYMENT_SERVICE_URL=http://masova-payment:8089
-      - LOGISTICS_SERVICE_URL=http://masova-logistics:8095
+      - LOGISTICS_SERVICE_URL=http://masova-logistics:8086
       - INTELLIGENCE_SERVICE_URL=http://masova-intelligence:8087
       - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
     depends_on:
@@ -186,8 +253,13 @@ services:
 
 volumes:
   mongodb_data:
+    driver: local
   redis_data:
+    driver: local
   rabbitmq_data:
+    driver: local
+  postgres_data:
+    driver: local
 
 networks:
   masova-network:
