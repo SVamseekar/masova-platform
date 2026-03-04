@@ -19,6 +19,9 @@ public class StoreServiceClient {
     @Value("${services.core.url:http://localhost:8085}")
     private String coreServiceUrl;
 
+    @Value("${services.logistics.url:http://localhost:8086}")
+    private String logisticsServiceUrl;
+
     public StoreServiceClient(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
@@ -26,17 +29,14 @@ public class StoreServiceClient {
     /**
      * Returns true if the coordinates are within the store's delivery radius.
      * Fail-open: returns true on any error so order placement is not blocked by network issues.
+     * Phase 1: /api/stores/{id}/delivery-radius-check removed →
+     *          GET /api/delivery/zones?check=true&storeId=&lat=&lng= (logistics-service)
      */
     @SuppressWarnings("unchecked")
     public boolean isWithinDeliveryRadius(String storeId, double latitude, double longitude) {
         try {
-            // Phase 1: /api/stores/{id}/delivery-radius-check removed →
-            //          GET /api/delivery/zones?check=true&storeId=&lat=&lng= (logistics-service :8086)
-            // Note: StoreServiceClient talks to core (:8085); this endpoint is on logistics (:8086).
-            // Using delivery zone check URL directly. coreServiceUrl is replaced with logistics URL here.
-            String logisticsUrl = coreServiceUrl.replace(":8085", ":8086");
             String url = UriComponentsBuilder
-                .fromHttpUrl(logisticsUrl)
+                .fromHttpUrl(logisticsServiceUrl)
                 .path("/api/delivery/zones")
                 .queryParam("check", true)
                 .queryParam("storeId", storeId)

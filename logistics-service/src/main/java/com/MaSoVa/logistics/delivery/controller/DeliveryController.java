@@ -299,7 +299,8 @@ public class DeliveryController {
         if ("AVAILABLE".equals(status)) {
             try {
                 Map<String, Object> session = userServiceClient.getEmployeeWorkingStatus(driverId);
-                Boolean isWorking = (Boolean) session.get("isWorking");
+                // Key is "active" (returned by UserServiceClient.getEmployeeWorkingStatus)
+                Boolean isWorking = (Boolean) session.get("active");
                 if (isWorking == null || !isWorking) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
                             "error", "Must be clocked in by a manager before going online",

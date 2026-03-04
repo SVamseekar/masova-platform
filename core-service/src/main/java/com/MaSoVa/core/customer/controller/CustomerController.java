@@ -107,6 +107,7 @@ public class CustomerController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "Create customer")
     public ResponseEntity<?> createCustomer(@Valid @RequestBody CreateCustomerRequest request) {
         try {
@@ -141,6 +142,7 @@ public class CustomerController {
     }
 
     @PatchMapping("/{id}")
+    @PreAuthorize("#id == authentication.name or hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Update customer")
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<?> updateCustomer(

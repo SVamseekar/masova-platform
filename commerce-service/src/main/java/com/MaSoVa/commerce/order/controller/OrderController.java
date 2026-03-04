@@ -265,12 +265,29 @@ public class OrderController {
 
     // ── PAYMENT STATUS (inter-service, called by payment-service) ─────────────────
 
+    /**
+     * PATCH /{orderId}/payment — update payment status.
+     * Called by payment-service (inter-service via X-Internal-Service header)
+     * or by MANAGER/STAFF for manual correction.
+     */
     @PatchMapping("/{orderId}/payment")
-    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
-    @Operation(summary = "Update payment status (inter-service, called by payment-service)")
+    @Operation(summary = "Update payment status (inter-service or MANAGER/STAFF)")
     public ResponseEntity<Order> updatePaymentStatus(
             @PathVariable String orderId,
-            @Valid @RequestBody UpdatePaymentStatusRequest request) {
+            @Valid @RequestBody UpdatePaymentStatusRequest request,
+            jakarta.servlet.http.HttpServletRequest httpRequest) {
+        String internalCaller = httpRequest.getHeader("X-Internal-Service");
+        if (internalCaller == null || internalCaller.isBlank()) {
+            // Not an internal call — require MANAGER/ASSISTANT_MANAGER/STAFF role
+            var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            boolean hasRole = auth != null && auth.getAuthorities().stream().anyMatch(a ->
+                    a.getAuthority().equals("ROLE_MANAGER") ||
+                    a.getAuthority().equals("ROLE_ASSISTANT_MANAGER") ||
+                    a.getAuthority().equals("ROLE_STAFF"));
+            if (!hasRole) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
+            }
+        }
         return ResponseEntity.ok(orderService.updatePaymentStatus(orderId, request.getStatus(), request.getTransactionId()));
     }
 
