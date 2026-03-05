@@ -99,7 +99,7 @@ const PaymentPage: React.FC = () => {
   }, [cartItems, navigate, orderPlaced]);
 
   useEffect(() => {
-    if (orderType === 'DELIVERY' && paymentMethod === 'CASH') {
+    if ((orderType === 'DELIVERY' || orderType === 'DINE_IN') && paymentMethod === 'CASH') {
       setPaymentMethod('CARD');
     }
   }, [orderType, paymentMethod]);
@@ -184,8 +184,8 @@ const PaymentPage: React.FC = () => {
           name: item.name,
           quantity: item.quantity,
           price: item.price,
-          variant: (item as any).variant,
-          customizations: (item as any).customizations,
+          variant: item.variant,
+          customizations: item.customizations,
         })),
         orderType,
         paymentMethod,
