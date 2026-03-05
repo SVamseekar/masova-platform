@@ -276,7 +276,7 @@ const KitchenDisplayPage: React.FC = () => {
     const statusFlow: string[] = orderType === 'DELIVERY'
       ? ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED', 'READY', 'DISPATCHED']
       : orderType === 'DINE_IN'
-        ? ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED', 'READY']
+        ? ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED'] // terminal via markAsCompleted → SERVED
         : ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED', 'READY']; // TAKEAWAY
 
     const currentIndex = statusFlow.indexOf(currentStatus);
@@ -433,7 +433,7 @@ const KitchenDisplayPage: React.FC = () => {
           </button>
         )}
         {/* Show Mark Picked Up for TAKEAWAY/COLLECTION orders at BAKED */}
-        {order.status === 'BAKED' && (order.orderType === 'COLLECTION' || order.orderType !== 'DELIVERY' && order.orderType !== 'DINE_IN') && (
+        {order.status === 'BAKED' && order.orderType === 'COLLECTION' && (
           <button
             className="complete-btn"
             onClick={() => markAsCompleted(order.id)}
