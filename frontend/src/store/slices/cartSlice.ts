@@ -9,6 +9,8 @@ interface CartItem {
   toppings?: string[];
   size?: string;
   imageUrl?: string;
+  variant?: string;
+  customizations?: string[];
 }
 
 interface CartState {
