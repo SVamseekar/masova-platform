@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import AssignDriverModal from '../../components/modals/AssignDriverModal';
 import AppHeader from '../../components/common/AppHeader';
 import OrderForm from '../../components/forms/OrderForm';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
@@ -60,6 +61,7 @@ const OrderManagementPage: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState('');
+  const [assignDriverModal, setAssignDriverModal] = useState<{ open: boolean; orderId: string }>({ open: false, orderId: '' });
 
   // Filter and sort state
   const [filterValues, setFilterValues] = useState<FilterValues>({
@@ -307,30 +309,8 @@ const OrderManagementPage: React.FC = () => {
     }
   };
 
-  const handleAssignDriver = async (orderId: string) => {
-    if (drivers.length === 0) {
-      alert('No drivers available');
-      return;
-    }
-
-    const driverList = drivers.map((d, i) => `${i + 1}. ${d.name} (${d.id})`).join('\n');
-    const selection = prompt(`Select driver:\n${driverList}\n\nEnter driver number:`);
-
-    if (!selection) return;
-
-    const driverIndex = parseInt(selection) - 1;
-    if (driverIndex < 0 || driverIndex >= drivers.length) {
-      alert('Invalid selection');
-      return;
-    }
-
-    try {
-      await assignDriver({ orderId, driverId: drivers[driverIndex].id }).unwrap();
-      alert('Driver assigned successfully');
-    } catch (error) {
-      console.error('Failed to assign driver:', error);
-      alert('Failed to assign driver');
-    }
+  const handleAssignDriver = (orderId: string) => {
+    setAssignDriverModal({ open: true, orderId });
   };
 
   const formatDate = (dateStr: string) => {
@@ -1436,6 +1416,18 @@ const OrderManagementPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Assign Driver Modal */}
+      <AssignDriverModal
+        open={assignDriverModal.open}
+        orderId={assignDriverModal.orderId}
+        onClose={() => setAssignDriverModal({ open: false, orderId: '' })}
+        onAssigned={(_driverId, driverName) => {
+          refetch();
+          setAssignDriverModal({ open: false, orderId: '' });
+          console.info(`Driver ${driverName} assigned to order ${assignDriverModal.orderId}`);
+        }}
+      />
     </div>
   );
 };
