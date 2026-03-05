@@ -184,15 +184,14 @@ const KitchenDisplayPage: React.FC = () => {
     }
   }, [isMuted]);
 
-  // Trigger chime when new RECEIVED orders arrive (uses localOrders, declared above)
+  // Trigger chime when new RECEIVED orders arrive — depend on RECEIVED count (not total length)
+  const receivedOrderCount = localOrders.filter(o => o.status === 'RECEIVED').length;
   useEffect(() => {
-    const receivedCount = localOrders.filter(o => o.status === 'RECEIVED').length;
-    if (receivedCount > prevOrderCountRef.current) {
+    if (receivedOrderCount > prevOrderCountRef.current) {
       playNewOrderChime();
     }
-    prevOrderCountRef.current = receivedCount;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [localOrders.length, isMuted]);
+    prevOrderCountRef.current = receivedOrderCount;
+  }, [receivedOrderCount, isMuted, playNewOrderChime]);
 
   // Full-screen toggle
   const toggleFullScreen = useCallback(() => {
@@ -264,20 +263,17 @@ const KitchenDisplayPage: React.FC = () => {
   };
 
   const moveOrderToNext = async (orderId: string, currentStatus: Order['status']): Promise<void> => {
-    // Kitchen flow varies by order type:
-    // DELIVERY: RECEIVED -> PREPARING -> OVEN -> BAKED -> DISPATCHED -> DELIVERED
-    // TAKEAWAY/COLLECTION: RECEIVED -> PREPARING -> OVEN -> BAKED (BAKED = Ready for Pickup, final stage)
-    // DINE_IN: RECEIVED -> PREPARING -> OVEN -> BAKED -> SERVED (manual)
+    // Kitchen flow (all types share RECEIVED→PREPARING→OVEN→BAKED→READY, then diverge):
+    // DELIVERY:   RECEIVED -> PREPARING -> OVEN -> BAKED -> READY -> DISPATCHED -> DELIVERED
+    // DINE_IN:    RECEIVED -> PREPARING -> OVEN -> BAKED -> READY -> SERVED (via markAsCompleted)
+    // COLLECTION: RECEIVED -> PREPARING -> OVEN -> BAKED -> READY -> COMPLETED (via markAsCompleted)
     const order = orders.find(o => o.id === orderId);
     const orderType = order?.orderType;
 
-    // Define status flow based on order type
-    // Backend flow: BAKED -> READY -> DISPATCHED/COMPLETED/SERVED
+    // "Next Stage" button advances up to READY (terminal for KDS) or DISPATCHED (for DELIVERY)
     const statusFlow: string[] = orderType === 'DELIVERY'
       ? ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED', 'READY', 'DISPATCHED']
-      : orderType === 'DINE_IN'
-        ? ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED'] // terminal via markAsCompleted → SERVED
-        : ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED', 'READY']; // TAKEAWAY
+      : ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED', 'READY']; // DINE_IN and COLLECTION
 
     const currentIndex = statusFlow.indexOf(currentStatus);
     const nextStatus = statusFlow[currentIndex + 1];
@@ -303,10 +299,9 @@ const KitchenDisplayPage: React.FC = () => {
       const order = orders.find(o => o.id === orderId);
       const orderType = order?.orderType;
 
+      // DELIVERY: DELIVERED is set by driver app after OTP verification — not from KDS
       let terminalStatus: string;
-      if (orderType === 'DELIVERY') {
-        terminalStatus = 'DELIVERED';
-      } else if (orderType === 'DINE_IN') {
+      if (orderType === 'DINE_IN') {
         terminalStatus = 'SERVED';
       } else {
         // COLLECTION/TAKEAWAY
@@ -390,13 +385,10 @@ const KitchenDisplayPage: React.FC = () => {
           <div className="status-dot"></div>
           <span>{order.status.replace('_', ' ')}</span>
         </div>
-        {/* Show Next Stage button based on order type and status */}
-        {/* DELIVERY: show until DISPATCHED */}
-        {/* DINE_IN: show until BAKED (then Mark Served button) */}
-        {/* TAKEAWAY: show until BAKED (BAKED is final - Ready for Pickup) */}
+        {/* Show Next Stage button: advance until DISPATCHED (DELIVERY) or READY (DINE_IN/COLLECTION) */}
         {!(
           order.status === 'DISPATCHED' ||
-          (order.status === 'BAKED' && order.orderType !== 'DELIVERY')
+          (order.status === 'READY' && order.orderType !== 'DELIVERY')
         ) && (
           <button
             className="next-btn"
@@ -408,20 +400,9 @@ const KitchenDisplayPage: React.FC = () => {
             <span className="next-icon">→</span>
           </button>
         )}
-        {/* Show Mark as Delivered for DELIVERY orders at DISPATCHED */}
-        {order.status === 'DISPATCHED' && order.orderType === 'DELIVERY' && (
-          <button
-            className="complete-btn"
-            onClick={() => markAsCompleted(order.id)}
-            disabled={isUpdating}
-            title="Mark as delivered"
-          >
-            <span>✓</span>
-            <span>{isUpdating ? 'Updating...' : 'Mark Delivered'}</span>
-          </button>
-        )}
-        {/* Show Mark as Served for DINE_IN orders at BAKED */}
-        {order.status === 'BAKED' && order.orderType === 'DINE_IN' && (
+        {/* DELIVERY orders at DISPATCHED: DELIVERED is set by the driver app after OTP verification — no KDS button */}
+        {/* Show Mark as Served for DINE_IN orders at READY */}
+        {order.status === 'READY' && order.orderType === 'DINE_IN' && (
           <button
             className="complete-btn"
             onClick={() => markAsCompleted(order.id)}
@@ -432,8 +413,8 @@ const KitchenDisplayPage: React.FC = () => {
             <span>{isUpdating ? 'Updating...' : 'Mark Served'}</span>
           </button>
         )}
-        {/* Show Mark Picked Up for TAKEAWAY/COLLECTION orders at BAKED */}
-        {order.status === 'BAKED' && order.orderType === 'COLLECTION' && (
+        {/* Show Mark Picked Up for COLLECTION orders at READY */}
+        {order.status === 'READY' && order.orderType === 'COLLECTION' && (
           <button
             className="complete-btn"
             onClick={() => markAsCompleted(order.id)}
@@ -455,7 +436,8 @@ const KitchenDisplayPage: React.FC = () => {
     { status: 'BAKED', title: 'Baked', Icon: CheckCircleIcon, color: '#10b981' },
     { status: 'READY', title: 'Ready', Icon: CheckCircleIcon, color: '#22c55e' },
     { status: 'DISPATCHED', title: 'Dispatched', Icon: LocalShippingIcon, color: '#8b5cf6' },
-    { status: 'SERVED', title: 'Served', Icon: RestaurantIcon, color: '#607D8B' }
+    { status: 'SERVED', title: 'Served', Icon: RestaurantIcon, color: '#607D8B' },
+    { status: 'COMPLETED', title: 'Picked Up', Icon: CheckCircleIcon, color: '#4caf50' }
   ];
 
   const getOrdersByStatus = (status: string): Order[] => {
@@ -570,7 +552,7 @@ const KitchenDisplayPage: React.FC = () => {
           margin: 0 auto;
           padding: 24px;
           display: grid;
-          grid-template-columns: repeat(7, 1fr);
+          grid-template-columns: repeat(8, 1fr);
           gap: 20px;
           height: calc(100vh - 160px);
           overflow-x: auto;
@@ -1057,7 +1039,7 @@ const KitchenDisplayPage: React.FC = () => {
         }
 
         /* Responsive Design */
-        @media (max-width: 1200px) {
+        @media (max-width: 1400px) {
           .kitchen-board {
             grid-template-columns: repeat(4, 1fr);
             gap: 16px;

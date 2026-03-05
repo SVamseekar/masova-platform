@@ -246,12 +246,13 @@ public class OrderService {
     }
 
     public List<Order> getKitchenQueue(String storeId) {
-        // Kitchen queue shows orders in RECEIVED, PREPARING, OVEN, BAKED, DISPATCHED (Completed) stages
+        // Kitchen queue shows active orders: RECEIVED through READY (all types), plus DISPATCHED (delivery in-flight)
         List<OrderStatus> kitchenStatuses = List.of(
                 OrderStatus.RECEIVED,
                 OrderStatus.PREPARING,
                 OrderStatus.OVEN,
                 OrderStatus.BAKED,
+                OrderStatus.READY,
                 OrderStatus.DISPATCHED
         );
 
@@ -302,6 +303,17 @@ public class OrderService {
             calculateAndUpdatePreparationTimes(order);
         }
 
+        // Set completedAt for DELIVERED (SERVED/COMPLETED are handled in updateStatusTimestamps)
+        if (newStatus == OrderStatus.DELIVERED) {
+            order.setCompletedAt(LocalDateTime.now());
+        }
+
+        // Generate delivery OTP when DELIVERY order is dispatched (also covers direct status-change path)
+        if (newStatus == OrderStatus.DISPATCHED && order.getOrderType() == Order.OrderType.DELIVERY
+                && order.getDeliveryOtp() == null) {
+            generateAndSetDeliveryOtp(order);
+        }
+
         Order updatedOrder = orderRepository.save(order);
         log.info("Order status updated: {} → {} - Analytics cache evicted",
                  updatedOrder.getOrderNumber(), updatedOrder.getStatus());
@@ -319,12 +331,14 @@ public class OrderService {
                     log.warn("Failed to decrement inventory for item {}: {}", item.getMenuItemId(), e.getMessage());
                 }
             });
-        } else if (newStatus == OrderStatus.CANCELLED && currentStatus != null && currentStatus == OrderStatus.PREPARING) {
+        } else if (newStatus == OrderStatus.CANCELLED && currentStatus != null
+                && List.of(OrderStatus.PREPARING, OrderStatus.OVEN, OrderStatus.BAKED, OrderStatus.READY, OrderStatus.DISPATCHED).contains(currentStatus)) {
+            // Restore inventory for any status after PREPARING (stock was already decremented)
             updatedOrder.getItems().forEach(item -> {
                 try {
                     inventoryServiceClient.adjustStock(item.getMenuItemId(), Map.of(
                         "quantityChange", item.getQuantity(),
-                        "reason", "Order " + updatedOrder.getOrderNumber() + " cancelled during preparation"
+                        "reason", "Order " + updatedOrder.getOrderNumber() + " cancelled after preparation started"
                     ));
                     log.info("Restored inventory for cancelled order item {} qty={}", item.getMenuItemId(), item.getQuantity());
                 } catch (Exception e) {
@@ -342,8 +356,9 @@ public class OrderService {
             log.warn("Failed to publish status changed event for {}: {}", updatedOrder.getOrderNumber(), e.getMessage());
         }
 
-        // Update customer stats when order is delivered (completed)
-        if (newStatus == OrderStatus.DELIVERED && updatedOrder.getCustomerId() != null && !updatedOrder.getCustomerId().isEmpty()) {
+        // Update customer stats for all terminal statuses (loyalty points)
+        if ((newStatus == OrderStatus.DELIVERED || newStatus == OrderStatus.COMPLETED || newStatus == OrderStatus.SERVED)
+                && updatedOrder.getCustomerId() != null && !updatedOrder.getCustomerId().isEmpty()) {
             customerServiceClient.updateOrderStats(
                 updatedOrder.getCustomerId(),
                 updatedOrder.getOrderNumber(),
@@ -362,6 +377,15 @@ public class OrderService {
 
         // Send customer notification for status change
         customerNotificationService.sendOrderStatusNotification(updatedOrder, currentStatus);
+
+        // Send OTP email when DELIVERY order is dispatched (covers direct status-update path)
+        if (newStatus == OrderStatus.DISPATCHED && updatedOrder.getDeliveryOtp() != null) {
+            try {
+                customerNotificationService.sendDeliveryOtpNotification(updatedOrder, updatedOrder.getDeliveryOtp());
+            } catch (Exception e) {
+                log.warn("Failed to send OTP notification for order {}: {}", updatedOrder.getOrderNumber(), e.getMessage());
+            }
+        }
 
         return updatedOrder;
     }
@@ -395,14 +419,9 @@ public class OrderService {
             order.setCompletedAt(LocalDateTime.now());
         }
 
-        // Auto-generate delivery OTP when DELIVERY order is dispatched (Gap #12)
+        // Auto-generate delivery OTP when DELIVERY order is dispatched
         if (nextStatus == OrderStatus.DISPATCHED && order.getOrderType() == Order.OrderType.DELIVERY) {
-            String otp = String.format("%04d", new java.util.Random().nextInt(10000));
-            LocalDateTime now = LocalDateTime.now();
-            order.setDeliveryOtp(otp);
-            order.setDeliveryOtpGeneratedAt(now);
-            order.setDeliveryOtpExpiresAt(now.plusMinutes(15));
-            log.info("Auto-generated delivery OTP for order {}", order.getOrderNumber());
+            generateAndSetDeliveryOtp(order);
         }
 
         Order updatedOrder = orderRepository.save(order);
@@ -440,9 +459,13 @@ public class OrderService {
         // Send customer notification for status change
         customerNotificationService.sendOrderStatusNotification(updatedOrder, currentStatus);
 
-        // Send OTP email when dispatched (Gap #12)
+        // Send OTP email when dispatched
         if (nextStatus == OrderStatus.DISPATCHED && updatedOrder.getDeliveryOtp() != null) {
-            customerNotificationService.sendDeliveryOtpNotification(updatedOrder, updatedOrder.getDeliveryOtp());
+            try {
+                customerNotificationService.sendDeliveryOtpNotification(updatedOrder, updatedOrder.getDeliveryOtp());
+            } catch (Exception e) {
+                log.warn("Failed to send OTP notification for order {}: {}", updatedOrder.getOrderNumber(), e.getMessage());
+            }
         }
 
         return updatedOrder;
@@ -466,13 +489,13 @@ public class OrderService {
 
         Order cancelledOrder = orderRepository.save(order);
 
-        // Restore inventory if order was in PREPARING state when cancelled
-        if (previousStatus == OrderStatus.PREPARING) {
+        // Restore inventory if order was in any post-PREPARING state when cancelled (stock was decremented at PREPARING)
+        if (List.of(OrderStatus.PREPARING, OrderStatus.OVEN, OrderStatus.BAKED, OrderStatus.READY, OrderStatus.DISPATCHED).contains(previousStatus)) {
             cancelledOrder.getItems().forEach(item -> {
                 try {
                     inventoryServiceClient.adjustStock(item.getMenuItemId(), Map.of(
                         "quantityChange", item.getQuantity(),
-                        "reason", "Order " + cancelledOrder.getOrderNumber() + " cancelled during preparation"
+                        "reason", "Order " + cancelledOrder.getOrderNumber() + " cancelled after preparation started"
                     ));
                     log.info("Restored inventory for cancelled order item {} qty={}", item.getMenuItemId(), item.getQuantity());
                 } catch (Exception e) {
@@ -846,6 +869,15 @@ public class OrderService {
     public List<com.MaSoVa.commerce.order.entity.QualityCheckpoint> getQualityCheckpoints(String orderId) {
         Order order = getOrderById(orderId);
         return order.getQualityCheckpoints() != null ? order.getQualityCheckpoints() : new java.util.ArrayList<>();
+    }
+
+    private void generateAndSetDeliveryOtp(Order order) {
+        String otp = String.format("%04d", new java.util.Random().nextInt(10000));
+        LocalDateTime now = LocalDateTime.now();
+        order.setDeliveryOtp(otp);
+        order.setDeliveryOtpGeneratedAt(now);
+        order.setDeliveryOtpExpiresAt(now.plusMinutes(15));
+        log.info("Generated delivery OTP for order {}", order.getOrderNumber());
     }
 
     // Preparation time tracking methods

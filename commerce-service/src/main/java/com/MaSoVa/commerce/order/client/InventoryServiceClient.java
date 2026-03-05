@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.Map;
 
-@FeignClient(name = "inventory-service-client", url = "${services.delivery.url:http://localhost:8086}")
+@FeignClient(name = "inventory-service-client", url = "${services.logistics.url:http://localhost:8086}")
 public interface InventoryServiceClient {
 
     @PatchMapping("/api/inventory/items/{menuItemId}/adjust")

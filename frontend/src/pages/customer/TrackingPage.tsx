@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTrackOrderQuery, OrderItem } from '../../store/api/orderApi';
 import { useTrackOrderQuery as useDeliveryTrackQuery } from '../../store/api/deliveryApi';
+import { useCreateReviewMutation } from '../../store/api/reviewApi';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { clearCart } from '../../store/slices/cartSlice';
 import CustomerPageHeader from '../../components/common/CustomerPageHeader';
@@ -10,17 +11,39 @@ import { useOrderTrackingWebSocket } from '../../hooks/useOrderTrackingWebSocket
 import { OrderTrackingUpdate } from '../../services/websocketService';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type OrderStatus = 'RECEIVED' | 'PREPARING' | 'OVEN' | 'BAKED' | 'READY' | 'DISPATCHED' | 'DELIVERED' | 'COMPLETED';
+type OrderStatus = 'RECEIVED' | 'PREPARING' | 'OVEN' | 'BAKED' | 'READY' | 'DISPATCHED' | 'DELIVERED' | 'SERVED' | 'COMPLETED' | 'CANCELLED';
 
-const ORDER_STEPS: { status: OrderStatus; label: string; description: string }[] = [
-  { status: 'RECEIVED',   label: 'Order Placed',    description: 'Restaurant received your order' },
-  { status: 'PREPARING',  label: 'Preparing',       description: 'Kitchen is getting started'     },
-  { status: 'OVEN',       label: 'In the Oven',     description: 'Your food is cooking'           },
-  { status: 'BAKED',      label: 'Baked',           description: 'Fresh out of the oven'          },
-  { status: 'READY',      label: 'Ready',           description: 'Packed and ready to go'         },
-  { status: 'DISPATCHED', label: 'Out for Delivery', description: 'Driver is on the way'          },
-  { status: 'DELIVERED',  label: 'Delivered',       description: 'Enjoy your meal!'               },
+type StepDef = { status: OrderStatus; label: string; description: string };
+
+const SHARED_STEPS: StepDef[] = [
+  { status: 'RECEIVED',  label: 'Order Placed', description: 'Restaurant received your order' },
+  { status: 'PREPARING', label: 'Preparing',    description: 'Kitchen is getting started'     },
+  { status: 'OVEN',      label: 'In the Oven',  description: 'Your food is cooking'           },
+  { status: 'BAKED',     label: 'Baked',        description: 'Fresh out of the oven'          },
+  { status: 'READY',     label: 'Ready',        description: 'Packed and ready to go'         },
 ];
+
+const DELIVERY_STEPS: StepDef[] = [
+  ...SHARED_STEPS,
+  { status: 'DISPATCHED', label: 'Out for Delivery', description: 'Driver is on the way'  },
+  { status: 'DELIVERED',  label: 'Delivered',        description: 'Enjoy your meal!'       },
+];
+
+const DINE_IN_STEPS: StepDef[] = [
+  ...SHARED_STEPS,
+  { status: 'SERVED', label: 'Served', description: 'Enjoy your meal at your table!' },
+];
+
+const TAKEAWAY_STEPS: StepDef[] = [
+  ...SHARED_STEPS,
+  { status: 'COMPLETED', label: 'Ready for Pickup', description: 'Please collect your order' },
+];
+
+const getOrderSteps = (orderType?: string): StepDef[] => {
+  if (orderType === 'DINE_IN') return DINE_IN_STEPS;
+  if (orderType === 'PICKUP' || orderType === 'COLLECTION' || orderType === 'TAKEAWAY') return TAKEAWAY_STEPS;
+  return DELIVERY_STEPS; // Default to delivery steps
+};
 
 // ─── Inline SVG icons ─────────────────────────────────────────────────────────
 const IconCheck = ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
@@ -122,6 +145,7 @@ const TrackingPage: React.FC = () => {
   const currentUser = useAppSelector((state) => state.auth.user);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [ratingOpen, setRatingOpen] = useState(false);
+  const [createReview] = useCreateReviewMutation();
   const [liveDriverLocation, setLiveDriverLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [liveStatus, setLiveStatus] = useState<string | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
@@ -171,10 +195,11 @@ const TrackingPage: React.FC = () => {
   }, [order?.createdAt]);
 
   // ── Status helpers ──────────────────────────────────────────────────────────
+  const orderSteps = getOrderSteps(order?.orderType);
   const currentStepIndex = order
-    ? ORDER_STEPS.findIndex(s => s.status === (effectiveStatus || order.status))
+    ? orderSteps.findIndex(s => s.status === (effectiveStatus || order.status))
     : 0;
-  const isDelivered = effectiveStatus === 'DELIVERED' || effectiveStatus === 'COMPLETED';
+  const isDelivered = effectiveStatus === 'DELIVERED' || effectiveStatus === 'COMPLETED' || effectiveStatus === 'SERVED';
   const shortId = orderId ? orderId.slice(-8).toUpperCase() : '';
 
   const etaMinutes = delivery?.estimatedArrival
@@ -217,7 +242,7 @@ const TrackingPage: React.FC = () => {
     );
   }
 
-  const activeStep = ORDER_STEPS[currentStepIndex];
+  const activeStep = orderSteps[currentStepIndex];
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-body)' }}>
@@ -275,7 +300,7 @@ const TrackingPage: React.FC = () => {
             <div style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.25)', borderRadius: 10, padding: '10px 18px', textAlign: 'center', flexShrink: 0 }}>
               <p style={{ fontSize: '0.64rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 2 }}>ETA</p>
               <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 800, color: 'var(--gold)' }}>
-                {currentStepIndex >= 0 ? ORDER_STEPS.slice(currentStepIndex).length * 5 + '–' + (ORDER_STEPS.slice(currentStepIndex).length * 5 + 5) + ' min' : '–'}
+                {currentStepIndex >= 0 ? orderSteps.slice(currentStepIndex).length * 5 + '–' + (orderSteps.slice(currentStepIndex).length * 5 + 5) + ' min' : '–'}
               </p>
             </div>
           ) : (
@@ -419,7 +444,7 @@ const TrackingPage: React.FC = () => {
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: 22, letterSpacing: '0.02em' }}>Order Progress</h2>
 
             <div style={{ position: 'relative' }}>
-              {ORDER_STEPS.map((step, index) => {
+              {orderSteps.map((step, index) => {
                 const isCompleted = index < currentStepIndex;
                 const isActive = index === currentStepIndex;
                 const isFuture = index > currentStepIndex;
@@ -443,12 +468,12 @@ const TrackingPage: React.FC = () => {
                           : <span style={{ fontSize: '0.7rem', fontWeight: 700, opacity: isFuture ? 0.4 : 1 }}>{index + 1}</span>
                         }
                       </div>
-                      {index < ORDER_STEPS.length - 1 && (
+                      {index < orderSteps.length - 1 && (
                         <div style={{ width: 2, flex: 1, minHeight: 22, background: lineColor, margin: '3px 0', transition: 'background 0.4s' }} />
                       )}
                     </div>
 
-                    <div style={{ paddingBottom: index < ORDER_STEPS.length - 1 ? 20 : 0, paddingTop: 4 }}>
+                    <div style={{ paddingBottom: index < orderSteps.length - 1 ? 20 : 0, paddingTop: 4 }}>
                       <p style={{ fontSize: '0.875rem', fontWeight: isActive ? 700 : isCompleted ? 600 : 400, color: isActive ? 'var(--text-1)' : isCompleted ? 'var(--text-2)' : 'var(--text-3)', marginBottom: 2, transition: 'color 0.3s' }}>
                         {step.label}
                       </p>
@@ -532,8 +557,18 @@ const TrackingPage: React.FC = () => {
         open={ratingOpen}
         driverName={delivery?.driverName}
         onClose={() => setRatingOpen(false)}
-        onSubmit={(rating, comment) => {
-          console.log('[TrackingPage] Rating submitted', { orderId, rating, comment });
+        onSubmit={async (rating, comment) => {
+          if (!orderId) return;
+          try {
+            await createReview({
+              orderId,
+              overallRating: rating,
+              comment,
+              deliveryRating: rating,
+            }).unwrap();
+          } catch {
+            // Non-blocking — rating failure should not disrupt the post-order experience
+          }
           setRatingOpen(false);
         }}
       />

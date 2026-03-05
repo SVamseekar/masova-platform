@@ -48,7 +48,7 @@ interface SalesData {
 
 interface Order {
   id: string;
-  status: 'PREPARING' | 'OVEN' | 'BAKED' | 'DISPATCHED';
+  status: 'RECEIVED' | 'PREPARING' | 'OVEN' | 'BAKED' | 'READY' | 'DISPATCHED' | 'DELIVERED' | 'SERVED' | 'COMPLETED' | 'CANCELLED';
   items: number;
   time: string;
   customer: string;
@@ -389,6 +389,7 @@ const DashboardPage: React.FC = () => {
                   </div>
                   <Badge
                     variant={
+                      order.status === 'READY' ? 'success' :
                       order.status === 'BAKED' ? 'success' :
                       order.status === 'OVEN' ? 'error' :
                       order.status === 'DISPATCHED' ? 'secondary' :
@@ -834,7 +835,7 @@ const DashboardPage: React.FC = () => {
             {[
               { stage: 'Received', count: orderQueue.filter(o => o.status === 'PREPARING').length, color: colors.semantic.info },
               { stage: 'In Kitchen', count: orderQueue.filter(o => ['PREPARING', 'OVEN'].includes(o.status)).length, color: colors.semantic.warning },
-              { stage: 'Ready', count: orderQueue.filter(o => o.status === 'BAKED').length, color: colors.semantic.success },
+              { stage: 'Ready', count: orderQueue.filter(o => o.status === 'READY').length, color: colors.semantic.success },
               { stage: 'Dispatched', count: orderQueue.filter(o => o.status === 'DISPATCHED').length, color: colors.brand.secondary },
             ].map(item => (
               <div key={item.stage} style={{ display: 'flex', alignItems: 'center', gap: spacing[3] }}>

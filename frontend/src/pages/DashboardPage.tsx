@@ -26,7 +26,7 @@ interface WorkingSession {
 
 interface Order {
   id: string;
-  status: 'PREPARING' | 'OVEN' | 'BAKED' | 'DISPATCHED';
+  status: 'RECEIVED' | 'PREPARING' | 'OVEN' | 'BAKED' | 'READY' | 'DISPATCHED' | 'DELIVERED' | 'SERVED' | 'COMPLETED' | 'CANCELLED';
   items: number;
   time: string;
   customer: string;
@@ -185,7 +185,7 @@ const DashboardPage: React.FC = () => {
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       order.status === 'PREPARING' ? 'bg-yellow-100 text-yellow-800' :
                       order.status === 'OVEN' ? 'bg-red-100 text-red-800' :
-                      order.status === 'BAKED' ? 'bg-green-100 text-green-800' :
+                      order.status === 'BAKED' || order.status === 'READY' ? 'bg-green-100 text-green-800' :
                       'bg-blue-100 text-blue-800'
                     }`}>
                       {order.status}

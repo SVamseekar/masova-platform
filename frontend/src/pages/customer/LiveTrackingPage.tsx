@@ -227,13 +227,13 @@ const LiveTrackingPage: React.FC = () => {
             <button
               onClick={callDriver}
               style={{
-                flex: 1, background: '#2e7d32', color: '#fff', border: 'none',
+                flex: 1, background: 'var(--dp-success, #2e7d32)', color: '#fff', border: 'none',
                 borderRadius: 'var(--radius-pill)', padding: '11px',
                 fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
                 transition: 'var(--transition)',
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#388e3c'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#2e7d32'; }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--dp-success-light, #388e3c)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--dp-success, #2e7d32)'; }}
             >
               Call Driver
             </button>

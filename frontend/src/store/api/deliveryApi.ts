@@ -66,6 +66,62 @@ export interface RouteSegment {
   instruction: string;
 }
 
+export interface DeliveryZoneCheck {
+  inZone: boolean;
+  zoneName?: string;
+  zoneId?: string;
+  distanceKm?: number;
+}
+
+export interface DeliveryZoneFee {
+  fee: number;
+  currency?: string;
+  zoneName?: string;
+}
+
+export interface DeliveryZone {
+  id: string;
+  name: string;
+  minDistanceKm?: number;
+  maxDistanceKm?: number;
+  fee: number;
+}
+
+export interface DeliveryOtpResponse {
+  otp: string;
+  expiresAt: string;
+}
+
+export interface DeliveryActionResponse {
+  success: boolean;
+  message?: string;
+}
+
+export interface DriverPerformance {
+  driverId: string;
+  totalDeliveries: number;
+  completedDeliveries: number;
+  avgRating?: number;
+  avgDeliveryTimeMinutes?: number;
+  onTimeRate?: number;
+}
+
+export interface DriverStatus {
+  driverId: string;
+  status: 'AVAILABLE' | 'ONLINE' | 'BUSY' | 'OFFLINE';
+  activeDeliveries?: number;
+  lastUpdated?: string;
+}
+
+export interface DriverDelivery {
+  id: string;
+  orderId: string;
+  status: string;
+  pickupAddress?: string;
+  deliveryAddress?: string;
+  estimatedArrival?: string;
+}
+
 // Available driver for manual assignment
 export interface AvailableDriver {
   id: string;
@@ -281,52 +337,52 @@ export const deliveryApi = createApi({
     }),
 
     // Driver performance
-    getDriverPerformance: builder.query<any, string>({
+    getDriverPerformance: builder.query<DriverPerformance, string>({
       query: (driverId) => `/delivery/driver/${driverId}/performance`,
       providesTags: (result, error, driverId) => [{ type: 'Drivers', id: driverId }],
     }),
 
-    getDriverPerformanceToday: builder.query<any, string>({
+    getDriverPerformanceToday: builder.query<DriverPerformance, string>({
       query: (driverId) => `/delivery/driver/${driverId}/performance/today`,
       providesTags: (result, error, driverId) => [{ type: 'Drivers', id: driverId }],
     }),
 
-    getDriverStatus: builder.query<any, string>({
+    getDriverStatus: builder.query<DriverStatus, string>({
       query: (driverId) => `/delivery/driver/${driverId}/status`,
       providesTags: (result, error, driverId) => [{ type: 'Drivers', id: driverId }],
     }),
 
-    getDriverPendingDeliveries: builder.query<any[], string>({
+    getDriverPendingDeliveries: builder.query<DriverDelivery[], string>({
       query: (driverId) => `/delivery/driver/${driverId}/pending`,
       providesTags: (result, error, driverId) => [{ type: 'Drivers', id: driverId }],
     }),
 
     // Delivery zone operations
-    checkDeliveryZone: builder.query<any, { latitude: number; longitude: number }>({
+    checkDeliveryZone: builder.query<DeliveryZoneCheck, { latitude: number; longitude: number }>({
       query: ({ latitude, longitude }) =>
         `/delivery/zone/check?latitude=${latitude}&longitude=${longitude}`,
       providesTags: ['Zone'],
     }),
 
-    getDeliveryZoneFee: builder.query<any, { latitude: number; longitude: number }>({
+    getDeliveryZoneFee: builder.query<DeliveryZoneFee, { latitude: number; longitude: number }>({
       query: ({ latitude, longitude }) =>
         `/delivery/zone/fee?latitude=${latitude}&longitude=${longitude}`,
       providesTags: ['Zone'],
     }),
 
-    listDeliveryZones: builder.query<any[], void>({
+    listDeliveryZones: builder.query<DeliveryZone[], void>({
       query: () => '/delivery/zone/list',
       providesTags: ['Zone'],
     }),
 
-    validateDeliveryZone: builder.query<any, { latitude: number; longitude: number }>({
+    validateDeliveryZone: builder.query<DeliveryZoneCheck, { latitude: number; longitude: number }>({
       query: ({ latitude, longitude }) =>
         `/delivery/zone/validate?latitude=${latitude}&longitude=${longitude}`,
       providesTags: ['Zone'],
     }),
 
     // Delivery operations
-    acceptDelivery: builder.mutation<any, { orderId: string; driverId: string }>({
+    acceptDelivery: builder.mutation<DeliveryActionResponse, { orderId: string; driverId: string }>({
       query: (data) => ({
         url: '/delivery/accept',
         method: 'POST',
@@ -335,7 +391,7 @@ export const deliveryApi = createApi({
       invalidatesTags: ['Delivery', 'Drivers'],
     }),
 
-    rejectDelivery: builder.mutation<any, { orderId: string; driverId: string; reason: string }>({
+    rejectDelivery: builder.mutation<DeliveryActionResponse, { orderId: string; driverId: string; reason: string }>({
       query: (data) => ({
         url: '/delivery/reject',
         method: 'POST',
@@ -345,7 +401,7 @@ export const deliveryApi = createApi({
     }),
 
     // OTP operations
-    generateDeliveryOTP: builder.mutation<any, string>({
+    generateDeliveryOTP: builder.mutation<DeliveryOtpResponse, string>({
       query: (orderId) => ({
         url: `/delivery/${orderId}/generate-otp`,
         method: 'POST',
@@ -353,7 +409,7 @@ export const deliveryApi = createApi({
       invalidatesTags: (result, error, orderId) => [{ type: 'Tracking', id: orderId }],
     }),
 
-    regenerateDeliveryOTP: builder.mutation<any, string>({
+    regenerateDeliveryOTP: builder.mutation<DeliveryOtpResponse, string>({
       query: (orderId) => ({
         url: `/delivery/${orderId}/regenerate-otp`,
         method: 'POST',

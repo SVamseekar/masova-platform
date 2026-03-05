@@ -15,17 +15,14 @@ const OrderTrackingPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month' | 'year'>('all');
 
-  const { data: customer, isLoading: customerLoading, error: customerError } = useGetCustomerByUserIdQuery(
+  const { data: customer, isLoading: customerLoading } = useGetCustomerByUserIdQuery(
     currentUser?.id || '',
     { skip: !currentUser?.id }
   );
 
-  React.useEffect(() => {
-    console.log('OrderTrackingPage Debug:', { currentUser, customer, customerLoading, customerError, customerId: customer?.id });
-  }, [currentUser, customer, customerLoading, customerError]);
 
-  const handleWebSocketUpdate = useCallback((update: OrderTrackingUpdate) => {
-    console.log('[OrderTrackingPage] WebSocket update:', update);
+  const handleWebSocketUpdate = useCallback((_update: OrderTrackingUpdate) => {
+    // WebSocket updates trigger a refetch via recentUpdates
   }, []);
 
   const { isConnected: wsConnected, recentUpdates } = useCustomerOrdersWebSocket({
@@ -47,9 +44,6 @@ const OrderTrackingPage: React.FC = () => {
     if (recentUpdates.length > 0) refetch();
   }, [recentUpdates, refetch]);
 
-  React.useEffect(() => {
-    console.log('Orders Query Debug:', { customerId: customer?.id, ordersLoading, ordersError, customerOrders, orderCount: customerOrders?.length });
-  }, [customer?.id, ordersLoading, ordersError, customerOrders]);
 
   const isLoading = customerLoading || ordersLoading;
   const noCustomer = !customerLoading && !customer;
@@ -75,11 +69,19 @@ const OrderTrackingPage: React.FC = () => {
   const formatTime = (dateStr: string) =>
     new Date(dateStr).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
-  const getStatusIndex = (status: string) => ORDER_STATUS_FLOW.indexOf(status as any);
+  const TERMINAL_STATUSES = ['DELIVERED', 'SERVED', 'COMPLETED', 'CANCELLED'];
+
+  const getStepsForOrderType = (orderType: string): typeof ORDER_STATUS_FLOW => {
+    const shared: typeof ORDER_STATUS_FLOW = ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED', 'READY'];
+    if (orderType === 'DINE_IN') return [...shared, 'SERVED'];
+    if (orderType === 'PICKUP' || orderType === 'COLLECTION' || orderType === 'TAKEAWAY') return [...shared, 'COMPLETED'];
+    return [...shared, 'DISPATCHED', 'DELIVERED']; // DELIVERY default
+  };
 
   const OrderCard: React.FC<{ order: Order }> = ({ order }) => {
-    const currentStepIndex = getStatusIndex(order.status);
-    const isActive = !['DELIVERED', 'CANCELLED'].includes(order.status);
+    const orderTypeSteps = getStepsForOrderType(order.orderType);
+    const currentStepIndex = orderTypeSteps.indexOf(order.status as typeof ORDER_STATUS_FLOW[number]);
+    const isActive = !TERMINAL_STATUSES.includes(order.status);
     const statusCfg = ORDER_STATUS_CONFIG[order.status];
 
     return (
@@ -146,13 +148,13 @@ const OrderTrackingPage: React.FC = () => {
               <div style={{ position: 'absolute', top: '14px', left: '5%', right: '5%', height: '3px', background: 'var(--surface-2)', borderRadius: '2px' }}>
                 <div style={{
                   height: '100%',
-                  width: `${(currentStepIndex / (ORDER_STATUS_FLOW.length - 1)) * 100}%`,
+                  width: `${(currentStepIndex / (orderTypeSteps.length - 1)) * 100}%`,
                   background: 'var(--gold)',
                   borderRadius: '2px',
                   transition: 'width 0.5s ease',
                 }} />
               </div>
-              {ORDER_STATUS_FLOW.map((status, idx) => {
+              {orderTypeSteps.map((status, idx) => {
                 const cfg = ORDER_STATUS_CONFIG[status];
                 const done = idx <= currentStepIndex;
                 const current = idx === currentStepIndex;
@@ -310,8 +312,11 @@ const OrderTrackingPage: React.FC = () => {
   }
 
   if (ordersError && customer) {
-    const errorData = ordersError as any;
-    const errorMessage = errorData?.data?.message || errorData?.error || 'Unknown error occurred';
+    const errorMessage = 'data' in ordersError
+      ? (ordersError.data as { message?: string })?.message ?? 'Unknown error occurred'
+      : 'error' in ordersError
+        ? ordersError.error
+        : 'Unknown error occurred';
     return (
       <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-body)' }}>
         <AppHeader showPublicNav onCartClick={() => navigate('/menu')} />
