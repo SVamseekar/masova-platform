@@ -19,6 +19,7 @@ import BuildIcon from '@mui/icons-material/Build';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import RestaurantIcon from '@mui/icons-material/Restaurant';
 
 // TypeScript interfaces
 interface OrderItem {
@@ -453,7 +454,8 @@ const KitchenDisplayPage: React.FC = () => {
     { status: 'OVEN', title: 'In Oven', Icon: WhatshotIcon, color: '#e53e3e' },
     { status: 'BAKED', title: 'Baked', Icon: CheckCircleIcon, color: '#10b981' },
     { status: 'READY', title: 'Ready', Icon: CheckCircleIcon, color: '#22c55e' },
-    { status: 'DISPATCHED', title: 'Dispatched', Icon: LocalShippingIcon, color: '#8b5cf6' }
+    { status: 'DISPATCHED', title: 'Dispatched', Icon: LocalShippingIcon, color: '#8b5cf6' },
+    { status: 'SERVED', title: 'Served', Icon: RestaurantIcon, color: '#607D8B' }
   ];
 
   const getOrdersByStatus = (status: string): Order[] => {
@@ -568,7 +570,7 @@ const KitchenDisplayPage: React.FC = () => {
           margin: 0 auto;
           padding: 24px;
           display: grid;
-          grid-template-columns: repeat(6, 1fr);
+          grid-template-columns: repeat(7, 1fr);
           gap: 20px;
           height: calc(100vh - 160px);
           overflow-x: auto;
