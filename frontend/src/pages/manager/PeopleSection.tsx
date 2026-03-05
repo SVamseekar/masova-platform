@@ -95,10 +95,13 @@ const label: React.CSSProperties = { display: 'block', marginBottom: 6, fontSize
 const input: React.CSSProperties = { width: '100%', padding: '10px 12px', border: `1px solid ${t.grayLight}`, borderRadius: 8, fontSize: 14, fontFamily: t.font, outline: 'none' };
 
 // ── tabs ──
+const DriverManagementPage = React.lazy(() => import('./DriverManagementPage'));
+
 const tabs = [
   { id: 'staff', label: 'Staff' },
   { id: 'scheduling', label: 'Scheduling' },
   { id: 'leaderboard', label: 'Leaderboard' },
+  { id: 'drivers', label: 'Drivers' },
   { id: 'customers', label: 'Customers' },
   { id: 'campaigns', label: 'Campaigns' },
   { id: 'reviews', label: 'Reviews' },
@@ -980,6 +983,11 @@ const PeopleSection: React.FC<Props> = ({ storeId, activeTab, onTabChange }) => 
       {current === 'staff' && <StaffTab storeId={storeId} />}
       {current === 'scheduling' && <SchedulingTab storeId={storeId} />}
       {current === 'leaderboard' && <LeaderboardTab storeId={storeId} />}
+      {current === 'drivers' && (
+        <React.Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: t.gray }}>Loading...</div>}>
+          <DriverManagementPage />
+        </React.Suspense>
+      )}
       {current === 'customers' && <CustomersTab storeId={storeId} />}
       {current === 'campaigns' && <CampaignsTab storeId={storeId} />}
       {current === 'reviews' && <ReviewsTab storeId={storeId} />}
