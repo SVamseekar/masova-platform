@@ -37,7 +37,9 @@ const PaymentPage: React.FC = () => {
   const guestInfo = location.state?.guestInfo as GuestInfo | undefined;
 
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'UPI'>('CARD');
-  const [orderType, setOrderType] = useState<'DELIVERY' | 'TAKEAWAY'>('DELIVERY');
+  const [orderType, setOrderType] = useState<'DELIVERY' | 'TAKEAWAY' | 'DINE_IN'>('DELIVERY');
+  const [tableNumber, setTableNumber] = useState('');
+  const [guestCount, setGuestCount] = useState('');
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
 
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
@@ -189,6 +191,8 @@ const PaymentPage: React.FC = () => {
         paymentMethod,
         deliveryAddress,
         specialInstructions,
+        ...(orderType === "DINE_IN" && tableNumber ? { tableNumber: parseInt(tableNumber, 10) } : {}),
+        ...(orderType === "DINE_IN" && guestCount ? { guestCount: parseInt(guestCount, 10) } : {}),
       };
 
       const orderResult = await createOrder(orderData).unwrap();
@@ -272,7 +276,7 @@ const PaymentPage: React.FC = () => {
     razorpay.open();
   };
 
-  const isPlaceOrderDisabled = isLoading || (orderType === 'DELIVERY' && !guestInfo && (!customerProfile || !selectedAddressId)) || isOutsideDeliveryRadius;
+  const isPlaceOrderDisabled = isLoading || (orderType === 'DELIVERY' && !guestInfo && (!customerProfile || !selectedAddressId)) || isOutsideDeliveryRadius || (orderType === 'DINE_IN' && !tableNumber);
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', fontFamily: 'var(--font-body)' }}>
@@ -389,7 +393,7 @@ const PaymentPage: React.FC = () => {
           {/* Order Type */}
           <div style={cardStyle}>
             <SectionLabel>Order Type</SectionLabel>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
               <OrderTypeCard
                 active={orderType === 'DELIVERY'}
                 onClick={() => setOrderType('DELIVERY')}
@@ -416,9 +420,50 @@ const PaymentPage: React.FC = () => {
                 title="Takeaway"
                 sub="No delivery fee"
               />
+              <OrderTypeCard
+                active={orderType === 'DINE_IN'}
+                onClick={() => setOrderType('DINE_IN')}
+                icon={
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 11l19-9-9 19-2-8-8-2z" />
+                  </svg>
+                }
+                title="Dine In"
+                sub="Eat at restaurant"
+              />
             </div>
           </div>
 
+
+          {/* Table Number and Guest Count for DINE_IN */}
+          {orderType === 'DINE_IN' && (
+            <div style={cardStyle}>
+              <SectionLabel>Table Details</SectionLabel>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', color: 'var(--text-3)', display: 'block', marginBottom: '6px' }}>Table Number *</label>
+                  <input
+                    type="number"
+                    value={tableNumber}
+                    onChange={e => setTableNumber(e.target.value)}
+                    placeholder="e.g. 5"
+                    required
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-1)', fontSize: '16px', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', color: 'var(--text-3)', display: 'block', marginBottom: '6px' }}>Number of Guests</label>
+                  <input
+                    type="number"
+                    value={guestCount}
+                    onChange={e => setGuestCount(e.target.value)}
+                    placeholder="e.g. 2"
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-1)', fontSize: '16px', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
           {/* Payment Method */}
           <div style={cardStyle}>
             <SectionLabel>Payment Method</SectionLabel>
