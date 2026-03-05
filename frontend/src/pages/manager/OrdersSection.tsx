@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+
+const DeliveryManagementPage = React.lazy(() => import('./DeliveryManagementPage'));
 import { t, cardStyle, tabStyle, tableHeaderStyle, tableCellStyle, sectionTitleStyle, statusBadge, selectStyle } from './manager-tokens';
 import {
   useGetStoreOrdersQuery,
@@ -33,6 +35,7 @@ const tabs = [
   { id: 'payments', label: 'Payments' },
   { id: 'refunds', label: 'Refunds' },
   { id: 'deliveries', label: 'Deliveries' },
+  { id: 'delivery-mgmt', label: 'Delivery Management' },
 ];
 
 // Shared styles
@@ -698,6 +701,11 @@ const OrdersSection: React.FC<Props> = ({ storeId, activeTab, onTabChange }) => 
       {currentTab === 'payments' && <PaymentsTab storeId={storeId} />}
       {currentTab === 'refunds' && <RefundsTab storeId={storeId} />}
       {currentTab === 'deliveries' && <DeliveriesTab storeId={storeId} />}
+      {currentTab === 'delivery-mgmt' && (
+        <React.Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: t.gray }}>Loading...</div>}>
+          <DeliveryManagementPage />
+        </React.Suspense>
+      )}
     </div>
   );
 };

@@ -1,6 +1,7 @@
 # Phase 2 — Database Migration (MongoDB → Polyglot) Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **MANDATORY CODE REVIEW:** After implementing EVERY task, run BOTH `superpowers:code-reviewer` AND `feature-dev:code-reviewer` agents. Fix all issues found. Repeat until 100% confident. No exceptions.
 
 **Goal:** Migrate financial/relational data from MongoDB to PostgreSQL using a dual-write pattern. MongoDB keeps flexible/geospatial collections. Redis keeps ephemeral state. Zero downtime, zero data loss.
 
