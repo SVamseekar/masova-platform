@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import { removeFromCart, updateItemQuantity, clearCart } from '../../store/slices/cartSlice';
+import { removeFromCart, updateItemQuantity, clearCart, selectDeliveryFee } from '../../store/slices/cartSlice';
 
 interface CartPageProps {
   onContinueShopping: () => void;
@@ -12,7 +12,8 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
   const cartItems = useAppSelector(state => state.cart.items);
 
   const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
-  const deliveryFee = subtotal > 0 ? 29 : 0;
+  const reduxDeliveryFee = useAppSelector(selectDeliveryFee);
+  const deliveryFee = subtotal > 0 ? reduxDeliveryFee : 0;
   const tax = subtotal * 0.05;
   const total = subtotal + deliveryFee + tax;
 
