@@ -1,18 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, TextField, List, ListItem, ListItemText,
   ListItemButton, Chip, CircularProgress, Typography
 } from '@mui/material';
+import { useGetAvailableDriversQuery } from '../../store/api/deliveryApi';
+import { useAssignDriverMutation } from '../../store/api/orderApi';
 import { useAppSelector } from '../../store/hooks';
-import { selectAuth } from '../../store/slices/authSlice';
-
-interface Driver {
-  id: string;
-  name: string;
-  available: boolean;
-  currentOrders: number;
-}
+import { selectSelectedStoreId } from '../../store/slices/cartSlice';
 
 interface AssignDriverModalProps {
   open: boolean;
@@ -23,58 +18,39 @@ interface AssignDriverModalProps {
 
 export const AssignDriverModal = ({ open, orderId, onClose, onAssigned }: AssignDriverModalProps) => {
   const [search, setSearch] = useState('');
-  const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [assigning, setAssigning] = useState<string | null>(null);
-  const [error, setError] = useState('');
-  const auth = useAppSelector(selectAuth);
+  const [assignError, setAssignError] = useState('');
+  const storeId = useAppSelector(selectSelectedStoreId) ?? '';
 
-  useEffect(() => {
-    if (!open) {
-      setSearch('');
-      setDrivers([]);
-      setError('');
-      return;
-    }
-    setLoading(true);
-    setError('');
-    const token = auth.accessToken || '';
-    fetch(`/api/users?type=DRIVER&search=${encodeURIComponent(search)}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(r => {
-        if (!r.ok) throw new Error('Failed to load drivers');
-        return r.json();
-      })
-      .then(data => setDrivers(Array.isArray(data) ? data : (data.content ?? [])))
-      .catch(() => setError('Could not load drivers. Please try again.'))
-      .finally(() => setLoading(false));
-  }, [open, search, auth.accessToken]);
+  const { data: drivers = [], isLoading, isError } = useGetAvailableDriversQuery(storeId, {
+    skip: !open || !storeId,
+    pollingInterval: open ? 15000 : 0,
+  });
 
-  const handleAssign = async (driver: Driver) => {
-    setAssigning(driver.id);
-    const token = auth.accessToken || '';
+  const [assignDriver, { isLoading: assigning }] = useAssignDriverMutation();
+
+  const filtered = search
+    ? drivers.filter(d => d.name?.toLowerCase().includes(search.toLowerCase()))
+    : drivers;
+
+  const handleAssign = async (driverId: string, driverName: string) => {
+    setAssignError('');
     try {
-      const res = await fetch(`/api/orders/${orderId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ assignedDriverId: driver.id })
-      });
-      if (!res.ok) throw new Error('Assignment failed');
-      onAssigned(driver.id, driver.name);
+      await assignDriver({ orderId, driverId }).unwrap();
+      onAssigned(driverId, driverName);
       onClose();
     } catch {
-      setError('Failed to assign driver. Please try again.');
-    } finally {
-      setAssigning(null);
+      setAssignError('Failed to assign driver. Please try again.');
     }
   };
 
+  const handleClose = () => {
+    setSearch('');
+    setAssignError('');
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Assign Driver</DialogTitle>
       <DialogContent>
         <TextField
@@ -85,43 +61,53 @@ export const AssignDriverModal = ({ open, orderId, onClose, onAssigned }: Assign
           sx={{ mb: 2, mt: 1 }}
           size="small"
         />
-        {error && (
-          <Typography color="error" variant="body2" sx={{ mb: 1 }}>{error}</Typography>
+        {assignError && (
+          <Typography color="error" variant="body2" sx={{ mb: 1 }}>{assignError}</Typography>
         )}
-        {loading ? (
+        {isLoading ? (
           <CircularProgress size={28} sx={{ display: 'block', mx: 'auto', my: 2 }} />
+        ) : isError ? (
+          <Typography color="error" variant="body2" sx={{ py: 2, textAlign: 'center' }}>
+            Could not load drivers. Please try again.
+          </Typography>
         ) : (
           <List dense>
-            {drivers.map(driver => (
-              <ListItem key={driver.id} disablePadding>
-                <ListItemButton
-                  onClick={() => handleAssign(driver)}
-                  disabled={!!assigning}
-                >
-                  <ListItemText
-                    primary={driver.name}
-                    secondary={driver.currentOrders > 0 ? `${driver.currentOrders} active orders` : 'No active orders'}
-                  />
-                  <Chip
-                    label={driver.available ? 'Available' : 'Busy'}
-                    color={driver.available ? 'success' : 'default'}
-                    size="small"
-                    sx={{ mr: assigning === driver.id ? 1 : 0 }}
-                  />
-                  {assigning === driver.id && <CircularProgress size={18} />}
-                </ListItemButton>
-              </ListItem>
-            ))}
-            {drivers.length === 0 && !loading && (
+            {filtered.map(driver => {
+              const isAvailable = !driver.status || driver.status === 'AVAILABLE' || driver.status === 'ONLINE';
+              return (
+                <ListItem key={driver.id} disablePadding>
+                  <ListItemButton
+                    onClick={() => handleAssign(driver.id, driver.name)}
+                    disabled={assigning}
+                  >
+                    <ListItemText
+                      primary={driver.name}
+                      secondary={driver.activeDeliveries != null
+                        ? `${driver.activeDeliveries} active deliveries`
+                        : undefined}
+                    />
+                    <Chip
+                      label={isAvailable ? 'Available' : 'Busy'}
+                      color={isAvailable ? 'success' : 'default'}
+                      size="small"
+                    />
+                  </ListItemButton>
+                </ListItem>
+              );
+            })}
+            {filtered.length === 0 && !isLoading && (
               <ListItem>
-                <ListItemText primary="No drivers found" secondary="Try a different search term" />
+                <ListItemText
+                  primary="No available drivers"
+                  secondary={search ? 'Try a different search term' : 'No drivers are currently available'}
+                />
               </ListItem>
             )}
           </List>
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={!!assigning}>Cancel</Button>
+        <Button onClick={handleClose} disabled={assigning}>Cancel</Button>
       </DialogActions>
     </Dialog>
   );
