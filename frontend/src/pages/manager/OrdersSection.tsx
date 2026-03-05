@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import AssignDriverModal from '../../components/modals/AssignDriverModal';
 
 const DeliveryManagementPage = React.lazy(() => import('./DeliveryManagementPage'));
 import { t, cardStyle, tabStyle, tableHeaderStyle, tableCellStyle, sectionTitleStyle, statusBadge, selectStyle } from './manager-tokens';
@@ -7,7 +8,6 @@ import {
   useUpdateOrderStatusMutation,
   useUpdateOrderPriorityMutation,
   useCancelOrderMutation,
-  useAssignDriverMutation,
   useGetActiveDeliveriesCountQuery,
   Order,
 } from '../../store/api/orderApi';
@@ -22,7 +22,6 @@ import {
   useTrackOrderQuery,
   useGetAvailableDriversQuery,
 } from '../../store/api/deliveryApi';
-import { useGetUsersQuery } from '../../store/api/userApi';
 import { useGetTodaySalesMetricsQuery } from '../../store/api/analyticsApi';
 import { ORDER_STATUS_CONFIG, ORDER_TYPE_CONFIG, PAYMENT_STATUS_CONFIG } from '../../types/order';
 import type { OrderStatus, OrderPriority } from '../../types/order';
@@ -66,11 +65,9 @@ const OrdersTab = ({ storeId }: { storeId: string }) => {
   });
   const { data: todaySalesMetrics, refetch: refetchAnalytics } = useGetTodaySalesMetricsQuery(storeId, { skip: !storeId });
   const { data: activeDeliveriesCount } = useGetActiveDeliveriesCountQuery(storeId, { skip: !storeId });
-  const { data: users = [] } = useGetUsersQuery();
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
   const [updateOrderPriority] = useUpdateOrderPriorityMutation();
   const [cancelOrder] = useCancelOrderMutation();
-  const [assignDriver] = useAssignDriverMutation();
 
   const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
@@ -78,8 +75,7 @@ const OrdersTab = ({ storeId }: { storeId: string }) => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState('');
-
-  const drivers = users.filter(u => u.type === 'DRIVER');
+  const [assignDriverModal, setAssignDriverModal] = useState<{ open: boolean; orderId: string }>({ open: false, orderId: '' });
 
   const filtered = useMemo(() => {
     let list = [...orders];
@@ -125,15 +121,8 @@ const OrdersTab = ({ storeId }: { storeId: string }) => {
     catch { alert('Failed to cancel order'); }
   };
 
-  const handleAssignDriver = async (orderId: string) => {
-    if (drivers.length === 0) { alert('No drivers available'); return; }
-    const list = drivers.map((d, i) => `${i + 1}. ${d.name}`).join('\n');
-    const sel = prompt(`Select driver:\n${list}\n\nEnter number:`);
-    if (!sel) return;
-    const idx = parseInt(sel) - 1;
-    if (idx < 0 || idx >= drivers.length) { alert('Invalid selection'); return; }
-    try { await assignDriver({ orderId, driverId: drivers[idx].id }).unwrap(); alert('Driver assigned'); }
-    catch { alert('Failed to assign driver'); }
+  const handleAssignDriver = (orderId: string) => {
+    setAssignDriverModal({ open: true, orderId });
   };
 
   const fmtDate = (d: string) => new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -321,6 +310,12 @@ const OrdersTab = ({ storeId }: { storeId: string }) => {
           </div>
         </div>
       )}
+      <AssignDriverModal
+        open={assignDriverModal.open}
+        orderId={assignDriverModal.orderId}
+        onClose={() => setAssignDriverModal({ open: false, orderId: '' })}
+        onAssigned={() => { refetch(); setAssignDriverModal({ open: false, orderId: '' }); }}
+      />
     </>
   );
 };
