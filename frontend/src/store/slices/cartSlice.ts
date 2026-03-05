@@ -31,7 +31,7 @@ const loadCartFromStorage = (): CartState => {
         items: savedCart.items || [],
         total: savedCart.total || 0,
         itemCount: savedCart.itemCount || 0,
-        deliveryFee: 50, // Estimated; actual fee calculated by backend on order creation
+        deliveryFee: 0, // Set dynamically when delivery address is entered
         isLoading: false,
         selectedStoreId: savedCart.selectedStoreId || null,
         selectedStoreName: savedCart.selectedStoreName || null,
@@ -44,7 +44,7 @@ const loadCartFromStorage = (): CartState => {
     items: [],
     total: 0,
     itemCount: 0,
-    deliveryFee: 29,
+    deliveryFee: 0,
     isLoading: false,
     selectedStoreId: null,
     selectedStoreName: null,
@@ -141,6 +141,11 @@ const cartSlice = createSlice({
       state.isLoading = action.payload;
     },
 
+    setDeliveryFee: (state, action: PayloadAction<number>) => {
+      state.deliveryFee = action.payload;
+      cartSlice.caseReducers.calculateTotals(state);
+    },
+
     setSelectedStore: (state, action: PayloadAction<{ storeId: string; storeName: string }>) => {
       state.selectedStoreId = action.payload.storeId;
       state.selectedStoreName = action.payload.storeName;
@@ -163,6 +168,7 @@ export const {
   clearCart,
   calculateTotals,
   setLoading,
+  setDeliveryFee,
   setSelectedStore,
   clearSelectedStore,
 } = cartSlice.actions;
@@ -174,6 +180,7 @@ export const selectCartItemCount = (state: { cart: CartState }) => state.cart.it
 export const selectCartSubtotal = (state: { cart: CartState }) =>
   state.cart.items.reduce((total, item) => total + (item.price * item.quantity), 0);
 export const selectDeliveryFee = (state: { cart: CartState }) => state.cart.deliveryFee;
+export const selectDeliveryFeeINR = (state: { cart: CartState }) => state.cart.deliveryFee;
 export const selectSelectedStoreId = (state: { cart: CartState }) => state.cart.selectedStoreId;
 export const selectSelectedStoreName = (state: { cart: CartState }) => state.cart.selectedStoreName;
 
