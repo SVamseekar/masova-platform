@@ -118,6 +118,7 @@ export interface TrackingResponse {
   distanceRemaining: number; // in meters
   lastUpdated: string;
   orderType?: 'DELIVERY' | 'PICKUP' | 'DINE_IN'; // Order type to restrict tracking
+  deliveryOtp?: string; // Shown to customer when status is DISPATCHED
 }
 
 export interface ETAResponse {
