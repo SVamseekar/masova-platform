@@ -467,6 +467,21 @@ public class OrderService {
 
         Order cancelledOrder = orderRepository.save(order);
 
+        // Restore inventory if order was in PREPARING state when cancelled
+        if (previousStatus == OrderStatus.PREPARING) {
+            cancelledOrder.getItems().forEach(item -> {
+                try {
+                    inventoryServiceClient.adjustStock(item.getMenuItemId(), Map.of(
+                        "quantityChange", item.getQuantity(),
+                        "reason", "Order " + cancelledOrder.getOrderNumber() + " cancelled during preparation"
+                    ));
+                    log.info("Restored inventory for cancelled order item {} qty={}", item.getMenuItemId(), item.getQuantity());
+                } catch (Exception e) {
+                    log.warn("Failed to restore inventory for cancelled order item {}: {}", item.getMenuItemId(), e.getMessage());
+                }
+            });
+        }
+
         // Publish status changed event to RabbitMQ
         try {
             orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
