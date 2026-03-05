@@ -19,7 +19,6 @@ const LiveTrackingPage: React.FC = () => {
   const { isConnected: wsConnected } = useOrderTrackingWebSocket({
     orderId: orderId || '',
     onOrderUpdate: (update: OrderTrackingUpdate) => {
-      console.log('[LiveTrackingPage] WebSocket update:', update);
       setLocalStatus(update.status);
       if (update.driverLocation) setLocalDriverLocation(update.driverLocation);
     },
@@ -158,23 +157,23 @@ const LiveTrackingPage: React.FC = () => {
           </span>
 
 
-          {/* OTP display for DISPATCHED status */}
-          {effectiveStatus?.toUpperCase() === 'DISPATCHED' && trackingData.deliveryOtp && (
+          {/* OTP display for DISPATCHED status — anchored to REST trackingData to avoid WebSocket/poll race */}
+          {trackingData.status?.toUpperCase() === 'DISPATCHED' && trackingData.deliveryOtp && (
             <div style={{
               marginTop: '20px',
               padding: '20px 24px',
-              background: 'rgba(76, 175, 80, 0.08)',
-              border: '2px solid rgba(76, 175, 80, 0.5)',
+              background: 'rgba(var(--dp-success-rgb, 76, 175, 80), 0.08)',
+              border: '2px solid rgba(var(--dp-success-rgb, 76, 175, 80), 0.5)',
               borderRadius: '12px',
               textAlign: 'center',
             }}>
               <p style={{ margin: '0 0 8px', fontSize: '0.72rem', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Delivery OTP — Share with your driver
               </p>
-              <p style={{ margin: '0 0 8px', fontFamily: 'var(--font-display)', fontSize: '2.5rem', fontWeight: 800, color: '#4CAF50', letterSpacing: '12px' }}>
+              <p style={{ margin: '0 0 8px', fontFamily: 'var(--font-display)', fontSize: '2.5rem', fontWeight: 800, color: 'var(--dp-success, #4CAF50)', letterSpacing: '12px' }}>
                 {trackingData.deliveryOtp}
               </p>
-              <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-3)' }}>Valid for 30 minutes</p>
+              <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-3)' }}>Valid for 15 minutes</p>
             </div>
           )}
 
