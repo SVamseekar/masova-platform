@@ -12,6 +12,7 @@ import com.MaSoVa.commerce.order.client.MenuServiceClient;
 import com.MaSoVa.commerce.order.client.CustomerServiceClient;
 import com.MaSoVa.commerce.order.client.DeliveryServiceClient;
 import com.MaSoVa.commerce.order.client.StoreServiceClient;
+import com.MaSoVa.commerce.order.client.InventoryServiceClient;
 import com.MaSoVa.commerce.order.config.TaxConfiguration;
 import com.MaSoVa.commerce.order.config.PreparationTimeConfiguration;
 import com.MaSoVa.commerce.order.config.DeliveryFeeConfiguration;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.Comparator;
@@ -42,6 +44,7 @@ public class OrderService {
     private final CustomerNotificationService customerNotificationService;
     private final DeliveryServiceClient deliveryServiceClient;
     private final StoreServiceClient storeServiceClient;
+    private final InventoryServiceClient inventoryServiceClient;
     private final TaxConfiguration taxConfiguration;
     private final PreparationTimeConfiguration preparationTimeConfiguration;
     private final DeliveryFeeConfiguration deliveryFeeConfiguration;
@@ -53,6 +56,7 @@ public class OrderService {
                        CustomerNotificationService customerNotificationService,
                        DeliveryServiceClient deliveryServiceClient,
                        StoreServiceClient storeServiceClient,
+                       InventoryServiceClient inventoryServiceClient,
                        TaxConfiguration taxConfiguration,
                        PreparationTimeConfiguration preparationTimeConfiguration,
                        DeliveryFeeConfiguration deliveryFeeConfiguration,
@@ -64,6 +68,7 @@ public class OrderService {
         this.customerNotificationService = customerNotificationService;
         this.deliveryServiceClient = deliveryServiceClient;
         this.storeServiceClient = storeServiceClient;
+        this.inventoryServiceClient = inventoryServiceClient;
         this.taxConfiguration = taxConfiguration;
         this.preparationTimeConfiguration = preparationTimeConfiguration;
         this.deliveryFeeConfiguration = deliveryFeeConfiguration;
@@ -300,6 +305,33 @@ public class OrderService {
         Order updatedOrder = orderRepository.save(order);
         log.info("Order status updated: {} → {} - Analytics cache evicted",
                  updatedOrder.getOrderNumber(), updatedOrder.getStatus());
+
+        // Inventory management on status transition
+        if (newStatus == OrderStatus.PREPARING) {
+            updatedOrder.getItems().forEach(item -> {
+                try {
+                    inventoryServiceClient.adjustStock(item.getMenuItemId(), Map.of(
+                        "quantityChange", -item.getQuantity(),
+                        "reason", "Order " + updatedOrder.getOrderNumber() + " started preparing"
+                    ));
+                    log.info("Decremented inventory for item {} qty={}", item.getMenuItemId(), item.getQuantity());
+                } catch (Exception e) {
+                    log.warn("Failed to decrement inventory for item {}: {}", item.getMenuItemId(), e.getMessage());
+                }
+            });
+        } else if (newStatus == OrderStatus.CANCELLED && currentStatus != null && currentStatus == OrderStatus.PREPARING) {
+            updatedOrder.getItems().forEach(item -> {
+                try {
+                    inventoryServiceClient.adjustStock(item.getMenuItemId(), Map.of(
+                        "quantityChange", item.getQuantity(),
+                        "reason", "Order " + updatedOrder.getOrderNumber() + " cancelled during preparation"
+                    ));
+                    log.info("Restored inventory for cancelled order item {} qty={}", item.getMenuItemId(), item.getQuantity());
+                } catch (Exception e) {
+                    log.warn("Failed to restore inventory for cancelled order item {}: {}", item.getMenuItemId(), e.getMessage());
+                }
+            });
+        }
 
         // Publish status changed event to RabbitMQ
         try {
