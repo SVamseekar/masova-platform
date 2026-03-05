@@ -549,7 +549,7 @@ const DeliveriesTab = ({ storeId }: { storeId: string }) => {
   const { data: trackingData, isError: trackingError } = useTrackOrderQuery(trackingOrderId, { skip: !trackingOrderId, pollingInterval: 10000 });
 
   const deliveryOrders = allOrders.filter((o: any) => o.orderType === 'DELIVERY');
-  const readyOrders = deliveryOrders.filter((o: any) => o.status === 'BAKED');
+  const readyOrders = deliveryOrders.filter((o: any) => o.status === 'READY');
   const outOrders = deliveryOrders.filter((o: any) => o.status === 'DISPATCHED');
   const today = new Date().toDateString();
   const completedToday = deliveryOrders.filter((o: any) => ['DELIVERED', 'SERVED', 'COMPLETED'].includes(o.status) && new Date(o.createdAt).toDateString() === today).length;

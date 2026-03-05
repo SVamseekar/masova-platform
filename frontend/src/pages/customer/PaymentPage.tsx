@@ -99,6 +99,7 @@ const PaymentPage: React.FC = () => {
   }, [cartItems, navigate, orderPlaced]);
 
   useEffect(() => {
+    // DELIVERY and DINE_IN do not show cash option in UI; clear stale CASH state if order type changes
     if ((orderType === 'DELIVERY' || orderType === 'DINE_IN') && paymentMethod === 'CASH') {
       setPaymentMethod('CARD');
     }

@@ -930,8 +930,11 @@ const OrderManagementPage: React.FC = () => {
                         <option value="PREPARING">Preparing</option>
                         <option value="OVEN">In Oven</option>
                         <option value="BAKED">Baked</option>
+                        <option value="READY">Ready</option>
                         <option value="DISPATCHED">Dispatched</option>
                         <option value="DELIVERED">Delivered</option>
+                        <option value="SERVED">Served</option>
+                        <option value="COMPLETED">Completed</option>
                       </select>
 
                       <button

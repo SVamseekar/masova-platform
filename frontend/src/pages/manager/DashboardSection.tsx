@@ -211,7 +211,7 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
             {[
               { stage: 'Received', count: orderQueue.filter(o => o.status === 'RECEIVED').length, color: t.blue },
               { stage: 'In Kitchen', count: orderQueue.filter(o => ['PREPARING', 'OVEN'].includes(o.status)).length, color: t.yellow },
-              { stage: 'Ready', count: orderQueue.filter(o => o.status === 'BAKED').length, color: t.green },
+              { stage: 'Ready', count: orderQueue.filter(o => o.status === 'READY').length, color: t.green },
               { stage: 'Dispatched', count: orderQueue.filter(o => o.status === 'DISPATCHED').length, color: t.orange },
             ].map(item => (
               <div key={item.stage} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

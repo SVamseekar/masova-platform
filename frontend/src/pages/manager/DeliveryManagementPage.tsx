@@ -78,7 +78,7 @@ const DeliveryManagementPage: React.FC = () => {
       label: 'Status',
       field: 'status',
       options: [
-        { label: 'Ready for Dispatch (Baked)', value: 'BAKED' },
+        { label: 'Ready for Dispatch', value: 'READY' },
         { label: 'Out for Delivery (Dispatched)', value: 'DISPATCHED' },
         { label: 'Delivered', value: 'DELIVERED' },
       ],
@@ -151,9 +151,9 @@ const DeliveryManagementPage: React.FC = () => {
     return orderDate === today;
   });
 
-  // Ready for dispatch: ONLY BAKED status (truly ready for driver pickup)
+  // Ready for dispatch: READY status (kitchen complete, awaiting driver pickup)
   const readyOrders = filteredAndSortedDeliveries.filter((order: any) =>
-    order.status === 'BAKED'
+    order.status === 'READY'
   );
 
   // Out for delivery: DISPATCHED status
