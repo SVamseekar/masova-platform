@@ -4,7 +4,8 @@
  */
 
 // ============================================
-// WorldPlate Dark — Customer EU Design Tokens
+// MaSoVa Dark Premium — Customer Design Tokens
+// These must stay in sync with .dark-premium-theme in index.css.
 // ============================================
 export const darkColors = {
   bg: '#0A0908',
@@ -15,6 +16,15 @@ export const darkColors = {
   goldLight: '#E8C060',
   red: '#C62A09',
   redLight: '#E53E3E',
+  success: '#2E7D32',
+  successLight: '#388E3C',
+  successRgb: '46, 125, 50',
+  info: '#1565C0',
+  infoLight: '#1976D2',
+  infoRgb: '21, 101, 192',
+  warning: '#E65100',
+  warningLight: '#EF6C00',
+  warningRgb: '230, 81, 0',
   border: 'rgba(212, 168, 67, 0.15)',
   borderStrong: 'rgba(212, 168, 67, 0.35)',
   text1: '#FDFCF8',

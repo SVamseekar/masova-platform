@@ -23,6 +23,12 @@
   --success: #2E7D32;
   --success-light: #388E3C;
   --success-rgb: 46, 125, 50;
+  --info: #1565C0;
+  --info-light: #1976D2;
+  --info-rgb: 21, 101, 192;
+  --warning: #E65100;
+  --warning-light: #EF6C00;
+  --warning-rgb: 230, 81, 0;
   --border: rgba(212, 168, 67, 0.15);
   --border-strong: rgba(212, 168, 67, 0.35);
   --text-1: #FDFCF8;
@@ -173,7 +179,10 @@ img {
   height: 0;
 }
 
-/* Selection styling */
+/* Selection styling
+   NOTE: ::selection cannot be scoped to a class selector (.dark-premium-theme ::selection
+   does not work reliably across browsers), so neumorphic :root vars are intentionally
+   used here as a shared global. This is not a design-system cross-contamination bug. */
 ::selection {
   background-color: var(--color-brand-primary);
   color: var(--color-text-inverse);

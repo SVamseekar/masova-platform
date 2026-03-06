@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useSnackbar } from 'notistack';
 import { useTrackOrderQuery } from '../../store/api/deliveryApi';
 import { useCreateReviewMutation } from '../../store/api/reviewApi';
 import AppHeader from '../../components/common/AppHeader';
@@ -11,6 +12,7 @@ import { OrderTrackingUpdate } from '../../services/websocketService';
 const LiveTrackingPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
   const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
   const [createReview] = useCreateReviewMutation();
   const [localStatus, setLocalStatus] = useState<string | null>(null);
@@ -44,8 +46,8 @@ const LiveTrackingPage: React.FC = () => {
         driverId: trackingData?.driverId,
       }).unwrap();
       setRatingDialogOpen(false);
-    } catch (error) {
-      console.error('Failed to submit rating:', error);
+    } catch {
+      enqueueSnackbar('Failed to submit rating. Please try again.', { variant: 'error' });
     }
   };
 
@@ -55,10 +57,19 @@ const LiveTrackingPage: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status?.toUpperCase()) {
-      case 'PICKED_UP': return '#2196f3';
-      case 'IN_TRANSIT': return '#ff9800';
-      case 'DELIVERED': return '#4caf50';
+      case 'PICKED_UP': return 'var(--info)';
+      case 'IN_TRANSIT': return 'var(--warning)';
+      case 'DELIVERED': return 'var(--success)';
       default: return 'var(--text-3)';
+    }
+  };
+
+  const getStatusBg = (status: string) => {
+    switch (status?.toUpperCase()) {
+      case 'PICKED_UP': return 'rgba(var(--info-rgb), 0.13)';
+      case 'IN_TRANSIT': return 'rgba(var(--warning-rgb), 0.13)';
+      case 'DELIVERED': return 'rgba(var(--success-rgb), 0.13)';
+      default: return 'rgba(var(--text-3), 0.13)';
     }
   };
 
@@ -111,8 +122,8 @@ const LiveTrackingPage: React.FC = () => {
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '48px 24px' }}>
         {/* WS indicator */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '6px', marginBottom: '24px' }}>
-          <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: wsConnected ? '#4caf50' : 'var(--text-3)', display: 'inline-block' }} />
-          <span style={{ fontSize: '0.72rem', color: wsConnected ? '#4caf50' : 'var(--text-3)' }}>
+          <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: wsConnected ? 'var(--success)' : 'var(--text-3)', display: 'inline-block' }} />
+          <span style={{ fontSize: '0.72rem', color: wsConnected ? 'var(--success)' : 'var(--text-3)' }}>
             {wsConnected ? 'Live Updates' : 'Polling Mode'}
           </span>
         </div>
@@ -146,7 +157,7 @@ const LiveTrackingPage: React.FC = () => {
             display: 'inline-block',
             padding: '4px 14px',
             borderRadius: 'var(--radius-pill)',
-            background: getStatusColor(effectiveStatus || '') + '22',
+            background: getStatusBg(effectiveStatus || ''),
             color: getStatusColor(effectiveStatus || ''),
             fontSize: '0.75rem',
             fontWeight: 700,
@@ -227,7 +238,7 @@ const LiveTrackingPage: React.FC = () => {
             <button
               onClick={callDriver}
               style={{
-                flex: 1, background: 'var(--success)', color: '#fff', border: 'none',
+                flex: 1, background: 'var(--success)', color: 'var(--text-1)', border: 'none',
                 borderRadius: 'var(--radius-pill)', padding: '11px',
                 fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
                 transition: 'var(--transition)',
@@ -241,7 +252,7 @@ const LiveTrackingPage: React.FC = () => {
               <button
                 onClick={() => setRatingDialogOpen(true)}
                 style={{
-                  flex: 1, background: 'var(--gold)', color: '#000', border: 'none',
+                  flex: 1, background: 'var(--gold)', color: 'var(--bg)', border: 'none',
                   borderRadius: 'var(--radius-pill)', padding: '11px',
                   fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
                   transition: 'var(--transition)',

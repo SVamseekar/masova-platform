@@ -52,7 +52,7 @@ const AppLoader = () => (
     justifyContent="center"
     alignItems="center"
     minHeight="100vh"
-    bgcolor="#0A0908"
+    bgcolor="transparent"
   >
     <CircularProgress color="primary" size={60} />
   </Box>
