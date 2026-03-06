@@ -23,7 +23,7 @@ const PublicMenuPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'var(--bg)' }}>
+    <Box sx={{ minHeight: '100vh' }}>
       {/* Menu Content with integrated header */}
       <MenuPage
         hideStaffLogin={true}

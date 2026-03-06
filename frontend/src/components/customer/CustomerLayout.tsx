@@ -3,11 +3,11 @@ import { ReactNode } from 'react';
 
 /**
  * Wrapper for all customer-facing pages.
- * Applies dark background color so customer pages render on the dark theme
- * established by CSS custom properties in index.css (:root).
+ * Applies .dark-premium-theme class which activates the dark CSS custom
+ * properties defined in index.css. Staff pages must NOT use this wrapper.
  */
 export const CustomerLayout = ({ children }: { children: ReactNode }) => (
-  <Box sx={{ minHeight: '100vh', bgcolor: 'var(--bg)', color: 'var(--text-1)' }}>
+  <Box className="dark-premium-theme" sx={{ minHeight: '100vh' }}>
     {children}
   </Box>
 );
