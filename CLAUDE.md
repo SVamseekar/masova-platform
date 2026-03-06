@@ -4,7 +4,7 @@
 - **Mac M1**: Claude Code, frontend (:3000), mobile apps
 - **Dell i3 Windows**: all 6 backend services + Docker (IP: `192.168.50.88`)
 - **Backend ports**: api-gateway:8080, core:8085, commerce:8084, payment:8089, logistics:8086, intel:8087
-- **Staff/Driver App**: `/Users/souravamseekarmarti/Projects/MaSoVaDriverApp/` (RN 0.83)
+- **Staff/Crew App**: `/Users/souravamseekarmarti/Projects/MaSoVaCrewApp/` (RN 0.83)
 - **Customer App**: `/Users/souravamseekarmarti/Projects/masova-mobile/` (RN 0.81 — NOT Expo Go, Metro :8888)
 - **AI Agent**: `/Users/souravamseekarmarti/Projects/masova-support/` (Python, Google ADK 1.25, FastAPI :8000)
 
@@ -74,8 +74,8 @@ Apply automatically based on which files/phase are being worked on. Never announ
 - Flyway migrations are append-only — never edit an existing `V*.sql` file
 - Dual-write pattern: PostgreSQL write first (synchronous), MongoDB second (async try/catch with warn log)
 
-**When touching MaSoVaDriverApp or masova-mobile:**
-- `RoleRouter` in MaSoVaDriverApp reads `user.type` from JWT — never hardcode role checks inline in screens
+**When touching MaSoVaCrewApp or masova-mobile:**
+- `RoleRouter` in MaSoVaCrewApp reads `user.type` from JWT — never hardcode role checks inline in screens
 - Role colors: Driver=`#00B14F`, Kitchen=`#FF6B35`, Cashier=`#2196F3`, Manager=`#7B1FA2` — never change these
 - masova-mobile is NOT Expo Go — bare RN 0.81, Metro on :8888
 - Every screen that calls an API must handle: loading spinner, network error, empty data

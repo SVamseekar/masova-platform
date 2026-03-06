@@ -2,13 +2,13 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Convert `MaSoVaDriverApp` (React Native 0.81) into a single consolidated Staff App serving Manager, Kitchen Staff, Driver, and Cashier roles. Remove the separate staff-only app concept. Customer app (`masova-mobile`) stays separate.
+**Goal:** Convert `MaSoVaCrewApp` (React Native 0.81) into a single consolidated Staff App serving Manager, Kitchen Staff, Driver, and Cashier roles. Remove the separate staff-only app concept. Customer app (`masova-mobile`) stays separate.
 
-**Architecture:** Single RN 0.81 codebase (`MaSoVaDriverApp`). JWT-decoded `user.type` field drives `RoleRouter` which dispatches to 4 role-specific tab navigators. Driver screens already exist — build 3 new tab navigators + 4 new screens. Shared components used across all roles.
+**Architecture:** Single RN 0.81 codebase (`MaSoVaCrewApp`). JWT-decoded `user.type` field drives `RoleRouter` which dispatches to 4 role-specific tab navigators. Driver screens already exist — build 3 new tab navigators + 4 new screens. Shared components used across all roles.
 
 **Tech Stack:** React Native 0.81, React Navigation 6, TypeScript, Redux Toolkit, Expo EAS (build config only — NOT Expo Go runtime)
 
-**Working Directory:** `/Users/souravamseekarmarti/Projects/MaSoVaDriverApp/`
+**Working Directory:** `/Users/souravamseekarmarti/Projects/MaSoVaCrewApp/`
 
 ---
 
@@ -22,9 +22,9 @@ Read this section before starting ANY task. These are the exact tools to use and
 **How to invoke:** Runs automatically. Use `mcp__ide__getDiagnostics` on any `.tsx` file explicitly.
 
 ### `feature-dev:code-explorer` (Agent)
-**Use it:** At the very start — Task 5.1 (audit). Run this agent on the `MaSoVaDriverApp/` directory before writing a single line of code. It will map the existing navigation structure, screen list, Redux store shape, and API client setup.
+**Use it:** At the very start — Task 5.1 (audit). Run this agent on the `MaSoVaCrewApp/` directory before writing a single line of code. It will map the existing navigation structure, screen list, Redux store shape, and API client setup.
 **Specifically:** You need to know: What navigators already exist? What screens exist for the Driver role? Where is the JWT decoded? Where is Redux state stored? This agent answers all of it in one pass.
-**How to invoke:** Use the Agent tool with `subagent_type: "feature-dev:code-explorer"` with the path `/Users/souravamseekarmarti/Projects/MaSoVaDriverApp/`.
+**How to invoke:** Use the Agent tool with `subagent_type: "feature-dev:code-explorer"` with the path `/Users/souravamseekarmarti/Projects/MaSoVaCrewApp/`.
 
 ### `feature-dev:code-architect` (Agent)
 **Use it:** After the audit (Task 5.1), before writing `RoleRouter.tsx` (Task 5.2). This agent designs the component and navigation architecture based on what already exists.
@@ -59,12 +59,12 @@ This skill guides creating distinctive, role-appropriate UI rather than generic 
 
 ---
 
-## Task 5.1: Audit Existing MaSoVaDriverApp Structure
+## Task 5.1: Audit Existing MaSoVaCrewApp Structure
 
 **Files:**
-- Read: `MaSoVaDriverApp/src/navigation/AppNavigator.tsx`
-- Read: `MaSoVaDriverApp/src/screens/auth/LoginScreen.tsx`
-- Read: `MaSoVaDriverApp/src/navigation/` (all files)
+- Read: `MaSoVaCrewApp/src/navigation/AppNavigator.tsx`
+- Read: `MaSoVaCrewApp/src/screens/auth/LoginScreen.tsx`
+- Read: `MaSoVaCrewApp/src/navigation/` (all files)
 
 **Step 1: Read AppNavigator.tsx**
 
@@ -73,7 +73,7 @@ Understand the current navigation structure. Find where `user.type` is read afte
 **Step 2: List all existing screens**
 
 ```bash
-find /Users/souravamseekarmarti/Projects/MaSoVaDriverApp/src/screens -name "*.tsx" | sort
+find /Users/souravamseekarmarti/Projects/MaSoVaCrewApp/src/screens -name "*.tsx" | sort
 ```
 
 Document what exists. The driver tab navigator and its screens should already exist.
@@ -97,7 +97,7 @@ Understand the driver screen structure (map, orders, profile tabs) as the templa
 **Step 5: Check existing design tokens**
 
 ```bash
-find /Users/souravamseekarmarti/Projects/MaSoVaDriverApp/src -name "*token*" -o -name "*theme*" -o -name "*color*"
+find /Users/souravamseekarmarti/Projects/MaSoVaCrewApp/src -name "*token*" -o -name "*theme*" -o -name "*color*"
 ```
 
 Read the existing design tokens file. This will be extended with role accent colors.
@@ -109,9 +109,9 @@ Read the existing design tokens file. This will be extended with role accent col
 ## Task 5.2: Remove Driver-Only Login Block + Add RoleRouter
 
 **Files:**
-- Modify: `MaSoVaDriverApp/src/navigation/AppNavigator.tsx`
-- Modify: `MaSoVaDriverApp/src/screens/auth/LoginScreen.tsx`
-- Create: `MaSoVaDriverApp/src/navigation/RoleRouter.tsx`
+- Modify: `MaSoVaCrewApp/src/navigation/AppNavigator.tsx`
+- Modify: `MaSoVaCrewApp/src/screens/auth/LoginScreen.tsx`
+- Create: `MaSoVaCrewApp/src/navigation/RoleRouter.tsx`
 
 **Step 1: Remove driver-only check from LoginScreen.tsx**
 
@@ -128,7 +128,7 @@ const handleLoginSuccess = (user: User, token: string) => {
 
 **Step 2: Create RoleRouter.tsx**
 
-Create `MaSoVaDriverApp/src/navigation/RoleRouter.tsx`:
+Create `MaSoVaCrewApp/src/navigation/RoleRouter.tsx`:
 
 ```tsx
 import React from 'react';
@@ -186,7 +186,7 @@ In `AppNavigator.tsx`, replace the current post-login navigator (likely `DriverT
 **Step 4: Build to verify no TypeScript errors**
 
 ```bash
-cd /Users/souravamseekarmarti/Projects/MaSoVaDriverApp
+cd /Users/souravamseekarmarti/Projects/MaSoVaCrewApp
 npx react-native bundle --entry-file index.js --platform android --dev false --bundle-output /tmp/test.bundle 2>&1 | tail -20
 ```
 
@@ -209,7 +209,7 @@ git commit -m "feat(staff-app): add RoleRouter — dispatches to role-specific n
 ## Task 5.3: Add Role Accent Colors to Design Tokens
 
 **Files:**
-- Modify: `MaSoVaDriverApp/src/` design tokens file (find exact path in Task 5.1 audit)
+- Modify: `MaSoVaCrewApp/src/` design tokens file (find exact path in Task 5.1 audit)
 
 **Step 1: Add role accent colors**
 
@@ -244,7 +244,7 @@ export type UserRole = keyof typeof roleColors;
 
 **Step 2: Create useRoleColors hook**
 
-Create `MaSoVaDriverApp/src/hooks/useRoleColors.ts`:
+Create `MaSoVaCrewApp/src/hooks/useRoleColors.ts`:
 
 ```typescript
 import { useSelector } from 'react-redux';
@@ -271,13 +271,13 @@ git commit -m "feat(staff-app): role accent colors — green/orange/blue/purple 
 ## Task 5.4: Create Kitchen Tab Navigator + KitchenQueueScreen
 
 **Files:**
-- Create: `MaSoVaDriverApp/src/navigation/KitchenTabNavigator.tsx`
-- Create: `MaSoVaDriverApp/src/screens/kitchen/KitchenQueueScreen.tsx`
-- Create: `MaSoVaDriverApp/src/screens/kitchen/OrderDetailScreen.tsx`
+- Create: `MaSoVaCrewApp/src/navigation/KitchenTabNavigator.tsx`
+- Create: `MaSoVaCrewApp/src/screens/kitchen/KitchenQueueScreen.tsx`
+- Create: `MaSoVaCrewApp/src/screens/kitchen/OrderDetailScreen.tsx`
 
 **Step 1: Create KitchenTabNavigator**
 
-Create `MaSoVaDriverApp/src/navigation/KitchenTabNavigator.tsx`:
+Create `MaSoVaCrewApp/src/navigation/KitchenTabNavigator.tsx`:
 
 ```tsx
 import React from 'react';
@@ -315,7 +315,7 @@ export const KitchenTabNavigator = () => (
 
 **Step 2: Create KitchenQueueScreen.tsx**
 
-Create `MaSoVaDriverApp/src/screens/kitchen/KitchenQueueScreen.tsx`:
+Create `MaSoVaCrewApp/src/screens/kitchen/KitchenQueueScreen.tsx`:
 
 ```tsx
 import React, { useEffect, useState } from 'react';
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
 
 **Step 3: Create OrderDetailScreen.tsx**
 
-Create `MaSoVaDriverApp/src/screens/kitchen/OrderDetailScreen.tsx`:
+Create `MaSoVaCrewApp/src/screens/kitchen/OrderDetailScreen.tsx`:
 
 ```tsx
 import React from 'react';
@@ -516,7 +516,7 @@ const styles = StyleSheet.create({
 **Step 4: Commit**
 
 ```bash
-cd /Users/souravamseekarmarti/Projects/MaSoVaDriverApp
+cd /Users/souravamseekarmarti/Projects/MaSoVaCrewApp
 git add src/navigation/KitchenTabNavigator.tsx
 git add src/screens/kitchen/KitchenQueueScreen.tsx
 git add src/screens/kitchen/OrderDetailScreen.tsx
@@ -528,8 +528,8 @@ git commit -m "feat(staff-app): KitchenTabNavigator, KitchenQueueScreen with urg
 ## Task 5.5: Create Cashier Tab Navigator + QuickOrderScreen
 
 **Files:**
-- Create: `MaSoVaDriverApp/src/navigation/CashierTabNavigator.tsx`
-- Create: `MaSoVaDriverApp/src/screens/cashier/QuickOrderScreen.tsx`
+- Create: `MaSoVaCrewApp/src/navigation/CashierTabNavigator.tsx`
+- Create: `MaSoVaCrewApp/src/screens/cashier/QuickOrderScreen.tsx`
 
 **Step 1: Create CashierTabNavigator**
 
@@ -759,8 +759,8 @@ git commit -m "feat(staff-app): CashierTabNavigator, QuickOrderScreen — menu g
 ## Task 5.6: Create Manager Tab Navigator + QuickDashboardScreen
 
 **Files:**
-- Create: `MaSoVaDriverApp/src/navigation/ManagerTabNavigator.tsx`
-- Create: `MaSoVaDriverApp/src/screens/manager/QuickDashboardScreen.tsx`
+- Create: `MaSoVaCrewApp/src/navigation/ManagerTabNavigator.tsx`
+- Create: `MaSoVaCrewApp/src/screens/manager/QuickDashboardScreen.tsx`
 
 **Step 1: Create ManagerTabNavigator**
 
@@ -921,15 +921,15 @@ git commit -m "feat(staff-app): ManagerTabNavigator, QuickDashboardScreen — KP
 ## Task 5.7: Shared Components
 
 **Files:**
-- Create: `MaSoVaDriverApp/src/components/NotificationBell.tsx`
-- Create: `MaSoVaDriverApp/src/components/ProfileHeader.tsx`
-- Create: `MaSoVaDriverApp/src/components/StatusBadge.tsx`
-- Modify: `MaSoVaDriverApp/src/screens/shared/ProfileScreen.tsx` (or create if not exists)
+- Create: `MaSoVaCrewApp/src/components/NotificationBell.tsx`
+- Create: `MaSoVaCrewApp/src/components/ProfileHeader.tsx`
+- Create: `MaSoVaCrewApp/src/components/StatusBadge.tsx`
+- Modify: `MaSoVaCrewApp/src/screens/shared/ProfileScreen.tsx` (or create if not exists)
 
 **Step 1: Create StatusBadge**
 
 ```tsx
-// MaSoVaDriverApp/src/components/StatusBadge.tsx
+// MaSoVaCrewApp/src/components/StatusBadge.tsx
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
@@ -962,7 +962,7 @@ const styles = StyleSheet.create({
 **Step 2: Create ProfileHeader**
 
 ```tsx
-// MaSoVaDriverApp/src/components/ProfileHeader.tsx
+// MaSoVaCrewApp/src/components/ProfileHeader.tsx
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useSelector } from 'react-redux';
@@ -1026,7 +1026,7 @@ git commit -m "feat(staff-app): shared StatusBadge + ProfileHeader components wi
 ## Task 5.8: Driver App Improvements
 
 **Files:**
-- Modify: `MaSoVaDriverApp/src/screens/driver/` (existing driver screens)
+- Modify: `MaSoVaCrewApp/src/screens/driver/` (existing driver screens)
 
 **Step 1: Replace polling with WebSocket subscription for order assignment**
 
@@ -1068,7 +1068,7 @@ const isAssignedToMe = order.assignedDriverId === user.id;
 
 **Step 3: Add OTP input screen before marking DELIVERED**
 
-Create `MaSoVaDriverApp/src/screens/driver/OtpVerificationScreen.tsx`:
+Create `MaSoVaCrewApp/src/screens/driver/OtpVerificationScreen.tsx`:
 
 ```tsx
 import React, { useState } from 'react';
@@ -1181,12 +1181,12 @@ git commit -m "feat(driver): WebSocket order assignment, OTP verification screen
 ## Task 5.9: Expo EAS Build Config
 
 **Files:**
-- Create: `MaSoVaDriverApp/eas.json`
-- Modify: `MaSoVaDriverApp/app.json` (if Expo managed config)
+- Create: `MaSoVaCrewApp/eas.json`
+- Modify: `MaSoVaCrewApp/app.json` (if Expo managed config)
 
 **Step 1: Create eas.json**
 
-Create `MaSoVaDriverApp/eas.json`:
+Create `MaSoVaCrewApp/eas.json`:
 
 ```json
 {
@@ -1273,7 +1273,7 @@ git commit -m "feat(customer-mobile): show delivery OTP when order status is DIS
 ## Execution Notes
 
 ### Working Directory
-All Staff App tasks (5.1–5.9) run in `/Users/souravamseekarmarti/Projects/MaSoVaDriverApp/`.
+All Staff App tasks (5.1–5.9) run in `/Users/souravamseekarmarti/Projects/MaSoVaCrewApp/`.
 Task 5.10 runs in `/Users/souravamseekarmarti/Projects/masova-mobile/`.
 
 ### Testing on Device (Mac M1)
