@@ -16,6 +16,7 @@ import {
   Review,
   ResponseType,
 } from '../../store/api/reviewApi';
+import { useTriggerReviewResponseMutation } from '../../store/api/agentApi';
 import ReviewCard from '../../components/reviews/ReviewCard';
 import Card from '../../components/ui/neumorphic/Card';
 import Button from '../../components/ui/neumorphic/Button';
@@ -136,6 +137,7 @@ const ReviewManagementPage: React.FC = () => {
   const [createResponse, { isLoading: isCreatingResponse }] = useCreateResponseMutation();
   const [approveReview] = useApproveReviewMutation();
   const [rejectReview] = useRejectReviewMutation();
+  const [triggerAIDraft, { isLoading: aiDraftLoading }] = useTriggerReviewResponseMutation();
 
   const currentData = {
     all: allReviews,
@@ -176,6 +178,24 @@ const ReviewManagementPage: React.FC = () => {
     setResponseText('');
     setSelectedTemplate(null);
     setShowResponseDialog(true);
+  };
+
+  const handleAIDraft = async () => {
+    if (!selectedReview) return;
+    try {
+      const result = await triggerAIDraft({
+        reviewId: selectedReview.id,
+        rating: selectedReview.overallRating,
+        text: selectedReview.comment || '',
+        storeId,
+        orderId: selectedReview.orderId,
+      }).unwrap();
+      if (result?.draftGenerated) {
+        setResponseText(String(result.draftResponse || result.responseLength || ''));
+      }
+    } catch {
+      // Agent service may be offline — fail silently, user can still type manually
+    }
   };
 
   const handleTemplateSelect = (type: ResponseType) => {
@@ -676,6 +696,46 @@ const ReviewManagementPage: React.FC = () => {
                   ))}
                 </div>
               </div>
+
+              {/* AI Draft Button */}
+              {selectedReview.overallRating <= 3 && (
+                <div style={{ marginBottom: spacing[4] }}>
+                  <button
+                    onClick={handleAIDraft}
+                    disabled={aiDraftLoading}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: spacing[2],
+                      padding: `${spacing[2]} ${spacing[4]}`,
+                      borderRadius: borderRadius.lg,
+                      border: `1px solid ${colors.brand.primary}40`,
+                      background: `linear-gradient(135deg, ${colors.brand.primary}08 0%, #8B5CF608 100%)`,
+                      color: colors.brand.primary,
+                      cursor: aiDraftLoading ? 'wait' : 'pointer',
+                      fontSize: typography.fontSize.sm,
+                      fontWeight: typography.fontWeight.semibold,
+                      fontFamily: typography.fontFamily.primary,
+                      transition: 'all 0.2s ease',
+                      width: '100%',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z" />
+                    </svg>
+                    {aiDraftLoading ? 'Generating AI draft...' : 'Generate AI Draft Response'}
+                  </button>
+                  <p style={{
+                    fontSize: typography.fontSize.xs,
+                    color: colors.text.tertiary,
+                    margin: `${spacing[1]} 0 0`,
+                    textAlign: 'center',
+                  }}>
+                    AI analyses the review and generates a personalised, empathetic response for you to edit.
+                  </p>
+                </div>
+              )}
 
               {/* Response Text */}
               <div style={{ marginBottom: spacing[4] }}>

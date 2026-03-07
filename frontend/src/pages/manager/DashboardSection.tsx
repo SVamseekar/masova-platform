@@ -120,6 +120,53 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
         )}
       </div>
 
+      {/* AI Insights Banner */}
+      <div style={{
+        ...cardStyle,
+        marginBottom: 24,
+        background: `linear-gradient(135deg, ${t.orange}08 0%, #8B5CF608 50%, ${t.blue}06 100%)`,
+        border: `1px solid ${t.grayLight}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 12,
+            background: `linear-gradient(135deg, ${t.orange}, #8B5CF6)`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#fff', boxShadow: `0 4px 12px ${t.orange}25`,
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z" />
+            </svg>
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: t.black }}>AI Agents Active</div>
+            <div style={{ fontSize: 12, color: t.gray, marginTop: 2 }}>
+              {salesForecast?.forecasts?.length ? `${salesForecast.forecasts.length}-day forecast ready (${Math.round(salesForecast.accuracy)}% accuracy)` : 'Demand forecasting runs nightly at 2 AM'}
+              {churnPrediction?.totalAtRisk ? ` · ${churnPrediction.totalAtRisk} customers at churn risk` : ''}
+            </div>
+          </div>
+        </div>
+        <div style={{
+          display: 'flex', gap: 8, alignItems: 'center',
+        }}>
+          {[
+            { path: 'M22 12l-4 0-3 9-6-18-3 9-4 0', label: 'Forecast', color: t.green },
+            { path: 'M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z', label: 'Reorder', color: '#8B5CF6' },
+            { path: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2z', label: 'Churn', color: t.orange },
+            { path: 'M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z', label: 'Reviews', color: t.yellow },
+          ].map(a => (
+            <div key={a.label} style={{
+              width: 34, height: 34, borderRadius: 8,
+              background: `${a.color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: a.color, cursor: 'default',
+            }} title={a.label}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={a.path} /></svg>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Two Column Layout: Order Queue + Staff Sessions */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
         {/* Live Order Queue */}

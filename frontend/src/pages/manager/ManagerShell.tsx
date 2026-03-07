@@ -15,6 +15,7 @@ const InventorySection = React.lazy(() => import('./InventorySection'));
 const OperationsSection = React.lazy(() => import('./OperationsSection'));
 const PeopleSection = React.lazy(() => import('./PeopleSection'));
 const AnalyticsSection = React.lazy(() => import('./AnalyticsSection'));
+const AIAgentsSection = React.lazy(() => import('./AIAgentsSection'));
 const RightSidebar = React.lazy(() => import('./RightSidebar'));
 
 const sections = [
@@ -24,6 +25,7 @@ const sections = [
   { id: 'operations', label: 'Operations', icon: Icons.Settings },
   { id: 'people', label: 'People & Marketing', icon: Icons.Users },
   { id: 'analytics', label: 'Analytics & Reports', icon: Icons.BarChart },
+  { id: 'ai', label: 'AI Agents', icon: Icons.Sparkle },
 ];
 
 const SIDEBAR_EXPANDED = 240;
@@ -377,6 +379,7 @@ function ManagerShell() {
               {activeSection === 'operations' && <OperationsSection storeId={storeId} activeTab={activeTab} onTabChange={setTab} />}
               {activeSection === 'people' && <PeopleSection storeId={storeId} activeTab={activeTab} onTabChange={setTab} />}
               {activeSection === 'analytics' && <AnalyticsSection storeId={storeId} activeTab={activeTab} onTabChange={setTab} />}
+              {activeSection === 'ai' && <AIAgentsSection storeId={storeId} />}
             </React.Suspense>
           </div>
 
