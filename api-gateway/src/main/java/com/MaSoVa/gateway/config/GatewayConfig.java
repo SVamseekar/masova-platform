@@ -139,6 +139,13 @@ public class GatewayConfig {
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
 
+                // Staff earnings + pay-rates (core-service)
+                .route("core_staff_earnings", r -> r.path("/api/staff/earnings/**", "/api/staff/pay-rates", "/api/staff/pay-rates/**")
+                        .filters(f -> f
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(100, "core_staff_earnings")))
+                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8085"))
+
                 // Core: Swagger docs proxy
                 .route("core_api_docs", r -> r.path("/core-service/v3/api-docs")
                         .filters(f -> f.rewritePath("/core-service(?<segment>.*)", "${segment}"))
@@ -166,6 +173,13 @@ public class GatewayConfig {
                         .and().method("POST", "PUT", "DELETE", "PATCH")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(30, "commerce_menu_modify")))
+                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8084"))
+
+                // Staff tips (commerce-service) — pending tips for a staff member
+                .route("commerce_staff_tips", r -> r.path("/api/staff/tips/**")
+                        .filters(f -> f
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(100, "commerce_staff_tips")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8084"))
 
