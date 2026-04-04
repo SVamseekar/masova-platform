@@ -29,6 +29,37 @@ spring:
     password: ${RABBITMQ_PASSWORD:masova_secret}
     virtual-host: ${RABBITMQ_VHOST:/}
 
+  # PostgreSQL — dual-write for orders (Phase 2)
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/masova_db?currentSchema=commerce_schema}
+    username: ${SPRING_DATASOURCE_USERNAME:masova}
+    password: ${SPRING_DATASOURCE_PASSWORD:masova_secret}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 2000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        default_schema: commerce_schema
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+    schemas: commerce_schema
+    table: flyway_schema_history
+
   cache:
     type: redis
     redis:
