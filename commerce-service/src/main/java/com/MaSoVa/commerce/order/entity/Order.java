@@ -72,6 +72,8 @@ public class Order {
     private DriverInfo assignedDriver;
 
     private String specialInstructions;
+    private String tableNumber;        // DINE_IN table identifier
+    private Integer guestCount;        // DINE_IN guest count
 
     @CreatedDate
     private LocalDateTime createdAt;
@@ -196,6 +198,10 @@ public class Order {
 
     public String getSpecialInstructions() { return specialInstructions; }
     public void setSpecialInstructions(String specialInstructions) { this.specialInstructions = specialInstructions; }
+    public String getTableNumber() { return tableNumber; }
+    public void setTableNumber(String tableNumber) { this.tableNumber = tableNumber; }
+    public Integer getGuestCount() { return guestCount; }
+    public void setGuestCount(Integer guestCount) { this.guestCount = guestCount; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
