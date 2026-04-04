@@ -1,15 +1,35 @@
 package com.MaSoVa.commerce.order.client;
 
-import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 
 import java.util.Map;
 
-@FeignClient(name = "inventory-service-client", url = "${services.logistics.url:http://localhost:8086}")
-public interface InventoryServiceClient {
+@Service
+public class InventoryServiceClient {
 
-    @PatchMapping("/api/inventory/items/{menuItemId}/adjust")
-    void adjustStock(@PathVariable String menuItemId, @RequestBody Map<String, Object> body);
+    private static final Logger log = LoggerFactory.getLogger(InventoryServiceClient.class);
+
+    private final RestTemplate restTemplate;
+
+    @Value("${services.logistics.url:http://localhost:8086}")
+    private String logisticsServiceUrl;
+
+    public InventoryServiceClient(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+
+    public void adjustStock(String menuItemId, Map<String, Object> body) {
+        try {
+            String url = logisticsServiceUrl + "/api/inventory/items/" + menuItemId + "/adjust";
+            restTemplate.exchange(url, HttpMethod.PATCH, new HttpEntity<>(body), Void.class);
+        } catch (Exception e) {
+            log.warn("Failed to adjust stock for menuItemId={}: {}", menuItemId, e.getMessage());
+        }
+    }
 }

@@ -357,7 +357,7 @@ public class OrderService {
                 }
             });
         } else if (newStatus == OrderStatus.CANCELLED && currentStatus != null
-                && List.of(OrderStatus.PREPARING, OrderStatus.OVEN, OrderStatus.BAKED, OrderStatus.READY, OrderStatus.DISPATCHED).contains(currentStatus)) {
+                && List.of(OrderStatus.PREPARING, OrderStatus.OVEN, OrderStatus.BAKED, OrderStatus.READY, OrderStatus.DISPATCHED, OrderStatus.OUT_FOR_DELIVERY).contains(currentStatus)) {
             // Restore inventory for any status after PREPARING (stock was already decremented)
             updatedOrder.getItems().forEach(item -> {
                 try {
@@ -461,6 +461,21 @@ public class OrderService {
 
         Order updatedOrder = orderRepository.save(order);
 
+        // Decrement inventory when order reaches PREPARING (mirrors updateOrderStatus path)
+        if (nextStatus == OrderStatus.PREPARING) {
+            updatedOrder.getItems().forEach(item -> {
+                try {
+                    inventoryServiceClient.adjustStock(item.getMenuItemId(), Map.of(
+                        "quantityChange", -item.getQuantity(),
+                        "reason", "Order " + updatedOrder.getOrderNumber() + " started preparing"
+                    ));
+                    log.info("Decremented inventory for item {} qty={}", item.getMenuItemId(), item.getQuantity());
+                } catch (Exception e) {
+                    log.warn("Failed to decrement inventory for item {}: {}", item.getMenuItemId(), e.getMessage());
+                }
+            });
+        }
+
         // Phase 2 dual-write: sync status + OTP + timestamps to PostgreSQL (non-blocking)
         try {
             orderJpaRepository.findByMongoId(updatedOrder.getId()).ifPresentOrElse(
@@ -535,7 +550,7 @@ public class OrderService {
         Order cancelledOrder = orderRepository.save(order);
 
         // Restore inventory if order was in any post-PREPARING state when cancelled (stock was decremented at PREPARING)
-        if (List.of(OrderStatus.PREPARING, OrderStatus.OVEN, OrderStatus.BAKED, OrderStatus.READY, OrderStatus.DISPATCHED).contains(previousStatus)) {
+        if (List.of(OrderStatus.PREPARING, OrderStatus.OVEN, OrderStatus.BAKED, OrderStatus.READY, OrderStatus.DISPATCHED, OrderStatus.OUT_FOR_DELIVERY).contains(previousStatus)) {
             cancelledOrder.getItems().forEach(item -> {
                 try {
                     inventoryServiceClient.adjustStock(item.getMenuItemId(), Map.of(
@@ -835,7 +850,7 @@ public class OrderService {
             case BAKED -> order.setBakedAt(now);
             case READY -> order.setReadyAt(now);  // Ready for pickup (TAKEAWAY) or serving (DINE_IN) or dispatch (DELIVERY)
             case DISPATCHED -> order.setDispatchedAt(now);
-            case OUT_FOR_DELIVERY -> order.setDispatchedAt(now);
+            case OUT_FOR_DELIVERY -> { /* dispatchedAt already set at DISPATCHED — no dedicated field */ }
             case DELIVERED -> order.setDeliveredAt(now);
             case SERVED -> order.setCompletedAt(now);  // DINE_IN final state
             case COMPLETED -> order.setCompletedAt(now);  // TAKEAWAY final state
