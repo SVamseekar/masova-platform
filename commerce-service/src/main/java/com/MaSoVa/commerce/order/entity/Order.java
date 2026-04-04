@@ -123,6 +123,10 @@ public class Order {
     private String createdByStaffId;     // POS staff who created the order
     private String createdByStaffName;   // For quick display
 
+    // Tip fields — optional, captured at order completion
+    private java.math.BigDecimal tipAmountINR;    // Customer tip amount (null = no tip)
+    private String tipRecipientStaffId;           // Direct tip recipient (null = pool)
+
     // Constructors
     public Order() {}
 
@@ -265,6 +269,12 @@ public class Order {
 
     public String getCreatedByStaffName() { return createdByStaffName; }
     public void setCreatedByStaffName(String createdByStaffName) { this.createdByStaffName = createdByStaffName; }
+
+    public java.math.BigDecimal getTipAmountINR() { return tipAmountINR; }
+    public void setTipAmountINR(java.math.BigDecimal tipAmountINR) { this.tipAmountINR = tipAmountINR; }
+
+    public String getTipRecipientStaffId() { return tipRecipientStaffId; }
+    public void setTipRecipientStaffId(String tipRecipientStaffId) { this.tipRecipientStaffId = tipRecipientStaffId; }
 
     // Proof of Delivery getters/setters
     public String getDeliveryOtp() { return deliveryOtp; }

@@ -40,6 +40,9 @@ public class CreateOrderRequest {
 
     private String createdByStaffName;
 
+    private java.math.BigDecimal tipAmountINR;
+    private String tipRecipientStaffId;
+
     public CreateOrderRequest() {}
 
     // Getters and Setters
@@ -78,6 +81,12 @@ public class CreateOrderRequest {
 
     public String getCreatedByStaffName() { return createdByStaffName; }
     public void setCreatedByStaffName(String createdByStaffName) { this.createdByStaffName = createdByStaffName; }
+
+    public java.math.BigDecimal getTipAmountINR() { return tipAmountINR; }
+    public void setTipAmountINR(java.math.BigDecimal tipAmountINR) { this.tipAmountINR = tipAmountINR; }
+
+    public String getTipRecipientStaffId() { return tipRecipientStaffId; }
+    public void setTipRecipientStaffId(String tipRecipientStaffId) { this.tipRecipientStaffId = tipRecipientStaffId; }
 
     public static class OrderItemRequest {
 
