@@ -12,6 +12,7 @@ import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { TokenRefreshManager } from './components/auth/TokenRefreshManager';
 import { ConnectionMonitorProvider } from './components/common/ConnectionMonitorProvider';
 import { ChatWidget } from './components/chat/ChatWidget';
+import { CustomerLayout } from './components/customer/CustomerLayout';
 
 // Lazy load components
 const ProductSitePage = React.lazy(() => import('./apps/ProductSite/ProductSitePage'))
@@ -51,7 +52,7 @@ const AppLoader = () => (
     justifyContent="center"
     alignItems="center"
     minHeight="100vh"
-    bgcolor="background.default"
+    bgcolor="transparent"
   >
     <CircularProgress color="primary" size={60} />
   </Box>
@@ -91,30 +92,30 @@ const App: React.FC = () => {
                     <Routes>
                   {/* Public Routes - No Login Required */}
                   <Route path="/" element={<ProductSitePage />} />
-                  <Route path="/order" element={<HomePage />} />
-                  <Route path="/menu" element={<PublicMenuPage />} />
-                  <Route path="/promotions" element={<PromotionsPage />} />
+                  <Route path="/order" element={<CustomerLayout><HomePage /></CustomerLayout>} />
+                  <Route path="/menu" element={<CustomerLayout><PublicMenuPage /></CustomerLayout>} />
+                  <Route path="/promotions" element={<CustomerLayout><PromotionsPage /></CustomerLayout>} />
 
                   {/* Authentication & Checkout Routes - Public */}
                   <Route path="/login" element={<Navigate to="/customer-login" replace />} />
-                  <Route path="/customer-login" element={<CustomerLoginPage />} />
+                  <Route path="/customer-login" element={<CustomerLayout><CustomerLoginPage /></CustomerLayout>} />
                   <Route path="/staff-login" element={<LoginPage />} />
-                  <Route path="/register" element={<RegisterPage />} />
-                  <Route path="/checkout" element={<CheckoutPage />} />
-                  <Route path="/guest-checkout" element={<GuestCheckoutPage />} />
-                  <Route path="/payment" element={<PaymentPage />} />
-                  <Route path="/payment/success" element={<PaymentSuccessPage />} />
-                  <Route path="/payment/failed" element={<PaymentFailedPage />} />
-                  <Route path="/tracking/:orderId" element={<TrackingPage />} />
-                  <Route path="/live-tracking/:orderId" element={<LiveTrackingPage />} />
-                  <Route path="/rate/:orderId/:token" element={<PublicRatingPage />} />
+                  <Route path="/register" element={<CustomerLayout><RegisterPage /></CustomerLayout>} />
+                  <Route path="/checkout" element={<CustomerLayout><CheckoutPage /></CustomerLayout>} />
+                  <Route path="/guest-checkout" element={<CustomerLayout><GuestCheckoutPage /></CustomerLayout>} />
+                  <Route path="/payment" element={<CustomerLayout><PaymentPage /></CustomerLayout>} />
+                  <Route path="/payment/success" element={<CustomerLayout><PaymentSuccessPage /></CustomerLayout>} />
+                  <Route path="/payment/failed" element={<CustomerLayout><PaymentFailedPage /></CustomerLayout>} />
+                  <Route path="/tracking/:orderId" element={<CustomerLayout><TrackingPage /></CustomerLayout>} />
+                  <Route path="/live-tracking/:orderId" element={<CustomerLayout><LiveTrackingPage /></CustomerLayout>} />
+                  <Route path="/rate/:orderId/:token" element={<CustomerLayout><PublicRatingPage /></CustomerLayout>} />
 
                   {/* Customer Dashboard - Login required */}
                   <Route
                     path="/customer-dashboard"
                     element={
                       <ProtectedRoute allowedRoles={['CUSTOMER']} requireAuth={true}>
-                        <CustomerDashboard />
+                        <CustomerLayout><CustomerDashboard /></CustomerLayout>
                       </ProtectedRoute>
                     }
                   />
@@ -122,7 +123,7 @@ const App: React.FC = () => {
                     path="/customer/orders"
                     element={
                       <ProtectedRoute allowedRoles={['CUSTOMER']} requireAuth={true}>
-                        <OrderTrackingPage />
+                        <CustomerLayout><OrderTrackingPage /></CustomerLayout>
                       </ProtectedRoute>
                     }
                   />
@@ -130,7 +131,7 @@ const App: React.FC = () => {
                     path="/customer/profile"
                     element={
                       <ProtectedRoute allowedRoles={['CUSTOMER']} requireAuth={true}>
-                        <ProfilePage />
+                        <CustomerLayout><ProfilePage /></CustomerLayout>
                       </ProtectedRoute>
                     }
                   />
@@ -142,7 +143,7 @@ const App: React.FC = () => {
                     path="/customer/gdpr"
                     element={
                       <ProtectedRoute allowedRoles={['CUSTOMER']} requireAuth={true}>
-                        <GdprRequests />
+                        <CustomerLayout><GdprRequests /></CustomerLayout>
                       </ProtectedRoute>
                     }
                   />
