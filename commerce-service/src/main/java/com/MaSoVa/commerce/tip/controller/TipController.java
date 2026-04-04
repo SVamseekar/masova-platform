@@ -9,10 +9,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
+/** POST /api/orders/{orderId}/tip — tip on a specific order */
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/orders")
 @SecurityRequirement(name = "bearerAuth")
 public class TipController {
 
@@ -22,19 +21,11 @@ public class TipController {
         this.tipService = tipService;
     }
 
-    /** POST /api/orders/{id}/tip — customer adds tip to a completed order */
-    @PostMapping("/orders/{orderId}/tip")
+    @PostMapping("/{orderId}/tip")
     @PreAuthorize("hasRole('CUSTOMER') or hasRole('CASHIER') or hasRole('KIOSK') or hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
     public ResponseEntity<TipResponse> addTip(
             @PathVariable String orderId,
             @Valid @RequestBody TipRequest request) {
         return ResponseEntity.ok(tipService.addTipToOrder(orderId, request));
-    }
-
-    /** GET /api/staff/tips/pending?employeeId={id} — staff sees their undistributed direct tips */
-    @GetMapping("/staff/tips/pending")
-    @PreAuthorize("hasRole('STAFF') or hasRole('DRIVER') or hasRole('CASHIER') or hasRole('KITCHEN_STAFF') or hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
-    public ResponseEntity<List<TipResponse>> getPendingTips(@RequestParam String employeeId) {
-        return ResponseEntity.ok(tipService.getUndistributedTipsForStaff(employeeId));
     }
 }

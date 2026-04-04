@@ -33,6 +33,10 @@ public class TipService {
         // Idempotent: update existing tip if one already exists for this order
         OrderTipEntity tip = tipRepository.findByOrderId(orderId).orElseGet(OrderTipEntity::new);
 
+        if (Boolean.TRUE.equals(tip.getDistributed())) {
+            throw new IllegalStateException("Tip for order " + orderId + " has already been distributed and cannot be modified.");
+        }
+
         tip.setOrderId(orderId);
         tip.setOrderNumber(order.getOrderNumber());
         tip.setStoreId(order.getStoreId());

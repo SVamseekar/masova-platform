@@ -65,7 +65,7 @@ public class EarningsService {
         LocalDate ws = (weekStart != null) ? weekStart : currentWeekStart();
         StaffEarningsSummaryEntity summary = summaryRepository
             .findByEmployeeIdAndWeekStart(employeeId, ws)
-            .orElseGet(() -> computeWeekSummary(employeeId, ws));
+            .orElseGet(() -> summaryRepository.save(computeWeekSummary(employeeId, ws)));
 
         BigDecimal rate = payRateRepository.findEffectiveRate(employeeId, ws)
             .map(StaffPayRateEntity::getHourlyRateInr)
@@ -92,7 +92,7 @@ public class EarningsService {
      * Runs every Sunday at midnight IST (18:30 UTC = UTC+5:30).
      * Computes base pay for the week that just ended for all staff who had sessions.
      */
-    @Scheduled(cron = "0 30 18 * * SUN", zone = "UTC")
+    @Scheduled(cron = "0 0 0 * * MON", zone = "Asia/Kolkata")
     @Transactional
     public void runWeeklyEarningsJob() {
         LocalDate lastWeekStart = currentWeekStart().minusWeeks(1);
