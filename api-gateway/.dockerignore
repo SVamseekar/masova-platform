@@ -1,6 +1,8 @@
 target/
 *.md
 .git/
-.gitignore
 src/test/
 *.bak
+*.iml
+.idea/
+

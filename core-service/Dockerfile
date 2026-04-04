@@ -1,25 +1,32 @@
-# Stage 1: Build
-FROM eclipse-temurin:21-jdk-alpine AS build
+# Stage 1: Build — Maven with dependency caching
+FROM maven:3.9-eclipse-temurin-21 AS builder
 WORKDIR /build
-COPY pom.xml .
-COPY src ./src
-RUN mvn package -DskipTests --no-transfer-progress 2>/dev/null || \
-    (apk add --no-cache maven && mvn package -DskipTests --no-transfer-progress)
 
-# Stage 2: Runtime
-FROM eclipse-temurin:21-jre-alpine
+# Copy poms first for layer caching (deps only re-downloaded when pom changes)
+COPY pom.xml .
+COPY shared-models/pom.xml shared-models/pom.xml
+COPY shared-security/pom.xml shared-security/pom.xml
+COPY core-service/pom.xml core-service/pom.xml
+RUN mvn dependency:go-offline -pl core-service -am -q 2>/dev/null || true
+
+# Copy source and build
+COPY shared-models/src shared-models/src
+COPY shared-security/src shared-security/src
+COPY core-service/src core-service/src
+RUN mvn package -pl core-service -am -DskipTests -q
+
+# Stage 2: Runtime — JRE only (~200MB vs ~600MB JDK)
+FROM eclipse-temurin:21-jre-jammy AS runtime
 WORKDIR /app
 
-RUN addgroup -S masova && adduser -S masova -G masova
+RUN groupadd -r masova && useradd -r -g masova -u 1001 masova
 USER masova
 
-COPY --from=build /build/target/*.jar app.jar
+COPY --from=builder --chown=masova:masova /build/core-service/target/core-service-*.jar app.jar
 
-ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom"
-
-EXPOSE 8085
-
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD wget -qO- http://localhost:8085/actuator/health || exit 1
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+EXPOSE 8085
+ENTRYPOINT ["java", "-jar", "-Xmx512m", "-XX:+UseContainerSupport", "-Dspring.profiles.active=prod", "app.jar"]
+
