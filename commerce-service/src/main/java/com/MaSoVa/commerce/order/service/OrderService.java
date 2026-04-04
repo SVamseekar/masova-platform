@@ -241,13 +241,14 @@ public class OrderService {
     }
 
     public List<Order> getKitchenQueue(String storeId) {
-        // Kitchen queue shows orders in RECEIVED, PREPARING, OVEN, BAKED, DISPATCHED (Completed) stages
+        // Kitchen queue shows active orders: from RECEIVED through OUT_FOR_DELIVERY
         List<OrderStatus> kitchenStatuses = List.of(
                 OrderStatus.RECEIVED,
                 OrderStatus.PREPARING,
                 OrderStatus.OVEN,
                 OrderStatus.BAKED,
-                OrderStatus.DISPATCHED
+                OrderStatus.DISPATCHED,
+                OrderStatus.OUT_FOR_DELIVERY
         );
 
         List<Order> orders = orderRepository.findByStoreIdAndStatusIn(storeId, kitchenStatuses);
@@ -617,7 +618,8 @@ public class OrderService {
                     case DINE_IN -> OrderStatus.SERVED;       // DINE_IN: READY → SERVED
                 };
             }
-            case DISPATCHED -> OrderStatus.DELIVERED;  // Only for DELIVERY orders
+            case DISPATCHED -> OrderStatus.OUT_FOR_DELIVERY;  // DELIVERY: DISPATCHED → OUT_FOR_DELIVERY → DELIVERED
+            case OUT_FOR_DELIVERY -> OrderStatus.DELIVERED;  // Driver en route → delivered
             default -> null;  // Already in terminal state (DELIVERED, COMPLETED, SERVED, CANCELLED)
         };
     }
@@ -648,7 +650,8 @@ public class OrderService {
             case OVEN -> List.of(OrderStatus.PREPARING, OrderStatus.BAKED, OrderStatus.CANCELLED);
             case BAKED -> List.of(OrderStatus.OVEN, OrderStatus.READY, OrderStatus.CANCELLED);  // Unified: go to READY
             case READY -> List.of(OrderStatus.DISPATCHED, OrderStatus.SERVED, OrderStatus.COMPLETED, OrderStatus.CANCELLED);  // Different final states per order type
-            case DISPATCHED -> List.of(OrderStatus.READY, OrderStatus.DELIVERED);  // DELIVERY orders
+            case DISPATCHED -> List.of(OrderStatus.READY, OrderStatus.OUT_FOR_DELIVERY);  // DELIVERY orders
+            case OUT_FOR_DELIVERY -> List.of(OrderStatus.DISPATCHED, OrderStatus.DELIVERED);  // Driver en route
             case DELIVERED -> List.of();  // Terminal state
             case SERVED -> List.of();  // Terminal state (DINE_IN)
             case COMPLETED -> List.of();  // Terminal state (TAKEAWAY)
