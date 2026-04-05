@@ -53,7 +53,8 @@ public class MenuService {
         return menuItemRepository.findByIsAvailableTrue();
     }
 
-    @Cacheable(value = "menuItems", key = "#id", unless = "#result == null || !#result.isPresent()")
+    // Not cached — Optional.empty() results cannot be reliably round-tripped through
+    // the Redis Jackson serializer, and the callers (MenuServiceClient) already fail open.
     public Optional<MenuItem> getMenuItemById(String id) {
         return menuItemRepository.findById(id);
     }
