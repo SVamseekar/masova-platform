@@ -489,13 +489,15 @@ public class OrderController {
     @PutMapping("/{orderId}/mark-delivered")
     public ResponseEntity<Order> markOrderDelivered(
             @PathVariable String orderId,
-            @RequestBody Map<String, Object> payload) {
+            @RequestBody(required = false) Map<String, Object> payload) {
         log.info("Marking order as delivered: {}", orderId);
 
-        String deliveredAtStr = (String) payload.get("deliveredAt");
-        String proofType = (String) payload.get("proofType");
+        String deliveredAtStr = payload != null ? (String) payload.get("deliveredAt") : null;
+        String proofType = payload != null ? (String) payload.get("proofType") : null;
 
-        java.time.LocalDateTime deliveredAt = java.time.LocalDateTime.parse(deliveredAtStr);
+        java.time.LocalDateTime deliveredAt = deliveredAtStr != null
+                ? java.time.LocalDateTime.parse(deliveredAtStr)
+                : java.time.LocalDateTime.now();
         Order order = orderService.markOrderDelivered(orderId, deliveredAt, proofType);
         return ResponseEntity.ok(order);
     }

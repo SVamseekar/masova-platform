@@ -2944,14 +2944,15 @@ async function testDelivery() {
     if (ok(rDelProofNV)) pass(sec, 'PUT /api/orders/{orderId}/delivery-proof');
     else                  warn(sec, 'PUT delivery-proof (no-v1)', `status ${rDelProofNV.status}`);
 
+    const markDeliveredBody = { deliveredAt: new Date().toISOString().slice(0,19), proofType: 'SIGNATURE' };
     const rMarkDel = await req(`${S.commerce}/api/v1/orders/${D.deliveryOrderId}/mark-delivered`, {
-      method: 'PUT', ...comMgrOpts,
+      method: 'PUT', ...comMgrOpts, body: markDeliveredBody,
     });
     if (ok(rMarkDel)) pass(sec, 'PUT /api/v1/orders/{orderId}/mark-delivered');
     else               warn(sec, 'PUT v1 mark-delivered', `status ${rMarkDel.status}`);
 
     const rMarkDelNV = await req(`${S.commerce}/api/orders/${D.deliveryOrderId}/mark-delivered`, {
-      method: 'PUT', ...comMgrOpts,
+      method: 'PUT', ...comMgrOpts, body: markDeliveredBody,
     });
     if (ok(rMarkDelNV)) pass(sec, 'PUT /api/orders/{orderId}/mark-delivered');
     else                 warn(sec, 'PUT mark-delivered (no-v1)', `status ${rMarkDelNV.status}`);
