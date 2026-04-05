@@ -1,0 +1,1340 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------< com.MaSoVa:intelligence-service >-------------------
+[INFO] Building Intelligence Service 1.0.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.2.0:run (default-cli) > test-compile @ intelligence-service >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ intelligence-service ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ intelligence-service ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ intelligence-service ---
+[INFO] Not copying test resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ intelligence-service ---
+[INFO] Not compiling test sources
+[INFO] 
+[INFO] <<< spring-boot:3.2.0:run (default-cli) < test-compile @ intelligence-service <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.2.0:run (default-cli) @ intelligence-service ---
+[INFO] Attaching agents: []
+15:43:41,345 |-INFO in ch.qos.logback.classic.LoggerContext[default] - This is logback-classic version 1.4.11
+15:43:41,348 |-INFO in ch.qos.logback.classic.util.ContextInitializer@73173f63 - Here is a list of configurators discovered as a service, by rank: 
+15:43:41,348 |-INFO in ch.qos.logback.classic.util.ContextInitializer@73173f63 -   org.springframework.boot.logging.logback.RootLogLevelConfigurator
+15:43:41,348 |-INFO in ch.qos.logback.classic.util.ContextInitializer@73173f63 - They will be invoked in order until ExecutionStatus.DO_NOT_INVOKE_NEXT_IF_ANY is returned.
+15:43:41,348 |-INFO in ch.qos.logback.classic.util.ContextInitializer@73173f63 - Constructed configurator of type class org.springframework.boot.logging.logback.RootLogLevelConfigurator
+15:43:41,362 |-INFO in ch.qos.logback.classic.util.ContextInitializer@73173f63 - org.springframework.boot.logging.logback.RootLogLevelConfigurator.configure() call lasted 0 milliseconds. ExecutionStatus=INVOKE_NEXT_IF_ANY
+15:43:41,362 |-INFO in ch.qos.logback.classic.util.ContextInitializer@73173f63 - Trying to configure with ch.qos.logback.classic.joran.SerializedModelConfigurator
+15:43:41,363 |-INFO in ch.qos.logback.classic.util.ContextInitializer@73173f63 - Constructed configurator of type class ch.qos.logback.classic.joran.SerializedModelConfigurator
+15:43:41,389 |-INFO in ch.qos.logback.classic.LoggerContext[default] - Could NOT find resource [logback-test.scmo]
+15:43:41,390 |-INFO in ch.qos.logback.classic.LoggerContext[default] - Could NOT find resource [logback.scmo]
+15:43:41,390 |-INFO in ch.qos.logback.classic.util.ContextInitializer@73173f63 - ch.qos.logback.classic.joran.SerializedModelConfigurator.configure() call lasted 27 milliseconds. ExecutionStatus=INVOKE_NEXT_IF_ANY
+15:43:41,390 |-INFO in ch.qos.logback.classic.util.ContextInitializer@73173f63 - Trying to configure with ch.qos.logback.classic.util.DefaultJoranConfigurator
+15:43:41,390 |-INFO in ch.qos.logback.classic.util.ContextInitializer@73173f63 - Constructed configurator of type class ch.qos.logback.classic.util.DefaultJoranConfigurator
+15:43:41,391 |-INFO in ch.qos.logback.classic.LoggerContext[default] - Could NOT find resource [logback-test.xml]
+15:43:41,391 |-INFO in ch.qos.logback.classic.LoggerContext[default] - Could NOT find resource [logback.xml]
+15:43:41,391 |-INFO in ch.qos.logback.classic.util.ContextInitializer@73173f63 - ch.qos.logback.classic.util.DefaultJoranConfigurator.configure() call lasted 1 milliseconds. ExecutionStatus=INVOKE_NEXT_IF_ANY
+15:43:41,391 |-INFO in ch.qos.logback.classic.util.ContextInitializer@73173f63 - Trying to configure with ch.qos.logback.classic.BasicConfigurator
+15:43:41,392 |-INFO in ch.qos.logback.classic.util.ContextInitializer@73173f63 - Constructed configurator of type class ch.qos.logback.classic.BasicConfigurator
+15:43:41,392 |-INFO in ch.qos.logback.classic.BasicConfigurator@55562aa9 - Setting up default configuration.
+15:43:41,416 |-INFO in ch.qos.logback.classic.util.ContextInitializer@73173f63 - ch.qos.logback.classic.BasicConfigurator.configure() call lasted 24 milliseconds. ExecutionStatus=NEUTRAL
+15:43:41,922 |-INFO in ch.qos.logback.core.joran.spi.ConfigurationWatchList@655ef322 - URL [jar:file:/C:/Users/Vamsee/.m2/repository/com/masova/shared-models/1.0.0/shared-models-1.0.0.jar!/logback-spring.xml] is not of type file
+15:43:42,014 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - Processing appender named [CONSOLE]
+15:43:42,014 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - About to instantiate appender of type [ch.qos.logback.core.ConsoleAppender]
+15:43:42,018 |-INFO in ch.qos.logback.core.model.processor.ImplicitModelHandler - Assuming default type [ch.qos.logback.classic.encoder.PatternLayoutEncoder] for [encoder] property
+15:43:42,034 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - Processing appender named [FILE]
+15:43:42,034 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - About to instantiate appender of type [ch.qos.logback.core.rolling.RollingFileAppender]
+15:43:42,036 |-INFO in ch.qos.logback.core.model.processor.ImplicitModelHandler - Assuming default type [ch.qos.logback.classic.encoder.PatternLayoutEncoder] for [encoder] property
+15:43:42,044 |-INFO in c.q.l.core.rolling.TimeBasedRollingPolicy@2116511124 - setting totalSizeCap to 1 GB
+15:43:42,046 |-INFO in c.q.l.core.rolling.TimeBasedRollingPolicy@2116511124 - No compression will be used
+15:43:42,047 |-INFO in c.q.l.core.rolling.TimeBasedRollingPolicy@2116511124 - Will use the pattern logs/application-%d{yyyy-MM-dd}.log for the active file
+15:43:42,071 |-INFO in c.q.l.core.rolling.DefaultTimeBasedFileNamingAndTriggeringPolicy - The date pattern is 'yyyy-MM-dd' from file name pattern 'logs/application-%d{yyyy-MM-dd}.log'.
+15:43:42,071 |-INFO in c.q.l.core.rolling.DefaultTimeBasedFileNamingAndTriggeringPolicy - Roll-over at midnight.
+15:43:42,077 |-INFO in c.q.l.core.rolling.DefaultTimeBasedFileNamingAndTriggeringPolicy - Setting initial period to 2026-04-05T10:07:36.607Z
+15:43:42,080 |-INFO in ch.qos.logback.core.rolling.RollingFileAppender[FILE] - Active log file name: logs/application.log
+15:43:42,080 |-INFO in ch.qos.logback.core.rolling.RollingFileAppender[FILE] - File property is set to [logs/application.log]
+15:43:42,081 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - Processing appender named [ERROR_FILE]
+15:43:42,081 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - About to instantiate appender of type [ch.qos.logback.core.rolling.RollingFileAppender]
+15:43:42,082 |-INFO in ch.qos.logback.core.model.processor.ImplicitModelHandler - Assuming default type [ch.qos.logback.classic.encoder.PatternLayoutEncoder] for [encoder] property
+15:43:42,082 |-INFO in c.q.l.core.rolling.TimeBasedRollingPolicy@872522004 - setting totalSizeCap to 2 GB
+15:43:42,082 |-INFO in c.q.l.core.rolling.TimeBasedRollingPolicy@872522004 - No compression will be used
+15:43:42,082 |-INFO in c.q.l.core.rolling.TimeBasedRollingPolicy@872522004 - Will use the pattern logs/error-%d{yyyy-MM-dd}.log for the active file
+15:43:42,082 |-INFO in c.q.l.core.rolling.DefaultTimeBasedFileNamingAndTriggeringPolicy - The date pattern is 'yyyy-MM-dd' from file name pattern 'logs/error-%d{yyyy-MM-dd}.log'.
+15:43:42,082 |-INFO in c.q.l.core.rolling.DefaultTimeBasedFileNamingAndTriggeringPolicy - Roll-over at midnight.
+15:43:42,083 |-INFO in c.q.l.core.rolling.DefaultTimeBasedFileNamingAndTriggeringPolicy - Setting initial period to 2026-04-05T10:05:25.859Z
+15:43:42,083 |-INFO in ch.qos.logback.core.rolling.RollingFileAppender[ERROR_FILE] - Active log file name: logs/error.log
+15:43:42,083 |-INFO in ch.qos.logback.core.rolling.RollingFileAppender[ERROR_FILE] - File property is set to [logs/error.log]
+15:43:42,083 |-WARN in ch.qos.logback.core.model.processor.AppenderModelHandler - Appender named [JSON_FILE] not referenced. Skipping further processing.
+15:43:42,084 |-INFO in ch.qos.logback.classic.model.processor.RootLoggerModelHandler - Setting level of ROOT logger to INFO
+15:43:42,084 |-INFO in ch.qos.logback.classic.jul.LevelChangePropagator@5066d65f - Propagating INFO level on Logger[ROOT] onto the JUL framework
+15:43:42,085 |-INFO in ch.qos.logback.core.model.processor.AppenderRefModelHandler - Attaching appender named [CONSOLE] to Logger[ROOT]
+15:43:42,085 |-INFO in ch.qos.logback.core.model.processor.AppenderRefModelHandler - Attaching appender named [FILE] to Logger[ROOT]
+15:43:42,085 |-INFO in ch.qos.logback.core.model.processor.AppenderRefModelHandler - Attaching appender named [ERROR_FILE] to Logger[ROOT]
+15:43:42,085 |-INFO in ch.qos.logback.classic.model.processor.LoggerModelHandler - Setting level of logger [com.MaSoVa] to DEBUG
+15:43:42,085 |-INFO in ch.qos.logback.classic.jul.LevelChangePropagator@5066d65f - Propagating DEBUG level on Logger[com.MaSoVa] onto the JUL framework
+15:43:42,085 |-INFO in ch.qos.logback.classic.model.processor.LoggerModelHandler - Setting level of logger [org.springframework] to INFO
+15:43:42,085 |-INFO in ch.qos.logback.classic.jul.LevelChangePropagator@5066d65f - Propagating INFO level on Logger[org.springframework] onto the JUL framework
+15:43:42,085 |-INFO in ch.qos.logback.classic.model.processor.LoggerModelHandler - Setting level of logger [org.mongodb] to WARN
+15:43:42,085 |-INFO in ch.qos.logback.classic.jul.LevelChangePropagator@5066d65f - Propagating WARN level on Logger[org.mongodb] onto the JUL framework
+15:43:42,085 |-WARN in ch.qos.logback.core.model.processor.AppenderModelHandler - Appender named [ASYNC_FILE] not referenced. Skipping further processing.
+15:43:42,085 |-INFO in ch.qos.logback.core.model.processor.DefaultProcessor@4233e892 - End of configuration.
+15:43:42,085 |-INFO in org.springframework.boot.logging.logback.SpringBootJoranConfigurator@77d2e85 - Registering current configuration as safe fallback point
+
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.0)
+
+2026-04-05 15:43:42.162 [background-preinit] INFO  o.h.validator.internal.util.Version [correlationId=N/A] [storeId=N/A] [userId=N/A] - HV000001: Hibernate Validator 8.0.1.Final
+2026-04-05 15:43:42.206 [main] INFO  c.M.i.IntelligenceServiceApplication [correlationId=N/A] [storeId=N/A] [userId=N/A] - Starting IntelligenceServiceApplication using Java 21.0.7 with PID 14956 (D:\projects\masova-platform\intelligence-service\target\classes started by Vamsee in D:\projects\masova-platform\intelligence-service)
+2026-04-05 15:43:42.207 [main] DEBUG c.M.i.IntelligenceServiceApplication [correlationId=N/A] [storeId=N/A] [userId=N/A] - Running with Spring Boot v3.2.0, Spring v6.1.1
+2026-04-05 15:43:42.208 [main] INFO  c.M.i.IntelligenceServiceApplication [correlationId=N/A] [storeId=N/A] [userId=N/A] - No active profile set, falling back to 1 default profile: "default"
+2026-04-05 15:43:43.663 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate [correlationId=N/A] [storeId=N/A] [userId=N/A] - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-04-05 15:43:43.664 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate [correlationId=N/A] [storeId=N/A] [userId=N/A] - Bootstrapping Spring Data MongoDB repositories in DEFAULT mode.
+2026-04-05 15:43:43.685 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate [correlationId=N/A] [storeId=N/A] [userId=N/A] - Finished Spring Data repository scanning in 16 ms. Found 0 MongoDB repository interfaces.
+2026-04-05 15:43:43.697 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate [correlationId=N/A] [storeId=N/A] [userId=N/A] - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-04-05 15:43:43.698 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate [correlationId=N/A] [storeId=N/A] [userId=N/A] - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-04-05 15:43:43.709 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate [correlationId=N/A] [storeId=N/A] [userId=N/A] - Finished Spring Data repository scanning in 3 ms. Found 0 Redis repository interfaces.
+2026-04-05 15:43:45.334 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer [correlationId=N/A] [storeId=N/A] [userId=N/A] - Tomcat initialized with port 8087 (http)
+2026-04-05 15:43:45.344 [main] INFO  o.a.coyote.http11.Http11NioProtocol [correlationId=N/A] [storeId=N/A] [userId=N/A] - Initializing ProtocolHandler ["http-nio-8087"]
+2026-04-05 15:43:45.352 [main] INFO  o.a.catalina.core.StandardService [correlationId=N/A] [storeId=N/A] [userId=N/A] - Starting service [Tomcat]
+2026-04-05 15:43:45.354 [main] INFO  o.a.catalina.core.StandardEngine [correlationId=N/A] [storeId=N/A] [userId=N/A] - Starting Servlet engine: [Apache Tomcat/10.1.16]
+2026-04-05 15:43:45.495 [main] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] [correlationId=N/A] [storeId=N/A] [userId=N/A] - Initializing Spring embedded WebApplicationContext
+2026-04-05 15:43:45.495 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext [correlationId=N/A] [storeId=N/A] [userId=N/A] - Root WebApplicationContext: initialization completed in 3236 ms
+2026-04-05 15:43:46.906 [main] DEBUG c.M.s.s.f.JwtAuthenticationFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Filter 'jwtAuthenticationFilter' configured for use
+2026-04-05 15:43:46.906 [main] INFO  c.M.s.filter.CorrelationIdFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - CorrelationIdFilter initialized - request correlation tracking enabled
+2026-04-05 15:43:47.293 [main] INFO  c.M.s.c.CircuitBreakerConfiguration [correlationId=N/A] [storeId=N/A] [userId=N/A] - Circuit breakers configured for all services
+2026-04-05 15:43:47.781 [main] INFO  c.M.shared.config.MongoPoolConfig [correlationId=N/A] [storeId=N/A] [userId=N/A] - Configuring MongoDB connection pool: min=10, max=100, maxWait=30000ms, maxIdle=60000ms
+2026-04-05 15:43:48.408 [main] INFO  c.M.shared.service.UpdateService [correlationId=N/A] [storeId=N/A] [userId=N/A] - MaSoVa Version: 1.0.0 (Built: null)
+2026-04-05 15:43:48.808 [main] WARN  o.s.b.a.s.s.UserDetailsServiceAutoConfiguration [correlationId=N/A] [storeId=N/A] [userId=N/A] - 
+
+Using generated security password: 36435258-13fd-4305-be8b-8d9afe3162b5
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2026-04-05 15:43:50.785 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver [correlationId=N/A] [storeId=N/A] [userId=N/A] - Exposing 3 endpoint(s) beneath base path '/actuator'
+2026-04-05 15:43:51.103 [main] INFO  o.s.s.web.DefaultSecurityFilterChain [correlationId=N/A] [storeId=N/A] [userId=N/A] - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@b257072, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@738da6f2, org.springframework.security.web.context.SecurityContextHolderFilter@1464a177, org.springframework.security.web.header.HeaderWriterFilter@301c0aae, org.springframework.security.web.authentication.logout.LogoutFilter@12ff3df, com.MaSoVa.shared.security.filter.JwtAuthenticationFilter@686fb58a, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@6ed2aa8a, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@65a03c19, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@1b513ce8, org.springframework.security.web.session.SessionManagementFilter@3d3e9163, org.springframework.security.web.access.ExceptionTranslationFilter@13515709, org.springframework.security.web.access.intercept.AuthorizationFilter@437ac2dc]
+2026-04-05 15:43:55.900 [main] INFO  o.a.coyote.http11.Http11NioProtocol [correlationId=N/A] [storeId=N/A] [userId=N/A] - Starting ProtocolHandler ["http-nio-8087"]
+2026-04-05 15:43:55.961 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer [correlationId=N/A] [storeId=N/A] [userId=N/A] - Tomcat started on port 8087 (http) with context path ''
+2026-04-05 15:43:55.969 [main] INFO  o.s.a.r.c.CachingConnectionFactory [correlationId=N/A] [storeId=N/A] [userId=N/A] - Attempting to connect to: [localhost:5672]
+2026-04-05 15:43:56.160 [main] INFO  o.s.a.r.c.CachingConnectionFactory [correlationId=N/A] [storeId=N/A] [userId=N/A] - Created new connection: rabbitConnectionFactory#6dc98c02:0/SimpleConnection@418f2af3 [delegate=amqp://masova@127.0.0.1:5672/, localPort=63377]
+2026-04-05 15:43:57.286 [main] INFO  c.M.i.IntelligenceServiceApplication [correlationId=N/A] [storeId=N/A] [userId=N/A] - Started IntelligenceServiceApplication in 15.765 seconds (process running for 16.179)
+2026-04-05 15:43:57.565 [main] INFO  c.M.shared.service.UpdateService [correlationId=N/A] [storeId=N/A] [userId=N/A] - Checking for updates on startup...
+2026-04-05 15:43:57.566 [main] DEBUG c.M.shared.service.UpdateService [correlationId=N/A] [storeId=N/A] [userId=N/A] - Fetching latest version from: https://raw.githubusercontent.com/SVamseekar/MaSoVa-restaurant-management-system/main/version.properties
+2026-04-05 15:43:58.590 [main] ERROR c.M.shared.service.UpdateService [correlationId=N/A] [storeId=N/A] [userId=N/A] - Error checking for updates: 404 Not Found: "404: Not Found"
+2026-04-05 15:43:58.626 [main] DEBUG c.M.shared.service.UpdateService [correlationId=N/A] [storeId=N/A] [userId=N/A] - Update check error details
+org.springframework.web.client.HttpClientErrorException$NotFound: 404 Not Found: "404: Not Found"
+	at org.springframework.web.client.HttpClientErrorException.create(HttpClientErrorException.java:112)
+	at org.springframework.web.client.DefaultResponseErrorHandler.handleError(DefaultResponseErrorHandler.java:183)
+	at org.springframework.web.client.DefaultResponseErrorHandler.handleError(DefaultResponseErrorHandler.java:137)
+	at org.springframework.web.client.ResponseErrorHandler.handleError(ResponseErrorHandler.java:63)
+	at org.springframework.web.client.RestTemplate.handleResponse(RestTemplate.java:932)
+	at org.springframework.web.client.RestTemplate.doExecute(RestTemplate.java:881)
+	at org.springframework.web.client.RestTemplate.execute(RestTemplate.java:781)
+	at org.springframework.web.client.RestTemplate.getForEntity(RestTemplate.java:422)
+	at com.MaSoVa.shared.service.UpdateService.checkForUpdates(UpdateService.java:135)
+	at com.MaSoVa.shared.service.UpdateService.checkOnStartup(UpdateService.java:104)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.context.event.ApplicationListenerMethodAdapter.doInvoke(ApplicationListenerMethodAdapter.java:365)
+	at org.springframework.context.event.ApplicationListenerMethodAdapter.processEvent(ApplicationListenerMethodAdapter.java:237)
+	at org.springframework.context.event.ApplicationListenerMethodAdapter.onApplicationEvent(ApplicationListenerMethodAdapter.java:168)
+	at org.springframework.context.event.SimpleApplicationEventMulticaster.doInvokeListener(SimpleApplicationEventMulticaster.java:178)
+	at org.springframework.context.event.SimpleApplicationEventMulticaster.invokeListener(SimpleApplicationEventMulticaster.java:171)
+	at org.springframework.context.event.SimpleApplicationEventMulticaster.multicastEvent(SimpleApplicationEventMulticaster.java:149)
+	at org.springframework.context.support.AbstractApplicationContext.publishEvent(AbstractApplicationContext.java:445)
+	at org.springframework.context.support.AbstractApplicationContext.publishEvent(AbstractApplicationContext.java:378)
+	at org.springframework.boot.context.event.EventPublishingRunListener.ready(EventPublishingRunListener.java:109)
+	at org.springframework.boot.SpringApplicationRunListeners.lambda$ready$6(SpringApplicationRunListeners.java:80)
+	at java.base/java.lang.Iterable.forEach(Iterable.java:75)
+	at org.springframework.boot.SpringApplicationRunListeners.doWithListeners(SpringApplicationRunListeners.java:118)
+	at org.springframework.boot.SpringApplicationRunListeners.doWithListeners(SpringApplicationRunListeners.java:112)
+	at org.springframework.boot.SpringApplicationRunListeners.ready(SpringApplicationRunListeners.java:80)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:341)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1342)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1331)
+	at com.MaSoVa.intelligence.IntelligenceServiceApplication.main(IntelligenceServiceApplication.java:16)
+2026-04-05 15:44:38.272 [http-nio-8087-exec-1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] [correlationId=N/A] [storeId=N/A] [userId=N/A] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-05 15:44:38.273 [http-nio-8087-exec-1] INFO  o.s.web.servlet.DispatcherServlet [correlationId=N/A] [storeId=N/A] [userId=N/A] - Initializing Servlet 'dispatcherServlet'
+2026-04-05 15:44:38.276 [http-nio-8087-exec-1] INFO  o.s.web.servlet.DispatcherServlet [correlationId=N/A] [storeId=N/A] [userId=N/A] - Completed initialization in 3 ms
+2026-04-05 15:44:38.304 [http-nio-8087-exec-1] WARN  o.s.w.s.h.HandlerMappingIntrospector [correlationId=N/A] [storeId=N/A] [userId=N/A] - Cache miss for REQUEST dispatch to '/actuator/health' (previous null). Performing MatchableHandlerMapping lookup. This is logged once only at WARN level, and every time at TRACE.
+2026-04-05 15:44:38.316 [http-nio-8087-exec-1] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Generated new correlation ID: b25ef9b0a1aa48e987bf825895ac9465
+2026-04-05 15:44:38.317 [http-nio-8087-exec-1] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=b25ef9b0a1aa48e987bf825895ac9465] [storeId=N/A] [userId=N/A] - Processing request: GET /actuator/health [correlationId=b25ef9b0a1aa48e987bf825895ac9465, storeId=N/A, userId=N/A]
+2026-04-05 15:45:01.457 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] WARN  o.s.a.s.c.Jackson2JsonMessageConverter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Could not convert incoming message with content-type [application/x-java-serialized-object], 'json' keyword missing.
+2026-04-05 15:45:01.462 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] WARN  o.s.a.r.l.ConditionalRejectingErrorHandler [correlationId=N/A] [storeId=N/A] [userId=N/A] - Execution of Rabbit message listener failed.
+org.springframework.amqp.rabbit.support.ListenerExecutionFailedException: Listener method could not be invoked with the incoming message
+Endpoint handler details:
+Method [public void com.MaSoVa.intelligence.messaging.AnalyticsEventListener.onPaymentCompleted(com.MaSoVa.shared.messaging.events.PaymentCompletedEvent)]
+Bean [com.MaSoVa.intelligence.messaging.AnalyticsEventListener@57b9c764]
+	at org.springframework.amqp.rabbit.listener.adapter.MessagingMessageListenerAdapter.invokeHandler(MessagingMessageListenerAdapter.java:281)
+	at org.springframework.amqp.rabbit.listener.adapter.MessagingMessageListenerAdapter.invokeHandlerAndProcessResult(MessagingMessageListenerAdapter.java:224)
+	at org.springframework.amqp.rabbit.listener.adapter.MessagingMessageListenerAdapter.onMessage(MessagingMessageListenerAdapter.java:149)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.doInvokeListener(AbstractMessageListenerContainer.java:1662)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.actualInvokeListener(AbstractMessageListenerContainer.java:1581)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.invokeListener(AbstractMessageListenerContainer.java:1569)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.doExecuteListener(AbstractMessageListenerContainer.java:1560)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.executeListenerAndHandleException(AbstractMessageListenerContainer.java:1505)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.lambda$executeListener$8(AbstractMessageListenerContainer.java:1483)
+	at io.micrometer.observation.Observation.observe(Observation.java:499)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.executeListener(AbstractMessageListenerContainer.java:1483)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer.doReceiveAndExecute(SimpleMessageListenerContainer.java:994)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer.receiveAndExecute(SimpleMessageListenerContainer.java:941)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.mainLoop(SimpleMessageListenerContainer.java:1325)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1227)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: org.springframework.messaging.converter.MessageConversionException: Cannot convert from [[B] to [com.MaSoVa.shared.messaging.events.PaymentCompletedEvent] for GenericMessage [payload=byte[854], headers={amqp_receivedDeliveryMode=PERSISTENT, amqp_receivedRoutingKey=payment.completed, amqp_receivedExchange=masova.payments.events, amqp_deliveryTag=1, amqp_consumerQueue=masova.analytics.payment-events, amqp_redelivered=false, id=7520aa87-a714-e34c-3529-16a3e356da04, amqp_consumerTag=amq.ctag-DlNK63o756mChQd1oLln3g, amqp_lastInBatch=false, contentType=application/x-java-serialized-object, timestamp=1775384101459}]
+	at org.springframework.messaging.handler.annotation.support.PayloadMethodArgumentResolver.resolveArgument(PayloadMethodArgumentResolver.java:151)
+	at org.springframework.amqp.rabbit.listener.adapter.AmqpMessageHandlerMethodFactory$OptionalEmptyAwarePayloadArgumentResolver.resolveArgument(AmqpMessageHandlerMethodFactory.java:99)
+	at org.springframework.messaging.handler.invocation.HandlerMethodArgumentResolverComposite.resolveArgument(HandlerMethodArgumentResolverComposite.java:118)
+	at org.springframework.messaging.handler.invocation.InvocableHandlerMethod.getMethodArgumentValues(InvocableHandlerMethod.java:147)
+	at org.springframework.messaging.handler.invocation.InvocableHandlerMethod.invoke(InvocableHandlerMethod.java:115)
+	at org.springframework.amqp.rabbit.listener.adapter.HandlerAdapter.invoke(HandlerAdapter.java:75)
+	at org.springframework.amqp.rabbit.listener.adapter.MessagingMessageListenerAdapter.invokeHandler(MessagingMessageListenerAdapter.java:277)
+	... 15 common frames omitted
+2026-04-05 15:45:01.503 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] WARN  o.s.a.r.l.ConditionalRejectingErrorHandler$DefaultExceptionStrategy [correlationId=N/A] [storeId=N/A] [userId=N/A] - Fatal message conversion error; message rejected; it will be dropped or routed to a dead letter exchange, if so configured: (Body:'[serialized object]' MessageProperties [headers={}, contentType=application/x-java-serialized-object, contentLength=0, receivedDeliveryMode=PERSISTENT, priority=0, redelivered=false, receivedExchange=masova.payments.events, receivedRoutingKey=payment.completed, deliveryTag=1, consumerTag=amq.ctag-DlNK63o756mChQd1oLln3g, consumerQueue=masova.analytics.payment-events])
+2026-04-05 15:45:01.503 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] ERROR o.s.a.r.l.SimpleMessageListenerContainer [correlationId=N/A] [storeId=N/A] [userId=N/A] - Execution of Rabbit message listener failed, and the error handler threw an exception
+org.springframework.amqp.AmqpRejectAndDontRequeueException: Error Handler converted exception to fatal
+	at org.springframework.amqp.rabbit.listener.ConditionalRejectingErrorHandler.handleError(ConditionalRejectingErrorHandler.java:147)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.invokeErrorHandler(AbstractMessageListenerContainer.java:1452)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.handleListenerException(AbstractMessageListenerContainer.java:1750)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.executeListenerAndHandleException(AbstractMessageListenerContainer.java:1526)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.lambda$executeListener$8(AbstractMessageListenerContainer.java:1483)
+	at io.micrometer.observation.Observation.observe(Observation.java:499)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.executeListener(AbstractMessageListenerContainer.java:1483)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer.doReceiveAndExecute(SimpleMessageListenerContainer.java:994)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer.receiveAndExecute(SimpleMessageListenerContainer.java:941)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.mainLoop(SimpleMessageListenerContainer.java:1325)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1227)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: org.springframework.amqp.rabbit.support.ListenerExecutionFailedException: Listener method could not be invoked with the incoming message
+Endpoint handler details:
+Method [public void com.MaSoVa.intelligence.messaging.AnalyticsEventListener.onPaymentCompleted(com.MaSoVa.shared.messaging.events.PaymentCompletedEvent)]
+Bean [com.MaSoVa.intelligence.messaging.AnalyticsEventListener@57b9c764]
+	at org.springframework.amqp.rabbit.listener.adapter.MessagingMessageListenerAdapter.invokeHandler(MessagingMessageListenerAdapter.java:281)
+	at org.springframework.amqp.rabbit.listener.adapter.MessagingMessageListenerAdapter.invokeHandlerAndProcessResult(MessagingMessageListenerAdapter.java:224)
+	at org.springframework.amqp.rabbit.listener.adapter.MessagingMessageListenerAdapter.onMessage(MessagingMessageListenerAdapter.java:149)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.doInvokeListener(AbstractMessageListenerContainer.java:1662)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.actualInvokeListener(AbstractMessageListenerContainer.java:1581)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.invokeListener(AbstractMessageListenerContainer.java:1569)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.doExecuteListener(AbstractMessageListenerContainer.java:1560)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.executeListenerAndHandleException(AbstractMessageListenerContainer.java:1505)
+	... 8 common frames omitted
+Caused by: org.springframework.messaging.converter.MessageConversionException: Cannot convert from [[B] to [com.MaSoVa.shared.messaging.events.PaymentCompletedEvent] for GenericMessage [payload=byte[854], headers={amqp_receivedDeliveryMode=PERSISTENT, amqp_receivedRoutingKey=payment.completed, amqp_receivedExchange=masova.payments.events, amqp_deliveryTag=1, amqp_consumerQueue=masova.analytics.payment-events, amqp_redelivered=false, id=7520aa87-a714-e34c-3529-16a3e356da04, amqp_consumerTag=amq.ctag-DlNK63o756mChQd1oLln3g, amqp_lastInBatch=false, contentType=application/x-java-serialized-object, timestamp=1775384101459}]
+	at org.springframework.messaging.handler.annotation.support.PayloadMethodArgumentResolver.resolveArgument(PayloadMethodArgumentResolver.java:151)
+	at org.springframework.amqp.rabbit.listener.adapter.AmqpMessageHandlerMethodFactory$OptionalEmptyAwarePayloadArgumentResolver.resolveArgument(AmqpMessageHandlerMethodFactory.java:99)
+	at org.springframework.messaging.handler.invocation.HandlerMethodArgumentResolverComposite.resolveArgument(HandlerMethodArgumentResolverComposite.java:118)
+	at org.springframework.messaging.handler.invocation.InvocableHandlerMethod.getMethodArgumentValues(InvocableHandlerMethod.java:147)
+	at org.springframework.messaging.handler.invocation.InvocableHandlerMethod.invoke(InvocableHandlerMethod.java:115)
+	at org.springframework.amqp.rabbit.listener.adapter.HandlerAdapter.invoke(HandlerAdapter.java:75)
+	at org.springframework.amqp.rabbit.listener.adapter.MessagingMessageListenerAdapter.invokeHandler(MessagingMessageListenerAdapter.java:277)
+	... 15 common frames omitted
+2026-04-05 15:45:05.717 [http-nio-8087-exec-3] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Generated new correlation ID: 4fb5c901ac8649da9017c879c3c6b5f9
+2026-04-05 15:45:05.717 [http-nio-8087-exec-3] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=4fb5c901ac8649da9017c879c3c6b5f9] [storeId=N/A] [userId=N/A] - Processing request: GET /api/analytics/health [correlationId=4fb5c901ac8649da9017c879c3c6b5f9, storeId=N/A, userId=N/A]
+2026-04-05 15:45:05.743 [http-nio-8087-exec-4] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Generated new correlation ID: f418774272224d6b9ade947acb5b6292
+2026-04-05 15:45:05.744 [http-nio-8087-exec-4] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=f418774272224d6b9ade947acb5b6292] [storeId=N/A] [userId=N/A] - Processing request: GET /api/bi/health [correlationId=f418774272224d6b9ade947acb5b6292, storeId=N/A, userId=N/A]
+2026-04-05 15:45:05.764 [http-nio-8087-exec-5] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Generated new correlation ID: dc833a250d1a42bf86294db4f65c76a2
+2026-04-05 15:45:05.764 [http-nio-8087-exec-5] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=dc833a250d1a42bf86294db4f65c76a2] [storeId=N/A] [userId=N/A] - Processing request: GET /api/analytics/sales/today [correlationId=dc833a250d1a42bf86294db4f65c76a2, storeId=N/A, userId=N/A]
+2026-04-05 15:45:05.810 [http-nio-8087-exec-5] DEBUG c.M.shared.util.StoreContextUtil [correlationId=dc833a250d1a42bf86294db4f65c76a2] [storeId=N/A] [userId=N/A] - Extracting storeId for userId=null, userType=null, selectedStoreId=DOM001, userStoreId=DOM001
+2026-04-05 15:45:05.811 [http-nio-8087-exec-5] DEBUG c.M.shared.util.StoreContextUtil [correlationId=dc833a250d1a42bf86294db4f65c76a2] [storeId=N/A] [userId=N/A] - Resolved storeId=DOM001 for userId=null, userType=null
+2026-04-05 15:45:05.811 [http-nio-8087-exec-5] INFO  c.M.i.controller.AnalyticsController [correlationId=dc833a250d1a42bf86294db4f65c76a2] [storeId=N/A] [userId=N/A] - GET /api/analytics/sales/today for store: DOM001
+2026-04-05 15:45:05.828 [http-nio-8087-exec-5] INFO  c.M.i.service.AnalyticsService [correlationId=dc833a250d1a42bf86294db4f65c76a2] [storeId=N/A] [userId=N/A] - Calculating sales metrics for store: DOM001
+2026-04-05 15:45:05.846 [http-nio-8087-exec-5] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=dc833a250d1a42bf86294db4f65c76a2] [storeId=N/A] [userId=N/A] - Forwarding JWT token to: http://localhost:8084/api/orders/date/2026-04-05
+2026-04-05 15:45:05.846 [http-nio-8087-exec-5] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=dc833a250d1a42bf86294db4f65c76a2] [storeId=N/A] [userId=N/A] - Forwarding X-Selected-Store-Id: DOM001 to: http://localhost:8084/api/orders/date/2026-04-05
+2026-04-05 15:45:05.847 [http-nio-8087-exec-5] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=dc833a250d1a42bf86294db4f65c76a2] [storeId=N/A] [userId=N/A] - Forwarding X-User-Store-Id: DOM001 to: http://localhost:8084/api/orders/date/2026-04-05
+2026-04-05 15:45:05.985 [http-nio-8087-exec-5] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=dc833a250d1a42bf86294db4f65c76a2] [storeId=N/A] [userId=N/A] - Forwarding JWT token to: http://localhost:8084/api/orders/range?start=2026-04-04T00:00&end=2026-04-04T15:45:05.828879300
+2026-04-05 15:45:05.985 [http-nio-8087-exec-5] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=dc833a250d1a42bf86294db4f65c76a2] [storeId=N/A] [userId=N/A] - Forwarding X-Selected-Store-Id: DOM001 to: http://localhost:8084/api/orders/range?start=2026-04-04T00:00&end=2026-04-04T15:45:05.828879300
+2026-04-05 15:45:05.985 [http-nio-8087-exec-5] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=dc833a250d1a42bf86294db4f65c76a2] [storeId=N/A] [userId=N/A] - Forwarding X-User-Store-Id: DOM001 to: http://localhost:8084/api/orders/range?start=2026-04-04T00:00&end=2026-04-04T15:45:05.828879300
+2026-04-05 15:45:05.998 [http-nio-8087-exec-5] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=dc833a250d1a42bf86294db4f65c76a2] [storeId=N/A] [userId=N/A] - Forwarding JWT token to: http://localhost:8084/api/orders/date/2025-04-05
+2026-04-05 15:45:05.998 [http-nio-8087-exec-5] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=dc833a250d1a42bf86294db4f65c76a2] [storeId=N/A] [userId=N/A] - Forwarding X-Selected-Store-Id: DOM001 to: http://localhost:8084/api/orders/date/2025-04-05
+2026-04-05 15:45:05.998 [http-nio-8087-exec-5] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=dc833a250d1a42bf86294db4f65c76a2] [storeId=N/A] [userId=N/A] - Forwarding X-User-Store-Id: DOM001 to: http://localhost:8084/api/orders/date/2025-04-05
+2026-04-05 15:45:06.120 [http-nio-8087-exec-6] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Generated new correlation ID: 1d714080ad864b4cb92ff8e9f6b84d53
+2026-04-05 15:45:06.120 [http-nio-8087-exec-6] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=1d714080ad864b4cb92ff8e9f6b84d53] [storeId=N/A] [userId=N/A] - Processing request: GET /api/analytics/avgOrderValue/today [correlationId=1d714080ad864b4cb92ff8e9f6b84d53, storeId=N/A, userId=N/A]
+2026-04-05 15:45:06.122 [http-nio-8087-exec-6] DEBUG c.M.shared.util.StoreContextUtil [correlationId=1d714080ad864b4cb92ff8e9f6b84d53] [storeId=N/A] [userId=N/A] - Extracting storeId for userId=null, userType=null, selectedStoreId=DOM001, userStoreId=DOM001
+2026-04-05 15:45:06.122 [http-nio-8087-exec-6] DEBUG c.M.shared.util.StoreContextUtil [correlationId=1d714080ad864b4cb92ff8e9f6b84d53] [storeId=N/A] [userId=N/A] - Resolved storeId=DOM001 for userId=null, userType=null
+2026-04-05 15:45:06.122 [http-nio-8087-exec-6] INFO  c.M.i.controller.AnalyticsController [correlationId=1d714080ad864b4cb92ff8e9f6b84d53] [storeId=N/A] [userId=N/A] - GET /api/analytics/avgOrderValue/today for store: DOM001
+2026-04-05 15:45:06.127 [http-nio-8087-exec-6] INFO  c.M.i.service.AnalyticsService [correlationId=1d714080ad864b4cb92ff8e9f6b84d53] [storeId=N/A] [userId=N/A] - Calculating average order value for store: DOM001
+2026-04-05 15:45:06.128 [http-nio-8087-exec-6] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=1d714080ad864b4cb92ff8e9f6b84d53] [storeId=N/A] [userId=N/A] - Forwarding JWT token to: http://localhost:8084/api/orders/date/2026-04-05
+2026-04-05 15:45:06.129 [http-nio-8087-exec-6] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=1d714080ad864b4cb92ff8e9f6b84d53] [storeId=N/A] [userId=N/A] - Forwarding X-Selected-Store-Id: DOM001 to: http://localhost:8084/api/orders/date/2026-04-05
+2026-04-05 15:45:06.129 [http-nio-8087-exec-6] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=1d714080ad864b4cb92ff8e9f6b84d53] [storeId=N/A] [userId=N/A] - Forwarding X-User-Store-Id: DOM001 to: http://localhost:8084/api/orders/date/2026-04-05
+2026-04-05 15:45:06.144 [http-nio-8087-exec-6] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=1d714080ad864b4cb92ff8e9f6b84d53] [storeId=N/A] [userId=N/A] - Forwarding JWT token to: http://localhost:8084/api/orders/date/2026-04-04
+2026-04-05 15:45:06.144 [http-nio-8087-exec-6] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=1d714080ad864b4cb92ff8e9f6b84d53] [storeId=N/A] [userId=N/A] - Forwarding X-Selected-Store-Id: DOM001 to: http://localhost:8084/api/orders/date/2026-04-04
+2026-04-05 15:45:06.144 [http-nio-8087-exec-6] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=1d714080ad864b4cb92ff8e9f6b84d53] [storeId=N/A] [userId=N/A] - Forwarding X-User-Store-Id: DOM001 to: http://localhost:8084/api/orders/date/2026-04-04
+2026-04-05 15:45:06.200 [http-nio-8087-exec-7] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Generated new correlation ID: 155f13a022fe40efa5adc1e93ceaae3a
+2026-04-05 15:45:06.200 [http-nio-8087-exec-7] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=155f13a022fe40efa5adc1e93ceaae3a] [storeId=N/A] [userId=N/A] - Processing request: GET /api/analytics/drivers/status [correlationId=155f13a022fe40efa5adc1e93ceaae3a, storeId=N/A, userId=N/A]
+2026-04-05 15:45:06.202 [http-nio-8087-exec-7] DEBUG c.M.shared.util.StoreContextUtil [correlationId=155f13a022fe40efa5adc1e93ceaae3a] [storeId=N/A] [userId=N/A] - Extracting storeId for userId=null, userType=null, selectedStoreId=DOM001, userStoreId=DOM001
+2026-04-05 15:45:06.202 [http-nio-8087-exec-7] DEBUG c.M.shared.util.StoreContextUtil [correlationId=155f13a022fe40efa5adc1e93ceaae3a] [storeId=N/A] [userId=N/A] - Resolved storeId=DOM001 for userId=null, userType=null
+2026-04-05 15:45:06.202 [http-nio-8087-exec-7] INFO  c.M.i.controller.AnalyticsController [correlationId=155f13a022fe40efa5adc1e93ceaae3a] [storeId=N/A] [userId=N/A] - GET /api/analytics/drivers/status for store: DOM001
+2026-04-05 15:45:06.206 [http-nio-8087-exec-7] INFO  c.M.i.service.AnalyticsService [correlationId=155f13a022fe40efa5adc1e93ceaae3a] [storeId=N/A] [userId=N/A] - Fetching driver status for store: DOM001
+2026-04-05 15:45:06.207 [http-nio-8087-exec-7] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=155f13a022fe40efa5adc1e93ceaae3a] [storeId=N/A] [userId=N/A] - Forwarding JWT token to: http://localhost:8085/api/users/drivers/store
+2026-04-05 15:45:06.207 [http-nio-8087-exec-7] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=155f13a022fe40efa5adc1e93ceaae3a] [storeId=N/A] [userId=N/A] - Forwarding X-Selected-Store-Id: DOM001 to: http://localhost:8085/api/users/drivers/store
+2026-04-05 15:45:06.207 [http-nio-8087-exec-7] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=155f13a022fe40efa5adc1e93ceaae3a] [storeId=N/A] [userId=N/A] - Forwarding X-User-Store-Id: DOM001 to: http://localhost:8085/api/users/drivers/store
+2026-04-05 15:45:06.221 [http-nio-8087-exec-7] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=155f13a022fe40efa5adc1e93ceaae3a] [storeId=N/A] [userId=N/A] - Forwarding JWT token to: http://localhost:8084/api/orders/active-deliveries/count
+2026-04-05 15:45:06.221 [http-nio-8087-exec-7] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=155f13a022fe40efa5adc1e93ceaae3a] [storeId=N/A] [userId=N/A] - Forwarding X-Selected-Store-Id: DOM001 to: http://localhost:8084/api/orders/active-deliveries/count
+2026-04-05 15:45:06.221 [http-nio-8087-exec-7] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=155f13a022fe40efa5adc1e93ceaae3a] [storeId=N/A] [userId=N/A] - Forwarding X-User-Store-Id: DOM001 to: http://localhost:8084/api/orders/active-deliveries/count
+2026-04-05 15:45:06.234 [http-nio-8087-exec-7] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=155f13a022fe40efa5adc1e93ceaae3a] [storeId=N/A] [userId=N/A] - Forwarding JWT token to: http://localhost:8084/api/orders/date/2026-04-05
+2026-04-05 15:45:06.234 [http-nio-8087-exec-7] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=155f13a022fe40efa5adc1e93ceaae3a] [storeId=N/A] [userId=N/A] - Forwarding X-Selected-Store-Id: DOM001 to: http://localhost:8084/api/orders/date/2026-04-05
+2026-04-05 15:45:06.234 [http-nio-8087-exec-7] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=155f13a022fe40efa5adc1e93ceaae3a] [storeId=N/A] [userId=N/A] - Forwarding X-User-Store-Id: DOM001 to: http://localhost:8084/api/orders/date/2026-04-05
+2026-04-05 15:45:06.305 [http-nio-8087-exec-8] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Generated new correlation ID: e914483e2ed84ad6840c63f807b3e8a2
+2026-04-05 15:45:06.306 [http-nio-8087-exec-8] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=e914483e2ed84ad6840c63f807b3e8a2] [storeId=N/A] [userId=N/A] - Processing request: GET /api/analytics/sales/trends/WEEKLY [correlationId=e914483e2ed84ad6840c63f807b3e8a2, storeId=N/A, userId=N/A]
+2026-04-05 15:45:06.312 [http-nio-8087-exec-8] DEBUG c.M.shared.util.StoreContextUtil [correlationId=e914483e2ed84ad6840c63f807b3e8a2] [storeId=N/A] [userId=N/A] - Extracting storeId for userId=null, userType=null, selectedStoreId=DOM001, userStoreId=DOM001
+2026-04-05 15:45:06.312 [http-nio-8087-exec-8] DEBUG c.M.shared.util.StoreContextUtil [correlationId=e914483e2ed84ad6840c63f807b3e8a2] [storeId=N/A] [userId=N/A] - Resolved storeId=DOM001 for userId=null, userType=null
+2026-04-05 15:45:06.312 [http-nio-8087-exec-8] INFO  c.M.i.controller.AnalyticsController [correlationId=e914483e2ed84ad6840c63f807b3e8a2] [storeId=N/A] [userId=N/A] - GET /api/analytics/sales/trends/WEEKLY for store DOM001
+2026-04-05 15:45:06.317 [http-nio-8087-exec-8] INFO  c.M.i.service.AnalyticsService [correlationId=e914483e2ed84ad6840c63f807b3e8a2] [storeId=N/A] [userId=N/A] - Calculating sales trends for store: DOM001, period: WEEKLY
+2026-04-05 15:45:06.317 [http-nio-8087-exec-8] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=e914483e2ed84ad6840c63f807b3e8a2] [storeId=N/A] [userId=N/A] - Forwarding JWT token to: http://localhost:8084/api/orders/range?start=2026-03-30T00:00&end=2026-04-05T23:59:59.999999999
+2026-04-05 15:45:06.318 [http-nio-8087-exec-8] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=e914483e2ed84ad6840c63f807b3e8a2] [storeId=N/A] [userId=N/A] - Forwarding X-Selected-Store-Id: DOM001 to: http://localhost:8084/api/orders/range?start=2026-03-30T00:00&end=2026-04-05T23:59:59.999999999
+2026-04-05 15:45:06.318 [http-nio-8087-exec-8] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=e914483e2ed84ad6840c63f807b3e8a2] [storeId=N/A] [userId=N/A] - Forwarding X-User-Store-Id: DOM001 to: http://localhost:8084/api/orders/range?start=2026-03-30T00:00&end=2026-04-05T23:59:59.999999999
+2026-04-05 15:45:06.367 [http-nio-8087-exec-8] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=e914483e2ed84ad6840c63f807b3e8a2] [storeId=N/A] [userId=N/A] - Forwarding JWT token to: http://localhost:8084/api/orders/range?start=2026-03-23T00:00&end=2026-03-29T23:59:59.999999999
+2026-04-05 15:45:06.368 [http-nio-8087-exec-8] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=e914483e2ed84ad6840c63f807b3e8a2] [storeId=N/A] [userId=N/A] - Forwarding X-Selected-Store-Id: DOM001 to: http://localhost:8084/api/orders/range?start=2026-03-23T00:00&end=2026-03-29T23:59:59.999999999
+2026-04-05 15:45:06.368 [http-nio-8087-exec-8] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=e914483e2ed84ad6840c63f807b3e8a2] [storeId=N/A] [userId=N/A] - Forwarding X-User-Store-Id: DOM001 to: http://localhost:8084/api/orders/range?start=2026-03-23T00:00&end=2026-03-29T23:59:59.999999999
+2026-04-05 15:45:06.424 [http-nio-8087-exec-9] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Generated new correlation ID: 400c1605a36e4fb1bf4b2834b22f568b
+2026-04-05 15:45:06.424 [http-nio-8087-exec-9] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=400c1605a36e4fb1bf4b2834b22f568b] [storeId=N/A] [userId=N/A] - Processing request: GET /api/analytics/sales/breakdown/order-type [correlationId=400c1605a36e4fb1bf4b2834b22f568b, storeId=N/A, userId=N/A]
+2026-04-05 15:45:06.426 [http-nio-8087-exec-9] DEBUG c.M.shared.util.StoreContextUtil [correlationId=400c1605a36e4fb1bf4b2834b22f568b] [storeId=N/A] [userId=N/A] - Extracting storeId for userId=null, userType=null, selectedStoreId=DOM001, userStoreId=DOM001
+2026-04-05 15:45:06.426 [http-nio-8087-exec-9] DEBUG c.M.shared.util.StoreContextUtil [correlationId=400c1605a36e4fb1bf4b2834b22f568b] [storeId=N/A] [userId=N/A] - Resolved storeId=DOM001 for userId=null, userType=null
+2026-04-05 15:45:06.426 [http-nio-8087-exec-9] INFO  c.M.i.controller.AnalyticsController [correlationId=400c1605a36e4fb1bf4b2834b22f568b] [storeId=N/A] [userId=N/A] - GET /api/analytics/sales/breakdown/order-type for store DOM001
+2026-04-05 15:45:06.432 [http-nio-8087-exec-9] INFO  c.M.i.service.AnalyticsService [correlationId=400c1605a36e4fb1bf4b2834b22f568b] [storeId=N/A] [userId=N/A] - Calculating order type breakdown for store: DOM001
+2026-04-05 15:45:06.433 [http-nio-8087-exec-9] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=400c1605a36e4fb1bf4b2834b22f568b] [storeId=N/A] [userId=N/A] - Forwarding JWT token to: http://localhost:8084/api/orders/date/2026-04-05
+2026-04-05 15:45:06.434 [http-nio-8087-exec-9] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=400c1605a36e4fb1bf4b2834b22f568b] [storeId=N/A] [userId=N/A] - Forwarding X-Selected-Store-Id: DOM001 to: http://localhost:8084/api/orders/date/2026-04-05
+2026-04-05 15:45:06.434 [http-nio-8087-exec-9] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=400c1605a36e4fb1bf4b2834b22f568b] [storeId=N/A] [userId=N/A] - Forwarding X-User-Store-Id: DOM001 to: http://localhost:8084/api/orders/date/2026-04-05
+2026-04-05 15:45:06.485 [http-nio-8087-exec-10] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Generated new correlation ID: a15e2a2368364c89822d37f22198a06c
+2026-04-05 15:45:06.485 [http-nio-8087-exec-10] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=a15e2a2368364c89822d37f22198a06c] [storeId=N/A] [userId=N/A] - Processing request: GET /api/analytics/sales/peak-hours [correlationId=a15e2a2368364c89822d37f22198a06c, storeId=N/A, userId=N/A]
+2026-04-05 15:45:06.488 [http-nio-8087-exec-10] DEBUG c.M.shared.util.StoreContextUtil [correlationId=a15e2a2368364c89822d37f22198a06c] [storeId=N/A] [userId=N/A] - Extracting storeId for userId=null, userType=null, selectedStoreId=DOM001, userStoreId=DOM001
+2026-04-05 15:45:06.488 [http-nio-8087-exec-10] DEBUG c.M.shared.util.StoreContextUtil [correlationId=a15e2a2368364c89822d37f22198a06c] [storeId=N/A] [userId=N/A] - Resolved storeId=DOM001 for userId=null, userType=null
+2026-04-05 15:45:06.488 [http-nio-8087-exec-10] INFO  c.M.i.controller.AnalyticsController [correlationId=a15e2a2368364c89822d37f22198a06c] [storeId=N/A] [userId=N/A] - GET /api/analytics/sales/peak-hours for store DOM001
+2026-04-05 15:45:06.493 [http-nio-8087-exec-10] INFO  c.M.i.service.AnalyticsService [correlationId=a15e2a2368364c89822d37f22198a06c] [storeId=N/A] [userId=N/A] - Calculating peak hours for store: DOM001
+2026-04-05 15:45:06.494 [http-nio-8087-exec-10] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=a15e2a2368364c89822d37f22198a06c] [storeId=N/A] [userId=N/A] - Forwarding JWT token to: http://localhost:8084/api/orders/date/2026-04-05
+2026-04-05 15:45:06.494 [http-nio-8087-exec-10] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=a15e2a2368364c89822d37f22198a06c] [storeId=N/A] [userId=N/A] - Forwarding X-Selected-Store-Id: DOM001 to: http://localhost:8084/api/orders/date/2026-04-05
+2026-04-05 15:45:06.494 [http-nio-8087-exec-10] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=a15e2a2368364c89822d37f22198a06c] [storeId=N/A] [userId=N/A] - Forwarding X-User-Store-Id: DOM001 to: http://localhost:8084/api/orders/date/2026-04-05
+2026-04-05 15:45:06.615 [http-nio-8087-exec-1] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Generated new correlation ID: 14cde76a818c4d60a7db009eb2c3cb14
+2026-04-05 15:45:06.615 [http-nio-8087-exec-1] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Processing request: GET /api/analytics/staff/leaderboard [correlationId=14cde76a818c4d60a7db009eb2c3cb14, storeId=N/A, userId=N/A]
+2026-04-05 15:45:06.617 [http-nio-8087-exec-1] DEBUG c.M.shared.util.StoreContextUtil [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Extracting storeId for userId=null, userType=null, selectedStoreId=DOM001, userStoreId=DOM001
+2026-04-05 15:45:06.617 [http-nio-8087-exec-1] DEBUG c.M.shared.util.StoreContextUtil [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Resolved storeId=DOM001 for userId=null, userType=null
+2026-04-05 15:45:06.617 [http-nio-8087-exec-1] INFO  c.M.i.controller.AnalyticsController [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - GET /api/analytics/staff/leaderboard for store DOM001, period TODAY
+2026-04-05 15:45:06.684 [http-nio-8087-exec-1] INFO  c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Fetching staff leaderboard for store: DOM001, period: TODAY
+2026-04-05 15:45:06.687 [http-nio-8087-exec-1] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Forwarding JWT token to: http://localhost:8085/api/users/store
+2026-04-05 15:45:06.688 [http-nio-8087-exec-1] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Forwarding X-Selected-Store-Id: DOM001 to: http://localhost:8085/api/users/store
+2026-04-05 15:45:06.693 [http-nio-8087-exec-1] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Forwarding X-User-Store-Id: DOM001 to: http://localhost:8085/api/users/store
+2026-04-05 15:45:06.871 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Found 33 staff members for store DOM001
+2026-04-05 15:45:06.877 [http-nio-8087-exec-1] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Forwarding JWT token to: http://localhost:8084/api/orders/range?start=2026-04-05T00:00&end=2026-04-05T23:59:59.999999999
+2026-04-05 15:45:06.877 [http-nio-8087-exec-1] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Forwarding X-Selected-Store-Id: DOM001 to: http://localhost:8084/api/orders/range?start=2026-04-05T00:00&end=2026-04-05T23:59:59.999999999
+2026-04-05 15:45:06.877 [http-nio-8087-exec-1] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Forwarding X-User-Store-Id: DOM001 to: http://localhost:8084/api/orders/range?start=2026-04-05T00:00&end=2026-04-05T23:59:59.999999999
+2026-04-05 15:45:06.907 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Fetched 0 total orders for date range 2026-04-05 to 2026-04-05
+2026-04-05 15:45:06.908 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Orders with createdByStaffId populated: 0
+2026-04-05 15:45:06.908 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Completed orders (counted in analytics): 0
+2026-04-05 15:45:06.908 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Kiosk terminal-1772282198274 - Store DOM001: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.918 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.919 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.919 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.919 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.920 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.920 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.921 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.922 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.922 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.922 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.923 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.923 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.923 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.923 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.924 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.925 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.925 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.925 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.925 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.925 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.926 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.926 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.926 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.926 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.926 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.926 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.927 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.927 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.927 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.927 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.928 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:06.929 [http-nio-8087-exec-1] DEBUG c.M.i.service.AnalyticsService [correlationId=14cde76a818c4d60a7db009eb2c3cb14] [storeId=N/A] [userId=N/A] - Staff Test Staff: 0 total orders, 0 completed orders, Γé╣0 sales
+2026-04-05 15:45:07.058 [http-nio-8087-exec-2] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Generated new correlation ID: 5c05fe5f58554954b3513236bb16199c
+2026-04-05 15:45:07.058 [http-nio-8087-exec-2] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=5c05fe5f58554954b3513236bb16199c] [storeId=N/A] [userId=N/A] - Processing request: GET /api/analytics/products/top-selling [correlationId=5c05fe5f58554954b3513236bb16199c, storeId=N/A, userId=N/A]
+2026-04-05 15:45:07.060 [http-nio-8087-exec-2] DEBUG c.M.shared.util.StoreContextUtil [correlationId=5c05fe5f58554954b3513236bb16199c] [storeId=N/A] [userId=N/A] - Extracting storeId for userId=null, userType=null, selectedStoreId=DOM001, userStoreId=DOM001
+2026-04-05 15:45:07.060 [http-nio-8087-exec-2] DEBUG c.M.shared.util.StoreContextUtil [correlationId=5c05fe5f58554954b3513236bb16199c] [storeId=N/A] [userId=N/A] - Resolved storeId=DOM001 for userId=null, userType=null
+2026-04-05 15:45:07.060 [http-nio-8087-exec-2] INFO  c.M.i.controller.AnalyticsController [correlationId=5c05fe5f58554954b3513236bb16199c] [storeId=N/A] [userId=N/A] - GET /api/analytics/products/top-selling for store DOM001, period TODAY, sortBy QUANTITY
+2026-04-05 15:45:07.067 [http-nio-8087-exec-2] INFO  c.M.i.service.AnalyticsService [correlationId=5c05fe5f58554954b3513236bb16199c] [storeId=N/A] [userId=N/A] - Fetching top products for store: DOM001, period: TODAY, sortBy: QUANTITY
+2026-04-05 15:45:07.069 [http-nio-8087-exec-2] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=5c05fe5f58554954b3513236bb16199c] [storeId=N/A] [userId=N/A] - Forwarding JWT token to: http://localhost:8084/api/orders/range?start=2026-04-05T00:00&end=2026-04-05T23:59:59.999999999
+2026-04-05 15:45:07.070 [http-nio-8087-exec-2] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=5c05fe5f58554954b3513236bb16199c] [storeId=N/A] [userId=N/A] - Forwarding X-Selected-Store-Id: DOM001 to: http://localhost:8084/api/orders/range?start=2026-04-05T00:00&end=2026-04-05T23:59:59.999999999
+2026-04-05 15:45:07.071 [http-nio-8087-exec-2] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=5c05fe5f58554954b3513236bb16199c] [storeId=N/A] [userId=N/A] - Forwarding X-User-Store-Id: DOM001 to: http://localhost:8084/api/orders/range?start=2026-04-05T00:00&end=2026-04-05T23:59:59.999999999
+2026-04-05 15:45:07.174 [http-nio-8087-exec-3] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Generated new correlation ID: ea52c975d4da4ce9acf544e5f80d8329
+2026-04-05 15:45:07.175 [http-nio-8087-exec-3] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=ea52c975d4da4ce9acf544e5f80d8329] [storeId=N/A] [userId=N/A] - Processing request: GET /api/analytics/sales/trends/MONTHLY [correlationId=ea52c975d4da4ce9acf544e5f80d8329, storeId=N/A, userId=N/A]
+2026-04-05 15:45:07.175 [http-nio-8087-exec-3] DEBUG c.M.shared.util.StoreContextUtil [correlationId=ea52c975d4da4ce9acf544e5f80d8329] [storeId=N/A] [userId=N/A] - Extracting storeId for userId=null, userType=null, selectedStoreId=DOM001, userStoreId=DOM001
+2026-04-05 15:45:07.175 [http-nio-8087-exec-3] DEBUG c.M.shared.util.StoreContextUtil [correlationId=ea52c975d4da4ce9acf544e5f80d8329] [storeId=N/A] [userId=N/A] - Resolved storeId=DOM001 for userId=null, userType=null
+2026-04-05 15:45:07.175 [http-nio-8087-exec-3] INFO  c.M.i.controller.AnalyticsController [correlationId=ea52c975d4da4ce9acf544e5f80d8329] [storeId=N/A] [userId=N/A] - GET /api/analytics/sales/trends/MONTHLY for store DOM001
+2026-04-05 15:45:07.183 [http-nio-8087-exec-3] INFO  c.M.i.service.AnalyticsService [correlationId=ea52c975d4da4ce9acf544e5f80d8329] [storeId=N/A] [userId=N/A] - Calculating sales trends for store: DOM001, period: MONTHLY
+2026-04-05 15:45:07.184 [http-nio-8087-exec-3] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=ea52c975d4da4ce9acf544e5f80d8329] [storeId=N/A] [userId=N/A] - Forwarding JWT token to: http://localhost:8084/api/orders/range?start=2026-03-07T00:00&end=2026-04-05T23:59:59.999999999
+2026-04-05 15:45:07.184 [http-nio-8087-exec-3] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=ea52c975d4da4ce9acf544e5f80d8329] [storeId=N/A] [userId=N/A] - Forwarding X-Selected-Store-Id: DOM001 to: http://localhost:8084/api/orders/range?start=2026-03-07T00:00&end=2026-04-05T23:59:59.999999999
+2026-04-05 15:45:07.184 [http-nio-8087-exec-3] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=ea52c975d4da4ce9acf544e5f80d8329] [storeId=N/A] [userId=N/A] - Forwarding X-User-Store-Id: DOM001 to: http://localhost:8084/api/orders/range?start=2026-03-07T00:00&end=2026-04-05T23:59:59.999999999
+2026-04-05 15:45:07.216 [http-nio-8087-exec-3] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=ea52c975d4da4ce9acf544e5f80d8329] [storeId=N/A] [userId=N/A] - Forwarding JWT token to: http://localhost:8084/api/orders/range?start=2026-02-05T00:00&end=2026-03-06T23:59:59.999999999
+2026-04-05 15:45:07.216 [http-nio-8087-exec-3] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=ea52c975d4da4ce9acf544e5f80d8329] [storeId=N/A] [userId=N/A] - Forwarding X-Selected-Store-Id: DOM001 to: http://localhost:8084/api/orders/range?start=2026-02-05T00:00&end=2026-03-06T23:59:59.999999999
+2026-04-05 15:45:07.216 [http-nio-8087-exec-3] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=ea52c975d4da4ce9acf544e5f80d8329] [storeId=N/A] [userId=N/A] - Forwarding X-User-Store-Id: DOM001 to: http://localhost:8084/api/orders/range?start=2026-02-05T00:00&end=2026-03-06T23:59:59.999999999
+2026-04-05 15:45:07.268 [http-nio-8087-exec-4] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Generated new correlation ID: 09498c1825a1447b8c4b45bc5d8057a3
+2026-04-05 15:45:07.268 [http-nio-8087-exec-4] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=09498c1825a1447b8c4b45bc5d8057a3] [storeId=N/A] [userId=N/A] - Processing request: GET /api/analytics/staff/69a2e0bc4642c64a6d1c59e7/performance/today [correlationId=09498c1825a1447b8c4b45bc5d8057a3, storeId=N/A, userId=N/A]
+2026-04-05 15:45:07.271 [http-nio-8087-exec-4] INFO  c.M.i.controller.AnalyticsController [correlationId=09498c1825a1447b8c4b45bc5d8057a3] [storeId=N/A] [userId=N/A] - GET /api/analytics/staff/69a2e0bc4642c64a6d1c59e7/performance/today
+2026-04-05 15:45:07.275 [http-nio-8087-exec-4] INFO  c.M.i.service.AnalyticsService [correlationId=09498c1825a1447b8c4b45bc5d8057a3] [storeId=N/A] [userId=N/A] - Fetching staff performance for: 69a2e0bc4642c64a6d1c59e7
+2026-04-05 15:45:07.276 [http-nio-8087-exec-4] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=09498c1825a1447b8c4b45bc5d8057a3] [storeId=N/A] [userId=N/A] - Forwarding JWT token to: http://localhost:8084/api/orders/staff/69a2e0bc4642c64a6d1c59e7/date/2026-04-05
+2026-04-05 15:45:07.276 [http-nio-8087-exec-4] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=09498c1825a1447b8c4b45bc5d8057a3] [storeId=N/A] [userId=N/A] - Forwarding X-Selected-Store-Id: DOM001 to: http://localhost:8084/api/orders/staff/69a2e0bc4642c64a6d1c59e7/date/2026-04-05
+2026-04-05 15:45:07.276 [http-nio-8087-exec-4] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=09498c1825a1447b8c4b45bc5d8057a3] [storeId=N/A] [userId=N/A] - Forwarding X-User-Store-Id: DOM001 to: http://localhost:8084/api/orders/staff/69a2e0bc4642c64a6d1c59e7/date/2026-04-05
+2026-04-05 15:45:07.294 [http-nio-8087-exec-4] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=09498c1825a1447b8c4b45bc5d8057a3] [storeId=N/A] [userId=N/A] - Forwarding JWT token to: http://localhost:8085/api/users/69a2e0bc4642c64a6d1c59e7
+2026-04-05 15:45:07.294 [http-nio-8087-exec-4] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=09498c1825a1447b8c4b45bc5d8057a3] [storeId=N/A] [userId=N/A] - Forwarding X-Selected-Store-Id: DOM001 to: http://localhost:8085/api/users/69a2e0bc4642c64a6d1c59e7
+2026-04-05 15:45:07.294 [http-nio-8087-exec-4] DEBUG c.M.i.c.JwtForwardingInterceptor [correlationId=09498c1825a1447b8c4b45bc5d8057a3] [storeId=N/A] [userId=N/A] - Forwarding X-User-Store-Id: DOM001 to: http://localhost:8085/api/users/69a2e0bc4642c64a6d1c59e7
+2026-04-05 15:45:07.354 [http-nio-8087-exec-5] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Generated new correlation ID: edc17cc018a941c3a3d05bb42b487628
+2026-04-05 15:45:07.355 [http-nio-8087-exec-5] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=edc17cc018a941c3a3d05bb42b487628] [storeId=N/A] [userId=N/A] - Processing request: POST /api/analytics/cache/clear [correlationId=edc17cc018a941c3a3d05bb42b487628, storeId=N/A, userId=N/A]
+2026-04-05 15:45:07.358 [http-nio-8087-exec-5] DEBUG c.M.shared.util.StoreContextUtil [correlationId=edc17cc018a941c3a3d05bb42b487628] [storeId=N/A] [userId=N/A] - Extracting storeId for userId=null, userType=null, selectedStoreId=DOM001, userStoreId=DOM001
+2026-04-05 15:45:07.358 [http-nio-8087-exec-5] DEBUG c.M.shared.util.StoreContextUtil [correlationId=edc17cc018a941c3a3d05bb42b487628] [storeId=N/A] [userId=N/A] - Resolved storeId=DOM001 for userId=null, userType=null
+2026-04-05 15:45:07.358 [http-nio-8087-exec-5] INFO  c.M.i.controller.AnalyticsController [correlationId=edc17cc018a941c3a3d05bb42b487628] [storeId=N/A] [userId=N/A] - Clearing all analytics caches for store: DOM001
+2026-04-05 15:45:07.404 [http-nio-8087-exec-5] INFO  c.M.i.controller.AnalyticsController [correlationId=edc17cc018a941c3a3d05bb42b487628] [storeId=N/A] [userId=N/A] - Successfully cleared all analytics caches for store: DOM001
+2026-04-05 15:45:07.422 [http-nio-8087-exec-6] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Generated new correlation ID: 6983379cdbef46e9ac086f4e5a4257c9
+2026-04-05 15:45:07.423 [http-nio-8087-exec-6] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=6983379cdbef46e9ac086f4e5a4257c9] [storeId=N/A] [userId=N/A] - Processing request: GET /api/bi/forecast/sales [correlationId=6983379cdbef46e9ac086f4e5a4257c9, storeId=N/A, userId=N/A]
+2026-04-05 15:45:07.426 [http-nio-8087-exec-6] INFO  c.M.i.controller.BIController [correlationId=6983379cdbef46e9ac086f4e5a4257c9] [storeId=N/A] [userId=N/A] - GET /api/bi/forecast/sales - storeId: DOM001, period: WEEKLY, days: 7
+2026-04-05 15:45:07.437 [http-nio-8087-exec-6] ERROR c.M.s.e.GlobalExceptionHandler [correlationId=6983379cdbef46e9ac086f4e5a4257c9] [storeId=N/A] [userId=N/A] - Unexpected error processing request /api/bi/forecast/sales: class java.util.LinkedHashMap cannot be cast to class com.MaSoVa.intelligence.dto.SalesForecastResponse (java.util.LinkedHashMap is in module java.base of loader 'bootstrap'; com.MaSoVa.intelligence.dto.SalesForecastResponse is in unnamed module of loader 'app')
+java.lang.ClassCastException: class java.util.LinkedHashMap cannot be cast to class com.MaSoVa.intelligence.dto.SalesForecastResponse (java.util.LinkedHashMap is in module java.base of loader 'bootstrap'; com.MaSoVa.intelligence.dto.SalesForecastResponse is in unnamed module of loader 'app')
+	at com.MaSoVa.intelligence.service.BIEngineService$$SpringCGLIB$$0.generateSalesForecast(<generated>)
+	at com.MaSoVa.intelligence.controller.BIController.getSalesForecast(BIController.java:68)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:254)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:182)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:917)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:829)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:205)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at com.MaSoVa.shared.filter.CorrelationIdFilter.doFilter(CorrelationIdFilter.java:88)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)
+	at org.springframework.security.web.ObservationFilterChainDecorator$FilterObservation$SimpleFilterObservation.lambda$wrap$1(ObservationFilterChainDecorator.java:479)
+	at org.springframework.security.web.ObservationFilterChainDecorator$AroundFilterObservation$SimpleAroundFilterObservation.lambda$wrap$1(ObservationFilterChainDecorator.java:340)
+	at org.springframework.security.web.ObservationFilterChainDecorator.lambda$wrapSecured$0(ObservationFilterChainDecorator.java:82)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:128)
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:100)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at com.MaSoVa.shared.security.filter.JwtAuthenticationFilter.doFilterInternal(JwtAuthenticationFilter.java:72)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$AroundFilterObservation$SimpleAroundFilterObservation.lambda$wrap$0(ObservationFilterChainDecorator.java:323)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:224)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233)
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:352)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:268)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:109)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:340)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:391)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:896)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1744)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1191)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+2026-04-05 15:45:07.475 [http-nio-8087-exec-7] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Generated new correlation ID: cfd1c42541db4833904ab7871c12a24a
+2026-04-05 15:45:07.475 [http-nio-8087-exec-7] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=cfd1c42541db4833904ab7871c12a24a] [storeId=N/A] [userId=N/A] - Processing request: GET /api/bi/analysis/customer-behavior [correlationId=cfd1c42541db4833904ab7871c12a24a, storeId=N/A, userId=N/A]
+2026-04-05 15:45:07.476 [http-nio-8087-exec-7] INFO  c.M.i.controller.BIController [correlationId=cfd1c42541db4833904ab7871c12a24a] [storeId=N/A] [userId=N/A] - GET /api/bi/analysis/customer-behavior - storeId: DOM001
+2026-04-05 15:45:07.485 [http-nio-8087-exec-7] ERROR c.M.s.e.GlobalExceptionHandler [correlationId=cfd1c42541db4833904ab7871c12a24a] [storeId=N/A] [userId=N/A] - Unexpected error processing request /api/bi/analysis/customer-behavior: class java.util.LinkedHashMap cannot be cast to class com.MaSoVa.intelligence.dto.CustomerBehaviorResponse (java.util.LinkedHashMap is in module java.base of loader 'bootstrap'; com.MaSoVa.intelligence.dto.CustomerBehaviorResponse is in unnamed module of loader 'app')
+java.lang.ClassCastException: class java.util.LinkedHashMap cannot be cast to class com.MaSoVa.intelligence.dto.CustomerBehaviorResponse (java.util.LinkedHashMap is in module java.base of loader 'bootstrap'; com.MaSoVa.intelligence.dto.CustomerBehaviorResponse is in unnamed module of loader 'app')
+	at com.MaSoVa.intelligence.service.BIEngineService$$SpringCGLIB$$0.analyzeCustomerBehavior(<generated>)
+	at com.MaSoVa.intelligence.controller.BIController.getCustomerBehaviorAnalysis(BIController.java:80)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:254)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:182)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:917)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:829)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:205)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at com.MaSoVa.shared.filter.CorrelationIdFilter.doFilter(CorrelationIdFilter.java:88)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)
+	at org.springframework.security.web.ObservationFilterChainDecorator$FilterObservation$SimpleFilterObservation.lambda$wrap$1(ObservationFilterChainDecorator.java:479)
+	at org.springframework.security.web.ObservationFilterChainDecorator$AroundFilterObservation$SimpleAroundFilterObservation.lambda$wrap$1(ObservationFilterChainDecorator.java:340)
+	at org.springframework.security.web.ObservationFilterChainDecorator.lambda$wrapSecured$0(ObservationFilterChainDecorator.java:82)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:128)
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:100)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at com.MaSoVa.shared.security.filter.JwtAuthenticationFilter.doFilterInternal(JwtAuthenticationFilter.java:72)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$AroundFilterObservation$SimpleAroundFilterObservation.lambda$wrap$0(ObservationFilterChainDecorator.java:323)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:224)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233)
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:352)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:268)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:109)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:340)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:391)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:896)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1744)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1191)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+2026-04-05 15:45:07.524 [http-nio-8087-exec-8] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Generated new correlation ID: b0311ac762eb46c9b7e7ca3c58f72fb9
+2026-04-05 15:45:07.524 [http-nio-8087-exec-8] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=b0311ac762eb46c9b7e7ca3c58f72fb9] [storeId=N/A] [userId=N/A] - Processing request: GET /api/bi/prediction/churn [correlationId=b0311ac762eb46c9b7e7ca3c58f72fb9, storeId=N/A, userId=N/A]
+2026-04-05 15:45:07.525 [http-nio-8087-exec-8] INFO  c.M.i.controller.BIController [correlationId=b0311ac762eb46c9b7e7ca3c58f72fb9] [storeId=N/A] [userId=N/A] - GET /api/bi/prediction/churn - storeId: DOM001
+2026-04-05 15:45:07.535 [http-nio-8087-exec-8] ERROR c.M.s.e.GlobalExceptionHandler [correlationId=b0311ac762eb46c9b7e7ca3c58f72fb9] [storeId=N/A] [userId=N/A] - Unexpected error processing request /api/bi/prediction/churn: class java.util.LinkedHashMap cannot be cast to class com.MaSoVa.intelligence.dto.ChurnPredictionResponse (java.util.LinkedHashMap is in module java.base of loader 'bootstrap'; com.MaSoVa.intelligence.dto.ChurnPredictionResponse is in unnamed module of loader 'app')
+java.lang.ClassCastException: class java.util.LinkedHashMap cannot be cast to class com.MaSoVa.intelligence.dto.ChurnPredictionResponse (java.util.LinkedHashMap is in module java.base of loader 'bootstrap'; com.MaSoVa.intelligence.dto.ChurnPredictionResponse is in unnamed module of loader 'app')
+	at com.MaSoVa.intelligence.service.BIEngineService$$SpringCGLIB$$0.predictChurn(<generated>)
+	at com.MaSoVa.intelligence.controller.BIController.getChurnPrediction(BIController.java:92)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:254)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:182)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:917)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:829)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:205)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at com.MaSoVa.shared.filter.CorrelationIdFilter.doFilter(CorrelationIdFilter.java:88)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)
+	at org.springframework.security.web.ObservationFilterChainDecorator$FilterObservation$SimpleFilterObservation.lambda$wrap$1(ObservationFilterChainDecorator.java:479)
+	at org.springframework.security.web.ObservationFilterChainDecorator$AroundFilterObservation$SimpleAroundFilterObservation.lambda$wrap$1(ObservationFilterChainDecorator.java:340)
+	at org.springframework.security.web.ObservationFilterChainDecorator.lambda$wrapSecured$0(ObservationFilterChainDecorator.java:82)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:128)
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:100)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at com.MaSoVa.shared.security.filter.JwtAuthenticationFilter.doFilterInternal(JwtAuthenticationFilter.java:72)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$AroundFilterObservation$SimpleAroundFilterObservation.lambda$wrap$0(ObservationFilterChainDecorator.java:323)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:224)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233)
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:352)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:268)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:109)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:340)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:391)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:896)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1744)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1191)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+2026-04-05 15:45:07.576 [http-nio-8087-exec-9] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Generated new correlation ID: 07ca2b772e184e97b46b2193898d8493
+2026-04-05 15:45:07.576 [http-nio-8087-exec-9] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=07ca2b772e184e97b46b2193898d8493] [storeId=N/A] [userId=N/A] - Processing request: GET /api/bi/forecast/demand [correlationId=07ca2b772e184e97b46b2193898d8493, storeId=N/A, userId=N/A]
+2026-04-05 15:45:07.577 [http-nio-8087-exec-9] INFO  c.M.i.controller.BIController [correlationId=07ca2b772e184e97b46b2193898d8493] [storeId=N/A] [userId=N/A] - GET /api/bi/forecast/demand - storeId: DOM001, period: WEEKLY
+2026-04-05 15:45:07.584 [http-nio-8087-exec-9] ERROR c.M.s.e.GlobalExceptionHandler [correlationId=07ca2b772e184e97b46b2193898d8493] [storeId=N/A] [userId=N/A] - Unexpected error processing request /api/bi/forecast/demand: class java.util.LinkedHashMap cannot be cast to class com.MaSoVa.intelligence.dto.DemandForecastResponse (java.util.LinkedHashMap is in module java.base of loader 'bootstrap'; com.MaSoVa.intelligence.dto.DemandForecastResponse is in unnamed module of loader 'app')
+java.lang.ClassCastException: class java.util.LinkedHashMap cannot be cast to class com.MaSoVa.intelligence.dto.DemandForecastResponse (java.util.LinkedHashMap is in module java.base of loader 'bootstrap'; com.MaSoVa.intelligence.dto.DemandForecastResponse is in unnamed module of loader 'app')
+	at com.MaSoVa.intelligence.service.BIEngineService$$SpringCGLIB$$0.generateDemandForecast(<generated>)
+	at com.MaSoVa.intelligence.controller.BIController.getDemandForecast(BIController.java:107)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:254)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:182)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:917)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:829)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:205)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at com.MaSoVa.shared.filter.CorrelationIdFilter.doFilter(CorrelationIdFilter.java:88)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)
+	at org.springframework.security.web.ObservationFilterChainDecorator$FilterObservation$SimpleFilterObservation.lambda$wrap$1(ObservationFilterChainDecorator.java:479)
+	at org.springframework.security.web.ObservationFilterChainDecorator$AroundFilterObservation$SimpleAroundFilterObservation.lambda$wrap$1(ObservationFilterChainDecorator.java:340)
+	at org.springframework.security.web.ObservationFilterChainDecorator.lambda$wrapSecured$0(ObservationFilterChainDecorator.java:82)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:128)
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:100)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at com.MaSoVa.shared.security.filter.JwtAuthenticationFilter.doFilterInternal(JwtAuthenticationFilter.java:72)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$AroundFilterObservation$SimpleAroundFilterObservation.lambda$wrap$0(ObservationFilterChainDecorator.java:323)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:224)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233)
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:352)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:268)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:109)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:340)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:391)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:896)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1744)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1191)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+2026-04-05 15:45:07.611 [http-nio-8087-exec-10] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Generated new correlation ID: 691d9841cc1548a69af684d389c9b1fe
+2026-04-05 15:45:07.611 [http-nio-8087-exec-10] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=691d9841cc1548a69af684d389c9b1fe] [storeId=N/A] [userId=N/A] - Processing request: GET /api/bi/cost-analysis [correlationId=691d9841cc1548a69af684d389c9b1fe, storeId=N/A, userId=N/A]
+2026-04-05 15:45:07.613 [http-nio-8087-exec-10] INFO  c.M.i.controller.BIController [correlationId=691d9841cc1548a69af684d389c9b1fe] [storeId=N/A] [userId=N/A] - GET /api/bi/cost-analysis - storeId: DOM001, period: MONTH
+2026-04-05 15:45:07.621 [http-nio-8087-exec-10] ERROR c.M.s.e.GlobalExceptionHandler [correlationId=691d9841cc1548a69af684d389c9b1fe] [storeId=N/A] [userId=N/A] - Unexpected error processing request /api/bi/cost-analysis: class java.util.LinkedHashMap cannot be cast to class com.MaSoVa.intelligence.dto.CostAnalysisResponse (java.util.LinkedHashMap is in module java.base of loader 'bootstrap'; com.MaSoVa.intelligence.dto.CostAnalysisResponse is in unnamed module of loader 'app')
+java.lang.ClassCastException: class java.util.LinkedHashMap cannot be cast to class com.MaSoVa.intelligence.dto.CostAnalysisResponse (java.util.LinkedHashMap is in module java.base of loader 'bootstrap'; com.MaSoVa.intelligence.dto.CostAnalysisResponse is in unnamed module of loader 'app')
+	at com.MaSoVa.intelligence.service.CostAnalysisService$$SpringCGLIB$$0.analyzeCosts(<generated>)
+	at com.MaSoVa.intelligence.controller.BIController.getCostAnalysis(BIController.java:122)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:254)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:182)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:917)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:829)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:205)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at com.MaSoVa.shared.filter.CorrelationIdFilter.doFilter(CorrelationIdFilter.java:88)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)
+	at org.springframework.security.web.ObservationFilterChainDecorator$FilterObservation$SimpleFilterObservation.lambda$wrap$1(ObservationFilterChainDecorator.java:479)
+	at org.springframework.security.web.ObservationFilterChainDecorator$AroundFilterObservation$SimpleAroundFilterObservation.lambda$wrap$1(ObservationFilterChainDecorator.java:340)
+	at org.springframework.security.web.ObservationFilterChainDecorator.lambda$wrapSecured$0(ObservationFilterChainDecorator.java:82)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:128)
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:100)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at com.MaSoVa.shared.security.filter.JwtAuthenticationFilter.doFilterInternal(JwtAuthenticationFilter.java:72)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$AroundFilterObservation$SimpleAroundFilterObservation.lambda$wrap$0(ObservationFilterChainDecorator.java:323)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:224)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233)
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:352)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:268)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:109)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:340)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:391)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:896)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1744)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1191)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+2026-04-05 15:45:07.705 [http-nio-8087-exec-1] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Generated new correlation ID: 5c3c610245a547499554d22d00d23eeb
+2026-04-05 15:45:07.705 [http-nio-8087-exec-1] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=5c3c610245a547499554d22d00d23eeb] [storeId=N/A] [userId=N/A] - Processing request: GET /api/bi/benchmarking/stores [correlationId=5c3c610245a547499554d22d00d23eeb, storeId=N/A, userId=N/A]
+2026-04-05 15:45:07.706 [http-nio-8087-exec-1] INFO  c.M.i.controller.BIController [correlationId=5c3c610245a547499554d22d00d23eeb] [storeId=N/A] [userId=N/A] - GET /api/bi/benchmarking/stores - period: MONTH
+2026-04-05 15:45:07.713 [http-nio-8087-exec-1] ERROR c.M.s.e.GlobalExceptionHandler [correlationId=5c3c610245a547499554d22d00d23eeb] [storeId=N/A] [userId=N/A] - Unexpected error processing request /api/bi/benchmarking/stores: class java.util.LinkedHashMap cannot be cast to class com.MaSoVa.intelligence.dto.BenchmarkingResponse (java.util.LinkedHashMap is in module java.base of loader 'bootstrap'; com.MaSoVa.intelligence.dto.BenchmarkingResponse is in unnamed module of loader 'app')
+java.lang.ClassCastException: class java.util.LinkedHashMap cannot be cast to class com.MaSoVa.intelligence.dto.BenchmarkingResponse (java.util.LinkedHashMap is in module java.base of loader 'bootstrap'; com.MaSoVa.intelligence.dto.BenchmarkingResponse is in unnamed module of loader 'app')
+	at com.MaSoVa.intelligence.service.BenchmarkingService$$SpringCGLIB$$0.generateBenchmarkingReport(<generated>)
+	at com.MaSoVa.intelligence.controller.BIController.getStoreBenchmarking(BIController.java:135)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:254)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:182)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:917)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:829)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:205)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at com.MaSoVa.shared.filter.CorrelationIdFilter.doFilter(CorrelationIdFilter.java:88)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)
+	at org.springframework.security.web.ObservationFilterChainDecorator$FilterObservation$SimpleFilterObservation.lambda$wrap$1(ObservationFilterChainDecorator.java:479)
+	at org.springframework.security.web.ObservationFilterChainDecorator$AroundFilterObservation$SimpleAroundFilterObservation.lambda$wrap$1(ObservationFilterChainDecorator.java:340)
+	at org.springframework.security.web.ObservationFilterChainDecorator.lambda$wrapSecured$0(ObservationFilterChainDecorator.java:82)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:128)
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:100)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at com.MaSoVa.shared.security.filter.JwtAuthenticationFilter.doFilterInternal(JwtAuthenticationFilter.java:72)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$AroundFilterObservation$SimpleAroundFilterObservation.lambda$wrap$0(ObservationFilterChainDecorator.java:323)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:224)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233)
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:352)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:268)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:109)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:340)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:391)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:896)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1744)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1191)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+2026-04-05 15:45:07.747 [http-nio-8087-exec-2] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=N/A] [storeId=N/A] [userId=N/A] - Generated new correlation ID: f4770c347d56487083135bb6a71f0cdb
+2026-04-05 15:45:07.747 [http-nio-8087-exec-2] DEBUG c.M.s.filter.CorrelationIdFilter [correlationId=f4770c347d56487083135bb6a71f0cdb] [storeId=N/A] [userId=N/A] - Processing request: GET /api/bi/executive-summary [correlationId=f4770c347d56487083135bb6a71f0cdb, storeId=N/A, userId=N/A]
+2026-04-05 15:45:07.748 [http-nio-8087-exec-2] INFO  c.M.i.controller.BIController [correlationId=f4770c347d56487083135bb6a71f0cdb] [storeId=N/A] [userId=N/A] - GET /api/bi/executive-summary - period: MONTH
+2026-04-05 15:45:07.754 [http-nio-8087-exec-2] ERROR c.M.s.e.GlobalExceptionHandler [correlationId=f4770c347d56487083135bb6a71f0cdb] [storeId=N/A] [userId=N/A] - Unexpected error processing request /api/bi/executive-summary: class java.util.LinkedHashMap cannot be cast to class com.MaSoVa.intelligence.dto.ExecutiveSummaryResponse (java.util.LinkedHashMap is in module java.base of loader 'bootstrap'; com.MaSoVa.intelligence.dto.ExecutiveSummaryResponse is in unnamed module of loader 'app')
+java.lang.ClassCastException: class java.util.LinkedHashMap cannot be cast to class com.MaSoVa.intelligence.dto.ExecutiveSummaryResponse (java.util.LinkedHashMap is in module java.base of loader 'bootstrap'; com.MaSoVa.intelligence.dto.ExecutiveSummaryResponse is in unnamed module of loader 'app')
+	at com.MaSoVa.intelligence.service.ExecutiveReportingService$$SpringCGLIB$$0.generateExecutiveSummary(<generated>)
+	at com.MaSoVa.intelligence.controller.BIController.getExecutiveSummary(BIController.java:148)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:254)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:182)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:917)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:829)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:205)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at com.MaSoVa.shared.filter.CorrelationIdFilter.doFilter(CorrelationIdFilter.java:88)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)
+	at org.springframework.security.web.ObservationFilterChainDecorator$FilterObservation$SimpleFilterObservation.lambda$wrap$1(ObservationFilterChainDecorator.java:479)
+	at org.springframework.security.web.ObservationFilterChainDecorator$AroundFilterObservation$SimpleAroundFilterObservation.lambda$wrap$1(ObservationFilterChainDecorator.java:340)
+	at org.springframework.security.web.ObservationFilterChainDecorator.lambda$wrapSecured$0(ObservationFilterChainDecorator.java:82)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:128)
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:100)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at com.MaSoVa.shared.security.filter.JwtAuthenticationFilter.doFilterInternal(JwtAuthenticationFilter.java:72)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$AroundFilterObservation$SimpleAroundFilterObservation.lambda$wrap$0(ObservationFilterChainDecorator.java:323)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:224)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233)
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:352)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:268)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:109)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:340)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:391)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:896)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1744)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1191)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
