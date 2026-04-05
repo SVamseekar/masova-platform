@@ -1300,7 +1300,7 @@ public class UserService {
                    .employeePinHash(emp.getEmployeePINHash())
                    .pinSuffix(emp.getPinSuffix())
                    .terminalId(emp.getTerminalId())
-                   .kioskAccount(emp.getIsKioskAccount());
+                   .isKioskAccount(emp.getIsKioskAccount());
         }
 
         if (user.getLastLogin() != null) {
