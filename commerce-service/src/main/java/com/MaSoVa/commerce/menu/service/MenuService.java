@@ -53,7 +53,7 @@ public class MenuService {
         return menuItemRepository.findByIsAvailableTrue();
     }
 
-    @Cacheable(value = "menuItems", key = "#id")
+    @Cacheable(value = "menuItems", key = "#id", unless = "#result == null || !#result.isPresent()")
     public Optional<MenuItem> getMenuItemById(String id) {
         return menuItemRepository.findById(id);
     }

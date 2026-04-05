@@ -3038,6 +3038,77 @@ async function testAnalytics() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// 19. STAFF EARNINGS & TIPS  (added: Phase 3 commit batch, 2026-04-05)
+// ══════════════════════════════════════════════════════════════════════════════
+async function testEarningsAndTips() {
+  section('STAFF EARNINGS & TIPS');
+  const sec = 'earnings';
+  const mgrOpts = { token: tok.manager, userId: D.managerId };
+
+  // Need a staff user ID — use first STAFF user from earlier test data
+  const staffId = D.staffId || D.newUserId;
+  if (!staffId) {
+    warn(sec, 'Earnings/Tips tests skipped', 'no staffUserId in D — run testUsers first');
+    return;
+  }
+
+  // POST /api/staff/pay-rates — set a pay rate for this staff member
+  const rSetRate = await req(`${S.core}/api/staff/pay-rates`, {
+    ...mgrOpts,
+    method: 'POST',
+    body: { employeeId: staffId, storeId: D.storeId001 || 'store-001', hourlyRateInr: 120, effectiveFrom: '2026-04-01' },
+  });
+  if (ok(rSetRate)) pass(sec, 'POST /api/staff/pay-rates');
+  else              warn(sec, 'POST /api/staff/pay-rates', `status ${rSetRate.status}`);
+
+  // GET /api/staff/pay-rates?employeeId=...
+  const rGetRate = await req(`${S.core}/api/staff/pay-rates?employeeId=${staffId}`, mgrOpts);
+  if (ok(rGetRate)) pass(sec, 'GET /api/staff/pay-rates');
+  else              warn(sec, 'GET /api/staff/pay-rates', `status ${rGetRate.status}`);
+
+  // GET /api/staff/earnings/weekly?employeeId=...
+  const rWeekly = await req(`${S.core}/api/staff/earnings/weekly?employeeId=${staffId}`, mgrOpts);
+  if (ok(rWeekly)) {
+    pass(sec, 'GET /api/staff/earnings/weekly');
+    const body = rWeekly.body;
+    if (body && typeof body.hoursWorked !== 'undefined') pass(sec, 'GET /api/staff/earnings/weekly — shape ok (hoursWorked present)');
+    else warn(sec, 'GET /api/staff/earnings/weekly — shape', 'hoursWorked field missing');
+  } else warn(sec, 'GET /api/staff/earnings/weekly', `status ${rWeekly.status}`);
+
+  // GET /api/staff/earnings/history?employeeId=...
+  const rHistory = await req(`${S.core}/api/staff/earnings/history?employeeId=${staffId}`, mgrOpts);
+  if (ok(rHistory)) pass(sec, 'GET /api/staff/earnings/history');
+  else              warn(sec, 'GET /api/staff/earnings/history', `status ${rHistory.status}`);
+
+  // GET /api/staff/tips/pending?employeeId=... (commerce)
+  const rTipsPending = await req(`${S.commerce}/api/staff/tips/pending?employeeId=${staffId}`, mgrOpts);
+  if (ok(rTipsPending)) pass(sec, 'GET /api/staff/tips/pending');
+  else                  warn(sec, 'GET /api/staff/tips/pending', `status ${rTipsPending.status}`);
+
+  // POST /api/orders/{orderId}/tip — only if we have a dine-in order from testOrders
+  if (D.dineInOrderId) {
+    const rTip = await req(`${S.commerce}/api/orders/${D.dineInOrderId}/tip`, {
+      ...mgrOpts,
+      method: 'POST',
+      body: { amountInr: 50, recipientStaffId: staffId },
+    });
+    if (ok(rTip)) pass(sec, 'POST /api/orders/{orderId}/tip (direct tip)');
+    else          warn(sec, 'POST /api/orders/{orderId}/tip', `status ${rTip.status}`);
+
+    // POST pool tip (no recipientStaffId)
+    const rPoolTip = await req(`${S.commerce}/api/orders/${D.dineInOrderId}/tip`, {
+      ...mgrOpts,
+      method: 'POST',
+      body: { amountInr: 25 },
+    });
+    if (ok(rPoolTip)) pass(sec, 'POST /api/orders/{orderId}/tip (pool tip, no recipient)');
+    else              warn(sec, 'POST /api/orders/{orderId}/tip (pool)', `status ${rPoolTip.status}`);
+  } else {
+    warn(sec, 'POST /api/orders/{orderId}/tip', 'skipped — no dineInOrderId from testOrders');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // SUMMARY + COVERAGE REPORT
 // ══════════════════════════════════════════════════════════════════════════════
 function printSummary() {
@@ -3130,6 +3201,7 @@ function printCoverageReport() {
   await testPayments();
   await testDelivery();
   await testAnalytics();
+  await testEarningsAndTips();
 
   printSummary();
   printCoverageReport();
