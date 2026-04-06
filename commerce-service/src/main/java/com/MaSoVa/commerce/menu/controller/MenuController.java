@@ -171,12 +171,15 @@ public class MenuController {
 
     /**
      * Copy all menu items from source store to target store
-     * Usage: POST /api/menu/copy-menu?sourceStoreId=xxx&targetStoreId=yyy
      */
     @PostMapping("/copy-menu")
     public ResponseEntity<Map<String, Object>> copyMenuBetweenStores(
-            @RequestParam String sourceStoreId,
-            @RequestParam String targetStoreId) {
+            @RequestBody Map<String, String> request) {
+        String sourceStoreId = request.get("sourceStoreId");
+        String targetStoreId = request.get("targetStoreId");
+        if (sourceStoreId == null || targetStoreId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "sourceStoreId and targetStoreId are required"));
+        }
         try {
             List<MenuItem> copiedItems = menuService.copyMenuBetweenStores(sourceStoreId, targetStoreId);
 

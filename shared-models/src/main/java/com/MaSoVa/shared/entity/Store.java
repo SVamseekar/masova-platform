@@ -37,6 +37,7 @@ public class Store {
     
     @NotNull
     @Field("code")
+    @Indexed(unique = true)
     @Pattern(regexp = "^DOM\\d{3}$", message = "Store code must be format DOM001")
     @JsonProperty("storeCode")
     @JsonAlias({"code", "storeCode"})

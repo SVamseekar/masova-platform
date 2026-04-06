@@ -236,6 +236,18 @@ public class CustomerController {
     // ADDRESS MANAGEMENT
     // ===========================
 
+    @GetMapping("/{id}/addresses")
+    @Operation(summary = "Get customer addresses")
+    public ResponseEntity<?> getAddresses(@PathVariable("id") String id) {
+        try {
+            Customer customer = customerService.getCustomerById(id)
+                    .orElseThrow(() -> new NoSuchElementException("Customer not found"));
+            return ResponseEntity.ok(customer.getAddresses());
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @PostMapping("/{id}/addresses")
     @Operation(summary = "Add address to customer")
     public ResponseEntity<?> addAddress(
@@ -292,6 +304,18 @@ public class CustomerController {
     // ===========================
     // LOYALTY MANAGEMENT
     // ===========================
+
+    @GetMapping("/{id}/loyalty")
+    @Operation(summary = "Get customer loyalty info")
+    public ResponseEntity<?> getLoyaltyInfo(@PathVariable("id") String id) {
+        try {
+            Customer customer = customerService.getCustomerById(id)
+                    .orElseThrow(() -> new NoSuchElementException("Customer not found"));
+            return ResponseEntity.ok(customer.getLoyaltyInfo());
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 
     @PostMapping("/{id}/loyalty/points")
     @Operation(summary = "Add or redeem loyalty points")

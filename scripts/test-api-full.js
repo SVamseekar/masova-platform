@@ -552,11 +552,11 @@ async function testStores() {
   if (ok(rNearby)) pass(sec, 'GET /api/stores/nearby');
   else              warn(sec, 'GET /api/stores/nearby', `status ${rNearby.status}`);
 
-  // GET /api/stores/metrics reads storeId from X-Selected-Store-Id header
-  if (D.storeId001) {
+  // GET /api/stores/metrics reads storeId from X-Selected-Store-Id header — expects storeCode not ObjectId
+  {
     const rMetrics = await req(`${S.core}/api/stores/metrics`, {
       token: tok.manager,
-      headers: { 'X-Selected-Store-Id': D.storeId001, 'X-User-Store-Id': D.storeId001, 'X-User-Type': 'MANAGER' },
+      headers: { 'X-Selected-Store-Id': 'DOM001', 'X-User-Store-Id': 'DOM001', 'X-User-Type': 'MANAGER' },
     });
     if (ok(rMetrics)) pass(sec, 'GET /api/stores/metrics');
     else               warn(sec, 'GET /api/stores/metrics', `status ${rMetrics.status}`);
@@ -567,7 +567,7 @@ async function testStores() {
     body: {
       name: 'Test Store API', code: `TST${Date.now().toString().slice(-4)}`,
       phoneNumber: '9000000099', regionId: 'south',
-      address: { street: '1 Test Rd', city: 'Hyderabad', postalCode: '500001', state: 'TS' },
+      address: { street: '1 Test Rd', city: 'Hyderabad', pincode: '500001', state: 'TS' },
     },
   });
   if (ok(rCreate)) {
@@ -840,13 +840,13 @@ async function testCustomers() {
 
     // Loyalty
     const rLP = await req(`${S.core}/api/v1/customers/${cpid}/loyalty/points`, {
-      method: 'POST', token: tok.manager, body: { points: 100, orderId: 'test-order-001', reason: 'TEST' },
+      method: 'POST', token: tok.manager, body: { points: 100, orderId: 'test-order-001', description: 'TEST', type: 'EARN' },
     });
     if (ok(rLP)) pass(sec, 'POST /api/v1/customers/{id}/loyalty/points');
     else          warn(sec, 'POST /api/v1/customers/{id}/loyalty/points', `status ${rLP.status}`);
 
     const rLPNV = await req(`${S.core}/api/customers/${cpid}/loyalty/points`, {
-      method: 'POST', token: tok.manager, body: { points: 50, orderId: 'test-order-002', reason: 'TEST' },
+      method: 'POST', token: tok.manager, body: { points: 50, orderId: 'test-order-002', description: 'TEST', type: 'EARN' },
     });
     if (ok(rLPNV)) pass(sec, 'POST /api/customers/{id}/loyalty/points');
     else            warn(sec, 'POST /api/customers/{id}/loyalty/points', `status ${rLPNV.status}`);
@@ -860,13 +860,13 @@ async function testCustomers() {
     else              warn(sec, 'GET loyalty max-redeemable (no-v1)', `status ${rMaxRNV.status}`);
 
     const rPref = await req(`${S.core}/api/v1/customers/${cpid}/preferences`, {
-      method: 'PUT', token: tok.manager, body: { preferredCuisine: 'SOUTH_INDIAN', dietaryPreference: 'VEG' },
+      method: 'PUT', token: tok.manager, body: { cuisinePreferences: ['SOUTH_INDIAN'], dietaryRestrictions: ['VEG'] },
     });
     if (ok(rPref)) pass(sec, 'PUT /api/v1/customers/{id}/preferences');
     else            warn(sec, 'PUT v1 preferences', `status ${rPref.status}`);
 
     const rPrefNV = await req(`${S.core}/api/customers/${cpid}/preferences`, {
-      method: 'PUT', token: tok.manager, body: { preferredCuisine: 'NORTH_INDIAN' },
+      method: 'PUT', token: tok.manager, body: { cuisinePreferences: ['NORTH_INDIAN'] },
     });
     if (ok(rPrefNV)) pass(sec, 'PUT /api/customers/{id}/preferences');
     else              warn(sec, 'PUT preferences (no-v1)', `status ${rPrefNV.status}`);
@@ -1004,30 +1004,28 @@ async function testCustomers() {
     if (ok(rActNV)) pass(sec, 'PATCH /api/customers/{id}/activate');
     else             warn(sec, 'PATCH activate (no-v1)', `status ${rActNV.status}`);
 
-    const rRedeem = await req(`${S.core}/api/v1/customers/${cpid2}/loyalty/redeem`, {
+    const rRedeem = await req(`${S.core}/api/v1/customers/${cpid2}/loyalty/redeem?points=10`, {
       method: 'POST', token: tok.manager,
-      body: { points: 10, orderId: 'test-order-redeem', reason: 'API test redeem' },
     });
     if (ok(rRedeem)) pass(sec, 'POST /api/v1/customers/{id}/loyalty/redeem');
     else              warn(sec, 'POST v1 loyalty/redeem', `status ${rRedeem.status}`);
 
-    const rRedeemNV = await req(`${S.core}/api/customers/${cpid2}/loyalty/redeem`, {
+    const rRedeemNV = await req(`${S.core}/api/customers/${cpid2}/loyalty/redeem?points=5`, {
       method: 'POST', token: tok.manager,
-      body: { points: 5, orderId: 'test-order-redeem2', reason: 'API test redeem2' },
     });
     if (ok(rRedeemNV)) pass(sec, 'POST /api/customers/{id}/loyalty/redeem');
     else                warn(sec, 'POST loyalty/redeem (no-v1)', `status ${rRedeemNV.status}`);
 
     const rOStats = await req(`${S.core}/api/v1/customers/${cpid2}/order-stats`, {
       method: 'POST', token: tok.manager,
-      body: { orderAmount: 250.0, orderId: 'test-order-stats' },
+      body: { orderTotal: 250.0, orderId: 'test-order-stats', status: 'DELIVERED', orderType: 'DELIVERY' },
     });
     if (ok(rOStats)) pass(sec, 'POST /api/v1/customers/{id}/order-stats');
     else              warn(sec, 'POST v1 order-stats', `status ${rOStats.status}`);
 
     const rOStatsNV = await req(`${S.core}/api/customers/${cpid2}/order-stats`, {
       method: 'POST', token: tok.manager,
-      body: { orderAmount: 150.0, orderId: 'test-order-stats2' },
+      body: { orderTotal: 150.0, orderId: 'test-order-stats2', status: 'DELIVERED', orderType: 'TAKEAWAY' },
     });
     if (ok(rOStatsNV)) pass(sec, 'POST /api/customers/{id}/order-stats');
     else                warn(sec, 'POST order-stats (no-v1)', `status ${rOStatsNV.status}`);
@@ -1119,7 +1117,7 @@ async function testCampaigns() {
     else           warn(sec, 'GET /api/campaigns/{id}', `status ${rGet.status}`);
 
     const rUp = await req(`${S.core}/api/campaigns/${D.campaignId}`, {
-      method: 'PUT', ...mgrOpts, body: { name: 'Updated Campaign', content: 'Updated content.' },
+      method: 'PUT', ...mgrOpts, body: { name: 'Updated Campaign', message: 'Updated content.' },
     });
     if (ok(rUp)) pass(sec, 'PUT /api/campaigns/{id}');
     else          warn(sec, 'PUT /api/campaigns/{id}', `status ${rUp.status}`);
@@ -1300,30 +1298,53 @@ async function testGdpr() {
   else              warn(sec, 'GET /api/gdpr/export/{userId}', `status ${rExport.status}`);
 
   if (D.gdprRequestId) {
-    const reqPaths = [
-      ['POST /api/gdpr/request/{requestId}/access',      `${S.core}/api/gdpr/request/${D.gdprRequestId}/access`],
-      ['POST /api/gdpr/request/{requestId}/portability', `${S.core}/api/gdpr/request/${D.gdprRequestId}/portability`],
-    ];
-    for (const [label, url] of reqPaths) {
-      const r = await req(url, { method: 'POST', ...mgrOpts });
-      if (ok(r)) pass(sec, label);
-      else        warn(sec, label, `status ${r.status}`);
-    }
+    // Process the ACCESS request
+    const rAccess = await req(`${S.core}/api/gdpr/request/${D.gdprRequestId}/access`, { method: 'POST', ...mgrOpts });
+    if (ok(rAccess)) pass(sec, 'POST /api/gdpr/request/{requestId}/access');
+    else              warn(sec, 'POST /api/gdpr/request/{requestId}/access', `status ${rAccess.status}`);
 
     const rVerify = await req(`${S.core}/api/gdpr/request/${D.gdprRequestId}/verify`, { method: 'POST', ...mgrOpts });
     if (ok(rVerify)) pass(sec, 'POST /api/gdpr/request/{requestId}/verify');
     else              warn(sec, 'POST /api/gdpr/request/{requestId}/verify', `status ${rVerify.status}`);
+  }
 
-    const rErasure = await req(`${S.core}/api/gdpr/request/${D.gdprRequestId}/erasure`, { method: 'POST', ...mgrOpts });
+  // Create separate PORTABILITY request
+  const rPortReq = await req(`${S.core}/api/gdpr/request`, {
+    method: 'POST', ...mgrOpts,
+    body: { userId, requestType: 'PORTABILITY', reason: 'Portability test' },
+  });
+  if (ok(rPortReq)) {
+    const portId = id(rPortReq.body);
+    const rPort = await req(`${S.core}/api/gdpr/request/${portId}/portability`, { method: 'POST', ...mgrOpts });
+    if (ok(rPort)) pass(sec, 'POST /api/gdpr/request/{requestId}/portability');
+    else            warn(sec, 'POST /api/gdpr/request/{requestId}/portability', `status ${rPort.status}`);
+  } else warn(sec, 'POST /api/gdpr/request (PORTABILITY)', `status ${rPortReq.status}`);
+
+  // Create separate ERASURE request
+  const rEraReq = await req(`${S.core}/api/gdpr/request`, {
+    method: 'POST', ...mgrOpts,
+    body: { userId, requestType: 'ERASURE', reason: 'Erasure test' },
+  });
+  if (ok(rEraReq)) {
+    const eraId = id(rEraReq.body);
+    const rErasure = await req(`${S.core}/api/gdpr/request/${eraId}/erasure`, { method: 'POST', ...mgrOpts });
     if (ok(rErasure)) pass(sec, 'POST /api/gdpr/request/{requestId}/erasure');
     else               warn(sec, 'POST /api/gdpr/request/{requestId}/erasure', `status ${rErasure.status}`);
+  } else warn(sec, 'POST /api/gdpr/request (ERASURE)', `status ${rEraReq.status}`);
 
-    const rRect = await req(`${S.core}/api/gdpr/request/${D.gdprRequestId}/rectification`, {
+  // Create separate RECTIFICATION request
+  const rRectReq = await req(`${S.core}/api/gdpr/request`, {
+    method: 'POST', ...mgrOpts,
+    body: { userId, requestType: 'RECTIFICATION', reason: 'Rectification test' },
+  });
+  if (ok(rRectReq)) {
+    const rectId = id(rRectReq.body);
+    const rRect = await req(`${S.core}/api/gdpr/request/${rectId}/rectification`, {
       method: 'POST', ...mgrOpts, body: { corrections: { name: 'Corrected Name' } },
     });
     if (ok(rRect)) pass(sec, 'POST /api/gdpr/request/{requestId}/rectification');
     else            warn(sec, 'POST /api/gdpr/request/{requestId}/rectification', `status ${rRect.status}`);
-  }
+  } else warn(sec, 'POST /api/gdpr/request (RECTIFICATION)', `status ${rRectReq.status}`);
 
   if (D.regUserId) {
     const rErase = await req(`${S.core}/api/gdpr/erase/${D.regUserId}`, {
@@ -1828,14 +1849,14 @@ async function testInventory() {
 
     const rRejPO = await req(`${S.logistics}/api/inventory/purchase-orders/${D.purchaseOrderId}/reject`, {
       method: 'PATCH', ...mgrOpts,
-      body: { rejectedBy: D.managerId, reason: 'API test rejection' },
+      body: { rejectionReason: 'API test rejection', storeId: D.storeId001 || 'DOM001' },
     });
     if (ok(rRejPO)) pass(sec, 'PATCH /api/inventory/purchase-orders/{id}/reject');
     else             warn(sec, 'PATCH /api/inventory/purchase-orders/{id}/reject', `status ${rRejPO.status}`);
 
     const rCancelPO = await req(`${S.logistics}/api/inventory/purchase-orders/${D.purchaseOrderId}/cancel`, {
       method: 'PATCH', ...mgrOpts,
-      body: { cancelledBy: D.managerId, reason: 'API test cancel' },
+      body: { reason: 'API test cancel', storeId: D.storeId001 || 'DOM001' },
     });
     if (ok(rCancelPO)) pass(sec, 'PATCH /api/inventory/purchase-orders/{id}/cancel');
     else                warn(sec, 'PATCH /api/inventory/purchase-orders/{id}/cancel', `status ${rCancelPO.status}`);
@@ -1893,7 +1914,7 @@ async function testInventory() {
 
     const rUpW = await req(`${S.logistics}/api/inventory/waste/${D.wasteId}`, {
       method: 'PUT', ...mgrOpts,
-      body: { quantity: 2, reason: 'SPOILAGE', notes: 'Updated via API test' },
+      body: { quantity: 2, wasteReason: 'SPOILAGE', notes: 'Updated via API test' },
     });
     if (ok(rUpW)) pass(sec, 'PUT /api/inventory/waste/{id}');
     else           warn(sec, 'PUT /api/inventory/waste/{id}', `status ${rUpW.status}`);
@@ -2377,7 +2398,7 @@ async function testReviews() {
   } else warn(sec, 'POST /api/reviews', `status ${rCreate.status}`);
 
   const rPubSub = await req(`${S.core}/api/reviews/public/submit?token=fake-rating-token`, {
-    method: 'POST', body: { orderId: 'test', rating: 5, comment: 'Public submit test' },
+    method: 'POST', body: { orderId: 'test', overallRating: 5, comment: 'Public submit test' },
   });
   if (ok(rPubSub) || rPubSub.status === 404 || rPubSub.status === 400 || rPubSub.status === 401)
     pass(sec, 'POST /api/reviews/public/submit — handled');
@@ -2397,7 +2418,7 @@ async function testReviews() {
     ['GET /api/reviews/rating',         `${S.core}/api/reviews/rating`],
   ];
   for (const [label, url] of reviewListEndpoints) {
-    const r = await req(url, { token: tok.manager, storeCode: A.manager.storeCode });
+    const r = await req(url, { token: tok.manager, storeCode: A.manager.storeCode, headers: { 'X-User-ID': D.managerId || 'test' } });
     if (ok(r)) pass(sec, label);
     else        warn(sec, label, `status ${r.status}`);
   }

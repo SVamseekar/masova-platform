@@ -644,7 +644,7 @@ public class UserService {
             try {
                 sessionService.endSession(userId);
             } catch (Exception e) {
-                logger.error("Failed to end session during deactivation for user {}: {}", userId, e.getMessage(), e);
+                logger.warn("No active session to end during deactivation for user {}: {}", userId, e.getMessage());
             }
         }
     }
@@ -1155,7 +1155,7 @@ public class UserService {
         User.PersonalInfo personalInfo = new User.PersonalInfo();
         personalInfo.setName(kioskName);
         personalInfo.setEmail(kioskEmail);
-        personalInfo.setPhone("0000000000"); // Placeholder phone for kiosk accounts
+        personalInfo.setPhone(String.format("KIOSK%s%s", storeId, terminalId)); // Unique phone per kiosk terminal
         // Generate random secure password (not meant for manual login)
         String randomPassword = java.util.UUID.randomUUID().toString() + java.util.UUID.randomUUID().toString();
         personalInfo.setPasswordHash(passwordEncoder.encode(randomPassword));

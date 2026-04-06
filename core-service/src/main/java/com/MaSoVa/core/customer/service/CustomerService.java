@@ -193,7 +193,7 @@ public class CustomerService {
     // READ
     // ===========================
 
-    @Cacheable(value = "customers", key = "#p0")
+    @Cacheable(value = "customers", key = "#p0", unless = "#result == null || !#result.isPresent()")
     public Optional<Customer> getCustomerById(String id) {
         logger.debug("Fetching customer by ID: {}", id);
         return customerRepository.findById(id);

@@ -1,8 +1,10 @@
 package com.MaSoVa.shared.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Address {
     @NotNull
     private String street;

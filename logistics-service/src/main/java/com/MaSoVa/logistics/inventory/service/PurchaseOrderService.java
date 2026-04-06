@@ -132,6 +132,11 @@ public class PurchaseOrderService {
             throw new RuntimeException("Cannot update a received purchase order");
         }
 
+        // Preserve orderNumber from existing record
+        if (purchaseOrder.getOrderNumber() == null || purchaseOrder.getOrderNumber().isBlank()) {
+            purchaseOrder.setOrderNumber(existing.getOrderNumber());
+        }
+
         // Recalculate totals
         purchaseOrder.calculateTotals();
 

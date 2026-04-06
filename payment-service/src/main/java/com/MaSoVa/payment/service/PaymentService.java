@@ -12,8 +12,10 @@ import com.razorpay.Payment;
 import com.razorpay.RazorpayException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.MaSoVa.shared.messaging.events.PaymentCompletedEvent;
 import com.MaSoVa.shared.messaging.events.PaymentFailedEvent;
@@ -78,10 +80,21 @@ public class PaymentService {
 
             // Check if payment already exists for this order
             Optional<Transaction> existingTransaction = transactionRepository.findByOrderId(request.getOrderId());
-            if (existingTransaction.isPresent() &&
-                existingTransaction.get().getStatus() == Transaction.PaymentStatus.SUCCESS) {
-                log.warn("Payment already exists for order: {}", request.getOrderId());
-                throw new RuntimeException("Payment already completed for this order");
+            if (existingTransaction.isPresent()) {
+                Transaction existing = existingTransaction.get();
+                if (existing.getStatus() == Transaction.PaymentStatus.SUCCESS) {
+                    log.warn("Payment already completed for order: {}", request.getOrderId());
+                    throw new RuntimeException("Payment already completed for this order");
+                }
+                log.info("Returning existing transaction for order: {}, status: {}", request.getOrderId(), existing.getStatus());
+                return PaymentResponse.builder()
+                        .transactionId(existing.getId())
+                        .orderId(existing.getOrderId())
+                        .razorpayOrderId(existing.getRazorpayOrderId())
+                        .amount(existing.getAmount())
+                        .currency(existing.getCurrency())
+                        .status(existing.getStatus())
+                        .build();
             }
 
             // Generate receipt number
@@ -147,8 +160,8 @@ public class PaymentService {
 
             // Find transaction
             Transaction transaction = transactionRepository.findByRazorpayOrderId(request.getRazorpayOrderId())
-                    .orElseThrow(() -> new RuntimeException("Transaction not found for Razorpay order: " +
-                                                            request.getRazorpayOrderId()));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                    "Transaction not found for Razorpay order: " + request.getRazorpayOrderId()));
 
             // IDEMPOTENCY CHECK: If payment already processed successfully, return existing response
             if (transaction.getStatus() == Transaction.PaymentStatus.SUCCESS &&
@@ -264,7 +277,7 @@ public class PaymentService {
      */
     public PaymentResponse getTransaction(String transactionId) {
         Transaction transaction = transactionRepository.findById(Objects.requireNonNull(transactionId))
-                .orElseThrow(() -> new RuntimeException("Transaction not found: " + transactionId));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction not found: " + transactionId));
         return buildPaymentResponse(transaction);
     }
 
@@ -273,7 +286,7 @@ public class PaymentService {
      */
     public PaymentResponse getTransactionByOrderId(String orderId) {
         Transaction transaction = transactionRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new RuntimeException("Transaction not found for order: " + orderId));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction not found for order: " + orderId));
         return buildPaymentResponse(transaction);
     }
 
@@ -369,7 +382,7 @@ public class PaymentService {
     @Transactional
     public void markAsReconciled(String transactionId, String reconciledBy) {
         Transaction transaction = transactionRepository.findById(Objects.requireNonNull(transactionId))
-                .orElseThrow(() -> new RuntimeException("Transaction not found: " + transactionId));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction not found: " + transactionId));
 
         transaction.setReconciled(true);
         transaction.setReconciledAt(LocalDateTime.now());

@@ -169,9 +169,8 @@ public class OrderController {
         }
     }
 
-    // Only customers can view their own orders
     @GetMapping("/customer/{customerId}")
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'STAFF')")
     public ResponseEntity<List<Order>> getCustomerOrders(@PathVariable String customerId) {
         List<Order> orders = orderService.getCustomerOrders(customerId);
         return ResponseEntity.ok(orders);
@@ -454,11 +453,14 @@ public class OrderController {
         String generatedAt = (String) payload.get("generatedAt");
         String expiresAt = (String) payload.get("expiresAt");
 
+        java.time.LocalDateTime generatedAtDt = generatedAt != null ? java.time.LocalDateTime.parse(generatedAt) : java.time.LocalDateTime.now();
+        java.time.LocalDateTime expiresAtDt = expiresAt != null ? java.time.LocalDateTime.parse(expiresAt) : java.time.LocalDateTime.now().plusMinutes(15);
+
         Order order = orderService.setDeliveryOtp(
                 orderId,
                 otp,
-                java.time.LocalDateTime.parse(generatedAt),
-                java.time.LocalDateTime.parse(expiresAt)
+                generatedAtDt,
+                expiresAtDt
         );
         return ResponseEntity.ok(order);
     }
