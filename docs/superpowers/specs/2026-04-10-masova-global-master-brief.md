@@ -163,6 +163,8 @@ The country field is **immutable after the first order is placed.**
 ---
 
 ### Phase Global-2: EU VAT Engine
+**Status:** ✅ COMPLETE — 2026-04-11 · branch `main` · 8 commits · 30+ tests
+
 **Legal basis:** EU VAT Directive 2006/112/EC — per-country, per-context rates
 
 **What changes:**
