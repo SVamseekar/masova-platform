@@ -10,6 +10,7 @@ public class OrderItem {
     private Double price;
     private String variant;
     private List<String> customizations;
+    private String category;  // MenuCategory name e.g. "FOOD", "BEVERAGE", "ALCOHOL" — for VAT routing
 
     public OrderItem() {}
 
@@ -40,6 +41,9 @@ public class OrderItem {
 
     public List<String> getCustomizations() { return customizations; }
     public void setCustomizations(List<String> customizations) { this.customizations = customizations; }
+
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
 
     public Double getItemTotal() {
         return price * quantity;
