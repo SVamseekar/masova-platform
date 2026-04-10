@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { AllergenType, ALLERGEN_SHORT } from '../../constants/allergens';
 import { useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import AppHeader from '../../components/common/AppHeader';
@@ -21,12 +22,43 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 
+// Allergen badge components
+export const AllergenBadge: React.FC<{ allergen: AllergenType }> = ({ allergen }) => (
+  <span
+    title={allergen}
+    style={{
+      display: 'inline-block',
+      background: 'rgba(255, 165, 0, 0.2)',
+      border: '1px solid rgba(255, 165, 0, 0.6)',
+      color: 'orange',
+      fontSize: '0.65rem',
+      fontWeight: 700,
+      padding: '2px 5px',
+      borderRadius: 4,
+      marginRight: 3,
+      letterSpacing: '0.05em',
+    }}
+  >
+    {ALLERGEN_SHORT[allergen]}
+  </span>
+);
+
+export const AllergenBadgeList: React.FC<{ allergens: AllergenType[] }> = ({ allergens }) => {
+  if (!allergens || allergens.length === 0) return <></>;
+  return (
+    <span>
+      {allergens.map(a => <AllergenBadge key={a} allergen={a} />)}
+    </span>
+  );
+};
+
 // TypeScript interfaces
 interface OrderItem {
   name: string;
   size: string | null;
   toppings: string[];
   quantity: number;
+  allergens?: AllergenType[];
 }
 
 interface Order {
@@ -364,6 +396,11 @@ const KitchenDisplayPage: React.FC = () => {
             </div>
             {item.toppings.length > 0 && (
               <div className="item-toppings">{item.toppings.join(', ')}</div>
+            )}
+            {item.allergens && item.allergens.length > 0 && (
+              <div style={{ marginTop: 4 }}>
+                <AllergenBadgeList allergens={item.allergens} />
+              </div>
             )}
           </div>
         ))}
