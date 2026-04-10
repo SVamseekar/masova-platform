@@ -10,9 +10,69 @@ import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import {
   useGetAllMenuItemsQuery,
   useUpdateMenuItemMutation,
+  useDeclareAllergensMutation,
   MenuItem,
   Cuisine,
 } from '../../store/api/menuApi';
+import { AllergenType, ALL_ALLERGENS, ALLERGEN_LABELS } from '../../constants/allergens';
+
+export interface AllergenGridProps {
+  selectedAllergens: AllergenType[];
+  onChange: (allergens: AllergenType[]) => void;
+  allergenFree: boolean;
+  onAllergenFreeChange: (value: boolean) => void;
+}
+
+export const AllergenGrid: React.FC<AllergenGridProps> = ({
+  selectedAllergens,
+  onChange,
+  allergenFree,
+  onAllergenFreeChange,
+}) => {
+  const toggle = (allergen: AllergenType) => {
+    if (selectedAllergens.includes(allergen)) {
+      onChange(selectedAllergens.filter(a => a !== allergen));
+    } else {
+      onChange([...selectedAllergens, allergen]);
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+        {ALL_ALLERGENS.map(allergen => (
+          <label
+            key={allergen}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, cursor: allergenFree ? 'not-allowed' : 'pointer',
+              opacity: allergenFree ? 0.4 : 1, fontSize: '0.875rem',
+            }}
+          >
+            <input
+              type="checkbox"
+              aria-label={ALLERGEN_LABELS[allergen]}
+              checked={selectedAllergens.includes(allergen)}
+              disabled={allergenFree}
+              onChange={() => toggle(allergen)}
+            />
+            {ALLERGEN_LABELS[allergen]}
+          </label>
+        ))}
+      </div>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontWeight: 600 }}>
+        <input
+          type="checkbox"
+          checked={allergenFree}
+          onChange={e => {
+            onAllergenFreeChange(e.target.checked);
+            if (e.target.checked) onChange([]);
+          }}
+        />
+        This item contains no allergens
+      </label>
+    </div>
+  );
+};
 
 const RecipeManagementPage: React.FC = () => {
   const { handleBack } = useSmartBackNavigation();
@@ -24,8 +84,11 @@ const RecipeManagementPage: React.FC = () => {
 
   const { data: menuItems = [], isLoading } = useGetAllMenuItemsQuery(storeId, { skip: !storeId });
   const [updateMenuItem] = useUpdateMenuItemMutation();
+  const [declareAllergens] = useDeclareAllergensMutation();
 
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [selectedAllergens, setSelectedAllergens] = useState<AllergenType[]>([]);
+  const [allergenFree, setAllergenFree] = useState(false);
   const [editingIngredients, setEditingIngredients] = useState<string[]>([]);
   const [editingInstructions, setEditingInstructions] = useState<string[]>([]);
   const [newIngredient, setNewIngredient] = useState('');
@@ -44,6 +107,8 @@ const RecipeManagementPage: React.FC = () => {
     setSelectedItem(item);
     setEditingIngredients(item.ingredients || []);
     setEditingInstructions(item.preparationInstructions || []);
+    setSelectedAllergens((item.allergens as AllergenType[]) || []);
+    setAllergenFree(item.allergensDeclared === true && (item.allergens?.length ?? 0) === 0);
     setSaveSuccess(false);
   };
 
@@ -475,6 +540,18 @@ const RecipeManagementPage: React.FC = () => {
         )}
       </div>
 
+      {menuItems.filter(i => !i.allergensDeclared).length > 0 && (
+        <div style={{
+          background: 'rgba(255, 165, 0, 0.15)', border: '1px solid orange',
+          borderRadius: 8, padding: '8px 16px', margin: '0 24px 16px',
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <span style={{ fontWeight: 700, color: 'orange', fontSize: '0.9rem' }}>
+            ⚠ {menuItems.filter(i => !i.allergensDeclared).length} items pending allergen review
+          </span>
+        </div>
+      )}
+
       <div style={layoutStyles}>
         {/* Sidebar - Menu Items List */}
         <div style={sidebarStyles}>
@@ -559,6 +636,42 @@ const RecipeManagementPage: React.FC = () => {
                 <p style={{ fontSize: typography.fontSize.base, color: colors.text.secondary }}>
                   {selectedItem.description || 'No description'}
                 </p>
+              </div>
+
+              {/* Allergen Declaration Section */}
+              <div style={{ ...sectionStyles, marginBottom: spacing[4] }}>
+                <h3 style={sectionTitleStyles}>Allergen Declaration</h3>
+                {!selectedItem.allergensDeclared && (
+                  <div style={{
+                    background: 'rgba(255, 165, 0, 0.12)', border: '1px solid orange',
+                    borderRadius: 8, padding: '8px 14px', marginBottom: 12,
+                    color: 'orange', fontWeight: 600, fontSize: '0.875rem',
+                  }}>
+                    ⚠ Allergens not yet declared — item cannot be made available until declared
+                  </div>
+                )}
+                <AllergenGrid
+                  selectedAllergens={selectedAllergens}
+                  onChange={setSelectedAllergens}
+                  allergenFree={allergenFree}
+                  onAllergenFreeChange={setAllergenFree}
+                />
+                <button
+                  style={{
+                    marginTop: 12, padding: '8px 20px',
+                    background: 'linear-gradient(135deg, #FF6B35, #D32F2F)',
+                    color: '#fff', border: 'none', borderRadius: 8,
+                    fontWeight: 700, cursor: 'pointer', fontSize: '0.875rem',
+                  }}
+                  onClick={async () => {
+                    if (!selectedItem) return;
+                    try {
+                      await declareAllergens({ id: selectedItem.id, data: { allergens: selectedAllergens, allergenFree } }).unwrap();
+                    } catch (e) { console.error('Failed to declare allergens', e); }
+                  }}
+                >
+                  Save Allergen Declaration
+                </button>
               </div>
 
               {/* Ingredients Section */}
