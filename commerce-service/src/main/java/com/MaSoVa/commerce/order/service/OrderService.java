@@ -263,9 +263,13 @@ public class OrderService {
 
         // Publish order created event to RabbitMQ
         try {
-            orderEventPublisher.publishOrderCreated(new OrderCreatedEvent(
+            String currency = savedOrder.getVatCountryCode() != null ? "EUR" : "INR";
+            OrderCreatedEvent createdEvent = new OrderCreatedEvent(
                 savedOrder.getId(), savedOrder.getCustomerId(), savedOrder.getStoreId(),
-                savedOrder.getOrderType().toString(), savedOrder.getTotal(), "INR"));
+                savedOrder.getOrderType().toString(), savedOrder.getTotal(), currency);
+            createdEvent.setVatCountryCode(savedOrder.getVatCountryCode());
+            createdEvent.setTotalVatAmount(savedOrder.getTotalVatAmount());
+            orderEventPublisher.publishOrderCreated(createdEvent);
         } catch (Exception e) {
             log.warn("Failed to publish order created event for {}: {}", savedOrder.getOrderNumber(), e.getMessage());
         }
@@ -415,9 +419,12 @@ public class OrderService {
 
         // Publish status changed event to RabbitMQ
         try {
-            orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
+            OrderStatusChangedEvent statusEvent = new OrderStatusChangedEvent(
                 updatedOrder.getId(), updatedOrder.getCustomerId(),
-                currentStatus.toString(), newStatus.toString(), updatedOrder.getStoreId()));
+                currentStatus.toString(), newStatus.toString(), updatedOrder.getStoreId());
+            statusEvent.setVatCountryCode(updatedOrder.getVatCountryCode());
+            statusEvent.setTotalVatAmount(updatedOrder.getTotalVatAmount());
+            orderEventPublisher.publishOrderStatusChanged(statusEvent);
         } catch (Exception e) {
             log.warn("Failed to publish status changed event for {}: {}", updatedOrder.getOrderNumber(), e.getMessage());
         }
@@ -519,9 +526,12 @@ public class OrderService {
 
         // Publish status changed event to RabbitMQ
         try {
-            orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
+            OrderStatusChangedEvent statusEvent = new OrderStatusChangedEvent(
                 updatedOrder.getId(), updatedOrder.getCustomerId(),
-                currentStatus.toString(), nextStatus.toString(), updatedOrder.getStoreId()));
+                currentStatus.toString(), nextStatus.toString(), updatedOrder.getStoreId());
+            statusEvent.setVatCountryCode(updatedOrder.getVatCountryCode());
+            statusEvent.setTotalVatAmount(updatedOrder.getTotalVatAmount());
+            orderEventPublisher.publishOrderStatusChanged(statusEvent);
         } catch (Exception e) {
             log.warn("Failed to publish status changed event for {}: {}", updatedOrder.getOrderNumber(), e.getMessage());
         }
@@ -607,9 +617,12 @@ public class OrderService {
 
         // Publish status changed event to RabbitMQ
         try {
-            orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
+            OrderStatusChangedEvent statusEvent = new OrderStatusChangedEvent(
                 cancelledOrder.getId(), cancelledOrder.getCustomerId(),
-                previousStatus.toString(), "CANCELLED", cancelledOrder.getStoreId()));
+                previousStatus.toString(), "CANCELLED", cancelledOrder.getStoreId());
+            statusEvent.setVatCountryCode(cancelledOrder.getVatCountryCode());
+            statusEvent.setTotalVatAmount(cancelledOrder.getTotalVatAmount());
+            orderEventPublisher.publishOrderStatusChanged(statusEvent);
         } catch (Exception e) {
             log.warn("Failed to publish cancel event for {}: {}", cancelledOrder.getOrderNumber(), e.getMessage());
         }
@@ -1477,10 +1490,13 @@ public class OrderService {
 
         // Publish status changed event to RabbitMQ
         try {
-            orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
+            OrderStatusChangedEvent statusEvent = new OrderStatusChangedEvent(
                 savedOrder.getId(), savedOrder.getCustomerId(),
                 OrderStatus.DISPATCHED.toString(), OrderStatus.DELIVERED.toString(),
-                savedOrder.getStoreId()));
+                savedOrder.getStoreId());
+            statusEvent.setVatCountryCode(savedOrder.getVatCountryCode());
+            statusEvent.setTotalVatAmount(savedOrder.getTotalVatAmount());
+            orderEventPublisher.publishOrderStatusChanged(statusEvent);
         } catch (Exception e) {
             log.warn("Failed to publish delivered event for {}: {}", orderId, e.getMessage());
         }
