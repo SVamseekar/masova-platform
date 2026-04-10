@@ -163,7 +163,7 @@ The country field is **immutable after the first order is placed.**
 ---
 
 ### Phase Global-2: EU VAT Engine
-**Status:** ✅ COMPLETE — 2026-04-11 · branch `main` · 8 commits · 30+ tests
+**Status:** ✅ COMPLETE — 2026-04-11 · PR #9 (`feature/global-2-eu-vat-engine`) · 11 commits · 55 tests
 
 **Legal basis:** EU VAT Directive 2006/112/EC — per-country, per-context rates
 
@@ -610,14 +610,14 @@ Never thought about fiscal compliance once since setup. TSE signs silently. NF52
 ## Recommended Build Order
 
 ```
-Global-1 (Allergen) ──────────────────────────────► done
-Global-2 (VAT) ───────────────────────────────────► done
-Global-3 (Currency) ──── depends on 2 ────────────► done
-Global-4 (Payments) ──── depends on 2+3 ──────────► done
-Global-5 (Fiscal) ─────── depends on 2+4 ─────────► done
-Global-6 (Aggregators) ── depends on 2 ───────────► done (parallel with 3-5)
-Global-7 (Agentic AI) ─── depends on 6 for data ──► done (parallel with 5)
-Global-8 (Payroll) ──────── depends on 3 ─────────► done (parallel with 5-7)
+Global-1 (Allergen) ──────────────────────────────► ✅ DONE — PR #8
+Global-2 (VAT) ───────────────────────────────────► ✅ DONE — PR #9
+Global-3 (Currency) ──── depends on 2 ────────────► pending
+Global-4 (Payments) ──── depends on 2+3 ──────────► pending
+Global-5 (Fiscal) ─────── depends on 2+4 ─────────► pending
+Global-6 (Aggregators) ── depends on 2 ───────────► pending (parallel with 3-5)
+Global-7 (Agentic AI) ─── depends on 6 for data ──► pending (parallel with 5)
+Global-8 (Payroll) ──────── depends on 3 ─────────► pending (parallel with 5-7)
 Global-9 (Operator UX) ── depends on all ─────────► last
 ```
 
