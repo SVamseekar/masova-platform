@@ -1,4 +1,32 @@
 import React, { useState, useEffect } from 'react';
+import { AllergenType, ALLERGEN_LABELS } from '../../constants/allergens';
+
+export interface AllergenWarningBannerProps {
+  itemAllergens: AllergenType[];
+  customerAllergenAlerts: AllergenType[];
+}
+
+export const AllergenWarningBanner: React.FC<AllergenWarningBannerProps> = ({
+  itemAllergens,
+  customerAllergenAlerts,
+}) => {
+  const matches = itemAllergens.filter(a => customerAllergenAlerts.includes(a));
+  if (matches.length === 0) return null;
+  return (
+    <div style={{
+      background: 'rgba(220, 38, 38, 0.12)',
+      border: '1px solid rgba(220, 38, 38, 0.4)',
+      borderRadius: 8,
+      padding: '10px 16px',
+      marginBottom: 12,
+      color: '#ef4444',
+      fontSize: '0.875rem',
+      fontWeight: 600,
+    }}>
+      ⚠ Contains allergens you've flagged: {matches.map(a => ALLERGEN_LABELS[a]).join(', ')}
+    </div>
+  );
+};
 import { Skeleton } from '@mui/material';
 import {
   useGetAvailableMenuQuery,
@@ -623,6 +651,24 @@ const MenuPage: React.FC<MenuPageProps> = ({
                 {item.variants && item.variants.length > 0 && (
                   <div style={variantsNoteStyles}>
                     + {item.variants.length} size options available
+                  </div>
+                )}
+
+                {/* Allergen info */}
+                {item.allergens && item.allergens.length > 0 && (
+                  <div style={{ marginBottom: 8 }}>
+                    <AllergenWarningBanner
+                      itemAllergens={item.allergens as AllergenType[]}
+                      customerAllergenAlerts={[]}
+                    />
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, fontSize: '0.75rem', color: 'var(--text-3)' }}>
+                      <span style={{ fontWeight: 600 }}>Contains:</span>
+                      {item.allergens.map(a => (
+                        <span key={a} style={{ background: 'rgba(255,165,0,0.1)', border: '1px solid rgba(255,165,0,0.3)', borderRadius: 4, padding: '1px 6px', color: 'orange' }}>
+                          {ALLERGEN_LABELS[a as AllergenType]}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
 
