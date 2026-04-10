@@ -30,7 +30,7 @@ public class MenuService {
 
     private void enforceAllergenGate(MenuItem item) {
         if (Boolean.TRUE.equals(item.getIsAvailable()) && !item.isAllergensDeclared()) {
-            throw new BusinessException("Allergens must be declared before making a menu item available. Use PATCH /api/menu/{id}/allergens first.");
+            throw new BusinessException("allergens must be declared before making a menu item available. Use PATCH /api/menu/{id}/allergens first.");
         }
     }
 

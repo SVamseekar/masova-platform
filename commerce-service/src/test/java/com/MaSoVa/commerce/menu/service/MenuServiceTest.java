@@ -6,13 +6,14 @@ import com.MaSoVa.shared.enums.Cuisine;
 import com.MaSoVa.shared.enums.MenuCategory;
 import com.MaSoVa.shared.exception.BusinessException;
 import com.MaSoVa.commerce.menu.repository.MenuItemRepository;
-import com.MaSoVa.shared.test.BaseServiceTest;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,7 +24,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-class MenuServiceTest extends BaseServiceTest {
+@ExtendWith(MockitoExtension.class)
+class MenuServiceTest {
 
     @Mock
     private MenuItemRepository menuItemRepository;
