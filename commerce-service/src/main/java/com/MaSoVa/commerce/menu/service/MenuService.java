@@ -1,9 +1,11 @@
 package com.MaSoVa.commerce.menu.service;
 
 import com.MaSoVa.shared.entity.MenuItem;
+import com.MaSoVa.shared.enums.AllergenType;
 import com.MaSoVa.shared.enums.Cuisine;
 import com.MaSoVa.shared.enums.MenuCategory;
 import com.MaSoVa.shared.enums.DietaryType;
+import com.MaSoVa.shared.exception.BusinessException;
 import com.MaSoVa.commerce.menu.repository.MenuItemRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +15,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class MenuService {
@@ -22,10 +26,19 @@ public class MenuService {
     @Autowired
     private MenuItemRepository menuItemRepository;
 
+    // ========== ALLERGEN GATE ==========
+
+    private void enforceAllergenGate(MenuItem item) {
+        if (Boolean.TRUE.equals(item.getIsAvailable()) && !item.isAllergensDeclared()) {
+            throw new BusinessException("Allergens must be declared before making a menu item available. Use PATCH /api/menu/{id}/allergens first.");
+        }
+    }
+
     // ========== CREATE ==========
 
     @CacheEvict(value = "menuItems", allEntries = true)
     public MenuItem createMenuItem(MenuItem menuItem) {
+        enforceAllergenGate(menuItem);
         menuItem.setCreatedAt(LocalDateTime.now());
         menuItem.setUpdatedAt(LocalDateTime.now());
         return menuItemRepository.save(menuItem);
@@ -154,6 +167,7 @@ public class MenuService {
                 existingItem.setServingSize(updatedMenuItem.getServingSize());
                 existingItem.setIngredients(updatedMenuItem.getIngredients());
                 existingItem.setAllergens(updatedMenuItem.getAllergens());
+                existingItem.setAllergensDeclared(updatedMenuItem.isAllergensDeclared());
                 existingItem.setPreparationInstructions(updatedMenuItem.getPreparationInstructions());
                 existingItem.setStoreId(updatedMenuItem.getStoreId());
                 existingItem.setDisplayOrder(updatedMenuItem.getDisplayOrder());
@@ -161,6 +175,7 @@ public class MenuService {
                 existingItem.setIsRecommended(updatedMenuItem.getIsRecommended());
 
                 existingItem.setUpdatedAt(LocalDateTime.now());
+                enforceAllergenGate(existingItem);
 
                 return menuItemRepository.save(existingItem);
             })
@@ -183,6 +198,19 @@ public class MenuService {
         return menuItemRepository.findById(id)
             .map(item -> {
                 item.setIsAvailable(isAvailable);
+                item.setUpdatedAt(LocalDateTime.now());
+                enforceAllergenGate(item);
+                return menuItemRepository.save(item);
+            })
+            .orElseThrow(() -> new RuntimeException("Menu item not found with id: " + id));
+    }
+
+    @CacheEvict(value = "menuItems", allEntries = true)
+    public MenuItem declareAllergens(String id, Set<AllergenType> allergens, boolean allergenFree) {
+        return menuItemRepository.findById(id)
+            .map(item -> {
+                item.setAllergens(allergenFree ? new HashSet<>() : allergens);
+                item.setAllergensDeclared(true);
                 item.setUpdatedAt(LocalDateTime.now());
                 return menuItemRepository.save(item);
             })
@@ -273,7 +301,7 @@ public class MenuService {
             copiedItem.setNutritionalInfo(sourceItem.getNutritionalInfo());
 
             copiedItem.setImageUrl(sourceItem.getImageUrl());
-            copiedItem.setIsAvailable(sourceItem.getIsAvailable());
+            copiedItem.setIsAvailable(false); // Copied items require allergen re-declaration before going live
             copiedItem.setPreparationTime(sourceItem.getPreparationTime());
             copiedItem.setServingSize(sourceItem.getServingSize());
             copiedItem.setStandardPortionSize(sourceItem.getStandardPortionSize());
@@ -281,7 +309,8 @@ public class MenuService {
             copiedItem.setYieldPerRecipe(sourceItem.getYieldPerRecipe());
 
             copiedItem.setIngredients(new ArrayList<>(sourceItem.getIngredients()));
-            copiedItem.setAllergens(new ArrayList<>(sourceItem.getAllergens()));
+            copiedItem.setAllergens(new HashSet<>(sourceItem.getAllergens()));
+            copiedItem.setAllergensDeclared(false); // Re-declaration required per allergen compliance
             copiedItem.setPreparationInstructions(new ArrayList<>(sourceItem.getPreparationInstructions()));
 
             // Set target store ID

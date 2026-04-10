@@ -138,4 +138,77 @@ class MenuServiceTest extends BaseServiceTest {
 
         assertThat(result).isEmpty();
     }
+
+    // ── Enforcement gate tests ────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("createMenuItem throws when isAvailable=true but allergensDeclared=false")
+    void createMenuItem_throwsWhenAvailableWithoutDeclaration() {
+        baseItem.setIsAvailable(true);
+        baseItem.setAllergensDeclared(false);
+
+        assertThatThrownBy(() -> menuService.createMenuItem(baseItem))
+            .isInstanceOf(BusinessException.class)
+            .hasMessageContaining("allergens must be declared");
+    }
+
+    @Test
+    @DisplayName("createMenuItem succeeds when isAvailable=true and allergensDeclared=true")
+    void createMenuItem_succeedsWhenDeclared() {
+        baseItem.setIsAvailable(true);
+        baseItem.setAllergensDeclared(true);
+        baseItem.setAllergens(Set.of(AllergenType.MILK, AllergenType.EGGS));
+        when(menuItemRepository.save(any(MenuItem.class))).thenReturn(baseItem);
+
+        MenuItem result = menuService.createMenuItem(baseItem);
+
+        assertThat(result).isNotNull();
+    }
+
+    @Test
+    @DisplayName("createMenuItem succeeds when isAvailable=false regardless of declaration")
+    void createMenuItem_succeedsWhenUnavailable() {
+        baseItem.setIsAvailable(false);
+        baseItem.setAllergensDeclared(false);
+        when(menuItemRepository.save(any(MenuItem.class))).thenReturn(baseItem);
+
+        MenuItem result = menuService.createMenuItem(baseItem);
+
+        assertThat(result).isNotNull();
+    }
+
+    @Test
+    @DisplayName("setAvailability throws when setting true without declaration")
+    void setAvailability_throwsWithoutDeclaration() {
+        baseItem.setAllergensDeclared(false);
+        when(menuItemRepository.findById("item-1")).thenReturn(Optional.of(baseItem));
+
+        assertThatThrownBy(() -> menuService.setAvailability("item-1", true))
+            .isInstanceOf(BusinessException.class)
+            .hasMessageContaining("allergens must be declared");
+    }
+
+    @Test
+    @DisplayName("declareAllergens sets allergensDeclared=true with provided allergens")
+    void declareAllergens_setsAllergens() {
+        when(menuItemRepository.findById("item-1")).thenReturn(Optional.of(baseItem));
+        when(menuItemRepository.save(any(MenuItem.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        MenuItem result = menuService.declareAllergens("item-1", Set.of(AllergenType.MILK, AllergenType.EGGS), false);
+
+        assertThat(result.isAllergensDeclared()).isTrue();
+        assertThat(result.getAllergens()).containsExactlyInAnyOrder(AllergenType.MILK, AllergenType.EGGS);
+    }
+
+    @Test
+    @DisplayName("declareAllergens with allergenFree=true sets empty allergens and declared=true")
+    void declareAllergens_allergenFree() {
+        when(menuItemRepository.findById("item-1")).thenReturn(Optional.of(baseItem));
+        when(menuItemRepository.save(any(MenuItem.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        MenuItem result = menuService.declareAllergens("item-1", Set.of(), true);
+
+        assertThat(result.isAllergensDeclared()).isTrue();
+        assertThat(result.getAllergens()).isEmpty();
+    }
 }
