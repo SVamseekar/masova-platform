@@ -2,6 +2,7 @@ import { createApi } from '@reduxjs/toolkit/query/react';
 import baseQueryWithAuth from './baseQueryWithAuth';
 import API_CONFIG from '../../config/api.config';
 import type { RootState } from '../store';
+import { AllergenType } from '../../constants/allergens';
 
 // Enums matching backend
 export enum Cuisine {
@@ -87,7 +88,6 @@ export interface NutritionalInfo {
   carbohydrates?: number;
   fat?: number;
   servingSize?: string;
-  allergens?: string[];
 }
 
 export interface MenuItem {
@@ -109,7 +109,8 @@ export interface MenuItem {
   preparationTime?: number; // in minutes
   servingSize?: string;
   ingredients?: string[];
-  allergens?: string[];
+  allergens?: AllergenType[];
+  allergensDeclared?: boolean;
   preparationInstructions?: string[];
   storeId?: string;
   displayOrder: number;
@@ -136,12 +137,18 @@ export interface MenuItemRequest {
   preparationTime?: number;
   servingSize?: string;
   ingredients?: string[];
-  allergens?: string[];
+  allergens?: AllergenType[];
+  allergensDeclared?: boolean;
   preparationInstructions?: string[];
   storeId?: string;
   displayOrder?: number;
   tags?: string[];
   isRecommended?: boolean;
+}
+
+export interface AllergenDeclarationRequest {
+  allergens: AllergenType[];
+  allergenFree: boolean;
 }
 
 export interface MenuStats {
@@ -332,6 +339,18 @@ export const menuApi = createApi({
       }),
       invalidatesTags: ['Menu', 'MenuStats'],
     }),
+    declareAllergens: builder.mutation<MenuItem, { id: string; data: AllergenDeclarationRequest }>({
+      query: ({ id, data }) => ({
+        url: `/menu/items/${id}/allergens`,
+        method: 'PATCH',
+        body: data,
+      }),
+      transformResponse: (response: any): MenuItem => ({
+        ...response,
+        price: response.basePrice,
+      }),
+      invalidatesTags: ['Menu'],
+    }),
     getMenuStats: builder.query<MenuStats, void>({
       query: () => '/menu/stats',
       providesTags: ['MenuStats'],
@@ -360,5 +379,6 @@ export const {
   useSetAvailabilityMutation,
   useDeleteMenuItemMutation,
   useDeleteAllMenuItemsMutation,
+  useDeclareAllergensMutation,
   useGetMenuStatsQuery,
 } = menuApi;
