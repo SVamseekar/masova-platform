@@ -18,6 +18,8 @@ import com.MaSoVa.commerce.order.client.InventoryServiceClient;
 import com.MaSoVa.commerce.order.config.TaxConfiguration;
 import com.MaSoVa.commerce.order.config.PreparationTimeConfiguration;
 import com.MaSoVa.commerce.order.config.DeliveryFeeConfiguration;
+import com.MaSoVa.shared.entity.Store;
+import com.MaSoVa.shared.model.VatBreakdown;
 import com.MaSoVa.shared.messaging.events.OrderCreatedEvent;
 import com.MaSoVa.shared.messaging.events.OrderStatusChangedEvent;
 import org.slf4j.Logger;
@@ -59,6 +61,7 @@ public class OrderService {
     private final PreparationTimeConfiguration preparationTimeConfiguration;
     private final DeliveryFeeConfiguration deliveryFeeConfiguration;
     private final OrderEventPublisher orderEventPublisher;
+    private final EuVatEngine euVatEngine;
     private final Random random = new Random();
 
     public OrderService(OrderRepository orderRepository,
@@ -74,7 +77,8 @@ public class OrderService {
                        TaxConfiguration taxConfiguration,
                        PreparationTimeConfiguration preparationTimeConfiguration,
                        DeliveryFeeConfiguration deliveryFeeConfiguration,
-                       OrderEventPublisher orderEventPublisher) {
+                       OrderEventPublisher orderEventPublisher,
+                       EuVatEngine euVatEngine) {
         this.orderRepository = orderRepository;
         this.orderJpaRepository = orderJpaRepository;
         this.orderItemSyncService = orderItemSyncService;
@@ -90,6 +94,7 @@ public class OrderService {
         this.preparationTimeConfiguration = preparationTimeConfiguration;
         this.deliveryFeeConfiguration = deliveryFeeConfiguration;
         this.orderEventPublisher = orderEventPublisher;
+        this.euVatEngine = euVatEngine;
     }
 
     @Transactional
@@ -102,14 +107,18 @@ public class OrderService {
 
         // Convert request items to order items
         List<OrderItem> orderItems = request.getItems().stream()
-                .map(item -> OrderItem.builder()
-                        .menuItemId(item.getMenuItemId())
-                        .name(item.getName())
-                        .quantity(item.getQuantity())
-                        .price(item.getPrice())
-                        .variant(item.getVariant())
-                        .customizations(item.getCustomizations())
-                        .build())
+                .map(item -> {
+                    OrderItem oi = OrderItem.builder()
+                            .menuItemId(item.getMenuItemId())
+                            .name(item.getName())
+                            .quantity(item.getQuantity())
+                            .price(item.getPrice())
+                            .variant(item.getVariant())
+                            .customizations(item.getCustomizations())
+                            .build();
+                    oi.setCategory(item.getCategory());
+                    return oi;
+                })
                 .collect(Collectors.toList());
 
         // Calculate totals
@@ -159,15 +168,28 @@ public class OrderService {
             }
         }
 
-        // HARD-002: Dynamic tax calculation using TaxConfiguration
-        // Get state from delivery address or default
-        String state = (request.getDeliveryAddress() != null && request.getDeliveryAddress().getState() != null)
-                ? request.getDeliveryAddress().getState()
-                : "Maharashtra"; // Default state
+        // Tax / VAT routing: EU stores → EuVatEngine; India stores → TaxConfiguration (GST)
+        Store store = storeServiceClient.getStore(request.getStoreId());
+        String countryCode = store.getCountryCode();
 
-        double tax = taxConfiguration.calculateTax(subtotal, state, true); // Assuming AC restaurant
-        log.debug("Tax calculated for state {}: ₹{} ({} GST)",
-                state, tax, taxConfiguration.getTaxRateForState(state));
+        double tax;
+        VatBreakdown vatBreakdown = null;
+
+        if (countryCode != null && !countryCode.isBlank()) {
+            // EU / international store — calculate per-line VAT
+            String orderContext = request.getOrderType() != null ? request.getOrderType().name() : "DINE_IN";
+            vatBreakdown = euVatEngine.calculate(countryCode, orderContext, orderItems);
+            tax = vatBreakdown.getTotalVatAmount().doubleValue();
+            log.debug("EU VAT calculated for country {} context {}: {}", countryCode, orderContext, tax);
+        } else {
+            // India store — existing GST path unchanged
+            String state = (request.getDeliveryAddress() != null && request.getDeliveryAddress().getState() != null)
+                    ? request.getDeliveryAddress().getState()
+                    : "Maharashtra";
+            tax = taxConfiguration.calculateTax(subtotal, state, true);
+            log.debug("GST calculated for state {}: ₹{} ({} GST)",
+                    state, tax, taxConfiguration.getTaxRateForState(state));
+        }
 
         double total = subtotal + deliveryFee + tax;
 
@@ -199,6 +221,15 @@ public class OrderService {
                 .preparationTime(calculatePreparationTime(orderItems.size()))
                 .receivedAt(LocalDateTime.now())
                 .build();
+
+        // Attach VAT breakdown for EU orders
+        if (vatBreakdown != null) {
+            order.setVatCountryCode(vatBreakdown.getVatCountryCode());
+            order.setVatBreakdown(vatBreakdown);
+            order.setTotalNetAmount(vatBreakdown.getTotalNetAmount());
+            order.setTotalVatAmount(vatBreakdown.getTotalVatAmount());
+            order.setTotalGrossAmount(vatBreakdown.getTotalGrossAmount());
+        }
 
         // Calculate estimated delivery time
         if (Order.OrderType.DELIVERY.equals(request.getOrderType())) {
@@ -963,7 +994,7 @@ public class OrderService {
         }
 
         com.MaSoVa.commerce.order.entity.QualityCheckpoint checkpoint = order.getQualityCheckpoints().stream()
-                .filter(cp -> cp.getCheckpointName().equals(checkpointName))
+                .filter(cp -> cp.getCheckpointName() != null && cp.getCheckpointName().equals(checkpointName))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Checkpoint not found: " + checkpointName));
 
@@ -1249,6 +1280,16 @@ public class OrderService {
             }
         }
 
+        // Serialize VAT breakdown as JSON for JSONB column
+        String vatBreakdownJson = null;
+        if (order.getVatBreakdown() != null) {
+            try {
+                vatBreakdownJson = objectMapper.writeValueAsString(order.getVatBreakdown());
+            } catch (Exception e) {
+                log.warn("PG dual-write: failed to serialize vatBreakdown for order {}: {}", order.getOrderNumber(), e.getMessage());
+            }
+        }
+
         OrderJpaEntity entity = OrderJpaEntity.builder()
             .id(order.getId())
             .mongoId(order.getId())
@@ -1287,6 +1328,11 @@ public class OrderService {
             .deliveredAt(toOdt(order.getDeliveredAt()))
             .cancelledAt(toOdt(order.getCancelledAt()))
             .createdAt(order.getCreatedAt() != null ? order.getCreatedAt().atZone(IST).toOffsetDateTime() : OffsetDateTime.now(IST))
+            .vatCountryCode(order.getVatCountryCode())
+            .totalNetAmount(order.getTotalNetAmount())
+            .totalVatAmount(order.getTotalVatAmount())
+            .totalGrossAmount(order.getTotalGrossAmount())
+            .vatBreakdown(vatBreakdownJson)
             .build();
 
         // Map line items
@@ -1401,6 +1447,14 @@ public class OrderService {
     @Transactional
     public Order markOrderDelivered(String orderId, LocalDateTime deliveredAt, String proofType) {
         Order order = getOrderById(orderId);
+
+        if (order.getStatus() == OrderStatus.DELIVERED) {
+            log.warn("Order {} is already DELIVERED — ignoring duplicate markOrderDelivered call", orderId);
+            return order;
+        }
+        if (order.getStatus() != OrderStatus.OUT_FOR_DELIVERY && order.getStatus() != OrderStatus.DISPATCHED) {
+            throw new IllegalStateException("Cannot mark order " + orderId + " as delivered — current status is " + order.getStatus());
+        }
 
         // Update status to delivered
         order.setStatus(OrderStatus.DELIVERED);

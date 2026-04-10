@@ -1,5 +1,6 @@
 package com.MaSoVa.commerce.order.client;
 
+import com.MaSoVa.shared.entity.Store;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +22,25 @@ public class StoreServiceClient {
 
     public StoreServiceClient(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
+    }
+
+    /**
+     * Fetches Store from core-service. Returns an empty Store (null countryCode) on error so
+     * order placement is not blocked — India GST fallback will apply.
+     */
+    public Store getStore(String storeId) {
+        try {
+            String url = UriComponentsBuilder
+                .fromHttpUrl(coreServiceUrl)
+                .pathSegment("api", "stores", storeId)
+                .build()
+                .toUriString();
+            Store store = restTemplate.getForObject(url, Store.class);
+            return store != null ? store : new Store();
+        } catch (Exception e) {
+            log.warn("getStore failed for store {} — falling back to India GST: {}", storeId, e.getMessage());
+            return new Store();
+        }
     }
 
     /**
