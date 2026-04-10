@@ -619,5 +619,191 @@ Global-9 (Operator UX) ── depends on all ─────────► last
 
 ---
 
+## Testing Requirements — Non-Negotiable
+
+Every single feature across all 9 phases must be covered by tests before it is considered done. No exceptions. A feature without tests is not finished — it is a liability.
+
+---
+
+### Testing philosophy
+
+**Tests are not an afterthought. They are written alongside the implementation, not after.**
+
+Every phase follows this sequence:
+1. Write tests first (or alongside) — never after
+2. Implementation passes those tests
+3. Code review verifies test coverage is complete
+4. No phase is marked done until all tests pass green
+
+The single highest-risk area is fiscal signing. A silent failure — unsigned receipt produced without error — is invisible during testing and catastrophic in production. Every fiscal signer must have explicit tests verifying the signature is present, structurally valid, and contains a non-null timestamp from the signing system clock, not the application clock.
+
+---
+
+### Test types required per phase
+
+#### Unit tests
+Every class with business logic gets unit tests. No exceptions.
+
+- `AllergenType` enum — all 14 values present, no duplicates
+- `EuVatEngine` — every country × every context × every category combination returns correct rate
+- `NonEuVatEngine` — CH rates, UK zero-rated vs standard-rated food correctly applied
+- `StripeTaxEngine` — correct Stripe API call constructed, result correctly mapped to `TaxCalculationResult`
+- `MoneyAmount` — arithmetic, formatting, currency mismatch throws exception
+- `FiscalSignerRegistry` — correct signer resolved for each of 12 countries
+- `PassthroughFiscalSigner` — returns empty signature, `isRequired()` = false
+- `RksvFiscalSigner` — AES-256 chain produces correct output, each receipt chained to previous
+- `Nf525FiscalSigner` — signature produced, order marked immutable after signing
+- `HungaryNtcaFiscalSigner` — correct XML invoice format, retry logic on failure
+- `UkMtdFiscalSigner` — correct VAT ledger entry written, HMRC submission format valid
+- `AggregatorNormaliser` — Wolt/Deliveroo/JustEat/UberEats order correctly mapped to MaSoVa Order
+- `RiskClassificationEngine` — every action type returns correct risk level
+- `ProposalService` — proposal created with correct fields, expiry set correctly
+- `GrossPayCalculator` — base pay + overtime + pooled tips + direct tips calculated correctly per country pay rules
+- `TipPoolingService` — by-hours, direct, equal-split, custom-% all produce correct distributions
+- `CountryProfileService` — every country maps to correct currency + locale + fiscal signer + payment gateway
+
+#### Integration tests
+Test the wiring between components with real Spring context and real databases (test containers).
+
+- Full order lifecycle per country — RECEIVED → terminal status, VAT correct, fiscal signature present
+- Payment initiation → webhook → order status update (Stripe CLI for webhook forwarding)
+- Allergen enforcement gate — cannot mark item available without allergen declaration
+- Aggregator order creation via POS — orderSource set, commission calculated, appears in Platform P&L
+- Payroll calculation — hours + tips → gross pay → Deel API called with correct payload (mocked Deel client)
+- Orchestrator agent cycle — perceive → specialist finding → proposal created → published to RabbitMQ
+- Manager approves proposal → action executed → outcome observed → StoreMemory updated
+- GDPR erasure — anonymization propagates across all services, fiscal records intact
+- Multi-currency executive report — EUR + GBP + USD stores show per-currency subtotals, never mixed
+
+#### Contract tests (Pact — already in project)
+Every frontend API call has a Pact contract test. Every new endpoint added in these phases gets a corresponding Pact test before the frontend consumes it.
+
+- `GET /api/stores/{id}` — response includes countryCode, currency, locale, vatNumber
+- `POST /api/orders` — request accepts orderSource, response includes vatBreakdown
+- `POST /api/payments/initiate` — response shape differs by country (clientSecret vs razorpayOrderId)
+- `GET /api/orders/{id}/receipt` — response includes fiscalSignature, qrCodeData
+- `GET /api/payroll/calculate` — response includes per-employee gross, deductions, net
+- `POST /api/aggregators/*/orders` — all four aggregator webhook schemas validated
+
+#### End-to-end tests (Playwright — already in project)
+Full browser automation covering the critical user journeys per country.
+
+- German store: create dine-in order → KDS shows allergen badges → order completed → receipt has QR code → fiscal compliance page shows signed receipt
+- French store: create takeaway order → VAT at 5.5% on receipt → attempt to edit order after signing → system blocks edit
+- UK store: create delivery order → Stripe PaymentElement renders → SCA challenge completes → order confirmed → VAT ledger entry created
+- Netherlands store: create order → passthrough signer → receipt has no QR code → no fiscal compliance section in dashboard
+- Hungary store: create order → NTCA submission fires (mocked) → transaction ID stored on order
+- Multi-store: manager views executive dashboard → 3 countries shown → currencies not mixed → traffic light per store correct
+- Aggregator: cashier selects Wolt source → enters order → Platform P&L shows commission deducted
+- Payroll: complete pay period → agent prepares proposal → manager approves → Deel called (mocked) → payslip stored
+- Agentic AI: seed StoreMemory → run orchestrator cycle → proposal appears in AgentControlCenterPage → manager approves → action executed → undo available for 30 minutes
+- Offline: disconnect network → create 3 orders on POS → reconnect → verify all 3 synced, no duplicates
+
+#### Mobile tests
+- masova-mobile: payment screen renders Stripe PaymentElement for EU store, Razorpay for India store
+- masova-mobile: allergen warning shown on cart if item matches customer preference
+- masova-mobile: receipt shows VAT breakdown and QR code for fiscal countries
+- MaSoVaCrewApp: KDS shows allergen badges and aggregator source badge
+- MaSoVaCrewApp: manager role shows proposal notification badge, approve/reject works
+- MaSoVaCrewApp: cashier self-onboarding flow — staff enters bank details, manager approves
+
+#### AI agent tests
+- Orchestrator produces structurally valid `SpecialistFinding` for each of 7 specialist domains
+- Risk classifier correctly blocks BLOCKED actions regardless of orchestrator instruction
+- Proposal expires after 24 hours — no auto-execution of expired proposals
+- Agent goes silent (no write actions) when Gemini returns an error
+- Manager pause command halts all orchestrator cycles within one heartbeat (5 minutes)
+- AUTO action undo — action reversed correctly within 30-minute window, rejected after window
+- StoreMemory updated correctly after action outcome observed
+- Customer support agent responds in correct language based on store locale
+- Customer support agent escalates unresolved issues to support ticket correctly
+
+#### Fiscal signing tests — highest priority
+These tests must pass before any fiscal-country store goes live. No exceptions.
+
+- Every `FiscalSigner` implementation: signature is present on returned `FiscalSignature`
+- Every `FiscalSigner` implementation: `signedAt` timestamp is from signing system, not `LocalDateTime.now()`
+- Every `FiscalSigner` implementation: `signerSystem` matches expected value for country
+- `TseFiscalSigner`: offline → order queued as `PENDING_FISCAL_SIGNATURE` → device comes online → queue flushed → all orders signed
+- `Nf525FiscalSigner`: attempt to modify signed order → exception thrown → order unchanged
+- `RksvFiscalSigner`: three consecutive receipts → each chained to previous → chain integrity verified
+- `HungaryNtcaFiscalSigner`: first submission fails → retry with exponential backoff → alert sent after 4 hours
+- `UkMtdFiscalSigner`: quarterly VAT ledger entries accumulate → HMRC submission format is valid MTD JSON
+- `PassthroughFiscalSigner`: `isRequired()` = false → no signature on receipt → no QR code on printed receipt
+- Receipt PDF: QR code present and scannable for AT/DE/IT/BE → absent for NL/LU/IE/US/CA
+
+#### Performance tests
+- Orchestrator: 50 simultaneous store cycles complete within 5-minute heartbeat window
+- WebSocket: 200 simultaneous connections, order update delivered to all subscribers within 500ms
+- Fiscal signing: signing call completes within 2 seconds for hardware devices, 500ms for software
+- Stripe Tax API: cached result served from Redis within 10ms, cache miss completes within 1 second
+- Platform P&L query: 90 days of aggregator orders across 4 platforms returns within 3 seconds
+
+---
+
+### Mock strategy for external dependencies
+
+Every external system that cannot be used in testing gets a mock implementation behind `@Profile("dev")`:
+
+| External system | Mock class | Behaviour |
+|---|---|---|
+| TSE device (DE) | `MockTseFiscalSigner` | Returns valid fake FiscalSignature with fake transactionId |
+| RT device (IT) | `MockRtFiscalSigner` | Same pattern |
+| FDM device (BE) | `MockFdmFiscalSigner` | Same pattern |
+| Hungary NTCA API | `MockNtcaClient` | Returns fake transaction ID, simulates 401 for error testing |
+| UK HMRC MTD API | HMRC sandbox environment | Register early — 1–2 week approval |
+| Stripe payments | Stripe CLI (`stripe listen`) | Forwards webhooks to localhost |
+| Stripe Tax | `MockStripeTaxClient` | Returns configurable tax amounts per test |
+| Deel payroll API | `MockDeelClient` | Returns fake payslip PDF URL and transaction ID |
+| Gemini LLM | `MockGeminiClient` | Returns scripted responses for deterministic agent tests |
+| Wolt/Deliveroo/JustEat/UberEats | Test webhook payloads | Hardcoded JSON fixtures per aggregator schema |
+
+All mock implementations are in `src/test/java` or behind `@Profile("dev")` — never compiled into production builds.
+
+---
+
+### Test data seeding
+
+`TestDataController` (already exists, `@Profile("dev")` only) must be extended to seed:
+
+- One store per country (12 stores) with realistic configuration
+- Menu items with complete allergen data (all 14 allergens represented across items)
+- 30 days of synthetic order history per store — realistic volume, realistic hour distribution
+- Staff members with hours worked, tip entitlements, bank details (fake IBANs)
+- Aggregator commission % configured per platform per store
+- StoreMemory pre-seeded with baseline metrics so agent has something to reason against
+- Pending proposals in various states (PENDING, APPROVED, REJECTED, EXPIRED)
+- One `RECEIPT_SIGNING_FAILED` order per fiscal country for FiscalCompliancePage testing
+- One `AGGREGATOR_ITEM_UNMAPPED` order for AggregatorHubPage testing
+
+---
+
+### Smoke testing sequence
+
+After full implementation, run in this exact order:
+
+```
+1.  Unit tests — all pass green
+2.  Integration tests — all pass green
+3.  Contract tests (Pact) — all pass green
+4.  Seed test data via TestDataController
+5.  i18n pass — run UI in all 7 languages, every raw key on screen = missing translation = fix before proceeding
+6.  Per-country smoke — one store per country, full order lifecycle end-to-end
+7.  Fiscal signing smoke — verify signed receipt + QR for DE/FR/IT/AT/BE/HU, verify no QR for NL/LU/IE
+8.  Multi-store smoke — 3 stores, 3 currencies simultaneously, executive view
+9.  Aggregator smoke — create Wolt order via POS, verify Platform P&L commission deducted correctly
+10. Payroll smoke — complete pay period, approve, verify mock Deel called with correct payload
+11. Agent smoke — run orchestrator cycle, verify proposal generated, approve, verify action executed, verify undo works
+12. Offline smoke — kill network, create 3 orders, restore network, verify sync with no duplicates
+13. Cross-currency smoke — verify EUR + GBP + USD never added together in any report
+14. Performance tests — 50 concurrent store orchestrator cycles, 200 WebSocket connections
+15. E2E Playwright suite — all journeys green
+16. Mobile tests — both apps, all critical journeys
+```
+
+No phase ships until its slice of this list is green.
+
+---
+
 *Each phase gets its own brainstorm → spec → implementation plan cycle.*  
 *This document is the master brief — the entry point for all 9 phase specs.*
