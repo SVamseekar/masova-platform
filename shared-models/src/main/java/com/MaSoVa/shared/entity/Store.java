@@ -80,7 +80,24 @@ public class Store {
     @JsonProperty("lastModified")
     @JsonAlias({"lastModified", "updatedAt"})
     private LocalDateTime lastModified = LocalDateTime.now();
-    
+
+    /** ISO 3166-1 alpha-2 country code, e.g. "DE", "FR". Null for India stores (legacy). */
+    @Field("countryCode")
+    @Indexed
+    private String countryCode;
+
+    /** VAT registration number for EU/UK/CH stores. Null for India stores. */
+    @Field("vatNumber")
+    private String vatNumber;
+
+    /** ISO 4217 currency code, e.g. "EUR", "GBP". Null = legacy India (INR assumed). */
+    @Field("currency")
+    private String currency;
+
+    /** BCP 47 locale tag, e.g. "de-DE", "fr-FR". Null = legacy India (en-IN assumed). */
+    @Field("locale")
+    private String locale;
+
     // Constructors
     public Store() {}
     
@@ -173,6 +190,18 @@ public class Store {
     
     public LocalDateTime getLastModified() { return lastModified; }
     public void setLastModified(LocalDateTime lastModified) { this.lastModified = lastModified; }
+
+    public String getCountryCode() { return countryCode; }
+    public void setCountryCode(String countryCode) { this.countryCode = countryCode; }
+
+    public String getVatNumber() { return vatNumber; }
+    public void setVatNumber(String vatNumber) { this.vatNumber = vatNumber; }
+
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
+
+    public String getLocale() { return locale; }
+    public void setLocale(String locale) { this.locale = locale; }
 
     // Custom setter to handle frontend's combined "operatingConfig"
     @JsonProperty("operatingConfig")
