@@ -619,189 +619,436 @@ Global-9 (Operator UX) ── depends on all ─────────► last
 
 ---
 
-## Testing Requirements — Non-Negotiable
+## Testing Strategy
 
-Every single feature across all 9 phases must be covered by tests before it is considered done. No exceptions. A feature without tests is not finished — it is a liability.
+### Guiding principle
 
----
-
-### Testing philosophy
-
-**Tests are not an afterthought. They are written alongside the implementation, not after.**
-
-Every phase follows this sequence:
-1. Write tests first (or alongside) — never after
-2. Implementation passes those tests
-3. Code review verifies test coverage is complete
-4. No phase is marked done until all tests pass green
-
-The single highest-risk area is fiscal signing. A silent failure — unsigned receipt produced without error — is invisible during testing and catastrophic in production. Every fiscal signer must have explicit tests verifying the signature is present, structurally valid, and contains a non-null timestamp from the signing system clock, not the application clock.
+A feature without tests is not complete — it is a liability. Tests are written alongside implementation, never after. Every phase is blocked from shipping until its full test slice is green. This is not a quality aspiration — it is a hard gate.
 
 ---
 
-### Test types required per phase
+### Definition of Done — per phase
 
-#### Unit tests
-Every class with business logic gets unit tests. No exceptions.
+A phase is considered complete only when all of the following are true:
 
-- `AllergenType` enum — all 14 values present, no duplicates
-- `EuVatEngine` — every country × every context × every category combination returns correct rate
-- `NonEuVatEngine` — CH rates, UK zero-rated vs standard-rated food correctly applied
-- `StripeTaxEngine` — correct Stripe API call constructed, result correctly mapped to `TaxCalculationResult`
-- `MoneyAmount` — arithmetic, formatting, currency mismatch throws exception
-- `FiscalSignerRegistry` — correct signer resolved for each of 12 countries
-- `PassthroughFiscalSigner` — returns empty signature, `isRequired()` = false
-- `RksvFiscalSigner` — AES-256 chain produces correct output, each receipt chained to previous
-- `Nf525FiscalSigner` — signature produced, order marked immutable after signing
-- `HungaryNtcaFiscalSigner` — correct XML invoice format, retry logic on failure
-- `UkMtdFiscalSigner` — correct VAT ledger entry written, HMRC submission format valid
-- `AggregatorNormaliser` — Wolt/Deliveroo/JustEat/UberEats order correctly mapped to MaSoVa Order
-- `RiskClassificationEngine` — every action type returns correct risk level
-- `ProposalService` — proposal created with correct fields, expiry set correctly
-- `GrossPayCalculator` — base pay + overtime + pooled tips + direct tips calculated correctly per country pay rules
-- `TipPoolingService` — by-hours, direct, equal-split, custom-% all produce correct distributions
-- `CountryProfileService` — every country maps to correct currency + locale + fiscal signer + payment gateway
+1. All unit tests pass with zero failures
+2. All integration tests pass against real test-container databases
+3. All Pact contract tests pass — no frontend/backend schema drift
+4. All Playwright E2E journeys for that phase pass in CI
+5. All mobile tests for that phase pass on both apps
+6. Test coverage on new business logic classes is ≥ 90% line coverage
+7. No `@Disabled`, `@Ignore`, or skipped tests without a filed issue
+8. `TestDataController` seeding covers all new entities and states
+9. All external dependencies are mocked — no test calls a real Stripe, Deel, or fiscal device API
+10. Code review has verified test completeness alongside implementation correctness
 
-#### Integration tests
-Test the wiring between components with real Spring context and real databases (test containers).
+---
 
-- Full order lifecycle per country — RECEIVED → terminal status, VAT correct, fiscal signature present
-- Payment initiation → webhook → order status update (Stripe CLI for webhook forwarding)
-- Allergen enforcement gate — cannot mark item available without allergen declaration
-- Aggregator order creation via POS — orderSource set, commission calculated, appears in Platform P&L
-- Payroll calculation — hours + tips → gross pay → Deel API called with correct payload (mocked Deel client)
-- Orchestrator agent cycle — perceive → specialist finding → proposal created → published to RabbitMQ
-- Manager approves proposal → action executed → outcome observed → StoreMemory updated
-- GDPR erasure — anonymization propagates across all services, fiscal records intact
-- Multi-currency executive report — EUR + GBP + USD stores show per-currency subtotals, never mixed
+### Coverage targets
 
-#### Contract tests (Pact — already in project)
-Every frontend API call has a Pact contract test. Every new endpoint added in these phases gets a corresponding Pact test before the frontend consumes it.
+| Layer | Minimum coverage |
+|---|---|
+| Business logic (services, engines, calculators) | 90% line coverage |
+| Controllers | 80% — happy path + all error responses |
+| Repositories | 70% — key queries tested via integration tests |
+| Frontend components | 80% — Vitest + React Testing Library |
+| Critical paths (fiscal signing, VAT calculation, payroll) | 100% — no untested branch |
 
-- `GET /api/stores/{id}` — response includes countryCode, currency, locale, vatNumber
-- `POST /api/orders` — request accepts orderSource, response includes vatBreakdown
-- `POST /api/payments/initiate` — response shape differs by country (clientSecret vs razorpayOrderId)
-- `GET /api/orders/{id}/receipt` — response includes fiscalSignature, qrCodeData
-- `GET /api/payroll/calculate` — response includes per-employee gross, deductions, net
-- `POST /api/aggregators/*/orders` — all four aggregator webhook schemas validated
+---
 
-#### End-to-end tests (Playwright — already in project)
-Full browser automation covering the critical user journeys per country.
+### Test pyramid
 
-- German store: create dine-in order → KDS shows allergen badges → order completed → receipt has QR code → fiscal compliance page shows signed receipt
-- French store: create takeaway order → VAT at 5.5% on receipt → attempt to edit order after signing → system blocks edit
-- UK store: create delivery order → Stripe PaymentElement renders → SCA challenge completes → order confirmed → VAT ledger entry created
-- Netherlands store: create order → passthrough signer → receipt has no QR code → no fiscal compliance section in dashboard
-- Hungary store: create order → NTCA submission fires (mocked) → transaction ID stored on order
-- Multi-store: manager views executive dashboard → 3 countries shown → currencies not mixed → traffic light per store correct
-- Aggregator: cashier selects Wolt source → enters order → Platform P&L shows commission deducted
-- Payroll: complete pay period → agent prepares proposal → manager approves → Deel called (mocked) → payslip stored
-- Agentic AI: seed StoreMemory → run orchestrator cycle → proposal appears in AgentControlCenterPage → manager approves → action executed → undo available for 30 minutes
-- Offline: disconnect network → create 3 orders on POS → reconnect → verify all 3 synced, no duplicates
+```
+         ▲
+        / \
+       /E2E\          Playwright (web) + Maestro (mobile)
+      /─────\         ~50 journeys — one per critical user flow per country
+     / Integ \
+    /─────────\       Spring Boot Test + Testcontainers
+   /           \      ~200 tests — full wiring, real DBs, mocked externals
+  /   Unit      \
+ /───────────────\    JUnit 5 + Mockito (Java) · Vitest (frontend) · pytest (Python)
+                       ~800 tests — every class with logic, every edge case
+```
 
-#### Mobile tests
-- masova-mobile: payment screen renders Stripe PaymentElement for EU store, Razorpay for India store
-- masova-mobile: allergen warning shown on cart if item matches customer preference
-- masova-mobile: receipt shows VAT breakdown and QR code for fiscal countries
-- MaSoVaCrewApp: KDS shows allergen badges and aggregator source badge
-- MaSoVaCrewApp: manager role shows proposal notification badge, approve/reject works
-- MaSoVaCrewApp: cashier self-onboarding flow — staff enters bank details, manager approves
+---
 
-#### AI agent tests
-- Orchestrator produces structurally valid `SpecialistFinding` for each of 7 specialist domains
-- Risk classifier correctly blocks BLOCKED actions regardless of orchestrator instruction
-- Proposal expires after 24 hours — no auto-execution of expired proposals
-- Agent goes silent (no write actions) when Gemini returns an error
-- Manager pause command halts all orchestrator cycles within one heartbeat (5 minutes)
-- AUTO action undo — action reversed correctly within 30-minute window, rejected after window
-- StoreMemory updated correctly after action outcome observed
-- Customer support agent responds in correct language based on store locale
-- Customer support agent escalates unresolved issues to support ticket correctly
+### Unit tests
 
-#### Fiscal signing tests — highest priority
-These tests must pass before any fiscal-country store goes live. No exceptions.
+Every class with business logic has unit tests. Every edge case has a dedicated test method with a descriptive name. No logic tested implicitly through a higher layer.
 
-- Every `FiscalSigner` implementation: signature is present on returned `FiscalSignature`
-- Every `FiscalSigner` implementation: `signedAt` timestamp is from signing system, not `LocalDateTime.now()`
-- Every `FiscalSigner` implementation: `signerSystem` matches expected value for country
-- `TseFiscalSigner`: offline → order queued as `PENDING_FISCAL_SIGNATURE` → device comes online → queue flushed → all orders signed
-- `Nf525FiscalSigner`: attempt to modify signed order → exception thrown → order unchanged
-- `RksvFiscalSigner`: three consecutive receipts → each chained to previous → chain integrity verified
-- `HungaryNtcaFiscalSigner`: first submission fails → retry with exponential backoff → alert sent after 4 hours
-- `UkMtdFiscalSigner`: quarterly VAT ledger entries accumulate → HMRC submission format is valid MTD JSON
-- `PassthroughFiscalSigner`: `isRequired()` = false → no signature on receipt → no QR code on printed receipt
-- Receipt PDF: QR code present and scannable for AT/DE/IT/BE → absent for NL/LU/IE/US/CA
+**Global-1 — Allergen**
+- `AllergenType` — exactly 14 values, names match EU 1169/2011 official list, no duplicates
+- `MenuService.setAvailable()` — throws `AllergenDeclarationRequiredException` when allergens not explicitly set
+- `MenuService.setAvailable()` — succeeds when allergens set to empty set (deliberately declared as none)
+- `OrderService.buildKitchenTicket()` — allergen set correctly attached per order item
 
-#### Performance tests
-- Orchestrator: 50 simultaneous store cycles complete within 5-minute heartbeat window
-- WebSocket: 200 simultaneous connections, order update delivered to all subscribers within 500ms
-- Fiscal signing: signing call completes within 2 seconds for hardware devices, 500ms for software
-- Stripe Tax API: cached result served from Redis within 10ms, cache miss completes within 1 second
-- Platform P&L query: 90 days of aggregator orders across 4 platforms returns within 3 seconds
+**Global-2 — VAT Engine**
+- `EuVatEngine` — one test per country × context × category combination (full matrix, ~96 test cases)
+- `EuVatEngine` — unknown country falls back to default, does not throw
+- `EuVatEngine` — dine-in vs takeaway produces different rates for DE, FR, IT, BE, LU
+- `NonEuVatEngine` — CH three-tier rates applied correctly
+- `NonEuVatEngine` — UK `ukVatCategory: ZERO_RATED` produces 0% rate
+- `NonEuVatEngine` — UK `ukVatCategory: STANDARD_RATED` produces 20% rate
+- `NonEuVatEngine` — UK missing `ukVatCategory` throws `UkVatCategoryRequiredException`
+- `StripeTaxEngine` — correct API request constructed, response mapped to `TaxCalculationResult`
+- `StripeTaxEngine` — cached result served without calling Stripe API on second request
+- `StripeTaxEngine` — cache invalidated when store address changes
+- `TaxEngineRegistry` — each of 12 countries resolves to correct engine implementation
+
+**Global-3 — Currency / Locale**
+- `MoneyAmount` — addition of two amounts with same currency succeeds
+- `MoneyAmount` — addition of two amounts with different currencies throws `CurrencyMismatchException`
+- `MoneyAmount` — zero amount is valid
+- `MoneyAmount` — negative amount throws `IllegalArgumentException`
+- `CountryProfileService` — each of 12 countries maps to correct currency, locale, and language code
+- `formatMoney()` (frontend) — DE locale formats 4999 EUR as "49,99 €"
+- `formatMoney()` (frontend) — FR locale formats 4999 EUR as "49,99 €" (different spacing from DE)
+- `formatMoney()` (frontend) — PL locale formats 4999 PLN as "49,99 zł"
+- `formatMoney()` (frontend) — IN locale formats 4999 INR as "₹49.99"
+- `formatDate()` (frontend) — DE locale formats ISO date as "dd.MM.yyyy"
+- `formatDate()` (frontend) — FR locale formats ISO date as "dd/MM/yyyy"
+
+**Global-4 — Payments**
+- `PaymentGatewayRegistry` — EU country resolves to `StripeGateway`
+- `PaymentGatewayRegistry` — IN resolves to `RazorpayGateway`
+- `StripeGateway.createPaymentIntent()` — idempotency key equals orderId
+- `StripeGateway.createPaymentIntent()` — `automatic_payment_methods: enabled` set on every request
+- `StripeGateway.parseWebhook()` — invalid signature throws `WebhookSignatureException`
+- `StripeGateway.parseWebhook()` — valid signature returns correct `WebhookEvent`
+- `RazorpayGateway` — existing tests retained, no regression
+
+**Global-5 — Fiscal Signing**
+See dedicated fiscal signing test section below — highest priority.
+
+**Global-6 — Aggregator Hub**
+- `AggregatorNormaliser` — Wolt order with all fields → correctly mapped MaSoVa Order
+- `AggregatorNormaliser` — Deliveroo order → correctly mapped
+- `AggregatorNormaliser` — Just Eat order → correctly mapped
+- `AggregatorNormaliser` — Uber Eats order → correctly mapped
+- `AggregatorNormaliser` — all aggregator orders: `orderType = DELIVERY`, `paymentStatus = PAID`, `paymentMethod = AGGREGATOR_COLLECTED`
+- `AggregatorNormaliser` — aggregator order skips delivery radius check
+- `PlatformPnLService` — commission % applied correctly to gross revenue to produce net payout
+- `PlatformPnLService` — unconfigured commission % defaults to 0, does not throw
+
+**Global-7 — Agentic AI**
+- `RiskClassificationEngine` — every defined action type returns correct risk level
+- `RiskClassificationEngine` — BLOCKED actions cannot be overridden by any input
+- `ProposalService` — proposal created with all required fields populated
+- `ProposalService` — expiry set to exactly 24 hours from creation time
+- `ProposalService` — expired proposal cannot be approved
+- `ProposalService` — expired proposal status set to EXPIRED, not PENDING
+- `OrchestratorAgent` — returns no write actions when Gemini client throws an exception
+- `StoreMemoryService` — memory updated correctly after action outcome
+- `StoreMemoryService` — memory survives Redis flush via MongoDB snapshot restore
+
+**Global-8 — Payroll**
+- `GrossPayCalculator` — base hourly rate × hours worked = correct gross
+- `GrossPayCalculator` — overtime hours (>8/day in DE, >40/week in US) calculated at correct multiplier per country
+- `GrossPayCalculator` — tips added correctly to gross before Deel submission
+- `TipPoolingService` — by-hours pooling distributes proportionally to hours worked
+- `TipPoolingService` — direct-to-server leaves tip with named server
+- `TipPoolingService` — equal-split divides evenly, remainder goes to longest-serving staff member on shift
+- `TipPoolingService` — custom-% respects configured percentages per role, total must equal 100%
+- `PayPeriodService` — DE/FR/IT/LU/HU/IE/CH pay period is monthly
+- `PayPeriodService` — UK pay period is configurable (weekly or monthly)
+- `PayPeriodService` — US/CA pay period is bi-weekly
+- `DeelApiClient` — correct payload shape sent for each of 12 countries
+- `DeelApiClient` — failed API call throws `PayrollSubmissionException`, not swallowed
+
+**Global-9 — Operator Experience**
+- `OfflineSyncService` — order created offline is queued in IndexedDB
+- `OfflineSyncService` — on reconnect, all queued orders sync in creation order
+- `OfflineSyncService` — duplicate detection: same orderId not inserted twice on reconnect
+- `ItemAvailabilityService` — 86 toggle sets `isAvailable = false`, WebSocket event published immediately
+- `StoreCloneService` — cloned store has identical menu, VAT config, commission settings
+- `StoreCloneService` — cloned store has empty inventory levels, no staff members, no device credentials
+
+---
+
+### Integration tests
+
+Run with Spring Boot Test + Testcontainers (MongoDB, PostgreSQL, Redis, RabbitMQ). Real database state, real Spring context. External APIs mocked via `@MockBean` or `@Profile("dev")` mock implementations.
+
+**Order lifecycle — one test per country**
+For each of 12 countries: create store → create menu item with allergens → place order → progress through all statuses → verify at each step: VAT amount correct, fiscal signature present (or absent for passthrough), status events published to RabbitMQ, order document correct in MongoDB, financial record correct in PostgreSQL.
+
+**Payment flow**
+- Stripe PaymentIntent created → Stripe CLI webhook delivered → `PaymentCompletedEvent` published → order `paymentStatus = PAID`
+- Stripe webhook with invalid signature → rejected with 400, no event published
+- Razorpay flow unchanged — existing integration tests retained
+
+**Allergen enforcement**
+- `POST /api/menu-items` with `isAvailable: true` and no allergens set → 400 response with clear error
+- `POST /api/menu-items` with `isAvailable: true` and `allergens: []` (empty, deliberate) → 200 success
+- Order item ticket payload contains allergen set from menu item
+
+**Aggregator order creation**
+- POS creates order with `orderSource: WOLT` → stored correctly → Platform P&L query returns correct net payout
+- POS creates order with `orderSource: MASOVA` → not included in aggregator commission calculations
+
+**Payroll calculation**
+- Seed 20 staff with shifts across 4 weeks → run `GrossPayCalculator` → verify each staff member's gross matches manual calculation → mock Deel client called with correct payload
+
+**Agent orchestrator cycle**
+- Seed `StoreMemory` with low inventory signal → run one orchestrator cycle → verify specialist finding generated → verify `ManagerProposal` created in MongoDB → verify `agent.proposal.created` event published to RabbitMQ
+
+**Manager approves proposal**
+- Create `ManagerProposal` with `type: PAUSE_MENU_ITEM` → POST approval → verify `pause_menu_item` internal endpoint called → verify menu item `isAvailable = false` → verify `agent.action.completed` event published
+
+**GDPR erasure**
+- Anonymize customer → verify personal fields nulled on User, Customer, Order documents → verify fiscal records (amounts, timestamps) intact — only personal identifiers removed
+
+**Multi-currency report**
+- Create stores in DE (EUR), GB (GBP), US (USD) → create orders in each → query executive dashboard → verify response contains three separate currency buckets, no combined total
+
+---
+
+### Contract tests (Pact)
+
+Every new API endpoint has a consumer-driven Pact contract defined before the frontend implementation begins. No frontend code consumes an endpoint without a passing Pact test.
+
+New contracts required across all phases:
+
+| Endpoint | Consumer | Key assertion |
+|---|---|---|
+| `GET /api/stores/{id}` | Manager Dashboard | Response includes `countryCode`, `currency`, `locale`, `vatNumber` |
+| `POST /api/stores` | Manager Dashboard | `countryCode` required, `currency` derived not accepted |
+| `POST /api/orders` | POS, Customer App | Request accepts `orderSource`, response includes `vatBreakdown[]` |
+| `GET /api/orders/{id}` | All apps | Response includes `fiscalSignature`, `aggregatorOrderId`, `orderSource` |
+| `POST /api/payments/initiate` | Customer App | Response shape: `clientSecret` for EU, `razorpayOrderId` for IN |
+| `GET /api/orders/{id}/receipt` | Customer App, POS | Response includes `fiscalSignature.qrCodeData`, `vatBreakdown[]` |
+| `GET /api/analytics/platform-pnl` | Manager Dashboard | Response includes per-platform `grossRevenue`, `commission`, `netPayout` |
+| `GET /api/payroll/calculate` | Manager Dashboard | Response includes per-employee `grossPay`, `estimatedDeductions`, `netPay` |
+| `POST /api/payroll/submit` | Manager Dashboard | Request includes `payPeriod`, `employeePayments[]` |
+| `GET /api/agents/proposals` | Manager Dashboard, Crew App | Response includes `title`, `reasoning`, `proposedActions[]`, `confidence`, `expiresAt` |
+| `POST /api/agents/proposals/{id}/approve` | Manager Dashboard, Crew App | 200 on success, 409 if expired |
+| `POST /api/aggregators/*/orders` | Aggregator webhooks | Schema validated per aggregator format |
+
+---
+
+### End-to-end tests (Playwright)
+
+Full browser automation. One test file per critical user journey. Each test is independent — seeds its own data, cleans up after itself.
+
+**Allergen journeys**
+- Manager creates menu item without allergens → cannot set available → adds allergens → can set available → customer sees allergen list on item page → allergen warning shown in cart
+
+**VAT journeys**
+- German dine-in: order subtotal €20 → VAT line shows "MwSt 19%" → total €23.80
+- French takeaway: order subtotal €20 → VAT line shows "TVA 5.5%" → total €21.10
+- UK cold food: order subtotal £20 → VAT line shows "VAT 0%" → total £20.00
+- Hungary: order subtotal HUF 5000 → VAT line shows "ÁFA 27%" → total HUF 6350
+
+**Payment journeys**
+- EU customer checkout → Stripe PaymentElement renders → test card 4242... → SCA challenge → order confirmed
+- IN customer checkout → Razorpay modal renders → test payment → order confirmed
+- Payment failure → clear error shown → order remains in PENDING state → retry available
+
+**Fiscal journeys**
+- DE order completed → FiscalCompliancePage shows signed receipt → receipt PDF contains QR code
+- FR order completed → attempt to edit order price → blocked with explanation
+- NL order completed → no QR on receipt → no fiscal section in store dashboard
+- HU order completed → NTCA transaction ID visible on order detail
+
+**Aggregator journeys**
+- Cashier enters Wolt order → selects source WOLT → enters items → order appears in KDS with Wolt badge → Platform P&L shows commission deducted
+
+**Payroll journeys**
+- End of pay period → agent proposal appears → manager opens PayrollReviewPage → sees breakdown per employee → approves → confirmation shown → payslip downloadable
+
+**Agent journeys**
+- Manager opens AgentControlCenterPage → live feed shows last 24 hours → pending proposal visible → manager approves → feed updates with execution confirmation → undo button available for 30 minutes
+- Manager opens chat → asks "why is food cost up?" → agent responds with specific store data → manager says "fix it" → agent proposes action → manager confirms → action executed
+
+**Offline journey**
+- POS in Chrome → DevTools → offline → create 3 orders → offline banner visible → go online → orders appear in KDS → no duplicates
+
+**i18n journey**
+- Set browser language to German → all staff-facing pages render in German → no raw translation keys visible
+- Set browser language to French → same → clean
+- Repeat for IT, NL, ES, PL
+
+---
+
+### Mobile tests (Maestro)
+
+Maestro YAML flows for both React Native apps. Run on Android emulator in CI.
+
+**masova-mobile**
+- EU store: checkout → Stripe payment screen renders, not Razorpay
+- India store: checkout → Razorpay screen renders, not Stripe
+- Item detail: allergen list displayed
+- Cart: allergen warning banner if item matches profile preference
+- Order history: receipt shows VAT breakdown and QR code for fiscal countries
+- Support chat: message sent → agent responds → escalation creates support ticket
+
+**MaSoVaCrewApp**
+- Kitchen screen: order card shows allergen badges
+- Kitchen screen: Wolt order shows Wolt source badge
+- Cashier screen: POS source selector present, Wolt order read-only after creation
+- Manager screen: proposal notification badge visible → approve tap → confirmation
+- Manager screen: executive dashboard shows traffic light per store
+- Staff self-onboarding: enter bank IBAN → submit → manager receives approval request
+
+---
+
+### Fiscal signing tests — highest priority
+
+These are the most critical tests in the entire system. A fiscal signing failure that is not caught in testing becomes a legal liability in production. Every signer must pass all of these before the corresponding country store type is available.
+
+**Universal assertions — every `FiscalSigner` implementation:**
+- `sign()` returns a non-null `FiscalSignature`
+- `fiscalSignature.signatureValue` is non-null and non-empty
+- `fiscalSignature.signedAt` is non-null
+- `fiscalSignature.signedAt` is NOT set via `LocalDateTime.now()` — verified by injecting a mock clock and confirming the signing system's timestamp is used, not the application clock
+- `fiscalSignature.signerSystem` matches the expected constant for that country
+- `fiscalSignature.signerCountry` matches the store's `countryCode`
+- Calling `sign()` twice on the same order produces two distinct `transactionId` values (idempotency is caller's responsibility)
+
+**Per-signer:**
+
+`TseFiscalSigner` (DE):
+- Happy path: device responds → signature stored → order status unchanged
+- Device offline: order status set to `PENDING_FISCAL_SIGNATURE` → queued in Redis → no exception thrown to caller
+- Device comes back online: queue flushed in order → all pending orders signed → status updated → manager alert cleared
+- Queue not flushed before Z-report deadline: alert sent to manager with count of unsigned receipts
+
+`Nf525FiscalSigner` (FR):
+- Happy path: signature produced → order status unchanged
+- Post-signing: attempt to modify `total` field via `OrderService` → `OrderImmutableAfterSigningException` thrown
+- Post-signing: attempt to modify `items` → same exception
+- Post-signing: void/correction creates a new credit note `Order` → original order untouched
+
+`RksvFiscalSigner` (AT):
+- Receipt 1: baseline signature produced
+- Receipt 2: `previousSignatureHash` in Receipt 2 matches `signatureValue` of Receipt 1
+- Receipt 3: same chain — Receipt 3 links to Receipt 2
+- Void receipt: produced as signed negative transaction, not a gap in chain
+- Chain gap test: manually remove Receipt 2 from store → verify chain validation fails on Receipt 3
+
+`RtFiscalSigner` (IT):
+- Same pattern as `TseFiscalSigner` — hardware device offline/online queue behaviour
+
+`FdmFiscalSigner` (BE):
+- Same pattern as `TseFiscalSigner`
+
+`HungaryNtcaFiscalSigner` (HU):
+- Invoice > HUF 100,000: submission attempted within 500ms of order completion
+- Invoice < HUF 100,000: submission queued for batch within 4 days
+- First submission fails (mock 500): retry after exponential backoff
+- Three consecutive failures: manager alert sent
+- After 4 hours unsubmitted: critical alert sent
+- Valid submission: `transactionId` stored on `fiscalSignature`
+- XML invoice format: validated against NTCA schema (XSD validation in test)
+
+`UkMtdFiscalSigner` (GB):
+- Order completed: entry written to `uk_vat_ledger` with correct `taxPeriod` (e.g. "2026-Q2")
+- Quarterly submission: all ledger entries for period aggregated into correct MTD JSON format
+- MTD JSON validated against HMRC's published schema
+- Submission marked `submitted_to_hmrc = true` after successful HMRC sandbox call
+- Already-submitted period cannot be re-submitted
+
+`PassthroughFiscalSigner` (NL, LU, IE, US, CA):
+- `isRequired()` returns false
+- `sign()` returns a `FiscalSignature` with `signerSystem = PASSTHROUGH`
+- Receipt PDF for these countries contains no QR code field
+- No fiscal compliance section rendered in manager dashboard for these countries
+
+**Receipt PDF assertions:**
+- DE/AT/IT/BE: receipt PDF contains a scannable QR code image
+- QR code content matches `fiscalSignature.qrCodeData`
+- QR code is scannable (verified using ZXing decoder in test)
+- NL/LU/IE/US/CA: receipt PDF contains no QR code
+
+---
+
+### Performance tests
+
+Run in a dedicated performance environment. Not part of CI pipeline — run before each major release.
+
+| Test | Tool | Target | Acceptable threshold |
+|---|---|---|---|
+| 50 concurrent orchestrator cycles | k6 | Complete within 5-minute heartbeat | p95 < 4 minutes |
+| 200 concurrent WebSocket connections | k6 | Order update delivered to all | p95 < 500ms |
+| Fiscal signing — software (FR/AT) | JMH | Sign one receipt | p99 < 500ms |
+| Fiscal signing — hardware (DE/IT/BE) | JMH | Sign one receipt | p99 < 2000ms |
+| Stripe Tax API cache hit | JMH | Cached response | p99 < 10ms |
+| Stripe Tax API cache miss | k6 | Uncached Stripe call + cache write | p95 < 1000ms |
+| Platform P&L query — 90 days | JMeter | 4 platforms, 90 days, 1 store | p95 < 3 seconds |
+| Platform P&L query — 90 days, 50 stores | JMeter | Same query, 50 stores | p95 < 10 seconds |
+| PostgreSQL fiscal_signatures — 10M rows | pgbench | Range query by country + date | p95 < 500ms |
 
 ---
 
 ### Mock strategy for external dependencies
 
-Every external system that cannot be used in testing gets a mock implementation behind `@Profile("dev")`:
+Every external system that cannot be used in automated testing has a mock implementation. All mocks are in `src/test/java` or behind `@Profile("dev")`. No mock code is compiled into production builds.
 
-| External system | Mock class | Behaviour |
+| External system | Mock | Behaviour in tests |
 |---|---|---|
-| TSE device (DE) | `MockTseFiscalSigner` | Returns valid fake FiscalSignature with fake transactionId |
+| TSE device (DE) | `MockTseFiscalSigner` | Returns structurally valid `FiscalSignature` with deterministic fake `transactionId`. Configurable offline mode for queue tests. |
 | RT device (IT) | `MockRtFiscalSigner` | Same pattern |
 | FDM device (BE) | `MockFdmFiscalSigner` | Same pattern |
-| Hungary NTCA API | `MockNtcaClient` | Returns fake transaction ID, simulates 401 for error testing |
-| UK HMRC MTD API | HMRC sandbox environment | Register early — 1–2 week approval |
-| Stripe payments | Stripe CLI (`stripe listen`) | Forwards webhooks to localhost |
-| Stripe Tax | `MockStripeTaxClient` | Returns configurable tax amounts per test |
-| Deel payroll API | `MockDeelClient` | Returns fake payslip PDF URL and transaction ID |
-| Gemini LLM | `MockGeminiClient` | Returns scripted responses for deterministic agent tests |
-| Wolt/Deliveroo/JustEat/UberEats | Test webhook payloads | Hardcoded JSON fixtures per aggregator schema |
-
-All mock implementations are in `src/test/java` or behind `@Profile("dev")` — never compiled into production builds.
+| Hungary NTCA API | `MockNtcaClient` | Returns fake `transactionId`. Configurable to return 401/500 for error path tests. Configurable delay for timing tests. |
+| UK HMRC MTD API | HMRC developer sandbox | Register at `developer.service.hmrc.gov.uk` — takes 1–2 weeks. Use sandbox for integration + E2E tests. |
+| Stripe payments | Stripe CLI (`stripe listen --forward-to localhost:8089/...`) | Forwards real Stripe test-mode webhooks to localhost. Use test cards from Stripe docs including SCA challenge cards. |
+| Stripe Tax | `MockStripeTaxClient` | Returns configurable per-test tax amounts. Verifies correct request shape. |
+| Deel payroll API | `MockDeelClient` | Returns fake payslip PDF URL and `transactionId`. Captures submitted payload for assertion. |
+| Gemini LLM | `MockGeminiClient` | Returns scripted deterministic responses. Configurable to throw errors for silence tests. |
+| Wolt webhook | JSON fixture `wolt-order-sample.json` | Hardcoded realistic Wolt webhook payload |
+| Deliveroo webhook | JSON fixture `deliveroo-order-sample.json` | Same |
+| Just Eat webhook | JSON fixture `justeat-order-sample.json` | Same |
+| Uber Eats webhook | JSON fixture `ubereats-order-sample.json` | Same |
 
 ---
 
 ### Test data seeding
 
-`TestDataController` (already exists, `@Profile("dev")` only) must be extended to seed:
+`TestDataController` (already exists, `@Profile("dev")` only) must be extended with the following seed endpoints:
 
-- One store per country (12 stores) with realistic configuration
-- Menu items with complete allergen data (all 14 allergens represented across items)
-- 30 days of synthetic order history per store — realistic volume, realistic hour distribution
-- Staff members with hours worked, tip entitlements, bank details (fake IBANs)
-- Aggregator commission % configured per platform per store
-- StoreMemory pre-seeded with baseline metrics so agent has something to reason against
-- Pending proposals in various states (PENDING, APPROVED, REJECTED, EXPIRED)
-- One `RECEIPT_SIGNING_FAILED` order per fiscal country for FiscalCompliancePage testing
-- One `AGGREGATOR_ITEM_UNMAPPED` order for AggregatorHubPage testing
+`POST /test/seed/global` — seeds complete global dataset:
+- 12 stores — one per country — with complete country configuration
+- 1 menu per store — 20 items each, all 14 allergens represented across items, full allergen declaration on every item
+- 30 days of synthetic order history per store — realistic hourly distribution (lunch/dinner peaks)
+- 8 staff members per store — with hours worked across 4 weeks, mix of roles, fake IBANs, fake tax IDs
+- Aggregator commission % configured: Wolt 28%, Deliveroo 32%, Just Eat 14%, Uber Eats 30%
+- 10 aggregator orders per store (manually entered, `orderSource` set)
+- `StoreMemory` pre-seeded per store with realistic baselines
+- 3 pending `ManagerProposal` documents per store — one AUTO-eligible, one PROPOSE, one DISCUSS
+- 1 `RECEIPT_SIGNING_FAILED` order per fiscal country (DE, FR, IT, BE, HU, AT)
+- 1 `AGGREGATOR_ITEM_UNMAPPED` order per store
+- 1 completed pay period with gross pay calculated, ready for Deel submission
+
+`DELETE /test/seed/global` — tears down all seeded data cleanly
 
 ---
 
 ### Smoke testing sequence
 
-After full implementation, run in this exact order:
+After full implementation of all 9 phases, execute in this exact order. Each step must be fully green before proceeding to the next.
 
 ```
-1.  Unit tests — all pass green
-2.  Integration tests — all pass green
-3.  Contract tests (Pact) — all pass green
-4.  Seed test data via TestDataController
-5.  i18n pass — run UI in all 7 languages, every raw key on screen = missing translation = fix before proceeding
-6.  Per-country smoke — one store per country, full order lifecycle end-to-end
-7.  Fiscal signing smoke — verify signed receipt + QR for DE/FR/IT/AT/BE/HU, verify no QR for NL/LU/IE
-8.  Multi-store smoke — 3 stores, 3 currencies simultaneously, executive view
-9.  Aggregator smoke — create Wolt order via POS, verify Platform P&L commission deducted correctly
-10. Payroll smoke — complete pay period, approve, verify mock Deel called with correct payload
-11. Agent smoke — run orchestrator cycle, verify proposal generated, approve, verify action executed, verify undo works
-12. Offline smoke — kill network, create 3 orders, restore network, verify sync with no duplicates
-13. Cross-currency smoke — verify EUR + GBP + USD never added together in any report
-14. Performance tests — 50 concurrent store orchestrator cycles, 200 WebSocket connections
-15. E2E Playwright suite — all journeys green
-16. Mobile tests — both apps, all critical journeys
+Step 1   Unit tests                  mvn test (all services)                         All green
+Step 2   Integration tests           mvn verify (Testcontainers)                     All green
+Step 3   Contract tests              npm run test:pact                               All green
+Step 4   Seed test data              POST /test/seed/global                          200 OK
+Step 5   i18n audit                  Run UI in DE, FR, IT, NL, ES, PL, EN           Zero raw keys visible on any screen
+Step 6   Per-country order smoke     One full order lifecycle per country             12/12 countries pass
+Step 7   Fiscal signing smoke        Verify QR present for DE/FR/IT/BE/HU/AT         6/6 fiscal countries signed
+                                     Verify no QR for NL/LU/IE/US/CA/CH              5/5 passthrough countries clean
+Step 8   Multi-store smoke           3 countries simultaneously                      No currency mixing in any report
+Step 9   Aggregator smoke            Enter Wolt order via POS                        Commission deducted in P&L
+Step 10  Payroll smoke               Complete pay period, approve                    Mock Deel called with correct payload
+Step 11  Agent smoke                 Orchestrator cycle → proposal → approve → undo  All steps verified
+Step 12  Offline smoke               Kill network → 3 orders → restore → verify      All 3 synced, zero duplicates
+Step 13  Cross-currency smoke        EUR + GBP + USD stores in executive view        Never added together
+Step 14  Performance tests           k6 + JMeter suite                               All targets met
+Step 15  Playwright E2E suite        npm run test:e2e                                All journeys green
+Step 16  Mobile test suite           Maestro on Android emulator                     All flows green
 ```
 
-No phase ships until its slice of this list is green.
+No phase ships to production until its slice of this sequence is green with zero exceptions, zero skipped tests, and zero known failures with open issues.
 
 ---
 
