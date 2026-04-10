@@ -6,8 +6,10 @@ import com.MaSoVa.commerce.order.client.InventoryServiceClient;
 import com.MaSoVa.commerce.order.client.MenuServiceClient;
 import com.MaSoVa.commerce.order.client.StoreServiceClient;
 import com.MaSoVa.commerce.order.config.DeliveryFeeConfiguration;
+import com.MaSoVa.commerce.order.config.EuVatConfiguration;
 import com.MaSoVa.commerce.order.config.PreparationTimeConfiguration;
 import com.MaSoVa.commerce.order.config.TaxConfiguration;
+import com.MaSoVa.shared.entity.Store;
 import com.MaSoVa.commerce.order.dto.CreateOrderRequest;
 import com.MaSoVa.commerce.order.entity.Order;
 import com.MaSoVa.commerce.order.entity.OrderJpaEntity;
@@ -59,6 +61,7 @@ class OrderServiceCreateOrderTest {
     private TaxConfiguration taxConfiguration;
     private PreparationTimeConfiguration preparationTimeConfiguration;
     private DeliveryFeeConfiguration deliveryFeeConfiguration;
+    private EuVatEngine euVatEngine;
     private ObjectMapper objectMapper;
 
     private OrderService orderService;
@@ -69,6 +72,10 @@ class OrderServiceCreateOrderTest {
         preparationTimeConfiguration = new PreparationTimeConfiguration();
         deliveryFeeConfiguration = new DeliveryFeeConfiguration();
         objectMapper = new ObjectMapper();
+
+        // Empty EuVatConfiguration — no countries configured, so lookupRate returns 0.0
+        // India store tests never reach it (countryCode == null routes to GST path)
+        euVatEngine = new EuVatEngine(new EuVatConfiguration());
 
         orderService = new OrderService(
                 orderRepository,
@@ -85,12 +92,16 @@ class OrderServiceCreateOrderTest {
                 taxConfiguration,
                 preparationTimeConfiguration,
                 deliveryFeeConfiguration,
-                orderEventPublisher
+                orderEventPublisher,
+                euVatEngine
         );
 
         // Stub menu client to pass validation (fails-open, but explicit here for clarity)
         when(menuServiceClient.isMenuItemAvailable(anyString())).thenReturn(true);
         when(menuServiceClient.validatePrice(anyString(), anyDouble())).thenReturn(true);
+
+        // Stub storeServiceClient.getStore() to return an India store (null countryCode → GST path)
+        when(storeServiceClient.getStore(anyString())).thenReturn(new Store());
 
         // Stub repositories: return the entity passed in (pass-through)
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
