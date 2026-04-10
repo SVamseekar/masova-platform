@@ -230,3 +230,187 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+# EU VAT rates (Global-2)
+eu-vat:
+  countries:
+    DE:
+      default-rate: 19.0
+      context-rates:
+        DINE_IN:
+          FOOD: 19.0
+          ALCOHOL: 19.0
+          BEVERAGE: 19.0
+        TAKEAWAY:
+          FOOD: 7.0
+          ALCOHOL: 19.0
+          BEVERAGE: 19.0
+        DELIVERY:
+          FOOD: 7.0
+          ALCOHOL: 19.0
+          BEVERAGE: 19.0
+    FR:
+      default-rate: 10.0
+      context-rates:
+        DINE_IN:
+          FOOD: 10.0
+          ALCOHOL: 20.0
+          BEVERAGE: 10.0
+        TAKEAWAY:
+          FOOD: 5.5
+          ALCOHOL: 20.0
+          BEVERAGE: 5.5
+        DELIVERY:
+          FOOD: 5.5
+          ALCOHOL: 20.0
+          BEVERAGE: 5.5
+    IT:
+      default-rate: 10.0
+      context-rates:
+        DINE_IN:
+          FOOD: 10.0
+          ALCOHOL: 22.0
+          BEVERAGE: 10.0
+        TAKEAWAY:
+          FOOD: 4.0
+          ALCOHOL: 22.0
+          BEVERAGE: 4.0
+        DELIVERY:
+          FOOD: 4.0
+          ALCOHOL: 22.0
+          BEVERAGE: 4.0
+    NL:
+      default-rate: 9.0
+      context-rates:
+        DINE_IN:
+          FOOD: 9.0
+          ALCOHOL: 21.0
+          BEVERAGE: 9.0
+        TAKEAWAY:
+          FOOD: 9.0
+          ALCOHOL: 21.0
+          BEVERAGE: 9.0
+        DELIVERY:
+          FOOD: 9.0
+          ALCOHOL: 21.0
+          BEVERAGE: 9.0
+    BE:
+      default-rate: 12.0
+      context-rates:
+        DINE_IN:
+          FOOD: 12.0
+          ALCOHOL: 21.0
+          BEVERAGE: 12.0
+        TAKEAWAY:
+          FOOD: 6.0
+          ALCOHOL: 21.0
+          BEVERAGE: 6.0
+        DELIVERY:
+          FOOD: 6.0
+          ALCOHOL: 21.0
+          BEVERAGE: 6.0
+    HU:
+      default-rate: 27.0
+      context-rates:
+        DINE_IN:
+          FOOD: 27.0
+          ALCOHOL: 27.0
+          BEVERAGE: 27.0
+        TAKEAWAY:
+          FOOD: 5.0
+          ALCOHOL: 27.0
+          BEVERAGE: 5.0
+        DELIVERY:
+          FOOD: 5.0
+          ALCOHOL: 27.0
+          BEVERAGE: 5.0
+    LU:
+      default-rate: 17.0
+      context-rates:
+        DINE_IN:
+          FOOD: 17.0
+          ALCOHOL: 17.0
+          BEVERAGE: 17.0
+        TAKEAWAY:
+          FOOD: 3.0
+          ALCOHOL: 17.0
+          BEVERAGE: 3.0
+        DELIVERY:
+          FOOD: 3.0
+          ALCOHOL: 17.0
+          BEVERAGE: 3.0
+    IE:
+      default-rate: 13.5
+      context-rates:
+        DINE_IN:
+          FOOD: 13.5
+          ALCOHOL: 23.0
+          BEVERAGE: 13.5
+        TAKEAWAY:
+          FOOD: 13.5
+          ALCOHOL: 23.0
+          BEVERAGE: 13.5
+        DELIVERY:
+          FOOD: 13.5
+          ALCOHOL: 23.0
+          BEVERAGE: 13.5
+    CH:
+      default-rate: 8.1
+      context-rates:
+        DINE_IN:
+          FOOD: 8.1
+          ALCOHOL: 8.1
+          BEVERAGE: 8.1
+        TAKEAWAY:
+          FOOD: 2.6
+          ALCOHOL: 8.1
+          BEVERAGE: 2.6
+        DELIVERY:
+          FOOD: 2.6
+          ALCOHOL: 8.1
+          BEVERAGE: 2.6
+    GB:
+      default-rate: 20.0
+      context-rates:
+        DINE_IN:
+          FOOD: 20.0
+          ALCOHOL: 20.0
+          BEVERAGE: 20.0
+        TAKEAWAY:
+          FOOD: 0.0
+          ALCOHOL: 20.0
+          BEVERAGE: 20.0
+        DELIVERY:
+          FOOD: 0.0
+          ALCOHOL: 20.0
+          BEVERAGE: 20.0
+    US:
+      default-rate: 0.0
+      context-rates:
+        DINE_IN:
+          FOOD: 0.0
+          ALCOHOL: 0.0
+          BEVERAGE: 0.0
+        TAKEAWAY:
+          FOOD: 0.0
+          ALCOHOL: 0.0
+          BEVERAGE: 0.0
+        DELIVERY:
+          FOOD: 0.0
+          ALCOHOL: 0.0
+          BEVERAGE: 0.0
+    CA:
+      default-rate: 0.0
+      context-rates:
+        DINE_IN:
+          FOOD: 0.0
+          ALCOHOL: 0.0
+          BEVERAGE: 0.0
+        TAKEAWAY:
+          FOOD: 0.0
+          ALCOHOL: 0.0
+          BEVERAGE: 0.0
+        DELIVERY:
+          FOOD: 0.0
+          ALCOHOL: 0.0
+          BEVERAGE: 0.0
