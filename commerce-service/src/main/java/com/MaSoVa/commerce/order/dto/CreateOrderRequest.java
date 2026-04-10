@@ -106,6 +106,8 @@ public class CreateOrderRequest {
 
         private List<String> customizations;
 
+        private String category;  // MenuCategory name for VAT routing e.g. "FOOD", "BEVERAGE", "ALCOHOL"
+
         public OrderItemRequest() {}
 
         // Getters and Setters
@@ -126,5 +128,8 @@ public class CreateOrderRequest {
 
         public List<String> getCustomizations() { return customizations; }
         public void setCustomizations(List<String> customizations) { this.customizations = customizations; }
+
+        public String getCategory() { return category; }
+        public void setCategory(String category) { this.category = category; }
     }
 }
