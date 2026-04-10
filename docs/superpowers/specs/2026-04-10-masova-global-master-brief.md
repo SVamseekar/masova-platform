@@ -141,6 +141,8 @@ The country field is **immutable after the first order is placed.**
 ---
 
 ### Phase Global-1: Allergen Law Compliance
+**Status:** ✅ COMPLETE — 2026-04-11 · PR #8 (`feature/global-1-allergen`) · 15 commits · 20 tests
+
 **Legal basis:** EU Regulation 1169/2011 — 14 mandatory named allergens
 
 **What changes:**
