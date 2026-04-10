@@ -619,6 +619,121 @@ Global-9 (Operator UX) ── depends on all ─────────► last
 
 ---
 
+## Test Debt — Current State and Resolution Strategy
+
+### Honest current state
+
+The project has complete test infrastructure — JUnit 5, Mockito, Testcontainers, Vitest, React Testing Library, Pact, Playwright, and Maestro are all configured and wired into the build. Test builder classes exist (`OrderTestDataBuilder`, `MenuTestDataBuilder`, `PaymentTestDataBuilder`, `DeliveryTestDataBuilder`). `BaseServiceTest` and `BaseIntegrationTest` base classes exist.
+
+However, actual test coverage across the codebase is near zero. The test runner passes because there is almost nothing to fail. The infrastructure is there. The safety net is not.
+
+This is not unusual for a project that moved fast through 8 phases of feature development. It is a known liability that must be addressed systematically.
+
+---
+
+### Chosen strategy: Test-as-you-touch (Option B with a safety floor)
+
+**The rule:**
+
+> Every time a Global phase implementation touches an existing class, that class gets fully tested as part of that phase's work. New code written in any phase gets tests written alongside it — never after. A pull request that touches a class without adding or updating its tests will not be merged.
+
+**Why not retrofit everything first:**
+Writing tests for `TaxConfiguration` right before Global-2 replaces it entirely is wasted effort. Writing tests for `OrderController` before Global-2 modifies it means rewriting those tests immediately. Retrofitting all existing tests before starting any phase delays real progress by weeks and tests code that is about to change.
+
+**Why not skip retrofitting entirely:**
+Building 9 phases on a foundation with hidden bugs is reckless. The safety floor exists to catch the most dangerous existing bugs before new code depends on them.
+
+---
+
+### The safety floor — existing tests required before each phase starts
+
+These are not optional. A phase cannot begin until the safety floor tests for that phase are written and passing.
+
+| Phase | Safety floor — write these existing tests first |
+|---|---|
+| **Global-1** | `MenuService` — existing CRUD methods · `MenuItem` entity validation · `MenuController` happy path + validation errors |
+| **Global-2** | `OrderService.createOrder()` full path · `TaxConfiguration` — document current behaviour before replacing it · `Store` entity validation · `OrderRepository` core queries |
+| **Global-3** | All frontend components that render `₹` or `deliveryFeeINR` — snapshot tests capturing current output · `cartSlice` Redux state — all reducers and selectors |
+| **Global-4** | `PaymentController` happy path + error responses · `PaymentService` existing Razorpay flow · `WebhookController` signature verification |
+| **Global-5** | `OrderService` terminal status transitions (COMPLETED, SERVED, DELIVERED, CANCELLED) · `OrderController` status change endpoint · `OrderJpaEntity` dual-write correctness |
+| **Global-6** | `OrderService.createOrder()` complete path with all order types · `OrderRepository` store + status queries · `OrderWebSocketController` broadcast methods |
+| **Global-7** | All 7 existing agent Python files — input/output contract tests · `AnalyticsService` — verify current queries return expected shapes · `CostAnalysisService` — document the hardcoded ratio behaviour before replacing it |
+| **Global-8** | `EarningsService` all methods · `ShiftController` clock-in/clock-out endpoints · `WorkingSession` entity · `TipController` + `StaffTipController` |
+| **Global-9** | `OrderWebSocketController` all broadcast channels · `OrderRepository` most-used queries · `InventoryService` depletion logic |
+
+---
+
+### The test-as-you-touch rule in practice
+
+When implementing any Global phase, the developer follows this sequence for every class touched:
+
+```
+1. Read the existing class
+2. Write tests that document its current behaviour (these become regression tests)
+3. Make the changes required by the phase
+4. Add tests for the new behaviour
+5. Verify all tests — old and new — pass
+6. Submit for review — reviewer checks both implementation and test completeness
+```
+
+If a class is being deleted or fully replaced (e.g. `TaxConfiguration` → `EuVatEngine`), step 2 still applies — write tests that document what the old class did so you have a reference for what the new class must reproduce or intentionally change.
+
+---
+
+### Classes at highest risk if untested
+
+These are the classes most likely to contain silent bugs that would surface in production. They are listed in order of risk.
+
+**Critical — must be covered by safety floor before any phase that touches them:**
+
+`OrderService` — 800+ lines, most complex class in the system. Touches every other service. State machine transitions, inventory deduction, event publishing, OTP generation, driver assignment. Any bug here affects every order in production.
+
+`PaymentService` + `PaymentController` — money movement. A silent bug here means wrong amounts charged, double charges, or failed payments with no recovery path.
+
+`GdprDataRequestService` — legal requirement. Erasure that silently fails, or that deletes fiscal records it should preserve, is a regulatory violation.
+
+`AuthService` + JWT handling in `shared-security` — security foundation. An untested auth bypass is a critical vulnerability.
+
+`OrderEventPublisher` — fire-and-forget with a catch/log. Tests needed to verify the catch path does not silently drop events that are required for downstream consistency.
+
+`InventoryService` — stock depletion is called on every order. Silent incorrect depletion corrupts inventory data that the agentic AI will reason against.
+
+`EarningsService` — staff pay calculations. Wrong earnings data flows directly into payroll. Must be correct before Global-8.
+
+**High risk — cover during the phase that first touches them:**
+
+`OrderRepository` core queries — wrong queries return wrong data to analytics, KDS, and manager dashboard simultaneously.
+
+`cartSlice` Redux — delivery fee, tax display, order total. Wrong totals shown to customers before payment.
+
+`TaxConfiguration` — being replaced in Global-2, but document its current behaviour first so the new engine reproduces it correctly for India stores.
+
+`CustomerService` — loyalty point calculations, allergen preferences, GDPR export.
+
+`WasteAnalysisService` — feeds the agentic AI's kitchen coach agent. Wrong waste data produces wrong recommendations.
+
+---
+
+### What good looks like at the end
+
+When all 9 Global phases are complete, the test suite should look like this:
+
+| Metric | Target |
+|---|---|
+| Backend unit test count | ~800 |
+| Backend integration test count | ~200 |
+| Frontend unit test count (Vitest) | ~300 |
+| Pact contract tests | ~30 (one per major endpoint) |
+| Playwright E2E journeys | ~50 |
+| Maestro mobile flows | ~20 |
+| Business logic coverage | ≥ 90% line coverage |
+| Critical path coverage (fiscal, VAT, payroll, auth) | 100% branch coverage |
+| Known untested classes in production build | 0 |
+
+These numbers are not aspirational — they are the exit criteria for the entire Global programme. The system is not ready for multi-country production deployment until all of them are met.
+
+---
+
 ## Testing Strategy
 
 ### Guiding principle
