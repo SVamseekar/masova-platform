@@ -40,7 +40,7 @@ class StoreVatFieldsTest {
         // India stores keep countryCode null — this is the routing gate in OrderService
         Store indiaStore = new Store();
         indiaStore.setName("Mumbai Branch");
-        indiaStore.setStoreCode("MUM001");
+        indiaStore.setCode("MUM001");
 
         assertThat(indiaStore.getCountryCode()).isNull();
     }
