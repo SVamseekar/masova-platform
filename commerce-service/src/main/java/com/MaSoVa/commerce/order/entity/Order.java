@@ -48,6 +48,13 @@ public class Order {
     private BigDecimal tax;
     private BigDecimal total;
 
+    // Global-2: EU VAT fields — null for India stores (use tax field instead)
+    private String vatCountryCode;
+    private BigDecimal totalNetAmount;
+    private BigDecimal totalVatAmount;
+    private BigDecimal totalGrossAmount;
+    private com.MaSoVa.shared.model.VatBreakdown vatBreakdown;
+
     @Indexed
     private OrderStatus status;
 
@@ -166,6 +173,21 @@ public class Order {
 
     public BigDecimal getTotal() { return total; }
     public void setTotal(BigDecimal total) { this.total = total; }
+
+    public String getVatCountryCode() { return vatCountryCode; }
+    public void setVatCountryCode(String vatCountryCode) { this.vatCountryCode = vatCountryCode; }
+
+    public BigDecimal getTotalNetAmount() { return totalNetAmount; }
+    public void setTotalNetAmount(BigDecimal totalNetAmount) { this.totalNetAmount = totalNetAmount; }
+
+    public BigDecimal getTotalVatAmount() { return totalVatAmount; }
+    public void setTotalVatAmount(BigDecimal totalVatAmount) { this.totalVatAmount = totalVatAmount; }
+
+    public BigDecimal getTotalGrossAmount() { return totalGrossAmount; }
+    public void setTotalGrossAmount(BigDecimal totalGrossAmount) { this.totalGrossAmount = totalGrossAmount; }
+
+    public com.MaSoVa.shared.model.VatBreakdown getVatBreakdown() { return vatBreakdown; }
+    public void setVatBreakdown(com.MaSoVa.shared.model.VatBreakdown vatBreakdown) { this.vatBreakdown = vatBreakdown; }
 
     public OrderStatus getStatus() { return status; }
     public void setStatus(OrderStatus status) { this.status = status; }

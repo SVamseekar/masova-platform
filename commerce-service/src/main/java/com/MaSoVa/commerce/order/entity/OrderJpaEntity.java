@@ -102,6 +102,23 @@ public class OrderJpaEntity {
     @Column(name = "total", nullable = false, precision = 10, scale = 2)
     private BigDecimal total;
 
+    // Global-2: EU VAT columns — null for India orders
+    @Column(name = "vat_country_code", length = 2)
+    private String vatCountryCode;
+
+    @Column(name = "total_net_amount", precision = 12, scale = 2)
+    private java.math.BigDecimal totalNetAmount;
+
+    @Column(name = "total_vat_amount", precision = 12, scale = 2)
+    private java.math.BigDecimal totalVatAmount;
+
+    @Column(name = "total_gross_amount", precision = 12, scale = 2)
+    private java.math.BigDecimal totalGrossAmount;
+
+    @Column(name = "vat_breakdown", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private String vatBreakdown;
+
     @Column(name = "special_instructions", columnDefinition = "TEXT")
     private String specialInstructions;
 
