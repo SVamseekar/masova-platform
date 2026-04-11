@@ -7,6 +7,7 @@ import cartReducer, {
   clearCart,
   calculateTotals,
   setLoading,
+  setDeliveryFee,
   setSelectedStore,
   clearSelectedStore,
   selectCartItems,
@@ -14,6 +15,7 @@ import cartReducer, {
   selectCartItemCount,
   selectCartSubtotal,
   selectDeliveryFee,
+  selectDeliveryFeeINR,
   selectSelectedStoreId,
   selectSelectedStoreName,
 } from './cartSlice';
@@ -241,6 +243,21 @@ describe('cartSlice', () => {
     });
   });
 
+  describe('setDeliveryFee', () => {
+    it('sets delivery fee and recalculates total', () => {
+      const state = cartReducer(stateWithItems, setDeliveryFee(49));
+      expect(state.deliveryFee).toBe(49);
+      // total = subtotal(550) + deliveryFee(49) = 599
+      expect(state.total).toBe(599);
+    });
+
+    it('sets delivery fee to 0 and recalculates', () => {
+      const state = cartReducer(stateWithItems, setDeliveryFee(0));
+      expect(state.deliveryFee).toBe(0);
+      expect(state.total).toBe(550);
+    });
+  });
+
   describe('selectors', () => {
     const rootState = { cart: stateWithItems };
 
@@ -262,6 +279,10 @@ describe('cartSlice', () => {
 
     it('selectDeliveryFee returns delivery fee', () => {
       expect(selectDeliveryFee(rootState)).toBe(29);
+    });
+
+    it('selectDeliveryFeeINR is an alias for selectDeliveryFee', () => {
+      expect(selectDeliveryFeeINR(rootState)).toBe(selectDeliveryFee(rootState));
     });
 
     it('selectSelectedStoreId returns null by default', () => {
