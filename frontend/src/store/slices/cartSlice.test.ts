@@ -10,12 +10,15 @@ import cartReducer, {
   setDeliveryFee,
   setSelectedStore,
   clearSelectedStore,
+  setStoreCurrency,
   selectCartItems,
   selectCartTotal,
   selectCartItemCount,
   selectCartSubtotal,
   selectDeliveryFee,
   selectDeliveryFeeINR,
+  selectCartCurrency,
+  selectCartLocale,
   selectSelectedStoreId,
   selectSelectedStoreName,
 } from './cartSlice';
@@ -34,6 +37,8 @@ describe('cartSlice', () => {
     isLoading: false,
     selectedStoreId: null,
     selectedStoreName: null,
+    currency: 'INR',
+    locale: 'en-IN',
   };
 
   const stateWithItems = {
@@ -285,12 +290,40 @@ describe('cartSlice', () => {
       expect(selectDeliveryFeeINR(rootState)).toBe(selectDeliveryFee(rootState));
     });
 
+    it('selectCartCurrency returns INR by default', () => {
+      expect(selectCartCurrency(rootState)).toBe('INR');
+    });
+
+    it('selectCartLocale returns en-IN by default', () => {
+      expect(selectCartLocale(rootState)).toBe('en-IN');
+    });
+
     it('selectSelectedStoreId returns null by default', () => {
       expect(selectSelectedStoreId(rootState)).toBeNull();
     });
 
     it('selectSelectedStoreName returns null by default', () => {
       expect(selectSelectedStoreName(rootState)).toBeNull();
+    });
+  });
+
+  describe('setStoreCurrency', () => {
+    it('sets currency and locale on the cart state', () => {
+      const state = cartReducer(emptyState, setStoreCurrency({ currency: 'EUR', locale: 'de-DE' }));
+      expect(state.currency).toBe('EUR');
+      expect(state.locale).toBe('de-DE');
+    });
+
+    it('selectCartCurrency reflects the new currency after setStoreCurrency', () => {
+      const state = cartReducer(emptyState, setStoreCurrency({ currency: 'GBP', locale: 'en-GB' }));
+      const rootState = { cart: state };
+      expect(selectCartCurrency(rootState)).toBe('GBP');
+      expect(selectCartLocale(rootState)).toBe('en-GB');
+    });
+
+    it('defaults to INR/en-IN before setStoreCurrency is called', () => {
+      expect(emptyState.currency).toBe('INR');
+      expect(emptyState.locale).toBe('en-IN');
     });
   });
 });

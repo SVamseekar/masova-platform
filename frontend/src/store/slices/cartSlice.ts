@@ -21,6 +21,8 @@ interface CartState {
   isLoading: boolean;
   selectedStoreId: string | null;
   selectedStoreName: string | null;
+  currency: string;   // ISO 4217 — default 'INR' for India stores
+  locale: string;     // BCP 47 — default 'en-IN' for India stores
 }
 
 // Load cart from localStorage
@@ -37,6 +39,8 @@ const loadCartFromStorage = (): CartState => {
         isLoading: false,
         selectedStoreId: savedCart.selectedStoreId || null,
         selectedStoreName: savedCart.selectedStoreName || null,
+        currency: savedCart.currency || 'INR',
+        locale: savedCart.locale || 'en-IN',
       };
     }
   } catch (e) {
@@ -50,6 +54,8 @@ const loadCartFromStorage = (): CartState => {
     isLoading: false,
     selectedStoreId: null,
     selectedStoreName: null,
+    currency: 'INR',
+    locale: 'en-IN',
   };
 };
 
@@ -62,6 +68,8 @@ const saveCartToStorage = (state: CartState) => {
       itemCount: state.itemCount,
       selectedStoreId: state.selectedStoreId,
       selectedStoreName: state.selectedStoreName,
+      currency: state.currency,
+      locale: state.locale,
     }));
   } catch (e) {
     console.error('Failed to save cart to localStorage:', e);
@@ -159,6 +167,12 @@ const cartSlice = createSlice({
       state.selectedStoreName = null;
       saveCartToStorage(state);
     },
+
+    setStoreCurrency: (state, action: PayloadAction<{ currency: string; locale: string }>) => {
+      state.currency = action.payload.currency;
+      state.locale = action.payload.locale;
+      saveCartToStorage(state);
+    },
   },
 });
 
@@ -173,6 +187,7 @@ export const {
   setDeliveryFee,
   setSelectedStore,
   clearSelectedStore,
+  setStoreCurrency,
 } = cartSlice.actions;
 
 // Selectors
@@ -183,6 +198,8 @@ export const selectCartSubtotal = (state: { cart: CartState }) =>
   state.cart.items.reduce((total, item) => total + (item.price * item.quantity), 0);
 export const selectDeliveryFee = (state: { cart: CartState }) => state.cart.deliveryFee;
 export const selectDeliveryFeeINR = (state: { cart: CartState }) => state.cart.deliveryFee;
+export const selectCartCurrency = (state: { cart: CartState }) => state.cart.currency;
+export const selectCartLocale = (state: { cart: CartState }) => state.cart.locale;
 export const selectSelectedStoreId = (state: { cart: CartState }) => state.cart.selectedStoreId;
 export const selectSelectedStoreName = (state: { cart: CartState }) => state.cart.selectedStoreName;
 
