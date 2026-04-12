@@ -14,6 +14,22 @@ export const formatDate = (date: string | Date): string => {
   });
 };
 
+/**
+ * Format a date using the store's locale.
+ * Falls back to en-IN (India legacy) when locale is null or undefined.
+ */
+export const formatDateLocale = (
+  date: string | Date,
+  locale: string | null | undefined
+): string => {
+  const activeLocale = locale ?? 'en-IN';
+  return new Date(date).toLocaleDateString(activeLocale, {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+};
+
 export const getElapsedTime = (startTime: string | Date): string => {
   const start = new Date(startTime).getTime();
   const now = Date.now();
