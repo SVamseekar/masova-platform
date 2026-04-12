@@ -12,6 +12,7 @@ export interface InitiatePaymentRequest {
   orderType?: string; // For payment analytics categorization
   paymentMethod?: string; // For payment analytics categorization
   notes?: string;
+  countryCode?: string;  // ISO 3166-1 alpha-2; null = India = Razorpay
 }
 
 export interface PaymentCallbackRequest {
@@ -28,7 +29,7 @@ export interface PaymentResponse {
   razorpayPaymentId?: string;
   amount: number;
   status: 'INITIATED' | 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'FAILED' | 'CANCELLED' | 'REFUNDED' | 'PARTIAL_REFUND';
-  paymentMethod?: 'CARD' | 'UPI' | 'NETBANKING' | 'WALLET' | 'CASH' | 'OTHER';
+  paymentMethod?: 'CARD' | 'UPI' | 'NETBANKING' | 'WALLET' | 'CASH' | 'AGGREGATOR_COLLECTED' | 'OTHER';
   customerId: string;
   customerEmail?: string;
   customerPhone?: string;
@@ -37,6 +38,12 @@ export interface PaymentResponse {
   createdAt: string;
   paidAt?: string;
   razorpayKeyId?: string; // Public key for Razorpay integration
+  // Global-4 Stripe fields
+  paymentGateway?: 'RAZORPAY' | 'STRIPE';
+  stripeClientSecret?: string;
+  stripePublishableKey?: string;
+  stripeFeeMinorUnits?: number;
+  paymentMethodType?: string;
 }
 
 export interface RefundRequest {
