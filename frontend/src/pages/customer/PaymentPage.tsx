@@ -9,6 +9,13 @@ import { useCheckDeliveryRadiusQuery } from '../../store/api/storeApi';
 import { selectCartItems, selectCartSubtotal, selectDeliveryFee, selectSelectedStoreId } from '../../store/slices/cartSlice';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { colors } from '../../styles/design-tokens';
+import { loadStripe } from '@stripe/stripe-js';
+import {
+  Elements,
+  PaymentElement,
+  useStripe,
+  useElements,
+} from '@stripe/react-stripe-js';
 
 // Razorpay is declared in types/razorpay.d.ts - no need to redeclare
 
@@ -36,7 +43,15 @@ const PaymentPage: React.FC = () => {
   // Get guest info from navigation state (passed from GuestCheckoutPage)
   const guestInfo = location.state?.guestInfo as GuestInfo | undefined;
 
+  // countryCode from store selection — null for India stores (Razorpay), set for EU stores (Stripe)
+  const storeCountryCode = (location.state?.storeCountryCode as string | undefined) ?? null;
+
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'UPI'>('CARD');
+  const [stripeData, setStripeData] = React.useState<{
+    clientSecret: string;
+    publishableKey: string;
+    orderId: string;
+  } | null>(null);
   const [orderType, setOrderType] = useState<'DELIVERY' | 'TAKEAWAY' | 'DINE_IN'>('DELIVERY');
   const [tableNumber, setTableNumber] = useState('');
   const [guestCount, setGuestCount] = useState('');
@@ -223,7 +238,18 @@ const PaymentPage: React.FC = () => {
         storeId: selectedStoreId || currentUser?.storeId || '',
         orderType: orderType,
         paymentMethod: paymentMethod,
+        countryCode: storeCountryCode ?? undefined,
       }).unwrap();
+
+      // If Stripe gateway — show Stripe PaymentElement in-page instead of opening Razorpay modal
+      if (paymentResult.paymentGateway === 'STRIPE' && paymentResult.stripeClientSecret && paymentResult.stripePublishableKey) {
+        setStripeData({
+          clientSecret: paymentResult.stripeClientSecret,
+          publishableKey: paymentResult.stripePublishableKey,
+          orderId: paymentResult.orderId,
+        });
+        return;
+      }
 
       openRazorpayCheckout(paymentResult, orderId);
 
@@ -465,6 +491,23 @@ const PaymentPage: React.FC = () => {
               </div>
             </div>
           )}
+          {/* Stripe Payment Element — shown after payment is initiated for EU stores */}
+          {stripeData && (
+            <div style={cardStyle}>
+              <SectionLabel>Complete Payment</SectionLabel>
+              <StripePaymentForm
+                clientSecret={stripeData.clientSecret}
+                publishableKey={stripeData.publishableKey}
+                orderId={stripeData.orderId}
+                onSuccess={() => {
+                  setOrderPlaced(true);
+                  navigate(`/payment/success?order_id=${stripeData!.orderId}`);
+                }}
+                onError={(msg: string) => alert(msg)}
+              />
+            </div>
+          )}
+
           {/* Payment Method */}
           <div style={cardStyle}>
             <SectionLabel>Payment Method</SectionLabel>
@@ -737,6 +780,65 @@ function PaymentOption({ active, onClick, icon, title, desc }: { active: boolean
         <div style={{ fontWeight: 600, fontSize: '0.88rem', color: active ? 'var(--text-1)' : 'var(--text-2)' }}>{title}</div>
         <div style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>{desc}</div>
       </div>
+    </div>
+  );
+}
+
+// ─── Stripe Payment Components ────────────────────────────────────────────────
+
+interface StripePaymentFormProps {
+  clientSecret: string;
+  publishableKey: string;
+  orderId: string;
+  onSuccess: () => void;
+  onError: (msg: string) => void;
+}
+
+function StripePaymentForm({ clientSecret, publishableKey, orderId, onSuccess, onError }: StripePaymentFormProps) {
+  const stripePromise = loadStripe(publishableKey);
+  return (
+    <Elements stripe={stripePromise} options={{ clientSecret }}>
+      <StripeCheckoutInner orderId={orderId} onSuccess={onSuccess} onError={onError} />
+    </Elements>
+  );
+}
+
+function StripeCheckoutInner({ orderId, onSuccess, onError }: { orderId: string; onSuccess: () => void; onError: (msg: string) => void }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  const handleConfirm = async () => {
+    if (!stripe || !elements) return;
+    setIsSubmitting(true);
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: `${window.location.origin}/payment/success?order_id=${orderId}`,
+      },
+    });
+    if (error) {
+      onError(error.message ?? 'Payment failed');
+      setIsSubmitting(false);
+    } else {
+      onSuccess();
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <PaymentElement />
+      <button
+        onClick={handleConfirm}
+        disabled={isSubmitting || !stripe}
+        style={{
+          width: '100%', padding: '15px', borderRadius: '10px', border: 'none',
+          background: isSubmitting ? 'var(--border)' : 'linear-gradient(135deg, #635bff, #7c71ff)',
+          color: '#fff', fontSize: '0.95rem', fontWeight: 700, cursor: isSubmitting ? 'not-allowed' : 'pointer',
+        }}
+      >
+        {isSubmitting ? 'Processing...' : 'Pay with Stripe'}
+      </button>
     </div>
   );
 }
