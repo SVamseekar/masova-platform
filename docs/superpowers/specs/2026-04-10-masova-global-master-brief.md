@@ -612,7 +612,7 @@ Never thought about fiscal compliance once since setup. TSE signs silently. NF52
 ```
 Global-1 (Allergen) ──────────────────────────────► ✅ DONE — PR #8
 Global-2 (VAT) ───────────────────────────────────► ✅ DONE — PR #9
-Global-3 (Currency) ──── depends on 2 ────────────► pending
+Global-3 (Currency) ──── depends on 2 ────────────► 🔄 IN PROGRESS — plan: docs/superpowers/plans/2026-04-11-global3-currency-locale-i18n.md
 Global-4 (Payments) ──── depends on 2+3 ──────────► pending
 Global-5 (Fiscal) ─────── depends on 2+4 ─────────► pending
 Global-6 (Aggregators) ── depends on 2 ───────────► pending (parallel with 3-5)
