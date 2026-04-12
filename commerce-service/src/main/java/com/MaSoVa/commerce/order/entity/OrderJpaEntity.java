@@ -119,6 +119,10 @@ public class OrderJpaEntity {
     @JdbcTypeCode(SqlTypes.JSON)
     private String vatBreakdown;
 
+    // Global-3: currency — null for India legacy orders (INR assumed)
+    @Column(name = "currency", length = 3)
+    private String currency;
+
     @Column(name = "special_instructions", columnDefinition = "TEXT")
     private String specialInstructions;
 
