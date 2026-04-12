@@ -49,6 +49,7 @@ class OrderServiceTerminalStatusTest {
     @Mock private StoreServiceClient storeServiceClient;
     @Mock private InventoryServiceClient inventoryServiceClient;
     @Mock private OrderEventPublisher orderEventPublisher;
+    @Mock private com.MaSoVa.commerce.fiscal.FiscalSigningService fiscalSigningService;
 
     private OrderService orderService;
 
@@ -72,7 +73,8 @@ class OrderServiceTerminalStatusTest {
                 new PreparationTimeConfiguration(),
                 new DeliveryFeeConfiguration(),
                 orderEventPublisher,
-                euVatEngine
+                euVatEngine,
+                fiscalSigningService
         );
     }
 

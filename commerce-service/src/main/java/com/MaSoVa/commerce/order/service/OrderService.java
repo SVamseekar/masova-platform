@@ -62,6 +62,7 @@ public class OrderService {
     private final DeliveryFeeConfiguration deliveryFeeConfiguration;
     private final OrderEventPublisher orderEventPublisher;
     private final EuVatEngine euVatEngine;
+    private final com.MaSoVa.commerce.fiscal.FiscalSigningService fiscalSigningService;
     private final Random random = new Random();
 
     public OrderService(OrderRepository orderRepository,
@@ -78,7 +79,8 @@ public class OrderService {
                        PreparationTimeConfiguration preparationTimeConfiguration,
                        DeliveryFeeConfiguration deliveryFeeConfiguration,
                        OrderEventPublisher orderEventPublisher,
-                       EuVatEngine euVatEngine) {
+                       EuVatEngine euVatEngine,
+                       com.MaSoVa.commerce.fiscal.FiscalSigningService fiscalSigningService) {
         this.orderRepository = orderRepository;
         this.orderJpaRepository = orderJpaRepository;
         this.orderItemSyncService = orderItemSyncService;
@@ -95,6 +97,7 @@ public class OrderService {
         this.deliveryFeeConfiguration = deliveryFeeConfiguration;
         this.orderEventPublisher = orderEventPublisher;
         this.euVatEngine = euVatEngine;
+        this.fiscalSigningService = fiscalSigningService;
     }
 
     @Transactional
@@ -463,6 +466,13 @@ public class OrderService {
             } catch (Exception e) {
                 log.warn("Failed to send OTP notification for order {}: {}", updatedOrder.getOrderNumber(), e.getMessage());
             }
+        }
+
+        // Global-5: Trigger fiscal signing for terminal statuses (async — does not block response)
+        if (newStatus == OrderStatus.DELIVERED
+                || newStatus == OrderStatus.SERVED
+                || newStatus == OrderStatus.COMPLETED) {
+            fiscalSigningService.signOrder(updatedOrder);
         }
 
         return updatedOrder;
