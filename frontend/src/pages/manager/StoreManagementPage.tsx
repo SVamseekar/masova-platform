@@ -62,6 +62,12 @@ const StoreManagementPage: React.FC = () => {
     },
   });
 
+  // Global-5: Fiscal device configuration — separate state as these aren't in CreateStoreRequest
+  const [fiscalCountryCode, setFiscalCountryCode] = React.useState('');
+  const [fiscalDeviceIp, setFiscalDeviceIp] = React.useState('');
+  const [ntcaApiCredentials, setNtcaApiCredentials] = React.useState('');
+  const [mtdVatNumber, setMtdVatNumber] = React.useState('');
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     if (name.startsWith('address.')) {
@@ -455,6 +461,66 @@ const StoreManagementPage: React.FC = () => {
                   value={formData.openingDate || ''}
                   onChange={handleInputChange}
                 />
+              </div>
+
+              {/* Global-5: Fiscal Device Configuration */}
+              <div style={{ marginBottom: spacing[4] }}>
+                <h3 style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, marginBottom: spacing[3], color: colors.text.primary }}>
+                  Fiscal Compliance
+                </h3>
+                <Input
+                  label="Country Code (e.g. DE, FR, GB — leave blank for India)"
+                  name="fiscalCountryCode"
+                  value={fiscalCountryCode}
+                  onChange={(e) => setFiscalCountryCode(e.target.value.toUpperCase())}
+                  placeholder="IN"
+                />
+                {['DE', 'IT', 'BE'].includes(fiscalCountryCode) && (
+                  <div style={{ marginTop: spacing[3] }}>
+                    <Input
+                      label="Fiscal Device IP Address (TSE / RT / FDM)"
+                      name="fiscalDeviceIp"
+                      value={fiscalDeviceIp}
+                      onChange={(e) => setFiscalDeviceIp(e.target.value)}
+                      placeholder="192.168.1.100"
+                    />
+                    <button
+                      type="button"
+                      style={{ marginTop: spacing[2], padding: '6px 14px', borderRadius: 6, border: '1px solid #ccc', cursor: 'pointer', fontSize: 13 }}
+                      onClick={() => alert('Device connection test — Phase 2 feature')}
+                    >
+                      Test Connection
+                    </button>
+                  </div>
+                )}
+                {fiscalCountryCode === 'HU' && (
+                  <div style={{ marginTop: spacing[3] }}>
+                    <Input
+                      label="NTCA API Credentials"
+                      name="ntcaApiCredentials"
+                      value={ntcaApiCredentials}
+                      onChange={(e) => setNtcaApiCredentials(e.target.value)}
+                      placeholder="Technical ID:Exchange Key"
+                    />
+                  </div>
+                )}
+                {fiscalCountryCode === 'GB' && (
+                  <div style={{ marginTop: spacing[3] }}>
+                    <Input
+                      label="HMRC VAT Registration Number"
+                      name="mtdVatNumber"
+                      value={mtdVatNumber}
+                      onChange={(e) => setMtdVatNumber(e.target.value)}
+                      placeholder="GB123456789"
+                    />
+                  </div>
+                )}
+                {fiscalCountryCode === 'FR' && (
+                  <div style={{ marginTop: spacing[3], padding: spacing[3], background: 'rgba(255,193,7,0.1)', borderRadius: 6 }}>
+                    <strong>NF525 Notice:</strong> Once an order is fiscally signed, it is immutable.
+                    Corrections must be submitted as new credit note orders.
+                  </div>
+                )}
               </div>
 
               {/* Store Configuration Section */}
