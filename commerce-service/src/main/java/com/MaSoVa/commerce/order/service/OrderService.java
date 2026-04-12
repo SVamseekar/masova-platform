@@ -231,6 +231,9 @@ public class OrderService {
             order.setTotalGrossAmount(vatBreakdown.getTotalGrossAmount());
         }
 
+        // Global-3: propagate store currency to order (null for India stores — INR legacy)
+        order.setCurrency(store.getCurrency());
+
         // Calculate estimated delivery time
         if (Order.OrderType.DELIVERY.equals(request.getOrderType())) {
             // Use dynamic delivery time from DeliveryZoneService if available, otherwise default to 30 minutes
@@ -263,10 +266,11 @@ public class OrderService {
 
         // Publish order created event to RabbitMQ
         try {
-            String currency = savedOrder.getVatCountryCode() != null ? "EUR" : "INR";
+            // Global-3: use actual currency from order (set from store.currency)
+            String eventCurrency = savedOrder.getCurrency() != null ? savedOrder.getCurrency() : "INR";
             OrderCreatedEvent createdEvent = new OrderCreatedEvent(
                 savedOrder.getId(), savedOrder.getCustomerId(), savedOrder.getStoreId(),
-                savedOrder.getOrderType().toString(), savedOrder.getTotal(), currency);
+                savedOrder.getOrderType().toString(), savedOrder.getTotal(), eventCurrency);
             createdEvent.setVatCountryCode(savedOrder.getVatCountryCode());
             createdEvent.setTotalVatAmount(savedOrder.getTotalVatAmount());
             orderEventPublisher.publishOrderCreated(createdEvent);
@@ -1346,6 +1350,7 @@ public class OrderService {
             .totalVatAmount(order.getTotalVatAmount())
             .totalGrossAmount(order.getTotalGrossAmount())
             .vatBreakdown(vatBreakdownJson)
+            .currency(order.getCurrency())
             .build();
 
         // Map line items
