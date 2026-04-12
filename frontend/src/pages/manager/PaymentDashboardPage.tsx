@@ -382,6 +382,8 @@ const PaymentDashboardPage: React.FC = () => {
                   <th style={tableHeaderStyles}>Customer</th>
                   <th style={tableHeaderStyles}>Amount</th>
                   <th style={tableHeaderStyles}>Method</th>
+                  <th style={tableHeaderStyles}>Gateway</th>
+                  <th style={tableHeaderStyles}>Method Type</th>
                   <th style={tableHeaderStyles}>Status</th>
                   <th style={tableHeaderStyles}>Date</th>
                 </tr>
@@ -400,6 +402,8 @@ const PaymentDashboardPage: React.FC = () => {
                       ₹{(txn.amount || 0).toFixed(2)}
                     </td>
                     <td style={tableCellStyles}>{txn.paymentMethod || 'N/A'}</td>
+                    <td style={tableCellStyles}>{txn.paymentGateway || 'RAZORPAY'}</td>
+                    <td style={tableCellStyles}>{txn.paymentMethodType || '—'}</td>
                     <td style={tableCellStyles}>
                       <span style={statusBadgeStyles(txn.status)}>{txn.status}</span>
                     </td>
