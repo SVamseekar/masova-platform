@@ -3,6 +3,7 @@ package com.MaSoVa.commerce.order.service;
 import com.MaSoVa.shared.messaging.config.MaSoVaRabbitMQConfig;
 import com.MaSoVa.shared.messaging.events.OrderCreatedEvent;
 import com.MaSoVa.shared.messaging.events.OrderStatusChangedEvent;
+import com.MaSoVa.shared.messaging.events.ReceiptSignedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -39,6 +40,19 @@ public class OrderEventPublisher {
             log.info("[AMQP] Published OrderStatusChangedEvent orderId={} status={}", event.getOrderId(), event.getNewStatus());
         } catch (Exception e) {
             log.error("[AMQP] Failed to publish OrderStatusChangedEvent orderId={}: {}", event.getOrderId(), e.getMessage());
+        }
+    }
+
+    public void publishReceiptSigned(ReceiptSignedEvent event) {
+        try {
+            rabbitTemplate.convertAndSend(
+                    MaSoVaRabbitMQConfig.ORDERS_EXCHANGE,
+                    MaSoVaRabbitMQConfig.ORDER_RECEIPT_SIGNED_KEY,
+                    event);
+            log.info("[AMQP] Published ReceiptSignedEvent orderId={} signingFailed={}",
+                    event.getOrderId(), event.isSigningFailed());
+        } catch (Exception e) {
+            log.error("[AMQP] Failed to publish ReceiptSignedEvent orderId={}: {}", event.getOrderId(), e.getMessage());
         }
     }
 }
