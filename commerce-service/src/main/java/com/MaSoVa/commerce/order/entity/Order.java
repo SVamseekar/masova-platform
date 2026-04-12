@@ -50,6 +50,9 @@ public class Order {
 
     // Global-2: EU VAT fields — null for India stores (use tax field instead)
     private String vatCountryCode;
+
+    // Global-3: currency — null for India legacy orders (INR assumed)
+    private String currency;
     private BigDecimal totalNetAmount;
     private BigDecimal totalVatAmount;
     private BigDecimal totalGrossAmount;
@@ -176,6 +179,9 @@ public class Order {
 
     public String getVatCountryCode() { return vatCountryCode; }
     public void setVatCountryCode(String vatCountryCode) { this.vatCountryCode = vatCountryCode; }
+
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
 
     public BigDecimal getTotalNetAmount() { return totalNetAmount; }
     public void setTotalNetAmount(BigDecimal totalNetAmount) { this.totalNetAmount = totalNetAmount; }
