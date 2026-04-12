@@ -1,0 +1,35 @@
+{
+  "cart": {
+    "delivery_fee": "Szállítási díj",
+    "subtotal": "Részösszeg",
+    "total": "Összesen",
+    "empty": "A kosár üres",
+    "checkout": "Pénztár"
+  },
+  "order": {
+    "status": {
+      "RECEIVED": "Fogadva",
+      "PREPARING": "Készítés alatt",
+      "READY": "Kész",
+      "DISPATCHED": "Elküldve",
+      "OUT_FOR_DELIVERY": "Szállítás alatt",
+      "DELIVERED": "Kézbesítve",
+      "SERVED": "Felszolgálva",
+      "COMPLETED": "Befejezve",
+      "CANCELLED": "Törölve"
+    },
+    "type": {
+      "DINE_IN": "Helyben fogyasztás",
+      "TAKEAWAY": "Elvitel",
+      "DELIVERY": "Házhozszállítás"
+    }
+  },
+  "common": {
+    "save": "Mentés",
+    "cancel": "Mégse",
+    "confirm": "Megerősítés",
+    "loading": "Betöltés…",
+    "error": "Valami hiba történt",
+    "no_data": "Nincs elérhető adat"
+  }
+}

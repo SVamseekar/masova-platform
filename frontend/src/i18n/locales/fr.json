@@ -1,0 +1,35 @@
+{
+  "cart": {
+    "delivery_fee": "Frais de livraison",
+    "subtotal": "Sous-total",
+    "total": "Total",
+    "empty": "Votre panier est vide",
+    "checkout": "Commander"
+  },
+  "order": {
+    "status": {
+      "RECEIVED": "Reçu",
+      "PREPARING": "En préparation",
+      "READY": "Prêt",
+      "DISPATCHED": "Expédié",
+      "OUT_FOR_DELIVERY": "En livraison",
+      "DELIVERED": "Livré",
+      "SERVED": "Servi",
+      "COMPLETED": "Terminé",
+      "CANCELLED": "Annulé"
+    },
+    "type": {
+      "DINE_IN": "Sur place",
+      "TAKEAWAY": "À emporter",
+      "DELIVERY": "Livraison"
+    }
+  },
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "loading": "Chargement…",
+    "error": "Une erreur s'est produite",
+    "no_data": "Aucune donnée disponible"
+  }
+}

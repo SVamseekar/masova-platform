@@ -1,0 +1,35 @@
+{
+  "cart": {
+    "delivery_fee": "Delivery fee",
+    "subtotal": "Subtotal",
+    "total": "Total",
+    "empty": "Your cart is empty",
+    "checkout": "Checkout"
+  },
+  "order": {
+    "status": {
+      "RECEIVED": "Received",
+      "PREPARING": "Preparing",
+      "READY": "Ready",
+      "DISPATCHED": "Dispatched",
+      "OUT_FOR_DELIVERY": "Out for delivery",
+      "DELIVERED": "Delivered",
+      "SERVED": "Served",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled"
+    },
+    "type": {
+      "DINE_IN": "Dine in",
+      "TAKEAWAY": "Takeaway",
+      "DELIVERY": "Delivery"
+    }
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "loading": "Loading…",
+    "error": "Something went wrong",
+    "no_data": "No data available"
+  }
+}
