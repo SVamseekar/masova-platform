@@ -32,11 +32,17 @@ public class MaSoVaRabbitMQConfig {
     public static final String DELIVERY_ASSIGNED_KEY = "delivery.assigned";
     public static final String DELIVERY_COMPLETED_KEY = "delivery.completed";
 
+    // Routing keys — fiscal (Global-5)
+    public static final String ORDER_RECEIPT_SIGNED_KEY = "order.receipt.signed";
+
     // Queue names
     public static final String NOTIFICATION_ORDER_QUEUE = "masova.notification.order-events";
     public static final String ANALYTICS_PAYMENT_QUEUE = "masova.analytics.payment-events";
     public static final String ANALYTICS_ORDER_QUEUE = "masova.analytics.order-events";
     public static final String DLQ = "masova.dlq";
+
+    // Compliance queue — intelligence-service subscribes for signing-failed alerts
+    public static final String COMPLIANCE_ORDER_QUEUE = "masova.compliance.order-events";
 
     @Bean
     public TopicExchange ordersExchange() {
@@ -74,6 +80,19 @@ public class MaSoVaRabbitMQConfig {
     @Bean
     public Binding notificationOrderCreatedBinding(Queue notificationOrderQueue, TopicExchange ordersExchange) {
         return BindingBuilder.bind(notificationOrderQueue).to(ordersExchange).with("order.#");
+    }
+
+    @Bean
+    public Queue complianceOrderQueue() {
+        return QueueBuilder.durable(COMPLIANCE_ORDER_QUEUE)
+                .withArgument("x-dead-letter-exchange", DLX)
+                .withArgument("x-dead-letter-routing-key", "dlq")
+                .build();
+    }
+
+    @Bean
+    public Binding complianceOrderBinding(Queue complianceOrderQueue, TopicExchange ordersExchange) {
+        return BindingBuilder.bind(complianceOrderQueue).to(ordersExchange).with("order.receipt.#");
     }
 
     @Bean
