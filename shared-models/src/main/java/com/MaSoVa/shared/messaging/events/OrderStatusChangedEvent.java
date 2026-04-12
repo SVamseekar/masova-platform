@@ -14,6 +14,7 @@ public class OrderStatusChangedEvent extends DomainEvent {
     private String storeId;
     private String vatCountryCode;
     private BigDecimal totalVatAmount;
+    private String currency;
 
     public OrderStatusChangedEvent() { super("ORDER_STATUS_CHANGED"); }
 
@@ -38,7 +39,8 @@ public class OrderStatusChangedEvent extends DomainEvent {
             @JsonProperty("newStatus") String newStatus,
             @JsonProperty("storeId") String storeId,
             @JsonProperty("vatCountryCode") String vatCountryCode,
-            @JsonProperty("totalVatAmount") BigDecimal totalVatAmount) {
+            @JsonProperty("totalVatAmount") BigDecimal totalVatAmount,
+            @JsonProperty("currency") String currency) {
         super(eventId, eventType, occurredAt);
         this.orderId = orderId;
         this.customerId = customerId;
@@ -47,6 +49,7 @@ public class OrderStatusChangedEvent extends DomainEvent {
         this.storeId = storeId;
         this.vatCountryCode = vatCountryCode;
         this.totalVatAmount = totalVatAmount;
+        this.currency = currency;
     }
 
     public String getOrderId() { return orderId; }
@@ -58,4 +61,6 @@ public class OrderStatusChangedEvent extends DomainEvent {
     public void setVatCountryCode(String vatCountryCode) { this.vatCountryCode = vatCountryCode; }
     public BigDecimal getTotalVatAmount() { return totalVatAmount; }
     public void setTotalVatAmount(BigDecimal totalVatAmount) { this.totalVatAmount = totalVatAmount; }
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
 }
