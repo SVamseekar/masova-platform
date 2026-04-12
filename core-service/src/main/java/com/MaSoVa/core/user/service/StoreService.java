@@ -3,6 +3,7 @@ package com.MaSoVa.core.user.service;
 import com.MaSoVa.shared.entity.Store;
 import com.MaSoVa.shared.enums.StoreStatus;
 import com.MaSoVa.core.user.repository.StoreRepository;
+import com.MaSoVa.core.store.service.CountryProfileService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +22,9 @@ public class StoreService {
 
     @Autowired
     private StoreRepository storeRepository;
+
+    @Autowired
+    private CountryProfileService countryProfileService;
     
     // @Cacheable(value = "stores", key = "#p0")
     public Store getStore(String storeId) {
@@ -65,6 +69,12 @@ public class StoreService {
 
     // @CacheEvict(value = "stores", key = "#p0.id")
     public Store saveStore(Store store) {
+        // Global-3: auto-derive currency + locale from countryCode at save time.
+        // India stores have null countryCode — not modified (INR/en-IN is the legacy assumption).
+        if (store.getCountryCode() != null && !store.getCountryCode().isBlank()) {
+            store.setCurrency(countryProfileService.resolveCurrency(store.getCountryCode()));
+            store.setLocale(countryProfileService.resolveLocale(store.getCountryCode()));
+        }
         store.setLastModified(LocalDateTime.now());
         return storeRepository.save(store);
     }
