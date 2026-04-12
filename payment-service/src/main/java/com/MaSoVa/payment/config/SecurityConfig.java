@@ -22,6 +22,9 @@ public class SecurityConfig extends SecurityConfigurationBase {
             "/api/payments/webhook",
             "/api/webhooks/**",
 
+            // Stripe webhook endpoint (must be public — Stripe cannot send JWT)
+            "/api/payments/webhook/stripe",
+
             // Health and actuator endpoints
             "/actuator/health",
             "/api/health/**",
