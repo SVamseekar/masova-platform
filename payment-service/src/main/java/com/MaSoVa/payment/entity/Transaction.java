@@ -65,6 +65,16 @@ public class Transaction {
     private String receipt;
     private String currency; // INR by default
 
+    /** "RAZORPAY" or "STRIPE" — populated at payment initiation. */
+    private String paymentGateway;
+
+    /** Stripe PaymentIntent ID (null for Razorpay transactions). */
+    @Indexed
+    private String stripePaymentIntentId;
+
+    /** Stripe platform fee in minor units (cents, pence). Null for Razorpay and non-Stripe. */
+    private Long stripeFeeMinorUnits;
+
     // Timestamps
     @CreatedDate
     @Indexed
@@ -140,6 +150,15 @@ public class Transaction {
 
     public String getCurrency() { return currency; }
     public void setCurrency(String currency) { this.currency = currency; }
+
+    public String getPaymentGateway() { return paymentGateway; }
+    public void setPaymentGateway(String paymentGateway) { this.paymentGateway = paymentGateway; }
+
+    public String getStripePaymentIntentId() { return stripePaymentIntentId; }
+    public void setStripePaymentIntentId(String stripePaymentIntentId) { this.stripePaymentIntentId = stripePaymentIntentId; }
+
+    public Long getStripeFeeMinorUnits() { return stripeFeeMinorUnits; }
+    public void setStripeFeeMinorUnits(Long stripeFeeMinorUnits) { this.stripeFeeMinorUnits = stripeFeeMinorUnits; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
@@ -244,6 +263,7 @@ public class Transaction {
         NETBANKING,
         WALLET,
         CASH,
+        AGGREGATOR_COLLECTED,   // Global-6 aggregator orders — payment already collected by platform
         OTHER
     }
 }
