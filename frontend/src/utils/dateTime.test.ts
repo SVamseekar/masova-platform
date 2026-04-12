@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { formatTime, formatDate, getElapsedTime } from './dateTime';
+import { formatTime, formatDate, getElapsedTime, formatDateLocale } from './dateTime';
 
 describe('formatTime', () => {
   it('formats a Date object to time string', () => {
@@ -76,5 +76,37 @@ describe('getElapsedTime', () => {
     const threeHoursAgo = new Date(now - 3 * 60 * 60 * 1000);
     const result = getElapsedTime(threeHoursAgo);
     expect(result).toBe('3h 0m');
+  });
+});
+
+describe('formatDateLocale', () => {
+  it('formats date in German locale — DD.MM.YYYY', () => {
+    const result = formatDateLocale('2026-04-11', 'de-DE');
+    expect(result).toMatch(/11[.\-/]04[.\-/]2026/);
+  });
+
+  it('formats date in French locale', () => {
+    const result = formatDateLocale('2026-04-11', 'fr-FR');
+    expect(result).toMatch(/11/);
+    expect(result).toMatch(/04/);
+    expect(result).toMatch(/2026/);
+  });
+
+  it('formats date in en-IN locale — same as existing formatDate', () => {
+    const result = formatDateLocale('2026-04-11', 'en-IN');
+    const existing = formatDate('2026-04-11');
+    expect(result).toBe(existing);
+  });
+
+  it('falls back to en-IN when locale is null', () => {
+    const result = formatDateLocale('2026-04-11', null);
+    const expected = formatDate('2026-04-11');
+    expect(result).toBe(expected);
+  });
+
+  it('falls back to en-IN when locale is undefined', () => {
+    const result = formatDateLocale('2026-04-11', undefined);
+    const expected = formatDate('2026-04-11');
+    expect(result).toBe(expected);
   });
 });
