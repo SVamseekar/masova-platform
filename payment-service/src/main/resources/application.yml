@@ -61,6 +61,13 @@ razorpay:
   key-secret: ${RAZORPAY_KEY_SECRET:Asbe0hf12kZn0VSX4ykn3Nvq}
   webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:whsec_YOUR_WEBHOOK_SECRET_HERE}
 
+# Stripe Configuration — Global-4 EU/Global payments
+# Set STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PUBLISHABLE_KEY in environment
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY:sk_test_placeholder_replace_in_env}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:whsec_placeholder_replace_in_env}
+  publishable-key: ${STRIPE_PUBLISHABLE_KEY:pk_test_placeholder_replace_in_env}
+
 # Service URLs
 services:
   order-service:

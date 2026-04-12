@@ -47,6 +47,13 @@
             <version>1.4.6</version>
         </dependency>
 
+        <!-- Stripe Java SDK — EU/Global payments (Global-4) -->
+        <dependency>
+            <groupId>com.stripe</groupId>
+            <artifactId>stripe-java</artifactId>
+            <version>26.3.0</version>
+        </dependency>
+
         <!-- Spring Boot Starter Actuator (for health checks) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
