@@ -50,4 +50,32 @@ class OrderEventVatFieldsTest {
         assertThat(event.getVatCountryCode()).isNull();
         assertThat(event.getTotalVatAmount()).isNull();
     }
+
+    @Test
+    void orderStatusChangedEvent_currency_field_set_and_get() {
+        OrderStatusChangedEvent event = new OrderStatusChangedEvent(
+            "order-3", "customer-3", "PREPARING", "READY", "store-3");
+        event.setCurrency("GBP");
+
+        assertThat(event.getCurrency()).isEqualTo("GBP");
+    }
+
+    @Test
+    void orderStatusChangedEvent_currency_defaults_null_for_india_orders() {
+        OrderStatusChangedEvent event = new OrderStatusChangedEvent(
+            "order-4", "customer-4", "RECEIVED", "PREPARING", "store-4");
+
+        assertThat(event.getCurrency()).isNull();
+    }
+
+    @Test
+    void orderStatusChangedEvent_json_creator_includes_currency() {
+        OrderStatusChangedEvent event = new OrderStatusChangedEvent(
+            "evt-id", "ORDER_STATUS_CHANGED", java.time.Instant.now(),
+            "order-5", "customer-5", "RECEIVED", "PREPARING", "store-5",
+            "DE", BigDecimal.valueOf(4.50), "EUR");
+
+        assertThat(event.getCurrency()).isEqualTo("EUR");
+        assertThat(event.getVatCountryCode()).isEqualTo("DE");
+    }
 }

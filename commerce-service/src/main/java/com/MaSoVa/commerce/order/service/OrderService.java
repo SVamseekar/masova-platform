@@ -428,6 +428,7 @@ public class OrderService {
                 currentStatus.toString(), newStatus.toString(), updatedOrder.getStoreId());
             statusEvent.setVatCountryCode(updatedOrder.getVatCountryCode());
             statusEvent.setTotalVatAmount(updatedOrder.getTotalVatAmount());
+            statusEvent.setCurrency(updatedOrder.getCurrency());
             orderEventPublisher.publishOrderStatusChanged(statusEvent);
         } catch (Exception e) {
             log.warn("Failed to publish status changed event for {}: {}", updatedOrder.getOrderNumber(), e.getMessage());
@@ -535,6 +536,7 @@ public class OrderService {
                 currentStatus.toString(), nextStatus.toString(), updatedOrder.getStoreId());
             statusEvent.setVatCountryCode(updatedOrder.getVatCountryCode());
             statusEvent.setTotalVatAmount(updatedOrder.getTotalVatAmount());
+            statusEvent.setCurrency(updatedOrder.getCurrency());
             orderEventPublisher.publishOrderStatusChanged(statusEvent);
         } catch (Exception e) {
             log.warn("Failed to publish status changed event for {}: {}", updatedOrder.getOrderNumber(), e.getMessage());
@@ -626,6 +628,7 @@ public class OrderService {
                 previousStatus.toString(), "CANCELLED", cancelledOrder.getStoreId());
             statusEvent.setVatCountryCode(cancelledOrder.getVatCountryCode());
             statusEvent.setTotalVatAmount(cancelledOrder.getTotalVatAmount());
+            statusEvent.setCurrency(cancelledOrder.getCurrency());
             orderEventPublisher.publishOrderStatusChanged(statusEvent);
         } catch (Exception e) {
             log.warn("Failed to publish cancel event for {}: {}", cancelledOrder.getOrderNumber(), e.getMessage());
@@ -1501,6 +1504,7 @@ public class OrderService {
                 savedOrder.getStoreId());
             statusEvent.setVatCountryCode(savedOrder.getVatCountryCode());
             statusEvent.setTotalVatAmount(savedOrder.getTotalVatAmount());
+            statusEvent.setCurrency(savedOrder.getCurrency());
             orderEventPublisher.publishOrderStatusChanged(statusEvent);
         } catch (Exception e) {
             log.warn("Failed to publish delivered event for {}: {}", orderId, e.getMessage());
