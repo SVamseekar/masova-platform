@@ -245,6 +245,8 @@ The country field is **immutable after the first order is placed.**
 ---
 
 ### Phase Global-5: Fiscal Signing — All 12 Countries
+**Status:** ✅ COMPLETE — 2026-04-12 · feature/global-5-fiscal-signing
+
 **Legal basis:** Country-specific fiscal laws — see table below
 
 **Architecture:** `FiscalSigner` interface + `FiscalSignerRegistry`. MaSoVa never implements signing directly — calls `sign(order, vatBreakdown)`, adapter handles country-specific logic.
@@ -614,7 +616,7 @@ Global-1 (Allergen) ────────────────────
 Global-2 (VAT) ───────────────────────────────────► ✅ DONE — PR #9
 Global-3 (Currency) ──── depends on 2 ────────────► ✅ DONE — PR #10
 Global-4 (Payments) ──── depends on 2+3 ──────────► pending
-Global-5 (Fiscal) ─────── depends on 2+4 ─────────► pending
+Global-5 (Fiscal) ─────── depends on 2+4 ─────────► ✅ DONE
 Global-6 (Aggregators) ── depends on 2 ───────────► pending (parallel with 3-5)
 Global-7 (Agentic AI) ─── depends on 6 for data ──► pending (parallel with 5)
 Global-8 (Payroll) ──────── depends on 3 ─────────► pending (parallel with 5-7)
