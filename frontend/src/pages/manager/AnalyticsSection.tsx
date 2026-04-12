@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+const PlatformPnLPage = React.lazy(() => import('./PlatformPnLPage'));
 import { t, cardStyle, tabStyle, sectionTitleStyle, statusBadge, tableHeaderStyle, tableCellStyle, selectStyle } from './manager-tokens';
 import {
   useGetTopProductsQuery,
@@ -23,6 +24,7 @@ const tabs = [
   { id: 'products', label: 'Products' },
   { id: 'reports', label: 'Reports' },
   { id: 'equipment', label: 'Equipment' },
+  { id: 'platform-pnl', label: 'Platform P&L' },
 ];
 
 // Shared styles
@@ -546,6 +548,11 @@ const AnalyticsSection: React.FC<Props> = ({ storeId, activeTab, onTabChange }) 
       {currentTab === 'products' && <ProductsTab storeId={storeId} />}
       {currentTab === 'reports' && <ReportsTab storeId={storeId} />}
       {currentTab === 'equipment' && <EquipmentTab storeId={storeId} userId="" />}
+      {currentTab === 'platform-pnl' && (
+        <React.Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: t.gray }}>Loading...</div>}>
+          <PlatformPnLPage />
+        </React.Suspense>
+      )}
     </div>
   );
 };

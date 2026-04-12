@@ -68,6 +68,10 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
   const [emailError, setEmailError] = useState('');
   const [addressError, setAddressError] = useState('');
 
+  // Global-6: aggregator source selector
+  const [orderSource, setOrderSource] = useState<'MASOVA' | 'WOLT' | 'DELIVEROO' | 'JUST_EAT' | 'UBER_EATS'>('MASOVA');
+  const [aggregatorOrderId, setAggregatorOrderId] = useState('');
+
   // PIN Authentication for order submission
   const [showPINModal, setShowPINModal] = useState(false);
   const [authenticatedStaff, setAuthenticatedStaff] = useState<{
@@ -311,6 +315,9 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
         // Staff tracking - who created this order (from PIN authentication)
         createdByStaffId: staffData.userId,
         createdByStaffName: staffData.name,
+        // Global-6: aggregator source
+        orderSource,
+        aggregatorOrderId: orderSource !== 'MASOVA' ? aggregatorOrderId || undefined : undefined,
       };
 
       // Step 3: Create the order
@@ -781,6 +788,70 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
                 </p>
               )}
             </>
+          )}
+        </Card>
+
+        {/* Order Source — Global-6 */}
+        <Card
+          elevation="sm"
+          padding="lg"
+          style={{
+            marginBottom: spacing[4],
+            backgroundColor: colors.surface.secondary,
+            border: `1px solid ${colors.surface.border}`
+          }}
+        >
+          <p style={{
+            margin: `0 0 ${spacing[3]} 0`,
+            fontSize: typography.fontSize.sm,
+            fontWeight: typography.fontWeight.bold,
+            color: colors.text.primary
+          }}>
+            Order Source
+          </p>
+          <select
+            value={orderSource}
+            onChange={(e) => {
+              const val = e.target.value as typeof orderSource;
+              setOrderSource(val);
+              if (val === 'MASOVA') setAggregatorOrderId('');
+            }}
+            style={{
+              width: '100%',
+              padding: `${spacing[2]} ${spacing[3]}`,
+              borderRadius: '10px',
+              border: `2px solid ${colors.surface.border}`,
+              background: colors.surface.primary,
+              fontFamily: typography.fontFamily.primary,
+              fontSize: typography.fontSize.sm,
+              color: colors.text.primary,
+              marginBottom: spacing[3],
+            }}
+          >
+            <option value="MASOVA">MaSoVa (Direct)</option>
+            <option value="WOLT">Wolt</option>
+            <option value="DELIVEROO">Deliveroo</option>
+            <option value="JUST_EAT">Just Eat</option>
+            <option value="UBER_EATS">Uber Eats</option>
+          </select>
+          {orderSource !== 'MASOVA' && (
+            <input
+              type="text"
+              value={aggregatorOrderId}
+              onChange={(e) => setAggregatorOrderId(e.target.value)}
+              placeholder="Aggregator Order ID (optional)"
+              style={{
+                width: '100%',
+                padding: `${spacing[2]} ${spacing[3]}`,
+                borderRadius: '10px',
+                border: `2px solid ${colors.surface.border}`,
+                background: colors.surface.primary,
+                fontFamily: typography.fontFamily.primary,
+                fontSize: typography.fontSize.sm,
+                color: colors.text.primary,
+                boxSizing: 'border-box',
+              }}
+            />
           )}
         </Card>
 

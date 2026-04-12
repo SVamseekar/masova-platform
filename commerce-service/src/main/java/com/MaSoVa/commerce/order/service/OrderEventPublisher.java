@@ -1,6 +1,7 @@
 package com.MaSoVa.commerce.order.service;
 
 import com.MaSoVa.shared.messaging.config.MaSoVaRabbitMQConfig;
+import com.MaSoVa.shared.messaging.events.AggregatorOrderReceivedEvent;
 import com.MaSoVa.shared.messaging.events.OrderCreatedEvent;
 import com.MaSoVa.shared.messaging.events.OrderStatusChangedEvent;
 import org.slf4j.Logger;
@@ -27,6 +28,20 @@ public class OrderEventPublisher {
             log.info("[AMQP] Published OrderCreatedEvent orderId={}", event.getOrderId());
         } catch (Exception e) {
             log.error("[AMQP] Failed to publish OrderCreatedEvent orderId={}: {}", event.getOrderId(), e.getMessage());
+        }
+    }
+
+    public void publishAggregatorOrderReceived(AggregatorOrderReceivedEvent event) {
+        try {
+            rabbitTemplate.convertAndSend(
+                    MaSoVaRabbitMQConfig.ORDERS_EXCHANGE,
+                    MaSoVaRabbitMQConfig.AGGREGATOR_ORDER_RECEIVED_KEY,
+                    event);
+            log.info("[AMQP] Published AggregatorOrderReceivedEvent orderId={} source={}",
+                    event.getOrderId(), event.getOrderSource());
+        } catch (Exception e) {
+            log.warn("[AMQP] Failed to publish AggregatorOrderReceivedEvent orderId={}: {}",
+                    event.getOrderId(), e.getMessage());
         }
     }
 

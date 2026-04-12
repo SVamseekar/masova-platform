@@ -2,6 +2,7 @@ package com.MaSoVa.intelligence.messaging;
 
 import com.MaSoVa.intelligence.service.AnalyticsService;
 import com.MaSoVa.shared.messaging.config.MaSoVaRabbitMQConfig;
+import com.MaSoVa.shared.messaging.events.AggregatorOrderReceivedEvent;
 import com.MaSoVa.shared.messaging.events.OrderCreatedEvent;
 import com.MaSoVa.shared.messaging.events.OrderStatusChangedEvent;
 import com.MaSoVa.shared.messaging.events.PaymentCompletedEvent;
@@ -76,6 +77,25 @@ public class AnalyticsEventListener {
             );
         } catch (Exception e) {
             log.error("Failed to process payment.completed analytics event paymentId={}", event.getPaymentId(), e);
+        }
+    }
+
+    @RabbitListener(queues = MaSoVaRabbitMQConfig.ANALYTICS_AGGREGATOR_QUEUE)
+    public void onAggregatorOrderReceived(AggregatorOrderReceivedEvent event) {
+        try {
+            log.info("Analytics: received aggregator order event orderId={} source={}",
+                    event.getOrderId(), event.getOrderSource());
+            analyticsService.recordAggregatorOrderEvent(
+                    event.getOrderId(),
+                    event.getStoreId(),
+                    event.getOrderSource(),
+                    event.getGrossAmount(),
+                    event.getCommissionAmount(),
+                    event.getNetPayout(),
+                    event.getCurrency()
+            );
+        } catch (Exception e) {
+            log.error("Failed to process aggregator order event orderId={}", event.getOrderId(), e);
         }
     }
 

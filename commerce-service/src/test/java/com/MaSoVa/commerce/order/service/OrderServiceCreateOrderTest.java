@@ -56,6 +56,7 @@ class OrderServiceCreateOrderTest {
     @Mock private StoreServiceClient storeServiceClient;
     @Mock private InventoryServiceClient inventoryServiceClient;
     @Mock private OrderEventPublisher orderEventPublisher;
+    @Mock private AggregatorService aggregatorService;
 
     // Real instances — these are pure value-object configs with no external deps
     private TaxConfiguration taxConfiguration;
@@ -93,7 +94,8 @@ class OrderServiceCreateOrderTest {
                 preparationTimeConfiguration,
                 deliveryFeeConfiguration,
                 orderEventPublisher,
-                euVatEngine
+                euVatEngine,
+                aggregatorService
         );
 
         // Stub menu client to pass validation (fails-open, but explicit here for clarity)

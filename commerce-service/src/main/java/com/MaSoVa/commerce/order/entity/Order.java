@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
+import com.MaSoVa.shared.enums.OrderSource;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -20,7 +21,8 @@ import java.util.List;
     @CompoundIndex(def = "{'customerId': 1, 'createdAt': -1}"),
     @CompoundIndex(def = "{'assignedDriverId': 1, 'status': 1}"),
     @CompoundIndex(def = "{'customerId': 1, 'status': 1}"),
-    @CompoundIndex(def = "{'storeId': 1, 'orderType': 1, 'status': 1}")
+    @CompoundIndex(def = "{'storeId': 1, 'orderType': 1, 'status': 1}"),
+    @CompoundIndex(def = "{'storeId': 1, 'orderSource': 1, 'createdAt': -1}")
 })
 public class Order {
 
@@ -136,6 +138,15 @@ public class Order {
     // Tip fields — optional, captured at order completion
     private java.math.BigDecimal tipAmountINR;    // Customer tip amount (null = no tip)
     private String tipRecipientStaffId;           // Direct tip recipient (null = pool)
+
+    // Global-6: Delivery aggregator fields
+    // orderSource is MASOVA for all direct orders; set to platform for staff-entered aggregator orders
+    @Indexed
+    private OrderSource orderSource = OrderSource.MASOVA;   // default — never null
+
+    private String aggregatorOrderId;      // Reference number from aggregator platform
+    private java.math.BigDecimal aggregatorCommission;    // Calculated from configured commission %
+    private java.math.BigDecimal aggregatorNetPayout;     // grossAmount - aggregatorCommission
 
     // Constructors
     public Order() {}
@@ -304,6 +315,18 @@ public class Order {
     public String getTipRecipientStaffId() { return tipRecipientStaffId; }
     public void setTipRecipientStaffId(String tipRecipientStaffId) { this.tipRecipientStaffId = tipRecipientStaffId; }
 
+    public OrderSource getOrderSource() { return orderSource; }
+    public void setOrderSource(OrderSource orderSource) { this.orderSource = orderSource; }
+
+    public String getAggregatorOrderId() { return aggregatorOrderId; }
+    public void setAggregatorOrderId(String aggregatorOrderId) { this.aggregatorOrderId = aggregatorOrderId; }
+
+    public java.math.BigDecimal getAggregatorCommission() { return aggregatorCommission; }
+    public void setAggregatorCommission(java.math.BigDecimal aggregatorCommission) { this.aggregatorCommission = aggregatorCommission; }
+
+    public java.math.BigDecimal getAggregatorNetPayout() { return aggregatorNetPayout; }
+    public void setAggregatorNetPayout(java.math.BigDecimal aggregatorNetPayout) { this.aggregatorNetPayout = aggregatorNetPayout; }
+
     // Proof of Delivery getters/setters
     public String getDeliveryOtp() { return deliveryOtp; }
     public void setDeliveryOtp(String deliveryOtp) { this.deliveryOtp = deliveryOtp; }
@@ -396,7 +419,8 @@ public class Order {
         CASH,
         CARD,
         UPI,
-        WALLET
+        WALLET,
+        AGGREGATOR_COLLECTED
     }
 
     public enum Priority {

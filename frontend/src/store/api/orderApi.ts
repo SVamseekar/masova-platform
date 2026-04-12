@@ -42,8 +42,12 @@ export interface Order {
   status: 'RECEIVED' | 'PREPARING' | 'OVEN' | 'BAKED' | 'READY' | 'DISPATCHED' | 'DELIVERED' | 'COMPLETED' | 'SERVED' | 'CANCELLED';
   orderType: 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY';
   paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
-  paymentMethod?: 'CASH' | 'CARD' | 'UPI' | 'WALLET';
+  paymentMethod?: 'CASH' | 'CARD' | 'UPI' | 'WALLET' | 'AGGREGATOR_COLLECTED';
   priority: 'NORMAL' | 'URGENT';
+  orderSource?: 'MASOVA' | 'WOLT' | 'DELIVEROO' | 'JUST_EAT' | 'UBER_EATS';
+  aggregatorOrderId?: string;
+  aggregatorCommission?: number;
+  aggregatorNetPayout?: number;
   preparationTime?: number;
   estimatedDeliveryTime?: string;
   createdAt: string;
@@ -79,12 +83,14 @@ export interface CreateOrderRequest {
     customizations?: string[];
   }>;
   orderType: 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY';
-  paymentMethod?: 'CASH' | 'CARD' | 'UPI' | 'WALLET';
+  paymentMethod?: 'CASH' | 'CARD' | 'UPI' | 'WALLET' | 'AGGREGATOR_COLLECTED';
   deliveryAddress?: DeliveryAddress;
   specialInstructions?: string;
   // POS staff attribution - tracks which staff member created the order
   createdByStaffId?: string;
   createdByStaffName?: string;
+  orderSource?: 'MASOVA' | 'WOLT' | 'DELIVEROO' | 'JUST_EAT' | 'UBER_EATS';
+  aggregatorOrderId?: string;
 }
 
 export interface UpdateOrderStatusRequest {

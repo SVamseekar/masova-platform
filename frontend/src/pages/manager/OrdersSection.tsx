@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import AssignDriverModal from '../../components/modals/AssignDriverModal';
 
 const DeliveryManagementPage = React.lazy(() => import('./DeliveryManagementPage'));
+const AggregatorHubPage = React.lazy(() => import('./AggregatorHubPage'));
 import { t, cardStyle, tabStyle, tableHeaderStyle, tableCellStyle, sectionTitleStyle, statusBadge, selectStyle } from './manager-tokens';
 import {
   useGetStoreOrdersQuery,
@@ -35,6 +36,7 @@ const tabs = [
   { id: 'refunds', label: 'Refunds' },
   { id: 'deliveries', label: 'Deliveries' },
   { id: 'delivery-mgmt', label: 'Delivery Management' },
+  { id: 'aggregators', label: 'Aggregators' },
 ];
 
 // Shared styles
@@ -699,6 +701,11 @@ const OrdersSection: React.FC<Props> = ({ storeId, activeTab, onTabChange }) => 
       {currentTab === 'delivery-mgmt' && (
         <React.Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: t.gray }}>Loading...</div>}>
           <DeliveryManagementPage />
+        </React.Suspense>
+      )}
+      {currentTab === 'aggregators' && (
+        <React.Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: t.gray }}>Loading...</div>}>
+          <AggregatorHubPage />
         </React.Suspense>
       )}
     </div>

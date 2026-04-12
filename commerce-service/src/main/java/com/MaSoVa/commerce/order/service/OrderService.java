@@ -20,6 +20,8 @@ import com.MaSoVa.commerce.order.config.PreparationTimeConfiguration;
 import com.MaSoVa.commerce.order.config.DeliveryFeeConfiguration;
 import com.MaSoVa.shared.entity.Store;
 import com.MaSoVa.shared.model.VatBreakdown;
+import com.MaSoVa.shared.enums.OrderSource;
+import com.MaSoVa.shared.messaging.events.AggregatorOrderReceivedEvent;
 import com.MaSoVa.shared.messaging.events.OrderCreatedEvent;
 import com.MaSoVa.shared.messaging.events.OrderStatusChangedEvent;
 import org.slf4j.Logger;
@@ -62,6 +64,7 @@ public class OrderService {
     private final DeliveryFeeConfiguration deliveryFeeConfiguration;
     private final OrderEventPublisher orderEventPublisher;
     private final EuVatEngine euVatEngine;
+    private final AggregatorService aggregatorService;
     private final Random random = new Random();
 
     public OrderService(OrderRepository orderRepository,
@@ -78,7 +81,8 @@ public class OrderService {
                        PreparationTimeConfiguration preparationTimeConfiguration,
                        DeliveryFeeConfiguration deliveryFeeConfiguration,
                        OrderEventPublisher orderEventPublisher,
-                       EuVatEngine euVatEngine) {
+                       EuVatEngine euVatEngine,
+                       AggregatorService aggregatorService) {
         this.orderRepository = orderRepository;
         this.orderJpaRepository = orderJpaRepository;
         this.orderItemSyncService = orderItemSyncService;
@@ -95,6 +99,7 @@ public class OrderService {
         this.deliveryFeeConfiguration = deliveryFeeConfiguration;
         this.orderEventPublisher = orderEventPublisher;
         this.euVatEngine = euVatEngine;
+        this.aggregatorService = aggregatorService;
     }
 
     @Transactional
@@ -234,6 +239,22 @@ public class OrderService {
         // Global-3: propagate store currency to order (null for India stores — INR legacy)
         order.setCurrency(store.getCurrency());
 
+        // Global-6: aggregator source
+        OrderSource orderSource = request.getOrderSource() != null ? request.getOrderSource() : OrderSource.MASOVA;
+        order.setOrderSource(orderSource);
+
+        if (orderSource != OrderSource.MASOVA) {
+            // Aggregator orders are already paid via the platform — skip payment processing
+            order.setPaymentMethod(Order.PaymentMethod.AGGREGATOR_COLLECTED);
+            order.setPaymentStatus(Order.PaymentStatus.PAID);
+            // Set aggregator reference + calculate commission
+            order.setAggregatorOrderId(request.getAggregatorOrderId());
+            BigDecimal commissionPct = aggregatorService.getCommissionPercent(request.getStoreId(), orderSource);
+            BigDecimal gross = order.getTotal();
+            order.setAggregatorCommission(aggregatorService.calculateCommissionAmount(gross, commissionPct));
+            order.setAggregatorNetPayout(aggregatorService.calculateNetPayout(gross, commissionPct));
+        }
+
         // Calculate estimated delivery time
         if (Order.OrderType.DELIVERY.equals(request.getOrderType())) {
             // Use dynamic delivery time from DeliveryZoneService if available, otherwise default to 30 minutes
@@ -276,6 +297,20 @@ public class OrderService {
             orderEventPublisher.publishOrderCreated(createdEvent);
         } catch (Exception e) {
             log.warn("Failed to publish order created event for {}: {}", savedOrder.getOrderNumber(), e.getMessage());
+        }
+
+        // Global-6: publish aggregator event for analytics
+        if (savedOrder.getOrderSource() != null && savedOrder.getOrderSource() != OrderSource.MASOVA) {
+            AggregatorOrderReceivedEvent aggEvent = new AggregatorOrderReceivedEvent(
+                    savedOrder.getId(),
+                    savedOrder.getStoreId(),
+                    savedOrder.getOrderSource().name(),
+                    savedOrder.getTotal(),
+                    savedOrder.getAggregatorCommission() != null ? savedOrder.getAggregatorCommission() : BigDecimal.ZERO,
+                    savedOrder.getAggregatorNetPayout() != null ? savedOrder.getAggregatorNetPayout() : savedOrder.getTotal(),
+                    savedOrder.getCurrency() != null ? savedOrder.getCurrency() : "INR"
+            );
+            orderEventPublisher.publishAggregatorOrderReceived(aggEvent);
         }
 
         // Update customer stats immediately after order creation
