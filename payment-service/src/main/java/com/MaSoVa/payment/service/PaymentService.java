@@ -1,13 +1,15 @@
 package com.MaSoVa.payment.service;
 
-import com.MaSoVa.payment.config.RazorpayConfig;
 import com.MaSoVa.payment.dto.InitiatePaymentRequest;
 import com.MaSoVa.payment.dto.PaymentCallbackRequest;
 import com.MaSoVa.payment.dto.PaymentResponse;
 import com.MaSoVa.payment.dto.ReconciliationReportResponse;
 import com.MaSoVa.payment.entity.Transaction;
+import com.MaSoVa.payment.gateway.GatewayPaymentRequest;
+import com.MaSoVa.payment.gateway.GatewayPaymentResult;
+import com.MaSoVa.payment.gateway.PaymentGateway;
+import com.MaSoVa.payment.gateway.PaymentGatewayResolver;
 import com.MaSoVa.payment.repository.TransactionRepository;
-import com.razorpay.Order;
 import com.razorpay.Payment;
 import com.razorpay.RazorpayException;
 import org.slf4j.Logger;
@@ -35,6 +37,7 @@ import java.util.UUID;
  *
  * GDPR Compliance: Customer PII (email, phone) is encrypted at rest using AES-256-GCM.
  * NOTIF-003: Payment notifications integrated for success/failure events.
+ * Global-4: Gateway resolved from store.countryCode — Razorpay for India, Stripe for EU/global.
  */
 @Service
 public class PaymentService {
@@ -42,35 +45,38 @@ public class PaymentService {
     private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
 
     private final TransactionRepository transactionRepository;
-    private final RazorpayService razorpayService;
+    private final PaymentGatewayResolver gatewayResolver;
+    private final RazorpayService razorpayService;  // kept for verifyPayment Razorpay-specific fetchPayment
     private final OrderServiceClient orderServiceClient;
-    private final RazorpayConfig razorpayConfig;
     private final PiiEncryptionService encryptionService;
     private final PaymentNotificationService paymentNotificationService;
     private final com.MaSoVa.payment.messaging.PaymentEventPublisher paymentEventPublisher;
 
-    public PaymentService(TransactionRepository transactionRepository, RazorpayService razorpayService,
-                         OrderServiceClient orderServiceClient, RazorpayConfig razorpayConfig,
-                         PiiEncryptionService encryptionService,
-                         PaymentNotificationService paymentNotificationService,
-                         com.MaSoVa.payment.messaging.PaymentEventPublisher paymentEventPublisher) {
+    public PaymentService(TransactionRepository transactionRepository,
+                          PaymentGatewayResolver gatewayResolver,
+                          RazorpayService razorpayService,
+                          OrderServiceClient orderServiceClient,
+                          PiiEncryptionService encryptionService,
+                          PaymentNotificationService paymentNotificationService,
+                          com.MaSoVa.payment.messaging.PaymentEventPublisher paymentEventPublisher) {
         this.transactionRepository = transactionRepository;
+        this.gatewayResolver = gatewayResolver;
         this.razorpayService = razorpayService;
         this.orderServiceClient = orderServiceClient;
-        this.razorpayConfig = razorpayConfig;
         this.encryptionService = encryptionService;
         this.paymentNotificationService = paymentNotificationService;
         this.paymentEventPublisher = paymentEventPublisher;
     }
 
     /**
-     * Initiate payment - Create Razorpay order
+     * Initiate payment — resolved to Razorpay (India) or Stripe (EU/global) via countryCode.
      */
     @Transactional
     public PaymentResponse initiatePayment(InitiatePaymentRequest request) {
         try {
-            log.info("Initiating payment for order: {}, amount: {}, orderType: {}, paymentMethod: {}",
-                     request.getOrderId(), request.getAmount(), request.getOrderType(), request.getPaymentMethod());
+            log.info("Initiating payment for order: {}, amount: {}, orderType: {}, paymentMethod: {}, countryCode: {}",
+                     request.getOrderId(), request.getAmount(), request.getOrderType(),
+                     request.getPaymentMethod(), request.getCountryCode());
 
             // Validate payment method based on order type
             if ("DELIVERY".equals(request.getOrderType()) && "CASH".equals(request.getPaymentMethod())) {
@@ -94,19 +100,27 @@ public class PaymentService {
                         .amount(existing.getAmount())
                         .currency(existing.getCurrency())
                         .status(existing.getStatus())
+                        .paymentGateway(existing.getPaymentGateway())
                         .build();
             }
 
-            // Generate receipt number
-            String receipt = "RCP_" + UUID.randomUUID().toString().substring(0, 8);
+            // Resolve gateway from countryCode (null = India = Razorpay, non-null = Stripe)
+            PaymentGateway gateway = gatewayResolver.resolve(request.getCountryCode());
 
-            // Create Razorpay order
-            Order razorpayOrder = razorpayService.createOrder(request.getAmount(), request.getOrderId(), receipt);
+            String receipt = "RCP_" + UUID.randomUUID().toString().substring(0, 8);
+            String currency = resolveCurrencyFromCountryCode(request.getCountryCode());
+
+            GatewayPaymentRequest gatewayReq = new GatewayPaymentRequest(
+                    request.getOrderId(), request.getAmount(), currency,
+                    request.getCustomerEmail(), request.getCustomerPhone(),
+                    request.getCustomerId(), receipt);
+
+            GatewayPaymentResult gatewayResult = gateway.initiatePayment(gatewayReq);
 
             // Create transaction record with encrypted PII (GDPR compliance)
             Transaction transaction = Transaction.builder()
                     .orderId(request.getOrderId())
-                    .razorpayOrderId(razorpayOrder.get("id"))
+                    .razorpayOrderId(gatewayResult.getGatewayOrderId()) // PI ID for Stripe, order ID for Razorpay
                     .amount(request.getAmount())
                     .status(Transaction.PaymentStatus.INITIATED)
                     .customerId(request.getCustomerId())
@@ -114,16 +128,20 @@ public class PaymentService {
                     .customerPhone(encryptionService.encrypt(request.getCustomerPhone()))
                     .storeId(request.getStoreId())
                     .receipt(receipt)
-                    .currency("INR")
+                    .currency(currency)
                     .reconciled(false)
                     .build();
 
+            transaction.setPaymentGateway(gatewayResult.getGatewayName());
+            if ("STRIPE".equals(gatewayResult.getGatewayName())) {
+                transaction.setStripePaymentIntentId(gatewayResult.getGatewayOrderId());
+            }
+
             transaction = Objects.requireNonNull(transactionRepository.save(transaction));
 
-            log.info("Payment initiated successfully. Transaction ID: {}, Razorpay Order ID: {}",
-                     transaction.getId(), transaction.getRazorpayOrderId());
+            log.info("Payment initiated successfully. Transaction ID: {}, Gateway: {}, Gateway Order ID: {}",
+                     transaction.getId(), gatewayResult.getGatewayName(), gatewayResult.getGatewayOrderId());
 
-            // Build response (return original unencrypted values to client)
             return PaymentResponse.builder()
                     .transactionId(transaction.getId())
                     .orderId(transaction.getOrderId())
@@ -131,20 +149,22 @@ public class PaymentService {
                     .amount(transaction.getAmount())
                     .status(transaction.getStatus())
                     .customerId(transaction.getCustomerId())
-                    .customerEmail(request.getCustomerEmail())  // Return original (not encrypted)
-                    .customerPhone(request.getCustomerPhone())  // Return original (not encrypted)
+                    .customerEmail(request.getCustomerEmail())
+                    .customerPhone(request.getCustomerPhone())
                     .storeId(transaction.getStoreId())
                     .currency(transaction.getCurrency())
                     .createdAt(transaction.getCreatedAt())
-                    .razorpayKeyId(razorpayConfig.getKeyId()) // Public key for frontend
+                    .paymentGateway(gatewayResult.getGatewayName())
+                    .stripeClientSecret(gatewayResult.getClientSecret())
+                    .stripePublishableKey(gatewayResult.getPublishableKey())
+                    .razorpayKeyId(
+                        "RAZORPAY".equals(gatewayResult.getGatewayName())
+                            ? gatewayResult.getPublishableKey() : null)
                     .build();
 
-        } catch (RazorpayException e) {
-            log.error("Razorpay error while initiating payment for order: {}", request.getOrderId(), e);
-            throw new RuntimeException("Failed to initiate payment: " + e.getMessage(), e);
         } catch (Exception e) {
             log.error("Error initiating payment for order: {}", request.getOrderId(), e);
-            throw new RuntimeException("Failed to initiate payment", e);
+            throw new RuntimeException("Failed to initiate payment: " + e.getMessage(), e);
         }
     }
 
@@ -161,7 +181,7 @@ public class PaymentService {
             // Find transaction
             Transaction transaction = transactionRepository.findByRazorpayOrderId(request.getRazorpayOrderId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                                    "Transaction not found for Razorpay order: " + request.getRazorpayOrderId()));
+                                    "Transaction not found for order: " + request.getRazorpayOrderId()));
 
             // IDEMPOTENCY CHECK: If payment already processed successfully, return existing response
             if (transaction.getStatus() == Transaction.PaymentStatus.SUCCESS &&
@@ -177,12 +197,14 @@ public class PaymentService {
                 throw new RuntimeException("Transaction already completed with a different payment ID");
             }
 
-            // Verify signature
-            boolean isValid = razorpayService.verifyPaymentSignature(
+            // Resolve gateway: Stripe if paymentGateway is STRIPE, else Razorpay
+            PaymentGateway gateway = gatewayResolver.resolve(
+                    "STRIPE".equals(transaction.getPaymentGateway()) ? "STRIPE" : null);
+
+            boolean isValid = gateway.confirmPayment(
                     request.getRazorpayOrderId(),
                     request.getRazorpayPaymentId(),
-                    request.getRazorpaySignature()
-            );
+                    request.getRazorpaySignature());
 
             if (!isValid) {
                 log.error("Payment signature verification failed for transaction: {}", transaction.getId());
@@ -199,22 +221,19 @@ public class PaymentService {
 
                 paymentEventPublisher.publishPaymentFailed(new PaymentFailedEvent(
                         transaction.getId(), transaction.getOrderId(), transaction.getCustomerId(),
-                        transaction.getAmount(), "Payment signature verification failed"));
+                        transaction.getAmount(), "Payment signature verification failed",
+                        transaction.getPaymentGateway()));
 
                 throw new RuntimeException("Payment signature verification failed");
             }
 
-            // Fetch payment details from Razorpay
-            Payment payment = razorpayService.fetchPayment(request.getRazorpayPaymentId());
-
             // Update transaction
             transaction.setRazorpayPaymentId(request.getRazorpayPaymentId());
-            
             transaction.setRazorpaySignature(request.getRazorpaySignature());
             transaction.setStatus(Transaction.PaymentStatus.SUCCESS);
             transaction.setPaidAt(LocalDateTime.now());
 
-            // Set payment method
+            // Set payment method — Razorpay fetches from API, Stripe is set from callback
             if (request.getPaymentMethod() != null) {
                 try {
                     transaction.setPaymentMethod(
@@ -223,17 +242,22 @@ public class PaymentService {
                 } catch (IllegalArgumentException e) {
                     transaction.setPaymentMethod(Transaction.PaymentMethod.OTHER);
                 }
-            } else {
+            } else if ("RAZORPAY".equals(transaction.getPaymentGateway()) || transaction.getPaymentGateway() == null) {
                 // Try to get from Razorpay payment object
-                String method = payment.get("method");
-                if (method != null) {
-                    try {
-                        transaction.setPaymentMethod(
-                                Transaction.PaymentMethod.valueOf(method.toUpperCase())
-                        );
-                    } catch (IllegalArgumentException e) {
-                        transaction.setPaymentMethod(Transaction.PaymentMethod.OTHER);
+                try {
+                    Payment payment = razorpayService.fetchPayment(request.getRazorpayPaymentId());
+                    String method = payment.get("method");
+                    if (method != null) {
+                        try {
+                            transaction.setPaymentMethod(
+                                    Transaction.PaymentMethod.valueOf(method.toUpperCase())
+                            );
+                        } catch (IllegalArgumentException e) {
+                            transaction.setPaymentMethod(Transaction.PaymentMethod.OTHER);
+                        }
                     }
+                } catch (RazorpayException e) {
+                    log.warn("Could not fetch Razorpay payment details for: {}", request.getRazorpayPaymentId(), e);
                 }
             }
 
@@ -259,16 +283,15 @@ public class PaymentService {
                     ? transaction.getPaymentMethod().name() : "UNKNOWN";
             paymentEventPublisher.publishPaymentCompleted(new PaymentCompletedEvent(
                     transaction.getId(), transaction.getOrderId(), transaction.getCustomerId(),
-                    transaction.getAmount(), "INR", methodName, transaction.getRazorpayPaymentId()));
+                    transaction.getAmount(), transaction.getCurrency() != null ? transaction.getCurrency() : "INR",
+                    methodName, transaction.getRazorpayPaymentId(),
+                    transaction.getPaymentGateway(), methodName));
 
             return buildPaymentResponse(transaction);
 
-        } catch (RazorpayException e) {
-            log.error("Razorpay error while verifying payment", e);
-            throw new RuntimeException("Failed to verify payment: " + e.getMessage(), e);
         } catch (Exception e) {
             log.error("Error verifying payment", e);
-            throw new RuntimeException("Failed to verify payment", e);
+            throw new RuntimeException("Failed to verify payment: " + e.getMessage(), e);
         }
     }
 
@@ -318,7 +341,6 @@ public class PaymentService {
         List<Transaction> transactions = transactionRepository
                 .findByStoreIdAndCreatedAtBetween(storeId, startOfDay, endOfDay);
 
-        // Calculate metrics
         long totalTransactions = transactions.size();
         long successfulTransactions = transactions.stream()
                 .filter(t -> t.getStatus() == Transaction.PaymentStatus.SUCCESS)
@@ -346,7 +368,6 @@ public class PaymentService {
                 .map(Transaction::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Payment method breakdown
         Map<String, BigDecimal> paymentMethodBreakdown = new HashMap<>();
         transactions.stream()
                 .filter(t -> t.getStatus() == Transaction.PaymentStatus.SUCCESS)
@@ -393,10 +414,6 @@ public class PaymentService {
     }
 
     /**
-     * Build PaymentResponse with decrypted PII fields.
-     * GDPR Note: PII is stored encrypted in database and decrypted only when needed.
-     */
-    /**
      * Record a CASH payment as SUCCESS
      * Used for POS/walk-in orders where payment is collected immediately
      */
@@ -406,28 +423,24 @@ public class PaymentService {
             log.info("Recording cash payment for order: {}, amount: {}, orderType: {}",
                      request.getOrderId(), request.getAmount(), request.getOrderType());
 
-            // Validate: Cash payment only allowed for PICKUP/TAKEAWAY orders
             if ("DELIVERY".equals(request.getOrderType())) {
                 log.error("CASH payment not allowed for DELIVERY orders. Order: {}", request.getOrderId());
                 throw new IllegalArgumentException("Cash payment is not allowed for delivery orders. Please use online payment methods.");
             }
 
-            // Check if payment already exists for this order
             Optional<Transaction> existingTransaction = transactionRepository.findByOrderId(request.getOrderId());
             if (existingTransaction.isPresent()) {
                 log.warn("Transaction already exists for order: {}", request.getOrderId());
                 return buildPaymentResponse(existingTransaction.get());
             }
 
-            // Generate receipt number
             String receipt = "CASH_" + UUID.randomUUID().toString().substring(0, 8);
 
-            // Create transaction record with SUCCESS status (cash collected immediately)
             Transaction transaction = Transaction.builder()
                     .orderId(request.getOrderId())
-                    .razorpayOrderId("CASH_" + request.getOrderId()) // No Razorpay order for cash
+                    .razorpayOrderId("CASH_" + request.getOrderId())
                     .amount(request.getAmount())
-                    .status(Transaction.PaymentStatus.SUCCESS) // Cash is collected immediately
+                    .status(Transaction.PaymentStatus.SUCCESS)
                     .customerId(request.getCustomerId())
                     .customerEmail(encryptionService.encrypt(request.getCustomerEmail()))
                     .customerPhone(encryptionService.encrypt(request.getCustomerPhone()))
@@ -437,15 +450,14 @@ public class PaymentService {
                     .reconciled(false)
                     .build();
 
-            // Set payment method to CASH
             transaction.setPaymentMethod(Transaction.PaymentMethod.CASH);
+            transaction.setPaymentGateway("RAZORPAY");
             transaction.setPaidAt(LocalDateTime.now());
 
             transaction = Objects.requireNonNull(transactionRepository.save(transaction));
 
             log.info("Cash payment recorded successfully. Transaction ID: {}", transaction.getId());
 
-            // Update order payment status
             try {
                 orderServiceClient.updateOrderPaymentStatus(
                         transaction.getOrderId(),
@@ -456,10 +468,10 @@ public class PaymentService {
                 log.warn("Failed to update order payment status, but cash transaction recorded: {}", e.getMessage());
             }
 
-            // Publish payment.completed event for analytics
             paymentEventPublisher.publishPaymentCompleted(new PaymentCompletedEvent(
                     transaction.getId(), transaction.getOrderId(), transaction.getCustomerId(),
-                    transaction.getAmount(), "INR", "CASH", transaction.getId()));
+                    transaction.getAmount(), "INR", "CASH", transaction.getId(),
+                    "RAZORPAY", "CASH"));
 
             return buildPaymentResponse(transaction);
 
@@ -485,6 +497,21 @@ public class PaymentService {
                 .currency(transaction.getCurrency())
                 .createdAt(transaction.getCreatedAt())
                 .paidAt(transaction.getPaidAt())
+                .paymentGateway(transaction.getPaymentGateway())
+                .stripeFeeMinorUnits(transaction.getStripeFeeMinorUnits())
                 .build();
+    }
+
+    private String resolveCurrencyFromCountryCode(String countryCode) {
+        if (countryCode == null || countryCode.isBlank()) return "INR";
+        return switch (countryCode.toUpperCase()) {
+            case "DE", "FR", "IT", "NL", "BE", "LU", "IE" -> "EUR";
+            case "HU" -> "HUF";
+            case "CH" -> "CHF";
+            case "GB" -> "GBP";
+            case "US" -> "USD";
+            case "CA" -> "CAD";
+            default   -> "INR";
+        };
     }
 }

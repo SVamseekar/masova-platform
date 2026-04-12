@@ -28,6 +28,13 @@ public class PaymentResponse {
     // For initiate payment response
     private String razorpayKeyId; // Public key for frontend
 
+    // Global-4 Stripe fields
+    private String paymentGateway;        // "RAZORPAY" or "STRIPE"
+    private String stripeClientSecret;    // Stripe PaymentIntent client_secret (null for Razorpay)
+    private String stripePublishableKey;  // Stripe publishable key (null for Razorpay)
+    private Long   stripeFeeMinorUnits;   // Stripe platform fee (null for Razorpay)
+    private String paymentMethodType;     // Normalised payment method string (e.g. "card", "ideal", "upi")
+
     public PaymentResponse() {
     }
 
@@ -151,6 +158,12 @@ public class PaymentResponse {
         this.razorpayKeyId = razorpayKeyId;
     }
 
+    public String getPaymentGateway() { return paymentGateway; }
+    public String getStripeClientSecret() { return stripeClientSecret; }
+    public String getStripePublishableKey() { return stripePublishableKey; }
+    public Long getStripeFeeMinorUnits() { return stripeFeeMinorUnits; }
+    public String getPaymentMethodType() { return paymentMethodType; }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -171,6 +184,11 @@ public class PaymentResponse {
         private LocalDateTime createdAt;
         private LocalDateTime paidAt;
         private String razorpayKeyId;
+        private String paymentGateway;
+        private String stripeClientSecret;
+        private String stripePublishableKey;
+        private Long   stripeFeeMinorUnits;
+        private String paymentMethodType;
 
         public Builder transactionId(String transactionId) {
             this.transactionId = transactionId;
@@ -247,6 +265,22 @@ public class PaymentResponse {
             return this;
         }
 
+        public Builder paymentGateway(String paymentGateway) {
+            this.paymentGateway = paymentGateway; return this;
+        }
+        public Builder stripeClientSecret(String stripeClientSecret) {
+            this.stripeClientSecret = stripeClientSecret; return this;
+        }
+        public Builder stripePublishableKey(String stripePublishableKey) {
+            this.stripePublishableKey = stripePublishableKey; return this;
+        }
+        public Builder stripeFeeMinorUnits(Long stripeFeeMinorUnits) {
+            this.stripeFeeMinorUnits = stripeFeeMinorUnits; return this;
+        }
+        public Builder paymentMethodType(String paymentMethodType) {
+            this.paymentMethodType = paymentMethodType; return this;
+        }
+
         public PaymentResponse build() {
             PaymentResponse response = new PaymentResponse();
             response.transactionId = this.transactionId;
@@ -264,6 +298,11 @@ public class PaymentResponse {
             response.createdAt = this.createdAt;
             response.paidAt = this.paidAt;
             response.razorpayKeyId = this.razorpayKeyId;
+            response.paymentGateway = this.paymentGateway;
+            response.stripeClientSecret = this.stripeClientSecret;
+            response.stripePublishableKey = this.stripePublishableKey;
+            response.stripeFeeMinorUnits = this.stripeFeeMinorUnits;
+            response.paymentMethodType = this.paymentMethodType;
             return response;
         }
     }
