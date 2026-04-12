@@ -1,0 +1,35 @@
+{
+  "cart": {
+    "delivery_fee": "Liefergebühr",
+    "subtotal": "Zwischensumme",
+    "total": "Gesamt",
+    "empty": "Ihr Warenkorb ist leer",
+    "checkout": "Zur Kasse"
+  },
+  "order": {
+    "status": {
+      "RECEIVED": "Eingegangen",
+      "PREPARING": "In Zubereitung",
+      "READY": "Bereit",
+      "DISPATCHED": "Versendet",
+      "OUT_FOR_DELIVERY": "Unterwegs",
+      "DELIVERED": "Geliefert",
+      "SERVED": "Serviert",
+      "COMPLETED": "Abgeschlossen",
+      "CANCELLED": "Storniert"
+    },
+    "type": {
+      "DINE_IN": "Im Restaurant",
+      "TAKEAWAY": "Zum Mitnehmen",
+      "DELIVERY": "Lieferung"
+    }
+  },
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen",
+    "loading": "Lädt…",
+    "error": "Etwas ist schiefgelaufen",
+    "no_data": "Keine Daten verfügbar"
+  }
+}

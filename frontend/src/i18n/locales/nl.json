@@ -1,0 +1,35 @@
+{
+  "cart": {
+    "delivery_fee": "Bezorgkosten",
+    "subtotal": "Subtotaal",
+    "total": "Totaal",
+    "empty": "Uw winkelwagen is leeg",
+    "checkout": "Afrekenen"
+  },
+  "order": {
+    "status": {
+      "RECEIVED": "Ontvangen",
+      "PREPARING": "In bereiding",
+      "READY": "Klaar",
+      "DISPATCHED": "Verzonden",
+      "OUT_FOR_DELIVERY": "Onderweg",
+      "DELIVERED": "Bezorgd",
+      "SERVED": "Geserveerd",
+      "COMPLETED": "Voltooid",
+      "CANCELLED": "Geannuleerd"
+    },
+    "type": {
+      "DINE_IN": "Ter plaatse",
+      "TAKEAWAY": "Afhalen",
+      "DELIVERY": "Bezorging"
+    }
+  },
+  "common": {
+    "save": "Opslaan",
+    "cancel": "Annuleren",
+    "confirm": "Bevestigen",
+    "loading": "Laden…",
+    "error": "Er is iets misgegaan",
+    "no_data": "Geen gegevens beschikbaar"
+  }
+}
