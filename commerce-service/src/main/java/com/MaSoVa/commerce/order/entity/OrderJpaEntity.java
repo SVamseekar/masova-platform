@@ -204,6 +204,19 @@ public class OrderJpaEntity {
     @Column(name = "updated_at", insertable = false, updatable = false)
     private OffsetDateTime updatedAt;
 
+    // Global-5: Fiscal signing columns — null until order reaches terminal status
+    @Column(name = "fiscal_signature_id", length = 200)
+    private String fiscalSignatureId;    // fiscal_signatures.transaction_id
+
+    @Column(name = "fiscal_signer_system", length = 20)
+    private String fiscalSignerSystem;   // "TSE", "NF525", "PASSTHROUGH" etc
+
+    @Column(name = "fiscal_signing_failed")
+    private boolean fiscalSigningFailed; // true = alert manager
+
+    @Column(name = "fiscal_signed_at")
+    private java.time.Instant fiscalSignedAt;
+
     /**
      * Order line items — written as part of the dual-write via CascadeType.ALL.
      * orphanRemoval=false: line items are immutable; if the collection is replaced on the
