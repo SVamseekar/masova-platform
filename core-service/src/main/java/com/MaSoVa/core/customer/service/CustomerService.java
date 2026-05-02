@@ -683,8 +683,8 @@ public class CustomerService {
         if (request.getDietaryRestrictions() != null) {
             prefs.setDietaryRestrictions(request.getDietaryRestrictions());
         }
-        if (request.getAllergens() != null) {
-            prefs.setAllergens(request.getAllergens());
+        if (request.getAllergenAlerts() != null) {
+            prefs.setAllergenAlerts(request.getAllergenAlerts());
         }
         if (request.getPreferredPaymentMethod() != null) {
             prefs.setPreferredPaymentMethod(request.getPreferredPaymentMethod());

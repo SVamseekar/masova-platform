@@ -1,5 +1,6 @@
 package com.MaSoVa.core.customer.dto.request;
 
+import com.MaSoVa.shared.enums.AllergenType;
 import java.util.Set;
 
 public class UpdatePreferencesRequest {
@@ -7,7 +8,7 @@ public class UpdatePreferencesRequest {
     private Set<String> favoriteMenuItems;
     private Set<String> cuisinePreferences;
     private Set<String> dietaryRestrictions;
-    private Set<String> allergens;
+    private Set<AllergenType> allergenAlerts;
     private String preferredPaymentMethod;
     private String spiceLevel;
     private Boolean notifyOnOffers;
@@ -25,8 +26,8 @@ public class UpdatePreferencesRequest {
     public Set<String> getDietaryRestrictions() { return dietaryRestrictions; }
     public void setDietaryRestrictions(Set<String> dietaryRestrictions) { this.dietaryRestrictions = dietaryRestrictions; }
 
-    public Set<String> getAllergens() { return allergens; }
-    public void setAllergens(Set<String> allergens) { this.allergens = allergens; }
+    public Set<AllergenType> getAllergenAlerts() { return allergenAlerts; }
+    public void setAllergenAlerts(Set<AllergenType> allergenAlerts) { this.allergenAlerts = allergenAlerts; }
 
     public String getPreferredPaymentMethod() { return preferredPaymentMethod; }
     public void setPreferredPaymentMethod(String preferredPaymentMethod) { this.preferredPaymentMethod = preferredPaymentMethod; }

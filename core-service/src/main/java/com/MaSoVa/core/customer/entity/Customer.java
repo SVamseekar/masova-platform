@@ -14,6 +14,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.MaSoVa.shared.enums.AllergenType;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -300,7 +301,7 @@ public class Customer implements Serializable {
         private Set<String> favoriteMenuItems = new HashSet<>();
         private Set<String> cuisinePreferences = new HashSet<>();
         private Set<String> dietaryRestrictions = new HashSet<>();
-        private Set<String> allergens = new HashSet<>();
+        private Set<AllergenType> allergenAlerts = new HashSet<>();
         private String preferredPaymentMethod; // CASH, CARD, UPI, WALLET
         private String spiceLevel = "MEDIUM"; // MILD, MEDIUM, HOT, EXTRA_HOT
         private boolean notifyOnOffers = true;
@@ -318,8 +319,8 @@ public class Customer implements Serializable {
         public Set<String> getDietaryRestrictions() { return dietaryRestrictions; }
         public void setDietaryRestrictions(Set<String> dietaryRestrictions) { this.dietaryRestrictions = dietaryRestrictions; }
 
-        public Set<String> getAllergens() { return allergens; }
-        public void setAllergens(Set<String> allergens) { this.allergens = allergens; }
+        public Set<AllergenType> getAllergenAlerts() { return allergenAlerts; }
+        public void setAllergenAlerts(Set<AllergenType> allergenAlerts) { this.allergenAlerts = allergenAlerts; }
 
         public String getPreferredPaymentMethod() { return preferredPaymentMethod; }
         public void setPreferredPaymentMethod(String preferredPaymentMethod) { this.preferredPaymentMethod = preferredPaymentMethod; }

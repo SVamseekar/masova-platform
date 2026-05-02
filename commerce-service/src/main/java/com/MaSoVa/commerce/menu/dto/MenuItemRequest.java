@@ -1,5 +1,6 @@
 package com.MaSoVa.commerce.menu.dto;
 
+import com.MaSoVa.shared.enums.AllergenType;
 import com.MaSoVa.shared.enums.Cuisine;
 import com.MaSoVa.shared.enums.MenuCategory;
 import com.MaSoVa.shared.enums.SpiceLevel;
@@ -10,7 +11,9 @@ import com.MaSoVa.shared.model.NutritionalInfo;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Min;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class MenuItemRequest {
 
@@ -41,7 +44,8 @@ public class MenuItemRequest {
     private Integer preparationTime;
     private String servingSize;
     private List<String> ingredients;
-    private List<String> allergens;
+    private Set<AllergenType> allergens = new HashSet<>();
+    private boolean allergensDeclared = false;
     private List<String> preparationInstructions;
     private String storeId;
     private Integer displayOrder = 0;
@@ -97,8 +101,11 @@ public class MenuItemRequest {
     public List<String> getIngredients() { return ingredients; }
     public void setIngredients(List<String> ingredients) { this.ingredients = ingredients; }
 
-    public List<String> getAllergens() { return allergens; }
-    public void setAllergens(List<String> allergens) { this.allergens = allergens; }
+    public Set<AllergenType> getAllergens() { return allergens; }
+    public void setAllergens(Set<AllergenType> allergens) { this.allergens = allergens; }
+
+    public boolean isAllergensDeclared() { return allergensDeclared; }
+    public void setAllergensDeclared(boolean allergensDeclared) { this.allergensDeclared = allergensDeclared; }
 
     public List<String> getPreparationInstructions() { return preparationInstructions; }
     public void setPreparationInstructions(List<String> preparationInstructions) { this.preparationInstructions = preparationInstructions; }

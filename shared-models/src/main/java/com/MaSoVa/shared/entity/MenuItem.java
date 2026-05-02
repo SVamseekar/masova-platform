@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
 
+import com.MaSoVa.shared.enums.AllergenType;
 import com.MaSoVa.shared.enums.Cuisine;
 import com.MaSoVa.shared.enums.MenuCategory;
 import com.MaSoVa.shared.enums.SpiceLevel;
@@ -22,7 +23,9 @@ import jakarta.validation.constraints.Min;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Menu Item Entity - Represents a dish/item in the restaurant menu
@@ -110,7 +113,10 @@ public class MenuItem implements Serializable {
     private List<String> ingredients = new ArrayList<>();
 
     @Field("allergens")
-    private List<String> allergens = new ArrayList<>();
+    private Set<AllergenType> allergens = new HashSet<>();
+
+    @Field("allergensDeclared")
+    private boolean allergensDeclared = false;
 
     @Field("preparationInstructions")
     private List<String> preparationInstructions = new ArrayList<>();  // Step-by-step recipe instructions
@@ -208,8 +214,11 @@ public class MenuItem implements Serializable {
     public List<String> getIngredients() { return ingredients; }
     public void setIngredients(List<String> ingredients) { this.ingredients = ingredients; }
 
-    public List<String> getAllergens() { return allergens; }
-    public void setAllergens(List<String> allergens) { this.allergens = allergens; }
+    public Set<AllergenType> getAllergens() { return allergens; }
+    public void setAllergens(Set<AllergenType> allergens) { this.allergens = allergens; }
+
+    public boolean isAllergensDeclared() { return allergensDeclared; }
+    public void setAllergensDeclared(boolean allergensDeclared) { this.allergensDeclared = allergensDeclared; }
 
     public List<String> getPreparationInstructions() { return preparationInstructions; }
     public void setPreparationInstructions(List<String> preparationInstructions) { this.preparationInstructions = preparationInstructions; }

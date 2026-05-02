@@ -4,6 +4,7 @@ import com.MaSoVa.shared.entity.MenuItem;
 import com.MaSoVa.shared.enums.Cuisine;
 import com.MaSoVa.shared.enums.MenuCategory;
 import com.MaSoVa.shared.enums.DietaryType;
+import com.MaSoVa.commerce.menu.dto.AllergenDeclarationRequest;
 import com.MaSoVa.commerce.menu.dto.MenuItemRequest;
 import com.MaSoVa.commerce.menu.service.MenuService;
 
@@ -152,6 +153,14 @@ public class MenuController {
             @PathVariable String id,
             @PathVariable boolean status) {
         MenuItem updated = menuService.setAvailability(id, status);
+        return ResponseEntity.ok(updated);
+    }
+
+    @PatchMapping("/items/{id}/allergens")
+    public ResponseEntity<MenuItem> declareAllergens(
+            @PathVariable String id,
+            @RequestBody AllergenDeclarationRequest request) {
+        MenuItem updated = menuService.declareAllergens(id, request.getAllergens(), request.isAllergenFree());
         return ResponseEntity.ok(updated);
     }
 
