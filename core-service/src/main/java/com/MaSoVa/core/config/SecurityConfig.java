@@ -26,12 +26,13 @@ public class SecurityConfig extends SecurityConfigurationBase {
     @Override
     protected String[] getPublicEndpoints() {
         return new String[]{
-            "/api/users/login",
-            "/api/users/register",
-            "/api/users/refresh",
-            "/api/users/logout",
-            "/api/users/kiosk/**",
+            "/api/auth/login",
+            "/api/auth/register",
+            "/api/auth/refresh",
+            "/api/auth/logout",
             "/api/auth/google",
+            "/api/auth/validate-pin",
+            "/api/users/kiosk/**",
             "/api/users/auth/google",
             "/api/users/auth/google/register",
             "/api/stores/public/**",
