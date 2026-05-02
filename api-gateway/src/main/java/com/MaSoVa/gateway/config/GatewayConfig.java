@@ -37,28 +37,33 @@ public class GatewayConfig {
                 //                            campaigns, reviews, responses
                 // ============================================================
 
-                // Auth: public login/register/refresh endpoints (no JWT required)
-                .route("core_auth_login", r -> r.path("/api/users/login")
+                // Auth: canonical /api/auth/* routes (Phase 1 renamed paths)
+                .route("core_auth_login", r -> r.path("/api/auth/login", "/api/users/login")
                         .and().method("POST")
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(10, "auth"))))
                         .uri("http://localhost:8085"))
 
-                .route("core_auth_register", r -> r.path("/api/users/register")
+                .route("core_auth_register", r -> r.path("/api/auth/register", "/api/users/register")
                         .and().method("POST")
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(5, "register"))))
                         .uri("http://localhost:8085"))
 
-                .route("core_auth_refresh", r -> r.path("/api/users/refresh")
+                .route("core_auth_refresh", r -> r.path("/api/auth/refresh", "/api/users/refresh")
                         .and().method("POST")
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(20, "refresh"))))
                         .uri("http://localhost:8085"))
 
-                .route("core_auth_logout", r -> r.path("/api/users/logout")
+                .route("core_auth_logout", r -> r.path("/api/auth/logout", "/api/users/logout")
                         .and().method("POST")
                         .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
 
-                .route("core_auth_google", r -> r.path("/api/auth/google", "/api/users/google")
+                .route("core_auth_validate_pin", r -> r.path("/api/auth/validate-pin")
+                        .and().method("POST")
+                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(20, "validate_pin"))))
+                        .uri("http://localhost:8085"))
+
+                .route("core_auth_google", r -> r.path("/api/auth/google", "/api/users/google", "/api/users/auth/google")
                         .and().method("POST")
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(20, "google_auth"))))
                         .uri("http://localhost:8085"))
