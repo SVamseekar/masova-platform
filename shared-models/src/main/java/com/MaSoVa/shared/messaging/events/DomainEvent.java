@@ -1,5 +1,8 @@
 package com.MaSoVa.shared.messaging.events;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.UUID;
@@ -15,11 +18,14 @@ public abstract class DomainEvent implements Serializable {
         this.occurredAt = Instant.now();
     }
 
-    // Default no-arg constructor for Jackson deserialization
-    protected DomainEvent() {
-        this.eventId = UUID.randomUUID().toString();
-        this.eventType = getClass().getSimpleName();
-        this.occurredAt = Instant.now();
+    @JsonCreator
+    protected DomainEvent(
+            @JsonProperty("eventId") String eventId,
+            @JsonProperty("eventType") String eventType,
+            @JsonProperty("occurredAt") Instant occurredAt) {
+        this.eventId = eventId != null ? eventId : UUID.randomUUID().toString();
+        this.eventType = eventType != null ? eventType : getClass().getSimpleName();
+        this.occurredAt = occurredAt != null ? occurredAt : Instant.now();
     }
 
     public String getEventId() { return eventId; }

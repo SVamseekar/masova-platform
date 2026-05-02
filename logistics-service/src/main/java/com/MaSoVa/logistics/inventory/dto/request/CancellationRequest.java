@@ -1,8 +1,8 @@
 package com.MaSoVa.logistics.inventory.dto.request;
 
-/**
- * Request DTO for cancelling purchase orders
- */
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CancellationRequest {
     private String reason;
     private String storeId;

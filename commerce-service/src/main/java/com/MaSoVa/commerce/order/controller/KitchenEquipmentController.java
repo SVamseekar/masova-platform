@@ -14,7 +14,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 
@@ -136,7 +138,10 @@ public class KitchenEquipmentController {
 
         log.info("POST /api/kitchen-equipment/{}/maintenance", equipmentId);
 
-        LocalDateTime nextMaintenanceDate = LocalDateTime.parse(request.get("nextMaintenanceDate"));
+        String nextMaintenanceDateStr = request.get("nextMaintenanceDate");
+        LocalDateTime nextMaintenanceDate = nextMaintenanceDateStr != null && nextMaintenanceDateStr.endsWith("Z")
+                ? Instant.parse(nextMaintenanceDateStr).atOffset(ZoneOffset.UTC).toLocalDateTime()
+                : LocalDateTime.parse(nextMaintenanceDateStr);
         String notes = request.get("notes");
 
         KitchenEquipment updated = equipmentService.recordMaintenance(equipmentId, nextMaintenanceDate, notes);

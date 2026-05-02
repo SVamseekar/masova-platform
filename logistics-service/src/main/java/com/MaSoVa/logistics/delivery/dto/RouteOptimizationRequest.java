@@ -1,8 +1,8 @@
 package com.MaSoVa.logistics.delivery.dto;
 
-/**
- * Request DTO for route optimization
- */
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class RouteOptimizationRequest {
 
     private AddressDTO origin; // Driver's current location

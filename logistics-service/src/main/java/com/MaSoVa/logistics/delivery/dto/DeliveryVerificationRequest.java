@@ -1,7 +1,10 @@
 package com.MaSoVa.logistics.delivery.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 
 /**
  * DTO for delivery verification request (OTP, photo, signature)

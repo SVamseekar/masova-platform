@@ -1,8 +1,8 @@
 package com.MaSoVa.logistics.inventory.dto.request;
 
-/**
- * Request DTO for rejecting purchase orders
- */
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class RejectionRequest {
     private String rejectionReason;
     private String storeId;

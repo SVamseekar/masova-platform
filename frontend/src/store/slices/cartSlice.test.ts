@@ -26,7 +26,7 @@ import cartReducer, {
 describe('cartSlice', () => {
   beforeEach(() => {
     vi.mocked(localStorage.getItem).mockReturnValue(null);
-    vi.mocked(localStorage.setItem).mockImplementation(() => {});
+    vi.mocked(localStorage.setItem).mockImplementation(() => { });
   });
 
   const emptyState = {
@@ -325,5 +325,7 @@ describe('cartSlice', () => {
       expect(emptyState.currency).toBe('INR');
       expect(emptyState.locale).toBe('en-IN');
     });
+
+
   });
 });

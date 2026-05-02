@@ -122,6 +122,7 @@ public class KitchenEquipment {
 
     public enum EquipmentStatus {
         AVAILABLE,
+        OPERATIONAL,
         IN_USE,
         MAINTENANCE,
         BROKEN,

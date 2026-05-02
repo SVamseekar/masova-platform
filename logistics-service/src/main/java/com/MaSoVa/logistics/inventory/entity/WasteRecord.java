@@ -1,5 +1,6 @@
 package com.MaSoVa.logistics.inventory.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
  *
  * Tracks inventory waste for analysis and cost control
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Document(collection = "waste_records")
 @CompoundIndexes({
     @CompoundIndex(def = "{'storeId': 1, 'wasteCategory': 1}"),
