@@ -55,11 +55,13 @@ public class DeliveryServiceClient {
         }
 
         try {
+            // Phase 1: /api/delivery/zone/fee → /api/delivery/zones?fee=true&storeId=&lat=&lng=
             String url = UriComponentsBuilder.fromHttpUrl(deliveryServiceUrl)
-                    .path("/api/delivery/zone/fee")
+                    .path("/api/delivery/zones")
+                    .queryParam("fee", true)
                     .queryParam("storeId", storeId)
-                    .queryParam("latitude", latitude)
-                    .queryParam("longitude", longitude)
+                    .queryParam("lat", latitude)
+                    .queryParam("lng", longitude)
                     .toUriString();
 
             log.debug("Calculating delivery fee from URL: {}", url);
@@ -112,11 +114,13 @@ public class DeliveryServiceClient {
         }
 
         try {
+            // Phase 1: /api/delivery/zone/validate → /api/delivery/zones?check=true&storeId=&lat=&lng=
             UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(deliveryServiceUrl)
-                    .path("/api/delivery/zone/validate")
+                    .path("/api/delivery/zones")
+                    .queryParam("check", true)
                     .queryParam("storeId", Objects.requireNonNull(storeId))
-                    .queryParam("latitude", latitude)
-                    .queryParam("longitude", longitude);
+                    .queryParam("lat", latitude)
+                    .queryParam("lng", longitude);
 
             if (pincode != null && !pincode.isEmpty()) {
                 builder.queryParam("pincode", pincode);

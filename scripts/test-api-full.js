@@ -1,8 +1,39 @@
 #!/usr/bin/env node
 /**
- * MaSoVa Full API Test Suite — v4
- * Spec-driven coverage tracking against all 471 OpenAPI endpoints.
+ * MaSoVa Full API Test Suite — v5 (Phase 1: API Reduction)
+ * Spec-driven coverage tracking against 175 canonical endpoints (reduced from 471).
  * Run: node scripts/test-api-full.js
+ *
+ * NOTE: Spec files in /specs/ must be regenerated after deploying Phase 1 services on Dell:
+ *   curl http://192.168.50.88:8085/v3/api-docs > specs/core-spec.json
+ *   curl http://192.168.50.88:8084/v3/api-docs > specs/commerce-spec.json
+ *   curl http://192.168.50.88:8086/v3/api-docs > specs/logistics-spec.json
+ *   curl http://192.168.50.88:8089/v3/api-docs > specs/payment-spec.json
+ *   curl http://192.168.50.88:8087/v3/api-docs > specs/intelligence-spec.json
+ * Expected counts: core=89, commerce=26, logistics=40, payment=8, intel=11 (total=175)
+ *
+ * Canonical path changes (Phase 1):
+ *   /api/v1/*          → /api/* (v1 prefix removed across all services)
+ *   /api/waste/*   → /api/waste/*
+ *   /api/purchase-orders/* → /api/purchase-orders/*
+ *   /api/suppliers/* → /api/suppliers/*
+ *   /api/dispatch/**, /api/tracking/** → /api/delivery/**
+ *   /api/equipment/** → /api/equipment/**
+ *   /api/bi/forecast/sales → /api/bi?type=sales-forecast
+ *   /api/bi/forecast/demand → /api/bi?type=demand-forecast
+ *   /api/bi/analysis/customer-behavior → /api/bi?type=customer-behavior
+ *   /api/bi/prediction/churn → /api/bi?type=churn
+ *   /api/bi/cost-analysis → /api/bi?type=cost-analysis
+ *   /api/bi/benchmarking/stores → /api/bi/reports?type=benchmarking
+ *   /api/bi/executive-summary → /api/bi/reports?type=executive-summary
+ *   /api/analytics/sales/today → /api/analytics?type=sales
+ *   /api/analytics/avgOrderValue/today → /api/analytics?type=aov
+ *   /api/analytics/drivers/status → /api/analytics?type=drivers
+ *   /api/analytics/staff/leaderboard → /api/analytics?type=staff-leaderboard
+ *   /api/analytics/products/top-selling → /api/analytics?type=top-products
+ *   /api/analytics/sales/trends/{period} → /api/analytics?type=sales-trends&period=
+ *   /api/analytics/sales/breakdown/order-type → /api/analytics?type=order-breakdown
+ *   /api/analytics/sales/peak-hours → /api/analytics?type=peak-hours
  */
 
 const http  = require('http');
@@ -552,11 +583,11 @@ async function testStores() {
   if (ok(rNearby)) pass(sec, 'GET /api/stores/nearby');
   else              warn(sec, 'GET /api/stores/nearby', `status ${rNearby.status}`);
 
-  // GET /api/stores/metrics reads storeId from X-Selected-Store-Id header — expects storeCode not ObjectId
-  {
+  // GET /api/stores/metrics reads storeId from X-Selected-Store-Id header
+  if (D.storeId001) {
     const rMetrics = await req(`${S.core}/api/stores/metrics`, {
       token: tok.manager,
-      headers: { 'X-Selected-Store-Id': 'DOM001', 'X-User-Store-Id': 'DOM001', 'X-User-Type': 'MANAGER' },
+      headers: { 'X-Selected-Store-Id': D.storeId001, 'X-User-Store-Id': D.storeId001, 'X-User-Type': 'MANAGER' },
     });
     if (ok(rMetrics)) pass(sec, 'GET /api/stores/metrics');
     else               warn(sec, 'GET /api/stores/metrics', `status ${rMetrics.status}`);
@@ -567,7 +598,7 @@ async function testStores() {
     body: {
       name: 'Test Store API', code: `TST${Date.now().toString().slice(-4)}`,
       phoneNumber: '9000000099', regionId: 'south',
-      address: { street: '1 Test Rd', city: 'Hyderabad', pincode: '500001', state: 'TS' },
+      address: { street: '1 Test Rd', city: 'Hyderabad', postalCode: '500001', state: 'TS' },
     },
   });
   if (ok(rCreate)) {
@@ -717,14 +748,14 @@ async function testCustomers() {
   section('CUSTOMERS');
   const sec = 'customers';
 
-  const rGOC = await req(`${S.core}/api/v1/customers/get-or-create`, {
+  const rGOC = await req(`${S.core}/api/customers/get-or-create`, {
     method: 'POST', token: tok.manager,
     body: { name: 'Priya Customer', email: A.customer.email, phone: '9876543210', userId: D.customerId || 'cust-user-1' },
   });
   if (ok(rGOC)) {
     D.customerProfileId = id(rGOC.body);
-    pass(sec, 'POST /api/v1/customers/get-or-create', D.customerProfileId);
-  } else warn(sec, 'POST /api/v1/customers/get-or-create', `status ${rGOC.status}`);
+    pass(sec, 'POST /api/customers/get-or-create', D.customerProfileId);
+  } else warn(sec, 'POST /api/customers/get-or-create', `status ${rGOC.status}`);
 
   const rGOC2 = await req(`${S.core}/api/customers/get-or-create`, {
     method: 'POST', token: tok.manager,
@@ -733,14 +764,14 @@ async function testCustomers() {
   if (ok(rGOC2) || rGOC2.status === 409) pass(sec, 'POST /api/customers/get-or-create');
   else warn(sec, 'POST /api/customers/get-or-create', `status ${rGOC2.status}`);
 
-  const rCreate = await req(`${S.core}/api/v1/customers`, {
+  const rCreate = await req(`${S.core}/api/customers`, {
     method: 'POST', token: tok.manager,
     body: { name: 'API Test Customer', email: `apicust.${Date.now()}@test.com`, phone: '9000111222', userId: D.managerId || 'test-user-1', storeId: D.storeId001 },
   });
   if (ok(rCreate)) {
     D.testCustomerProfileId = id(rCreate.body);
-    pass(sec, 'POST /api/v1/customers');
-  } else warn(sec, 'POST /api/v1/customers', `status ${rCreate.status}`);
+    pass(sec, 'POST /api/customers');
+  } else warn(sec, 'POST /api/customers', `status ${rCreate.status}`);
 
   const rCreate2 = await req(`${S.core}/api/customers`, {
     method: 'POST', token: tok.manager,
@@ -752,19 +783,19 @@ async function testCustomers() {
   const cpid = D.customerProfileId || D.testCustomerProfileId;
 
   if (cpid) {
-    const rGet = await req(`${S.core}/api/v1/customers/${cpid}`, { token: tok.customer });
-    if (ok(rGet)) pass(sec, 'GET /api/v1/customers/{id}');
-    else           warn(sec, 'GET /api/v1/customers/{id}', `status ${rGet.status}`);
+    const rGet = await req(`${S.core}/api/customers/${cpid}`, { token: tok.customer });
+    if (ok(rGet)) pass(sec, 'GET /api/customers/{id}');
+    else           warn(sec, 'GET /api/customers/{id}', `status ${rGet.status}`);
 
     const rGetNV = await req(`${S.core}/api/customers/${cpid}`, { token: tok.customer });
     if (ok(rGetNV)) pass(sec, 'GET /api/customers/{id}');
     else             warn(sec, 'GET /api/customers/{id}', `status ${rGetNV.status}`);
 
-    const rUp = await req(`${S.core}/api/v1/customers/${cpid}`, {
+    const rUp = await req(`${S.core}/api/customers/${cpid}`, {
       method: 'PUT', token: tok.manager, body: { name: 'Priya Updated' },
     });
-    if (ok(rUp)) pass(sec, 'PUT /api/v1/customers/{id}');
-    else          warn(sec, 'PUT /api/v1/customers/{id}', `status ${rUp.status}`);
+    if (ok(rUp)) pass(sec, 'PUT /api/customers/{id}');
+    else          warn(sec, 'PUT /api/customers/{id}', `status ${rUp.status}`);
 
     const rUpNV = await req(`${S.core}/api/customers/${cpid}`, {
       method: 'PUT', token: tok.manager, body: { name: 'Priya Updated2' },
@@ -773,7 +804,7 @@ async function testCustomers() {
     else            warn(sec, 'PUT /api/customers/{id}', `status ${rUpNV.status}`);
 
     // Addresses
-    const rAddr = await req(`${S.core}/api/v1/customers/${cpid}/addresses`, {
+    const rAddr = await req(`${S.core}/api/customers/${cpid}/addresses`, {
       method: 'POST', token: tok.manager,
       body: { addressLine1: '12 MG Road', city: 'Hyderabad', postalCode: '500001', state: 'Telangana', default: true, label: 'HOME' },
     });
@@ -781,8 +812,8 @@ async function testCustomers() {
       // Response is full Customer object; address id is in addresses array
       const addrs = rAddr.body?.addresses;
       D.addressId = (Array.isArray(addrs) && addrs.length > 0) ? addrs[addrs.length - 1].id : id(rAddr.body);
-      pass(sec, 'POST /api/v1/customers/{id}/addresses');
-    } else warn(sec, 'POST /api/v1/customers/{id}/addresses', `status ${rAddr.status}`);
+      pass(sec, 'POST /api/customers/{id}/addresses');
+    } else warn(sec, 'POST /api/customers/{id}/addresses', `status ${rAddr.status}`);
 
     const rAddrNV = await req(`${S.core}/api/customers/${cpid}/addresses`, {
       method: 'POST', token: tok.manager,
@@ -792,10 +823,10 @@ async function testCustomers() {
     else              warn(sec, 'POST /api/customers/{id}/addresses', `status ${rAddrNV.status}`);
 
     if (D.addressId) {
-      const rSetDef = await req(`${S.core}/api/v1/customers/${cpid}/addresses/${D.addressId}/set-default`, {
+      const rSetDef = await req(`${S.core}/api/customers/${cpid}/addresses/${D.addressId}/set-default`, {
         method: 'PATCH', token: tok.manager,
       });
-      if (ok(rSetDef)) pass(sec, 'PATCH /api/v1/customers/{customerId}/addresses/{addressId}/set-default');
+      if (ok(rSetDef)) pass(sec, 'PATCH /api/customers/{customerId}/addresses/{addressId}/set-default');
       else              warn(sec, 'PATCH v1 set-default address', `status ${rSetDef.status}`);
 
       const rSetDefNV = await req(`${S.core}/api/customers/${cpid}/addresses/${D.addressId}/set-default`, {
@@ -804,10 +835,10 @@ async function testCustomers() {
       if (ok(rSetDefNV)) pass(sec, 'PATCH /api/customers/{customerId}/addresses/{addressId}/set-default');
       else                warn(sec, 'PATCH set-default address (no-v1)', `status ${rSetDefNV.status}`);
 
-      const rUpAddr = await req(`${S.core}/api/v1/customers/${cpid}/addresses/${D.addressId}`, {
+      const rUpAddr = await req(`${S.core}/api/customers/${cpid}/addresses/${D.addressId}`, {
         method: 'PATCH', token: tok.manager, body: { addressLine1: '14 MG Road Updated', city: 'Hyderabad', state: 'Telangana', postalCode: '500001', label: 'HOME' },
       });
-      if (ok(rUpAddr)) pass(sec, 'PATCH /api/v1/customers/{customerId}/addresses/{addressId}');
+      if (ok(rUpAddr)) pass(sec, 'PATCH /api/customers/{customerId}/addresses/{addressId}');
       else              warn(sec, 'PATCH update address', `status ${rUpAddr.status}`);
 
       const rUpAddrNV = await req(`${S.core}/api/customers/${cpid}/addresses/${D.addressId}`, {
@@ -817,17 +848,17 @@ async function testCustomers() {
       else                warn(sec, 'PATCH update address (no-v1)', `status ${rUpAddrNV.status}`);
 
       // Create a second address to delete via no-v1 path
-      const rAddr2 = await req(`${S.core}/api/v1/customers/${cpid}/addresses`, {
+      const rAddr2 = await req(`${S.core}/api/customers/${cpid}/addresses`, {
         method: 'POST', token: tok.manager,
         body: { addressLine1: '99 Test Street', city: 'Hyderabad', postalCode: '500002', state: 'Telangana', default: false, label: 'OTHER' },
       });
       const addrs2 = rAddr2.body?.addresses;
       const addressId2 = ok(rAddr2) && Array.isArray(addrs2) && addrs2.length > 0 ? addrs2[addrs2.length - 1].id : null;
 
-      const rDelAddr = await req(`${S.core}/api/v1/customers/${cpid}/addresses/${D.addressId}`, {
+      const rDelAddr = await req(`${S.core}/api/customers/${cpid}/addresses/${D.addressId}`, {
         method: 'DELETE', token: tok.manager,
       });
-      if (ok(rDelAddr)) pass(sec, 'DELETE /api/v1/customers/{customerId}/addresses/{addressId}');
+      if (ok(rDelAddr)) pass(sec, 'DELETE /api/customers/{customerId}/addresses/{addressId}');
       else               warn(sec, 'DELETE v1 address', `status ${rDelAddr.status}`);
 
       const delId2 = addressId2 || D.addressId;
@@ -839,42 +870,42 @@ async function testCustomers() {
     }
 
     // Loyalty
-    const rLP = await req(`${S.core}/api/v1/customers/${cpid}/loyalty/points`, {
-      method: 'POST', token: tok.manager, body: { points: 100, orderId: 'test-order-001', description: 'TEST', type: 'EARN' },
+    const rLP = await req(`${S.core}/api/customers/${cpid}/loyalty/points`, {
+      method: 'POST', token: tok.manager, body: { points: 100, orderId: 'test-order-001', reason: 'TEST' },
     });
-    if (ok(rLP)) pass(sec, 'POST /api/v1/customers/{id}/loyalty/points');
-    else          warn(sec, 'POST /api/v1/customers/{id}/loyalty/points', `status ${rLP.status}`);
+    if (ok(rLP)) pass(sec, 'POST /api/customers/{id}/loyalty/points');
+    else          warn(sec, 'POST /api/customers/{id}/loyalty/points', `status ${rLP.status}`);
 
     const rLPNV = await req(`${S.core}/api/customers/${cpid}/loyalty/points`, {
-      method: 'POST', token: tok.manager, body: { points: 50, orderId: 'test-order-002', description: 'TEST', type: 'EARN' },
+      method: 'POST', token: tok.manager, body: { points: 50, orderId: 'test-order-002', reason: 'TEST' },
     });
     if (ok(rLPNV)) pass(sec, 'POST /api/customers/{id}/loyalty/points');
     else            warn(sec, 'POST /api/customers/{id}/loyalty/points', `status ${rLPNV.status}`);
 
-    const rMaxR = await req(`${S.core}/api/v1/customers/${cpid}/loyalty/max-redeemable?orderTotal=500`, { token: tok.manager });
-    if (ok(rMaxR)) pass(sec, 'GET /api/v1/customers/{id}/loyalty/max-redeemable');
+    const rMaxR = await req(`${S.core}/api/customers/${cpid}/loyalty/max-redeemable?orderTotal=500`, { token: tok.manager });
+    if (ok(rMaxR)) pass(sec, 'GET /api/customers/{id}/loyalty/max-redeemable');
     else            warn(sec, 'GET v1 loyalty max-redeemable', `status ${rMaxR.status}`);
 
     const rMaxRNV = await req(`${S.core}/api/customers/${cpid}/loyalty/max-redeemable?orderTotal=500`, { token: tok.manager });
     if (ok(rMaxRNV)) pass(sec, 'GET /api/customers/{id}/loyalty/max-redeemable');
     else              warn(sec, 'GET loyalty max-redeemable (no-v1)', `status ${rMaxRNV.status}`);
 
-    const rPref = await req(`${S.core}/api/v1/customers/${cpid}/preferences`, {
-      method: 'PUT', token: tok.manager, body: { cuisinePreferences: ['SOUTH_INDIAN'], dietaryRestrictions: ['VEG'] },
+    const rPref = await req(`${S.core}/api/customers/${cpid}/preferences`, {
+      method: 'PUT', token: tok.manager, body: { preferredCuisine: 'SOUTH_INDIAN', dietaryPreference: 'VEG' },
     });
-    if (ok(rPref)) pass(sec, 'PUT /api/v1/customers/{id}/preferences');
+    if (ok(rPref)) pass(sec, 'PUT /api/customers/{id}/preferences');
     else            warn(sec, 'PUT v1 preferences', `status ${rPref.status}`);
 
     const rPrefNV = await req(`${S.core}/api/customers/${cpid}/preferences`, {
-      method: 'PUT', token: tok.manager, body: { cuisinePreferences: ['NORTH_INDIAN'] },
+      method: 'PUT', token: tok.manager, body: { preferredCuisine: 'NORTH_INDIAN' },
     });
     if (ok(rPrefNV)) pass(sec, 'PUT /api/customers/{id}/preferences');
     else              warn(sec, 'PUT preferences (no-v1)', `status ${rPrefNV.status}`);
 
-    const rTags = await req(`${S.core}/api/v1/customers/${cpid}/tags`, {
+    const rTags = await req(`${S.core}/api/customers/${cpid}/tags`, {
       method: 'POST', token: tok.manager, body: ['VIP', 'REGULAR'],
     });
-    if (ok(rTags)) pass(sec, 'POST /api/v1/customers/{id}/tags');
+    if (ok(rTags)) pass(sec, 'POST /api/customers/{id}/tags');
     else            warn(sec, 'POST v1 tags', `status ${rTags.status}`);
 
     const rTagsNV = await req(`${S.core}/api/customers/${cpid}/tags`, {
@@ -883,10 +914,10 @@ async function testCustomers() {
     if (ok(rTagsNV)) pass(sec, 'POST /api/customers/{id}/tags');
     else              warn(sec, 'POST tags (no-v1)', `status ${rTagsNV.status}`);
 
-    const rDelTags = await req(`${S.core}/api/v1/customers/${cpid}/tags`, {
+    const rDelTags = await req(`${S.core}/api/customers/${cpid}/tags`, {
       method: 'DELETE', token: tok.manager, body: ['REGULAR'],
     });
-    if (ok(rDelTags)) pass(sec, 'DELETE /api/v1/customers/{id}/tags');
+    if (ok(rDelTags)) pass(sec, 'DELETE /api/customers/{id}/tags');
     else               warn(sec, 'DELETE v1 tags', `status ${rDelTags.status}`);
 
     const rDelTagsNV = await req(`${S.core}/api/customers/${cpid}/tags`, {
@@ -895,10 +926,10 @@ async function testCustomers() {
     if (ok(rDelTagsNV)) pass(sec, 'DELETE /api/customers/{id}/tags');
     else                 warn(sec, 'DELETE tags (no-v1)', `status ${rDelTagsNV.status}`);
 
-    const rNote = await req(`${S.core}/api/v1/customers/${cpid}/notes`, {
+    const rNote = await req(`${S.core}/api/customers/${cpid}/notes`, {
       method: 'POST', token: tok.manager, body: { note: 'API test note', addedBy: D.managerId || 'test-manager', category: 'GENERAL' },
     });
-    if (ok(rNote)) pass(sec, 'POST /api/v1/customers/{id}/notes');
+    if (ok(rNote)) pass(sec, 'POST /api/customers/{id}/notes');
     else            warn(sec, 'POST v1 notes', `status ${rNote.status}`);
 
     const rNoteNV = await req(`${S.core}/api/customers/${cpid}/notes`, {
@@ -907,16 +938,16 @@ async function testCustomers() {
     if (ok(rNoteNV)) pass(sec, 'POST /api/customers/{id}/notes');
     else              warn(sec, 'POST notes (no-v1)', `status ${rNoteNV.status}`);
 
-    const rVE = await req(`${S.core}/api/v1/customers/${cpid}/verify-email`, { method: 'PATCH', token: tok.manager });
-    if (ok(rVE)) pass(sec, 'PATCH /api/v1/customers/{id}/verify-email');
+    const rVE = await req(`${S.core}/api/customers/${cpid}/verify-email`, { method: 'PATCH', token: tok.manager });
+    if (ok(rVE)) pass(sec, 'PATCH /api/customers/{id}/verify-email');
     else          warn(sec, 'PATCH v1 verify-email', `status ${rVE.status}`);
 
     const rVENV = await req(`${S.core}/api/customers/${cpid}/verify-email`, { method: 'PATCH', token: tok.manager });
     if (ok(rVENV)) pass(sec, 'PATCH /api/customers/{id}/verify-email');
     else            warn(sec, 'PATCH verify-email (no-v1)', `status ${rVENV.status}`);
 
-    const rVP = await req(`${S.core}/api/v1/customers/${cpid}/verify-phone`, { method: 'PATCH', token: tok.manager });
-    if (ok(rVP)) pass(sec, 'PATCH /api/v1/customers/{id}/verify-phone');
+    const rVP = await req(`${S.core}/api/customers/${cpid}/verify-phone`, { method: 'PATCH', token: tok.manager });
+    if (ok(rVP)) pass(sec, 'PATCH /api/customers/{id}/verify-phone');
     else          warn(sec, 'PATCH v1 verify-phone', `status ${rVP.status}`);
 
     const rVPNV = await req(`${S.core}/api/customers/${cpid}/verify-phone`, { method: 'PATCH', token: tok.manager });
@@ -926,31 +957,31 @@ async function testCustomers() {
 
   // List endpoints
   const listEndpoints = [
-    ['GET /api/v1/customers',              `${S.core}/api/v1/customers`],
+    ['GET /api/customers',              `${S.core}/api/customers`],
     ['GET /api/customers',                 `${S.core}/api/customers`],
-    ['GET /api/v1/customers/active',       `${S.core}/api/v1/customers/active`],
+    ['GET /api/customers/active',       `${S.core}/api/customers/active`],
     ['GET /api/customers/active',          `${S.core}/api/customers/active`],
-    ['GET /api/v1/customers/search',       `${S.core}/api/v1/customers/search?query=priya`],
+    ['GET /api/customers/search',       `${S.core}/api/customers/search?query=priya`],
     ['GET /api/customers/search',          `${S.core}/api/customers/search?query=priya`],
-    ['GET /api/v1/customers/stats',        `${S.core}/api/v1/customers/stats`],
+    ['GET /api/customers/stats',        `${S.core}/api/customers/stats`],
     ['GET /api/customers/stats',           `${S.core}/api/customers/stats`],
-    ['GET /api/v1/customers/high-value',   `${S.core}/api/v1/customers/high-value`],
+    ['GET /api/customers/high-value',   `${S.core}/api/customers/high-value`],
     ['GET /api/customers/high-value',      `${S.core}/api/customers/high-value`],
-    ['GET /api/v1/customers/top-spenders', `${S.core}/api/v1/customers/top-spenders`],
+    ['GET /api/customers/top-spenders', `${S.core}/api/customers/top-spenders`],
     ['GET /api/customers/top-spenders',    `${S.core}/api/customers/top-spenders`],
-    ['GET /api/v1/customers/recently-active', `${S.core}/api/v1/customers/recently-active`],
     ['GET /api/customers/recently-active', `${S.core}/api/customers/recently-active`],
-    ['GET /api/v1/customers/inactive',     `${S.core}/api/v1/customers/inactive`],
+    ['GET /api/customers/recently-active', `${S.core}/api/customers/recently-active`],
+    ['GET /api/customers/inactive',     `${S.core}/api/customers/inactive`],
     ['GET /api/customers/inactive',        `${S.core}/api/customers/inactive`],
-    ['GET /api/v1/customers/birthdays/today', `${S.core}/api/v1/customers/birthdays/today`],
     ['GET /api/customers/birthdays/today', `${S.core}/api/customers/birthdays/today`],
-    ['GET /api/v1/customers/marketing-opt-in', `${S.core}/api/v1/customers/marketing-opt-in`],
+    ['GET /api/customers/birthdays/today', `${S.core}/api/customers/birthdays/today`],
     ['GET /api/customers/marketing-opt-in', `${S.core}/api/customers/marketing-opt-in`],
-    ['GET /api/v1/customers/sms-opt-in',   `${S.core}/api/v1/customers/sms-opt-in`],
+    ['GET /api/customers/marketing-opt-in', `${S.core}/api/customers/marketing-opt-in`],
+    ['GET /api/customers/sms-opt-in',   `${S.core}/api/customers/sms-opt-in`],
     ['GET /api/customers/sms-opt-in',      `${S.core}/api/customers/sms-opt-in`],
-    ['GET /api/v1/customers/loyalty/tier/{tier}', `${S.core}/api/v1/customers/loyalty/tier/BRONZE`],
     ['GET /api/customers/loyalty/tier/{tier}', `${S.core}/api/customers/loyalty/tier/BRONZE`],
-    ['GET /api/v1/customers/tags',         `${S.core}/api/v1/customers/tags?tags=VIP`],
+    ['GET /api/customers/loyalty/tier/{tier}', `${S.core}/api/customers/loyalty/tier/BRONZE`],
+    ['GET /api/customers/tags',         `${S.core}/api/customers/tags?tags=VIP`],
     ['GET /api/customers/tags',            `${S.core}/api/customers/tags?tags=VIP`],
   ];
   for (const [label, url] of listEndpoints) {
@@ -960,26 +991,26 @@ async function testCustomers() {
   }
 
   if (D.customerId) {
-    const rByUser = await req(`${S.core}/api/v1/customers/user/${D.customerId}`, { token: tok.customer });
-    if (ok(rByUser)) pass(sec, 'GET /api/v1/customers/user/{userId}');
-    else              warn(sec, 'GET /api/v1/customers/user/{userId}', `status ${rByUser.status}`);
+    const rByUser = await req(`${S.core}/api/customers/user/${D.customerId}`, { token: tok.customer });
+    if (ok(rByUser)) pass(sec, 'GET /api/customers/user/{userId}');
+    else              warn(sec, 'GET /api/customers/user/{userId}', `status ${rByUser.status}`);
 
     const rByUserNV = await req(`${S.core}/api/customers/user/${D.customerId}`, { token: tok.customer });
     if (ok(rByUserNV)) pass(sec, 'GET /api/customers/user/{userId}');
     else                warn(sec, 'GET /api/customers/user/{userId}', `status ${rByUserNV.status}`);
   }
 
-  const rByEmail = await req(`${S.core}/api/v1/customers/email/${encodeURIComponent(A.customer.email)}`, { token: tok.manager });
-  if (ok(rByEmail)) pass(sec, 'GET /api/v1/customers/email/{email}');
-  else               warn(sec, 'GET /api/v1/customers/email/{email}', `status ${rByEmail.status}`);
+  const rByEmail = await req(`${S.core}/api/customers/email/${encodeURIComponent(A.customer.email)}`, { token: tok.manager });
+  if (ok(rByEmail)) pass(sec, 'GET /api/customers/email/{email}');
+  else               warn(sec, 'GET /api/customers/email/{email}', `status ${rByEmail.status}`);
 
   const rByEmailNV = await req(`${S.core}/api/customers/email/${encodeURIComponent(A.customer.email)}`, { token: tok.manager });
   if (ok(rByEmailNV)) pass(sec, 'GET /api/customers/email/{email}');
   else                 warn(sec, 'GET /api/customers/email/{email} (no-v1)', `status ${rByEmailNV.status}`);
 
-  const rByPhone = await req(`${S.core}/api/v1/customers/phone/9876543210`, { token: tok.manager });
-  if (ok(rByPhone)) pass(sec, 'GET /api/v1/customers/phone/{phone}');
-  else               warn(sec, 'GET /api/v1/customers/phone/{phone}', `status ${rByPhone.status}`);
+  const rByPhone = await req(`${S.core}/api/customers/phone/9876543210`, { token: tok.manager });
+  if (ok(rByPhone)) pass(sec, 'GET /api/customers/phone/{phone}');
+  else               warn(sec, 'GET /api/customers/phone/{phone}', `status ${rByPhone.status}`);
 
   const rByPhoneNV = await req(`${S.core}/api/customers/phone/9876543210`, { token: tok.manager });
   if (ok(rByPhoneNV)) pass(sec, 'GET /api/customers/phone/{phone}');
@@ -988,53 +1019,55 @@ async function testCustomers() {
   const cpid2 = D.customerProfileId || D.testCustomerProfileId;
 
   if (cpid2) {
-    const rDeact = await req(`${S.core}/api/v1/customers/${cpid2}/deactivate`, { method: 'PATCH', token: tok.manager });
-    if (ok(rDeact)) pass(sec, 'PATCH /api/v1/customers/{id}/deactivate');
+    const rDeact = await req(`${S.core}/api/customers/${cpid2}/deactivate`, { method: 'PATCH', token: tok.manager });
+    if (ok(rDeact)) pass(sec, 'PATCH /api/customers/{id}/deactivate');
     else             warn(sec, 'PATCH v1 deactivate', `status ${rDeact.status}`);
 
     const rDeactNV = await req(`${S.core}/api/customers/${cpid2}/deactivate`, { method: 'PATCH', token: tok.manager });
     if (ok(rDeactNV)) pass(sec, 'PATCH /api/customers/{id}/deactivate');
     else               warn(sec, 'PATCH deactivate (no-v1)', `status ${rDeactNV.status}`);
 
-    const rAct = await req(`${S.core}/api/v1/customers/${cpid2}/activate`, { method: 'PATCH', token: tok.manager });
-    if (ok(rAct)) pass(sec, 'PATCH /api/v1/customers/{id}/activate');
+    const rAct = await req(`${S.core}/api/customers/${cpid2}/activate`, { method: 'PATCH', token: tok.manager });
+    if (ok(rAct)) pass(sec, 'PATCH /api/customers/{id}/activate');
     else           warn(sec, 'PATCH v1 activate', `status ${rAct.status}`);
 
     const rActNV = await req(`${S.core}/api/customers/${cpid2}/activate`, { method: 'PATCH', token: tok.manager });
     if (ok(rActNV)) pass(sec, 'PATCH /api/customers/{id}/activate');
     else             warn(sec, 'PATCH activate (no-v1)', `status ${rActNV.status}`);
 
-    const rRedeem = await req(`${S.core}/api/v1/customers/${cpid2}/loyalty/redeem?points=10`, {
+    const rRedeem = await req(`${S.core}/api/customers/${cpid2}/loyalty/redeem`, {
       method: 'POST', token: tok.manager,
+      body: { points: 10, orderId: 'test-order-redeem', reason: 'API test redeem' },
     });
-    if (ok(rRedeem)) pass(sec, 'POST /api/v1/customers/{id}/loyalty/redeem');
+    if (ok(rRedeem)) pass(sec, 'POST /api/customers/{id}/loyalty/redeem');
     else              warn(sec, 'POST v1 loyalty/redeem', `status ${rRedeem.status}`);
 
-    const rRedeemNV = await req(`${S.core}/api/customers/${cpid2}/loyalty/redeem?points=5`, {
+    const rRedeemNV = await req(`${S.core}/api/customers/${cpid2}/loyalty/redeem`, {
       method: 'POST', token: tok.manager,
+      body: { points: 5, orderId: 'test-order-redeem2', reason: 'API test redeem2' },
     });
     if (ok(rRedeemNV)) pass(sec, 'POST /api/customers/{id}/loyalty/redeem');
     else                warn(sec, 'POST loyalty/redeem (no-v1)', `status ${rRedeemNV.status}`);
 
-    const rOStats = await req(`${S.core}/api/v1/customers/${cpid2}/order-stats`, {
+    const rOStats = await req(`${S.core}/api/customers/${cpid2}/order-stats`, {
       method: 'POST', token: tok.manager,
-      body: { orderTotal: 250.0, orderId: 'test-order-stats', status: 'DELIVERED', orderType: 'DELIVERY' },
+      body: { orderAmount: 250.0, orderId: 'test-order-stats' },
     });
-    if (ok(rOStats)) pass(sec, 'POST /api/v1/customers/{id}/order-stats');
+    if (ok(rOStats)) pass(sec, 'POST /api/customers/{id}/order-stats');
     else              warn(sec, 'POST v1 order-stats', `status ${rOStats.status}`);
 
     const rOStatsNV = await req(`${S.core}/api/customers/${cpid2}/order-stats`, {
       method: 'POST', token: tok.manager,
-      body: { orderTotal: 150.0, orderId: 'test-order-stats2', status: 'DELIVERED', orderType: 'TAKEAWAY' },
+      body: { orderAmount: 150.0, orderId: 'test-order-stats2' },
     });
     if (ok(rOStatsNV)) pass(sec, 'POST /api/customers/{id}/order-stats');
     else                warn(sec, 'POST order-stats (no-v1)', `status ${rOStatsNV.status}`);
 
-    const rUpEmail = await req(`${S.core}/api/v1/customers/${cpid2}/update-email`, {
+    const rUpEmail = await req(`${S.core}/api/customers/${cpid2}/update-email`, {
       method: 'POST', token: tok.manager,
       body: { email: `updated.${Date.now()}@test.com` },
     });
-    if (ok(rUpEmail)) pass(sec, 'POST /api/v1/customers/{id}/update-email');
+    if (ok(rUpEmail)) pass(sec, 'POST /api/customers/{id}/update-email');
     else               warn(sec, 'POST v1 update-email', `status ${rUpEmail.status}`);
 
     const rUpEmailNV = await req(`${S.core}/api/customers/${cpid2}/update-email`, {
@@ -1046,11 +1079,11 @@ async function testCustomers() {
   }
 
   if (D.testCustomerProfileId) {
-    const rDel = await req(`${S.core}/api/v1/customers/${D.testCustomerProfileId}`, {
+    const rDel = await req(`${S.core}/api/customers/${D.testCustomerProfileId}`, {
       method: 'DELETE', token: tok.manager,
     });
-    if (ok(rDel)) pass(sec, 'DELETE /api/v1/customers/{id}');
-    else           warn(sec, 'DELETE /api/v1/customers/{id}', `status ${rDel.status}`);
+    if (ok(rDel)) pass(sec, 'DELETE /api/customers/{id}');
+    else           warn(sec, 'DELETE /api/customers/{id}', `status ${rDel.status}`);
 
     const rDelNV = await req(`${S.core}/api/customers/${D.testCustomerProfileId}`, {
       method: 'DELETE', token: tok.manager,
@@ -1058,10 +1091,10 @@ async function testCustomers() {
     if (ok(rDelNV) || rDelNV.status === 404) pass(sec, 'DELETE /api/customers/{id}');
     else warn(sec, 'DELETE /api/customers/{id} (no-v1)', `status ${rDelNV.status}`);
 
-    const rGdprDel = await req(`${S.core}/api/v1/customers/${D.testCustomerProfileId}/gdpr`, {
+    const rGdprDel = await req(`${S.core}/api/customers/${D.testCustomerProfileId}/gdpr`, {
       method: 'DELETE', token: tok.manager,
     });
-    if (ok(rGdprDel) || rGdprDel.status === 404) pass(sec, 'DELETE /api/v1/customers/{id}/gdpr');
+    if (ok(rGdprDel) || rGdprDel.status === 404) pass(sec, 'DELETE /api/customers/{id}/gdpr');
     else warn(sec, 'DELETE v1 /customers/{id}/gdpr', `status ${rGdprDel.status}`);
 
     const rGdprDelNV = await req(`${S.core}/api/customers/${D.testCustomerProfileId}/gdpr`, {
@@ -1070,10 +1103,10 @@ async function testCustomers() {
     if (ok(rGdprDelNV) || rGdprDelNV.status === 404) pass(sec, 'DELETE /api/customers/{id}/gdpr');
     else warn(sec, 'DELETE /api/customers/{id}/gdpr (no-v1)', `status ${rGdprDelNV.status}`);
 
-    const rHardDel = await req(`${S.core}/api/v1/customers/${D.testCustomerProfileId}/hard`, {
+    const rHardDel = await req(`${S.core}/api/customers/${D.testCustomerProfileId}/hard`, {
       method: 'DELETE', token: tok.manager,
     });
-    if (ok(rHardDel) || rHardDel.status === 404) pass(sec, 'DELETE /api/v1/customers/{id}/hard');
+    if (ok(rHardDel) || rHardDel.status === 404) pass(sec, 'DELETE /api/customers/{id}/hard');
     else warn(sec, 'DELETE v1 /customers/{id}/hard', `status ${rHardDel.status}`);
 
     const rHardDelNV = await req(`${S.core}/api/customers/${D.testCustomerProfileId}/hard`, {
@@ -1117,7 +1150,7 @@ async function testCampaigns() {
     else           warn(sec, 'GET /api/campaigns/{id}', `status ${rGet.status}`);
 
     const rUp = await req(`${S.core}/api/campaigns/${D.campaignId}`, {
-      method: 'PUT', ...mgrOpts, body: { name: 'Updated Campaign', message: 'Updated content.' },
+      method: 'PUT', ...mgrOpts, body: { name: 'Updated Campaign', content: 'Updated content.' },
     });
     if (ok(rUp)) pass(sec, 'PUT /api/campaigns/{id}');
     else          warn(sec, 'PUT /api/campaigns/{id}', `status ${rUp.status}`);
@@ -1298,53 +1331,30 @@ async function testGdpr() {
   else              warn(sec, 'GET /api/gdpr/export/{userId}', `status ${rExport.status}`);
 
   if (D.gdprRequestId) {
-    // Process the ACCESS request
-    const rAccess = await req(`${S.core}/api/gdpr/request/${D.gdprRequestId}/access`, { method: 'POST', ...mgrOpts });
-    if (ok(rAccess)) pass(sec, 'POST /api/gdpr/request/{requestId}/access');
-    else              warn(sec, 'POST /api/gdpr/request/{requestId}/access', `status ${rAccess.status}`);
+    const reqPaths = [
+      ['POST /api/gdpr/request/{requestId}/access',      `${S.core}/api/gdpr/request/${D.gdprRequestId}/access`],
+      ['POST /api/gdpr/request/{requestId}/portability', `${S.core}/api/gdpr/request/${D.gdprRequestId}/portability`],
+    ];
+    for (const [label, url] of reqPaths) {
+      const r = await req(url, { method: 'POST', ...mgrOpts });
+      if (ok(r)) pass(sec, label);
+      else        warn(sec, label, `status ${r.status}`);
+    }
 
     const rVerify = await req(`${S.core}/api/gdpr/request/${D.gdprRequestId}/verify`, { method: 'POST', ...mgrOpts });
     if (ok(rVerify)) pass(sec, 'POST /api/gdpr/request/{requestId}/verify');
     else              warn(sec, 'POST /api/gdpr/request/{requestId}/verify', `status ${rVerify.status}`);
-  }
 
-  // Create separate PORTABILITY request
-  const rPortReq = await req(`${S.core}/api/gdpr/request`, {
-    method: 'POST', ...mgrOpts,
-    body: { userId, requestType: 'PORTABILITY', reason: 'Portability test' },
-  });
-  if (ok(rPortReq)) {
-    const portId = id(rPortReq.body);
-    const rPort = await req(`${S.core}/api/gdpr/request/${portId}/portability`, { method: 'POST', ...mgrOpts });
-    if (ok(rPort)) pass(sec, 'POST /api/gdpr/request/{requestId}/portability');
-    else            warn(sec, 'POST /api/gdpr/request/{requestId}/portability', `status ${rPort.status}`);
-  } else warn(sec, 'POST /api/gdpr/request (PORTABILITY)', `status ${rPortReq.status}`);
-
-  // Create separate ERASURE request
-  const rEraReq = await req(`${S.core}/api/gdpr/request`, {
-    method: 'POST', ...mgrOpts,
-    body: { userId, requestType: 'ERASURE', reason: 'Erasure test' },
-  });
-  if (ok(rEraReq)) {
-    const eraId = id(rEraReq.body);
-    const rErasure = await req(`${S.core}/api/gdpr/request/${eraId}/erasure`, { method: 'POST', ...mgrOpts });
+    const rErasure = await req(`${S.core}/api/gdpr/request/${D.gdprRequestId}/erasure`, { method: 'POST', ...mgrOpts });
     if (ok(rErasure)) pass(sec, 'POST /api/gdpr/request/{requestId}/erasure');
     else               warn(sec, 'POST /api/gdpr/request/{requestId}/erasure', `status ${rErasure.status}`);
-  } else warn(sec, 'POST /api/gdpr/request (ERASURE)', `status ${rEraReq.status}`);
 
-  // Create separate RECTIFICATION request
-  const rRectReq = await req(`${S.core}/api/gdpr/request`, {
-    method: 'POST', ...mgrOpts,
-    body: { userId, requestType: 'RECTIFICATION', reason: 'Rectification test' },
-  });
-  if (ok(rRectReq)) {
-    const rectId = id(rRectReq.body);
-    const rRect = await req(`${S.core}/api/gdpr/request/${rectId}/rectification`, {
+    const rRect = await req(`${S.core}/api/gdpr/request/${D.gdprRequestId}/rectification`, {
       method: 'POST', ...mgrOpts, body: { corrections: { name: 'Corrected Name' } },
     });
     if (ok(rRect)) pass(sec, 'POST /api/gdpr/request/{requestId}/rectification');
     else            warn(sec, 'POST /api/gdpr/request/{requestId}/rectification', `status ${rRect.status}`);
-  } else warn(sec, 'POST /api/gdpr/request (RECTIFICATION)', `status ${rRectReq.status}`);
+  }
 
   if (D.regUserId) {
     const rErase = await req(`${S.core}/api/gdpr/erase/${D.regUserId}`, {
@@ -1712,7 +1722,7 @@ async function testInventory() {
   }
 
   // Suppliers
-  const rSupCreate = await req(`${S.logistics}/api/inventory/suppliers`, {
+  const rSupCreate = await req(`${S.logistics}/api/suppliers`, {
     method: 'POST', ...mgrOpts,
     body: {
       supplierName: 'API Test Supplier', contactPerson: 'Test Contact',
@@ -1725,18 +1735,18 @@ async function testInventory() {
   if (ok(rSupCreate)) {
     D.supplierId = id(rSupCreate.body);
     D.supplierCode = rSupCreate.body?.supplierCode;
-    pass(sec, 'POST /api/inventory/suppliers', D.supplierId);
-  } else warn(sec, 'POST /api/inventory/suppliers', `status ${rSupCreate.status}`);
+    pass(sec, 'POST /api/suppliers', D.supplierId);
+  } else warn(sec, 'POST /api/suppliers', `status ${rSupCreate.status}`);
 
   const supListEndpoints = [
-    ['GET /api/inventory/suppliers',                        `${S.logistics}/api/inventory/suppliers`],
-    ['GET /api/inventory/suppliers/active',                 `${S.logistics}/api/inventory/suppliers/active`],
-    ['GET /api/inventory/suppliers/preferred',              `${S.logistics}/api/inventory/suppliers/preferred`],
-    ['GET /api/inventory/suppliers/reliable',               `${S.logistics}/api/inventory/suppliers/reliable`],
-    ['GET /api/inventory/suppliers/category/{category}',    `${S.logistics}/api/inventory/suppliers/category/INGREDIENT`],
-    ['GET /api/inventory/suppliers/search',                 `${S.logistics}/api/inventory/suppliers/search?q=test`],
-    ['GET /api/inventory/suppliers/city/{city}',            `${S.logistics}/api/inventory/suppliers/city/Hyderabad`],
-    ['GET /api/inventory/suppliers/compare/category/{category}', `${S.logistics}/api/inventory/suppliers/compare/category/INGREDIENT`],
+    ['GET /api/suppliers',                        `${S.logistics}/api/suppliers`],
+    ['GET /api/suppliers/active',                 `${S.logistics}/api/suppliers/active`],
+    ['GET /api/suppliers/preferred',              `${S.logistics}/api/suppliers/preferred`],
+    ['GET /api/suppliers/reliable',               `${S.logistics}/api/suppliers/reliable`],
+    ['GET /api/suppliers/category/{category}',    `${S.logistics}/api/suppliers/category/INGREDIENT`],
+    ['GET /api/suppliers/search',                 `${S.logistics}/api/suppliers/search?q=test`],
+    ['GET /api/suppliers/city/{city}',            `${S.logistics}/api/suppliers/city/Hyderabad`],
+    ['GET /api/suppliers/compare/category/{category}', `${S.logistics}/api/suppliers/compare/category/INGREDIENT`],
   ];
   for (const [label, url] of supListEndpoints) {
     const r = await req(url, mgrOpts);
@@ -1744,45 +1754,45 @@ async function testInventory() {
     else        warn(sec, label, `status ${r.status}`);
   }
 
-  const rSupByCode = await req(`${S.logistics}/api/inventory/suppliers/code/${D.supplierCode || 'NONEXISTENT'}`, mgrOpts);
+  const rSupByCode = await req(`${S.logistics}/api/suppliers/code/${D.supplierCode || 'NONEXISTENT'}`, mgrOpts);
   if (ok(rSupByCode) || rSupByCode.status === 404)
-    pass(sec, 'GET /api/inventory/suppliers/code/{code} — handled');
-  else warn(sec, 'GET /api/inventory/suppliers/code/{code}', `status ${rSupByCode.status}`);
+    pass(sec, 'GET /api/suppliers/code/{code} — handled');
+  else warn(sec, 'GET /api/suppliers/code/{code}', `status ${rSupByCode.status}`);
 
   if (D.supplierId) {
-    const rGetSup = await req(`${S.logistics}/api/inventory/suppliers/${D.supplierId}`, mgrOpts);
-    if (ok(rGetSup)) pass(sec, 'GET /api/inventory/suppliers/{id}');
-    else              warn(sec, 'GET /api/inventory/suppliers/{id}', `status ${rGetSup.status}`);
+    const rGetSup = await req(`${S.logistics}/api/suppliers/${D.supplierId}`, mgrOpts);
+    if (ok(rGetSup)) pass(sec, 'GET /api/suppliers/{id}');
+    else              warn(sec, 'GET /api/suppliers/{id}', `status ${rGetSup.status}`);
 
-    const rUpSup = await req(`${S.logistics}/api/inventory/suppliers/${D.supplierId}`, {
+    const rUpSup = await req(`${S.logistics}/api/suppliers/${D.supplierId}`, {
       method: 'PUT', ...mgrOpts, body: { supplierName: 'Updated Supplier', email: `supplier.upd.${Date.now()}@test.com`, phoneNumber: '9000111444', supplierCode: `SUP-UPD-${Date.now()}` },
     });
-    if (ok(rUpSup)) pass(sec, 'PUT /api/inventory/suppliers/{id}');
-    else             warn(sec, 'PUT /api/inventory/suppliers/{id}', `status ${rUpSup.status}`);
+    if (ok(rUpSup)) pass(sec, 'PUT /api/suppliers/{id}');
+    else             warn(sec, 'PUT /api/suppliers/{id}', `status ${rUpSup.status}`);
 
-    const rStSup = await req(`${S.logistics}/api/inventory/suppliers/${D.supplierId}/status`, {
+    const rStSup = await req(`${S.logistics}/api/suppliers/${D.supplierId}/status`, {
       method: 'PATCH', ...mgrOpts, body: { status: 'ACTIVE' },
     });
-    if (ok(rStSup)) pass(sec, 'PATCH /api/inventory/suppliers/{id}/status');
+    if (ok(rStSup)) pass(sec, 'PATCH /api/suppliers/{id}/status');
     else             warn(sec, 'PATCH supplier status', `status ${rStSup.status}`);
 
-    const rPrefSup = await req(`${S.logistics}/api/inventory/suppliers/${D.supplierId}/preferred`, {
+    const rPrefSup = await req(`${S.logistics}/api/suppliers/${D.supplierId}/preferred`, {
       method: 'PATCH', ...mgrOpts, body: { isPreferred: true },
     });
-    if (ok(rPrefSup)) pass(sec, 'PATCH /api/inventory/suppliers/{id}/preferred');
+    if (ok(rPrefSup)) pass(sec, 'PATCH /api/suppliers/{id}/preferred');
     else               warn(sec, 'PATCH supplier preferred', `status ${rPrefSup.status}`);
 
-    const rPerfSup = await req(`${S.logistics}/api/inventory/suppliers/${D.supplierId}/performance`, {
+    const rPerfSup = await req(`${S.logistics}/api/suppliers/${D.supplierId}/performance`, {
       method: 'PATCH', ...mgrOpts,
       body: { completedOrders: 10, cancelledOrders: 0, onTimeDeliveryRate: 95, qualityRating: 4.5 },
     });
-    if (ok(rPerfSup)) pass(sec, 'PATCH /api/inventory/suppliers/{id}/performance');
+    if (ok(rPerfSup)) pass(sec, 'PATCH /api/suppliers/{id}/performance');
     else               warn(sec, 'PATCH supplier performance', `status ${rPerfSup.status}`);
   }
 
   // Purchase Orders
   if (D.supplierId && D.inventoryItemId) {
-    const rPOCreate = await req(`${S.logistics}/api/inventory/purchase-orders`, {
+    const rPOCreate = await req(`${S.logistics}/api/purchase-orders`, {
       method: 'POST', ...mgrOpts,
       body: {
         supplierId: D.supplierId, storeId: D.storeId001 || 'DOM001',
@@ -1792,16 +1802,16 @@ async function testInventory() {
     });
     if (ok(rPOCreate)) {
       D.purchaseOrderId = id(rPOCreate.body);
-      pass(sec, 'POST /api/inventory/purchase-orders', D.purchaseOrderId);
-    } else warn(sec, 'POST /api/inventory/purchase-orders', `status ${rPOCreate.status}`);
-  } else warn(sec, 'POST /api/inventory/purchase-orders', 'skipped — missing supplierId or inventoryItemId');
+      pass(sec, 'POST /api/purchase-orders', D.purchaseOrderId);
+    } else warn(sec, 'POST /api/purchase-orders', `status ${rPOCreate.status}`);
+  } else warn(sec, 'POST /api/purchase-orders', 'skipped — missing supplierId or inventoryItemId');
 
   const poListEndpoints = [
-    ['GET /api/inventory/purchase-orders',                        `${S.logistics}/api/inventory/purchase-orders`],
-    ['GET /api/inventory/purchase-orders/status/{status}',        `${S.logistics}/api/inventory/purchase-orders/status/PENDING`],
-    ['GET /api/inventory/purchase-orders/pending-approval',       `${S.logistics}/api/inventory/purchase-orders/pending-approval`],
-    ['GET /api/inventory/purchase-orders/overdue',                `${S.logistics}/api/inventory/purchase-orders/overdue`],
-    ['GET /api/inventory/purchase-orders/date-range',             `${S.logistics}/api/inventory/purchase-orders/date-range?startDate=${WEEK_START}&endDate=${TODAY}`],
+    ['GET /api/purchase-orders',                        `${S.logistics}/api/purchase-orders`],
+    ['GET /api/purchase-orders/status/{status}',        `${S.logistics}/api/purchase-orders/status/PENDING`],
+    ['GET /api/purchase-orders/pending-approval',       `${S.logistics}/api/purchase-orders/pending-approval`],
+    ['GET /api/purchase-orders/overdue',                `${S.logistics}/api/purchase-orders/overdue`],
+    ['GET /api/purchase-orders/date-range',             `${S.logistics}/api/purchase-orders/date-range?startDate=${WEEK_START}&endDate=${TODAY}`],
   ];
   for (const [label, url] of poListEndpoints) {
     const r = await req(url, mgrOpts);
@@ -1810,73 +1820,73 @@ async function testInventory() {
   }
 
   if (D.purchaseOrderId) {
-    const rGetPO = await req(`${S.logistics}/api/inventory/purchase-orders/${D.purchaseOrderId}`, mgrOpts);
-    if (ok(rGetPO)) pass(sec, 'GET /api/inventory/purchase-orders/{id}');
-    else             warn(sec, 'GET /api/inventory/purchase-orders/{id}', `status ${rGetPO.status}`);
+    const rGetPO = await req(`${S.logistics}/api/purchase-orders/${D.purchaseOrderId}`, mgrOpts);
+    if (ok(rGetPO)) pass(sec, 'GET /api/purchase-orders/{id}');
+    else             warn(sec, 'GET /api/purchase-orders/{id}', `status ${rGetPO.status}`);
 
     if (rGetPO.body && (rGetPO.body.orderNumber || rGetPO.body.purchaseOrderNumber)) {
       const poNum = rGetPO.body.orderNumber || rGetPO.body.purchaseOrderNumber;
-      const rGetPONum = await req(`${S.logistics}/api/inventory/purchase-orders/number/${poNum}`, mgrOpts);
-      if (ok(rGetPONum)) pass(sec, 'GET /api/inventory/purchase-orders/number/{orderNumber}');
-      else                warn(sec, 'GET /api/inventory/purchase-orders/number/{orderNumber}', `status ${rGetPONum.status}`);
-    } else warn(sec, 'GET /api/inventory/purchase-orders/number/{orderNumber}', 'skipped — no orderNumber in response');
+      const rGetPONum = await req(`${S.logistics}/api/purchase-orders/number/${poNum}`, mgrOpts);
+      if (ok(rGetPONum)) pass(sec, 'GET /api/purchase-orders/number/{orderNumber}');
+      else                warn(sec, 'GET /api/purchase-orders/number/{orderNumber}', `status ${rGetPONum.status}`);
+    } else warn(sec, 'GET /api/purchase-orders/number/{orderNumber}', 'skipped — no orderNumber in response');
 
-    const rUpPO = await req(`${S.logistics}/api/inventory/purchase-orders/${D.purchaseOrderId}`, {
+    const rUpPO = await req(`${S.logistics}/api/purchase-orders/${D.purchaseOrderId}`, {
       method: 'PUT', ...mgrOpts, body: { notes: 'Updated via API test' },
     });
-    if (ok(rUpPO)) pass(sec, 'PUT /api/inventory/purchase-orders/{id}');
-    else            warn(sec, 'PUT /api/inventory/purchase-orders/{id}', `status ${rUpPO.status}`);
+    if (ok(rUpPO)) pass(sec, 'PUT /api/purchase-orders/{id}');
+    else            warn(sec, 'PUT /api/purchase-orders/{id}', `status ${rUpPO.status}`);
 
-    const rAppPO = await req(`${S.logistics}/api/inventory/purchase-orders/${D.purchaseOrderId}/approve`, {
+    const rAppPO = await req(`${S.logistics}/api/purchase-orders/${D.purchaseOrderId}/approve`, {
       method: 'PATCH', ...mgrOpts,
       body: { approverId: D.managerId, storeId: D.storeId001 || 'DOM001' },
     });
-    if (ok(rAppPO)) pass(sec, 'PATCH /api/inventory/purchase-orders/{id}/approve');
+    if (ok(rAppPO)) pass(sec, 'PATCH /api/purchase-orders/{id}/approve');
     else             warn(sec, 'PATCH purchase-order approve', `status ${rAppPO.status}`);
 
-    const rSendPO = await req(`${S.logistics}/api/inventory/purchase-orders/${D.purchaseOrderId}/send`, {
+    const rSendPO = await req(`${S.logistics}/api/purchase-orders/${D.purchaseOrderId}/send`, {
       method: 'PATCH', ...mgrOpts, body: { storeId: D.storeId001 || 'DOM001' },
     });
-    if (ok(rSendPO)) pass(sec, 'PATCH /api/inventory/purchase-orders/{id}/send');
+    if (ok(rSendPO)) pass(sec, 'PATCH /api/purchase-orders/{id}/send');
     else              warn(sec, 'PATCH purchase-order send', `status ${rSendPO.status}`);
 
-    const rRecvPO = await req(`${S.logistics}/api/inventory/purchase-orders/${D.purchaseOrderId}/receive`, {
+    const rRecvPO = await req(`${S.logistics}/api/purchase-orders/${D.purchaseOrderId}/receive`, {
       method: 'PATCH', ...mgrOpts,
       body: { receivedBy: D.managerId, notes: 'Received via API test' },
     });
-    if (ok(rRecvPO)) pass(sec, 'PATCH /api/inventory/purchase-orders/{id}/receive');
-    else              warn(sec, 'PATCH /api/inventory/purchase-orders/{id}/receive', `status ${rRecvPO.status}`);
+    if (ok(rRecvPO)) pass(sec, 'PATCH /api/purchase-orders/{id}/receive');
+    else              warn(sec, 'PATCH /api/purchase-orders/{id}/receive', `status ${rRecvPO.status}`);
 
-    const rRejPO = await req(`${S.logistics}/api/inventory/purchase-orders/${D.purchaseOrderId}/reject`, {
+    const rRejPO = await req(`${S.logistics}/api/purchase-orders/${D.purchaseOrderId}/reject`, {
       method: 'PATCH', ...mgrOpts,
-      body: { rejectionReason: 'API test rejection', storeId: D.storeId001 || 'DOM001' },
+      body: { rejectedBy: D.managerId, reason: 'API test rejection' },
     });
-    if (ok(rRejPO)) pass(sec, 'PATCH /api/inventory/purchase-orders/{id}/reject');
-    else             warn(sec, 'PATCH /api/inventory/purchase-orders/{id}/reject', `status ${rRejPO.status}`);
+    if (ok(rRejPO)) pass(sec, 'PATCH /api/purchase-orders/{id}/reject');
+    else             warn(sec, 'PATCH /api/purchase-orders/{id}/reject', `status ${rRejPO.status}`);
 
-    const rCancelPO = await req(`${S.logistics}/api/inventory/purchase-orders/${D.purchaseOrderId}/cancel`, {
+    const rCancelPO = await req(`${S.logistics}/api/purchase-orders/${D.purchaseOrderId}/cancel`, {
       method: 'PATCH', ...mgrOpts,
-      body: { reason: 'API test cancel', storeId: D.storeId001 || 'DOM001' },
+      body: { cancelledBy: D.managerId, reason: 'API test cancel' },
     });
-    if (ok(rCancelPO)) pass(sec, 'PATCH /api/inventory/purchase-orders/{id}/cancel');
-    else                warn(sec, 'PATCH /api/inventory/purchase-orders/{id}/cancel', `status ${rCancelPO.status}`);
+    if (ok(rCancelPO)) pass(sec, 'PATCH /api/purchase-orders/{id}/cancel');
+    else                warn(sec, 'PATCH /api/purchase-orders/{id}/cancel', `status ${rCancelPO.status}`);
 
-    const rDelPO = await req(`${S.logistics}/api/inventory/purchase-orders/${D.purchaseOrderId}`, {
+    const rDelPO = await req(`${S.logistics}/api/purchase-orders/${D.purchaseOrderId}`, {
       method: 'DELETE', ...mgrOpts,
     });
-    if (ok(rDelPO)) pass(sec, 'DELETE /api/inventory/purchase-orders/{id}');
-    else             warn(sec, 'DELETE /api/inventory/purchase-orders/{id}', `status ${rDelPO.status}`);
+    if (ok(rDelPO)) pass(sec, 'DELETE /api/purchase-orders/{id}');
+    else             warn(sec, 'DELETE /api/purchase-orders/{id}', `status ${rDelPO.status}`);
   }
 
-  const rAutoGen = await req(`${S.logistics}/api/inventory/purchase-orders/auto-generate`, {
+  const rAutoGen = await req(`${S.logistics}/api/purchase-orders/auto-generate`, {
     method: 'POST', ...mgrOpts,
   });
-  if (ok(rAutoGen)) pass(sec, 'POST /api/inventory/purchase-orders/auto-generate');
+  if (ok(rAutoGen)) pass(sec, 'POST /api/purchase-orders/auto-generate');
   else               warn(sec, 'POST auto-generate purchase-orders', `status ${rAutoGen.status}`);
 
   // Waste
   if (D.inventoryItemId) {
-    const rWasteCreate = await req(`${S.logistics}/api/inventory/waste`, {
+    const rWasteCreate = await req(`${S.logistics}/api/waste`, {
       method: 'POST', ...mgrOpts,
       body: {
         inventoryItemId: D.inventoryItemId, storeId: D.storeId001 || 'DOM001',
@@ -1887,19 +1897,19 @@ async function testInventory() {
     });
     if (ok(rWasteCreate)) {
       D.wasteId = id(rWasteCreate.body);
-      pass(sec, 'POST /api/inventory/waste', D.wasteId);
-    } else warn(sec, 'POST /api/inventory/waste', `status ${rWasteCreate.status}`);
-  } else warn(sec, 'POST /api/inventory/waste', 'skipped — no inventoryItemId');
+      pass(sec, 'POST /api/waste', D.wasteId);
+    } else warn(sec, 'POST /api/waste', `status ${rWasteCreate.status}`);
+  } else warn(sec, 'POST /api/waste', 'skipped — no inventoryItemId');
 
   const wasteEndpoints = [
-    ['GET /api/inventory/waste',                     `${S.logistics}/api/inventory/waste`],
-    ['GET /api/inventory/waste/total-cost',          `${S.logistics}/api/inventory/waste/total-cost?startDate=${WEEK_START}&endDate=${TODAY}`],
-    ['GET /api/inventory/waste/cost-by-category',    `${S.logistics}/api/inventory/waste/cost-by-category?startDate=${WEEK_START}&endDate=${TODAY}`],
-    ['GET /api/inventory/waste/top-items',           `${S.logistics}/api/inventory/waste/top-items?startDate=${WEEK_START}&endDate=${TODAY}`],
-    ['GET /api/inventory/waste/preventable-analysis',`${S.logistics}/api/inventory/waste/preventable-analysis?startDate=${WEEK_START}&endDate=${TODAY}`],
-    ['GET /api/inventory/waste/trend',               `${S.logistics}/api/inventory/waste/trend`],
-    ['GET /api/inventory/waste/date-range',          `${S.logistics}/api/inventory/waste/date-range?startDate=${WEEK_START}&endDate=${TODAY}`],
-    ['GET /api/inventory/waste/category/{category}', `${S.logistics}/api/inventory/waste/category/SPOILAGE`],
+    ['GET /api/waste',                     `${S.logistics}/api/waste`],
+    ['GET /api/waste/analytics?type=total-cost',     `${S.logistics}/api/waste/analytics?type=total-cost&startDate=${WEEK_START}&endDate=${TODAY}`],
+    ['GET /api/waste/analytics?type=cost-by-category', `${S.logistics}/api/waste/analytics?type=cost-by-category&startDate=${WEEK_START}&endDate=${TODAY}`],
+    ['GET /api/waste/analytics?type=top-items',      `${S.logistics}/api/waste/analytics?type=top-items&startDate=${WEEK_START}&endDate=${TODAY}`],
+    ['GET /api/waste/analytics?type=preventable',    `${S.logistics}/api/waste/analytics?type=preventable&startDate=${WEEK_START}&endDate=${TODAY}`],
+    ['GET /api/waste/analytics?type=trend',          `${S.logistics}/api/waste/analytics?type=trend`],
+    ['GET /api/waste/date-range',          `${S.logistics}/api/waste/date-range?startDate=${WEEK_START}&endDate=${TODAY}`],
+    ['GET /api/waste/category/{category}', `${S.logistics}/api/waste/category/SPOILAGE`],
   ];
   for (const [label, url] of wasteEndpoints) {
     const r = await req(url, mgrOpts);
@@ -1908,28 +1918,28 @@ async function testInventory() {
   }
 
   if (D.wasteId) {
-    const rGetW = await req(`${S.logistics}/api/inventory/waste/${D.wasteId}`, mgrOpts);
-    if (ok(rGetW)) pass(sec, 'GET /api/inventory/waste/{id}');
-    else            warn(sec, 'GET /api/inventory/waste/{id}', `status ${rGetW.status}`);
+    const rGetW = await req(`${S.logistics}/api/waste/${D.wasteId}`, mgrOpts);
+    if (ok(rGetW)) pass(sec, 'GET /api/waste/{id}');
+    else            warn(sec, 'GET /api/waste/{id}', `status ${rGetW.status}`);
 
-    const rUpW = await req(`${S.logistics}/api/inventory/waste/${D.wasteId}`, {
+    const rUpW = await req(`${S.logistics}/api/waste/${D.wasteId}`, {
       method: 'PUT', ...mgrOpts,
-      body: { quantity: 2, wasteReason: 'SPOILAGE', notes: 'Updated via API test' },
+      body: { quantity: 2, reason: 'SPOILAGE', notes: 'Updated via API test' },
     });
-    if (ok(rUpW)) pass(sec, 'PUT /api/inventory/waste/{id}');
-    else           warn(sec, 'PUT /api/inventory/waste/{id}', `status ${rUpW.status}`);
+    if (ok(rUpW)) pass(sec, 'PUT /api/waste/{id}');
+    else           warn(sec, 'PUT /api/waste/{id}', `status ${rUpW.status}`);
 
-    const rAppW = await req(`${S.logistics}/api/inventory/waste/${D.wasteId}/approve`, {
+    const rAppW = await req(`${S.logistics}/api/waste/${D.wasteId}/approve`, {
       method: 'PATCH', ...mgrOpts, body: { approverId: D.managerId },
     });
-    if (ok(rAppW)) pass(sec, 'PATCH /api/inventory/waste/{id}/approve');
+    if (ok(rAppW)) pass(sec, 'PATCH /api/waste/{id}/approve');
     else            warn(sec, 'PATCH waste approve', `status ${rAppW.status}`);
 
-    const rDelW = await req(`${S.logistics}/api/inventory/waste/${D.wasteId}`, {
+    const rDelW = await req(`${S.logistics}/api/waste/${D.wasteId}`, {
       method: 'DELETE', ...mgrOpts,
     });
-    if (ok(rDelW)) pass(sec, 'DELETE /api/inventory/waste/{id}');
-    else            warn(sec, 'DELETE /api/inventory/waste/{id}', `status ${rDelW.status}`);
+    if (ok(rDelW)) pass(sec, 'DELETE /api/waste/{id}');
+    else            warn(sec, 'DELETE /api/waste/{id}', `status ${rDelW.status}`);
   }
 
   // Cleanup
@@ -1942,11 +1952,11 @@ async function testInventory() {
   }
 
   if (D.supplierId) {
-    const rDelSup = await req(`${S.logistics}/api/inventory/suppliers/${D.supplierId}`, {
+    const rDelSup = await req(`${S.logistics}/api/suppliers/${D.supplierId}`, {
       method: 'DELETE', ...mgrOpts,
     });
-    if (ok(rDelSup)) pass(sec, 'DELETE /api/inventory/suppliers/{id}');
-    else              warn(sec, 'DELETE /api/inventory/suppliers/{id}', `status ${rDelSup.status}`);
+    if (ok(rDelSup)) pass(sec, 'DELETE /api/suppliers/{id}');
+    else              warn(sec, 'DELETE /api/suppliers/{id}', `status ${rDelSup.status}`);
   }
 }
 
@@ -1960,7 +1970,7 @@ async function testKitchenEquipment() {
 
   const mgrOpts = { token: tok.manager, storeCode: A.manager2.storeCode };
 
-  const rCreate = await req(`${S.commerce}/api/kitchen-equipment`, {
+  const rCreate = await req(`${S.commerce}/api/equipment`, {
     method: 'POST', ...mgrOpts,
     body: {
       equipmentName: 'Test Fryer', type: 'FRYER', storeId: D.storeId001 || 'DOM001',
@@ -1969,63 +1979,63 @@ async function testKitchenEquipment() {
   });
   if (ok(rCreate)) {
     D.equipmentId = id(rCreate.body);
-    pass(sec, 'POST /api/kitchen-equipment', D.equipmentId);
-  } else warn(sec, 'POST /api/kitchen-equipment', `status ${rCreate.status}`);
+    pass(sec, 'POST /api/equipment', D.equipmentId);
+  } else warn(sec, 'POST /api/equipment', `status ${rCreate.status}`);
 
-  const rStore = await req(`${S.commerce}/api/kitchen-equipment/store`, mgrOpts);
-  if (ok(rStore)) pass(sec, 'GET /api/kitchen-equipment/store');
-  else             warn(sec, 'GET /api/kitchen-equipment/store', `status ${rStore.status}`);
+  const rStore = await req(`${S.commerce}/api/equipment/store`, mgrOpts);
+  if (ok(rStore)) pass(sec, 'GET /api/equipment/store');
+  else             warn(sec, 'GET /api/equipment/store', `status ${rStore.status}`);
 
-  const rStatus = await req(`${S.commerce}/api/kitchen-equipment/store/status/OPERATIONAL`, mgrOpts);
-  if (ok(rStatus)) pass(sec, 'GET /api/kitchen-equipment/store/status/{status}');
-  else              warn(sec, 'GET /api/kitchen-equipment/store/status/{status}', `status ${rStatus.status}`);
+  const rStatus = await req(`${S.commerce}/api/equipment/store/status/OPERATIONAL`, mgrOpts);
+  if (ok(rStatus)) pass(sec, 'GET /api/equipment/store/status/{status}');
+  else              warn(sec, 'GET /api/equipment/store/status/{status}', `status ${rStatus.status}`);
 
-  const rMaint = await req(`${S.commerce}/api/kitchen-equipment/store/maintenance-needed`, mgrOpts);
-  if (ok(rMaint)) pass(sec, 'GET /api/kitchen-equipment/store/maintenance-needed');
-  else             warn(sec, 'GET /api/kitchen-equipment/store/maintenance-needed', `status ${rMaint.status}`);
+  const rMaint = await req(`${S.commerce}/api/equipment/store/maintenance-needed`, mgrOpts);
+  if (ok(rMaint)) pass(sec, 'GET /api/equipment/store/maintenance-needed');
+  else             warn(sec, 'GET /api/equipment/store/maintenance-needed', `status ${rMaint.status}`);
 
-  const rReset = await req(`${S.commerce}/api/kitchen-equipment/store/reset-usage`, {
+  const rReset = await req(`${S.commerce}/api/equipment/store/reset-usage`, {
     method: 'POST', ...mgrOpts,
   });
-  if (ok(rReset)) pass(sec, 'POST /api/kitchen-equipment/store/reset-usage');
-  else             warn(sec, 'POST /api/kitchen-equipment/store/reset-usage', `status ${rReset.status}`);
+  if (ok(rReset)) pass(sec, 'POST /api/equipment/store/reset-usage');
+  else             warn(sec, 'POST /api/equipment/store/reset-usage', `status ${rReset.status}`);
 
   if (D.equipmentId) {
-    const rGet = await req(`${S.commerce}/api/kitchen-equipment/${D.equipmentId}`, mgrOpts);
-    if (ok(rGet)) pass(sec, 'GET /api/kitchen-equipment/{equipmentId}');
-    else           warn(sec, 'GET /api/kitchen-equipment/{equipmentId}', `status ${rGet.status}`);
+    const rGet = await req(`${S.commerce}/api/equipment/${D.equipmentId}`, mgrOpts);
+    if (ok(rGet)) pass(sec, 'GET /api/equipment/{equipmentId}');
+    else           warn(sec, 'GET /api/equipment/{equipmentId}', `status ${rGet.status}`);
 
-    const rStUpd = await req(`${S.commerce}/api/kitchen-equipment/${D.equipmentId}/status`, {
+    const rStUpd = await req(`${S.commerce}/api/equipment/${D.equipmentId}/status`, {
       method: 'PATCH', ...mgrOpts,
       body: { status: 'AVAILABLE', staffId: D.staffId || 'test', notes: 'API test' },
     });
-    if (ok(rStUpd)) pass(sec, 'PATCH /api/kitchen-equipment/{equipmentId}/status');
+    if (ok(rStUpd)) pass(sec, 'PATCH /api/equipment/{equipmentId}/status');
     else             warn(sec, 'PATCH equipment status', `status ${rStUpd.status}`);
 
-    const rPower = await req(`${S.commerce}/api/kitchen-equipment/${D.equipmentId}/power`, {
+    const rPower = await req(`${S.commerce}/api/equipment/${D.equipmentId}/power`, {
       method: 'PATCH', ...mgrOpts, body: { isOn: true, staffId: D.staffId || 'test' },
     });
-    if (ok(rPower)) pass(sec, 'PATCH /api/kitchen-equipment/{equipmentId}/power');
+    if (ok(rPower)) pass(sec, 'PATCH /api/equipment/{equipmentId}/power');
     else             warn(sec, 'PATCH equipment power', `status ${rPower.status}`);
 
-    const rTemp = await req(`${S.commerce}/api/kitchen-equipment/${D.equipmentId}/temperature`, {
+    const rTemp = await req(`${S.commerce}/api/equipment/${D.equipmentId}/temperature`, {
       method: 'PATCH', ...mgrOpts, body: { temperature: 180 },
     });
-    if (ok(rTemp)) pass(sec, 'PATCH /api/kitchen-equipment/{equipmentId}/temperature');
+    if (ok(rTemp)) pass(sec, 'PATCH /api/equipment/{equipmentId}/temperature');
     else            warn(sec, 'PATCH equipment temperature', `status ${rTemp.status}`);
 
-    const rMaintSched = await req(`${S.commerce}/api/kitchen-equipment/${D.equipmentId}/maintenance`, {
+    const rMaintSched = await req(`${S.commerce}/api/equipment/${D.equipmentId}/maintenance`, {
       method: 'POST', ...mgrOpts,
       body: { nextMaintenanceDate: new Date(Date.now() + 30 * 86400000).toISOString(), notes: 'Scheduled' },
     });
-    if (ok(rMaintSched)) pass(sec, 'POST /api/kitchen-equipment/{equipmentId}/maintenance');
+    if (ok(rMaintSched)) pass(sec, 'POST /api/equipment/{equipmentId}/maintenance');
     else                  warn(sec, 'POST equipment maintenance', `status ${rMaintSched.status}`);
 
-    const rDel = await req(`${S.commerce}/api/kitchen-equipment/${D.equipmentId}`, {
+    const rDel = await req(`${S.commerce}/api/equipment/${D.equipmentId}`, {
       method: 'DELETE', ...mgrOpts,
     });
-    if (ok(rDel)) pass(sec, 'DELETE /api/kitchen-equipment/{equipmentId}');
-    else           warn(sec, 'DELETE /api/kitchen-equipment/{equipmentId}', `status ${rDel.status}`);
+    if (ok(rDel)) pass(sec, 'DELETE /api/equipment/{equipmentId}');
+    else           warn(sec, 'DELETE /api/equipment/{equipmentId}', `status ${rDel.status}`);
   }
 }
 
@@ -2047,7 +2057,7 @@ async function testOrders() {
   const mgrOpts    = { token: tok.manager, storeCode: A.manager2.storeCode };
 
   // DINE_IN
-  const rDI = await req(`${S.commerce}/api/v1/orders`, {
+  const rDI = await req(`${S.commerce}/api/orders`, {
     method: 'POST', ...mgrOpts,
     body: {
       customerName: 'Dine In Test', customerPhone: '9000000001',
@@ -2058,11 +2068,11 @@ async function testOrders() {
   if (ok(rDI)) {
     D.dineInOrderId = id(rDI.body);
     D.dineInOrderNumber = rDI.body.orderNumber;
-    pass(sec, 'POST /api/v1/orders — DINE_IN', D.dineInOrderId);
-  } else fail(sec, 'POST /api/v1/orders — DINE_IN', `status ${rDI.status} — ${JSON.stringify(rDI.body)?.slice(0,200)}`);
+    pass(sec, 'POST /api/orders — DINE_IN', D.dineInOrderId);
+  } else fail(sec, 'POST /api/orders — DINE_IN', `status ${rDI.status} — ${JSON.stringify(rDI.body)?.slice(0,200)}`);
 
   // TAKEAWAY
-  const rTA = await req(`${S.commerce}/api/v1/orders`, {
+  const rTA = await req(`${S.commerce}/api/orders`, {
     method: 'POST', ...mgrOpts,
     body: {
       customerName: 'Takeaway Test', customerPhone: '9000000002',
@@ -2073,11 +2083,11 @@ async function testOrders() {
   if (ok(rTA)) {
     D.takeawayOrderId = id(rTA.body);
     D.takeawayOrderNumber = rTA.body.orderNumber;
-    pass(sec, 'POST /api/v1/orders — TAKEAWAY', D.takeawayOrderId);
-  } else fail(sec, 'POST /api/v1/orders — TAKEAWAY', `status ${rTA.status} — ${JSON.stringify(rTA.body)?.slice(0,200)}`);
+    pass(sec, 'POST /api/orders — TAKEAWAY', D.takeawayOrderId);
+  } else fail(sec, 'POST /api/orders — TAKEAWAY', `status ${rTA.status} — ${JSON.stringify(rTA.body)?.slice(0,200)}`);
 
   // DELIVERY
-  const rDelOrd = await req(`${S.commerce}/api/v1/orders`, {
+  const rDelOrd = await req(`${S.commerce}/api/orders`, {
     method: 'POST', ...mgrOpts,
     body: {
       customerName: 'Delivery Test', customerPhone: '9000000003',
@@ -2089,8 +2099,8 @@ async function testOrders() {
   if (ok(rDelOrd)) {
     D.deliveryOrderId = id(rDelOrd.body);
     D.deliveryOrderNumber = rDelOrd.body.orderNumber;
-    pass(sec, 'POST /api/v1/orders — DELIVERY', D.deliveryOrderId);
-  } else fail(sec, 'POST /api/v1/orders — DELIVERY', `status ${rDelOrd.status} — ${JSON.stringify(rDelOrd.body)?.slice(0,200)}`);
+    pass(sec, 'POST /api/orders — DELIVERY', D.deliveryOrderId);
+  } else fail(sec, 'POST /api/orders — DELIVERY', `status ${rDelOrd.status} — ${JSON.stringify(rDelOrd.body)?.slice(0,200)}`);
 
   // Also hit /api/orders (non-v1) for coverage
   const rOrdNV = await req(`${S.commerce}/api/orders`, {
@@ -2109,17 +2119,17 @@ async function testOrders() {
   const orderNum = D.dineInOrderNumber || D.takeawayOrderNumber;
 
   if (orderId) {
-    const rGet = await req(`${S.commerce}/api/v1/orders/${orderId}`, mgrOpts);
-    if (ok(rGet)) pass(sec, 'GET /api/v1/orders/{orderId}');
-    else           warn(sec, 'GET /api/v1/orders/{orderId}', `status ${rGet.status}`);
+    const rGet = await req(`${S.commerce}/api/orders/${orderId}`, mgrOpts);
+    if (ok(rGet)) pass(sec, 'GET /api/orders/{orderId}');
+    else           warn(sec, 'GET /api/orders/{orderId}', `status ${rGet.status}`);
 
     const rGetNV = await req(`${S.commerce}/api/orders/${orderId}`, mgrOpts);
     if (ok(rGetNV)) pass(sec, 'GET /api/orders/{orderId}');
     else             warn(sec, 'GET /api/orders/{orderId}', `status ${rGetNV.status}`);
 
-    const rTrack = await req(`${S.commerce}/api/v1/orders/track/${orderId}`);
-    if (ok(rTrack)) pass(sec, 'GET /api/v1/orders/track/{orderId}');
-    else             warn(sec, 'GET /api/v1/orders/track/{orderId}', `status ${rTrack.status}`);
+    const rTrack = await req(`${S.commerce}/api/orders/track/${orderId}`);
+    if (ok(rTrack)) pass(sec, 'GET /api/orders/track/{orderId}');
+    else             warn(sec, 'GET /api/orders/track/{orderId}', `status ${rTrack.status}`);
 
     const rTrackNV = await req(`${S.commerce}/api/orders/track/${orderId}`);
     if (ok(rTrackNV)) pass(sec, 'GET /api/orders/track/{orderId}');
@@ -2127,9 +2137,9 @@ async function testOrders() {
   }
 
   if (orderNum) {
-    const rNum = await req(`${S.commerce}/api/v1/orders/number/${orderNum}`, mgrOpts);
-    if (ok(rNum)) pass(sec, 'GET /api/v1/orders/number/{orderNumber}');
-    else           warn(sec, 'GET /api/v1/orders/number/{orderNumber}', `status ${rNum.status}`);
+    const rNum = await req(`${S.commerce}/api/orders/number/${orderNum}`, mgrOpts);
+    if (ok(rNum)) pass(sec, 'GET /api/orders/number/{orderNumber}');
+    else           warn(sec, 'GET /api/orders/number/{orderNumber}', `status ${rNum.status}`);
 
     const rNumNV = await req(`${S.commerce}/api/orders/number/${orderNum}`, mgrOpts);
     if (ok(rNumNV)) pass(sec, 'GET /api/orders/number/{orderNumber}');
@@ -2137,27 +2147,27 @@ async function testOrders() {
   }
 
   const orderListEndpoints = [
-    ['GET /api/v1/orders/kitchen',          `${S.commerce}/api/v1/orders/kitchen`],
+    ['GET /api/orders/kitchen',          `${S.commerce}/api/orders/kitchen`],
     ['GET /api/orders/kitchen',             `${S.commerce}/api/orders/kitchen`],
-    ['GET /api/v1/orders/store',            `${S.commerce}/api/v1/orders/store`],
+    ['GET /api/orders/store',            `${S.commerce}/api/orders/store`],
     ['GET /api/orders/store',               `${S.commerce}/api/orders/store`],
-    ['GET /api/v1/orders/status/{status}',  `${S.commerce}/api/v1/orders/status/RECEIVED`],
+    ['GET /api/orders/status/{status}',  `${S.commerce}/api/orders/status/RECEIVED`],
     ['GET /api/orders/status/{status}',     `${S.commerce}/api/orders/status/RECEIVED`],
-    ['GET /api/v1/orders/search',           `${S.commerce}/api/v1/orders/search?query=test`],
+    ['GET /api/orders/search',           `${S.commerce}/api/orders/search?query=test`],
     ['GET /api/orders/search',              `${S.commerce}/api/orders/search?query=test`],
-    ['GET /api/v1/orders/date/{date}',      `${S.commerce}/api/v1/orders/date/${TODAY}`],
+    ['GET /api/orders/date/{date}',      `${S.commerce}/api/orders/date/${TODAY}`],
     ['GET /api/orders/date/{date}',         `${S.commerce}/api/orders/date/${TODAY}`],
-    ['GET /api/v1/orders/range',            `${S.commerce}/api/v1/orders/range?start=${WEEK_START}T00:00:00&end=${TODAY}T23:59:59`],
+    ['GET /api/orders/range',            `${S.commerce}/api/orders/range?start=${WEEK_START}T00:00:00&end=${TODAY}T23:59:59`],
     ['GET /api/orders/range',               `${S.commerce}/api/orders/range?start=${WEEK_START}T00:00:00&end=${TODAY}T23:59:59`],
-    ['GET /api/v1/orders/active-deliveries/count', `${S.commerce}/api/v1/orders/active-deliveries/count`],
+    ['GET /api/orders/active-deliveries/count', `${S.commerce}/api/orders/active-deliveries/count`],
     ['GET /api/orders/active-deliveries/count',    `${S.commerce}/api/orders/active-deliveries/count`],
-    ['GET /api/v1/orders/store/avg-prep-time',     `${S.commerce}/api/v1/orders/store/avg-prep-time?date=${TODAY}`],
+    ['GET /api/orders/store/avg-prep-time',     `${S.commerce}/api/orders/store/avg-prep-time?date=${TODAY}`],
     ['GET /api/orders/store/avg-prep-time',        `${S.commerce}/api/orders/store/avg-prep-time?date=${TODAY}`],
-    ['GET /api/v1/orders/store/failed-quality-checks', `${S.commerce}/api/v1/orders/store/failed-quality-checks`],
+    ['GET /api/orders/store/failed-quality-checks', `${S.commerce}/api/orders/store/failed-quality-checks`],
     ['GET /api/orders/store/failed-quality-checks',    `${S.commerce}/api/orders/store/failed-quality-checks`],
-    ['GET /api/v1/orders/store/analytics/prep-time-distribution', `${S.commerce}/api/v1/orders/store/analytics/prep-time-distribution?date=${TODAY}`],
+    ['GET /api/orders/store/analytics/prep-time-distribution', `${S.commerce}/api/orders/store/analytics/prep-time-distribution?date=${TODAY}`],
     ['GET /api/orders/store/analytics/prep-time-distribution',    `${S.commerce}/api/orders/store/analytics/prep-time-distribution?date=${TODAY}`],
-    ['GET /api/v1/orders/store/analytics/prep-time-by-item',      `${S.commerce}/api/v1/orders/store/analytics/prep-time-by-item?date=${TODAY}`],
+    ['GET /api/orders/store/analytics/prep-time-by-item',      `${S.commerce}/api/orders/store/analytics/prep-time-by-item?date=${TODAY}`],
     ['GET /api/orders/store/analytics/prep-time-by-item',         `${S.commerce}/api/orders/store/analytics/prep-time-by-item?date=${TODAY}`],
   ];
   for (const [label, url] of orderListEndpoints) {
@@ -2167,24 +2177,24 @@ async function testOrders() {
   }
 
   if (D.staffId) {
-    const rStaff = await req(`${S.commerce}/api/v1/orders/staff/${D.staffId}/date/${TODAY}`, mgrOpts);
-    if (ok(rStaff)) pass(sec, 'GET /api/v1/orders/staff/{staffId}/date/{date}');
-    else             warn(sec, 'GET /api/v1/orders/staff/{staffId}/date/{date}', `status ${rStaff.status}`);
+    const rStaff = await req(`${S.commerce}/api/orders/staff/${D.staffId}/date/${TODAY}`, mgrOpts);
+    if (ok(rStaff)) pass(sec, 'GET /api/orders/staff/{staffId}/date/{date}');
+    else             warn(sec, 'GET /api/orders/staff/{staffId}/date/{date}', `status ${rStaff.status}`);
 
     const rStaffNV = await req(`${S.commerce}/api/orders/staff/${D.staffId}/date/${TODAY}`, mgrOpts);
     if (ok(rStaffNV)) pass(sec, 'GET /api/orders/staff/{staffId}/date/{date}');
     else               warn(sec, 'GET /api/orders/staff/{staffId}/date/{date} (no-v1)', `status ${rStaffNV.status}`);
 
-    const rKPerfS = await req(`${S.commerce}/api/v1/orders/analytics/kitchen-staff/${D.staffId}/performance?date=${TODAY}`);
-    if (ok(rKPerfS)) pass(sec, 'GET /api/v1/orders/analytics/kitchen-staff/{staffId}/performance');
+    const rKPerfS = await req(`${S.commerce}/api/orders/analytics/kitchen-staff/${D.staffId}/performance?date=${TODAY}`);
+    if (ok(rKPerfS)) pass(sec, 'GET /api/orders/analytics/kitchen-staff/{staffId}/performance');
     else              warn(sec, 'GET v1 kitchen-staff performance', `status ${rKPerfS.status}`);
 
     const rKPerfSNV = await req(`${S.commerce}/api/orders/analytics/kitchen-staff/${D.staffId}/performance?date=${TODAY}`);
     if (ok(rKPerfSNV)) pass(sec, 'GET /api/orders/analytics/kitchen-staff/{staffId}/performance');
     else                warn(sec, 'GET kitchen-staff performance (no-v1)', `status ${rKPerfSNV.status}`);
 
-    const rPPerfS = await req(`${S.commerce}/api/v1/orders/analytics/pos-staff/${D.staffId}/performance?startDate=${WEEK_START}&endDate=${TODAY}`, mgrOpts);
-    if (ok(rPPerfS)) pass(sec, 'GET /api/v1/orders/analytics/pos-staff/{staffId}/performance');
+    const rPPerfS = await req(`${S.commerce}/api/orders/analytics/pos-staff/${D.staffId}/performance?startDate=${WEEK_START}&endDate=${TODAY}`, mgrOpts);
+    if (ok(rPPerfS)) pass(sec, 'GET /api/orders/analytics/pos-staff/{staffId}/performance');
     else              warn(sec, 'GET v1 pos-staff performance', `status ${rPPerfS.status}`);
 
     const rPPerfSNV = await req(`${S.commerce}/api/orders/analytics/pos-staff/${D.staffId}/performance?startDate=${WEEK_START}&endDate=${TODAY}`, mgrOpts);
@@ -2193,9 +2203,9 @@ async function testOrders() {
   }
 
   if (D.customerId) {
-    const rCust = await req(`${S.commerce}/api/v1/orders/customer/${D.customerId}`, { token: tok.customer });
-    if (ok(rCust)) pass(sec, 'GET /api/v1/orders/customer/{customerId}');
-    else            warn(sec, 'GET /api/v1/orders/customer/{customerId}', `status ${rCust.status}`);
+    const rCust = await req(`${S.commerce}/api/orders/customer/${D.customerId}`, { token: tok.customer });
+    if (ok(rCust)) pass(sec, 'GET /api/orders/customer/{customerId}');
+    else            warn(sec, 'GET /api/orders/customer/{customerId}', `status ${rCust.status}`);
 
     const rCustNV = await req(`${S.commerce}/api/orders/customer/${D.customerId}`, { token: tok.customer });
     if (ok(rCustNV)) pass(sec, 'GET /api/orders/customer/{customerId}');
@@ -2203,10 +2213,10 @@ async function testOrders() {
   }
 
   if (D.dineInOrderId) {
-    const rNext = await req(`${S.commerce}/api/v1/orders/${D.dineInOrderId}/next-stage`, {
+    const rNext = await req(`${S.commerce}/api/orders/${D.dineInOrderId}/next-stage`, {
       method: 'PATCH', ...mgrOpts,
     });
-    if (ok(rNext)) pass(sec, 'PATCH /api/v1/orders/{orderId}/next-stage');
+    if (ok(rNext)) pass(sec, 'PATCH /api/orders/{orderId}/next-stage');
     else            warn(sec, 'PATCH v1 next-stage', `status ${rNext.status}`);
 
     const rNextNV = await req(`${S.commerce}/api/orders/${D.dineInOrderId}/next-stage`, {
@@ -2215,10 +2225,10 @@ async function testOrders() {
     if (ok(rNextNV)) pass(sec, 'PATCH /api/orders/{orderId}/next-stage');
     else              warn(sec, 'PATCH next-stage (no-v1)', `status ${rNextNV.status}`);
 
-    const rPri = await req(`${S.commerce}/api/v1/orders/${D.dineInOrderId}/priority`, {
+    const rPri = await req(`${S.commerce}/api/orders/${D.dineInOrderId}/priority`, {
       method: 'PATCH', ...mgrOpts, body: { priority: 'URGENT' },
     });
-    if (ok(rPri)) pass(sec, 'PATCH /api/v1/orders/{orderId}/priority');
+    if (ok(rPri)) pass(sec, 'PATCH /api/orders/{orderId}/priority');
     else           warn(sec, 'PATCH v1 priority', `status ${rPri.status}`);
 
     const rPriNV = await req(`${S.commerce}/api/orders/${D.dineInOrderId}/priority`, {
@@ -2227,11 +2237,11 @@ async function testOrders() {
     if (ok(rPriNV)) pass(sec, 'PATCH /api/orders/{orderId}/priority');
     else             warn(sec, 'PATCH priority (no-v1)', `status ${rPriNV.status}`);
 
-    const rQCAdd = await req(`${S.commerce}/api/v1/orders/${D.dineInOrderId}/quality-checkpoint`, {
+    const rQCAdd = await req(`${S.commerce}/api/orders/${D.dineInOrderId}/quality-checkpoint`, {
       method: 'POST', ...mgrOpts,
       body: { type: 'FINAL_INSPECTION', status: 'PASSED', notes: 'All good', checkedByStaffId: D.staffId || 'test' },
     });
-    if (ok(rQCAdd)) pass(sec, 'POST /api/v1/orders/{orderId}/quality-checkpoint');
+    if (ok(rQCAdd)) pass(sec, 'POST /api/orders/{orderId}/quality-checkpoint');
     else             warn(sec, 'POST v1 quality-checkpoint', `status ${rQCAdd.status}`);
 
     const rQCAddNV = await req(`${S.commerce}/api/orders/${D.dineInOrderId}/quality-checkpoint`, {
@@ -2241,18 +2251,18 @@ async function testOrders() {
     if (ok(rQCAddNV)) pass(sec, 'POST /api/orders/{orderId}/quality-checkpoint');
     else               warn(sec, 'POST quality-checkpoint (no-v1)', `status ${rQCAddNV.status}`);
 
-    const rQCGet = await req(`${S.commerce}/api/v1/orders/${D.dineInOrderId}/quality-checkpoints`, mgrOpts);
-    if (ok(rQCGet)) pass(sec, 'GET /api/v1/orders/{orderId}/quality-checkpoints');
+    const rQCGet = await req(`${S.commerce}/api/orders/${D.dineInOrderId}/quality-checkpoints`, mgrOpts);
+    if (ok(rQCGet)) pass(sec, 'GET /api/orders/{orderId}/quality-checkpoints');
     else             warn(sec, 'GET v1 quality-checkpoints', `status ${rQCGet.status}`);
 
     const rQCGetNV = await req(`${S.commerce}/api/orders/${D.dineInOrderId}/quality-checkpoints`, mgrOpts);
     if (ok(rQCGetNV)) pass(sec, 'GET /api/orders/{orderId}/quality-checkpoints');
     else               warn(sec, 'GET quality-checkpoints (no-v1)', `status ${rQCGetNV.status}`);
 
-    const rQCPatch = await req(`${S.commerce}/api/v1/orders/${D.dineInOrderId}/quality-checkpoint/FINAL_INSPECTION`, {
+    const rQCPatch = await req(`${S.commerce}/api/orders/${D.dineInOrderId}/quality-checkpoint/FINAL_INSPECTION`, {
       method: 'PATCH', ...mgrOpts, body: { status: 'PASSED', notes: 'Updated' },
     });
-    if (ok(rQCPatch)) pass(sec, 'PATCH /api/v1/orders/{orderId}/quality-checkpoint/{checkpointName}');
+    if (ok(rQCPatch)) pass(sec, 'PATCH /api/orders/{orderId}/quality-checkpoint/{checkpointName}');
     else               warn(sec, 'PATCH v1 quality-checkpoint/{name}', `status ${rQCPatch.status}`);
 
     const rQCPatchNV = await req(`${S.commerce}/api/orders/${D.dineInOrderId}/quality-checkpoint/PACKAGING`, {
@@ -2261,11 +2271,11 @@ async function testOrders() {
     if (ok(rQCPatchNV)) pass(sec, 'PATCH /api/orders/{orderId}/quality-checkpoint/{checkpointName}');
     else                 warn(sec, 'PATCH quality-checkpoint/{name} (no-v1)', `status ${rQCPatchNV.status}`);
 
-    const rMT = await req(`${S.commerce}/api/v1/orders/${D.dineInOrderId}/assign-make-table`, {
+    const rMT = await req(`${S.commerce}/api/orders/${D.dineInOrderId}/assign-make-table`, {
       method: 'PATCH', ...mgrOpts,
       body: { station: 'STATION_1', staffId: D.staffId || 'test', staffName: 'Test Staff' },
     });
-    if (ok(rMT)) pass(sec, 'PATCH /api/v1/orders/{orderId}/assign-make-table');
+    if (ok(rMT)) pass(sec, 'PATCH /api/orders/{orderId}/assign-make-table');
     else          warn(sec, 'PATCH v1 assign-make-table', `status ${rMT.status}`);
 
     const rMTNV = await req(`${S.commerce}/api/orders/${D.dineInOrderId}/assign-make-table`, {
@@ -2275,8 +2285,8 @@ async function testOrders() {
     if (ok(rMTNV)) pass(sec, 'PATCH /api/orders/{orderId}/assign-make-table');
     else            warn(sec, 'PATCH assign-make-table (no-v1)', `status ${rMTNV.status}`);
 
-    const rMTGet = await req(`${S.commerce}/api/v1/orders/store/make-table/STATION_1`, mgrOpts);
-    if (ok(rMTGet)) pass(sec, 'GET /api/v1/orders/store/make-table/{station}');
+    const rMTGet = await req(`${S.commerce}/api/orders/store/make-table/STATION_1`, mgrOpts);
+    if (ok(rMTGet)) pass(sec, 'GET /api/orders/store/make-table/{station}');
     else             warn(sec, 'GET v1 make-table/{station}', `status ${rMTGet.status}`);
 
     const rMTGetNV = await req(`${S.commerce}/api/orders/store/make-table/STATION_1`, mgrOpts);
@@ -2285,10 +2295,10 @@ async function testOrders() {
   }
 
   if (D.deliveryOrderId && D.driverId) {
-    const rAD = await req(`${S.commerce}/api/v1/orders/${D.deliveryOrderId}/assign-driver`, {
+    const rAD = await req(`${S.commerce}/api/orders/${D.deliveryOrderId}/assign-driver`, {
       method: 'PATCH', ...mgrOpts, body: { driverId: D.driverId },
     });
-    if (ok(rAD)) pass(sec, 'PATCH /api/v1/orders/{orderId}/assign-driver');
+    if (ok(rAD)) pass(sec, 'PATCH /api/orders/{orderId}/assign-driver');
     else          warn(sec, 'PATCH v1 assign-driver', `status ${rAD.status}`);
 
     const rADNV = await req(`${S.commerce}/api/orders/${D.deliveryOrderId}/assign-driver`, {
@@ -2313,11 +2323,11 @@ async function testOrders() {
 
   const orderId2 = D.takeawayOrderId || D.dineInOrderId;
   if (orderId2) {
-    const rStatus = await req(`${S.commerce}/api/v1/orders/${orderId2}/status`, {
+    const rStatus = await req(`${S.commerce}/api/orders/${orderId2}/status`, {
       method: 'PATCH', ...mgrOpts,
       body: { status: 'PREPARING', notes: 'API test status update' },
     });
-    if (ok(rStatus)) pass(sec, 'PATCH /api/v1/orders/{orderId}/status');
+    if (ok(rStatus)) pass(sec, 'PATCH /api/orders/{orderId}/status');
     else              warn(sec, 'PATCH v1 /orders/{orderId}/status', `status ${rStatus.status}`);
 
     const rStatusNV = await req(`${S.commerce}/api/orders/${orderId2}/status`, {
@@ -2327,11 +2337,11 @@ async function testOrders() {
     if (ok(rStatusNV)) pass(sec, 'PATCH /api/orders/{orderId}/status');
     else                warn(sec, 'PATCH /orders/{orderId}/status (no-v1)', `status ${rStatusNV.status}`);
 
-    const rItemsPatch = await req(`${S.commerce}/api/v1/orders/${orderId2}/items`, {
+    const rItemsPatch = await req(`${S.commerce}/api/orders/${orderId2}/items`, {
       method: 'PATCH', ...mgrOpts,
       body: { items: [{ menuItemId: D.menuItemId, name: 'Test Item', quantity: 3, price: 99.0 }] },
     });
-    if (ok(rItemsPatch)) pass(sec, 'PATCH /api/v1/orders/{orderId}/items');
+    if (ok(rItemsPatch)) pass(sec, 'PATCH /api/orders/{orderId}/items');
     else                  warn(sec, 'PATCH v1 /orders/{orderId}/items', `status ${rItemsPatch.status}`);
 
     const rItemsPatchNV = await req(`${S.commerce}/api/orders/${orderId2}/items`, {
@@ -2341,11 +2351,11 @@ async function testOrders() {
     if (ok(rItemsPatchNV)) pass(sec, 'PATCH /api/orders/{orderId}/items');
     else                    warn(sec, 'PATCH /orders/{orderId}/items (no-v1)', `status ${rItemsPatchNV.status}`);
 
-    const rPayment = await req(`${S.commerce}/api/v1/orders/${orderId2}/payment`, {
+    const rPayment = await req(`${S.commerce}/api/orders/${orderId2}/payment`, {
       method: 'PATCH', ...mgrOpts,
       body: { status: 'PAID', transactionId: D.cashPaymentId || 'test-txn' },
     });
-    if (ok(rPayment)) pass(sec, 'PATCH /api/v1/orders/{orderId}/payment');
+    if (ok(rPayment)) pass(sec, 'PATCH /api/orders/{orderId}/payment');
     else               warn(sec, 'PATCH v1 /orders/{orderId}/payment', `status ${rPayment.status}`);
 
     const rPaymentNV = await req(`${S.commerce}/api/orders/${orderId2}/payment`, {
@@ -2359,10 +2369,10 @@ async function testOrders() {
   // Cancel / delete orders
   const orderToDelete = D.dineInOrderId || D.noV1OrderId;
   if (orderToDelete) {
-    const rCancel = await req(`${S.commerce}/api/v1/orders/${orderToDelete}`, {
+    const rCancel = await req(`${S.commerce}/api/orders/${orderToDelete}`, {
       method: 'DELETE', ...mgrOpts,
     });
-    if (ok(rCancel)) pass(sec, 'DELETE /api/v1/orders/{orderId}');
+    if (ok(rCancel)) pass(sec, 'DELETE /api/orders/{orderId}');
     else              warn(sec, 'DELETE v1 /orders/{orderId}', `status ${rCancel.status}`);
 
     const rCancelNV = await req(`${S.commerce}/api/orders/${orderToDelete}`, {
@@ -2398,7 +2408,7 @@ async function testReviews() {
   } else warn(sec, 'POST /api/reviews', `status ${rCreate.status}`);
 
   const rPubSub = await req(`${S.core}/api/reviews/public/submit?token=fake-rating-token`, {
-    method: 'POST', body: { orderId: 'test', overallRating: 5, comment: 'Public submit test' },
+    method: 'POST', body: { orderId: 'test', rating: 5, comment: 'Public submit test' },
   });
   if (ok(rPubSub) || rPubSub.status === 404 || rPubSub.status === 400 || rPubSub.status === 401)
     pass(sec, 'POST /api/reviews/public/submit — handled');
@@ -2418,7 +2428,7 @@ async function testReviews() {
     ['GET /api/reviews/rating',         `${S.core}/api/reviews/rating`],
   ];
   for (const [label, url] of reviewListEndpoints) {
-    const r = await req(url, { token: tok.manager, storeCode: A.manager.storeCode, headers: { 'X-User-ID': D.managerId || 'test' } });
+    const r = await req(url, { token: tok.manager, storeCode: A.manager.storeCode });
     if (ok(r)) pass(sec, label);
     else        warn(sec, label, `status ${r.status}`);
   }
@@ -2579,14 +2589,14 @@ async function testPayments() {
   const orderId = D.dineInOrderId || D.takeawayOrderId;
 
   if (orderId && cpid && D.storeId001) {
-    const rCash = await req(`${S.payment}/api/v1/payments/cash`, {
+    const rCash = await req(`${S.payment}/api/payments/cash`, {
       method: 'POST', ...mgrOpts,
       body: { orderId, amount: 198.0, customerId: cpid, storeId: D.storeId001, paymentMethod: 'CASH' },
     });
     if (ok(rCash)) {
       D.cashPaymentId = id(rCash.body);
-      pass(sec, 'POST /api/v1/payments/cash', D.cashPaymentId);
-    } else warn(sec, 'POST /api/v1/payments/cash', `status ${rCash.status}`);
+      pass(sec, 'POST /api/payments/cash', D.cashPaymentId);
+    } else warn(sec, 'POST /api/payments/cash', `status ${rCash.status}`);
 
     // Also hit non-v1 path
     const rCashNV = await req(`${S.payment}/api/payments/cash`, {
@@ -2595,10 +2605,10 @@ async function testPayments() {
     });
     if (ok(rCashNV) || rCashNV.status === 409) pass(sec, 'POST /api/payments/cash');
     else warn(sec, 'POST /api/payments/cash (no-v1)', `status ${rCashNV.status}`);
-  } else warn(sec, 'POST /api/v1/payments/cash', 'skipped — missing orderId, customerId, or storeId');
+  } else warn(sec, 'POST /api/payments/cash', 'skipped — missing orderId, customerId, or storeId');
 
   if (orderId && cpid && D.storeId001) {
-    const rInit = await req(`${S.payment}/api/v1/payments/initiate`, {
+    const rInit = await req(`${S.payment}/api/payments/initiate`, {
       method: 'POST', ...mgrOpts,
       body: {
         orderId: D.takeawayOrderId || orderId,
@@ -2608,8 +2618,8 @@ async function testPayments() {
     });
     if (ok(rInit)) {
       D.paymentId = id(rInit.body);
-      pass(sec, 'POST /api/v1/payments/initiate', D.paymentId);
-    } else warn(sec, 'POST /api/v1/payments/initiate', `status ${rInit.status}`);
+      pass(sec, 'POST /api/payments/initiate', D.paymentId);
+    } else warn(sec, 'POST /api/payments/initiate', `status ${rInit.status}`);
 
     const rInitNV = await req(`${S.payment}/api/payments/initiate`, {
       method: 'POST', ...mgrOpts,
@@ -2621,15 +2631,15 @@ async function testPayments() {
     });
     if (ok(rInitNV) || rInitNV.status === 409) pass(sec, 'POST /api/payments/initiate');
     else warn(sec, 'POST /api/payments/initiate (no-v1)', `status ${rInitNV.status}`);
-  } else warn(sec, 'POST /api/v1/payments/initiate', 'skipped');
+  } else warn(sec, 'POST /api/payments/initiate', 'skipped');
 
-  const rVerify = await req(`${S.payment}/api/v1/payments/verify`, {
+  const rVerify = await req(`${S.payment}/api/payments/verify`, {
     method: 'POST', ...mgrOpts,
     body: { razorpayPaymentId: 'fake_pay_id', razorpayOrderId: 'fake_order_id', razorpaySignature: 'fake_sig' },
   });
   if (rVerify.status === 400 || rVerify.status === 422)
-    pass(sec, 'POST /api/v1/payments/verify — rejects fake signature');
-  else warn(sec, 'POST /api/v1/payments/verify', `status ${rVerify.status}`);
+    pass(sec, 'POST /api/payments/verify — rejects fake signature');
+  else warn(sec, 'POST /api/payments/verify', `status ${rVerify.status}`);
 
   const rVerifyNV = await req(`${S.payment}/api/payments/verify`, {
     method: 'POST', ...mgrOpts,
@@ -2649,10 +2659,8 @@ async function testPayments() {
   else warn(sec, 'POST /api/payments/webhook', `status ${rWebhook.status}`);
 
   const payListEndpoints = [
-    ['GET /api/v1/payments/store',          `${S.payment}/api/v1/payments/store`],
-    ['GET /api/payments/store',             `${S.payment}/api/payments/store`],
-    ['GET /api/v1/payments/reconciliation', `${S.payment}/api/v1/payments/reconciliation?date=${TODAY}`],
-    ['GET /api/payments/reconciliation',    `${S.payment}/api/payments/reconciliation?date=${TODAY}`],
+    ['GET /api/payments (store default)',         `${S.payment}/api/payments`],
+    ['GET /api/payments?reconciliation=true&date=', `${S.payment}/api/payments?reconciliation=true&date=${TODAY}`],
   ];
   for (const [label, url] of payListEndpoints) {
     const r = await req(url, mgrOpts);
@@ -2661,18 +2669,18 @@ async function testPayments() {
   }
 
   if (D.cashPaymentId) {
-    const rGetP = await req(`${S.payment}/api/v1/payments/${D.cashPaymentId}`, mgrOpts);
-    if (ok(rGetP)) pass(sec, 'GET /api/v1/payments/{transactionId}');
-    else            warn(sec, 'GET /api/v1/payments/{transactionId}', `status ${rGetP.status}`);
+    const rGetP = await req(`${S.payment}/api/payments/${D.cashPaymentId}`, mgrOpts);
+    if (ok(rGetP)) pass(sec, 'GET /api/payments/{transactionId}');
+    else            warn(sec, 'GET /api/payments/{transactionId}', `status ${rGetP.status}`);
 
     const rGetPNV = await req(`${S.payment}/api/payments/${D.cashPaymentId}`, mgrOpts);
     if (ok(rGetPNV)) pass(sec, 'GET /api/payments/{transactionId}');
     else              warn(sec, 'GET /api/payments/{transactionId} (no-v1)', `status ${rGetPNV.status}`);
 
-    const rRecon = await req(`${S.payment}/api/v1/payments/${D.cashPaymentId}/reconcile?reconciledBy=${D.managerId}`, {
+    const rRecon = await req(`${S.payment}/api/payments/${D.cashPaymentId}/reconcile?reconciledBy=${D.managerId}`, {
       method: 'POST', ...mgrOpts,
     });
-    if (ok(rRecon)) pass(sec, 'POST /api/v1/payments/{transactionId}/reconcile');
+    if (ok(rRecon)) pass(sec, 'POST /api/payments/{transactionId}/reconcile');
     else             warn(sec, 'POST v1 reconcile', `status ${rRecon.status}`);
 
     const rReconNV = await req(`${S.payment}/api/payments/${D.cashPaymentId}/reconcile?reconciledBy=${D.managerId}`, {
@@ -2696,8 +2704,8 @@ async function testPayments() {
     if (ok(rGetRef)) pass(sec, 'GET /api/payments/refund/{refundId}');
     else              warn(sec, 'GET /api/payments/refund/{refundId}', `status ${rGetRef.status}`);
 
-    const rRefByTx = await req(`${S.payment}/api/payments/refund/transaction/${D.cashPaymentId || 'test-txn'}`, mgrOpts);
-    if (ok(rRefByTx)) pass(sec, 'GET /api/payments/refund/transaction/{transactionId}');
+    const rRefByTx = await req(`${S.payment}/api/payments/refund?transactionId=${D.cashPaymentId || 'test-txn'}`, mgrOpts);
+    if (ok(rRefByTx)) pass(sec, 'GET /api/payments/refund?transactionId=');
     else               warn(sec, 'GET refund by transaction', `status ${rRefByTx.status}`);
   }
 
@@ -2707,30 +2715,30 @@ async function testPayments() {
     : mgrOpts;
 
   if (orderId) {
-    const rPayByOrder = await req(`${S.payment}/api/v1/payments/order/${orderId}`, payMgrOpts);
-    if (ok(rPayByOrder)) pass(sec, 'GET /api/v1/payments/order/{orderId}');
+    const rPayByOrder = await req(`${S.payment}/api/payments?orderId=${orderId}`, payMgrOpts);
+    if (ok(rPayByOrder)) pass(sec, 'GET /api/payments?orderId=');
     else                  warn(sec, 'GET v1 payments by order', `status ${rPayByOrder.status}`);
 
-    const rPayByOrderNV = await req(`${S.payment}/api/payments/order/${orderId}`, payMgrOpts);
-    if (ok(rPayByOrderNV)) pass(sec, 'GET /api/payments/order/{orderId}');
+    const rPayByOrderNV = await req(`${S.payment}/api/payments?orderId=${orderId}`, payMgrOpts);
+    if (ok(rPayByOrderNV)) pass(sec, 'GET /api/payments?orderId= (no-vendor)');
     else                    warn(sec, 'GET payments by order (no-v1)', `status ${rPayByOrderNV.status}`);
 
-    const rRefByOrder = await req(`${S.payment}/api/payments/refund/order/${orderId}`, mgrOpts);
-    if (ok(rRefByOrder)) pass(sec, 'GET /api/payments/refund/order/{orderId}');
+    const rRefByOrder = await req(`${S.payment}/api/payments/refund?orderId=${orderId}`, mgrOpts);
+    if (ok(rRefByOrder)) pass(sec, 'GET /api/payments/refund?orderId=');
     else                  warn(sec, 'GET refund by order', `status ${rRefByOrder.status}`);
   }
 
   if (cpid) {
-    const rPayByCust = await req(`${S.payment}/api/v1/payments/customer/${cpid}`, mgrOpts);
-    if (ok(rPayByCust)) pass(sec, 'GET /api/v1/payments/customer/{customerId}');
+    const rPayByCust = await req(`${S.payment}/api/payments?customerId=${cpid}`, mgrOpts);
+    if (ok(rPayByCust)) pass(sec, 'GET /api/payments?customerId=');
     else                 warn(sec, 'GET v1 payments by customer', `status ${rPayByCust.status}`);
 
-    const rPayByCustNV = await req(`${S.payment}/api/payments/customer/${cpid}`, mgrOpts);
-    if (ok(rPayByCustNV)) pass(sec, 'GET /api/payments/customer/{customerId}');
+    const rPayByCustNV = await req(`${S.payment}/api/payments?customerId=${cpid}`, mgrOpts);
+    if (ok(rPayByCustNV)) pass(sec, 'GET /api/payments?customerId= (no-vendor)');
     else                   warn(sec, 'GET payments by customer (no-v1)', `status ${rPayByCustNV.status}`);
 
-    const rRefByCust = await req(`${S.payment}/api/payments/refund/customer/${cpid}`, mgrOpts);
-    if (ok(rRefByCust)) pass(sec, 'GET /api/payments/refund/customer/{customerId}');
+    const rRefByCust = await req(`${S.payment}/api/payments/refund?customerId=${cpid}`, mgrOpts);
+    if (ok(rRefByCust)) pass(sec, 'GET /api/payments/refund?customerId=');
     else                 warn(sec, 'GET refund by customer', `status ${rRefByCust.status}`);
   }
 }
@@ -2941,10 +2949,10 @@ async function testDelivery() {
 
     // Commerce-service delivery confirmation endpoints (need DISPATCHED order)
     const comMgrOpts = { token: tok.manager, storeCode: A.manager2.storeCode };
-    const rDelOtp = await req(`${S.commerce}/api/v1/orders/${D.deliveryOrderId}/delivery-otp`, {
+    const rDelOtp = await req(`${S.commerce}/api/orders/${D.deliveryOrderId}/delivery-otp`, {
       method: 'PUT', ...comMgrOpts, body: { otp: '1234' },
     });
-    if (ok(rDelOtp)) pass(sec, 'PUT /api/v1/orders/{orderId}/delivery-otp');
+    if (ok(rDelOtp)) pass(sec, 'PUT /api/orders/{orderId}/delivery-otp');
     else              warn(sec, 'PUT v1 delivery-otp', `status ${rDelOtp.status}`);
 
     const rDelOtpNV = await req(`${S.commerce}/api/orders/${D.deliveryOrderId}/delivery-otp`, {
@@ -2953,10 +2961,10 @@ async function testDelivery() {
     if (ok(rDelOtpNV)) pass(sec, 'PUT /api/orders/{orderId}/delivery-otp');
     else                warn(sec, 'PUT delivery-otp (no-v1)', `status ${rDelOtpNV.status}`);
 
-    const rDelProof = await req(`${S.commerce}/api/v1/orders/${D.deliveryOrderId}/delivery-proof`, {
+    const rDelProof = await req(`${S.commerce}/api/orders/${D.deliveryOrderId}/delivery-proof`, {
       method: 'PUT', ...comMgrOpts, body: { proofPhotoUrl: 'https://test.com/proof.jpg' },
     });
-    if (ok(rDelProof)) pass(sec, 'PUT /api/v1/orders/{orderId}/delivery-proof');
+    if (ok(rDelProof)) pass(sec, 'PUT /api/orders/{orderId}/delivery-proof');
     else                warn(sec, 'PUT v1 delivery-proof', `status ${rDelProof.status}`);
 
     const rDelProofNV = await req(`${S.commerce}/api/orders/${D.deliveryOrderId}/delivery-proof`, {
@@ -2965,15 +2973,14 @@ async function testDelivery() {
     if (ok(rDelProofNV)) pass(sec, 'PUT /api/orders/{orderId}/delivery-proof');
     else                  warn(sec, 'PUT delivery-proof (no-v1)', `status ${rDelProofNV.status}`);
 
-    const markDeliveredBody = { deliveredAt: new Date().toISOString().slice(0,19), proofType: 'SIGNATURE' };
-    const rMarkDel = await req(`${S.commerce}/api/v1/orders/${D.deliveryOrderId}/mark-delivered`, {
-      method: 'PUT', ...comMgrOpts, body: markDeliveredBody,
+    const rMarkDel = await req(`${S.commerce}/api/orders/${D.deliveryOrderId}/mark-delivered`, {
+      method: 'PUT', ...comMgrOpts,
     });
-    if (ok(rMarkDel)) pass(sec, 'PUT /api/v1/orders/{orderId}/mark-delivered');
+    if (ok(rMarkDel)) pass(sec, 'PUT /api/orders/{orderId}/mark-delivered');
     else               warn(sec, 'PUT v1 mark-delivered', `status ${rMarkDel.status}`);
 
     const rMarkDelNV = await req(`${S.commerce}/api/orders/${D.deliveryOrderId}/mark-delivered`, {
-      method: 'PUT', ...comMgrOpts, body: markDeliveredBody,
+      method: 'PUT', ...comMgrOpts,
     });
     if (ok(rMarkDelNV)) pass(sec, 'PUT /api/orders/{orderId}/mark-delivered');
     else                 warn(sec, 'PUT mark-delivered (no-v1)', `status ${rMarkDelNV.status}`);
@@ -3000,27 +3007,24 @@ async function testAnalytics() {
   section('ANALYTICS & BI');
   const sec = 'analytics';
 
-  const rHealth = await req(`${S.intel}/api/analytics/health`, { token: tok.manager });
-  if (ok(rHealth)) pass(sec, 'GET /api/analytics/health');
-  else              fail(sec, 'GET /api/analytics/health', `intelligence-service unreachable — status ${rHealth.status}`);
-
-  const rBIHealth = await req(`${S.intel}/api/bi/health`, { token: tok.manager });
-  if (ok(rBIHealth)) pass(sec, 'GET /api/bi/health');
-  else                warn(sec, 'GET /api/bi/health', `status ${rBIHealth.status}`);
+  // Phase 1: intelligence-service uses /api/analytics?type= and /api/bi?type= (no sub-paths)
+  const rHealth = await req(`${S.intel}/api/analytics?type=sales`, { token: tok.manager });
+  if (ok(rHealth)) pass(sec, 'GET /api/analytics — intelligence-service reachable');
+  else              fail(sec, 'GET /api/analytics', `intelligence-service unreachable — status ${rHealth.status}`);
 
   if (!tok.manager) { warn(sec, 'Analytics endpoints skipped', 'no manager token'); return; }
 
   const mgrOpts = { token: tok.manager, storeCode: A.manager2.storeCode };
 
   const analyticsEndpoints = [
-    ['GET /api/analytics/sales/today',                `${S.intel}/api/analytics/sales/today`],
-    ['GET /api/analytics/avgOrderValue/today',        `${S.intel}/api/analytics/avgOrderValue/today`],
-    ['GET /api/analytics/drivers/status',             `${S.intel}/api/analytics/drivers/status`],
-    ['GET /api/analytics/sales/trends/{period}',      `${S.intel}/api/analytics/sales/trends/WEEKLY`],
-    ['GET /api/analytics/sales/breakdown/order-type', `${S.intel}/api/analytics/sales/breakdown/order-type`],
-    ['GET /api/analytics/sales/peak-hours',           `${S.intel}/api/analytics/sales/peak-hours`],
-    ['GET /api/analytics/staff/leaderboard',          `${S.intel}/api/analytics/staff/leaderboard`],
-    ['GET /api/analytics/products/top-selling',       `${S.intel}/api/analytics/products/top-selling`],
+    ['GET /api/analytics?type=sales',           `${S.intel}/api/analytics?type=sales`],
+    ['GET /api/analytics?type=aov',             `${S.intel}/api/analytics?type=aov`],
+    ['GET /api/analytics?type=drivers',         `${S.intel}/api/analytics?type=drivers`],
+    ['GET /api/analytics?type=sales-trends',    `${S.intel}/api/analytics?type=sales-trends&period=WEEKLY`],
+    ['GET /api/analytics?type=order-breakdown', `${S.intel}/api/analytics?type=order-breakdown`],
+    ['GET /api/analytics?type=peak-hours',      `${S.intel}/api/analytics?type=peak-hours`],
+    ['GET /api/analytics?type=staff-leaderboard', `${S.intel}/api/analytics?type=staff-leaderboard&period=TODAY`],
+    ['GET /api/analytics?type=top-products',    `${S.intel}/api/analytics?type=top-products&period=TODAY`],
   ];
   for (const [label, url] of analyticsEndpoints) {
     const r = await req(url, mgrOpts);
@@ -3028,15 +3032,10 @@ async function testAnalytics() {
     else        warn(sec, label, `status ${r.status}`);
   }
 
-  // Also hit MONTHLY trend
-  const rMonthly = await req(`${S.intel}/api/analytics/sales/trends/MONTHLY`, mgrOpts);
-  if (ok(rMonthly)) pass(sec, 'GET /api/analytics/sales/trends/{period} (MONTHLY)');
-  else               warn(sec, 'GET /api/analytics/sales/trends/MONTHLY', `status ${rMonthly.status}`);
-
   if (D.staffId) {
-    const rSP = await req(`${S.intel}/api/analytics/staff/${D.staffId}/performance/today`, mgrOpts);
-    if (ok(rSP)) pass(sec, 'GET /api/analytics/staff/{staffId}/performance/today');
-    else          warn(sec, 'GET /api/analytics/staff/{staffId}/performance/today', `status ${rSP.status}`);
+    const rSP = await req(`${S.intel}/api/analytics?type=staff-performance&staffId=${D.staffId}`, mgrOpts);
+    if (ok(rSP)) pass(sec, 'GET /api/analytics?type=staff-performance');
+    else          warn(sec, 'GET /api/analytics?type=staff-performance', `status ${rSP.status}`);
   }
 
   const rCC = await req(`${S.intel}/api/analytics/cache/clear`, { method: 'POST', ...mgrOpts });
@@ -3044,89 +3043,18 @@ async function testAnalytics() {
   else          warn(sec, 'POST /api/analytics/cache/clear', `status ${rCC.status}`);
 
   const biEndpoints = [
-    ['GET /api/bi/forecast/sales',             `${S.intel}/api/bi/forecast/sales`],
-    ['GET /api/bi/analysis/customer-behavior', `${S.intel}/api/bi/analysis/customer-behavior`],
-    ['GET /api/bi/prediction/churn',           `${S.intel}/api/bi/prediction/churn`],
-    ['GET /api/bi/forecast/demand',            `${S.intel}/api/bi/forecast/demand`],
-    ['GET /api/bi/cost-analysis',              `${S.intel}/api/bi/cost-analysis`],
-    ['GET /api/bi/benchmarking/stores',        `${S.intel}/api/bi/benchmarking/stores`],
-    ['GET /api/bi/executive-summary',          `${S.intel}/api/bi/executive-summary`],
+    ['GET /api/bi?type=sales-forecast',     `${S.intel}/api/bi?type=sales-forecast`],
+    ['GET /api/bi?type=demand-forecast',    `${S.intel}/api/bi?type=demand-forecast`],
+    ['GET /api/bi?type=customer-behavior',  `${S.intel}/api/bi?type=customer-behavior`],
+    ['GET /api/bi?type=churn',              `${S.intel}/api/bi?type=churn`],
+    ['GET /api/bi?type=cost-analysis',      `${S.intel}/api/bi?type=cost-analysis`],
+    ['GET /api/bi/reports?type=benchmarking',      `${S.intel}/api/bi/reports?type=benchmarking`],
+    ['GET /api/bi/reports?type=executive-summary', `${S.intel}/api/bi/reports?type=executive-summary`],
   ];
   for (const [label, url] of biEndpoints) {
     const r = await req(url, mgrOpts);
     if (ok(r)) pass(sec, label);
     else        warn(sec, label, `status ${r.status}`);
-  }
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// 19. STAFF EARNINGS & TIPS  (added: Phase 3 commit batch, 2026-04-05)
-// ══════════════════════════════════════════════════════════════════════════════
-async function testEarningsAndTips() {
-  section('STAFF EARNINGS & TIPS');
-  const sec = 'earnings';
-  const mgrOpts = { token: tok.manager, userId: D.managerId };
-
-  // Need a staff user ID — use first STAFF user from earlier test data
-  const staffId = D.staffId || D.newUserId;
-  if (!staffId) {
-    warn(sec, 'Earnings/Tips tests skipped', 'no staffUserId in D — run testUsers first');
-    return;
-  }
-
-  // POST /api/staff/pay-rates — set a pay rate for this staff member
-  const rSetRate = await req(`${S.core}/api/staff/pay-rates`, {
-    ...mgrOpts,
-    method: 'POST',
-    body: { employeeId: staffId, storeId: D.storeId001 || 'store-001', hourlyRateInr: 120, effectiveFrom: '2026-04-01' },
-  });
-  if (ok(rSetRate)) pass(sec, 'POST /api/staff/pay-rates');
-  else              warn(sec, 'POST /api/staff/pay-rates', `status ${rSetRate.status}`);
-
-  // GET /api/staff/pay-rates?employeeId=...
-  const rGetRate = await req(`${S.core}/api/staff/pay-rates?employeeId=${staffId}`, mgrOpts);
-  if (ok(rGetRate)) pass(sec, 'GET /api/staff/pay-rates');
-  else              warn(sec, 'GET /api/staff/pay-rates', `status ${rGetRate.status}`);
-
-  // GET /api/staff/earnings/weekly?employeeId=...
-  const rWeekly = await req(`${S.core}/api/staff/earnings/weekly?employeeId=${staffId}`, mgrOpts);
-  if (ok(rWeekly)) {
-    pass(sec, 'GET /api/staff/earnings/weekly');
-    const body = rWeekly.body;
-    if (body && typeof body.hoursWorked !== 'undefined') pass(sec, 'GET /api/staff/earnings/weekly — shape ok (hoursWorked present)');
-    else warn(sec, 'GET /api/staff/earnings/weekly — shape', 'hoursWorked field missing');
-  } else warn(sec, 'GET /api/staff/earnings/weekly', `status ${rWeekly.status}`);
-
-  // GET /api/staff/earnings/history?employeeId=...
-  const rHistory = await req(`${S.core}/api/staff/earnings/history?employeeId=${staffId}`, mgrOpts);
-  if (ok(rHistory)) pass(sec, 'GET /api/staff/earnings/history');
-  else              warn(sec, 'GET /api/staff/earnings/history', `status ${rHistory.status}`);
-
-  // GET /api/staff/tips/pending?employeeId=... (commerce)
-  const rTipsPending = await req(`${S.commerce}/api/staff/tips/pending?employeeId=${staffId}`, mgrOpts);
-  if (ok(rTipsPending)) pass(sec, 'GET /api/staff/tips/pending');
-  else                  warn(sec, 'GET /api/staff/tips/pending', `status ${rTipsPending.status}`);
-
-  // POST /api/orders/{orderId}/tip — only if we have a dine-in order from testOrders
-  if (D.dineInOrderId) {
-    const rTip = await req(`${S.commerce}/api/orders/${D.dineInOrderId}/tip`, {
-      ...mgrOpts,
-      method: 'POST',
-      body: { amountInr: 50, recipientStaffId: staffId },
-    });
-    if (ok(rTip)) pass(sec, 'POST /api/orders/{orderId}/tip (direct tip)');
-    else          warn(sec, 'POST /api/orders/{orderId}/tip', `status ${rTip.status}`);
-
-    // POST pool tip (no recipientStaffId)
-    const rPoolTip = await req(`${S.commerce}/api/orders/${D.dineInOrderId}/tip`, {
-      ...mgrOpts,
-      method: 'POST',
-      body: { amountInr: 25 },
-    });
-    if (ok(rPoolTip)) pass(sec, 'POST /api/orders/{orderId}/tip (pool tip, no recipient)');
-    else              warn(sec, 'POST /api/orders/{orderId}/tip (pool)', `status ${rPoolTip.status}`);
-  } else {
-    warn(sec, 'POST /api/orders/{orderId}/tip', 'skipped — no dineInOrderId from testOrders');
   }
 }
 
@@ -3223,7 +3151,6 @@ function printCoverageReport() {
   await testPayments();
   await testDelivery();
   await testAnalytics();
-  await testEarningsAndTips();
 
   printSummary();
   printCoverageReport();

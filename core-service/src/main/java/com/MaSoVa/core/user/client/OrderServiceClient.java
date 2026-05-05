@@ -36,12 +36,13 @@ public class OrderServiceClient {
 
     /**
      * Get all orders for a customer (GDPR data export)
+     * Phase 1: /api/orders/customer/{id} → /api/orders?customerId=
      */
     @Retry(name = "orderService")
     @CircuitBreaker(name = "orderService", fallbackMethod = "getCustomerOrdersFallback")
     public List<Map<String, Object>> getCustomerOrders(String customerId, String authToken) {
         try {
-            String url = orderServiceUrl + "/api/orders/customer/" + customerId;
+            String url = orderServiceUrl + "/api/orders?customerId=" + customerId;
 
             HttpHeaders headers = createHttpHeaders(authToken);
             HttpEntity<Void> entity = new HttpEntity<>(headers);
@@ -61,49 +62,33 @@ public class OrderServiceClient {
     }
 
     /**
-     * Get order count for a customer
+     * Get order count for a customer.
+     * Phase 1: no canonical /count endpoint — derive from list size to avoid dead path.
      */
     @Retry(name = "orderService")
     @CircuitBreaker(name = "orderService", fallbackMethod = "getCustomerOrderCountFallback")
     public int getCustomerOrderCount(String customerId, String authToken) {
-        try {
-            String url = orderServiceUrl + "/api/orders/customer/" + customerId + "/count";
-
-            HttpHeaders headers = createHttpHeaders(authToken);
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
-
-            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                entity,
-                new ParameterizedTypeReference<Map<String, Object>>() {}
-            );
-
-            if (response.getBody() != null && response.getBody().containsKey("count")) {
-                return ((Number) response.getBody().get("count")).intValue();
-            }
-            return 0;
-        } catch (Exception e) {
-            logger.error("Error fetching order count for customer {}: {}", customerId, e.getMessage());
-            throw e;
-        }
+        List<Map<String, Object>> orders = getCustomerOrders(customerId, authToken);
+        return orders.size();
     }
 
     /**
-     * Anonymize customer data in orders (for GDPR erasure)
+     * Anonymize customer data in orders (for GDPR erasure).
+     * Phase 1: PUT /api/orders/customer/{id}/anonymize → POST /api/orders/gdpr/anonymize?customerId=
+     * The POST /api/orders/gdpr/anonymize endpoint is internal-only (X-Internal-Service header required).
      */
     @Retry(name = "orderService")
     @CircuitBreaker(name = "orderService", fallbackMethod = "anonymizeCustomerDataFallback")
     public boolean anonymizeCustomerData(String customerId, String authToken) {
         try {
-            String url = orderServiceUrl + "/api/orders/customer/" + customerId + "/anonymize";
+            String url = orderServiceUrl + "/api/orders/gdpr/anonymize?customerId=" + customerId;
 
             HttpHeaders headers = createHttpHeaders(authToken);
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
             ResponseEntity<Void> response = restTemplate.exchange(
                 url,
-                HttpMethod.PUT,
+                HttpMethod.POST,
                 entity,
                 Void.class
             );

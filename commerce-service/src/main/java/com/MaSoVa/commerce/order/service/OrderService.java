@@ -6,20 +6,15 @@ import com.MaSoVa.commerce.order.entity.Order;
 import com.MaSoVa.commerce.order.entity.Order.OrderStatus;
 import com.MaSoVa.commerce.order.entity.Order.Priority;
 import com.MaSoVa.commerce.order.entity.OrderItem;
-import com.MaSoVa.commerce.order.entity.OrderJpaEntity;
-import com.MaSoVa.commerce.order.repository.OrderJpaRepository;
 import com.MaSoVa.commerce.order.repository.OrderRepository;
 import com.MaSoVa.commerce.order.websocket.OrderWebSocketController;
 import com.MaSoVa.commerce.order.client.MenuServiceClient;
 import com.MaSoVa.commerce.order.client.CustomerServiceClient;
 import com.MaSoVa.commerce.order.client.DeliveryServiceClient;
 import com.MaSoVa.commerce.order.client.StoreServiceClient;
-import com.MaSoVa.commerce.order.client.InventoryServiceClient;
 import com.MaSoVa.commerce.order.config.TaxConfiguration;
 import com.MaSoVa.commerce.order.config.PreparationTimeConfiguration;
 import com.MaSoVa.commerce.order.config.DeliveryFeeConfiguration;
-import com.MaSoVa.shared.entity.Store;
-import com.MaSoVa.shared.model.VatBreakdown;
 import com.MaSoVa.shared.messaging.events.OrderCreatedEvent;
 import com.MaSoVa.shared.messaging.events.OrderStatusChangedEvent;
 import org.slf4j.Logger;
@@ -30,71 +25,49 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.Comparator;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class OrderService {
 
     private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
-    private static final ZoneId IST = ZoneId.of("Asia/Kolkata");
-
     private final OrderRepository orderRepository;
-    private final OrderJpaRepository orderJpaRepository;
-    private final OrderItemSyncService orderItemSyncService;
-    private final ObjectMapper objectMapper;
     private final OrderWebSocketController webSocketController;
     private final MenuServiceClient menuServiceClient;
     private final CustomerServiceClient customerServiceClient;
     private final CustomerNotificationService customerNotificationService;
     private final DeliveryServiceClient deliveryServiceClient;
     private final StoreServiceClient storeServiceClient;
-    private final InventoryServiceClient inventoryServiceClient;
     private final TaxConfiguration taxConfiguration;
     private final PreparationTimeConfiguration preparationTimeConfiguration;
     private final DeliveryFeeConfiguration deliveryFeeConfiguration;
     private final OrderEventPublisher orderEventPublisher;
-    private final EuVatEngine euVatEngine;
     private final Random random = new Random();
 
-    public OrderService(OrderRepository orderRepository,
-                       OrderJpaRepository orderJpaRepository,
-                       OrderItemSyncService orderItemSyncService,
-                       ObjectMapper objectMapper,
-                       OrderWebSocketController webSocketController,
+    public OrderService(OrderRepository orderRepository, OrderWebSocketController webSocketController,
                        MenuServiceClient menuServiceClient, CustomerServiceClient customerServiceClient,
                        CustomerNotificationService customerNotificationService,
                        DeliveryServiceClient deliveryServiceClient,
                        StoreServiceClient storeServiceClient,
-                       InventoryServiceClient inventoryServiceClient,
                        TaxConfiguration taxConfiguration,
                        PreparationTimeConfiguration preparationTimeConfiguration,
                        DeliveryFeeConfiguration deliveryFeeConfiguration,
-                       OrderEventPublisher orderEventPublisher,
-                       EuVatEngine euVatEngine) {
+                       OrderEventPublisher orderEventPublisher) {
         this.orderRepository = orderRepository;
-        this.orderJpaRepository = orderJpaRepository;
-        this.orderItemSyncService = orderItemSyncService;
-        this.objectMapper = objectMapper;
         this.webSocketController = webSocketController;
         this.menuServiceClient = menuServiceClient;
         this.customerServiceClient = customerServiceClient;
         this.customerNotificationService = customerNotificationService;
         this.deliveryServiceClient = deliveryServiceClient;
         this.storeServiceClient = storeServiceClient;
-        this.inventoryServiceClient = inventoryServiceClient;
         this.taxConfiguration = taxConfiguration;
         this.preparationTimeConfiguration = preparationTimeConfiguration;
         this.deliveryFeeConfiguration = deliveryFeeConfiguration;
         this.orderEventPublisher = orderEventPublisher;
-        this.euVatEngine = euVatEngine;
     }
 
     @Transactional
@@ -107,18 +80,14 @@ public class OrderService {
 
         // Convert request items to order items
         List<OrderItem> orderItems = request.getItems().stream()
-                .map(item -> {
-                    OrderItem oi = OrderItem.builder()
-                            .menuItemId(item.getMenuItemId())
-                            .name(item.getName())
-                            .quantity(item.getQuantity())
-                            .price(item.getPrice())
-                            .variant(item.getVariant())
-                            .customizations(item.getCustomizations())
-                            .build();
-                    oi.setCategory(item.getCategory());
-                    return oi;
-                })
+                .map(item -> OrderItem.builder()
+                        .menuItemId(item.getMenuItemId())
+                        .name(item.getName())
+                        .quantity(item.getQuantity())
+                        .price(item.getPrice())
+                        .variant(item.getVariant())
+                        .customizations(item.getCustomizations())
+                        .build())
                 .collect(Collectors.toList());
 
         // Calculate totals
@@ -168,28 +137,15 @@ public class OrderService {
             }
         }
 
-        // Tax / VAT routing: EU stores → EuVatEngine; India stores → TaxConfiguration (GST)
-        Store store = storeServiceClient.getStore(request.getStoreId());
-        String countryCode = store.getCountryCode();
+        // HARD-002: Dynamic tax calculation using TaxConfiguration
+        // Get state from delivery address or default
+        String state = (request.getDeliveryAddress() != null && request.getDeliveryAddress().getState() != null)
+                ? request.getDeliveryAddress().getState()
+                : "Maharashtra"; // Default state
 
-        double tax;
-        VatBreakdown vatBreakdown = null;
-
-        if (countryCode != null && !countryCode.isBlank()) {
-            // EU / international store — calculate per-line VAT
-            String orderContext = request.getOrderType() != null ? request.getOrderType().name() : "DINE_IN";
-            vatBreakdown = euVatEngine.calculate(countryCode, orderContext, orderItems);
-            tax = vatBreakdown.getTotalVatAmount().doubleValue();
-            log.debug("EU VAT calculated for country {} context {}: {}", countryCode, orderContext, tax);
-        } else {
-            // India store — existing GST path unchanged
-            String state = (request.getDeliveryAddress() != null && request.getDeliveryAddress().getState() != null)
-                    ? request.getDeliveryAddress().getState()
-                    : "Maharashtra";
-            tax = taxConfiguration.calculateTax(subtotal, state, true);
-            log.debug("GST calculated for state {}: ₹{} ({} GST)",
-                    state, tax, taxConfiguration.getTaxRateForState(state));
-        }
+        double tax = taxConfiguration.calculateTax(subtotal, state, true); // Assuming AC restaurant
+        log.debug("Tax calculated for state {}: ₹{} ({} GST)",
+                state, tax, taxConfiguration.getTaxRateForState(state));
 
         double total = subtotal + deliveryFee + tax;
 
@@ -222,18 +178,6 @@ public class OrderService {
                 .receivedAt(LocalDateTime.now())
                 .build();
 
-        // Attach VAT breakdown for EU orders
-        if (vatBreakdown != null) {
-            order.setVatCountryCode(vatBreakdown.getVatCountryCode());
-            order.setVatBreakdown(vatBreakdown);
-            order.setTotalNetAmount(vatBreakdown.getTotalNetAmount());
-            order.setTotalVatAmount(vatBreakdown.getTotalVatAmount());
-            order.setTotalGrossAmount(vatBreakdown.getTotalGrossAmount());
-        }
-
-        // Global-3: propagate store currency to order (null for India stores — INR legacy)
-        order.setCurrency(store.getCurrency());
-
         // Calculate estimated delivery time
         if (Order.OrderType.DELIVERY.equals(request.getOrderType())) {
             // Use dynamic delivery time from DeliveryZoneService if available, otherwise default to 30 minutes
@@ -257,23 +201,11 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
         log.info("Order created successfully: {}", savedOrder.getOrderNumber());
 
-        // Phase 2 dual-write: sync to PostgreSQL (non-blocking)
-        try {
-            orderJpaRepository.save(toOrderJpaEntity(savedOrder));
-        } catch (Exception e) {
-            log.warn("PG dual-write failed for createOrder orderNumber={}: {}", savedOrder.getOrderNumber(), e.getMessage());
-        }
-
         // Publish order created event to RabbitMQ
         try {
-            // Global-3: use actual currency from order (set from store.currency)
-            String eventCurrency = savedOrder.getCurrency() != null ? savedOrder.getCurrency() : "INR";
-            OrderCreatedEvent createdEvent = new OrderCreatedEvent(
+            orderEventPublisher.publishOrderCreated(new OrderCreatedEvent(
                 savedOrder.getId(), savedOrder.getCustomerId(), savedOrder.getStoreId(),
-                savedOrder.getOrderType().toString(), savedOrder.getTotal(), eventCurrency);
-            createdEvent.setVatCountryCode(savedOrder.getVatCountryCode());
-            createdEvent.setTotalVatAmount(savedOrder.getTotalVatAmount());
-            orderEventPublisher.publishOrderCreated(createdEvent);
+                savedOrder.getOrderType().toString(), savedOrder.getTotal(), "INR"));
         } catch (Exception e) {
             log.warn("Failed to publish order created event for {}: {}", savedOrder.getOrderNumber(), e.getMessage());
         }
@@ -309,15 +241,13 @@ public class OrderService {
     }
 
     public List<Order> getKitchenQueue(String storeId) {
-        // Kitchen queue shows active orders: RECEIVED through READY (all types), plus DISPATCHED and OUT_FOR_DELIVERY (delivery in-flight)
+        // Kitchen queue shows orders in RECEIVED, PREPARING, OVEN, BAKED, DISPATCHED (Completed) stages
         List<OrderStatus> kitchenStatuses = List.of(
                 OrderStatus.RECEIVED,
                 OrderStatus.PREPARING,
                 OrderStatus.OVEN,
                 OrderStatus.BAKED,
-                OrderStatus.READY,
-                OrderStatus.DISPATCHED,
-                OrderStatus.OUT_FOR_DELIVERY
+                OrderStatus.DISPATCHED
         );
 
         List<Order> orders = orderRepository.findByStoreIdAndStatusIn(storeId, kitchenStatuses);
@@ -367,76 +297,21 @@ public class OrderService {
             calculateAndUpdatePreparationTimes(order);
         }
 
-        // Set completedAt for DELIVERED (SERVED/COMPLETED are handled in updateStatusTimestamps)
-        if (newStatus == OrderStatus.DELIVERED) {
-            order.setCompletedAt(LocalDateTime.now());
-        }
-
-        // Generate delivery OTP when DELIVERY order is dispatched (also covers direct status-change path)
-        if (newStatus == OrderStatus.DISPATCHED && order.getOrderType() == Order.OrderType.DELIVERY
-                && order.getDeliveryOtp() == null) {
-            generateAndSetDeliveryOtp(order);
-        }
-
         Order updatedOrder = orderRepository.save(order);
         log.info("Order status updated: {} → {} - Analytics cache evicted",
                  updatedOrder.getOrderNumber(), updatedOrder.getStatus());
 
-        // Inventory management on status transition
-        if (newStatus == OrderStatus.PREPARING) {
-            updatedOrder.getItems().forEach(item -> {
-                try {
-                    inventoryServiceClient.adjustStock(item.getMenuItemId(), Map.of(
-                        "quantityChange", -item.getQuantity(),
-                        "reason", "Order " + updatedOrder.getOrderNumber() + " started preparing"
-                    ));
-                    log.info("Decremented inventory for item {} qty={}", item.getMenuItemId(), item.getQuantity());
-                } catch (Exception e) {
-                    log.warn("Failed to decrement inventory for item {}: {}", item.getMenuItemId(), e.getMessage());
-                }
-            });
-        } else if (newStatus == OrderStatus.CANCELLED && currentStatus != null
-                && List.of(OrderStatus.PREPARING, OrderStatus.OVEN, OrderStatus.BAKED, OrderStatus.READY, OrderStatus.DISPATCHED, OrderStatus.OUT_FOR_DELIVERY).contains(currentStatus)) {
-            // Restore inventory for any status after PREPARING (stock was already decremented)
-            updatedOrder.getItems().forEach(item -> {
-                try {
-                    inventoryServiceClient.adjustStock(item.getMenuItemId(), Map.of(
-                        "quantityChange", item.getQuantity(),
-                        "reason", "Order " + updatedOrder.getOrderNumber() + " cancelled after preparation started"
-                    ));
-                    log.info("Restored inventory for cancelled order item {} qty={}", item.getMenuItemId(), item.getQuantity());
-                } catch (Exception e) {
-                    log.warn("Failed to restore inventory for cancelled order item {}: {}", item.getMenuItemId(), e.getMessage());
-                }
-            });
-        }
-
-        // Phase 2 dual-write: sync status + timestamps to PostgreSQL (non-blocking)
-        try {
-            orderJpaRepository.findByMongoId(updatedOrder.getId()).ifPresentOrElse(
-                pgOrder -> { updateOrderJpaEntityFields(pgOrder, updatedOrder); orderJpaRepository.save(pgOrder); },
-                () -> log.warn("PG dual-write: no PG row found for updateOrderStatus orderId={}", updatedOrder.getId())
-            );
-        } catch (Exception e) {
-            log.warn("PG dual-write failed for updateOrderStatus orderNumber={}: {}", updatedOrder.getOrderNumber(), e.getMessage());
-        }
-
         // Publish status changed event to RabbitMQ
         try {
-            OrderStatusChangedEvent statusEvent = new OrderStatusChangedEvent(
+            orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
                 updatedOrder.getId(), updatedOrder.getCustomerId(),
-                currentStatus.toString(), newStatus.toString(), updatedOrder.getStoreId());
-            statusEvent.setVatCountryCode(updatedOrder.getVatCountryCode());
-            statusEvent.setTotalVatAmount(updatedOrder.getTotalVatAmount());
-            statusEvent.setCurrency(updatedOrder.getCurrency());
-            orderEventPublisher.publishOrderStatusChanged(statusEvent);
+                currentStatus.toString(), newStatus.toString(), updatedOrder.getStoreId()));
         } catch (Exception e) {
             log.warn("Failed to publish status changed event for {}: {}", updatedOrder.getOrderNumber(), e.getMessage());
         }
 
-        // Update customer stats for all terminal statuses (loyalty points)
-        if ((newStatus == OrderStatus.DELIVERED || newStatus == OrderStatus.COMPLETED || newStatus == OrderStatus.SERVED)
-                && updatedOrder.getCustomerId() != null && !updatedOrder.getCustomerId().isEmpty()) {
+        // Update customer stats when order is delivered (completed)
+        if (newStatus == OrderStatus.DELIVERED && updatedOrder.getCustomerId() != null && !updatedOrder.getCustomerId().isEmpty()) {
             customerServiceClient.updateOrderStats(
                 updatedOrder.getCustomerId(),
                 updatedOrder.getOrderNumber(),
@@ -455,15 +330,6 @@ public class OrderService {
 
         // Send customer notification for status change
         customerNotificationService.sendOrderStatusNotification(updatedOrder, currentStatus);
-
-        // Send OTP email when DELIVERY order is dispatched (covers direct status-update path)
-        if (newStatus == OrderStatus.DISPATCHED && updatedOrder.getDeliveryOtp() != null) {
-            try {
-                customerNotificationService.sendDeliveryOtpNotification(updatedOrder, updatedOrder.getDeliveryOtp());
-            } catch (Exception e) {
-                log.warn("Failed to send OTP notification for order {}: {}", updatedOrder.getOrderNumber(), e.getMessage());
-            }
-        }
 
         return updatedOrder;
     }
@@ -497,47 +363,23 @@ public class OrderService {
             order.setCompletedAt(LocalDateTime.now());
         }
 
-        // Auto-generate delivery OTP when DELIVERY order is dispatched
+        // Auto-generate delivery OTP when DELIVERY order is dispatched (Gap #12)
         if (nextStatus == OrderStatus.DISPATCHED && order.getOrderType() == Order.OrderType.DELIVERY) {
-            generateAndSetDeliveryOtp(order);
+            String otp = String.format("%04d", new java.util.Random().nextInt(10000));
+            LocalDateTime now = LocalDateTime.now();
+            order.setDeliveryOtp(otp);
+            order.setDeliveryOtpGeneratedAt(now);
+            order.setDeliveryOtpExpiresAt(now.plusMinutes(15));
+            log.info("Auto-generated delivery OTP for order {}", order.getOrderNumber());
         }
 
         Order updatedOrder = orderRepository.save(order);
 
-        // Decrement inventory when order reaches PREPARING (mirrors updateOrderStatus path)
-        if (nextStatus == OrderStatus.PREPARING) {
-            updatedOrder.getItems().forEach(item -> {
-                try {
-                    inventoryServiceClient.adjustStock(item.getMenuItemId(), Map.of(
-                        "quantityChange", -item.getQuantity(),
-                        "reason", "Order " + updatedOrder.getOrderNumber() + " started preparing"
-                    ));
-                    log.info("Decremented inventory for item {} qty={}", item.getMenuItemId(), item.getQuantity());
-                } catch (Exception e) {
-                    log.warn("Failed to decrement inventory for item {}: {}", item.getMenuItemId(), e.getMessage());
-                }
-            });
-        }
-
-        // Phase 2 dual-write: sync status + OTP + timestamps to PostgreSQL (non-blocking)
-        try {
-            orderJpaRepository.findByMongoId(updatedOrder.getId()).ifPresentOrElse(
-                pgOrder -> { updateOrderJpaEntityFields(pgOrder, updatedOrder); orderJpaRepository.save(pgOrder); },
-                () -> log.warn("PG dual-write: no PG row found for moveOrderToNextStage orderId={}", updatedOrder.getId())
-            );
-        } catch (Exception e) {
-            log.warn("PG dual-write failed for moveOrderToNextStage orderNumber={}: {}", updatedOrder.getOrderNumber(), e.getMessage());
-        }
-
         // Publish status changed event to RabbitMQ
         try {
-            OrderStatusChangedEvent statusEvent = new OrderStatusChangedEvent(
+            orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
                 updatedOrder.getId(), updatedOrder.getCustomerId(),
-                currentStatus.toString(), nextStatus.toString(), updatedOrder.getStoreId());
-            statusEvent.setVatCountryCode(updatedOrder.getVatCountryCode());
-            statusEvent.setTotalVatAmount(updatedOrder.getTotalVatAmount());
-            statusEvent.setCurrency(updatedOrder.getCurrency());
-            orderEventPublisher.publishOrderStatusChanged(statusEvent);
+                currentStatus.toString(), nextStatus.toString(), updatedOrder.getStoreId()));
         } catch (Exception e) {
             log.warn("Failed to publish status changed event for {}: {}", updatedOrder.getOrderNumber(), e.getMessage());
         }
@@ -566,13 +408,9 @@ public class OrderService {
         // Send customer notification for status change
         customerNotificationService.sendOrderStatusNotification(updatedOrder, currentStatus);
 
-        // Send OTP email when dispatched
+        // Send OTP email when dispatched (Gap #12)
         if (nextStatus == OrderStatus.DISPATCHED && updatedOrder.getDeliveryOtp() != null) {
-            try {
-                customerNotificationService.sendDeliveryOtpNotification(updatedOrder, updatedOrder.getDeliveryOtp());
-            } catch (Exception e) {
-                log.warn("Failed to send OTP notification for order {}: {}", updatedOrder.getOrderNumber(), e.getMessage());
-            }
+            customerNotificationService.sendDeliveryOtpNotification(updatedOrder, updatedOrder.getDeliveryOtp());
         }
 
         return updatedOrder;
@@ -596,40 +434,11 @@ public class OrderService {
 
         Order cancelledOrder = orderRepository.save(order);
 
-        // Restore inventory if order was in any post-PREPARING state when cancelled (stock was decremented at PREPARING)
-        if (List.of(OrderStatus.PREPARING, OrderStatus.OVEN, OrderStatus.BAKED, OrderStatus.READY, OrderStatus.DISPATCHED, OrderStatus.OUT_FOR_DELIVERY).contains(previousStatus)) {
-            cancelledOrder.getItems().forEach(item -> {
-                try {
-                    inventoryServiceClient.adjustStock(item.getMenuItemId(), Map.of(
-                        "quantityChange", item.getQuantity(),
-                        "reason", "Order " + cancelledOrder.getOrderNumber() + " cancelled after preparation started"
-                    ));
-                    log.info("Restored inventory for cancelled order item {} qty={}", item.getMenuItemId(), item.getQuantity());
-                } catch (Exception e) {
-                    log.warn("Failed to restore inventory for cancelled order item {}: {}", item.getMenuItemId(), e.getMessage());
-                }
-            });
-        }
-
-        // Phase 2 dual-write: sync cancellation to PostgreSQL (non-blocking)
-        try {
-            orderJpaRepository.findByMongoId(cancelledOrder.getId()).ifPresentOrElse(
-                pgOrder -> { updateOrderJpaEntityFields(pgOrder, cancelledOrder); orderJpaRepository.save(pgOrder); },
-                () -> log.warn("PG dual-write: no PG row found for cancelOrder orderId={}", cancelledOrder.getId())
-            );
-        } catch (Exception e) {
-            log.warn("PG dual-write failed for cancelOrder orderNumber={}: {}", cancelledOrder.getOrderNumber(), e.getMessage());
-        }
-
         // Publish status changed event to RabbitMQ
         try {
-            OrderStatusChangedEvent statusEvent = new OrderStatusChangedEvent(
+            orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
                 cancelledOrder.getId(), cancelledOrder.getCustomerId(),
-                previousStatus.toString(), "CANCELLED", cancelledOrder.getStoreId());
-            statusEvent.setVatCountryCode(cancelledOrder.getVatCountryCode());
-            statusEvent.setTotalVatAmount(cancelledOrder.getTotalVatAmount());
-            statusEvent.setCurrency(cancelledOrder.getCurrency());
-            orderEventPublisher.publishOrderStatusChanged(statusEvent);
+                previousStatus.toString(), "CANCELLED", cancelledOrder.getStoreId()));
         } catch (Exception e) {
             log.warn("Failed to publish cancel event for {}: {}", cancelledOrder.getOrderNumber(), e.getMessage());
         }
@@ -663,16 +472,6 @@ public class OrderService {
         order.setAssignedDriverId(driverId);
         Order updatedOrder = orderRepository.save(order);
 
-        // Phase 2 dual-write: sync driver assignment to PostgreSQL (non-blocking)
-        try {
-            orderJpaRepository.findByMongoId(updatedOrder.getId()).ifPresentOrElse(
-                pgOrder -> { pgOrder.setAssignedDriverId(driverId); orderJpaRepository.save(pgOrder); },
-                () -> log.warn("PG dual-write: no PG row found for assignDriver orderId={}", updatedOrder.getId())
-            );
-        } catch (Exception e) {
-            log.warn("PG dual-write failed for assignDriver orderNumber={}: {}", updatedOrder.getOrderNumber(), e.getMessage());
-        }
-
         // Send driver assignment notification to customer
         customerNotificationService.sendDriverAssignmentNotification(updatedOrder, driverName, driverPhone);
 
@@ -691,20 +490,6 @@ public class OrderService {
         order.setPaymentTransactionId(transactionId);
 
         Order updatedOrder = orderRepository.save(order);
-
-        // Phase 2 dual-write: sync payment status + transaction ID to PostgreSQL (non-blocking)
-        try {
-            orderJpaRepository.findByMongoId(updatedOrder.getId()).ifPresentOrElse(
-                pgOrder -> {
-                    pgOrder.setPaymentStatus(paymentStatus.name());
-                    pgOrder.setPaymentTransactionId(transactionId);
-                    orderJpaRepository.save(pgOrder);
-                },
-                () -> log.warn("PG dual-write: no PG row found for updatePaymentStatus orderId={}", updatedOrder.getId())
-            );
-        } catch (Exception e) {
-            log.warn("PG dual-write failed for updatePaymentStatus orderNumber={}: {}", updatedOrder.getOrderNumber(), e.getMessage());
-        }
 
         // Broadcast payment update via WebSocket
         if (updatedOrder.getCustomerId() != null) {
@@ -733,8 +518,10 @@ public class OrderService {
                 .mapToDouble(OrderItem::getItemTotal)
                 .sum();
 
-        // Preserve the zone-based delivery fee from the original order (do not flatten to base fee)
-        double deliveryFee = order.getDeliveryFee() != null ? order.getDeliveryFee().doubleValue() : 0.0;
+        // Week 3 Fix: Use configuration instead of hardcoded values
+        double deliveryFee = Order.OrderType.DELIVERY.equals(order.getOrderType())
+                ? deliveryFeeConfiguration.getBaseFee()
+                : 0.0;
 
         // Get state from order's delivery address or default
         String state = (order.getDeliveryAddress() != null && order.getDeliveryAddress().getState() != null)
@@ -751,17 +538,6 @@ public class OrderService {
         order.setPreparationTime(calculatePreparationTime(newItems.size()));
 
         Order updatedOrder = orderRepository.save(order);
-
-        // Phase 2 dual-write: sync recalculated totals + re-map line items to PostgreSQL (non-blocking)
-        // Uses OrderItemSyncService.syncOrderItems (REQUIRES_NEW) to atomically delete + reinsert items.
-        try {
-            orderJpaRepository.findByMongoId(updatedOrder.getId()).ifPresentOrElse(
-                pgOrder -> orderItemSyncService.syncOrderItems(pgOrder, updatedOrder),
-                () -> log.warn("PG dual-write: no PG row found for updateOrderItems orderId={}", updatedOrder.getId())
-            );
-        } catch (Exception e) {
-            log.warn("PG dual-write failed for updateOrderItems orderNumber={}: {}", updatedOrder.getOrderNumber(), e.getMessage());
-        }
 
         // Broadcast modification via WebSocket
         webSocketController.sendKitchenQueueUpdate(updatedOrder.getStoreId(), updatedOrder);
@@ -783,16 +559,6 @@ public class OrderService {
         order.setPriority(priority);
 
         Order updatedOrder = orderRepository.save(order);
-
-        // Phase 2 dual-write: sync priority to PostgreSQL (non-blocking)
-        try {
-            orderJpaRepository.findByMongoId(updatedOrder.getId()).ifPresentOrElse(
-                pgOrder -> { pgOrder.setPriority(priority.name()); orderJpaRepository.save(pgOrder); },
-                () -> log.warn("PG dual-write: no PG row found for updateOrderPriority orderId={}", updatedOrder.getId())
-            );
-        } catch (Exception e) {
-            log.warn("PG dual-write failed for updateOrderPriority orderNumber={}: {}", updatedOrder.getOrderNumber(), e.getMessage());
-        }
 
         // Broadcast priority change via WebSocket
         webSocketController.sendKitchenQueueUpdate(updatedOrder.getStoreId(), updatedOrder);
@@ -851,8 +617,7 @@ public class OrderService {
                     case DINE_IN -> OrderStatus.SERVED;       // DINE_IN: READY → SERVED
                 };
             }
-            case DISPATCHED -> OrderStatus.OUT_FOR_DELIVERY;  // DELIVERY: DISPATCHED → OUT_FOR_DELIVERY → DELIVERED
-            case OUT_FOR_DELIVERY -> OrderStatus.DELIVERED;  // Driver en route → delivered
+            case DISPATCHED -> OrderStatus.DELIVERED;  // Only for DELIVERY orders
             default -> null;  // Already in terminal state (DELIVERED, COMPLETED, SERVED, CANCELLED)
         };
     }
@@ -883,8 +648,7 @@ public class OrderService {
             case OVEN -> List.of(OrderStatus.PREPARING, OrderStatus.BAKED, OrderStatus.CANCELLED);
             case BAKED -> List.of(OrderStatus.OVEN, OrderStatus.READY, OrderStatus.CANCELLED);  // Unified: go to READY
             case READY -> List.of(OrderStatus.DISPATCHED, OrderStatus.SERVED, OrderStatus.COMPLETED, OrderStatus.CANCELLED);  // Different final states per order type
-            case DISPATCHED -> List.of(OrderStatus.READY, OrderStatus.OUT_FOR_DELIVERY);  // DELIVERY orders
-            case OUT_FOR_DELIVERY -> List.of(OrderStatus.DISPATCHED, OrderStatus.DELIVERED);  // Driver en route
+            case DISPATCHED -> List.of(OrderStatus.READY, OrderStatus.DELIVERED);  // DELIVERY orders
             case DELIVERED -> List.of();  // Terminal state
             case SERVED -> List.of();  // Terminal state (DINE_IN)
             case COMPLETED -> List.of();  // Terminal state (TAKEAWAY)
@@ -901,7 +665,6 @@ public class OrderService {
             case BAKED -> order.setBakedAt(now);
             case READY -> order.setReadyAt(now);  // Ready for pickup (TAKEAWAY) or serving (DINE_IN) or dispatch (DELIVERY)
             case DISPATCHED -> order.setDispatchedAt(now);
-            case OUT_FOR_DELIVERY -> { /* dispatchedAt already set at DISPATCHED — no dedicated field */ }
             case DELIVERED -> order.setDeliveredAt(now);
             case SERVED -> order.setCompletedAt(now);  // DINE_IN final state
             case COMPLETED -> order.setCompletedAt(now);  // TAKEAWAY final state
@@ -943,10 +706,11 @@ public class OrderService {
     public List<Order> getOrdersByDate(String storeId, java.time.LocalDate date) {
         // FIXED: Use IST timezone consistently with analytics service
         // Analytics service uses Asia/Kolkata for date calculations, so we must use the same timezone here
+        java.time.ZoneId istZone = java.time.ZoneId.of("Asia/Kolkata");
 
         // Convert date to IST timezone boundaries (start and end of day in IST)
-        java.time.ZonedDateTime zonedStart = date.atStartOfDay(IST);
-        java.time.ZonedDateTime zonedEnd = date.atTime(23, 59, 59, 999_999_999).atZone(IST);
+        java.time.ZonedDateTime zonedStart = date.atStartOfDay(istZone);
+        java.time.ZonedDateTime zonedEnd = date.atTime(23, 59, 59, 999_999_999).atZone(istZone);
 
         // Convert IST to UTC for MongoDB query (MongoDB stores timestamps in UTC)
         LocalDateTime startOfDay = zonedStart.withZoneSameInstant(java.time.ZoneOffset.UTC).toLocalDateTime();
@@ -963,10 +727,11 @@ public class OrderService {
 
     public List<Order> getOrdersByStaffAndDate(String storeId, String staffId, java.time.LocalDate date) {
         // FIXED: Use IST timezone consistently with analytics service
+        java.time.ZoneId istZone = java.time.ZoneId.of("Asia/Kolkata");
 
         // Convert date to IST timezone boundaries
-        java.time.ZonedDateTime zonedStart = date.atStartOfDay(IST);
-        java.time.ZonedDateTime zonedEnd = date.atTime(23, 59, 59, 999_999_999).atZone(IST);
+        java.time.ZonedDateTime zonedStart = date.atStartOfDay(istZone);
+        java.time.ZonedDateTime zonedEnd = date.atTime(23, 59, 59, 999_999_999).atZone(istZone);
 
         // Convert IST to UTC for MongoDB query
         LocalDateTime startOfDay = zonedStart.withZoneSameInstant(java.time.ZoneOffset.UTC).toLocalDateTime();
@@ -1014,7 +779,7 @@ public class OrderService {
         }
 
         com.MaSoVa.commerce.order.entity.QualityCheckpoint checkpoint = order.getQualityCheckpoints().stream()
-                .filter(cp -> cp.getCheckpointName() != null && cp.getCheckpointName().equals(checkpointName))
+                .filter(cp -> cp.getCheckpointName().equals(checkpointName))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Checkpoint not found: " + checkpointName));
 
@@ -1034,15 +799,6 @@ public class OrderService {
     public List<com.MaSoVa.commerce.order.entity.QualityCheckpoint> getQualityCheckpoints(String orderId) {
         Order order = getOrderById(orderId);
         return order.getQualityCheckpoints() != null ? order.getQualityCheckpoints() : new java.util.ArrayList<>();
-    }
-
-    private void generateAndSetDeliveryOtp(Order order) {
-        String otp = String.format("%04d", new java.util.Random().nextInt(10000));
-        LocalDateTime now = LocalDateTime.now();
-        order.setDeliveryOtp(otp);
-        order.setDeliveryOtpGeneratedAt(now);
-        order.setDeliveryOtpExpiresAt(now.plusMinutes(15));
-        log.info("Generated delivery OTP for order {}", order.getOrderNumber());
     }
 
     // Preparation time tracking methods
@@ -1282,113 +1038,6 @@ public class OrderService {
         );
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    // Phase 2 dual-write helpers — MongoDB Order → PostgreSQL OrderJpaEntity
-    // ─────────────────────────────────────────────────────────────────────────────
-
-    private OffsetDateTime toOdt(LocalDateTime ldt) {
-        return ldt != null ? ldt.atZone(IST).toOffsetDateTime() : null;
-    }
-
-    private OrderJpaEntity toOrderJpaEntity(Order order) {
-        String deliveryAddressJson = null;
-        if (order.getDeliveryAddress() != null) {
-            try {
-                deliveryAddressJson = objectMapper.writeValueAsString(order.getDeliveryAddress());
-            } catch (Exception e) {
-                log.warn("PG dual-write: failed to serialize deliveryAddress for order {}: {}", order.getOrderNumber(), e.getMessage());
-            }
-        }
-
-        // Serialize VAT breakdown as JSON for JSONB column
-        String vatBreakdownJson = null;
-        if (order.getVatBreakdown() != null) {
-            try {
-                vatBreakdownJson = objectMapper.writeValueAsString(order.getVatBreakdown());
-            } catch (Exception e) {
-                log.warn("PG dual-write: failed to serialize vatBreakdown for order {}: {}", order.getOrderNumber(), e.getMessage());
-            }
-        }
-
-        OrderJpaEntity entity = OrderJpaEntity.builder()
-            .id(order.getId())
-            .mongoId(order.getId())
-            .orderNumber(order.getOrderNumber())
-            .customerId(order.getCustomerId())
-            .customerName(order.getCustomerName())
-            .customerPhone(order.getCustomerPhone())
-            .customerEmail(order.getCustomerEmail())
-            .storeId(order.getStoreId())
-            .status(order.getStatus() != null ? order.getStatus().name() : null)
-            .orderType(order.getOrderType() != null ? order.getOrderType().name() : null)
-            .paymentStatus(order.getPaymentStatus() != null ? order.getPaymentStatus().name() : "PENDING")
-            .paymentMethod(order.getPaymentMethod() != null ? order.getPaymentMethod().name() : null)
-            .paymentTransactionId(order.getPaymentTransactionId())
-            .priority(order.getPriority() != null ? order.getPriority().name() : "NORMAL")
-            .subtotal(order.getSubtotal())
-            .deliveryFee(order.getDeliveryFee())
-            .tax(order.getTax())
-            .total(order.getTotal())
-            .specialInstructions(order.getSpecialInstructions())
-            .tableNumber(order.getTableNumber())
-            .guestCount(order.getGuestCount())
-            .assignedDriverId(order.getAssignedDriverId())
-            .createdByStaffId(order.getCreatedByStaffId())
-            .createdByStaffName(order.getCreatedByStaffName())
-            .preparationTime(order.getPreparationTime())
-            .estimatedDeliveryTime(toOdt(order.getEstimatedDeliveryTime()))
-            .deliveryAddress(deliveryAddressJson)
-            .deliveryOtp(order.getDeliveryOtp())
-            .deliveryProofType(order.getDeliveryProofType())
-            .cancellationReason(order.getCancellationReason())
-            .receivedAt(toOdt(order.getReceivedAt()))
-            .preparingStartedAt(toOdt(order.getPreparingStartedAt()))
-            .readyAt(toOdt(order.getReadyAt()))
-            .dispatchedAt(toOdt(order.getDispatchedAt()))
-            .deliveredAt(toOdt(order.getDeliveredAt()))
-            .cancelledAt(toOdt(order.getCancelledAt()))
-            .createdAt(order.getCreatedAt() != null ? order.getCreatedAt().atZone(IST).toOffsetDateTime() : OffsetDateTime.now(IST))
-            .vatCountryCode(order.getVatCountryCode())
-            .totalNetAmount(order.getTotalNetAmount())
-            .totalVatAmount(order.getTotalVatAmount())
-            .totalGrossAmount(order.getTotalGrossAmount())
-            .vatBreakdown(vatBreakdownJson)
-            .currency(order.getCurrency())
-            .build();
-
-        // Map line items
-        if (order.getItems() != null) {
-            entity.setItems(orderItemSyncService.buildItemEntities(order.getItems(), entity));
-        }
-
-        return entity;
-    }
-
-    private void updateOrderJpaEntityFields(OrderJpaEntity pgOrder, Order order) {
-        pgOrder.setStatus(order.getStatus() != null ? order.getStatus().name() : pgOrder.getStatus());
-        pgOrder.setPaymentStatus(order.getPaymentStatus() != null ? order.getPaymentStatus().name() : pgOrder.getPaymentStatus());
-        pgOrder.setPaymentMethod(order.getPaymentMethod() != null ? order.getPaymentMethod().name() : pgOrder.getPaymentMethod());
-        pgOrder.setPaymentTransactionId(order.getPaymentTransactionId());
-        pgOrder.setPriority(order.getPriority() != null ? order.getPriority().name() : pgOrder.getPriority());
-        pgOrder.setAssignedDriverId(order.getAssignedDriverId());
-        pgOrder.setTableNumber(order.getTableNumber());
-        pgOrder.setGuestCount(order.getGuestCount());
-        pgOrder.setSubtotal(order.getSubtotal());
-        pgOrder.setDeliveryFee(order.getDeliveryFee());
-        pgOrder.setTax(order.getTax());
-        pgOrder.setTotal(order.getTotal());
-        pgOrder.setPreparationTime(order.getPreparationTime());
-        pgOrder.setDeliveryOtp(order.getDeliveryOtp());
-        pgOrder.setDeliveryProofType(order.getDeliveryProofType());
-        pgOrder.setCancellationReason(order.getCancellationReason());
-        pgOrder.setReceivedAt(toOdt(order.getReceivedAt()));
-        pgOrder.setPreparingStartedAt(toOdt(order.getPreparingStartedAt()));
-        pgOrder.setReadyAt(toOdt(order.getReadyAt()));
-        pgOrder.setDispatchedAt(toOdt(order.getDispatchedAt()));
-        pgOrder.setDeliveredAt(toOdt(order.getDeliveredAt()));
-        pgOrder.setCancelledAt(toOdt(order.getCancelledAt()));
-    }
-
     // ==================== PROOF OF DELIVERY METHODS (DELIV-002) ====================
 
     /**
@@ -1405,16 +1054,6 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
         log.info("Delivery OTP set for order {}. Expires at {}", orderId, expiresAt);
-
-        // Phase 2 dual-write: sync OTP to PostgreSQL (non-blocking)
-        try {
-            orderJpaRepository.findByMongoId(savedOrder.getId()).ifPresentOrElse(
-                pgOrder -> { pgOrder.setDeliveryOtp(otp); orderJpaRepository.save(pgOrder); },
-                () -> log.warn("PG dual-write: no PG row found for setDeliveryOtp orderId={}", orderId)
-            );
-        } catch (Exception e) {
-            log.warn("PG dual-write failed for setDeliveryOtp orderId={}: {}", orderId, e.getMessage());
-        }
 
         // Send OTP to customer via notification service
         customerNotificationService.sendDeliveryOtpNotification(savedOrder, otp);
@@ -1443,22 +1082,6 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
         log.info("Delivery proof set for order {}. Type: {}", orderId, proofType);
 
-        // Phase 2 dual-write: sync proof type to PostgreSQL (non-blocking)
-        try {
-            orderJpaRepository.findByMongoId(savedOrder.getId()).ifPresentOrElse(
-                pgOrder -> {
-                        pgOrder.setDeliveryProofType(proofType);
-                        // Store whichever proof URL is present (photo takes precedence; fall back to signature)
-                        String proofUrl = photoUrl != null ? photoUrl : signatureUrl;
-                        if (proofUrl != null) pgOrder.setDeliveryProofUrl(proofUrl);
-                        orderJpaRepository.save(pgOrder);
-                    },
-                () -> log.warn("PG dual-write: no PG row found for setDeliveryProof orderId={}", orderId)
-            );
-        } catch (Exception e) {
-            log.warn("PG dual-write failed for setDeliveryProof orderId={}: {}", orderId, e.getMessage());
-        }
-
         return savedOrder;
     }
 
@@ -1469,14 +1092,6 @@ public class OrderService {
     public Order markOrderDelivered(String orderId, LocalDateTime deliveredAt, String proofType) {
         Order order = getOrderById(orderId);
 
-        if (order.getStatus() == OrderStatus.DELIVERED) {
-            log.warn("Order {} is already DELIVERED — ignoring duplicate markOrderDelivered call", orderId);
-            return order;
-        }
-        if (order.getStatus() != OrderStatus.OUT_FOR_DELIVERY && order.getStatus() != OrderStatus.DISPATCHED) {
-            throw new IllegalStateException("Cannot mark order " + orderId + " as delivered — current status is " + order.getStatus());
-        }
-
         // Update status to delivered
         order.setStatus(OrderStatus.DELIVERED);
         order.setDeliveredAt(deliveredAt);
@@ -1486,30 +1101,6 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
         log.info("Order {} marked as delivered at {} using {} verification", orderId, deliveredAt, proofType);
 
-        // Phase 2 dual-write: sync delivered status + proof type to PostgreSQL (non-blocking)
-        try {
-            orderJpaRepository.findByMongoId(savedOrder.getId()).ifPresentOrElse(
-                pgOrder -> { updateOrderJpaEntityFields(pgOrder, savedOrder); orderJpaRepository.save(pgOrder); },
-                () -> log.warn("PG dual-write: no PG row found for markOrderDelivered orderId={}", orderId)
-            );
-        } catch (Exception e) {
-            log.warn("PG dual-write failed for markOrderDelivered orderId={}: {}", orderId, e.getMessage());
-        }
-
-        // Publish status changed event to RabbitMQ
-        try {
-            OrderStatusChangedEvent statusEvent = new OrderStatusChangedEvent(
-                savedOrder.getId(), savedOrder.getCustomerId(),
-                OrderStatus.DISPATCHED.toString(), OrderStatus.DELIVERED.toString(),
-                savedOrder.getStoreId());
-            statusEvent.setVatCountryCode(savedOrder.getVatCountryCode());
-            statusEvent.setTotalVatAmount(savedOrder.getTotalVatAmount());
-            statusEvent.setCurrency(savedOrder.getCurrency());
-            orderEventPublisher.publishOrderStatusChanged(statusEvent);
-        } catch (Exception e) {
-            log.warn("Failed to publish delivered event for {}: {}", orderId, e.getMessage());
-        }
-
         // Send delivery confirmation notification
         customerNotificationService.sendOrderStatusNotification(savedOrder, OrderStatus.DELIVERED);
 
@@ -1517,5 +1108,24 @@ public class OrderService {
         webSocketController.sendKitchenQueueUpdate(savedOrder.getStoreId(), savedOrder);
 
         return savedOrder;
+    }
+
+    /**
+     * Anonymise all PII in orders for a customer (GDPR erasure).
+     * Called internally by core-service GDPR service via POST /api/orders/gdpr/anonymize.
+     */
+    @Transactional
+    public void anonymizeCustomerOrders(String customerId) {
+        List<Order> orders = orderRepository.findByCustomerId(customerId);
+        for (Order order : orders) {
+            order.setCustomerName("ANONYMIZED");
+            order.setCustomerPhone("ANONYMIZED");
+            order.setCustomerEmail("ANONYMIZED");
+            if (order.getDeliveryAddress() != null) {
+                order.setDeliveryAddress(null);
+            }
+            orderRepository.save(order);
+        }
+        log.info("Anonymised {} orders for customer {}", orders.size(), customerId);
     }
 }

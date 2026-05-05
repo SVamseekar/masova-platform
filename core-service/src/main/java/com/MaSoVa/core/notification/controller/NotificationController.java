@@ -3,17 +3,28 @@ package com.MaSoVa.core.notification.controller;
 import com.MaSoVa.core.notification.dto.NotificationRequest;
 import com.MaSoVa.core.notification.entity.Notification;
 import com.MaSoVa.core.notification.service.NotificationService;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.data.domain.Page;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Notifications — 5 canonical endpoints at /api/notifications.
+ * Replaces: /api/notifications/user/{userId}, /user/{userId}/unread,
+ *           /user/{userId}/unread-count, /user/{userId}/read-all,
+ *           /user/{userId}/recent, /send
+ */
 @RestController
 @RequestMapping("/api/notifications")
+@Tag(name = "Notifications", description = "Send and manage notifications")
+@SecurityRequirement(name = "bearerAuth")
 public class NotificationController {
 
     private final NotificationService notificationService;
@@ -22,91 +33,69 @@ public class NotificationController {
         this.notificationService = notificationService;
     }
 
-    private String getStoreIdFromHeaders(HttpServletRequest request) {
-        String userType = request.getHeader("X-User-Type");
-        String selectedStoreId = request.getHeader("X-Selected-Store-Id");
-        String userStoreId = request.getHeader("X-User-Store-Id");
-
-        if ("MANAGER".equals(userType) || "CUSTOMER".equals(userType)) {
-            return selectedStoreId != null ? selectedStoreId : userStoreId;
+    /**
+     * GET /api/notifications?userId=&unread=&recent=
+     * Replaces: /user/{userId}, /user/{userId}/unread, /user/{userId}/recent
+     */
+    @GetMapping
+    @PreAuthorize("#userId == authentication.name or hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
+    @Operation(summary = "List notifications (query: userId, unread, recent)")
+    public ResponseEntity<List<Notification>> getNotifications(
+            @RequestParam String userId,
+            @RequestParam(required = false) Boolean unread,
+            @RequestParam(required = false, defaultValue = "false") Boolean recent) {
+        if (Boolean.TRUE.equals(unread)) {
+            return ResponseEntity.ok(notificationService.getUnreadNotifications(userId));
         }
-        return userStoreId;
+        if (Boolean.TRUE.equals(recent)) {
+            return ResponseEntity.ok(notificationService.getRecentNotifications(userId, 7));
+        }
+        return ResponseEntity.ok(notificationService.getUserNotifications(userId, PageRequest.of(0, 50)).getContent());
     }
 
-    @PostMapping("/send")
+    @PostMapping
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
+    @Operation(summary = "Send notification")
     public ResponseEntity<Notification> sendNotification(@RequestBody NotificationRequest request) {
         Notification notification = new Notification(
                 request.getUserId(),
                 request.getTitle(),
                 request.getMessage(),
                 request.getType(),
-                request.getChannel()
-        );
-
-        if (request.getPriority() != null) {
-            notification.setPriority(request.getPriority());
-        }
-        if (request.getRecipientEmail() != null) {
-            notification.setRecipientEmail(request.getRecipientEmail());
-        }
-        if (request.getRecipientPhone() != null) {
-            notification.setRecipientPhone(request.getRecipientPhone());
-        }
-        if (request.getRecipientDeviceToken() != null) {
-            notification.setRecipientDeviceToken(request.getRecipientDeviceToken());
-        }
-
+                request.getChannel());
+        if (request.getPriority() != null) notification.setPriority(request.getPriority());
+        if (request.getRecipientEmail() != null) notification.setRecipientEmail(request.getRecipientEmail());
+        if (request.getRecipientPhone() != null) notification.setRecipientPhone(request.getRecipientPhone());
+        if (request.getRecipientDeviceToken() != null) notification.setRecipientDeviceToken(request.getRecipientDeviceToken());
         Notification created = notificationService.createNotification(notification);
         notificationService.sendNotification(created.getId());
-
         return ResponseEntity.ok(created);
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<Page<Notification>> getUserNotifications(
-            @PathVariable String userId,
-            @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "size", defaultValue = "20") int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Notification> notifications = notificationService.getUserNotifications(userId, pageable);
-        return ResponseEntity.ok(notifications);
-    }
-
-    @GetMapping("/user/{userId}/unread")
-    public ResponseEntity<List<Notification>> getUnreadNotifications(@PathVariable String userId) {
-        List<Notification> notifications = notificationService.getUnreadNotifications(userId);
-        return ResponseEntity.ok(notifications);
-    }
-
-    @GetMapping("/user/{userId}/unread-count")
-    public ResponseEntity<Long> getUnreadCount(@PathVariable String userId) {
-        Long count = notificationService.getUnreadCount(userId);
-        return ResponseEntity.ok(count);
-    }
-
     @PatchMapping("/{id}/read")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Mark notification as read")
     public ResponseEntity<Notification> markAsRead(@PathVariable String id) {
-        Notification notification = notificationService.markAsRead(id);
-        return ResponseEntity.ok(notification);
+        return ResponseEntity.ok(notificationService.markAsRead(id));
     }
 
-    @PatchMapping("/user/{userId}/read-all")
-    public ResponseEntity<Void> markAllAsRead(@PathVariable String userId) {
+    /**
+     * PATCH /api/notifications/read-all?userId=
+     * Replaces: PATCH /user/{userId}/read-all
+     */
+    @PatchMapping("/read-all")
+    @PreAuthorize("#userId == authentication.name or hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
+    @Operation(summary = "Mark all as read (query: userId)")
+    public ResponseEntity<Void> markAllAsRead(@RequestParam String userId) {
         notificationService.markAllAsRead(userId);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Delete notification")
     public ResponseEntity<Void> deleteNotification(@PathVariable String id) {
         notificationService.deleteNotification(id);
         return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/user/{userId}/recent")
-    public ResponseEntity<List<Notification>> getRecentNotifications(
-            @PathVariable String userId,
-            @RequestParam(name = "days", defaultValue = "7") int days) {
-        List<Notification> notifications = notificationService.getRecentNotifications(userId, days);
-        return ResponseEntity.ok(notifications);
     }
 }

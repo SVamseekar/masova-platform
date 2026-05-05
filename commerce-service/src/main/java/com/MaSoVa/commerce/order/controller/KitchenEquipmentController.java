@@ -3,26 +3,31 @@ package com.MaSoVa.commerce.order.controller;
 import com.MaSoVa.commerce.order.entity.KitchenEquipment;
 import com.MaSoVa.commerce.order.service.KitchenEquipmentService;
 import com.MaSoVa.shared.util.StoreContextUtil;
+
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Kitchen Equipment — 6 canonical endpoints at /api/equipment.
+ * Replaces: /api/kitchen-equipment (wrong path), /store, /store/status/{status},
+ *           /store/maintenance-needed, /store/reset-usage (removed — internal scheduler only),
+ *           /{id}/status, /{id}/power, /{id}/temperature (merged into PATCH /{id}).
+ */
 @RestController
-@RequestMapping("/api/kitchen-equipment")
-@Tag(name = "Kitchen Equipment", description = "APIs for managing kitchen equipment monitoring and maintenance")
+@RequestMapping("/api/equipment")
+@Tag(name = "Kitchen Equipment", description = "Kitchen equipment monitoring and maintenance")
 @SecurityRequirement(name = "bearerAuth")
 public class KitchenEquipmentController {
 
@@ -35,173 +40,88 @@ public class KitchenEquipmentController {
     }
 
     /**
-     * Create new equipment
+     * GET /api/equipment?status=&maintenanceNeeded=true
+     * Replaces: /store, /store/status/{status}, /store/maintenance-needed
      */
+    @GetMapping
+    @Operation(summary = "List equipment (query: status, maintenanceNeeded)")
+    public ResponseEntity<List<KitchenEquipment>> getEquipment(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Boolean maintenanceNeeded,
+            HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        if (Boolean.TRUE.equals(maintenanceNeeded)) {
+            return ResponseEntity.ok(equipmentService.getEquipmentNeedingMaintenance(storeId));
+        }
+        if (status != null) {
+            return ResponseEntity.ok(equipmentService.getEquipmentByStatus(
+                    storeId, KitchenEquipment.EquipmentStatus.valueOf(status)));
+        }
+        return ResponseEntity.ok(equipmentService.getEquipmentByStore(storeId));
+    }
+
     @PostMapping
-    @Operation(summary = "Create new kitchen equipment", description = "Register new kitchen equipment for monitoring")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Equipment created successfully"),
-        @ApiResponse(responseCode = "400", description = "Invalid equipment data")
-    })
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Register new equipment")
     public ResponseEntity<KitchenEquipment> createEquipment(@RequestBody KitchenEquipment equipment) {
-        log.info("POST /api/kitchen-equipment - Creating equipment: {}", equipment.getEquipmentName());
-        KitchenEquipment created = equipmentService.createEquipment(equipment);
-        return ResponseEntity.ok(created);
+        return ResponseEntity.ok(equipmentService.createEquipment(equipment));
     }
 
-    /**
-     * Get all equipment for a store
-     */
-    @GetMapping("/store")
-    @Operation(summary = "Get store equipment", description = "Retrieves all kitchen equipment for the authenticated user's store")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Equipment list retrieved successfully"),
-        @ApiResponse(responseCode = "400", description = "Invalid store ID")
-    })
-    public ResponseEntity<List<KitchenEquipment>> getEquipmentByStore(HttpServletRequest request) {
-        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
-        if (storeId == null || storeId.isEmpty()) {
-            return ResponseEntity.badRequest().body(null);
-        }
-        log.info("GET /api/kitchen-equipment/store - Fetching equipment for store: {}", storeId);
-        List<KitchenEquipment> equipment = equipmentService.getEquipmentByStore(storeId);
-        return ResponseEntity.ok(equipment);
-    }
-
-    /**
-     * Get equipment by ID
-     */
     @GetMapping("/{equipmentId}")
+    @Operation(summary = "Get equipment by ID")
     public ResponseEntity<KitchenEquipment> getEquipmentById(@PathVariable String equipmentId) {
-        log.info("GET /api/kitchen-equipment/{}", equipmentId);
-        KitchenEquipment equipment = equipmentService.getEquipmentById(equipmentId);
-        return ResponseEntity.ok(equipment);
+        return ResponseEntity.ok(equipmentService.getEquipmentById(equipmentId));
     }
 
     /**
-     * Update equipment status
+     * PATCH /api/equipment/{id}
+     * Body can contain: status+staffId+notes (status update),
+     *                   isOn+staffId (power toggle),
+     *                   temperature (temperature update).
+     * Replaces: /{id}/status, /{id}/power, /{id}/temperature
      */
-    @PatchMapping("/{equipmentId}/status")
-    public ResponseEntity<KitchenEquipment> updateEquipmentStatus(
+    @PatchMapping("/{equipmentId}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
+    @Operation(summary = "Update equipment (status, power, or temperature)")
+    public ResponseEntity<KitchenEquipment> updateEquipment(
             @PathVariable String equipmentId,
-            @RequestBody Map<String, String> request) {
+            @RequestBody Map<String, Object> body) {
 
-        log.info("PATCH /api/kitchen-equipment/{}/status", equipmentId);
-
-        KitchenEquipment.EquipmentStatus status = KitchenEquipment.EquipmentStatus.valueOf(request.get("status"));
-        String staffId = request.get("staffId");
-        String notes = request.get("notes");
-
-        KitchenEquipment updated = equipmentService.updateEquipmentStatus(equipmentId, status, staffId, notes);
-        return ResponseEntity.ok(updated);
-    }
-
-    /**
-     * Toggle equipment power on/off
-     */
-    @PatchMapping("/{equipmentId}/power")
-    public ResponseEntity<KitchenEquipment> togglePower(
-            @PathVariable String equipmentId,
-            @RequestBody Map<String, Object> request) {
-
-        log.info("PATCH /api/kitchen-equipment/{}/power", equipmentId);
-
-        Boolean isOn = (Boolean) request.get("isOn");
-        String staffId = (String) request.get("staffId");
-
-        KitchenEquipment updated = equipmentService.toggleEquipmentPower(equipmentId, isOn, staffId);
-        return ResponseEntity.ok(updated);
-    }
-
-    /**
-     * Update equipment temperature
-     */
-    @PatchMapping("/{equipmentId}/temperature")
-    public ResponseEntity<KitchenEquipment> updateTemperature(
-            @PathVariable String equipmentId,
-            @RequestBody Map<String, Integer> request) {
-
-        log.info("PATCH /api/kitchen-equipment/{}/temperature", equipmentId);
-
-        Integer temperature = request.get("temperature");
-        KitchenEquipment updated = equipmentService.updateTemperature(equipmentId, temperature);
-        return ResponseEntity.ok(updated);
-    }
-
-    /**
-     * Record maintenance
-     */
-    @PostMapping("/{equipmentId}/maintenance")
-    public ResponseEntity<KitchenEquipment> recordMaintenance(
-            @PathVariable String equipmentId,
-            @RequestBody Map<String, String> request) {
-
-        log.info("POST /api/kitchen-equipment/{}/maintenance", equipmentId);
-
-        String nextMaintenanceDateStr = request.get("nextMaintenanceDate");
-        LocalDateTime nextMaintenanceDate = nextMaintenanceDateStr != null && nextMaintenanceDateStr.endsWith("Z")
-                ? Instant.parse(nextMaintenanceDateStr).atOffset(ZoneOffset.UTC).toLocalDateTime()
-                : LocalDateTime.parse(nextMaintenanceDateStr);
-        String notes = request.get("notes");
-
-        KitchenEquipment updated = equipmentService.recordMaintenance(equipmentId, nextMaintenanceDate, notes);
-        return ResponseEntity.ok(updated);
-    }
-
-    /**
-     * Get equipment by status
-     */
-    @GetMapping("/store/status/{status}")
-    public ResponseEntity<List<KitchenEquipment>> getEquipmentByStatus(
-            HttpServletRequest request,
-            @PathVariable String status) {
-
-        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
-        if (storeId == null || storeId.isEmpty()) {
-            return ResponseEntity.badRequest().body(null);
+        if (body.containsKey("status")) {
+            KitchenEquipment.EquipmentStatus status = KitchenEquipment.EquipmentStatus.valueOf((String) body.get("status"));
+            return ResponseEntity.ok(equipmentService.updateEquipmentStatus(
+                    equipmentId, status, (String) body.get("staffId"), (String) body.get("notes")));
         }
-        log.info("GET /api/kitchen-equipment/store/status/{} - Fetching equipment with status for store: {}", status, storeId);
-
-        KitchenEquipment.EquipmentStatus equipmentStatus = KitchenEquipment.EquipmentStatus.valueOf(status);
-        List<KitchenEquipment> equipment = equipmentService.getEquipmentByStatus(storeId, equipmentStatus);
-        return ResponseEntity.ok(equipment);
-    }
-
-    /**
-     * Get equipment needing maintenance
-     */
-    @GetMapping("/store/maintenance-needed")
-    public ResponseEntity<List<KitchenEquipment>> getEquipmentNeedingMaintenance(HttpServletRequest request) {
-        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
-        if (storeId == null || storeId.isEmpty()) {
-            return ResponseEntity.badRequest().body(null);
+        if (body.containsKey("isOn")) {
+            Boolean isOn = (Boolean) body.get("isOn");
+            return ResponseEntity.ok(equipmentService.toggleEquipmentPower(
+                    equipmentId, isOn, (String) body.get("staffId")));
         }
-        log.info("GET /api/kitchen-equipment/store/maintenance-needed - Fetching equipment needing maintenance for store: {}", storeId);
-        List<KitchenEquipment> equipment = equipmentService.getEquipmentNeedingMaintenance(storeId);
-        return ResponseEntity.ok(equipment);
+        if (body.containsKey("temperature")) {
+            Integer temp = (Integer) body.get("temperature");
+            return ResponseEntity.ok(equipmentService.updateTemperature(equipmentId, temp));
+        }
+        return ResponseEntity.badRequest().body(null);
     }
 
-    /**
-     * Delete equipment
-     */
     @DeleteMapping("/{equipmentId}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Delete equipment")
     public ResponseEntity<Void> deleteEquipment(@PathVariable String equipmentId) {
-        log.info("DELETE /api/kitchen-equipment/{}", equipmentId);
         equipmentService.deleteEquipment(equipmentId);
         return ResponseEntity.noContent().build();
     }
 
     /**
-     * Reset daily usage counts
+     * POST /api/equipment/{id}/maintenance — record maintenance and set next date
      */
-    @PostMapping("/store/reset-usage")
-    public ResponseEntity<Void> resetUsageCounts(HttpServletRequest request) {
-        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
-        if (storeId == null || storeId.isEmpty()) {
-            return ResponseEntity.badRequest().body(null);
-        }
-        log.info("POST /api/kitchen-equipment/store/reset-usage - Resetting usage counts for store: {}", storeId);
-        equipmentService.resetDailyUsageCounts(storeId);
-        return ResponseEntity.ok().build();
+    @PostMapping("/{equipmentId}/maintenance")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Record maintenance event")
+    public ResponseEntity<KitchenEquipment> recordMaintenance(
+            @PathVariable String equipmentId,
+            @RequestBody Map<String, String> body) {
+        LocalDateTime nextMaintenance = LocalDateTime.parse(body.get("nextMaintenanceDate"));
+        return ResponseEntity.ok(equipmentService.recordMaintenance(equipmentId, nextMaintenance, body.get("notes")));
     }
 }

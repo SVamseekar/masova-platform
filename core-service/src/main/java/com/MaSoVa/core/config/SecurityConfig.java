@@ -26,18 +26,26 @@ public class SecurityConfig extends SecurityConfigurationBase {
     @Override
     protected String[] getPublicEndpoints() {
         return new String[]{
+            // Canonical auth endpoints
             "/api/auth/login",
             "/api/auth/register",
             "/api/auth/refresh",
             "/api/auth/logout",
             "/api/auth/google",
             "/api/auth/validate-pin",
+            // Legacy auth paths (kept for backwards compat during transition)
+            "/api/users/login",
+            "/api/users/register",
+            "/api/users/refresh",
+            "/api/users/logout",
             "/api/users/kiosk/**",
             "/api/users/auth/google",
             "/api/users/auth/google/register",
+            // Public store/menu/review browsing
             "/api/stores/public/**",
             "/api/menu/public/**",
             "/api/reviews/public/**",
+            // Health and docs
             "/actuator/health",
             "/api/health/**",
             "/v3/api-docs/**",

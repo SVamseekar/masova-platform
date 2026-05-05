@@ -1,31 +1,37 @@
 package com.MaSoVa.logistics.inventory.controller;
 
-import com.MaSoVa.logistics.inventory.dto.request.PerformanceUpdateRequest;
-import com.MaSoVa.logistics.inventory.dto.request.PreferredUpdateRequest;
-import com.MaSoVa.logistics.inventory.dto.request.StatusUpdateRequest;
 import com.MaSoVa.logistics.inventory.dto.response.MessageResponse;
 import com.MaSoVa.logistics.inventory.entity.Supplier;
 import com.MaSoVa.logistics.inventory.service.SupplierService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import java.util.List;
+import java.util.Map;
 
 /**
- * REST Controller for Supplier Management
+ * Suppliers — 6 canonical endpoints at /api/suppliers.
+ * Path moved from /api/inventory/suppliers (matches gateway route /api/suppliers/**).
+ * Replaces: /active, /preferred, /reliable, /category/{cat}, /search,
+ *           /city/{city}, /code/{code}, /compare/category/{cat}, PUT /{id},
+ *           separate PATCH /{id}/status and /{id}/preferred and /{id}/performance
  */
 @RestController
-@Tag(name = "SupplierController", description = "Supplier management")
+@RequestMapping("/api/suppliers")
+@Tag(name = "Suppliers", description = "Supplier management")
 @SecurityRequirement(name = "bearerAuth")
-@RequestMapping("/api/inventory/suppliers")
 public class SupplierController {
 
-    private static final Logger logger = LoggerFactory.getLogger(SupplierController.class);
+    private static final Logger log = LoggerFactory.getLogger(SupplierController.class);
 
     private final SupplierService supplierService;
 
@@ -34,199 +40,95 @@ public class SupplierController {
     }
 
     /**
-     * Create a new supplier
-     * POST /api/inventory/suppliers
-     */
-    @PostMapping
-    public ResponseEntity<Supplier> createSupplier(@RequestBody Supplier supplier) {
-        logger.info("Creating supplier: {}", supplier.getSupplierName());
-        Supplier created = supplierService.createSupplier(supplier);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
-    }
-
-    /**
-     * Get all suppliers
-     * GET /api/inventory/suppliers
+     * GET /api/suppliers?status=&preferred=true&reliable=true&category=&search=&city=&code=
+     * Replaces: /active, /preferred, /reliable, /category/{cat}, /search, /city/{city}, /code/{code},
+     *           /compare/category/{cat}
      */
     @GetMapping
-    public ResponseEntity<List<Supplier>> getAllSuppliers() {
-        logger.info("Getting all suppliers");
-        List<Supplier> suppliers = supplierService.getAllSuppliers();
-        return ResponseEntity.ok(suppliers);
+    @Operation(summary = "List suppliers (query: status, preferred, reliable, category, search, city, code)")
+    public ResponseEntity<List<Supplier>> getSuppliers(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Boolean preferred,
+            @RequestParam(required = false) Boolean reliable,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) String code) {
+        if (code != null) return ResponseEntity.ok(List.of(supplierService.getSupplierByCode(code)));
+        if (Boolean.TRUE.equals(preferred)) return ResponseEntity.ok(supplierService.getPreferredSuppliers());
+        if (Boolean.TRUE.equals(reliable)) return ResponseEntity.ok(supplierService.getReliableSuppliers());
+        if (search != null) return ResponseEntity.ok(supplierService.searchSuppliers(search));
+        if (city != null) return ResponseEntity.ok(supplierService.getSuppliersByCity(city));
+        if (category != null) return ResponseEntity.ok(supplierService.getSuppliersByCategory(category));
+        if ("ACTIVE".equalsIgnoreCase(status)) return ResponseEntity.ok(supplierService.getActiveSuppliers());
+        return ResponseEntity.ok(supplierService.getAllSuppliers());
     }
 
-    /**
-     * Get supplier by ID
-     * GET /api/inventory/suppliers/{id}
-     */
+    @PostMapping
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Create supplier")
+    public ResponseEntity<Supplier> createSupplier(@RequestBody Supplier supplier) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(supplierService.createSupplier(supplier));
+    }
+
     @GetMapping("/{id}")
-    public ResponseEntity<Supplier> getSupplierById(@PathVariable String id) {
-        logger.info("Getting supplier: {}", id);
-        Supplier supplier = supplierService.getSupplierById(id);
-        return ResponseEntity.ok(supplier);
+    @Operation(summary = "Get supplier by ID")
+    public ResponseEntity<Supplier> getSupplier(@PathVariable String id) {
+        return ResponseEntity.ok(supplierService.getSupplierById(id));
     }
 
     /**
-     * Get supplier by code
-     * GET /api/inventory/suppliers/code/{code}
+     * PATCH /api/suppliers/{id}
+     * Body can contain: status, isPreferred, completedOrders, cancelledOrders,
+     *                   onTimeDeliveryRate, qualityRating, or any other supplier field.
+     * Replaces: PUT /{id}, PATCH /{id}/status, PATCH /{id}/preferred, PATCH /{id}/performance
      */
-    @GetMapping("/code/{code}")
-    public ResponseEntity<Supplier> getSupplierByCode(@PathVariable String code) {
-        logger.info("Getting supplier by code: {}", code);
-        Supplier supplier = supplierService.getSupplierByCode(code);
-        return ResponseEntity.ok(supplier);
-    }
-
-    /**
-     * Get active suppliers
-     * GET /api/inventory/suppliers/active
-     */
-    @GetMapping("/active")
-    public ResponseEntity<List<Supplier>> getActiveSuppliers() {
-        logger.info("Getting active suppliers");
-        List<Supplier> suppliers = supplierService.getActiveSuppliers();
-        return ResponseEntity.ok(suppliers);
-    }
-
-    /**
-     * Get preferred suppliers
-     * GET /api/inventory/suppliers/preferred
-     */
-    @GetMapping("/preferred")
-    public ResponseEntity<List<Supplier>> getPreferredSuppliers() {
-        logger.info("Getting preferred suppliers");
-        List<Supplier> suppliers = supplierService.getPreferredSuppliers();
-        return ResponseEntity.ok(suppliers);
-    }
-
-    /**
-     * Get reliable suppliers
-     * GET /api/inventory/suppliers/reliable
-     */
-    @GetMapping("/reliable")
-    public ResponseEntity<List<Supplier>> getReliableSuppliers() {
-        logger.info("Getting reliable suppliers");
-        List<Supplier> suppliers = supplierService.getReliableSuppliers();
-        return ResponseEntity.ok(suppliers);
-    }
-
-    /**
-     * Get suppliers by category
-     * GET /api/inventory/suppliers/category/{category}
-     */
-    @GetMapping("/category/{category}")
-    public ResponseEntity<List<Supplier>> getSuppliersByCategory(@PathVariable String category) {
-        logger.info("Getting suppliers for category: {}", category);
-        List<Supplier> suppliers = supplierService.getSuppliersByCategory(category);
-        return ResponseEntity.ok(suppliers);
-    }
-
-    /**
-     * Search suppliers by name
-     * GET /api/inventory/suppliers/search?q=xxx
-     */
-    @GetMapping("/search")
-    public ResponseEntity<List<Supplier>> searchSuppliers(@RequestParam String q) {
-        logger.info("Searching suppliers: {}", q);
-        List<Supplier> suppliers = supplierService.searchSuppliers(q);
-        return ResponseEntity.ok(suppliers);
-    }
-
-    /**
-     * Get suppliers by city
-     * GET /api/inventory/suppliers/city/{city}
-     */
-    @GetMapping("/city/{city}")
-    public ResponseEntity<List<Supplier>> getSuppliersByCity(@PathVariable String city) {
-        logger.info("Getting suppliers in city: {}", city);
-        List<Supplier> suppliers = supplierService.getSuppliersByCity(city);
-        return ResponseEntity.ok(suppliers);
-    }
-
-    /**
-     * Compare suppliers by category
-     * GET /api/inventory/suppliers/compare/category/{category}
-     */
-    @GetMapping("/compare/category/{category}")
-    public ResponseEntity<List<Supplier>> compareSuppliersByCategory(@PathVariable String category) {
-        logger.info("Comparing suppliers for category: {}", category);
-        List<Supplier> suppliers = supplierService.compareSuppliersByCategory(category);
-        return ResponseEntity.ok(suppliers);
-    }
-
-    /**
-     * Update supplier
-     * PUT /api/inventory/suppliers/{id}
-     */
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Update supplier (status, preferred flag, performance metrics, or full update)")
     public ResponseEntity<Supplier> updateSupplier(
             @PathVariable String id,
-            @RequestBody Supplier supplier) {
-        logger.info("Updating supplier: {}", id);
+            @RequestBody Map<String, Object> body) {
+
+        if (body.containsKey("status") && body.size() == 1) {
+            return ResponseEntity.ok(supplierService.updateSupplierStatus(id, (String) body.get("status")));
+        }
+        if (body.containsKey("isPreferred") && body.size() == 1) {
+            return ResponseEntity.ok(supplierService.markAsPreferred(id, (Boolean) body.get("isPreferred")));
+        }
+        if (body.containsKey("onTimeDeliveryRate") || body.containsKey("qualityRating")) {
+            return ResponseEntity.ok(supplierService.updatePerformanceMetrics(
+                    id,
+                    body.containsKey("completedOrders") ? (Integer) body.get("completedOrders") : null,
+                    body.containsKey("cancelledOrders") ? (Integer) body.get("cancelledOrders") : null,
+                    body.containsKey("onTimeDeliveryRate") ? ((Number) body.get("onTimeDeliveryRate")).doubleValue() : null,
+                    body.containsKey("qualityRating") ? ((Number) body.get("qualityRating")).doubleValue() : null));
+        }
+        // Full update
+        Supplier supplier = supplierService.getSupplierById(id);
+        if (body.containsKey("supplierName")) supplier.setSupplierName((String) body.get("supplierName"));
+        if (body.containsKey("status")) supplier.setStatus((String) body.get("status"));
         supplier.setId(id);
-        Supplier updated = supplierService.updateSupplier(supplier);
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(supplierService.updateSupplier(supplier));
     }
 
-    /**
-     * Update supplier status
-     * PATCH /api/inventory/suppliers/{id}/status
-     * Body: { "status": "ACTIVE" }
-     */
-    @PatchMapping("/{id}/status")
-    public ResponseEntity<Supplier> updateSupplierStatus(
-            @PathVariable String id,
-            @RequestBody StatusUpdateRequest request) {
-        logger.info("Updating supplier {} status to: {}", id, request.getStatus());
-        Supplier updated = supplierService.updateSupplierStatus(id, request.getStatus());
-        return ResponseEntity.ok(updated);
-    }
-
-    /**
-     * Mark supplier as preferred
-     * PATCH /api/inventory/suppliers/{id}/preferred
-     * Body: { "isPreferred": true }
-     */
-    @PatchMapping("/{id}/preferred")
-    public ResponseEntity<Supplier> markAsPreferred(
-            @PathVariable String id,
-            @RequestBody PreferredUpdateRequest request) {
-        logger.info("Setting supplier {} preferred status to: {}", id, request.getIsPreferred());
-        Supplier updated = supplierService.markAsPreferred(id, request.getIsPreferred());
-        return ResponseEntity.ok(updated);
-    }
-
-    /**
-     * Update supplier performance metrics
-     * PATCH /api/inventory/suppliers/{id}/performance
-     * Body: { "completedOrders": 1, "cancelledOrders": 0, "onTimeDeliveryRate": 95.0, "qualityRating": 4.5 }
-     */
-    @PatchMapping("/{id}/performance")
-    public ResponseEntity<Supplier> updatePerformanceMetrics(
-            @PathVariable String id,
-            @RequestBody PerformanceUpdateRequest request) {
-        logger.info("Updating performance metrics for supplier: {}", id);
-
-        Supplier updated = supplierService.updatePerformanceMetrics(
-            id,
-            request.getCompletedOrders(),
-            request.getCancelledOrders(),
-            request.getOnTimeDeliveryRate(),
-            request.getQualityRating()
-        );
-
-        return ResponseEntity.ok(updated);
-    }
-
-    /**
-     * Delete supplier
-     * DELETE /api/inventory/suppliers/{id}
-     */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Delete supplier")
     public ResponseEntity<MessageResponse> deleteSupplier(@PathVariable String id) {
-        logger.info("Deleting supplier: {}", id);
         supplierService.deleteSupplier(id);
-
         return ResponseEntity.ok(new MessageResponse("Supplier deleted successfully"));
+    }
+
+    // ── REORDER SUGGESTIONS ───────────────────────────────────────────────────────
+
+    /**
+     * GET /api/suppliers/compare?category= — compare by category
+     * Replaces: /compare/category/{category}
+     */
+    @GetMapping("/compare")
+    @Operation(summary = "Compare suppliers by category (query: category)")
+    public ResponseEntity<List<Supplier>> compare(@RequestParam String category) {
+        return ResponseEntity.ok(supplierService.compareSuppliersByCategory(category));
     }
 }

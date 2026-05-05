@@ -7,6 +7,10 @@ import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import reactor.core.publisher.Mono;
 
 /**
  * API Gateway route configuration — Phase 1 consolidated architecture (6 services).
@@ -33,11 +37,11 @@ public class GatewayConfig {
         return builder.routes()
 
                 // ============================================================
-                // CORE SERVICE (port 8096) — users, customers, notifications,
-                //                            campaigns, reviews, responses
+                // CORE SERVICE (port 8085) — users, customers, notifications,
+                //                            campaigns, reviews, preferences
                 // ============================================================
 
-                // Auth: canonical /api/auth/* routes (Phase 1 renamed paths)
+                // ── Canonical auth routes: POST /api/auth/* (+ legacy /api/users/* aliases) ─
                 .route("core_auth_login", r -> r.path("/api/auth/login", "/api/users/login")
                         .and().method("POST")
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(10, "auth"))))
@@ -58,22 +62,28 @@ public class GatewayConfig {
                         .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
 
-                .route("core_auth_validate_pin", r -> r.path("/api/auth/validate-pin")
-                        .and().method("POST")
-                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(20, "validate_pin"))))
-                        .uri("http://localhost:8085"))
-
-                .route("core_auth_google", r -> r.path("/api/auth/google", "/api/users/google", "/api/users/auth/google")
+                .route("core_auth_google", r -> r.path("/api/auth/google", "/api/users/auth/google", "/api/users/google")
                         .and().method("POST")
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(20, "google_auth"))))
+                        .uri("http://localhost:8085"))
+
+                .route("core_auth_change_password", r -> r.path("/api/auth/change-password")
+                        .and().method("POST")
+                        .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8085"))
+
+                .route("core_auth_validate_pin", r -> r.path("/api/auth/validate-pin")
+                        .and().method("POST")
+                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(30, "validate_pin"))))
                         .uri("http://localhost:8085"))
 
                 .route("core_kiosk_public", r -> r.path("/api/users/kiosk/**")
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(20, "kiosk"))))
                         .uri("http://localhost:8085"))
 
-                // Stores — public info served by core-service (store entity lives in user domain)
-                .route("core_stores_public", r -> r.path("/api/stores/public/**")
+                // Stores — all stores routes served by core-service (no /public sub-path any more)
+                .route("core_stores_public", r -> r.path("/api/stores")
+                        .and().method("GET")
                         .uri("http://localhost:8085"))
 
                 // Reviews — public rating display (no auth for customer-facing pages)
@@ -81,11 +91,55 @@ public class GatewayConfig {
                         .and().method("GET")
                         .uri("http://localhost:8085"))
 
-                // Customers — public get-or-create for guest checkout
-                .route("core_customers_public", r -> r.path("/api/customers/get-or-create")
+                // POST /api/customers/get-or-create is service-to-service ONLY — deny at gateway
+                .route("core_customers_get_or_create_blocked", r -> r
+                        .path("/api/customers/get-or-create")
                         .and().method("POST")
-                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(50, "customer_create"))))
+                        .filters(f -> f.filter((exchange, chain) -> {
+                            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                            exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+                            byte[] body = "{\"error\":\"This endpoint is not accessible externally\"}".getBytes();
+                            DataBuffer buf = exchange.getResponse().bufferFactory().wrap(body);
+                            return exchange.getResponse().writeWith(Mono.just(buf));
+                        }))
                         .uri("http://localhost:8085"))
+
+                // GDPR anonymize endpoints are service-to-service ONLY — never reachable externally
+                .route("gdpr_anonymize_orders_blocked", r -> r
+                        .path("/api/orders/gdpr/**")
+                        .and().method("POST")
+                        .filters(f -> f.filter((exchange, chain) -> {
+                            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                            exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+                            byte[] body = "{\"error\":\"This endpoint is not accessible externally\"}".getBytes();
+                            DataBuffer buf = exchange.getResponse().bufferFactory().wrap(body);
+                            return exchange.getResponse().writeWith(Mono.just(buf));
+                        }))
+                        .uri("http://localhost:8084"))
+
+                .route("gdpr_anonymize_payments_blocked", r -> r
+                        .path("/api/payments/gdpr/**")
+                        .and().method("POST")
+                        .filters(f -> f.filter((exchange, chain) -> {
+                            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                            exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+                            byte[] body = "{\"error\":\"This endpoint is not accessible externally\"}".getBytes();
+                            DataBuffer buf = exchange.getResponse().bufferFactory().wrap(body);
+                            return exchange.getResponse().writeWith(Mono.just(buf));
+                        }))
+                        .uri("http://localhost:8089"))
+
+                .route("gdpr_anonymize_delivery_blocked", r -> r
+                        .path("/api/delivery/gdpr/**")
+                        .and().method("POST")
+                        .filters(f -> f.filter((exchange, chain) -> {
+                            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                            exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+                            byte[] body = "{\"error\":\"This endpoint is not accessible externally\"}".getBytes();
+                            DataBuffer buf = exchange.getResponse().bufferFactory().wrap(body);
+                            return exchange.getResponse().writeWith(Mono.just(buf));
+                        }))
+                        .uri("http://localhost:8086"))
 
                 // Users — all other protected user/store/session/shift operations
                 .route("core_users", r -> r.path("/api/users/**")
@@ -138,16 +192,17 @@ public class GatewayConfig {
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
 
-                .route("core_responses", r -> r.path("/api/responses/**", "/api/ratings/**")
+                .route("core_gdpr", r -> r.path("/api/gdpr/**")
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(60, "core_responses")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(30, "core_gdpr")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
 
-                // Staff earnings + pay-rates (core-service)
-                .route("core_staff_earnings", r -> r.path("/api/staff/earnings/**", "/api/staff/pay-rates", "/api/staff/pay-rates/**")
+                // /api/responses and /api/ratings have been merged into /api/reviews — route removed
+
+                .route("core_preferences", r -> r.path("/api/preferences/**")
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(100, "core_staff_earnings")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(100, "core_preferences")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
 
@@ -160,31 +215,24 @@ public class GatewayConfig {
                 // COMMERCE SERVICE (port 8084) — menu, orders, kitchen
                 // ============================================================
 
-                // Menu — public browsing (no auth)
-                .route("commerce_menu_public", r -> r.path("/api/menu/public", "/api/menu/public/**",
-                                                            "/api/menu/items", "/api/menu/items/**",
-                                                            "/api/menu/cuisine/**", "/api/menu/category/**")
+                // Menu — public browsing (no auth) — canonical: GET /api/menu and GET /api/menu/{id}
+                .route("commerce_menu_public", r -> r.path("/api/menu", "/api/menu/{id}")
                         .and().method("GET")
                         .uri("http://localhost:8084"))
 
-                // Menu — admin mutations (auth required)
-                .route("commerce_menu_admin", r -> r.path("/api/menu/admin/**")
+                // Menu — protected GET sub-paths (stats, copy, bulk-availability) — auth required
+                .route("commerce_menu_get_protected", r -> r.path("/api/menu/**")
+                        .and().method("GET")
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(30, "commerce_menu_admin")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(60, "commerce_menu_get_protected")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8084"))
 
+                // Menu — mutations (auth required)
                 .route("commerce_menu_modify", r -> r.path("/api/menu/**")
                         .and().method("POST", "PUT", "DELETE", "PATCH")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(30, "commerce_menu_modify")))
-                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8084"))
-
-                // Staff tips (commerce-service) — pending tips for a staff member
-                .route("commerce_staff_tips", r -> r.path("/api/staff/tips/**")
-                        .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(100, "commerce_staff_tips")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8084"))
 
@@ -194,16 +242,19 @@ public class GatewayConfig {
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(100, "commerce_track"))))
                         .uri("http://localhost:8084"))
 
-                // Orders — protected
+                // Orders — protected (GDPR anonymize paths blocked above via dedicated routes)
+                // X-Internal-Service is stripped here so external callers cannot spoof it
                 .route("commerce_orders", r -> r.path("/api/orders/**")
                         .and().not(p -> p.path("/api/orders/track/**"))
+                        .and().not(p -> p.path("/api/orders/gdpr/**"))
                         .filters(f -> f
+                            .removeRequestHeader("X-Internal-Service")
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(200, "commerce_orders")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8084"))
 
-                // Kitchen & equipment
-                .route("commerce_kitchen", r -> r.path("/api/kitchen/**", "/api/kitchen-equipment/**")
+                // Kitchen queue and equipment (canonical path: /api/equipment)
+                .route("commerce_kitchen", r -> r.path("/api/kitchen/**", "/api/equipment/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(150, "commerce_kitchen")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
@@ -220,7 +271,7 @@ public class GatewayConfig {
                         .uri("http://localhost:8084"))
 
                 // ============================================================
-                // PAYMENT SERVICE (port 8087) — standalone PCI DSS scope
+                // PAYMENT SERVICE (port 8089) — standalone PCI DSS scope
                 // ============================================================
 
                 // Webhook — public (Razorpay callbacks, no auth)
@@ -228,10 +279,13 @@ public class GatewayConfig {
                         .and().method("POST")
                         .uri("http://localhost:8089"))
 
-                // Payments — protected
+                // Payments — protected (GDPR anonymize paths blocked above via dedicated routes)
+                // X-Internal-Service is stripped here so external callers cannot spoof it
                 .route("payments_protected", r -> r.path("/api/payments/**")
                         .and().not(p -> p.path("/api/payments/webhook"))
+                        .and().not(p -> p.path("/api/payments/gdpr/**"))
                         .filters(f -> f
+                            .removeRequestHeader("X-Internal-Service")
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(50, "payments")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8089"))
@@ -242,25 +296,24 @@ public class GatewayConfig {
                         .uri("http://localhost:8089"))
 
                 // ============================================================
-                // LOGISTICS SERVICE (port 8095) — delivery, inventory
+                // LOGISTICS SERVICE (port 8086) — delivery, inventory
                 // ============================================================
 
-                // Delivery, dispatch, tracking
+                // Delivery public tracking — no auth (driver app / customer tracking page)
+                .route("logistics_delivery_track", r -> r.path("/api/delivery/track/**")
+                        .and().method("GET")
+                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(100, "logistics_delivery_track"))))
+                        .uri("http://localhost:8086"))
+
+                // Delivery (merged: dispatch + tracking + performance — now all at /api/delivery)
+                // GDPR anonymize paths blocked above via dedicated routes
+                // X-Internal-Service is stripped here so external callers cannot spoof it
                 .route("logistics_delivery", r -> r.path("/api/delivery/**")
+                        .and().not(p -> p.path("/api/delivery/gdpr/**"))
+                        .and().not(p -> p.path("/api/delivery/track/**"))
                         .filters(f -> f
+                            .removeRequestHeader("X-Internal-Service")
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(150, "logistics_delivery")))
-                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8086"))
-
-                .route("logistics_dispatch", r -> r.path("/api/dispatch/**")
-                        .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(100, "logistics_dispatch")))
-                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri("http://localhost:8086"))
-
-                .route("logistics_tracking", r -> r.path("/api/tracking/**")
-                        .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(200, "logistics_tracking")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8086"))
 
@@ -300,7 +353,7 @@ public class GatewayConfig {
                         .uri("http://localhost:8086"))
 
                 // ============================================================
-                // INTELLIGENCE SERVICE (port 8086) — analytics, BI, reports
+                // INTELLIGENCE SERVICE (port 8087) — analytics, BI, reports
                 // ============================================================
 
                 .route("intelligence_analytics", r -> r.path("/api/analytics/**", "/api/bi/**", "/api/reports/**")

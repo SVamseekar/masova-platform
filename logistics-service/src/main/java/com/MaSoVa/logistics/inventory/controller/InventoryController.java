@@ -6,29 +6,37 @@ import com.MaSoVa.logistics.inventory.dto.response.InventoryValueResponse;
 import com.MaSoVa.logistics.inventory.dto.response.MessageResponse;
 import com.MaSoVa.logistics.inventory.entity.InventoryItem;
 import com.MaSoVa.logistics.inventory.service.InventoryService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
 /**
- * REST Controller for Inventory Management
+ * Inventory — 7 canonical endpoints at /api/inventory.
+ * Replaces: /items, /items/{id}, /items/category/{cat}, /items/search,
+ *           /items/{id}/adjust, /items/{id}/reserve, /items/{id}/release,
+ *           /items/{id}/consume, /low-stock, /out-of-stock, /expiring-soon,
+ *           /alerts/low-stock, /value, /value/by-category, PUT /items/{id}
  */
 @RestController
-@Tag(name = "InventoryController", description = "Inventory management and stock control")
-@SecurityRequirement(name = "bearerAuth")
 @RequestMapping("/api/inventory")
+@Tag(name = "Inventory", description = "Inventory management and stock control")
+@SecurityRequirement(name = "bearerAuth")
 public class InventoryController {
 
-    private static final Logger logger = LoggerFactory.getLogger(InventoryController.class);
+    private static final Logger log = LoggerFactory.getLogger(InventoryController.class);
 
     private final InventoryService inventoryService;
 
@@ -36,257 +44,142 @@ public class InventoryController {
         this.inventoryService = inventoryService;
     }
 
-    /**
-     * Extract storeId from HTTP headers
-     */
     private String getStoreIdFromHeaders(HttpServletRequest request) {
         String userType = request.getHeader("X-User-Type");
         String selectedStoreId = request.getHeader("X-Selected-Store-Id");
         String userStoreId = request.getHeader("X-User-Store-Id");
-
-        // Managers/Customers use selected store
         if ("MANAGER".equals(userType) || "CUSTOMER".equals(userType)) {
             return selectedStoreId != null ? selectedStoreId : userStoreId;
         }
-
-        // Staff/Driver use assigned store
         return userStoreId;
     }
 
-    /**
-     * Create a new inventory item
-     * POST /api/inventory/items
-     */
-    @PostMapping("/items")
-    public ResponseEntity<InventoryItem> createInventoryItem(@RequestBody InventoryItem item) {
-        logger.info("Creating inventory item: {}", item.getItemName());
-        InventoryItem created = inventoryService.createInventoryItem(item);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
-    }
+    // ── LIST ──────────────────────────────────────────────────────────────────────
 
     /**
-     * Get all inventory items for a store
-     * GET /api/inventory/items
+     * GET /api/inventory?category=&search=&lowStock=true&outOfStock=true&expiringSoon=7
+     * Replaces: /items, /items/category/{cat}, /items/search, /low-stock, /out-of-stock,
+     *           /expiring-soon, /alerts/low-stock
      */
-    @GetMapping("/items")
-    public ResponseEntity<List<InventoryItem>> getAllInventoryItems(HttpServletRequest request) {
-        String storeId = getStoreIdFromHeaders(request);
-        logger.info("Getting all inventory items for store: {}", storeId);
-        List<InventoryItem> items = inventoryService.getAllInventoryItems(storeId);
-        return ResponseEntity.ok(items);
-    }
-
-    /**
-     * Get inventory item by ID
-     * GET /api/inventory/items/{id}
-     */
-    @GetMapping("/items/{id}")
-    public ResponseEntity<InventoryItem> getInventoryItemById(@PathVariable String id) {
-        logger.info("Getting inventory item: {}", id);
-        InventoryItem item = inventoryService.getInventoryItemById(id);
-        return ResponseEntity.ok(item);
-    }
-
-    /**
-     * Get inventory items by category
-     * GET /api/inventory/items/category/{category}
-     */
-    @GetMapping("/items/category/{category}")
-    public ResponseEntity<List<InventoryItem>> getItemsByCategory(
-            @PathVariable String category,
+    @GetMapping
+    @Operation(summary = "List inventory (query: category, search, lowStock, outOfStock, expiringSoon)")
+    public ResponseEntity<List<InventoryItem>> getInventory(
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean lowStock,
+            @RequestParam(required = false) Boolean outOfStock,
+            @RequestParam(required = false) Integer expiringSoon,
             HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
-        logger.info("Getting inventory items by category: {} for store: {}", category, storeId);
-        List<InventoryItem> items = inventoryService.getItemsByCategory(storeId, category);
-        return ResponseEntity.ok(items);
+        if (Boolean.TRUE.equals(outOfStock)) {
+            return ResponseEntity.ok(inventoryService.getOutOfStockItems(storeId));
+        }
+        if (Boolean.TRUE.equals(lowStock)) {
+            return ResponseEntity.ok(inventoryService.getLowStockAlerts(storeId));
+        }
+        if (expiringSoon != null) {
+            return ResponseEntity.ok(inventoryService.getItemsExpiringSoon(storeId, expiringSoon));
+        }
+        if (search != null) {
+            return ResponseEntity.ok(inventoryService.searchItems(storeId, search));
+        }
+        if (category != null) {
+            return ResponseEntity.ok(inventoryService.getItemsByCategory(storeId, category));
+        }
+        return ResponseEntity.ok(inventoryService.getAllInventoryItems(storeId));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Create inventory item")
+    public ResponseEntity<InventoryItem> createItem(@RequestBody InventoryItem item) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(inventoryService.createInventoryItem(item));
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get inventory item by ID")
+    public ResponseEntity<InventoryItem> getItem(@PathVariable String id) {
+        return ResponseEntity.ok(inventoryService.getInventoryItemById(id));
     }
 
     /**
-     * Search inventory items
-     * GET /api/inventory/items/search?q=xxx
+     * PATCH /api/inventory/{id} — update item fields (replaces PUT)
      */
-    @GetMapping("/items/search")
-    public ResponseEntity<List<InventoryItem>> searchInventoryItems(
-            @RequestParam String q,
-            HttpServletRequest request) {
-        String storeId = getStoreIdFromHeaders(request);
-        logger.info("Searching inventory items: {} in store: {}", q, storeId);
-        List<InventoryItem> items = inventoryService.searchItems(storeId, q);
-        return ResponseEntity.ok(items);
-    }
-
-    /**
-     * Update inventory item
-     * PUT /api/inventory/items/{id}
-     */
-    @PutMapping("/items/{id}")
-    public ResponseEntity<InventoryItem> updateInventoryItem(
-            @PathVariable String id,
-            @RequestBody InventoryItem item) {
-        logger.info("Updating inventory item: {}", id);
+    @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Update inventory item")
+    public ResponseEntity<InventoryItem> updateItem(@PathVariable String id, @RequestBody InventoryItem item) {
         item.setId(id);
-        InventoryItem updated = inventoryService.updateInventoryItem(item);
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(inventoryService.updateInventoryItem(item));
     }
 
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Delete inventory item")
+    public ResponseEntity<MessageResponse> deleteItem(@PathVariable String id, HttpServletRequest request) {
+        inventoryService.deleteInventoryItem(id, getStoreIdFromHeaders(request));
+        return ResponseEntity.ok(new MessageResponse("Inventory item deleted successfully"));
+    }
+
+    // ── STOCK OPERATIONS ──────────────────────────────────────────────────────────
+
     /**
-     * Adjust stock
-     * PATCH /api/inventory/items/{id}/adjust
-     * Body: { "quantityChange": 10.0, "storeId": "xxx", "unitCost": 100.00, "updatedBy": "userId", "reason": "Purchase" }
+     * POST /api/inventory/{id}/stock
+     * Body: { operation: "ADJUST"|"RESERVE"|"RELEASE"|"CONSUME", quantity, storeId, ... }
+     * Replaces: PATCH /items/{id}/adjust, /items/{id}/reserve, /items/{id}/release, /items/{id}/consume
      */
-    @PatchMapping("/items/{id}/adjust")
-    public ResponseEntity<InventoryItem> adjustStock(
+    @PostMapping("/{id}/stock")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
+    @Operation(summary = "Stock operation (body: operation=ADJUST|RESERVE|RELEASE|CONSUME)")
+    public ResponseEntity<?> stockOperation(
             @PathVariable String id,
-            @RequestBody StockAdjustmentRequest request) {
-        logger.info("Adjusting stock for item: {} by {}", id, request.getQuantityChange());
-
-        InventoryItem updated = inventoryService.adjustStock(
-            id,
-            request.getQuantityChange(),
-            request.getStoreId(),
-            request.getUnitCost(),
-            request.getUpdatedBy(),
-            request.getReason()
-        );
-
-        return ResponseEntity.ok(updated);
+            @RequestBody Map<String, Object> body) {
+        String operation = ((String) body.getOrDefault("operation", "ADJUST")).toUpperCase();
+        return switch (operation) {
+            case "ADJUST" -> {
+                StockAdjustmentRequest req = new StockAdjustmentRequest();
+                req.setQuantityChange(((Number) body.get("quantityChange")).doubleValue());
+                req.setStoreId((String) body.get("storeId"));
+                if (body.containsKey("unitCost")) req.setUnitCost(new BigDecimal(body.get("unitCost").toString()));
+                req.setUpdatedBy((String) body.get("updatedBy"));
+                req.setReason((String) body.get("reason"));
+                yield ResponseEntity.ok(inventoryService.adjustStock(id, req.getQuantityChange(),
+                        req.getStoreId(), req.getUnitCost(), req.getUpdatedBy(), req.getReason()));
+            }
+            case "RESERVE" -> {
+                double qty = ((Number) body.get("quantity")).doubleValue();
+                inventoryService.reserveStock(id, qty, (String) body.get("storeId"));
+                yield ResponseEntity.ok(new MessageResponse("Stock reserved"));
+            }
+            case "RELEASE" -> {
+                double qty = ((Number) body.get("quantity")).doubleValue();
+                inventoryService.releaseReservedStock(id, qty, (String) body.get("storeId"));
+                yield ResponseEntity.ok(new MessageResponse("Reserved stock released"));
+            }
+            case "CONSUME" -> {
+                double qty = ((Number) body.get("quantity")).doubleValue();
+                inventoryService.consumeReservedStock(id, qty, (String) body.get("storeId"));
+                yield ResponseEntity.ok(new MessageResponse("Reserved stock consumed"));
+            }
+            default -> ResponseEntity.badRequest().body(new MessageResponse("operation must be ADJUST|RESERVE|RELEASE|CONSUME"));
+        };
     }
 
-    /**
-     * Reserve stock for an order
-     * PATCH /api/inventory/items/{id}/reserve
-     * Body: { "quantity": 5.0, "storeId": "xxx" }
-     */
-    @PatchMapping("/items/{id}/reserve")
-    public ResponseEntity<MessageResponse> reserveStock(
-            @PathVariable String id,
-            @RequestBody ReserveStockRequest request) {
-        logger.info("Reserving {} units for item: {}", request.getQuantity(), id);
-
-        inventoryService.reserveStock(id, request.getQuantity(), request.getStoreId());
-
-        return ResponseEntity.ok(new MessageResponse("Stock reserved successfully"));
-    }
+    // ── VALUE ─────────────────────────────────────────────────────────────────────
 
     /**
-     * Release reserved stock
-     * PATCH /api/inventory/items/{id}/release
-     * Body: { "quantity": 5.0, "storeId": "xxx" }
-     */
-    @PatchMapping("/items/{id}/release")
-    public ResponseEntity<MessageResponse> releaseReservedStock(
-            @PathVariable String id,
-            @RequestBody ReserveStockRequest request) {
-        logger.info("Releasing {} reserved units for item: {}", request.getQuantity(), id);
-
-        inventoryService.releaseReservedStock(id, request.getQuantity(), request.getStoreId());
-
-        return ResponseEntity.ok(new MessageResponse("Reserved stock released successfully"));
-    }
-
-    /**
-     * Consume reserved stock
-     * PATCH /api/inventory/items/{id}/consume
-     * Body: { "quantity": 5.0, "storeId": "xxx" }
-     */
-    @PatchMapping("/items/{id}/consume")
-    public ResponseEntity<MessageResponse> consumeReservedStock(
-            @PathVariable String id,
-            @RequestBody ReserveStockRequest request) {
-        logger.info("Consuming {} reserved units for item: {}", request.getQuantity(), id);
-
-        inventoryService.consumeReservedStock(id, request.getQuantity(), request.getStoreId());
-
-        return ResponseEntity.ok(new MessageResponse("Reserved stock consumed successfully"));
-    }
-
-    /**
-     * Get items needing reorder
-     * GET /api/inventory/low-stock
-     */
-    @GetMapping("/low-stock")
-    public ResponseEntity<List<InventoryItem>> getItemsNeedingReorder(HttpServletRequest request) {
-        String storeId = getStoreIdFromHeaders(request);
-        logger.info("Getting items needing reorder for store: {}", storeId);
-        List<InventoryItem> items = inventoryService.getItemsNeedingReorder(storeId);
-        return ResponseEntity.ok(items);
-    }
-
-    /**
-     * Get out of stock items
-     * GET /api/inventory/out-of-stock
-     */
-    @GetMapping("/out-of-stock")
-    public ResponseEntity<List<InventoryItem>> getOutOfStockItems(HttpServletRequest request) {
-        String storeId = getStoreIdFromHeaders(request);
-        logger.info("Getting out of stock items for store: {}", storeId);
-        List<InventoryItem> items = inventoryService.getOutOfStockItems(storeId);
-        return ResponseEntity.ok(items);
-    }
-
-    /**
-     * Get items expiring soon
-     * GET /api/inventory/expiring-soon?days=7
-     */
-    @GetMapping("/expiring-soon")
-    public ResponseEntity<List<InventoryItem>> getItemsExpiringSoon(
-            @RequestParam(name = "days", defaultValue = "7") Integer days,
-            HttpServletRequest request) {
-        String storeId = getStoreIdFromHeaders(request);
-        logger.info("Getting items expiring within {} days for store: {}", days, storeId);
-        List<InventoryItem> items = inventoryService.getItemsExpiringSoon(storeId, days);
-        return ResponseEntity.ok(items);
-    }
-
-    /**
-     * Get low stock alerts
-     * GET /api/inventory/alerts/low-stock
-     */
-    @GetMapping("/alerts/low-stock")
-    public ResponseEntity<List<InventoryItem>> getLowStockAlerts(HttpServletRequest request) {
-        String storeId = getStoreIdFromHeaders(request);
-        logger.info("Getting low stock alerts for store: {}", storeId);
-        List<InventoryItem> items = inventoryService.getLowStockAlerts(storeId);
-        return ResponseEntity.ok(items);
-    }
-
-    /**
-     * Get total inventory value
-     * GET /api/inventory/value
+     * GET /api/inventory/value?byCategory=true
+     * Replaces: /value, /value/by-category
      */
     @GetMapping("/value")
-    public ResponseEntity<InventoryValueResponse> getTotalInventoryValue(HttpServletRequest request) {
-        String storeId = getStoreIdFromHeaders(request);
-        logger.info("Getting total inventory value for store: {}", storeId);
-        BigDecimal totalValue = inventoryService.getTotalInventoryValue(storeId);
-
-        return ResponseEntity.ok(new InventoryValueResponse(totalValue));
-    }
-
-    /**
-     * Get inventory value by category
-     * GET /api/inventory/value/by-category
-     */
-    @GetMapping("/value/by-category")
-    public ResponseEntity<Map<String, BigDecimal>> getInventoryValueByCategory(HttpServletRequest request) {
-        String storeId = getStoreIdFromHeaders(request);
-        logger.info("Getting inventory value by category for store: {}", storeId);
-        Map<String, BigDecimal> valueByCategory = inventoryService.getInventoryValueByCategory(storeId);
-        return ResponseEntity.ok(valueByCategory);
-    }
-
-    /**
-     * Delete inventory item
-     * DELETE /api/inventory/items/{id}
-     */
-    @DeleteMapping("/items/{id}")
-    public ResponseEntity<MessageResponse> deleteInventoryItem(
-            @PathVariable String id,
+    @Operation(summary = "Inventory value (query: byCategory=true for breakdown)")
+    public ResponseEntity<?> getValue(
+            @RequestParam(required = false) Boolean byCategory,
             HttpServletRequest request) {
         String storeId = getStoreIdFromHeaders(request);
-        logger.info("Deleting inventory item: {}", id);
-        inventoryService.deleteInventoryItem(id, storeId);
-
-        return ResponseEntity.ok(new MessageResponse("Inventory item deleted successfully"));
+        if (Boolean.TRUE.equals(byCategory)) {
+            return ResponseEntity.ok(inventoryService.getInventoryValueByCategory(storeId));
+        }
+        return ResponseEntity.ok(new InventoryValueResponse(inventoryService.getTotalInventoryValue(storeId)));
     }
 }

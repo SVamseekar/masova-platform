@@ -1,5 +1,7 @@
 package com.MaSoVa.commerce.order.client;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +34,7 @@ public class UserServiceClient {
     /**
      * Get driver details by ID
      */
+    @CircuitBreaker(name = "userService", fallbackMethod = "getDriverDetailsFallback")
     public Map<String, Object> getDriverDetails(String driverId) {
         String url = userServiceUrl + "/api/users/" + driverId;
         log.debug("Fetching driver details from: {}", url);
@@ -48,5 +51,10 @@ public class UserServiceClient {
             log.error("Error fetching driver details for driver {}: {}", driverId, e.getMessage());
             return Map.of();
         }
+    }
+
+    public Map<String, Object> getDriverDetailsFallback(String driverId, Exception e) {
+        log.warn("user-service circuit open for driver {}: {}", driverId, e.getMessage());
+        return Map.of();
     }
 }

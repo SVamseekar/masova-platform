@@ -60,25 +60,22 @@ public class CustomerServiceClient {
     }
 
     /**
-     * Get customer loyalty information
+     * Get customer loyalty information.
+     * Phase 1: /api/customers/{id}/loyalty does not exist as a GET sub-resource.
+     * Loyalty data is embedded in the customer profile from GET /api/customers/{id}.
      */
     @Retry(name = "customerService")
     @CircuitBreaker(name = "customerService", fallbackMethod = "getCustomerLoyaltyFallback")
     public Map<String, Object> getCustomerLoyalty(String customerId, String authToken) {
         try {
-            String url = customerServiceUrl + "/api/customers/" + customerId + "/loyalty";
-
-            HttpHeaders headers = createHttpHeaders(authToken);
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
-
-            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                entity,
-                new ParameterizedTypeReference<Map<String, Object>>() {}
-            );
-
-            return response.getBody() != null ? response.getBody() : Collections.emptyMap();
+            Map<String, Object> profile = getCustomerProfile(customerId, authToken);
+            Object loyalty = profile.get("loyaltyInfo");
+            if (loyalty instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> loyaltyMap = (Map<String, Object>) loyalty;
+                return loyaltyMap;
+            }
+            return Collections.emptyMap();
         } catch (Exception e) {
             logger.error("Error fetching loyalty info for customer {}: {}", customerId, e.getMessage());
             throw e;
@@ -86,25 +83,22 @@ public class CustomerServiceClient {
     }
 
     /**
-     * Get customer saved addresses
+     * Get customer saved addresses.
+     * Phase 1: /api/customers/{id}/addresses does not exist as a GET sub-resource.
+     * Addresses are embedded in the customer profile from GET /api/customers/{id}.
      */
     @Retry(name = "customerService")
     @CircuitBreaker(name = "customerService", fallbackMethod = "getCustomerAddressesFallback")
     public List<Map<String, Object>> getCustomerAddresses(String customerId, String authToken) {
         try {
-            String url = customerServiceUrl + "/api/customers/" + customerId + "/addresses";
-
-            HttpHeaders headers = createHttpHeaders(authToken);
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
-
-            ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                entity,
-                new ParameterizedTypeReference<List<Map<String, Object>>>() {}
-            );
-
-            return response.getBody() != null ? response.getBody() : Collections.emptyList();
+            Map<String, Object> profile = getCustomerProfile(customerId, authToken);
+            Object addresses = profile.get("savedAddresses");
+            if (addresses instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> list = (List<Map<String, Object>>) addresses;
+                return list;
+            }
+            return Collections.emptyList();
         } catch (Exception e) {
             logger.error("Error fetching addresses for customer {}: {}", customerId, e.getMessage());
             throw e;
@@ -144,19 +138,20 @@ public class CustomerServiceClient {
     @CircuitBreaker(name = "customerService", fallbackMethod = "anonymizeCustomerDataFallback")
     public boolean anonymizeCustomerData(String customerId, String authToken) {
         try {
-            String url = customerServiceUrl + "/api/customers/" + customerId + "/gdpr";
+            // Phase 1: /api/customers/{id}/gdpr removed → PATCH /api/customers/{id} with anonymized fields
+            String url = customerServiceUrl + "/api/customers/" + customerId;
+
+            Map<String, Object> body = new java.util.HashMap<>();
+            body.put("name", "ANONYMIZED");
+            body.put("email", "anonymized-" + customerId + "@deleted.local");
+            body.put("phone", "ANONYMIZED");
 
             HttpHeaders headers = createHttpHeaders(authToken);
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
-            ResponseEntity<Void> response = restTemplate.exchange(
-                url,
-                HttpMethod.DELETE,
-                entity,
-                Void.class
-            );
-
-            return response.getStatusCode() == HttpStatus.OK || response.getStatusCode() == HttpStatus.NO_CONTENT;
+            restTemplate.patchForObject(url, entity, Void.class);
+            return true;
         } catch (Exception e) {
             logger.error("Error anonymizing customer {}: {}", customerId, e.getMessage());
             throw e;

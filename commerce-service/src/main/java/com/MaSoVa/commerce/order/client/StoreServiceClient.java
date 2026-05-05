@@ -20,6 +20,9 @@ public class StoreServiceClient {
     @Value("${services.core.url:http://localhost:8085}")
     private String coreServiceUrl;
 
+    @Value("${services.logistics.url:http://localhost:8086}")
+    private String logisticsServiceUrl;
+
     public StoreServiceClient(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
@@ -46,21 +49,26 @@ public class StoreServiceClient {
     /**
      * Returns true if the coordinates are within the store's delivery radius.
      * Fail-open: returns true on any error so order placement is not blocked by network issues.
+     * Phase 1: /api/stores/{id}/delivery-radius-check removed →
+     *          GET /api/delivery/zones?check=true&storeId=&lat=&lng= (logistics-service)
      */
     @SuppressWarnings("unchecked")
     public boolean isWithinDeliveryRadius(String storeId, double latitude, double longitude) {
         try {
             String url = UriComponentsBuilder
-                .fromHttpUrl(coreServiceUrl)
-                .pathSegment("api", "stores", storeId, "delivery-radius-check")
-                .queryParam("latitude", latitude)
-                .queryParam("longitude", longitude)
+                .fromHttpUrl(logisticsServiceUrl)
+                .path("/api/delivery/zones")
+                .queryParam("check", true)
+                .queryParam("storeId", storeId)
+                .queryParam("lat", latitude)
+                .queryParam("lng", longitude)
                 .build()
                 .toUriString();
 
+            @SuppressWarnings("unchecked")
             Map<String, Object> result = restTemplate.getForObject(url, Map.class);
             if (result == null) return true;
-            Boolean within = (Boolean) result.get("withinRadius");
+            Boolean within = (Boolean) result.get("withinDeliveryZone");
             return within == null || within;
         } catch (Exception e) {
             log.warn("Delivery radius check failed for store {} — failing open: {}", storeId, e.getMessage());

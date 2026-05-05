@@ -45,27 +45,19 @@ public class CustomerServiceClient {
         }
 
         try {
-            String url = customerServiceUrl + "/api/customers/" + customerId + "/update-email";
+            // Phase 1: /update-email removed → PATCH /api/customers/{id} with email field
+            String url = customerServiceUrl + "/api/customers/" + customerId;
 
             Map<String, Object> request = new HashMap<>();
             request.put("email", email);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-
-            // Note: Authorization header is automatically added by JwtForwardingInterceptor
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
 
-            log.info("Updating customer email. Customer: {}, Email: {}", customerId, email);
-
-            ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
-
-            if (response.getStatusCode().is2xxSuccessful()) {
-                log.info("Successfully updated email for customer: {}", customerId);
-            } else {
-                log.error("Failed to update email for customer: {}. HTTP Status: {}",
-                         customerId, response.getStatusCode());
-            }
+            log.info("Updating customer email. Customer: {}", customerId);
+            restTemplate.patchForObject(url, entity, String.class);
+            log.info("Successfully updated email for customer: {}", customerId);
         } catch (Exception e) {
             log.error("Error updating customer email for customer: {}", customerId, e);
             // Don't throw - order creation should succeed even if email update fails
@@ -84,37 +76,8 @@ public class CustomerServiceClient {
             return;
         }
 
-        try {
-            String url = customerServiceUrl + "/api/customers/" + customerId + "/order-stats";
-
-            Map<String, Object> request = new HashMap<>();
-            request.put("orderId", orderId);
-            request.put("orderType", orderType);
-            request.put("status", status);
-            request.put("orderTotal", orderTotal);
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
-            // Note: Authorization header is automatically added by JwtForwardingInterceptor
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
-
-            log.info("Updating customer order stats. Customer: {}, Order: {}, Type: {}, Status: {}, Total: {}",
-                     customerId, orderId, orderType, status, orderTotal);
-
-            ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
-            
-            if (response.getStatusCode().is2xxSuccessful()) {
-                log.info("Successfully updated order stats for customer: {}", customerId);
-            } else {
-                log.error("Failed to update order stats for customer: {}. HTTP Status: {}", 
-                         customerId, response.getStatusCode());
-            }
-        } catch (Exception e) {
-            log.error("Error updating customer order stats for customer: {}. Order Total: {}", 
-                     customerId, orderTotal, e);
-            // Don't throw - order creation should succeed even if stats update fails
-            // This should be handled with retry logic or event-driven updates
-        }
+        // Phase 1: /order-stats sub-resource removed. Order statistics are derived by querying
+        // orders directly. This update is a no-op until Phase 3 (event-driven stats via RabbitMQ).
+        log.debug("updateOrderStats skipped — no Phase 1 canonical endpoint. customerId={}, orderId={}", customerId, orderId);
     }
 }

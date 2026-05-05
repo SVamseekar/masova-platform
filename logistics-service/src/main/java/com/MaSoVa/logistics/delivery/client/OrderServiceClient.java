@@ -59,16 +59,17 @@ public class OrderServiceClient {
 
     /**
      * Update order delivery status
+     * Phase 1: /api/orders/{id}/delivery-status → POST /api/orders/{id}/status (state machine)
      */
     @Retry(name = "orderService")
     @CircuitBreaker(name = "orderService", fallbackMethod = "updateOrderDeliveryStatusFallback")
     public void updateOrderDeliveryStatus(String orderId, String status) {
-        String url = orderServiceUrl + "/api/orders/" + orderId + "/delivery-status";
+        String url = orderServiceUrl + "/api/orders/" + orderId + "/status";
         log.debug("Updating order delivery status: {} to {}", orderId, status);
 
         try {
             Map<String, String> request = Map.of("status", status);
-            restTemplate.put(url, request);
+            restTemplate.postForObject(url, request, Void.class);
         } catch (Exception e) {
             log.error("Error updating order delivery status: {}", e.getMessage());
             throw e;
@@ -77,11 +78,12 @@ public class OrderServiceClient {
 
     /**
      * Assign driver to order
+     * Phase 1: /api/orders/{id}/assign-driver → PATCH /api/orders/{id} body={driverId}
      */
     @Retry(name = "orderService")
     @CircuitBreaker(name = "orderService", fallbackMethod = "assignDriverToOrderFallback")
     public void assignDriverToOrder(String orderId, String driverId) {
-        String url = orderServiceUrl + "/api/orders/" + orderId + "/assign-driver";
+        String url = orderServiceUrl + "/api/orders/" + orderId;
         log.info("Assigning driver {} to order {}", driverId, orderId);
 
         try {
@@ -96,11 +98,12 @@ public class OrderServiceClient {
 
     /**
      * Set delivery OTP on order (DELIV-002)
+     * Phase 1: PUT /api/orders/{id}/delivery-otp → PATCH /api/orders/{id} body={otp,...}
      */
     @Retry(name = "orderService")
     @CircuitBreaker(name = "orderService", fallbackMethod = "setDeliveryOtpFallback")
     public void setDeliveryOtp(String orderId, String otp, LocalDateTime generatedAt, LocalDateTime expiresAt) {
-        String url = orderServiceUrl + "/api/orders/" + orderId + "/delivery-otp";
+        String url = orderServiceUrl + "/api/orders/" + orderId;
         log.debug("Setting delivery OTP for order {}", orderId);
 
         try {
@@ -108,7 +111,7 @@ public class OrderServiceClient {
             request.put("otp", otp);
             request.put("generatedAt", generatedAt.toString());
             request.put("expiresAt", expiresAt.toString());
-            restTemplate.put(url, request);
+            restTemplate.patchForObject(url, request, Void.class);
         } catch (Exception e) {
             log.error("Error setting delivery OTP: {}", e.getMessage());
             throw e;
@@ -117,11 +120,12 @@ public class OrderServiceClient {
 
     /**
      * Set delivery proof details (DELIV-002)
+     * Phase 1: PUT /api/orders/{id}/delivery-proof → PATCH /api/orders/{id} body={proofType,...}
      */
     @Retry(name = "orderService")
     @CircuitBreaker(name = "orderService", fallbackMethod = "setDeliveryProofFallback")
     public void setDeliveryProof(String orderId, String proofType, String photoUrl, String signatureUrl, String notes) {
-        String url = orderServiceUrl + "/api/orders/" + orderId + "/delivery-proof";
+        String url = orderServiceUrl + "/api/orders/" + orderId;
         log.debug("Setting delivery proof for order {} (type: {})", orderId, proofType);
 
         try {
@@ -130,7 +134,7 @@ public class OrderServiceClient {
             if (photoUrl != null) request.put("photoUrl", photoUrl);
             if (signatureUrl != null) request.put("signatureUrl", signatureUrl);
             if (notes != null) request.put("notes", notes);
-            restTemplate.put(url, request);
+            restTemplate.patchForObject(url, request, Void.class);
         } catch (Exception e) {
             log.error("Error setting delivery proof: {}", e.getMessage());
             throw e;
@@ -139,18 +143,19 @@ public class OrderServiceClient {
 
     /**
      * Mark order as delivered (DELIV-002)
+     * Phase 1: PUT /api/orders/{id}/mark-delivered → PATCH /api/orders/{id} body={deliveredAt,...}
      */
     @Retry(name = "orderService")
     @CircuitBreaker(name = "orderService", fallbackMethod = "markOrderDeliveredFallback")
     public void markOrderDelivered(String orderId, LocalDateTime deliveredAt, String proofType) {
-        String url = orderServiceUrl + "/api/orders/" + orderId + "/mark-delivered";
+        String url = orderServiceUrl + "/api/orders/" + orderId;
         log.debug("Marking order {} as delivered", orderId);
 
         try {
             Map<String, Object> request = new HashMap<>();
             request.put("deliveredAt", deliveredAt.toString());
             request.put("proofType", proofType);
-            restTemplate.put(url, request);
+            restTemplate.patchForObject(url, request, Void.class);
         } catch (Exception e) {
             log.error("Error marking order as delivered: {}", e.getMessage());
             throw e;
