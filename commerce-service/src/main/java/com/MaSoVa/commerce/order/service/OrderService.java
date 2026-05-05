@@ -7,14 +7,17 @@ import com.MaSoVa.commerce.order.entity.Order.OrderStatus;
 import com.MaSoVa.commerce.order.entity.Order.Priority;
 import com.MaSoVa.commerce.order.entity.OrderItem;
 import com.MaSoVa.commerce.order.repository.OrderRepository;
+import com.MaSoVa.commerce.order.repository.OrderJpaRepository;
 import com.MaSoVa.commerce.order.websocket.OrderWebSocketController;
 import com.MaSoVa.commerce.order.client.MenuServiceClient;
 import com.MaSoVa.commerce.order.client.CustomerServiceClient;
 import com.MaSoVa.commerce.order.client.DeliveryServiceClient;
 import com.MaSoVa.commerce.order.client.StoreServiceClient;
+import com.MaSoVa.commerce.order.client.InventoryServiceClient;
 import com.MaSoVa.commerce.order.config.TaxConfiguration;
 import com.MaSoVa.commerce.order.config.PreparationTimeConfiguration;
 import com.MaSoVa.commerce.order.config.DeliveryFeeConfiguration;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.MaSoVa.shared.messaging.events.OrderCreatedEvent;
 import com.MaSoVa.shared.messaging.events.OrderStatusChangedEvent;
 import org.slf4j.Logger;
@@ -36,38 +39,58 @@ public class OrderService {
     private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
     private final OrderRepository orderRepository;
+    private final OrderJpaRepository orderJpaRepository;
+    private final OrderItemSyncService orderItemSyncService;
+    private final ObjectMapper objectMapper;
     private final OrderWebSocketController webSocketController;
     private final MenuServiceClient menuServiceClient;
     private final CustomerServiceClient customerServiceClient;
     private final CustomerNotificationService customerNotificationService;
     private final DeliveryServiceClient deliveryServiceClient;
     private final StoreServiceClient storeServiceClient;
+    private final InventoryServiceClient inventoryServiceClient;
     private final TaxConfiguration taxConfiguration;
     private final PreparationTimeConfiguration preparationTimeConfiguration;
     private final DeliveryFeeConfiguration deliveryFeeConfiguration;
     private final OrderEventPublisher orderEventPublisher;
+    private final EuVatEngine euVatEngine;
+    private final AggregatorService aggregatorService;
     private final Random random = new Random();
 
-    public OrderService(OrderRepository orderRepository, OrderWebSocketController webSocketController,
-                       MenuServiceClient menuServiceClient, CustomerServiceClient customerServiceClient,
+    public OrderService(OrderRepository orderRepository,
+                       OrderJpaRepository orderJpaRepository,
+                       OrderItemSyncService orderItemSyncService,
+                       ObjectMapper objectMapper,
+                       OrderWebSocketController webSocketController,
+                       MenuServiceClient menuServiceClient,
+                       CustomerServiceClient customerServiceClient,
                        CustomerNotificationService customerNotificationService,
                        DeliveryServiceClient deliveryServiceClient,
                        StoreServiceClient storeServiceClient,
+                       InventoryServiceClient inventoryServiceClient,
                        TaxConfiguration taxConfiguration,
                        PreparationTimeConfiguration preparationTimeConfiguration,
                        DeliveryFeeConfiguration deliveryFeeConfiguration,
-                       OrderEventPublisher orderEventPublisher) {
+                       OrderEventPublisher orderEventPublisher,
+                       EuVatEngine euVatEngine,
+                       AggregatorService aggregatorService) {
         this.orderRepository = orderRepository;
+        this.orderJpaRepository = orderJpaRepository;
+        this.orderItemSyncService = orderItemSyncService;
+        this.objectMapper = objectMapper;
         this.webSocketController = webSocketController;
         this.menuServiceClient = menuServiceClient;
         this.customerServiceClient = customerServiceClient;
         this.customerNotificationService = customerNotificationService;
         this.deliveryServiceClient = deliveryServiceClient;
         this.storeServiceClient = storeServiceClient;
+        this.inventoryServiceClient = inventoryServiceClient;
         this.taxConfiguration = taxConfiguration;
         this.preparationTimeConfiguration = preparationTimeConfiguration;
         this.deliveryFeeConfiguration = deliveryFeeConfiguration;
         this.orderEventPublisher = orderEventPublisher;
+        this.euVatEngine = euVatEngine;
+        this.aggregatorService = aggregatorService;
     }
 
     @Transactional

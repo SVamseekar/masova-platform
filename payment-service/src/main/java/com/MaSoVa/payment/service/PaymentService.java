@@ -186,7 +186,8 @@ public class PaymentService {
 
                 paymentEventPublisher.publishPaymentFailed(new PaymentFailedEvent(
                         transaction.getId(), transaction.getOrderId(), transaction.getCustomerId(),
-                        transaction.getAmount(), "Payment signature verification failed"));
+                        transaction.getAmount(), "Payment signature verification failed",
+                        transaction.getPaymentGateway() != null ? transaction.getPaymentGateway() : "UNKNOWN"));
 
                 throw new RuntimeException("Payment signature verification failed");
             }
@@ -246,7 +247,9 @@ public class PaymentService {
                     ? transaction.getPaymentMethod().name() : "UNKNOWN";
             paymentEventPublisher.publishPaymentCompleted(new PaymentCompletedEvent(
                     transaction.getId(), transaction.getOrderId(), transaction.getCustomerId(),
-                    transaction.getAmount(), "INR", methodName, transaction.getRazorpayPaymentId()));
+                    transaction.getAmount(), "INR", methodName, transaction.getRazorpayPaymentId(),
+                    transaction.getPaymentGateway() != null ? transaction.getPaymentGateway() : "RAZORPAY",
+                    null));
 
             return buildPaymentResponse(transaction);
 
@@ -446,7 +449,8 @@ public class PaymentService {
             // Publish payment.completed event for analytics
             paymentEventPublisher.publishPaymentCompleted(new PaymentCompletedEvent(
                     transaction.getId(), transaction.getOrderId(), transaction.getCustomerId(),
-                    transaction.getAmount(), "INR", "CASH", transaction.getId()));
+                    transaction.getAmount(), "INR", "CASH", transaction.getId(),
+                    "CASH", null));
 
             return buildPaymentResponse(transaction);
 
