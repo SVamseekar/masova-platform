@@ -770,4 +770,11 @@ All processing is async, failures logged but do not affect business flow.
 
 ---
 
+---
+
+> **Endpoint Reference:** See `docs/MASOVA_MASTER_REFERENCE_ENDPOINTS.md` for the complete
+> per-controller endpoint table derived from live source code.
+> Live count: **194 endpoints** across 32 controllers (plan targeted 175 — difference is
+> AggregatorController, SystemInfoController, GDPR anonymise endpoints, minor additions).
+
 *Continued in Part 2: Frontend, AI Support Agent, Mobile Apps*
