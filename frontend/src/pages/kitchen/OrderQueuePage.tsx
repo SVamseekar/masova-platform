@@ -1,4 +1,11 @@
 import React from 'react';
+
+const AGGREGATOR_BADGE: Record<string, { label: string; bg: string; color: string }> = {
+  WOLT:       { label: 'Wolt',       bg: '#009DE0', color: '#fff' },
+  DELIVEROO:  { label: 'Deliveroo',  bg: '#00CCBC', color: '#fff' },
+  JUST_EAT:   { label: 'Just Eat',   bg: '#FF8000', color: '#fff' },
+  UBER_EATS:  { label: 'Uber Eats',  bg: '#000000', color: '#fff' },
+};
 import AppHeader from '../../components/common/AppHeader';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
@@ -353,6 +360,16 @@ const OrderQueuePage: React.FC = () => {
                     <div className="order-num">
                       #{order.orderNumber.split('-').pop()}
                       {order.priority === 'URGENT' && <div style={{ fontSize: '10px', color: '#ef4444' }}>�URGENT</div>}
+                      {order.orderSource && order.orderSource !== 'MASOVA' && AGGREGATOR_BADGE[order.orderSource] && (
+                        <span style={{
+                          padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 700,
+                          background: AGGREGATOR_BADGE[order.orderSource].bg,
+                          color: AGGREGATOR_BADGE[order.orderSource].color,
+                          marginLeft: 6,
+                        }}>
+                          {AGGREGATOR_BADGE[order.orderSource].label}
+                        </span>
+                      )}
                     </div>
                     <div className="order-details">
                       <div className="customer-name">{order.customerName}</div>

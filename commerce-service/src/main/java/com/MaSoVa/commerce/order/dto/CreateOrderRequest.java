@@ -3,6 +3,7 @@ package com.MaSoVa.commerce.order.dto;
 import com.MaSoVa.commerce.order.entity.Order.OrderType;
 import com.MaSoVa.commerce.order.entity.Order.PaymentMethod;
 import com.MaSoVa.commerce.order.entity.DeliveryAddress;
+import com.MaSoVa.shared.enums.OrderSource;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -42,6 +43,10 @@ public class CreateOrderRequest {
 
     private java.math.BigDecimal tipAmountINR;
     private String tipRecipientStaffId;
+
+    // Global-6: aggregator source — defaults to MASOVA for all direct orders
+    private OrderSource orderSource = OrderSource.MASOVA;
+    private String aggregatorOrderId;  // reference number printed on aggregator platform ticket
 
     public CreateOrderRequest() {}
 
@@ -87,6 +92,12 @@ public class CreateOrderRequest {
 
     public String getTipRecipientStaffId() { return tipRecipientStaffId; }
     public void setTipRecipientStaffId(String tipRecipientStaffId) { this.tipRecipientStaffId = tipRecipientStaffId; }
+
+    public OrderSource getOrderSource() { return orderSource != null ? orderSource : OrderSource.MASOVA; }
+    public void setOrderSource(OrderSource orderSource) { this.orderSource = orderSource; }
+
+    public String getAggregatorOrderId() { return aggregatorOrderId; }
+    public void setAggregatorOrderId(String aggregatorOrderId) { this.aggregatorOrderId = aggregatorOrderId; }
 
     public static class OrderItemRequest {
 

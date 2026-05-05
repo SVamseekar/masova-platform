@@ -1,8 +1,8 @@
 # MaSoVa Restaurant OS
 
-**A full-stack restaurant operating system** — from customer ordering and live kitchen display, to AI-driven demand forecasting, multi-gateway payments, delivery management, and third-party aggregator integration.
+> A production-grade, full-stack restaurant operating system built for multi-store operations — covering everything from customer ordering and kitchen display to AI-driven analytics, delivery management, and third-party aggregator integration.
 
-Built across a microservices backend (Java 21 · Spring Boot 3), six React web apps, two React Native mobile apps, and a Python AI agent layer (Google ADK · FastAPI).
+**6 microservices · 8 AI agents · 6 web apps · 2 mobile apps · 8+ months of development**
 
 ---
 

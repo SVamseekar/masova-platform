@@ -32,10 +32,14 @@ public class MaSoVaRabbitMQConfig {
     public static final String DELIVERY_ASSIGNED_KEY = "delivery.assigned";
     public static final String DELIVERY_COMPLETED_KEY = "delivery.completed";
 
+    // Routing key — aggregator
+    public static final String AGGREGATOR_ORDER_RECEIVED_KEY = "order.aggregator.received";
+
     // Queue names
     public static final String NOTIFICATION_ORDER_QUEUE = "masova.notification.order-events";
     public static final String ANALYTICS_PAYMENT_QUEUE = "masova.analytics.payment-events";
     public static final String ANALYTICS_ORDER_QUEUE = "masova.analytics.order-events";
+    public static final String ANALYTICS_AGGREGATOR_QUEUE = "masova.analytics.aggregator-events";
     public static final String DLQ = "masova.dlq";
 
     @Bean
@@ -100,6 +104,19 @@ public class MaSoVaRabbitMQConfig {
     @Bean
     public Binding analyticsOrderBinding(Queue analyticsOrderQueue, TopicExchange ordersExchange) {
         return BindingBuilder.bind(analyticsOrderQueue).to(ordersExchange).with("order.#");
+    }
+
+    @Bean
+    public Queue analyticsAggregatorQueue() {
+        return QueueBuilder.durable(ANALYTICS_AGGREGATOR_QUEUE)
+                .withArgument("x-dead-letter-exchange", DLX)
+                .withArgument("x-dead-letter-routing-key", "dlq")
+                .build();
+    }
+
+    @Bean
+    public Binding analyticsAggregatorBinding(Queue analyticsAggregatorQueue, TopicExchange ordersExchange) {
+        return BindingBuilder.bind(analyticsAggregatorQueue).to(ordersExchange).with(AGGREGATOR_ORDER_RECEIVED_KEY);
     }
 
     @Bean

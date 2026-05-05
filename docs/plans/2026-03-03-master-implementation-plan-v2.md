@@ -943,5 +943,36 @@ Phase 0 (Production Blockers) — FIRST, BLOCKING
 
 ---
 
+## Post-Phase Superpowers Additions (2026-04 onwards)
+
+All 8 phases complete as of 2026-04-06. The following global feature tracks were added after phase completion. Each has its own plan doc in `docs/superpowers/plans/`.
+
+| # | Feature | Branch | Status | Plan doc |
+|---|---------|--------|--------|----------|
+| Global-1 | Allergen labelling (EU/UK) | `feature/global-1-allergen` | ✅ Complete | `2026-04-10-global1-allergen.md` |
+| Global-2 | EU payment gateway (Stripe) + country routing | `feature/global-2-stripe` | ✅ Complete | — |
+| Global-3 | Staff earnings & tips dashboard | — | ✅ Complete | `2026-04-04-staff-earnings-tips.md` |
+| Global-4 | *(reserved)* | — | — | — |
+| Global-5 | Fiscal receipt signing (12 countries) | `feature/global-5-fiscal-signing` | 🔄 In progress | `2026-04-12-global5-fiscal-signing.md` |
+| Global-6 | Aggregator Hub (Wolt/Deliveroo/Just Eat/Uber Eats) | `feature/global-6-aggregator-hub` | ✅ Complete | `2026-04-12-global6-aggregator-hub.md` |
+
+### Global-6 Aggregator Hub — summary
+
+Manual aggregator order entry so managers can log Wolt/Deliveroo/Just Eat/Uber Eats orders via POS and track platform P&L.
+
+**Key additions:**
+- `OrderSource` enum (MASOVA, WOLT, DELIVEROO, JUST_EAT, UBER_EATS) — shared-models
+- `AggregatorOrderReceivedEvent` + RabbitMQ queue `masova.analytics.aggregator-events`
+- Flyway V6 (aggregator columns on orders) + V7 (aggregator_connections table)
+- `AggregatorService`: commission % per platform per store, net payout calculation
+- `AggregatorController`: `GET/PUT /api/aggregators/connections`
+- `OrderService`: auto-sets `AGGREGATOR_COLLECTED` payment + commission on non-MASOVA orders
+- KDS colour-coded source badges (Wolt=#009DE0, Deliveroo=#00CCBC, JustEat=#FF8000, UberEats=#000)
+- `OrderManagementPage`: orderSource filter dropdown
+- `AggregatorHubPage` (Manager > Orders > Aggregators tab): commission config
+- `PlatformPnLPage` (Manager > Analytics > Platform P&L tab): revenue/commission/net analytics
+
+---
+
 *This document supersedes: `2026-03-02-master-implementation-plan.md`, `2026-03-02-api-reduction-plan.md`*
 *This document is consistent with and references: `2026-03-02-database-architecture-design.md`, `2026-02-19-mongodb-dba-audit.md`, `2026-02-22-order-flow-gaps.md`, `2026-02-18-customer-web-revamp-design.md`, `2026-02-23-store-selection-design.md`*

@@ -29,6 +29,13 @@ interface OrderItem {
   quantity: number;
 }
 
+const AGGREGATOR_BADGE: Record<string, { label: string; bg: string; color: string }> = {
+  WOLT:       { label: 'Wolt',       bg: '#009DE0', color: '#fff' },
+  DELIVEROO:  { label: 'Deliveroo',  bg: '#00CCBC', color: '#fff' },
+  JUST_EAT:   { label: 'Just Eat',   bg: '#FF8000', color: '#fff' },
+  UBER_EATS:  { label: 'Uber Eats',  bg: '#000000', color: '#fff' },
+};
+
 interface Order {
   id: string;
   orderNumber: string;
@@ -41,6 +48,7 @@ interface Order {
   priority: 'NORMAL' | 'URGENT';
   ovenStartTime?: Date;
   ovenEndTime?: Date;
+  orderSource?: string;
 }
 
 interface StatusColumn {
@@ -241,6 +249,7 @@ const KitchenDisplayPage: React.FC = () => {
     customer: order.customerName,
     orderType: order.orderType === 'TAKEAWAY' ? 'COLLECTION' : (order.orderType === 'DINE_IN' ? 'DINE_IN' : 'DELIVERY'),
     priority: order.priority,
+    orderSource: order.orderSource,
   }));
 
   useEffect(() => {
@@ -324,7 +333,23 @@ const KitchenDisplayPage: React.FC = () => {
     >
       {/* Order Header */}
       <div className="order-header">
-        <div className="order-number">#{order.orderNumber}</div>
+        <div className="order-number" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          #{order.orderNumber}
+          {order.orderSource && order.orderSource !== 'MASOVA' && AGGREGATOR_BADGE[order.orderSource] && (
+            <span style={{
+              display: 'inline-block',
+              padding: '2px 8px',
+              borderRadius: 12,
+              fontSize: 11,
+              fontWeight: 700,
+              background: AGGREGATOR_BADGE[order.orderSource].bg,
+              color: AGGREGATOR_BADGE[order.orderSource].color,
+              letterSpacing: 0.5,
+            }}>
+              {AGGREGATOR_BADGE[order.orderSource].label}
+            </span>
+          )}
+        </div>
         <div className="order-meta">
           <span className={`order-type ${order.orderType.toLowerCase()}`}>
             {order.orderType}

@@ -25,6 +25,13 @@ import { FilterBar, type FilterConfig, type FilterValues, type SortConfig } from
 import { applyFilters, applySort, exportToCSV, commonFilters } from '../../utils/filterUtils';
 import { colors, spacing, typography, shadows } from '../../styles/design-tokens';
 
+const AGGREGATOR_BADGE: Record<string, { label: string; bg: string; color: string }> = {
+  WOLT:      { label: 'Wolt',      bg: '#009DE0', color: '#fff' },
+  DELIVEROO: { label: 'Deliveroo', bg: '#00CCBC', color: '#fff' },
+  JUST_EAT:  { label: 'Just Eat',  bg: '#FF8000', color: '#fff' },
+  UBER_EATS: { label: 'Uber Eats', bg: '#000000', color: '#fff' },
+};
+
 const OrderManagementPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const currentUser = useAppSelector(selectCurrentUser);
@@ -69,6 +76,7 @@ const OrderManagementPage: React.FC = () => {
     status: '',
     orderType: '',
     paymentStatus: '',
+    orderSource: '',
     dateRange: {},
   });
   const [sortConfig, setSortConfig] = useState<SortConfig>({
@@ -133,6 +141,18 @@ const OrderManagementPage: React.FC = () => {
       })),
     },
     {
+      type: 'select',
+      label: 'Source',
+      field: 'orderSource',
+      options: [
+        { value: 'MASOVA', label: 'MaSoVa' },
+        { value: 'WOLT', label: 'Wolt' },
+        { value: 'DELIVEROO', label: 'Deliveroo' },
+        { value: 'JUST_EAT', label: 'Just Eat' },
+        { value: 'UBER_EATS', label: 'Uber Eats' },
+      ],
+    },
+    {
       type: 'dateRange',
       label: 'Order Date',
       field: 'dateRange',
@@ -154,6 +174,7 @@ const OrderManagementPage: React.FC = () => {
       status: (order, value) => order.status === value,
       orderType: (order, value) => order.orderType === value,
       paymentStatus: (order, value) => order.paymentStatus === value,
+      orderSource: (order, value) => (order.orderSource ?? 'MASOVA') === value,
       dateRange: (order, value) =>
         commonFilters.dateRange(order, value as { from?: string; to?: string }, 'createdAt'),
     });
@@ -197,6 +218,7 @@ const OrderManagementPage: React.FC = () => {
       status: '',
       orderType: '',
       paymentStatus: '',
+      orderSource: '',
       dateRange: {},
     });
   };
@@ -816,7 +838,19 @@ const OrderManagementPage: React.FC = () => {
               <div key={order.id} className={`order-card ${order.priority === 'URGENT' ? 'urgent' : ''}`}>
                 {/* Header */}
                 <div className="order-header">
-                  <div className="order-number">#{order.orderNumber}</div>
+                  <div className="order-number">
+                    #{order.orderNumber}
+                    {order.orderSource && order.orderSource !== 'MASOVA' && AGGREGATOR_BADGE[order.orderSource] && (
+                      <span style={{
+                        marginLeft: 8, padding: '2px 8px', borderRadius: 10,
+                        fontSize: 11, fontWeight: 700,
+                        background: AGGREGATOR_BADGE[order.orderSource].bg,
+                        color: AGGREGATOR_BADGE[order.orderSource].color,
+                      }}>
+                        {AGGREGATOR_BADGE[order.orderSource].label}
+                      </span>
+                    )}
+                  </div>
                   <div className="order-badges">
                     <span className="badge badge-status" style={{ color: ORDER_STATUS_CONFIG[order.status].color }}>
                       {ORDER_STATUS_CONFIG[order.status].label}

@@ -731,4 +731,15 @@ public class AnalyticsService {
         log.info("Analytics event-ingest: payment paymentId={} orderId={} method={} success={} amount={}",
                 paymentId, orderId, paymentMethod, success, amount);
     }
+
+    public void recordAggregatorOrderEvent(String orderId, String storeId, String platform,
+                                            java.math.BigDecimal grossAmount,
+                                            java.math.BigDecimal commissionAmount,
+                                            java.math.BigDecimal netPayout,
+                                            String currency) {
+        // Log for now — full P&L is queried on demand from commerce-service
+        log.info("[Analytics] Aggregator order recorded orderId={} storeId={} platform={} gross={} net={}",
+                orderId, storeId, platform, grossAmount, netPayout);
+        // Future: persist to analytics_aggregator_orders collection for cross-period reporting
+    }
 }
