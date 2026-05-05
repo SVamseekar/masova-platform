@@ -91,27 +91,27 @@ Selector: `selectDeliveryFeeINR` — every component that needs delivery fee MUS
 
 ### 11.3 RTK Query API Slices (18)
 
-Every slice uses the canonical base URL (no `/api/v1/` prefix — 175 endpoints).
+Every slice uses the canonical base URL (no `/api/v1/` prefix — 194 live endpoints).
 
 | Slice | Key Endpoints |
 |-------|--------------|
 | `authApi` | POST `/api/auth/login`, `/api/auth/register`, `/api/auth/logout`, `/api/auth/refresh`, `/api/auth/google` |
-| `orderApi` | GET/POST `/api/orders`, PATCH `/api/orders/{id}/status`, GET `/api/orders/{id}`, WebSocket subscriptions |
+| `orderApi` | GET/POST `/api/orders`, POST `/api/orders/{id}/status`, GET `/api/orders/{id}`, WebSocket subscriptions |
 | `userApi` | GET/PUT `/api/users`, `/api/users/{id}` |
-| `sessionApi` | POST `/api/sessions`, POST `/api/sessions/end`, GET session history |
-| `analyticsApi` | GET `/api/analytics/*` — sales, revenue, behavior, forecast |
-| `menuApi` | GET `/api/menu`, `/api/menu/items`, `/api/menu/items/{id}` |
-| `storeApi` | GET `/api/stores`, `/api/stores/{id}`, `/api/stores/public/nearest` |
-| `shiftApi` | GET `/api/shifts`, `/api/shifts/{id}`, POST shift creation |
-| `paymentApi` | POST `/api/payments/initiate`, `/api/payments/verify` |
-| `equipmentApi` | GET `/api/equipment` — kitchen equipment status |
-| `inventoryApi` | GET `/api/inventory/items` |
-| `customerApi` | GET/POST `/api/customers`, `/api/customers/{id}/stats` |
-| `driverApi` | GET `/api/users/role/DRIVER`, driver status updates |
-| `deliveryApi` | GET `/api/delivery/tracking/{orderId}` |
-| `reviewApi` | GET/POST `/api/reviews`, public review endpoints |
-| `notificationApi` | GET `/api/notifications`, mark-read, delete |
-| `kioskApi` | POST `/api/users/kiosk/auto-login`, kiosk-specific |
+| `sessionApi` | POST `/api/sessions`, POST `/api/sessions/end`, GET `/api/sessions` |
+| `analyticsApi` | GET `/api/analytics` (query params: period, view, type), GET `/api/bi`, GET `/api/bi/reports` |
+| `menuApi` | GET `/api/menu`, `/api/menu/{id}` |
+| `storeApi` | GET `/api/stores`, `/api/stores/{storeId}` |
+| `shiftApi` | GET `/api/shifts`, `/api/shifts/{id}`, POST `/api/shifts` |
+| `paymentApi` | POST `/api/payments/initiate`, `/api/payments/verify`, `/api/payments/cash` |
+| `equipmentApi` | GET `/api/equipment`, PATCH `/api/equipment/{id}` |
+| `inventoryApi` | GET `/api/inventory`, PATCH `/api/inventory/{id}` |
+| `customerApi` | GET/POST `/api/customers`, POST `/api/customers/{id}/loyalty` |
+| `driverApi` | GET/PUT `/api/users/{driverId}/status`, GET `/api/delivery/driver/{id}/performance` |
+| `deliveryApi` | GET `/api/delivery/track/{orderId}`, GET `/api/delivery/driver/{id}/pending` |
+| `reviewApi` | GET/POST `/api/reviews`, GET `/api/reviews/public/token/{token}` |
+| `notificationApi` | GET `/api/notifications`, PATCH `/api/notifications/{id}/read` |
+| `kioskApi` | POST `/api/users/kiosk/auto-login` |
 | `agentApi` | POST `/api/agents/{name}/trigger` — AI agent manual triggers |
 
 ---
@@ -236,7 +236,7 @@ Every slice uses the canonical base URL (no `/api/v1/` prefix — 175 endpoints)
 ```typescript
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
-// Canonical paths (175 endpoints — no /api/v1/ prefix)
+// Canonical paths (194 live endpoints — no /api/v1/ prefix)
 export const API_PATHS = {
   auth: {
     login: '/api/auth/login',
@@ -255,9 +255,9 @@ export const API_PATHS = {
   sessions: {
     start: '/api/sessions',
     end: '/api/sessions/end',
-    byEmployee: (id: string) => `/api/sessions/employee/${id}`,
+    list: '/api/sessions',        // GET with query params: employeeId, storeId, active
   },
-  // ... all 175 canonical paths
+  // ... all 194 canonical paths — see MASOVA_MASTER_REFERENCE_ENDPOINTS.md
 }
 ```
 

@@ -194,11 +194,11 @@ X-User-Store-Id: {user.storeId}
 | Endpoint | Method | Path | Polling |
 |----------|--------|------|---------|
 | `getPendingDeliveries(driverId)` | GET | `/delivery/driver/{id}/pending` | 30s |
-| `getActiveDeliveries(driverId)` | GET | `/delivery/driver/{id}/active` | 30s |
-| `markAsPickedUp(trackingId)` | POST | `/delivery/{id}/pickup` | — |
-| `markAsDelivered({trackingId, notes?})` | POST | `/delivery/{id}/deliver` | — |
-| `updateLocation({driverId, lat, lng})` | POST | `/delivery/location-update` | — |
-| `getDeliveryHistory({driverId, limit?})` | GET | `/delivery/driver/{id}/history` | — |
+| `getActiveDeliveries(driverId)` | GET | `/delivery/driver/{id}/pending` | 30s |
+| `markAsPickedUp(trackingId)` | PATCH | `/delivery/{trackingId}/status` (body: PICKED_UP) | — |
+| `markAsDelivered({trackingId, notes?})` | PATCH | `/delivery/{trackingId}/status` (body: DELIVERED) | — |
+| `updateLocation({driverId, lat, lng})` | POST | `/delivery/location` | — |
+| `getDeliveryHistory({driverId, limit?})` | GET | `/delivery/driver/{id}/pending?status=DELIVERED` | — |
 
 #### crewApi
 
@@ -206,8 +206,8 @@ X-User-Store-Id: {user.storeId}
 
 | Endpoint | Method | Path |
 |----------|--------|------|
-| `getMyActiveSession(employeeId)` | GET | `/sessions/employee/{id}` (filters ACTIVE) |
-| `getMySessionHistory({employeeId, limit?})` | GET | `/sessions/employee/{id}?limit=10&sort=date,desc` |
+| `getMyActiveSession(employeeId)` | GET | `/sessions?employeeId={id}&active=true` |
+| `getMySessionHistory({employeeId, limit?})` | GET | `/sessions?employeeId={id}&limit=10` |
 | `clockIn({employeeId, storeId})` | POST | `/sessions` |
 | `clockOut({sessionId})` | POST | `/sessions/end` |
 | `getMyUpcomingShifts({employeeId, storeId})` | GET | `/shifts?employeeId={id}&storeId={id}&upcoming=true` |
@@ -469,8 +469,8 @@ ASSISTANT_MANAGER: #FF9800  (amber)
    - Per row: date, time range (login→logout), total hours (bold, role colour), status badge
 
 **API calls:**
-- GET `/api/sessions/employee/{employeeId}` — filter for ACTIVE
-- GET `/api/sessions/employee/{employeeId}?limit=10&sort=date,desc` — history
+- GET `/api/sessions?employeeId={employeeId}&active=true` — active session
+- GET `/api/sessions?employeeId={employeeId}&limit=10` — history
 - POST `/api/sessions` with `{employeeId, storeId}` — clock in
 - POST `/api/sessions/end` with `{sessionId}` — clock out
 
@@ -537,7 +537,7 @@ ASSISTANT_MANAGER → 'Asst. Manager'
 - "Verify & Complete Delivery" button
 - "Cancel" button
 
-**API:** POST `/api/delivery/verify-otp` with `{orderId, otp}` → `{verified: boolean}`
+**API:** POST `/api/delivery/verify` with `{orderId, otp}` → `{verified: boolean}`
 
 ---
 

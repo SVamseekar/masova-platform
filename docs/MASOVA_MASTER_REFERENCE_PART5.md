@@ -622,22 +622,41 @@ RABBITMQ_URL=amqp://guest:guest@192.168.50.88:5672/
 
 ---
 
-## 22. API PATH REFERENCE (CANONICAL — 175 ENDPOINTS)
+## 22. API PATH REFERENCE (CANONICAL — 194 LIVE ENDPOINTS)
+
+> Full per-controller endpoint tables: see `docs/MASOVA_MASTER_REFERENCE_ENDPOINTS.md`
 
 ### Critical Path Corrections
 
-| Wrong | Correct |
-|-------|---------|
-| `/api/kitchen-equipment` | `/api/equipment` |
-| `/api/ratings/token/{token}` | `/api/reviews/public/token/{token}` |
-| `/api/v1/orders/...` | `/api/orders/...` (no /v1/ prefix) |
-| `/api/users/login` | `/api/auth/login` (canonical auth path) |
-| `/api/users/register` | `/api/auth/register` |
+| Wrong | Correct | Status |
+|-------|---------|--------|
+| `/api/kitchen-equipment` | `/api/equipment` | Fixed — gateway remaps |
+| `/api/ratings/token/{token}` | `/api/reviews/public/token/{token}` | Fixed — RatingController deleted |
+| `/api/v1/orders/...` | `/api/orders/...` | Fixed — no /v1/ prefix anywhere |
+| `/api/users/login` | `/api/auth/login` | Fixed — AuthController split in Phase 1 |
+| `/api/users/register` | `/api/auth/register` | Fixed |
+| `/api/dispatch/*` | `/api/delivery/*` | Fixed — 3 controllers merged into DeliveryController |
+| `/api/intelligence/*` | `/api/bi/*` | Fixed — BIController path changed |
+| `/api/responses/**` | `/api/reviews/{id}/response` | Fixed — ResponseController deleted |
+| `/api/sessions/employee/{id}` | `/api/sessions?employeeId={id}` | Fixed — collapsed to query param |
+| `/api/delivery/verify-otp` | `/api/delivery/verify` | Fixed — path simplified |
+| `/api/delivery/location-update` | `/api/delivery/location` | Fixed — path simplified |
 
 ### Canonical Session Paths
 ```
-POST /api/sessions       → Start session (clock in)
-POST /api/sessions/end   → End session (clock out)
+POST /api/sessions                           → Start session (clock in)
+POST /api/sessions/end                       → End session (clock out)
+GET  /api/sessions?employeeId={id}&active=true → Active session
+GET  /api/sessions?employeeId={id}           → Session history
+```
+
+### Legacy Auth Aliases (still work via gateway dual-routing)
+```
+/api/users/login    → /api/auth/login
+/api/users/register → /api/auth/register
+/api/users/logout   → /api/auth/logout
+/api/users/refresh  → /api/auth/refresh
+/api/users/google   → /api/auth/google
 ```
 
 ### Key Endpoint Groups by Service
@@ -672,18 +691,20 @@ POST /api/sessions/end   → End session (clock out)
 
 **Logistics Service:**
 ```
-/api/delivery/*         Delivery tracking, OTP, proof of delivery
-/api/dispatch/*         Auto-dispatch, route optimization, driver status
-/api/inventory/*        Inventory items, stock reserve/release
+/api/delivery/*         All delivery — dispatch, tracking, OTP, driver status, performance
+                        (DispatchController + TrackingController + PerformanceController merged)
+/api/inventory/*        Inventory items, stock adjust/reserve/release
 /api/suppliers/*        Supplier management
-/api/purchase-orders/*  PO lifecycle, auto-generate (AI)
+/api/purchase-orders/*  PO lifecycle, auto-generate (AI agent)
 /api/waste/*            Waste recording and approval
 ```
 
 **Intelligence Service:**
 ```
-/api/analytics/*        Sales, demand, behavior, churn, forecasting
-/api/intelligence/*     Executive summary, benchmarking, leaderboard
+/api/analytics          Analytics (query params: period, view, type)
+/api/analytics/cache/clear  Cache management
+/api/bi                 BI dashboard
+/api/bi/reports         BI reports
 ```
 
 ---
@@ -729,7 +750,7 @@ POST /api/sessions/end   → End session (clock out)
 ### Frontend
 - Customer pages: `--dp-*` CSS vars only — never hardcode `#` colours or `px` spacing
 - Staff pages: neumorphic tokens from `design-tokens.ts` only — never mix with dark-premium
-- Every RTK Query endpoint uses canonical paths (175 endpoints — no `/api/v1/` prefix)
+- Every RTK Query endpoint uses canonical paths (194 live endpoints — no `/api/v1/` prefix)
 - `deliveryFeeINR` always from `useSelector(selectDeliveryFeeINR)` — NEVER hardcoded
 - Every new component: loading state + error state + empty state — all three
 - TypeScript strict: no `any`, no `// @ts-ignore`
