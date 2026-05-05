@@ -178,24 +178,37 @@ Boolean is_kiosk_account, OffsetDateTime deleted_at (soft delete)
 OffsetDateTime created_at, updated_at (IST timezone)
 ```
 
-#### UserController — 35 endpoints
+#### AuthController — 7 endpoints (`/api/auth`)
+
+Auth was split into its own controller in Phase 1. Legacy `/api/users/*` paths still work via gateway dual-routing.
 
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
-| POST | `/api/users/register` | Public | Customer registration |
-| POST | `/api/users/login` | Public | Email/password login → JWT |
+| POST | `/api/auth/login` | Public | Email/password login → JWT |
+| POST | `/api/auth/register` | Public | Customer registration |
+| POST | `/api/auth/logout` | JWT | Blacklist token in Redis |
+| POST | `/api/auth/refresh` | JWT (refresh) | Issue new access token |
 | POST | `/api/auth/google` | Public | Google OAuth2 → JWT |
-| POST | `/api/users/validate-pin` | Public | PIN-based login (kiosk) |
-| POST | `/api/users/logout` | JWT | Blacklist token in Redis |
-| POST | `/api/users/refresh` | JWT (refresh) | Issue new access token |
-| GET | `/api/users/{userId}` | JWT | Get user details |
+| POST | `/api/auth/change-password` | JWT | Change password |
+| POST | `/api/auth/validate-pin` | Public | PIN-based login (kiosk) |
+
+#### UserController — 14 endpoints (`/api/users`)
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| GET | `/api/users` | JWT | List users (query: type, storeId, available, search) |
+| GET | `/api/users/{userId}` | JWT | Get user |
 | PUT | `/api/users/{userId}` | JWT | Update user |
-| DELETE | `/api/users/{userId}` | JWT+MANAGER | Soft-delete user |
-| POST | `/api/users/activate` | JWT+MANAGER | Activate user |
-| POST | `/api/users/deactivate` | JWT+MANAGER | Deactivate user |
-| POST | `/api/users/kiosk/create` | JWT+MANAGER | Create kiosk account |
-| GET | `/api/users/kiosk/list` | JWT+MANAGER | List kiosk accounts |
-| POST | `/api/users/kiosk/{id}/regenerate-tokens` | JWT+MANAGER | Regenerate kiosk PIN |
+| GET | `/api/users/{userId}/status` | JWT | Get driver/staff status |
+| PUT | `/api/users/{userId}/status` | JWT | Update driver/staff status |
+| POST | `/api/users/{userId}/activate` | JWT+MANAGER | Activate user |
+| POST | `/api/users/{userId}/deactivate` | JWT+MANAGER | Deactivate user |
+| POST | `/api/users/{userId}/generate-pin` | JWT+MANAGER | Generate employee PIN |
+| GET | `/api/users/{userId}/can-take-orders` | JWT | Check if staff can take orders |
+| POST | `/api/users/kiosk` | JWT+MANAGER | Create kiosk account |
+| GET | `/api/users/kiosk` | JWT+MANAGER | List kiosk accounts |
+| POST | `/api/users/kiosk/{kioskUserId}/regenerate` | JWT+MANAGER | Regenerate kiosk tokens |
+| POST | `/api/users/kiosk/{kioskUserId}/deactivate` | JWT+MANAGER | Deactivate kiosk |
 | POST | `/api/users/kiosk/auto-login` | Public | PIN-based kiosk auto-login |
 
 #### JWT Token Structure
@@ -224,48 +237,64 @@ Signature: HMAC-SHA512(JWT_SECRET)
 | Class | Notes |
 |-------|-------|
 | `StoreEntity` (MongoDB) | Name, address, operatingHours, deliveryRadius, deliveryFee, storeType, countryCode |
-| `StoreController` | 25+ endpoints: CRUD, working hours, validation |
+| `StoreController` | 4 endpoints: CRUD (collapsed from 25+ via query params) |
 | `StoreService` | Operating hours check, delivery radius validation |
-| `CountryProfileService` | Multi-country config (India, EU, US, Canada) |
+| `CountryProfileService` | Multi-country config — auto-sets currency+locale on store save |
 
-**Store endpoints:**
+**Store endpoints — 4 (`/api/stores`):**
 
-| Method | Path | Auth |
-|--------|------|------|
-| GET | `/api/stores/public` | Public |
-| GET | `/api/stores/public/{storeId}` | Public |
-| GET | `/api/stores/public/nearest` | Public (lat/lng params) |
-| POST | `/api/stores` | JWT+MANAGER |
-| PUT | `/api/stores/{storeId}` | JWT+MANAGER |
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| GET | `/api/stores` | Public | query: code, region, near=lat,lng, radius |
+| GET | `/api/stores/{storeId}` | Public | |
+| POST | `/api/stores` | JWT+MANAGER | |
+| PUT | `/api/stores/{storeId}` | JWT+MANAGER | |
 
 ### 5.3 Shift & Working Sessions
 
 | Class | Notes |
 |-------|-------|
-| `ShiftController` | 10+ endpoints: schedule shifts, list by employee/store/date |
+| `ShiftController` | 10 endpoints (`/api/shifts`) |
 | `ShiftService` (180 lines) | Overlap detection, 4h minimum shift duration rule |
 | `ShiftViolationException` | Detects early checkout, working outside assigned shift |
-| `WorkingSessionController` | Clock-in/clock-out lifecycle |
+| `WorkingSessionController` | 9 endpoints (`/api/sessions`) |
 | `WorkingSessionService` | Active session tracking, session history |
 
-**Key endpoints:**
+**ShiftController — 10 (`/api/shifts`):**
 
 | Method | Path | Auth |
 |--------|------|------|
-| POST | `/api/sessions` | JWT | Clock in |
-| POST | `/api/sessions/end` | JWT | Clock out |
-| GET | `/api/sessions/employee/{employeeId}` | JWT | Session history |
-| GET | `/api/sessions/store/{storeId}/active` | JWT+MANAGER | Active sessions |
-| PATCH | `/api/sessions/{id}/approve` | JWT+MANAGER | Approve session |
-| GET | `/api/shifts` | JWT | Upcoming shifts |
-| POST | `/api/shifts` | JWT+MANAGER | Schedule shift |
+| GET | `/api/shifts` | JWT |
+| POST | `/api/shifts` | JWT+MANAGER |
+| POST | `/api/shifts/bulk` | JWT+MANAGER |
+| POST | `/api/shifts/copy-week` | JWT+MANAGER |
+| GET | `/api/shifts/{shiftId}` | JWT |
+| PUT | `/api/shifts/{shiftId}` | JWT+MANAGER |
+| DELETE | `/api/shifts/{shiftId}` | JWT+MANAGER |
+| POST | `/api/shifts/{shiftId}/confirm` | JWT |
+| POST | `/api/shifts/{shiftId}/start` | JWT |
+| POST | `/api/shifts/{shiftId}/complete` | JWT |
+
+**WorkingSessionController — 9 (`/api/sessions`):**
+
+| Method | Path | Auth |
+|--------|------|------|
+| POST | `/api/sessions` | JWT |
+| POST | `/api/sessions/end` | JWT |
+| POST | `/api/sessions/clock-in` | Public |
+| POST | `/api/sessions/clock-out` | JWT+MANAGER |
+| GET | `/api/sessions` | JWT |
+| GET | `/api/sessions/pending` | JWT+MANAGER |
+| POST | `/api/sessions/{sessionId}/approve` | JWT+MANAGER |
+| POST | `/api/sessions/{sessionId}/reject` | JWT+MANAGER |
+| POST | `/api/sessions/{sessionId}/break` | JWT |
 
 ### 5.4 Customer Management
 
 | Class | Notes |
 |-------|-------|
 | `CustomerEntity` (MongoDB) | Profile, addresses[], loyaltyPoints, tier, preferences, GDPR consent |
-| `CustomerController` | 15+ endpoints: CRUD, loyalty, addresses, preferences |
+| `CustomerController` | 14 endpoints (`/api/customers`) — filter variants collapsed to query params |
 | `CustomerService` (500+ lines) | Signup bonus 100 pts, birthday bonus 200 pts, tier calculation |
 | `CustomerAuditService` | GDPR data access logging |
 | `CustomerDataRetentionService` | Auto soft-delete per retention policy |
@@ -276,18 +305,24 @@ Signature: HMAC-SHA512(JWT_SECRET)
 - GOLD: 2000–4999 pts
 - PLATINUM: 5000+ pts
 
-**Key endpoints:**
+**CustomerController — 14 (`/api/customers`):**
 
 | Method | Path | Auth |
 |--------|------|------|
-| POST | `/api/customers/get-or-create` | Internal only (NOT via gateway) |
-| GET | `/api/customers/{customerId}` | JWT |
-| PATCH | `/api/customers/{customerId}` | JWT |
-| POST | `/api/customers/{customerId}/addresses` | JWT |
-| PATCH | `/api/customers/{customerId}/addresses/{addressId}` | JWT |
-| DELETE | `/api/customers/{customerId}/addresses/{addressId}` | JWT |
-| PATCH | `/api/customers/{customerId}/addresses/{addressId}/set-default` | JWT |
-| GET | `/api/customers/{customerId}/stats` | JWT | Loyalty points, tier, order stats |
+| GET | `/api/customers` | JWT |
+| POST | `/api/customers` | JWT |
+| GET | `/api/customers/stats` | JWT+MANAGER |
+| GET | `/api/customers/{id}` | JWT |
+| PUT | `/api/customers/{id}` | JWT |
+| POST | `/api/customers/{id}/activate` | JWT+MANAGER |
+| POST | `/api/customers/{id}/deactivate` | JWT+MANAGER |
+| POST | `/api/customers/{id}/loyalty` | JWT |
+| POST | `/api/customers/{id}/addresses` | JWT |
+| PUT | `/api/customers/{id}/addresses/{addressId}` | JWT |
+| DELETE | `/api/customers/{id}/addresses/{addressId}` | JWT |
+| POST | `/api/customers/{id}/tags` | JWT+MANAGER |
+| POST | `/api/customers/get-or-create` | Internal only — blocked at gateway |
+| DELETE | `/api/customers/{id}/gdpr/anonymize` | JWT+MANAGER |
 
 ### 5.5 Notifications & Communications
 
@@ -309,20 +344,28 @@ Signature: HMAC-SHA512(JWT_SECRET)
 |-------|-------|
 | `Review` (MongoDB) | reviewId, orderId, customerId, storeId, rating(1-5), text, type(DINE_IN/DELIVERY/DRIVER/ITEM), flagged, createdAt |
 | `ReviewResponse` (MongoDB) | reviewId, responseText, respondedBy, isAutoGenerated |
-| `ReviewController` | 150+ lines — public rating, create, read, flag |
+| `ReviewController` | 10 endpoints (`/api/reviews`) — ResponseController merged in |
 | `ReviewService` | Creation, analytics by category/item/driver |
-| `ReviewResponseService` | AI-draft replies (delegates to masova-support) |
+| `ReviewResponseService` | Manager responses — now served via `POST /api/reviews/{id}/response` |
 | `ModerationService` | Content moderation (keyword filter) |
 | `SentimentAnalysisService` | NLP-based sentiment scoring |
 
-**Key endpoints:**
+**ReviewController — 10 (`/api/reviews`):**
 
 | Method | Path | Auth |
 |--------|------|------|
+| GET | `/api/reviews` | JWT |
 | POST | `/api/reviews` | JWT |
-| GET | `/api/reviews/public/token/{token}` | Public (rating token) |
-| GET | `/api/reviews/public/item/{itemId}` | Public |
-| POST | `/api/reviews/complaints` | JWT |
+| GET | `/api/reviews/stats` | JWT |
+| GET | `/api/reviews/public/token/{token}` | Public |
+| POST | `/api/reviews/public/submit` | Public |
+| GET | `/api/reviews/{reviewId}` | JWT |
+| PUT | `/api/reviews/{reviewId}` | JWT |
+| DELETE | `/api/reviews/{reviewId}` | JWT+MANAGER |
+| POST | `/api/reviews/{reviewId}/response` | JWT+MANAGER |
+| GET | `/api/reviews/response-templates` | JWT+MANAGER |
+
+> `ResponseController` was deleted — its endpoints are now part of ReviewController.
 
 ### 5.7 GDPR & Compliance
 
@@ -342,7 +385,7 @@ Retention policies (auto-delete):
 |-------|-------|
 | `StaffEarningsSummaryEntity` | Weekly earnings rollup per employee |
 | `StaffPayRateEntity` | Store-specific hourly pay rates (₹/hour) |
-| `EarningsController` | GET `/weekly/{staffId}`, POST `/pay-rate` |
+| `EarningsController` | 4 endpoints (`/api/staff/earnings`, `/api/staff/pay-rates`) |
 | `EarningsService` | Calculates from working sessions + tips |
 
 ---
@@ -381,24 +424,25 @@ vatCountryCode, currency, totalNetAmount, totalVatAmount, totalGrossAmount, vatB
 assignedKitchenStaffId, assignedMakeTableStation, receivedAt, actualPreparationTime
 ```
 
-### 6.3 OrderController — 40+ endpoints
+### 6.3 OrderController — 13 endpoints (`/api/orders`)
+
+Collapsed from 40+ in Phase 1 — filter variants now use query params, delivery/OTP/proof consolidated into PATCH `/{orderId}`.
 
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
+| GET | `/api/orders` | JWT | List (query: storeId, status, customerId, staffId, from, to) |
 | POST | `/api/orders` | JWT | Create order |
+| GET | `/api/orders/kitchen` | JWT+STAFF | Kitchen queue (KDS) |
+| GET | `/api/orders/track/{orderId}` | Public | Real-time tracking (no auth) |
 | GET | `/api/orders/{orderId}` | JWT | Order details |
-| GET | `/api/orders/track/{orderId}` | Public | Real-time tracking |
-| GET | `/api/orders/kitchen` | JWT+STAFF | Active kitchen orders |
-| PATCH | `/api/orders/{orderId}/status` | JWT+STAFF | Status transition |
-| POST | `/api/orders/{orderId}/status` | JWT+STAFF | Alternate status path |
-| PATCH | `/api/orders/{orderId}/next-stage` | JWT+STAFF | Sequential stage advance |
-| PATCH | `/api/orders/{orderId}/assign-driver` | JWT+MANAGER | Driver assignment |
+| PUT | `/api/orders/{orderId}` | JWT | Update mutable fields |
+| POST | `/api/orders/{orderId}/status` | JWT+STAFF | Explicit status transition |
+| DELETE | `/api/orders/{orderId}` | JWT+MANAGER | Cancel order |
+| PATCH | `/api/orders/{orderId}/next-stage` | JWT+STAFF | Advance KDS stage |
 | PATCH | `/api/orders/{orderId}/payment` | Internal | Payment status update |
-| POST | `/api/orders/{orderId}/quality-checkpoint` | JWT+STAFF | Quality check |
-| PATCH | `/api/orders/{orderId}/delivery-otp` | JWT+DRIVER | OTP verification |
-| PATCH | `/api/orders/{orderId}/delivery-proof` | JWT+DRIVER | Proof of delivery (photo) |
-| PATCH | `/api/orders/{orderId}/mark-delivered` | JWT+DRIVER | Mark as delivered |
-| GET | `/api/orders/analytics/prep-time` | JWT+MANAGER | Preparation time analytics |
+| GET | `/api/orders/{orderId}/quality-checkpoint` | JWT | Get checkpoints |
+| POST | `/api/orders/{orderId}/quality-checkpoint` | JWT+STAFF | Add checkpoint |
+| PATCH | `/api/orders/{orderId}/quality-checkpoint/{checkpointName}` | JWT+STAFF | Update checkpoint |
 
 ### 6.4 OrderService Key Logic (1521 lines)
 
@@ -576,16 +620,31 @@ assignedAt, pickedUpAt, deliveredAt
 driverId, latitude, longitude, accuracy, timestamp
 ```
 
-#### DispatchController — 10 endpoints
+#### DeliveryController — 17 endpoints (`/api/delivery`)
+
+`DispatchController` + `TrackingController` + `PerformanceController` were merged into a single `DeliveryController` in Phase 1.
 
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
-| POST | `/api/dispatch/auto-dispatch` | Internal | AI driver assignment |
-| POST | `/api/dispatch/route-optimize` | JWT+MANAGER | Multi-stop route optimization |
-| GET | `/api/dispatch/zone/check` | JWT | Delivery feasibility |
-| GET | `/api/dispatch/zone/fee` | JWT | Zone delivery fee |
-| PUT | `/api/dispatch/driver/status` | JWT+DRIVER | Update driver status |
-| GET | `/api/dispatch/driver/{driverId}/status` | JWT | Driver current status |
+| POST | `/api/delivery/dispatch` | Internal | Auto-dispatch driver |
+| POST | `/api/delivery/accept` | JWT+DRIVER | Driver accepts delivery |
+| POST | `/api/delivery/reject` | JWT+DRIVER | Driver rejects delivery |
+| POST | `/api/delivery/location` | JWT+DRIVER | Driver GPS location update |
+| POST | `/api/delivery/verify` | JWT+DRIVER | Verify delivery OTP + proof |
+| POST | `/api/delivery/route` | JWT+MANAGER | Route optimization |
+| GET | `/api/delivery/track/{orderId}` | JWT | Track order with ETA |
+| GET | `/api/delivery/zones` | JWT | Delivery zones + fee |
+| GET | `/api/delivery/drivers/available` | JWT+MANAGER | Available drivers |
+| GET | `/api/delivery/driver/{driverId}/pending` | JWT+DRIVER | Driver's pending deliveries |
+| GET | `/api/delivery/driver/{driverId}/performance` | JWT | Driver performance metrics |
+| GET | `/api/delivery/driver/{driverId}/status` | JWT | Driver current status |
+| PUT | `/api/delivery/driver/{driverId}/status` | JWT+DRIVER | Update driver status |
+| POST | `/api/delivery/{orderId}/otp` | JWT+DRIVER | Generate/regenerate OTP |
+| PATCH | `/api/delivery/{trackingId}/status` | JWT+DRIVER | Advance delivery state |
+| GET | `/api/delivery/analytics` | JWT+MANAGER | Delivery analytics |
+| GET | `/api/delivery/metrics` | JWT+MANAGER | Today's delivery metrics |
+
+**WebSocket:** `/ws/delivery` — Real-time driver location + order updates (STOMP)
 
 #### Auto-Dispatch Algorithm (AutoDispatchService)
 1. Get all AVAILABLE drivers in store area
@@ -593,38 +652,6 @@ driverId, latitude, longitude, accuracy, timestamp
 3. Calculate Haversine distance from each driver to store
 4. Select closest driver (load-balance: minimize cumulative distance)
 5. Assign via RabbitMQ event or direct DB write
-
-### 8.2 Tracking
-
-| Method | Path | Auth |
-|--------|------|------|
-| GET | `/api/delivery/tracking/{orderId}` | JWT |
-| GET | `/api/delivery/eta/{orderId}` | JWT |
-| GET | `/api/delivery/track/{orderId}` | JWT |
-
-**WebSocket:** `/ws/delivery/{customerId}` — Real-time delivery updates (STOMP)
-
-**ETACalculationService:** Google Maps Distance Matrix API → predicted delivery minutes
-
-### 8.3 Proof of Delivery
-
-- `ProofOfDeliveryService` — Photo upload + OTP verification
-- Photo stored in Cloud Storage
-- OTP: 4-digit, generated on order dispatch, verified on delivery
-- POST `/api/delivery/{orderId}/generate-otp` — Generate OTP
-- POST `/api/delivery/verify-otp` — Verify OTP (`{orderId, otp}`)
-
-### 8.4 Driver Performance
-
-| Metric | Source |
-|--------|--------|
-| Total deliveries | Completed delivery count |
-| On-time % | Estimated vs actual delivery time |
-| Average delivery time | Minutes per delivery |
-| Rating | Customer ratings on delivered orders |
-| Distance | GPS tracking (accumulated km) |
-
-GET `/api/dispatch/performance/{driverId}` — Full performance metrics
 
 ### 8.5 Inventory Management
 
@@ -637,13 +664,17 @@ supplier (supplierId, name), cost
 
 **Auto-reorder trigger:** `currentStock < minStock` → notify manager + background agent creates PO
 
+**InventoryController — 7 (`/api/inventory`):**
+
 | Method | Path | Auth |
 |--------|------|------|
-| GET | `/api/inventory/items` | JWT |
-| POST | `/api/inventory/reserve` | Internal | Reserve stock for order |
-| POST | `/api/inventory/release` | Internal | Release reservation |
-| POST | `/api/inventory/adjust` | JWT+MANAGER | Manual adjustment |
-| GET | `/api/inventory/value` | JWT+MANAGER | Inventory value report |
+| GET | `/api/inventory` | JWT |
+| POST | `/api/inventory` | JWT+MANAGER |
+| GET | `/api/inventory/{id}` | JWT |
+| PATCH | `/api/inventory/{id}` | JWT+MANAGER |
+| DELETE | `/api/inventory/{id}` | JWT+MANAGER |
+| GET | `/api/inventory/{id}/stock` | JWT |
+| GET | `/api/inventory/value` | JWT+MANAGER |
 
 ### 8.6 Purchase Orders & Suppliers
 
@@ -655,13 +686,27 @@ expectedDeliveryDate, actualDeliveryDate, notes
 autoGenerated (boolean — from AI agent), generatedAt
 ```
 
+**PurchaseOrderController — 6 (`/api/purchase-orders`):**
+
 | Method | Path | Auth |
 |--------|------|------|
+| GET | `/api/purchase-orders` | JWT |
 | POST | `/api/purchase-orders` | JWT+MANAGER |
+| GET | `/api/purchase-orders/{id}` | JWT |
+| PUT | `/api/purchase-orders/{id}` | JWT+MANAGER |
+| DELETE | `/api/purchase-orders/{id}` | JWT+MANAGER |
 | POST | `/api/purchase-orders/auto-generate` | Internal (AI agent) |
-| PATCH | `/api/purchase-orders/{poId}/approve` | JWT+MANAGER |
-| PATCH | `/api/purchase-orders/{poId}/receive` | JWT+MANAGER |
-| GET | `/api/purchase-orders/supplier/{supplierId}/performance` | JWT+MANAGER |
+
+**SupplierController — 6 (`/api/suppliers`):**
+
+| Method | Path | Auth |
+|--------|------|------|
+| GET | `/api/suppliers` | JWT |
+| POST | `/api/suppliers` | JWT+MANAGER |
+| GET | `/api/suppliers/{id}` | JWT |
+| PUT | `/api/suppliers/{id}` | JWT+MANAGER |
+| DELETE | `/api/suppliers/{id}` | JWT+MANAGER |
+| GET | `/api/suppliers/compare` | JWT+MANAGER |
 
 ### 8.7 Waste Tracking
 
@@ -673,11 +718,16 @@ quantity, unit, reason, cost
 approvedByManager, createdByStaffId
 ```
 
+**WasteController — 6 (`/api/waste`):**
+
 | Method | Path | Auth |
 |--------|------|------|
-| POST | `/api/waste/record` | JWT+STAFF |
-| PATCH | `/api/waste/approve` | JWT+MANAGER |
-| GET | `/api/waste/summary` | JWT+MANAGER |
+| GET | `/api/waste` | JWT |
+| POST | `/api/waste` | JWT+STAFF |
+| GET | `/api/waste/{id}` | JWT |
+| PUT | `/api/waste/{id}` | JWT+MANAGER |
+| POST | `/api/waste/{id}/approve` | JWT+MANAGER |
+| GET | `/api/waste/stats` | JWT+MANAGER |
 
 ---
 
@@ -687,23 +737,24 @@ approvedByManager, createdByStaffId
 **Primary DB:** MongoDB (`masova_analytics`)
 **Java Files:** 34
 
-### AnalyticsController + BIController — 11 endpoints total
+### AnalyticsController — 3 endpoints (`/api/analytics`)
 
-> **Note:** After Phase 1 API reduction, BIController was merged into AnalyticsController. All 11 canonical endpoints live under `/api/analytics`. There is no separate `/api/bi` or `/api/intelligence` prefix.
-
-| Method | Path | Auth | Returns |
+| Method | Path | Auth | Purpose |
 |--------|------|------|---------|
-| GET | `/api/analytics/sales` | JWT+MANAGER | Sales (query: period=today\|week\|month, view=breakdown\|trend\|peak-hours) |
-| GET | `/api/analytics/products` | JWT+MANAGER | Top products |
-| GET | `/api/analytics/staff` | JWT+MANAGER | Staff performance (query: staffId, view=leaderboard) |
-| GET | `/api/analytics/staff/{id}/hours` | JWT+MANAGER | Working hours report |
-| GET | `/api/analytics/orders` | JWT+MANAGER | Order metrics (avg prep time, avg value, distribution) |
-| GET | `/api/analytics/drivers` | JWT+MANAGER | Driver status + performance metrics |
-| GET | `/api/analytics/customers` | JWT+MANAGER | Customer behaviour analytics |
-| GET | `/api/analytics/cost` | JWT+MANAGER | Cost analysis (COGS, margins) |
-| GET | `/api/analytics/forecast` | JWT+MANAGER | Forecasts (query: type=sales\|demand\|churn) |
-| GET | `/api/analytics/executive` | JWT+MANAGER | Executive summary dashboard (P&L, KPIs) |
-| GET | `/api/analytics/benchmarking` | JWT+MANAGER | Store benchmarking (multi-store comparison) |
+| GET | `/api/analytics` | JWT+MANAGER | Analytics (query params: period, view, type) |
+| GET | `/api/analytics/cache/clear` | JWT+MANAGER | Cache status |
+| POST | `/api/analytics/cache/clear` | JWT+MANAGER | Clear analytics cache |
+
+### BIController — 2 endpoints (`/api/bi`)
+
+> **Note:** BIController was NOT merged into AnalyticsController in the live code — it remains separate at `/api/bi`. The plan targeted `/api/analytics` for everything but the code kept them separate.
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| GET | `/api/bi` | JWT+MANAGER | BI dashboard |
+| GET | `/api/bi/reports` | JWT+MANAGER | BI reports |
+
+> **Known gap:** Only 4 live intelligence endpoints exist vs the plan's 11. The analytics query params (`period`, `view`, `type`) are handled on the single `GET /api/analytics` endpoint rather than separate routes. This is intentional — the service methods are fully implemented, just consolidated behind query params.
 
 ### Event Consumption
 
