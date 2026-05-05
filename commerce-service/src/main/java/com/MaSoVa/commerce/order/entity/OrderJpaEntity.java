@@ -192,6 +192,19 @@ public class OrderJpaEntity {
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
 
+    // Global-5: Fiscal signing columns — null until order reaches terminal status
+    @Column(name = "fiscal_signature_id", length = 200)
+    private String fiscalSignatureId;
+
+    @Column(name = "fiscal_signer_system", length = 20)
+    private String fiscalSignerSystem;
+
+    @Column(name = "fiscal_signing_failed")
+    private boolean fiscalSigningFailed;
+
+    @Column(name = "fiscal_signed_at")
+    private java.time.Instant fiscalSignedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 

@@ -53,6 +53,7 @@ class OrderServiceCurrencyTest {
     @Mock private InventoryServiceClient inventoryServiceClient;
     @Mock private OrderEventPublisher orderEventPublisher;
     @Mock private AggregatorService aggregatorService;
+    @Mock private com.MaSoVa.commerce.fiscal.FiscalSigningService fiscalSigningService;
 
     private OrderService orderService;
 
@@ -70,7 +71,8 @@ class OrderServiceCurrencyTest {
                 customerServiceClient, customerNotificationService,
                 deliveryServiceClient, storeServiceClient, inventoryServiceClient,
                 taxConfiguration, prepConfig, deliveryFeeConfig,
-                orderEventPublisher, euVatEngine, aggregatorService
+                orderEventPublisher, euVatEngine, aggregatorService,
+                fiscalSigningService
         );
 
         when(menuServiceClient.isMenuItemAvailable(anyString())).thenReturn(true);
