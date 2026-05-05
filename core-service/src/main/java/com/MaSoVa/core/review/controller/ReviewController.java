@@ -28,14 +28,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Reviews — 10 canonical endpoints at /api/reviews.
- * Merges ResponseController (/api/responses) into this controller.
- * Replaces: /api/reviews/order/*, /customer/*, /driver/*, /staff/*, /item/*,
- *           /recent, /rating, /needs-response, /stats/*, /pending, /flagged,
- *           /{id}/approve, /{id}/reject, /{id}/flag, /{id}/status,
- *           /public/item/*/average, /api/responses/**, /api/ratings/**
- */
+// Reviews — 10 canonical endpoints at /api/reviews.
+// Merges ResponseController into this controller.
+// Replaces separate per-filter endpoints, /api/responses/*, /api/ratings/*
 @RestController
 @RequestMapping("/api/reviews")
 @Tag(name = "Reviews", description = "Customer reviews, moderation, and manager responses")
