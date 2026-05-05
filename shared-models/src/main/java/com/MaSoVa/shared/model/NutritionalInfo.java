@@ -1,7 +1,6 @@
 package com.MaSoVa.shared.model;
 
 import java.io.Serializable;
-import java.util.List;
 
 /**
  * Nutritional information for menu items
@@ -14,7 +13,6 @@ public class NutritionalInfo implements Serializable {
     private Double carbohydrates;     // Carbs in grams
     private Double fat;               // Fat in grams
     private String servingSize;       // e.g., "1 piece", "100g"
-    private List<String> allergens;   // Common allergens
 
     public NutritionalInfo() {}
 
@@ -33,7 +31,4 @@ public class NutritionalInfo implements Serializable {
 
     public String getServingSize() { return servingSize; }
     public void setServingSize(String servingSize) { this.servingSize = servingSize; }
-
-    public List<String> getAllergens() { return allergens; }
-    public void setAllergens(List<String> allergens) { this.allergens = allergens; }
 }

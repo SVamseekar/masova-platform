@@ -52,7 +52,8 @@ public class MenuTestDataBuilder {
     private String portionUnit = "g";
     private Integer yieldPerRecipe = 8;
     private List<String> ingredients = List.of("Flour", "Mozzarella", "Tomato sauce", "Basil");
-    private List<String> allergens = List.of("Gluten", "Dairy");
+    private List<String> allergens = List.of("CEREALS_GLUTEN", "MILK");
+    private boolean allergensDeclared = true;
     private List<String> preparationInstructions = List.of("Prepare dough", "Add toppings", "Bake at 250C");
     private String storeId = TestDataBuilder.defaultStoreId();
     private Integer displayOrder = 0;
@@ -78,6 +79,7 @@ public class MenuTestDataBuilder {
                 .withDietaryInfo(List.of())
                 .withIngredients(List.of("Basmati rice", "Chicken", "Spices", "Onion", "Yogurt"))
                 .withAllergens(List.of())
+                .withAllergensDeclared(true)
                 .withPreparationTime(35);
     }
 
@@ -92,6 +94,7 @@ public class MenuTestDataBuilder {
                 .withDietaryInfo(List.of("VEGETARIAN", "VEGAN"))
                 .withIngredients(List.of("Rice batter", "Urad dal", "Potato", "Onion", "Spices"))
                 .withAllergens(List.of())
+                .withAllergensDeclared(true)
                 .withPreparationTime(15);
     }
 
@@ -105,7 +108,8 @@ public class MenuTestDataBuilder {
                 .withSpiceLevel("MILD")
                 .withDietaryInfo(List.of("VEGETARIAN"))
                 .withIngredients(List.of("Tea leaves", "Milk", "Sugar", "Cardamom", "Ginger"))
-                .withAllergens(List.of("Dairy"))
+                .withAllergens(List.of("MILK"))
+                .withAllergensDeclared(true)
                 .withPreparationTime(5);
     }
 
@@ -211,6 +215,11 @@ public class MenuTestDataBuilder {
         return this;
     }
 
+    public MenuTestDataBuilder withAllergensDeclared(boolean allergensDeclared) {
+        this.allergensDeclared = allergensDeclared;
+        return this;
+    }
+
     public MenuTestDataBuilder withPreparationInstructions(List<String> preparationInstructions) {
         this.preparationInstructions = preparationInstructions;
         return this;
@@ -257,6 +266,7 @@ public class MenuTestDataBuilder {
         menuItem.put("yieldPerRecipe", yieldPerRecipe);
         menuItem.put("ingredients", ingredients);
         menuItem.put("allergens", allergens);
+        menuItem.put("allergensDeclared", allergensDeclared);
         menuItem.put("preparationInstructions", preparationInstructions);
         menuItem.put("storeId", storeId);
         menuItem.put("displayOrder", displayOrder);

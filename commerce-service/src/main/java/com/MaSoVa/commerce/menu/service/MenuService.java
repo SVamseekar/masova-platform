@@ -5,6 +5,8 @@ import com.MaSoVa.shared.enums.Cuisine;
 import com.MaSoVa.shared.enums.MenuCategory;
 import com.MaSoVa.shared.enums.DietaryType;
 import com.MaSoVa.commerce.menu.repository.MenuItemRepository;
+import com.MaSoVa.shared.enums.AllergenType;
+import com.MaSoVa.shared.exception.BusinessException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -13,8 +15,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class MenuService {
@@ -22,10 +26,19 @@ public class MenuService {
     @Autowired
     private MenuItemRepository menuItemRepository;
 
+    // ========== ALLERGEN GATE (EU Regulation 1169/2011) ==========
+
+    private void enforceAllergenGate(MenuItem item) {
+        if (Boolean.TRUE.equals(item.getIsAvailable()) && !item.isAllergensDeclared()) {
+            throw new BusinessException("allergens must be declared before making a menu item available. Use PATCH /api/menu/items/{id}/allergens first.");
+        }
+    }
+
     // ========== CREATE ==========
 
     @CacheEvict(value = "menuItems", allEntries = true)
     public MenuItem createMenuItem(MenuItem menuItem) {
+        enforceAllergenGate(menuItem);
         menuItem.setCreatedAt(LocalDateTime.now());
         menuItem.setUpdatedAt(LocalDateTime.now());
         return menuItemRepository.save(menuItem);
@@ -154,12 +167,14 @@ public class MenuService {
                 existingItem.setServingSize(updatedMenuItem.getServingSize());
                 existingItem.setIngredients(updatedMenuItem.getIngredients());
                 existingItem.setAllergens(updatedMenuItem.getAllergens());
+                existingItem.setAllergensDeclared(updatedMenuItem.isAllergensDeclared());
                 existingItem.setPreparationInstructions(updatedMenuItem.getPreparationInstructions());
                 existingItem.setStoreId(updatedMenuItem.getStoreId());
                 existingItem.setDisplayOrder(updatedMenuItem.getDisplayOrder());
                 existingItem.setTags(updatedMenuItem.getTags());
                 existingItem.setIsRecommended(updatedMenuItem.getIsRecommended());
 
+                enforceAllergenGate(existingItem);
                 existingItem.setUpdatedAt(LocalDateTime.now());
 
                 return menuItemRepository.save(existingItem);
@@ -281,7 +296,8 @@ public class MenuService {
             copiedItem.setYieldPerRecipe(sourceItem.getYieldPerRecipe());
 
             copiedItem.setIngredients(new ArrayList<>(sourceItem.getIngredients()));
-            copiedItem.setAllergens(new ArrayList<>(sourceItem.getAllergens()));
+            copiedItem.setAllergens(new HashSet<>(sourceItem.getAllergens()));
+            copiedItem.setAllergensDeclared(false); // Re-declaration required per allergen compliance
             copiedItem.setPreparationInstructions(new ArrayList<>(sourceItem.getPreparationInstructions()));
 
             // Set target store ID
@@ -302,5 +318,19 @@ public class MenuService {
         List<MenuItem> savedItems = menuItemRepository.saveAll(targetItems);
 
         return savedItems;
+    }
+
+    // ========== ALLERGEN DECLARATION ==========
+
+    @CacheEvict(value = "menuItems", allEntries = true)
+    public MenuItem declareAllergens(String id, Set<AllergenType> allergens, boolean allergenFree) {
+        return menuItemRepository.findById(id)
+            .map(item -> {
+                item.setAllergens(allergenFree ? new HashSet<>() : allergens);
+                item.setAllergensDeclared(true);
+                item.setUpdatedAt(LocalDateTime.now());
+                return menuItemRepository.save(item);
+            })
+            .orElseThrow(() -> new RuntimeException("Menu item not found with id: " + id));
     }
 }
