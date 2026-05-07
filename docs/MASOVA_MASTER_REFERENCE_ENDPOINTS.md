@@ -11,15 +11,16 @@
 | Service | Controllers | Endpoints |
 |---------|------------|-----------|
 | core-service | 15 | **105** |
-| commerce-service | 6 | **31** |
+| commerce-service | 6 | **32** |
 | payment-service | 4 | **12** |
 | logistics-service | 5 | **42** |
 | intelligence-service | 2 | **4** |
-| **TOTAL** | **32** | **194** |
+| **TOTAL** | **32** | **195** |
 
-> **Note:** Phase 1 plan targeted 175. Live code has 194 — the difference is from
+> **Note:** Phase 1 plan targeted 175. Live code has 195 — the difference is from
 > `AggregatorController` (Global-6, +2), `SystemInfoController` (+5), `RatingController` (+1),
-> GDPR anonymise endpoints per service (+3), and minor additions. All intentional.
+> GDPR anonymise endpoints per service (+3), `PATCH /api/menu/items/{id}/allergens` (Global-1, +1),
+> and minor additions. All intentional.
 
 ---
 
@@ -192,7 +193,7 @@
 
 ---
 
-## COMMERCE-SERVICE — 31 Endpoints, 6 Controllers
+## COMMERCE-SERVICE — 32 Endpoints, 6 Controllers
 
 ### OrderController — 13 (`/api/orders`)
 | Method | Path | Auth |
@@ -211,7 +212,7 @@
 | POST | `/api/orders/{orderId}/quality-checkpoint` | JWT+STAFF |
 | PATCH | `/api/orders/{orderId}/quality-checkpoint/{checkpointName}` | JWT+STAFF |
 
-### MenuController — 8 (`/api/menu`)
+### MenuController — 9 (`/api/menu`)
 | Method | Path | Auth |
 |--------|------|------|
 | GET | `/api/menu` | Public |
@@ -220,6 +221,7 @@
 | POST | `/api/menu/bulk` | JWT+MANAGER |
 | POST | `/api/menu/copy` | JWT+MANAGER |
 | PUT | `/api/menu/{id}` | JWT+MANAGER |
+| PATCH | `/api/menu/items/{id}/allergens` | JWT+MANAGER |
 | DELETE | `/api/menu/{id}` | JWT+MANAGER |
 | GET | `/api/menu/stats` | JWT+MANAGER |
 

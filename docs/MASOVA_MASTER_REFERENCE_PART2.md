@@ -89,7 +89,7 @@ Selector: `selectDeliveryFeeINR` — every component that needs delivery fee MUS
 
 ---
 
-### 11.3 RTK Query API Slices (18)
+### 11.3 RTK Query API Slices (19)
 
 Every slice uses the canonical base URL (no `/api/v1/` prefix — 194 live endpoints).
 
@@ -113,6 +113,7 @@ Every slice uses the canonical base URL (no `/api/v1/` prefix — 194 live endpo
 | `notificationApi` | GET `/api/notifications`, PATCH `/api/notifications/{id}/read` |
 | `kioskApi` | POST `/api/users/kiosk/auto-login` |
 | `agentApi` | POST `/api/agents/{name}/trigger` — AI agent manual triggers |
+| `fiscalApi` | GET/POST `/api/payments/fiscal/**` — fiscal compliance (Global-5) |
 
 ---
 
@@ -162,6 +163,30 @@ Every slice uses the canonical base URL (no `/api/v1/` prefix — 194 live endpo
 
 #### PrivacyPolicy.tsx
 - Static privacy policy & terms of service page
+
+#### FiscalCompliancePage.tsx (Global-5)
+- Route: `/manager/fiscal-compliance`
+- Protected: MANAGER only
+- Lists fiscal signatures per order, signing status, failed signings
+- Uses `fiscalApi` RTK slice
+- Alerts manager if `fiscalSigningFailed=true` on any recent order
+
+---
+
+### 11.4a Allergen Constants
+
+**File:** `frontend/src/constants/allergens.ts`
+
+14 EU mandatory allergens with display names and icon keys:
+```typescript
+export const EU_ALLERGENS = [
+  { key: 'GLUTEN', label: 'Gluten', icon: 'wheat' },
+  { key: 'CRUSTACEANS', label: 'Crustaceans', icon: 'shrimp' },
+  // ... 12 more: EGGS, FISH, PEANUTS, SOYBEANS, MILK, NUTS,
+  //              CELERY, MUSTARD, SESAME, SULPHITES, LUPIN, MOLLUSCS
+]
+```
+Used by: `RecipeManagementPage`, `KitchenDisplayPage` allergen badges, `ProfilePage` allergen alert preferences.
 
 ---
 
