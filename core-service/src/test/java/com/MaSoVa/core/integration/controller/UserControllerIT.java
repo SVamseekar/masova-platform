@@ -4,6 +4,7 @@ import com.MaSoVa.shared.test.BaseFullIntegrationTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -16,6 +17,7 @@ class UserControllerIT extends BaseFullIntegrationTest {
     private MockMvc mockMvc;
 
     @Test
+    @WithMockUser(roles = "MANAGER")
     @DisplayName("GET /api/users returns 200 with empty list when no users")
     void getUsers_returnsEmptyList() throws Exception {
         mockMvc.perform(get("/api/users")
@@ -25,6 +27,7 @@ class UserControllerIT extends BaseFullIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "MANAGER")
     @DisplayName("GET /api/users/{userId} returns 404 for non-existent user")
     void getUser_returns404() throws Exception {
         mockMvc.perform(get("/api/users/nonexistent-id")

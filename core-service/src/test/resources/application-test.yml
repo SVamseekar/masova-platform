@@ -8,9 +8,14 @@ spring:
     url: jdbc:postgresql://localhost:5432/masova_test
     username: masova
     password: masova_test
+    hikari:
+      connection-init-sql: "CREATE SCHEMA IF NOT EXISTS core_schema"
   jpa:
     hibernate:
       ddl-auto: create-drop
+    properties:
+      hibernate:
+        default_schema: core_schema
   flyway:
     enabled: false
   rabbitmq:
