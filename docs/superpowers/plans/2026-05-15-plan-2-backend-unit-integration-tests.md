@@ -8,6 +8,13 @@
 
 **Prerequisite:** Plan 0 (deployment blockers) and Plan 1 (test infrastructure) must be complete.
 
+> ⚠️ **Dell required for integration tests (`*IT.java`):** Unit tests (`*Test.java`) run on Mac with no Docker. Integration tests spin up Testcontainers locally — Docker must be running on the **Dell machine (192.168.50.88)**. Before starting Task 7 (integration tests), pause and confirm:
+> 1. On Dell (PowerShell): `docker compose up -d mongodb redis rabbitmq postgres`
+> 2. Verify Docker is healthy: `docker compose ps` — all 4 containers should show `Up`
+> 3. Confirm Dell is reachable from Mac: `ping 192.168.50.88`
+> 
+> Tasks 1–6 (unit tests) can run on Mac without Dell.
+
 **Tech Stack:** JUnit 5, Mockito, AssertJ, MockMvc, Spring Security Test, `@WebMvcTest`, `@DataMongoTest`, `@DataJpaTest`, Testcontainers 1.19.3
 
 ---

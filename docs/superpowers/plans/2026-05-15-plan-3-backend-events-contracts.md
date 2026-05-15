@@ -8,6 +8,13 @@
 
 **Prerequisite:** Plan 1 (test infrastructure) must be complete. Frontend Plan 4 must be complete before Pact provider tests can run (frontend generates the pact files).
 
+> ⚠️ **Dell required — this entire plan needs Docker:** All tests in this plan use `BaseMessagingIntegrationTest` which spins up RabbitMQ + MongoDB + PostgreSQL via Testcontainers. Before starting Task 1, confirm:
+> 1. On Dell (PowerShell): `docker compose up -d mongodb redis rabbitmq postgres`
+> 2. Verify all 4 containers are healthy: `docker compose ps`
+> 3. Confirm Dell reachable from Mac: `ping 192.168.50.88`
+> 
+> Do not proceed until Dell confirms all containers are `Up`.
+
 **Tech Stack:** Spring AMQP, `spring-rabbit-test`, Testcontainers RabbitMQ 1.19.3, `pact-jvm-provider-spring` 4.6.x
 
 ---
