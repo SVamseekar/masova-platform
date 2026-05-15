@@ -22,6 +22,9 @@
         <springdoc-openapi.version>2.3.0</springdoc-openapi.version>
         <smart-doc.version>3.0.5</smart-doc.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- Default empty JaCoCo agent args — overridden by JaCoCo prepare-agent execution -->
+        <surefireArgLine></surefireArgLine>
+        <failsafeArgLine></failsafeArgLine>
     </properties>
     
     <modules>
