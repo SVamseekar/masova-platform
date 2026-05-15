@@ -7,19 +7,20 @@
 
 // Validate required environment variables
 const validateEnvVars = () => {
-  const required = {
-    VITE_API_GATEWAY_URL: import.meta.env.VITE_API_GATEWAY_URL,
-    VITE_WS_URL: import.meta.env.VITE_WS_URL,
-  };
+  const gatewayUrl = import.meta.env.VITE_API_GATEWAY_URL || import.meta.env.VITE_API_BASE_URL;
+  const wsUrl = import.meta.env.VITE_WS_URL;
 
-  const missing = Object.entries(required)
-    .filter(([, value]) => !value)
-    .map(([key]) => key);
-
-  if (missing.length > 0) {
+  if (!gatewayUrl) {
     throw new Error(
-      `Missing required environment variables: ${missing.join(', ')}\n` +
-      'Please set these in your .env file. See .env.example for reference.'
+      'Missing required environment variable: VITE_API_GATEWAY_URL (or VITE_API_BASE_URL as fallback)\n' +
+      'Please set one of these in your .env file. See .env.example for reference.'
+    );
+  }
+
+  if (!wsUrl) {
+    throw new Error(
+      'Missing required environment variable: VITE_WS_URL\n' +
+      'Please set this in your .env file. See .env.example for reference.'
     );
   }
 };
@@ -27,19 +28,22 @@ const validateEnvVars = () => {
 // Validate on module load
 validateEnvVars();
 
+const _GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || import.meta.env.VITE_API_BASE_URL;
+
 export const API_CONFIG = {
   // API Gateway - Single entry point for all backend services
-  API_GATEWAY_URL: import.meta.env.VITE_API_GATEWAY_URL,
+  // Accepts VITE_API_GATEWAY_URL (preferred) or VITE_API_BASE_URL (fallback)
+  API_GATEWAY_URL: _GATEWAY_URL,
 
   // Base URL (alias for API Gateway)
-  BASE_URL: import.meta.env.VITE_API_GATEWAY_URL,
+  BASE_URL: _GATEWAY_URL,
 
   // Service URLs through API Gateway
-  USER_SERVICE_URL: import.meta.env.VITE_API_GATEWAY_URL,
-  ORDER_SERVICE_URL: import.meta.env.VITE_API_GATEWAY_URL,
-  PAYMENT_SERVICE_URL: import.meta.env.VITE_API_GATEWAY_URL,
-  CUSTOMER_SERVICE_URL: import.meta.env.VITE_API_GATEWAY_URL,
-  REVIEW_SERVICE_URL: import.meta.env.VITE_API_GATEWAY_URL,
+  USER_SERVICE_URL: _GATEWAY_URL,
+  ORDER_SERVICE_URL: _GATEWAY_URL,
+  PAYMENT_SERVICE_URL: _GATEWAY_URL,
+  CUSTOMER_SERVICE_URL: _GATEWAY_URL,
+  REVIEW_SERVICE_URL: _GATEWAY_URL,
 
   // Service URLs (for reference only - DO NOT USE DIRECTLY)
   // All requests go through API Gateway
@@ -64,7 +68,7 @@ export const API_CONFIG = {
 } as const;
 
 // Use API Gateway for all endpoints
-const GATEWAY = API_CONFIG.API_GATEWAY_URL;
+const GATEWAY = _GATEWAY_URL;
 
 export const API_ENDPOINTS = {
   // Authentication
