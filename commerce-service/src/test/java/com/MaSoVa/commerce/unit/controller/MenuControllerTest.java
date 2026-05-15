@@ -5,7 +5,6 @@ import com.MaSoVa.shared.entity.MenuItem;
 import com.MaSoVa.shared.enums.AllergenType;
 import com.MaSoVa.shared.enums.Cuisine;
 import com.MaSoVa.shared.enums.MenuCategory;
-import com.MaSoVa.shared.exception.BusinessException;
 import com.MaSoVa.commerce.menu.dto.AllergenDeclarationRequest;
 import com.MaSoVa.commerce.menu.service.MenuService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,24 +49,24 @@ class MenuControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/menu/public/{id} returns 200 for existing item")
+    @DisplayName("GET /api/menu/{id} returns 200 for existing item")
     void getMenuItem_returns200() throws Exception {
         MenuItem item = new MenuItem("Pizza", Cuisine.ITALIAN, MenuCategory.PIZZA, 29900L);
         item.setId("item-1");
         item.setAllergensDeclared(true);
         when(menuService.getMenuItemById("item-1")).thenReturn(Optional.of(item));
 
-        mockMvc.perform(get("/api/menu/public/item-1"))
+        mockMvc.perform(get("/api/menu/item-1"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.name").value("Pizza"));
     }
 
     @Test
-    @DisplayName("GET /api/menu/public/{id} returns 404 for missing item")
+    @DisplayName("GET /api/menu/{id} returns 404 for missing item")
     void getMenuItem_returns404() throws Exception {
         when(menuService.getMenuItemById("bad-id")).thenReturn(Optional.empty());
 
-        mockMvc.perform(get("/api/menu/public/bad-id"))
+        mockMvc.perform(get("/api/menu/bad-id"))
             .andExpect(status().isNotFound());
     }
 
@@ -101,9 +100,9 @@ class MenuControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/menu/items returns 400 when name is missing")
+    @DisplayName("POST /api/menu returns 400 when name is missing")
     void createMenuItem_returns400WhenNameMissing() throws Exception {
-        mockMvc.perform(post("/api/menu/items")
+        mockMvc.perform(post("/api/menu")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"cuisine\":\"ITALIAN\",\"category\":\"PIZZA\",\"basePrice\":29900}"))
             .andExpect(status().isBadRequest());

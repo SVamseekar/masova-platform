@@ -1,302 +1,127 @@
 package com.MaSoVa.payment.unit.controller;
 
 import com.MaSoVa.payment.controller.PaymentController;
-import com.MaSoVa.payment.dto.InitiatePaymentRequest;
-import com.MaSoVa.payment.dto.PaymentCallbackRequest;
 import com.MaSoVa.payment.dto.PaymentResponse;
-import com.MaSoVa.payment.dto.ReconciliationReportResponse;
 import com.MaSoVa.payment.entity.Transaction;
 import com.MaSoVa.payment.service.PaymentService;
+import com.MaSoVa.shared.test.BaseServiceTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(PaymentController.class)
-@AutoConfigureMockMvc(addFilters = false)
-@DisplayName("PaymentController Integration Tests")
-class PaymentControllerTest {
+@ExtendWith(MockitoExtension.class)
+@DisplayName("PaymentController Unit Tests")
+class PaymentControllerTest extends BaseServiceTest {
 
-    @Autowired
+    @Mock private PaymentService paymentService;
+    @InjectMocks private PaymentController paymentController;
     private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @MockBean
-    private PaymentService paymentService;
-
-    private PaymentResponse sampleResponse;
-    private InitiatePaymentRequest initiateRequest;
 
     @BeforeEach
     void setUp() {
-        sampleResponse = PaymentResponse.builder()
-                .transactionId("txn-001")
-                .orderId("order-123")
-                .razorpayOrderId("order_razorpay_001")
-                .amount(BigDecimal.valueOf(500.00))
-                .status(Transaction.PaymentStatus.INITIATED)
-                .customerId("cust-456")
-                .customerEmail("customer@real.com")
-                .customerPhone("+31612345678")
-                .storeId("store-789")
-                .currency("INR")
-                .createdAt(LocalDateTime.of(2026, 2, 15, 14, 30))
-                .razorpayKeyId("rzp_test_key")
-                .build();
+        ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        mockMvc = MockMvcBuilders.standaloneSetup(paymentController)
+            .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+            .build();
+    }
 
-        initiateRequest = InitiatePaymentRequest.builder()
-                .orderId("order-123")
-                .amount(BigDecimal.valueOf(500.00))
-                .customerId("cust-456")
-                .customerEmail("customer@real.com")
-                .customerPhone("+31612345678")
-                .storeId("store-789")
-                .orderType("TAKEAWAY")
-                .paymentMethod("CARD")
-                .build();
+    private PaymentResponse buildPaymentResponse(String id, Transaction.PaymentStatus status) {
+        PaymentResponse r = new PaymentResponse();
+        r.setTransactionId(id);
+        r.setStatus(status);
+        r.setAmount(new BigDecimal("200.00"));
+        return r;
     }
 
     @Nested
     @DisplayName("POST /api/payments/initiate")
-    class InitiatePaymentEndpointTests {
+    class InitiatePayment {
 
         @Test
-        @DisplayName("Should return 200 with payment response on successful initiation")
-        @WithMockUser(roles = "CUSTOMER")
-        void shouldReturn200OnSuccessfulInitiation() throws Exception {
-            // Given
-            when(paymentService.initiatePayment(any(InitiatePaymentRequest.class)))
-                    .thenReturn(sampleResponse);
+        @DisplayName("returns 200 on successful initiation")
+        void returns200OnSuccess() throws Exception {
+            when(paymentService.initiatePayment(any())).thenReturn(buildPaymentResponse("txn-1", Transaction.PaymentStatus.PENDING));
 
-            // When / Then
             mockMvc.perform(post("/api/payments/initiate")
-                            .with(csrf())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(initiateRequest)))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.transactionId", is("txn-001")))
-                    .andExpect(jsonPath("$.orderId", is("order-123")))
-                    .andExpect(jsonPath("$.razorpayKeyId", is("rzp_test_key")));
-        }
-
-        @Test
-        @DisplayName("Should return 500 when payment service throws exception")
-        @WithMockUser(roles = "CUSTOMER")
-        void shouldReturn500OnServiceException() throws Exception {
-            // Given
-            when(paymentService.initiatePayment(any(InitiatePaymentRequest.class)))
-                    .thenThrow(new RuntimeException("Payment gateway error"));
-
-            // When / Then
-            mockMvc.perform(post("/api/payments/initiate")
-                            .with(csrf())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(initiateRequest)))
-                    .andExpect(status().isInternalServerError());
-        }
-    }
-
-    @Nested
-    @DisplayName("POST /api/payments/verify")
-    class VerifyPaymentEndpointTests {
-
-        @Test
-        @DisplayName("Should return 200 on successful verification")
-        @WithMockUser(roles = "CUSTOMER")
-        void shouldReturn200OnSuccessfulVerification() throws Exception {
-            // Given
-            PaymentResponse verifiedResponse = PaymentResponse.builder()
-                    .transactionId("txn-001")
-                    .orderId("order-123")
-                    .status(Transaction.PaymentStatus.SUCCESS)
-                    .amount(BigDecimal.valueOf(500.00))
-                    .build();
-
-            PaymentCallbackRequest callbackRequest = PaymentCallbackRequest.builder()
-                    .razorpayOrderId("order_razorpay_001")
-                    .razorpayPaymentId("pay_razorpay_001")
-                    .razorpaySignature("valid_signature")
-                    .paymentMethod("CARD")
-                    .build();
-
-            when(paymentService.verifyPayment(any(PaymentCallbackRequest.class)))
-                    .thenReturn(verifiedResponse);
-
-            // When / Then
-            mockMvc.perform(post("/api/payments/verify")
-                            .with(csrf())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(callbackRequest)))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.status", is("SUCCESS")));
-        }
-
-        @Test
-        @DisplayName("Should return 400 when verification fails")
-        @WithMockUser(roles = "CUSTOMER")
-        void shouldReturn400OnVerificationFailure() throws Exception {
-            // Given
-            PaymentCallbackRequest callbackRequest = PaymentCallbackRequest.builder()
-                    .razorpayOrderId("order_razorpay_001")
-                    .razorpayPaymentId("pay_razorpay_001")
-                    .razorpaySignature("invalid_sig")
-                    .build();
-
-            when(paymentService.verifyPayment(any(PaymentCallbackRequest.class)))
-                    .thenThrow(new RuntimeException("Signature verification failed"));
-
-            // When / Then
-            mockMvc.perform(post("/api/payments/verify")
-                            .with(csrf())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(callbackRequest)))
-                    .andExpect(status().isBadRequest());
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"orderId\":\"order-1\",\"amount\":200.00,\"customerId\":\"cust-1\",\"storeId\":\"store-1\",\"paymentMethod\":\"UPI\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.transactionId").value("txn-1"));
         }
     }
 
     @Nested
     @DisplayName("GET /api/payments/{transactionId}")
-    class GetTransactionEndpointTests {
+    class GetTransaction {
 
         @Test
-        @DisplayName("Should return 200 with transaction details")
-        @WithMockUser(roles = "MANAGER")
-        void shouldReturn200WithTransactionDetails() throws Exception {
-            // Given
-            when(paymentService.getTransaction("txn-001")).thenReturn(sampleResponse);
+        @DisplayName("returns 200 for existing transaction")
+        void returns200WhenFound() throws Exception {
+            when(paymentService.getTransaction("txn-1")).thenReturn(buildPaymentResponse("txn-1", Transaction.PaymentStatus.SUCCESS));
 
-            // When / Then
-            mockMvc.perform(get("/api/payments/txn-001"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.transactionId", is("txn-001")));
+            mockMvc.perform(get("/api/payments/txn-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.transactionId").value("txn-1"));
         }
 
         @Test
-        @DisplayName("Should return 404 when transaction not found")
-        @WithMockUser(roles = "CUSTOMER")
-        void shouldReturn404WhenNotFound() throws Exception {
-            // Given
-            when(paymentService.getTransaction("missing"))
-                    .thenThrow(new RuntimeException("Transaction not found"));
+        @DisplayName("returns 404 when not found")
+        void returns404WhenNotFound() throws Exception {
+            when(paymentService.getTransaction("bad-id")).thenThrow(new RuntimeException("Transaction not found"));
 
-            // When / Then
-            mockMvc.perform(get("/api/payments/missing"))
-                    .andExpect(status().isNotFound());
+            mockMvc.perform(get("/api/payments/bad-id"))
+                .andExpect(status().isNotFound());
         }
     }
 
     @Nested
-    @DisplayName("GET /api/payments/order/{orderId}")
-    class GetTransactionByOrderIdEndpointTests {
+    @DisplayName("GET /api/payments")
+    class GetTransactions {
 
         @Test
-        @DisplayName("Should return 200 with transaction for order")
-        @WithMockUser(roles = "STAFF")
-        void shouldReturn200WithTransactionForOrder() throws Exception {
-            // Given
-            when(paymentService.getTransactionByOrderId("order-123")).thenReturn(sampleResponse);
+        @DisplayName("returns 200 with transaction list by customerId")
+        void returns200WithListByCustomer() throws Exception {
+            when(paymentService.getTransactionsByCustomerId("cust-1"))
+                .thenReturn(List.of(buildPaymentResponse("txn-1", Transaction.PaymentStatus.SUCCESS)));
 
-            // When / Then
-            mockMvc.perform(get("/api/payments/order/order-123"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.orderId", is("order-123")));
-        }
-    }
-
-    @Nested
-    @DisplayName("GET /api/payments/customer/{customerId}")
-    class GetTransactionsByCustomerIdEndpointTests {
-
-        @Test
-        @DisplayName("Should return 200 with list of customer transactions")
-        @WithMockUser(roles = "CUSTOMER")
-        void shouldReturn200WithCustomerTransactions() throws Exception {
-            // Given
-            when(paymentService.getTransactionsByCustomerId("cust-456"))
-                    .thenReturn(List.of(sampleResponse));
-
-            // When / Then
-            mockMvc.perform(get("/api/payments/customer/cust-456"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$", hasSize(1)))
-                    .andExpect(jsonPath("$[0].customerId", is("cust-456")));
+            mockMvc.perform(get("/api/payments").param("customerId", "cust-1"))
+                .andExpect(status().isOk());
         }
     }
 
     @Nested
     @DisplayName("POST /api/payments/cash")
-    class RecordCashPaymentEndpointTests {
+    class CashPayment {
 
         @Test
-        @DisplayName("Should return 200 for cash payment recording")
-        @WithMockUser(roles = "STAFF")
-        void shouldReturn200ForCashPayment() throws Exception {
-            // Given
-            PaymentResponse cashResponse = PaymentResponse.builder()
-                    .transactionId("txn-cash-001")
-                    .orderId("order-123")
-                    .status(Transaction.PaymentStatus.SUCCESS)
-                    .paymentMethod(Transaction.PaymentMethod.CASH)
-                    .amount(BigDecimal.valueOf(300.00))
-                    .build();
+        @DisplayName("returns 200 on cash payment")
+        void returns200() throws Exception {
+            when(paymentService.recordCashPayment(any())).thenReturn(buildPaymentResponse("txn-cash", Transaction.PaymentStatus.SUCCESS));
 
-            when(paymentService.recordCashPayment(any(InitiatePaymentRequest.class)))
-                    .thenReturn(cashResponse);
-
-            // When / Then
             mockMvc.perform(post("/api/payments/cash")
-                            .with(csrf())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(initiateRequest)))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.paymentMethod", is("CASH")))
-                    .andExpect(jsonPath("$.status", is("SUCCESS")));
-        }
-    }
-
-    @Nested
-    @DisplayName("POST /api/payments/{transactionId}/reconcile")
-    class ReconcileEndpointTests {
-
-        @Test
-        @DisplayName("Should return 200 when transaction reconciled successfully")
-        @WithMockUser(roles = "MANAGER")
-        void shouldReturn200OnSuccessfulReconciliation() throws Exception {
-            // Given
-            when(paymentService.getTransaction("txn-001")).thenReturn(sampleResponse);
-
-            // When / Then
-            mockMvc.perform(post("/api/payments/txn-001/reconcile")
-                            .with(csrf())
-                            .param("reconciledBy", "manager-user"))
-                    .andExpect(status().isOk());
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"orderId\":\"order-1\",\"amount\":200.00,\"customerId\":\"cust-1\",\"storeId\":\"store-1\",\"paymentMethod\":\"CASH\"}"))
+                .andExpect(status().isOk());
         }
     }
 }

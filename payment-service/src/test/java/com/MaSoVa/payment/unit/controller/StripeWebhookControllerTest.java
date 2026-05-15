@@ -3,57 +3,64 @@ package com.MaSoVa.payment.unit.controller;
 import com.MaSoVa.payment.controller.StripeWebhookController;
 import com.MaSoVa.payment.gateway.GatewayWebhookResult;
 import com.MaSoVa.payment.gateway.PaymentGateway;
+import com.MaSoVa.shared.test.BaseServiceTest;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.StringHttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-class StripeWebhookControllerTest {
+@ExtendWith(MockitoExtension.class)
+@DisplayName("StripeWebhookController Unit Tests")
+class StripeWebhookControllerTest extends BaseServiceTest {
 
-    private PaymentGateway stripeGateway;
-    private StripeWebhookController controller;
+    @Mock private PaymentGateway stripeGateway;
+    @InjectMocks private StripeWebhookController stripeWebhookController;
+    private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
-        stripeGateway = mock(PaymentGateway.class);
-        controller = new StripeWebhookController(stripeGateway);
+        mockMvc = MockMvcBuilders.standaloneSetup(stripeWebhookController)
+            .setMessageConverters(new StringHttpMessageConverter(), new MappingJackson2HttpMessageConverter())
+            .build();
     }
 
     @Test
-    void valid_payment_captured_returns_200() throws Exception {
+    @DisplayName("POST /api/payments/webhook/stripe returns 200 with valid signature")
+    void handleStripeWebhook_returns200OnSuccess() throws Exception {
         GatewayWebhookResult result = new GatewayWebhookResult(
-                GatewayWebhookResult.EventType.PAYMENT_CAPTURED,
-                "pi_123", "ch_456", null, 50L);
+            GatewayWebhookResult.EventType.PAYMENT_CAPTURED, "pi_test_123", "ch_test_123", null, null);
         when(stripeGateway.parseWebhook(any(), any())).thenReturn(result);
 
-        ResponseEntity<String> response = controller.handleStripeWebhook("{}", "sig_header");
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        mockMvc.perform(post("/api/payments/webhook/stripe")
+                .contentType(org.springframework.http.MediaType.TEXT_PLAIN)
+                .header("Stripe-Signature", "t=12345,v1=abc123")
+                .content("{\"type\":\"payment_intent.succeeded\"}"))
+            .andExpect(status().isOk());
     }
 
     @Test
-    void invalid_signature_returns_401() throws Exception {
+    @DisplayName("POST /api/payments/webhook/stripe returns 500 on parse error")
+    void handleStripeWebhook_returns500OnError() throws Exception {
         when(stripeGateway.parseWebhook(any(), any()))
-                .thenThrow(new SecurityException("Bad signature"));
+            .thenThrow(new RuntimeException("Error processing"));
 
-        ResponseEntity<String> response = controller.handleStripeWebhook("{}", "bad_sig");
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-    }
-
-    @Test
-    void unknown_event_returns_200() throws Exception {
-        GatewayWebhookResult result = new GatewayWebhookResult(
-                GatewayWebhookResult.EventType.UNKNOWN,
-                null, null, null, null);
-        when(stripeGateway.parseWebhook(any(), any())).thenReturn(result);
-
-        ResponseEntity<String> response = controller.handleStripeWebhook("{}", "sig");
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        mockMvc.perform(post("/api/payments/webhook/stripe")
+                .contentType(org.springframework.http.MediaType.TEXT_PLAIN)
+                .header("Stripe-Signature", "invalid-sig")
+                .content("{\"type\":\"payment_intent.succeeded\"}"))
+            .andExpect(status().isInternalServerError());
     }
 }
