@@ -596,9 +596,52 @@ class PaymentPactVerificationIT extends BaseFullIntegrationTest {
 }
 ```
 
-- [ ] **Step 3: Write LogisticsPactVerificationIT.java following the same pattern**
+- [ ] **Step 3: Write LogisticsPactVerificationIT.java**
 
-Provider name: `"logistics-service"`. States: `"delivery tracking exists"`, `"delivery zones configured"`.
+```java
+package com.MaSoVa.logistics.contract;
+
+import au.com.dius.pact.provider.junit5.HttpTestTarget;
+import au.com.dius.pact.provider.junit5.PactVerificationContext;
+import au.com.dius.pact.provider.junitsupport.Provider;
+import au.com.dius.pact.provider.junitsupport.State;
+import au.com.dius.pact.provider.junitsupport.loader.PactFolder;
+import au.com.dius.pact.provider.spring.junit5.PactVerificationSpringProvider;
+import com.MaSoVa.shared.test.BaseMessagingIntegrationTest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestTemplate;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.web.server.LocalServerPort;
+
+@Provider("logistics-service")
+@PactFolder("src/test/resources/pacts")
+class LogisticsPactVerificationIT extends BaseMessagingIntegrationTest {
+
+    @LocalServerPort
+    int port;
+
+    @BeforeEach
+    void before(PactVerificationContext context) {
+        context.setTarget(new HttpTestTarget("localhost", port));
+    }
+
+    @TestTemplate
+    @ExtendWith(PactVerificationSpringProvider.class)
+    void pactVerificationTestTemplate(PactVerificationContext context) {
+        context.verifyInteraction();
+    }
+
+    @State("delivery tracking exists")
+    void deliveryTrackingExists() {
+        // Seed an active delivery via DeliveryRepository with orderId "ORDER-PACT-1"
+    }
+
+    @State("delivery zones configured")
+    void deliveryZonesConfigured() {
+        // No seeding needed — zones are loaded from application config, not DB
+    }
+}
+```
 
 - [ ] **Step 4: Run all contract tests (requires frontend pact files to exist)**
 
