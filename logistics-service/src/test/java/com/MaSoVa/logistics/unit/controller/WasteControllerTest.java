@@ -66,15 +66,6 @@ class WasteControllerTest extends BaseServiceTest {
     }
 
     @Test
-    @DisplayName("GET /api/waste/{id} returns 200")
-    void getWasteById_returns200() throws Exception {
-        when(wasteAnalysisService.getWasteRecordById("waste-1")).thenReturn(buildWasteRecord("waste-1"));
-
-        mockMvc.perform(get("/api/waste/waste-1"))
-            .andExpect(status().isOk());
-    }
-
-    @Test
     @DisplayName("GET /api/waste/{id} returns 200 with record")
     void getWasteById_returns200() throws Exception {
         when(wasteAnalysisService.getWasteRecordById("waste-1")).thenReturn(buildWasteRecord("waste-1"));

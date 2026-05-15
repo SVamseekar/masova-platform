@@ -75,13 +75,4 @@ class PurchaseOrderControllerTest extends BaseServiceTest {
         mockMvc.perform(get("/api/purchase-orders/po-1"))
             .andExpect(status().isOk());
     }
-
-    @Test
-    @DisplayName("GET /api/purchase-orders/{id} returns 200 with existing PO")
-    void getPOById_returns200() throws Exception {
-        when(purchaseOrderService.getPurchaseOrderById("po-1")).thenReturn(buildPO("po-1"));
-
-        mockMvc.perform(get("/api/purchase-orders/po-1"))
-            .andExpect(status().isOk());
-    }
 }
