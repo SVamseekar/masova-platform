@@ -55,6 +55,7 @@ public class OrderService {
     private final OrderEventPublisher orderEventPublisher;
     private final EuVatEngine euVatEngine;
     private final AggregatorService aggregatorService;
+    private final com.MaSoVa.commerce.fiscal.FiscalSigningService fiscalSigningService;
     private final Random random = new Random();
 
     public OrderService(OrderRepository orderRepository,
@@ -73,7 +74,8 @@ public class OrderService {
                        DeliveryFeeConfiguration deliveryFeeConfiguration,
                        OrderEventPublisher orderEventPublisher,
                        EuVatEngine euVatEngine,
-                       AggregatorService aggregatorService) {
+                       AggregatorService aggregatorService,
+                       com.MaSoVa.commerce.fiscal.FiscalSigningService fiscalSigningService) {
         this.orderRepository = orderRepository;
         this.orderJpaRepository = orderJpaRepository;
         this.orderItemSyncService = orderItemSyncService;
@@ -91,6 +93,7 @@ public class OrderService {
         this.orderEventPublisher = orderEventPublisher;
         this.euVatEngine = euVatEngine;
         this.aggregatorService = aggregatorService;
+        this.fiscalSigningService = fiscalSigningService;
     }
 
     @Transactional
@@ -353,6 +356,11 @@ public class OrderService {
 
         // Send customer notification for status change
         customerNotificationService.sendOrderStatusNotification(updatedOrder, currentStatus);
+
+        // Global-5: Trigger fiscal signing for terminal statuses (async — does not block response)
+        if (newStatus == OrderStatus.DELIVERED || newStatus == OrderStatus.COMPLETED || newStatus == OrderStatus.SERVED) {
+            fiscalSigningService.signOrder(updatedOrder);
+        }
 
         return updatedOrder;
     }

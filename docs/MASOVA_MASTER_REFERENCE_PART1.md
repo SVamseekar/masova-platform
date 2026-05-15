@@ -293,7 +293,7 @@ Signature: HMAC-SHA512(JWT_SECRET)
 
 | Class | Notes |
 |-------|-------|
-| `CustomerEntity` (MongoDB) | Profile, addresses[], loyaltyPoints, tier, preferences, GDPR consent |
+| `CustomerEntity` (MongoDB) | Profile, addresses[], loyaltyPoints, tier, preferences (incl. allergenAlerts), GDPR consent |
 | `CustomerController` | 14 endpoints (`/api/customers`) — filter variants collapsed to query params |
 | `CustomerService` (500+ lines) | Signup bonus 100 pts, birthday bonus 200 pts, tier calculation |
 | `CustomerAuditService` | GDPR data access logging |
@@ -507,7 +507,10 @@ imageUrl, isAvailable, preparationTime, isRecommended
 rating, reviewCount, nutritionalInfo: {calories, protein, carbs, fat}
 ```
 
-**Allergen enforcement:** All 14 EU Regulation 1169/2011 allergens tracked and displayed
+**Allergen enforcement (EU Regulation 1169/2011):**
+- `allergensDeclared` gate: a menu item cannot be set `isAvailable=true` until allergens are explicitly declared via `PATCH /api/menu/items/{id}/allergens`
+- Copied menu items (`POST /api/menu/copy`) reset `allergensDeclared=false` — re-declaration required before going live
+- `AllergenType` enum: 14 mandatory EU allergens (GLUTEN, CRUSTACEANS, EGGS, FISH, PEANUTS, SOYBEANS, MILK, NUTS, CELERY, MUSTARD, SESAME, SULPHITES, LUPIN, MOLLUSCS)
 
 ### 6.8 Kitchen Equipment
 
@@ -595,6 +598,42 @@ Dual-write: MongoDB `masova_payment` + PostgreSQL `payment_schema.transactions`
 - `PiiEncryptionService` — AES-256 encryption for PAN (card numbers — last 4 only stored)
 - Stripe webhook signature validation (Stripe-Signature header)
 - Razorpay webhook HMAC validation
+
+### 7.6 EU Fiscal Signing (Global-5)
+
+7-country fiscal compliance triggered asynchronously when an order reaches a terminal status (DELIVERED, COMPLETED, SERVED).
+
+```
+FiscalSigningService (@Async) — wired into OrderService.updateOrderStatus()
+├── GermanTSEFiscalSigner         — TSE (Technische Sicherheitseinrichtung)
+├── FrenchNF525FiscalSigner       — NF525 certified cash register
+├── ItalianSDIFiscalSigner        — SDI (Sistema di Interscambio)
+├── SpanishVeriFactuFiscalSigner  — VeriFactu 2024
+├── UKFiscalSigner                — HMRC MTD compatible
+├── USFiscalSigner                — State-level sales tax signing
+└── PassthroughFiscalSigner       — Fallback for unconfigured countries
+```
+
+**FiscalSignature value object (PostgreSQL — `payment_schema.fiscal_signatures`):**
+```
+transactionId, orderId, storeId, countryCode, signerSystem
+signedAt (Instant), signaturePayload (jsonb)
+```
+
+**OrderJpaEntity columns added:**
+- `fiscal_signature_id` — FK to fiscal_signatures.transaction_id
+- `fiscal_signer_system` — e.g. "TSE", "NF525", "PASSTHROUGH"
+- `fiscal_signing_failed` — boolean alert for manager
+- `fiscal_signed_at` — Instant
+
+**RabbitMQ:** Publishes `ReceiptSignedEvent` to `masova.orders.exchange` with routing key `order.receipt.signed`. Consumed by `masova.compliance.order-events` queue.
+
+**Frontend:** `FiscalCompliancePage` at `/manager/fiscal-compliance` — `fiscalApi` RTK slice at `/api/payments/fiscal/**`
+
+**Flyway migrations added:**
+- `V6__add_fiscal_signatures_table.sql`
+- `V7__add_fiscal_columns_to_orders.sql`
+- `V8__add_compliance_indexes.sql`
 
 ---
 
@@ -770,7 +809,7 @@ All processing is async, failures logged but do not affect business flow.
 
 ### shared-models (`/shared-models`) — 96 Java files
 
-**Enums (14):** OrderStatus, PaymentStatus, PaymentMethod, UserType, ShiftType, ShiftStatus, StoreStatus, MenuCategory, Cuisine, DietaryType, SpiceLevel, ConsentType, GdprRequestType, GdprRequestStatus
+**Enums (15):** OrderStatus, PaymentStatus, PaymentMethod, UserType, ShiftType, ShiftStatus, StoreStatus, MenuCategory, Cuisine, DietaryType, SpiceLevel, ConsentType, GdprRequestType, GdprRequestStatus, **AllergenType**
 
 **OrderStatus values:** RECEIVED, PREPARING, OVEN, BAKED, READY, DISPATCHED, OUT_FOR_DELIVERY, DELIVERED, SERVED, COMPLETED, CANCELLED
 
@@ -782,12 +821,14 @@ All processing is async, failures logged but do not affect business flow.
 **Domain Events:**
 - `OrderCreatedEvent`
 - `OrderStatusChangedEvent` — `{eventId, orderId, storeId, timestamp, previousStatus, newStatus, orderType, customerId, assignedDriverId}`
-- `PaymentCompletedEvent`
-- `PaymentFailedEvent`
+- `PaymentCompletedEvent` — includes `paymentGateway` + `paymentMethodType` fields
+- `PaymentFailedEvent` — includes `paymentGateway` field
+- `ReceiptSignedEvent` (Global-5) — `{orderId, storeId, signatureId, signerSystem, signedAt}`
 
 **RabbitMQ Config:**
-- `masova.orders.exchange` (topic, durable) — routing: `order.*`
+- `masova.orders.exchange` (topic, durable) — routing: `order.*`, `order.receipt.*`
 - `masova.notifications.exchange` (topic, durable) — routing: `notification.*`
+- Queues: `masova.compliance.order-events` — binds to `order.receipt.#`
 
 **Security (shared-security):**
 - `JwtTokenProvider` — HS512 generation/validation
@@ -807,7 +848,7 @@ All processing is async, failures logged but do not affect business flow.
 | masova_payment | MongoDB | transactions, refunds |
 | masova_logistics | MongoDB | delivery_tracking, driver_locations, inventory_items, purchase_orders, suppliers, waste_records |
 | masova_analytics | MongoDB | analytics snapshots (denormalized) |
-| masova_db | PostgreSQL | core_schema.users, commerce_schema.orders, payment_schema.transactions, payment_schema.refunds, logistics_schema.inventory |
+| masova_db | PostgreSQL | core_schema.users, commerce_schema.orders, payment_schema.transactions, payment_schema.refunds, payment_schema.fiscal_signatures, logistics_schema.inventory |
 
 **Redis:**
 - DB 0: JWT blacklist (`token:{jti}` → expiration)

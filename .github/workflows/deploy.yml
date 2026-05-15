@@ -109,8 +109,18 @@ jobs:
           INTELLIGENCE_SERVICE_URL=https://intelligence-service-${{ env.PROJECT_ID }}.run.app,\
           PAYMENT_SERVICE_URL=https://payment-service-${{ env.PROJECT_ID }}.run.app,\
           FRONTEND_URL=https://masova-app.web.app,\
+          SPRING_DATASOURCE_URL=jdbc:postgresql://${{ secrets.POSTGRES_HOST }}:5432/masova_db,\
+          SPRING_DATASOURCE_USERNAME=${{ secrets.POSTGRES_USERNAME }},\
+          SPRING_DATASOURCE_PASSWORD=${{ secrets.POSTGRES_PASSWORD }},\
           RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID }},\
           RAZORPAY_KEY_SECRET=${{ secrets.RAZORPAY_KEY_SECRET }},\
+          STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }},\
+          STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }},\
+          STRIPE_PUBLISHABLE_KEY=${{ secrets.STRIPE_PUBLISHABLE_KEY }},\
+          TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }},\
+          TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }},\
+          TWILIO_PHONE_NUMBER=${{ secrets.TWILIO_PHONE_NUMBER }},\
+          FIREBASE_SERVICE_ACCOUNT_JSON=${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }},\
           GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }},\
           BREVO_API_KEY=${{ secrets.BREVO_API_KEY }},\
           GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}"
@@ -185,7 +195,12 @@ jobs:
         run: cd frontend && npm run build
         env:
           VITE_API_BASE_URL: https://api.masova.app
+          VITE_API_GATEWAY_URL: https://api.masova.app/api
+          VITE_WS_URL: wss://api.masova.app/ws
           VITE_AGENT_URL: https://agent.masova.app
+          VITE_RAZORPAY_KEY_ID: ${{ secrets.RAZORPAY_KEY_ID }}
+          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          VITE_GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:

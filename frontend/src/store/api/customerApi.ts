@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import API_CONFIG from '../../config/api.config';
 import type { RootState } from '../store';
+import { AllergenType } from '../../constants/allergens';
 
 // Types
 export interface CustomerAddress {
@@ -42,7 +43,7 @@ export interface CustomerPreferences {
   favoriteMenuItems: string[];
   cuisinePreferences: string[];
   dietaryRestrictions: string[];
-  allergens: string[];
+  allergenAlerts: AllergenType[];
   preferredPaymentMethod?: string;
   spiceLevel: string;
   notifyOnOffers: boolean;
@@ -135,7 +136,7 @@ export interface UpdatePreferencesRequest {
   favoriteMenuItems?: string[];
   cuisinePreferences?: string[];
   dietaryRestrictions?: string[];
-  allergens?: string[];
+  allergenAlerts?: AllergenType[];
   preferredPaymentMethod?: string;
   spiceLevel?: string;
   notifyOnOffers?: boolean;

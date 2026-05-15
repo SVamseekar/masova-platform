@@ -1,0 +1,35 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/masova_logistics_test
+  datasource:
+    url: jdbc:postgresql://localhost:5432/masova_test
+    username: masova
+    password: masova_test
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  flyway:
+    enabled: false
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: masova
+    password: masova_secret
+  cache:
+    type: none
+
+jwt:
+  secret: test-secret-key-at-least-64-characters-long-for-hs512-algorithm-ok
+  access-token-expiration: 900000
+  refresh-token-expiration: 86400000
+
+google:
+  maps:
+    api-key: test-maps-key
+
+logging:
+  level:
+    com.MaSoVa: WARN
+    org.springframework: WARN
+    org.testcontainers: WARN

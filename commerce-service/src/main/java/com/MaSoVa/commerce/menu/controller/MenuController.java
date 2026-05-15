@@ -4,6 +4,7 @@ import com.MaSoVa.shared.entity.MenuItem;
 import com.MaSoVa.shared.enums.Cuisine;
 import com.MaSoVa.shared.enums.MenuCategory;
 import com.MaSoVa.shared.enums.DietaryType;
+import com.MaSoVa.commerce.menu.dto.AllergenDeclarationRequest;
 import com.MaSoVa.commerce.menu.dto.MenuItemRequest;
 import com.MaSoVa.commerce.menu.service.MenuService;
 
@@ -166,6 +167,19 @@ public class MenuController {
                 "copiedItemsCount", copied.size(),
                 "fromStoreId", fromStoreId,
                 "toStoreId", toStoreId));
+    }
+
+    /**
+     * PATCH /api/menu/items/{id}/allergens — declare allergens for a menu item (EU Regulation 1169/2011)
+     */
+    @PatchMapping("/items/{id}/allergens")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Declare allergens for a menu item", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<MenuItem> declareAllergens(
+            @PathVariable String id,
+            @RequestBody AllergenDeclarationRequest request) {
+        MenuItem updated = menuService.declareAllergens(id, request.getAllergens(), request.isAllergenFree());
+        return ResponseEntity.ok(updated);
     }
 
     /**

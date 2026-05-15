@@ -21,6 +21,7 @@ import { notificationApi } from './api/notificationApi';
 import { kioskApi } from './api/kioskApi';
 import { agentApi } from './api/agentApi';
 import { aggregatorApi } from './api/aggregatorApi';
+import { fiscalApi } from './api/fiscalApi';
 
 // Slice reducers
 import authReducer from './slices/authSlice';
@@ -56,6 +57,7 @@ export const store = configureStore({
     [kioskApi.reducerPath]: kioskApi.reducer,
     [agentApi.reducerPath]: agentApi.reducer,
     [aggregatorApi.reducerPath]: aggregatorApi.reducer,
+    [fiscalApi.reducerPath]: fiscalApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -83,7 +85,8 @@ export const store = configureStore({
       notificationApi.middleware,
       kioskApi.middleware,
       agentApi.middleware,
-      aggregatorApi.middleware
+      aggregatorApi.middleware,
+      fiscalApi.middleware
     ),
   devTools: process.env.NODE_ENV !== 'production',
 });

@@ -60,6 +60,9 @@ public class Order {
     private BigDecimal totalGrossAmount;
     private com.MaSoVa.shared.model.VatBreakdown vatBreakdown;
 
+    // Global-5: Fiscal signature — null for India stores and orders not yet in terminal status
+    private com.MaSoVa.shared.model.FiscalSignature fiscalSignature;
+
     @Indexed
     private OrderStatus status;
 
@@ -205,6 +208,9 @@ public class Order {
 
     public com.MaSoVa.shared.model.VatBreakdown getVatBreakdown() { return vatBreakdown; }
     public void setVatBreakdown(com.MaSoVa.shared.model.VatBreakdown vatBreakdown) { this.vatBreakdown = vatBreakdown; }
+
+    public com.MaSoVa.shared.model.FiscalSignature getFiscalSignature() { return fiscalSignature; }
+    public void setFiscalSignature(com.MaSoVa.shared.model.FiscalSignature fiscalSignature) { this.fiscalSignature = fiscalSignature; }
 
     public OrderStatus getStatus() { return status; }
     public void setStatus(OrderStatus status) { this.status = status; }

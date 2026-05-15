@@ -686,6 +686,9 @@ public class CustomerService {
         if (request.getAllergens() != null) {
             prefs.setAllergens(request.getAllergens());
         }
+        if (request.getAllergenAlerts() != null) {
+            prefs.setAllergenAlerts(request.getAllergenAlerts());
+        }
         if (request.getPreferredPaymentMethod() != null) {
             prefs.setPreferredPaymentMethod(request.getPreferredPaymentMethod());
         }

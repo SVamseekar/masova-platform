@@ -212,6 +212,7 @@ const POSDashboard: React.FC = () => {
           quantity,
           specialInstructions: '',
           image: item.image,
+          allergens: item.allergens ?? [],
         },
       ]);
     }

@@ -480,6 +480,19 @@ Rule:     Append-only — NEVER edit an existing V*.sql file
 Scripts:  Use IF NOT EXISTS, CREATE OR REPLACE (idempotent)
 ```
 
+**Applied migrations (as of Global-5 merge):**
+
+| Version | File | Description |
+|---------|------|-------------|
+| V1 | `V1__initial_schema.sql` | core_schema.users, commerce_schema.orders, base tables |
+| V2 | `V2__add_order_items.sql` | commerce_schema.order_items |
+| V3 | `V3__add_payment_tables.sql` | payment_schema.transactions, refunds |
+| V4 | `V4__add_logistics_tables.sql` | logistics_schema.inventory, purchase_orders |
+| V5 | `V5__add_currency_columns.sql` | currency field to orders (Global-3) |
+| V6 | `V6__add_fiscal_signatures_table.sql` | payment_schema.fiscal_signatures (Global-5) |
+| V7 | `V7__add_fiscal_columns_to_orders.sql` | fiscal_signature_id, fiscal_signer_system, fiscal_signing_failed, fiscal_signed_at columns on orders (Global-5) |
+| V8 | `V8__add_compliance_indexes.sql` | Indexes on fiscal_signatures for compliance queries (Global-5) |
+
 **Hibernate validation:**
 - Production: `ddl-auto: validate` — fails on schema mismatch
 - Dev: `ddl-auto: update` — auto-creates missing columns
@@ -722,7 +735,8 @@ GET  /api/sessions?employeeId={id}           → Session history
 | masova-mobile mock data | Info | HomeScreen uses hardcoded mock stores — not live API |
 | SavedScreen mock data | Info | Saved items use hardcoded mock — wishlist API not wired |
 | MaSoVaCrewApp ChatScreen | Info | Stub — not implemented |
-| EU allergens on older items | Info | Legacy menu items may not have allergensDeclared=true |
+| EU allergens on older items | Info | Legacy menu items may not have allergensDeclared=true — they cannot be re-enabled without declaring via PATCH /api/menu/items/{id}/allergens |
+| Fiscal signing passthrough | Info | Countries without a configured FiscalSigner use PassthroughFiscalSigner — fiscal_signer_system="PASSTHROUGH", fiscalSigningFailed=false |
 
 ---
 
@@ -735,6 +749,9 @@ GET  /api/sessions?employeeId={id}           → Session history
 - Any `try/catch` swallowing an exception MUST log `log.warn(...)` with order/user context
 - Before removing any endpoint: use search to find all callers first
 - `OrderService` state transitions MUST publish to `masova.orders.exchange` via `OrderEventPublisher`
+- Menu items: `allergensDeclared` MUST be true before `isAvailable=true` — enforced by `MenuService.enforceAllergenGate()`
+- Copied menu items reset `allergensDeclared=false` — managers must re-declare allergens before making copy live
+- Fiscal signing: `FiscalSigningService.signOrder()` triggered async on DELIVERED/COMPLETED/SERVED — never blocks the status update response
 - commerce-service NEVER imports from logistics-service — use RabbitMQ events
 - api-gateway is routing only — no business logic, no DB calls
 - `shared-models` is single source of truth for enums — inner enums in entities must match

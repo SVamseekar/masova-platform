@@ -16,6 +16,7 @@ import {
   UpdatePreferencesRequest,
 } from '../../store/api/customerApi';
 import AppHeader from '../../components/common/AppHeader';
+import { AllergenType, ALLERGEN_LABELS, ALL_ALLERGENS } from '../../constants/allergens';
 
 // ─── Nav items ───────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
@@ -155,7 +156,7 @@ const ProfilePage: React.FC = () => {
         spiceLevel: customer.preferences?.spiceLevel || 'MEDIUM',
         cuisinePreferences: customer.preferences?.cuisinePreferences || [],
         dietaryRestrictions: customer.preferences?.dietaryRestrictions || [],
-        allergens: customer.preferences?.allergens || [],
+        allergenAlerts: customer.preferences?.allergenAlerts || [],
         preferredPaymentMethod: customer.preferences?.preferredPaymentMethod || '',
         notifyOnOffers: customer.preferences?.notifyOnOffers !== false,
         notifyOnOrderStatus: customer.preferences?.notifyOnOrderStatus !== false,
@@ -274,7 +275,7 @@ const ProfilePage: React.FC = () => {
 
   const cuisineOptions = ['Indian', 'Chinese', 'Italian', 'Mexican', 'Thai', 'Japanese', 'Continental', 'Mediterranean'];
   const dietaryOptions = ['Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free', 'Nut-Free', 'Low-Carb', 'Keto', 'Halal'];
-  const allergenOptions = ['Peanuts', 'Tree Nuts', 'Milk', 'Eggs', 'Wheat', 'Soy', 'Fish', 'Shellfish', 'Sesame'];
+  const allergenOptions = ALL_ALLERGENS;
 
   // ─── Shared micro-components ───────────────────────────────────────────────
   const Field = ({ label, value, verified }: { label: string; value: string; verified?: boolean }) => (
@@ -657,12 +658,12 @@ const ProfilePage: React.FC = () => {
         <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', color: 'var(--red-light)', textTransform: 'uppercase', marginBottom: 6 }}>Allergens</div>
         <p style={{ fontSize: '0.78rem', color: 'var(--text-3)', marginBottom: 14 }}>We'll warn you if any item contains these</p>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {allergenOptions.map(a => {
-            const sel = (preferencesForm.allergens || []).includes(a);
+          {allergenOptions.map((a: AllergenType) => {
+            const sel = (preferencesForm.allergenAlerts || []).includes(a);
             return (
               <button
                 key={a}
-                onClick={() => editingPreferences && setPreferencesForm(p => ({ ...p, allergens: toggleArrayItem(p.allergens || [], a) }))}
+                onClick={() => editingPreferences && setPreferencesForm(p => ({ ...p, allergenAlerts: toggleArrayItem(p.allergenAlerts || [], a) }))}
                 style={{
                   padding: '7px 16px', borderRadius: 99, fontSize: '0.8rem', fontWeight: 600, cursor: editingPreferences ? 'pointer' : 'default',
                   border: sel ? '1px solid rgba(229,62,62,0.5)' : '1px solid var(--border)',
@@ -670,7 +671,7 @@ const ProfilePage: React.FC = () => {
                   color: sel ? 'var(--red-light)' : 'var(--text-3)',
                   fontFamily: 'var(--font-body)',
                 }}
-              >{a}</button>
+              >{ALLERGEN_LABELS[a]}</button>
             );
           })}
         </div>

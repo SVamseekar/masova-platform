@@ -11,6 +11,8 @@ import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import TableRestaurantIcon from '@mui/icons-material/TableRestaurant';
 import InventoryIcon from '@mui/icons-material/Inventory';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import { AllergenType, ALLERGEN_LABELS } from '../../../constants/allergens';
 
 interface OrderPanelProps {
   items: any[];
@@ -43,6 +45,11 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
   const tax = subtotal * 0.05; // 5% GST (estimate; actual calculated by backend)
   const deliveryFee = orderType === 'DELIVERY' && subtotal > 0 ? 50 : 0; // Estimate; actual fee from backend
   const total = subtotal + tax + deliveryFee;
+
+  // Collect unique allergens across all order items
+  const orderAllergens: AllergenType[] = Array.from(
+    new Set(items.flatMap((item) => (item.allergens ?? []) as AllergenType[]))
+  );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -380,6 +387,38 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
             background: colors.surface.border,
             margin: `${spacing[2]} 0`
           }} />
+
+          {/* Allergen summary */}
+          {orderAllergens.length > 0 && (
+            <div style={{
+              backgroundColor: '#fff8e1',
+              border: '1px solid #f9a825',
+              borderRadius: '8px',
+              padding: spacing[2],
+              marginBottom: spacing[2],
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: spacing[2]
+            }}>
+              <WarningAmberIcon style={{ fontSize: '16px', color: '#f9a825', flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <div style={{
+                  fontSize: typography.fontSize.xs,
+                  fontWeight: typography.fontWeight.bold,
+                  color: '#795548',
+                  marginBottom: spacing[1]
+                }}>
+                  Allergens in this order:
+                </div>
+                <div style={{
+                  fontSize: typography.fontSize.xs,
+                  color: '#5d4037'
+                }}>
+                  {orderAllergens.map((a) => ALLERGEN_LABELS[a]).join(', ')}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div style={{
             display: 'flex',
