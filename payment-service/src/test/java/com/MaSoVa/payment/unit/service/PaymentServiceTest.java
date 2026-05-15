@@ -44,6 +44,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 @DisplayName("PaymentService Unit Tests")
 class PaymentServiceTest {
 
@@ -64,6 +65,9 @@ class PaymentServiceTest {
 
     @Mock
     private PaymentNotificationService paymentNotificationService;
+
+    @Mock
+    private com.MaSoVa.payment.messaging.PaymentEventPublisher paymentEventPublisher;
 
     @InjectMocks
     private PaymentService paymentService;

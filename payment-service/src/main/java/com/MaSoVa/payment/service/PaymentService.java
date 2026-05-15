@@ -129,6 +129,9 @@ public class PaymentService {
         } catch (RazorpayException e) {
             log.error("Razorpay error while initiating payment for order: {}", request.getOrderId(), e);
             throw new RuntimeException("Failed to initiate payment: " + e.getMessage(), e);
+        } catch (RuntimeException e) {
+            log.error("Error initiating payment for order: {}", request.getOrderId(), e);
+            throw e;
         } catch (Exception e) {
             log.error("Error initiating payment for order: {}", request.getOrderId(), e);
             throw new RuntimeException("Failed to initiate payment", e);
@@ -256,6 +259,9 @@ public class PaymentService {
         } catch (RazorpayException e) {
             log.error("Razorpay error while verifying payment", e);
             throw new RuntimeException("Failed to verify payment: " + e.getMessage(), e);
+        } catch (RuntimeException e) {
+            log.error("Error verifying payment", e);
+            throw e;
         } catch (Exception e) {
             log.error("Error verifying payment", e);
             throw new RuntimeException("Failed to verify payment", e);
@@ -454,6 +460,9 @@ public class PaymentService {
 
             return buildPaymentResponse(transaction);
 
+        } catch (RuntimeException e) {
+            log.error("Error recording cash payment", e);
+            throw e;
         } catch (Exception e) {
             log.error("Error recording cash payment", e);
             throw new RuntimeException("Failed to record cash payment", e);

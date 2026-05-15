@@ -6,8 +6,10 @@ import com.MaSoVa.commerce.order.entity.Order;
 import com.MaSoVa.commerce.order.entity.Order.OrderStatus;
 import com.MaSoVa.commerce.order.entity.Order.Priority;
 import com.MaSoVa.commerce.order.entity.OrderItem;
+import com.MaSoVa.commerce.order.entity.OrderJpaEntity;
 import com.MaSoVa.commerce.order.repository.OrderRepository;
 import com.MaSoVa.commerce.order.repository.OrderJpaRepository;
+import com.MaSoVa.shared.entity.Store;
 import com.MaSoVa.commerce.order.websocket.OrderWebSocketController;
 import com.MaSoVa.commerce.order.client.MenuServiceClient;
 import com.MaSoVa.commerce.order.client.CustomerServiceClient;
@@ -218,6 +220,16 @@ public class OrderService {
         // Initialize quality checkpoints for the order
         initializeQualityCheckpoints(order);
 
+        // Global-3: propagate store currency (null = India/INR legacy)
+        try {
+            Store store = storeServiceClient.getStore(request.getStoreId());
+            if (store != null && store.getCurrency() != null) {
+                order.setCurrency(store.getCurrency());
+            }
+        } catch (Exception e) {
+            log.warn("Could not fetch store for currency propagation, defaulting to INR: {}", e.getMessage());
+        }
+
         // Update customer email if provided (for walk-in customers)
         if (request.getCustomerEmail() != null && !request.getCustomerEmail().trim().isEmpty() &&
             request.getCustomerId() != null && !request.getCustomerId().trim().isEmpty()) {
@@ -226,6 +238,27 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
         log.info("Order created successfully: {}", savedOrder.getOrderNumber());
+
+        // PostgreSQL dual-write (Global-3: includes currency)
+        try {
+            OrderJpaEntity jpaEntity = OrderJpaEntity.builder()
+                    .orderNumber(savedOrder.getOrderNumber())
+                    .customerId(savedOrder.getCustomerId())
+                    .storeId(savedOrder.getStoreId())
+                    .status(savedOrder.getStatus() != null ? savedOrder.getStatus().name() : "RECEIVED")
+                    .orderType(savedOrder.getOrderType() != null ? savedOrder.getOrderType().name() : null)
+                    .subtotal(savedOrder.getSubtotal())
+                    .deliveryFee(savedOrder.getDeliveryFee())
+                    .tax(savedOrder.getTax())
+                    .total(savedOrder.getTotal())
+                    .currency(savedOrder.getCurrency())
+                    .receivedAt(savedOrder.getReceivedAt() != null
+                            ? savedOrder.getReceivedAt().atOffset(java.time.ZoneOffset.UTC) : null)
+                    .build();
+            orderJpaRepository.save(jpaEntity);
+        } catch (Exception e) {
+            log.warn("PostgreSQL dual-write failed for order {}: {}", savedOrder.getOrderNumber(), e.getMessage());
+        }
 
         // Publish order created event to RabbitMQ
         try {

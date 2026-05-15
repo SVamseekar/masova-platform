@@ -198,6 +198,7 @@ public class MenuService {
         return menuItemRepository.findById(id)
             .map(item -> {
                 item.setIsAvailable(isAvailable);
+                enforceAllergenGate(item);
                 item.setUpdatedAt(LocalDateTime.now());
                 return menuItemRepository.save(item);
             })

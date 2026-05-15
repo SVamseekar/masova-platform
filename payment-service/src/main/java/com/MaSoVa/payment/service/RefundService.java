@@ -122,6 +122,9 @@ public class RefundService {
         } catch (RazorpayException e) {
             log.error("Razorpay error while initiating refund", e);
             throw new RuntimeException("Failed to initiate refund: " + e.getMessage(), e);
+        } catch (RuntimeException e) {
+            log.error("Error initiating refund", e);
+            throw e;
         } catch (Exception e) {
             log.error("Error initiating refund", e);
             throw new RuntimeException("Failed to initiate refund", e);

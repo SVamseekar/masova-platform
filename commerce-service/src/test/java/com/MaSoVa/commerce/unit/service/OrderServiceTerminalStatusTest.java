@@ -22,7 +22,7 @@ import com.MaSoVa.commerce.order.repository.OrderRepository;
 import com.MaSoVa.commerce.order.websocket.OrderWebSocketController;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -33,6 +33,7 @@ import org.mockito.quality.Strictness;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -89,15 +90,25 @@ class OrderServiceTerminalStatusTest {
         );
     }
 
+    static Stream<Object[]> terminalTransitions() {
+        return Stream.of(
+            // {fromStatus, orderType, toStatus}
+            new Object[]{Order.OrderStatus.READY,      Order.OrderType.DINE_IN,   Order.OrderStatus.SERVED},
+            new Object[]{Order.OrderStatus.READY,      Order.OrderType.TAKEAWAY,  Order.OrderStatus.COMPLETED},
+            new Object[]{Order.OrderStatus.DISPATCHED, Order.OrderType.DELIVERY,  Order.OrderStatus.DELIVERED}
+        );
+    }
+
     @ParameterizedTest
-    @ValueSource(strings = {"DELIVERED", "SERVED", "COMPLETED"})
-    void terminal_status_publishes_order_status_changed_event(String statusStr) {
+    @MethodSource("terminalTransitions")
+    void terminal_status_publishes_order_status_changed_event(
+            Order.OrderStatus fromStatus, Order.OrderType orderType, Order.OrderStatus toStatus) {
         Order order = new Order();
         order.setId("ord-safety-001");
         order.setStoreId("store-001");
         order.setCustomerId("cust-001");
-        order.setOrderType(Order.OrderType.TAKEAWAY);
-        order.setStatus(Order.OrderStatus.READY);
+        order.setOrderType(orderType);
+        order.setStatus(fromStatus);
         order.setItems(Collections.emptyList());
         order.setTotal(BigDecimal.valueOf(100));
 
@@ -106,7 +117,7 @@ class OrderServiceTerminalStatusTest {
         when(orderJpaRepository.findByMongoId(any())).thenReturn(Optional.empty());
 
         UpdateOrderStatusRequest req = new UpdateOrderStatusRequest();
-        req.setStatus(Order.OrderStatus.valueOf(statusStr));
+        req.setStatus(toStatus);
         orderService.updateOrderStatus("ord-safety-001", req);
 
         verify(orderEventPublisher).publishOrderStatusChanged(any());
