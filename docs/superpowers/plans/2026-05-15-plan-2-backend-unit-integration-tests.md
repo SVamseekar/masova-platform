@@ -14,7 +14,7 @@
 
 ## File Map — New Files Created
 
-### core-service unit tests (~120 new tests)
+### core-service unit tests (~130 new tests)
 | File | Tests |
 |------|-------|
 | `unit/controller/AuthControllerTest.java` | login, register, logout, refresh, google, change-password, validate-pin — 200/400/401/403 |
@@ -24,21 +24,26 @@
 | `unit/controller/WorkingSessionControllerTest.java` | all 9 endpoints |
 | `unit/controller/CustomerControllerTest.java` | all 13 endpoints |
 | `unit/controller/NotificationControllerTest.java` | all 5 endpoints |
+| `unit/controller/RatingControllerTest.java` | POST /api/notifications/rating/send — 200/400 |
 | `unit/controller/ReviewControllerTest.java` | all 10 endpoints |
 | `unit/controller/CampaignControllerTest.java` | all 8 endpoints |
 | `unit/controller/EarningsControllerTest.java` | all 4 endpoints |
 | `unit/controller/GdprControllerTest.java` | all 8 endpoints |
+| `unit/controller/UserPreferencesControllerTest.java` | GET/PATCH/DELETE /api/preferences/{userId} — 200/404 |
+| `unit/controller/SystemInfoControllerTest.java` | GET /api/system/version, /health, /info, /updates/check, /updates/status — 200 |
 | `unit/service/AuthServiceTest.java` | login, register, logout, refresh, PIN validation |
 | `unit/service/UserServiceTest.java` | CRUD, activate/deactivate, PIN generation |
 
-### commerce-service unit tests (~40 new tests)
+### commerce-service unit tests (~45 new tests)
 | File | Tests |
 |------|-------|
 | `unit/controller/OrderControllerTest.java` | all 12 endpoints — status transitions, quality checkpoints, analytics |
 | `unit/controller/KitchenEquipmentControllerTest.java` | all 6 endpoints |
 | `unit/controller/AggregatorControllerTest.java` | GET/PUT connections |
-| `unit/controller/TipControllerTest.java` | POST tip |
+| `unit/controller/TipControllerTest.java` | POST /api/orders/{orderId}/tip — 200/404 |
+| `unit/controller/StaffTipControllerTest.java` | GET /api/staff/tips/pending — 200 |
 | `unit/service/OrderServiceStatusTest.java` | all OrderStatus transitions via state machine |
+| NOTE | `OrderWebSocketController` — WebSocket, not REST. Test via `@MessageMapping` with `StompClient` in a separate `unit/websocket/` task below. |
 
 ### logistics-service unit tests (~80 new tests)
 | File | Tests |
@@ -727,6 +732,86 @@ For **WorkingSessionControllerTest** (`/api/sessions`):
 - Test `GET /api/sessions/pending` → 200 list
 - Test `POST /api/sessions/{sessionId}/approve` → 200
 
+For **RatingControllerTest** (`/api/notifications/rating`):
+```java
+@Test
+@DisplayName("POST /api/notifications/rating/send returns 200")
+void sendRatingRequest_returns200() throws Exception {
+    when(ratingService.sendRatingRequest(anyString(), anyString(), any()))
+        .thenReturn(Map.of("sent", true, "channel", "SMS"));
+    mockMvc.perform(post("/api/notifications/rating/send")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"orderId\":\"order-1\",\"customerId\":\"cust-1\",\"channel\":\"SMS\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.sent").value(true));
+}
+
+@Test
+@DisplayName("POST /api/notifications/rating/send returns 400 when orderId missing")
+void sendRatingRequest_returns400WhenMissingOrderId() throws Exception {
+    mockMvc.perform(post("/api/notifications/rating/send")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"channel\":\"SMS\"}"))
+        .andExpect(status().isBadRequest());
+}
+```
+
+For **UserPreferencesControllerTest** (`/api/preferences`):
+```java
+@Test
+@DisplayName("GET /api/preferences/{userId} returns 200 with preferences")
+void getPreferences_returns200() throws Exception {
+    when(preferencesService.getPreferences("user-1"))
+        .thenReturn(Map.of("userId", "user-1", "emailEnabled", true, "smsEnabled", false));
+    mockMvc.perform(get("/api/preferences/user-1"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.userId").value("user-1"));
+}
+
+@Test
+@DisplayName("GET /api/preferences/{userId} returns 404 when not found")
+void getPreferences_returns404() throws Exception {
+    when(preferencesService.getPreferences("bad-id"))
+        .thenThrow(new RuntimeException("Preferences not found"));
+    mockMvc.perform(get("/api/preferences/bad-id"))
+        .andExpect(status().isNotFound());
+}
+
+@Test
+@DisplayName("PATCH /api/preferences/{userId} returns 200")
+void updatePreferences_returns200() throws Exception {
+    when(preferencesService.updatePreferences(anyString(), any()))
+        .thenReturn(Map.of("userId", "user-1", "emailEnabled", false));
+    mockMvc.perform(patch("/api/preferences/user-1")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"emailEnabled\":false}"))
+        .andExpect(status().isOk());
+}
+```
+
+For **SystemInfoControllerTest** (`/api/system`):
+```java
+@Test
+@DisplayName("GET /api/system/health returns 200")
+void systemHealth_returns200() throws Exception {
+    when(systemInfoService.getHealth())
+        .thenReturn(Map.of("status", "UP", "version", "1.0.0"));
+    mockMvc.perform(get("/api/system/health"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("UP"));
+}
+
+@Test
+@DisplayName("GET /api/system/version returns 200 with version info")
+void systemVersion_returns200() throws Exception {
+    when(systemInfoService.getVersion())
+        .thenReturn(Map.of("version", "1.0.0", "buildDate", "2026-05-15"));
+    mockMvc.perform(get("/api/system/version"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.version").value("1.0.0"));
+}
+```
+
 - [ ] **Step 5: Run all core-service unit tests**
 
 ```bash
@@ -1002,19 +1087,241 @@ class KitchenEquipmentControllerTest extends BaseServiceTest {
 }
 ```
 
-- [ ] **Step 3: Run all commerce-service unit tests**
+- [ ] **Step 3: Write StaffTipControllerTest.java**
+
+```java
+package com.MaSoVa.commerce.unit.controller;
+
+import com.MaSoVa.commerce.tip.controller.StaffTipController;
+import com.MaSoVa.commerce.tip.service.TipService;
+import com.MaSoVa.shared.test.BaseServiceTest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@ExtendWith(MockitoExtension.class)
+@DisplayName("StaffTipController Unit Tests")
+class StaffTipControllerTest extends BaseServiceTest {
+
+    @Mock private TipService tipService;
+    @InjectMocks private StaffTipController staffTipController;
+    private MockMvc mockMvc;
+
+    @BeforeEach
+    void setUp() {
+        mockMvc = MockMvcBuilders.standaloneSetup(staffTipController).build();
+    }
+
+    @Test
+    @DisplayName("GET /api/staff/tips/pending returns 200 with pending tips list")
+    void getPendingTips_returns200() throws Exception {
+        when(tipService.getPendingTipsForEmployee(anyString()))
+            .thenReturn(List.of(
+                Map.of("orderId", "order-1", "amount", BigDecimal.valueOf(50.0), "status", "PENDING")
+            ));
+
+        mockMvc.perform(get("/api/staff/tips/pending").param("employeeId", "emp-1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].status").value("PENDING"));
+    }
+
+    @Test
+    @DisplayName("GET /api/staff/tips/pending returns 200 with empty list when no tips")
+    void getPendingTips_returnsEmptyList() throws Exception {
+        when(tipService.getPendingTipsForEmployee(anyString())).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/staff/tips/pending").param("employeeId", "emp-99"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$").isEmpty());
+    }
+}
+```
+
+- [ ] **Step 4: Write payment-service missing controller tests — RefundController, WebhookController, StripeWebhookController**
+
+```java
+// payment-service/src/test/java/com/MaSoVa/payment/unit/controller/RefundControllerTest.java
+package com.MaSoVa.payment.unit.controller;
+
+import com.MaSoVa.payment.controller.RefundController;
+import com.MaSoVa.payment.service.RefundService;
+import com.MaSoVa.shared.test.BaseServiceTest;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@ExtendWith(MockitoExtension.class)
+@DisplayName("RefundController Unit Tests")
+class RefundControllerTest extends BaseServiceTest {
+
+    @Mock private RefundService refundService;
+    @InjectMocks private RefundController refundController;
+    private MockMvc mockMvc;
+
+    @BeforeEach
+    void setUp() {
+        mockMvc = MockMvcBuilders.standaloneSetup(refundController).build();
+    }
+
+    @Test
+    @DisplayName("POST /api/payments/refund returns 200 on successful refund initiation")
+    void initiateRefund_returns200() throws Exception {
+        when(refundService.initiateRefund(any()))
+            .thenReturn(Map.of("refundId", "refund-1", "status", "INITIATED", "amount", BigDecimal.valueOf(200.00)));
+
+        mockMvc.perform(post("/api/payments/refund")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"transactionId\":\"txn-1\",\"amount\":200.00,\"reason\":\"Customer request\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.refundId").value("refund-1"))
+            .andExpect(jsonPath("$.status").value("INITIATED"));
+    }
+
+    @Test
+    @DisplayName("GET /api/payments/refund/{refundId} returns 200 for existing refund")
+    void getRefund_returns200() throws Exception {
+        when(refundService.getRefundById("refund-1"))
+            .thenReturn(Optional.of(Map.of("refundId", "refund-1", "status", "PROCESSED")));
+
+        mockMvc.perform(get("/api/payments/refund/refund-1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.refundId").value("refund-1"));
+    }
+
+    @Test
+    @DisplayName("GET /api/payments/refund/{refundId} returns 404 when refund not found")
+    void getRefund_returns404() throws Exception {
+        when(refundService.getRefundById("bad-id")).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/api/payments/refund/bad-id"))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("GET /api/payments/refund returns 200 with refund list")
+    void getRefunds_returns200() throws Exception {
+        when(refundService.getRefunds(any()))
+            .thenReturn(List.of(Map.of("refundId", "refund-1", "status", "PROCESSED")));
+
+        mockMvc.perform(get("/api/payments/refund").param("transactionId", "txn-1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].refundId").value("refund-1"));
+    }
+}
+```
+
+```java
+// payment-service/src/test/java/com/MaSoVa/payment/unit/controller/WebhookControllerTest.java
+package com.MaSoVa.payment.unit.controller;
+
+import com.MaSoVa.payment.controller.WebhookController;
+import com.MaSoVa.payment.service.WebhookService;
+import com.MaSoVa.shared.test.BaseServiceTest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@ExtendWith(MockitoExtension.class)
+@DisplayName("WebhookController Unit Tests")
+class WebhookControllerTest extends BaseServiceTest {
+
+    @Mock private WebhookService webhookService;
+    @InjectMocks private WebhookController webhookController;
+    private MockMvc mockMvc;
+
+    @BeforeEach
+    void setUp() {
+        mockMvc = MockMvcBuilders.standaloneSetup(webhookController).build();
+    }
+
+    @Test
+    @DisplayName("POST /api/payments/webhook returns 200 with valid Razorpay signature")
+    void handleWebhook_returns200OnValidSignature() throws Exception {
+        doNothing().when(webhookService).processRazorpayWebhook(any(), anyString());
+
+        mockMvc.perform(post("/api/payments/webhook")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("X-Razorpay-Signature", "valid-signature")
+                .content("{\"event\":\"payment.captured\",\"payload\":{}}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("POST /api/payments/webhook returns 400 with invalid signature")
+    void handleWebhook_returns400OnInvalidSignature() throws Exception {
+        doThrow(new RuntimeException("Invalid signature"))
+            .when(webhookService).processRazorpayWebhook(any(), anyString());
+
+        mockMvc.perform(post("/api/payments/webhook")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("X-Razorpay-Signature", "bad-signature")
+                .content("{\"event\":\"payment.captured\",\"payload\":{}}"))
+            .andExpect(status().isBadRequest());
+    }
+}
+```
+
+- [ ] **Step 5: Run all commerce-service and payment-service unit tests**
 
 ```bash
-mvn test -pl commerce-service --no-transfer-progress 2>&1 | tail -10
+mvn test -pl commerce-service,payment-service --no-transfer-progress 2>&1 | tail -10
 ```
 
 Expected: `BUILD SUCCESS`
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add commerce-service/src/test/
-git commit -m "test(commerce): unit tests for OrderController, KitchenEquipmentController, AggregatorController"
+git add commerce-service/src/test/ payment-service/src/test/
+git commit -m "test(commerce,payment): unit tests for OrderController, KitchenEquipment, StaffTip, Refund, Webhook controllers"
 ```
 
 ---
@@ -1694,13 +2001,226 @@ class PaymentControllerIT extends BaseFullIntegrationTest {
 }
 ```
 
-- [ ] **Step 3: Write remaining IT files (OrderControllerIT, InventoryControllerIT, DeliveryControllerIT, AnalyticsControllerIT)**
+- [ ] **Step 3: Write OrderControllerIT.java**
 
-Each follows the same pattern:
-- Extend `BaseFullIntegrationTest` (or `BaseMessagingIntegrationTest` for commerce/logistics which use RabbitMQ)
-- Test: GET empty list → 200, GET nonexistent → 404, POST valid → 201 + GET back → 200
+```java
+package com.MaSoVa.commerce.integration.controller;
 
-- [ ] **Step 4: Run all integration tests across all services (requires Docker)**
+import com.MaSoVa.shared.test.BaseMessagingIntegrationTest;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@DisplayName("OrderController Integration Tests")
+class OrderControllerIT extends BaseMessagingIntegrationTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    @DisplayName("GET /api/orders returns 200 with empty list initially")
+    void getOrders_returnsEmptyList() throws Exception {
+        mockMvc.perform(get("/api/orders")
+                .header("X-User-Type", "MANAGER"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
+    @DisplayName("GET /api/orders/{id} returns 404 for non-existent order")
+    void getOrder_returns404() throws Exception {
+        mockMvc.perform(get("/api/orders/nonexistent")
+                .header("X-User-Type", "MANAGER"))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("POST /api/orders creates order and GET retrieves it")
+    void createOrder_thenRetrieve() throws Exception {
+        String createBody = "{\"storeId\":\"store-1\",\"customerId\":\"cust-1\",\"items\":[{\"menuItemId\":\"item-1\",\"quantity\":2}],\"deliveryType\":\"DELIVERY\"}";
+
+        String response = mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("X-User-Type", "CUSTOMER")
+                .header("X-User-Id", "cust-1")
+                .content(createBody))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").isNotEmpty())
+            .andReturn().getResponse().getContentAsString();
+
+        String id = new com.fasterxml.jackson.databind.ObjectMapper()
+            .readTree(response).get("id").asText();
+
+        mockMvc.perform(get("/api/orders/" + id)
+                .header("X-User-Type", "MANAGER"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(id));
+    }
+}
+```
+
+- [ ] **Step 4: Write InventoryControllerIT.java**
+
+```java
+package com.MaSoVa.logistics.integration.controller;
+
+import com.MaSoVa.shared.test.BaseFullIntegrationTest;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@DisplayName("InventoryController Integration Tests")
+class InventoryControllerIT extends BaseFullIntegrationTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    @DisplayName("GET /api/inventory returns 200 with empty list")
+    void getInventory_returnsEmptyList() throws Exception {
+        mockMvc.perform(get("/api/inventory")
+                .header("X-User-Type", "MANAGER")
+                .header("X-User-Store-Id", "store-1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
+    @DisplayName("GET /api/inventory/{id} returns 404 for non-existent item")
+    void getInventoryItem_returns404() throws Exception {
+        mockMvc.perform(get("/api/inventory/nonexistent")
+                .header("X-User-Type", "MANAGER"))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("GET /api/suppliers returns 200 with empty list")
+    void getSuppliers_returnsEmptyList() throws Exception {
+        mockMvc.perform(get("/api/suppliers")
+                .header("X-User-Type", "MANAGER"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
+    @DisplayName("GET /api/purchase-orders returns 200 with empty list")
+    void getPurchaseOrders_returnsEmptyList() throws Exception {
+        mockMvc.perform(get("/api/purchase-orders")
+                .header("X-User-Type", "MANAGER"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$").isArray());
+    }
+}
+```
+
+- [ ] **Step 5: Write DeliveryControllerIT.java**
+
+```java
+package com.MaSoVa.logistics.integration.controller;
+
+import com.MaSoVa.shared.test.BaseMessagingIntegrationTest;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@DisplayName("DeliveryController Integration Tests")
+class DeliveryControllerIT extends BaseMessagingIntegrationTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    @DisplayName("GET /api/delivery/zones returns 200 with zone list")
+    void getDeliveryZones_returnsZones() throws Exception {
+        mockMvc.perform(get("/api/delivery/zones"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
+    @DisplayName("GET /api/delivery/available-drivers returns 200")
+    void getAvailableDrivers_returns200() throws Exception {
+        mockMvc.perform(get("/api/delivery/available-drivers")
+                .header("X-User-Type", "MANAGER")
+                .header("X-User-Store-Id", "store-1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
+    @DisplayName("GET /api/delivery/track/{orderId} returns 404 for non-existent order")
+    void trackDelivery_returns404() throws Exception {
+        mockMvc.perform(get("/api/delivery/track/nonexistent"))
+            .andExpect(status().isNotFound());
+    }
+}
+```
+
+- [ ] **Step 6: Write AnalyticsControllerIT.java**
+
+```java
+package com.MaSoVa.intelligence.integration.controller;
+
+import com.MaSoVa.shared.test.BaseMessagingIntegrationTest;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@DisplayName("AnalyticsController Integration Tests")
+class AnalyticsControllerIT extends BaseMessagingIntegrationTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    @DisplayName("GET /api/analytics returns 200 with sales data")
+    void getAnalytics_returnsSalesData() throws Exception {
+        mockMvc.perform(get("/api/analytics")
+                .param("type", "sales")
+                .param("period", "TODAY")
+                .header("X-User-Type", "MANAGER"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/bi returns 200 with BI data")
+    void getBiData_returns200() throws Exception {
+        mockMvc.perform(get("/api/bi")
+                .param("type", "sales-forecast")
+                .header("X-User-Type", "MANAGER"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/bi/reports returns 200")
+    void getBiReports_returns200() throws Exception {
+        mockMvc.perform(get("/api/bi/reports")
+                .param("type", "executive-summary")
+                .header("X-User-Type", "MANAGER"))
+            .andExpect(status().isOk());
+    }
+}
+```
+
+- [ ] **Step 7: Run all integration tests across all services (requires Docker)**
 
 ```bash
 mvn verify -Dtest=NONE --no-transfer-progress 2>&1 | tail -20
@@ -1708,7 +2228,7 @@ mvn verify -Dtest=NONE --no-transfer-progress 2>&1 | tail -20
 
 Expected: `BUILD SUCCESS` — all `*IT.java` tests pass.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add commerce-service/src/test/java/com/MaSoVa/commerce/integration/ \

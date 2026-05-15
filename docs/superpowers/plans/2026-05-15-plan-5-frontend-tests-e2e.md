@@ -945,15 +945,99 @@ describe('KitchenDisplayPage', () => {
 });
 ```
 
-- [ ] **Step 3: Write remaining page tests following same 3-state pattern**
+- [ ] **Step 3: Write remaining page tests — one file per page, four states each**
 
-For every remaining untested page, follow this pattern:
-1. **Loading state** — mock API to never resolve, assert loading indicator
-2. **Success state** — mock API to return data, assert data renders
-3. **Empty state** — mock API to return `[]`, assert empty state message
-4. **Error state** — mock API to return 500, assert error message/retry
+For every file listed below, create the test file using the same four-state pattern as Task 7 Steps 1 and 2.
 
-Apply this to: DriverHomePage, StaffLoginPage (test form validation, not actual auth), all remaining manager pages.
+**Pattern reminder** (copy this structure into each file):
+```typescript
+// src/pages/[domain]/[Page].test.tsx
+import { screen, waitFor } from '@testing-library/react';
+import { renderWithProviders } from '../../test/utils/testUtils';
+import { server } from '../../test/mocks/server';
+import { http, HttpResponse } from 'msw';
+import { API } from '../../config/api.config';
+import [Page] from './[Page]';
+
+describe('[Page]', () => {
+  it('shows loading indicator while fetching', async () => {
+    server.use(http.get(`${API}/api/[resource]`, () => new Promise(() => {})));
+    renderWithProviders(<[Page] />);
+    expect(await screen.findByRole('progressbar')).toBeInTheDocument();
+  });
+
+  it('renders data on success', async () => {
+    renderWithProviders(<[Page] />);
+    expect(await screen.findByText(/[expected text]/i)).toBeInTheDocument();
+  });
+
+  it('shows empty state when no data', async () => {
+    server.use(http.get(`${API}/api/[resource]`, () => HttpResponse.json([])));
+    renderWithProviders(<[Page] />);
+    expect(await screen.findByText(/no [items]/i)).toBeInTheDocument();
+  });
+
+  it('shows error message on network failure', async () => {
+    server.use(http.get(`${API}/api/[resource]`, () => HttpResponse.json({ message: 'Server error' }, { status: 500 })));
+    renderWithProviders(<[Page] />);
+    expect(await screen.findByText(/error|failed|try again/i)).toBeInTheDocument();
+  });
+});
+```
+
+**Files to create (18 files):**
+
+| File to create | API endpoint to mock | Expected success text hint |
+|---|---|---|
+| `src/pages/driver/DriverHomePage.test.tsx` | `/api/delivery` | driver / delivery / orders |
+| `src/pages/auth/StaffLoginPage.test.tsx` | form validation only — no API mock needed | Email field, Password field, Sign in button |
+| `src/pages/manager/DashboardPage.test.tsx` | `/api/analytics` | dashboard / revenue / orders |
+| `src/pages/manager/InventoryDashboardPage.test.tsx` | `/api/inventory` | inventory / stock |
+| `src/pages/manager/StaffManagementPage.test.tsx` | `/api/users` | staff / employee |
+| `src/pages/manager/DeliveryManagementPage.test.tsx` | `/api/delivery` | delivery / driver |
+| `src/pages/manager/ReportingPage.test.tsx` | `/api/analytics` | report / revenue |
+| `src/pages/manager/CustomerManagementPage.test.tsx` | `/api/customers` | customer / loyalty |
+| `src/pages/manager/ShiftSchedulePage.test.tsx` | `/api/shifts` | shift / schedule |
+| `src/pages/manager/CampaignManagementPage.test.tsx` | `/api/campaigns` | campaign / promo |
+| `src/pages/manager/ReviewManagementPage.test.tsx` | `/api/reviews` | review / rating |
+| `src/pages/manager/SupplierManagementPage.test.tsx` | `/api/suppliers` | supplier / vendor |
+| `src/pages/pos/POSSystem.test.tsx` | `/api/menu` | POS / menu / item |
+| `src/pages/customer/MenuPage.test.tsx` | `/api/menu` | menu / item / price |
+| `src/pages/customer/CartPage.test.tsx` | `/api/orders` | cart / total / checkout |
+| `src/pages/customer/OrderTrackingPage.test.tsx` | `/api/orders/track/:orderId` | track / status / delivery |
+| `src/pages/customer/ProfilePage.test.tsx` | `/api/customers/:id` | profile / name / address |
+| `src/pages/customer/LoyaltyPage.test.tsx` | `/api/customers/:id/loyalty` | loyalty / points / tier |
+
+**StaffLoginPage special case** — test form validation without mocking auth:
+```typescript
+import userEvent from '@testing-library/user-event';
+import { screen } from '@testing-library/react';
+import { renderWithProviders } from '../../test/utils/testUtils';
+import StaffLoginPage from './StaffLoginPage';
+
+describe('StaffLoginPage', () => {
+  it('shows email and password fields', () => {
+    renderWithProviders(<StaffLoginPage />);
+    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+  });
+
+  it('shows validation error when submitted empty', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<StaffLoginPage />);
+    await user.click(screen.getByRole('button', { name: /sign in/i }));
+    expect(await screen.findByText(/required|email is required|password is required/i)).toBeInTheDocument();
+  });
+
+  it('shows validation error for invalid email format', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<StaffLoginPage />);
+    await user.type(screen.getByLabelText(/email/i), 'not-an-email');
+    await user.click(screen.getByRole('button', { name: /sign in/i }));
+    expect(await screen.findByText(/invalid email|valid email/i)).toBeInTheDocument();
+  });
+});
+```
 
 - [ ] **Step 4: Run all page tests**
 

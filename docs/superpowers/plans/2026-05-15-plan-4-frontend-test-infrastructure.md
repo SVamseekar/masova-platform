@@ -192,6 +192,7 @@ git commit -m "fix(frontend/test): add /api/ prefix to all MSW handlers to match
 - Modify: `frontend/src/store/api/orderApi.ts`
 - Modify: `frontend/src/store/api/shiftApi.ts`
 - Modify: `frontend/src/store/api/driverApi.ts`
+- Modify: `frontend/src/store/api/inventoryApi.ts`
 
 - [ ] **Step 1: Fix authApi.ts — change from /users/ to /api/auth/**
 
@@ -315,7 +316,39 @@ url: '/delivery/location-update',
 url: '/api/delivery/location',
 ```
 
-- [ ] **Step 7: Verify TypeScript compiles with no errors**
+- [ ] **Step 7: Fix inventoryApi.ts — supplier and purchase-order endpoints use wrong base paths**
+
+In `frontend/src/store/api/inventoryApi.ts`, the supplier and purchase-order calls go to `/inventory/suppliers` and `/inventory/purchase-orders` but these are served at `/api/suppliers` and `/api/purchase-orders` respectively on core-service (not logistics-service).
+
+```typescript
+// BEFORE — wrong base path and wrong service
+baseUrl: API_CONFIG.LOGISTICS_SERVICE_URL,
+url: '/inventory/suppliers',
+url: '/inventory/suppliers/${supplierId}',
+url: '/inventory/purchase-orders',
+url: '/inventory/purchase-orders/${poId}',
+url: '/inventory/purchase-orders/${poId}/receive',
+url: '/inventory/waste',
+url: '/inventory/waste/${wasteId}',
+url: '/inventory',
+url: '/inventory/${itemId}',
+url: '/inventory/${itemId}/adjust',
+
+// AFTER — canonical paths on logistics-service gateway route
+baseUrl: API_CONFIG.BASE_URL,
+url: '/api/suppliers',
+url: '/api/suppliers/${supplierId}',
+url: '/api/purchase-orders',
+url: '/api/purchase-orders/${poId}',
+url: '/api/purchase-orders/${poId}/receive',
+url: '/api/waste',
+url: '/api/waste/${wasteId}',
+url: '/api/inventory',
+url: '/api/inventory/${itemId}',
+url: '/api/inventory/${itemId}/adjust',
+```
+
+- [ ] **Step 8: Verify TypeScript compiles with no errors**
 
 ```bash
 cd frontend && npx tsc --noEmit 2>&1 | head -20
@@ -323,7 +356,7 @@ cd frontend && npx tsc --noEmit 2>&1 | head -20
 
 Expected: no errors.
 
-- [ ] **Step 8: Run unit tests for affected API slices**
+- [ ] **Step 9: Run unit tests for affected API slices**
 
 ```bash
 cd frontend && npm run test:run -- src/store/api/ --reporter=verbose 2>&1 | tail -20
@@ -331,11 +364,11 @@ cd frontend && npm run test:run -- src/store/api/ --reporter=verbose 2>&1 | tail
 
 Expected: all API slice tests pass.
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
 git add frontend/src/store/api/
-git commit -m "fix(frontend): correct RTK Query slice URLs to match canonical backend paths — authApi, sessionApi, equipmentApi, orderApi, shiftApi, driverApi"
+git commit -m "fix(frontend): correct RTK Query slice URLs to match canonical backend paths — authApi, sessionApi, equipmentApi, orderApi, shiftApi, driverApi, inventoryApi"
 ```
 
 ---

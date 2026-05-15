@@ -25,6 +25,7 @@
 | `logistics-service/src/main/resources/application.yml` | Add logging pattern |
 | `api-gateway/src/main/resources/application.yml` | Add logging pattern |
 | All 6 `application.yml` | Change `access-token-expiration` from 3600000 to 900000 |
+| All 6 `application.yml` | Replace hardcoded JWT secret default with `CHANGE_ME_IN_PRODUCTION` |
 | `api-gateway/src/main/java/com/MaSoVa/gateway/config/CorsConfig.java` | Replace wildcard headers with explicit list |
 | `core-service/src/main/java/.../AuthController.java` | Add refresh token rotation |
 | `core-service/src/main/java/.../AuthService.java` | Add refresh token blacklist on rotation |
@@ -1127,6 +1128,77 @@ git commit -m "docs: add CLAUDE.md to all 6 services and frontend with test comm
 
 ---
 
+### Task 14: Replace Hardcoded JWT Secret Default with CHANGE_ME Placeholder
+
+**Context:** The `application.yml` files in some services contain a real-looking JWT secret as the default value (e.g., `masova-secret-key-...`). While the production secret is overridden by the `JWT_SECRET` env var in deploy.yml, leaving a real-looking default creates two risks: (1) a developer running locally without `.env` uses a weak but plausible-looking secret, and (2) security scanners flag it. Replace the default with `CHANGE_ME_IN_PRODUCTION` which makes the intent explicit and causes an obvious failure rather than silent use.
+
+**Files:**
+- Modify: `core-service/src/main/resources/application.yml`
+- Modify: `commerce-service/src/main/resources/application.yml`
+- Modify: `logistics-service/src/main/resources/application.yml`
+- Modify: `payment-service/src/main/resources/application.yml`
+- Modify: `intelligence-service/src/main/resources/application.yml`
+- Modify: `api-gateway/src/main/resources/application.yml`
+
+- [ ] **Step 1: Find all current JWT secret defaults**
+
+```bash
+grep -rn "jwt.*secret\|secret.*jwt" */src/main/resources/application.yml
+```
+
+Note the current value in each file. It will be something like `masova-jwt-secret-key-...`.
+
+- [ ] **Step 2: Replace default secret value in all 6 application.yml files**
+
+In each `application.yml`, find the `secret:` line under the JWT/security configuration block and replace the hardcoded value with the placeholder:
+
+```yaml
+# BEFORE
+jwt:
+  secret: masova-jwt-secret-key-do-not-use-in-production-replace-with-env-var
+  
+# AFTER  
+jwt:
+  secret: ${JWT_SECRET:CHANGE_ME_IN_PRODUCTION}
+```
+
+If the pattern is already `${JWT_SECRET:...}`, only replace the fallback value:
+
+```yaml
+# BEFORE
+secret: ${JWT_SECRET:masova-some-real-looking-secret}
+
+# AFTER
+secret: ${JWT_SECRET:CHANGE_ME_IN_PRODUCTION}
+```
+
+- [ ] **Step 3: Verify application-test.yml in shared-models uses a proper test secret**
+
+The test base classes set `JWT_SECRET` via `@DynamicPropertySource`. Verify `shared-models/src/test/resources/application-test.yml` (or the `@DynamicPropertySource` in `BaseIntegrationTest`) already sets a test-safe value:
+
+```bash
+grep -rn "jwt.*secret\|JWT_SECRET" shared-models/src/test/
+```
+
+Expected: test secret is set to `ci-test-secret-key-at-least-64-chars-long-for-hs512-algorithm-security` or similar — not `CHANGE_ME_IN_PRODUCTION`.
+
+- [ ] **Step 4: Verify services still start with mvn test**
+
+```bash
+mvn test -pl core-service -Dtest=AuthControllerTest --no-transfer-progress 2>&1 | tail -10
+```
+
+Expected: `BUILD SUCCESS` — `application-test.yml` overrides the placeholder so tests still pass.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add */src/main/resources/application.yml
+git commit -m "fix(security): replace hardcoded JWT secret default with CHANGE_ME_IN_PRODUCTION placeholder"
+```
+
+---
+
 ## Verification Checklist
 
 - [ ] `grep "access-token-expiration" */src/main/resources/application.yml` — all show `900000`
@@ -1142,3 +1214,4 @@ git commit -m "docs: add CLAUDE.md to all 6 services and frontend with test comm
 - [ ] `grep "React.lazy" frontend/src/App.tsx | wc -l` — at least 4 lazy routes
 - [ ] `ls .github/workflows/smoke.yml` — exists
 - [ ] `grep -rn "@CircuitBreaker" */src/main/java/ | wc -l` — at least 1 per service with Feign clients
+- [ ] `grep "jwt.*secret\|secret.*jwt" */src/main/resources/application.yml` — all show `CHANGE_ME_IN_PRODUCTION` as fallback, no real secret values
