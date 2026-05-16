@@ -360,4 +360,152 @@ class ShiftServiceTest {
             assertThat(shiftService.weeklyScheduleExists("store-1", LocalDate.now())).isFalse();
         }
     }
+
+    // ===========================
+    // getShift
+    // ===========================
+
+    @Nested
+    @DisplayName("getShift")
+    class GetShift {
+
+        @Test
+        @DisplayName("returns shift when found")
+        void returnsShift() {
+            Shift shift = buildShift("s1", "emp-1", LocalDateTime.now(), LocalDateTime.now().plusHours(8));
+            when(shiftRepository.findById("s1")).thenReturn(Optional.of(shift));
+
+            assertThat(shiftService.getShift("s1")).isNotNull();
+        }
+
+        @Test
+        @DisplayName("throws when shift not found")
+        void throwsWhenNotFound() {
+            when(shiftRepository.findById("missing")).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> shiftService.getShift("missing"))
+                    .isInstanceOf(RuntimeException.class);
+        }
+    }
+
+    // ===========================
+    // getEmployeeShifts / getStoreShifts / getCurrentShift
+    // ===========================
+
+    @Nested
+    @DisplayName("getEmployeeShifts")
+    class GetEmployeeShifts {
+
+        @Test
+        @DisplayName("returns employee shifts in date range")
+        void returnsShifts() {
+            Shift shift = buildShift("s1", "emp-1", LocalDateTime.now(), LocalDateTime.now().plusHours(8));
+            when(shiftRepository.findByEmployeeIdAndScheduledStartBetween(any(), any(), any()))
+                    .thenReturn(List.of(shift));
+
+            List<Shift> result = shiftService.getEmployeeShifts("emp-1", LocalDate.now(), LocalDate.now().plusDays(7));
+            assertThat(result).hasSize(1);
+        }
+    }
+
+    @Nested
+    @DisplayName("getStoreShifts")
+    class GetStoreShifts {
+
+        @Test
+        @DisplayName("returns store shifts for given date")
+        void returnsShifts() {
+            Shift shift = buildShift("s1", "emp-1", LocalDateTime.now(), LocalDateTime.now().plusHours(8));
+            when(shiftRepository.findByStoreIdAndScheduledStartBetween(any(), any(), any()))
+                    .thenReturn(List.of(shift));
+
+            List<Shift> result = shiftService.getStoreShifts("store-1", LocalDate.now());
+            assertThat(result).hasSize(1);
+        }
+    }
+
+    @Nested
+    @DisplayName("getCurrentShift")
+    class GetCurrentShift {
+
+        @Test
+        @DisplayName("returns current shift when found")
+        void returnsShift() {
+            Shift shift = buildShift("s1", "emp-1", LocalDateTime.now().minusHours(1), LocalDateTime.now().plusHours(7));
+            when(shiftRepository.findCurrentShiftForEmployee(any(), any())).thenReturn(Optional.of(shift));
+
+            assertThat(shiftService.getCurrentShift("emp-1")).isNotNull();
+        }
+
+        @Test
+        @DisplayName("returns null when no current shift")
+        void returnsNull() {
+            when(shiftRepository.findCurrentShiftForEmployee(any(), any())).thenReturn(Optional.empty());
+
+            assertThat(shiftService.getCurrentShift("emp-1")).isNull();
+        }
+    }
+
+    // ===========================
+    // startShift
+    // ===========================
+
+    @Nested
+    @DisplayName("startShift")
+    class StartShift {
+
+        @Test
+        @DisplayName("throws when shift cannot be started yet")
+        void throwsWhenCannotStart() {
+            Shift shift = buildShift("s1", "emp-1", LocalDateTime.now().plusHours(2), LocalDateTime.now().plusHours(10));
+            when(shiftRepository.findById("s1")).thenReturn(Optional.of(shift));
+
+            assertThatThrownBy(() -> shiftService.startShift("s1"))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("cannot be started");
+        }
+    }
+
+    // ===========================
+    // bulkCreateShifts
+    // ===========================
+
+    @Nested
+    @DisplayName("bulkCreateShifts")
+    class BulkCreateShifts {
+
+        @Test
+        @DisplayName("validates and saves all shifts")
+        void savesAll() {
+            LocalDateTime start = LocalDateTime.now().plusDays(1);
+            LocalDateTime end = start.plusHours(8);
+            Shift shift1 = buildShift(null, "emp-1", start, end);
+            Shift shift2 = buildShift(null, "emp-2", start, end);
+            when(shiftRepository.findByEmployeeIdAndScheduledStartBetween(any(), any(), any())).thenReturn(List.of());
+            when(shiftRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            List<Shift> result = shiftService.bulkCreateShifts(List.of(shift1, shift2));
+            assertThat(result).hasSize(2);
+        }
+    }
+
+    // ===========================
+    // getWeeklySchedule
+    // ===========================
+
+    @Nested
+    @DisplayName("getWeeklySchedule")
+    class GetWeeklySchedule {
+
+        @Test
+        @DisplayName("returns shifts for the whole week")
+        void returnsWeeklyShifts() {
+            Shift shift = buildShift("s1", "emp-1", LocalDateTime.now(), LocalDateTime.now().plusHours(8));
+            when(shiftRepository.findByStoreIdAndScheduledStartBetween(any(), any(), any()))
+                    .thenReturn(List.of(shift));
+
+            List<Shift> result = shiftService.getWeeklySchedule("store-1", LocalDate.now());
+            assertThat(result).hasSize(1);
+        }
+    }
 }
