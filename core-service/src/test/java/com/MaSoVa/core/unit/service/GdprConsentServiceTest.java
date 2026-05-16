@@ -53,13 +53,13 @@ class GdprConsentServiceTest {
         @Test
         @DisplayName("returns existing consent when already GRANTED")
         void returnsExistingWhenAlreadyGranted() {
-            GdprConsent existing = buildConsent("user-1", ConsentType.TERMS_OF_SERVICE, ConsentStatus.GRANTED);
+            GdprConsent existing = buildConsent("user-1", ConsentType.TERMS_AND_CONDITIONS, ConsentStatus.GRANTED);
             when(consentRepository.findByUserIdAndConsentTypeAndStatus(
-                    "user-1", ConsentType.TERMS_OF_SERVICE, ConsentStatus.GRANTED))
+                    "user-1", ConsentType.TERMS_AND_CONDITIONS, ConsentStatus.GRANTED))
                     .thenReturn(Optional.of(existing));
 
             GdprConsent result = gdprConsentService.grantConsent(
-                    "user-1", ConsentType.TERMS_OF_SERVICE, "v1", "1.2.3.4", "Mozilla", "I agree");
+                    "user-1", ConsentType.TERMS_AND_CONDITIONS, "v1", "1.2.3.4", "Mozilla", "I agree");
 
             assertThat(result.getId()).isEqualTo("consent-1");
             verify(consentRepository, never()).save(any());
@@ -70,12 +70,12 @@ class GdprConsentServiceTest {
         void createsNewConsent() {
             when(consentRepository.findByUserIdAndConsentTypeAndStatus(any(), any(), any()))
                     .thenReturn(Optional.empty());
-            GdprConsent saved = buildConsent("user-1", ConsentType.TERMS_OF_SERVICE, ConsentStatus.GRANTED);
+            GdprConsent saved = buildConsent("user-1", ConsentType.TERMS_AND_CONDITIONS, ConsentStatus.GRANTED);
             when(consentRepository.save(any())).thenReturn(saved);
             when(auditLogRepository.save(any())).thenReturn(new GdprAuditLog());
 
             GdprConsent result = gdprConsentService.grantConsent(
-                    "user-1", ConsentType.TERMS_OF_SERVICE, "v1", "1.2.3.4", "Mozilla", "I agree");
+                    "user-1", ConsentType.TERMS_AND_CONDITIONS, "v1", "1.2.3.4", "Mozilla", "I agree");
 
             assertThat(result).isNotNull();
             verify(consentRepository).save(any());
@@ -119,7 +119,7 @@ class GdprConsentServiceTest {
             when(auditLogRepository.save(any())).thenReturn(new GdprAuditLog());
 
             gdprConsentService.grantConsent(
-                    "user-1", ConsentType.TERMS_OF_SERVICE, "v1", null, null, "Agree");
+                    "user-1", ConsentType.TERMS_AND_CONDITIONS, "v1", null, null, "Agree");
 
             verify(consentRepository).save(argThat(c -> c.getExpiresAt() == null));
         }
@@ -137,11 +137,11 @@ class GdprConsentServiceTest {
         @DisplayName("throws when no active consent to revoke")
         void throwsWhenNoActiveConsent() {
             when(consentRepository.findByUserIdAndConsentTypeAndStatus(
-                    "user-1", ConsentType.TERMS_OF_SERVICE, ConsentStatus.GRANTED))
+                    "user-1", ConsentType.TERMS_AND_CONDITIONS, ConsentStatus.GRANTED))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> gdprConsentService.revokeConsent(
-                    "user-1", ConsentType.TERMS_OF_SERVICE, null, null))
+                    "user-1", ConsentType.TERMS_AND_CONDITIONS, null, null))
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("No active consent");
         }
@@ -149,15 +149,15 @@ class GdprConsentServiceTest {
         @Test
         @DisplayName("sets status to REVOKED and records audit log")
         void setsRevoked() {
-            GdprConsent existing = buildConsent("user-1", ConsentType.TERMS_OF_SERVICE, ConsentStatus.GRANTED);
+            GdprConsent existing = buildConsent("user-1", ConsentType.TERMS_AND_CONDITIONS, ConsentStatus.GRANTED);
             when(consentRepository.findByUserIdAndConsentTypeAndStatus(
-                    "user-1", ConsentType.TERMS_OF_SERVICE, ConsentStatus.GRANTED))
+                    "user-1", ConsentType.TERMS_AND_CONDITIONS, ConsentStatus.GRANTED))
                     .thenReturn(Optional.of(existing));
             when(consentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
             when(auditLogRepository.save(any())).thenReturn(new GdprAuditLog());
 
             GdprConsent result = gdprConsentService.revokeConsent(
-                    "user-1", ConsentType.TERMS_OF_SERVICE, null, null);
+                    "user-1", ConsentType.TERMS_AND_CONDITIONS, null, null);
 
             assertThat(result.getStatus()).isEqualTo(ConsentStatus.REVOKED);
             assertThat(result.getRevokedAt()).isNotNull();
@@ -179,18 +179,18 @@ class GdprConsentServiceTest {
             when(consentRepository.findByUserIdAndConsentTypeAndStatus(any(), any(), any()))
                     .thenReturn(Optional.empty());
 
-            assertThat(gdprConsentService.hasActiveConsent("user-1", ConsentType.TERMS_OF_SERVICE))
+            assertThat(gdprConsentService.hasActiveConsent("user-1", ConsentType.TERMS_AND_CONDITIONS))
                     .isFalse();
         }
 
         @Test
         @DisplayName("returns true when active consent exists")
         void returnsTrueWhenActive() {
-            GdprConsent consent = buildConsent("user-1", ConsentType.TERMS_OF_SERVICE, ConsentStatus.GRANTED);
+            GdprConsent consent = buildConsent("user-1", ConsentType.TERMS_AND_CONDITIONS, ConsentStatus.GRANTED);
             when(consentRepository.findByUserIdAndConsentTypeAndStatus(any(), any(), any()))
                     .thenReturn(Optional.of(consent));
 
-            assertThat(gdprConsentService.hasActiveConsent("user-1", ConsentType.TERMS_OF_SERVICE))
+            assertThat(gdprConsentService.hasActiveConsent("user-1", ConsentType.TERMS_AND_CONDITIONS))
                     .isTrue();
         }
     }
@@ -238,7 +238,7 @@ class GdprConsentServiceTest {
         @Test
         @DisplayName("returns consents for user")
         void returnsConsents() {
-            GdprConsent c = buildConsent("user-1", ConsentType.TERMS_OF_SERVICE, ConsentStatus.GRANTED);
+            GdprConsent c = buildConsent("user-1", ConsentType.TERMS_AND_CONDITIONS, ConsentStatus.GRANTED);
             when(consentRepository.findByUserId("user-1")).thenReturn(List.of(c));
 
             List<GdprConsent> result = gdprConsentService.getUserConsents("user-1");
