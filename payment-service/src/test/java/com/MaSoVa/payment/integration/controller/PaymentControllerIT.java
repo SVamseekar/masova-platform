@@ -37,10 +37,21 @@ class PaymentControllerIT extends BaseFullIntegrationTest {
 
     @Test
     @WithMockUser(roles = "MANAGER")
-    @DisplayName("GET /api/payments/refund returns 200")
-    void getRefunds_returnsEmptyList() throws Exception {
+    @DisplayName("GET /api/payments/refund with no params returns 400")
+    void getRefunds_noParams_returns400() throws Exception {
         mockMvc.perform(get("/api/payments/refund")
                 .header("X-User-Type", "MANAGER"))
-            .andExpect(status().isOk());
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    @DisplayName("GET /api/payments/refund?orderId=nonexistent returns 200 with empty list")
+    void getRefunds_withOrderId_returnsEmptyList() throws Exception {
+        mockMvc.perform(get("/api/payments/refund")
+                .param("orderId", "nonexistent-order")
+                .header("X-User-Type", "MANAGER"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$").isArray());
     }
 }
