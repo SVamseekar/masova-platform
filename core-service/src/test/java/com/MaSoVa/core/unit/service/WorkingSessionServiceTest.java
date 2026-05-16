@@ -482,4 +482,175 @@ class WorkingSessionServiceTest {
             assertThat(workingSessionService.isEmployeeCurrentlyWorking("emp-1")).isFalse();
         }
     }
+
+    // ===========================
+    // getCurrentSession
+    // ===========================
+
+    @Nested
+    @DisplayName("getCurrentSession")
+    class GetCurrentSession {
+
+        @Test
+        @DisplayName("returns mapped response when active session exists")
+        void returnsResponse() {
+            WorkingSession session = buildSession("s1", "emp-1", true);
+            when(sessionRepository.findAllActiveSessionsByEmployeeIdSorted("emp-1"))
+                    .thenReturn(List.of(session));
+
+            assertThat(workingSessionService.getCurrentSession("emp-1")).isNotNull();
+        }
+
+        @Test
+        @DisplayName("returns null when no active session")
+        void returnsNull() {
+            when(sessionRepository.findAllActiveSessionsByEmployeeIdSorted("emp-1"))
+                    .thenReturn(List.of());
+
+            assertThat(workingSessionService.getCurrentSession("emp-1")).isNull();
+        }
+    }
+
+    // ===========================
+    // getEmployeeSessions
+    // ===========================
+
+    @Nested
+    @DisplayName("getEmployeeSessions")
+    class GetEmployeeSessions {
+
+        @Test
+        @DisplayName("fetches by date range when dates provided")
+        void fetchesByDateRange() {
+            WorkingSession session = buildSession("s1", "emp-1", false);
+            session.setLoginTime(LocalDateTime.now().minusDays(2));
+            LocalDate start = LocalDate.now().minusDays(7);
+            LocalDate end = LocalDate.now();
+            when(sessionRepository.findByEmployeeIdAndDateBetween("emp-1", start, end))
+                    .thenReturn(List.of(session));
+
+            List<WorkingSessionResponse> result = workingSessionService.getEmployeeSessions("emp-1", start, end, 0, 10);
+
+            assertThat(result).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("fetches all sessions when no dates provided")
+        void fetchesAll() {
+            WorkingSession session = buildSession("s1", "emp-1", false);
+            session.setLoginTime(LocalDateTime.now().minusDays(2));
+            when(sessionRepository.findByEmployeeId("emp-1")).thenReturn(List.of(session));
+
+            List<WorkingSessionResponse> result = workingSessionService.getEmployeeSessions("emp-1", null, null, 0, 10);
+
+            assertThat(result).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("returns empty list when page is beyond total sessions")
+        void returnsEmptyWhenOutOfBounds() {
+            WorkingSession session = buildSession("s1", "emp-1", false);
+            session.setLoginTime(LocalDateTime.now());
+            when(sessionRepository.findByEmployeeId("emp-1")).thenReturn(List.of(session));
+
+            List<WorkingSessionResponse> result = workingSessionService.getEmployeeSessions("emp-1", null, null, 5, 10);
+
+            assertThat(result).isEmpty();
+        }
+    }
+
+    // ===========================
+    // getStoreSessions
+    // ===========================
+
+    @Nested
+    @DisplayName("getStoreSessions")
+    class GetStoreSessions {
+
+        @Test
+        @DisplayName("returns sessions for store in date range")
+        void returnsStoreSessions() {
+            WorkingSession session = buildSession("s1", "emp-1", false);
+            LocalDate start = LocalDate.now().minusDays(7);
+            LocalDate end = LocalDate.now();
+            when(sessionRepository.findByStoreIdAndDateBetween("store-1", start, end))
+                    .thenReturn(List.of(session));
+
+            List<WorkingSessionResponse> result = workingSessionService.getStoreSessions("store-1", start, end);
+
+            assertThat(result).hasSize(1);
+        }
+    }
+
+    // ===========================
+    // getActiveSessionsForStore
+    // ===========================
+
+    @Nested
+    @DisplayName("getActiveSessionsForStore")
+    class GetActiveSessionsForStore {
+
+        @Test
+        @DisplayName("returns active sessions for store")
+        void returnsActive() {
+            WorkingSession session = buildSession("s1", "emp-1", true);
+            when(sessionRepository.findActiveSessionsByStoreId("store-1")).thenReturn(List.of(session));
+
+            List<WorkingSessionResponse> result = workingSessionService.getActiveSessionsForStore("store-1");
+
+            assertThat(result).hasSize(1);
+        }
+    }
+
+    // ===========================
+    // getCurrentWorkingDuration
+    // ===========================
+
+    @Nested
+    @DisplayName("getCurrentWorkingDuration")
+    class GetCurrentWorkingDuration {
+
+        @Test
+        @DisplayName("returns ZERO when no active session")
+        void returnsZeroWhenNoSession() {
+            when(sessionRepository.findAllActiveSessionsByEmployeeIdSorted("emp-1"))
+                    .thenReturn(List.of());
+
+            assertThat(workingSessionService.getCurrentWorkingDuration("emp-1"))
+                    .isEqualTo(java.time.Duration.ZERO);
+        }
+    }
+
+    // ===========================
+    // closeAllActiveSessions
+    // ===========================
+
+    @Nested
+    @DisplayName("closeAllActiveSessions")
+    class CloseAllActiveSessions {
+
+        @Test
+        @DisplayName("does nothing when no active sessions")
+        void noopWhenNoActiveSessions() {
+            WorkingSession inactive = buildSession("s1", "emp-1", false);
+            when(sessionRepository.findAll()).thenReturn(List.of(inactive));
+
+            assertThatCode(() -> workingSessionService.closeAllActiveSessions())
+                    .doesNotThrowAnyException();
+            verify(sessionRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("auto-closes active sessions on shutdown")
+        void closesActiveSessions() {
+            WorkingSession active = buildSession("s1", "emp-1", true);
+            active.setLoginTime(LocalDateTime.now().minusHours(2));
+            when(sessionRepository.findAll()).thenReturn(List.of(active));
+            when(sessionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            workingSessionService.closeAllActiveSessions();
+
+            verify(sessionRepository).save(argThat(s -> s.getStatus() == WorkingSessionStatus.AUTO_CLOSED));
+        }
+    }
 }
