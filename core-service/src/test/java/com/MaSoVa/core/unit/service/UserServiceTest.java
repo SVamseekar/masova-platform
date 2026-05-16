@@ -1294,6 +1294,56 @@ class UserServiceTest {
     }
 
     // ===========================
+    // registerWithGoogle
+    // ===========================
+
+    @Nested
+    @DisplayName("registerWithGoogle")
+    class RegisterWithGoogle {
+
+        @Test
+        @DisplayName("throws when account already exists for google email")
+        void throwsWhenAccountExists() {
+            Map<String, Object> tokenInfo = new HashMap<>();
+            tokenInfo.put("sub", "google-sub-123");
+            tokenInfo.put("email", "existing@gmail.com");
+            when(restTemplate.getForEntity(anyString(), eq(Map.class)))
+                    .thenReturn(ResponseEntity.ok(tokenInfo));
+            User existing = buildUser("u1", "existing@gmail.com", UserType.CUSTOMER);
+            when(userRepository.findByPersonalInfoEmail("existing@gmail.com")).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> userService.registerWithGoogle("valid-token"))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("already exists");
+        }
+
+        @Test
+        @DisplayName("creates new user and returns LoginResponse")
+        void createsNewUser() {
+            Map<String, Object> tokenInfo = new HashMap<>();
+            tokenInfo.put("sub", "google-sub-123");
+            tokenInfo.put("email", "newuser@gmail.com");
+            tokenInfo.put("name", "New User");
+            when(restTemplate.getForEntity(anyString(), eq(Map.class)))
+                    .thenReturn(ResponseEntity.ok(tokenInfo));
+            when(userRepository.findByPersonalInfoEmail("newuser@gmail.com")).thenReturn(Optional.empty());
+            when(passwordEncoder.encode(any())).thenReturn("hashed-random");
+            User saved = buildUser("u2", "newuser@gmail.com", UserType.CUSTOMER);
+            saved.setAuthProviders(new ArrayList<>());
+            when(userRepository.save(any())).thenReturn(saved);
+            when(jwtService.generateAccessToken(any(), any(), any())).thenReturn("access-token");
+            when(jwtService.generateRefreshToken(any())).thenReturn("refresh-token");
+            when(userJpaRepository.save(any())).thenReturn(null);
+            when(restTemplate.postForEntity(anyString(), any(), eq(Map.class)))
+                    .thenThrow(new org.springframework.web.client.RestClientException("Service unavailable"));
+
+            LoginResponse result = userService.registerWithGoogle("valid-token");
+
+            assertThat(result.getAccessToken()).isEqualTo("access-token");
+        }
+    }
+
+    // ===========================
     // createEmployee
     // ===========================
 
