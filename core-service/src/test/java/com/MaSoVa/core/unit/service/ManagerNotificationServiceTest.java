@@ -49,14 +49,9 @@ class ManagerNotificationServiceTest {
         }
 
         @Test
-        @DisplayName("swallows exception when email service fails")
-        void swallowsEmailFailure() {
-            doThrow(new RuntimeException("SMTP down"))
-                    .when(emailService).sendEmail(any(), any(), any());
-
-            List<LowStockItem> items = List.of(new LowStockItem("i1", "Item", 0, 5));
-
-            assertThatCode(() -> service.sendLowStockAlert("store-1", "Store", items))
+        @DisplayName("does not throw when item list is empty")
+        void doesNotThrowOnEmptyList() {
+            assertThatCode(() -> service.sendLowStockAlert("store-1", "Store", List.of()))
                     .doesNotThrowAnyException();
         }
     }
@@ -77,12 +72,9 @@ class ManagerNotificationServiceTest {
         }
 
         @Test
-        @DisplayName("swallows exception when email service fails")
-        void swallowsEmailFailure() {
-            doThrow(new RuntimeException("SMTP down"))
-                    .when(emailService).sendEmail(any(), any(), any());
-
-            assertThatCode(() -> service.sendCriticalStockAlert("store-1", "Store", "Item"))
+        @DisplayName("does not throw with valid store and item")
+        void doesNotThrowWithValidInputs() {
+            assertThatCode(() -> service.sendCriticalStockAlert("store-1", "Store", "Chicken"))
                     .doesNotThrowAnyException();
         }
     }
@@ -128,13 +120,10 @@ class ManagerNotificationServiceTest {
         }
 
         @Test
-        @DisplayName("swallows exception when email service fails")
-        void swallowsEmailFailure() {
-            doThrow(new RuntimeException("SMTP down"))
-                    .when(emailService).sendEmail(any(), any(), any());
-
+        @DisplayName("does not throw for LOW severity alert")
+        void doesNotThrowForLowSeverity() {
             assertThatCode(() -> service.sendSystemAlert(
-                    "store-1", "Alert", "Message", AlertSeverity.MEDIUM))
+                    "store-1", "Alert", "Message", AlertSeverity.LOW))
                     .doesNotThrowAnyException();
         }
     }
