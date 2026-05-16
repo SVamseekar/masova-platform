@@ -75,7 +75,7 @@ class UserServiceExceptionHandlerTest {
         @Test
         @DisplayName("handles null storeId and operationType gracefully")
         void handlesNullFields() {
-            StoreOperationException ex = new StoreOperationException("Failed", null, null, null);
+            StoreOperationException ex = new StoreOperationException("Failed");
 
             ResponseEntity<ErrorResponse> response = handler.handleStoreOperationException(ex);
 
