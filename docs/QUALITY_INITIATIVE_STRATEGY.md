@@ -59,26 +59,56 @@ Built the foundation every subsequent test relies on:
 
 **What is NOT complete — the real gap:**
 
-Current line coverage with only legitimate exclusions (repositories, DTOs, configs):
+Current line coverage (from JaCoCo XML analysis on 2026-05-16, Mac local run):
 
-| Service | Current Coverage | Target | Gap |
-|---------|-----------------|--------|-----|
-| core-service | 12.6% | 80% | 67.4% |
-| commerce-service | 24.9% | 80% | 55.1% |
-| logistics-service | 12.8% | 80% | 67.2% |
-| payment-service | 69.3% | 80% | 10.7% |
-| intelligence-service | 25.4% | 80% | 54.6% |
+| Service | JaCoCo Coverage | SonarQube Coverage | Target | Gap |
+|---------|----------------|-------------------|--------|-----|
+| core-service | 10.6% (628/5920 lines) | 8.2% | 80% | ~69% |
+| commerce-service | 24.9% | — | 80% | 55.1% |
+| logistics-service | 12.8% | — | 80% | 67.2% |
+| payment-service | 69.3% | — | 80% | 10.7% |
+| intelligence-service | 25.4% | — | 80% | 54.6% |
 
-**101 classes need tests.** These are real service classes — not DTOs, not interfaces, not config. They contain business logic that can have bugs, and currently has zero test coverage. Examples of what is completely untested:
+**Why JaCoCo and SonarQube show different numbers for core-service:**
+- JaCoCo counts only files it saw during test execution (628/5920 = 10.6%)
+- SonarQube adds ALL source files to the denominator, even untouched ones (8.2%)
+- SonarQube is more conservative and honest — use it for gates, JaCoCo for debugging exact lines
 
-- `CustomerService` — 554 lines, 0% coverage (all customer lifecycle logic)
-- `DeliveryZoneService` — 171 lines, 1% coverage (zone radius and fee calculation)
-- `DriverAcceptanceService` — 282 lines, 1% coverage (driver workflow, race conditions possible)
-- `JwtService` — 82 lines, 2% coverage (token validation, expiry — security critical)
-- `GdprDataRequestService` — 259 lines, 0% coverage (legal compliance)
-- `WorkingSessionService` — 280 lines, 0% coverage (shift/clock-in logic)
-- `ExecutiveReportingService` — 256 lines, 0% coverage (BI reporting)
-- `FreeRoutingService` — 117 lines, 0% coverage (delivery routing engine)
+**core-service needs 4108 more lines covered to hit 80%.** Full sorted class list (from JaCoCo XML):
+
+```
+UserService:                  625 lines missed  ← biggest gap
+CustomerService:              554 lines missed
+WorkingSessionService:        280 lines missed
+GdprDataRequestService:       259 lines missed
+ReviewService:                133 lines missed
+CustomerDataRetentionService: 117 lines missed
+NotificationService:          107 lines missed
+ShiftService:                 106 lines missed
+ManagerNotificationService:   100 lines missed
+EmailService:                 113 lines missed
+SentimentAnalysisService:      83 lines missed
+CampaignService:               92 lines missed
+JwtService:                    82 lines missed
+EarningsService:               79 lines missed
+PushService:                   65 lines missed
+GdprBreachService:             69 lines missed
+GdprDataRetentionService:      60 lines missed
+GdprConsentService:            60 lines missed
+SmsService:                    42 lines missed
+UserController:               102 lines missed
+ReviewController:              61 lines missed
+CustomerController:            64 lines missed
+... + controllers, exception handlers, clients
+```
+
+**Step 1 before writing any tests: fix JaCoCo exclusions** in pom.xml.
+Currently JaCoCo counts ~700 lines of untestable boilerplate in the denominator:
+- DTOs, request/response objects (no logic)
+- `@Configuration` classes (bean wiring)
+- `TestDataController` (behind `@Profile("dev")`)
+- `CoreServiceApplication`
+Excluding these properly raises the baseline without writing a single test and gives honest numbers.
 
 ---
 
@@ -109,11 +139,19 @@ The correct exclusions (industry standard — Baeldung, SonarSource):
 - DTOs/Requests/Responses — pure data carriers, no logic
 - `@Configuration` classes — bean wiring, tested via integration
 - `*Application.java` — Spring entry point
+- `TestDataController` — behind `@Profile("dev")`, not production code
 - Lombok `@Generated` inner classes — generated code
 
 Everything else — services, controllers, clients, publishers, listeners — must be tested.
 
-**The honest numbers:** 101 classes, ~38 hours of test writing at proper quality. This is the real scope of completing Plan 2.
+**JaCoCo vs SonarQube — which to trust (researched 2026-05-16):**
+- **JaCoCo is the measurement tool** — instruments bytecode at runtime, writes `jacoco.xml`. Most accurate for "which exact lines were hit."
+- **SonarQube reads JaCoCo's XML** — does not independently measure coverage. Adds all source files (including ones JaCoCo never touched) to the denominator, so its % is always lower and more conservative.
+- **For writing tests:** use JaCoCo HTML report locally — faster, no Dell round-trip, exact line numbers.
+- **For quality gates and reporting:** use SonarQube — honest denominator, plus bugs/vulns/hotspots JaCoCo cannot see.
+- **Industry standard** (Google, Netflix, Spotify): JaCoCo measures, SonarQube reports. They are complementary, not competing.
+
+**The honest numbers:** writing tests for all real service classes in core-service = ~4108 lines to cover. This is the real scope of completing Plan 2 for core-service alone.
 
 ---
 
@@ -283,31 +321,34 @@ intelligence-service: 25.4% ❌  (target: 80%)
 
 ### How every session works
 
-1. Read this document — find the first unchecked service below
-2. SSH into Dell and start SonarQube if not already running:
+**Do NOT run Sonar on every session — only when a service is at or near 80% locally.**
+
+The correct sequence:
+
+1. **Fix JaCoCo exclusions first** (one-time, already done for parent pom — verify per service)
+2. **Write tests on Mac** — use JaCoCo HTML report locally for exact uncovered lines. No Dell needed.
+   ```bash
+   # After writing tests, check coverage locally on Mac:
+   mvn verify -DskipITs -pl shared-models,shared-security,<service> -Dmaven.test.failure.ignore=true -Djacoco.haltOnFailure=false
+   # Open: <service>/target/site/jacoco/index.html
    ```
-   ssh Vamsee@192.168.50.88
-   docker start sonarqube   # (already pulled and named — use docker run only first time)
-   ```
-3. Pull latest code on Dell, run verify (generates JaCoCo XML), then Sonar scan:
+3. **Repeat** — write more tests, run verify, check HTML report. Stay on Mac.
+4. **When JaCoCo locally shows ~80%** — then go to Dell:
    ```powershell
    git -C 'D:\Projects\masova-platform' pull
-   # From D:\Projects\masova-platform:
    mvn verify -DskipITs -pl shared-models,shared-security,<service> "-Dmaven.test.failure.ignore=true" "-Dmaven.javadoc.skip=true"
-   mvn sonar:sonar "-Dsonar.host.url=http://localhost:9000" "-Dsonar.login=admin" "-Dsonar.password=admin" "-Dsonar.projectKey=masova-platform" "-Dsonar.projectName=MaSoVa Platform" "-Dmaven.test.skip=true"
+   mvn sonar:sonar "-Dsonar.host.url=http://localhost:9000" "-Dsonar.login=admin" "-Dsonar.password=admin" "-Dsonar.projectKey=masova-core-service" "-Dsonar.projectName=MaSoVa Core Service" "-Dmaven.test.skip=true"
    ```
-4. Open SonarQube at `http://192.168.50.88:9000` from Mac browser — it shows every class with exact uncovered lines, real bugs, security hotspots, and code smells
-5. Write tests on Mac for whatever SonarQube flags — target boundary conditions, error paths, state transitions, business rules, edge cases. Do not skip a class just because it looks simple.
-6. Run `mvn verify -DskipITs -pl <service>` on Mac to check coverage improved (or use Dell)
-7. Commit and push, tick the checkbox below, update coverage numbers
+5. **SonarQube confirms** the gate is green — check `http://192.168.50.88:9000`
+6. Commit, push, tick the checkbox below, move to next service
 
-**Known SonarQube findings as of 2026-05-16 (baseline):**
-- 17 bugs total: 2 critical/blocker (Random reuse in OrderService, Thread.sleep in FreeRoutingService)
-- 13 vulnerabilities: all CRITICAL — entities used directly in controller @RequestBody parameters
-- 8 security hotspots: hardcoded admin password in pom.xml (dev only), ReDoS-risk regexes in InputValidator, PRNG in OrderService
-- 820 code smells, 6.3% overall coverage
+**Known SonarQube baseline findings (2026-05-16, before tests written):**
+- 17 bugs: 2 critical/blocker (`Random` reuse in OrderService, `Thread.sleep` in FreeRoutingService)
+- 13 vulnerabilities: all CRITICAL — entities used as `@RequestBody` directly in controllers
+- 8 security hotspots: hardcoded admin password in pom.xml (dev), ReDoS regexes in InputValidator, PRNG in OrderService
+- 820 code smells, 6.3% overall (only core-service had jacoco.xml at time of scan)
 
-**SonarQube drives the class list each session — do not pre-judge what needs tests.**
+**The class hit list is already known from JaCoCo XML analysis — SonarQube confirmed it. No need to re-run Sonar to know what to test.**
 
 ### Progress tracker
 
