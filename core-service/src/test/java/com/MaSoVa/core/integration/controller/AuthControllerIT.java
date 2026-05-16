@@ -21,7 +21,7 @@ class AuthControllerIT extends BaseFullIntegrationTest {
     void registerThenLogin_returnsValidToken() throws Exception {
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"Test User\",\"email\":\"integration@masova.com\",\"password\":\"Test1234!\",\"phone\":\"9876543210\"}"))
+                .content("{\"name\":\"Test User\",\"email\":\"integration@masova.com\",\"password\":\"Test1234!\",\"phone\":\"9876543210\",\"type\":\"CASHIER\"}"))
             .andExpect(status().isOk());
 
         mockMvc.perform(post("/api/auth/login")

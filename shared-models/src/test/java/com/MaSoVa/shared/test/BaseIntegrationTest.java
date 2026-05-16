@@ -43,8 +43,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 public abstract class BaseIntegrationTest {
 
     @Container
+    @SuppressWarnings("resource")
     protected static final MongoDBContainer mongoDBContainer =
-            new MongoDBContainer("mongo:7.0").withExposedPorts(27017);
+            new MongoDBContainer("mongo:7.0").withExposedPorts(27017).withReuse(true);
 
     @Autowired
     protected MockMvc mockMvc;
