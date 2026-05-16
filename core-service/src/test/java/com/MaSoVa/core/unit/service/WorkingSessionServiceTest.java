@@ -527,7 +527,7 @@ class WorkingSessionServiceTest {
             LocalDate start = LocalDate.now().minusDays(7);
             LocalDate end = LocalDate.now();
             when(sessionRepository.findByEmployeeIdAndDateBetween("emp-1", start, end))
-                    .thenReturn(List.of(session));
+                    .thenReturn(new java.util.ArrayList<>(List.of(session)));
 
             List<WorkingSessionResponse> result = workingSessionService.getEmployeeSessions("emp-1", start, end, 0, 10);
 
@@ -539,7 +539,7 @@ class WorkingSessionServiceTest {
         void fetchesAll() {
             WorkingSession session = buildSession("s1", "emp-1", false);
             session.setLoginTime(LocalDateTime.now().minusDays(2));
-            when(sessionRepository.findByEmployeeId("emp-1")).thenReturn(List.of(session));
+            when(sessionRepository.findByEmployeeId("emp-1")).thenReturn(new java.util.ArrayList<>(List.of(session)));
 
             List<WorkingSessionResponse> result = workingSessionService.getEmployeeSessions("emp-1", null, null, 0, 10);
 
@@ -551,7 +551,7 @@ class WorkingSessionServiceTest {
         void returnsEmptyWhenOutOfBounds() {
             WorkingSession session = buildSession("s1", "emp-1", false);
             session.setLoginTime(LocalDateTime.now());
-            when(sessionRepository.findByEmployeeId("emp-1")).thenReturn(List.of(session));
+            when(sessionRepository.findByEmployeeId("emp-1")).thenReturn(new java.util.ArrayList<>(List.of(session)));
 
             List<WorkingSessionResponse> result = workingSessionService.getEmployeeSessions("emp-1", null, null, 5, 10);
 
