@@ -58,4 +58,40 @@ class SystemInfoControllerTest extends BaseServiceTest {
         mockMvc.perform(get("/api/system/updates/check"))
             .andExpect(status().isOk());
     }
+
+    @Test
+    @DisplayName("GET /api/system/updates/status returns 200 with update availability")
+    void getUpdateStatus_returns200() throws Exception {
+        when(updateService.getCurrentVersion()).thenReturn("1.0.0");
+        when(updateService.getLatestVersion()).thenReturn("1.1.0");
+        when(updateService.isUpdateAvailable()).thenReturn(true);
+        when(updateService.getUpdateDetails()).thenReturn("Bug fixes");
+
+        mockMvc.perform(get("/api/system/updates/status"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.updateAvailable").value(true));
+    }
+
+    @Test
+    @DisplayName("GET /api/system/health returns 200 with UP status")
+    void health_returns200() throws Exception {
+        when(updateService.getCurrentVersion()).thenReturn("1.0.0");
+
+        mockMvc.perform(get("/api/system/health"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("UP"));
+    }
+
+    @Test
+    @DisplayName("GET /api/system/info returns 200 with system info")
+    void getSystemInfo_returns200() throws Exception {
+        when(updateService.getCurrentVersion()).thenReturn("1.0.0");
+        when(updateService.getBuildDate()).thenReturn(LocalDateTime.of(2026, 5, 15, 0, 0));
+        when(updateService.isUpdateAvailable()).thenReturn(false);
+        when(updateService.getLatestVersion()).thenReturn("1.0.0");
+
+        mockMvc.perform(get("/api/system/info"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.javaVersion").exists());
+    }
 }

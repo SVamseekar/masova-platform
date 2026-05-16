@@ -356,4 +356,125 @@ class UserControllerTest extends BaseServiceTest {
                     .andExpect(jsonPath("$.totalProcessed").value(1));
         }
     }
+
+    @Nested
+    @DisplayName("PATCH /api/users/{userId}")
+    class UpdateUser {
+
+        @Test
+        @DisplayName("returns 200 with updated user")
+        void returns200OnUpdate() throws Exception {
+            when(userService.updateUser(anyString(), any())).thenReturn(buildUser("user-1"));
+
+            mockMvc.perform(patch("/api/users/user-1")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"type\":\"CUSTOMER\",\"name\":\"Updated\",\"email\":\"upd@masova.com\",\"phone\":\"9876543210\",\"password\":\"pass1234\"}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value("user-1"));
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/users/kiosk/{kioskUserId}/regenerate")
+    class RegenerateKioskTokens {
+
+        @Test
+        @DisplayName("returns 200 with regenerated tokens")
+        void returns200WithTokens() throws Exception {
+            com.MaSoVa.shared.entity.User kiosk = new com.MaSoVa.shared.entity.User();
+            kiosk.setId("k1");
+            com.MaSoVa.shared.entity.User.EmployeeDetails details = new com.MaSoVa.shared.entity.User.EmployeeDetails();
+            details.setTerminalId("POS-01");
+            kiosk.setEmployeeDetails(details);
+
+            com.MaSoVa.core.user.dto.UserResponse ur = buildUser("k1");
+            LoginResponse tokens = new LoginResponse("new.access", "new.refresh", ur);
+
+            when(userService.generateKioskTokens("k1")).thenReturn(tokens);
+            when(userService.getUserById("k1")).thenReturn(kiosk);
+
+            mockMvc.perform(post("/api/users/kiosk/k1/regenerate")
+                    .header("X-User-Id", "manager-1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.accessToken").value("new.access"))
+                    .andExpect(jsonPath("$.terminalId").value("POS-01"));
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/users/{userId}/can-take-orders")
+    class CanTakeOrders {
+
+        @Test
+        @DisplayName("returns 200 with canTakeOrders field")
+        void returns200WithPermission() throws Exception {
+            com.MaSoVa.shared.entity.User user = new com.MaSoVa.shared.entity.User();
+            user.setId("emp-1");
+            user.setType(com.MaSoVa.shared.enums.UserType.STAFF);
+            user.setActive(true);
+            when(userService.canUserTakeOrders("emp-1")).thenReturn(true);
+            when(userService.getUserById("emp-1")).thenReturn(user);
+
+            mockMvc.perform(get("/api/users/emp-1/can-take-orders"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.canTakeOrders").value(true));
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/users/kiosk/auto-login — valid kiosk token")
+    class KioskAutoLoginValid {
+
+        @Test
+        @DisplayName("returns 200 with user when token is valid and not near expiry")
+        void returns200ForValidToken() throws Exception {
+            com.MaSoVa.shared.entity.User kiosk = new com.MaSoVa.shared.entity.User();
+            kiosk.setId("k1");
+            kiosk.setType(com.MaSoVa.shared.enums.UserType.KIOSK);
+            kiosk.setActive(true);
+
+            com.MaSoVa.core.user.dto.UserResponse ur = buildUser("k1");
+
+            when(jwtService.isKioskToken("valid-kiosk-token")).thenReturn(true);
+            when(jwtService.extractUserId("valid-kiosk-token")).thenReturn("k1");
+            when(userService.getUserById("k1")).thenReturn(kiosk);
+            when(jwtService.extractExpiration("valid-kiosk-token"))
+                    .thenReturn(new java.util.Date(System.currentTimeMillis() + 48L * 60 * 60 * 1000));
+            when(userService.mapToUserResponse(kiosk)).thenReturn(ur);
+
+            mockMvc.perform(post("/api/users/kiosk/auto-login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"kioskToken\":\"valid-kiosk-token\"}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.tokensRefreshed").value(false));
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/users — search query")
+    class GetUsersSearch {
+
+        @Test
+        @DisplayName("returns results when search param is provided")
+        void returnsSearchResults() throws Exception {
+            when(userService.searchUsers(anyString(), any(), any(), any(), any())).thenReturn(List.of(buildUser("u1")));
+
+            mockMvc.perform(get("/api/users").param("search", "John"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].id").value("u1"));
+        }
+
+        @Test
+        @DisplayName("returns available drivers when type=DRIVER and available=true")
+        void returnsAvailableDrivers() throws Exception {
+            when(userService.getAvailableDrivers("store-1")).thenReturn(List.of(buildUser("d1")));
+
+            mockMvc.perform(get("/api/users")
+                    .param("type", "DRIVER")
+                    .param("available", "true")
+                    .param("storeId", "store-1"))
+                    .andExpect(status().isOk());
+        }
+    }
 }

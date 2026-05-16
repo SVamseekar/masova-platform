@@ -167,4 +167,81 @@ class CustomerControllerTest extends BaseServiceTest {
                 .content("{\"add\":[\"VIP\"]}"))
             .andExpect(status().isOk());
     }
+
+    @Test
+    @DisplayName("POST /api/customers/{id}/tags with remove map removes tags")
+    void manageTags_remove_returns200() throws Exception {
+        Customer c = buildCustomer("cust-1");
+        when(customerService.getCustomerById("cust-1")).thenReturn(Optional.of(c));
+        when(customerService.removeTags(anyString(), any())).thenReturn(c);
+
+        mockMvc.perform(post("/api/customers/cust-1/tags")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"remove\":[\"VIP\"]}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("POST /api/customers/{id}/tags returns 404 when customer not found")
+    void manageTags_notFound_returns404() throws Exception {
+        when(customerService.getCustomerById("bad-id")).thenReturn(Optional.empty());
+
+        mockMvc.perform(post("/api/customers/bad-id/tags")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"add\":[\"VIP\"]}"))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("GET /api/customers/stats returns 200 with stats")
+    void getStats_returns200() throws Exception {
+        when(customerService.getCustomerStatsByStore(any()))
+                .thenReturn(new com.MaSoVa.core.customer.dto.response.CustomerStatsResponse());
+
+        mockMvc.perform(get("/api/customers/stats"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("PATCH /api/customers/{id}/addresses/{addressId} updates address and returns 200")
+    void updateAddress_returns200() throws Exception {
+        when(customerService.updateAddress(anyString(), anyString(), any())).thenReturn(buildCustomer("cust-1"));
+
+        mockMvc.perform(patch("/api/customers/cust-1/addresses/addr-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"label\":\"Work\",\"addressLine1\":\"456 MG Road\",\"city\":\"Bangalore\",\"state\":\"Karnataka\",\"postalCode\":\"560001\"}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("DELETE /api/customers/{id} anonymizes customer and returns 200")
+    void gdprDelete_returns200() throws Exception {
+        Customer anon = buildCustomer("cust-1");
+        anon.setDeletedAt(java.time.LocalDateTime.now());
+        when(customerService.anonymizeAndDeleteCustomer(anyString(), anyString())).thenReturn(anon);
+
+        mockMvc.perform(delete("/api/customers/cust-1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.message").value("Customer data anonymized successfully per GDPR requirements"));
+    }
+
+    @Test
+    @DisplayName("POST /api/customers/{id}/loyalty with REDEEMED type redeems points")
+    void manageLoyalty_redeem_returns200() throws Exception {
+        when(customerService.redeemLoyaltyPoints(anyString(), any(), any())).thenReturn(buildCustomer("cust-1"));
+
+        mockMvc.perform(post("/api/customers/cust-1/loyalty")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"type\":\"REDEEMED\",\"points\":50,\"orderId\":\"ord-1\"}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("POST /api/customers/{id}/activate returns 404 when customer not found")
+    void activate_notFound_returns404() throws Exception {
+        when(customerService.activateCustomer("bad-id")).thenThrow(new java.util.NoSuchElementException("Not found"));
+
+        mockMvc.perform(post("/api/customers/bad-id/activate"))
+            .andExpect(status().isNotFound());
+    }
 }

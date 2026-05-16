@@ -101,4 +101,117 @@ class ShiftControllerTest extends BaseServiceTest {
         mockMvc.perform(delete("/api/shifts/shift-1"))
             .andExpect(status().isOk());
     }
+
+    @Test
+    @DisplayName("GET /api/shifts/{shiftId} returns 200 with shift")
+    void getShift_returns200() throws Exception {
+        when(shiftService.getShift("shift-1")).thenReturn(buildShift("shift-1"));
+
+        mockMvc.perform(get("/api/shifts/shift-1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value("shift-1"));
+    }
+
+    @Test
+    @DisplayName("PATCH /api/shifts/{shiftId} returns 200 with updated shift")
+    void updateShift_returns200() throws Exception {
+        when(shiftService.updateShift(any())).thenReturn(buildShift("shift-1"));
+
+        mockMvc.perform(patch("/api/shifts/shift-1")
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .content(VALID_SHIFT_JSON))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/shifts with view=coverage returns coverage map")
+    void getShifts_coverageView_returns200() throws Exception {
+        when(shiftService.getShiftCoverage(anyString(), any()))
+                .thenReturn(java.util.Map.of("MORNING", 2, "EVENING", 1));
+
+        mockMvc.perform(get("/api/shifts")
+                .param("storeId", "store-1")
+                .param("view", "coverage")
+                .param("date", "2026-05-15"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/shifts with employeeId returns employee shifts")
+    void getShifts_byEmployee_returns200() throws Exception {
+        when(shiftService.getEmployeeShifts(anyString(), any(), any()))
+                .thenReturn(List.of(buildShift("shift-1")));
+
+        mockMvc.perform(get("/api/shifts")
+                .param("employeeId", "emp-1")
+                .param("week", "2026-05-12"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/shifts with week+storeId returns weekly schedule")
+    void getShifts_weeklySchedule_returns200() throws Exception {
+        java.util.Map<String, List<Shift>> schedule = new java.util.HashMap<>();
+        schedule.put("2026-05-12", List.of(buildShift("shift-1")));
+        when(shiftService.getWeeklySchedule(anyString(), any())).thenReturn(schedule);
+
+        mockMvc.perform(get("/api/shifts")
+                .param("storeId", "store-1")
+                .param("week", "2026-05-12"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/shifts with date+storeId returns store shifts for that date")
+    void getShifts_byDate_returns200() throws Exception {
+        when(shiftService.getStoreShifts(anyString(), any()))
+                .thenReturn(List.of(buildShift("shift-1")));
+
+        mockMvc.perform(get("/api/shifts")
+                .param("storeId", "store-1")
+                .param("date", "2026-05-15"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/shifts with only storeId returns today's shifts")
+    void getShifts_byStoreOnly_returns200() throws Exception {
+        when(shiftService.getStoreShifts(anyString(), any()))
+                .thenReturn(List.of(buildShift("shift-1")));
+
+        mockMvc.perform(get("/api/shifts")
+                .param("storeId", "store-1"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/shifts with no params returns 400")
+    void getShifts_noParams_returns400() throws Exception {
+        mockMvc.perform(get("/api/shifts"))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /api/shifts/copy-week returns 200 with copied shifts")
+    void copyWeek_returns200() throws Exception {
+        when(shiftService.copyPreviousWeekSchedule(any(), any()))
+                .thenReturn(List.of(buildShift("shift-new")));
+
+        mockMvc.perform(post("/api/shifts/copy-week")
+                .param("targetWeekStart", "2026-05-19")
+                .header("X-User-Store-Id", "store-1"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/shifts with employeeId and date returns shifts for that day")
+    void getShifts_byEmployeeAndDate_returns200() throws Exception {
+        when(shiftService.getEmployeeShifts(anyString(), any(), any()))
+                .thenReturn(List.of(buildShift("shift-1")));
+
+        mockMvc.perform(get("/api/shifts")
+                .param("employeeId", "emp-1")
+                .param("date", "2026-05-15"))
+            .andExpect(status().isOk());
+    }
 }

@@ -213,5 +213,56 @@ class AuthControllerTest extends BaseServiceTest {
                     .content("{\"pin\":\"123\"}"))
                 .andExpect(status().isBadRequest());
         }
+
+        @Test
+        @DisplayName("returns 401 when user is null (PIN not found)")
+        void returns401WhenUserNotFound() throws Exception {
+            when(userService.findUserByPIN("99999")).thenReturn(null);
+
+            mockMvc.perform(post("/api/auth/validate-pin")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"pin\":\"99999\"}"))
+                .andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        @DisplayName("returns 200 with user info when PIN is valid and user is active employee")
+        void returns200ForValidPin() throws Exception {
+            com.MaSoVa.shared.entity.User emp = new com.MaSoVa.shared.entity.User();
+            emp.setId("emp-1");
+            emp.setType(com.MaSoVa.shared.enums.UserType.STAFF);
+            emp.setActive(true);
+            com.MaSoVa.shared.entity.User.PersonalInfo info = new com.MaSoVa.shared.entity.User.PersonalInfo();
+            info.setName("Test Employee");
+            emp.setPersonalInfo(info);
+            com.MaSoVa.shared.entity.User.EmployeeDetails details = new com.MaSoVa.shared.entity.User.EmployeeDetails();
+            details.setRole("STAFF");
+            details.setStoreId("store-1");
+            emp.setEmployeeDetails(details);
+            when(userService.findUserByPIN("12345")).thenReturn(emp);
+
+            mockMvc.perform(post("/api/auth/validate-pin")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"pin\":\"12345\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value("emp-1"));
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/auth/google — failure path")
+    class GoogleSignInFailure {
+
+        @Test
+        @DisplayName("returns 401 when Google sign-in throws unexpected exception")
+        void returns401OnUnexpectedException() throws Exception {
+            when(userService.loginWithGoogle(anyString()))
+                    .thenThrow(new RuntimeException("Google API unreachable"));
+
+            mockMvc.perform(post("/api/auth/google")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"idToken\":\"bad.token\"}"))
+                .andExpect(status().isUnauthorized());
+        }
     }
 }

@@ -154,4 +154,107 @@ class ReviewControllerTest extends BaseServiceTest {
                 .param("entityId", "ord-1"))
             .andExpect(status().isOk());
     }
+
+    @Test
+    @DisplayName("POST /api/reviews/public/submit with valid token returns 201")
+    void submitPublicRating_returns201() throws Exception {
+        Review review = buildReview("rev-pub");
+        review.setId("rev-pub");
+        when(reviewService.createPublicReview(any(), anyString())).thenReturn(review);
+
+        mockMvc.perform(post("/api/reviews/public/submit")
+                .param("token", "valid-token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"orderId\":\"ord-1\",\"overallRating\":5,\"comment\":\"Awesome!\"}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @DisplayName("POST /api/reviews/public/submit with invalid token returns 400")
+    void submitPublicRating_invalidToken_returns400() throws Exception {
+        when(reviewService.createPublicReview(any(), anyString()))
+                .thenThrow(new IllegalArgumentException("Token expired"));
+
+        mockMvc.perform(post("/api/reviews/public/submit")
+                .param("token", "bad-token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"orderId\":\"ord-1\",\"overallRating\":5,\"comment\":\"Awesome!\"}"))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("PATCH /api/reviews/{reviewId} with status=APPROVED returns 200")
+    void updateReview_approve_returns200() throws Exception {
+        when(moderationService.approveReview(anyString(), anyString())).thenReturn(buildReview("rev-1"));
+
+        mockMvc.perform(patch("/api/reviews/rev-1")
+                .header("X-User-ID", "mgr-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"APPROVED\"}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("PATCH /api/reviews/{reviewId} with status=REJECTED returns 200")
+    void updateReview_reject_returns200() throws Exception {
+        when(moderationService.rejectReview(anyString(), anyString(), any())).thenReturn(buildReview("rev-1"));
+
+        mockMvc.perform(patch("/api/reviews/rev-1")
+                .header("X-User-ID", "mgr-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"REJECTED\",\"reason\":\"Spam\"}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("PATCH /api/reviews/{reviewId} with status=FLAGGED returns 200")
+    void updateReview_flag_returns200() throws Exception {
+        when(reviewService.flagReview(anyString(), any(), anyString())).thenReturn(buildReview("rev-1"));
+
+        mockMvc.perform(patch("/api/reviews/rev-1")
+                .header("X-User-ID", "mgr-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"FLAGGED\",\"flagReason\":\"Offensive\"}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/reviews/stats with DRIVER entityType returns 200")
+    void getStats_driver_returns200() throws Exception {
+        when(analyticsService.getDriverRating("drv-1"))
+                .thenReturn(new com.MaSoVa.core.review.dto.response.DriverRatingResponse());
+
+        mockMvc.perform(get("/api/reviews/stats")
+                .param("entityType", "DRIVER")
+                .param("entityId", "drv-1"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/reviews/stats with MENU_ITEM entityType returns 200")
+    void getStats_menuItem_returns200() throws Exception {
+        when(analyticsService.getItemRating("item-1"))
+                .thenReturn(new com.MaSoVa.core.review.dto.response.ItemRatingResponse());
+
+        mockMvc.perform(get("/api/reviews/stats")
+                .param("entityType", "MENU_ITEM")
+                .param("entityId", "item-1"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("POST /api/reviews/{reviewId}/response creates new response when none exists")
+    void addOrUpdateResponse_creates_returns201() throws Exception {
+        com.MaSoVa.core.review.entity.ReviewResponse created = new com.MaSoVa.core.review.entity.ReviewResponse();
+        created.setId("resp-1");
+        when(responseService.getResponseByReviewId("rev-1")).thenReturn(java.util.Optional.empty());
+        when(responseService.createResponse(anyString(), any(), anyString(), anyString())).thenReturn(created);
+
+        mockMvc.perform(post("/api/reviews/rev-1/response")
+                .header("X-User-ID", "mgr-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"responseText\":\"Thank you for your feedback!\"}"))
+            .andExpect(status().isCreated());
+    }
 }
