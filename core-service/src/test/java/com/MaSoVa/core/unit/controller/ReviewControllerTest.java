@@ -98,8 +98,8 @@ class ReviewControllerTest extends BaseServiceTest {
         when(reviewService.createReview(any(), anyString(), anyString())).thenReturn(buildReview("rev-1"));
 
         mockMvc.perform(post("/api/reviews")
-                .header("X-User-Id", "cust-1")
-                .header("X-Customer-Name", "Test Customer")
+                .header("X-User-ID", "cust-1")
+                .header("X-User-Name", "Test Customer")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"orderId\":\"ord-1\",\"overallRating\":4,\"comment\":\"Great!\"}"))
             .andExpect(status().isCreated());
@@ -133,21 +133,25 @@ class ReviewControllerTest extends BaseServiceTest {
     }
 
     @Test
-    @DisplayName("GET /api/reviews with customer filter returns 200")
+    @DisplayName("GET /api/reviews with CUSTOMER entityType filter returns 200")
     void getReviews_withCustomerFilter_returns200() throws Exception {
         when(reviewService.getReviewsByCustomerId(anyString(), any()))
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
 
-        mockMvc.perform(get("/api/reviews").param("customerId", "cust-1"))
+        mockMvc.perform(get("/api/reviews")
+                .param("entityType", "CUSTOMER")
+                .param("entityId", "cust-1"))
             .andExpect(status().isOk());
     }
 
     @Test
-    @DisplayName("GET /api/reviews with orderId filter returns 200")
+    @DisplayName("GET /api/reviews with ORDER entityType filter returns 200")
     void getReviews_withOrderFilter_returns200() throws Exception {
         when(reviewService.getReviewsByOrderId("ord-1")).thenReturn(List.of());
 
-        mockMvc.perform(get("/api/reviews").param("orderId", "ord-1"))
+        mockMvc.perform(get("/api/reviews")
+                .param("entityType", "ORDER")
+                .param("entityId", "ord-1"))
             .andExpect(status().isOk());
     }
 }
