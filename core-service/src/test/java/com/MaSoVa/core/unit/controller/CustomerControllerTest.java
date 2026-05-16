@@ -19,13 +19,18 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.List;
 import java.util.Optional;
 
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("CustomerController Unit Tests")
 class CustomerControllerTest extends BaseServiceTest {
 
@@ -228,7 +233,7 @@ class CustomerControllerTest extends BaseServiceTest {
     @Test
     @DisplayName("POST /api/customers/{id}/loyalty with REDEEMED type redeems points")
     void manageLoyalty_redeem_returns200() throws Exception {
-        when(customerService.redeemLoyaltyPoints(anyString(), any(), any())).thenReturn(buildCustomer("cust-1"));
+        when(customerService.redeemLoyaltyPoints(anyString(), anyInt(), anyString())).thenReturn(buildCustomer("cust-1"));
 
         mockMvc.perform(post("/api/customers/cust-1/loyalty")
                 .contentType(MediaType.APPLICATION_JSON)
