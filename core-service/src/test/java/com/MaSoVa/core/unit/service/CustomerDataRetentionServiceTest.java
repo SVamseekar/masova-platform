@@ -60,9 +60,9 @@ class CustomerDataRetentionServiceTest {
         @Test
         @DisplayName("does not throw when retention is enabled")
         void doesNotThrow() {
-            when(customerRepository.findByActiveAndDeletedAtBefore(any(), any())).thenReturn(List.of());
-            when(customerRepository.findByActiveAndLastOrderDateBefore(any(), any())).thenReturn(List.of());
-            when(customerRepository.findByActiveAndLastOrderDateIsNullAndCreatedAtBefore(any(), any())).thenReturn(List.of());
+            when(customerRepository.findByActiveAndDeletedAtBefore(anyBoolean(), any())).thenReturn(List.of());
+            when(customerRepository.findByActiveAndLastOrderDateBefore(anyBoolean(), any())).thenReturn(List.of());
+            when(customerRepository.findByActiveAndLastOrderDateIsNullAndCreatedAtBefore(anyBoolean(), any())).thenReturn(List.of());
             when(customerRepository.findByLoyaltyInfoPointsGreaterThanAndLastOrderDateBefore(anyInt(), any())).thenReturn(List.of());
 
             assertThatCode(() -> retentionService.runManualRetention())
