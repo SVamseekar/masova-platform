@@ -84,7 +84,7 @@ class WorkingSessionControllerTest extends BaseServiceTest {
 
         mockMvc.perform(post("/api/sessions")
                 .header("X-User-Id", "emp-1")
-                .header("X-Store-Id", "store-1")
+                .header("X-User-Store-Id", "store-1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
             .andExpect(status().isOk());
@@ -125,7 +125,7 @@ class WorkingSessionControllerTest extends BaseServiceTest {
     @DisplayName("POST /api/sessions/clock-in — returns 400 when employeeId or pin missing")
     void clockIn_returns400WhenMissingFields() throws Exception {
         mockMvc.perform(post("/api/sessions/clock-in")
-                .header("X-Store-Id", "store-1")
+                .header("X-User-Store-Id", "store-1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
             .andExpect(status().isBadRequest());
