@@ -58,7 +58,7 @@ class NotificationServiceTest {
         @DisplayName("saves notification with PENDING status")
         void savesAsPending() {
             Notification n = buildNotification("n1", "user-1",
-                    Notification.NotificationType.ORDER_UPDATE, Notification.NotificationChannel.EMAIL);
+                    Notification.NotificationType.ORDER_STATUS_UPDATE, Notification.NotificationChannel.EMAIL);
             when(notificationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
             Notification result = notificationService.createNotification(n);
@@ -90,7 +90,7 @@ class NotificationServiceTest {
         @DisplayName("sets readAt and status to READ")
         void setsRead() {
             Notification n = buildNotification("n1", "user-1",
-                    Notification.NotificationType.ORDER_UPDATE, Notification.NotificationChannel.EMAIL);
+                    Notification.NotificationType.ORDER_STATUS_UPDATE, Notification.NotificationChannel.EMAIL);
             when(notificationRepository.findById("n1")).thenReturn(Optional.of(n));
             when(notificationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -113,7 +113,7 @@ class NotificationServiceTest {
         @DisplayName("marks all unread notifications as READ")
         void marksAllRead() {
             Notification n1 = buildNotification("n1", "user-1",
-                    Notification.NotificationType.ORDER_UPDATE, Notification.NotificationChannel.IN_APP);
+                    Notification.NotificationType.ORDER_STATUS_UPDATE, Notification.NotificationChannel.IN_APP);
             Notification n2 = buildNotification("n2", "user-1",
                     Notification.NotificationType.PROMOTIONAL, Notification.NotificationChannel.IN_APP);
             when(notificationRepository.findByUserIdAndReadAtIsNull("user-1")).thenReturn(List.of(n1, n2));
@@ -201,7 +201,7 @@ class NotificationServiceTest {
         @DisplayName("routes SMS channel to SmsService")
         void routesToSmsService() {
             Notification n = buildNotification("n1", "user-1",
-                    Notification.NotificationType.ORDER_UPDATE, Notification.NotificationChannel.SMS);
+                    Notification.NotificationType.ORDER_STATUS_UPDATE, Notification.NotificationChannel.SMS);
             when(notificationRepository.findById("n1")).thenReturn(Optional.of(n));
             when(userPreferencesRepository.findByUserId("user-1")).thenReturn(Optional.empty());
             when(smsService.sendSms(any())).thenReturn(true);
@@ -216,7 +216,7 @@ class NotificationServiceTest {
         @DisplayName("routes EMAIL channel to EmailService")
         void routesToEmailService() {
             Notification n = buildNotification("n1", "user-1",
-                    Notification.NotificationType.ORDER_UPDATE, Notification.NotificationChannel.EMAIL);
+                    Notification.NotificationType.ORDER_STATUS_UPDATE, Notification.NotificationChannel.EMAIL);
             when(notificationRepository.findById("n1")).thenReturn(Optional.of(n));
             when(userPreferencesRepository.findByUserId("user-1")).thenReturn(Optional.empty());
             when(emailService.sendEmail(any())).thenReturn(true);
@@ -231,7 +231,7 @@ class NotificationServiceTest {
         @DisplayName("routes PUSH channel to PushService")
         void routesToPushService() {
             Notification n = buildNotification("n1", "user-1",
-                    Notification.NotificationType.ORDER_UPDATE, Notification.NotificationChannel.PUSH);
+                    Notification.NotificationType.ORDER_STATUS_UPDATE, Notification.NotificationChannel.PUSH);
             when(notificationRepository.findById("n1")).thenReturn(Optional.of(n));
             when(userPreferencesRepository.findByUserId("user-1")).thenReturn(Optional.empty());
             when(pushService.sendPushNotification(any())).thenReturn(true);
@@ -246,7 +246,7 @@ class NotificationServiceTest {
         @DisplayName("IN_APP channel marks as SENT without calling external services")
         void inAppNoExternalCall() {
             Notification n = buildNotification("n1", "user-1",
-                    Notification.NotificationType.ORDER_UPDATE, Notification.NotificationChannel.IN_APP);
+                    Notification.NotificationType.ORDER_STATUS_UPDATE, Notification.NotificationChannel.IN_APP);
             when(notificationRepository.findById("n1")).thenReturn(Optional.of(n));
             when(userPreferencesRepository.findByUserId("user-1")).thenReturn(Optional.empty());
             when(notificationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -262,7 +262,7 @@ class NotificationServiceTest {
         @DisplayName("cancels notification when user has SMS disabled in preferences")
         void cancelledWhenSmsDisabled() {
             Notification n = buildNotification("n1", "user-1",
-                    Notification.NotificationType.ORDER_UPDATE, Notification.NotificationChannel.SMS);
+                    Notification.NotificationType.ORDER_STATUS_UPDATE, Notification.NotificationChannel.SMS);
             UserPreferences prefs = new UserPreferences("user-1");
             prefs.setSmsEnabled(false);
             when(notificationRepository.findById("n1")).thenReturn(Optional.of(n));
@@ -280,7 +280,7 @@ class NotificationServiceTest {
         @DisplayName("increments retry count on send failure, marks FAILED after 3 attempts")
         void marksFailedAfterThreeRetries() {
             Notification n = buildNotification("n1", "user-1",
-                    Notification.NotificationType.ORDER_UPDATE, Notification.NotificationChannel.EMAIL);
+                    Notification.NotificationType.ORDER_STATUS_UPDATE, Notification.NotificationChannel.EMAIL);
             n.setRetryCount(2); // already failed twice
             when(notificationRepository.findById("n1")).thenReturn(Optional.of(n));
             when(userPreferencesRepository.findByUserId("user-1")).thenReturn(Optional.empty());
