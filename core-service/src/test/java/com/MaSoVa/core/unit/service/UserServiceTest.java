@@ -26,9 +26,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -1230,6 +1234,62 @@ class UserServiceTest {
             UserResponse result = userService.mapToUserResponse(emp);
 
             assertThat(result.getStoreId()).isEqualTo("store-1");
+        }
+    }
+
+    // ===========================
+    // loginWithGoogle
+    // ===========================
+
+    @Nested
+    @DisplayName("loginWithGoogle")
+    class LoginWithGoogle {
+
+        @Test
+        @DisplayName("throws when Google token verification fails")
+        void throwsWhenTokenVerificationFails() {
+            when(restTemplate.getForEntity(anyString(), eq(Map.class)))
+                    .thenThrow(new org.springframework.web.client.RestClientException("Connection failed"));
+
+            assertThatThrownBy(() -> userService.loginWithGoogle("bad-token"))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Google token verification failed");
+        }
+
+        @Test
+        @DisplayName("throws when no account found for google email")
+        void throwsWhenNoAccountFound() {
+            Map<String, Object> tokenInfo = new HashMap<>();
+            tokenInfo.put("sub", "google-sub-123");
+            tokenInfo.put("email", "notfound@gmail.com");
+            when(restTemplate.getForEntity(anyString(), eq(Map.class)))
+                    .thenReturn(ResponseEntity.ok(tokenInfo));
+            when(userRepository.findByPersonalInfoEmail("notfound@gmail.com")).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.loginWithGoogle("valid-token"))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("No account found");
+        }
+
+        @Test
+        @DisplayName("returns LoginResponse when account found")
+        void returnsLoginResponseWhenFound() {
+            Map<String, Object> tokenInfo = new HashMap<>();
+            tokenInfo.put("sub", "google-sub-123");
+            tokenInfo.put("email", "user@gmail.com");
+            when(restTemplate.getForEntity(anyString(), eq(Map.class)))
+                    .thenReturn(ResponseEntity.ok(tokenInfo));
+            User user = buildUser("u1", "user@gmail.com", UserType.CUSTOMER);
+            user.setAuthProviders(new java.util.ArrayList<>());
+            when(userRepository.findByPersonalInfoEmail("user@gmail.com")).thenReturn(Optional.of(user));
+            when(userRepository.save(any())).thenReturn(user);
+            when(jwtService.generateAccessToken(any(), any(), any())).thenReturn("access-token");
+            when(jwtService.generateRefreshToken(any())).thenReturn("refresh-token");
+            when(userJpaRepository.findByMongoId(any())).thenReturn(Optional.empty());
+
+            LoginResponse result = userService.loginWithGoogle("valid-token");
+
+            assertThat(result.getAccessToken()).isEqualTo("access-token");
         }
     }
 
