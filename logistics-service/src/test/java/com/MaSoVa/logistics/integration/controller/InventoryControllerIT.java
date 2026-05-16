@@ -4,6 +4,7 @@ import com.MaSoVa.shared.test.BaseFullIntegrationTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -16,6 +17,7 @@ class InventoryControllerIT extends BaseFullIntegrationTest {
     private MockMvc mockMvc;
 
     @Test
+    @WithMockUser(roles = "MANAGER")
     @DisplayName("GET /api/inventory returns 200 with empty list")
     void getInventory_returnsEmptyList() throws Exception {
         mockMvc.perform(get("/api/inventory")
@@ -26,6 +28,7 @@ class InventoryControllerIT extends BaseFullIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "MANAGER")
     @DisplayName("GET /api/inventory/{id} returns 404 for non-existent item")
     void getInventoryItem_returns404() throws Exception {
         mockMvc.perform(get("/api/inventory/nonexistent")
@@ -34,6 +37,7 @@ class InventoryControllerIT extends BaseFullIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "MANAGER")
     @DisplayName("GET /api/suppliers returns 200 with empty list")
     void getSuppliers_returnsEmptyList() throws Exception {
         mockMvc.perform(get("/api/suppliers")
@@ -43,6 +47,7 @@ class InventoryControllerIT extends BaseFullIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "MANAGER")
     @DisplayName("GET /api/purchase-orders returns 200 with empty list")
     void getPurchaseOrders_returnsEmptyList() throws Exception {
         mockMvc.perform(get("/api/purchase-orders")

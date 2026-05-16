@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -17,6 +18,7 @@ class MenuControllerIT extends BaseFullIntegrationTest {
     private MockMvc mockMvc;
 
     @Test
+    @WithMockUser(roles = "MANAGER")
     @DisplayName("POST /api/menu creates item then GET retrieves it")
     void createThenRetrieve() throws Exception {
         String createBody = "{\"name\":\"Margherita\",\"cuisine\":\"ITALIAN\",\"category\":\"PIZZA\",\"basePrice\":29900,\"storeId\":\"store-1\"}";
@@ -38,6 +40,7 @@ class MenuControllerIT extends BaseFullIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "MANAGER")
     @DisplayName("GET /api/menu returns 200 with empty list initially")
     void getMenu_returnsEmptyList() throws Exception {
         mockMvc.perform(get("/api/menu"))
@@ -46,6 +49,7 @@ class MenuControllerIT extends BaseFullIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "MANAGER")
     @DisplayName("GET /api/menu/{id} returns 404 for non-existent item")
     void getMenuItem_returns404() throws Exception {
         mockMvc.perform(get("/api/menu/nonexistent"))
