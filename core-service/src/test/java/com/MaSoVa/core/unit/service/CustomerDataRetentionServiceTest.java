@@ -84,18 +84,17 @@ class CustomerDataRetentionServiceTest {
         }
 
         @Test
-        @DisplayName("anonymizes inactive customers past retention period")
+        @DisplayName("anonymizes inactive customers via weekly job")
         void anonymizesInactiveCustomers() {
             Customer inactive = new Customer();
             inactive.setId("c2");
             inactive.setActive(true);
-            // stub all repo calls invoked by runDailyRetentionJob
-            when(customerRepository.findByActiveAndDeletedAtBefore(anyBoolean(), any())).thenReturn(List.of());
             when(customerRepository.findByActiveAndLastOrderDateBefore(anyBoolean(), any())).thenReturn(List.of(inactive));
             when(customerRepository.findByActiveAndLastOrderDateIsNullAndCreatedAtBefore(anyBoolean(), any())).thenReturn(List.of());
             when(customerRepository.findByLoyaltyInfoPointsGreaterThanAndLastOrderDateBefore(anyInt(), any())).thenReturn(List.of());
 
-            retentionService.runManualRetention();
+            // anonymizeInactiveCustomers is called by runWeeklyRetentionJob, not daily
+            retentionService.runWeeklyRetentionJob();
 
             verify(customerService).anonymizeAndDeleteCustomer("c2", "RETENTION_POLICY_EXPIRY");
         }
