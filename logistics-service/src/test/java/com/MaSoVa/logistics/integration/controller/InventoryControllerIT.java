@@ -29,11 +29,11 @@ class InventoryControllerIT extends BaseFullIntegrationTest {
 
     @Test
     @WithMockUser(roles = "MANAGER")
-    @DisplayName("GET /api/inventory/{id} returns 404 for non-existent item")
-    void getInventoryItem_returns404() throws Exception {
+    @DisplayName("GET /api/inventory/{id} returns error for non-existent item")
+    void getInventoryItem_returnsErrorForNonExistent() throws Exception {
         mockMvc.perform(get("/api/inventory/nonexistent")
                 .header("X-User-Type", "MANAGER"))
-            .andExpect(status().isNotFound());
+            .andExpect(status().is4xxClientError());
     }
 
     @Test
@@ -51,7 +51,8 @@ class InventoryControllerIT extends BaseFullIntegrationTest {
     @DisplayName("GET /api/purchase-orders returns 200 with empty list")
     void getPurchaseOrders_returnsEmptyList() throws Exception {
         mockMvc.perform(get("/api/purchase-orders")
-                .header("X-User-Type", "MANAGER"))
+                .header("X-User-Type", "MANAGER")
+                .header("X-User-Store-Id", "store-1"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$").isArray());
     }

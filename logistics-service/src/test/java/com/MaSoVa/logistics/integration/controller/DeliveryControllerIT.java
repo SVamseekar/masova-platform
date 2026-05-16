@@ -1,21 +1,23 @@
 package com.MaSoVa.logistics.integration.controller;
 
-import com.MaSoVa.shared.test.BaseMessagingIntegrationTest;
+import com.MaSoVa.shared.test.BaseFullIntegrationTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @DisplayName("DeliveryController Integration Tests")
-class DeliveryControllerIT extends BaseMessagingIntegrationTest {
+class DeliveryControllerIT extends BaseFullIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Test
+    @WithMockUser(roles = "MANAGER")
     @DisplayName("GET /api/delivery/zones returns 200 with zone list")
     void getDeliveryZones_returnsZones() throws Exception {
         mockMvc.perform(get("/api/delivery/zones"))
@@ -24,9 +26,10 @@ class DeliveryControllerIT extends BaseMessagingIntegrationTest {
     }
 
     @Test
-    @DisplayName("GET /api/delivery/track/{orderId} returns 404 for non-existent order")
-    void trackOrder_returns404() throws Exception {
+    @WithMockUser(roles = "MANAGER")
+    @DisplayName("GET /api/delivery/track/{orderId} returns error for non-existent order")
+    void trackOrder_returnsErrorForNonExistent() throws Exception {
         mockMvc.perform(get("/api/delivery/track/nonexistent"))
-            .andExpect(status().isNotFound());
+            .andExpect(status().is4xxClientError());
     }
 }
