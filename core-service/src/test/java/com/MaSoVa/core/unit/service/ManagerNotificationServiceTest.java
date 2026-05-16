@@ -158,4 +158,20 @@ class ManagerNotificationServiceTest {
             assertThat(item.getCurrentStock()).isEqualTo(5);
         }
     }
+
+    // ===========================
+    // sendDailySalesSummary
+    // ===========================
+
+    @Nested
+    @DisplayName("sendDailySalesSummary")
+    class SendDailySalesSummary {
+
+        @Test
+        @DisplayName("does not throw when called (stores list is empty placeholder)")
+        void doesNotThrow() {
+            assertThatCode(() -> service.sendDailySalesSummary())
+                    .doesNotThrowAnyException();
+        }
+    }
 }
