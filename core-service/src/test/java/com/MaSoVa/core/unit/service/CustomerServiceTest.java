@@ -96,9 +96,10 @@ class CustomerServiceTest {
     class GetOrCreateCustomer {
 
         @Test
-        @DisplayName("returns existing customer when found by userId")
+        @DisplayName("returns existing customer when found by userId and storeId already present")
         void returnsExistingByUserId() {
             Customer existing = buildCustomer("c1", "test@example.com");
+            existing.addStoreId("store-1"); // storeId already present — no save needed
             when(customerRepository.findByUserId("user-c1")).thenReturn(Optional.of(existing));
 
             CreateCustomerRequest req = buildCreateRequest("user-c1", "test@example.com", "9876543210");
