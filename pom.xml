@@ -199,6 +199,37 @@
                             <id>report</id>
                             <phase>verify</phase>
                             <goals><goal>report</goal></goals>
+                            <configuration>
+                                <excludes>
+                                    <exclude>**/*Application.class</exclude>
+                                    <exclude>**/*Config.class</exclude>
+                                    <exclude>**/*Configuration.class</exclude>
+                                    <exclude>**/*OpenApiConfig.class</exclude>
+                                    <exclude>**/dto/**</exclude>
+                                    <exclude>**/entity/**</exclude>
+                                    <exclude>**/model/**</exclude>
+                                    <exclude>**/*Request.class</exclude>
+                                    <exclude>**/*Response.class</exclude>
+                                    <exclude>**/*DTO.class</exclude>
+                                    <exclude>**/*Dto.class</exclude>
+                                    <exclude>**/repository/**</exclude>
+                                    <exclude>**/client/**</exclude>
+                                    <exclude>**/messaging/**</exclude>
+                                    <exclude>**/event/**</exclude>
+                                    <exclude>**/events/**</exclude>
+                                    <exclude>**/*EventPublisher.class</exclude>
+                                    <exclude>**/*EventListener.class</exclude>
+                                    <exclude>**/*Interceptor.class</exclude>
+                                    <exclude>**/*Builder.class</exclude>
+                                    <exclude>**/*$Builder.class</exclude>
+                                    <exclude>**/*$*.class</exclude>
+                                    <exclude>**/websocket/**</exclude>
+                                    <exclude>**/filter/**</exclude>
+                                    <exclude>**/security/**</exclude>
+                                    <exclude>**/*TestDataController.class</exclude>
+                                    <exclude>**/*Exception.class</exclude>
+                                </excludes>
+                            </configuration>
                         </execution>
                         <execution>
                             <id>check</id>
@@ -222,14 +253,23 @@
                                     </rule>
                                 </rules>
                                 <excludes>
+                                    <!-- Spring entry points -->
                                     <exclude>**/*Application.class</exclude>
+                                    <!-- Configuration / bean wiring -->
                                     <exclude>**/*Config.class</exclude>
                                     <exclude>**/*Configuration.class</exclude>
                                     <exclude>**/*OpenApiConfig.class</exclude>
+                                    <!-- Data carriers — no logic -->
                                     <exclude>**/dto/**</exclude>
                                     <exclude>**/entity/**</exclude>
                                     <exclude>**/model/**</exclude>
+                                    <exclude>**/*Request.class</exclude>
+                                    <exclude>**/*Response.class</exclude>
+                                    <exclude>**/*DTO.class</exclude>
+                                    <exclude>**/*Dto.class</exclude>
+                                    <!-- Spring Data proxies -->
                                     <exclude>**/repository/**</exclude>
+                                    <!-- Infrastructure — tested via integration -->
                                     <exclude>**/client/**</exclude>
                                     <exclude>**/messaging/**</exclude>
                                     <exclude>**/event/**</exclude>
@@ -243,6 +283,10 @@
                                     <exclude>**/websocket/**</exclude>
                                     <exclude>**/filter/**</exclude>
                                     <exclude>**/security/**</exclude>
+                                    <!-- Dev-only controllers -->
+                                    <exclude>**/*TestDataController.class</exclude>
+                                    <!-- Exception classes — no logic to test -->
+                                    <exclude>**/*Exception.class</exclude>
                                 </excludes>
                             </configuration>
                         </execution>
