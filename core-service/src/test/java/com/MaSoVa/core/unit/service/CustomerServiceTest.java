@@ -1127,4 +1127,96 @@ class CustomerServiceTest {
             assertThat(customerService.getAllCustomersByStoreId("store-1")).hasSize(1);
         }
     }
+
+    // ===========================
+    // getCustomerStats and getCustomerStatsByStore
+    // ===========================
+
+    @Nested
+    @DisplayName("getCustomerStats")
+    class GetCustomerStats {
+
+        @Test
+        @DisplayName("returns overall customer statistics")
+        void returnsOverallStats() {
+            when(customerRepository.count()).thenReturn(100L);
+            when(customerRepository.countByActiveTrue()).thenReturn(80L);
+            when(customerRepository.countByEmailVerifiedTrue()).thenReturn(60L);
+            when(customerRepository.countByPhoneVerifiedTrue()).thenReturn(55L);
+            when(customerRepository.countByLoyaltyInfo_Tier(anyString())).thenReturn(20L);
+            when(customerRepository.countHighValueCustomers(anyDouble())).thenReturn(5L);
+            when(customerRepository.findAllWithOrderStats()).thenReturn(List.of());
+
+            var result = customerService.getCustomerStats();
+
+            assertThat(result.getTotalCustomers()).isEqualTo(100L);
+            assertThat(result.getActiveCustomers()).isEqualTo(80L);
+        }
+    }
+
+    @Nested
+    @DisplayName("getCustomerStatsByStore")
+    class GetCustomerStatsByStore {
+
+        @Test
+        @DisplayName("delegates to getCustomerStats when storeId is null")
+        void delegatesWhenNullStore() {
+            when(customerRepository.count()).thenReturn(50L);
+            when(customerRepository.countByActiveTrue()).thenReturn(40L);
+            when(customerRepository.countByEmailVerifiedTrue()).thenReturn(30L);
+            when(customerRepository.countByPhoneVerifiedTrue()).thenReturn(25L);
+            when(customerRepository.countByLoyaltyInfo_Tier(anyString())).thenReturn(10L);
+            when(customerRepository.countHighValueCustomers(anyDouble())).thenReturn(2L);
+            when(customerRepository.findAllWithOrderStats()).thenReturn(List.of());
+
+            var result = customerService.getCustomerStatsByStore(null);
+
+            assertThat(result.getTotalCustomers()).isEqualTo(50L);
+        }
+
+        @Test
+        @DisplayName("returns store-specific stats when storeId provided")
+        void returnsStoreStats() {
+            when(customerRepository.findByStoreIdsContaining("store-1")).thenReturn(List.of());
+            when(customerRepository.countActiveCustomersByStoreIdsContaining("store-1")).thenReturn(0L);
+            when(customerRepository.countByStoreIdAndEmailVerifiedTrue("store-1")).thenReturn(0L);
+            when(customerRepository.countByStoreIdAndPhoneVerifiedTrue("store-1")).thenReturn(0L);
+            when(customerRepository.findByStoreId("store-1")).thenReturn(List.of());
+            when(customerRepository.countHighValueCustomersByStoreId("store-1", 10000.0)).thenReturn(0L);
+
+            var result = customerService.getCustomerStatsByStore("store-1");
+
+            assertThat(result.getTotalCustomers()).isEqualTo(0L);
+        }
+    }
+
+    // ===========================
+    // getMarketingOptInCustomersByStore / getSmsOptInCustomersByStore
+    // ===========================
+
+    @Nested
+    @DisplayName("Store-specific opt-in queries")
+    class StoreOptInQueries {
+
+        @Test
+        @DisplayName("getMarketingOptInCustomersByStore delegates when storeId provided")
+        void marketingByStore() {
+            when(customerRepository.findMarketingOptInCustomersByStoreIdsContaining("store-1")).thenReturn(List.of());
+            assertThat(customerService.getMarketingOptInCustomersByStore("store-1")).isEmpty();
+        }
+
+        @Test
+        @DisplayName("getMarketingOptInCustomersByStore falls back when storeId null")
+        void marketingFallback() {
+            when(customerRepository.findMarketingOptInCustomers()).thenReturn(List.of());
+            assertThat(customerService.getMarketingOptInCustomersByStore(null)).isEmpty();
+        }
+
+        @Test
+        @DisplayName("getSmsOptInCustomersByStore delegates when storeId provided")
+        void smsByStore() {
+            when(customerRepository.findSmsOptInCustomersByStoreIdsContaining("store-1")).thenReturn(List.of());
+            assertThat(customerService.getSmsOptInCustomersByStore("store-1")).isEmpty();
+        }
+    }
 }
