@@ -1058,4 +1058,177 @@ class UserServiceTest {
             verify(userRepository).findAllActiveEmployees();
         }
     }
+
+    // ===========================
+    // registerUser
+    // ===========================
+
+    @Nested
+    @DisplayName("registerUser")
+    class RegisterUser {
+
+        @Test
+        @DisplayName("throws when email already exists")
+        void throwsOnDuplicateEmail() {
+            UserCreateRequest req = buildCreateRequest("exists@masova.com", "9876543210", UserType.CUSTOMER, null);
+            when(userRepository.existsByPersonalInfoEmail("exists@masova.com")).thenReturn(true);
+
+            assertThatThrownBy(() -> userService.registerUser(req))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Email already exists");
+        }
+
+        @Test
+        @DisplayName("creates customer and returns login response")
+        void createsCustomer() {
+            UserCreateRequest req = buildCreateRequest("new@masova.com", "9876543210", UserType.CUSTOMER, null);
+            when(userRepository.existsByPersonalInfoEmail(any())).thenReturn(false);
+            when(userRepository.existsByPersonalInfoPhone(any())).thenReturn(false);
+            when(passwordEncoder.encode(any())).thenReturn("hashed");
+            User saved = buildUser("u1", "new@masova.com", UserType.CUSTOMER);
+            when(userRepository.save(any())).thenReturn(saved);
+            when(jwtService.generateAccessToken(any(), any(), any())).thenReturn("access-token");
+            when(jwtService.generateRefreshToken(any())).thenReturn("refresh-token");
+            when(userJpaRepository.save(any())).thenReturn(null);
+
+            LoginResponse result = userService.registerUser(req);
+
+            assertThat(result.getAccessToken()).isEqualTo("access-token");
+            assertThat(result.getRefreshToken()).isEqualTo("refresh-token");
+        }
+    }
+
+    // ===========================
+    // deactivateKioskAccount
+    // ===========================
+
+    @Nested
+    @DisplayName("deactivateKioskAccount")
+    class DeactivateKioskAccount {
+
+        @Test
+        @DisplayName("throws when requester is not a manager")
+        void throwsWhenNotManager() {
+            User notManager = buildEmployee("e1", "emp@masova.com", "store-1");
+            when(userRepository.findById("e1")).thenReturn(Optional.of(notManager));
+
+            assertThatThrownBy(() -> userService.deactivateKioskAccount("k1", "e1"))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Only managers");
+        }
+
+        @Test
+        @DisplayName("throws when target is not a kiosk account")
+        void throwsWhenNotKiosk() {
+            User manager = buildUser("m1", "mgr@masova.com", UserType.MANAGER);
+            User notKiosk = buildEmployee("e1", "emp@masova.com", "store-1");
+            when(userRepository.findById("m1")).thenReturn(Optional.of(manager));
+            when(userRepository.findById("e1")).thenReturn(Optional.of(notKiosk));
+
+            assertThatThrownBy(() -> userService.deactivateKioskAccount("e1", "m1"))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("not a kiosk");
+        }
+
+        @Test
+        @DisplayName("deactivates kiosk account when manager and target are valid")
+        void deactivatesKiosk() {
+            User manager = buildUser("m1", "mgr@masova.com", UserType.MANAGER);
+            User kiosk = buildUser("k1", "kiosk@masova.internal", UserType.KIOSK);
+            User.EmployeeDetails kd = new User.EmployeeDetails();
+            kd.setStoreId("store-1");
+            kiosk.setEmployeeDetails(kd);
+            when(userRepository.findById("m1")).thenReturn(Optional.of(manager));
+            when(userRepository.findById("k1")).thenReturn(Optional.of(kiosk));
+            when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            when(userJpaRepository.findByMongoId(any())).thenReturn(Optional.empty());
+
+            userService.deactivateKioskAccount("k1", "m1");
+
+            verify(userRepository).save(argThat(u -> !u.isActive()));
+        }
+    }
+
+    // ===========================
+    // createKioskAccount
+    // ===========================
+
+    @Nested
+    @DisplayName("createKioskAccount")
+    class CreateKioskAccount {
+
+        @Test
+        @DisplayName("throws when creator is not a manager")
+        void throwsWhenNotManager() {
+            User notManager = buildEmployee("e1", "emp@masova.com", "store-1");
+            when(userRepository.findById("e1")).thenReturn(Optional.of(notManager));
+
+            assertThatThrownBy(() -> userService.createKioskAccount("store-1", "POS-01", "e1"))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Only managers");
+        }
+
+        @Test
+        @DisplayName("throws when kiosk already exists for terminal")
+        void throwsWhenAlreadyExists() {
+            User manager = buildUser("m1", "mgr@masova.com", UserType.MANAGER);
+            User existingKiosk = buildUser("k0", "kiosk@masova.internal", UserType.KIOSK);
+            when(userRepository.findById("m1")).thenReturn(Optional.of(manager));
+            when(userRepository.findByEmployeeDetailsStoreIdAndEmployeeDetailsTerminalId("store-1", "POS-01"))
+                    .thenReturn(Optional.of(existingKiosk));
+
+            assertThatThrownBy(() -> userService.createKioskAccount("store-1", "POS-01", "m1"))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("already exists");
+        }
+
+        @Test
+        @DisplayName("creates kiosk account successfully")
+        void createsKiosk() {
+            User manager = buildUser("m1", "mgr@masova.com", UserType.MANAGER);
+            when(userRepository.findById("m1")).thenReturn(Optional.of(manager));
+            when(userRepository.findByEmployeeDetailsStoreIdAndEmployeeDetailsTerminalId(any(), any()))
+                    .thenReturn(Optional.empty());
+            when(passwordEncoder.encode(any())).thenReturn("hashed-random");
+            User savedKiosk = buildUser("k1", "kiosk.store-1.POS-01@masova.internal", UserType.KIOSK);
+            when(userRepository.save(any())).thenReturn(savedKiosk);
+            when(userJpaRepository.save(any())).thenReturn(null);
+
+            User result = userService.createKioskAccount("store-1", "POS-01", "m1");
+
+            assertThat(result).isNotNull();
+            verify(userRepository).save(any());
+        }
+    }
+
+    // ===========================
+    // mapToUserResponse
+    // ===========================
+
+    @Nested
+    @DisplayName("mapToUserResponse")
+    class MapToUserResponse {
+
+        @Test
+        @DisplayName("maps basic customer fields correctly")
+        void mapsCustomer() {
+            User customer = buildUser("c1", "cust@masova.com", UserType.CUSTOMER);
+
+            UserResponse result = userService.mapToUserResponse(customer);
+
+            assertThat(result.getId()).isEqualTo("c1");
+            assertThat(result.getEmail()).isEqualTo("cust@masova.com");
+            assertThat(result.getType()).isEqualTo(UserType.CUSTOMER);
+        }
+
+        @Test
+        @DisplayName("includes storeId for employee users")
+        void mapsEmployee() {
+            User emp = buildEmployee("e1", "emp@masova.com", "store-1");
+
+            UserResponse result = userService.mapToUserResponse(emp);
+
+            assertThat(result.getStoreId()).isEqualTo("store-1");
+        }
+    }
 }
