@@ -63,7 +63,7 @@ class CustomerDataRetentionServiceTest {
             when(customerRepository.findByActiveAndDeletedAtBefore(any(), any())).thenReturn(List.of());
             when(customerRepository.findByActiveAndLastOrderDateBefore(any(), any())).thenReturn(List.of());
             when(customerRepository.findByActiveAndLastOrderDateIsNullAndCreatedAtBefore(any(), any())).thenReturn(List.of());
-            when(customerRepository.findByLoyaltyInfoTotalPointsGreaterThanAndLastOrderDateBefore(anyInt(), any())).thenReturn(List.of());
+            when(customerRepository.findByLoyaltyInfoPointsGreaterThanAndLastOrderDateBefore(anyInt(), any())).thenReturn(List.of());
 
             assertThatCode(() -> retentionService.runManualRetention())
                     .doesNotThrowAnyException();
@@ -76,7 +76,7 @@ class CustomerDataRetentionServiceTest {
             when(customerRepository.findByActiveAndDeletedAtBefore(any(), any())).thenReturn(List.of(toDelete));
             when(customerRepository.findByActiveAndLastOrderDateBefore(any(), any())).thenReturn(List.of());
             when(customerRepository.findByActiveAndLastOrderDateIsNullAndCreatedAtBefore(any(), any())).thenReturn(List.of());
-            when(customerRepository.findByLoyaltyInfoTotalPointsGreaterThanAndLastOrderDateBefore(anyInt(), any())).thenReturn(List.of());
+            when(customerRepository.findByLoyaltyInfoPointsGreaterThanAndLastOrderDateBefore(anyInt(), any())).thenReturn(List.of());
 
             retentionService.runManualRetention();
 
@@ -93,7 +93,7 @@ class CustomerDataRetentionServiceTest {
             when(customerRepository.findByActiveAndDeletedAtBefore(any(), any())).thenReturn(List.of());
             when(customerRepository.findByActiveAndLastOrderDateBefore(any(), any())).thenReturn(List.of(inactive));
             when(customerRepository.findByActiveAndLastOrderDateIsNullAndCreatedAtBefore(any(), any())).thenReturn(List.of());
-            when(customerRepository.findByLoyaltyInfoTotalPointsGreaterThanAndLastOrderDateBefore(anyInt(), any())).thenReturn(List.of());
+            when(customerRepository.findByLoyaltyInfoPointsGreaterThanAndLastOrderDateBefore(anyInt(), any())).thenReturn(List.of());
 
             retentionService.runManualRetention();
 
@@ -119,7 +119,7 @@ class CustomerDataRetentionServiceTest {
             when(customerRepository.findByActiveAndDeletedAtBefore(any(), any())).thenReturn(List.of(toDelete));
             when(customerRepository.findByActiveAndLastOrderDateBefore(any(), any())).thenReturn(List.of());
             when(customerRepository.findByActiveAndLastOrderDateIsNullAndCreatedAtBefore(any(), any())).thenReturn(List.of());
-            when(customerRepository.findByLoyaltyInfoTotalPointsGreaterThanAndLastOrderDateBefore(anyInt(), any())).thenReturn(List.of());
+            when(customerRepository.findByLoyaltyInfoPointsGreaterThanAndLastOrderDateBefore(anyInt(), any())).thenReturn(List.of());
 
             retentionService.runManualRetention();
 
@@ -134,7 +134,7 @@ class CustomerDataRetentionServiceTest {
             when(customerRepository.findByActiveAndDeletedAtBefore(any(), any())).thenReturn(List.of(c1, c2));
             when(customerRepository.findByActiveAndLastOrderDateBefore(any(), any())).thenReturn(List.of());
             when(customerRepository.findByActiveAndLastOrderDateIsNullAndCreatedAtBefore(any(), any())).thenReturn(List.of());
-            when(customerRepository.findByLoyaltyInfoTotalPointsGreaterThanAndLastOrderDateBefore(anyInt(), any())).thenReturn(List.of());
+            when(customerRepository.findByLoyaltyInfoPointsGreaterThanAndLastOrderDateBefore(anyInt(), any())).thenReturn(List.of());
             doThrow(new RuntimeException("DB error")).when(customerService).hardDeleteCustomer("c1");
 
             assertThatCode(() -> retentionService.runManualRetention())
