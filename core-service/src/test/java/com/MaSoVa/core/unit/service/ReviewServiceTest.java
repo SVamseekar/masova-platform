@@ -1,6 +1,6 @@
 package com.MaSoVa.core.unit.service;
 
-import com.MaSoVa.core.review.dto.CreateReviewRequest;
+import com.MaSoVa.core.review.dto.request.CreateReviewRequest;
 import com.MaSoVa.core.review.entity.Review;
 import com.MaSoVa.core.review.repository.ReviewRepository;
 import com.MaSoVa.core.review.service.ReviewService;
