@@ -193,4 +193,37 @@ class WorkingSessionControllerTest extends BaseServiceTest {
                 .param("storeId", "store-1"))
             .andExpect(status().isOk());
     }
+
+    @Test
+    @DisplayName("POST /api/sessions/clock-in — returns 200 with successful clock in")
+    void clockIn_returnsOk() throws Exception {
+        WorkingSession session = new WorkingSession();
+        session.setId("session-1");
+        session.setEmployeeId("emp-1");
+        session.setStoreId("store-1");
+        when(sessionService.startSession("emp-1", "store-1")).thenReturn(session);
+
+        mockMvc.perform(post("/api/sessions/clock-in")
+                .header("X-User-Store-Id", "store-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"employeeId\":\"emp-1\",\"pin\":\"12345\"}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("POST /api/sessions/{sessionId}/break — adds break time and returns 200")
+    void addBreak_returnsOk() throws Exception {
+        WorkingSession session = new WorkingSession();
+        session.setId("session-1");
+        session.setEmployeeId("emp-1");
+        session.setStoreId("store-1");
+        session.setActive(false);
+        when(sessionService.addBreakTime(anyString(), anyLong())).thenReturn(session);
+
+        mockMvc.perform(post("/api/sessions/session-1/break")
+                .header("X-User-Id", "emp-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"breakMinutes\":30}"))
+            .andExpect(status().isOk());
+    }
 }

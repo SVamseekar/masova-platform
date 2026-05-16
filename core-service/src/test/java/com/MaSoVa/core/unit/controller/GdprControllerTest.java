@@ -117,4 +117,59 @@ class GdprControllerTest extends BaseServiceTest {
         mockMvc.perform(get("/api/gdpr/export/user-1"))
             .andExpect(status().isOk());
     }
+
+    @Test
+    @DisplayName("POST /api/gdpr/request/{id}/process with type=access returns 200")
+    void processRequest_access_returns200() throws Exception {
+        when(dataRequestService.processAccessRequest("req-1")).thenReturn(java.util.Map.of("requestId", "req-1"));
+
+        mockMvc.perform(post("/api/gdpr/request/req-1/process")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"type\":\"access\"}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("POST /api/gdpr/request/{id}/process with type=erasure returns 200")
+    void processRequest_erasure_returns200() throws Exception {
+        org.mockito.Mockito.doNothing().when(dataRequestService).processErasureRequest("req-1");
+
+        mockMvc.perform(post("/api/gdpr/request/req-1/process")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"type\":\"erasure\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.message").value("Erasure request processed successfully"));
+    }
+
+    @Test
+    @DisplayName("POST /api/gdpr/request/{id}/process with type=portability returns 200")
+    void processRequest_portability_returns200() throws Exception {
+        when(dataRequestService.processPortabilityRequest("req-1")).thenReturn(java.util.Map.of("requestId", "req-1"));
+
+        mockMvc.perform(post("/api/gdpr/request/req-1/process")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"type\":\"portability\"}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("POST /api/gdpr/request/{id}/process with type=rectification returns 200")
+    void processRequest_rectification_returns200() throws Exception {
+        org.mockito.Mockito.doNothing().when(dataRequestService).processRectificationRequest(anyString(), any());
+
+        mockMvc.perform(post("/api/gdpr/request/req-1/process")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"type\":\"rectification\",\"updates\":{\"name\":\"New Name\"}}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.message").value("Rectification request processed successfully"));
+    }
+
+    @Test
+    @DisplayName("POST /api/gdpr/request/{id}/process with invalid type returns 400")
+    void processRequest_invalidType_returns400() throws Exception {
+        mockMvc.perform(post("/api/gdpr/request/req-1/process")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"type\":\"invalid\"}"))
+            .andExpect(status().isBadRequest());
+    }
 }

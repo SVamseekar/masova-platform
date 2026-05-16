@@ -249,4 +249,59 @@ class CustomerControllerTest extends BaseServiceTest {
         mockMvc.perform(post("/api/customers/bad-id/activate"))
             .andExpect(status().isNotFound());
     }
+
+    @Test
+    @DisplayName("GET /api/customers with email param returns matching customer")
+    void getCustomers_byEmail_returns200() throws Exception {
+        when(customerService.getCustomerByEmail("test@example.com")).thenReturn(Optional.of(buildCustomer("c1")));
+
+        mockMvc.perform(get("/api/customers").param("email", "test@example.com"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/customers with phone param returns matching customer")
+    void getCustomers_byPhone_returns200() throws Exception {
+        when(customerService.getCustomerByPhone("9876543210")).thenReturn(Optional.of(buildCustomer("c1")));
+
+        mockMvc.perform(get("/api/customers").param("phone", "9876543210"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/customers with userId param returns matching customer")
+    void getCustomers_byUserId_returns200() throws Exception {
+        when(customerService.getCustomerByUserId("user-1")).thenReturn(Optional.of(buildCustomer("c1")));
+
+        mockMvc.perform(get("/api/customers").param("userId", "user-1"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/customers with tier param returns filtered list")
+    void getCustomers_byTier_returns200() throws Exception {
+        when(customerService.getCustomersByLoyaltyTierAndStore(any(), anyString())).thenReturn(List.of(buildCustomer("c1")));
+
+        mockMvc.perform(get("/api/customers").param("tier", "GOLD"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/customers with tag param returns filtered list")
+    void getCustomers_byTag_returns200() throws Exception {
+        when(customerService.getCustomersByTagsAndStore(any(), any())).thenReturn(List.of(buildCustomer("c1")));
+
+        mockMvc.perform(get("/api/customers").param("tag", "VIP"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/customers with search param returns search results")
+    void getCustomers_bySearch_returns200() throws Exception {
+        org.springframework.data.domain.Page<Customer> page = new org.springframework.data.domain.PageImpl<>(List.of(buildCustomer("c1")));
+        when(customerService.searchCustomersByStoreId(any(), anyString(), anyInt(), anyInt())).thenReturn(page);
+
+        mockMvc.perform(get("/api/customers").param("search", "John"))
+            .andExpect(status().isOk());
+    }
 }
