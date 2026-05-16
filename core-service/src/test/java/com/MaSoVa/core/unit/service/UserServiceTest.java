@@ -708,4 +708,354 @@ class UserServiceTest {
             assertThat(stats.get("onlineDrivers")).isEqualTo(1L);
         }
     }
+
+    // ===========================
+    // getUsersByType
+    // ===========================
+
+    @Nested
+    @DisplayName("getUsersByType")
+    class GetUsersByType {
+
+        @Test
+        @DisplayName("returns mapped list for given type")
+        void returnsMappedList() {
+            User u = buildEmployee("e1", "emp@masova.com", "store-1");
+            when(userRepository.findByType(UserType.STAFF)).thenReturn(List.of(u));
+
+            List<UserResponse> result = userService.getUsersByType(UserType.STAFF);
+
+            assertThat(result).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("returns empty list when none found")
+        void returnsEmpty() {
+            when(userRepository.findByType(UserType.DRIVER)).thenReturn(List.of());
+
+            assertThat(userService.getUsersByType(UserType.DRIVER)).isEmpty();
+        }
+    }
+
+    // ===========================
+    // getUsersByTypeAndStore
+    // ===========================
+
+    @Nested
+    @DisplayName("getUsersByTypeAndStore")
+    class GetUsersByTypeAndStore {
+
+        @Test
+        @DisplayName("returns employees of given type in given store")
+        void returnsFiltered() {
+            User u = buildEmployee("e1", "emp@masova.com", "store-1");
+            when(userRepository.findByTypeAndEmployeeDetailsStoreId(UserType.STAFF, "store-1"))
+                    .thenReturn(List.of(u));
+
+            List<UserResponse> result = userService.getUsersByTypeAndStore(UserType.STAFF, "store-1");
+
+            assertThat(result).hasSize(1);
+        }
+    }
+
+    // ===========================
+    // getStoreEmployees
+    // ===========================
+
+    @Nested
+    @DisplayName("getStoreEmployees")
+    class GetStoreEmployees {
+
+        @Test
+        @DisplayName("returns all employees for given store")
+        void returnsEmployees() {
+            User u = buildEmployee("e1", "emp@masova.com", "store-1");
+            when(userRepository.findByStoreId("store-1")).thenReturn(List.of(u));
+
+            List<UserResponse> result = userService.getStoreEmployees("store-1");
+
+            assertThat(result).hasSize(1);
+        }
+    }
+
+    // ===========================
+    // getActiveManagers
+    // ===========================
+
+    @Nested
+    @DisplayName("getActiveManagers")
+    class GetActiveManagers {
+
+        @Test
+        @DisplayName("returns active managers and assistant managers")
+        void returnsManagers() {
+            User mgr = buildUser("m1", "mgr@masova.com", UserType.MANAGER);
+            when(userRepository.findActiveManagersAndAssistants(UserType.MANAGER, UserType.ASSISTANT_MANAGER))
+                    .thenReturn(List.of(mgr));
+
+            List<UserResponse> result = userService.getActiveManagers();
+
+            assertThat(result).hasSize(1);
+        }
+    }
+
+    // ===========================
+    // updateUser
+    // ===========================
+
+    @Nested
+    @DisplayName("updateUser")
+    class UpdateUser {
+
+        @Test
+        @DisplayName("updates personal info and saves")
+        void updatesPersonalInfo() {
+            User existing = buildEmployee("e1", "emp@masova.com", "store-1");
+            when(userRepository.findById("e1")).thenReturn(Optional.of(existing));
+            when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            when(userJpaRepository.findByMongoId(any())).thenReturn(Optional.empty());
+
+            UserCreateRequest req = buildCreateRequest("new@masova.com", "9999999999", UserType.STAFF, "store-1");
+            req.setName("Updated Name");
+
+            UserResponse result = userService.updateUser("e1", req);
+
+            assertThat(result.getName()).isEqualTo("Updated Name");
+            verify(userRepository).save(any());
+        }
+    }
+
+    // ===========================
+    // getDriversByStore
+    // ===========================
+
+    @Nested
+    @DisplayName("getDriversByStore")
+    class GetDriversByStore {
+
+        @Test
+        @DisplayName("returns drivers for store")
+        void returnsDrivers() {
+            User driver = buildUser("d1", "driver@masova.com", UserType.DRIVER);
+            User.EmployeeDetails details = new User.EmployeeDetails();
+            details.setStoreId("store-1");
+            driver.setEmployeeDetails(details);
+            when(userRepository.findByTypeAndEmployeeDetailsStoreId(UserType.DRIVER, "store-1"))
+                    .thenReturn(List.of(driver));
+
+            List<UserResponse> result = userService.getDriversByStore("store-1");
+
+            assertThat(result).hasSize(1);
+        }
+    }
+
+    // ===========================
+    // getAvailableDrivers
+    // ===========================
+
+    @Nested
+    @DisplayName("getAvailableDrivers")
+    class GetAvailableDrivers {
+
+        @Test
+        @DisplayName("returns only active drivers with AVAILABLE status")
+        void returnsAvailableOnly() {
+            User available = buildUser("d1", "d1@masova.com", UserType.DRIVER);
+            User.EmployeeDetails ad = new User.EmployeeDetails();
+            ad.setStatus("AVAILABLE");
+            available.setEmployeeDetails(ad);
+
+            User busy = buildUser("d2", "d2@masova.com", UserType.DRIVER);
+            User.EmployeeDetails bd = new User.EmployeeDetails();
+            bd.setStatus("BUSY");
+            busy.setEmployeeDetails(bd);
+
+            when(userRepository.findByTypeAndEmployeeDetailsStoreId(UserType.DRIVER, "store-1"))
+                    .thenReturn(List.of(available, busy));
+
+            List<UserResponse> result = userService.getAvailableDrivers("store-1");
+
+            assertThat(result).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("excludes inactive drivers")
+        void excludesInactive() {
+            User inactive = buildUser("d1", "d1@masova.com", UserType.DRIVER);
+            inactive.setActive(false);
+            User.EmployeeDetails d = new User.EmployeeDetails();
+            d.setStatus("AVAILABLE");
+            inactive.setEmployeeDetails(d);
+            when(userRepository.findByTypeAndEmployeeDetailsStoreId(UserType.DRIVER, "store-1"))
+                    .thenReturn(List.of(inactive));
+
+            assertThat(userService.getAvailableDrivers("store-1")).isEmpty();
+        }
+    }
+
+    // ===========================
+    // updateDriverStatus
+    // ===========================
+
+    @Nested
+    @DisplayName("updateDriverStatus")
+    class UpdateDriverStatus {
+
+        @Test
+        @DisplayName("throws when user not found")
+        void throwsWhenNotFound() {
+            when(userRepository.findById("missing")).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.updateDriverStatus("missing", "ONLINE"))
+                    .isInstanceOf(RuntimeException.class);
+        }
+
+        @Test
+        @DisplayName("throws when user is not a driver")
+        void throwsWhenNotDriver() {
+            User notDriver = buildEmployee("e1", "emp@masova.com", "store-1");
+            when(userRepository.findById("e1")).thenReturn(Optional.of(notDriver));
+
+            assertThatThrownBy(() -> userService.updateDriverStatus("e1", "ONLINE"))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("not a driver");
+        }
+
+        @Test
+        @DisplayName("updates status and saves driver")
+        void updatesStatus() {
+            User driver = buildUser("d1", "d@masova.com", UserType.DRIVER);
+            User.EmployeeDetails details = new User.EmployeeDetails();
+            driver.setEmployeeDetails(details);
+            when(userRepository.findById("d1")).thenReturn(Optional.of(driver));
+            when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            when(userJpaRepository.findByMongoId(any())).thenReturn(Optional.empty());
+
+            userService.updateDriverStatus("d1", "OFFLINE");
+
+            verify(userRepository).save(argThat(u -> "OFFLINE".equals(u.getEmployeeDetails().getStatus())));
+        }
+    }
+
+    // ===========================
+    // generateKioskTokens
+    // ===========================
+
+    @Nested
+    @DisplayName("generateKioskTokens")
+    class GenerateKioskTokens {
+
+        @Test
+        @DisplayName("throws when user is not a kiosk account")
+        void throwsWhenNotKiosk() {
+            User notKiosk = buildEmployee("e1", "emp@masova.com", "store-1");
+            when(userRepository.findById("e1")).thenReturn(Optional.of(notKiosk));
+
+            assertThatThrownBy(() -> userService.generateKioskTokens("e1"))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("not a kiosk");
+        }
+
+        @Test
+        @DisplayName("throws when kiosk account is deactivated")
+        void throwsWhenDeactivated() {
+            User kiosk = buildUser("k1", "kiosk@masova.internal", UserType.KIOSK);
+            kiosk.setActive(false);
+            User.EmployeeDetails kd = new User.EmployeeDetails();
+            kd.setStoreId("store-1");
+            kd.setTerminalId("POS-01");
+            kiosk.setEmployeeDetails(kd);
+            when(userRepository.findById("k1")).thenReturn(Optional.of(kiosk));
+
+            assertThatThrownBy(() -> userService.generateKioskTokens("k1"))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("deactivated");
+        }
+
+        @Test
+        @DisplayName("generates tokens for active kiosk account")
+        void generatesTokens() {
+            User kiosk = buildUser("k1", "kiosk@masova.internal", UserType.KIOSK);
+            User.EmployeeDetails kd = new User.EmployeeDetails();
+            kd.setStoreId("store-1");
+            kd.setTerminalId("POS-01");
+            kiosk.setEmployeeDetails(kd);
+            when(userRepository.findById("k1")).thenReturn(Optional.of(kiosk));
+            when(jwtService.generateKioskAccessToken(any(), any(), any())).thenReturn("kiosk-access-token");
+            when(jwtService.generateKioskRefreshToken(any())).thenReturn("kiosk-refresh-token");
+            when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            when(userJpaRepository.findByMongoId(any())).thenReturn(Optional.empty());
+
+            LoginResponse result = userService.generateKioskTokens("k1");
+
+            assertThat(result.getAccessToken()).isEqualTo("kiosk-access-token");
+            assertThat(result.getRefreshToken()).isEqualTo("kiosk-refresh-token");
+        }
+    }
+
+    // ===========================
+    // getKioskAccountsByStore
+    // ===========================
+
+    @Nested
+    @DisplayName("getKioskAccountsByStore")
+    class GetKioskAccountsByStore {
+
+        @Test
+        @DisplayName("returns kiosk accounts for store")
+        void returnsKioskAccounts() {
+            User kiosk = buildUser("k1", "kiosk@masova.internal", UserType.KIOSK);
+            User.EmployeeDetails kd = new User.EmployeeDetails();
+            kd.setStoreId("store-1");
+            kiosk.setEmployeeDetails(kd);
+            when(userRepository.findByTypeAndEmployeeDetailsStoreId(UserType.KIOSK, "store-1"))
+                    .thenReturn(List.of(kiosk));
+
+            List<UserResponse> result = userService.getKioskAccountsByStore("store-1");
+
+            assertThat(result).hasSize(1);
+        }
+    }
+
+    // ===========================
+    // searchUsers
+    // ===========================
+
+    @Nested
+    @DisplayName("searchUsers")
+    class SearchUsers {
+
+        @Test
+        @DisplayName("searches by storeId and type when both provided")
+        void searchesByStoreAndType() {
+            User u = buildEmployee("e1", "emp@masova.com", "store-1");
+            when(userRepository.findByStoreIdAndType("store-1", UserType.STAFF)).thenReturn(List.of(u));
+
+            List<UserResponse> result = userService.searchUsers(null, null, null, UserType.STAFF, "store-1");
+
+            assertThat(result).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("searches by name when only name provided")
+        void searchesByName() {
+            User u = buildEmployee("e1", "emp@masova.com", "store-1");
+            when(userRepository.findByNameContainingIgnoreCase("Test")).thenReturn(List.of(u));
+
+            List<UserResponse> result = userService.searchUsers("Test", null, null, null, null);
+
+            assertThat(result).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("falls back to active employees when no filter provided")
+        void fallsBackToActiveEmployees() {
+            when(userRepository.findAllActiveEmployees()).thenReturn(List.of());
+
+            List<UserResponse> result = userService.searchUsers(null, null, null, null, null);
+
+            assertThat(result).isEmpty();
+            verify(userRepository).findAllActiveEmployees();
+        }
+    }
 }
