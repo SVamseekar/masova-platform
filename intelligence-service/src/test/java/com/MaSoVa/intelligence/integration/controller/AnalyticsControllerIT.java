@@ -1,6 +1,6 @@
 package com.MaSoVa.intelligence.integration.controller;
 
-import com.MaSoVa.shared.test.BaseFullIntegrationTest;
+import com.MaSoVa.shared.test.BaseIntegrationTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @DisplayName("AnalyticsController Integration Tests")
-class AnalyticsControllerIT extends BaseFullIntegrationTest {
+class AnalyticsControllerIT extends BaseIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
