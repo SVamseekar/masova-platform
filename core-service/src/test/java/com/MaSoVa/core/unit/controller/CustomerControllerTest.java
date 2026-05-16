@@ -101,4 +101,68 @@ class CustomerControllerTest extends BaseServiceTest {
         mockMvc.perform(post("/api/customers/cust-1/deactivate"))
             .andExpect(status().isOk());
     }
+
+    @Test
+    @DisplayName("PATCH /api/customers/{id} updates customer and returns 200")
+    void updateCustomer_returns200() throws Exception {
+        when(customerService.updateCustomer(anyString(), any())).thenReturn(buildCustomer("cust-1"));
+
+        mockMvc.perform(patch("/api/customers/cust-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Updated Name\"}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("POST /api/customers/{id}/addresses adds address and returns 200")
+    void addAddress_returns200() throws Exception {
+        when(customerService.addAddress(anyString(), any())).thenReturn(buildCustomer("cust-1"));
+
+        mockMvc.perform(post("/api/customers/cust-1/addresses")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"label\":\"Home\",\"addressLine1\":\"123 Main St\",\"city\":\"Bangalore\"}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("DELETE /api/customers/{id}/addresses/{addressId} removes address and returns 200")
+    void removeAddress_returns200() throws Exception {
+        when(customerService.removeAddress("cust-1", "addr-1")).thenReturn(buildCustomer("cust-1"));
+
+        mockMvc.perform(delete("/api/customers/cust-1/addresses/addr-1"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("POST /api/customers/get-or-create returns existing or new customer")
+    void getOrCreate_returns200() throws Exception {
+        when(customerService.getOrCreateCustomer(any())).thenReturn(buildCustomer("cust-1"));
+
+        mockMvc.perform(post("/api/customers/get-or-create")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"userId\":\"user-1\",\"email\":\"test@example.com\",\"name\":\"Test\",\"phone\":\"9876543210\"}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("POST /api/customers/{id}/loyalty with ADD action adds points")
+    void manageLoyalty_add_returns200() throws Exception {
+        when(customerService.addLoyaltyPoints(anyString(), any())).thenReturn(buildCustomer("cust-1"));
+
+        mockMvc.perform(post("/api/customers/cust-1/loyalty")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"action\":\"ADD\",\"points\":100,\"reason\":\"Purchase\",\"orderId\":\"ord-1\"}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("POST /api/customers/{id}/tags with ADD action adds tags")
+    void manageTags_add_returns200() throws Exception {
+        when(customerService.addTags(anyString(), any())).thenReturn(buildCustomer("cust-1"));
+
+        mockMvc.perform(post("/api/customers/cust-1/tags")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"action\":\"ADD\",\"tags\":[\"VIP\"]}"))
+            .andExpect(status().isOk());
+    }
 }

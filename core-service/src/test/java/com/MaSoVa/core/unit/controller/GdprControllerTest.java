@@ -71,4 +71,50 @@ class GdprControllerTest extends BaseServiceTest {
         mockMvc.perform(get("/api/gdpr/audit/user-1"))
             .andExpect(status().isOk());
     }
+
+    @Test
+    @DisplayName("POST /api/gdpr/consent returns 200 when consent granted")
+    void grantConsent_returns200() throws Exception {
+        when(consentService.grantConsent(any(), any(), any(), any(), any(), any()))
+                .thenReturn(new GdprConsent());
+
+        mockMvc.perform(post("/api/gdpr/consent")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"userId\":\"user-1\",\"consentType\":\"TERMS_AND_CONDITIONS\",\"version\":\"v1\",\"confirmationText\":\"I agree\"}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("DELETE /api/gdpr/consent returns 200 when consent revoked")
+    void revokeConsent_returns200() throws Exception {
+        when(consentService.revokeConsent(any(), any(), any(), any()))
+                .thenReturn(new GdprConsent());
+
+        mockMvc.perform(delete("/api/gdpr/consent")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"userId\":\"user-1\",\"consentType\":\"TERMS_AND_CONDITIONS\"}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("POST /api/gdpr/request returns 200 on request creation")
+    void createRequest_returns200() throws Exception {
+        when(dataRequestService.createDataRequest(any(), any(), any(), any(), any()))
+                .thenReturn(new GdprDataRequest());
+
+        mockMvc.perform(post("/api/gdpr/request")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"userId\":\"user-1\",\"requestType\":\"ACCESS\",\"description\":\"Please provide my data\"}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/gdpr/export/{userId} returns 200 with export")
+    void exportData_returns200() throws Exception {
+        when(dataRequestService.exportAllCustomerData(anyString(), any()))
+                .thenReturn(new com.MaSoVa.core.user.dto.GdprExportPackage("user-1"));
+
+        mockMvc.perform(get("/api/gdpr/export/user-1"))
+            .andExpect(status().isOk());
+    }
 }
