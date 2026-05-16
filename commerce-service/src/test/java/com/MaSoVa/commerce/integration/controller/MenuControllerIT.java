@@ -21,7 +21,7 @@ class MenuControllerIT extends BaseFullIntegrationTest {
     @WithMockUser(roles = "MANAGER")
     @DisplayName("POST /api/menu creates item then GET retrieves it")
     void createThenRetrieve() throws Exception {
-        String createBody = "{\"name\":\"Margherita\",\"cuisine\":\"ITALIAN\",\"category\":\"PIZZA\",\"basePrice\":29900,\"storeId\":\"store-1\"}";
+        String createBody = "{\"name\":\"Margherita\",\"cuisine\":\"ITALIAN\",\"category\":\"PIZZA\",\"basePrice\":29900,\"storeId\":\"store-1\",\"isAvailable\":false}";
 
         String response = mockMvc.perform(post("/api/menu")
                 .contentType(MediaType.APPLICATION_JSON)

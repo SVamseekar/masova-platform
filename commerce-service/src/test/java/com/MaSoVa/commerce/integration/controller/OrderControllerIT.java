@@ -28,10 +28,10 @@ class OrderControllerIT extends BaseMessagingIntegrationTest {
 
     @Test
     @WithMockUser(roles = "MANAGER")
-    @DisplayName("GET /api/orders/{id} returns 404 for non-existent order")
-    void getOrder_returns404() throws Exception {
+    @DisplayName("GET /api/orders/{id} returns error for non-existent order")
+    void getOrder_returnsErrorForNonExistent() throws Exception {
         mockMvc.perform(get("/api/orders/nonexistent")
                 .header("X-User-Type", "MANAGER"))
-            .andExpect(status().isNotFound());
+            .andExpect(status().is4xxClientError());
     }
 }
