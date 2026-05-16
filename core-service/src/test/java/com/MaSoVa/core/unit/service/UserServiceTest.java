@@ -1231,4 +1231,73 @@ class UserServiceTest {
             assertThat(result.getStoreId()).isEqualTo("store-1");
         }
     }
+
+    // ===========================
+    // createEmployee
+    // ===========================
+
+    @Nested
+    @DisplayName("createEmployee")
+    class CreateEmployee {
+
+        @Test
+        @DisplayName("throws when email already exists")
+        void throwsOnDuplicateEmail() {
+            UserCreateRequest req = buildCreateRequest("exists@masova.com", "9876543210", UserType.STAFF, "store-1");
+            when(userRepository.existsByPersonalInfoEmail("exists@masova.com")).thenReturn(true);
+
+            assertThatThrownBy(() -> userService.createEmployee(req))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Email already exists");
+        }
+
+        @Test
+        @DisplayName("throws when storeId missing for employee")
+        void throwsWhenNoStoreId() {
+            UserCreateRequest req = buildCreateRequest("emp@masova.com", "9876543210", UserType.STAFF, null);
+            when(userRepository.existsByPersonalInfoEmail(any())).thenReturn(false);
+            when(userRepository.existsByPersonalInfoPhone(any())).thenReturn(false);
+
+            assertThatThrownBy(() -> userService.createEmployee(req))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Store ID");
+        }
+
+        @Test
+        @DisplayName("creates employee and returns UserResponse")
+        void createsEmployee() {
+            UserCreateRequest req = buildCreateRequest("emp@masova.com", "9876543210", UserType.STAFF, "store-1");
+            when(userRepository.existsByPersonalInfoEmail(any())).thenReturn(false);
+            when(userRepository.existsByPersonalInfoPhone(any())).thenReturn(false);
+            when(passwordEncoder.encode(any())).thenReturn("hashed");
+            User saved = buildEmployee("e1", "emp@masova.com", "store-1");
+            when(userRepository.save(any())).thenReturn(saved);
+            when(userJpaRepository.save(any())).thenReturn(null);
+
+            UserResponse result = userService.createEmployee(req);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getStoreId()).isEqualTo("store-1");
+        }
+    }
+
+    // ===========================
+    // getUserResponseById
+    // ===========================
+
+    @Nested
+    @DisplayName("getUserResponseById")
+    class GetUserResponseById {
+
+        @Test
+        @DisplayName("returns UserResponse for found user")
+        void returnsResponse() {
+            User user = buildUser("u1", "test@masova.com", UserType.CUSTOMER);
+            when(userRepository.findById("u1")).thenReturn(Optional.of(user));
+
+            UserResponse result = userService.getUserResponseById("u1");
+
+            assertThat(result.getId()).isEqualTo("u1");
+        }
+    }
 }
