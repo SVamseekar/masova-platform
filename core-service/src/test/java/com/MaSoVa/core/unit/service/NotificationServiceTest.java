@@ -21,6 +21,10 @@ import org.mockito.quality.Strictness;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -299,6 +303,100 @@ class NotificationServiceTest {
             when(notificationRepository.findById("missing")).thenReturn(Optional.empty());
 
             assertThatCode(() -> notificationService.sendNotification("missing"))
+                    .doesNotThrowAnyException();
+        }
+    }
+
+    // ===========================
+    // getUserNotifications
+    // ===========================
+
+    @Nested
+    @DisplayName("getUserNotifications")
+    class GetUserNotifications {
+
+        @Test
+        @DisplayName("returns paginated notifications for user")
+        void returnsPaginated() {
+            Page<Notification> page = new PageImpl<>(List.of());
+            when(notificationRepository.findByUserIdOrderByCreatedAtDesc(eq("user-1"), any(Pageable.class)))
+                    .thenReturn(page);
+
+            assertThat(notificationService.getUserNotifications("user-1", Pageable.unpaged())).isEmpty();
+        }
+    }
+
+    // ===========================
+    // getUnreadNotifications
+    // ===========================
+
+    @Nested
+    @DisplayName("getUnreadNotifications")
+    class GetUnreadNotifications {
+
+        @Test
+        @DisplayName("returns unread notifications for user")
+        void returnsUnread() {
+            Notification n = buildNotification("n1", "user-1",
+                    Notification.NotificationType.ORDER_STATUS_UPDATE, Notification.NotificationChannel.IN_APP);
+            when(notificationRepository.findByUserIdAndReadAtIsNull("user-1")).thenReturn(List.of(n));
+
+            List<Notification> result = notificationService.getUnreadNotifications("user-1");
+            assertThat(result).hasSize(1);
+        }
+    }
+
+    // ===========================
+    // sendImmediately
+    // ===========================
+
+    @Nested
+    @DisplayName("sendImmediately")
+    class SendImmediately {
+
+        @Test
+        @DisplayName("creates and sends notification immediately using user preferences")
+        void sendsImmediately() {
+            UserPreferences prefs = new UserPreferences("user-1");
+            prefs.setEmail("test@example.com");
+            prefs.setSmsEnabled(true);
+            when(userPreferencesRepository.findByUserId("user-1")).thenReturn(Optional.of(prefs));
+            when(notificationRepository.save(any())).thenAnswer(inv -> {
+                Notification n = inv.getArgument(0);
+                n.setId("n1");
+                return n;
+            });
+            when(notificationRepository.findById("n1")).thenReturn(Optional.empty());
+
+            assertThatCode(() -> notificationService.sendImmediately("user-1", "Title", "Message",
+                    Notification.NotificationType.ORDER_STATUS_UPDATE, Notification.NotificationChannel.IN_APP))
+                    .doesNotThrowAnyException();
+        }
+    }
+
+    // ===========================
+    // Event handlers
+    // ===========================
+
+    @Nested
+    @DisplayName("handleOrderCreatedEvent and handleOrderStatusChangedEvent")
+    class EventHandlers {
+
+        @Test
+        @DisplayName("handleOrderCreatedEvent does not throw")
+        void orderCreatedNoThrow() {
+            var event = new com.MaSoVa.shared.messaging.events.OrderCreatedEvent();
+
+            assertThatCode(() -> notificationService.handleOrderCreatedEvent(event))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("handleOrderStatusChangedEvent does not throw")
+        void orderStatusChangedNoThrow() {
+            var event = new com.MaSoVa.shared.messaging.events.OrderStatusChangedEvent();
+
+            assertThatCode(() -> notificationService.handleOrderStatusChangedEvent(event))
                     .doesNotThrowAnyException();
         }
     }
