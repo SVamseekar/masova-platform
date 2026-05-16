@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
@@ -762,6 +763,222 @@ class CustomerServiceTest {
             Customer result = customerService.updateEmail("c1", "same@example.com");
             assertThat(result.getEmail()).isEqualTo("same@example.com");
             verify(customerRepository, never()).save(any());
+        }
+    }
+
+    // ===========================
+    // getCustomerById / getCustomerByUserId / getCustomerByEmail
+    // ===========================
+
+    @Nested
+    @DisplayName("getCustomerById")
+    class GetCustomerById {
+
+        @Test
+        @DisplayName("returns present when found")
+        void returnsPresent() {
+            Customer c = buildCustomer("c1", "test@example.com");
+            when(customerRepository.findById("c1")).thenReturn(Optional.of(c));
+            assertThat(customerService.getCustomerById("c1")).isPresent();
+        }
+
+        @Test
+        @DisplayName("returns empty when not found")
+        void returnsEmpty() {
+            when(customerRepository.findById("missing")).thenReturn(Optional.empty());
+            assertThat(customerService.getCustomerById("missing")).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("getCustomerByUserId")
+    class GetCustomerByUserId {
+
+        @Test
+        @DisplayName("returns present when found by userId")
+        void returnsPresent() {
+            Customer c = buildCustomer("c1", "test@example.com");
+            when(customerRepository.findByUserId("user-1")).thenReturn(Optional.of(c));
+            assertThat(customerService.getCustomerByUserId("user-1")).isPresent();
+        }
+    }
+
+    @Nested
+    @DisplayName("getCustomerByEmail")
+    class GetCustomerByEmail {
+
+        @Test
+        @DisplayName("returns customer by email")
+        void returnsByEmail() {
+            Customer c = buildCustomer("c1", "test@example.com");
+            when(customerRepository.findByEmail("test@example.com")).thenReturn(Optional.of(c));
+            assertThat(customerService.getCustomerByEmail("test@example.com")).isPresent();
+        }
+    }
+
+    @Nested
+    @DisplayName("getAllCustomers and getActiveCustomers")
+    class QueryAllCustomers {
+
+        @Test
+        @DisplayName("getAllCustomers returns sorted list")
+        void getAllCustomers() {
+            Customer c = buildCustomer("c1", "test@example.com");
+            when(customerRepository.findAll(any(org.springframework.data.domain.Sort.class))).thenReturn(List.of(c));
+            assertThat(customerService.getAllCustomers()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("getActiveCustomers returns active only")
+        void getActiveCustomers() {
+            Customer c = buildCustomer("c1", "test@example.com");
+            when(customerRepository.findByActiveTrue()).thenReturn(List.of(c));
+            assertThat(customerService.getActiveCustomers()).hasSize(1);
+        }
+    }
+
+    // ===========================
+    // verifyEmail / verifyPhone
+    // ===========================
+
+    @Nested
+    @DisplayName("verifyEmail and verifyPhone")
+    class Verification {
+
+        @Test
+        @DisplayName("verifyEmail sets emailVerified=true")
+        void verifiesEmail() {
+            Customer c = buildCustomer("c1", "test@example.com");
+            c.setEmailVerified(false);
+            when(customerRepository.findById("c1")).thenReturn(Optional.of(c));
+            when(customerRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            Customer result = customerService.verifyEmail("c1");
+            assertThat(result.isEmailVerified()).isTrue();
+        }
+
+        @Test
+        @DisplayName("verifyPhone sets phoneVerified=true")
+        void verifiesPhone() {
+            Customer c = buildCustomer("c1", "test@example.com");
+            c.setPhoneVerified(false);
+            when(customerRepository.findById("c1")).thenReturn(Optional.of(c));
+            when(customerRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            Customer result = customerService.verifyPhone("c1");
+            assertThat(result.isPhoneVerified()).isTrue();
+        }
+    }
+
+    // ===========================
+    // addTags / removeTags
+    // ===========================
+
+    @Nested
+    @DisplayName("addTags and removeTags")
+    class TagManagement {
+
+        @Test
+        @DisplayName("addTags adds tags to customer")
+        void addsTags() {
+            Customer c = buildCustomer("c1", "test@example.com");
+            c.setTags(new HashSet<>());
+            when(customerRepository.findById("c1")).thenReturn(Optional.of(c));
+            when(customerRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            Customer result = customerService.addTags("c1", Set.of("VIP", "LOYAL"));
+            assertThat(result.getTags()).contains("VIP", "LOYAL");
+        }
+
+        @Test
+        @DisplayName("removeTags removes specified tags")
+        void removesTags() {
+            Customer c = buildCustomer("c1", "test@example.com");
+            c.setTags(new HashSet<>(Set.of("VIP", "LOYAL", "NEW")));
+            when(customerRepository.findById("c1")).thenReturn(Optional.of(c));
+            when(customerRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            Customer result = customerService.removeTags("c1", Set.of("NEW"));
+            assertThat(result.getTags()).doesNotContain("NEW");
+            assertThat(result.getTags()).contains("VIP", "LOYAL");
+        }
+    }
+
+    // ===========================
+    // Query helpers
+    // ===========================
+
+    @Nested
+    @DisplayName("Query helper methods")
+    class QueryHelpers {
+
+        @Test
+        @DisplayName("getCustomersByLoyaltyTier delegates to repository")
+        void getByLoyaltyTier() {
+            Customer c = buildCustomer("c1", "test@example.com");
+            when(customerRepository.findByLoyaltyTier("GOLD")).thenReturn(List.of(c));
+            assertThat(customerService.getCustomersByLoyaltyTier("GOLD")).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("getHighValueCustomers delegates to repository")
+        void getHighValue() {
+            Customer c = buildCustomer("c1", "test@example.com");
+            when(customerRepository.findByMinimumSpending(1000.0)).thenReturn(List.of(c));
+            assertThat(customerService.getHighValueCustomers(1000.0)).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("getTopSpenders delegates to repository")
+        void getTopSpenders() {
+            Customer c = buildCustomer("c1", "test@example.com");
+            when(customerRepository.findTopSpenders(any())).thenReturn(List.of(c));
+            assertThat(customerService.getTopSpenders(5)).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("getMarketingOptInCustomers delegates to repository")
+        void getMarketingOptIn() {
+            when(customerRepository.findMarketingOptInCustomers()).thenReturn(List.of());
+            assertThat(customerService.getMarketingOptInCustomers()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("getSmsOptInCustomers delegates to repository")
+        void getSmsOptIn() {
+            when(customerRepository.findSmsOptInCustomers()).thenReturn(List.of());
+            assertThat(customerService.getSmsOptInCustomers()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("getCustomersByTags delegates to repository")
+        void getByTags() {
+            Customer c = buildCustomer("c1", "test@example.com");
+            when(customerRepository.findByTags(List.of("VIP"))).thenReturn(List.of(c));
+            assertThat(customerService.getCustomersByTags(List.of("VIP"))).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("getRecentlyActiveCustomers queries with correct cutoff date")
+        void getRecentlyActive() {
+            when(customerRepository.findRecentlyActiveCustomers(any())).thenReturn(List.of());
+            assertThat(customerService.getRecentlyActiveCustomers(30)).isEmpty();
+            verify(customerRepository).findRecentlyActiveCustomers(any());
+        }
+
+        @Test
+        @DisplayName("getInactiveCustomers queries with correct cutoff date")
+        void getInactive() {
+            when(customerRepository.findInactiveCustomersSince(any())).thenReturn(List.of());
+            assertThat(customerService.getInactiveCustomers(90)).isEmpty();
+            verify(customerRepository).findInactiveCustomersSince(any());
+        }
+
+        @Test
+        @DisplayName("getBirthdayCustomersToday delegates to repository with today's date")
+        void getBirthday() {
+            when(customerRepository.findBirthdayCustomers(anyInt(), anyInt())).thenReturn(List.of());
+            assertThat(customerService.getBirthdayCustomersToday()).isEmpty();
         }
     }
 }
