@@ -89,9 +89,10 @@ class CustomerDataRetentionServiceTest {
             Customer inactive = new Customer();
             inactive.setId("c2");
             inactive.setActive(true);
-            when(customerRepository.findByActiveAndLastOrderDateBefore(anyBoolean(), any())).thenReturn(List.of(inactive));
-            when(customerRepository.findByActiveAndLastOrderDateIsNullAndCreatedAtBefore(anyBoolean(), any())).thenReturn(List.of());
-            when(customerRepository.findByLoyaltyInfoPointsGreaterThanAndLastOrderDateBefore(anyInt(), any())).thenReturn(List.of());
+            // Return mutable list — service calls addAll() on result, List.of() would throw UnsupportedOperationException
+            when(customerRepository.findByActiveAndLastOrderDateBefore(anyBoolean(), any())).thenReturn(new java.util.ArrayList<>(List.of(inactive)));
+            when(customerRepository.findByActiveAndLastOrderDateIsNullAndCreatedAtBefore(anyBoolean(), any())).thenReturn(new java.util.ArrayList<>());
+            when(customerRepository.findByLoyaltyInfoPointsGreaterThanAndLastOrderDateBefore(anyInt(), any())).thenReturn(new java.util.ArrayList<>());
 
             // anonymizeInactiveCustomers is called by runWeeklyRetentionJob, not daily
             retentionService.runWeeklyRetentionJob();
