@@ -16,8 +16,15 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
+import com.MaSoVa.core.user.dto.WorkingHoursReport;
+import com.MaSoVa.shared.entity.WorkingSession;
+import com.MaSoVa.shared.enums.WorkingSessionStatus;
+
+import java.time.LocalDate;
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -66,5 +73,124 @@ class WorkingSessionControllerTest extends BaseServiceTest {
                 .content("{\"reason\":\"Not authorized\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.message").value("Session rejected"));
+    }
+
+    @Test
+    @DisplayName("POST /api/sessions — starts session with storeId header")
+    void startSession_returnsOk() throws Exception {
+        WorkingSession session = new WorkingSession();
+        session.setStatus(WorkingSessionStatus.COMPLETED);
+        when(sessionService.startSession(anyString(), anyString())).thenReturn(session);
+
+        mockMvc.perform(post("/api/sessions")
+                .header("X-User-Id", "emp-1")
+                .header("X-Store-Id", "store-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("POST /api/sessions — returns 400 when no storeId")
+    void startSession_returns400WhenNoStore() throws Exception {
+        mockMvc.perform(post("/api/sessions")
+                .header("X-User-Id", "emp-1"))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /api/sessions/end — ends session")
+    void endSession_returnsOk() throws Exception {
+        WorkingSession session = new WorkingSession();
+        session.setStatus(WorkingSessionStatus.COMPLETED);
+        when(sessionService.endSession(anyString())).thenReturn(session);
+
+        mockMvc.perform(post("/api/sessions/end")
+                .header("X-User-Id", "emp-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("POST /api/sessions/clock-in — returns 400 when no storeId")
+    void clockIn_returns400WhenNoStore() throws Exception {
+        mockMvc.perform(post("/api/sessions/clock-in")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"employeeId\":\"emp-1\",\"pin\":\"12345\"}"))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /api/sessions/clock-in — returns 400 when employeeId or pin missing")
+    void clockIn_returns400WhenMissingFields() throws Exception {
+        mockMvc.perform(post("/api/sessions/clock-in")
+                .header("X-Store-Id", "store-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /api/sessions/clock-out — returns 400 when employeeId missing")
+    void clockOut_returns400WhenMissing() throws Exception {
+        mockMvc.perform(post("/api/sessions/clock-out")
+                .header("X-User-Id", "manager-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /api/sessions/clock-out — returns 200 with employee clocked out")
+    void clockOut_returnsOk() throws Exception {
+        WorkingSession session = new WorkingSession();
+        session.setStatus(WorkingSessionStatus.COMPLETED);
+        when(sessionService.endSession("emp-1")).thenReturn(session);
+
+        mockMvc.perform(post("/api/sessions/clock-out")
+                .header("X-User-Id", "manager-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"employeeId\":\"emp-1\"}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/sessions — returns 400 when no storeId or employeeId")
+    void getSessions_returns400WhenNoFilter() throws Exception {
+        mockMvc.perform(get("/api/sessions"))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("GET /api/sessions — returns sessions for employeeId")
+    void getSessions_byEmployee() throws Exception {
+        when(sessionService.getEmployeeSessions(anyString(), any(), any(), anyInt(), anyInt()))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get("/api/sessions")
+                .param("employeeId", "emp-1"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/sessions — returns active sessions for store")
+    void getSessions_activeSessions() throws Exception {
+        when(sessionService.getActiveSessionsForStore("store-1")).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/sessions")
+                .param("storeId", "store-1")
+                .param("active", "true"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/sessions — returns store sessions")
+    void getSessions_byStore() throws Exception {
+        when(sessionService.getStoreSessions(anyString(), any(), any())).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/sessions")
+                .param("storeId", "store-1"))
+            .andExpect(status().isOk());
     }
 }
