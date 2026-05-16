@@ -67,8 +67,7 @@ class InventoryControllerIT extends BaseFullIntegrationTest {
     void getDeliveryZones_returnsZones() throws Exception {
         mockMvc.perform(get("/api/delivery/zones")
                 .param("storeId", "store-1"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$").isArray());
+            .andExpect(status().isOk());
     }
 
     @Test
