@@ -183,14 +183,15 @@ class ReviewServiceTest {
         }
 
         @Test
-        @DisplayName("deletes review when found")
-        void deletesReview() {
+        @DisplayName("soft-deletes review by setting isDeleted=true")
+        void softDeletesReview() {
             Review review = buildReview("r1", "order-1");
             when(reviewRepository.findById("r1")).thenReturn(Optional.of(review));
+            when(reviewRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
             reviewService.deleteReview("r1");
 
-            verify(reviewRepository).delete(review);
+            verify(reviewRepository).save(argThat(r -> Boolean.TRUE.equals(r.getIsDeleted())));
         }
     }
 
