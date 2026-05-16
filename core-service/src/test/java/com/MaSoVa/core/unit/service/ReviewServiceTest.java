@@ -18,6 +18,10 @@ import org.mockito.quality.Strictness;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -299,6 +303,80 @@ class ReviewServiceTest {
         void returnsEmpty() {
             when(reviewRepository.findByOrderIdAndIsDeletedFalse("order-99")).thenReturn(List.of());
             assertThat(reviewService.getReviewsByOrderId("order-99")).isEmpty();
+        }
+    }
+
+    // ===========================
+    // Paginated query delegation methods
+    // ===========================
+
+    @Nested
+    @DisplayName("Paginated query methods")
+    class PaginatedQueries {
+
+        @Test
+        @DisplayName("getReviewsByCustomerId delegates to repository")
+        void byCustomerId() {
+            Review r = buildReview("r1", "order-1");
+            Page<Review> page = new PageImpl<>(List.of(r));
+            when(reviewRepository.findByCustomerIdAndIsDeletedFalse(eq("cust-1"), any(Pageable.class))).thenReturn(page);
+
+            assertThat(reviewService.getReviewsByCustomerId("cust-1", Pageable.unpaged())).isNotEmpty();
+        }
+
+        @Test
+        @DisplayName("getReviewsByDriverId delegates to repository")
+        void byDriverId() {
+            Review r = buildReview("r1", "order-1");
+            Page<Review> page = new PageImpl<>(List.of(r));
+            when(reviewRepository.findByDriverIdAndIsDeletedFalseAndDriverRatingIsNotNull(eq("driver-1"), any(Pageable.class))).thenReturn(page);
+
+            assertThat(reviewService.getReviewsByDriverId("driver-1", Pageable.unpaged())).isNotEmpty();
+        }
+
+        @Test
+        @DisplayName("getReviewsByMenuItemId delegates to repository")
+        void byMenuItemId() {
+            Page<Review> page = new PageImpl<>(List.of());
+            when(reviewRepository.findByMenuItemId(eq("item-1"), any(Pageable.class))).thenReturn(page);
+
+            assertThat(reviewService.getReviewsByMenuItemId("item-1", Pageable.unpaged())).isEmpty();
+        }
+
+        @Test
+        @DisplayName("getRecentReviews delegates to repository")
+        void recentReviews() {
+            Page<Review> page = new PageImpl<>(List.of());
+            when(reviewRepository.findByIsDeletedFalseOrderByCreatedAtDesc(any(Pageable.class))).thenReturn(page);
+
+            assertThat(reviewService.getRecentReviews(Pageable.unpaged())).isEmpty();
+        }
+
+        @Test
+        @DisplayName("getReviewsByStatus delegates to repository")
+        void byStatus() {
+            Page<Review> page = new PageImpl<>(List.of());
+            when(reviewRepository.findByStatusAndIsDeletedFalse(eq(Review.ReviewStatus.PENDING), any(Pageable.class))).thenReturn(page);
+
+            assertThat(reviewService.getReviewsByStatus(Review.ReviewStatus.PENDING, Pageable.unpaged())).isEmpty();
+        }
+
+        @Test
+        @DisplayName("getReviewsNeedingResponse delegates to repository")
+        void needingResponse() {
+            Page<Review> page = new PageImpl<>(List.of());
+            when(reviewRepository.findReviewsNeedingResponse(any(Pageable.class))).thenReturn(page);
+
+            assertThat(reviewService.getReviewsNeedingResponse(Pageable.unpaged())).isEmpty();
+        }
+
+        @Test
+        @DisplayName("getReviewsByStaffId delegates to repository")
+        void byStaffId() {
+            Page<Review> page = new PageImpl<>(List.of());
+            when(reviewRepository.findByStaffIdAndIsDeletedFalseAndStaffRatingIsNotNull(eq("staff-1"), any(Pageable.class))).thenReturn(page);
+
+            assertThat(reviewService.getReviewsByStaffId("staff-1", Pageable.unpaged())).isEmpty();
         }
     }
 }
