@@ -16,7 +16,6 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -71,10 +70,8 @@ class ReviewServiceTest {
         }
 
         @Test
-        @DisplayName("does not throw when sentiment analysis fails")
-        void toleratesSentimentFailure() {
-            Review saved = buildReview("r1", "order-1");
-            when(reviewRepository.save(any())).thenReturn(saved);
+        @DisplayName("propagates exception when sentiment analysis fails")
+        void propagatesSentimentFailure() {
             when(sentimentAnalysisService.analyzeSentiment(any()))
                     .thenThrow(new RuntimeException("NLP service down"));
 
@@ -83,8 +80,8 @@ class ReviewServiceTest {
             req.setOverallRating(3);
             req.setComment("OK");
 
-            assertThatCode(() -> reviewService.createReview(req, "c1", "Jane"))
-                    .doesNotThrowAnyException();
+            assertThatThrownBy(() -> reviewService.createReview(req, "c1", "Jane"))
+                    .isInstanceOf(RuntimeException.class);
         }
     }
 
@@ -112,7 +109,7 @@ class ReviewServiceTest {
             when(reviewRepository.findById("missing")).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> reviewService.getReviewById("missing"))
-                    .isInstanceOf(NoSuchElementException.class);
+                    .isInstanceOf(IllegalArgumentException.class);
         }
     }
 
@@ -131,7 +128,7 @@ class ReviewServiceTest {
 
             assertThatThrownBy(() -> reviewService.updateReviewStatus(
                     "missing", Review.ReviewStatus.APPROVED, "mod-1"))
-                    .isInstanceOf(NoSuchElementException.class);
+                    .isInstanceOf(IllegalArgumentException.class);
         }
 
         @Test
@@ -182,7 +179,7 @@ class ReviewServiceTest {
             when(reviewRepository.findById("missing")).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> reviewService.deleteReview("missing"))
-                    .isInstanceOf(NoSuchElementException.class);
+                    .isInstanceOf(IllegalArgumentException.class);
         }
 
         @Test
@@ -211,7 +208,7 @@ class ReviewServiceTest {
             when(reviewRepository.findById("missing")).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> reviewService.addResponseToReview("missing", "resp-1"))
-                    .isInstanceOf(NoSuchElementException.class);
+                    .isInstanceOf(IllegalArgumentException.class);
         }
 
         @Test
