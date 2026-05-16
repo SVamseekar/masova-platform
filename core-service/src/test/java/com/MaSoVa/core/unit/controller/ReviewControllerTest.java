@@ -91,4 +91,63 @@ class ReviewControllerTest extends BaseServiceTest {
         mockMvc.perform(get("/api/reviews/public/token/valid-token"))
             .andExpect(status().isOk());
     }
+
+    @Test
+    @DisplayName("POST /api/reviews creates review and returns 201")
+    void createReview_returns201() throws Exception {
+        when(reviewService.createReview(any(), anyString(), anyString())).thenReturn(buildReview("rev-1"));
+
+        mockMvc.perform(post("/api/reviews")
+                .header("X-User-Id", "cust-1")
+                .header("X-Customer-Name", "Test Customer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"orderId\":\"ord-1\",\"overallRating\":4,\"comment\":\"Great!\"}"))
+            .andExpect(status().isCreated());
+    }
+
+    @Test
+    @DisplayName("GET /api/reviews/stats returns 200 with overall stats")
+    void getStats_returns200() throws Exception {
+        when(analyticsService.getOverallStats()).thenReturn(new com.MaSoVa.core.review.dto.response.ReviewStatsResponse());
+
+        mockMvc.perform(get("/api/reviews/stats"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("DELETE /api/reviews/{reviewId} deletes review and returns 200")
+    void deleteReview_returns200() throws Exception {
+        org.mockito.Mockito.doNothing().when(reviewService).deleteReview(anyString());
+
+        mockMvc.perform(delete("/api/reviews/rev-1"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/reviews/response-templates returns 200 with templates")
+    void getResponseTemplates_returns200() throws Exception {
+        when(responseService.getAllTemplates()).thenReturn(java.util.Map.of());
+
+        mockMvc.perform(get("/api/reviews/response-templates"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/reviews with customer filter returns 200")
+    void getReviews_withCustomerFilter_returns200() throws Exception {
+        when(reviewService.getReviewsByCustomerId(anyString(), any()))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
+
+        mockMvc.perform(get("/api/reviews").param("customerId", "cust-1"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/reviews with orderId filter returns 200")
+    void getReviews_withOrderFilter_returns200() throws Exception {
+        when(reviewService.getReviewsByOrderId("ord-1")).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/reviews").param("orderId", "ord-1"))
+            .andExpect(status().isOk());
+    }
 }
