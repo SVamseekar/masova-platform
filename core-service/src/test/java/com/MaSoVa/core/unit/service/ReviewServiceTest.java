@@ -40,6 +40,7 @@ class ReviewServiceTest {
                 .overallRating(4)
                 .comment("Great food!")
                 .status(Review.ReviewStatus.APPROVED)
+                .isDeleted(false)
                 .build();
     }
 
