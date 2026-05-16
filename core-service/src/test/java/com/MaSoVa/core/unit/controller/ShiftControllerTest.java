@@ -151,9 +151,8 @@ class ShiftControllerTest extends BaseServiceTest {
     @Test
     @DisplayName("GET /api/shifts with week+storeId returns weekly schedule")
     void getShifts_weeklySchedule_returns200() throws Exception {
-        java.util.Map<String, List<Shift>> schedule = new java.util.HashMap<>();
-        schedule.put("2026-05-12", List.of(buildShift("shift-1")));
-        when(shiftService.getWeeklySchedule(anyString(), any())).thenReturn(schedule);
+        when(shiftService.getWeeklySchedule(anyString(), any()))
+                .thenReturn(List.of(buildShift("shift-1")));
 
         mockMvc.perform(get("/api/shifts")
                 .param("storeId", "store-1")
