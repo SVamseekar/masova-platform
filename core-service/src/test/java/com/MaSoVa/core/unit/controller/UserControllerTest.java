@@ -170,4 +170,190 @@ class UserControllerTest extends BaseServiceTest {
                 .andExpect(status().isBadRequest());
         }
     }
+
+    @Nested
+    @DisplayName("GET /api/users/kiosk")
+    class ListKiosks {
+
+        @Test
+        @DisplayName("returns 200 with kiosk accounts for store")
+        void returns200() throws Exception {
+            when(userService.getKioskAccountsByStore("store-1")).thenReturn(List.of(buildUser("k1")));
+
+            mockMvc.perform(get("/api/users/kiosk").param("storeId", "store-1"))
+                    .andExpect(status().isOk());
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/users/kiosk/{kioskUserId}/deactivate")
+    class DeactivateKiosk {
+
+        @Test
+        @DisplayName("returns 200 on deactivation")
+        void returns200() throws Exception {
+            doNothing().when(userService).deactivateKioskAccount(anyString(), anyString());
+
+            mockMvc.perform(post("/api/users/kiosk/k1/deactivate")
+                    .header("X-User-Id", "manager-1"))
+                    .andExpect(status().isOk());
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/users/kiosk/auto-login")
+    class KioskAutoLogin {
+
+        @Test
+        @DisplayName("returns 400 when kioskToken is missing")
+        void returns400WhenTokenMissing() throws Exception {
+            mockMvc.perform(post("/api/users/kiosk/auto-login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{}"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("returns 401 when token is not a kiosk token")
+        void returns401WhenNotKioskToken() throws Exception {
+            when(jwtService.isKioskToken("invalid-token")).thenReturn(false);
+
+            mockMvc.perform(post("/api/users/kiosk/auto-login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"kioskToken\":\"invalid-token\"}"))
+                    .andExpect(status().isUnauthorized());
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/users/{userId}/status")
+    class GetDriverStatus {
+
+        @Test
+        @DisplayName("returns driver status when user is a driver")
+        void returnsStatus() throws Exception {
+            com.MaSoVa.shared.entity.User driver = new com.MaSoVa.shared.entity.User();
+            driver.setId("d1");
+            driver.setType(com.MaSoVa.shared.enums.UserType.DRIVER);
+            com.MaSoVa.shared.entity.User.EmployeeDetails details = new com.MaSoVa.shared.entity.User.EmployeeDetails();
+            details.setStatus("AVAILABLE");
+            driver.setEmployeeDetails(details);
+            when(userService.getUserByIdUncached("d1")).thenReturn(driver);
+            when(workingSessionService.isEmployeeCurrentlyWorking("d1")).thenReturn(true);
+
+            mockMvc.perform(get("/api/users/d1/status"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.status").value("AVAILABLE"));
+        }
+
+        @Test
+        @DisplayName("returns 400 when user is not a driver")
+        void returns400WhenNotDriver() throws Exception {
+            com.MaSoVa.shared.entity.User notDriver = new com.MaSoVa.shared.entity.User();
+            notDriver.setId("u1");
+            notDriver.setType(com.MaSoVa.shared.enums.UserType.CUSTOMER);
+            when(userService.getUserByIdUncached("u1")).thenReturn(notDriver);
+
+            mockMvc.perform(get("/api/users/u1/status"))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Nested
+    @DisplayName("PATCH /api/users/{userId}/status")
+    class UpdateDriverStatus {
+
+        @Test
+        @DisplayName("returns 400 when status is invalid")
+        void returns400WhenInvalidStatus() throws Exception {
+            mockMvc.perform(patch("/api/users/d1/status")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"status\":\"INVALID_STATUS\"}"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("returns 400 when status is missing")
+        void returns400WhenStatusMissing() throws Exception {
+            mockMvc.perform(patch("/api/users/d1/status")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{}"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("returns 200 when status is valid AVAILABLE")
+        void returns200WhenValid() throws Exception {
+            doNothing().when(userService).updateDriverStatus("d1", "AVAILABLE");
+
+            mockMvc.perform(patch("/api/users/d1/status")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"status\":\"AVAILABLE\"}"))
+                    .andExpect(status().isOk());
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/users — filtered queries")
+    class GetUsersFiltered {
+
+        @Test
+        @DisplayName("returns DRIVER list when type=DRIVER and storeId given")
+        void returnsDriversByStore() throws Exception {
+            when(userService.getDriversByStore("store-1")).thenReturn(List.of(buildUser("d1")));
+
+            mockMvc.perform(get("/api/users")
+                    .param("type", "DRIVER")
+                    .param("storeId", "store-1"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("returns filtered by type and store")
+        void returnsByTypeAndStore() throws Exception {
+            when(userService.getUsersByTypeAndStore(any(), anyString())).thenReturn(List.of());
+
+            mockMvc.perform(get("/api/users")
+                    .param("type", "STAFF")
+                    .param("storeId", "store-1"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("returns store employees when only storeId given")
+        void returnsByStoreOnly() throws Exception {
+            when(userService.getStoreEmployees("store-1")).thenReturn(List.of());
+
+            mockMvc.perform(get("/api/users")
+                    .param("storeId", "store-1"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("returns by type when only type given")
+        void returnsByTypeOnly() throws Exception {
+            when(userService.getUsersByType(any())).thenReturn(List.of());
+
+            mockMvc.perform(get("/api/users")
+                    .param("type", "MANAGER"))
+                    .andExpect(status().isOk());
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/users/{userId}/generate-pin (bulk)")
+    class GeneratePinBulk {
+
+        @Test
+        @DisplayName("returns bulk results when bulk=true")
+        void returnsBulkResults() throws Exception {
+            when(userService.generatePINsForAllEmployees()).thenReturn(Map.of("emp-1", "12345"));
+
+            mockMvc.perform(post("/api/users/user-1/generate-pin")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"bulk\":true}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.totalProcessed").value(1));
+        }
+    }
 }
