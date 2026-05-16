@@ -201,7 +201,8 @@ class WorkingSessionControllerTest extends BaseServiceTest {
         session.setId("session-1");
         session.setEmployeeId("emp-1");
         session.setStoreId("store-1");
-        when(sessionService.startSession("emp-1", "store-1")).thenReturn(session);
+        session.setActive(false);
+        when(sessionService.clockInWithPin(anyString(), anyString(), anyString(), anyString())).thenReturn(session);
 
         mockMvc.perform(post("/api/sessions/clock-in")
                 .header("X-User-Store-Id", "store-1")
