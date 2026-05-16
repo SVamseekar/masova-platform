@@ -156,13 +156,15 @@ class CustomerControllerTest extends BaseServiceTest {
     }
 
     @Test
-    @DisplayName("POST /api/customers/{id}/tags with ADD action adds tags")
+    @DisplayName("POST /api/customers/{id}/tags with add map adds tags")
     void manageTags_add_returns200() throws Exception {
-        when(customerService.addTags(anyString(), any())).thenReturn(buildCustomer("cust-1"));
+        Customer c = buildCustomer("cust-1");
+        when(customerService.getCustomerById("cust-1")).thenReturn(Optional.of(c));
+        when(customerService.addTags(anyString(), any())).thenReturn(c);
 
         mockMvc.perform(post("/api/customers/cust-1/tags")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"action\":\"ADD\",\"tags\":[\"VIP\"]}"))
+                .content("{\"add\":[\"VIP\"]}"))
             .andExpect(status().isOk());
     }
 }

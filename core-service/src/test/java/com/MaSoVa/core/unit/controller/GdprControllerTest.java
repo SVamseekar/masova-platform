@@ -97,15 +97,15 @@ class GdprControllerTest extends BaseServiceTest {
     }
 
     @Test
-    @DisplayName("POST /api/gdpr/request returns 200 on request creation")
-    void createRequest_returns200() throws Exception {
+    @DisplayName("POST /api/gdpr/request returns 201 on request creation")
+    void createRequest_returns201() throws Exception {
         when(dataRequestService.createDataRequest(any(), any(), any(), any(), any()))
                 .thenReturn(new GdprDataRequest());
 
         mockMvc.perform(post("/api/gdpr/request")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"userId\":\"user-1\",\"requestType\":\"ACCESS\",\"description\":\"Please provide my data\"}"))
-            .andExpect(status().isOk());
+            .andExpect(status().isCreated());
     }
 
     @Test
