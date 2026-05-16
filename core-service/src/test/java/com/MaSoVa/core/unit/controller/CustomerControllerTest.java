@@ -120,7 +120,7 @@ class CustomerControllerTest extends BaseServiceTest {
 
         mockMvc.perform(post("/api/customers/cust-1/addresses")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"label\":\"Home\",\"addressLine1\":\"123 Main St\",\"city\":\"Bangalore\"}"))
+                .content("{\"label\":\"Home\",\"addressLine1\":\"123 Main St\",\"city\":\"Bangalore\",\"state\":\"Karnataka\",\"postalCode\":\"560001\"}"))
             .andExpect(status().isOk());
     }
 
