@@ -22,6 +22,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyInt;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -59,12 +60,10 @@ class CustomerDataRetentionServiceTest {
         @Test
         @DisplayName("does not throw when retention is enabled")
         void doesNotThrow() {
-            when(customerRepository.findByActiveAndDeletedAtBefore(eq(false), any()))
-                    .thenReturn(List.of());
-            when(customerRepository.findByActiveAndLastOrderDateBefore(eq(true), any()))
-                    .thenReturn(List.of());
-            when(customerRepository.findByActiveAndLastOrderDateIsNullAndCreatedAtBefore(eq(true), any()))
-                    .thenReturn(List.of());
+            when(customerRepository.findByActiveAndDeletedAtBefore(any(), any())).thenReturn(List.of());
+            when(customerRepository.findByActiveAndLastOrderDateBefore(any(), any())).thenReturn(List.of());
+            when(customerRepository.findByActiveAndLastOrderDateIsNullAndCreatedAtBefore(any(), any())).thenReturn(List.of());
+            when(customerRepository.findByLoyaltyInfoTotalPointsGreaterThanAndLastOrderDateBefore(anyInt(), any())).thenReturn(List.of());
 
             assertThatCode(() -> retentionService.runManualRetention())
                     .doesNotThrowAnyException();
@@ -74,12 +73,10 @@ class CustomerDataRetentionServiceTest {
         @DisplayName("hard-deletes customers past deletion cutoff")
         void hardDeletesPastCutoff() {
             Customer toDelete = buildInactiveCustomer("c1");
-            when(customerRepository.findByActiveAndDeletedAtBefore(eq(false), any()))
-                    .thenReturn(List.of(toDelete));
-            when(customerRepository.findByActiveAndLastOrderDateBefore(eq(true), any()))
-                    .thenReturn(List.of());
-            when(customerRepository.findByActiveAndLastOrderDateIsNullAndCreatedAtBefore(eq(true), any()))
-                    .thenReturn(List.of());
+            when(customerRepository.findByActiveAndDeletedAtBefore(any(), any())).thenReturn(List.of(toDelete));
+            when(customerRepository.findByActiveAndLastOrderDateBefore(any(), any())).thenReturn(List.of());
+            when(customerRepository.findByActiveAndLastOrderDateIsNullAndCreatedAtBefore(any(), any())).thenReturn(List.of());
+            when(customerRepository.findByLoyaltyInfoTotalPointsGreaterThanAndLastOrderDateBefore(anyInt(), any())).thenReturn(List.of());
 
             retentionService.runManualRetention();
 
@@ -92,12 +89,11 @@ class CustomerDataRetentionServiceTest {
             Customer inactive = new Customer();
             inactive.setId("c2");
             inactive.setActive(true);
-            when(customerRepository.findByActiveAndDeletedAtBefore(eq(false), any()))
-                    .thenReturn(List.of());
-            when(customerRepository.findByActiveAndLastOrderDateBefore(eq(true), any()))
-                    .thenReturn(List.of(inactive));
-            when(customerRepository.findByActiveAndLastOrderDateIsNullAndCreatedAtBefore(eq(true), any()))
-                    .thenReturn(List.of());
+            // stub all repo calls invoked by runDailyRetentionJob
+            when(customerRepository.findByActiveAndDeletedAtBefore(any(), any())).thenReturn(List.of());
+            when(customerRepository.findByActiveAndLastOrderDateBefore(any(), any())).thenReturn(List.of(inactive));
+            when(customerRepository.findByActiveAndLastOrderDateIsNullAndCreatedAtBefore(any(), any())).thenReturn(List.of());
+            when(customerRepository.findByLoyaltyInfoTotalPointsGreaterThanAndLastOrderDateBefore(anyInt(), any())).thenReturn(List.of());
 
             retentionService.runManualRetention();
 
@@ -120,12 +116,10 @@ class CustomerDataRetentionServiceTest {
         void skipsHardDeleteInDryRun() {
             ReflectionTestUtils.setField(retentionService, "dryRun", true);
             Customer toDelete = buildInactiveCustomer("c1");
-            when(customerRepository.findByActiveAndDeletedAtBefore(eq(false), any()))
-                    .thenReturn(List.of(toDelete));
-            when(customerRepository.findByActiveAndLastOrderDateBefore(eq(true), any()))
-                    .thenReturn(List.of());
-            when(customerRepository.findByActiveAndLastOrderDateIsNullAndCreatedAtBefore(eq(true), any()))
-                    .thenReturn(List.of());
+            when(customerRepository.findByActiveAndDeletedAtBefore(any(), any())).thenReturn(List.of(toDelete));
+            when(customerRepository.findByActiveAndLastOrderDateBefore(any(), any())).thenReturn(List.of());
+            when(customerRepository.findByActiveAndLastOrderDateIsNullAndCreatedAtBefore(any(), any())).thenReturn(List.of());
+            when(customerRepository.findByLoyaltyInfoTotalPointsGreaterThanAndLastOrderDateBefore(anyInt(), any())).thenReturn(List.of());
 
             retentionService.runManualRetention();
 
@@ -137,12 +131,10 @@ class CustomerDataRetentionServiceTest {
         void continuesOnFailure() {
             Customer c1 = buildInactiveCustomer("c1");
             Customer c2 = buildInactiveCustomer("c2");
-            when(customerRepository.findByActiveAndDeletedAtBefore(eq(false), any()))
-                    .thenReturn(List.of(c1, c2));
-            when(customerRepository.findByActiveAndLastOrderDateBefore(eq(true), any()))
-                    .thenReturn(List.of());
-            when(customerRepository.findByActiveAndLastOrderDateIsNullAndCreatedAtBefore(eq(true), any()))
-                    .thenReturn(List.of());
+            when(customerRepository.findByActiveAndDeletedAtBefore(any(), any())).thenReturn(List.of(c1, c2));
+            when(customerRepository.findByActiveAndLastOrderDateBefore(any(), any())).thenReturn(List.of());
+            when(customerRepository.findByActiveAndLastOrderDateIsNullAndCreatedAtBefore(any(), any())).thenReturn(List.of());
+            when(customerRepository.findByLoyaltyInfoTotalPointsGreaterThanAndLastOrderDateBefore(anyInt(), any())).thenReturn(List.of());
             doThrow(new RuntimeException("DB error")).when(customerService).hardDeleteCustomer("c1");
 
             assertThatCode(() -> retentionService.runManualRetention())
