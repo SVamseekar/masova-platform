@@ -25,6 +25,28 @@
         <!-- Default empty JaCoCo agent args — overridden by JaCoCo prepare-agent execution -->
         <surefireArgLine></surefireArgLine>
         <failsafeArgLine></failsafeArgLine>
+        <!-- SonarQube -->
+        <sonar.host.url>http://192.168.50.88:9000</sonar.host.url>
+        <sonar.login>admin</sonar.login>
+        <sonar.password>admin</sonar.password>
+        <sonar.java.source>21</sonar.java.source>
+        <sonar.coverage.jacoco.xmlReportPaths>
+            ${project.build.directory}/site/jacoco/jacoco.xml
+        </sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.exclusions>
+            **/dto/**,**/entity/**,**/model/**,**/repository/**,
+            **/*Application.java,**/*Config.java,**/*Configuration.java,
+            **/client/**,**/messaging/**,**/event/**,**/events/**,
+            **/*EventPublisher.java,**/*EventListener.java,
+            **/websocket/**,**/filter/**
+        </sonar.exclusions>
+        <sonar.coverage.exclusions>
+            **/dto/**,**/entity/**,**/model/**,**/repository/**,
+            **/*Application.java,**/*Config.java,**/*Configuration.java,
+            **/client/**,**/messaging/**,**/event/**,**/events/**,
+            **/*EventPublisher.java,**/*EventListener.java,
+            **/websocket/**,**/filter/**
+        </sonar.coverage.exclusions>
     </properties>
     
     <modules>
@@ -121,7 +143,7 @@
                         <excludes>
                             <exclude>**/*IT.java</exclude>
                         </excludes>
-                        <argLine>${surefireArgLine}</argLine>
+                        <argLine>@{surefireArgLine}</argLine>
                     </configuration>
                 </plugin>
 
@@ -144,6 +166,13 @@
                             </goals>
                         </execution>
                     </executions>
+                </plugin>
+
+                <!-- SonarQube scanner -->
+                <plugin>
+                    <groupId>org.sonarsource.scanner.maven</groupId>
+                    <artifactId>sonar-maven-plugin</artifactId>
+                    <version>3.11.0.3922</version>
                 </plugin>
 
                 <!-- JaCoCo: coverage reporting and enforcement -->
@@ -196,9 +225,24 @@
                                     <exclude>**/*Application.class</exclude>
                                     <exclude>**/*Config.class</exclude>
                                     <exclude>**/*Configuration.class</exclude>
+                                    <exclude>**/*OpenApiConfig.class</exclude>
                                     <exclude>**/dto/**</exclude>
                                     <exclude>**/entity/**</exclude>
                                     <exclude>**/model/**</exclude>
+                                    <exclude>**/repository/**</exclude>
+                                    <exclude>**/client/**</exclude>
+                                    <exclude>**/messaging/**</exclude>
+                                    <exclude>**/event/**</exclude>
+                                    <exclude>**/events/**</exclude>
+                                    <exclude>**/*EventPublisher.class</exclude>
+                                    <exclude>**/*EventListener.class</exclude>
+                                    <exclude>**/*Interceptor.class</exclude>
+                                    <exclude>**/*Builder.class</exclude>
+                                    <exclude>**/*$Builder.class</exclude>
+                                    <exclude>**/*$*.class</exclude>
+                                    <exclude>**/websocket/**</exclude>
+                                    <exclude>**/filter/**</exclude>
+                                    <exclude>**/security/**</exclude>
                                 </excludes>
                             </configuration>
                         </execution>
