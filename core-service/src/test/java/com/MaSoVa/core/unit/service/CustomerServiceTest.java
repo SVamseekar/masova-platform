@@ -981,4 +981,150 @@ class CustomerServiceTest {
             assertThat(customerService.getBirthdayCustomersToday()).isEmpty();
         }
     }
+
+    // ===========================
+    // updateAddress
+    // ===========================
+
+    @Nested
+    @DisplayName("updateAddress")
+    class UpdateAddress {
+
+        @Test
+        @DisplayName("throws when customer not found")
+        void throwsWhenCustomerNotFound() {
+            when(customerRepository.findById("missing")).thenReturn(Optional.empty());
+
+            AddAddressRequest req = new AddAddressRequest();
+            assertThatThrownBy(() -> customerService.updateAddress("missing", "addr-1", req))
+                    .isInstanceOf(java.util.NoSuchElementException.class);
+        }
+
+        @Test
+        @DisplayName("throws when address not found on customer")
+        void throwsWhenAddressNotFound() {
+            Customer c = buildCustomer("c1", "test@example.com");
+            when(customerRepository.findById("c1")).thenReturn(Optional.of(c));
+
+            AddAddressRequest req = new AddAddressRequest();
+            assertThatThrownBy(() -> customerService.updateAddress("c1", "nonexistent-addr", req))
+                    .isInstanceOf(java.util.NoSuchElementException.class)
+                    .hasMessageContaining("Address not found");
+        }
+
+        @Test
+        @DisplayName("updates existing address fields")
+        void updatesAddress() {
+            Customer c = buildCustomer("c1", "test@example.com");
+            com.MaSoVa.core.customer.entity.Customer.CustomerAddress addr =
+                    new com.MaSoVa.core.customer.entity.Customer.CustomerAddress();
+            addr.setId("addr-1");
+            c.getAddresses().add(addr);
+            when(customerRepository.findById("c1")).thenReturn(Optional.of(c));
+            when(customerRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            AddAddressRequest req = new AddAddressRequest();
+            req.setLabel("Home");
+            req.setAddressLine1("123 Main St");
+            req.setCity("Bangalore");
+
+            Customer result = customerService.updateAddress("c1", "addr-1", req);
+            assertThat(result).isNotNull();
+            verify(customerRepository).save(any());
+        }
+    }
+
+    // ===========================
+    // addNote
+    // ===========================
+
+    @Nested
+    @DisplayName("addNote")
+    class AddNote {
+
+        @Test
+        @DisplayName("throws when customer not found")
+        void throwsWhenNotFound() {
+            when(customerRepository.findById("missing")).thenReturn(Optional.empty());
+
+            AddCustomerNoteRequest req = new AddCustomerNoteRequest();
+            assertThatThrownBy(() -> customerService.addNote("missing", req))
+                    .isInstanceOf(java.util.NoSuchElementException.class);
+        }
+
+        @Test
+        @DisplayName("adds note to customer's notes list")
+        void addsNote() {
+            Customer c = buildCustomer("c1", "test@example.com");
+            when(customerRepository.findById("c1")).thenReturn(Optional.of(c));
+            when(customerRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            AddCustomerNoteRequest req = new AddCustomerNoteRequest();
+            req.setNote("VIP customer");
+            req.setAddedBy("admin");
+            req.setCategory("GENERAL");
+
+            Customer result = customerService.addNote("c1", req);
+
+            assertThat(result.getNotes()).hasSize(1);
+        }
+    }
+
+    // ===========================
+    // updatePreferences
+    // ===========================
+
+    @Nested
+    @DisplayName("updatePreferences")
+    class UpdatePreferences {
+
+        @Test
+        @DisplayName("throws when customer not found")
+        void throwsWhenNotFound() {
+            when(customerRepository.findById("missing")).thenReturn(Optional.empty());
+            assertThatThrownBy(() -> customerService.updatePreferences("missing", new UpdatePreferencesRequest()))
+                    .isInstanceOf(java.util.NoSuchElementException.class);
+        }
+
+        @Test
+        @DisplayName("saves updated preferences when found")
+        void updatesPreferences() {
+            Customer c = buildCustomer("c1", "test@example.com");
+            when(customerRepository.findById("c1")).thenReturn(Optional.of(c));
+            when(customerRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            UpdatePreferencesRequest req = new UpdatePreferencesRequest();
+            Customer result = customerService.updatePreferences("c1", req);
+
+            assertThat(result).isNotNull();
+            verify(customerRepository).save(any());
+        }
+    }
+
+    // ===========================
+    // getAllCustomersByStoreId / getActiveCustomersByStoreId
+    // ===========================
+
+    @Nested
+    @DisplayName("getAllCustomersByStoreId and getActiveCustomersByStoreId")
+    class ByStoreId {
+
+        @Test
+        @DisplayName("getAllCustomersByStoreId returns all customers when storeId null")
+        void returnsAllWhenNullStoreId() {
+            Customer c = buildCustomer("c1", "test@example.com");
+            when(customerRepository.findAll(any(Sort.class))).thenReturn(List.of(c));
+
+            assertThat(customerService.getAllCustomersByStoreId(null)).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("getAllCustomersByStoreId delegates to findByStoreIdsContaining when storeId provided")
+        void returnsByStoreId() {
+            Customer c = buildCustomer("c1", "test@example.com");
+            when(customerRepository.findByStoreIdsContaining("store-1")).thenReturn(List.of(c));
+
+            assertThat(customerService.getAllCustomersByStoreId("store-1")).hasSize(1);
+        }
+    }
 }
