@@ -38,6 +38,7 @@ class GdprBreachServiceTest {
         GdprDataBreach b = new GdprDataBreach("Test Breach", "Description", BreachSeverity.HIGH);
         b.setId(id);
         b.setStatus(status);
+        b.setAffectedUserIds(new java.util.ArrayList<>());
         return b;
     }
 
