@@ -129,7 +129,7 @@ class OrderControllerExtendedTest extends BaseServiceTest {
 
         mockMvc.perform(patch("/api/orders/order-1/payment")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"paymentStatus\":\"PAID\",\"transactionId\":\"txn-123\"}")
+                        .content("{\"status\":\"PAID\",\"transactionId\":\"txn-123\"}")
                         .header("X-Internal-Service", "payment-service"))
                 .andExpect(status().isOk());
     }
