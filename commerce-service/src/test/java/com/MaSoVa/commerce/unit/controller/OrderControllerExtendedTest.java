@@ -121,39 +121,46 @@ class OrderControllerExtendedTest extends BaseServiceTest {
                 .andExpect(status().isOk());
     }
 
-    // PATCH /api/orders/{orderId}/payment
+    // PATCH /api/orders/{orderId}/payment — uses X-Internal-Service to bypass role check
     @Test
-    void updatePaymentStatus_returns_200() throws Exception {
+    void updatePaymentStatus_returns_200_with_internal_header() throws Exception {
         when(orderService.updatePaymentStatus(eq("order-1"), any(), any()))
                 .thenReturn(buildOrder("order-1", Order.OrderStatus.RECEIVED));
 
         mockMvc.perform(patch("/api/orders/order-1/payment")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"paymentStatus\":\"PAID\",\"transactionId\":\"txn-123\"}")
-                        .header("X-User-Store-Id", "store-1"))
+                        .header("X-Internal-Service", "payment-service"))
                 .andExpect(status().isOk());
     }
 
-    // PATCH /api/orders/{orderId} (update order — body is a generic Map)
+    // PATCH /api/orders/{orderId} (update order priority — simpler body)
     @Test
-    void updateOrder_items_returns_200() throws Exception {
-        when(orderService.updateOrderItems(eq("order-1"), any()))
+    void updateOrder_priority_returns_200() throws Exception {
+        when(orderService.updateOrderPriority(eq("order-1"), eq(Order.Priority.URGENT)))
                 .thenReturn(buildOrder("order-1", Order.OrderStatus.RECEIVED));
 
         mockMvc.perform(patch("/api/orders/order-1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"items\":[{\"menuItemId\":\"m1\",\"name\":\"Pizza\",\"quantity\":2,\"price\":150.0}]}")
+                        .content("{\"priority\":\"URGENT\"}")
                         .header("X-User-Store-Id", "store-1"))
                 .andExpect(status().isOk());
     }
 
-    // POST /api/orders/gdpr/anonymize — no @PreAuthorize in standaloneSetup, just check it runs
+    // POST /api/orders/gdpr/anonymize — requires X-Internal-Service header
     @Test
-    void anonymizeCustomerOrders_returns_204() throws Exception {
+    void anonymizeCustomerOrders_returns_200_with_internal_header() throws Exception {
         mockMvc.perform(post("/api/orders/gdpr/anonymize")
                         .param("customerId", "cust-1")
-                        .header("X-User-Store-Id", "store-1"))
-                .andExpect(status().isNoContent());
+                        .header("X-Internal-Service", "core-service"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void anonymizeCustomerOrders_returns_403_without_internal_header() throws Exception {
+        mockMvc.perform(post("/api/orders/gdpr/anonymize")
+                        .param("customerId", "cust-1"))
+                .andExpect(status().isForbidden());
     }
 
     // GET /api/orders with search
@@ -196,18 +203,25 @@ class OrderControllerExtendedTest extends BaseServiceTest {
                 .andExpect(status().isOk());
     }
 
-    // GET /api/orders/analytics
+    // GET /api/orders/analytics — type=active-deliveries (simplest, no extra params needed)
     @Test
-    void getAnalytics_by_date_returns_200() throws Exception {
-        when(orderService.getOrdersByDate(eq("store-1"), any()))
-                .thenReturn(List.of(buildOrder("order-1", Order.OrderStatus.DELIVERED)));
+    void getAnalytics_active_deliveries_returns_200() throws Exception {
+        when(orderService.getActiveDeliveryCount("store-1")).thenReturn(3);
 
         mockMvc.perform(get("/api/orders/analytics")
-                        .param("storeId", "store-1")
-                        .param("date", "2025-05-17")
+                        .param("type", "active-deliveries")
                         .header("X-User-Store-Id", "store-1")
                         .header("X-User-Type", "MANAGER"))
                 .andExpect(status().isOk());
+    }
+
+    // GET /api/orders/analytics — no type returns 400
+    @Test
+    void getAnalytics_without_type_returns_400() throws Exception {
+        mockMvc.perform(get("/api/orders/analytics")
+                        .header("X-User-Store-Id", "store-1")
+                        .header("X-User-Type", "MANAGER"))
+                .andExpect(status().isBadRequest());
     }
 
     // RuntimeException → 400

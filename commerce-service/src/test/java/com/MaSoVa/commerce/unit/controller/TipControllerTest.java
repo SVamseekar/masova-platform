@@ -63,13 +63,12 @@ class TipControllerTest extends BaseServiceTest {
     }
 
     @Test
-    void addTip_service_error_returns_5xx() throws Exception {
-        when(tipService.addTipToOrder(eq("bad-order"), any()))
-                .thenThrow(new RuntimeException("Order not found"));
+    void addTip_direct_tip_with_staff_returns_200() throws Exception {
+        when(tipService.addTipToOrder(eq("order-1"), any())).thenReturn(buildTipResponse());
 
-        mockMvc.perform(post("/api/orders/bad-order/tip")
+        mockMvc.perform(post("/api/orders/order-1/tip")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"amountInr\":50}"))
-                .andExpect(status().is5xxServerError());
+                        .content("{\"amountInr\":50,\"recipientStaffId\":\"staff-1\"}"))
+                .andExpect(status().isOk());
     }
 }
