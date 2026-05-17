@@ -166,4 +166,53 @@ class CustomerDataRetentionServiceTest {
             assertThat(stats.isDryRunMode()).isFalse();
         }
     }
+
+    // ===========================
+    // runMonthlyRetentionJob (triggers generateComplianceReport)
+    // ===========================
+
+    @Nested
+    @DisplayName("runMonthlyRetentionJob")
+    class RunMonthlyRetentionJob {
+
+        @Test
+        @DisplayName("generates compliance report without throwing")
+        void generatesReport() {
+            when(customerRepository.count()).thenReturn(100L);
+            when(customerRepository.countByActive(true)).thenReturn(80L);
+            when(customerRepository.countByActive(false)).thenReturn(20L);
+            when(customerRepository.countByActiveAndLastOrderDateBefore(eq(true), any())).thenReturn(5L);
+
+            assertThatCode(() -> retentionService.runMonthlyRetentionJob())
+                    .doesNotThrowAnyException();
+
+            verify(customerRepository).count();
+        }
+    }
+
+    // ===========================
+    // RetentionStats inner class
+    // ===========================
+
+    @Nested
+    @DisplayName("RetentionStats")
+    class RetentionStatsTest {
+
+        @Test
+        @DisplayName("setters and getters work correctly")
+        void settersGetters() {
+            CustomerDataRetentionService.RetentionStats stats = new CustomerDataRetentionService.RetentionStats();
+            stats.setPendingHardDeletes(5);
+            stats.setPendingAnonymizations(10);
+            stats.setPendingLoyaltyExpirations(3);
+            stats.setRetentionEnabled(true);
+            stats.setDryRunMode(false);
+
+            assertThat(stats.getPendingHardDeletes()).isEqualTo(5);
+            assertThat(stats.getPendingAnonymizations()).isEqualTo(10);
+            assertThat(stats.getPendingLoyaltyExpirations()).isEqualTo(3);
+            assertThat(stats.isRetentionEnabled()).isTrue();
+            assertThat(stats.isDryRunMode()).isFalse();
+        }
+    }
 }

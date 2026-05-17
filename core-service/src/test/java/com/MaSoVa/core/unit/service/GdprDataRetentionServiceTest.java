@@ -164,5 +164,73 @@ class GdprDataRetentionServiceTest {
 
             verify(userRepository, never()).findAll();
         }
+
+        @Test
+        @DisplayName("processes INACTIVE_USER_ACCOUNTS policy by deleting inactive users")
+        void processesInactiveUsersPolicy() {
+            GdprDataRetention policy = buildPolicy("p1", "INACTIVE_USER_ACCOUNTS");
+            policy.setRetentionPeriodDays(365);
+            when(retentionRepository.findByAutoDeleteEnabled(true)).thenReturn(List.of(policy));
+            when(userRepository.findByActiveAndLastLoginBefore(eq(false), any())).thenReturn(List.of());
+
+            assertThatCode(() -> gdprDataRetentionService.applyRetentionPolicies())
+                    .doesNotThrowAnyException();
+
+            verify(userRepository).findByActiveAndLastLoginBefore(eq(false), any());
+        }
+
+        @Test
+        @DisplayName("processes AUDIT_LOGS policy by deleting old audit logs")
+        void processesAuditLogsPolicy() {
+            GdprDataRetention policy = buildPolicy("p1", "AUDIT_LOGS");
+            policy.setRetentionPeriodDays(90);
+            when(retentionRepository.findByAutoDeleteEnabled(true)).thenReturn(List.of(policy));
+            when(auditLogRepository.findByTimestampBetween(any(), any())).thenReturn(List.of());
+
+            assertThatCode(() -> gdprDataRetentionService.applyRetentionPolicies())
+                    .doesNotThrowAnyException();
+
+            verify(auditLogRepository).findByTimestampBetween(any(), any());
+        }
+
+        @Test
+        @DisplayName("processes SESSION_DATA policy without error")
+        void processesSessionDataPolicy() {
+            GdprDataRetention policy = buildPolicy("p1", "SESSION_DATA");
+            policy.setRetentionPeriodDays(30);
+            when(retentionRepository.findByAutoDeleteEnabled(true)).thenReturn(List.of(policy));
+
+            assertThatCode(() -> gdprDataRetentionService.applyRetentionPolicies())
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("logs warning for unknown data type")
+        void handlesUnknownDataType() {
+            GdprDataRetention policy = buildPolicy("p1", "UNKNOWN_TYPE");
+            when(retentionRepository.findByAutoDeleteEnabled(true)).thenReturn(List.of(policy));
+
+            assertThatCode(() -> gdprDataRetentionService.applyRetentionPolicies())
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("deletes inactive user when found by retention policy")
+        void deletesInactiveUser() {
+            GdprDataRetention policy = buildPolicy("p1", "INACTIVE_USER_ACCOUNTS");
+            policy.setRetentionPeriodDays(365);
+            when(retentionRepository.findByAutoDeleteEnabled(true)).thenReturn(List.of(policy));
+
+            com.MaSoVa.shared.entity.User inactiveUser = new com.MaSoVa.shared.entity.User();
+            inactiveUser.setId("old-user");
+            inactiveUser.setActive(false);
+            when(userRepository.findByActiveAndLastLoginBefore(eq(false), any()))
+                    .thenReturn(List.of(inactiveUser));
+            when(auditLogRepository.save(any())).thenReturn(new GdprAuditLog());
+
+            gdprDataRetentionService.applyRetentionPolicies();
+
+            verify(userRepository).delete(inactiveUser);
+        }
     }
 }
