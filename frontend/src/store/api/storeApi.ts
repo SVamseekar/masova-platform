@@ -92,7 +92,7 @@ export interface DeliveryRadiusCheckResult {
 export const storeApi = createApi({
   reducerPath: 'storeApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: API_CONFIG.USER_SERVICE_URL,
+    baseUrl: API_CONFIG.BASE_URL,
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState;
       const token = state.auth.accessToken;
@@ -125,19 +125,19 @@ export const storeApi = createApi({
   endpoints: (builder) => ({
     // Get store by ID
     getStore: builder.query<Store, string>({
-      query: (storeId) => `/stores/${storeId}`,
+      query: (storeId) => `/api/stores/${storeId}`,
       providesTags: (result, error, storeId) => [{ type: 'Store', id: storeId }],
     }),
 
     // Get store by code
     getStoreByCode: builder.query<Store, string>({
-      query: (storeCode) => `/stores/code/${storeCode}`,
+      query: (storeCode) => `/api/stores?code=${storeCode}`,
       providesTags: (result) => result ? [{ type: 'Store', id: result.id }] : [],
     }),
 
     // Get all active stores (public - no auth required)
     getActiveStores: builder.query<Store[], void>({
-      query: () => `/stores/public`,
+      query: () => `/api/stores`,
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Store' as const, id })), { type: 'Stores', id: 'LIST' }]
@@ -146,7 +146,7 @@ export const storeApi = createApi({
 
     // Get all active stores (protected - auth required)
     getActiveStoresProtected: builder.query<Store[], void>({
-      query: () => `/stores`,
+      query: () => `/api/stores`,
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Store' as const, id })), { type: 'Stores', id: 'LIST' }]
@@ -155,7 +155,7 @@ export const storeApi = createApi({
 
     // Get stores by region
     getStoresByRegion: builder.query<Store[], string>({
-      query: (regionId) => `/stores/region/${regionId}`,
+      query: (regionId) => `/api/stores?region=${regionId}`,
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Store' as const, id })), { type: 'Stores', id: 'LIST' }]
@@ -165,20 +165,20 @@ export const storeApi = createApi({
     // Find nearby stores
     getNearbyStores: builder.query<Store[], { latitude: number; longitude: number; radiusKm?: number }>({
       query: ({ latitude, longitude, radiusKm = 10 }) =>
-        `/stores/nearby?latitude=${latitude}&longitude=${longitude}&radiusKm=${radiusKm}`,
+        `/api/stores?near=${latitude},${longitude}&radius=${radiusKm}`,
       providesTags: [{ type: 'Stores', id: 'LIST' }],
     }),
 
     // Check if a location is within a store's delivery radius
     checkDeliveryRadius: builder.query<DeliveryRadiusCheckResult, { storeId: string; latitude: number; longitude: number }>({
       query: ({ storeId, latitude, longitude }) =>
-        `/stores/${storeId}/delivery-radius-check?latitude=${latitude}&longitude=${longitude}`,
+        `/api/stores/${storeId}?checkRadius=true&lat=${latitude}&lng=${longitude}`,
     }),
 
     // Create new store
     createStore: builder.mutation<Store, CreateStoreRequest>({
       query: (data) => ({
-        url: '/stores',
+        url: '/api/stores',
         method: 'POST',
         body: data,
       }),
@@ -188,8 +188,8 @@ export const storeApi = createApi({
     // Update store
     updateStore: builder.mutation<Store, { storeId: string; data: UpdateStoreRequest }>({
       query: ({ storeId, data }) => ({
-        url: `/stores/${storeId}`,
-        method: 'PUT',
+        url: `/api/stores/${storeId}`,
+        method: 'PATCH',
         body: data,
       }),
       invalidatesTags: (result, error, { storeId }) => [
@@ -200,14 +200,14 @@ export const storeApi = createApi({
 
     // Get operational status (uses header-based store filtering)
     getOperationalStatus: builder.query<{ isOperational: boolean }, void>({
-      query: () => `/stores/operational-status`,
+      query: () => `/api/stores`,
       providesTags: [{ type: 'Store', id: 'CURRENT' }],
     }),
 
     // Get store metrics
     // Takes storeId as parameter to ensure refetch when store changes
     getStoreMetrics: builder.query<StoreMetrics, string | undefined>({
-      query: (storeId) => `/stores/metrics${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/api/stores${storeId ? `?storeId=${storeId}` : ''}`,
       providesTags: (_result, _error, storeId) => [{ type: 'Store', id: storeId || 'DEFAULT' }],
     }),
   }),

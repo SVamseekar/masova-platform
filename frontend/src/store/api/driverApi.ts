@@ -76,7 +76,7 @@ export interface LocationUpdateRequest {
 export const driverApi = createApi({
   reducerPath: 'driverApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: API_CONFIG.USER_SERVICE_URL,
+    baseUrl: API_CONFIG.BASE_URL,
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState;
       const token = state.auth.accessToken;
@@ -109,19 +109,19 @@ export const driverApi = createApi({
   endpoints: (builder) => ({
     // Get all drivers - uses store context from headers
     getAllDrivers: builder.query<Driver[], string | undefined>({
-      query: (storeId) => `/users/drivers/store${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/api/users?type=DRIVER${storeId ? `&storeId=${storeId}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'Driver', id: storeId || 'DEFAULT' }],
     }),
 
     // Get driver by ID
     getDriverById: builder.query<Driver, string>({
-      query: (id) => `/users/${id}`,
+      query: (id) => `/api/users/${id}`,
       providesTags: (result, error, id) => [{ type: 'Driver', id }],
     }),
 
     // Get driver by user ID
     getDriverByUserId: builder.query<Driver, string>({
-      query: (userId) => `/users/${userId}`,
+      query: (userId) => `/api/users/${userId}`,
       providesTags: (result, error, userId) => [{ type: 'Driver', id: userId }],
     }),
 
@@ -131,7 +131,7 @@ export const driverApi = createApi({
         const params = new URLSearchParams();
         params.append('status', 'online');
         if (storeId) params.append('storeId', storeId);
-        return `/users/type/DRIVER?${params.toString()}`;
+        return `/api/users?type=DRIVER&${params.toString()}`;
       },
       providesTags: (result, error, storeId) => [{ type: 'Driver', id: storeId || 'DEFAULT' }],
     }),
@@ -142,7 +142,7 @@ export const driverApi = createApi({
         const params = new URLSearchParams();
         params.append('available', 'true');
         if (storeId) params.append('storeId', storeId);
-        return `/users/type/DRIVER?${params.toString()}`;
+        return `/api/users?type=DRIVER&${params.toString()}`;
       },
       providesTags: (result, error, storeId) => [{ type: 'Driver', id: storeId || 'DEFAULT' }],
     }),
@@ -150,8 +150,8 @@ export const driverApi = createApi({
     // Update driver
     updateDriver: builder.mutation<Driver, { id: string; data: UpdateDriverRequest }>({
       query: ({ id, data }) => ({
-        url: `/users/${id}`,
-        method: 'PUT',
+        url: `/api/users/${id}`,
+        method: 'PATCH',
         body: data,
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'Driver', id }, 'Driver'],
@@ -160,7 +160,7 @@ export const driverApi = createApi({
     // Update driver location
     updateDriverLocation: builder.mutation<void, LocationUpdateRequest>({
       query: (data) => ({
-        url: '/delivery/location-update',
+        url: '/api/delivery/location',
         method: 'POST',
         body: data,
       }),
@@ -176,27 +176,27 @@ export const driverApi = createApi({
         const params = new URLSearchParams();
         if (startDate) params.append('startDate', startDate);
         if (endDate) params.append('endDate', endDate);
-        return `/delivery/driver/${driverId}/performance?${params.toString()}`;
+        return `/api/delivery/driver/${driverId}/performance?${params.toString()}`;
       },
       providesTags: (result, error, { driverId }) => [{ type: 'DriverPerformance', id: driverId }],
     }),
 
     // Get today's driver performance
     getTodayDriverPerformance: builder.query<DriverPerformance, string>({
-      query: (driverId) => `/delivery/driver/${driverId}/performance/today`,
+      query: (driverId) => `/api/delivery/driver/${driverId}/performance`,
       providesTags: (result, error, driverId) => [{ type: 'DriverPerformance', id: driverId }],
     }),
 
     // Get driver stats
     getDriverStats: builder.query<DriverStats, string | undefined>({
-      query: (storeId) => `/users/stats${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/api/users?type=DRIVER&stats=true${storeId ? `&storeId=${storeId}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'DriverStats', id: storeId || 'DEFAULT' }],
     }),
 
     // Activate driver
     activateDriver: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/users/${id}/activate`,
+        url: `/api/users/${id}/activate`,
         method: 'POST',
       }),
       invalidatesTags: (result, error, id) => [{ type: 'Driver', id }, 'Driver', 'DriverStats'],
@@ -205,7 +205,7 @@ export const driverApi = createApi({
     // Deactivate driver
     deactivateDriver: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/users/${id}/deactivate`,
+        url: `/api/users/${id}/deactivate`,
         method: 'POST',
       }),
       invalidatesTags: (result, error, id) => [{ type: 'Driver', id }, 'Driver', 'DriverStats'],
@@ -215,7 +215,7 @@ export const driverApi = createApi({
 
     // Get driver online/offline status
     getDriverStatus: builder.query<{ success: boolean; userId: string; status: string; isOnline: boolean }, string>({
-      query: (driverId) => `/users/${driverId}/status`,
+      query: (driverId) => `/api/users/${driverId}/status`,
       providesTags: (result, error, driverId) => [{ type: 'Driver', id: `${driverId}-status` }],
     }),
 
@@ -225,8 +225,8 @@ export const driverApi = createApi({
       { driverId: string; status: 'AVAILABLE' | 'OFF_DUTY' }
     >({
       query: ({ driverId, status }) => ({
-        url: `/users/${driverId}/status`,
-        method: 'PUT',
+        url: `/api/users/${driverId}/status`,
+        method: 'PATCH',
         body: { status },
       }),
       invalidatesTags: (result, error, { driverId }) => [

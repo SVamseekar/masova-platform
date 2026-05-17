@@ -172,7 +172,7 @@ export const menuApi = createApi({
   endpoints: (builder) => ({
     // Public endpoints (no auth required)
     getAvailableMenu: builder.query<MenuItem[], void>({
-      query: () => '/menu/public',
+      query: () => '/api/menu',
       transformResponse: (response: any[]): MenuItem[] => {
         // Map MongoDB _id to id for frontend compatibility
         return response.map(item => ({
@@ -186,7 +186,7 @@ export const menuApi = createApi({
       },
     }),
     getMenuItem: builder.query<MenuItem, string>({
-      query: (id) => `/menu/public/${id}`,
+      query: (id) => `/api/menu/${id}`,
       transformResponse: (response: any): MenuItem => ({
         ...response,
         id: response.id || response._id
@@ -194,7 +194,7 @@ export const menuApi = createApi({
       providesTags: (result, error, id) => [{ type: 'Menu', id }],
     }),
     getMenuByCuisine: builder.query<MenuItem[], Cuisine>({
-      query: (cuisine) => `/menu/public/cuisine/${cuisine}`,
+      query: (cuisine) => `/api/menu?cuisine=${cuisine}`,
       transformResponse: (response: any[]): MenuItem[] => {
         return response.map(item => ({
           ...item,
@@ -204,7 +204,7 @@ export const menuApi = createApi({
       providesTags: ['Menu'],
     }),
     getMenuByCategory: builder.query<MenuItem[], MenuCategory>({
-      query: (category) => `/menu/public/category/${category}`,
+      query: (category) => `/api/menu?category=${category}`,
       transformResponse: (response: any[]): MenuItem[] => {
         return response.map(item => ({
           ...item,
@@ -214,7 +214,7 @@ export const menuApi = createApi({
       providesTags: ['Menu'],
     }),
     getMenuByDietaryType: builder.query<MenuItem[], DietaryType>({
-      query: (dietaryType) => `/menu/public/dietary/${dietaryType}`,
+      query: (dietaryType) => `/api/menu?dietary=${dietaryType}`,
       transformResponse: (response: any[]): MenuItem[] => {
         return response.map(item => ({
           ...item,
@@ -224,7 +224,7 @@ export const menuApi = createApi({
       providesTags: ['Menu'],
     }),
     getRecommendedItems: builder.query<MenuItem[], void>({
-      query: () => '/menu/public/recommended',
+      query: () => '/api/menu?recommended=true',
       transformResponse: (response: any[]): MenuItem[] => {
         return response.map(item => ({
           ...item,
@@ -234,7 +234,7 @@ export const menuApi = createApi({
       providesTags: ['Menu'],
     }),
     searchMenu: builder.query<MenuItem[], string>({
-      query: (searchTerm) => `/menu/public/search?q=${encodeURIComponent(searchTerm)}`,
+      query: (searchTerm) => `/api/menu?search=${encodeURIComponent(searchTerm)}`,
       transformResponse: (response: any[]): MenuItem[] => {
         return response.map(item => ({
           ...item,
@@ -244,7 +244,7 @@ export const menuApi = createApi({
       providesTags: ['Menu'],
     }),
     getMenuByTag: builder.query<MenuItem[], string>({
-      query: (tag) => `/menu/public/tag/${tag}`,
+      query: (tag) => `/api/menu?tag=${tag}`,
       transformResponse: (response: any[]): MenuItem[] => {
         return response.map(item => ({
           ...item,
@@ -256,7 +256,7 @@ export const menuApi = createApi({
 
     // Manager endpoints (auth required)
     getAllMenuItems: builder.query<MenuItem[], string | undefined>({
-      query: (storeId) => `/menu/items${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/api/menu${storeId ? `?storeId=${storeId}` : ''}`,
       transformResponse: (response: any[]): MenuItem[] => {
         return response.map(item => ({
           ...item,
@@ -267,7 +267,7 @@ export const menuApi = createApi({
     }),
     createMenuItem: builder.mutation<MenuItem, MenuItemRequest>({
       query: (menuItem) => ({
-        url: '/menu/items',
+        url: '/api/menu',
         method: 'POST',
         body: menuItem,
       }),
@@ -279,7 +279,7 @@ export const menuApi = createApi({
     }),
     createMultipleMenuItems: builder.mutation<MenuItem[], MenuItemRequest[]>({
       query: (menuItems) => ({
-        url: '/menu/items/bulk',
+        url: '/api/menu/bulk',
         method: 'POST',
         body: menuItems,
       }),
@@ -293,7 +293,7 @@ export const menuApi = createApi({
     }),
     updateMenuItem: builder.mutation<MenuItem, { id: string; data: MenuItemRequest }>({
       query: ({ id, data }) => ({
-        url: `/menu/items/${id}`,
+        url: `/api/menu/${id}`,
         method: 'PUT',
         body: data,
       }),
@@ -305,7 +305,7 @@ export const menuApi = createApi({
     }),
     toggleAvailability: builder.mutation<MenuItem, string>({
       query: (id) => ({
-        url: `/menu/items/${id}/availability`,
+        url: `/api/menu/${id}`,
         method: 'PATCH',
       }),
       transformResponse: (response: any): MenuItem => ({
@@ -316,7 +316,7 @@ export const menuApi = createApi({
     }),
     setAvailability: builder.mutation<MenuItem, { id: string; status: boolean }>({
       query: ({ id, status }) => ({
-        url: `/menu/items/${id}/availability/${status}`,
+        url: `/api/menu/${id}`,
         method: 'PATCH',
       }),
       transformResponse: (response: any): MenuItem => ({
@@ -327,21 +327,21 @@ export const menuApi = createApi({
     }),
     deleteMenuItem: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/menu/items/${id}`,
+        url: `/api/menu/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Menu', 'MenuStats'],
     }),
     deleteAllMenuItems: builder.mutation<void, void>({
       query: () => ({
-        url: '/menu/items',
+        url: '/api/menu',
         method: 'DELETE',
       }),
       invalidatesTags: ['Menu', 'MenuStats'],
     }),
     declareAllergens: builder.mutation<MenuItem, { id: string; data: AllergenDeclarationRequest }>({
       query: ({ id, data }) => ({
-        url: `/menu/items/${id}/allergens`,
+        url: `/api/menu/items/${id}/allergens`,
         method: 'PATCH',
         body: data,
       }),
@@ -352,7 +352,7 @@ export const menuApi = createApi({
       invalidatesTags: ['Menu'],
     }),
     getMenuStats: builder.query<MenuStats, void>({
-      query: () => '/menu/stats',
+      query: () => '/api/menu/stats',
       providesTags: ['MenuStats'],
     }),
   }),

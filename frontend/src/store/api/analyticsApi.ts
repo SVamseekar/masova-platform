@@ -230,7 +230,7 @@ interface ExecutiveSummary {
 export const analyticsApi = createApi({
   reducerPath: 'analyticsApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: `${API_CONFIG.BASE_URL}/analytics`,
+    baseUrl: API_CONFIG.BASE_URL,
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as any;
       const token = state.auth.accessToken;
@@ -265,43 +265,43 @@ export const analyticsApi = createApi({
   endpoints: (builder) => ({
     // Get today's sales metrics with comparisons
     getTodaySalesMetrics: builder.query<SalesMetricsResponse, string | undefined>({
-      query: (storeId) => `sales/today${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/api/analytics?type=sales&period=TODAY${storeId ? `&storeId=${storeId}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'SalesMetrics', id: storeId || 'DEFAULT' }],
     }),
 
     // Get average order value
     getAverageOrderValue: builder.query<AverageOrderValueResponse, string | undefined>({
-      query: (storeId) => `avgOrderValue/today${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/api/analytics?type=aov&period=TODAY${storeId ? `&storeId=${storeId}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'SalesMetrics', id: storeId || 'DEFAULT' }],
     }),
 
     // Get driver status
     getDriverStatus: builder.query<DriverStatusResponse, string | undefined>({
-      query: (storeId) => `drivers/status${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/api/analytics?type=drivers${storeId ? `&storeId=${storeId}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'DriverStatus', id: storeId || 'DEFAULT' }],
     }),
 
     // Get staff performance
     getStaffPerformance: builder.query<StaffPerformanceResponse, string>({
-      query: (staffId) => `staff/${staffId}/performance/today`,
+      query: (staffId) => `/api/analytics?type=staff-leaderboard&staffId=${staffId}&period=TODAY`,
       providesTags: ['StaffPerformance'],
     }),
 
     // Get sales trends (weekly or monthly)
     getSalesTrends: builder.query<SalesTrendResponse, { period: 'WEEKLY' | 'MONTHLY'; storeId?: string }>({
-      query: ({ period, storeId }) => `sales/trends/${period}${storeId ? `?storeId=${storeId}` : ''}`,
+      query: ({ period, storeId }) => `/api/analytics?type=sales-trends&period=${period}${storeId ? `&storeId=${storeId}` : ''}`,
       providesTags: (result, error, { storeId }) => [{ type: 'SalesMetrics', id: storeId || 'DEFAULT' }],
     }),
 
     // Get order type breakdown
     getOrderTypeBreakdown: builder.query<OrderTypeBreakdownResponse, string | undefined>({
-      query: (storeId) => `sales/breakdown/order-type${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/api/analytics?type=order-breakdown${storeId ? `&storeId=${storeId}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'SalesMetrics', id: storeId || 'DEFAULT' }],
     }),
 
     // Get peak hours analysis
     getPeakHours: builder.query<PeakHoursResponse, string | undefined>({
-      query: (storeId) => `sales/peak-hours${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/api/analytics?type=peak-hours${storeId ? `&storeId=${storeId}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'Analytics', id: storeId || 'DEFAULT' }],
     }),
 
@@ -311,7 +311,7 @@ export const analyticsApi = createApi({
         const params = new URLSearchParams();
         params.append('period', period);
         if (storeId) params.append('storeId', storeId);
-        return `staff/leaderboard?${params.toString()}`;
+        return `/api/analytics?type=staff-leaderboard&${params.toString()}`;
       },
       providesTags: (result, error, { storeId }) => [{ type: 'StaffPerformance', id: storeId || 'DEFAULT' }],
     }),
@@ -323,7 +323,7 @@ export const analyticsApi = createApi({
         params.append('period', period);
         params.append('sortBy', sortBy);
         if (storeId) params.append('storeId', storeId);
-        return `products/top-selling?${params.toString()}`;
+        return `/api/analytics?type=top-products&${params.toString()}`;
       },
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: storeId || 'DEFAULT' }],
     }),
@@ -334,13 +334,13 @@ export const analyticsApi = createApi({
         const params = new URLSearchParams();
         params.append('days', days.toString());
         if (storeId) params.append('storeId', storeId);
-        return `/api/bi/forecast/sales?${params.toString()}`;
+        return `/api/bi?type=sales-forecast&${params.toString()}`;
       },
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: `FORECAST_${storeId || 'DEFAULT'}` }],
     }),
 
     getCustomerBehaviorAnalysis: builder.query<CustomerBehaviorResponse, string | undefined>({
-      query: (storeId) => `/api/bi/analysis/customer-behavior${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/api/bi?type=customer-behavior${storeId ? `&storeId=${storeId}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'Analytics', id: `BEHAVIOR_${storeId || 'DEFAULT'}` }],
     }),
 
@@ -349,7 +349,7 @@ export const analyticsApi = createApi({
         const params = new URLSearchParams();
         params.append('threshold', threshold.toString());
         if (storeId) params.append('storeId', storeId);
-        return `/api/bi/prediction/churn?${params.toString()}`;
+        return `/api/bi?type=churn&${params.toString()}`;
       },
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: `CHURN_${storeId || 'DEFAULT'}` }],
     }),
@@ -359,7 +359,7 @@ export const analyticsApi = createApi({
         const params = new URLSearchParams();
         params.append('days', days.toString());
         if (storeId) params.append('storeId', storeId);
-        return `/api/bi/forecast/demand?${params.toString()}`;
+        return `/api/bi?type=demand-forecast&${params.toString()}`;
       },
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: `DEMAND_${storeId || 'DEFAULT'}` }],
     }),
@@ -369,20 +369,20 @@ export const analyticsApi = createApi({
         const params = new URLSearchParams();
         params.append('period', period);
         if (storeId) params.append('storeId', storeId);
-        return `/api/bi/cost-analysis?${params.toString()}`;
+        return `/api/bi?type=cost-analysis&${params.toString()}`;
       },
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: `COST_${storeId || 'DEFAULT'}` }],
     }),
 
     getExecutiveSummary: builder.query<ExecutiveSummary, string | undefined>({
-      query: (storeId) => `/api/bi/executive-summary${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/api/bi/reports?type=executive-summary${storeId ? `&storeId=${storeId}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'Analytics', id: `EXECUTIVE_${storeId || 'DEFAULT'}` }],
     }),
 
     // Mutations
     clearAnalyticsCache: builder.mutation<{ status: string; message: string; storeId: string }, void>({
       query: () => ({
-        url: 'cache/clear',
+        url: '/api/analytics/cache/clear',
         method: 'POST',
       }),
       invalidatesTags: ['Analytics', 'SalesMetrics', 'DriverStatus', 'StaffPerformance'],

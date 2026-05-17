@@ -186,7 +186,7 @@ export const customerApi = createApi({
   reducerPath: 'customerApi',
   baseQuery: fetchBaseQuery({
     // Direct to customer-service (port 8091) or via gateway (port 8080)
-    baseUrl: `${API_CONFIG.CUSTOMER_SERVICE_URL}/customers`,
+    baseUrl: API_CONFIG.BASE_URL,
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState;
       const token = state.auth.accessToken;
@@ -220,7 +220,7 @@ export const customerApi = createApi({
     // CREATE
     createCustomer: builder.mutation<Customer, CreateCustomerRequest>({
       query: (data) => ({
-        url: '',
+        url: '/api/customers',
         method: 'POST',
         body: data,
       }),
@@ -233,7 +233,7 @@ export const customerApi = createApi({
 
     getOrCreateCustomer: builder.mutation<Customer, CreateCustomerRequest>({
       query: (data) => ({
-        url: '/get-or-create',
+        url: '/api/customers/get-or-create',
         method: 'POST',
         body: data,
       }),
@@ -246,12 +246,12 @@ export const customerApi = createApi({
 
     // READ
     getCustomerById: builder.query<Customer, string>({
-      query: (id) => `/${id}`,
+      query: (id) => `/api/customers/${id}`,
       providesTags: (result, error, id) => [{ type: 'Customer', id }],
     }),
 
     getCustomerByUserId: builder.query<Customer, string>({
-      query: (userId) => `/user/${userId}`,
+      query: (userId) => `/api/customers?userId=${userId}`,
       // Provide tags for both the customer ID and a special "USER_QUERY" tag for invalidation
       providesTags: (result, error, userId) => (result
         ? [{ type: 'Customer', id: result.id }, { type: 'Customers', id: `USER_${userId}` }]
@@ -259,17 +259,17 @@ export const customerApi = createApi({
     }),
 
     getCustomerByEmail: builder.query<Customer, string>({
-      query: (email) => `/email/${email}`,
+      query: (email) => `/api/customers?email=${email}`,
       providesTags: (result) => (result ? [{ type: 'Customer', id: result.id }] : []),
     }),
 
     getCustomerByPhone: builder.query<Customer, string>({
-      query: (phone) => `/phone/${phone}`,
+      query: (phone) => `/api/customers?phone=${phone}`,
       providesTags: (result) => (result ? [{ type: 'Customer', id: result.id }] : []),
     }),
 
     getAllCustomers: builder.query<Customer[], string | undefined>({
-      query: (storeId) => `${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/api/customers${storeId ? `?storeId=${storeId}` : ''}`,
       providesTags: (result, error, storeId) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), { type: 'Customers', id: storeId || 'DEFAULT' }]
@@ -277,7 +277,7 @@ export const customerApi = createApi({
     }),
 
     getActiveCustomers: builder.query<Customer[], string | undefined>({
-      query: (storeId) => `/active${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/api/customers?active=true&storeId=${storeId ? `?storeId=${storeId}` : ''}`,
       providesTags: (result, error, storeId) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), { type: 'Customers', id: storeId || 'DEFAULT' }]
@@ -285,7 +285,7 @@ export const customerApi = createApi({
     }),
 
     searchCustomers: builder.query<PageResponse<Customer>, { query: string; page?: number; size?: number }>({
-      query: ({ query, page = 0, size = 20 }) => `/search?query=${query}&page=${page}&size=${size}`,
+      query: ({ query, page = 0, size = 20 }) => `/api/customers?search=${query}&query=${query}&page=${page}&size=${size}`,
       providesTags: (result) =>
         result
           ? [
@@ -298,7 +298,7 @@ export const customerApi = createApi({
     // UPDATE
     updateCustomer: builder.mutation<Customer, { id: string; data: UpdateCustomerRequest }>({
       query: ({ id, data }) => ({
-        url: `/${id}`,
+        url: `/api/customers/${id}`,
         method: 'PUT',
         body: data,
       }),
@@ -307,7 +307,7 @@ export const customerApi = createApi({
 
     deactivateCustomer: builder.mutation<Customer, string>({
       query: (id) => ({
-        url: `/${id}/deactivate`,
+        url: `/api/customers/${id}/deactivate`,
         method: 'PATCH',
       }),
       invalidatesTags: (result, error, id) => [{ type: 'Customer', id }, 'Customers', 'CustomerStats'],
@@ -315,7 +315,7 @@ export const customerApi = createApi({
 
     activateCustomer: builder.mutation<Customer, string>({
       query: (id) => ({
-        url: `/${id}/activate`,
+        url: `/api/customers/${id}/activate`,
         method: 'PATCH',
       }),
       invalidatesTags: (result, error, id) => [{ type: 'Customer', id }, 'Customers', 'CustomerStats'],
@@ -324,7 +324,7 @@ export const customerApi = createApi({
     // ADDRESS MANAGEMENT
     addAddress: builder.mutation<Customer, { customerId: string; data: AddAddressRequest }>({
       query: ({ customerId, data }) => ({
-        url: `/${customerId}/addresses`,
+        url: `/api/customers/${customerId}/addresses`,
         method: 'POST',
         body: data,
       }),
@@ -333,7 +333,7 @@ export const customerApi = createApi({
 
     updateAddress: builder.mutation<Customer, { customerId: string; addressId: string; data: AddAddressRequest }>({
       query: ({ customerId, addressId, data }) => ({
-        url: `/${customerId}/addresses/${addressId}`,
+        url: `/api/customers/${customerId}/addresses/${addressId}`,
         method: 'PATCH',
         body: data,
       }),
@@ -346,7 +346,7 @@ export const customerApi = createApi({
 
     removeAddress: builder.mutation<Customer, { customerId: string; addressId: string }>({
       query: ({ customerId, addressId }) => ({
-        url: `/${customerId}/addresses/${addressId}`,
+        url: `/api/customers/${customerId}/addresses/${addressId}`,
         method: 'DELETE',
       }),
       // Invalidate all customer-related tags to ensure fresh data everywhere
@@ -359,7 +359,7 @@ export const customerApi = createApi({
 
     setDefaultAddress: builder.mutation<Customer, { customerId: string; addressId: string }>({
       query: ({ customerId, addressId }) => ({
-        url: `/${customerId}/addresses/${addressId}/set-default`,
+        url: `/api/customers/${customerId}/addresses/${addressId}`,
         method: 'PATCH',
       }),
       // Invalidate all customer-related tags to ensure fresh data everywhere
@@ -373,7 +373,7 @@ export const customerApi = createApi({
     // LOYALTY MANAGEMENT
     addLoyaltyPoints: builder.mutation<Customer, { customerId: string; data: AddLoyaltyPointsRequest }>({
       query: ({ customerId, data }) => ({
-        url: `/${customerId}/loyalty/points`,
+        url: `/api/customers/${customerId}/loyalty`,
         method: 'POST',
         body: data,
       }),
@@ -385,7 +385,7 @@ export const customerApi = createApi({
       { customerId: string; points: number; orderId: string }
     >({
       query: ({ customerId, points, orderId }) => ({
-        url: `/${customerId}/loyalty/redeem?points=${points}&orderId=${orderId}`,
+        url: `/api/customers/${customerId}/loyalty?type=REDEEMED&points=${points}&orderId=${orderId}`,
         method: 'POST',
       }),
       invalidatesTags: (result, error, { customerId }) => [{ type: 'Customer', id: customerId }],
@@ -395,12 +395,12 @@ export const customerApi = createApi({
       { maxRedeemablePoints: number; maxDiscountAmount: number; redemptionRate: string },
       { customerId: string; orderTotal: number }
     >({
-      query: ({ customerId, orderTotal }) => `/${customerId}/loyalty/max-redeemable?orderTotal=${orderTotal}`,
+      query: ({ customerId, orderTotal }) => `/api/customers/${customerId}?loyaltyInfo=true&orderTotal=${orderTotal}`,
       providesTags: (result, error, { customerId }) => [{ type: 'Customer', id: customerId }],
     }),
 
     getCustomersByTier: builder.query<Customer[], string>({
-      query: (tier) => `/loyalty/tier/${tier}`,
+      query: (tier) => `/api/customers?tier=${tier}`,
       providesTags: (result) =>
         result ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), 'Customers'] : ['Customers'],
     }),
@@ -408,7 +408,7 @@ export const customerApi = createApi({
     // PREFERENCES
     updatePreferences: builder.mutation<Customer, { customerId: string; data: UpdatePreferencesRequest }>({
       query: ({ customerId, data }) => ({
-        url: `/${customerId}/preferences`,
+        url: `/api/customers/${customerId}`,
         method: 'PUT',
         body: data,
       }),
@@ -418,7 +418,7 @@ export const customerApi = createApi({
     // ORDER STATS
     updateOrderStats: builder.mutation<Customer, { customerId: string; data: UpdateOrderStatsRequest }>({
       query: ({ customerId, data }) => ({
-        url: `/${customerId}/order-stats`,
+        url: `/api/customers/${customerId}`,
         method: 'POST',
         body: data,
       }),
@@ -431,7 +431,7 @@ export const customerApi = createApi({
     // NOTES
     addNote: builder.mutation<Customer, { customerId: string; data: AddCustomerNoteRequest }>({
       query: ({ customerId, data }) => ({
-        url: `/${customerId}/notes`,
+        url: `/api/customers/${customerId}`,
         method: 'POST',
         body: data,
       }),
@@ -441,7 +441,7 @@ export const customerApi = createApi({
     // VERIFICATION
     verifyEmail: builder.mutation<Customer, string>({
       query: (customerId) => ({
-        url: `/${customerId}/verify-email`,
+        url: `/api/customers/${customerId}`,
         method: 'PATCH',
       }),
       invalidatesTags: (result, error, customerId) => [{ type: 'Customer', id: customerId }, 'CustomerStats'],
@@ -449,7 +449,7 @@ export const customerApi = createApi({
 
     verifyPhone: builder.mutation<Customer, string>({
       query: (customerId) => ({
-        url: `/${customerId}/verify-phone`,
+        url: `/api/customers/${customerId}`,
         method: 'PATCH',
       }),
       invalidatesTags: (result, error, customerId) => [{ type: 'Customer', id: customerId }, 'CustomerStats'],
@@ -458,7 +458,7 @@ export const customerApi = createApi({
     // TAGS
     addTags: builder.mutation<Customer, { customerId: string; tags: string[] }>({
       query: ({ customerId, tags }) => ({
-        url: `/${customerId}/tags`,
+        url: `/api/customers/${customerId}/tags`,
         method: 'POST',
         body: tags,
       }),
@@ -467,7 +467,7 @@ export const customerApi = createApi({
 
     removeTags: builder.mutation<Customer, { customerId: string; tags: string[] }>({
       query: ({ customerId, tags }) => ({
-        url: `/${customerId}/tags`,
+        url: `/api/customers/${customerId}/tags`,
         method: 'DELETE',
         body: tags,
       }),
@@ -475,64 +475,64 @@ export const customerApi = createApi({
     }),
 
     getCustomersByTags: builder.query<Customer[], string[]>({
-      query: (tags) => `/tags?tags=${tags.join(',')}`,
+      query: (tags) => `/api/customers?tags=${tags.join(',')}&ignore=tags=${tags.join(',')}`,
       providesTags: (result) =>
         result ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), 'Customers'] : ['Customers'],
     }),
 
     // QUERIES
     getHighValueCustomers: builder.query<Customer[], number>({
-      query: (minSpending = 10000) => `/high-value?minSpending=${minSpending}`,
+      query: (minSpending = 10000) => `/api/customers?highValue=true&minSpending=${minSpending}`,
       providesTags: (result) =>
         result ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), 'Customers'] : ['Customers'],
     }),
 
     getTopSpenders: builder.query<Customer[], number>({
-      query: (limit = 10) => `/top-spenders?limit=${limit}`,
+      query: (limit = 10) => `/api/customers?sortBy=spending&limit=${limit}`,
       providesTags: (result) =>
         result ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), 'Customers'] : ['Customers'],
     }),
 
     getRecentlyActiveCustomers: builder.query<Customer[], number>({
-      query: (days = 30) => `/recently-active?days=${days}`,
+      query: (days = 30) => `/api/customers?recentlyActive=true&days=${days}`,
       providesTags: (result) =>
         result ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), 'Customers'] : ['Customers'],
     }),
 
     getInactiveCustomers: builder.query<Customer[], number>({
-      query: (days = 90) => `/inactive?days=${days}`,
+      query: (days = 90) => `/api/customers?active=false&inactiveDays=${days}`,
       providesTags: (result) =>
         result ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), 'Customers'] : ['Customers'],
     }),
 
     getBirthdayCustomersToday: builder.query<Customer[], void>({
-      query: () => '/birthdays/today',
+      query: () => '/api/customers?birthdayToday=true',
       providesTags: (result) =>
         result ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), 'Customers'] : ['Customers'],
     }),
 
     getMarketingOptInCustomers: builder.query<Customer[], void>({
-      query: () => '/marketing-opt-in',
+      query: () => '/api/customers?marketingOptIn=true',
       providesTags: (result) =>
         result ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), 'Customers'] : ['Customers'],
     }),
 
     getSmsOptInCustomers: builder.query<Customer[], void>({
-      query: () => '/sms-opt-in',
+      query: () => '/api/customers?smsOptIn=true',
       providesTags: (result) =>
         result ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), 'Customers'] : ['Customers'],
     }),
 
     // STATISTICS
     getCustomerStats: builder.query<CustomerStatsResponse, string | undefined>({
-      query: (storeId) => `/stats${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/api/customers/stats${storeId ? `?storeId=${storeId}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'CustomerStats', id: storeId || 'DEFAULT' }],
     }),
 
     // DELETE
     deleteCustomer: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/${id}`,
+        url: `/api/customers/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: (result, error, id) => [{ type: 'Customer', id }, 'Customers', 'CustomerStats'],

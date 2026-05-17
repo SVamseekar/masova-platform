@@ -101,8 +101,8 @@ export interface UpdateOrderStatusRequest {
 export const orderApi = createApi({
   reducerPath: 'orderApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: API_CONFIG.ORDER_SERVICE_URL,
-    prepareHeaders: (headers, { getState, endpoint }) => {
+    baseUrl: API_CONFIG.BASE_URL,
+    prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState;
       const token = state.auth.accessToken;
       const user = state.auth.user;
@@ -143,7 +143,7 @@ export const orderApi = createApi({
         if (startDate) params.append('startDate', startDate);
         if (endDate) params.append('endDate', endDate);
         const queryString = params.toString();
-        return queryString ? `/orders?${queryString}` : '/orders';
+        return queryString ? `/api/orders?${queryString}` : '/api/orders';
       },
       providesTags: (result) =>
         result
@@ -153,21 +153,21 @@ export const orderApi = createApi({
 
     // Get order by ID (requires authentication)
     getOrder: builder.query<Order, string>({
-      query: (orderId) => `/orders/${orderId}`,
+      query: (orderId) => `/api/orders/${orderId}`,
       providesTags: (result, error, orderId) => [{ type: 'Order', id: orderId }],
     }),
 
     // Track order by ID (public endpoint, no authentication required)
     // Used for email tracking links
     trackOrder: builder.query<Order, string>({
-      query: (orderId) => `/orders/track/${orderId}`,
+      query: (orderId) => `/api/orders/track/${orderId}`,
       providesTags: (result, error, orderId) => [{ type: 'Order', id: orderId }],
     }),
 
     // Get kitchen queue (active orders for kitchen display)
     // Takes storeId as parameter to ensure refetch when store changes
     getKitchenQueue: builder.query<Order[], string | undefined>({
-      query: (storeId) => `/orders/kitchen${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/api/orders${storeId ? `?storeId=${storeId}` : ''}`,
       providesTags: (result, error, storeId) => [
         { type: 'KitchenQueue', id: storeId || 'DEFAULT' }
       ],
@@ -175,7 +175,7 @@ export const orderApi = createApi({
 
     // Get orders by status
     getOrdersByStatus: builder.query<Order[], string>({
-      query: (status) => `/orders/status/${status}`,
+      query: (status) => `/api/orders?status=${status}`,
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Order' as const, id })), { type: 'Orders', id: 'LIST' }]
@@ -185,7 +185,7 @@ export const orderApi = createApi({
     // Create new order
     createOrder: builder.mutation<Order, CreateOrderRequest>({
       query: (data) => ({
-        url: '/orders',
+        url: '/api/orders',
         method: 'POST',
         body: data,
       }),
@@ -195,8 +195,8 @@ export const orderApi = createApi({
     // Update order status
     updateOrderStatus: builder.mutation<Order, UpdateOrderStatusRequest>({
       query: ({ orderId, status }) => ({
-        url: `/orders/${orderId}/status`,
-        method: 'PATCH',
+        url: `/api/orders/${orderId}/status`,
+        method: 'POST',
         body: { status },
       }),
       invalidatesTags: (result, error, { orderId }) => [
@@ -213,7 +213,7 @@ export const orderApi = createApi({
         if (reason) params.append('reason', reason);
         const queryString = params.toString();
         return {
-          url: `/orders/${orderId}${queryString ? `?${queryString}` : ''}`,
+          url: `/api/orders/${orderId}${queryString ? `?${queryString}` : ''}`,
           method: 'DELETE',
         };
       },
@@ -226,7 +226,7 @@ export const orderApi = createApi({
 
     // Get customer orders
     getCustomerOrders: builder.query<Order[], string>({
-      query: (customerId) => `/orders/customer/${customerId}`,
+      query: (customerId) => `/api/orders?customerId=${customerId}`,
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Order' as const, id })), { type: 'Orders', id: 'LIST' }]
@@ -235,7 +235,7 @@ export const orderApi = createApi({
 
     // Get order by order number
     getOrderByNumber: builder.query<Order, string>({
-      query: (orderNumber) => `/orders/number/${orderNumber}`,
+      query: (orderNumber) => `/api/orders?number=${orderNumber}`,
       providesTags: (result) => result ? [{ type: 'Order', id: result.id }] : [],
     }),
 
@@ -243,7 +243,7 @@ export const orderApi = createApi({
     // Takes storeId as parameter to ensure refetch when store changes
     // Note: storeId is passed via headers (X-Selected-Store-Id), not query params
     getStoreOrders: builder.query<Order[], string | undefined>({
-      query: (storeId) => '/orders/store',
+      query: (storeId) => `/api/orders${storeId ? `?storeId=${storeId}` : ''}`,
       providesTags: (result, error, storeId) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Order' as const, id })), { type: 'Orders', id: storeId || 'DEFAULT' }]
@@ -253,8 +253,8 @@ export const orderApi = createApi({
     // Move order to next stage
     moveToNextStage: builder.mutation<Order, string>({
       query: (orderId) => ({
-        url: `/orders/${orderId}/next-stage`,
-        method: 'PATCH',
+        url: `/api/orders/${orderId}/next-stage`,
+        method: 'POST',
       }),
       invalidatesTags: (result, error, orderId) => [
         { type: 'Order', id: orderId },
@@ -266,7 +266,7 @@ export const orderApi = createApi({
     // Assign driver to order
     assignDriver: builder.mutation<Order, { orderId: string; driverId: string }>({
       query: ({ orderId, driverId }) => ({
-        url: `/orders/${orderId}/assign-driver`,
+        url: `/api/orders/${orderId}`,
         method: 'PATCH',
         body: { driverId },
       }),
@@ -279,7 +279,7 @@ export const orderApi = createApi({
     // Update payment status
     updatePaymentStatus: builder.mutation<Order, { orderId: string; status: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED'; transactionId?: string }>({
       query: ({ orderId, status, transactionId }) => ({
-        url: `/orders/${orderId}/payment`,
+        url: `/api/orders/${orderId}/payment`,
         method: 'PATCH',
         body: { status, transactionId },
       }),
@@ -292,7 +292,7 @@ export const orderApi = createApi({
     // Update order items
     updateOrderItems: builder.mutation<Order, { orderId: string; items: OrderItem[] }>({
       query: ({ orderId, items }) => ({
-        url: `/orders/${orderId}/items`,
+        url: `/api/orders/${orderId}`,
         method: 'PATCH',
         body: { items },
       }),
@@ -306,7 +306,7 @@ export const orderApi = createApi({
     // Update order priority
     updateOrderPriority: builder.mutation<Order, { orderId: string; priority: 'NORMAL' | 'URGENT' }>({
       query: ({ orderId, priority }) => ({
-        url: `/orders/${orderId}/priority`,
+        url: `/api/orders/${orderId}`,
         method: 'PATCH',
         body: { priority },
       }),
@@ -323,7 +323,7 @@ export const orderApi = createApi({
         const params = new URLSearchParams();
         params.append('storeId', storeId);
         params.append('query', query);
-        return `/orders/search?${params.toString()}`;
+        return `/api/orders?${params.toString()}`;
       },
       providesTags: (result) =>
         result
@@ -334,7 +334,7 @@ export const orderApi = createApi({
     // Quality Checkpoint endpoints
     addQualityCheckpoint: builder.mutation<Order, { orderId: string; checkpoint: QualityCheckpoint }>({
       query: ({ orderId, checkpoint }) => ({
-        url: `/orders/${orderId}/quality-checkpoint`,
+        url: `/api/orders/${orderId}/quality-checkpoint`,
         method: 'POST',
         body: checkpoint,
       }),
@@ -346,7 +346,7 @@ export const orderApi = createApi({
 
     updateQualityCheckpoint: builder.mutation<Order, { orderId: string; checkpointName: string; status: QualityCheckpoint['status']; notes?: string }>({
       query: ({ orderId, checkpointName, status, notes }) => ({
-        url: `/orders/${orderId}/quality-checkpoint/${encodeURIComponent(checkpointName)}`,
+        url: `/api/orders/${orderId}/quality-checkpoint/${encodeURIComponent(checkpointName)}`,
         method: 'PATCH',
         body: { status, notes },
       }),
@@ -357,23 +357,23 @@ export const orderApi = createApi({
     }),
 
     getQualityCheckpoints: builder.query<QualityCheckpoint[], string>({
-      query: (orderId) => `/orders/${orderId}/quality-checkpoints`,
+      query: (orderId) => `/api/orders/${orderId}`,
       providesTags: (result, error, orderId) => [{ type: 'Order', id: orderId }],
     }),
 
     getOrdersWithFailedQualityChecks: builder.query<Order[], string | undefined>({
-      query: (storeId) => `/orders/store/failed-quality-checks${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/api/orders?failedQualityChecks=true${storeId ? `&storeId=${storeId}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'Orders', id: storeId || 'DEFAULT' }],
     }),
 
     getAveragePreparationTime: builder.query<number, { date: string }>({
-      query: ({ date }) => `/orders/store/avg-prep-time?date=${date}`,
+      query: ({ date }) => `/api/orders/analytics?type=avg-prep-time&date=${date}`,
     }),
 
     // Make-table workflow endpoints
     assignToMakeTable: builder.mutation<Order, { orderId: string; station: string; staffId: string; staffName: string }>({
       query: ({ orderId, station, staffId, staffName }) => ({
-        url: `/orders/${orderId}/assign-make-table`,
+        url: `/api/orders/${orderId}`,
         method: 'PATCH',
         body: { station, staffId, staffName },
       }),
@@ -384,13 +384,13 @@ export const orderApi = createApi({
     }),
 
     getOrdersByMakeTableStation: builder.query<Order[], { station: string }>({
-      query: ({ station }) => `/orders/store/make-table/${station}`,
+      query: ({ station }) => `/api/orders?makeTableStation=${station}`,
       providesTags: ['KitchenQueue'],
     }),
 
     // Kitchen analytics endpoints
     getAveragePreparationTimeByItem: builder.query<{ [itemName: string]: number }, { date: string }>({
-      query: ({ date }) => `/orders/store/analytics/prep-time-by-item?date=${date}`,
+      query: ({ date }) => `/api/orders/analytics?type=prep-time-by-item&date=${date}`,
     }),
 
     getKitchenStaffPerformance: builder.query<{
@@ -401,7 +401,7 @@ export const orderApi = createApi({
       failedQualityChecks: number;
       completionRate: number;
     }, { staffId: string; date: string }>({
-      query: ({ staffId, date }) => `/orders/analytics/kitchen-staff/${staffId}/performance?date=${date}`,
+      query: ({ staffId, date }) => `/api/orders/analytics?type=kitchen-staff&staffId=${staffId}&date=${date}`,
     }),
 
     getPosStaffPerformance: builder.query<{
@@ -414,7 +414,7 @@ export const orderApi = createApi({
       averageOrderValue: number;
     }, { staffId: string; startDate: string; endDate: string }>({
       query: ({ staffId, startDate, endDate }) =>
-        `/orders/analytics/pos-staff/${staffId}/performance?startDate=${startDate}&endDate=${endDate}`,
+        `/api/orders/analytics?type=pos-staff&staffId=${staffId}&startDate=${startDate}&endDate=${endDate}`,
     }),
 
     getPreparationTimeDistribution: builder.query<{
@@ -426,12 +426,12 @@ export const orderApi = createApi({
       p95: number;
       totalOrders: number;
     }, { date: string }>({
-      query: ({ date }) => `/orders/store/analytics/prep-time-distribution?date=${date}`,
+      query: ({ date }) => `/api/orders/analytics?type=prep-time-distribution&date=${date}`,
     }),
 
     // Date-based order queries
     getOrdersByDate: builder.query<Order[], string>({
-      query: (date) => `/orders/date/${date}`,
+      query: (date) => `/api/orders?date=${date}`,
       providesTags: (result, error, date) => [{ type: 'Orders', id: `DATE_${date}` }],
     }),
 
@@ -441,18 +441,18 @@ export const orderApi = createApi({
         params.append('startDate', startDate);
         params.append('endDate', endDate);
         if (storeId) params.append('storeId', storeId);
-        return `/orders/range?${params.toString()}`;
+        return `/api/orders?${params.toString()}`;
       },
       providesTags: ['Orders'],
     }),
 
     getStaffOrdersByDate: builder.query<Order[], { staffId: string; date: string }>({
-      query: ({ staffId, date }) => `/orders/staff/${staffId}/date/${date}`,
+      query: ({ staffId, date }) => `/api/orders?createdByStaffId=${staffId}&date=${date}`,
       providesTags: (result, error, { staffId, date }) => [{ type: 'Orders', id: `STAFF_${staffId}_${date}` }],
     }),
 
     getActiveDeliveriesCount: builder.query<{ count: number }, string | undefined>({
-      query: (storeId) => `/orders/active-deliveries/count${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/api/orders?status=DISPATCHED&countOnly=true${storeId ? `&storeId=${storeId}` : ''}`,
       providesTags: ['Orders'],
     }),
   }),
