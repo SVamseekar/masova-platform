@@ -682,23 +682,32 @@ Change `baseUrl` from `API_CONFIG.ORDER_SERVICE_URL` to `API_CONFIG.BASE_URL`.
 
 `orderApi.ts` has `baseUrl: API_CONFIG.ORDER_SERVICE_URL` (= gateway root). All query/mutation URLs lack the `/api/` prefix:
 
+`OrderController` comment says: "Replaces: /items, /priority, /assign-driver, /assign-make-table..." — they are all now `PATCH /api/orders/{id}` with different body keys.
+
 ```typescript
-// BEFORE → AFTER (representative — apply to ALL occurrences)
-query: `...`  `/orders` (any form)      → `/api/orders` (same form)
-query: `/orders/${orderId}`              → `/api/orders/${orderId}`
-query: `/orders/track/${orderId}`        → `/api/orders/track/${orderId}`
-query: `/orders/kitchen...`             → `/api/orders/kitchen...`
-query: `/orders/status/${status}`       → `/api/orders/status/${status}`
-url: '/orders',                         → url: '/api/orders',
-url: `/orders/${orderId}/status`,        → url: `/api/orders/${orderId}/status`,
-method: 'PATCH',                        → method: 'POST',   // ← status transition is POST
-url: `/orders/${orderId}...` (delete)   → url: `/api/orders/${orderId}...`
-url: `/orders/${orderId}/next-stage`    → url: `/api/orders/${orderId}/next-stage`
-url: `/orders/${orderId}/assign-driver` → url: `/api/orders/${orderId}/assign-driver`
-url: `/orders/${orderId}/payment`       → url: `/api/orders/${orderId}/payment`
-url: `/orders/${orderId}/items`         → url: `/api/orders/${orderId}/items`
-url: `/orders/${orderId}/priority`      → url: `/api/orders/${orderId}/priority`
-// etc. — apply /api/ prefix to every single URL in this file
+// KEEP — real endpoints (add /api/ prefix):
+url: '/api/orders',                              POST create
+query: `/api/orders/${orderId}`                  GET by id
+query: `/api/orders/track/${orderId}`            GET track (public, no auth)
+query: '/api/orders' (+ query params)            GET list (?storeId=&status=&kitchen=&customerId=&search=&number=)
+url: `/api/orders/${orderId}/status`, POST       POST status transition (was PATCH)
+url: `/api/orders/${orderId}/next-stage`, POST   POST next kitchen stage
+url: `/api/orders/${orderId}`, PATCH             PATCH update (replaces /items, /priority, /assign-driver, /assign-make-table)
+url: `/api/orders/${orderId}`, DELETE            DELETE / cancel
+url: `/api/orders/${orderId}/payment`, PATCH     PATCH payment status
+url: `/api/orders/${orderId}/quality-checkpoint`, POST
+url: `/api/orders/${orderId}/quality-checkpoint/${name}`, PATCH
+query: '/api/orders/analytics'                   GET analytics (+ query params)
+
+// REMOVE — these are now handled by PATCH /api/orders/{id} with body keys:
+// url: `/orders/${orderId}/assign-driver`       → use PATCH /{id} with body {driverId: ...}
+// url: `/orders/${orderId}/items`               → use PATCH /{id} with body {items: [...]}
+// url: `/orders/${orderId}/priority`            → use PATCH /{id} with body {priority: ...}
+// url: `/orders/${orderId}/assign-make-table`   → use PATCH /{id} with body {makeTableStation: ...}
+// Also remove: /orders/status/:status, /orders/kitchen, /orders/store, /orders/customer/:id,
+//   /orders/number/:num, /orders/date/:date, /orders/range, /orders/active-deliveries/count,
+//   /orders/search, /orders/store/avg-prep-time, /orders/store/failed-quality-checks
+// These are all query params on GET /api/orders
 ```
 
 - [ ] **Step 5: Fix shiftApi.ts — add /api/ prefix, fix names, remove stale methods**
@@ -721,22 +730,59 @@ completeShift:       url: `/api/shifts/${id}/complete`, method: 'POST'
 // REMOVE — these endpoints do NOT exist in ShiftController:
 // getEmployeeCurrentShift → no /api/shifts/employee/:id/current
 // getStoreWeekShifts      → no /api/shifts/store/:id/week
-// getShiftCoverage        → (verify if this exists — if not, remove)
+// getShiftCoverage (separate mutation) → use GET /api/shifts?view=coverage instead
+//   ShiftController comment: "Replaces: /api/shifts/store/coverage"
 ```
 
-- [ ] **Step 6: Fix driverApi.ts — /api/delivery/location not /delivery/location-update**
+- [ ] **Step 6: Fix driverApi.ts — multiple broken URLs, stale endpoints**
 
-In `frontend/src/store/api/driverApi.ts`, find `updateDriverLocation` mutation:
+`driverApi.ts` has `baseUrl: API_CONFIG.USER_SERVICE_URL` (= gateway root). Fix all URLs:
 
 ```typescript
-// BEFORE
-url: '/delivery/location-update',
+// getAllDrivers: no /users/drivers/store endpoint
+// → change to GET /api/users?type=DRIVER (query param on UserController)
+query: (storeId) => `/api/users?type=DRIVER${storeId ? `&storeId=${storeId}` : ''}`
 
-// AFTER
-url: '/api/delivery/location',
+// getDriverById: /users/${id} → correct base but missing /api/
+query: (id) => `/api/users/${id}`
+
+// getDriverByUserId: /users/${userId} → same fix
+query: (userId) => `/api/users/${userId}`
+
+// getOnlineDrivers: /users/type/DRIVER?... → no /users/type/:type sub-path
+// → change to query params on GET /api/users
+query: (storeId) => `/api/users?type=DRIVER&available=true${storeId ? `&storeId=${storeId}` : ''}`
+
+// getAvailableDrivers: /users/type/DRIVER?... → same fix
+query: (storeId) => `/api/users?type=DRIVER&available=true${storeId ? `&storeId=${storeId}` : ''}`
+
+// updateDriver: /users/${id} → just add /api/
+url: `/api/users/${id}`, method: 'PATCH'
+
+// updateDriverLocation: FIXED
+url: '/api/delivery/location', method: 'POST'
+
+// getDriverPerformance: /delivery/driver/${id}/performance — VERIFIED real endpoint
+query: (driverId) => `/api/delivery/driver/${driverId}/performance`
+
+// getDriverPerformanceToday: /delivery/driver/${id}/performance/today — DOES NOT EXIST
+// → REMOVE this method or fold into getDriverPerformance
+
+// getDriverStats: /users/stats — DOES NOT EXIST in UserController
+// → REMOVE this method
+
+// activateDriver: /users/${id}/activate — VERIFIED (UserController POST /{userId}/activate)
+url: `/api/users/${id}/activate`, method: 'POST'
+
+// deactivateDriver: /users/${id}/deactivate — VERIFIED
+url: `/api/users/${id}/deactivate`, method: 'POST'
+
+// getDriverStatus: /users/${driverId}/status — VERIFIED (UserController GET /{userId}/status)
+query: (driverId) => `/api/users/${driverId}/status`
+
+// updateDriverStatus: /users/${driverId}/status — VERIFIED (UserController PATCH /{userId}/status)
+url: `/api/users/${driverId}/status`, method: 'PATCH'
 ```
-
-Also check all other driverApi URLs for missing `/api/` prefix and add it.
 
 - [ ] **Step 7: Fix inventoryApi.ts — change baseUrl, fix all URL groups, remove stale methods**
 
