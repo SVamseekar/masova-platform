@@ -67,8 +67,8 @@ Built the foundation every subsequent test relies on:
 |---------|------------|---------------|--------|--------|
 | core-service | **80.77%** | 60.3% | 80% line / 60% branch | ✅ DONE |
 | commerce-service | **85%** | 71% | 80% line / 60% branch | ✅ DONE |
+| payment-service | **86%** | 68% | 80% line / 60% branch | ✅ DONE |
 | logistics-service | 12.8% | — | 80% | ❌ TODO |
-| payment-service | 69.3% | — | 80% | ⚠️ Close |
 | intelligence-service | 25.4% | — | 80% | ❌ TODO |
 
 **What is NOT complete — remaining services:**
@@ -359,8 +359,8 @@ The correct sequence:
 **Priority: core-service → commerce-service → payment-service → logistics-service → intelligence-service**
 
 - [x] core-service — **DONE 2026-05-17** — 80.77% line, 60.3% branch, 704 tests, SonarQube scan complete
-- [ ] commerce-service — 24.9% → need 80%
-- [ ] payment-service — 69.3% → need 80% (closest)
+- [x] commerce-service — **DONE 2026-05-17** — 85% line, 71% branch, 400 tests, SonarQube scan complete
+- [x] payment-service — **DONE 2026-05-17** — 86% line, 68% branch, 0 failures, SonarQube ANALYSIS SUCCESSFUL
 - [ ] logistics-service — 12.8% → need 80%
 - [ ] intelligence-service — 25.4% → need 80%
 
