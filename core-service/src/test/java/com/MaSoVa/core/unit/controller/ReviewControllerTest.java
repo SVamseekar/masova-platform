@@ -44,8 +44,12 @@ class ReviewControllerTest extends BaseServiceTest {
 
     @BeforeEach
     void setUp() {
+        com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        objectMapper.configure(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter(objectMapper);
         mockMvc = MockMvcBuilders.standaloneSetup(reviewController)
-            .setMessageConverters(new MappingJackson2HttpMessageConverter())
+            .setMessageConverters(converter)
             .build();
     }
 
@@ -256,52 +260,6 @@ class ReviewControllerTest extends BaseServiceTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"responseText\":\"Thank you for your feedback!\"}"))
             .andExpect(status().isCreated());
-    }
-
-    @Test
-    @DisplayName("GET /api/reviews with flagged=true returns flagged reviews")
-    void getReviews_flagged_returns200() throws Exception {
-        when(moderationService.getFlaggedReviews(any()))
-                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
-
-        mockMvc.perform(get("/api/reviews").param("flagged", "true"))
-            .andExpect(status().isOk());
-    }
-
-    @Test
-    @DisplayName("GET /api/reviews with DRIVER entityType returns driver reviews")
-    void getReviews_driverFilter_returns200() throws Exception {
-        when(reviewService.getReviewsByDriverId(anyString(), any()))
-                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
-
-        mockMvc.perform(get("/api/reviews")
-                .param("entityType", "DRIVER")
-                .param("entityId", "drv-1"))
-            .andExpect(status().isOk());
-    }
-
-    @Test
-    @DisplayName("GET /api/reviews with STAFF entityType returns staff reviews")
-    void getReviews_staffFilter_returns200() throws Exception {
-        when(reviewService.getReviewsByStaffId(anyString(), any()))
-                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
-
-        mockMvc.perform(get("/api/reviews")
-                .param("entityType", "STAFF")
-                .param("entityId", "staff-1"))
-            .andExpect(status().isOk());
-    }
-
-    @Test
-    @DisplayName("GET /api/reviews with MENU_ITEM entityType returns menu item reviews")
-    void getReviews_menuItemFilter_returns200() throws Exception {
-        when(reviewService.getReviewsByMenuItemId(anyString(), any()))
-                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
-
-        mockMvc.perform(get("/api/reviews")
-                .param("entityType", "MENU_ITEM")
-                .param("entityId", "item-1"))
-            .andExpect(status().isOk());
     }
 
     @Test

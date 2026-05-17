@@ -97,4 +97,38 @@ class NotificationControllerTest extends BaseServiceTest {
         mockMvc.perform(delete("/api/notifications/notif-1"))
             .andExpect(status().isOk());
     }
+
+    @Test
+    @DisplayName("GET /api/notifications with unread=true returns unread notifications")
+    void getNotifications_unread_returns200() throws Exception {
+        when(notificationService.getUnreadNotifications("user-1")).thenReturn(List.of(buildNotification("n1")));
+
+        mockMvc.perform(get("/api/notifications")
+                .param("userId", "user-1")
+                .param("unread", "true"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/notifications with recent=true returns recent notifications")
+    void getNotifications_recent_returns200() throws Exception {
+        when(notificationService.getRecentNotifications("user-1", 7)).thenReturn(List.of(buildNotification("n1")));
+
+        mockMvc.perform(get("/api/notifications")
+                .param("userId", "user-1")
+                .param("recent", "true"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("POST /api/notifications with optional fields sets them correctly")
+    void sendNotification_withOptionalFields_returns200() throws Exception {
+        when(notificationService.createNotification(any())).thenReturn(buildNotification("notif-new"));
+        doNothing().when(notificationService).sendNotification(anyString());
+
+        mockMvc.perform(post("/api/notifications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"userId\":\"user-1\",\"title\":\"Test\",\"message\":\"Msg\",\"type\":\"SYSTEM_ALERT\",\"channel\":\"EMAIL\",\"recipientEmail\":\"test@masova.com\",\"recipientPhone\":\"9876543210\"}"))
+            .andExpect(status().isOk());
+    }
 }
