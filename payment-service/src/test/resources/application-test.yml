@@ -2,6 +2,11 @@ spring:
   data:
     mongodb:
       uri: mongodb://localhost:27017/masova-test
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: masova
+    password: masova_secret
   mail:
     host: localhost
     port: 1025
