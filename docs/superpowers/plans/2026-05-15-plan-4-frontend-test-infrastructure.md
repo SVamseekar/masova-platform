@@ -79,7 +79,7 @@ These routes are in the handler files but the backend never serves them. Simply 
 |------|--------|
 | `frontend/src/test/mocks/handlers/orderHandlers.ts` | Fix `/api/` prefix + remove stale routes that don't exist in `OrderController` |
 | `frontend/src/test/mocks/handlers/paymentHandlers.ts` | Fix `/api/` prefix |
-| `frontend/src/test/mocks/handlers/authHandlers.ts` | Fix to `/api/auth/` paths; `/api/users/profile` for profile |
+| `frontend/src/test/mocks/handlers/authHandlers.ts` | Fix to `/api/auth/` paths; remove `/users/profile` handler (no profile endpoint exists) |
 | `frontend/src/test/mocks/handlers/menuHandlers.ts` | Fix: collapse `/menu/public/*` into `GET /api/menu` with query params; fix item paths |
 | `frontend/src/test/mocks/handlers/userHandlers.ts` | Fix `/api/users/` prefix; `/api/auth/validate-pin` for pin validation |
 | `frontend/src/test/mocks/handlers/deliveryHandlers.ts` | Fix prefix + rename `auto-dispatch→dispatch`, `route-optimize→route`; remove non-existent sub-paths |
@@ -266,14 +266,14 @@ http.post(`${API}/users/login`, ...)
 http.post(`${API}/users/register`, ...)
 http.post(`${API}/users/refresh-token`, ...)   // also wrong suffix
 http.post(`${API}/users/logout`, ...)
-http.get(`${API}/users/profile`, ...)
+http.get(`${API}/users/profile`, ...)          // ← REMOVE: no /profile endpoint exists anywhere
 
 // AFTER
 http.post(`${API}/api/auth/login`, ...)
 http.post(`${API}/api/auth/register`, ...)
 http.post(`${API}/api/auth/refresh`, ...)      // canonical: /api/auth/refresh
 http.post(`${API}/api/auth/logout`, ...)
-http.get(`${API}/api/users/profile`, ...)
+// Remove the profile handler entirely — no /profile endpoint exists in UserController or AuthController
 ```
 
 - [ ] **Step 3: Fix sessionHandlers.ts — rewrite to only 9 real endpoints**
