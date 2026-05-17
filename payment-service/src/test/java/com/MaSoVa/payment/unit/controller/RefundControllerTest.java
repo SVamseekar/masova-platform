@@ -75,11 +75,47 @@ class RefundControllerTest extends BaseServiceTest {
     }
 
     @Test
-    @DisplayName("GET /api/payments/refund returns 200 with list")
-    void getRefunds_returns200() throws Exception {
+    @DisplayName("GET /api/payments/refund returns 200 with list by transactionId")
+    void getRefunds_returns200ByTransactionId() throws Exception {
         when(refundService.getRefundsByTransactionId(anyString())).thenReturn(List.of(buildRefund("refund-1")));
 
         mockMvc.perform(get("/api/payments/refund").param("transactionId", "txn-1"))
             .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/payments/refund returns 200 with list by orderId")
+    void getRefunds_returns200ByOrderId() throws Exception {
+        when(refundService.getRefundsByOrderId(anyString())).thenReturn(List.of(buildRefund("refund-1")));
+
+        mockMvc.perform(get("/api/payments/refund").param("orderId", "order-1"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/payments/refund returns 200 with list by customerId")
+    void getRefunds_returns200ByCustomerId() throws Exception {
+        when(refundService.getRefundsByCustomerId(anyString())).thenReturn(List.of(buildRefund("refund-1")));
+
+        mockMvc.perform(get("/api/payments/refund").param("customerId", "cust-1"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/payments/refund returns 400 with no params")
+    void getRefunds_returns400WithNoParams() throws Exception {
+        mockMvc.perform(get("/api/payments/refund"))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /api/payments/refund returns 500 on exception")
+    void initiateRefund_returns500OnException() throws Exception {
+        when(refundService.initiateRefund(any())).thenThrow(new RuntimeException("Razorpay error"));
+
+        mockMvc.perform(post("/api/payments/refund")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"transactionId\":\"txn-1\",\"amount\":200.00,\"type\":\"PARTIAL\",\"reason\":\"Customer request\",\"initiatedBy\":\"manager-1\"}"))
+            .andExpect(status().isInternalServerError());
     }
 }

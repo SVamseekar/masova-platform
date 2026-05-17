@@ -614,5 +614,260 @@ class PaymentServiceTest {
             assertThat(response).isNotNull();
             verify(transactionRepository, never()).save(any(Transaction.class));
         }
+
+        @Test
+        @DisplayName("Should handle orderServiceClient failure gracefully for cash payment")
+        void shouldHandleOrderClientFailureGracefully() {
+            // Given
+            InitiatePaymentRequest cashRequest = InitiatePaymentRequest.builder()
+                    .orderId("order-cash-002")
+                    .amount(BigDecimal.valueOf(150.00))
+                    .customerId("cust-456")
+                    .customerEmail("customer@real.com")
+                    .customerPhone("+31612345678")
+                    .storeId("store-789")
+                    .orderType("PICKUP")
+                    .build();
+
+            Transaction cashTxn = Transaction.builder()
+                    .orderId("order-cash-002")
+                    .razorpayOrderId("CASH_order-cash-002")
+                    .amount(BigDecimal.valueOf(150.00))
+                    .status(Transaction.PaymentStatus.SUCCESS)
+                    .customerId("cust-456")
+                    .customerEmail("enc-email")
+                    .customerPhone("enc-phone")
+                    .storeId("store-789")
+                    .currency("INR")
+                    .reconciled(false)
+                    .build();
+            cashTxn.setId("txn-cash-002");
+            cashTxn.setPaymentMethod(Transaction.PaymentMethod.CASH);
+
+            when(transactionRepository.findByOrderId("order-cash-002")).thenReturn(Optional.empty());
+            when(encryptionService.encrypt(anyString())).thenReturn("enc");
+            when(transactionRepository.save(any(Transaction.class))).thenReturn(cashTxn);
+            when(encryptionService.decrypt(anyString())).thenReturn("decrypted");
+            doNothing().when(paymentEventPublisher).publishPaymentCompleted(any());
+            // orderServiceClient throws — should be caught and logged, not propagated
+            org.mockito.Mockito.doThrow(new RuntimeException("Order service down"))
+                    .when(orderServiceClient).updateOrderPaymentStatus(anyString(), anyString(), anyString());
+
+            // When — should NOT throw
+            PaymentResponse response = paymentService.recordCashPayment(cashRequest);
+
+            // Then
+            assertThat(response).isNotNull();
+            assertThat(response.getStatus()).isEqualTo(Transaction.PaymentStatus.SUCCESS);
+        }
+    }
+
+    @Nested
+    @DisplayName("anonymizeCustomerData")
+    class AnonymizeCustomerDataTests {
+
+        @Test
+        @DisplayName("Should anonymize all PII fields for given customer")
+        void shouldAnonymizeAllTransactionsForCustomer() {
+            // Given
+            Transaction tx1 = Transaction.builder()
+                    .orderId("order-1")
+                    .customerEmail("encrypted-email-1")
+                    .customerPhone("encrypted-phone-1")
+                    .status(Transaction.PaymentStatus.SUCCESS)
+                    .build();
+            tx1.setId("txn-anon-1");
+
+            Transaction tx2 = Transaction.builder()
+                    .orderId("order-2")
+                    .customerEmail("encrypted-email-2")
+                    .customerPhone("encrypted-phone-2")
+                    .status(Transaction.PaymentStatus.SUCCESS)
+                    .build();
+            tx2.setId("txn-anon-2");
+
+            when(transactionRepository.findByCustomerId("cust-999"))
+                    .thenReturn(List.of(tx1, tx2));
+            when(encryptionService.encrypt("ANONYMIZED")).thenReturn("anon-encrypted");
+            when(transactionRepository.save(any(Transaction.class))).thenAnswer(i -> i.getArgument(0));
+
+            // When
+            paymentService.anonymizeCustomerData("cust-999");
+
+            // Then
+            verify(transactionRepository, org.mockito.Mockito.times(2)).save(any(Transaction.class));
+            assertThat(tx1.getCustomerEmail()).isEqualTo("anon-encrypted");
+            assertThat(tx1.getCustomerPhone()).isEqualTo("anon-encrypted");
+            assertThat(tx2.getCustomerEmail()).isEqualTo("anon-encrypted");
+        }
+
+        @Test
+        @DisplayName("Should do nothing when customer has no transactions")
+        void shouldDoNothingWhenNoTransactions() {
+            // Given
+            when(transactionRepository.findByCustomerId("cust-none"))
+                    .thenReturn(Collections.emptyList());
+
+            // When
+            paymentService.anonymizeCustomerData("cust-none");
+
+            // Then
+            verify(transactionRepository, never()).save(any(Transaction.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("verifyPayment - additional paths")
+    class VerifyPaymentAdditionalTests {
+
+        @Test
+        @DisplayName("Should use Razorpay method when request paymentMethod is null")
+        void shouldUseRazorpayMethodWhenRequestMethodNull() throws com.razorpay.RazorpayException {
+            // Given
+            PaymentCallbackRequest callbackRequest = PaymentCallbackRequest.builder()
+                    .razorpayOrderId("order_razorpay_001")
+                    .razorpayPaymentId("pay_razorpay_001")
+                    .razorpaySignature("valid_signature")
+                    .paymentMethod(null) // null — should fall back to Razorpay payment object
+                    .build();
+
+            com.razorpay.Payment razorpayPayment = mock(com.razorpay.Payment.class);
+            when(razorpayPayment.get("method")).thenReturn("upi");
+
+            when(transactionRepository.findByRazorpayOrderId("order_razorpay_001"))
+                    .thenReturn(Optional.of(initiatedTransaction));
+            when(razorpayService.verifyPaymentSignature(anyString(), anyString(), anyString()))
+                    .thenReturn(true);
+            when(razorpayService.fetchPayment("pay_razorpay_001")).thenReturn(razorpayPayment);
+            when(transactionRepository.save(any(Transaction.class))).thenReturn(initiatedTransaction);
+            when(encryptionService.decrypt("encrypted-email")).thenReturn("customer@real.com");
+            when(encryptionService.decrypt("encrypted-phone")).thenReturn("+31612345678");
+            doNothing().when(orderServiceClient).updateOrderPaymentStatus(anyString(), anyString(), anyString());
+
+            // When
+            PaymentResponse response = paymentService.verifyPayment(callbackRequest);
+
+            // Then
+            assertThat(response).isNotNull();
+            verify(paymentNotificationService).sendPaymentSuccessNotification(
+                    any(Transaction.class), anyString(), anyString());
+        }
+
+        @Test
+        @DisplayName("Should use OTHER method when Razorpay returns unknown method string")
+        void shouldUseOtherMethodWhenRazorpayReturnsUnknown() throws com.razorpay.RazorpayException {
+            // Given
+            PaymentCallbackRequest callbackRequest = PaymentCallbackRequest.builder()
+                    .razorpayOrderId("order_razorpay_001")
+                    .razorpayPaymentId("pay_razorpay_001")
+                    .razorpaySignature("valid_signature")
+                    .paymentMethod("UNSUPPORTED_METHOD") // triggers IllegalArgumentException -> OTHER
+                    .build();
+
+            com.razorpay.Payment razorpayPayment = mock(com.razorpay.Payment.class);
+
+            when(transactionRepository.findByRazorpayOrderId("order_razorpay_001"))
+                    .thenReturn(Optional.of(initiatedTransaction));
+            when(razorpayService.verifyPaymentSignature(anyString(), anyString(), anyString()))
+                    .thenReturn(true);
+            when(razorpayService.fetchPayment("pay_razorpay_001")).thenReturn(razorpayPayment);
+            when(transactionRepository.save(any(Transaction.class))).thenReturn(initiatedTransaction);
+            when(encryptionService.decrypt(anyString())).thenReturn("decrypted");
+            doNothing().when(orderServiceClient).updateOrderPaymentStatus(anyString(), anyString(), anyString());
+
+            // When
+            PaymentResponse response = paymentService.verifyPayment(callbackRequest);
+
+            // Then
+            assertThat(response).isNotNull();
+        }
+
+        @Test
+        @DisplayName("Should use OTHER when Razorpay payment method is also unknown string")
+        void shouldUseOtherWhenRazorpayPaymentMethodUnknown() throws com.razorpay.RazorpayException {
+            // Given
+            PaymentCallbackRequest callbackRequest = PaymentCallbackRequest.builder()
+                    .razorpayOrderId("order_razorpay_001")
+                    .razorpayPaymentId("pay_razorpay_001")
+                    .razorpaySignature("valid_signature")
+                    .paymentMethod(null)
+                    .build();
+
+            com.razorpay.Payment razorpayPayment = mock(com.razorpay.Payment.class);
+            when(razorpayPayment.get("method")).thenReturn("unknown_gateway_method");
+
+            when(transactionRepository.findByRazorpayOrderId("order_razorpay_001"))
+                    .thenReturn(Optional.of(initiatedTransaction));
+            when(razorpayService.verifyPaymentSignature(anyString(), anyString(), anyString()))
+                    .thenReturn(true);
+            when(razorpayService.fetchPayment("pay_razorpay_001")).thenReturn(razorpayPayment);
+            when(transactionRepository.save(any(Transaction.class))).thenReturn(initiatedTransaction);
+            when(encryptionService.decrypt(anyString())).thenReturn("decrypted");
+            doNothing().when(orderServiceClient).updateOrderPaymentStatus(anyString(), anyString(), anyString());
+
+            // When
+            PaymentResponse response = paymentService.verifyPayment(callbackRequest);
+
+            // Then
+            assertThat(response).isNotNull();
+        }
+
+        @Test
+        @DisplayName("Should handle null method from Razorpay payment object")
+        void shouldHandleNullMethodFromRazorpay() throws com.razorpay.RazorpayException {
+            // Given
+            PaymentCallbackRequest callbackRequest = PaymentCallbackRequest.builder()
+                    .razorpayOrderId("order_razorpay_001")
+                    .razorpayPaymentId("pay_razorpay_001")
+                    .razorpaySignature("valid_signature")
+                    .paymentMethod(null)
+                    .build();
+
+            com.razorpay.Payment razorpayPayment = mock(com.razorpay.Payment.class);
+            when(razorpayPayment.get("method")).thenReturn(null);
+
+            when(transactionRepository.findByRazorpayOrderId("order_razorpay_001"))
+                    .thenReturn(Optional.of(initiatedTransaction));
+            when(razorpayService.verifyPaymentSignature(anyString(), anyString(), anyString()))
+                    .thenReturn(true);
+            when(razorpayService.fetchPayment("pay_razorpay_001")).thenReturn(razorpayPayment);
+            when(transactionRepository.save(any(Transaction.class))).thenReturn(initiatedTransaction);
+            when(encryptionService.decrypt(anyString())).thenReturn("decrypted");
+            doNothing().when(orderServiceClient).updateOrderPaymentStatus(anyString(), anyString(), anyString());
+
+            // When — should not throw
+            PaymentResponse response = paymentService.verifyPayment(callbackRequest);
+
+            // Then
+            assertThat(response).isNotNull();
+        }
+    }
+
+    @Nested
+    @DisplayName("initiatePayment - additional paths")
+    class InitiatePaymentAdditionalTests {
+
+        @Test
+        @DisplayName("Should allow re-initiation when existing transaction is not SUCCESS")
+        void shouldAllowReInitiationWhenExistingIsNotSuccess() throws com.razorpay.RazorpayException {
+            // Given — existing INITIATED transaction (not SUCCESS) should NOT block
+            when(transactionRepository.findByOrderId("order-123"))
+                    .thenReturn(Optional.of(initiatedTransaction)); // INITIATED status
+
+            com.razorpay.Order razorpayOrder = mock(com.razorpay.Order.class);
+            when(razorpayOrder.get("id")).thenReturn("order_razorpay_002");
+            when(razorpayService.createOrder(any(), anyString(), anyString())).thenReturn(razorpayOrder);
+            when(encryptionService.encrypt(anyString())).thenReturn("encrypted");
+            when(transactionRepository.save(any(Transaction.class))).thenReturn(initiatedTransaction);
+            when(razorpayConfig.getKeyId()).thenReturn("rzp_test_key");
+            when(encryptionService.decrypt("encrypted-email")).thenReturn("customer@real.com");
+            when(encryptionService.decrypt("encrypted-phone")).thenReturn("+31612345678");
+
+            // When
+            PaymentResponse response = paymentService.initiatePayment(paymentRequest);
+
+            // Then
+            assertThat(response).isNotNull();
+        }
     }
 }

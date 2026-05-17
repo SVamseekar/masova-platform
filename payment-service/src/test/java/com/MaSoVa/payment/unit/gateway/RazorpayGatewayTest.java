@@ -3,6 +3,7 @@ package com.MaSoVa.payment.unit.gateway;
 import com.MaSoVa.payment.gateway.RazorpayGateway;
 import com.MaSoVa.payment.gateway.GatewayPaymentRequest;
 import com.MaSoVa.payment.gateway.GatewayPaymentResult;
+import com.MaSoVa.payment.gateway.GatewayWebhookResult;
 import com.MaSoVa.payment.config.RazorpayConfig;
 import com.MaSoVa.payment.service.RazorpayService;
 import com.razorpay.Order;
@@ -65,5 +66,76 @@ class RazorpayGatewayTest {
     @Test
     void getGatewayName_returns_RAZORPAY() {
         assertThat(gateway.getGatewayName()).isEqualTo("RAZORPAY");
+    }
+
+    @Test
+    void refund_returns_razorpay_refund_id() throws Exception {
+        org.json.JSONObject refundJson = new org.json.JSONObject();
+        refundJson.put("id", "rfnd_test_001");
+        when(razorpayService.createRefund(eq("pay_123"), any(), anyString())).thenReturn(refundJson);
+
+        String refundId = gateway.refund("pay_123", new java.math.BigDecimal("100.00"), "normal");
+
+        assertThat(refundId).isEqualTo("rfnd_test_001");
+    }
+
+    @Test
+    void parseWebhook_valid_payment_captured_event() throws Exception {
+        when(razorpayService.verifyWebhookSignature(any(), any(), any())).thenReturn(true);
+        String payload = "{\"event\":\"payment.captured\",\"payload\":{\"payment\":{\"entity\":{\"id\":\"pay_123\",\"order_id\":\"order_123\"}}}}";
+
+        GatewayWebhookResult result = gateway.parseWebhook(payload, "valid_sig");
+
+        assertThat(result.getEventType()).isEqualTo(GatewayWebhookResult.EventType.PAYMENT_CAPTURED);
+    }
+
+    @Test
+    void parseWebhook_valid_refund_processed_event() throws Exception {
+        when(razorpayService.verifyWebhookSignature(any(), any(), any())).thenReturn(true);
+        String payload = "{\"event\":\"refund.processed\",\"payload\":{\"refund\":{\"entity\":{\"id\":\"rfnd_123\",\"payment_id\":\"pay_123\"}}}}";
+
+        GatewayWebhookResult result = gateway.parseWebhook(payload, "valid_sig");
+
+        assertThat(result.getEventType()).isEqualTo(GatewayWebhookResult.EventType.REFUND_PROCESSED);
+    }
+
+    @Test
+    void parseWebhook_order_paid_maps_to_payment_captured() throws Exception {
+        when(razorpayService.verifyWebhookSignature(any(), any(), any())).thenReturn(true);
+        String payload = "{\"event\":\"order.paid\",\"payload\":{\"payment\":{\"entity\":{\"id\":\"pay_123\",\"order_id\":\"order_123\"}}}}";
+
+        GatewayWebhookResult result = gateway.parseWebhook(payload, "valid_sig");
+
+        assertThat(result.getEventType()).isEqualTo(GatewayWebhookResult.EventType.PAYMENT_CAPTURED);
+    }
+
+    @Test
+    void parseWebhook_unknown_event_returns_unknown_type() throws Exception {
+        when(razorpayService.verifyWebhookSignature(any(), any(), any())).thenReturn(true);
+        String payload = "{\"event\":\"some.unknown\",\"payload\":{}}";
+
+        GatewayWebhookResult result = gateway.parseWebhook(payload, "valid_sig");
+
+        assertThat(result.getEventType()).isEqualTo(GatewayWebhookResult.EventType.UNKNOWN);
+    }
+
+    @Test
+    void parseWebhook_refund_failed_event() throws Exception {
+        when(razorpayService.verifyWebhookSignature(any(), any(), any())).thenReturn(true);
+        String payload = "{\"event\":\"refund.failed\",\"payload\":{\"refund\":{\"entity\":{\"id\":\"rfnd_123\",\"payment_id\":\"pay_123\"}}}}";
+
+        GatewayWebhookResult result = gateway.parseWebhook(payload, "valid_sig");
+
+        assertThat(result.getEventType()).isEqualTo(GatewayWebhookResult.EventType.REFUND_FAILED);
+    }
+
+    @Test
+    void parseWebhook_payment_failed_event() throws Exception {
+        when(razorpayService.verifyWebhookSignature(any(), any(), any())).thenReturn(true);
+        String payload = "{\"event\":\"payment.failed\",\"payload\":{\"payment\":{\"entity\":{\"id\":\"pay_123\",\"order_id\":\"order_123\",\"error_description\":\"Declined\"}}}}";
+
+        GatewayWebhookResult result = gateway.parseWebhook(payload, "valid_sig");
+
+        assertThat(result.getEventType()).isEqualTo(GatewayWebhookResult.EventType.PAYMENT_FAILED);
     }
 }

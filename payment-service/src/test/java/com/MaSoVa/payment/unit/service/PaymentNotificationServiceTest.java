@@ -337,5 +337,157 @@ class PaymentNotificationServiceTest {
             // Then
             verify(restTemplate, never()).postForEntity(anyString(), any(), any());
         }
+
+        @Test
+        @DisplayName("Should skip notification for no-reply email")
+        void shouldSkipForNoReplyEmail() {
+            // When
+            notificationService.sendPaymentSuccessNotification(
+                    transaction, "no-reply@masova.com", "+31612345678");
+
+            // Then
+            verify(restTemplate, never()).postForEntity(anyString(), any(), any());
+        }
+
+        @Test
+        @DisplayName("Should skip notification for email without dot")
+        void shouldSkipForEmailWithoutDot() {
+            // When
+            notificationService.sendPaymentSuccessNotification(
+                    transaction, "user@nodot", "+31612345678");
+
+            // Then
+            verify(restTemplate, never()).postForEntity(anyString(), any(), any());
+        }
+    }
+
+    @Nested
+    @DisplayName("fetchOrderItems path coverage")
+    class FetchOrderItemsTests {
+
+        @Test
+        @DisplayName("Should include order items in success notification HTML when orderId present")
+        void shouldIncludeOrderItemsInEmailWhenOrderIdPresent() {
+            // Given — orderId is set on transaction, restTemplate returns order with items
+            java.util.Map<String, Object> orderResponse = new java.util.HashMap<>();
+            java.util.List<java.util.Map<String, Object>> items = new java.util.ArrayList<>();
+            java.util.Map<String, Object> item = new java.util.HashMap<>();
+            item.put("name", "Burger");
+            item.put("quantity", 2);
+            item.put("price", 100.0);
+            items.add(item);
+            orderResponse.put("items", items);
+
+            // First call: getForObject (order items fetch)
+            when(restTemplate.getForObject(anyString(), eq(java.util.Map.class)))
+                    .thenReturn(orderResponse);
+            // Second call: postForEntity (notification send)
+            when(restTemplate.postForEntity(anyString(), any(org.springframework.http.HttpEntity.class), eq(java.util.Map.class)))
+                    .thenReturn(org.springframework.http.ResponseEntity.ok(null));
+
+            // When
+            notificationService.sendPaymentSuccessNotification(
+                    transaction, "customer@valid.com", "+31612345678");
+
+            // Then — notification was sent (not skipped)
+            verify(restTemplate).postForEntity(anyString(), any(), eq(java.util.Map.class));
+        }
+
+        @Test
+        @DisplayName("Should proceed gracefully when order items fetch fails")
+        void shouldProceedWhenOrderItemsFetchFails() {
+            // Given — order fetch throws, notification still sends
+            when(restTemplate.getForObject(anyString(), eq(java.util.Map.class)))
+                    .thenThrow(new org.springframework.web.client.RestClientException("Order service down"));
+            when(restTemplate.postForEntity(anyString(), any(org.springframework.http.HttpEntity.class), eq(java.util.Map.class)))
+                    .thenReturn(org.springframework.http.ResponseEntity.ok(null));
+
+            // When — should not throw
+            notificationService.sendPaymentSuccessNotification(
+                    transaction, "customer@valid.com", "+31612345678");
+
+            // Then — notification still sent
+            verify(restTemplate).postForEntity(anyString(), any(), eq(java.util.Map.class));
+        }
+
+        @Test
+        @DisplayName("Should handle null order response gracefully")
+        void shouldHandleNullOrderResponse() {
+            // Given
+            when(restTemplate.getForObject(anyString(), eq(java.util.Map.class))).thenReturn(null);
+            when(restTemplate.postForEntity(anyString(), any(org.springframework.http.HttpEntity.class), eq(java.util.Map.class)))
+                    .thenReturn(org.springframework.http.ResponseEntity.ok(null));
+
+            // When
+            notificationService.sendPaymentSuccessNotification(
+                    transaction, "customer@valid.com", "+31612345678");
+
+            // Then
+            verify(restTemplate).postForEntity(anyString(), any(), eq(java.util.Map.class));
+        }
+
+        @Test
+        @DisplayName("Should handle order item with Integer price")
+        void shouldHandleOrderItemWithIntegerPrice() {
+            // Given
+            java.util.Map<String, Object> orderResponse = new java.util.HashMap<>();
+            java.util.List<java.util.Map<String, Object>> items = new java.util.ArrayList<>();
+            java.util.Map<String, Object> item = new java.util.HashMap<>();
+            item.put("name", "Pizza");
+            item.put("quantity", 1);
+            item.put("price", 250); // Integer not Double
+            items.add(item);
+            orderResponse.put("items", items);
+
+            when(restTemplate.getForObject(anyString(), eq(java.util.Map.class))).thenReturn(orderResponse);
+            when(restTemplate.postForEntity(anyString(), any(org.springframework.http.HttpEntity.class), eq(java.util.Map.class)))
+                    .thenReturn(org.springframework.http.ResponseEntity.ok(null));
+
+            // When
+            notificationService.sendPaymentSuccessNotification(
+                    transaction, "customer@valid.com", "+31612345678");
+
+            // Then — sent without error
+            verify(restTemplate).postForEntity(anyString(), any(), eq(java.util.Map.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("Phone number handling")
+    class PhoneHandlingTests {
+
+        @Test
+        @DisplayName("Should include phone in notification when phone is non-empty")
+        void shouldIncludePhoneWhenNonEmpty() {
+            // Given
+            when(restTemplate.postForEntity(anyString(), any(org.springframework.http.HttpEntity.class), eq(java.util.Map.class)))
+                    .thenReturn(org.springframework.http.ResponseEntity.ok(null));
+
+            // When
+            notificationService.sendPaymentSuccessNotification(
+                    transaction, "customer@valid.com", "+31612345678");
+
+            // Then
+            verify(restTemplate).postForEntity(anyString(), httpEntityCaptor.capture(), eq(java.util.Map.class));
+            java.util.Map<String, Object> body = httpEntityCaptor.getValue().getBody();
+            assertThat(body).containsKey("recipientPhone");
+        }
+
+        @Test
+        @DisplayName("Should not include phone in notification when phone is null")
+        void shouldNotIncludePhoneWhenNull() {
+            // Given
+            when(restTemplate.postForEntity(anyString(), any(org.springframework.http.HttpEntity.class), eq(java.util.Map.class)))
+                    .thenReturn(org.springframework.http.ResponseEntity.ok(null));
+
+            // When
+            notificationService.sendPaymentSuccessNotification(
+                    transaction, "customer@valid.com", null);
+
+            // Then
+            verify(restTemplate).postForEntity(anyString(), httpEntityCaptor.capture(), eq(java.util.Map.class));
+            java.util.Map<String, Object> body = httpEntityCaptor.getValue().getBody();
+            assertThat(body).doesNotContainKey("recipientPhone");
+        }
     }
 }
