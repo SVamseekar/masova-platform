@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-17  
 **Author:** Engineering (via Claude Code)  
-**Status:** Active — Plans 0-1 complete, Plan 2 core-service DONE ✅
+**Status:** Active — Plans 0-1 complete, Plan 2 core-service + commerce-service DONE ✅
 
 ---
 
@@ -47,15 +47,17 @@ Built the foundation every subsequent test relies on:
 - Testcontainers dependencies (MongoDB, PostgreSQL, Redis, RabbitMQ) in all service poms
 - `ForwardedHeaderFilterTest` — existing test fixed and passing
 
-### Plan 2 — Backend Unit & Integration Tests ✅ core-service COMPLETE
+### Plan 2 — Backend Unit & Integration Tests ✅ core-service + commerce-service COMPLETE
 
 **What is complete (as of 2026-05-17):**
 - **704 unit tests in core-service — 0 failures** ✅
+- **400 unit tests in commerce-service — 0 failures** ✅
 - core-service JaCoCo: **80.77% line coverage** (gate: 80% line, 60% branch) ✅
+- commerce-service JaCoCo: **85% line, 71% branch** ✅
 - SonarQube scan: **ANALYSIS SUCCESSFUL** at `http://192.168.50.88:9000/dashboard?id=masova-platform` ✅
 - 23 integration tests across 5 services — 0 failures on Dell
 - All controller unit tests written (standaloneSetup + Mockito, no Docker)
-- Service unit tests: UserService (+78 tests), CustomerService (+73 tests), WorkingSessionService (+34 tests), all GDPR services, all notification services, StoreService, ShiftService, AnalyticsService, and more
+- Service unit tests: UserService, CustomerService, WorkingSessionService, all GDPR services, all notification services, StoreService, ShiftService, AnalyticsService, OrderService (all paths), MenuService, KitchenEquipmentService, TipService, RatingTokenService, AggregatorService, FiscalSigningService, PredictiveNotificationService, OrderItemSyncService, OrderEventPublisher, CustomerNotificationService (full)
 - JaCoCo exclusions added: Email/SMS/PushService (require real Twilio/Brevo/Firebase) + standard exclusions
 - Branch minimum adjusted to 0.60 (realistic given external-call branches in notification services)
 
@@ -64,7 +66,7 @@ Built the foundation every subsequent test relies on:
 | Service | JaCoCo LINE | JaCoCo BRANCH | Target | Status |
 |---------|------------|---------------|--------|--------|
 | core-service | **80.77%** | 60.3% | 80% line / 60% branch | ✅ DONE |
-| commerce-service | 24.9% | — | 80% | ❌ TODO |
+| commerce-service | **85%** | 71% | 80% line / 60% branch | ✅ DONE |
 | logistics-service | 12.8% | — | 80% | ❌ TODO |
 | payment-service | 69.3% | — | 80% | ⚠️ Close |
 | intelligence-service | 25.4% | — | 80% | ❌ TODO |
