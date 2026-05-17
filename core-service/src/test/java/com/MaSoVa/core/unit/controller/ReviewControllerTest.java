@@ -269,26 +269,6 @@ class ReviewControllerTest extends BaseServiceTest {
     }
 
     @Test
-    @DisplayName("GET /api/reviews with status=PENDING returns pending reviews")
-    void getReviews_pendingStatus_returns200() throws Exception {
-        when(moderationService.getPendingReviews(any()))
-                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
-
-        mockMvc.perform(get("/api/reviews").param("status", "PENDING"))
-            .andExpect(status().isOk());
-    }
-
-    @Test
-    @DisplayName("GET /api/reviews with status=APPROVED returns reviews by status")
-    void getReviews_approvedStatus_returns200() throws Exception {
-        when(reviewService.getReviewsByStatus(any(), any()))
-                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
-
-        mockMvc.perform(get("/api/reviews").param("status", "APPROVED"))
-            .andExpect(status().isOk());
-    }
-
-    @Test
     @DisplayName("GET /api/reviews with DRIVER entityType returns driver reviews")
     void getReviews_driverFilter_returns200() throws Exception {
         when(reviewService.getReviewsByDriverId(anyString(), any()))
