@@ -16,9 +16,11 @@
 
 The following issues were found by auditing the actual codebase AND reading every backend `@RequestMapping`/`@GetMapping`/`@PostMapping` annotation directly from the Java controllers:
 
-### Handler files — two already correct (prefix only), do NOT touch prefix but verify content:
-1. **`analyticsHandlers.ts` already correct** — already uses `${API}/api/analytics/...`. Verify only.
-2. **`notificationHandlers.ts` already correct** — already uses `${API}/api/notifications/...`, `/api/preferences/...`, `/api/campaigns/...`. All confirmed against `NotificationController`, `UserPreferencesController`, `CampaignController`. Verify only.
+### Handler files — one already correct:
+1. **`notificationHandlers.ts` already correct** — already uses `${API}/api/notifications/...`, `/api/preferences/...`, `/api/campaigns/...`. All confirmed against `NotificationController`, `UserPreferencesController`, `CampaignController`. Verify only.
+
+### Handler files — correct prefix but wrong sub-paths (intelligence service):
+2. **`analyticsHandlers.ts` has `/api/` prefix but ALL sub-paths are wrong** — `AnalyticsController` (intelligence-service) has only 4 endpoints — all sub-path routes like `/api/analytics/sales/today`, `/api/analytics/staff/leaderboard` etc. don't exist. The real API uses a single `GET /api/analytics?type=sales&period=TODAY` with a `type` query param. All 9 handlers need to be collapsed into 4 real ones.
 3. **`customerHandlers.ts` has correct prefix BUT has stale sub-paths** — prefix `/api/customers/` is correct but routes like `/user/:userId`, `/email/:email`, `/phone/:phone`, `/high-value`, `/top-spenders`, `/recently-active`, `/inactive`, `/birthdays/today`, `/marketing-opt-in`, `/sms-opt-in`, `/loyalty/max-redeemable`, `/order-stats`, `/preferences`, `/loyalty/tier/:tier` don't exist. `CustomerController` uses query params: `?userId=&email=&phone=&tier=&tag=&search=` on `GET /api/customers`. **Must clean up stale routes.**
 
 ### Handler files — stale routes that don't exist in any backend controller:
@@ -37,7 +39,9 @@ These routes are in the handler files but the backend never serves them. Simply 
 - `${API}/equipment/store/status/:status`, `/equipment/store/maintenance-needed`, `/equipment/store/reset-usage` — `KitchenEquipmentController` has no store-scoped sub-paths
 - `${API}/shifts/employee/:id/current`, `/shifts/store/:id/week` — `ShiftController` has no such paths
 - `${API}/users/profile`, `/users/change-password`, `/users/type/:type`, `/users/store`, `/users/managers`, `/users/create`, `/users/search`, `/users/stats` — `UserController` has NO `/profile` endpoint anywhere, `change-password` is on `AuthController` at `/api/auth/change-password`, all filters use query params on `GET /api/users`
-- `${API}/customers/user/:userId`, `/customers/email/:email`, `/customers/phone/:phone`, `/customers/high-value`, `/customers/top-spenders`, etc. — `CustomerController` uses query params on `GET /api/customers`; sub-path routes like `/loyalty/max-redeemable`, `/order-stats`, `/preferences`, `/loyalty/tier/:tier` don't exist as separate endpoints
+- `${API}/customers/user/:userId`, `/customers/email/:email`, `/customers/phone/:phone`, `/customers/high-value`, `/customers/top-spenders`, etc. — `CustomerController` uses query params on `GET /api/customers`
+- `${API}/api/analytics/sales/today`, `/api/analytics/avgOrderValue/today`, `/api/analytics/drivers/status`, `/api/analytics/staff/:id/performance/today`, `/api/analytics/sales/trends/:period`, `/api/analytics/sales/breakdown/order-type`, `/api/analytics/sales/peak-hours`, `/api/analytics/staff/leaderboard`, `/api/analytics/products/top-selling` — **ALL wrong**. `AnalyticsController` has one endpoint: `GET /api/analytics?type=<sales|aov|drivers|sales-trends|order-breakdown|peak-hours|staff-leaderboard|top-products>&period=<TODAY|WEEKLY|...>`
+- `${API}/api/bi/analysis/*`, `/api/bi/executive-summary` — wrong sub-paths. Real endpoints: `GET /api/bi?type=<sales-forecast|demand-forecast|customer-behavior|churn|cost-analysis>` and `GET /api/bi/reports?type=<benchmarking|executive-summary>`; sub-path routes like `/loyalty/max-redeemable`, `/order-stats`, `/preferences`, `/loyalty/tier/:tier` don't exist as separate endpoints
 - `${API}/reviews/order/:orderId`, `/reviews/customer/:customerId`, `/reviews/driver/:driverId`, `/reviews/item/:menuItemId`, `/reviews/recent`, `/reviews/needs-response`, `/reviews/stats/overall`, `/reviews/pending`, `/reviews/flagged`, `/reviews/staff/:id` — `ReviewController` uses query params on `GET /api/reviews`; consolidated
 - `${API}/responses/review/:reviewId` (POST/GET) → real path is `POST /api/reviews/{id}/response` and `GET /api/reviews/{id}/response` — on `ReviewController`
 - `${API}/responses/templates` → real path is `GET /api/reviews/response-templates`
@@ -62,7 +66,7 @@ These routes are in the handler files but the backend never serves them. Simply 
 - **`NotificationController`** → `/api/notifications`: GET, POST, PATCH `/{id}/read`, PATCH `/read-all`, DELETE `/{id}`
 - **`UserPreferencesController`** → `/api/preferences`: (verify endpoints)
 - **`CampaignController`** → `/api/campaigns`: (verify endpoints)
-- **`AnalyticsController`** → `GET /api/analytics`, `POST /api/analytics/cache/clear`, `GET /api/bi`, `GET /api/bi/reports`
+- **`AnalyticsController`** (intelligence-service) → `GET /api/analytics?type=<sales|aov|drivers|sales-trends|order-breakdown|peak-hours|staff-leaderboard|top-products>&period=<period>`, `POST /api/analytics/cache/clear`, `GET /api/bi?type=<sales-forecast|demand-forecast|customer-behavior|churn|cost-analysis>&period=<period>`, `GET /api/bi/reports?type=<benchmarking|executive-summary>&period=<period>`
 
 ### Other corrections:
 4. **`inventoryApi.ts`** — `baseUrl = ${API_CONFIG.API_GATEWAY_URL}/inventory`. Fix: change to `API_CONFIG.BASE_URL` and prefix URLs with `/api/inventory`, `/api/suppliers`, `/api/purchase-orders`.
@@ -87,7 +91,8 @@ These routes are in the handler files but the backend never serves them. Simply 
 | `frontend/src/test/mocks/handlers/inventoryHandlers.ts` | Fix to `/api/inventory`, `/api/suppliers`, `/api/purchase-orders`; remove stale sub-paths |
 | `frontend/src/test/mocks/handlers/notificationHandlers.ts` | **Already correct** — verify only, no changes needed |
 | `frontend/src/test/mocks/handlers/sessionHandlers.ts` | Rewrite: only 9 real endpoints exist; remove 5 stale routes |
-| `frontend/src/test/mocks/handlers/analyticsHandlers.ts` | **Already correct** — verify only, no changes needed |
+| `frontend/src/test/mocks/handlers/analyticsHandlers.ts` | Collapse 9 stale sub-path handlers into 4 real query-param handlers |
+| `frontend/src/store/api/analyticsApi.ts` | Fix `baseUrl` (has `/analytics` appended); collapse all endpoints into `GET /api/analytics?type=`, `GET /api/bi?type=`, `GET /api/bi/reports?type=`, `POST /api/analytics/cache/clear` |
 | `frontend/src/test/mocks/handlers/reviewHandlers.ts` | Fix `/api/reviews/` prefix |
 | `frontend/src/store/api/authApi.ts` | Fix paths: `/api/auth/login` not `/users/login` |
 | `frontend/src/store/api/sessionApi.ts` | Fix to `/api/sessions`; remove 5 methods for non-existent endpoints |
@@ -336,13 +341,39 @@ http.get(`${API}/api/delivery/metrics`, ...)
 // http.post(`${API}/delivery/:orderId/regenerate-otp`, ...)
 ```
 
-- [ ] **Step 5: Verify analyticsHandlers.ts is already correct — no changes needed**
+- [ ] **Step 5: Fix analyticsHandlers.ts — collapse stale sub-paths into real query-param endpoints**
 
-```bash
-grep -n "http\." frontend/src/test/mocks/handlers/analyticsHandlers.ts | head -5
+`AnalyticsController` (intelligence-service, verified) has only 4 endpoints. The current 9 handlers use non-existent sub-paths. Rewrite the entire file:
+
+```typescript
+// KEEP — 4 real endpoints:
+http.get(`${API}/api/analytics`, () =>        // query: ?type=sales|aov|drivers|sales-trends|order-breakdown|peak-hours|staff-leaderboard|top-products&period=TODAY
+  HttpResponse.json({ /* combined response shape varies by type */ }),
+),
+
+http.post(`${API}/api/analytics/cache/clear`, () =>
+  HttpResponse.json({ status: 'success', message: 'Cache cleared', storeId: '1' }),
+),
+
+http.get(`${API}/api/bi`, () =>               // query: ?type=sales-forecast|demand-forecast|customer-behavior|churn|cost-analysis&period=WEEKLY
+  HttpResponse.json({ /* BI data varies by type */ }),
+),
+
+http.get(`${API}/api/bi/reports`, () =>       // query: ?type=benchmarking|executive-summary&period=MONTH
+  HttpResponse.json({ /* report data varies by type */ }),
+),
+
+// REMOVE — none of these sub-paths exist in AnalyticsController:
+// http.get(`${API}/api/analytics/sales/today`, ...)
+// http.get(`${API}/api/analytics/avgOrderValue/today`, ...)
+// http.get(`${API}/api/analytics/drivers/status`, ...)
+// http.get(`${API}/api/analytics/staff/:staffId/performance/today`, ...)
+// http.get(`${API}/api/analytics/sales/trends/:period`, ...)
+// http.get(`${API}/api/analytics/sales/breakdown/order-type`, ...)
+// http.get(`${API}/api/analytics/sales/peak-hours`, ...)
+// http.get(`${API}/api/analytics/staff/leaderboard`, ...)
+// http.get(`${API}/api/analytics/products/top-selling`, ...)
 ```
-
-Expected: all routes already have `${API}/api/analytics/...` or `${API}/api/bi/...`. If all correct, move on.
 
 - [ ] **Step 6: Fix inventoryHandlers.ts — three base paths, remove stale sub-paths**
 
@@ -599,7 +630,7 @@ git commit -m "fix(frontend/test): add /api/ prefix to all MSW handlers to match
 **Context:** Multiple RTK Query slices have URL mismatches — wrong paths, wrong HTTP methods, stale sub-path endpoints that don't exist in the backend. Each slice needs targeted fixes. These fixes correct both the app behaviour and the tests simultaneously since MSW handler fixes align with the same canonical paths.
 
 **Files:**
-- Modify: `authApi.ts`, `sessionApi.ts`, `equipmentApi.ts`, `orderApi.ts`, `shiftApi.ts`, `driverApi.ts`, `inventoryApi.ts`
+- Modify: `authApi.ts`, `sessionApi.ts`, `equipmentApi.ts`, `orderApi.ts`, `shiftApi.ts`, `driverApi.ts`, `inventoryApi.ts`, `analyticsApi.ts`
 
 - [ ] **Step 1: Fix authApi.ts — change from /users/ to /api/auth/**
 
@@ -839,7 +870,43 @@ url: `/api/waste/${id}`                    // GET, PATCH, DELETE
 url: '/api/waste/analytics'               // GET analytics (was /waste/trend — wrong)
 ```
 
-- [ ] **Step 8: Verify TypeScript compiles with no errors**
+- [ ] **Step 8: Fix analyticsApi.ts — fix baseUrl and collapse all endpoints into 4 real ones**
+
+`analyticsApi.ts` has `baseUrl: ${API_CONFIG.BASE_URL}/analytics` — so `sales/today` resolves to `gateway/analytics/sales/today`. No such paths exist.
+
+Change `baseUrl` from `${API_CONFIG.BASE_URL}/analytics` to `API_CONFIG.BASE_URL`. Then replace all endpoint queries with the 4 real endpoints using the `type` query param:
+
+```typescript
+// BEFORE (examples of stale pattern):
+query: (storeId) => `sales/today${...}`           // resolves to gateway/analytics/sales/today — WRONG
+query: (storeId) => `drivers/status${...}`         // WRONG
+query: (driverId) => `/api/bi/executive-summary${...}`  // absolute path bypassing baseUrl — inconsistent
+
+// AFTER — 4 real endpoints, all with /api/ prefix:
+// Consolidate all analytics queries into one endpoint with type param:
+getSalesAnalytics:       query: () => `/api/analytics?type=sales&period=TODAY`
+getAovAnalytics:         query: () => `/api/analytics?type=aov&period=TODAY`
+getDriversAnalytics:     query: () => `/api/analytics?type=drivers`
+getSalesTrends:          query: ({ period }) => `/api/analytics?type=sales-trends&period=${period}`
+getOrderBreakdown:       query: () => `/api/analytics?type=order-breakdown`
+getPeakHours:            query: () => `/api/analytics?type=peak-hours`
+getStaffLeaderboard:     query: ({ period }) => `/api/analytics?type=staff-leaderboard&period=${period}`
+getTopProducts:          query: ({ period }) => `/api/analytics?type=top-products&period=${period}`
+clearCaches:             url: '/api/analytics/cache/clear', method: 'POST'
+
+// BI endpoints — fix absolute paths + use correct paths:
+getBI:                   query: ({ type, period }) => `/api/bi?type=${type}&period=${period}`
+getBIReports:            query: ({ type, period }) => `/api/bi/reports?type=${type}&period=${period}`
+
+// REMOVE — stale BI sub-paths:
+// query: () => `/api/bi/analysis/customer-behavior${...}`  → use /api/bi?type=customer-behavior
+// query: () => `/api/bi/churn-prediction${...}`            → use /api/bi?type=churn
+// query: () => `/api/bi/cost-analysis${...}`               → use /api/bi?type=cost-analysis
+// query: () => `/api/bi/sales-forecast${...}`              → use /api/bi?type=sales-forecast
+// query: () => `/api/bi/executive-summary${...}`           → use /api/bi/reports?type=executive-summary
+```
+
+- [ ] **Step 9: Verify TypeScript compiles with no errors**
 
 ```bash
 cd frontend && npx tsc --noEmit 2>&1 | head -20
@@ -847,7 +914,7 @@ cd frontend && npx tsc --noEmit 2>&1 | head -20
 
 Expected: no errors.
 
-- [ ] **Step 9: Run unit tests for affected API slices**
+- [ ] **Step 10: Run unit tests for affected API slices**
 
 ```bash
 cd frontend && npm run test:run -- src/store/api/ --reporter=verbose 2>&1 | tail -20
@@ -855,11 +922,11 @@ cd frontend && npm run test:run -- src/store/api/ --reporter=verbose 2>&1 | tail
 
 Expected: all existing API slice tests pass.
 
-- [ ] **Step 10: Commit**
+- [ ] **Step 11: Commit**
 
 ```bash
 git add frontend/src/store/api/
-git commit -m "fix(frontend): correct RTK Query slice URLs to match canonical backend paths — authApi, sessionApi, equipmentApi, orderApi, shiftApi, driverApi, inventoryApi"
+git commit -m "fix(frontend): correct RTK Query slice URLs to match canonical backend paths — authApi, sessionApi, equipmentApi, orderApi, shiftApi, driverApi, inventoryApi, analyticsApi"
 ```
 
 ---
