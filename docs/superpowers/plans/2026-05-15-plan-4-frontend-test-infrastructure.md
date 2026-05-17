@@ -68,6 +68,19 @@ These routes are in the handler files but the backend never serves them. Simply 
 - **`CampaignController`** → `/api/campaigns`: (verify endpoints)
 - **`AnalyticsController`** (intelligence-service) → `GET /api/analytics?type=<sales|aov|drivers|sales-trends|order-breakdown|peak-hours|staff-leaderboard|top-products>&period=<period>`, `POST /api/analytics/cache/clear`, `GET /api/bi?type=<sales-forecast|demand-forecast|customer-behavior|churn|cost-analysis>&period=<period>`, `GET /api/bi/reports?type=<benchmarking|executive-summary>&period=<period>`
 
+### Controllers NOT referenced by frontend (safe to ignore in this plan):
+- `EarningsController` → `/api/staff/earnings/...` — no frontend slice found
+- `RatingController` → `/api/notifications/rating/send` — internal use only
+- `GdprController` → `/api/gdpr/...` — no frontend slice found
+- `StaffTipController` → `/api/staff/tips/...` — no frontend slice found
+- `TipController` → `POST /api/orders/{id}/tip` — no frontend slice found
+- `StripeWebhookController` / `WebhookController` → `/api/payments/webhook/...` — backend-only webhooks
+- `SystemInfoController`, `TestDataController` — dev-only, not frontend-facing
+
+### Additional slice corrections found in full service audit:
+- **`aggregatorApi.ts`** — calls `PUT /api/aggregators/connections` but `AggregatorController` only has `GET /connections`. The PUT/upsert endpoint doesn't exist — remove `upsertConnection` mutation.
+- **`reviewApi.ts`** — `baseUrl = API_CONFIG.REVIEW_SERVICE_URL` (= gateway root). All URLs like `/reviews/...` missing `/api/` prefix. Also has stale sub-paths: `/reviews/order/:id`, `/reviews/customer/:id`, `/reviews/driver/:id`, `/reviews/item/:id`, `/reviews/staff/:id/rating`, `/reviews/stats/driver/:id`, `/reviews/stats/item/:id` — `ReviewController` uses query params on `GET /api/reviews`.
+
 ### Other corrections:
 4. **`inventoryApi.ts`** — `baseUrl = ${API_CONFIG.API_GATEWAY_URL}/inventory`. Fix: change to `API_CONFIG.BASE_URL` and prefix URLs with `/api/inventory`, `/api/suppliers`, `/api/purchase-orders`.
 5. **`orderApi.ts`** — `baseUrl = API_CONFIG.ORDER_SERVICE_URL`. Fix: add `/api/` prefix to all URLs AND change `updateOrderStatus` to POST.
@@ -93,6 +106,8 @@ These routes are in the handler files but the backend never serves them. Simply 
 | `frontend/src/test/mocks/handlers/sessionHandlers.ts` | Rewrite: only 9 real endpoints exist; remove 5 stale routes |
 | `frontend/src/test/mocks/handlers/analyticsHandlers.ts` | Collapse 9 stale sub-path handlers into 4 real query-param handlers |
 | `frontend/src/store/api/analyticsApi.ts` | Fix `baseUrl` (has `/analytics` appended); collapse all endpoints into `GET /api/analytics?type=`, `GET /api/bi?type=`, `GET /api/bi/reports?type=`, `POST /api/analytics/cache/clear` |
+| `frontend/src/store/api/reviewApi.ts` | Add `/api/` prefix; remove stale sub-path mutations (`flag`, `status`, `staff/:id`, `stats/driver`, `stats/item`) — use query params or `PATCH /{id}` |
+| `frontend/src/store/api/aggregatorApi.ts` | Remove `upsertConnection` mutation — `PUT /api/aggregators/connections` doesn't exist in `AggregatorController` |
 | `frontend/src/test/mocks/handlers/reviewHandlers.ts` | Fix `/api/reviews/` prefix |
 | `frontend/src/store/api/authApi.ts` | Fix paths: `/api/auth/login` not `/users/login` |
 | `frontend/src/store/api/sessionApi.ts` | Fix to `/api/sessions`; remove 5 methods for non-existent endpoints |
@@ -630,7 +645,7 @@ git commit -m "fix(frontend/test): add /api/ prefix to all MSW handlers to match
 **Context:** Multiple RTK Query slices have URL mismatches — wrong paths, wrong HTTP methods, stale sub-path endpoints that don't exist in the backend. Each slice needs targeted fixes. These fixes correct both the app behaviour and the tests simultaneously since MSW handler fixes align with the same canonical paths.
 
 **Files:**
-- Modify: `authApi.ts`, `sessionApi.ts`, `equipmentApi.ts`, `orderApi.ts`, `shiftApi.ts`, `driverApi.ts`, `inventoryApi.ts`, `analyticsApi.ts`
+- Modify: `authApi.ts`, `sessionApi.ts`, `equipmentApi.ts`, `orderApi.ts`, `shiftApi.ts`, `driverApi.ts`, `inventoryApi.ts`, `analyticsApi.ts`, `reviewApi.ts`, `aggregatorApi.ts`
 
 - [ ] **Step 1: Fix authApi.ts — change from /users/ to /api/auth/**
 
@@ -906,7 +921,55 @@ getBIReports:            query: ({ type, period }) => `/api/bi/reports?type=${ty
 // query: () => `/api/bi/executive-summary${...}`           → use /api/bi/reports?type=executive-summary
 ```
 
-- [ ] **Step 9: Verify TypeScript compiles with no errors**
+- [ ] **Step 9: Fix reviewApi.ts — add /api/ prefix, remove stale sub-path mutations**
+
+`reviewApi.ts` has `baseUrl: API_CONFIG.REVIEW_SERVICE_URL` (= gateway root). All URLs like `/reviews/...` resolve to `gateway/reviews/...` — missing `/api/`. Also remove mutations that map to non-existent sub-paths.
+
+```typescript
+// Fix all query URLs — add /api/ prefix:
+url: '/reviews'                → url: '/api/reviews'
+url: `/reviews/${id}/flag`     → REMOVE — use PATCH /api/reviews/{id} with body {flagged: true}
+url: `/reviews/${id}/status`   → REMOVE — use PATCH /api/reviews/{id} with body {status: ...}
+
+// Fix stale query sub-paths → use query params on GET /api/reviews:
+query: (orderId) => `/reviews/order/${orderId}`      → `/api/reviews?orderId=${orderId}`
+query: (customerId) => `/reviews/customer/${customerId}` → `/api/reviews?customerId=${customerId}`
+query: (driverId) => `/reviews/driver/${driverId}`   → `/api/reviews?driverId=${driverId}`
+query: (menuItemId) => `/reviews/item/${menuItemId}` → `/api/reviews?menuItemId=${menuItemId}`
+query: (staffId) => `/reviews/staff/${staffId}/rating` → REMOVE — no such endpoint
+query: (storeId) => `/reviews/stats/overall`         → `/api/reviews/stats` (+ query params)
+query: (driverId) => `/reviews/stats/driver/${driverId}` → `/api/reviews/stats?driverId=${driverId}`
+
+// Fix approve/reject mutations:
+url: `/reviews/${id}/approve`  → REMOVE — use PATCH /api/reviews/{id} with body {status: 'APPROVED'}
+url: `/reviews/${id}/reject`   → REMOVE — use PATCH /api/reviews/{id} with body {status: 'REJECTED'}
+
+// Keep and fix these real endpoints:
+POST   `/api/reviews`
+GET    `/api/reviews` (+ query params)
+GET    `/api/reviews/stats`
+GET    `/api/reviews/public/token/${token}`
+POST   `/api/reviews/public/submit`
+GET    `/api/reviews/${reviewId}`
+PATCH  `/api/reviews/${reviewId}`
+DELETE `/api/reviews/${reviewId}`
+POST   `/api/reviews/${reviewId}/response`
+GET    `/api/reviews/response-templates`
+```
+
+- [ ] **Step 10: Fix aggregatorApi.ts — remove non-existent upsertConnection mutation**
+
+`AggregatorController` only has `GET /api/aggregators/connections`. Remove the `upsertConnection` mutation which calls `PUT /api/aggregators/connections` — this endpoint doesn't exist.
+
+```typescript
+// KEEP:
+getConnections: query: (storeId) => `/api/aggregators/connections?storeId=${storeId}`
+
+// REMOVE:
+// upsertConnection: url: `/api/aggregators/connections`, method: 'PUT'  — endpoint doesn't exist
+```
+
+- [ ] **Step 12: Verify TypeScript compiles with no errors**
 
 ```bash
 cd frontend && npx tsc --noEmit 2>&1 | head -20
@@ -914,7 +977,7 @@ cd frontend && npx tsc --noEmit 2>&1 | head -20
 
 Expected: no errors.
 
-- [ ] **Step 10: Run unit tests for affected API slices**
+- [ ] **Step 13: Run unit tests for affected API slices**
 
 ```bash
 cd frontend && npm run test:run -- src/store/api/ --reporter=verbose 2>&1 | tail -20
@@ -922,11 +985,11 @@ cd frontend && npm run test:run -- src/store/api/ --reporter=verbose 2>&1 | tail
 
 Expected: all existing API slice tests pass.
 
-- [ ] **Step 11: Commit**
+- [ ] **Step 14: Commit**
 
 ```bash
 git add frontend/src/store/api/
-git commit -m "fix(frontend): correct RTK Query slice URLs to match canonical backend paths — authApi, sessionApi, equipmentApi, orderApi, shiftApi, driverApi, inventoryApi, analyticsApi"
+git commit -m "fix(frontend): correct RTK Query slice URLs to match canonical backend paths — authApi, sessionApi, equipmentApi, orderApi, shiftApi, driverApi, inventoryApi, analyticsApi, reviewApi, aggregatorApi"
 ```
 
 ---
