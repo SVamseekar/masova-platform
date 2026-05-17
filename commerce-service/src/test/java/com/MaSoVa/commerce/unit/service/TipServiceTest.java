@@ -92,7 +92,7 @@ class TipServiceTest {
         when(orderRepository.findById("o1")).thenReturn(Optional.of(order));
 
         OrderTipEntity existing = new OrderTipEntity();
-        existing.setId("tip-1");
+        existing.setId(UUID.randomUUID());
         existing.setOrderId("o1");
         existing.setAmountInr(BigDecimal.valueOf(30));
         existing.setDistributed(false);
