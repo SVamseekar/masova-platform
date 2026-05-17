@@ -73,6 +73,7 @@ class OrderServiceStatusTransitionTest {
         order.setCustomerId("cust-1");
         order.setStatus(status);
         order.setOrderType(type);
+        order.setPriority(Order.Priority.NORMAL);
         order.setItems(Collections.emptyList());
         order.setTotal(BigDecimal.valueOf(200));
         return order;

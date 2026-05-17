@@ -48,7 +48,7 @@ class CustomerNotificationServiceTest {
         order.setId(id);
         order.setOrderNumber("ORD-001");
         order.setCustomerId("cust-1");
-        order.setCustomerEmail("customer@example.com");
+        order.setCustomerEmail("customer@gmail.com");
         order.setCustomerPhone("9876543210");
         order.setStoreId("store-1");
         order.setStatus(status);
@@ -107,14 +107,15 @@ class CustomerNotificationServiceTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void sendOrderStatusNotification_sends_email_for_PREPARING_status() {
         Order order = buildOrder("o1", OrderStatus.PREPARING, OrderType.TAKEAWAY);
-        when(restTemplate.postForEntity(any(String.class), any(), any())).thenReturn(null);
+        when(restTemplate.postForEntity(any(String.class), any(), any(Class.class)))
+                .thenReturn(org.springframework.http.ResponseEntity.ok(null));
 
         notificationService.sendOrderStatusNotification(order, OrderStatus.RECEIVED);
 
-        // Email is attempted for PREPARING status
-        verify(restTemplate, atLeastOnce()).postForEntity(any(String.class), any(), any());
+        verify(restTemplate, atLeastOnce()).postForEntity(any(String.class), any(), any(Class.class));
     }
 
     @Test

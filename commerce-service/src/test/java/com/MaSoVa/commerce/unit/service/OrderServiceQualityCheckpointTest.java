@@ -72,6 +72,7 @@ class OrderServiceQualityCheckpointTest {
         order.setStoreId("store-1");
         order.setStatus(OrderStatus.RECEIVED);
         order.setOrderType(OrderType.TAKEAWAY);
+        order.setPriority(Order.Priority.NORMAL);
         order.setItems(Collections.emptyList());
         order.setTotal(BigDecimal.valueOf(200));
         return order;
