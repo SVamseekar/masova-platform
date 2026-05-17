@@ -14,17 +14,50 @@
 
 ## Research-Validated Corrections (applied to this plan)
 
-The following issues were found by auditing the actual codebase against the plan:
+The following issues were found by auditing the actual codebase AND reading every backend `@RequestMapping`/`@GetMapping`/`@PostMapping` annotation directly from the Java controllers:
 
-1. **`analyticsHandlers.ts` already correct** — already uses `${API}/api/analytics/...`. Do NOT change it, only verify.
-2. **`customerHandlers.ts` already correct** — already uses `${API}/api/customers/...`. Do NOT change it, only verify.
-3. **`notificationHandlers.ts` already correct** — already uses `${API}/api/notifications/...`. Do NOT change it, only verify.
-4. **`inventoryHandlers.ts`** — `${API}/inventory/items` needs to become `${API}/api/inventory`. The canonical path is `/api/inventory` (not `/api/inventory/items`). Suppliers = `/api/suppliers`. Purchase orders = `/api/purchase-orders`.
-5. **`inventoryApi.ts`** — `baseUrl = ${API_CONFIG.API_GATEWAY_URL}/inventory`. All endpoint URLs like `/items` resolve to `gateway/inventory/items`. Fix: change `baseUrl` to `API_CONFIG.BASE_URL` and prefix all URLs with `/api/inventory`, `/api/suppliers`, `/api/purchase-orders`.
-6. **`orderApi.ts`** — `baseUrl = API_CONFIG.ORDER_SERVICE_URL` (= gateway root). All URLs like `/orders/...` resolve to `gateway/orders/...`. Fix: add `/api/` prefix to all order URLs AND change `updateOrderStatus` to POST.
-7. **`order.pact.test.ts` is BROKEN** — it imports `{ Pact, Matchers }` from `@pact-foundation/pact`. In v16, there is no bare `Pact` export (it's exported as `PactV2`). This file must be rewritten as `PactV4`, not kept.
-8. **OOM crash** — tests hit `JS heap out of memory`. Fix: add `pool: 'forks'` + `maxWorkers` to vitest.config.ts. Must be done BEFORE raising coverage thresholds.
-9. **`coverage.include` missing** — add explicit `include: ['src/**/*.{ts,tsx}']` so coverage only counts source files, not test utilities.
+### Handler files — three already correct, do NOT touch:
+1. **`analyticsHandlers.ts` already correct** — already uses `${API}/api/analytics/...`. Verify only.
+2. **`customerHandlers.ts` already correct** — already uses `${API}/api/customers/...`. Verify only.
+3. **`notificationHandlers.ts` already correct** — already uses `${API}/api/notifications/...`. Verify only.
+
+### Handler files — stale routes that don't exist in any backend controller:
+These routes are in the handler files but the backend never serves them. Simply adding `/api/` prefix will NOT fix them — the endpoint doesn't exist. They must be **removed** from handlers (and their RTK Query counterparts noted for follow-up):
+- `${API}/orders/status/:status` — `OrderController` has no `GET /api/orders/status/:status`
+- `${API}/orders/kitchen` — no such endpoint (kitchen queue is a query param on `GET /api/orders`)
+- `${API}/orders/store`, `/orders/customer/:id`, `/orders/number/:num`, `/orders/date/:date`, `/orders/range`, `/orders/active-deliveries/count`, `/orders/store/avg-prep-time`, `/orders/store/failed-quality-checks`, `/orders/store/make-table/:station` — none exist
+- `${API}/delivery/auto-dispatch` → real path is `/api/delivery/dispatch`
+- `${API}/delivery/route-optimize` → real path is `/api/delivery/route`
+- `${API}/delivery/eta/:orderId`, `/delivery/zone/check`, `/delivery/zone/fee`, `/delivery/zone/list`, `/delivery/zone/validate`, `/delivery/driver/:id/performance/today`, `/delivery/metrics/today` — none exist in `DeliveryController`
+- `${API}/delivery/accept`, `/delivery/reject` — real paths are `/api/delivery/accept`, `/api/delivery/reject` ✅ (these do exist)
+- `${API}/users/sessions/current`, `/users/sessions/store/active`, `/users/sessions/store`, `/users/sessions/:employeeId`, `/users/sessions/:employeeId/report`, `/users/sessions/:employeeId/status` — `WorkingSessionController` has NO such endpoints
+- `${API}/inventory/items/category/:cat`, `/inventory/items/search`, `/inventory/items/reserve`, `/inventory/items/release`, `/inventory/items/consume`, `/inventory/low-stock`, `/inventory/out-of-stock`, `/inventory/expiring-soon`, `/inventory/alerts/low-stock`, `/inventory/value/by-category` — `InventoryController` uses query params on `GET /api/inventory` instead of separate sub-paths
+- `${API}/inventory/suppliers/active`, `/inventory/suppliers/preferred`, `/inventory/suppliers/reliable`, `/inventory/suppliers/search` — `SupplierController` has no such sub-paths
+- `${API}/menu/public`, `/menu/public/:id`, `/menu/public/cuisine/:cuisine`, etc. — `MenuController` collapsed all public routes into `GET /api/menu` with query params; comment says "Replaces /public/*"
+- `${API}/equipment/store/status/:status`, `/equipment/store/maintenance-needed`, `/equipment/store/reset-usage` — `KitchenEquipmentController` has no store-scoped sub-paths
+- `${API}/shifts/employee/:id/current`, `/shifts/store/:id/week` — `ShiftController` has no such paths
+
+### Backend-verified canonical endpoints (source of truth from controllers):
+- **`AuthController`** → `/api/auth`: login, register, logout, refresh, google, change-password, validate-pin
+- **`UserController`** → `/api/users`: GET(list), GET `/{id}`, PATCH `/{id}`, POST `/{id}/activate`, POST `/{id}/deactivate`, POST `/{id}/generate-pin`, POST/GET `/kiosk`, GET `/{id}/status`, PATCH `/{id}/status`, GET `/{id}/can-take-orders`
+- **`WorkingSessionController`** → `/api/sessions`: POST(start), POST `/end`, POST `/clock-in`, POST `/clock-out`, GET(list), GET `/pending`, POST `/{id}/approve`, POST `/{id}/reject`, POST `/{id}/break`
+- **`ShiftController`** → `/api/shifts`: GET, POST, POST `/bulk`, POST `/copy-week`, GET `/{id}`, PATCH `/{id}`, DELETE `/{id}`, POST `/{id}/confirm`, POST `/{id}/start`, POST `/{id}/complete`
+- **`OrderController`** → `/api/orders`: POST, GET `/{id}`, GET `/track/{id}`, GET(list with query params), POST `/{id}/status`, POST `/{id}/next-stage`, PATCH `/{id}`, DELETE `/{id}`, PATCH `/{id}/payment`, POST `/{id}/quality-checkpoint`, PATCH `/{id}/quality-checkpoint/{name}`, GET `/analytics`
+- **`MenuController`** → `/api/menu`: GET(list), GET `/{id}`, POST, POST `/bulk`, PATCH `/{id}`, DELETE `/{id}`, POST `/copy`, PATCH `/items/{id}/allergens`, GET `/stats`
+- **`KitchenEquipmentController`** → `/api/equipment`: GET, POST, GET `/{id}`, PATCH `/{id}`, DELETE `/{id}`, POST `/{id}/maintenance`
+- **`DeliveryController`** → `/api/delivery`: POST `/dispatch`, POST `/route`, POST `/accept`, POST `/reject`, POST `/location`, GET `/track/{id}`, POST `/verify`, POST `/{id}/otp`, GET `/driver/{id}/pending`, GET `/driver/{id}/performance`, GET `/zones`, POST `/{id}/status`, PATCH `/driver/{id}/status`, GET `/driver/{id}/status`, GET `/metrics`, GET `/drivers/available`
+- **`InventoryController`** → `/api/inventory`: GET(with query params), POST, GET `/{id}`, PATCH `/{id}`, DELETE `/{id}`, POST `/{id}/stock`, GET `/value`
+- **`SupplierController`** → `/api/suppliers`: GET, POST, GET `/{id}`, PATCH `/{id}`, DELETE `/{id}`, GET `/compare`
+- **`PurchaseOrderController`** → `/api/purchase-orders`: GET, POST, GET `/{id}`, PATCH `/{id}`, DELETE `/{id}`, POST `/auto-generate`
+- **`PaymentController`** → `/api/payments`: POST `/initiate`, POST `/verify`, POST `/cash`, GET `/{id}`, GET(list), POST `/{id}/reconcile`
+- **`RefundController`** → `/api/payments/refund`: POST, GET `/{id}`, GET(list)
+
+### Other corrections:
+4. **`inventoryApi.ts`** — `baseUrl = ${API_CONFIG.API_GATEWAY_URL}/inventory`. Fix: change to `API_CONFIG.BASE_URL` and prefix URLs with `/api/inventory`, `/api/suppliers`, `/api/purchase-orders`.
+5. **`orderApi.ts`** — `baseUrl = API_CONFIG.ORDER_SERVICE_URL`. Fix: add `/api/` prefix to all URLs AND change `updateOrderStatus` to POST.
+6. **`order.pact.test.ts` is BROKEN** — imports `{ Pact, Matchers }` — no bare `Pact` export in v16 (it's `PactV2`). Must rewrite as `PactV4`.
+7. **OOM crash** — add `pool: 'forks'` + `maxForks: 2` to vitest.config.ts. Must be done BEFORE raising coverage thresholds.
+8. **`coverage.include` missing** — add `include: ['src/**/*.{ts,tsx}']` so coverage only counts source files.
 
 ---
 
@@ -32,33 +65,33 @@ The following issues were found by auditing the actual codebase against the plan
 
 | File | Change |
 |------|--------|
-| `frontend/src/test/mocks/handlers/orderHandlers.ts` | Fix `/api/` prefix on all URLs |
+| `frontend/src/test/mocks/handlers/orderHandlers.ts` | Fix `/api/` prefix + remove stale routes that don't exist in `OrderController` |
 | `frontend/src/test/mocks/handlers/paymentHandlers.ts` | Fix `/api/` prefix |
-| `frontend/src/test/mocks/handlers/authHandlers.ts` | Fix `/api/auth/` paths (not `/users/`) |
-| `frontend/src/test/mocks/handlers/menuHandlers.ts` | Fix `/api/menu/` prefix |
-| `frontend/src/test/mocks/handlers/userHandlers.ts` | Fix `/api/users/` prefix |
-| `frontend/src/test/mocks/handlers/deliveryHandlers.ts` | Fix `/api/delivery/` prefix + `location` not `location-update` |
+| `frontend/src/test/mocks/handlers/authHandlers.ts` | Fix to `/api/auth/` paths; `/api/users/profile` for profile |
+| `frontend/src/test/mocks/handlers/menuHandlers.ts` | Fix: collapse `/menu/public/*` into `GET /api/menu` with query params; fix item paths |
+| `frontend/src/test/mocks/handlers/userHandlers.ts` | Fix `/api/users/` prefix; `/api/auth/validate-pin` for pin validation |
+| `frontend/src/test/mocks/handlers/deliveryHandlers.ts` | Fix prefix + rename `auto-dispatch→dispatch`, `route-optimize→route`; remove non-existent sub-paths |
 | `frontend/src/test/mocks/handlers/customerHandlers.ts` | **Already correct** — verify only, no changes needed |
-| `frontend/src/test/mocks/handlers/inventoryHandlers.ts` | Fix to `/api/inventory`, `/api/suppliers`, `/api/purchase-orders` |
+| `frontend/src/test/mocks/handlers/inventoryHandlers.ts` | Fix to `/api/inventory`, `/api/suppliers`, `/api/purchase-orders`; remove stale sub-paths |
 | `frontend/src/test/mocks/handlers/notificationHandlers.ts` | **Already correct** — verify only, no changes needed |
-| `frontend/src/test/mocks/handlers/sessionHandlers.ts` | Fix ALL routes: `/api/sessions` (not `/users/sessions`) |
+| `frontend/src/test/mocks/handlers/sessionHandlers.ts` | Rewrite: only 9 real endpoints exist; remove 5 stale routes |
 | `frontend/src/test/mocks/handlers/analyticsHandlers.ts` | **Already correct** — verify only, no changes needed |
 | `frontend/src/test/mocks/handlers/reviewHandlers.ts` | Fix `/api/reviews/` prefix |
 | `frontend/src/store/api/authApi.ts` | Fix paths: `/api/auth/login` not `/users/login` |
-| `frontend/src/store/api/sessionApi.ts` | Fix paths: `/api/sessions` not `/users/sessions` |
-| `frontend/src/store/api/equipmentApi.ts` | Fix paths: `/api/equipment` not `/kitchen-equipment` |
+| `frontend/src/store/api/sessionApi.ts` | Fix to `/api/sessions`; remove 5 methods for non-existent endpoints |
+| `frontend/src/store/api/equipmentApi.ts` | Fix `/api/equipment`; remove `resetUsageCounts` + stale store sub-paths |
 | `frontend/src/store/api/orderApi.ts` | Add `/api/` prefix to ALL order URLs + change `updateOrderStatus` to POST |
-| `frontend/src/store/api/shiftApi.ts` | Fix `/api/shifts/bulk` not `/shifts/bulk-create`; add `/api/` to all paths |
-| `frontend/src/store/api/driverApi.ts` | Fix `/api/delivery/location` not `/delivery/location-update` |
-| `frontend/src/store/api/inventoryApi.ts` | Change baseUrl to BASE_URL; fix all URLs to `/api/inventory`, `/api/suppliers`, `/api/purchase-orders` |
-| `frontend/src/pact/consumers/order.pact.test.ts` | Rewrite — imports broken `Pact` (v2 class) — rewrite as `PactV4` |
+| `frontend/src/store/api/shiftApi.ts` | Fix `/api/shifts/bulk`; add `/api/`; remove `employee/:id/current`, `store/:id/week` |
+| `frontend/src/store/api/driverApi.ts` | Fix `/api/delivery/location`; add `/api/` prefix to all driver URLs |
+| `frontend/src/store/api/inventoryApi.ts` | Change baseUrl to BASE_URL; fix all URL groups; remove stale sub-paths |
+| `frontend/src/pact/consumers/order.pact.test.ts` | Rewrite — imports broken `Pact` v2 class — rewrite as `PactV4` |
 | `frontend/src/pact/consumers/order-service.pact.test.ts` | Delete — replaced by rewritten `order.pact.test.ts` |
-| `frontend/src/pact/consumers/menu-service.pact.test.ts` | Rewrite using `PactV4` |
+| `frontend/src/pact/consumers/menu-service.pact.test.ts` | Rewrite using `PactV4` with correct paths |
 | `frontend/src/pact/consumers/payment-service.pact.test.ts` | Rewrite using `PactV4` |
 | `frontend/src/pact/consumers/user-service.pact.test.ts` | Rewrite using `PactV4` |
-| `frontend/src/pact/consumers/delivery-service.pact.test.ts` | Rewrite using `PactV4` |
+| `frontend/src/pact/consumers/delivery-service.pact.test.ts` | Rewrite using `PactV4` with correct paths |
 | `frontend/src/pact/consumers/customer-service.pact.test.ts` | Rewrite using `PactV4` |
-| `frontend/vitest.config.ts` | Add OOM fix (pool + maxWorkers + include); raise coverage thresholds to 80% |
+| `frontend/vitest.config.ts` | Add OOM fix (pool:forks + maxForks:2 + include); raise coverage thresholds to 80% |
 
 ---
 
@@ -183,35 +216,33 @@ The fix: change every handler to include `/api/` in the path. Three files are al
 - Modify: `orderHandlers.ts`, `authHandlers.ts`, `sessionHandlers.ts`, `deliveryHandlers.ts`, `inventoryHandlers.ts`, `paymentHandlers.ts`, `menuHandlers.ts`, `userHandlers.ts`, `reviewHandlers.ts`
 - Verify only (no changes): `customerHandlers.ts`, `notificationHandlers.ts`, `analyticsHandlers.ts`
 
-- [ ] **Step 1: Fix orderHandlers.ts**
+- [ ] **Step 1: Fix orderHandlers.ts — add /api/ prefix AND remove stale routes**
 
-Open `frontend/src/test/mocks/handlers/orderHandlers.ts`. Change every URL from `${API}/orders/...` to `${API}/api/orders/...`. Also fix the one PATCH status handler — the canonical backend method is POST not PATCH for status transitions:
+`OrderController` (verified) only exposes: `POST /api/orders`, `GET /api/orders/{id}`, `GET /api/orders/track/{id}`, `GET /api/orders` (list with query params), `POST /api/orders/{id}/status`, `POST /api/orders/{id}/next-stage`, `PATCH /api/orders/{id}`, `DELETE /api/orders/{id}`, `PATCH /api/orders/{id}/payment`, `POST /api/orders/{id}/quality-checkpoint`, `PATCH /api/orders/{id}/quality-checkpoint/{name}`.
+
+Keep only handlers that map to real endpoints. Remove: `orders/status/:status`, `orders/kitchen`, `orders/store`, `orders/customer/:id`, `orders/number/:num`, `orders/date/:date`, `orders/range`, `orders/active-deliveries/count`, `orders/search`, `orders/store/avg-prep-time`, `orders/store/failed-quality-checks`, `orders/store/make-table/:station`.
 
 ```typescript
-// BEFORE
-http.get(`${API}/orders`, ...)
-http.get(`${API}/orders/:orderId`, ...)
-http.get(`${API}/orders/track/:orderId`, ...)
-http.get(`${API}/orders/kitchen`, ...)
-http.get(`${API}/orders/status/:status`, ...)
-http.post(`${API}/orders`, ...)
-http.patch(`${API}/orders/:orderId/status`, ...)    // ← also wrong method
-http.delete(`${API}/orders/:orderId`, ...)
-// ... all other routes
-
-// AFTER
-http.get(`${API}/api/orders`, ...)
+// KEEP with /api/ prefix — these endpoints exist in OrderController:
+http.post(`${API}/api/orders`, ...)
+http.get(`${API}/api/orders`, ...)             // list with query params ?storeId=&status=&startDate=&endDate=
 http.get(`${API}/api/orders/:orderId`, ...)
 http.get(`${API}/api/orders/track/:orderId`, ...)
-http.get(`${API}/api/orders/kitchen`, ...)
-http.get(`${API}/api/orders/status/:status`, ...)
-http.post(`${API}/api/orders`, ...)
-http.post(`${API}/api/orders/:orderId/status`, ...) // POST not PATCH
+http.post(`${API}/api/orders/:orderId/status`, ...)  // POST not PATCH
+http.post(`${API}/api/orders/:orderId/next-stage`, ...)
+http.patch(`${API}/api/orders/:orderId`, ...)
 http.delete(`${API}/api/orders/:orderId`, ...)
-// ... apply /api/ to all other routes
-```
+http.patch(`${API}/api/orders/:orderId/payment`, ...)
+http.post(`${API}/api/orders/:orderId/quality-checkpoint`, ...)
+http.patch(`${API}/api/orders/:orderId/quality-checkpoint/:checkpointName`, ...)
 
-Apply the same `/api/` insertion to every route in the file.
+// REMOVE — these don't exist in backend:
+// http.get(`${API}/orders/status/:status`, ...)
+// http.get(`${API}/orders/kitchen`, ...)
+// http.get(`${API}/orders/store`, ...)
+// http.get(`${API}/orders/customer/:customerId`, ...)
+// ... etc.
+```
 
 - [ ] **Step 2: Fix authHandlers.ts — paths change from /users/ to /api/auth/**
 
@@ -233,49 +264,64 @@ http.post(`${API}/api/auth/logout`, ...)
 http.get(`${API}/api/users/profile`, ...)
 ```
 
-- [ ] **Step 3: Fix sessionHandlers.ts — ALL routes: /api/sessions not /users/sessions**
+- [ ] **Step 3: Fix sessionHandlers.ts — rewrite to only 9 real endpoints**
 
-The current file has 14 handlers all on `/users/sessions/...`. Every single route needs to change. Canonical paths per the endpoint map:
+`WorkingSessionController` (verified) only has these 9 endpoints: `POST /api/sessions` (start), `POST /api/sessions/end`, `POST /api/sessions/clock-in`, `POST /api/sessions/clock-out`, `GET /api/sessions` (list), `GET /api/sessions/pending`, `POST /api/sessions/{id}/approve`, `POST /api/sessions/{id}/reject`, `POST /api/sessions/{id}/break`.
+
+Remove the 5 routes that don't exist in the backend: `current`, `store/active`, `store`, `/:employeeId` (employee-specific list), `/:employeeId/report`, `/:employeeId/status`.
 
 ```typescript
-// BEFORE → AFTER mapping
-`${API}/users/sessions/current`           → `${API}/api/sessions/current`
-`${API}/users/sessions/start`             → `${API}/api/sessions`          // POST to start
-`${API}/users/sessions/end`               → `${API}/api/sessions/end`
-`${API}/users/sessions/:employeeId/break` → `${API}/api/sessions/:sessionId/break`
-`${API}/users/sessions/store/active`      → `${API}/api/sessions/store/active`
-`${API}/users/sessions/store`             → `${API}/api/sessions/store`
-`${API}/users/sessions/:employeeId`       → `${API}/api/sessions/:employeeId`
-`${API}/users/sessions/pending-approval`  → `${API}/api/sessions/pending`
-`${API}/users/sessions/:sessionId/approve`→ `${API}/api/sessions/:sessionId/approve`
-`${API}/users/sessions/:sessionId/reject` → `${API}/api/sessions/:sessionId/reject`
-`${API}/users/sessions/clock-in-with-pin` → `${API}/api/sessions/clock-in`
-`${API}/users/sessions/clock-out-employee`→ `${API}/api/sessions/clock-out`
-`${API}/users/sessions/:employeeId/report`→ `${API}/api/sessions/:employeeId/report`
-`${API}/users/sessions/:employeeId/status`→ `${API}/api/sessions/:employeeId/status`
+// KEEP — real endpoints (9 total):
+http.post(`${API}/api/sessions`, ...)                    // start session
+http.post(`${API}/api/sessions/end`, ...)
+http.post(`${API}/api/sessions/clock-in`, ...)
+http.post(`${API}/api/sessions/clock-out`, ...)
+http.get(`${API}/api/sessions`, ...)                     // list all sessions
+http.get(`${API}/api/sessions/pending`, ...)
+http.post(`${API}/api/sessions/:sessionId/approve`, ...)
+http.post(`${API}/api/sessions/:sessionId/reject`, ...)
+http.post(`${API}/api/sessions/:sessionId/break`, ...)
+
+// REMOVE — these endpoints do NOT exist in WorkingSessionController:
+// http.get(`${API}/users/sessions/current`, ...)
+// http.get(`${API}/users/sessions/store/active`, ...)
+// http.get(`${API}/users/sessions/store`, ...)
+// http.get(`${API}/users/sessions/:employeeId`, ...)
+// http.get(`${API}/users/sessions/:employeeId/report`, ...)
+// http.get(`${API}/users/sessions/:employeeId/status`, ...)
 ```
 
-- [ ] **Step 4: Fix deliveryHandlers.ts — /api/delivery/ prefix + fix location-update path**
+- [ ] **Step 4: Fix deliveryHandlers.ts — fix paths AND remove non-existent routes**
+
+`DeliveryController` (verified) has: `POST /dispatch`, `POST /route`, `POST /accept`, `POST /reject`, `POST /location`, `GET /track/{id}`, `POST /verify`, `POST /{id}/otp`, `GET /driver/{id}/pending`, `GET /driver/{id}/performance`, `GET /zones`, `POST /{id}/status`, `PATCH /driver/{id}/status`, `GET /driver/{id}/status`, `GET /metrics`, `GET /drivers/available`.
 
 ```typescript
-// BEFORE → AFTER (representative examples — apply to ALL routes)
-`${API}/delivery/drivers/available`       → `${API}/api/delivery/drivers/available`
-`${API}/delivery/auto-dispatch`           → `${API}/api/delivery/auto-dispatch`
-`${API}/delivery/route-optimize`          → `${API}/api/delivery/route-optimize`
-`${API}/delivery/location-update`         → `${API}/api/delivery/location`  // name change too
-`${API}/delivery/track/:orderId`          → `${API}/api/delivery/track/:orderId`
-`${API}/delivery/eta/:orderId`            → `${API}/api/delivery/eta/:orderId`
-`${API}/delivery/metrics`                 → `${API}/api/delivery/metrics`
-`${API}/delivery/metrics/today`           → `${API}/api/delivery/metrics/today`
-`${API}/delivery/driver/:driverId/...`    → `${API}/api/delivery/driver/:driverId/...`
-`${API}/delivery/zone/check`              → `${API}/api/delivery/zone/check`
-`${API}/delivery/zone/fee`                → `${API}/api/delivery/zone/fee`
-`${API}/delivery/zone/list`               → `${API}/api/delivery/zone/list`
-`${API}/delivery/zone/validate`           → `${API}/api/delivery/zone/validate`
-`${API}/delivery/accept`                  → `${API}/api/delivery/accept`
-`${API}/delivery/reject`                  → `${API}/api/delivery/reject`
-`${API}/delivery/:orderId/generate-otp`   → `${API}/api/delivery/:orderId/generate-otp`
-`${API}/delivery/:orderId/regenerate-otp` → `${API}/api/delivery/:orderId/regenerate-otp`
+// KEEP with /api/ prefix — real endpoints:
+http.get(`${API}/api/delivery/drivers/available`, ...)
+http.post(`${API}/api/delivery/dispatch`, ...)           // was /auto-dispatch — name change
+http.post(`${API}/api/delivery/route`, ...)              // was /route-optimize — name change
+http.post(`${API}/api/delivery/accept`, ...)
+http.post(`${API}/api/delivery/reject`, ...)
+http.post(`${API}/api/delivery/location`, ...)           // was /location-update — name change
+http.get(`${API}/api/delivery/track/:orderId`, ...)
+http.post(`${API}/api/delivery/verify`, ...)
+http.post(`${API}/api/delivery/:orderId/otp`, ...)       // was /:orderId/generate-otp
+http.get(`${API}/api/delivery/driver/:driverId/pending`, ...)
+http.get(`${API}/api/delivery/driver/:driverId/performance`, ...)
+http.get(`${API}/api/delivery/zones`, ...)               // plural, was /zone/list
+http.post(`${API}/api/delivery/:trackingId/status`, ...)
+http.patch(`${API}/api/delivery/driver/:driverId/status`, ...)
+http.get(`${API}/api/delivery/driver/:driverId/status`, ...)
+http.get(`${API}/api/delivery/metrics`, ...)
+
+// REMOVE — these do NOT exist in DeliveryController:
+// http.get(`${API}/delivery/eta/:orderId`, ...)
+// http.get(`${API}/delivery/metrics/today`, ...)
+// http.get(`${API}/delivery/driver/:id/performance/today`, ...)
+// http.get(`${API}/delivery/zone/check`, ...)
+// http.get(`${API}/delivery/zone/fee`, ...)
+// http.get(`${API}/delivery/zone/validate`, ...)
+// http.post(`${API}/delivery/:orderId/regenerate-otp`, ...)
 ```
 
 - [ ] **Step 5: Verify analyticsHandlers.ts is already correct — no changes needed**
@@ -286,40 +332,57 @@ grep -n "http\." frontend/src/test/mocks/handlers/analyticsHandlers.ts | head -5
 
 Expected: all routes already have `${API}/api/analytics/...` or `${API}/api/bi/...`. If all correct, move on.
 
-- [ ] **Step 6: Fix inventoryHandlers.ts — three different canonical base paths**
+- [ ] **Step 6: Fix inventoryHandlers.ts — three base paths, remove stale sub-paths**
 
-The canonical backend paths are:
-- Items: `/api/inventory` (not `/inventory/items`)
-- Suppliers: `/api/suppliers` (not `/inventory/suppliers`)
-- Purchase orders: `/api/purchase-orders` (not `/inventory/purchase-orders`)
-- Waste: `/api/waste` (not `/inventory/waste`)
+`InventoryController` (verified): GET `/api/inventory` (with query params `?category=&search=&lowStock=&outOfStock=&expiringSoon=`), POST, GET `/{id}`, PATCH `/{id}`, DELETE `/{id}`, POST `/{id}/stock`, GET `/value`.
+`SupplierController` (verified): GET `/api/suppliers`, POST, GET `/{id}`, PATCH `/{id}`, DELETE `/{id}`, GET `/compare`.
+`PurchaseOrderController` (verified): GET `/api/purchase-orders`, POST, GET `/{id}`, PATCH `/{id}`, DELETE `/{id}`, POST `/auto-generate`.
 
 ```typescript
-// BEFORE → AFTER
-`${API}/inventory/items`                  → `${API}/api/inventory`
-`${API}/inventory/items/:id`              → `${API}/api/inventory/:id`
-`${API}/inventory/items/category/:cat`    → `${API}/api/inventory/category/:cat`
-`${API}/inventory/items/search`           → `${API}/api/inventory/search`
-`${API}/inventory/low-stock`              → `${API}/api/inventory/low-stock`
-`${API}/inventory/out-of-stock`           → `${API}/api/inventory/out-of-stock`
-`${API}/inventory/expiring-soon`          → `${API}/api/inventory/expiring-soon`
-`${API}/inventory/alerts/low-stock`       → `${API}/api/inventory/alerts/low-stock`
-`${API}/inventory/value`                  → `${API}/api/inventory/value`
-`${API}/inventory/value/by-category`      → `${API}/api/inventory/value/by-category`
+// KEEP — real Inventory endpoints:
+http.get(`${API}/api/inventory`, ...)          // list with query params
+http.post(`${API}/api/inventory`, ...)
+http.get(`${API}/api/inventory/:id`, ...)
+http.patch(`${API}/api/inventory/:id`, ...)
+http.delete(`${API}/api/inventory/:id`, ...)
+http.post(`${API}/api/inventory/:id/stock`, ...)
+http.get(`${API}/api/inventory/value`, ...)
 
-`${API}/inventory/suppliers`              → `${API}/api/suppliers`
-`${API}/inventory/suppliers/:id`          → `${API}/api/suppliers/:id`
-`${API}/inventory/suppliers/active`       → `${API}/api/suppliers/active`
-`${API}/inventory/suppliers/preferred`    → `${API}/api/suppliers/preferred`
-`${API}/inventory/suppliers/reliable`     → `${API}/api/suppliers/reliable`
-`${API}/inventory/suppliers/search`       → `${API}/api/suppliers/search`
+// KEEP — real Supplier endpoints:
+http.get(`${API}/api/suppliers`, ...)
+http.post(`${API}/api/suppliers`, ...)
+http.get(`${API}/api/suppliers/:id`, ...)
+http.patch(`${API}/api/suppliers/:id`, ...)
+http.delete(`${API}/api/suppliers/:id`, ...)
+http.get(`${API}/api/suppliers/compare`, ...)
 
-`${API}/inventory/purchase-orders`        → `${API}/api/purchase-orders`
-`${API}/inventory/purchase-orders/:id`    → `${API}/api/purchase-orders/:id`
+// KEEP — real PurchaseOrder endpoints:
+http.get(`${API}/api/purchase-orders`, ...)
+http.post(`${API}/api/purchase-orders`, ...)
+http.get(`${API}/api/purchase-orders/:id`, ...)
+http.patch(`${API}/api/purchase-orders/:id`, ...)
+http.delete(`${API}/api/purchase-orders/:id`, ...)
+http.post(`${API}/api/purchase-orders/auto-generate`, ...)
 
-`${API}/inventory/waste`                  → `${API}/api/waste`
-`${API}/inventory/waste/trend`            → `${API}/api/waste/trend`
+// REMOVE — these don't exist in any backend controller:
+// http.get(`${API}/inventory/items/category/:cat`, ...)       ← use ?category= query param
+// http.get(`${API}/inventory/items/search`, ...)              ← use ?search= query param
+// http.get(`${API}/inventory/low-stock`, ...)                 ← use ?lowStock=true
+// http.get(`${API}/inventory/out-of-stock`, ...)              ← use ?outOfStock=true
+// http.get(`${API}/inventory/expiring-soon`, ...)             ← use ?expiringSoon=true
+// http.get(`${API}/inventory/alerts/low-stock`, ...)
+// http.get(`${API}/inventory/value/by-category`, ...)         ← use ?byCategory=true
+// http.patch(`${API}/inventory/items/:id/reserve`, ...)       ← use POST /{id}/stock with operation=RESERVE
+// http.patch(`${API}/inventory/items/:id/release`, ...)       ← use POST /{id}/stock with operation=RELEASE
+// http.patch(`${API}/inventory/items/:id/consume`, ...)       ← use POST /{id}/stock with operation=CONSUME
+// http.get(`${API}/inventory/suppliers/active`, ...)
+// http.get(`${API}/inventory/suppliers/preferred`, ...)
+// http.get(`${API}/inventory/suppliers/reliable`, ...)
+// http.get(`${API}/inventory/suppliers/search`, ...)
+// All waste handlers — no WasteController found in backend
 ```
+
+Note: The handler file currently has a `waste` section. Search for `WasteController.java` in the codebase — if no waste controller exists, remove all waste handlers.
 
 - [ ] **Step 7: Fix paymentHandlers.ts — add /api/ prefix**
 
@@ -339,21 +402,35 @@ The canonical backend paths are:
 // etc.
 ```
 
-- [ ] **Step 8: Fix menuHandlers.ts — add /api/ prefix**
+- [ ] **Step 8: Fix menuHandlers.ts — collapse /public/* routes, fix item paths**
+
+`MenuController` (verified) has: `GET /api/menu` (list — replaces all `/public/*` sub-paths via query params), `GET /api/menu/{id}`, `POST /api/menu`, `POST /api/menu/bulk`, `PATCH /api/menu/{id}`, `DELETE /api/menu/{id}`, `POST /api/menu/copy`, `PATCH /api/menu/items/{id}/allergens`, `GET /api/menu/stats`.
+
+The controller comment explicitly says: "Replaces: /public, /public/{id}, /public/cuisine/{c}, /public/category/{cat}, /public/dietary/{d}, /public/recommended, /public/search, /public/tag/{t}". All those old paths no longer exist.
 
 ```typescript
-// BEFORE → AFTER
-`${API}/menu/public`                      → `${API}/api/menu/public`
-`${API}/menu/public/:id`                  → `${API}/api/menu/public/:id`
-`${API}/menu/public/cuisine/:cuisine`     → `${API}/api/menu/public/cuisine/:cuisine`
-`${API}/menu/public/category/:category`   → `${API}/api/menu/public/category/:category`
-`${API}/menu/public/dietary/:type`        → `${API}/api/menu/public/dietary/:type`
-`${API}/menu/public/recommended`          → `${API}/api/menu/public/recommended`
-`${API}/menu/public/search`               → `${API}/api/menu/public/search`
-`${API}/menu/public/tag/:tag`             → `${API}/api/menu/public/tag/:tag`
-`${API}/menu/items`                       → `${API}/api/menu/items`
-`${API}/menu/items/:id`                   → `${API}/api/menu/items/:id`
-// etc. — apply to all routes in file
+// KEEP — real endpoints:
+http.get(`${API}/api/menu`, ...)               // list all menu items (accepts query params)
+http.get(`${API}/api/menu/:id`, ...)
+http.post(`${API}/api/menu`, ...)
+http.post(`${API}/api/menu/bulk`, ...)
+http.patch(`${API}/api/menu/:id`, ...)
+http.delete(`${API}/api/menu/:id`, ...)
+http.post(`${API}/api/menu/copy`, ...)
+http.patch(`${API}/api/menu/items/:id/allergens`, ...)
+http.get(`${API}/api/menu/stats`, ...)
+
+// REMOVE — all /public/* sub-paths are gone (collapsed into GET /api/menu):
+// http.get(`${API}/menu/public`, ...)
+// http.get(`${API}/menu/public/:id`, ...)
+// http.get(`${API}/menu/public/cuisine/:cuisine`, ...)
+// http.get(`${API}/menu/public/category/:category`, ...)
+// http.get(`${API}/menu/public/dietary/:type`, ...)
+// http.get(`${API}/menu/public/recommended`, ...)
+// http.get(`${API}/menu/public/search`, ...)
+// http.get(`${API}/menu/public/tag/:tag`, ...)
+// http.patch(`${API}/menu/items/:id/availability`, ...)        ← no availability endpoint in controller
+// http.patch(`${API}/menu/items/:id/availability/:status`, ...)
 ```
 
 - [ ] **Step 9: Fix userHandlers.ts — add /api/ prefix**
@@ -443,49 +520,57 @@ url: '/api/auth/google',
 url: '/api/auth/google',               // same endpoint handles both login and register
 ```
 
-- [ ] **Step 2: Fix sessionApi.ts — /api/sessions not /users/sessions**
+- [ ] **Step 2: Fix sessionApi.ts — fix paths AND remove methods for non-existent endpoints**
 
-`sessionApi.ts` has `baseUrl: API_CONFIG.USER_SERVICE_URL` (= gateway root). Change every URL:
+`WorkingSessionController` (verified) has only 9 endpoints. Remove the RTK Query methods for `getCurrentSession` (`/current`), `getActiveStoreSessions` (`/store/active`), `getStoreSessions` (`/store`), `getEmployeeSessions` (`/:employeeId`), `getEmployeeSessionReport` (`/:employeeId/report`), `getEmployeeSessionStatus` (`/:employeeId/status`) — these endpoints do NOT exist in the backend controller.
 
-```typescript
-// BEFORE → AFTER
-`/users/sessions/current`              → `/api/sessions/current`
-`/users/sessions/start`                → `/api/sessions`           // POST to start session
-`/users/sessions/end`                  → `/api/sessions/end`
-`/users/sessions/${employeeId}/break`  → `/api/sessions/${sessionId}/break`
-`/users/sessions/store/active`         → `/api/sessions/store/active`
-`/users/sessions/store`                → `/api/sessions/store`
-`/users/sessions/${employeeId}`        → `/api/sessions/${employeeId}`
-`/users/sessions/pending-approval`     → `/api/sessions/pending`
-`/users/sessions/${sessionId}/approve` → `/api/sessions/${sessionId}/approve`
-`/users/sessions/${sessionId}/reject`  → `/api/sessions/${sessionId}/reject`
-`/users/sessions/clock-in-with-pin`    → `/api/sessions/clock-in`
-`/users/sessions/clock-out-employee`   → `/api/sessions/clock-out`
-`/users/sessions/${employeeId}/report` → `/api/sessions/${employeeId}/report`
-`/users/sessions/${employeeId}/status` → `/api/sessions/${employeeId}/status`
-```
-
-- [ ] **Step 3: Fix equipmentApi.ts — /api/equipment not /kitchen-equipment**
-
-`equipmentApi.ts` has `baseUrl: API_CONFIG.ORDER_SERVICE_URL` (= gateway root). Change every URL:
+Keep and fix the 9 real endpoint methods:
 
 ```typescript
-// BEFORE → AFTER
-`/kitchen-equipment`                   → `/api/equipment`
-`/kitchen-equipment/store`             → `/api/equipment/store`
-`/kitchen-equipment/${id}`             → `/api/equipment/${id}`
-`/kitchen-equipment/${id}/status`      → `/api/equipment/${id}/status`
-`/kitchen-equipment/${id}/power`       → `/api/equipment/${id}/power`
-`/kitchen-equipment/${id}/temperature` → `/api/equipment/${id}/temperature`
-`/kitchen-equipment/${id}/maintenance` → `/api/equipment/${id}/maintenance`
-`/kitchen-equipment/store/status/${s}` → `/api/equipment/store/status/${s}`
-`/kitchen-equipment/store/maintenance-needed` → `/api/equipment/store/maintenance-needed`
-`/kitchen-equipment/store/reset-usage` → remove this endpoint — does not exist in backend
+// KEEP — fix URL and method names:
+startSession:   url: '/api/sessions', method: 'POST'
+endSession:     url: '/api/sessions/end', method: 'POST'
+clockIn:        url: '/api/sessions/clock-in', method: 'POST'     // was clockInWithPin
+clockOut:       url: '/api/sessions/clock-out', method: 'POST'    // was clockOutEmployee
+getSessions:    query: () => '/api/sessions'                       // GET list
+getPending:     query: () => '/api/sessions/pending'              // was pending-approval
+approveSession: url: `/api/sessions/${sessionId}/approve`
+rejectSession:  url: `/api/sessions/${sessionId}/reject`
+addBreak:       url: `/api/sessions/${sessionId}/break`
+
+// REMOVE these methods — no backend endpoint exists:
+// getCurrentSession    → no /api/sessions/current
+// getActiveStoreSessions → no /api/sessions/store/active
+// getStoreSessions     → no /api/sessions/store
+// getEmployeeSessions  → no /api/sessions/:employeeId list endpoint
+// getEmployeeSessionReport → no /api/sessions/:id/report
+// getEmployeeSessionStatus → no /api/sessions/:id/status
 ```
 
-Remove `resetUsageCounts` mutation entirely — this endpoint (`/kitchen-equipment/store/reset-usage`) does not exist in the backend canonical endpoint map.
+Also remove the `useRecordBreakMutation` alias export at the bottom (no longer needed).
 
-Also change `baseUrl` from `API_CONFIG.ORDER_SERVICE_URL` to `API_CONFIG.BASE_URL` (semantically cleaner, functionally the same).
+- [ ] **Step 3: Fix equipmentApi.ts — /api/equipment not /kitchen-equipment, remove stale methods**
+
+`KitchenEquipmentController` (verified) has: `GET /api/equipment`, `POST /api/equipment`, `GET /api/equipment/{id}`, `PATCH /api/equipment/{id}`, `DELETE /api/equipment/{id}`, `POST /api/equipment/{id}/maintenance`.
+
+```typescript
+// KEEP — real endpoints:
+getEquipmentByStore:      query: () => '/api/equipment'
+createEquipment:          url: '/api/equipment', method: 'POST'
+getEquipmentById:         query: (id) => `/api/equipment/${id}`
+updateEquipment:          url: `/api/equipment/${id}`, method: 'PATCH'   // was updateEquipmentStatus
+deleteEquipment:          url: `/api/equipment/${id}`, method: 'DELETE'
+recordMaintenance:        url: `/api/equipment/${id}/maintenance`, method: 'POST'
+
+// REMOVE — these endpoints do NOT exist in KitchenEquipmentController:
+// toggleEquipmentPower   → no /api/equipment/{id}/power
+// updateTemperature      → no /api/equipment/{id}/temperature
+// getEquipmentByStatus   → no /api/equipment/store/status/:status
+// getEquipmentNeedingMaintenance → no /api/equipment/store/maintenance-needed
+// resetUsageCounts       → no /api/equipment/store/reset-usage
+```
+
+Change `baseUrl` from `API_CONFIG.ORDER_SERVICE_URL` to `API_CONFIG.BASE_URL`.
 
 - [ ] **Step 4: Fix orderApi.ts — add /api/ prefix to ALL URLs + change updateOrderStatus to POST**
 
@@ -510,23 +595,27 @@ url: `/orders/${orderId}/priority`      → url: `/api/orders/${orderId}/priorit
 // etc. — apply /api/ prefix to every single URL in this file
 ```
 
-- [ ] **Step 5: Fix shiftApi.ts — add /api/ prefix to all URLs**
+- [ ] **Step 5: Fix shiftApi.ts — add /api/ prefix, fix names, remove stale methods**
 
-`shiftApi.ts` has `baseUrl: API_CONFIG.USER_SERVICE_URL` (= gateway root). Fix all URLs:
+`ShiftController` (verified) has: `GET /api/shifts`, `POST /api/shifts`, `POST /api/shifts/bulk`, `POST /api/shifts/copy-week`, `GET /api/shifts/{id}`, `PATCH /api/shifts/{id}`, `DELETE /api/shifts/{id}`, `POST /api/shifts/{id}/confirm`, `POST /api/shifts/{id}/start`, `POST /api/shifts/{id}/complete`.
 
 ```typescript
-// BEFORE → AFTER (key mismatches)
-url: '/shifts/bulk-create'              → url: '/api/shifts/bulk'
-url: `/shifts/copy-previous-week?...`  → url: `/api/shifts/copy-week?...`
+// KEEP — real endpoints:
+getShifts:           query: () => '/api/shifts'
+createShift:         url: '/api/shifts', method: 'POST'
+bulkCreateShifts:    url: '/api/shifts/bulk', method: 'POST'         // was /shifts/bulk-create
+copyWeekSchedule:    url: '/api/shifts/copy-week?...', method: 'POST' // was /shifts/copy-previous-week
+getShiftById:        query: (id) => `/api/shifts/${id}`
+updateShift:         url: `/api/shifts/${id}`, method: 'PATCH'
+deleteShift:         url: `/api/shifts/${id}`, method: 'DELETE'
+confirmShift:        url: `/api/shifts/${id}/confirm`, method: 'POST'
+startShift:          url: `/api/shifts/${id}/start`, method: 'POST'
+completeShift:       url: `/api/shifts/${id}/complete`, method: 'POST'
 
-// All other shift URLs — add /api/ prefix:
-`/shifts`                              → `/api/shifts`
-`/shifts/${shiftId}`                   → `/api/shifts/${shiftId}`
-`/shifts/${shiftId}/confirm`           → `/api/shifts/${shiftId}/confirm`
-`/shifts/${shiftId}/start`             → `/api/shifts/${shiftId}/start`
-`/shifts/${shiftId}/complete`          → `/api/shifts/${shiftId}/complete`
-`/shifts/employee/${id}/current`       → `/api/shifts/employee/${id}/current`
-`/shifts/store/${id}/week?...`         → `/api/shifts/store/${id}/week?...`
+// REMOVE — these endpoints do NOT exist in ShiftController:
+// getEmployeeCurrentShift → no /api/shifts/employee/:id/current
+// getStoreWeekShifts      → no /api/shifts/store/:id/week
+// getShiftCoverage        → (verify if this exists — if not, remove)
 ```
 
 - [ ] **Step 6: Fix driverApi.ts — /api/delivery/location not /delivery/location-update**
@@ -543,51 +632,57 @@ url: '/api/delivery/location',
 
 Also check all other driverApi URLs for missing `/api/` prefix and add it.
 
-- [ ] **Step 7: Fix inventoryApi.ts — change baseUrl and fix all URL groups**
+- [ ] **Step 7: Fix inventoryApi.ts — change baseUrl, fix all URL groups, remove stale methods**
 
-`inventoryApi.ts` currently has `baseUrl: ${API_CONFIG.API_GATEWAY_URL}/inventory`. This means URL `/items` resolves to `gateway/inventory/items`. The canonical paths are completely different — three separate base paths. Change:
+Change `baseUrl` from `${API_CONFIG.API_GATEWAY_URL}/inventory` to `API_CONFIG.BASE_URL`.
 
-```typescript
-// BEFORE
-baseUrl: `${API_CONFIG.API_GATEWAY_URL}/inventory`,
-
-// AFTER
-baseUrl: API_CONFIG.BASE_URL,    // plain gateway root
-```
-
-Then fix all URL groups:
+Then fix URLs based on verified controller endpoints:
 
 ```typescript
-// Items — BEFORE → AFTER
-url: '/items'                          → url: '/api/inventory'
-url: `/items/${id}`                    → url: `/api/inventory/${id}`
-url: `/items/${id}/adjust`             → url: `/api/inventory/${id}/adjust`
-url: `/items/${id}/reserve`            → url: `/api/inventory/${id}/reserve`
-url: `/items/${id}/release`            → url: `/api/inventory/${id}/release`
-url: `/items/${id}/consume`            → url: `/api/inventory/${id}/consume`
-// also fix query paths like /low-stock, /out-of-stock, /expiring-soon, /value, /value/by-category
+// Inventory items — KEEP:
+url: '/api/inventory'                        // was '/items' (list with query params)
+url: '/api/inventory'         POST           // was '/items' create
+url: `/api/inventory/${id}`                  // was `/items/${id}`
+url: `/api/inventory/${id}`   PATCH          // was `/items/${id}`
+url: `/api/inventory/${id}`   DELETE         // was `/items/${id}`
+url: `/api/inventory/${id}/stock`            // was `/items/${id}/adjust` — backend uses single /stock endpoint
 
-// Suppliers — BEFORE → AFTER
-url: '/suppliers'                      → url: '/api/suppliers'
-url: `/suppliers/${id}`                → url: `/api/suppliers/${id}`
-url: `/suppliers/${id}/status`         → url: `/api/suppliers/${id}/status`
-url: `/suppliers/${id}/preferred`      → url: `/api/suppliers/${id}/preferred`
-url: `/suppliers/${id}/performance`    → url: `/api/suppliers/${id}/performance`
+// Inventory items — REMOVE (no backend endpoint):
+// url: `/items/${id}/adjust`    → use /stock with body {operation: 'ADJUST'}
+// url: `/items/${id}/reserve`   → use /stock with body {operation: 'RESERVE'}
+// url: `/items/${id}/release`   → use /stock with body {operation: 'RELEASE'}
+// url: `/items/${id}/consume`   → use /stock with body {operation: 'CONSUME'}
 
-// Purchase Orders — BEFORE → AFTER
-url: '/purchase-orders'                → url: '/api/purchase-orders'
-url: `/purchase-orders/${id}`          → url: `/api/purchase-orders/${id}`
-url: `/purchase-orders/${id}/approve`  → url: `/api/purchase-orders/${id}/approve`
-url: `/purchase-orders/${id}/reject`   → url: `/api/purchase-orders/${id}/reject`
-url: `/purchase-orders/${id}/send`     → url: `/api/purchase-orders/${id}/send`
-url: `/purchase-orders/${id}/receive`  → url: `/api/purchase-orders/${id}/receive`
-url: `/purchase-orders/${id}/cancel`   → url: `/api/purchase-orders/${id}/cancel`
-url: '/purchase-orders/auto-generate'  → url: '/api/purchase-orders/auto-generate'
+// Suppliers — KEEP (verified):
+url: '/api/suppliers'
+url: '/api/suppliers'         POST
+url: `/api/suppliers/${id}`
+url: `/api/suppliers/${id}`   PATCH
+url: `/api/suppliers/${id}`   DELETE
+url: '/api/suppliers/compare'
 
-// Waste — BEFORE → AFTER
-url: '/waste'                          → url: '/api/waste'
-url: `/waste/${id}`                    → url: `/api/waste/${id}`
-url: `/waste/${id}/approve`            → url: `/api/waste/${id}/approve`
+// Suppliers — REMOVE:
+// url: `/suppliers/${id}/status`       → no such endpoint
+// url: `/suppliers/${id}/preferred`    → no such endpoint
+// url: `/suppliers/${id}/performance`  → no such endpoint
+
+// Purchase Orders — KEEP (verified):
+url: '/api/purchase-orders'
+url: '/api/purchase-orders'       POST
+url: `/api/purchase-orders/${id}`
+url: `/api/purchase-orders/${id}` PATCH
+url: `/api/purchase-orders/${id}` DELETE
+url: '/api/purchase-orders/auto-generate'
+
+// Purchase Orders — REMOVE:
+// url: `/purchase-orders/${id}/approve` → no such endpoint in PurchaseOrderController
+// url: `/purchase-orders/${id}/reject`  → no such endpoint
+// url: `/purchase-orders/${id}/send`    → no such endpoint
+// url: `/purchase-orders/${id}/receive` → no such endpoint
+// url: `/purchase-orders/${id}/cancel`  → no such endpoint
+
+// Waste — REMOVE entirely:
+// Search backend for WasteController.java — if not found, delete all waste methods from inventoryApi.ts
 ```
 
 - [ ] **Step 8: Verify TypeScript compiles with no errors**
@@ -770,6 +865,8 @@ describe('Commerce Service (Orders) Pact', () => {
 
 - [ ] **Step 3: Rewrite menu-service.pact.test.ts**
 
+Use verified `MenuController` endpoints: `GET /api/menu` (list — no `/public` sub-path), `GET /api/menu/{id}`, `PATCH /api/menu/items/{id}/allergens`.
+
 ```typescript
 import path from 'path';
 import { PactV4, MatchersV3 } from '@pact-foundation/pact';
@@ -784,13 +881,13 @@ const provider = new PactV4({
 });
 
 describe('Commerce Service (Menu) Pact', () => {
-  describe('GET /api/menu/public', () => {
-    it('returns list of public menu items', async () => {
+  describe('GET /api/menu', () => {
+    it('returns list of menu items', async () => {
       await provider
         .addInteraction()
         .given('menu items exist')
-        .uponReceiving('a request to get all public menu items')
-        .withRequest('GET', '/api/menu/public')
+        .uponReceiving('a request to get all menu items')
+        .withRequest('GET', '/api/menu')
         .willRespondWith(200, (builder) => {
           builder.jsonBody(eachLike({
             id: string('menu-1'),
@@ -801,7 +898,7 @@ describe('Commerce Service (Menu) Pact', () => {
           }));
         })
         .executeTest(async (mockServer) => {
-          const response = await fetch(`${mockServer.url}/api/menu/public`);
+          const response = await fetch(`${mockServer.url}/api/menu`);
           expect(response.status).toBe(200);
           const data = await response.json();
           expect(Array.isArray(data)).toBe(true);
@@ -811,13 +908,13 @@ describe('Commerce Service (Menu) Pact', () => {
     });
   });
 
-  describe('GET /api/menu/public/:id', () => {
+  describe('GET /api/menu/:id', () => {
     it('returns a single menu item by id', async () => {
       await provider
         .addInteraction()
         .given('menu item exists with id menu-pact-1')
         .uponReceiving('a request to get menu item by id')
-        .withRequest('GET', '/api/menu/public/menu-pact-1')
+        .withRequest('GET', '/api/menu/menu-pact-1')
         .willRespondWith(200, (builder) => {
           builder.jsonBody(like({
             id: string('menu-pact-1'),
@@ -827,7 +924,7 @@ describe('Commerce Service (Menu) Pact', () => {
           }));
         })
         .executeTest(async (mockServer) => {
-          const response = await fetch(`${mockServer.url}/api/menu/public/menu-pact-1`);
+          const response = await fetch(`${mockServer.url}/api/menu/menu-pact-1`);
           expect(response.status).toBe(200);
           const data = await response.json();
           expect(data.id).toBe('menu-pact-1');
@@ -1045,6 +1142,8 @@ describe('Core Service (Users/Auth) Pact', () => {
 
 - [ ] **Step 6: Rewrite delivery-service.pact.test.ts (maps to logistics-service)**
 
+Use only verified `DeliveryController` endpoints: `GET /api/delivery/track/{id}` and `GET /api/delivery/drivers/available` (both confirmed real).
+
 ```typescript
 import path from 'path';
 import { PactV4, MatchersV3 } from '@pact-foundation/pact';
@@ -1088,7 +1187,7 @@ describe('Logistics Service (Delivery) Pact', () => {
     it('returns list of available drivers', async () => {
       await provider
         .addInteraction()
-        .given('drivers are available for store store-1')
+        .given('drivers are available')
         .uponReceiving('a request to get available drivers')
         .withRequest('GET', '/api/delivery/drivers/available')
         .willRespondWith(200, (builder) => {
