@@ -18,7 +18,7 @@ public class OrderEventListener {
         this.notificationService = notificationService;
     }
 
-    @RabbitListener(queues = MaSoVaRabbitMQConfig.NOTIFICATION_ORDER_QUEUE)
+    @RabbitListener(queues = MaSoVaRabbitMQConfig.NOTIFICATION_ORDER_QUEUE, id = "orderCreatedNotificationListener")
     public void onOrderCreated(OrderCreatedEvent event) {
         try {
             notificationService.handleOrderCreatedEvent(event);
@@ -27,7 +27,7 @@ public class OrderEventListener {
         }
     }
 
-    @RabbitListener(queues = MaSoVaRabbitMQConfig.NOTIFICATION_ORDER_QUEUE)
+    @RabbitListener(queues = MaSoVaRabbitMQConfig.NOTIFICATION_ORDER_QUEUE, id = "orderStatusNotificationListener")
     public void onOrderStatusChanged(OrderStatusChangedEvent event) {
         try {
             notificationService.handleOrderStatusChangedEvent(event);

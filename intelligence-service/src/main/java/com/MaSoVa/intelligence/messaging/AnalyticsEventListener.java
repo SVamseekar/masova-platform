@@ -28,7 +28,7 @@ public class AnalyticsEventListener {
         this.analyticsService = analyticsService;
     }
 
-    @RabbitListener(queues = MaSoVaRabbitMQConfig.ANALYTICS_ORDER_QUEUE)
+    @RabbitListener(queues = MaSoVaRabbitMQConfig.ANALYTICS_ORDER_QUEUE, id = "analyticsOrderCreatedListener")
     public void onOrderCreated(OrderCreatedEvent event) {
         try {
             log.info("Analytics: received order.created event orderId={}", event.getOrderId());
@@ -45,7 +45,7 @@ public class AnalyticsEventListener {
         }
     }
 
-    @RabbitListener(queues = MaSoVaRabbitMQConfig.ANALYTICS_ORDER_QUEUE)
+    @RabbitListener(queues = MaSoVaRabbitMQConfig.ANALYTICS_ORDER_QUEUE, id = "analyticsOrderStatusListener")
     public void onOrderStatusChanged(OrderStatusChangedEvent event) {
         try {
             log.info("Analytics: received order.status.changed event orderId={} status={}",
@@ -63,7 +63,7 @@ public class AnalyticsEventListener {
         }
     }
 
-    @RabbitListener(queues = MaSoVaRabbitMQConfig.ANALYTICS_PAYMENT_QUEUE)
+    @RabbitListener(queues = MaSoVaRabbitMQConfig.ANALYTICS_PAYMENT_QUEUE, id = "analyticsPaymentCompletedListener")
     public void onPaymentCompleted(PaymentCompletedEvent event) {
         try {
             log.info("Analytics: received payment.completed event paymentId={} orderId={}",
@@ -80,7 +80,7 @@ public class AnalyticsEventListener {
         }
     }
 
-    @RabbitListener(queues = MaSoVaRabbitMQConfig.ANALYTICS_AGGREGATOR_QUEUE)
+    @RabbitListener(queues = MaSoVaRabbitMQConfig.ANALYTICS_AGGREGATOR_QUEUE, id = "analyticsAggregatorListener")
     public void onAggregatorOrderReceived(AggregatorOrderReceivedEvent event) {
         try {
             log.info("Analytics: received aggregator order event orderId={} source={}",
@@ -99,7 +99,7 @@ public class AnalyticsEventListener {
         }
     }
 
-    @RabbitListener(queues = MaSoVaRabbitMQConfig.ANALYTICS_PAYMENT_QUEUE)
+    @RabbitListener(queues = MaSoVaRabbitMQConfig.ANALYTICS_PAYMENT_QUEUE, id = "analyticsPaymentFailedListener")
     public void onPaymentFailed(PaymentFailedEvent event) {
         try {
             log.info("Analytics: received payment.failed event paymentId={} orderId={}",
