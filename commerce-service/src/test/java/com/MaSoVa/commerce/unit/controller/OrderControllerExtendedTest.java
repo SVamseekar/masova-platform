@@ -71,13 +71,16 @@ class OrderControllerExtendedTest extends BaseServiceTest {
                 .andExpect(jsonPath("$.status").value("PREPARING"));
     }
 
-    // GET /api/orders (store orders)
+    // GET /api/orders (store orders) — must pass X-User-Store-Id header
     @Test
     void getOrders_by_storeId_returns_list() throws Exception {
         when(orderService.getStoreOrders("store-1"))
                 .thenReturn(List.of(buildOrder("order-1", Order.OrderStatus.RECEIVED)));
 
-        mockMvc.perform(get("/api/orders").param("storeId", "store-1"))
+        mockMvc.perform(get("/api/orders")
+                        .param("storeId", "store-1")
+                        .header("X-User-Store-Id", "store-1")
+                        .header("X-User-Type", "MANAGER"))
                 .andExpect(status().isOk());
     }
 
@@ -86,7 +89,10 @@ class OrderControllerExtendedTest extends BaseServiceTest {
         when(orderService.getCustomerOrders("cust-1"))
                 .thenReturn(List.of(buildOrder("order-1", Order.OrderStatus.DELIVERED)));
 
-        mockMvc.perform(get("/api/orders").param("customerId", "cust-1"))
+        mockMvc.perform(get("/api/orders")
+                        .param("customerId", "cust-1")
+                        .header("X-User-Store-Id", "store-1")
+                        .header("X-User-Type", "MANAGER"))
                 .andExpect(status().isOk());
     }
 
@@ -97,7 +103,9 @@ class OrderControllerExtendedTest extends BaseServiceTest {
 
         mockMvc.perform(get("/api/orders")
                         .param("storeId", "store-1")
-                        .param("status", "PREPARING"))
+                        .param("status", "PREPARING")
+                        .header("X-User-Store-Id", "store-1")
+                        .header("X-User-Type", "MANAGER"))
                 .andExpect(status().isOk());
     }
 
@@ -107,7 +115,9 @@ class OrderControllerExtendedTest extends BaseServiceTest {
         when(orderService.getKitchenQueue("store-1"))
                 .thenReturn(List.of(buildOrder("order-1", Order.OrderStatus.RECEIVED)));
 
-        mockMvc.perform(get("/api/orders/kitchen-queue").param("storeId", "store-1"))
+        mockMvc.perform(get("/api/orders/kitchen-queue")
+                        .param("storeId", "store-1")
+                        .header("X-User-Store-Id", "store-1"))
                 .andExpect(status().isOk());
     }
 
@@ -119,39 +129,44 @@ class OrderControllerExtendedTest extends BaseServiceTest {
 
         mockMvc.perform(patch("/api/orders/order-1/payment")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"paymentStatus\":\"PAID\",\"transactionId\":\"txn-123\"}"))
+                        .content("{\"paymentStatus\":\"PAID\",\"transactionId\":\"txn-123\"}")
+                        .header("X-User-Store-Id", "store-1"))
                 .andExpect(status().isOk());
     }
 
-    // PATCH /api/orders/{orderId} (update order items)
+    // PATCH /api/orders/{orderId} (update order — body is a generic Map)
     @Test
-    void updateOrder_returns_200() throws Exception {
+    void updateOrder_items_returns_200() throws Exception {
         when(orderService.updateOrderItems(eq("order-1"), any()))
                 .thenReturn(buildOrder("order-1", Order.OrderStatus.RECEIVED));
 
         mockMvc.perform(patch("/api/orders/order-1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"items\":[{\"menuItemId\":\"m1\",\"name\":\"Pizza\",\"quantity\":2,\"price\":150.0}]}"))
+                        .content("{\"items\":[{\"menuItemId\":\"m1\",\"name\":\"Pizza\",\"quantity\":2,\"price\":150.0}]}")
+                        .header("X-User-Store-Id", "store-1"))
                 .andExpect(status().isOk());
     }
 
-    // POST /api/orders/gdpr/anonymize
+    // POST /api/orders/gdpr/anonymize — no @PreAuthorize in standaloneSetup, just check it runs
     @Test
     void anonymizeCustomerOrders_returns_204() throws Exception {
         mockMvc.perform(post("/api/orders/gdpr/anonymize")
-                        .param("customerId", "cust-1"))
+                        .param("customerId", "cust-1")
+                        .header("X-User-Store-Id", "store-1"))
                 .andExpect(status().isNoContent());
     }
 
-    // GET /api/orders/search
+    // GET /api/orders with search
     @Test
-    void searchOrders_returns_results() throws Exception {
+    void getOrders_search_returns_results() throws Exception {
         when(orderService.searchOrders(eq("store-1"), eq("pizza")))
                 .thenReturn(List.of(buildOrder("order-1", Order.OrderStatus.RECEIVED)));
 
-        mockMvc.perform(get("/api/orders/search")
+        mockMvc.perform(get("/api/orders")
                         .param("storeId", "store-1")
-                        .param("query", "pizza"))
+                        .param("search", "pizza")
+                        .header("X-User-Store-Id", "store-1")
+                        .header("X-User-Type", "MANAGER"))
                 .andExpect(status().isOk());
     }
 
@@ -163,19 +178,21 @@ class OrderControllerExtendedTest extends BaseServiceTest {
 
         mockMvc.perform(patch("/api/orders/order-1/quality-checkpoint/temp-check")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"status\":\"PASSED\",\"notes\":\"OK\"}"))
+                        .content("{\"status\":\"PASSED\",\"notes\":\"OK\"}")
+                        .header("X-User-Store-Id", "store-1"))
                 .andExpect(status().isOk());
     }
 
-    // POST /api/orders/{orderId}/assign-driver
+    // PATCH /api/orders/{orderId} assign driver via body field
     @Test
-    void assignDriver_returns_200() throws Exception {
+    void updateOrder_assignDriver_returns_200() throws Exception {
         when(orderService.assignDriver(eq("order-1"), eq("driver-1"), any(), any()))
                 .thenReturn(buildOrder("order-1", Order.OrderStatus.DISPATCHED));
 
-        mockMvc.perform(post("/api/orders/order-1/assign-driver")
+        mockMvc.perform(patch("/api/orders/order-1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"driverId\":\"driver-1\",\"driverName\":\"John\",\"driverPhone\":\"9999999999\"}"))
+                        .content("{\"driverId\":\"driver-1\"}")
+                        .header("X-User-Store-Id", "store-1"))
                 .andExpect(status().isOk());
     }
 
@@ -187,7 +204,9 @@ class OrderControllerExtendedTest extends BaseServiceTest {
 
         mockMvc.perform(get("/api/orders/analytics")
                         .param("storeId", "store-1")
-                        .param("date", "2025-05-17"))
+                        .param("date", "2025-05-17")
+                        .header("X-User-Store-Id", "store-1")
+                        .header("X-User-Type", "MANAGER"))
                 .andExpect(status().isOk());
     }
 

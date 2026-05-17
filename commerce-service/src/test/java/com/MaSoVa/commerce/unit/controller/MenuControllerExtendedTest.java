@@ -155,8 +155,8 @@ class MenuControllerExtendedTest extends BaseServiceTest {
                 .thenReturn(List.of(buildItem("m1")));
 
         mockMvc.perform(post("/api/menu/copy")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"sourceStoreId\":\"store-src\",\"targetStoreId\":\"store-tgt\"}"))
+                        .param("fromStoreId", "store-src")
+                        .param("toStoreId", "store-tgt"))
                 .andExpect(status().isOk());
     }
 
@@ -174,10 +174,12 @@ class MenuControllerExtendedTest extends BaseServiceTest {
     // GET /api/menu/stats
     @Test
     void getMenuStats_returns_200() throws Exception {
-        when(menuService.getTotalItemsCount()).thenReturn(10L);
-        when(menuService.getAvailableItemsCount()).thenReturn(8L);
+        when(menuService.getTotalItemsCountByStore(any())).thenReturn(10L);
+        when(menuService.getAvailableItemsCountByStore(any())).thenReturn(8L);
 
-        mockMvc.perform(get("/api/menu/stats"))
+        mockMvc.perform(get("/api/menu/stats")
+                        .header("X-User-Store-Id", "store-1")
+                        .header("X-User-Type", "MANAGER"))
                 .andExpect(status().isOk());
     }
 }
