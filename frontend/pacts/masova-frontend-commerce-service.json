@@ -1,0 +1,714 @@
+{
+  "consumer": {
+    "name": "masova-frontend"
+  },
+  "interactions": [
+    {
+      "description": "a request to create a new order",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "store exists with id store-1"
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "customerName": "Test Customer",
+            "items": [
+              {
+                "menuItemId": "item-1",
+                "name": "Pizza",
+                "price": 299,
+                "quantity": 1
+              }
+            ],
+            "orderType": "DELIVERY",
+            "storeId": "store-1"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.customerName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.items": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.items[*].menuItemId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.items[*].name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.items[*].price": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.items[*].quantity": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.orderType": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.storeId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/orders"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "customerName": "Test Customer",
+            "id": "order-pact-new",
+            "orderNumber": "ORD-20250101-002",
+            "status": "RECEIVED",
+            "total": 299
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.customerName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.orderNumber": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.status": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.total": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 201
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a request to declare allergens",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "menu item exists with id menu-pact-1"
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "allergenFree": false,
+            "allergens": [
+              "MILK",
+              "GLUTEN"
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.allergenFree": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.allergens": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "/api/menu/items/menu-pact-1/allergens"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "allergensDeclared": true,
+            "id": "menu-pact-1"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.allergensDeclared": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a request to get all menu items",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "menu items exist"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/menu"
+      },
+      "response": {
+        "body": {
+          "content": [
+            {
+              "allergensDeclared": true,
+              "basePrice": 29900,
+              "id": "menu-1",
+              "isAvailable": true,
+              "name": "Margherita Pizza"
+            }
+          ],
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$[*].allergensDeclared": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].basePrice": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].isAvailable": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a request to get menu item by id",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "menu item exists with id menu-pact-1"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/menu/menu-pact-1"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "basePrice": 29900,
+            "id": "menu-pact-1",
+            "isAvailable": true,
+            "name": "Margherita Pizza"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.basePrice": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.isAvailable": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a request to get order by ID",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "order exists with id order-pact-1"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/orders/order-pact-1"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "createdAt": "2025-01-15T10:30:00Z",
+            "customerName": "Test Customer",
+            "id": "order-pact-1",
+            "items": [
+              {
+                "menuItemId": "item-1",
+                "name": "Pizza",
+                "price": 299,
+                "quantity": 1
+              }
+            ],
+            "orderNumber": "ORD-20250101-001",
+            "orderType": "DELIVERY",
+            "paymentStatus": "PENDING",
+            "status": "RECEIVED",
+            "storeId": "store-1",
+            "total": 299
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.customerName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.items": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.items[*].menuItemId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.items[*].name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.items[*].price": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.items[*].quantity": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.orderNumber": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.orderType": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.paymentStatus": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.status": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.storeId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.total": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a request to update order status to PREPARING",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "order exists with id order-pact-1"
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "status": "PREPARING"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.status": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/orders/order-pact-1/status"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "id": "order-pact-1",
+            "status": "PREPARING",
+            "updatedAt": "2025-01-15T11:00:00Z"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.status": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.updatedAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    }
+  ],
+  "metadata": {
+    "pactRust": {
+      "ffi": "0.4.28",
+      "models": "1.3.5"
+    },
+    "pactSpecification": {
+      "version": "4.0"
+    }
+  },
+  "provider": {
+    "name": "commerce-service"
+  }
+}

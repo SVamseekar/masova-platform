@@ -1,205 +1,96 @@
-/**
- * Auto-generated Pact Contract Test for MenuService
- * Generated: 2026-01-18T15:55:55.665Z
- *
- * This test ensures the frontend and backend API contracts match.
- * DO NOT EDIT MANUALLY - Regenerate using automated-testing-suite.js
- */
+import path from 'path';
+import { PactV4, MatchersV3 } from '@pact-foundation/pact';
 
-import { pactWith } from 'jest-pact';
-import { like, string, integer, boolean } from '@pact-foundation/pact/src/dsl/matchers';
+const { like, eachLike, string } = MatchersV3;
 
-pactWith(
-  {
-    consumer: 'MaSoVa-Frontend',
-    provider: 'MenuService',
-    port: 8082,
-  },
-  (interaction) => {
+const provider = new PactV4({
+  consumer: 'masova-frontend',
+  provider: 'commerce-service',
+  dir: path.resolve(process.cwd(), 'pacts'),
+  logLevel: 'error',
+});
 
-    test('updateMenuItem', async () => {
-      await interaction
-        .given('menu-service is available')
-        .uponReceiving('PUT request to /api/menu/items/{id}')
-        .withRequest({
-          method: 'PUT',
-          path: '/api/menu/items/{id}',
-          headers: { 'Content-Type': 'application/json' },
+describe('Commerce Service (Menu) Pact', () => {
+  describe('GET /api/menu', () => {
+    it('returns list of menu items', async () => {
+      await provider
+        .addInteraction()
+        .given('menu items exist')
+        .uponReceiving('a request to get all menu items')
+        .withRequest('GET', '/api/menu')
+        .willRespondWith(200, (builder) => {
+          builder.jsonBody(eachLike({
+            id: string('menu-1'),
+            name: string('Margherita Pizza'),
+            basePrice: like(29900),
+            isAvailable: like(true),
+            allergensDeclared: like(true),
+          }));
         })
-        .willRespondWith({
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-          body: like({
-            // Auto-generated from OpenAPI schema
-            data: {}
-          }),
+        .executeTest(async (mockServer) => {
+          const response = await fetch(`${mockServer.url}/api/menu`);
+          expect(response.status).toBe(200);
+          const data = await response.json();
+          expect(Array.isArray(data)).toBe(true);
+          expect(data[0]).toHaveProperty('id');
+          expect(data[0]).toHaveProperty('name');
         });
-
-      // Verify interaction
-      const baseUrl = interaction.mockService.baseUrl;
-      // TODO: Add actual API call verification
     });
+  });
 
-    test('deleteMenuItem', async () => {
-      await interaction
-        .given('menu-service is available')
-        .uponReceiving('DELETE request to /api/menu/items/{id}')
-        .withRequest({
-          method: 'DELETE',
-          path: '/api/menu/items/{id}',
-          headers: { 'Content-Type': 'application/json' },
+  describe('GET /api/menu/:id', () => {
+    it('returns a single menu item by id', async () => {
+      await provider
+        .addInteraction()
+        .given('menu item exists with id menu-pact-1')
+        .uponReceiving('a request to get menu item by id')
+        .withRequest('GET', '/api/menu/menu-pact-1')
+        .willRespondWith(200, (builder) => {
+          builder.jsonBody(like({
+            id: string('menu-pact-1'),
+            name: string('Margherita Pizza'),
+            basePrice: like(29900),
+            isAvailable: like(true),
+          }));
         })
-        .willRespondWith({
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-          body: like({
-            // Auto-generated from OpenAPI schema
-            data: {}
-          }),
+        .executeTest(async (mockServer) => {
+          const response = await fetch(`${mockServer.url}/api/menu/menu-pact-1`);
+          expect(response.status).toBe(200);
+          const data = await response.json();
+          expect(data.id).toBe('menu-pact-1');
         });
-
-      // Verify interaction
-      const baseUrl = interaction.mockService.baseUrl;
-      // TODO: Add actual API call verification
     });
+  });
 
-    test('getAllMenuItems', async () => {
-      await interaction
-        .given('menu-service is available')
-        .uponReceiving('GET request to /api/menu/items')
-        .withRequest({
-          method: 'GET',
-          path: '/api/menu/items',
-          
+  describe('PATCH /api/menu/items/:id/allergens', () => {
+    it('declares allergens for a menu item', async () => {
+      await provider
+        .addInteraction()
+        .given('menu item exists with id menu-pact-1')
+        .uponReceiving('a request to declare allergens')
+        .withRequest('PATCH', '/api/menu/items/menu-pact-1/allergens', (builder) => {
+          builder.jsonBody({
+            allergens: like(['MILK', 'GLUTEN']),
+            allergenFree: like(false),
+          });
         })
-        .willRespondWith({
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-          body: like({
-            // Auto-generated from OpenAPI schema
-            data: {}
-          }),
-        });
-
-      // Verify interaction
-      const baseUrl = interaction.mockService.baseUrl;
-      // TODO: Add actual API call verification
-    });
-
-    test('createMenuItem', async () => {
-      await interaction
-        .given('menu-service is available')
-        .uponReceiving('POST request to /api/menu/items')
-        .withRequest({
-          method: 'POST',
-          path: '/api/menu/items',
-          headers: { 'Content-Type': 'application/json' },
+        .willRespondWith(200, (builder) => {
+          builder.jsonBody(like({
+            id: string('menu-pact-1'),
+            allergensDeclared: like(true),
+          }));
         })
-        .willRespondWith({
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-          body: like({
-            // Auto-generated from OpenAPI schema
-            data: {}
-          }),
+        .executeTest(async (mockServer) => {
+          const response = await fetch(
+            `${mockServer.url}/api/menu/items/menu-pact-1/allergens`,
+            {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ allergens: ['MILK', 'GLUTEN'], allergenFree: false }),
+            }
+          );
+          expect(response.status).toBe(200);
         });
-
-      // Verify interaction
-      const baseUrl = interaction.mockService.baseUrl;
-      // TODO: Add actual API call verification
     });
-
-    test('deleteAllMenuItems', async () => {
-      await interaction
-        .given('menu-service is available')
-        .uponReceiving('DELETE request to /api/menu/items')
-        .withRequest({
-          method: 'DELETE',
-          path: '/api/menu/items',
-          headers: { 'Content-Type': 'application/json' },
-        })
-        .willRespondWith({
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-          body: like({
-            // Auto-generated from OpenAPI schema
-            data: {}
-          }),
-        });
-
-      // Verify interaction
-      const baseUrl = interaction.mockService.baseUrl;
-      // TODO: Add actual API call verification
-    });
-
-    test('createMultipleMenuItems', async () => {
-      await interaction
-        .given('menu-service is available')
-        .uponReceiving('POST request to /api/menu/items/bulk')
-        .withRequest({
-          method: 'POST',
-          path: '/api/menu/items/bulk',
-          headers: { 'Content-Type': 'application/json' },
-        })
-        .willRespondWith({
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-          body: like({
-            // Auto-generated from OpenAPI schema
-            data: {}
-          }),
-        });
-
-      // Verify interaction
-      const baseUrl = interaction.mockService.baseUrl;
-      // TODO: Add actual API call verification
-    });
-
-    test('copyMenuBetweenStores', async () => {
-      await interaction
-        .given('menu-service is available')
-        .uponReceiving('POST request to /api/menu/copy-menu')
-        .withRequest({
-          method: 'POST',
-          path: '/api/menu/copy-menu',
-          headers: { 'Content-Type': 'application/json' },
-        })
-        .willRespondWith({
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-          body: like({
-            // Auto-generated from OpenAPI schema
-            data: {}
-          }),
-        });
-
-      // Verify interaction
-      const baseUrl = interaction.mockService.baseUrl;
-      // TODO: Add actual API call verification
-    });
-
-    test('toggleAvailability', async () => {
-      await interaction
-        .given('menu-service is available')
-        .uponReceiving('PATCH request to /api/menu/items/{id}/availability')
-        .withRequest({
-          method: 'PATCH',
-          path: '/api/menu/items/{id}/availability',
-          headers: { 'Content-Type': 'application/json' },
-        })
-        .willRespondWith({
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-          body: like({
-            // Auto-generated from OpenAPI schema
-            data: {}
-          }),
-        });
-
-      // Verify interaction
-      const baseUrl = interaction.mockService.baseUrl;
-      // TODO: Add actual API call verification
-    });
-
-  }
-);
+  });
+});

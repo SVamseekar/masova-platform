@@ -1,0 +1,373 @@
+{
+  "consumer": {
+    "name": "masova-frontend"
+  },
+  "interactions": [
+    {
+      "description": "a login request with valid credentials",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "user exists with email test@masova.com"
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "email": "test@masova.com",
+            "password": "Test1234!"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.email": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.password": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/auth/login"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "accessToken": "access.token.value",
+            "refreshToken": "refresh.token.value",
+            "user": {
+              "email": "test@masova.com",
+              "id": "user-1",
+              "type": "CUSTOMER"
+            }
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.accessToken": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.refreshToken": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.user": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.user.email": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.user.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.user.type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a request to get customer by id",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "customer exists with id cust-pact-1"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/customers/cust-pact-1"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "email": "customer@masova.com",
+            "id": "cust-pact-1",
+            "loyaltyInfo": {
+              "tier": "SILVER",
+              "totalPoints": 100
+            }
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.email": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.loyaltyInfo": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.loyaltyInfo.tier": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.loyaltyInfo.totalPoints": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a request to list customers",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "customers exist"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/customers"
+      },
+      "response": {
+        "body": {
+          "content": [
+            {
+              "active": true,
+              "email": "customer@masova.com",
+              "id": "cust-1"
+            }
+          ],
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$[*].active": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].email": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a request to list stores",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "stores exist"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/stores"
+      },
+      "response": {
+        "body": {
+          "content": [
+            {
+              "code": "MUM001",
+              "id": "store-1",
+              "name": "MaSoVa Mumbai"
+            }
+          ],
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$[*].code": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    }
+  ],
+  "metadata": {
+    "pactRust": {
+      "ffi": "0.4.28",
+      "models": "1.3.5"
+    },
+    "pactSpecification": {
+      "version": "4.0"
+    }
+  },
+  "provider": {
+    "name": "core-service"
+  }
+}
