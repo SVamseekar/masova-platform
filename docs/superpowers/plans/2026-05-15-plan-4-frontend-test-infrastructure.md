@@ -8,6 +8,8 @@
 
 **Prerequisite:** Plan 0 (deployment blockers) must be complete.
 
+**Audit tool:** Run `node scripts/audit-api-mismatches.js` at any time to get a live diff of backend endpoints vs frontend handlers/slices. This script reads every Java `@RequestMapping` annotation and every RTK Query `url:` / MSW `http.*` call and produces 5 reports: missing `/api/` prefix, paths not in backend, baseUrl problems, slice URL mismatches, and uncovered backend endpoints. Run it before starting and after each task to verify progress. Current output: **568 ❌ missing prefix, 63 ⚠️ paths not in backend, 150 📭 uncovered endpoints.**
+
 **Tech Stack:** Vitest 1.6.x, React Testing Library 16.x, MSW 2.x, @pact-foundation/pact 16.0.4
 
 ---
@@ -79,7 +81,7 @@ These routes are in the handler files but the backend never serves them. Simply 
 
 ### Additional slice corrections — full audit of ALL 20 API slices:
 
-**`aggregatorApi.ts`** — calls `PUT /api/aggregators/connections` but `AggregatorController` only has `GET /connections`. Remove `upsertConnection` mutation.
+**`aggregatorApi.ts`** — `AggregatorController` has both `GET` and `PUT /api/aggregators/connections` (confirmed by script). Both slice URLs already have `/api/` prefix. No changes needed.
 
 **`reviewApi.ts`** — `baseUrl = API_CONFIG.REVIEW_SERVICE_URL` (= gateway root). All URLs like `/reviews/...` missing `/api/` prefix. Stale sub-paths: use query params on `GET /api/reviews`.
 
@@ -129,7 +131,7 @@ These routes are in the handler files but the backend never serves them. Simply 
 | `frontend/src/test/mocks/handlers/analyticsHandlers.ts` | Collapse 9 stale sub-path handlers into 4 real query-param handlers |
 | `frontend/src/store/api/analyticsApi.ts` | Fix `baseUrl` (has `/analytics` appended); collapse all endpoints into `GET /api/analytics?type=`, `GET /api/bi?type=`, `GET /api/bi/reports?type=`, `POST /api/analytics/cache/clear` |
 | `frontend/src/store/api/reviewApi.ts` | Add `/api/` prefix; remove stale sub-path mutations — use query params on `GET /api/reviews` |
-| `frontend/src/store/api/aggregatorApi.ts` | Remove `upsertConnection` — `PUT /api/aggregators/connections` doesn't exist |
+| `frontend/src/store/api/aggregatorApi.ts` | **No changes needed** — both GET and PUT confirmed in `AggregatorController` |
 | `frontend/src/store/api/customerApi.ts` | Fix `baseUrl` (`gateway/customers` → `BASE_URL`); add `/api/customers/` prefix; `/user/:userId` → query param |
 | `frontend/src/store/api/deliveryApi.ts` | Rename `auto-dispatch→dispatch`, `route-optimize→route`, `location-update→location`; remove stale paths (`eta`, `metrics/today`, `zone/*`) |
 | `frontend/src/store/api/fiscalApi.ts` | Remove both mutations — no `FiscalController` exists in any backend service |
