@@ -76,7 +76,7 @@ Built the foundation every subsequent test relies on:
 - SonarQube adds ALL source files to the denominator, even untouched ones (8.2%)
 - SonarQube is more conservative and honest — use it for gates, JaCoCo for debugging exact lines
 
-**core-service needs 4108 more lines covered to hit 80%.** Full sorted class list (from JaCoCo XML):
+**core-service is DONE (80.77%).** Original gap analysis (2026-05-16, for historical reference):
 
 ```
 UserService:                  625 lines missed  ← biggest gap
