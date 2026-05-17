@@ -248,10 +248,12 @@ class OrderServiceQualityCheckpointTest {
         Order o1 = buildOrder("o1");
         o1.setStatus(OrderStatus.PREPARING);
         o1.setAssignedMakeTableStation("STATION-A");
+        o1.setCreatedAt(java.time.LocalDateTime.now().minusMinutes(5));
 
         Order o2 = buildOrder("o2");
         o2.setStatus(OrderStatus.PREPARING);
         o2.setAssignedMakeTableStation("STATION-B");
+        o2.setCreatedAt(java.time.LocalDateTime.now());
 
         when(orderRepository.findByStoreIdAndStatusIn(eq("store-1"), anyList()))
                 .thenReturn(List.of(o1, o2));

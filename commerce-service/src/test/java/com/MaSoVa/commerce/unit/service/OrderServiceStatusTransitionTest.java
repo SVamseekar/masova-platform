@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -406,7 +407,9 @@ class OrderServiceStatusTransitionTest {
     @Test
     void getKitchenQueue_returns_active_statuses_only() {
         Order o1 = buildOrder("o1", OrderStatus.RECEIVED, OrderType.TAKEAWAY);
+        o1.setCreatedAt(LocalDateTime.now().minusMinutes(5));
         Order o2 = buildOrder("o2", OrderStatus.PREPARING, OrderType.TAKEAWAY);
+        o2.setCreatedAt(LocalDateTime.now());
         when(orderRepository.findByStoreIdAndStatusIn(eq("store-1"), anyList()))
                 .thenReturn(List.of(o1, o2));
 
