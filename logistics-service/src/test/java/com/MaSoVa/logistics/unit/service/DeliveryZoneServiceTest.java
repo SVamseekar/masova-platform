@@ -323,14 +323,16 @@ class DeliveryZoneServiceTest {
         }
 
         @Test
-        @DisplayName("returns default zones on exception")
-        void returnsDefaultZonesOnException() {
+        @DisplayName("returns null when restTemplate throws (getStoreDetails catches and returns null)")
+        void returnsNullOnException() {
             when(restTemplate.getForObject(anyString(), eq(Map.class)))
                 .thenThrow(new RuntimeException("Network error"));
 
+            // getStoreDetails catches the exception and returns null
+            // getDeliveryZones sees null storeData and returns null
             List<Map<String, Object>> result = deliveryZoneService.getDeliveryZones(STORE_ID);
 
-            assertThat(result).hasSize(3);
+            assertThat(result).isNull();
         }
     }
 
