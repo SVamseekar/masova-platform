@@ -6,7 +6,9 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.DefaultJackson2JavaTypeMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.Jackson2JavaTypeMapper.TypePrecedence;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -146,7 +148,14 @@ public class MaSoVaRabbitMQConfig {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        return new Jackson2JsonMessageConverter(mapper);
+        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter(mapper);
+        // TYPE_ID precedence: always deserialize using __TypeId__ header, never infer from listener method signature.
+        // Required for @RabbitHandler dispatch when multiple handlers share the same queue.
+        DefaultJackson2JavaTypeMapper typeMapper = new DefaultJackson2JavaTypeMapper();
+        typeMapper.setTypePrecedence(TypePrecedence.TYPE_ID);
+        typeMapper.addTrustedPackages("com.MaSoVa.shared.messaging.events");
+        converter.setJavaTypeMapper(typeMapper);
+        return converter;
     }
 
     @Bean
