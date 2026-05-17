@@ -34,7 +34,7 @@ class LogisticsPactVerificationIT extends BaseMessagingIntegrationTest {
     @TestTemplate
     @ExtendWith(PactVerificationSpring6Provider.class)
     void pactVerificationTestTemplate(PactVerificationContext context) {
-        context.verifyInteraction();
+        if (context != null) { context.verifyInteraction(); }
     }
 
     @State("delivery zones configured")

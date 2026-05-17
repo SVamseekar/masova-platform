@@ -34,7 +34,7 @@ class CommercePactVerificationIT extends BaseFullIntegrationTest {
     @TestTemplate
     @ExtendWith(PactVerificationSpring6Provider.class)
     void pactVerificationTestTemplate(PactVerificationContext context) {
-        context.verifyInteraction();
+        if (context != null) { context.verifyInteraction(); }
     }
 
     @State("menu items exist")

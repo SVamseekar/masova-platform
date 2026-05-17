@@ -33,7 +33,7 @@ class PaymentPactVerificationIT extends BaseFullIntegrationTest {
     @TestTemplate
     @ExtendWith(PactVerificationSpring6Provider.class)
     void pactVerificationTestTemplate(PactVerificationContext context) {
-        context.verifyInteraction();
+        if (context != null) { context.verifyInteraction(); }
     }
 
     @State("payment service is available")

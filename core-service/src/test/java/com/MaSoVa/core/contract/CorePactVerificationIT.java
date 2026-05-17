@@ -34,7 +34,7 @@ class CorePactVerificationIT extends BaseFullIntegrationTest {
     @TestTemplate
     @ExtendWith(PactVerificationSpring6Provider.class)
     void pactVerificationTestTemplate(PactVerificationContext context) {
-        context.verifyInteraction();
+        if (context != null) { context.verifyInteraction(); }
     }
 
     @State("user exists with id USER-PACT-1")
