@@ -151,7 +151,68 @@ jobs:
           path: frontend/pacts/
 
   # ============================================================
-  # Job 3: Detect breaking API changes vs main
+  # Job 3: Backend Pact provider verification
+  # ============================================================
+  backend-pact-verification:
+    name: Backend Pact Provider Verification
+    runs-on: ubuntu-latest
+    needs: pact-consumer-tests
+    services:
+      mongodb:
+        image: mongo:7
+        ports: ["27017:27017"]
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+      rabbitmq:
+        image: rabbitmq:3.12-alpine
+        ports: ["5672:5672"]
+        env:
+          RABBITMQ_DEFAULT_USER: masova
+          RABBITMQ_DEFAULT_PASS: masova_secret
+      postgres:
+        image: postgres:16-alpine
+        ports: ["5432:5432"]
+        env:
+          POSTGRES_USER: masova
+          POSTGRES_PASSWORD: masova_secret
+          POSTGRES_DB: masova_db
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Download Pact contracts from consumer job
+        uses: actions/download-artifact@v4
+        with:
+          name: pact-contracts
+          path: frontend/pacts/
+
+      - name: Copy pact files to backend services
+        run: ./scripts/copy-pacts.sh
+
+      - name: Run Pact provider verification (all services)
+        run: |
+          mvn verify \
+            -pl shared-models,shared-security,core-service,commerce-service,logistics-service,payment-service \
+            -am \
+            -Dtest=NONE \
+            -Dit.test="*PactVerificationIT" \
+            --no-transfer-progress
+        env:
+          JWT_SECRET: ci-test-secret-key-at-least-64-chars-long-for-hs512-algorithm-security
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/masova_db
+          SPRING_DATASOURCE_USERNAME: masova
+          SPRING_DATASOURCE_PASSWORD: masova_secret
+          RABBITMQ_USERNAME: masova
+          RABBITMQ_PASSWORD: masova_secret
+
+  # ============================================================
+  # Job 4: Detect breaking API changes vs main
   # ============================================================
   api-breaking-change-detection:
     name: Detect Breaking API Changes
