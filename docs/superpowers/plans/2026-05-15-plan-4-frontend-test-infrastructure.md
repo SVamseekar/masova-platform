@@ -77,9 +77,31 @@ These routes are in the handler files but the backend never serves them. Simply 
 - `StripeWebhookController` / `WebhookController` → `/api/payments/webhook/...` — backend-only webhooks
 - `SystemInfoController`, `TestDataController` — dev-only, not frontend-facing
 
-### Additional slice corrections found in full service audit:
-- **`aggregatorApi.ts`** — calls `PUT /api/aggregators/connections` but `AggregatorController` only has `GET /connections`. The PUT/upsert endpoint doesn't exist — remove `upsertConnection` mutation.
-- **`reviewApi.ts`** — `baseUrl = API_CONFIG.REVIEW_SERVICE_URL` (= gateway root). All URLs like `/reviews/...` missing `/api/` prefix. Also has stale sub-paths: `/reviews/order/:id`, `/reviews/customer/:id`, `/reviews/driver/:id`, `/reviews/item/:id`, `/reviews/staff/:id/rating`, `/reviews/stats/driver/:id`, `/reviews/stats/item/:id` — `ReviewController` uses query params on `GET /api/reviews`.
+### Additional slice corrections — full audit of ALL 20 API slices:
+
+**`aggregatorApi.ts`** — calls `PUT /api/aggregators/connections` but `AggregatorController` only has `GET /connections`. Remove `upsertConnection` mutation.
+
+**`reviewApi.ts`** — `baseUrl = API_CONFIG.REVIEW_SERVICE_URL` (= gateway root). All URLs like `/reviews/...` missing `/api/` prefix. Stale sub-paths: use query params on `GET /api/reviews`.
+
+**`customerApi.ts`** — `baseUrl = ${CUSTOMER_SERVICE_URL}/customers` (= `gateway/customers`). URLs like `''` (create), `/${id}`, `/user/${userId}` resolve to `gateway/customers/` — missing `/api/`. Fix to `API_CONFIG.BASE_URL` + `/api/customers/...`. Also `/user/:userId` doesn't exist — use `?userId=` query param.
+
+**`deliveryApi.ts`** — `baseUrl = API_CONFIG.BASE_URL` (correct). But paths: `/delivery/auto-dispatch` → `/api/delivery/dispatch`; `/delivery/route-optimize` → `/api/delivery/route`; `/delivery/location-update` → `/api/delivery/location`; `/delivery/eta/:id` → remove (doesn't exist); `/delivery/metrics/today` → remove; `/delivery/zone/list` → `/api/delivery/zones` (plural); `/delivery/zone/check`, `/zone/fee`, `/zone/validate` → remove.
+
+**`fiscalApi.ts`** — calls `/fiscal/summary` and `/fiscal/failures`. **No FiscalController exists in any backend service.** These endpoints are dead. Remove both mutations or mark as TODO.
+
+**`kioskApi.ts`** — `baseUrl = baseQueryWithAuth` (gateway root). Paths `/users/kiosk/create` → `/api/users/kiosk` (POST); `/users/kiosk/list` → `/api/users/kiosk` (GET); `/users/kiosk/:id/regenerate-tokens` → `/api/users/kiosk/:id/regenerate`; `/users/kiosk/:id/deactivate` → `/api/users/kiosk/:id/deactivate` ✅.
+
+**`menuApi.ts`** — `baseUrl = baseQueryWithAuth` (gateway root). All paths missing `/api/` prefix. Also `/menu/public`, `/menu/items/:id/availability`, `/menu/items/:id/availability/:status` → don't exist in `MenuController`. Fix to `/api/menu` with query params.
+
+**`notificationApi.ts`** — `baseUrl = baseQueryWithAuth`. Mixed: `/notifications/send` missing `/api/`; other paths already have `/api/notifications/...` correct. Fix `/notifications/send` → `/api/notifications`. `/campaigns` path → `/api/campaigns`.
+
+**`paymentApi.ts`** — `baseUrl = ${PAYMENT_SERVICE_URL}/payments` (= `gateway/payments`). URLs `/initiate`, `/cash`, `/verify` etc. resolve to `gateway/payments/initiate` — missing `/api/`. Fix to `API_CONFIG.BASE_URL` + use `/api/payments/...` paths.
+
+**`storeApi.ts`** — `baseUrl = USER_SERVICE_URL` (gateway root). All paths missing `/api/`. `StoreController` (verified) has: `GET /api/stores` (query: `?code=&region=&near=lat,lng&radius=`), `GET /api/stores/{id}`, `POST /api/stores`, `PATCH /api/stores/{id}`. No `/stores/public`, `/stores/code/:code`, `/stores/region/:id` sub-paths — all use query params. Fix: add `/api/` prefix, remove stale sub-path queries.
+
+**`userApi.ts`** — `baseUrl = USER_SERVICE_URL` (gateway root). `/users/profile` → **no profile endpoint exists**; `/users/change-password` → `/api/auth/change-password` (AuthController); `/users/${userId}` → `/api/users/${userId}`.
+
+**`agentApi.ts`** — `baseUrl = VITE_AGENT_URL` (Python agent at :8000). Paths `/agent/chat`, `/health`, `/agents/*/trigger` — correct for the Python service. **No changes needed.**
 
 ### Other corrections:
 4. **`inventoryApi.ts`** — `baseUrl = ${API_CONFIG.API_GATEWAY_URL}/inventory`. Fix: change to `API_CONFIG.BASE_URL` and prefix URLs with `/api/inventory`, `/api/suppliers`, `/api/purchase-orders`.
@@ -106,8 +128,18 @@ These routes are in the handler files but the backend never serves them. Simply 
 | `frontend/src/test/mocks/handlers/sessionHandlers.ts` | Rewrite: only 9 real endpoints exist; remove 5 stale routes |
 | `frontend/src/test/mocks/handlers/analyticsHandlers.ts` | Collapse 9 stale sub-path handlers into 4 real query-param handlers |
 | `frontend/src/store/api/analyticsApi.ts` | Fix `baseUrl` (has `/analytics` appended); collapse all endpoints into `GET /api/analytics?type=`, `GET /api/bi?type=`, `GET /api/bi/reports?type=`, `POST /api/analytics/cache/clear` |
-| `frontend/src/store/api/reviewApi.ts` | Add `/api/` prefix; remove stale sub-path mutations (`flag`, `status`, `staff/:id`, `stats/driver`, `stats/item`) — use query params or `PATCH /{id}` |
-| `frontend/src/store/api/aggregatorApi.ts` | Remove `upsertConnection` mutation — `PUT /api/aggregators/connections` doesn't exist in `AggregatorController` |
+| `frontend/src/store/api/reviewApi.ts` | Add `/api/` prefix; remove stale sub-path mutations — use query params on `GET /api/reviews` |
+| `frontend/src/store/api/aggregatorApi.ts` | Remove `upsertConnection` — `PUT /api/aggregators/connections` doesn't exist |
+| `frontend/src/store/api/customerApi.ts` | Fix `baseUrl` (`gateway/customers` → `BASE_URL`); add `/api/customers/` prefix; `/user/:userId` → query param |
+| `frontend/src/store/api/deliveryApi.ts` | Rename `auto-dispatch→dispatch`, `route-optimize→route`, `location-update→location`; remove stale paths (`eta`, `metrics/today`, `zone/*`) |
+| `frontend/src/store/api/fiscalApi.ts` | Remove both mutations — no `FiscalController` exists in any backend service |
+| `frontend/src/store/api/kioskApi.ts` | Fix paths: `/users/kiosk/create` → `/api/users/kiosk` (POST); `/users/kiosk/list` → `/api/users/kiosk` (GET); `regenerate-tokens` → `regenerate` |
+| `frontend/src/store/api/menuApi.ts` | Add `/api/` prefix; remove `/menu/public/*` and `/menu/items/:id/availability` (all gone from `MenuController`) |
+| `frontend/src/store/api/notificationApi.ts` | Fix `/notifications/send` → `/api/notifications`; `/campaigns` → `/api/campaigns` |
+| `frontend/src/store/api/paymentApi.ts` | Fix `baseUrl` (`gateway/payments` → `BASE_URL`); add `/api/payments/` prefix to all URLs |
+| `frontend/src/store/api/storeApi.ts` | Add `/api/` prefix; remove `/stores/public`, `/stores/code/:code`, `/stores/region/:id` — use `?code=&region=` query params |
+| `frontend/src/store/api/userApi.ts` | Remove `getProfile`/`updateProfile` (no endpoint); `/users/change-password` → `/api/auth/change-password`; add `/api/` prefix |
+| `frontend/src/store/api/agentApi.ts` | **No changes** — points to Python agent at :8000, paths are correct |
 | `frontend/src/test/mocks/handlers/reviewHandlers.ts` | Fix `/api/reviews/` prefix |
 | `frontend/src/store/api/authApi.ts` | Fix paths: `/api/auth/login` not `/users/login` |
 | `frontend/src/store/api/sessionApi.ts` | Fix to `/api/sessions`; remove 5 methods for non-existent endpoints |
@@ -645,7 +677,8 @@ git commit -m "fix(frontend/test): add /api/ prefix to all MSW handlers to match
 **Context:** Multiple RTK Query slices have URL mismatches — wrong paths, wrong HTTP methods, stale sub-path endpoints that don't exist in the backend. Each slice needs targeted fixes. These fixes correct both the app behaviour and the tests simultaneously since MSW handler fixes align with the same canonical paths.
 
 **Files:**
-- Modify: `authApi.ts`, `sessionApi.ts`, `equipmentApi.ts`, `orderApi.ts`, `shiftApi.ts`, `driverApi.ts`, `inventoryApi.ts`, `analyticsApi.ts`, `reviewApi.ts`, `aggregatorApi.ts`
+- Modify: `authApi.ts`, `sessionApi.ts`, `equipmentApi.ts`, `orderApi.ts`, `shiftApi.ts`, `driverApi.ts`, `inventoryApi.ts`, `analyticsApi.ts`, `reviewApi.ts`, `aggregatorApi.ts`, `customerApi.ts`, `deliveryApi.ts`, `fiscalApi.ts`, `kioskApi.ts`, `menuApi.ts`, `notificationApi.ts`, `paymentApi.ts`, `storeApi.ts`, `userApi.ts`
+- No changes: `agentApi.ts` (Python agent, correct as-is), `baseQueryWithAuth.ts`
 
 - [ ] **Step 1: Fix authApi.ts — change from /users/ to /api/auth/**
 
@@ -969,7 +1002,110 @@ getConnections: query: (storeId) => `/api/aggregators/connections?storeId=${stor
 // upsertConnection: url: `/api/aggregators/connections`, method: 'PUT'  — endpoint doesn't exist
 ```
 
-- [ ] **Step 12: Verify TypeScript compiles with no errors**
+- [ ] **Step 12: Fix customerApi.ts**
+
+`baseUrl = ${CUSTOMER_SERVICE_URL}/customers` → change to `API_CONFIG.BASE_URL`. Add `/api/customers` prefix to all URLs. Remove `/user/:userId`, `/email/:email`, `/phone/:phone` sub-paths — use `?userId=&email=&phone=` query params on `GET /api/customers`.
+
+- [ ] **Step 13: Fix deliveryApi.ts**
+
+`baseUrl = API_CONFIG.BASE_URL` (correct). Fix paths:
+- `/delivery/auto-dispatch` → `/api/delivery/dispatch`
+- `/delivery/route-optimize` → `/api/delivery/route`
+- `/delivery/location-update` → `/api/delivery/location`
+- `/delivery/track/:id` → `/api/delivery/track/:id`
+- `/delivery/driver/:id/performance` → `/api/delivery/driver/:id/performance` ✅ (add /api/)
+- `/delivery/driver/:id/status` → `/api/delivery/driver/:id/status` ✅ (add /api/)
+- `/delivery/driver/:id/pending` → `/api/delivery/driver/:id/pending` ✅ (add /api/)
+- `/delivery/drivers/available` → `/api/delivery/drivers/available` ✅ (add /api/)
+- Remove: `/delivery/eta/:id`, `/delivery/metrics/today`, `/delivery/driver/:id/performance/today`, `/delivery/zone/check`, `/delivery/zone/fee`, `/delivery/zone/validate`
+- `/delivery/zone/list` → `/api/delivery/zones` (plural, no /zone/list)
+- `/delivery/metrics` → `/api/delivery/metrics` ✅ (add /api/)
+
+- [ ] **Step 14: Fix fiscalApi.ts — remove dead endpoints**
+
+No `FiscalController` exists in any backend service. Remove both `getFiscalSummary` and `getFiscalFailures` mutations entirely. The fiscal signing logic is internal to commerce-service (FlyWay/fiscal module) and not exposed via REST to the frontend.
+
+- [ ] **Step 15: Fix kioskApi.ts**
+
+`baseUrl = baseQueryWithAuth` (gateway root). Fix paths per `UserController` (verified):
+- `/users/kiosk/create` → `/api/users/kiosk` method POST
+- `/users/kiosk/list?storeId=` → `/api/users/kiosk?storeId=` method GET
+- `/users/kiosk/:id/regenerate-tokens` → `/api/users/kiosk/:id/regenerate` (method name changed)
+- `/users/kiosk/:id/deactivate` → `/api/users/kiosk/:id/deactivate` ✅ (add /api/)
+
+- [ ] **Step 16: Fix menuApi.ts**
+
+`baseUrl = baseQueryWithAuth` (gateway root). All paths missing `/api/`. Also `MenuController` replaced `/public/*` with query params and has no `/items/:id/availability` endpoint.
+
+```typescript
+// Fix all to /api/menu prefix:
+'/menu/public'         → '/api/menu'                    // GET with ?public=true if needed
+'/menu/public/:id'     → '/api/menu/:id'
+'/menu/public/cuisine' → '/api/menu?cuisine=...'        // query param
+'/menu/public/category'→ '/api/menu?category=...'
+'/menu/items'          → '/api/menu'                    // GET with ?storeId=
+'/menu/items'  POST    → '/api/menu'
+'/menu/items/bulk'     → '/api/menu/bulk'
+'/menu/items/:id'      → '/api/menu/:id'
+'/menu/stats'          → '/api/menu/stats'
+'/menu/copy-menu'      → '/api/menu/copy'
+
+// REMOVE — no availability endpoint in MenuController:
+// '/menu/items/:id/availability'
+// '/menu/items/:id/availability/:status'
+```
+
+- [ ] **Step 17: Fix notificationApi.ts**
+
+`baseUrl = baseQueryWithAuth` (gateway root). Most paths already have `/api/` prefix. Fix inconsistency:
+- `/notifications/send` → `/api/notifications` (POST) — missing `/api/`
+- `/campaigns` → `/api/campaigns` — missing `/api/`
+All other notification/preference paths already correct.
+
+- [ ] **Step 18: Fix paymentApi.ts**
+
+`baseUrl = ${PAYMENT_SERVICE_URL}/payments` (= `gateway/payments`). Change to `API_CONFIG.BASE_URL`. Add `/api/payments/` prefix to all URLs:
+- `/initiate` → `/api/payments/initiate`
+- `/cash` → `/api/payments/cash`
+- `/verify` → `/api/payments/verify`
+- `/:transactionId` → `/api/payments/:transactionId`
+- `/refund` → `/api/payments/refund` (POST)
+- `/refund/:id` → `/api/payments/refund/:id`
+- etc.
+
+- [ ] **Step 19: Fix storeApi.ts**
+
+`baseUrl = USER_SERVICE_URL` (gateway root). `StoreController` (verified): `GET /api/stores` (query: `?code=&region=&near=&radius=`), `GET /api/stores/{id}`, `POST /api/stores`, `PATCH /api/stores/{id}`.
+
+```typescript
+// Fix + simplify:
+'/stores'              → '/api/stores'          GET list (query params)
+'/stores/:storeId'     → '/api/stores/:storeId' GET by id or code
+'/stores'              → '/api/stores'          POST create
+'/stores/:storeId'     → '/api/stores/:storeId' PATCH update
+
+// REMOVE — use query params on GET /api/stores instead:
+// '/stores/code/:code'     → use /api/stores?code=
+// '/stores/public'         → use /api/stores (all are public)
+// '/stores/region/:region' → use /api/stores?region=
+// '/stores/nearby'         → use /api/stores?near=lat,lng&radius=
+```
+
+- [ ] **Step 20: Fix userApi.ts**
+
+`baseUrl = USER_SERVICE_URL` (gateway root). `/users/profile` does not exist anywhere — remove `getProfile` and `updateProfile`. `/users/change-password` → `/api/auth/change-password` (AuthController). All other paths: add `/api/` prefix.
+
+```typescript
+// Fix:
+'/users/change-password' → '/api/auth/change-password'
+'/users/:userId'         → '/api/users/:userId'
+
+// REMOVE — no profile endpoint:
+// '/users/profile'  GET
+// '/users/profile'  PUT
+```
+
+- [ ] **Step 21: Verify TypeScript compiles with no errors**
 
 ```bash
 cd frontend && npx tsc --noEmit 2>&1 | head -20
@@ -977,7 +1113,7 @@ cd frontend && npx tsc --noEmit 2>&1 | head -20
 
 Expected: no errors.
 
-- [ ] **Step 13: Run unit tests for affected API slices**
+- [ ] **Step 22: Run unit tests for affected API slices**
 
 ```bash
 cd frontend && npm run test:run -- src/store/api/ --reporter=verbose 2>&1 | tail -20
@@ -985,11 +1121,11 @@ cd frontend && npm run test:run -- src/store/api/ --reporter=verbose 2>&1 | tail
 
 Expected: all existing API slice tests pass.
 
-- [ ] **Step 14: Commit**
+- [ ] **Step 23: Commit**
 
 ```bash
 git add frontend/src/store/api/
-git commit -m "fix(frontend): correct RTK Query slice URLs to match canonical backend paths — authApi, sessionApi, equipmentApi, orderApi, shiftApi, driverApi, inventoryApi, analyticsApi, reviewApi, aggregatorApi"
+git commit -m "fix(frontend): correct RTK Query slice URLs to match canonical backend paths — all 19 API slices audited against backend controllers"
 ```
 
 ---
@@ -1643,3 +1779,8 @@ git commit -m "fix(frontend/test): ensure fresh Redux store per test to prevent 
 - [ ] `grep -r "location-update\|auto-dispatch\|route-optimize" frontend/src/store/api/\|frontend/src/test/` — returns nothing
 - [ ] `grep -r "/responses/review\|/responses/templates" frontend/src/test/` — returns nothing (moved to `/api/reviews/{id}/response` and `/api/reviews/response-templates`)
 - [ ] `grep -r "users/profile\|users/type/\|users/store\|users/managers\|users/stats" frontend/src/test/` — returns nothing
+- [ ] `grep -r "fiscal/summary\|fiscal/failures" frontend/src/store/api/` — returns nothing (dead endpoints removed)
+- [ ] `grep -r "menu/public\|items/availability\|menu/items" frontend/src/store/api/menuApi.ts` — returns nothing (all collapsed to /api/menu)
+- [ ] `grep -r "delivery/auto-dispatch\|delivery/route-optimize\|delivery/eta\|delivery/zone" frontend/src/store/api/` — returns nothing
+- [ ] `grep -r "/payments/\|/customers/\|/stores/\|/notifications/\|/reviews/" frontend/src/store/api/ | grep -v "/api/"` — returns nothing (all have /api/ prefix)
+- [ ] `grep -r "kiosk/create\|kiosk/list\|regenerate-tokens" frontend/src/store/api/` — returns nothing
