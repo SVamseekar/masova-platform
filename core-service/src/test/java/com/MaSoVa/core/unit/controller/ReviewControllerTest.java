@@ -257,4 +257,93 @@ class ReviewControllerTest extends BaseServiceTest {
                 .content("{\"responseText\":\"Thank you for your feedback!\"}"))
             .andExpect(status().isCreated());
     }
+
+    @Test
+    @DisplayName("GET /api/reviews with flagged=true returns flagged reviews")
+    void getReviews_flagged_returns200() throws Exception {
+        when(moderationService.getFlaggedReviews(any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/reviews").param("flagged", "true"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/reviews with status=PENDING returns pending reviews")
+    void getReviews_pendingStatus_returns200() throws Exception {
+        when(moderationService.getPendingReviews(any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/reviews").param("status", "PENDING"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/reviews with status=APPROVED returns reviews by status")
+    void getReviews_approvedStatus_returns200() throws Exception {
+        when(reviewService.getReviewsByStatus(any(), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/reviews").param("status", "APPROVED"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/reviews with DRIVER entityType returns driver reviews")
+    void getReviews_driverFilter_returns200() throws Exception {
+        when(reviewService.getReviewsByDriverId(anyString(), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/reviews")
+                .param("entityType", "DRIVER")
+                .param("entityId", "drv-1"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/reviews with STAFF entityType returns staff reviews")
+    void getReviews_staffFilter_returns200() throws Exception {
+        when(reviewService.getReviewsByStaffId(anyString(), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/reviews")
+                .param("entityType", "STAFF")
+                .param("entityId", "staff-1"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/reviews with MENU_ITEM entityType returns menu item reviews")
+    void getReviews_menuItemFilter_returns200() throws Exception {
+        when(reviewService.getReviewsByMenuItemId(anyString(), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/reviews")
+                .param("entityType", "MENU_ITEM")
+                .param("entityId", "item-1"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("PATCH /api/reviews/{reviewId} returns 400 when no action specified")
+    void updateReview_noAction_returns400() throws Exception {
+        mockMvc.perform(patch("/api/reviews/rev-1")
+                .header("X-User-ID", "mgr-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /api/reviews/public/submit with IllegalState returns 400")
+    void submitPublicRating_illegalState_returns400() throws Exception {
+        when(reviewService.createPublicReview(any(), anyString()))
+                .thenThrow(new IllegalStateException("Already submitted"));
+
+        mockMvc.perform(post("/api/reviews/public/submit")
+                .param("token", "valid-token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"orderId\":\"ord-1\",\"overallRating\":5,\"comment\":\"Good!\"}"))
+            .andExpect(status().isBadRequest());
+    }
 }

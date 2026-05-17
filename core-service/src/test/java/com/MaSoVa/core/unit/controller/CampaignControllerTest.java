@@ -106,4 +106,35 @@ class CampaignControllerTest extends BaseServiceTest {
         mockMvc.perform(delete("/api/campaigns/camp-1"))
             .andExpect(status().isOk());
     }
+
+    @Test
+    @DisplayName("PATCH /api/campaigns/{id} returns 200 with updated campaign")
+    void updateCampaign_returns200() throws Exception {
+        when(campaignService.updateCampaign(anyString(), any())).thenReturn(buildCampaign("camp-1"));
+
+        mockMvc.perform(patch("/api/campaigns/camp-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Updated Campaign\"}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("POST /api/campaigns/{id}/schedule returns 200")
+    void scheduleCampaign_returns200() throws Exception {
+        doNothing().when(campaignService).scheduleCampaign(anyString(), any());
+
+        mockMvc.perform(post("/api/campaigns/camp-1/schedule")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"scheduledFor\":\"2026-06-01T10:00:00\"}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/campaigns/{id} returns 404 when not found")
+    void getCampaign_returns404WhenNotFound() throws Exception {
+        when(campaignService.getCampaignById("bad-id")).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/api/campaigns/bad-id"))
+            .andExpect(status().isNotFound());
+    }
 }
