@@ -218,6 +218,7 @@ class WorkingSessionServiceTest {
             when(sessionRepository.findActiveSessionByEmployeeId("emp-1")).thenReturn(Optional.empty());
             when(shiftValidationService.validateSessionStart(anyString(), anyString(), any()))
                     .thenReturn(ShiftValidationResult.success(null));
+            when(storeService.validateStoreOperational("store-1")).thenReturn(true);
             when(sessionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
             WorkingSession result = workingSessionService.clockInWithPin("emp-1", "12345", "store-1", "mgr-1");
