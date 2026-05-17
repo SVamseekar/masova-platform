@@ -711,6 +711,7 @@ class AnalyticsServiceTest {
         @Test
         @DisplayName("sorts by REVENUE when sortBy=REVENUE")
         void sortsByRevenue() {
+            // Biryani: 1 × 300 = 300 revenue; Curry: 10 × 50 = 500 revenue → Curry wins by revenue
             List<Map<String, Object>> orders = List.of(
                 orderWithItems(List.of(
                     item("P1", "Biryani", 1, 300.0),
@@ -721,7 +722,7 @@ class AnalyticsServiceTest {
 
             TopProductsResponse result = analyticsService.getTopProducts("store-1", "TODAY", "REVENUE");
 
-            assertThat(result.getTopProducts().get(0).getItemName()).isEqualTo("Biryani");
+            assertThat(result.getTopProducts().get(0).getItemName()).isEqualTo("Curry");
             assertThat(result.getSortBy()).isEqualTo("REVENUE");
         }
 
