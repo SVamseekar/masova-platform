@@ -206,6 +206,25 @@ class WorkingSessionServiceTest {
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("already has an active session");
         }
+
+        @Test
+        @DisplayName("successfully clocks in with valid PIN and no existing session")
+        void successfulClockIn() {
+            User emp = buildEmployee("emp-1", UserType.STAFF);
+            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+            emp.getEmployeeDetails().setEmployeePINHash(encoder.encode("12345"));
+            when(userRepository.findById("emp-1")).thenReturn(Optional.of(emp));
+            when(sessionRepository.findAllActiveSessionsByEmployeeIdSorted("emp-1")).thenReturn(List.of());
+            when(sessionRepository.findActiveSessionByEmployeeId("emp-1")).thenReturn(Optional.empty());
+            when(shiftValidationService.validateSessionStart(anyString(), anyString(), any()))
+                    .thenReturn(ShiftValidationResult.success("OK"));
+            when(sessionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            WorkingSession result = workingSessionService.clockInWithPin("emp-1", "12345", "store-1", "mgr-1");
+
+            assertThat(result).isNotNull();
+            assertThat(result.getNotes()).contains("mgr-1");
+        }
     }
 
     // ===========================
@@ -618,99 +637,6 @@ class WorkingSessionServiceTest {
 
             assertThat(workingSessionService.getCurrentWorkingDuration("emp-1"))
                     .isEqualTo(java.time.Duration.ZERO);
-        }
-    }
-
-    // ===========================
-    // clockInWithPin
-    // ===========================
-
-    @Nested
-    @DisplayName("clockInWithPin")
-    class ClockInWithPin {
-
-        @Test
-        @DisplayName("throws when employee not found")
-        void throwsWhenEmployeeNotFound() {
-            when(userRepository.findById("missing")).thenReturn(Optional.empty());
-
-            assertThatThrownBy(() -> workingSessionService.clockInWithPin("missing", "12345", "store-1", "mgr-1"))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("not found");
-        }
-
-        @Test
-        @DisplayName("throws when user is not an employee")
-        void throwsWhenNotEmployee() {
-            User customer = new User();
-            customer.setId("cust-1");
-            customer.setType(UserType.CUSTOMER);
-            when(userRepository.findById("cust-1")).thenReturn(Optional.of(customer));
-
-            assertThatThrownBy(() -> workingSessionService.clockInWithPin("cust-1", "12345", "store-1", "mgr-1"))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("not an employee");
-        }
-
-        @Test
-        @DisplayName("throws when employee has no PIN set")
-        void throwsWhenNoPinSet() {
-            User emp = buildEmployee("emp-1", UserType.STAFF);
-            emp.getEmployeeDetails().setEmployeePINHash(null);
-            when(userRepository.findById("emp-1")).thenReturn(Optional.of(emp));
-
-            assertThatThrownBy(() -> workingSessionService.clockInWithPin("emp-1", "12345", "store-1", "mgr-1"))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("PIN not set");
-        }
-
-        @Test
-        @DisplayName("throws when PIN is invalid")
-        void throwsWhenInvalidPin() {
-            User emp = buildEmployee("emp-1", UserType.STAFF);
-            // Set a real BCrypt hash for "99999" — wrong PIN will be "12345"
-            String hash = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode("99999");
-            emp.getEmployeeDetails().setEmployeePINHash(hash);
-            when(userRepository.findById("emp-1")).thenReturn(Optional.of(emp));
-
-            assertThatThrownBy(() -> workingSessionService.clockInWithPin("emp-1", "12345", "store-1", "mgr-1"))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Invalid PIN");
-        }
-
-        @Test
-        @DisplayName("throws when employee already has active session")
-        void throwsWhenAlreadyActive() {
-            User emp = buildEmployee("emp-1", UserType.STAFF);
-            String hash = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode("12345");
-            emp.getEmployeeDetails().setEmployeePINHash(hash);
-            when(userRepository.findById("emp-1")).thenReturn(Optional.of(emp));
-
-            WorkingSession active = buildSession("s1", "emp-1", true);
-            when(sessionRepository.findAllActiveSessionsByEmployeeIdSorted("emp-1")).thenReturn(List.of(active));
-
-            assertThatThrownBy(() -> workingSessionService.clockInWithPin("emp-1", "12345", "store-1", "mgr-1"))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("already has an active session");
-        }
-
-        @Test
-        @DisplayName("successfully clocks in with valid PIN and no existing session")
-        void successfulClockIn() {
-            User emp = buildEmployee("emp-1", UserType.STAFF);
-            String hash = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode("12345");
-            emp.getEmployeeDetails().setEmployeePINHash(hash);
-            when(userRepository.findById("emp-1")).thenReturn(Optional.of(emp));
-            when(sessionRepository.findAllActiveSessionsByEmployeeIdSorted("emp-1")).thenReturn(List.of());
-            when(sessionRepository.findActiveSessionByEmployeeId("emp-1")).thenReturn(Optional.empty());
-            when(shiftValidationService.validateSessionStart(anyString(), anyString(), any()))
-                    .thenReturn(ShiftValidationResult.success("OK"));
-            when(sessionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
-            WorkingSession result = workingSessionService.clockInWithPin("emp-1", "12345", "store-1", "mgr-1");
-
-            assertThat(result).isNotNull();
-            assertThat(result.getNotes()).contains("mgr-1");
         }
     }
 
