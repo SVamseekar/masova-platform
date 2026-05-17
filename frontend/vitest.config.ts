@@ -18,6 +18,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
+      include: ['src/**/*.{ts,tsx}'],
       exclude: [
         'node_modules/',
         'src/test/',
@@ -27,13 +28,13 @@ export default defineConfig({
         '**/vite-env.d.ts',
         '**/*.config.{ts,js}',
         '**/dist/',
+        'src/pact/**',
       ],
-      // Coverage thresholds (will gradually increase these)
       thresholds: {
-        lines: 30,
-        branches: 25,
-        functions: 30,
-        statements: 30,
+        lines: 80,
+        branches: 75,
+        functions: 80,
+        statements: 80,
       },
     },
 
@@ -49,16 +50,25 @@ export default defineConfig({
       '.cache',
     ],
 
-    // Test timeout (10 seconds)
-    testTimeout: 10000,
+    // Test timeout
+    testTimeout: 15000,
 
     // Hooks timeout
-    hookTimeout: 10000,
+    hookTimeout: 15000,
 
     // Mock reset between tests
     clearMocks: true,
     restoreMocks: true,
     mockReset: true,
+
+    // Pool config: forks prevents OOM by isolating each worker in its own process
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        maxForks: 2,
+        minForks: 1,
+      },
+    },
   },
 
   resolve: {
