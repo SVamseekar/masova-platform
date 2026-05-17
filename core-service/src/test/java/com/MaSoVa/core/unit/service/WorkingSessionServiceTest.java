@@ -217,7 +217,7 @@ class WorkingSessionServiceTest {
             when(sessionRepository.findAllActiveSessionsByEmployeeIdSorted("emp-1")).thenReturn(List.of());
             when(sessionRepository.findActiveSessionByEmployeeId("emp-1")).thenReturn(Optional.empty());
             when(shiftValidationService.validateSessionStart(anyString(), anyString(), any()))
-                    .thenReturn(ShiftValidationResult.success("OK"));
+                    .thenReturn(ShiftValidationResult.success(null));
             when(sessionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
             WorkingSession result = workingSessionService.clockInWithPin("emp-1", "12345", "store-1", "mgr-1");
