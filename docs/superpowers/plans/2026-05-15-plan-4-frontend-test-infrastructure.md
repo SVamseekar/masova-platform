@@ -16,10 +16,10 @@
 
 The following issues were found by auditing the actual codebase AND reading every backend `@RequestMapping`/`@GetMapping`/`@PostMapping` annotation directly from the Java controllers:
 
-### Handler files — three already correct, do NOT touch:
+### Handler files — two already correct (prefix only), do NOT touch prefix but verify content:
 1. **`analyticsHandlers.ts` already correct** — already uses `${API}/api/analytics/...`. Verify only.
-2. **`customerHandlers.ts` already correct** — already uses `${API}/api/customers/...`. Verify only.
-3. **`notificationHandlers.ts` already correct** — already uses `${API}/api/notifications/...`. Verify only.
+2. **`notificationHandlers.ts` already correct** — already uses `${API}/api/notifications/...`, `/api/preferences/...`, `/api/campaigns/...`. All confirmed against `NotificationController`, `UserPreferencesController`, `CampaignController`. Verify only.
+3. **`customerHandlers.ts` has correct prefix BUT has stale sub-paths** — prefix `/api/customers/` is correct but routes like `/user/:userId`, `/email/:email`, `/phone/:phone`, `/high-value`, `/top-spenders`, `/recently-active`, `/inactive`, `/birthdays/today`, `/marketing-opt-in`, `/sms-opt-in`, `/loyalty/max-redeemable`, `/order-stats`, `/preferences`, `/loyalty/tier/:tier` don't exist. `CustomerController` uses query params: `?userId=&email=&phone=&tier=&tag=&search=` on `GET /api/customers`. **Must clean up stale routes.**
 
 ### Handler files — stale routes that don't exist in any backend controller:
 These routes are in the handler files but the backend never serves them. Simply adding `/api/` prefix will NOT fix them — the endpoint doesn't exist. They must be **removed** from handlers (and their RTK Query counterparts noted for follow-up):
@@ -36,6 +36,11 @@ These routes are in the handler files but the backend never serves them. Simply 
 - `${API}/menu/public`, `/menu/public/:id`, `/menu/public/cuisine/:cuisine`, etc. — `MenuController` collapsed all public routes into `GET /api/menu` with query params; comment says "Replaces /public/*"
 - `${API}/equipment/store/status/:status`, `/equipment/store/maintenance-needed`, `/equipment/store/reset-usage` — `KitchenEquipmentController` has no store-scoped sub-paths
 - `${API}/shifts/employee/:id/current`, `/shifts/store/:id/week` — `ShiftController` has no such paths
+- `${API}/users/profile`, `/users/change-password`, `/users/type/:type`, `/users/store`, `/users/managers`, `/users/create`, `/users/search`, `/users/stats` — `UserController` has NO `/profile` endpoint anywhere, `change-password` is on `AuthController` at `/api/auth/change-password`, all filters use query params on `GET /api/users`
+- `${API}/customers/user/:userId`, `/customers/email/:email`, `/customers/phone/:phone`, `/customers/high-value`, `/customers/top-spenders`, etc. — `CustomerController` uses query params on `GET /api/customers`; sub-path routes like `/loyalty/max-redeemable`, `/order-stats`, `/preferences`, `/loyalty/tier/:tier` don't exist as separate endpoints
+- `${API}/reviews/order/:orderId`, `/reviews/customer/:customerId`, `/reviews/driver/:driverId`, `/reviews/item/:menuItemId`, `/reviews/recent`, `/reviews/needs-response`, `/reviews/stats/overall`, `/reviews/pending`, `/reviews/flagged`, `/reviews/staff/:id` — `ReviewController` uses query params on `GET /api/reviews`; consolidated
+- `${API}/responses/review/:reviewId` (POST/GET) → real path is `POST /api/reviews/{id}/response` and `GET /api/reviews/{id}/response` — on `ReviewController`
+- `${API}/responses/templates` → real path is `GET /api/reviews/response-templates`
 
 ### Backend-verified canonical endpoints (source of truth from controllers):
 - **`AuthController`** → `/api/auth`: login, register, logout, refresh, google, change-password, validate-pin
@@ -51,6 +56,13 @@ These routes are in the handler files but the backend never serves them. Simply 
 - **`PurchaseOrderController`** → `/api/purchase-orders`: GET, POST, GET `/{id}`, PATCH `/{id}`, DELETE `/{id}`, POST `/auto-generate`
 - **`PaymentController`** → `/api/payments`: POST `/initiate`, POST `/verify`, POST `/cash`, GET `/{id}`, GET(list), POST `/{id}/reconcile`
 - **`RefundController`** → `/api/payments/refund`: POST, GET `/{id}`, GET(list)
+- **`ReviewController`** → `/api/reviews`: GET(list with query params), POST, GET `/stats`, GET `/public/token/{token}`, POST `/public/submit`, GET `/{id}`, PATCH `/{id}`, DELETE `/{id}`, POST `/{id}/response`, GET `/response-templates`
+- **`WasteController`** → `/api/waste`: GET(list), POST, GET `/{id}`, PATCH `/{id}`, DELETE `/{id}`, GET `/analytics`
+- **`CustomerController`** → `/api/customers`: GET(list with query params), POST, GET `/stats`, GET `/{id}`, PATCH `/{id}`, POST `/{id}/activate`, POST `/{id}/deactivate`, POST `/{id}/loyalty`, POST `/{id}/addresses`, PATCH `/{id}/addresses/{addressId}`, DELETE `/{id}/addresses/{addressId}`, POST `/{id}/tags`, DELETE `/{id}`, POST `/get-or-create`
+- **`NotificationController`** → `/api/notifications`: GET, POST, PATCH `/{id}/read`, PATCH `/read-all`, DELETE `/{id}`
+- **`UserPreferencesController`** → `/api/preferences`: (verify endpoints)
+- **`CampaignController`** → `/api/campaigns`: (verify endpoints)
+- **`AnalyticsController`** → `GET /api/analytics`, `POST /api/analytics/cache/clear`, `GET /api/bi`, `GET /api/bi/reports`
 
 ### Other corrections:
 4. **`inventoryApi.ts`** — `baseUrl = ${API_CONFIG.API_GATEWAY_URL}/inventory`. Fix: change to `API_CONFIG.BASE_URL` and prefix URLs with `/api/inventory`, `/api/suppliers`, `/api/purchase-orders`.
@@ -71,7 +83,7 @@ These routes are in the handler files but the backend never serves them. Simply 
 | `frontend/src/test/mocks/handlers/menuHandlers.ts` | Fix: collapse `/menu/public/*` into `GET /api/menu` with query params; fix item paths |
 | `frontend/src/test/mocks/handlers/userHandlers.ts` | Fix `/api/users/` prefix; `/api/auth/validate-pin` for pin validation |
 | `frontend/src/test/mocks/handlers/deliveryHandlers.ts` | Fix prefix + rename `auto-dispatch→dispatch`, `route-optimize→route`; remove non-existent sub-paths |
-| `frontend/src/test/mocks/handlers/customerHandlers.ts` | **Already correct** — verify only, no changes needed |
+| `frontend/src/test/mocks/handlers/customerHandlers.ts` | Has correct prefix but stale sub-paths — remove non-existent routes |
 | `frontend/src/test/mocks/handlers/inventoryHandlers.ts` | Fix to `/api/inventory`, `/api/suppliers`, `/api/purchase-orders`; remove stale sub-paths |
 | `frontend/src/test/mocks/handlers/notificationHandlers.ts` | **Already correct** — verify only, no changes needed |
 | `frontend/src/test/mocks/handlers/sessionHandlers.ts` | Rewrite: only 9 real endpoints exist; remove 5 stale routes |
@@ -379,10 +391,17 @@ http.post(`${API}/api/purchase-orders/auto-generate`, ...)
 // http.get(`${API}/inventory/suppliers/preferred`, ...)
 // http.get(`${API}/inventory/suppliers/reliable`, ...)
 // http.get(`${API}/inventory/suppliers/search`, ...)
-// All waste handlers — no WasteController found in backend
-```
+// KEEP — real Waste endpoints (WasteController verified at /api/waste):
+http.get(`${API}/api/waste`, ...)
+http.post(`${API}/api/waste`, ...)
+http.get(`${API}/api/waste/:id`, ...)
+http.patch(`${API}/api/waste/:id`, ...)
+http.delete(`${API}/api/waste/:id`, ...)
+http.get(`${API}/api/waste/analytics`, ...)
 
-Note: The handler file currently has a `waste` section. Search for `WasteController.java` in the codebase — if no waste controller exists, remove all waste handlers.
+// REMOVE — stale waste sub-paths not in WasteController:
+// http.get(`${API}/inventory/waste/trend`, ...)   ← use /api/waste/analytics instead
+```
 
 - [ ] **Step 7: Fix paymentHandlers.ts — add /api/ prefix**
 
@@ -433,46 +452,132 @@ http.get(`${API}/api/menu/stats`, ...)
 // http.patch(`${API}/menu/items/:id/availability/:status`, ...)
 ```
 
-- [ ] **Step 9: Fix userHandlers.ts — add /api/ prefix**
+- [ ] **Step 9: Fix userHandlers.ts — add /api/ prefix AND remove stale routes**
+
+`UserController` (verified) uses query params for type/search/store/availability — NOT sub-paths. There is no `/profile` endpoint anywhere. `change-password` is on `AuthController`.
 
 ```typescript
-// BEFORE → AFTER
-`${API}/users/profile`                    → `${API}/api/users/profile`
-`${API}/users/change-password`            → `${API}/api/users/change-password`
-`${API}/users/:userId`                    → `${API}/api/users/:userId`
-`${API}/users/type/:type`                 → `${API}/api/users/type/:type`
-`${API}/users/store`                      → `${API}/api/users/store`
-`${API}/users/managers`                   → `${API}/api/users/managers`
-`${API}/users`                            → `${API}/api/users`
-`${API}/users/create`                     → `${API}/api/users/create`
-`${API}/users/validate-pin`               → `${API}/api/auth/validate-pin`  // canonical path
-`${API}/users/search`                     → `${API}/api/users/search`
-`${API}/users/stats`                      → `${API}/api/users/stats`
+// KEEP — real endpoints:
+http.get(`${API}/api/users`, ...)            // list (query: ?type=&storeId=&search=&available=)
+http.get(`${API}/api/users/:userId`, ...)
+http.patch(`${API}/api/users/:userId`, ...)
+http.post(`${API}/api/users/:userId/activate`, ...)
+http.post(`${API}/api/users/:userId/deactivate`, ...)
+http.post(`${API}/api/users/:userId/generate-pin`, ...)
+http.get(`${API}/api/users/:userId/status`, ...)
+http.patch(`${API}/api/users/:userId/status`, ...)
+http.get(`${API}/api/users/:userId/can-take-orders`, ...)
+http.post(`${API}/api/auth/validate-pin`, ...)    // moved from users — on AuthController
+
+// REMOVE — these don't exist in UserController:
+// http.get(`${API}/users/profile`, ...)          ← no /profile endpoint anywhere
+// http.put(`${API}/users/profile`, ...)          ← no /profile endpoint anywhere
+// http.post(`${API}/users/change-password`, ...) ← on AuthController at /api/auth/change-password
+// http.get(`${API}/users/type/:type`, ...)       ← use ?type= query param
+// http.get(`${API}/users/store`, ...)            ← use ?storeId= query param
+// http.get(`${API}/users/managers`, ...)         ← use ?type=MANAGER query param
+// http.post(`${API}/users/create`, ...)          ← no POST /users/create; just POST /api/users (or /api/auth/register)
+// http.get(`${API}/users/search`, ...)           ← use ?search= query param
+// http.get(`${API}/users/stats`, ...)            ← no stats endpoint in UserController
 ```
 
-- [ ] **Step 10: Fix reviewHandlers.ts — add /api/ prefix**
+- [ ] **Step 10: Fix reviewHandlers.ts — add /api/ prefix AND fix response/template paths AND remove stale sub-paths**
+
+`ReviewController` (verified) at `/api/reviews`: GET(list), POST, GET `/stats`, GET `/public/token/{token}`, POST `/public/submit`, GET `/{id}`, PATCH `/{id}`, DELETE `/{id}`, POST `/{id}/response`, GET `/response-templates`.
 
 ```typescript
-// BEFORE → AFTER (apply to all routes)
-`${API}/reviews`                          → `${API}/api/reviews`
-`${API}/reviews/:reviewId`                → `${API}/api/reviews/:reviewId`
-`${API}/reviews/order/:orderId`           → `${API}/api/reviews/order/:orderId`
-`${API}/reviews/customer/:customerId`     → `${API}/api/reviews/customer/:customerId`
-// etc.
-`${API}/responses/review/:reviewId`       → `${API}/api/responses/review/:reviewId`
-`${API}/responses/templates`              → `${API}/api/responses/templates`
+// KEEP — real endpoints:
+http.get(`${API}/api/reviews`, ...)                      // list (query params for filter)
+http.post(`${API}/api/reviews`, ...)
+http.get(`${API}/api/reviews/stats`, ...)
+http.get(`${API}/api/reviews/public/token/:token`, ...)
+http.post(`${API}/api/reviews/public/submit`, ...)
+http.get(`${API}/api/reviews/:reviewId`, ...)
+http.patch(`${API}/api/reviews/:reviewId`, ...)
+http.delete(`${API}/api/reviews/:reviewId`, ...)
+http.post(`${API}/api/reviews/:reviewId/response`, ...)   // was /responses/review/:id — wrong base path
+http.get(`${API}/api/reviews/:reviewId/response`, ...)    // was /responses/review/:id
+http.get(`${API}/api/reviews/response-templates`, ...)    // was /responses/templates — wrong base path
+
+// REMOVE — these don't exist in ReviewController:
+// http.get(`${API}/reviews/order/:orderId`, ...)          ← use ?orderId= query param
+// http.get(`${API}/reviews/customer/:customerId`, ...)    ← use ?customerId= query param
+// http.get(`${API}/reviews/driver/:driverId`, ...)        ← use ?driverId= query param
+// http.get(`${API}/reviews/item/:menuItemId`, ...)        ← use ?menuItemId= query param
+// http.get(`${API}/reviews/recent`, ...)                  ← use ?recent=true query param
+// http.get(`${API}/reviews/needs-response`, ...)          ← use ?needsResponse=true
+// http.patch(`${API}/reviews/:reviewId/flag`, ...)        ← use PATCH /:id with body
+// http.patch(`${API}/reviews/:reviewId/status`, ...)      ← use PATCH /:id with body
+// http.get(`${API}/reviews/stats/overall`, ...)           ← just /stats
+// http.get(`${API}/reviews/stats/driver/:id`, ...)        ← use /stats?driverId=
+// http.get(`${API}/reviews/stats/item/:id`, ...)          ← use /stats?menuItemId=
+// http.get(`${API}/reviews/public/item/:id/average`, ...) ← no such endpoint
+// http.get(`${API}/reviews/pending`, ...)                 ← use ?status=PENDING query param
+// http.get(`${API}/reviews/flagged`, ...)                 ← use ?status=FLAGGED query param
+// http.post(`${API}/reviews/:id/approve`, ...)            ← use PATCH /:id with body
+// http.post(`${API}/reviews/:id/reject`, ...)             ← use PATCH /:id with body
+// http.get(`${API}/reviews/staff/:id/rating`, ...)        ← no such endpoint
+// http.get(`${API}/reviews/staff/:id`, ...)               ← no such endpoint
 ```
 
-- [ ] **Step 11: Verify customerHandlers.ts and notificationHandlers.ts are already correct**
+- [ ] **Step 11: Fix customerHandlers.ts — prefix correct but remove stale sub-paths**
+
+`CustomerController` (verified) uses query params: `?email=&phone=&userId=&tier=&tag=&search=&filter=`. Many sub-path routes in the handler are stale.
+
+```typescript
+// KEEP — real endpoints (prefix already correct):
+http.get(`${API}/api/customers`, ...)              // list (query params)
+http.post(`${API}/api/customers`, ...)
+http.post(`${API}/api/customers/get-or-create`, ...)  // internal only — keep for test mocking
+http.get(`${API}/api/customers/stats`, ...)
+http.get(`${API}/api/customers/:id`, ...)
+http.patch(`${API}/api/customers/:id`, ...)
+http.post(`${API}/api/customers/:id/activate`, ...)
+http.post(`${API}/api/customers/:id/deactivate`, ...)
+http.post(`${API}/api/customers/:id/loyalty`, ...)    // unified endpoint: EARNED|REDEEMED in body
+http.post(`${API}/api/customers/:id/addresses`, ...)
+http.patch(`${API}/api/customers/:id/addresses/:addressId`, ...)
+http.delete(`${API}/api/customers/:id/addresses/:addressId`, ...)
+http.post(`${API}/api/customers/:id/tags`, ...)
+http.delete(`${API}/api/customers/:id`, ...)
+
+// REMOVE — these don't exist in CustomerController:
+// http.get(`${API}/api/customers/user/:userId`, ...)
+// http.get(`${API}/api/customers/email/:email`, ...)
+// http.get(`${API}/api/customers/phone/:phone`, ...)
+// http.get(`${API}/api/customers/active`, ...)
+// http.get(`${API}/api/customers/high-value`, ...)
+// http.get(`${API}/api/customers/top-spenders`, ...)
+// http.get(`${API}/api/customers/recently-active`, ...)
+// http.get(`${API}/api/customers/inactive`, ...)
+// http.get(`${API}/api/customers/birthdays/today`, ...)
+// http.get(`${API}/api/customers/marketing-opt-in`, ...)
+// http.get(`${API}/api/customers/sms-opt-in`, ...)
+// http.get(`${API}/api/customers/loyalty/tier/:tier`, ...)
+// http.post(`${API}/api/customers/:id/loyalty/points`, ...)      ← use /loyalty with type=EARNED
+// http.post(`${API}/api/customers/:id/loyalty/redeem`, ...)      ← use /loyalty with type=REDEEMED
+// http.get(`${API}/api/customers/:id/loyalty/max-redeemable`, ...) ← bundled in GET /:id response
+// http.get(`${API}/api/customers/:id/order-stats`, ...)
+// http.get(`${API}/api/customers/:id/preferences`, ...)
+// http.get(`${API}/api/customers/:id/loyalty/points`, ...)
+// http.get(`${API}/api/customers/:id/addresses`, ...)
+// http.patch(`${API}/api/customers/:id/addresses/:id/set-default`, ...)  ← use PATCH /:id/addresses/:id with isDefault: true
+// http.post(`${API}/api/customers/:id/notes`, ...)
+// http.patch(`${API}/api/customers/:id/verify-email`, ...)
+// http.patch(`${API}/api/customers/:id/verify-phone`, ...)
+// http.delete(`${API}/api/customers/:id/tags`, ...)
+// http.get(`${API}/api/customers/tags`, ...)
+```
+
+- [ ] **Step 12: Verify notificationHandlers.ts is correct**
 
 ```bash
-grep -c "api/" frontend/src/test/mocks/handlers/customerHandlers.ts
-grep -c "api/" frontend/src/test/mocks/handlers/notificationHandlers.ts
+grep -n "http\." frontend/src/test/mocks/handlers/notificationHandlers.ts | head -5
 ```
 
-Expected: large numbers — these files are already correct.
+Expected: all routes use `/api/notifications/...`, `/api/preferences/...`, `/api/campaigns/...` — all confirmed correct.
 
-- [ ] **Step 12: Run grep to verify no handlers remain without /api/ prefix**
+- [ ] **Step 13: Run grep to verify no handlers remain without /api/ prefix**
 
 ```bash
 grep -rn "http\.\(get\|post\|put\|patch\|delete\).*\`\${API}/[^a]" frontend/src/test/mocks/handlers/
@@ -480,18 +585,18 @@ grep -rn "http\.\(get\|post\|put\|patch\|delete\).*\`\${API}/[^a]" frontend/src/
 
 Expected: zero matches. Every handler should now have `/api/` after the base URL.
 
-- [ ] **Step 13: Commit**
+- [ ] **Step 14: Commit**
 
 ```bash
 git add frontend/src/test/mocks/handlers/
-git commit -m "fix(frontend/test): add /api/ prefix to all MSW handlers to match actual backend routes"
+git commit -m "fix(frontend/test): add /api/ prefix to all MSW handlers to match actual backend routes, remove stale sub-paths"
 ```
 
 ---
 
 ### Task 2: Fix RTK Query Slice URL Mismatches
 
-**Context:** 7 confirmed mismatches between what RTK Query slices call and what the backend serves. Each needs a targeted fix in the slice file. No test changes — fixing the slices fixes both the app and the tests simultaneously.
+**Context:** Multiple RTK Query slices have URL mismatches — wrong paths, wrong HTTP methods, stale sub-path endpoints that don't exist in the backend. Each slice needs targeted fixes. These fixes correct both the app behaviour and the tests simultaneously since MSW handler fixes align with the same canonical paths.
 
 **Files:**
 - Modify: `authApi.ts`, `sessionApi.ts`, `equipmentApi.ts`, `orderApi.ts`, `shiftApi.ts`, `driverApi.ts`, `inventoryApi.ts`
@@ -506,7 +611,7 @@ url: '/users/login',
 url: '/users/register',
 url: '/users/refresh',
 url: '/users/logout',
-query: () => '/users/profile',
+query: () => '/users/profile',          // ← this endpoint does NOT exist in any backend controller
 url: '/users/auth/google',
 url: '/users/auth/google/register',
 
@@ -515,7 +620,8 @@ url: '/api/auth/login',
 url: '/api/auth/register',
 url: '/api/auth/refresh',
 url: '/api/auth/logout',
-query: () => '/api/users/profile',     // profile is on UserController not AuthController
+// getProfile → remove or replace with GET /api/users/{userId} (use current user's ID from JWT)
+// The backend has no /profile shortcut — profile data comes from GET /api/users/{userId}
 url: '/api/auth/google',
 url: '/api/auth/google',               // same endpoint handles both login and register
 ```
@@ -681,8 +787,10 @@ url: '/api/purchase-orders/auto-generate'
 // url: `/purchase-orders/${id}/receive` → no such endpoint
 // url: `/purchase-orders/${id}/cancel`  → no such endpoint
 
-// Waste — REMOVE entirely:
-// Search backend for WasteController.java — if not found, delete all waste methods from inventoryApi.ts
+// Waste — KEEP but fix paths (WasteController verified at /api/waste):
+url: '/api/waste'                          // GET list + POST create
+url: `/api/waste/${id}`                    // GET, PATCH, DELETE
+url: '/api/waste/analytics'               // GET analytics (was /waste/trend — wrong)
 ```
 
 - [ ] **Step 8: Verify TypeScript compiles with no errors**
@@ -1354,3 +1462,8 @@ git commit -m "fix(frontend/test): ensure fresh Redux store per test to prevent 
 - [ ] `grep -r "import.*Pact.*from.*@pact-foundation/pact" frontend/src/pact/` — all imports use `PactV4`
 - [ ] `grep -r "kitchen-equipment" frontend/src/store/api/` — returns nothing
 - [ ] `grep -r "/users/login\|/users/register\|/users/logout" frontend/src/store/api/` — returns nothing
+- [ ] `grep -r "users/sessions\|/users/auth/google" frontend/src/store/api/` — returns nothing
+- [ ] `grep -r "bulk-create\|copy-previous-week" frontend/src/store/api/` — returns nothing
+- [ ] `grep -r "location-update\|auto-dispatch\|route-optimize" frontend/src/store/api/\|frontend/src/test/` — returns nothing
+- [ ] `grep -r "/responses/review\|/responses/templates" frontend/src/test/` — returns nothing (moved to `/api/reviews/{id}/response` and `/api/reviews/response-templates`)
+- [ ] `grep -r "users/profile\|users/type/\|users/store\|users/managers\|users/stats" frontend/src/test/` — returns nothing
