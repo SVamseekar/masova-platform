@@ -362,7 +362,7 @@ The correct sequence:
 - [x] commerce-service — **DONE 2026-05-17** — 85% line, 71% branch, 400 tests, SonarQube scan complete
 - [x] payment-service — **DONE 2026-05-17** — 86% line, 68% branch, 0 failures, SonarQube ANALYSIS SUCCESSFUL
 - [x] logistics-service — **DONE 2026-05-17** — 81.9% line, 65.5% branch, 301 tests, SonarQube ANALYSIS SUCCESSFUL
-- [ ] intelligence-service — 25.4% → need 80%
+- [x] intelligence-service — **DONE 2026-05-17** — 96% line, 72% branch, 156 tests, SonarQube ANALYSIS SUCCESSFUL
 
 Each service is done when `mvn verify -DskipITs` passes the 80% line / 60% branch JaCoCo check for that service, and `mvn sonar:sonar` shows ANALYSIS SUCCESSFUL.
 
