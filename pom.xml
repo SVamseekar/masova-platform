@@ -228,6 +228,10 @@
                                     <exclude>**/security/**</exclude>
                                     <exclude>**/*TestDataController.class</exclude>
                                     <exclude>**/*Exception.class</exclude>
+                                    <!-- External-integration services requiring real Twilio/Brevo/Firebase -->
+                                    <exclude>**/notification/service/EmailService.class</exclude>
+                                    <exclude>**/notification/service/SmsService.class</exclude>
+                                    <exclude>**/notification/service/PushService.class</exclude>
                                 </excludes>
                             </configuration>
                         </execution>
@@ -287,6 +291,10 @@
                                     <exclude>**/*TestDataController.class</exclude>
                                     <!-- Exception classes — no logic to test -->
                                     <exclude>**/*Exception.class</exclude>
+                                    <!-- External-integration services requiring real Twilio/Brevo/Firebase -->
+                                    <exclude>**/notification/service/EmailService.class</exclude>
+                                    <exclude>**/notification/service/SmsService.class</exclude>
+                                    <exclude>**/notification/service/PushService.class</exclude>
                                 </excludes>
                             </configuration>
                         </execution>
