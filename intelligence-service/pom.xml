@@ -124,6 +124,12 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
+        <!-- RabbitMQ test harness — for asserting @RabbitListener methods were invoked -->
+        <dependency>
+            <groupId>org.springframework.amqp</groupId>
+            <artifactId>spring-rabbit-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

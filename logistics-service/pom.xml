@@ -181,6 +181,13 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
+        <!-- Pact provider verification — Spring Boot 3 / Spring 6 compatible -->
+        <dependency>
+            <groupId>au.com.dius.pact.provider</groupId>
+            <artifactId>spring6</artifactId>
+            <version>4.6.17</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
