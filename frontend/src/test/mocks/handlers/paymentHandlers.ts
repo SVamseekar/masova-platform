@@ -38,72 +38,39 @@ const mockRefund = {
 };
 
 export const paymentHandlers = [
-  http.post(`${API}/payments/initiate`, () =>
+  http.post(`${API}/api/payments/initiate`, () =>
     HttpResponse.json({ ...mockTransaction, status: 'INITIATED', paidAt: undefined }),
   ),
 
-  http.post(`${API}/payments/cash`, () =>
+  http.post(`${API}/api/payments/cash`, () =>
     HttpResponse.json({ ...mockTransaction, paymentMethod: 'CASH' }),
   ),
 
-  http.post(`${API}/payments/verify`, () =>
+  http.post(`${API}/api/payments/verify`, () =>
     HttpResponse.json(mockTransaction),
   ),
 
-  http.get(`${API}/payments/:transactionId`, () =>
-    HttpResponse.json(mockTransaction),
-  ),
-
-  http.get(`${API}/payments/order/:orderId`, () =>
-    HttpResponse.json(mockTransaction),
-  ),
-
-  http.get(`${API}/payments/customer/:customerId`, () =>
+  http.get(`${API}/api/payments`, () =>
     HttpResponse.json([mockTransaction]),
   ),
 
-  http.get(`${API}/payments/store`, () =>
-    HttpResponse.json([mockTransaction]),
+  http.get(`${API}/api/payments/:transactionId`, () =>
+    HttpResponse.json(mockTransaction),
   ),
 
-  http.get(`${API}/payments/reconciliation`, () =>
-    HttpResponse.json({
-      reportDate: '2025-01-15',
-      storeId: '1',
-      totalTransactions: 50,
-      successfulTransactions: 48,
-      failedTransactions: 2,
-      refundedTransactions: 3,
-      totalAmount: 45000,
-      successfulAmount: 43000,
-      refundedAmount: 2000,
-      netAmount: 41000,
-      paymentMethodBreakdown: { UPI: 30, CARD: 15, CASH: 5 },
-      unreconciledCount: 1,
-    }),
-  ),
-
-  http.post(`${API}/payments/:transactionId/reconcile`, () =>
+  http.post(`${API}/api/payments/:transactionId/reconcile`, () =>
     new HttpResponse(null, { status: 204 }),
   ),
 
-  http.post(`${API}/payments/refund`, () =>
+  http.post(`${API}/api/payments/refund`, () =>
     HttpResponse.json(mockRefund),
   ),
 
-  http.get(`${API}/payments/refund/:refundId`, () =>
+  http.get(`${API}/api/payments/refund/:refundId`, () =>
     HttpResponse.json(mockRefund),
   ),
 
-  http.get(`${API}/payments/refund/transaction/:transactionId`, () =>
-    HttpResponse.json([mockRefund]),
-  ),
-
-  http.get(`${API}/payments/refund/order/:orderId`, () =>
-    HttpResponse.json([mockRefund]),
-  ),
-
-  http.get(`${API}/payments/refund/customer/:customerId`, () =>
+  http.get(`${API}/api/payments/refund`, () =>
     HttpResponse.json([mockRefund]),
   ),
 ];

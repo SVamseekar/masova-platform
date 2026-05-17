@@ -33,67 +33,55 @@ const mockUsers = [
 ];
 
 export const userHandlers = [
-  http.get(`${API}/users/profile`, () =>
-    HttpResponse.json(mockUsers[0]),
+  http.get(`${API}/api/users`, () =>
+    HttpResponse.json(mockUsers),
   ),
 
-  http.put(`${API}/users/profile`, () =>
-    HttpResponse.json(mockUsers[0]),
-  ),
-
-  http.post(`${API}/users/change-password`, () =>
-    new HttpResponse(null, { status: 204 }),
-  ),
-
-  http.get(`${API}/users/:userId`, ({ params }) =>
+  http.get(`${API}/api/users/:userId`, ({ params }) =>
     HttpResponse.json(mockUsers.find((u) => u.id === params.userId) ?? mockUsers[0]),
   ),
 
-  http.put(`${API}/users/:userId`, ({ params }) =>
+  http.patch(`${API}/api/users/:userId`, ({ params }) =>
     HttpResponse.json({ ...mockUsers[0], id: params.userId }),
   ),
 
-  http.post(`${API}/users/:userId/activate`, () =>
+  http.post(`${API}/api/users/:userId/activate`, () =>
     new HttpResponse(null, { status: 204 }),
   ),
 
-  http.post(`${API}/users/:userId/deactivate`, () =>
+  http.post(`${API}/api/users/:userId/deactivate`, () =>
     new HttpResponse(null, { status: 204 }),
   ),
 
-  http.get(`${API}/users/type/:type`, ({ params }) =>
-    HttpResponse.json(mockUsers.filter((u) => u.type === params.type)),
+  http.post(`${API}/api/users/:userId/generate-pin`, () =>
+    HttpResponse.json({ pin: '1234', expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() }),
   ),
 
-  http.get(`${API}/users/store`, () =>
-    HttpResponse.json(mockUsers.filter((u) => u.storeId === '1')),
+  http.get(`${API}/api/users/:userId/status`, () =>
+    HttpResponse.json({ status: 'ACTIVE', lastSeen: new Date().toISOString() }),
   ),
 
-  http.get(`${API}/users/managers`, () =>
-    HttpResponse.json(mockUsers.filter((u) => u.type === 'MANAGER')),
+  http.patch(`${API}/api/users/:userId/status`, () =>
+    HttpResponse.json({ status: 'ACTIVE' }),
   ),
 
-  http.get(`${API}/users/:userId/can-take-orders`, () =>
+  http.get(`${API}/api/users/:userId/can-take-orders`, () =>
     HttpResponse.json({ canTakeOrders: true }),
   ),
 
-  http.get(`${API}/users`, () =>
-    HttpResponse.json(mockUsers),
+  http.post(`${API}/api/users/kiosk`, () =>
+    HttpResponse.json({ ...mockUsers[1], id: '99', type: 'KIOSK' }),
   ),
 
-  http.post(`${API}/users/create`, () =>
-    HttpResponse.json({ ...mockUsers[1], id: '99' }),
+  http.get(`${API}/api/users/kiosk`, () =>
+    HttpResponse.json([{ ...mockUsers[1], id: '99', type: 'KIOSK' }]),
   ),
 
-  http.post(`${API}/users/validate-pin`, () =>
-    HttpResponse.json({ userId: '2', name: 'Staff Member', type: 'STAFF', role: 'CASHIER', storeId: '1' }),
+  http.post(`${API}/api/users/kiosk/:id/regenerate`, () =>
+    HttpResponse.json({ token: 'new-kiosk-token' }),
   ),
 
-  http.get(`${API}/users/search`, () =>
-    HttpResponse.json(mockUsers),
-  ),
-
-  http.get(`${API}/users/stats`, () =>
-    HttpResponse.json({ totalUsers: 50, activeUsers: 45, staffCount: 12, driverCount: 8 }),
+  http.post(`${API}/api/users/kiosk/:id/deactivate`, () =>
+    new HttpResponse(null, { status: 204 }),
   ),
 ];
