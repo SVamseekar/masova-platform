@@ -133,21 +133,29 @@ class OrderControllerPatchTest extends BaseServiceTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // POST /{orderId}/quality-checkpoint — GET checkpoints
+    // POST /api/orders/{orderId}/quality-checkpoint — add checkpoint
     @Test
-    void getQualityCheckpoints_returns_200() throws Exception {
-        when(orderService.getQualityCheckpoints("order-1")).thenReturn(Collections.emptyList());
+    void addQualityCheckpoint_with_type_returns_200() throws Exception {
+        when(orderService.addQualityCheckpoint(eq("order-1"), any()))
+                .thenReturn(buildOrder("order-1"));
 
-        mockMvc.perform(get("/api/orders/order-1/quality-checkpoint"))
+        mockMvc.perform(post("/api/orders/order-1/quality-checkpoint")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"checkpointName\":\"Final Inspection\",\"type\":\"FINAL_INSPECTION\",\"status\":\"PENDING\"}")
+                        .header("X-User-Store-Id", "store-1"))
                 .andExpect(status().isOk());
     }
 
-    // POST /api/orders bulk create
+    // PATCH /api/orders/{orderId}/quality-checkpoint/{name}
     @Test
-    void createOrder_missing_items_returns_400() throws Exception {
-        mockMvc.perform(post("/api/orders")
+    void patchQualityCheckpoint_marks_passed_returns_200() throws Exception {
+        when(orderService.updateQualityCheckpoint(eq("order-1"), eq("Final Inspection"), any(), any()))
+                .thenReturn(buildOrder("order-1"));
+
+        mockMvc.perform(patch("/api/orders/order-1/quality-checkpoint/Final Inspection")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"storeId\":\"store-1\",\"orderType\":\"TAKEAWAY\",\"customerName\":\"Test\",\"items\":[]}"))
-                .andExpect(status().isBadRequest());
+                        .content("{\"status\":\"PASSED\",\"notes\":\"All good\"}")
+                        .header("X-User-Store-Id", "store-1"))
+                .andExpect(status().isOk());
     }
 }
