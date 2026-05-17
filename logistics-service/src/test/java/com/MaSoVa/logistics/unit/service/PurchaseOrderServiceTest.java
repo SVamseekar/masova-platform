@@ -448,6 +448,7 @@ class PurchaseOrderServiceTest {
             item.setPrimarySupplierId("sup-1");
             item.setReorderQuantity(50.0);
             item.setUnit("KG");
+            item.setLastPurchaseCost(java.math.BigDecimal.valueOf(25.0));
 
             when(inventoryService.getAllStoreIds()).thenReturn(List.of("store-1"));
             when(inventoryService.getItemsNeedingReorder("store-1")).thenReturn(List.of(item));

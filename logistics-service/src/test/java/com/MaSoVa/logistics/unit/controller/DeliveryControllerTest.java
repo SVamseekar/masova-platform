@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -339,7 +340,7 @@ class DeliveryControllerTest extends BaseServiceTest {
         void returnsAddressValidation() throws Exception {
             DeliveryZoneService.ValidationResult vr = new DeliveryZoneService.ValidationResult();
             vr.setValid(true);
-            when(deliveryZoneService.validateDeliveryAddress(anyString(), any(), any(), anyString()))
+            when(deliveryZoneService.validateDeliveryAddress(anyString(), anyDouble(), anyDouble(), anyString()))
                 .thenReturn(vr);
 
             mockMvc.perform(get("/api/delivery/zones")

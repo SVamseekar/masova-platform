@@ -25,6 +25,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -110,7 +111,7 @@ class AutoDispatchServiceTest {
             doNothing().when(orderServiceClient).assignDriverToOrder(anyString(), anyString());
 
             FreeRoutingService.RouteResult route = new FreeRoutingService.RouteResult(2500.0, 480.0, List.of(), List.of());
-            when(freeRoutingService.getRoute(any(Double.class), any(Double.class), any(Double.class), any(Double.class)))
+            when(freeRoutingService.getRoute(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
                 .thenReturn(route);
 
             AutoDispatchResponse result = autoDispatchService.autoDispatch(req);
@@ -135,7 +136,7 @@ class AutoDispatchServiceTest {
             doNothing().when(orderServiceClient).assignDriverToOrder(anyString(), anyString());
 
             FreeRoutingService.RouteResult route = new FreeRoutingService.RouteResult(3000.0, 600.0, List.of(), List.of());
-            when(freeRoutingService.getRoute(any(Double.class), any(Double.class), any(Double.class), any(Double.class)))
+            when(freeRoutingService.getRoute(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
                 .thenReturn(route);
 
             AutoDispatchResponse result = autoDispatchService.autoDispatch(req);
@@ -172,7 +173,7 @@ class AutoDispatchServiceTest {
             doNothing().when(orderServiceClient).assignDriverToOrder(anyString(), anyString());
 
             // OSRM fails — falls back to Haversine
-            when(freeRoutingService.getRoute(any(Double.class), any(Double.class), any(Double.class), any(Double.class)))
+            when(freeRoutingService.getRoute(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
                 .thenThrow(new RuntimeException("OSRM unavailable"));
 
             AutoDispatchResponse result = autoDispatchService.autoDispatch(req);
@@ -195,7 +196,7 @@ class AutoDispatchServiceTest {
             doNothing().when(orderServiceClient).assignDriverToOrder(anyString(), anyString());
 
             FreeRoutingService.RouteResult route = new FreeRoutingService.RouteResult(50000.0, 6000.0, List.of(), List.of());
-            when(freeRoutingService.getRoute(any(Double.class), any(Double.class), any(Double.class), any(Double.class)))
+            when(freeRoutingService.getRoute(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
                 .thenReturn(route);
 
             AutoDispatchResponse result = autoDispatchService.autoDispatch(req);
