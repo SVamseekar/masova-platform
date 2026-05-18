@@ -135,7 +135,7 @@ describe('Neumorphic Button', () => {
     });
 
     it('prevents click events when disabled', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: 0 });
       const handleClick = vi.fn();
       render(<Button disabled onClick={handleClick}>Disabled</Button>);
       await user.click(screen.getByRole('button'));
@@ -153,7 +153,7 @@ describe('Neumorphic Button', () => {
     });
 
     it('does not call onClick when loading', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: 0 });
       const handleClick = vi.fn();
       render(<Button isLoading onClick={handleClick}>Loading</Button>);
       await user.click(screen.getByRole('button'));

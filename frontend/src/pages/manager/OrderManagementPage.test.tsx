@@ -19,51 +19,86 @@ const mockOrders = [
   },
 ];
 
-vi.mock('@/store/api/orderApi', () => ({
-  useGetStoreOrdersQuery: vi.fn().mockReturnValue({ data: mockOrders, isLoading: false, refetch: vi.fn() }),
-  useUpdateOrderStatusMutation: vi.fn().mockReturnValue([vi.fn(), {}]),
-  useUpdateOrderPriorityMutation: vi.fn().mockReturnValue([vi.fn(), {}]),
-  useCancelOrderMutation: vi.fn().mockReturnValue([vi.fn(), {}]),
-  useAssignDriverMutation: vi.fn().mockReturnValue([vi.fn(), {}]),
-  useUpdatePaymentStatusMutation: vi.fn().mockReturnValue([vi.fn(), {}]),
-  useGetOrdersByDateQuery: vi.fn().mockReturnValue({ data: [] }),
-  useGetOrdersByDateRangeQuery: vi.fn().mockReturnValue({ data: [] }),
-  useGetActiveDeliveriesCountQuery: vi.fn().mockReturnValue({ data: { count: 3 } }),
-  useSearchOrdersQuery: vi.fn().mockReturnValue({ data: [] }),
-}));
+vi.mock('@/store/api/orderApi', async () => {
+  const actual = await vi.importActual('@/store/api/orderApi');
+  return {
+    ...actual,
+  useGetStoreOrdersQuery: () => ({ data: mockOrders, isLoading: false, refetch: vi.fn() }),
+  useUpdateOrderStatusMutation: () => ([vi.fn(), {}]),
+  useUpdateOrderPriorityMutation: () => ([vi.fn(), {}]),
+  useCancelOrderMutation: () => ([vi.fn(), {}]),
+  useAssignDriverMutation: () => ([vi.fn(), {}]),
+  useUpdatePaymentStatusMutation: () => ([vi.fn(), {}]),
+  useGetOrdersByDateQuery: () => ({ data: [] }),
+  useGetOrdersByDateRangeQuery: () => ({ data: [] }),
+  useGetActiveDeliveriesCountQuery: () => ({ data: { count: 3 } }),
+  useSearchOrdersQuery: () => ({ data: [] }),
+  };
+});
 
-vi.mock('@/store/api/userApi', () => ({
-  useGetUsersQuery: vi.fn().mockReturnValue({ data: [] }),
-}));
+vi.mock('@/store/api/userApi', async () => {
+  const actual = await vi.importActual('@/store/api/userApi');
+  return {
+    ...actual,
+  useGetUsersQuery: () => ({ data: [] }),
+  };
+});
 
-vi.mock('@/store/api/analyticsApi', () => ({
-  useGetTodaySalesMetricsQuery: vi.fn().mockReturnValue({ data: { todaySales: 15000, todayOrderCount: 25 }, refetch: vi.fn() }),
-}));
+vi.mock('@/store/api/analyticsApi', async () => {
+  const actual = await vi.importActual('@/store/api/analyticsApi');
+  return {
+    ...actual,
+  useGetTodaySalesMetricsQuery: () => ({ data: { todaySales: 15000, todayOrderCount: 25 }, refetch: vi.fn() }),
+  };
+});
 
-vi.mock('@/contexts/PageStoreContext', () => ({
-  usePageStore: vi.fn().mockReturnValue({ selectedStoreId: 'store-1', setSelectedStoreId: vi.fn() }),
-}));
+vi.mock('@/contexts/PageStoreContext', async () => {
+  const actual = await vi.importActual('@/contexts/PageStoreContext');
+  return {
+    ...actual,
+  usePageStore: () => ({ selectedStoreId: 'store-1', setSelectedStoreId: vi.fn() }),
+  };
+});
 
-vi.mock('@/hoc/withPageStoreContext', () => ({
+vi.mock('@/hoc/withPageStoreContext', async () => {
+  const actual = await vi.importActual('@/hoc/withPageStoreContext');
+  return {
+    ...actual,
   withPageStoreContext: (Component: React.ComponentType) => Component,
-}));
+  };
+});
 
-vi.mock('@/hooks/useSmartBackNavigation', () => ({
-  useSmartBackNavigation: vi.fn().mockReturnValue({ handleBack: vi.fn() }),
-}));
+vi.mock('@/hooks/useSmartBackNavigation', async () => {
+  const actual = await vi.importActual('@/hooks/useSmartBackNavigation');
+  return {
+    ...actual,
+  useSmartBackNavigation: () => ({ handleBack: vi.fn() }),
+  };
+});
 
-vi.mock('@/components/common/FilterBar', () => ({
+vi.mock('@/components/common/FilterBar', async () => {
+  const actual = await vi.importActual('@/components/common/FilterBar');
+  return {
+    ...actual,
   FilterBar: () => <div data-testid="filter-bar">FilterBar</div>,
-}));
+  };
+});
 
-vi.mock('@/utils/filterUtils', () => ({
+vi.mock('@/utils/filterUtils', async () => {
+  const actual = await vi.importActual('@/utils/filterUtils');
+  return {
+    ...actual,
   applyFilters: vi.fn((data: any[]) => data),
   applySort: vi.fn((data: any[]) => data),
   exportToCSV: vi.fn(),
   commonFilters: { searchText: vi.fn(), dateRange: vi.fn() },
-}));
+  };
+});
 
-vi.mock('@/types/order', () => ({
+vi.mock('@/types/order', async () => {
+  const actual = await vi.importActual('@/types/order');
+  return {
+    ...actual,
   ORDER_STATUS_CONFIG: {
     RECEIVED: { label: 'Received', color: '#blue' },
     PREPARING: { label: 'Preparing', color: '#orange' },
@@ -87,7 +122,8 @@ vi.mock('@/types/order', () => ({
     REFUNDED: { label: 'Refunded', color: '#red' },
     FAILED: { label: 'Failed', color: '#red' },
   },
-}));
+  };
+});
 
 describe('OrderManagementPage', () => {
   beforeEach(() => {
@@ -103,7 +139,7 @@ describe('OrderManagementPage', () => {
     renderAsManager(<OrderManagementPage />);
     expect(screen.getByText('Total Orders')).toBeInTheDocument();
     expect(screen.getByText('Active Orders')).toBeInTheDocument();
-    expect(screen.getByText('Delivered')).toBeInTheDocument();
+    expect(screen.getAllByText('Delivered').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Cancelled')).toBeInTheDocument();
     expect(screen.getByText('Total Revenue')).toBeInTheDocument();
   });

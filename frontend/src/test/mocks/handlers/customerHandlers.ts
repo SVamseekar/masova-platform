@@ -57,9 +57,19 @@ const mockCustomer = {
 };
 
 export const customerHandlers = [
-  http.get(`${API}/api/customers`, () =>
-    HttpResponse.json([mockCustomer]),
-  ),
+  http.get(`${API}/api/customers`, ({ request }) => {
+    const url = new URL(request.url);
+    if (url.searchParams.get('search') || url.searchParams.get('query')) {
+      return HttpResponse.json({
+        content: [mockCustomer],
+        totalElements: 1,
+        totalPages: 1,
+        size: 20,
+        number: 0,
+      });
+    }
+    return HttpResponse.json([mockCustomer]);
+  }),
 
   http.post(`${API}/api/customers`, () =>
     HttpResponse.json(mockCustomer),
@@ -82,9 +92,17 @@ export const customerHandlers = [
     }),
   ),
 
-  http.get(`${API}/api/customers/:id`, () =>
-    HttpResponse.json(mockCustomer),
-  ),
+  http.get(`${API}/api/customers/:id`, ({ request }) => {
+    const url = new URL(request.url);
+    if (url.searchParams.get('loyaltyInfo') === 'true') {
+      return HttpResponse.json({
+        maxRedeemablePoints: 300,
+        maxDiscountAmount: 30,
+        redemptionRate: '1:0.1',
+      });
+    }
+    return HttpResponse.json(mockCustomer);
+  }),
 
   http.patch(`${API}/api/customers/:id`, () =>
     HttpResponse.json(mockCustomer),
@@ -115,6 +133,14 @@ export const customerHandlers = [
   ),
 
   http.post(`${API}/api/customers/:customerId/tags`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.delete(`${API}/api/customers/:customerId/tags`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.post(`${API}/api/customers/:id`, () =>
     HttpResponse.json(mockCustomer),
   ),
 

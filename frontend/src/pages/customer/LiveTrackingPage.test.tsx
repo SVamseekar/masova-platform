@@ -12,10 +12,7 @@ vi.mock('@/store/api/deliveryApi', async () => {
 });
 
 vi.mock('@/hooks/useOrderTrackingWebSocket', () => ({
-  useOrderTrackingWebSocket: () => ({
-    isConnected: false,
-    lastUpdate: null,
-  }),
+  useOrderTrackingWebSocket: () => ({ isConnected: false, lastUpdate: null }),
 }));
 
 vi.mock('@/components/backgrounds/AnimatedBackground', () => ({
@@ -34,12 +31,16 @@ vi.mock('@/components/delivery/RatingDialog', () => ({
   default: () => <div data-testid="rating-dialog" />,
 }));
 
-vi.mock('@/components/ui/neumorphic', () => ({
-  Card: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  Button: ({ children, onClick, ...props }: any) => (
-    <button onClick={onClick} {...props}>{children}</button>
-  ),
-}));
+vi.mock('@/components/ui/neumorphic', async () => {
+  const actual = await vi.importActual('@/components/ui/neumorphic');
+  return {
+    ...actual,
+    Card: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    Button: ({ children, onClick, ...props }: any) => (
+      <button onClick={onClick} {...props}>{children}</button>
+    ),
+  };
+});
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {

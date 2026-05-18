@@ -26,7 +26,7 @@ describe('CartPage', () => {
     });
 
     expect(screen.getByText('Your Cart is Empty')).toBeInTheDocument();
-    expect(screen.getByText("Looks like you haven't added anything to your cart yet")).toBeInTheDocument();
+    expect(screen.getByText("Looks like you haven't added anything yet")).toBeInTheDocument();
   });
 
   it('shows Browse Menu button in empty state', () => {
@@ -38,7 +38,7 @@ describe('CartPage', () => {
       useMemoryRouter: true,
     });
 
-    expect(screen.getByText('Browse Menu')).toBeInTheDocument();
+    expect(screen.getByText('Browse Menu →')).toBeInTheDocument();
   });
 
   it('calls onContinueShopping when Browse Menu is clicked in empty state', async () => {
@@ -52,7 +52,7 @@ describe('CartPage', () => {
       useMemoryRouter: true,
     });
 
-    await user.click(screen.getByText('Browse Menu'));
+    await user.click(screen.getByRole('button', { name: 'Browse Menu →' }));
     expect(mockOnContinueShopping).toHaveBeenCalledTimes(1);
   });
 
@@ -87,7 +87,7 @@ describe('CartPage', () => {
       useMemoryRouter: true,
     });
 
-    expect(screen.getByText('2 items in your cart')).toBeInTheDocument();
+    expect(screen.getByText(/2 items/)).toBeInTheDocument();
   });
 
   it('displays order summary section', () => {
@@ -123,7 +123,7 @@ describe('CartPage', () => {
       useMemoryRouter: true,
     });
 
-    expect(screen.getByText('Proceed to Payment')).toBeInTheDocument();
+    expect(screen.getByText('Proceed to Payment →')).toBeInTheDocument();
   });
 
   it('shows Continue Shopping button', () => {
@@ -156,7 +156,7 @@ describe('CartPage', () => {
       useMemoryRouter: true,
     });
 
-    await user.click(screen.getByText('Proceed to Payment'));
+    await user.click(screen.getByRole('button', { name: 'Proceed to Payment →' }));
     expect(mockOnProceedToPayment).toHaveBeenCalledTimes(1);
   });
 
@@ -173,6 +173,6 @@ describe('CartPage', () => {
       useMemoryRouter: true,
     });
 
-    expect(screen.getByText('1 item in your cart')).toBeInTheDocument();
+    expect(screen.getByText(/1 item/)).toBeInTheDocument();
   });
 });

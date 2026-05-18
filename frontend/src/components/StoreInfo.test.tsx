@@ -3,34 +3,33 @@ import { render, screen } from '@testing-library/react';
 import StoreInfo from './StoreInfo';
 import { mockStore } from '@/test/fixtures';
 
-// Mock the store API
+const mockUseGetStoreQuery = vi.fn();
+
 vi.mock('../store/api/storeApi', async () => {
   const actual = await vi.importActual('../store/api/storeApi');
   return {
     ...actual,
-    useGetStoreQuery: vi.fn(),
+    useGetStoreQuery: (...args: any[]) => mockUseGetStoreQuery(...args),
   };
 });
 
-const { useGetStoreQuery } = require('../store/api/storeApi');
-
 describe('StoreInfo', () => {
   it('shows loading state', () => {
-    useGetStoreQuery.mockReturnValue({ data: undefined, isLoading: true });
+    mockUseGetStoreQuery.mockReturnValue({ data: undefined, isLoading: true });
 
     render(<StoreInfo storeId="store-1" />);
     expect(screen.getByText('Loading store information...')).toBeInTheDocument();
   });
 
   it('returns null when no store data and not loading', () => {
-    useGetStoreQuery.mockReturnValue({ data: undefined, isLoading: false });
+    mockUseGetStoreQuery.mockReturnValue({ data: undefined, isLoading: false });
 
     const { container } = render(<StoreInfo storeId="store-1" />);
     expect(container.innerHTML).toBe('');
   });
 
   it('renders compact variant by default', () => {
-    useGetStoreQuery.mockReturnValue({ data: mockStore, isLoading: false });
+    mockUseGetStoreQuery.mockReturnValue({ data: mockStore, isLoading: false });
 
     render(<StoreInfo storeId="store-1" />);
     expect(screen.getByText('Downtown Branch')).toBeInTheDocument();
@@ -39,7 +38,7 @@ describe('StoreInfo', () => {
   });
 
   it('renders detailed variant with extra information', () => {
-    useGetStoreQuery.mockReturnValue({ data: mockStore, isLoading: false });
+    mockUseGetStoreQuery.mockReturnValue({ data: mockStore, isLoading: false });
 
     render(<StoreInfo storeId="store-1" variant="detailed" />);
     expect(screen.getByText('Downtown Branch')).toBeInTheDocument();
@@ -50,7 +49,7 @@ describe('StoreInfo', () => {
   });
 
   it('renders operating config info in detailed variant', () => {
-    useGetStoreQuery.mockReturnValue({ data: mockStore, isLoading: false });
+    mockUseGetStoreQuery.mockReturnValue({ data: mockStore, isLoading: false });
 
     render(<StoreInfo storeId="store-1" variant="detailed" />);
     expect(screen.getByText(/Delivery Radius/)).toBeInTheDocument();
@@ -60,7 +59,7 @@ describe('StoreInfo', () => {
   });
 
   it('shows phone number in detailed variant', () => {
-    useGetStoreQuery.mockReturnValue({ data: mockStore, isLoading: false });
+    mockUseGetStoreQuery.mockReturnValue({ data: mockStore, isLoading: false });
 
     render(<StoreInfo storeId="store-1" variant="detailed" />);
     expect(screen.getByText('555-0100')).toBeInTheDocument();
@@ -68,16 +67,16 @@ describe('StoreInfo', () => {
 
   it('shows "No phone number" when phone is missing', () => {
     const storeWithoutPhone = { ...mockStore, phoneNumber: undefined };
-    useGetStoreQuery.mockReturnValue({ data: storeWithoutPhone, isLoading: false });
+    mockUseGetStoreQuery.mockReturnValue({ data: storeWithoutPhone, isLoading: false });
 
     render(<StoreInfo storeId="store-1" variant="detailed" />);
     expect(screen.getByText('No phone number')).toBeInTheDocument();
   });
 
   it('skips query when storeId is empty', () => {
-    useGetStoreQuery.mockReturnValue({ data: undefined, isLoading: false });
+    mockUseGetStoreQuery.mockReturnValue({ data: undefined, isLoading: false });
 
     render(<StoreInfo storeId="" />);
-    expect(useGetStoreQuery).toHaveBeenCalledWith('', { skip: true });
+    expect(mockUseGetStoreQuery).toHaveBeenCalledWith('', { skip: true });
   });
 });

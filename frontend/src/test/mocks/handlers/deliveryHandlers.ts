@@ -82,6 +82,8 @@ export const deliveryHandlers = [
       distanceRemaining: 3200,
       lastUpdated: new Date().toISOString(),
       orderType: 'DELIVERY',
+      confidence: 'HIGH',
+      timeRemaining: 15,
     }),
   ),
 
@@ -128,7 +130,7 @@ export const deliveryHandlers = [
   http.get(`${API}/api/delivery/metrics`, () =>
     HttpResponse.json({
       totalDeliveries: 150,
-      activeDeliveries: 5,
+      activeDeliveries: 3,
       completedDeliveries: 140,
       cancelledDeliveries: 5,
       averageDeliveryTime: 28,

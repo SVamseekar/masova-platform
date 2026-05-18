@@ -1,11 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock external dependencies before importing the slice
-vi.mock('../../contexts/PageStoreContext', () => ({
+vi.mock('../../contexts/PageStoreContext', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../contexts/PageStoreContext')>();
+  return {
+    ...actual,
   clearAllStoreContexts: vi.fn(),
-}));
+  };
+});
 
-vi.mock('../api/authApi', () => ({
+vi.mock('../api/authApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../api/authApi')>();
+  return {
+    ...actual,
   authApi: {
     reducerPath: 'authApi',
     reducer: (state = {}) => state,
@@ -24,7 +31,8 @@ vi.mock('../api/authApi', () => ({
       },
     },
   },
-}));
+  };
+});
 
 import authReducer, {
   loginStart,

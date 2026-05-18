@@ -21,19 +21,31 @@ vi.mock('@/store/api/orderApi', async () => {
   };
 });
 
-vi.mock('@/components/backgrounds/AnimatedBackground', () => ({
+vi.mock('@/components/backgrounds/AnimatedBackground', async () => {
+  const actual = await vi.importActual('@/components/backgrounds/AnimatedBackground');
+  return {
+    ...actual,
   default: () => <div data-testid="animated-background" />,
-}));
+  };
+});
 
-vi.mock('@/components/common/AppHeader', () => ({
+vi.mock('@/components/common/AppHeader', async () => {
+  const actual = await vi.importActual('@/components/common/AppHeader');
+  return {
+    ...actual,
   default: () => <div data-testid="app-header" />,
-}));
+  };
+});
 
-vi.mock('@/components/ui/neumorphic', () => ({
+vi.mock('@/components/ui/neumorphic', async () => {
+  const actual = await vi.importActual('@/components/ui/neumorphic');
+  return {
+    ...actual,
   Button: ({ children, onClick, ...props }: any) => (
     <button onClick={onClick} {...props}>{children}</button>
   ),
-}));
+  };
+});
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {

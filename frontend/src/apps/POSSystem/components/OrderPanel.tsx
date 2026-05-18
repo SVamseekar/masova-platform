@@ -274,6 +274,7 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
                     </button>
                   </div>
                   <button
+                    aria-label="Remove item"
                     onClick={() => onRemoveItem(item.menuItemId)}
                     style={{
                       width: '28px',

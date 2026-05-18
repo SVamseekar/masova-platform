@@ -98,6 +98,10 @@ export const menuHandlers = [
     new HttpResponse(null, { status: 204 }),
   ),
 
+  http.delete(`${API}/api/menu`, () =>
+    new HttpResponse(null, { status: 204 }),
+  ),
+
   http.patch(`${API}/api/menu/items/:id/allergens`, ({ params }) =>
     HttpResponse.json({ ...mockMenuItems[0], id: params.id, allergensDeclared: true }),
   ),

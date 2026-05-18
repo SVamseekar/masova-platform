@@ -299,7 +299,7 @@ export const customerApi = createApi({
     updateCustomer: builder.mutation<Customer, { id: string; data: UpdateCustomerRequest }>({
       query: ({ id, data }) => ({
         url: `/api/customers/${id}`,
-        method: 'PUT',
+        method: 'PATCH',
         body: data,
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'Customer', id }, 'Customers'],
@@ -308,7 +308,7 @@ export const customerApi = createApi({
     deactivateCustomer: builder.mutation<Customer, string>({
       query: (id) => ({
         url: `/api/customers/${id}/deactivate`,
-        method: 'PATCH',
+        method: 'POST',
       }),
       invalidatesTags: (result, error, id) => [{ type: 'Customer', id }, 'Customers', 'CustomerStats'],
     }),
@@ -316,7 +316,7 @@ export const customerApi = createApi({
     activateCustomer: builder.mutation<Customer, string>({
       query: (id) => ({
         url: `/api/customers/${id}/activate`,
-        method: 'PATCH',
+        method: 'POST',
       }),
       invalidatesTags: (result, error, id) => [{ type: 'Customer', id }, 'Customers', 'CustomerStats'],
     }),
@@ -409,7 +409,7 @@ export const customerApi = createApi({
     updatePreferences: builder.mutation<Customer, { customerId: string; data: UpdatePreferencesRequest }>({
       query: ({ customerId, data }) => ({
         url: `/api/customers/${customerId}`,
-        method: 'PUT',
+        method: 'PATCH',
         body: data,
       }),
       invalidatesTags: (result, error, { customerId }) => [{ type: 'Customer', id: customerId }],

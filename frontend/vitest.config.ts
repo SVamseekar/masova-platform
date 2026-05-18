@@ -5,8 +5,9 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   test: {
-    // Use jsdom environment for DOM testing
-    environment: 'jsdom',
+    // Custom jsdom environment that preserves native AbortController/AbortSignal.
+    // Fixes "Expected signal to be an instance of AbortSignal" on Node 22+ with MSW 2.x.
+    environment: './vitest-environment.ts',
 
     // Setup file to run before each test file
     setupFiles: ['./src/test/setup.ts'],
@@ -48,6 +49,7 @@ export default defineConfig({
       '.idea',
       '.git',
       '.cache',
+      'tests/**',
     ],
 
     // Test timeout

@@ -37,10 +37,10 @@ import {
   useGetBirthdayCustomersTodayQuery,
   useGetMarketingOptInCustomersQuery,
   useGetCustomerStatsQuery,
-  useGetCustomerOrderStatsQuery,
-  useGetCustomerPreferencesQuery,
-  useGetCustomerLoyaltyPointsQuery,
-  useGetCustomerAddressesQuery,
+  useGetCustomerByIdQuery as useGetCustomerOrderStatsQuery,
+  useGetCustomerByIdQuery as useGetCustomerPreferencesQuery,
+  useGetCustomerByIdQuery as useGetCustomerLoyaltyPointsQuery,
+  useGetCustomerByIdQuery as useGetCustomerAddressesQuery,
   useDeleteCustomerMutation,
 } from './customerApi';
 

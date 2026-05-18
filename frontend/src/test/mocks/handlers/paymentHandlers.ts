@@ -50,8 +50,33 @@ export const paymentHandlers = [
     HttpResponse.json(mockTransaction),
   ),
 
-  http.get(`${API}/api/payments`, () =>
-    HttpResponse.json([mockTransaction]),
+  http.get(`${API}/api/payments`, ({ request }) => {
+    const url = new URL(request.url);
+    if (url.searchParams.get('reconciliation') === 'true') {
+      return HttpResponse.json({
+        totalTransactions: 50,
+        reconciledCount: 45,
+        unreconciledCount: 5,
+        totalAmount: 125000,
+        reconciledAmount: 112500,
+        unreconciledAmount: 12500,
+        date: url.searchParams.get('date') || '2025-01-15',
+        generatedAt: '2025-01-15T23:59:59Z',
+      });
+    }
+    return HttpResponse.json([mockTransaction]);
+  }),
+
+  http.get(`${API}/api/payments/refund`, () =>
+    HttpResponse.json([mockRefund]),
+  ),
+
+  http.get(`${API}/api/payments/refund/:refundId`, () =>
+    HttpResponse.json(mockRefund),
+  ),
+
+  http.post(`${API}/api/payments/refund`, () =>
+    HttpResponse.json(mockRefund),
   ),
 
   http.get(`${API}/api/payments/:transactionId`, () =>
@@ -60,17 +85,5 @@ export const paymentHandlers = [
 
   http.post(`${API}/api/payments/:transactionId/reconcile`, () =>
     new HttpResponse(null, { status: 204 }),
-  ),
-
-  http.post(`${API}/api/payments/refund`, () =>
-    HttpResponse.json(mockRefund),
-  ),
-
-  http.get(`${API}/api/payments/refund/:refundId`, () =>
-    HttpResponse.json(mockRefund),
-  ),
-
-  http.get(`${API}/api/payments/refund`, () =>
-    HttpResponse.json([mockRefund]),
   ),
 ];

@@ -294,7 +294,7 @@ export const menuApi = createApi({
     updateMenuItem: builder.mutation<MenuItem, { id: string; data: MenuItemRequest }>({
       query: ({ id, data }) => ({
         url: `/api/menu/${id}`,
-        method: 'PUT',
+        method: 'PATCH',
         body: data,
       }),
       transformResponse: (response: any): MenuItem => ({

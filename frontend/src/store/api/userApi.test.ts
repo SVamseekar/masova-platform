@@ -5,9 +5,6 @@ import { server } from '../../test/mocks/server';
 import { DefaultTestWrapper } from '../../test/TestWrapper';
 import {
   userApi,
-  useGetProfileQuery,
-  useUpdateProfileMutation,
-  useChangePasswordMutation,
   useGetUserQuery,
   useUpdateUserMutation,
   useActivateUserMutation,
@@ -19,8 +16,6 @@ import {
   useGetUsersQuery,
   useCreateUserMutation,
   useValidatePINMutation,
-  useSearchUsersQuery,
-  useGetUserStatsQuery,
 } from './userApi';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -33,9 +28,6 @@ describe('userApi', () => {
 
     it('should define all expected endpoints', () => {
       const endpoints = userApi.endpoints;
-      expect(endpoints.getProfile).toBeDefined();
-      expect(endpoints.updateProfile).toBeDefined();
-      expect(endpoints.changePassword).toBeDefined();
       expect(endpoints.getUser).toBeDefined();
       expect(endpoints.updateUser).toBeDefined();
       expect(endpoints.activateUser).toBeDefined();
@@ -47,23 +39,10 @@ describe('userApi', () => {
       expect(endpoints.getUsers).toBeDefined();
       expect(endpoints.createUser).toBeDefined();
       expect(endpoints.validatePIN).toBeDefined();
-      expect(endpoints.searchUsers).toBeDefined();
-      expect(endpoints.getUserStats).toBeDefined();
     });
   });
 
   describe('query endpoints', () => {
-    it('should fetch user profile', async () => {
-      const { result } = renderHook(() => useGetProfileQuery(), {
-        wrapper: DefaultTestWrapper,
-      });
-
-      await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-      expect(result.current.data).toBeDefined();
-      expect(result.current.data!.name).toBe('Test Customer');
-    });
-
     it('should fetch user by ID', async () => {
       const { result } = renderHook(() => useGetUserQuery('1'), {
         wrapper: DefaultTestWrapper,
@@ -124,52 +103,9 @@ describe('userApi', () => {
       expect(result.current.data).toBeDefined();
       expect(result.current.data!.length).toBeGreaterThan(0);
     });
-
-    it('should search users', async () => {
-      const { result } = renderHook(
-        () => useSearchUsersQuery({ query: 'test' }),
-        { wrapper: DefaultTestWrapper },
-      );
-
-      await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-      expect(result.current.data).toBeDefined();
-    });
-
-    it('should fetch user stats', async () => {
-      const { result } = renderHook(() => useGetUserStatsQuery(undefined), {
-        wrapper: DefaultTestWrapper,
-      });
-
-      await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-      expect(result.current.data).toBeDefined();
-    });
   });
 
   describe('mutation endpoints', () => {
-    it('should update profile', async () => {
-      const { result } = renderHook(() => useUpdateProfileMutation(), {
-        wrapper: DefaultTestWrapper,
-      });
-
-      const [updateProfile] = result.current;
-      updateProfile({ name: 'Updated Name' });
-
-      await waitFor(() => expect(result.current[1].isSuccess).toBe(true));
-    });
-
-    it('should change password', async () => {
-      const { result } = renderHook(() => useChangePasswordMutation(), {
-        wrapper: DefaultTestWrapper,
-      });
-
-      const [changePassword] = result.current;
-      changePassword({ currentPassword: 'old', newPassword: 'new' });
-
-      await waitFor(() => expect(result.current[1].isSuccess).toBe(true));
-    });
-
     it('should update a user', async () => {
       const { result } = renderHook(() => useUpdateUserMutation(), {
         wrapper: DefaultTestWrapper,
@@ -237,7 +173,7 @@ describe('userApi', () => {
   describe('error handling', () => {
     it('should handle user not found', async () => {
       server.use(
-        http.get(`${API}/users/:userId`, () =>
+        http.get(`${API}/api/users/:userId`, () =>
           HttpResponse.json({ message: 'Not found' }, { status: 404 }),
         ),
       );

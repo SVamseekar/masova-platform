@@ -11,7 +11,10 @@ const mockMoveToNextStage = vi.fn(() => ({
   unwrap: () => Promise.resolve(),
 }));
 
-vi.mock('../../store/api/orderApi', () => ({
+vi.mock('../../store/api/orderApi', async () => {
+  const actual = await vi.importActual('../../store/api/orderApi');
+  return {
+    ...actual,
   useGetKitchenQueueQuery: () => ({
     data: mockOrders,
     isLoading: mockIsLoading,
@@ -19,13 +22,21 @@ vi.mock('../../store/api/orderApi', () => ({
   }),
   useMoveToNextStageMutation: () => [mockMoveToNextStage, { isLoading: false }],
   orderApi: { reducerPath: 'orderApi', reducer: () => ({}), middleware: () => (next: any) => (action: any) => next(action) },
-}));
+  };
+});
 
-vi.mock('../../components/common/AppHeader', () => ({
+vi.mock('../../components/common/AppHeader', async () => {
+  const actual = await vi.importActual('../../components/common/AppHeader');
+  return {
+    ...actual,
   default: ({ title }: { title: string }) => <div data-testid="app-header">{title}</div>,
-}));
+  };
+});
 
-vi.mock('../../types/order', () => ({
+vi.mock('../../types/order', async () => {
+  const actual = await vi.importActual('../../types/order');
+  return {
+    ...actual,
   ORDER_STATUS_CONFIG: {
     RECEIVED: { label: 'Received', color: '#3b82f6', icon: '' },
     PREPARING: { label: 'Preparing', color: '#f59e0b', icon: '' },
@@ -38,7 +49,8 @@ vi.mock('../../types/order', () => ({
     SERVED: { label: 'Served', color: '#10b981', icon: '' },
     CANCELLED: { label: 'Cancelled', color: '#6b7280', icon: '' },
   },
-}));
+  };
+});
 
 describe('OrderQueuePage', () => {
   beforeEach(() => {
@@ -111,9 +123,9 @@ describe('OrderQueuePage', () => {
     ];
 
     renderAsKitchenStaff(<OrderQueuePage />);
-    expect(screen.getByText('Urgent')).toBeInTheDocument();
-    expect(screen.getByText('Preparing')).toBeInTheDocument();
-    expect(screen.getByText('In Oven')).toBeInTheDocument();
+    expect(screen.getAllByText('Urgent').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Preparing').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('In Oven').length).toBeGreaterThan(0);
   });
 
   it('renders table headers', () => {
@@ -253,12 +265,17 @@ describe('OrderQueuePage', () => {
 
     renderAsKitchenStaff(<OrderQueuePage />);
 
-    const urgentNode = screen.getByText('Urgent');
+    const urgentNodes = screen.getAllByText('Urgent');
+    // 'Urgent' appears as stat label + customer name; customer name is in a row
+    // We want the one inside the table body, not the stats section
     const normalNode = screen.getByText('Normal');
+
+    // The last 'Urgent' element should be in the order list (after stat label)
+    const urgentCustomerNode = urgentNodes[urgentNodes.length - 1];
 
     // Urgent should appear before Normal in DOM
     expect(
-      urgentNode.compareDocumentPosition(normalNode) & Node.DOCUMENT_POSITION_FOLLOWING
+      urgentCustomerNode.compareDocumentPosition(normalNode) & Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
   });
 

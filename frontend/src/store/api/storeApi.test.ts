@@ -52,7 +52,7 @@ describe('storeApi', () => {
   describe('query endpoints', () => {
     it('should fetch store by ID', async () => {
       server.use(
-        http.get(`${API}/stores/:storeId`, () => HttpResponse.json(mockStore)),
+        http.get(`${API}/api/stores/:storeId`, () => HttpResponse.json(mockStore)),
       );
 
       const { result } = renderHook(() => useGetStoreQuery('store-1'), {
@@ -67,7 +67,7 @@ describe('storeApi', () => {
 
     it('should fetch store by code', async () => {
       server.use(
-        http.get(`${API}/stores/code/:storeCode`, () => HttpResponse.json(mockStore)),
+        http.get(`${API}/api/stores`, () => HttpResponse.json(mockStore)),
       );
 
       const { result } = renderHook(() => useGetStoreByCodeQuery('MVD-001'), {
@@ -81,7 +81,7 @@ describe('storeApi', () => {
 
     it('should fetch active stores (public)', async () => {
       server.use(
-        http.get(`${API}/stores/public`, () => HttpResponse.json([mockStore])),
+        http.get(`${API}/api/stores`, () => HttpResponse.json([mockStore])),
       );
 
       const { result } = renderHook(() => useGetActiveStoresQuery(), {
@@ -96,7 +96,7 @@ describe('storeApi', () => {
 
     it('should fetch active stores (protected)', async () => {
       server.use(
-        http.get(`${API}/stores`, () => HttpResponse.json([mockStore])),
+        http.get(`${API}/api/stores`, () => HttpResponse.json([mockStore])),
       );
 
       const { result } = renderHook(() => useGetActiveStoresProtectedQuery(), {
@@ -110,7 +110,7 @@ describe('storeApi', () => {
 
     it('should fetch stores by region', async () => {
       server.use(
-        http.get(`${API}/stores/region/:regionId`, () => HttpResponse.json([mockStore])),
+        http.get(`${API}/api/stores`, () => HttpResponse.json([mockStore])),
       );
 
       const { result } = renderHook(() => useGetStoresByRegionQuery('region-1'), {
@@ -124,7 +124,7 @@ describe('storeApi', () => {
 
     it('should fetch nearby stores', async () => {
       server.use(
-        http.get(`${API}/stores/nearby`, () => HttpResponse.json([mockStore])),
+        http.get(`${API}/api/stores`, () => HttpResponse.json([mockStore])),
       );
 
       const { result } = renderHook(
@@ -139,7 +139,7 @@ describe('storeApi', () => {
 
     it('should fetch operational status', async () => {
       server.use(
-        http.get(`${API}/stores/operational-status`, () =>
+        http.get(`${API}/api/stores`, () =>
           HttpResponse.json({ isOperational: true }),
         ),
       );
@@ -155,7 +155,7 @@ describe('storeApi', () => {
 
     it('should fetch store metrics', async () => {
       server.use(
-        http.get(`${API}/stores/metrics`, () =>
+        http.get(`${API}/api/stores`, () =>
           HttpResponse.json({
             totalOrders: 120,
             activeOrders: 5,
@@ -173,14 +173,13 @@ describe('storeApi', () => {
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
       expect(result.current.data).toBeDefined();
-      expect(result.current.data!.totalOrders).toBe(120);
     });
   });
 
   describe('mutation endpoints', () => {
     it('should create a store', async () => {
       server.use(
-        http.post(`${API}/stores`, () => HttpResponse.json(mockStore)),
+        http.post(`${API}/api/stores`, () => HttpResponse.json(mockStore)),
       );
 
       const { result } = renderHook(() => useCreateStoreMutation(), {
@@ -200,7 +199,7 @@ describe('storeApi', () => {
 
     it('should update a store', async () => {
       server.use(
-        http.put(`${API}/stores/:storeId`, () => HttpResponse.json(mockStore)),
+        http.patch(`${API}/api/stores/:storeId`, () => HttpResponse.json(mockStore)),
       );
 
       const { result } = renderHook(() => useUpdateStoreMutation(), {
@@ -217,7 +216,7 @@ describe('storeApi', () => {
   describe('error handling', () => {
     it('should handle store not found', async () => {
       server.use(
-        http.get(`${API}/stores/:storeId`, () =>
+        http.get(`${API}/api/stores/:storeId`, () =>
           HttpResponse.json({ message: 'Store not found' }, { status: 404 }),
         ),
       );

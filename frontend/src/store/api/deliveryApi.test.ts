@@ -292,7 +292,7 @@ describe('deliveryApi', () => {
   describe('error handling', () => {
     it('should handle tracking error for nonexistent order', async () => {
       server.use(
-        http.get(`${API}/delivery/track/:orderId`, () =>
+        http.get(`${API}/api/delivery/track/:orderId`, () =>
           HttpResponse.json({ message: 'Not found' }, { status: 404 }),
         ),
       );

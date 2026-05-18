@@ -48,6 +48,14 @@ export const inventoryHandlers = [
     HttpResponse.json(mockInventoryItem),
   ),
 
+  http.get(`${API}/api/inventory/value`, () =>
+    HttpResponse.json({
+      totalValue: 125000,
+      totalItems: 45,
+      categoryBreakdown: { RAW_MATERIAL: 80000, INGREDIENT: 30000, PACKAGING: 15000 },
+    }),
+  ),
+
   http.get(`${API}/api/inventory/:id`, () =>
     HttpResponse.json(mockInventoryItem),
   ),
@@ -60,16 +68,8 @@ export const inventoryHandlers = [
     new HttpResponse(null, { status: 204 }),
   ),
 
-  http.post(`${API}/api/inventory/:id/stock`, () =>
+  http.patch(`${API}/api/inventory/:id/stock`, () =>
     HttpResponse.json(mockInventoryItem),
-  ),
-
-  http.get(`${API}/api/inventory/value`, () =>
-    HttpResponse.json({
-      totalValue: 125000,
-      totalItems: 45,
-      categoryBreakdown: { RAW_MATERIAL: 80000, INGREDIENT: 30000, PACKAGING: 15000 },
-    }),
   ),
 
   // Suppliers

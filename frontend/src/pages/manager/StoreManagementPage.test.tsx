@@ -7,20 +7,31 @@ const mockStores = [
   { id: 'store-2', name: 'HITEC City Branch', storeCode: 'HC-002', address: { street: '456 Tech Park', city: 'Hyderabad', state: 'Telangana', pincode: '500081' }, phoneNumber: '555-0200', status: 'ACTIVE', operatingConfig: { maxConcurrentOrders: 75, deliveryRadiusKm: 8, weeklySchedule: {} } },
 ];
 
-vi.mock('@/store/api/storeApi', () => ({
-  useGetStoreQuery: vi.fn().mockReturnValue({ data: mockStores[0], isLoading: false, refetch: vi.fn() }),
-  useGetActiveStoresQuery: vi.fn().mockReturnValue({ data: mockStores, isLoading: false }),
-  useCreateStoreMutation: vi.fn().mockReturnValue([vi.fn(), { isLoading: false }]),
-  useUpdateStoreMutation: vi.fn().mockReturnValue([vi.fn(), { isLoading: false }]),
-}));
+let mockStoresResult = { data: mockStores, isLoading: false };
 
-vi.mock('@/hooks/useSmartBackNavigation', () => ({
-  useSmartBackNavigation: vi.fn().mockReturnValue({ handleBack: vi.fn() }),
-}));
+vi.mock('@/store/api/storeApi', async () => {
+  const actual = await vi.importActual('@/store/api/storeApi');
+  return {
+    ...actual,
+  useGetStoreQuery: () => ({ data: mockStores[0], isLoading: false, refetch: vi.fn() }),
+  useGetActiveStoresQuery: () => mockStoresResult,
+  useCreateStoreMutation: () => ([vi.fn(), { isLoading: false }]),
+  useUpdateStoreMutation: () => ([vi.fn(), { isLoading: false }]),
+  };
+});
+
+vi.mock('@/hooks/useSmartBackNavigation', async () => {
+  const actual = await vi.importActual('@/hooks/useSmartBackNavigation');
+  return {
+    ...actual,
+  useSmartBackNavigation: () => ({ handleBack: vi.fn() }),
+  };
+});
 
 describe('StoreManagementPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockStoresResult = { data: mockStores, isLoading: false };
   });
 
   it('renders without crashing', () => {
@@ -52,10 +63,7 @@ describe('StoreManagementPage', () => {
   });
 
   it('shows loading state', () => {
-    const { useGetActiveStoresQuery } = vi.mocked(
-      await import('@/store/api/storeApi')
-    );
-    (useGetActiveStoresQuery as any).mockReturnValueOnce({ data: [], isLoading: true });
+    mockStoresResult = { data: [], isLoading: true };
     renderAsManager(<StoreManagementPage />);
     expect(screen.getByText('Loading stores...')).toBeInTheDocument();
   });

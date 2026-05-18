@@ -301,7 +301,7 @@ export const inventoryApi = createApi({
     updateInventoryItem: builder.mutation<InventoryItem, { id: string; item: Partial<InventoryItem> }>({
       query: ({ id, item }) => ({
         url: `/api/inventory/${id}`,
-        method: 'PUT',
+        method: 'PATCH',
         body: item,
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'InventoryItem', id }, 'InventoryValue'],
@@ -468,7 +468,7 @@ export const inventoryApi = createApi({
     updateSupplier: builder.mutation<Supplier, { id: string; supplier: Partial<Supplier> }>({
       query: ({ id, supplier }) => ({
         url: `/api/suppliers/${id}`,
-        method: 'PUT',
+        method: 'PATCH',
         body: supplier,
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'Supplier', id }],
@@ -563,7 +563,7 @@ export const inventoryApi = createApi({
     updatePurchaseOrder: builder.mutation<PurchaseOrder, { id: string; order: Partial<PurchaseOrder> }>({
       query: ({ id, order }) => ({
         url: `/api/purchase-orders/${id}`,
-        method: 'PUT',
+        method: 'PATCH',
         body: order,
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'PurchaseOrder', id }],
@@ -683,7 +683,7 @@ export const inventoryApi = createApi({
     updateWasteRecord: builder.mutation<WasteRecord, { id: string; waste: Partial<WasteRecord> }>({
       query: ({ id, waste }) => ({
         url: `/api/waste/${id}`,
-        method: 'PUT',
+        method: 'PATCH',
         body: waste,
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'WasteRecord', id }],

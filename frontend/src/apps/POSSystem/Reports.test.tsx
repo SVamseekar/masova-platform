@@ -8,7 +8,10 @@ import Reports from './Reports';
 // Mock RTK Query hooks
 // ---------------------------------------------------------------------------
 
-vi.mock('../../store/api/analyticsApi', () => ({
+vi.mock('../../store/api/analyticsApi', async () => {
+  const actual = await vi.importActual('../../store/api/analyticsApi');
+  return {
+    ...actual,
   useGetTodaySalesMetricsQuery: () => ({
     data: {
       todaySales: 15000,
@@ -64,11 +67,16 @@ vi.mock('../../store/api/analyticsApi', () => ({
     },
     isLoading: false,
   }),
-}));
+  };
+});
 
-vi.mock('../../components/common/AppHeader', () => ({
+vi.mock('../../components/common/AppHeader', async () => {
+  const actual = await vi.importActual('../../components/common/AppHeader');
+  return {
+    ...actual,
   default: ({ title }: any) => <div data-testid="app-header">{title}</div>,
-}));
+  };
+});
 
 const managerState = {
   auth: {
@@ -182,9 +190,9 @@ describe('Reports', () => {
         preloadedState: managerState as any,
       });
 
-      expect(screen.getByText(/Sales/)).toBeInTheDocument();
-      expect(screen.getByText(/Staff/)).toBeInTheDocument();
-      expect(screen.getByText(/Inventory/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /^Sales$/ })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /^Staff/ })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /^Inventory/ })).toBeInTheDocument();
     });
 
     it('switches to staff tab and shows staff leaderboard', async () => {
@@ -195,10 +203,10 @@ describe('Reports', () => {
         preloadedState: managerState as any,
       });
 
-      await user.click(screen.getByText(/Staff/));
+      await user.click(screen.getByRole('button', { name: /^Staff/ }));
 
-      expect(screen.getByText('Alice Chef')).toBeInTheDocument();
-      expect(screen.getByText('Bob Cook')).toBeInTheDocument();
+      expect(screen.getByText(/Alice Chef/)).toBeInTheDocument();
+      expect(screen.getByText(/Bob Cook/)).toBeInTheDocument();
       expect(screen.getByText(/15 orders processed/)).toBeInTheDocument();
     });
 

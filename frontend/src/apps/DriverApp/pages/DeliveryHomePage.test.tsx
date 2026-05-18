@@ -5,13 +5,20 @@ import { renderAsDriver } from '@/test/utils/testUtils';
 import DeliveryHomePage from './DeliveryHomePage';
 
 // Mock RTK Query hooks
-vi.mock('../../../store/api/sessionApi', () => ({
+vi.mock('../../../store/api/sessionApi', async () => {
+  const actual = await vi.importActual('../../../store/api/sessionApi');
+  return {
+    ...actual,
   useStartSessionMutation: () => [vi.fn(), { isLoading: false }],
   useEndSessionMutation: () => [vi.fn(), { isLoading: false }],
   sessionApi: { reducerPath: 'sessionApi', reducer: () => ({}), middleware: () => (next: any) => (action: any) => next(action) },
-}));
+  };
+});
 
-vi.mock('../../../store/api/driverApi', () => ({
+vi.mock('../../../store/api/driverApi', async () => {
+  const actual = await vi.importActual('../../../store/api/driverApi');
+  return {
+    ...actual,
   useGetDriverPerformanceQuery: () => ({
     data: {
       totalDeliveries: 12,
@@ -22,26 +29,39 @@ vi.mock('../../../store/api/driverApi', () => ({
     isLoading: false,
   }),
   driverApi: { reducerPath: 'driverApi', reducer: () => ({}), middleware: () => (next: any) => (action: any) => next(action) },
-}));
+  };
+});
 
-vi.mock('../../../store/api/deliveryApi', () => ({
+vi.mock('../../../store/api/deliveryApi', async () => {
+  const actual = await vi.importActual('../../../store/api/deliveryApi');
+  return {
+    ...actual,
   useUpdateLocationMutation: () => [vi.fn(() => ({ unwrap: () => Promise.resolve() })), { isLoading: false }],
   deliveryApi: { reducerPath: 'deliveryApi', reducer: () => ({}), middleware: () => (next: any) => (action: any) => next(action) },
-}));
+  };
+});
 
-vi.mock('../../../services/websocketService', () => ({
+vi.mock('../../../services/websocketService', async () => {
+  const actual = await vi.importActual('../../../services/websocketService');
+  return {
+    ...actual,
   websocketService: {
     connect: vi.fn(),
     disconnect: vi.fn(),
     isConnected: () => false,
   },
-}));
+  };
+});
 
 // Mock LocationMapModal to avoid deep rendering issues
-vi.mock('../components/LocationMapModal', () => ({
+vi.mock('../components/LocationMapModal', async () => {
+  const actual = await vi.importActual('../components/LocationMapModal');
+  return {
+    ...actual,
   default: ({ open, onClose }: { open: boolean; onClose: () => void }) =>
     open ? <div data-testid="location-map-modal"><button onClick={onClose}>Close Modal</button></div> : null,
-}));
+  };
+});
 
 describe('DeliveryHomePage', () => {
   const defaultProps = {

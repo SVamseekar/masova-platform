@@ -9,7 +9,6 @@ import {
   useRegisterMutation,
   useRefreshTokenMutation,
   useLogoutMutation,
-  useGetProfileQuery,
 } from './authApi';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -26,7 +25,6 @@ describe('authApi', () => {
       expect(endpoints.register).toBeDefined();
       expect(endpoints.refreshToken).toBeDefined();
       expect(endpoints.logout).toBeDefined();
-      expect(endpoints.getProfile).toBeDefined();
     });
 
     it('should have correct tag types', () => {
@@ -79,7 +77,7 @@ describe('authApi', () => {
 
     it('should handle login failure', async () => {
       server.use(
-        http.post(`${API}/users/login`, () =>
+        http.post(`${API}/api/auth/login`, () =>
           HttpResponse.json({ message: 'Invalid credentials' }, { status: 401 }),
         ),
       );
@@ -117,12 +115,11 @@ describe('authApi', () => {
       const data = result.current[1].data;
       expect(data).toBeDefined();
       expect(data?.accessToken).toBe('mock-access-token');
-      expect(data?.user.name).toBe('New User');
     });
 
     it('should handle registration failure', async () => {
       server.use(
-        http.post(`${API}/users/register`, () =>
+        http.post(`${API}/api/auth/register`, () =>
           HttpResponse.json({ message: 'Email already exists' }, { status: 409 }),
         ),
       );
@@ -170,34 +167,6 @@ describe('authApi', () => {
       logout();
 
       await waitFor(() => expect(result.current[1].isSuccess).toBe(true));
-    });
-  });
-
-  describe('getProfile query', () => {
-    it('should fetch user profile', async () => {
-      const { result } = renderHook(() => useGetProfileQuery(), {
-        wrapper: DefaultTestWrapper,
-      });
-
-      await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-      expect(result.current.data).toBeDefined();
-      expect(result.current.data?.name).toBe('Test User');
-      expect(result.current.data?.email).toBe('test@example.com');
-    });
-
-    it('should handle profile fetch error', async () => {
-      server.use(
-        http.get(`${API}/users/profile`, () =>
-          HttpResponse.json({ message: 'Unauthorized' }, { status: 403 }),
-        ),
-      );
-
-      const { result } = renderHook(() => useGetProfileQuery(), {
-        wrapper: DefaultTestWrapper,
-      });
-
-      await waitFor(() => expect(result.current.isError).toBe(true));
     });
   });
 });

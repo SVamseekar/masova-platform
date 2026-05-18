@@ -54,6 +54,14 @@ export const orderHandlers = [
     HttpResponse.json({ ...mockOrder, id: params.orderId, status: 'DISPATCHED' }),
   ),
 
+  http.get(`${API}/api/orders/analytics`, ({ request }) => {
+    const url = new URL(request.url);
+    const type = url.searchParams.get('type');
+    if (type === 'avg-prep-time') return HttpResponse.json(18);
+    if (type === 'prep-time-by-item') return HttpResponse.json({ 'Margherita Pizza': 15, 'Cheeseburger': 10 });
+    return HttpResponse.json({});
+  }),
+
   http.get(`${API}/api/orders/:orderId`, ({ params }) =>
     HttpResponse.json({ ...mockOrder, id: params.orderId }),
   ),

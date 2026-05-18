@@ -73,7 +73,7 @@ describe('menuApi', () => {
 
     it('should transform response to map _id to id', async () => {
       server.use(
-        http.get(`${API}/menu/public`, () =>
+        http.get(`${API}/api/menu`, () =>
           HttpResponse.json([
             { _id: 'mongo-id-1', name: 'Test Item', isAvailable: true, displayOrder: 1, isRecommended: false, createdAt: '', updatedAt: '' },
           ]),
@@ -300,7 +300,7 @@ describe('menuApi', () => {
   describe('error handling', () => {
     it('should handle server error on getAvailableMenu', async () => {
       server.use(
-        http.get(`${API}/menu/public`, () =>
+        http.get(`${API}/api/menu`, () =>
           HttpResponse.json({ message: 'Internal Server Error' }, { status: 500 }),
         ),
       );
@@ -316,7 +316,7 @@ describe('menuApi', () => {
 
     it('should handle not found on getMenuItem', async () => {
       server.use(
-        http.get(`${API}/menu/public/:id`, () =>
+        http.get(`${API}/api/menu/:id`, () =>
           HttpResponse.json({ message: 'Not found' }, { status: 404 }),
         ),
       );

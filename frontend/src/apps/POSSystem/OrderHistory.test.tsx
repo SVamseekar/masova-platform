@@ -8,11 +8,15 @@ import OrderHistory from './OrderHistory';
 // Mock RTK Query hooks
 // ---------------------------------------------------------------------------
 
-const mockRecordCashPayment = vi.fn().mockReturnValue({ unwrap: vi.fn() });
+const mockRecordCashPayment = vi.fn(() => ({ unwrap: vi.fn() }));
 
-vi.mock('../../store/api/paymentApi', () => ({
+vi.mock('../../store/api/paymentApi', async () => {
+  const actual = await vi.importActual('../../store/api/paymentApi');
+  return {
+    ...actual,
   useRecordCashPaymentMutation: () => [mockRecordCashPayment, { isLoading: false }],
-}));
+  };
+});
 
 const today = new Date().toISOString();
 
@@ -53,17 +57,25 @@ let mockOrdersData: any[] = mockOrders;
 let mockIsLoading = false;
 let mockError: any = null;
 
-vi.mock('../../store/api/orderApi', () => ({
+vi.mock('../../store/api/orderApi', async () => {
+  const actual = await vi.importActual('../../store/api/orderApi');
+  return {
+    ...actual,
   useGetStoreOrdersQuery: () => ({
     data: mockOrdersData,
     isLoading: mockIsLoading,
     error: mockError,
   }),
-}));
+  };
+});
 
-vi.mock('../../components/common/AppHeader', () => ({
+vi.mock('../../components/common/AppHeader', async () => {
+  const actual = await vi.importActual('../../components/common/AppHeader');
+  return {
+    ...actual,
   default: ({ title }: any) => <div data-testid="app-header">{title}</div>,
-}));
+  };
+});
 
 const managerState = {
   auth: {
@@ -180,7 +192,7 @@ describe('OrderHistory', () => {
         preloadedState: managerState as any,
       });
 
-      expect(screen.getByText(/Paid/)).toBeInTheDocument();
+      expect(screen.getAllByText(/Paid/).length).toBeGreaterThan(0);
     });
 
     it('shows Mark as Paid button for pending cash orders', () => {

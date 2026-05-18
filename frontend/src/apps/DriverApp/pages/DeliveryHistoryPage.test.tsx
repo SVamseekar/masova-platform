@@ -7,13 +7,17 @@ import DeliveryHistoryPage from './DeliveryHistoryPage';
 let mockDeliveredOrders: any[] = [];
 let mockIsLoading = false;
 
-vi.mock('../../../store/api/orderApi', () => ({
+vi.mock('../../../store/api/orderApi', async () => {
+  const actual = await vi.importActual('../../../store/api/orderApi');
+  return {
+    ...actual,
   useGetOrdersByStatusQuery: () => ({
     data: mockDeliveredOrders,
     isLoading: mockIsLoading,
   }),
   orderApi: { reducerPath: 'orderApi', reducer: () => ({}), middleware: () => (next: any) => (action: any) => next(action) },
-}));
+  };
+});
 
 describe('DeliveryHistoryPage', () => {
   beforeEach(() => {

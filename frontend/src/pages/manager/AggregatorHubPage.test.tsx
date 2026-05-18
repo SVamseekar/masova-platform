@@ -3,8 +3,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AggregatorHubPage from './AggregatorHubPage';
 
-vi.mock('../../store/api/aggregatorApi', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../store/api/aggregatorApi')>();
+vi.mock('../../store/api/aggregatorApi', async () => {
+  const actual = await vi.importActual('../../store/api/aggregatorApi');
   return {
     ...actual,
     useGetConnectionsQuery: vi.fn(() => ({

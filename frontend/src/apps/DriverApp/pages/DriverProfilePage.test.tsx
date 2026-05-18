@@ -12,24 +12,32 @@ let mockIsLoading = false;
 let mockError: any = null;
 let mockCurrentSession: any = null;
 
-vi.mock('../../../store/api/driverApi', () => ({
-  useGetDriverPerformanceQuery: () => ({
-    data: mockPerformanceData,
-    isLoading: mockIsLoading,
-    error: mockError,
-  }),
-  driverApi: { reducerPath: 'driverApi', reducer: () => ({}), middleware: () => (next: any) => (action: any) => next(action) },
-}));
+vi.mock('../../../store/api/driverApi', async () => {
+  const actual = await vi.importActual('../../../store/api/driverApi');
+  return {
+    ...actual,
+    useGetDriverPerformanceQuery: () => ({
+      data: mockPerformanceData,
+      isLoading: mockIsLoading,
+      error: mockError,
+    }),
+    driverApi: { reducerPath: 'driverApi', reducer: () => ({}), middleware: () => (next: any) => (action: any) => next(action) },
+  };
+});
 
-vi.mock('../../../store/api/sessionApi', () => ({
-  useGetCurrentSessionQuery: () => ({
-    data: mockCurrentSession,
-    refetch: vi.fn(),
-  }),
-  useStartSessionMutation: () => [mockStartSession, { isLoading: false }],
-  useEndSessionMutation: () => [mockEndSession, { isLoading: false }],
-  sessionApi: { reducerPath: 'sessionApi', reducer: () => ({}), middleware: () => (next: any) => (action: any) => next(action) },
-}));
+vi.mock('../../../store/api/sessionApi', async () => {
+  const actual = await vi.importActual('../../../store/api/sessionApi');
+  return {
+    ...actual,
+    useGetCurrentSessionQuery: () => ({
+      data: mockCurrentSession,
+      refetch: vi.fn(),
+    }),
+    useStartSessionMutation: () => [mockStartSession, { isLoading: false }],
+    useEndSessionMutation: () => [mockEndSession, { isLoading: false }],
+    sessionApi: { reducerPath: 'sessionApi', reducer: () => ({}), middleware: () => (next: any) => (action: any) => next(action) },
+  };
+});
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {

@@ -3,6 +3,7 @@ import { cleanup } from '@testing-library/react';
 import { afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { server } from './mocks/server';
 
+
 // Establish API mocking before all tests
 beforeAll(() => {
   server.listen({ onUnhandledRequest: 'warn' });
