@@ -238,6 +238,7 @@ foreach ($c in $customers) {
     }
 
     Write-Host ""
+    Start-Sleep -Seconds 13  # stay under 5 req/min gateway rate limit
 }
 
 # Save customer IDs to state

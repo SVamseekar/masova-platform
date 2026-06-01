@@ -114,6 +114,7 @@ $staff = @(
 
 foreach ($entry in $staff) {
     Create-User -Label $entry.label -User $entry.user
+    Start-Sleep -Seconds 13  # stay under 5 req/min gateway rate limit
 }
 
 # Login as the actual manager and save that token (used by subsequent scripts)
