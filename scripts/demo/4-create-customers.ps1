@@ -161,14 +161,7 @@ foreach ($c in $customers) {
         Write-Host "  userId: $userId" -ForegroundColor Yellow
     }
 
-    # Get customer token for address operations
-    $custLogin = Invoke-Api -Method POST -Path "/api/auth/login" -Body @{
-        email    = $c.email
-        password = $c.password
-    }
-    $custToken = $custLogin.accessToken
-
-    # Create customer profile (links userId → customer record with DOB/gender)
+    # Create customer profile using manager token (POST /api/customers requires MANAGER role)
     Write-Host "    Creating customer profile..." -NoNewline
     try {
         $profile = Invoke-Api -Method POST -Path "/api/customers" -Body @{
@@ -180,14 +173,14 @@ foreach ($c in $customers) {
             dateOfBirth   = $c.dob
             gender        = $c.gender
             marketingOptIn = $true
-        } -Token $custToken
+        } -Token $managerToken
         $customerId = $profile.id
         Write-Host " OK (customerId: $customerId)" -ForegroundColor Green
     } catch {
         Write-Host " profile might exist, fetching..." -ForegroundColor Yellow
         try {
-            $profile = Invoke-Api -Method GET -Path "/api/customers/user/$userId" -Token $custToken
-            $customerId = $profile.id
+            $profile = Invoke-Api -Method GET -Path "/api/customers?userId=$userId" -Token $managerToken
+            $customerId = $profile[0].id ?? $profile.id
             Write-Host "  customerId: $customerId" -ForegroundColor Yellow
         } catch {
             $customerId = $null
@@ -197,7 +190,7 @@ foreach ($c in $customers) {
 
     $customerIds[$c.email] = $customerId
 
-    # Add home address
+    # Add home address (manager token — address endpoint requires auth)
     if ($customerId -and $c.homeAddress) {
         Write-Host "    Adding HOME address..." -NoNewline
         try {
@@ -212,7 +205,7 @@ foreach ($c in $customers) {
                 longitude   = $c.homeAddress.longitude
                 landmark    = $c.homeAddress.landmark
                 isDefault   = $true
-            } -Token $custToken | Out-Null
+            } -Token $managerToken | Out-Null
             Write-Host " OK" -ForegroundColor Green
         } catch { Write-Host " skipped (may exist)" -ForegroundColor Yellow }
     }
@@ -232,7 +225,7 @@ foreach ($c in $customers) {
                 longitude   = $c.workAddress.longitude
                 landmark    = $c.workAddress.landmark
                 isDefault   = $false
-            } -Token $custToken | Out-Null
+            } -Token $managerToken | Out-Null
             Write-Host " OK" -ForegroundColor Green
         } catch { Write-Host " skipped (may exist)" -ForegroundColor Yellow }
     }
