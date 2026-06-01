@@ -44,7 +44,7 @@ export const authApi = createApi({
   endpoints: (builder) => ({
     login: builder.mutation<AuthResponse, LoginRequest>({
       query: ({ email, password }) => ({
-        url: '/api/auth/login',
+        url: '/users/login',
         method: 'POST',
         body: { email, password },
       }),
@@ -56,7 +56,7 @@ export const authApi = createApi({
     }),
     register: builder.mutation<AuthResponse, RegisterRequest>({
       query: ({ rememberMe, ...userData }) => ({
-        url: '/api/auth/register',
+        url: '/users/register',
         method: 'POST',
         body: userData,
       }),
@@ -68,21 +68,25 @@ export const authApi = createApi({
     }),
     refreshToken: builder.mutation<AuthResponse, RefreshTokenRequest>({
       query: (data) => ({
-        url: '/api/auth/refresh',
+        url: '/users/refresh',
         method: 'POST',
         body: data,
       }),
     }),
     logout: builder.mutation<void, void>({
       query: () => ({
-        url: '/api/auth/logout',
+        url: '/users/logout',
         method: 'POST',
       }),
       invalidatesTags: ['Auth', 'User'],
     }),
+    getProfile: builder.query<AuthResponse['user'], void>({
+      query: () => '/users/profile',
+      providesTags: ['User'],
+    }),
     googleLogin: builder.mutation<AuthResponse, { idToken: string }>({
       query: (body) => ({
-        url: '/api/auth/google',
+        url: '/users/auth/google',
         method: 'POST',
         body,
       }),
@@ -90,7 +94,7 @@ export const authApi = createApi({
     }),
     googleRegister: builder.mutation<AuthResponse, { idToken: string }>({
       query: (body) => ({
-        url: '/api/auth/google',
+        url: '/users/auth/google/register',
         method: 'POST',
         body,
       }),
@@ -104,6 +108,7 @@ export const {
   useRegisterMutation,
   useRefreshTokenMutation,
   useLogoutMutation,
+  useGetProfileQuery,
   useGoogleLoginMutation,
   useGoogleRegisterMutation,
 } = authApi;

@@ -9,7 +9,10 @@ import {
   selectDeliveryFee,
   selectSelectedStoreId,
   selectSelectedStoreName,
+  selectCartCurrency,
+  selectCartLocale,
 } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import {
   useGetCustomerByUserIdQuery,
@@ -73,6 +76,8 @@ const GuestCheckoutPage: React.FC = () => {
   const subtotal = useAppSelector(selectCartSubtotal);
   const itemCount = useAppSelector(selectCartItemCount);
   const deliveryFee = useAppSelector(selectDeliveryFee);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
   const currentUser = useAppSelector(selectCurrentUser);
   const selectedStoreId = useAppSelector(selectSelectedStoreId);
   const selectedStoreName = useAppSelector(selectSelectedStoreName);
@@ -644,9 +649,9 @@ const GuestCheckoutPage: React.FC = () => {
                 <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                   <div style={{ flex: 1 }}>
                     <p style={{ margin: '0 0 2px', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-1)' }}>{item.name}</p>
-                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-3)' }}>Qty: {item.quantity} × ₹{item.price.toFixed(2)}</p>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-3)' }}>Qty: {item.quantity} × {formatMoney(Math.round(item.price * 100), currency, locale)}</p>
                   </div>
-                  <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-1)', flexShrink: 0 }}>₹{(item.price * item.quantity).toFixed(2)}</span>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-1)', flexShrink: 0 }}>{formatMoney(Math.round(item.price * item.quantity * 100), currency, locale)}</span>
                 </div>
               ))}
             </div>
@@ -656,9 +661,9 @@ const GuestCheckoutPage: React.FC = () => {
             {/* Totals */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {[
-                { label: `Subtotal (${itemCount} items)`, value: `₹${subtotal.toFixed(2)}` },
-                { label: 'Delivery Fee', value: `₹${deliveryFee.toFixed(2)}` },
-                { label: 'Tax (5%)', value: `₹${tax.toFixed(2)}` },
+                { label: `Subtotal (${itemCount} items)`, value: formatMoney(Math.round(subtotal * 100), currency, locale) },
+                { label: 'Delivery Fee', value: formatMoney(Math.round(deliveryFee * 100), currency, locale) },
+                { label: 'Tax (5%)', value: formatMoney(Math.round(tax * 100), currency, locale) },
               ].map(row => (
                 <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-3)' }}>{row.label}</span>
@@ -668,7 +673,7 @@ const GuestCheckoutPage: React.FC = () => {
               <div style={{ height: '1px', background: 'var(--border)', margin: '6px 0' }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--text-1)', fontSize: '1.05rem' }}>Total</span>
-                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--gold)', fontSize: '1.35rem' }}>₹{total.toFixed(2)}</span>
+                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--gold)', fontSize: '1.35rem' }}>{formatMoney(Math.round(total * 100), currency, locale)}</span>
               </div>
             </div>
 

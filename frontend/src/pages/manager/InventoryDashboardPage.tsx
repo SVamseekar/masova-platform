@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import { usePageStore } from '../../contexts/PageStoreContext';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
@@ -25,6 +27,9 @@ import AddInventoryItemDialog from '../../components/inventory/AddInventoryItemD
 
 const InventoryDashboardPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const { selectedStoreId } = usePageStore();
   const { handleBack } = useSmartBackNavigation();
 
@@ -159,14 +164,14 @@ const InventoryDashboardPage: React.FC = () => {
         { label: 'Category', field: 'category' },
         { label: 'Quantity', field: 'quantity' },
         { label: 'Unit', field: 'unit' },
-        { label: 'Unit Price', field: 'unitPrice', format: (v) => `₹${v}` },
+        { label: 'Unit Price', field: 'unitPrice', format: (v) => fmt(Number(v)) },
         { label: 'Reorder Level', field: 'reorderLevel' },
         {
           label: 'Total Value',
           field: 'quantity',
           format: (v: any) => {
             // Note: This is a simplified version. Full implementation would need item context
-            return `₹${v}`;
+            return fmt(Number(v));
           },
         },
       ]
@@ -388,7 +393,7 @@ const InventoryDashboardPage: React.FC = () => {
         </div>
         <div style={statCardStyles}>
           <div style={statLabelStyles}>Total Value</div>
-          <div style={statValueStyles}>₹{inventoryValue?.totalValue.toLocaleString() || 0}</div>
+          <div style={statValueStyles}>{fmt(inventoryValue?.totalValue || 0)}</div>
         </div>
         <div style={statCardStyles}>
           <div style={statLabelStyles}>Low Stock</div>
@@ -475,7 +480,7 @@ const InventoryDashboardPage: React.FC = () => {
                 <td style={tableCellStyles}>
                   {item.minimumStock} {item.unit}
                 </td>
-                <td style={tableCellStyles}>₹{item.unitCost.toFixed(2)}</td>
+                <td style={tableCellStyles}>{fmt(item.unitCost)}</td>
                 <td style={tableCellStyles}>
                   <span style={statusBadgeStyles(item.status)}>{item.status.replace('_', ' ')}</span>
                 </td>

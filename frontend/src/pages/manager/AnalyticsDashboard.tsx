@@ -19,14 +19,8 @@ import {
   useGetTopProductsQuery,
 } from '../../store/api/analyticsApi';
 import { useAppSelector } from '../../store/hooks';
-import { selectSelectedStoreId } from '../../store/slices/cartSlice';
-
-const formatINR = (v: number) =>
-  new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    minimumFractionDigits: 0,
-  }).format(v);
+import { selectSelectedStoreId, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 
 interface StatCardProps {
   title: string;
@@ -60,6 +54,9 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, highlight }
 
 const AnalyticsDashboard: React.FC = () => {
   const storeId = useAppSelector(selectSelectedStoreId) ?? undefined;
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const formatCurrency = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
 
   const {
     data: salesMetrics,
@@ -130,7 +127,7 @@ const AnalyticsDashboard: React.FC = () => {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Today's Revenue"
-            value={formatINR(salesMetrics?.todaySales ?? 0)}
+            value={formatCurrency(salesMetrics?.todaySales ?? 0)}
             subtitle={
               salesMetrics
                 ? `${salesMetrics.trend === 'UP' ? '+' : ''}${salesMetrics.percentChangeFromYesterday.toFixed(1)}% vs yesterday`
@@ -153,7 +150,7 @@ const AnalyticsDashboard: React.FC = () => {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Avg Order Value"
-            value={formatINR(aovData?.averageOrderValue ?? 0)}
+            value={formatCurrency(aovData?.averageOrderValue ?? 0)}
             subtitle={
               aovData
                 ? `${aovData.trend === 'UP' ? '+' : ''}${aovData.percentChange.toFixed(1)}% vs yesterday`
@@ -164,7 +161,7 @@ const AnalyticsDashboard: React.FC = () => {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Total Sales (today)"
-            value={formatINR(aovData?.totalSales ?? 0)}
+            value={formatCurrency(aovData?.totalSales ?? 0)}
             subtitle={aovData ? `${aovData.totalOrders} orders` : undefined}
           />
         </Grid>
@@ -188,10 +185,10 @@ const AnalyticsDashboard: React.FC = () => {
             <LineChart data={trendChartData} margin={{ top: 4, right: 20, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
+              <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => formatCurrency(v / 1000) + 'k'} />
               <Tooltip
                 formatter={(value: number, name: string) =>
-                  name === 'revenue' ? [formatINR(value), 'Revenue'] : [value, 'Orders']
+                  name === 'revenue' ? [formatCurrency(value), 'Revenue'] : [value, 'Orders']
                 }
               />
               <Legend />
@@ -242,12 +239,12 @@ const AnalyticsDashboard: React.FC = () => {
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip
                 formatter={(value: number, name: string) =>
-                  name === 'revenue' ? [formatINR(value), 'Revenue'] : [value, 'Units Sold']
+                  name === 'revenue' ? [formatCurrency(value), 'Revenue'] : [value, 'Units Sold']
                 }
               />
               <Legend verticalAlign="top" />
               <Bar dataKey="quantity" fill="#D32F2F" name="Units Sold" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="revenue" fill="#FF8F00" name="Revenue (₹)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="revenue" fill="#FF8F00" name="Revenue" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}

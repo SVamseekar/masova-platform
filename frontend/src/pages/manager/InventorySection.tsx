@@ -26,6 +26,8 @@ import {
 import type { InventoryItem, Supplier, PurchaseOrder } from '../../store/api/inventoryApi';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import StockAdjustmentDialog from '../../components/inventory/StockAdjustmentDialog';
 import AddInventoryItemDialog from '../../components/inventory/AddInventoryItemDialog';
 import AddSupplierDialog from '../../components/inventory/AddSupplierDialog';
@@ -280,6 +282,9 @@ const SuppliersTab = ({ storeId }: { storeId: string }) => {
 // ======================== PURCHASE ORDERS TAB ========================
 const PurchaseOrdersTab = ({ storeId }: { storeId: string }) => {
   const currentUser = useAppSelector(selectCurrentUser);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const { data: allOrders = [], isLoading } = useGetAllPurchaseOrdersQuery(storeId, { skip: !storeId, pollingInterval: 60000 });
   const [approvePO] = useApprovePurchaseOrderMutation();
   const [rejectPO] = useRejectPurchaseOrderMutation();
@@ -361,7 +366,7 @@ const PurchaseOrdersTab = ({ storeId }: { storeId: string }) => {
               ['Order Date', format(new Date(po.orderDate), 'MMM dd, yyyy')],
               ['Expected', format(new Date(po.expectedDeliveryDate), 'MMM dd, yyyy')],
               ['Items', po.items.length],
-              ['Total', `₹${po.totalAmount.toLocaleString()}`],
+              ['Total', fmt(po.totalAmount)],
             ].map(([l, v]) => (
               <div key={l as string}><p style={{ margin: 0, fontSize: 11, color: t.grayMuted }}>{l}</p><p style={{ margin: '2px 0 0', fontSize: 13, fontWeight: 600, color: t.black }}>{v}</p></div>
             ))}
@@ -499,6 +504,9 @@ const WasteTab = ({ storeId }: { storeId: string }) => {
 // ======================== MAIN SECTION ========================
 const InventorySection: React.FC<Props> = ({ storeId, activeTab, onTabChange }) => {
   const currentTab = activeTab || 'stock';
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
 
   return (
     <div>

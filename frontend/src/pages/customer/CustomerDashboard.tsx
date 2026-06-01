@@ -7,6 +7,8 @@ import { colors, spacing, typography } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import { useGetCustomerByUserIdQuery } from '../../store/api/customerApi';
 import { useGetCustomerOrdersQuery } from '../../store/api/orderApi';
 
@@ -17,6 +19,8 @@ import { useGetCustomerOrdersQuery } from '../../store/api/orderApi';
 const CustomerDashboard: React.FC = () => {
   const navigate = useNavigate();
   const currentUser = useAppSelector(selectCurrentUser);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
 
   // Fetch customer data
   const { data: customer, isLoading: customerLoading } = useGetCustomerByUserIdQuery(currentUser?.id || '', {
@@ -198,7 +202,7 @@ const CustomerDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div style={{ fontSize: typography.fontSize.base, color: colors.text.secondary }}>
-                  {activeOrder.items.length} items • ₹{activeOrder.total.toFixed(2)}
+                  {activeOrder.items.length} items • {formatMoney(Math.round(activeOrder.total * 100), currency, locale)}
                 </div>
                 <div style={{ marginTop: spacing[2], color: colors.brand.primary, fontWeight: typography.fontWeight.semibold }}>
                   Track Order →
@@ -230,7 +234,7 @@ const CustomerDashboard: React.FC = () => {
                       Order #{order.orderNumber}
                     </div>
                     <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
-                      ₹{order.total.toFixed(2)}
+                      {formatMoney(Math.round(order.total * 100), currency, locale)}
                     </div>
                   </div>
                   <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>

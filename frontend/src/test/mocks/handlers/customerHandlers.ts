@@ -57,20 +57,6 @@ const mockCustomer = {
 };
 
 export const customerHandlers = [
-  http.get(`${API}/api/customers`, ({ request }) => {
-    const url = new URL(request.url);
-    if (url.searchParams.get('search') || url.searchParams.get('query')) {
-      return HttpResponse.json({
-        content: [mockCustomer],
-        totalElements: 1,
-        totalPages: 1,
-        size: 20,
-        number: 0,
-      });
-    }
-    return HttpResponse.json([mockCustomer]);
-  }),
-
   http.post(`${API}/api/customers`, () =>
     HttpResponse.json(mockCustomer),
   ),
@@ -79,44 +65,49 @@ export const customerHandlers = [
     HttpResponse.json(mockCustomer),
   ),
 
-  http.get(`${API}/api/customers/stats`, () =>
+  http.get(`${API}/api/customers/:id`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.get(`${API}/api/customers/user/:userId`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.get(`${API}/api/customers/email/:email`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.get(`${API}/api/customers/phone/:phone`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.get(`${API}/api/customers`, () =>
+    HttpResponse.json([mockCustomer]),
+  ),
+
+  http.get(`${API}/api/customers/active`, () =>
+    HttpResponse.json([mockCustomer]),
+  ),
+
+  http.get(`${API}/api/customers/search`, () =>
     HttpResponse.json({
-      totalCustomers: 150,
-      activeCustomers: 120,
-      inactiveCustomers: 30,
-      verifiedEmails: 100,
-      verifiedPhones: 80,
-      customersByTier: { BRONZE: 60, SILVER: 40, GOLD: 15, PLATINUM: 5 },
-      highValueCustomers: 20,
-      averageLifetimeValue: 8500,
+      content: [mockCustomer],
+      totalElements: 1,
+      totalPages: 1,
+      size: 20,
+      number: 0,
     }),
   ),
 
-  http.get(`${API}/api/customers/:id`, ({ request }) => {
-    const url = new URL(request.url);
-    if (url.searchParams.get('loyaltyInfo') === 'true') {
-      return HttpResponse.json({
-        maxRedeemablePoints: 300,
-        maxDiscountAmount: 30,
-        redemptionRate: '1:0.1',
-      });
-    }
-    return HttpResponse.json(mockCustomer);
-  }),
-
-  http.patch(`${API}/api/customers/:id`, () =>
+  http.put(`${API}/api/customers/:id`, () =>
     HttpResponse.json(mockCustomer),
   ),
 
-  http.post(`${API}/api/customers/:id/activate`, () =>
-    HttpResponse.json(mockCustomer),
-  ),
-
-  http.post(`${API}/api/customers/:id/deactivate`, () =>
+  http.patch(`${API}/api/customers/:id/deactivate`, () =>
     HttpResponse.json({ ...mockCustomer, active: false }),
   ),
 
-  http.post(`${API}/api/customers/:id/loyalty`, () =>
+  http.patch(`${API}/api/customers/:id/activate`, () =>
     HttpResponse.json(mockCustomer),
   ),
 
@@ -132,6 +123,46 @@ export const customerHandlers = [
     HttpResponse.json(mockCustomer),
   ),
 
+  http.patch(`${API}/api/customers/:customerId/addresses/:addressId/set-default`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.post(`${API}/api/customers/:customerId/loyalty/points`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.post(`${API}/api/customers/:customerId/loyalty/redeem`, () =>
+    HttpResponse.json({ customer: mockCustomer, pointsRedeemed: 100, discountAmount: 50 }),
+  ),
+
+  http.get(`${API}/api/customers/:customerId/loyalty/max-redeemable`, () =>
+    HttpResponse.json({ maxRedeemablePoints: 300, maxDiscountAmount: 150, redemptionRate: '2:1' }),
+  ),
+
+  http.get(`${API}/api/customers/loyalty/tier/:tier`, () =>
+    HttpResponse.json([mockCustomer]),
+  ),
+
+  http.put(`${API}/api/customers/:customerId/preferences`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.post(`${API}/api/customers/:customerId/order-stats`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.post(`${API}/api/customers/:customerId/notes`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.patch(`${API}/api/customers/:customerId/verify-email`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.patch(`${API}/api/customers/:customerId/verify-phone`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
   http.post(`${API}/api/customers/:customerId/tags`, () =>
     HttpResponse.json(mockCustomer),
   ),
@@ -140,8 +171,65 @@ export const customerHandlers = [
     HttpResponse.json(mockCustomer),
   ),
 
-  http.post(`${API}/api/customers/:id`, () =>
-    HttpResponse.json(mockCustomer),
+  http.get(`${API}/api/customers/tags`, () =>
+    HttpResponse.json([mockCustomer]),
+  ),
+
+  http.get(`${API}/api/customers/high-value`, () =>
+    HttpResponse.json([mockCustomer]),
+  ),
+
+  http.get(`${API}/api/customers/top-spenders`, () =>
+    HttpResponse.json([mockCustomer]),
+  ),
+
+  http.get(`${API}/api/customers/recently-active`, () =>
+    HttpResponse.json([mockCustomer]),
+  ),
+
+  http.get(`${API}/api/customers/inactive`, () =>
+    HttpResponse.json([]),
+  ),
+
+  http.get(`${API}/api/customers/birthdays/today`, () =>
+    HttpResponse.json([]),
+  ),
+
+  http.get(`${API}/api/customers/marketing-opt-in`, () =>
+    HttpResponse.json([mockCustomer]),
+  ),
+
+  http.get(`${API}/api/customers/sms-opt-in`, () =>
+    HttpResponse.json([]),
+  ),
+
+  http.get(`${API}/api/customers/stats`, () =>
+    HttpResponse.json({
+      totalCustomers: 150,
+      activeCustomers: 120,
+      inactiveCustomers: 30,
+      verifiedEmails: 100,
+      verifiedPhones: 80,
+      customersByTier: { BRONZE: 60, SILVER: 40, GOLD: 15, PLATINUM: 5 },
+      highValueCustomers: 20,
+      averageLifetimeValue: 8500,
+    }),
+  ),
+
+  http.get(`${API}/api/customers/:customerId/order-stats`, () =>
+    HttpResponse.json(mockCustomer.orderStats),
+  ),
+
+  http.get(`${API}/api/customers/:customerId/preferences`, () =>
+    HttpResponse.json(mockCustomer.preferences),
+  ),
+
+  http.get(`${API}/api/customers/:customerId/loyalty/points`, () =>
+    HttpResponse.json(mockCustomer.loyaltyInfo),
+  ),
+
+  http.get(`${API}/api/customers/:customerId/addresses`, () =>
+    HttpResponse.json(mockCustomer.addresses),
   ),
 
   http.delete(`${API}/api/customers/:id`, () =>

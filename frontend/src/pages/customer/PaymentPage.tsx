@@ -6,7 +6,8 @@ import { useCreateOrderMutation } from '../../store/api/orderApi';
 import { useInitiatePaymentMutation } from '../../store/api/paymentApi';
 import { useGetCustomerByUserIdQuery, useGetOrCreateCustomerMutation, useUpdatePreferencesMutation } from '../../store/api/customerApi';
 import { useCheckDeliveryRadiusQuery } from '../../store/api/storeApi';
-import { selectCartItems, selectCartSubtotal, selectDeliveryFee, selectSelectedStoreId } from '../../store/slices/cartSlice';
+import { selectCartItems, selectCartSubtotal, selectDeliveryFee, selectSelectedStoreId, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { colors } from '../../styles/design-tokens';
 import { loadStripe } from '@stripe/stripe-js';
@@ -39,6 +40,8 @@ const PaymentPage: React.FC = () => {
   const baseDeliveryFee = useAppSelector(selectDeliveryFee);
   const currentUser = useAppSelector(selectCurrentUser);
   const selectedStoreId = useAppSelector(selectSelectedStoreId);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
 
   // Get guest info from navigation state (passed from GuestCheckoutPage)
   const guestInfo = location.state?.guestInfo as GuestInfo | undefined;
@@ -432,7 +435,7 @@ const PaymentPage: React.FC = () => {
                   </svg>
                 }
                 title="Delivery"
-                sub={`+₹${baseDeliveryFee.toFixed(0)} delivery`}
+                sub={`+${formatMoney(Math.round(baseDeliveryFee * 100), currency, locale)} delivery`}
               />
               <OrderTypeCard
                 active={orderType === 'TAKEAWAY'}
@@ -589,7 +592,7 @@ const PaymentPage: React.FC = () => {
                     {item.name}
                   </div>
                   <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-1)' }}>
-                    ₹{(item.price * item.quantity).toFixed(2)}
+                    {formatMoney(Math.round(item.price * item.quantity * 100), currency, locale)}
                   </span>
                 </div>
               ))}
@@ -599,11 +602,11 @@ const PaymentPage: React.FC = () => {
 
             {/* Breakdown */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
-              <SummaryRow label={`Subtotal (${cartItems.length} items)`} value={`₹${subtotal.toFixed(2)}`} />
+              <SummaryRow label={`Subtotal (${cartItems.length} items)`} value={formatMoney(Math.round(subtotal * 100), currency, locale)} />
               {orderType === 'DELIVERY' && (
-                <SummaryRow label="Delivery fee" value={`₹${deliveryFee.toFixed(2)}`} />
+                <SummaryRow label="Delivery fee" value={formatMoney(Math.round(deliveryFee * 100), currency, locale)} />
               )}
-              <SummaryRow label="Tax (5%)" value={`₹${tax.toFixed(2)}`} />
+              <SummaryRow label="Tax (5%)" value={formatMoney(Math.round(tax * 100), currency, locale)} />
             </div>
 
             <div style={{ height: '1px', background: 'var(--border)', marginBottom: '16px' }} />
@@ -611,7 +614,7 @@ const PaymentPage: React.FC = () => {
             {/* Total */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
               <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-1)' }}>Total</span>
-              <span style={{ fontWeight: 800, fontSize: '1.4rem', color: 'var(--gold)' }}>₹{total.toFixed(2)}</span>
+              <span style={{ fontWeight: 800, fontSize: '1.4rem', color: 'var(--gold)' }}>{formatMoney(Math.round(total * 100), currency, locale)}</span>
             </div>
             <p style={{ fontSize: '0.72rem', color: 'var(--text-3)', marginBottom: '20px', lineHeight: 1.4 }}>
               Delivery charges may vary based on distance.
@@ -661,8 +664,8 @@ const PaymentPage: React.FC = () => {
               {isLoading
                 ? 'Processing...'
                 : paymentMethod === 'CASH'
-                  ? `Place Order — ₹${total.toFixed(2)}`
-                  : `Pay ₹${total.toFixed(2)} via Razorpay`}
+                  ? `Place Order — ${formatMoney(Math.round(total * 100), currency, locale)}`
+                  : `Pay ${formatMoney(Math.round(total * 100), currency, locale)} via Razorpay`}
             </button>
 
             <button

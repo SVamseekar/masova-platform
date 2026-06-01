@@ -9,7 +9,7 @@ const MENU_ITEMS = [
   {
     name: 'Masala Dosa',
     cuisine: 'South Indian',
-    price: '₹149',
+    price: '€14.90',
     imageUrl: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=400&q=80',
     ring: '#d97706',
     tag: "Chef's Pick",
@@ -17,7 +17,7 @@ const MENU_ITEMS = [
   {
     name: 'Chicken Biryani',
     cuisine: 'North Indian',
-    price: '₹299',
+    price: '€29.90',
     imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&q=80',
     ring: '#f59e0b',
     tag: 'Bestseller',
@@ -25,7 +25,7 @@ const MENU_ITEMS = [
   {
     name: 'Margherita Pizza',
     cuisine: 'Italian',
-    price: '₹349',
+    price: '€34.90',
     imageUrl: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400&q=80',
     ring: '#ef4444',
     tag: 'New',
@@ -33,7 +33,7 @@ const MENU_ITEMS = [
   {
     name: 'Hakka Noodles',
     cuisine: 'Indo-Chinese',
-    price: '₹199',
+    price: '€19.90',
     imageUrl: 'https://images.unsplash.com/photo-1617622141675-d3005b9067c5?w=400&q=80',
     ring: '#84cc16',
     tag: '',
@@ -41,7 +41,7 @@ const MENU_ITEMS = [
   {
     name: 'Chicken Burger',
     cuisine: 'American',
-    price: '₹249',
+    price: '€24.90',
     imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&q=80',
     ring: '#fb923c',
     tag: 'Popular',
@@ -49,7 +49,7 @@ const MENU_ITEMS = [
   {
     name: 'Chocolate Lava Cake',
     cuisine: 'Desserts',
-    price: '₹199',
+    price: '€19.90',
     imageUrl: 'https://images.unsplash.com/photo-1633981823231-2a2a7c9b014c?w=400&q=80',
     ring: '#a78bfa',
     tag: '',

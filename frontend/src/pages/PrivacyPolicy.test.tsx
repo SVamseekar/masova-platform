@@ -18,7 +18,7 @@ describe('PrivacyPolicy', () => {
   it('displays the last updated date', () => {
     renderUnauthenticated(<PrivacyPolicy />);
     expect(screen.getByText(/Last Updated:/)).toBeInTheDocument();
-    expect(screen.getAllByText(/January 1, 2025/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/January 1, 2025/)).toBeInTheDocument();
   });
 
   it('displays the effective date', () => {
@@ -35,7 +35,7 @@ describe('PrivacyPolicy', () => {
   it('renders Section 2: Data Controller Information', () => {
     renderUnauthenticated(<PrivacyPolicy />);
     expect(screen.getByText('2. Data Controller Information')).toBeInTheDocument();
-    expect(screen.getAllByText(/privacy@masova.com/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/privacy@masova.com/)).toBeInTheDocument();
   });
 
   it('renders Section 3: Personal Data We Collect', () => {

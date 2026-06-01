@@ -39,16 +39,63 @@ const mockLowStockItem = {
 };
 
 export const inventoryHandlers = [
-  // Inventory
-  http.get(`${API}/api/inventory`, () =>
-    HttpResponse.json([mockInventoryItem, mockLowStockItem]),
-  ),
-
-  http.post(`${API}/api/inventory`, () =>
+  http.post(`${API}/inventory/items`, () =>
     HttpResponse.json(mockInventoryItem),
   ),
 
-  http.get(`${API}/api/inventory/value`, () =>
+  http.get(`${API}/inventory/items`, () =>
+    HttpResponse.json([mockInventoryItem, mockLowStockItem]),
+  ),
+
+  http.get(`${API}/inventory/items/:id`, () =>
+    HttpResponse.json(mockInventoryItem),
+  ),
+
+  http.get(`${API}/inventory/items/category/:category`, () =>
+    HttpResponse.json([mockInventoryItem]),
+  ),
+
+  http.get(`${API}/inventory/items/search`, () =>
+    HttpResponse.json([mockInventoryItem]),
+  ),
+
+  http.put(`${API}/inventory/items/:id`, () =>
+    HttpResponse.json(mockInventoryItem),
+  ),
+
+  http.patch(`${API}/inventory/items/:id/adjust`, () =>
+    HttpResponse.json(mockInventoryItem),
+  ),
+
+  http.patch(`${API}/inventory/items/:id/reserve`, () =>
+    HttpResponse.json(mockInventoryItem),
+  ),
+
+  http.patch(`${API}/inventory/items/:id/release`, () =>
+    HttpResponse.json(mockInventoryItem),
+  ),
+
+  http.patch(`${API}/inventory/items/:id/consume`, () =>
+    HttpResponse.json(mockInventoryItem),
+  ),
+
+  http.get(`${API}/inventory/low-stock`, () =>
+    HttpResponse.json([mockLowStockItem]),
+  ),
+
+  http.get(`${API}/inventory/out-of-stock`, () =>
+    HttpResponse.json([]),
+  ),
+
+  http.get(`${API}/inventory/expiring-soon`, () =>
+    HttpResponse.json([mockInventoryItem]),
+  ),
+
+  http.get(`${API}/inventory/alerts/low-stock`, () =>
+    HttpResponse.json([mockLowStockItem]),
+  ),
+
+  http.get(`${API}/inventory/value`, () =>
     HttpResponse.json({
       totalValue: 125000,
       totalItems: 45,
@@ -56,97 +103,69 @@ export const inventoryHandlers = [
     }),
   ),
 
-  http.get(`${API}/api/inventory/:id`, () =>
-    HttpResponse.json(mockInventoryItem),
+  http.get(`${API}/inventory/value/by-category`, () =>
+    HttpResponse.json({
+      totalValue: 125000,
+      totalItems: 45,
+      categoryBreakdown: { RAW_MATERIAL: 80000, INGREDIENT: 30000, PACKAGING: 15000 },
+    }),
   ),
 
-  http.patch(`${API}/api/inventory/:id`, () =>
-    HttpResponse.json(mockInventoryItem),
-  ),
-
-  http.delete(`${API}/api/inventory/:id`, () =>
+  http.delete(`${API}/inventory/items/:id`, () =>
     new HttpResponse(null, { status: 204 }),
   ),
 
-  http.patch(`${API}/api/inventory/:id/stock`, () =>
-    HttpResponse.json(mockInventoryItem),
+  // Suppliers
+  http.post(`${API}/inventory/suppliers`, () =>
+    HttpResponse.json({ id: 'sup-1', supplierName: 'Fresh Farms', status: 'ACTIVE' }),
   ),
 
-  // Suppliers
-  http.get(`${API}/api/suppliers`, () =>
+  http.get(`${API}/inventory/suppliers`, () =>
     HttpResponse.json([
       { id: 'sup-1', supplierName: 'Fresh Farms', status: 'ACTIVE', qualityRating: 4.5 },
       { id: 'sup-2', supplierName: 'Veggie World', status: 'ACTIVE', qualityRating: 4.2 },
     ]),
   ),
 
-  http.post(`${API}/api/suppliers`, () =>
+  http.get(`${API}/inventory/suppliers/:id`, () =>
     HttpResponse.json({ id: 'sup-1', supplierName: 'Fresh Farms', status: 'ACTIVE' }),
   ),
 
-  http.get(`${API}/api/suppliers/:id`, () =>
-    HttpResponse.json({ id: 'sup-1', supplierName: 'Fresh Farms', status: 'ACTIVE' }),
+  http.get(`${API}/inventory/suppliers/active`, () =>
+    HttpResponse.json([{ id: 'sup-1', supplierName: 'Fresh Farms', status: 'ACTIVE' }]),
   ),
 
-  http.patch(`${API}/api/suppliers/:id`, () =>
-    HttpResponse.json({ id: 'sup-1', supplierName: 'Fresh Farms', status: 'ACTIVE' }),
+  http.get(`${API}/inventory/suppliers/preferred`, () =>
+    HttpResponse.json([{ id: 'sup-1', supplierName: 'Fresh Farms', isPreferred: true }]),
   ),
 
-  http.delete(`${API}/api/suppliers/:id`, () =>
-    new HttpResponse(null, { status: 204 }),
+  http.get(`${API}/inventory/suppliers/reliable`, () =>
+    HttpResponse.json([{ id: 'sup-1', supplierName: 'Fresh Farms', reliability: 'HIGH' }]),
   ),
 
-  http.get(`${API}/api/suppliers/compare`, () =>
-    HttpResponse.json([]),
+  http.get(`${API}/inventory/suppliers/search`, () =>
+    HttpResponse.json([{ id: 'sup-1', supplierName: 'Fresh Farms' }]),
   ),
 
   // Purchase Orders
-  http.get(`${API}/api/purchase-orders`, () =>
+  http.get(`${API}/inventory/purchase-orders`, () =>
     HttpResponse.json([]),
   ),
 
-  http.post(`${API}/api/purchase-orders`, () =>
+  http.post(`${API}/inventory/purchase-orders`, () =>
     HttpResponse.json({ id: 'po-1', orderNumber: 'PO-001', status: 'DRAFT' }),
-  ),
-
-  http.get(`${API}/api/purchase-orders/:id`, () =>
-    HttpResponse.json({ id: 'po-1', orderNumber: 'PO-001', status: 'DRAFT' }),
-  ),
-
-  http.patch(`${API}/api/purchase-orders/:id`, () =>
-    HttpResponse.json({ id: 'po-1', orderNumber: 'PO-001', status: 'APPROVED' }),
-  ),
-
-  http.delete(`${API}/api/purchase-orders/:id`, () =>
-    new HttpResponse(null, { status: 204 }),
-  ),
-
-  http.post(`${API}/api/purchase-orders/auto-generate`, () =>
-    HttpResponse.json([{ id: 'po-2', orderNumber: 'PO-002', status: 'DRAFT' }]),
   ),
 
   // Waste
-  http.get(`${API}/api/waste`, () =>
+  http.get(`${API}/inventory/waste`, () =>
     HttpResponse.json([]),
   ),
 
-  http.post(`${API}/api/waste`, () =>
+  http.post(`${API}/inventory/waste`, () =>
     HttpResponse.json({ id: 'waste-1', itemName: 'Tomatoes', quantity: 2, wasteCost: 80 }),
   ),
 
-  http.get(`${API}/api/waste/:id`, () =>
-    HttpResponse.json({ id: 'waste-1', itemName: 'Tomatoes', quantity: 2, wasteCost: 80 }),
-  ),
-
-  http.patch(`${API}/api/waste/:id`, () =>
-    HttpResponse.json({ id: 'waste-1', itemName: 'Tomatoes', quantity: 2, wasteCost: 80 }),
-  ),
-
-  http.delete(`${API}/api/waste/:id`, () =>
-    new HttpResponse(null, { status: 204 }),
-  ),
-
-  http.get(`${API}/api/waste/analytics`, () =>
+  http.get(`${API}/inventory/waste/trend`, () =>
     HttpResponse.json([
       { month: '2025-01', totalWasteCost: 5000, recordCount: 12 },
       { month: '2024-12', totalWasteCost: 4500, recordCount: 10 },

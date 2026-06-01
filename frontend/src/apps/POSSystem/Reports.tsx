@@ -9,7 +9,8 @@ import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import { useAppSelector } from '../../store/hooks';
-import { CURRENCY } from '../../config/business-config';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import {
   useGetTodaySalesMetricsQuery,
   useGetSalesTrendsQuery,
@@ -28,6 +29,9 @@ import { colors, shadows, spacing, typography } from '../../styles/design-tokens
 const Reports: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.auth);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const [activeTab, setActiveTab] = useState<'sales' | 'staff' | 'inventory'>('sales');
 
   // Fetch real data from APIs
@@ -242,7 +246,7 @@ const Reports: React.FC = () => {
                       color: colors.text.primary,
                       marginBottom: spacing[2]
                     }}>
-                      {CURRENCY.format(todayData?.todaySales || 0)}
+                      {fmt(todayData?.todaySales || 0)}
                     </div>
                     <div style={{
                       fontSize: typography.fontSize.xs,
@@ -266,7 +270,7 @@ const Reports: React.FC = () => {
                       color: colors.text.primary,
                       marginBottom: spacing[2]
                     }}>
-                      {CURRENCY.format(weekData?.totalSales || 0)}
+                      {fmt(weekData?.totalSales || 0)}
                     </div>
                     <div style={{
                       fontSize: typography.fontSize.xs,
@@ -290,7 +294,7 @@ const Reports: React.FC = () => {
                       color: colors.text.primary,
                       marginBottom: spacing[2]
                     }}>
-                      {CURRENCY.format(monthData?.totalSales || 0)}
+                      {fmt(monthData?.totalSales || 0)}
                     </div>
                     <div style={{
                       fontSize: typography.fontSize.xs,
@@ -371,7 +375,7 @@ const Reports: React.FC = () => {
                             fontWeight: typography.fontWeight.bold,
                             color: colors.brand.primary
                           }}>
-                            {CURRENCY.format(item.revenue)}
+                            {fmt(item.revenue)}
                           </div>
                         </div>
                       ))}
@@ -474,7 +478,7 @@ const Reports: React.FC = () => {
                           fontWeight: typography.fontWeight.bold,
                           color: colors.brand.primary
                         }}>
-                          {CURRENCY.format(staff.salesGenerated)}
+                          {fmt(staff.salesGenerated)}
                         </div>
                       </div>
                     ))}

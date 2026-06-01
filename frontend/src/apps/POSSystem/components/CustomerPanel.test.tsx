@@ -12,40 +12,25 @@ const mockCreateOrder = vi.fn().mockReturnValue({
   unwrap: () => Promise.resolve({ id: 'order-1', orderNumber: 'ORD-001' }),
 });
 
-vi.mock('../../../store/api/orderApi', async () => {
-  const actual = await vi.importActual('../../../store/api/orderApi');
-  return {
-    ...actual,
+vi.mock('../../../store/api/orderApi', () => ({
   useCreateOrderMutation: () => [mockCreateOrder, { isLoading: false }],
-  };
-});
+}));
 
-vi.mock('../../../store/api/paymentApi', async () => {
-  const actual = await vi.importActual('../../../store/api/paymentApi');
-  return {
-    ...actual,
+vi.mock('../../../store/api/paymentApi', () => ({
   useInitiatePaymentMutation: () => [vi.fn(), { isLoading: false }],
   useVerifyPaymentMutation: () => [vi.fn(), { isLoading: false }],
-  };
-});
+}));
 
-vi.mock('../../../store/api/customerApi', async () => {
-  const actual = await vi.importActual('../../../store/api/customerApi');
-  return {
-    ...actual,
+vi.mock('../../../store/api/customerApi', () => ({
   useGetOrCreateCustomerMutation: () => [
     vi.fn().mockReturnValue({
       unwrap: () => Promise.resolve({ id: 'cust-1' }),
     }),
     { isLoading: false },
   ],
-  };
-});
+}));
 
-vi.mock('../../../hooks/useGeocoding', async () => {
-  const actual = await vi.importActual('../../../hooks/useGeocoding');
-  return {
-    ...actual,
+vi.mock('../../../hooks/useGeocoding', () => ({
   useGeocoding: () => ({
     geocode: vi.fn().mockResolvedValue({ latitude: 17.385, longitude: 78.487 }),
     loading: false,
@@ -55,13 +40,9 @@ vi.mock('../../../hooks/useGeocoding', async () => {
     (street: string, city: string, _: any, pincode: string) =>
       `${street}, ${city}, ${pincode}`
   ),
-  };
-});
+}));
 
-vi.mock('./PINAuthModal', async () => {
-  const actual = await vi.importActual('./PINAuthModal');
-  return {
-    ...actual,
+vi.mock('./PINAuthModal', () => ({
   PINAuthModal: ({ isOpen, onAuthenticated }: any) =>
     isOpen ? (
       <div data-testid="pin-auth-modal">
@@ -81,8 +62,7 @@ vi.mock('./PINAuthModal', async () => {
         </button>
       </div>
     ) : null,
-  };
-});
+}));
 
 const mockItems = [
   {

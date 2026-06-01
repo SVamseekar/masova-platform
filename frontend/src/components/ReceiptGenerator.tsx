@@ -1,6 +1,8 @@
 import { Box, Button, Dialog, DialogContent, DialogTitle, Typography, Divider, IconButton } from '@mui/material';
 import { Print as PrintIcon, Close as CloseIcon, Download as DownloadIcon } from '@mui/icons-material';
-import { CURRENCY } from '../config/business-config';
+import { useAppSelector } from '../store/hooks';
+import { selectCartCurrency, selectCartLocale } from '../store/slices/cartSlice';
+import { formatMoney } from '../utils/currency';
 import { format } from 'date-fns';
 import { createCard, createButtonVariant } from '../styles/neumorphic-utils';
 import { colors, shadows } from '../styles/design-tokens';
@@ -58,6 +60,9 @@ export default function ReceiptGenerator({ open, onClose, receiptData }: Receipt
     storeAddress = 'Bangalore, Karnataka, India',
     storePhone = '+91 99999 99999',
   } = receiptData;
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
 
   const handlePrint = () => {
     window.print();
@@ -181,9 +186,9 @@ export default function ReceiptGenerator({ open, onClose, receiptData }: Receipt
       <div class="item">
         <div class="item-header">
           <span>${item.quantity} × ${item.itemName}</span>
-          <span>${CURRENCY.format(item.quantity * item.price)}</span>
+          <span>${fmt(item.quantity * item.price)}</span>
         </div>
-        <div class="item-details">@ ${CURRENCY.format(item.price)} each</div>
+        <div class="item-details">@ ${fmt(item.price)} each</div>
         ${item.specialInstructions ? `<div class="item-details">Note: ${item.specialInstructions}</div>` : ''}
       </div>
     `).join('')}
@@ -192,21 +197,21 @@ export default function ReceiptGenerator({ open, onClose, receiptData }: Receipt
   <div class="totals">
     <div class="total-row">
       <span>Subtotal:</span>
-      <span>${CURRENCY.format(subtotal)}</span>
+      <span>${fmt(subtotal)}</span>
     </div>
     <div class="total-row">
       <span>Tax (5%):</span>
-      <span>${CURRENCY.format(tax)}</span>
+      <span>${fmt(tax)}</span>
     </div>
     ${deliveryFee > 0 ? `
     <div class="total-row">
       <span>Delivery Fee:</span>
-      <span>${CURRENCY.format(deliveryFee)}</span>
+      <span>${fmt(deliveryFee)}</span>
     </div>
     ` : ''}
     <div class="total-row grand-total">
       <span>TOTAL:</span>
-      <span>${CURRENCY.format(total)}</span>
+      <span>${fmt(total)}</span>
     </div>
   </div>
 
@@ -340,11 +345,11 @@ export default function ReceiptGenerator({ open, onClose, receiptData }: Receipt
                     {item.quantity} × {item.itemName}
                   </Typography>
                   <Typography variant="body2" fontWeight="medium">
-                    {CURRENCY.format(item.quantity * item.price)}
+                    {fmt(item.quantity * item.price)}
                   </Typography>
                 </Box>
                 <Typography variant="caption" color="text.secondary" sx={{ ml: 2 }}>
-                  @ {CURRENCY.format(item.price)} each
+                  @ {fmt(item.price)} each
                 </Typography>
                 {item.specialInstructions && (
                   <Typography variant="caption" color="text.secondary" sx={{ ml: 2, display: 'block' }}>
@@ -361,16 +366,16 @@ export default function ReceiptGenerator({ open, onClose, receiptData }: Receipt
           <Box sx={{ mb: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
               <Typography variant="body2">Subtotal:</Typography>
-              <Typography variant="body2">{CURRENCY.format(subtotal)}</Typography>
+              <Typography variant="body2">{fmt(subtotal)}</Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
               <Typography variant="body2">Tax (5%):</Typography>
-              <Typography variant="body2">{CURRENCY.format(tax)}</Typography>
+              <Typography variant="body2">{fmt(tax)}</Typography>
             </Box>
             {deliveryFee > 0 && (
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                 <Typography variant="body2">Delivery Fee:</Typography>
-                <Typography variant="body2">{CURRENCY.format(deliveryFee)}</Typography>
+                <Typography variant="body2">{fmt(deliveryFee)}</Typography>
               </Box>
             )}
             <Divider sx={{ my: 1 }} />
@@ -379,7 +384,7 @@ export default function ReceiptGenerator({ open, onClose, receiptData }: Receipt
                 TOTAL:
               </Typography>
               <Typography variant="h6" fontWeight="bold">
-                {CURRENCY.format(total)}
+                {fmt(total)}
               </Typography>
             </Box>
           </Box>

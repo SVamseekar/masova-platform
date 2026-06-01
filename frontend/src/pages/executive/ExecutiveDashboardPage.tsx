@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import AppHeader from '../../components/common/AppHeader';
 import axios from 'axios';
 import API_CONFIG from '../../config/api.config';
+import { useAppSelector } from '../../store/hooks';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 
 interface KPITile {
   kpiName: string;
@@ -66,6 +69,8 @@ interface ExecutiveSummary {
 }
 
 const ExecutiveDashboardPage: React.FC = () => {
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
   const [summary, setSummary] = useState<ExecutiveSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<string>('MONTH');
@@ -88,7 +93,7 @@ const ExecutiveDashboardPage: React.FC = () => {
   };
 
   const formatCurrency = (value: number): string => {
-    return `₹${value.toLocaleString('en-IN')}`;
+    return formatMoney(Math.round(value * 100), currency, locale);
   };
 
   const formatPercent = (value: number): string => {

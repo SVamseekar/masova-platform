@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppSelector } from '../store/hooks';
+import { selectCartCurrency, selectCartLocale } from '../store/slices/cartSlice';
+import { formatMoney } from '../utils/currency';
 
 // TypeScript interfaces
 interface MenuItem {
@@ -32,6 +35,9 @@ interface Order {
 
 const CustomerApp: React.FC = () => {
   const navigate = useNavigate();
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const [activeSection, setActiveSection] = useState('menu');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState(false);
@@ -142,7 +148,7 @@ const CustomerApp: React.FC = () => {
               </div>
               <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg shadow-lg">
                 <p className="font-bold text-sm">💰 FLAT 40% OFF</p>
-                <p className="text-xs">On orders above ₹399</p>
+                <p className="text-xs">On orders above 399</p>
               </div>
             </div>
 
@@ -175,7 +181,7 @@ const CustomerApp: React.FC = () => {
             <p className="font-bold text-sm">🔥 Hot & Fresh Pizzas - Delivered in 30 minutes or FREE!</p>
           </div>
           <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-2 rounded-lg text-center">
-            <p className="font-bold text-sm">💰 FLAT 40% OFF on orders above ₹399</p>
+            <p className="font-bold text-sm">💰 FLAT 40% OFF on qualifying orders</p>
           </div>
         </div>
 
@@ -226,7 +232,7 @@ const CustomerApp: React.FC = () => {
                     <p className="text-gray-600 mb-4">{item.description}</p>
                     
                     <div className="flex justify-between items-center">
-                      <span className="text-2xl font-bold text-red-600">₹{item.price}</span>
+                      <span className="text-2xl font-bold text-red-600">{fmt(item.price)}</span>
                       <button
                         onClick={() => addToCart(item)}
                         disabled={!item.available}
@@ -279,7 +285,7 @@ const CustomerApp: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-gray-900">₹{item.price * item.quantity}</p>
+                        <p className="font-bold text-gray-900">{fmt(item.price * item.quantity)}</p>
                         <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
                       </div>
                     </div>
@@ -287,9 +293,9 @@ const CustomerApp: React.FC = () => {
                   
                   <div className="border-t pt-6">
                     <div className="flex justify-between items-center mb-6">
-                      <span className="text-xl font-bold text-gray-900">Total: ₹{getCartTotal()}</span>
+                      <span className="text-xl font-bold text-gray-900">Total: {fmt(getCartTotal())}</span>
                       <span className="text-sm text-green-600 font-medium">
-                        {getCartTotal() > 399 ? '40% OFF Applied!' : `Add ₹${399 - getCartTotal()} more for 40% OFF`}
+                        {getCartTotal() > 399 ? '40% OFF Applied!' : 'Add more for 40% OFF'}
                       </span>
                     </div>
                     
@@ -297,7 +303,7 @@ const CustomerApp: React.FC = () => {
                       onClick={placeOrder}
                       className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-bold text-lg transition-colors"
                     >
-                      Place Order - ₹{getCartTotal()}
+                      Place Order - {fmt(getCartTotal())}
                     </button>
                   </div>
                 </div>

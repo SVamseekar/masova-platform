@@ -7,85 +7,49 @@ const mockItems = [
   { id: 'inv-2', itemCode: 'RM-002', itemName: 'Tomatoes', category: 'INGREDIENT', currentStock: 3, reservedStock: 0, minimumStock: 10, unitCost: 30, unit: 'kg', status: 'LOW_STOCK', isPerishable: true, quantity: 3, reorderLevel: 10 },
 ];
 
-vi.mock('@/store/api/inventoryApi', async () => {
-  const actual = await vi.importActual('@/store/api/inventoryApi');
-  return {
-    ...actual,
-  useGetAllInventoryItemsQuery: () => ({ data: mockItems, isLoading: false, refetch: vi.fn() }),
-  useGetLowStockAlertsQuery: () => ({ data: [mockItems[1]], refetch: vi.fn() }),
-  useGetOutOfStockItemsQuery: () => ({ data: [], refetch: vi.fn() }),
-  useGetExpiringItemsQuery: () => ({ data: [], refetch: vi.fn() }),
-  useGetTotalInventoryValueQuery: () => ({ data: { totalValue: 125000 }, refetch: vi.fn() }),
-  useDeleteInventoryItemMutation: () => ([vi.fn()]),
-  };
-});
+vi.mock('@/store/api/inventoryApi', () => ({
+  useGetAllInventoryItemsQuery: vi.fn().mockReturnValue({ data: mockItems, isLoading: false, refetch: vi.fn() }),
+  useGetLowStockAlertsQuery: vi.fn().mockReturnValue({ data: [mockItems[1]], refetch: vi.fn() }),
+  useGetOutOfStockItemsQuery: vi.fn().mockReturnValue({ data: [], refetch: vi.fn() }),
+  useGetExpiringItemsQuery: vi.fn().mockReturnValue({ data: [], refetch: vi.fn() }),
+  useGetTotalInventoryValueQuery: vi.fn().mockReturnValue({ data: { totalValue: 125000 }, refetch: vi.fn() }),
+  useDeleteInventoryItemMutation: vi.fn().mockReturnValue([vi.fn()]),
+}));
 
-vi.mock('@/contexts/PageStoreContext', async () => {
-  const actual = await vi.importActual('@/contexts/PageStoreContext');
-  return {
-    ...actual,
-  usePageStore: () => ({ selectedStoreId: 'store-1', setSelectedStoreId: vi.fn() }),
-  };
-});
+vi.mock('@/contexts/PageStoreContext', () => ({
+  usePageStore: vi.fn().mockReturnValue({ selectedStoreId: 'store-1', setSelectedStoreId: vi.fn() }),
+}));
 
-vi.mock('@/hoc/withPageStoreContext', async () => {
-  const actual = await vi.importActual('@/hoc/withPageStoreContext');
-  return {
-    ...actual,
+vi.mock('@/hoc/withPageStoreContext', () => ({
   withPageStoreContext: (Component: React.ComponentType) => Component,
-  };
-});
+}));
 
-vi.mock('@/hooks/useSmartBackNavigation', async () => {
-  const actual = await vi.importActual('@/hooks/useSmartBackNavigation');
-  return {
-    ...actual,
-  useSmartBackNavigation: () => ({ handleBack: vi.fn() }),
-  };
-});
+vi.mock('@/hooks/useSmartBackNavigation', () => ({
+  useSmartBackNavigation: vi.fn().mockReturnValue({ handleBack: vi.fn() }),
+}));
 
-vi.mock('@/components/common/FilterBar', async () => {
-  const actual = await vi.importActual('@/components/common/FilterBar');
-  return {
-    ...actual,
+vi.mock('@/components/common/FilterBar', () => ({
   FilterBar: () => <div data-testid="filter-bar">FilterBar</div>,
-  };
-});
+}));
 
-vi.mock('@/utils/filterUtils', async () => {
-  const actual = await vi.importActual('@/utils/filterUtils');
-  return {
-    ...actual,
+vi.mock('@/utils/filterUtils', () => ({
   applyFilters: vi.fn((data: any[]) => data),
   applySort: vi.fn((data: any[]) => data),
   exportToCSV: vi.fn(),
   commonFilters: { searchText: vi.fn() },
-  };
-});
+}));
 
-vi.mock('@/components/backgrounds/AnimatedBackground', async () => {
-  const actual = await vi.importActual('@/components/backgrounds/AnimatedBackground');
-  return {
-    ...actual,
+vi.mock('@/components/backgrounds/AnimatedBackground', () => ({
   default: () => <div data-testid="animated-bg" />,
-  };
-});
+}));
 
-vi.mock('@/components/inventory/StockAdjustmentDialog', async () => {
-  const actual = await vi.importActual('@/components/inventory/StockAdjustmentDialog');
-  return {
-    ...actual,
+vi.mock('@/components/inventory/StockAdjustmentDialog', () => ({
   default: () => null,
-  };
-});
+}));
 
-vi.mock('@/components/inventory/AddInventoryItemDialog', async () => {
-  const actual = await vi.importActual('@/components/inventory/AddInventoryItemDialog');
-  return {
-    ...actual,
+vi.mock('@/components/inventory/AddInventoryItemDialog', () => ({
   default: () => null,
-  };
-});
+}));
 
 describe('InventoryDashboardPage', () => {
   beforeEach(() => {

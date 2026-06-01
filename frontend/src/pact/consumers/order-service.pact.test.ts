@@ -1,5 +1,5 @@
 /**
- * Auto-generated Pact Contract Test for PaymentService
+ * Auto-generated Pact Contract Test for OrderService
  * Generated: 2026-01-18T15:55:55.666Z
  *
  * This test ensures the frontend and backend API contracts match.
@@ -12,18 +12,18 @@ import { like, string, integer, boolean } from '@pact-foundation/pact/src/dsl/ma
 pactWith(
   {
     consumer: 'MaSoVa-Frontend',
-    provider: 'PaymentService',
-    port: 8086,
+    provider: 'OrderService',
+    port: 8083,
   },
   (interaction) => {
 
-    test('markAsReconciled', async () => {
+    test('markOrderDelivered', async () => {
       await interaction
-        .given('payment-service is available')
-        .uponReceiving('POST request to /api/payments/{transactionId}/reconcile')
+        .given('order-service is available')
+        .uponReceiving('PUT request to /api/v1/orders/{orderId}/mark-delivered')
         .withRequest({
-          method: 'POST',
-          path: '/api/payments/{transactionId}/reconcile',
+          method: 'PUT',
+          path: '/api/v1/orders/{orderId}/mark-delivered',
           headers: { 'Content-Type': 'application/json' },
         })
         .willRespondWith({
@@ -40,13 +40,13 @@ pactWith(
       // TODO: Add actual API call verification
     });
 
-    test('markAsReconciled_1', async () => {
+    test('markOrderDelivered_1', async () => {
       await interaction
-        .given('payment-service is available')
-        .uponReceiving('POST request to /api/v1/payments/{transactionId}/reconcile')
+        .given('order-service is available')
+        .uponReceiving('PUT request to /api/orders/{orderId}/mark-delivered')
         .withRequest({
-          method: 'POST',
-          path: '/api/v1/payments/{transactionId}/reconcile',
+          method: 'PUT',
+          path: '/api/orders/{orderId}/mark-delivered',
           headers: { 'Content-Type': 'application/json' },
         })
         .willRespondWith({
@@ -63,13 +63,13 @@ pactWith(
       // TODO: Add actual API call verification
     });
 
-    test('verifyPayment', async () => {
+    test('setDeliveryProof', async () => {
       await interaction
-        .given('payment-service is available')
-        .uponReceiving('POST request to /api/payments/verify')
+        .given('order-service is available')
+        .uponReceiving('PUT request to /api/v1/orders/{orderId}/delivery-proof')
         .withRequest({
-          method: 'POST',
-          path: '/api/payments/verify',
+          method: 'PUT',
+          path: '/api/v1/orders/{orderId}/delivery-proof',
           headers: { 'Content-Type': 'application/json' },
         })
         .willRespondWith({
@@ -86,13 +86,13 @@ pactWith(
       // TODO: Add actual API call verification
     });
 
-    test('verifyPayment_1', async () => {
+    test('setDeliveryProof_1', async () => {
       await interaction
-        .given('payment-service is available')
-        .uponReceiving('POST request to /api/v1/payments/verify')
+        .given('order-service is available')
+        .uponReceiving('PUT request to /api/orders/{orderId}/delivery-proof')
         .withRequest({
-          method: 'POST',
-          path: '/api/v1/payments/verify',
+          method: 'PUT',
+          path: '/api/orders/{orderId}/delivery-proof',
           headers: { 'Content-Type': 'application/json' },
         })
         .willRespondWith({
@@ -109,13 +109,13 @@ pactWith(
       // TODO: Add actual API call verification
     });
 
-    test('initiatePayment', async () => {
+    test('setDeliveryOtp', async () => {
       await interaction
-        .given('payment-service is available')
-        .uponReceiving('POST request to /api/payments/initiate')
+        .given('order-service is available')
+        .uponReceiving('PUT request to /api/v1/orders/{orderId}/delivery-otp')
         .withRequest({
-          method: 'POST',
-          path: '/api/payments/initiate',
+          method: 'PUT',
+          path: '/api/v1/orders/{orderId}/delivery-otp',
           headers: { 'Content-Type': 'application/json' },
         })
         .willRespondWith({

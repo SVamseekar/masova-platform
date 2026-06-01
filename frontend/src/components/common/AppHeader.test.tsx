@@ -72,7 +72,7 @@ describe('AppHeader', () => {
   });
 
   describe('authenticated customer on public nav', () => {
-    it('shows Menu, Promotions nav links and user name', () => {
+    it('shows Home, Offers, Cart, and user name', () => {
       renderWithProviders(
         <AppHeader showPublicNav />,
         {
@@ -81,8 +81,9 @@ describe('AppHeader', () => {
         }
       );
 
-      expect(screen.getByText('Menu')).toBeInTheDocument();
-      expect(screen.getByText('Promotions')).toBeInTheDocument();
+      expect(screen.getByText(/Home/)).toBeInTheDocument();
+      expect(screen.getByText(/Offers/)).toBeInTheDocument();
+      expect(screen.getByText(/Cart/)).toBeInTheDocument();
       expect(screen.getByText('Test Customer')).toBeInTheDocument();
     });
 
@@ -97,11 +98,11 @@ describe('AppHeader', () => {
         }
       );
 
-      await user.click(screen.getByRole('button', { name: /open cart/i }));
+      await user.click(screen.getByText(/Cart/));
       expect(onCartClick).toHaveBeenCalledTimes(1);
     });
 
-    it('shows Sign In button when showPublicNav but no user', () => {
+    it('shows Login button when showPublicNav but no user', () => {
       renderWithProviders(
         <AppHeader showPublicNav />,
         {
@@ -110,12 +111,12 @@ describe('AppHeader', () => {
         }
       );
 
-      expect(screen.getByText(/Sign In/)).toBeInTheDocument();
+      expect(screen.getByText(/Login/)).toBeInTheDocument();
     });
   });
 
   describe('authenticated staff on public nav', () => {
-    it('shows Dashboard button for staff users', () => {
+    it('shows Go to Dashboard button for staff users', () => {
       renderWithProviders(
         <AppHeader showPublicNav />,
         {
@@ -124,10 +125,10 @@ describe('AppHeader', () => {
         }
       );
 
-      expect(screen.getByText(/→ Dashboard/)).toBeInTheDocument();
+      expect(screen.getByText(/Go to Dashboard/)).toBeInTheDocument();
     });
 
-    it('does not show cart button for staff users on public pages', () => {
+    it('does not show Cart button for staff users on public pages', () => {
       renderWithProviders(
         <AppHeader showPublicNav />,
         {
@@ -136,7 +137,7 @@ describe('AppHeader', () => {
         }
       );
 
-      expect(screen.queryByRole('button', { name: /open cart/i })).not.toBeInTheDocument();
+      expect(screen.queryByText(/Cart/)).not.toBeInTheDocument();
     });
   });
 

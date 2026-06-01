@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useGetAvailableMenuQuery, Cuisine, MenuCategory, DietaryType } from '../../../store/api/menuApi';
 import { useAppSelector } from '../../../store/hooks';
-import { selectSelectedStoreId } from '../../../store/slices/cartSlice';
-import { CURRENCY } from '../../../config/business-config';
+import { selectSelectedStoreId, selectCartCurrency, selectCartLocale } from '../../../store/slices/cartSlice';
+import { formatMoney } from '../../../utils/currency';
 import Card from '../../../components/ui/neumorphic/Card';
 import Badge from '../../../components/ui/neumorphic/Badge';
 import { colors, shadows, spacing, typography } from '../../../styles/design-tokens';
@@ -17,6 +17,8 @@ interface MenuPanelProps {
 }
 
 const MenuPanel: React.FC<MenuPanelProps> = ({ onAddItem }) => {
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCuisine, setSelectedCuisine] = useState<Cuisine>(Cuisine.SOUTH_INDIAN);
   const [selectedCategory, setSelectedCategory] = useState<MenuCategory | null>(null);
@@ -434,7 +436,7 @@ const MenuPanel: React.FC<MenuPanelProps> = ({ onAddItem }) => {
                   e.currentTarget.style.boxShadow = shadows.raised.sm;
                 }}
               >
-                {item.name} ({CURRENCY.format(item.basePrice / 100)}) +
+                {item.name} ({formatMoney(item.basePrice, currency, locale)}) +
               </button>
             ))}
           </div>
@@ -581,7 +583,7 @@ const MenuPanel: React.FC<MenuPanelProps> = ({ onAddItem }) => {
                 marginTop: 'auto',
                 marginBottom: spacing[2]
               }}>
-                {CURRENCY.format(item.basePrice / 100)}
+                {formatMoney(item.basePrice, currency, locale)}
               </div>
 
               {/* Add button - full width at bottom */}

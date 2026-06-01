@@ -7,6 +7,8 @@ import Button from '../../components/ui/neumorphic/Button';
 import Badge from '../../components/ui/neumorphic/Badge';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import { usePageStore } from '../../contexts/PageStoreContext';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import {
@@ -58,6 +60,9 @@ interface Order {
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const [currentDate] = useState(new Date().toLocaleDateString('en-IN', {
     weekday: 'long',
     year: 'numeric',
@@ -294,14 +299,14 @@ const DashboardPage: React.FC = () => {
     const dashboardKPIs: KPICardData[] = [
       {
         label: "Today's Sales",
-        value: loadingMetrics ? '...' : `₹${salesData.today.toLocaleString('en-IN')}`,
+        value: loadingMetrics ? '...' : fmt(salesData.today),
         sub: `+${salesData.percentageChange}% vs Last Year`,
         trend: salesData.percentageChange >= 0 ? 'up' : 'down',
         accentColor: '#e53e3e',
       },
       {
         label: 'Weekly Total',
-        value: loadingMetrics ? '...' : `₹${salesData.weeklyTotal.toLocaleString('en-IN')}`,
+        value: loadingMetrics ? '...' : fmt(salesData.weeklyTotal),
         sub: 'Last 7 days',
         trend: 'neutral',
         accentColor: '#7B1FA2',
@@ -734,7 +739,7 @@ const DashboardPage: React.FC = () => {
             color: colors.text.primary,
             marginBottom: spacing[1]
           }}>
-            {loadingMetrics ? '...' : `₹${salesData.weeklyTotal.toLocaleString('en-IN')}`}
+            {loadingMetrics ? '...' : fmt(salesData.weeklyTotal)}
           </div>
           <div style={{
             fontSize: typography.fontSize.xs,
@@ -759,7 +764,7 @@ const DashboardPage: React.FC = () => {
             color: colors.text.primary,
             marginBottom: spacing[1]
           }}>
-            {loadingMetrics ? '...' : `₹${(storeMetrics?.averageOrderValue || 0).toLocaleString('en-IN')}`}
+            {loadingMetrics ? '...' : fmt(storeMetrics?.averageOrderValue || 0)}
           </div>
           <div style={{
             fontSize: typography.fontSize.xs,
@@ -975,7 +980,7 @@ const DashboardPage: React.FC = () => {
                     </div>
                   </div>
                   <div style={{ fontSize: typography.fontSize.xs, color: colors.text.secondary }}>
-                    Orders: {staff.ordersProcessed} | Sales: ₹{staff.salesGenerated.toLocaleString('en-IN')}
+                    Orders: {staff.ordersProcessed} | Sales: {fmt(staff.salesGenerated)}
                   </div>
                 </Card>
               ))}
@@ -1023,7 +1028,7 @@ const DashboardPage: React.FC = () => {
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold }}>
-                      ₹{product.revenue.toLocaleString('en-IN')}
+                      {fmt(product.revenue)}
                     </div>
                     <div style={{ fontSize: typography.fontSize.xs, color: colors.text.secondary }}>
                       {product.percentOfTotalRevenue.toFixed(1)}% of total
@@ -1052,7 +1057,7 @@ const DashboardPage: React.FC = () => {
               <div>
                 <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>Revenue</div>
                 <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>
-                  ₹{executiveSummary.revenue.total.toLocaleString('en-IN')}
+                  {fmt(executiveSummary.revenue.total)}
                 </div>
                 <div style={{ fontSize: typography.fontSize.xs, color: executiveSummary.revenue.change >= 0 ? colors.semantic.success : colors.semantic.error }}>
                   {executiveSummary.revenue.change >= 0 ? '↑' : '↓'} {Math.abs(executiveSummary.revenue.change)}%
@@ -1163,7 +1168,7 @@ const DashboardPage: React.FC = () => {
                     {new Date(forecast.date).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })}
                   </div>
                   <div style={{ fontWeight: typography.fontWeight.bold }}>
-                    ₹{forecast.forecastedSales.toLocaleString('en-IN')}
+                    {fmt(forecast.forecastedSales)}
                   </div>
                 </div>
               ))}

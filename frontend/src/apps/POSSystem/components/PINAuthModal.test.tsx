@@ -10,13 +10,9 @@ import { PINAuthModal } from './PINAuthModal';
 
 const mockValidatePIN = vi.fn();
 
-vi.mock('../../../store/api/userApi', async () => {
-  const actual = await vi.importActual('../../../store/api/userApi');
-  return {
-    ...actual,
+vi.mock('../../../store/api/userApi', () => ({
   useValidatePINMutation: () => [mockValidatePIN, { isLoading: false }],
-  };
-});
+}));
 
 describe('PINAuthModal', () => {
   const defaultProps = {
@@ -64,7 +60,8 @@ describe('PINAuthModal', () => {
         useMemoryRouter: true,
       });
 
-      // password inputs are not textboxes, query by type directly
+      const inputs = screen.getAllByRole('textbox', { hidden: true });
+      // password inputs are not textboxes, let's query by type
       const passwordInputs = document.querySelectorAll(
         'input[type="password"]'
       );
@@ -159,21 +156,17 @@ describe('PINAuthModal', () => {
         useMemoryRouter: true,
       });
 
-      // Enter a 5-digit PIN then click Continue
+      // Enter a 5-digit PIN
       const inputs = document.querySelectorAll('input[type="password"]');
       await user.click(inputs[0] as HTMLElement);
-      for (const d of ['1', '2', '3', '4', '5']) {
-        await user.keyboard(d);
-      }
+      await user.keyboard('12345');
 
-      // Wait for Continue button to become enabled, then click it
-      const continueBtn = screen.getByRole('button', { name: 'Continue' });
-      await waitFor(() => expect(continueBtn).not.toBeDisabled());
-      await user.click(continueBtn);
+      // Click Continue
+      await user.click(screen.getByRole('button', { name: 'Continue' }));
 
       await waitFor(() => {
         expect(screen.getByText('Invalid PIN')).toBeInTheDocument();
-      }, { timeout: 3000 });
+      });
     });
 
     it('shows incomplete PIN error when submitting partial PIN', async () => {

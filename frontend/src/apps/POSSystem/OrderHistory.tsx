@@ -12,7 +12,8 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useGetStoreOrdersQuery } from '../../store/api/orderApi';
 import { useRecordCashPaymentMutation } from '../../store/api/paymentApi';
 import { useAppSelector } from '../../store/hooks';
-import { CURRENCY } from '../../config/business-config';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import AppHeader from '../../components/common/AppHeader';
 import Card from '../../components/ui/neumorphic/Card';
 import Badge from '../../components/ui/neumorphic/Badge';
@@ -26,6 +27,9 @@ import { colors, shadows, spacing, typography } from '../../styles/design-tokens
 const OrderHistory: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.auth);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const storeId = user?.storeId;
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,7 +45,7 @@ const OrderHistory: React.FC = () => {
     const confirmed = window.confirm(
       `Mark this order as PAID?\n\n` +
       `Order: #${order.orderNumber}\n` +
-      `Amount: ${CURRENCY.format(order.total)}\n` +
+      `Amount: ${fmt(order.total)}\n` +
       `Payment Method: ${order.paymentMethod}\n\n` +
       `This confirms that CASH payment has been received.`
     );
@@ -61,7 +65,7 @@ const OrderHistory: React.FC = () => {
         notes: `Cash payment recorded for Order #${order.orderNumber}`,
       }).unwrap();
 
-      alert(`Order #${order.orderNumber} marked as PAID!\n\nCash payment of ${CURRENCY.format(order.total)} recorded.`);
+      alert(`Order #${order.orderNumber} marked as PAID!\n\nCash payment of ${fmt(order.total)} recorded.`);
     } catch (error: any) {
       console.error('Failed to record cash payment:', error);
       alert(`Failed to mark order as paid.\n\n${error?.data?.message || 'Please try again.'}`);
@@ -150,7 +154,7 @@ const OrderHistory: React.FC = () => {
             fontSize: typography.fontSize.sm,
             fontWeight: typography.fontWeight.bold
           }}>
-            {CURRENCY.format(totalSales)}
+            {fmt(totalSales)}
           </div>
         </div>
       </div>
@@ -319,7 +323,7 @@ const OrderHistory: React.FC = () => {
                     fontWeight: typography.fontWeight.bold,
                     color: colors.brand.primary
                   }}>
-                    {CURRENCY.format(order.total || 0)}
+                    {fmt(order.total || 0)}
                   </div>
                 </div>
 

@@ -244,14 +244,14 @@ export const deliveryApi = createApi({
   endpoints: (builder) => ({
     // Get available drivers for manual assignment
     getAvailableDrivers: builder.query<AvailableDriver[], string>({
-      query: (storeId) => `/api/delivery/drivers/available?storeId=${storeId}`,
+      query: (storeId) => `/delivery/drivers/available?storeId=${storeId}`,
       providesTags: ['Drivers'],
     }),
 
     // Auto-dispatch driver to order
     autoDispatch: builder.mutation<AutoDispatchResponse, AutoDispatchRequest>({
       query: (data) => ({
-        url: '/api/delivery/dispatch',
+        url: '/delivery/auto-dispatch',
         method: 'POST',
         body: data,
       }),
@@ -267,7 +267,7 @@ export const deliveryApi = createApi({
     // Get optimized route (DELIV-004: Real navigation)
     getOptimizedRoute: builder.mutation<RouteOptimizationResponse, RouteOptimizationRequest>({
       query: (data) => ({
-        url: '/api/delivery/route',
+        url: '/delivery/route-optimize',
         method: 'POST',
         body: data,
       }),
@@ -300,7 +300,7 @@ export const deliveryApi = createApi({
     // Update driver location
     updateLocation: builder.mutation<void, LocationUpdateRequest>({
       query: (data) => ({
-        url: '/api/delivery/location',
+        url: '/delivery/location-update',
         method: 'POST',
         body: data,
       }),
@@ -309,13 +309,13 @@ export const deliveryApi = createApi({
 
     // Track order
     trackOrder: builder.query<TrackingResponse, string>({
-      query: (orderId) => `/api/delivery/track/${orderId}`,
+      query: (orderId) => `/delivery/track/${orderId}`,
       providesTags: (result, error, orderId) => [{ type: 'Tracking', id: orderId }],
     }),
 
     // Get ETA
     getETA: builder.query<ETAResponse, string>({
-      query: (orderId) => `/api/delivery/track/${orderId}`,
+      query: (orderId) => `/delivery/eta/${orderId}`,
       providesTags: (result, error, orderId) => [{ type: 'Tracking', id: orderId }],
     }),
 
@@ -325,66 +325,66 @@ export const deliveryApi = createApi({
         const params = new URLSearchParams();
         if (startDate) params.append('startDate', startDate);
         if (endDate) params.append('endDate', endDate);
-        return `/api/delivery/metrics?${params.toString()}`;
+        return `/delivery/metrics?${params.toString()}`;
       },
       providesTags: ['Metrics'],
     }),
 
     // Get today's metrics
     getTodayMetrics: builder.query<DeliveryMetrics, string | undefined>({
-      query: (storeId) => `/api/delivery/metrics${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/delivery/metrics/today${storeId ? `?storeId=${storeId}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'Metrics', id: storeId || 'DEFAULT' }],
     }),
 
     // Driver performance
     getDriverPerformance: builder.query<DriverPerformance, string>({
-      query: (driverId) => `/api/delivery/driver/${driverId}/performance`,
+      query: (driverId) => `/delivery/driver/${driverId}/performance`,
       providesTags: (result, error, driverId) => [{ type: 'Drivers', id: driverId }],
     }),
 
     getDriverPerformanceToday: builder.query<DriverPerformance, string>({
-      query: (driverId) => `/api/delivery/driver/${driverId}/performance`,
+      query: (driverId) => `/delivery/driver/${driverId}/performance/today`,
       providesTags: (result, error, driverId) => [{ type: 'Drivers', id: driverId }],
     }),
 
     getDriverStatus: builder.query<DriverStatus, string>({
-      query: (driverId) => `/api/delivery/driver/${driverId}/status`,
+      query: (driverId) => `/delivery/driver/${driverId}/status`,
       providesTags: (result, error, driverId) => [{ type: 'Drivers', id: driverId }],
     }),
 
     getDriverPendingDeliveries: builder.query<DriverDelivery[], string>({
-      query: (driverId) => `/api/delivery/driver/${driverId}/pending`,
+      query: (driverId) => `/delivery/driver/${driverId}/pending`,
       providesTags: (result, error, driverId) => [{ type: 'Drivers', id: driverId }],
     }),
 
     // Delivery zone operations
     checkDeliveryZone: builder.query<DeliveryZoneCheck, { latitude: number; longitude: number }>({
       query: ({ latitude, longitude }) =>
-        `/api/delivery/zones?lat=${latitude}&lng=${longitude}`,
+        `/delivery/zone/check?latitude=${latitude}&longitude=${longitude}`,
       providesTags: ['Zone'],
     }),
 
     getDeliveryZoneFee: builder.query<DeliveryZoneFee, { latitude: number; longitude: number }>({
       query: ({ latitude, longitude }) =>
-        `/api/delivery/zones?lat=${latitude}&lng=${longitude}&type=fee`,
+        `/delivery/zone/fee?latitude=${latitude}&longitude=${longitude}`,
       providesTags: ['Zone'],
     }),
 
     listDeliveryZones: builder.query<DeliveryZone[], void>({
-      query: () => '/api/delivery/zones',
+      query: () => '/delivery/zone/list',
       providesTags: ['Zone'],
     }),
 
     validateDeliveryZone: builder.query<DeliveryZoneCheck, { latitude: number; longitude: number }>({
       query: ({ latitude, longitude }) =>
-        `/api/delivery/zones?lat=${latitude}&lng=${longitude}&validate=true`,
+        `/delivery/zone/validate?latitude=${latitude}&longitude=${longitude}`,
       providesTags: ['Zone'],
     }),
 
     // Delivery operations
     acceptDelivery: builder.mutation<DeliveryActionResponse, { orderId: string; driverId: string }>({
       query: (data) => ({
-        url: '/api/delivery/accept',
+        url: '/delivery/accept',
         method: 'POST',
         body: data,
       }),
@@ -393,7 +393,7 @@ export const deliveryApi = createApi({
 
     rejectDelivery: builder.mutation<DeliveryActionResponse, { orderId: string; driverId: string; reason: string }>({
       query: (data) => ({
-        url: '/api/delivery/reject',
+        url: '/delivery/reject',
         method: 'POST',
         body: data,
       }),
@@ -403,7 +403,7 @@ export const deliveryApi = createApi({
     // OTP operations
     generateDeliveryOTP: builder.mutation<DeliveryOtpResponse, string>({
       query: (orderId) => ({
-        url: `/api/delivery/${orderId}/otp`,
+        url: `/delivery/${orderId}/generate-otp`,
         method: 'POST',
       }),
       invalidatesTags: (result, error, orderId) => [{ type: 'Tracking', id: orderId }],
@@ -411,7 +411,7 @@ export const deliveryApi = createApi({
 
     regenerateDeliveryOTP: builder.mutation<DeliveryOtpResponse, string>({
       query: (orderId) => ({
-        url: `/api/delivery/${orderId}/otp`,
+        url: `/delivery/${orderId}/regenerate-otp`,
         method: 'POST',
       }),
       invalidatesTags: (result, error, orderId) => [{ type: 'Tracking', id: orderId }],

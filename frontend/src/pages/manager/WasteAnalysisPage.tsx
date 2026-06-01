@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import { usePageStore } from '../../contexts/PageStoreContext';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
@@ -22,6 +24,9 @@ import RecordWasteDialog from '../../components/inventory/RecordWasteDialog';
 
 const WasteAnalysisPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const { selectedStoreId } = usePageStore();
   const storeId = selectedStoreId || currentUser?.storeId || '';
   const { handleBack } = useSmartBackNavigation();
@@ -250,7 +255,7 @@ const WasteAnalysisPage: React.FC = () => {
       <div style={statsGridStyles}>
         <div style={statCardStyles}>
           <div style={statLabelStyles}>Total Waste Cost</div>
-          <div style={statValueStyles}>₹{totalWaste?.totalWasteCost.toLocaleString() || 0}</div>
+          <div style={statValueStyles}>{fmt(totalWaste?.totalWasteCost || 0)}</div>
         </div>
         <div style={statCardStyles}>
           <div style={statLabelStyles}>Total Records</div>
@@ -258,7 +263,7 @@ const WasteAnalysisPage: React.FC = () => {
         </div>
         <div style={statCardStyles}>
           <div style={statLabelStyles}>Preventable Waste</div>
-          <div style={statValueStyles}>₹{preventableWaste?.preventableWasteCost.toLocaleString() || 0}</div>
+          <div style={statValueStyles}>{fmt(preventableWaste?.preventableWasteCost || 0)}</div>
         </div>
         <div style={statCardStyles}>
           <div style={statLabelStyles}>Preventable %</div>
@@ -301,7 +306,7 @@ const WasteAnalysisPage: React.FC = () => {
                 <div style={barContentStyles}>
                   <span style={{ fontWeight: typography.fontWeight.semibold }}>{category}</span>
                   <span style={{ fontWeight: typography.fontWeight.bold, color: colors.brand.primary }}>
-                    ₹{cost.toLocaleString()}
+                    {fmt(cost)}
                   </span>
                 </div>
               </div>
@@ -331,7 +336,7 @@ const WasteAnalysisPage: React.FC = () => {
                 <td style={tableCellStyles}>
                   {item.totalQuantity} {item.unit}
                 </td>
-                <td style={tableCellStyles}>₹{item.totalCost.toLocaleString()}</td>
+                <td style={tableCellStyles}>{fmt(item.totalCost)}</td>
               </tr>
             ))}
           </tbody>
@@ -370,7 +375,7 @@ const WasteAnalysisPage: React.FC = () => {
                 <td style={tableCellStyles}>
                   {record.quantity} {record.unit}
                 </td>
-                <td style={tableCellStyles}>₹{record.wasteCost.toFixed(2)}</td>
+                <td style={tableCellStyles}>{fmt(record.wasteCost)}</td>
                 <td style={tableCellStyles}>{record.isPreventable ? '⚠️ Yes' : '—'}</td>
               </tr>
             ))}

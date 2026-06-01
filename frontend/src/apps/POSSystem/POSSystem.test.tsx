@@ -29,31 +29,34 @@ describe('POSSystem (router)', () => {
     expect(screen.getByTestId('pos-dashboard')).toBeInTheDocument();
   });
 
-  it('redirects /history route without crashing', () => {
-    const { container } = renderWithProviders(<POSSystem />, {
+  it('redirects /history to the root dashboard', () => {
+    renderWithProviders(<POSSystem />, {
       useMemoryRouter: true,
       initialEntries: ['/history'],
       preloadedState: createAuthState(managerUser as any, true),
     });
-    // Navigate redirects to /pos — no match in isolated Routes, but renders without crashing
-    expect(container).toBeDefined();
+
+    // After redirect, should render dashboard
+    expect(screen.getByTestId('pos-dashboard')).toBeInTheDocument();
   });
 
-  it('redirects /reports route without crashing', () => {
-    const { container } = renderWithProviders(<POSSystem />, {
+  it('redirects /reports to the root dashboard', () => {
+    renderWithProviders(<POSSystem />, {
       useMemoryRouter: true,
       initialEntries: ['/reports'],
       preloadedState: createAuthState(managerUser as any, true),
     });
-    expect(container).toBeDefined();
+
+    expect(screen.getByTestId('pos-dashboard')).toBeInTheDocument();
   });
 
-  it('redirects unknown routes without crashing', () => {
-    const { container } = renderWithProviders(<POSSystem />, {
+  it('redirects unknown routes to the root dashboard', () => {
+    renderWithProviders(<POSSystem />, {
       useMemoryRouter: true,
       initialEntries: ['/unknown-route'],
       preloadedState: createAuthState(managerUser as any, true),
     });
-    expect(container).toBeDefined();
+
+    expect(screen.getByTestId('pos-dashboard')).toBeInTheDocument();
   });
 });

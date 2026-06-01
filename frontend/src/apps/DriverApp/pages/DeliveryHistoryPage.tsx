@@ -24,12 +24,18 @@ import {
 import { useGetOrdersByStatusQuery } from '../../../store/api/orderApi';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../store/store';
+import { useAppSelector } from '../../../store/hooks';
+import { selectCartCurrency, selectCartLocale } from '../../../store/slices/cartSlice';
+import { formatMoney } from '../../../utils/currency';
 import { MetricCard, StatsChart } from '../components/shared';
 import { colors, spacing, typography, borderRadius, shadows, animations } from '../../../styles/driver-design-tokens';
 import { skeletonStyles } from '../utils/animations';
 
 const DeliveryHistoryPage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const [timeFilter, setTimeFilter] = useState('today');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
@@ -285,7 +291,7 @@ const DeliveryHistoryPage: React.FC = () => {
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: spacing.md }}>
                   {orders.map((order: any) => {
                     const deliveryTime = new Date(order.deliveredAt || order.updatedAt);
-                    const earnings = (order.totalAmount * 0.2).toFixed(0);
+                    const earnings = Math.round(order.totalAmount * 0.2);
                     const isExpanded = expandedOrder === (order.id || order._id);
 
                     return (
@@ -349,7 +355,7 @@ const DeliveryHistoryPage: React.FC = () => {
                                   color: colors.text.primary,
                                 }}
                               >
-                                #{order.orderNumber || (order.id || order._id).slice(-6).toUpperCase()} · ₹{order.totalAmount}
+                                #{order.orderNumber || (order.id || order._id).slice(-6).toUpperCase()} · {fmt(order.totalAmount)}
                               </Typography>
                             </Box>
 
@@ -362,7 +368,7 @@ const DeliveryHistoryPage: React.FC = () => {
                                   lineHeight: typography.lineHeight.tight,
                                 }}
                               >
-                                +₹{earnings}
+                                +{fmt(earnings)}
                               </Typography>
                               <Typography
                                 sx={{

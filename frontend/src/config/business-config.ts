@@ -140,34 +140,6 @@ export const PAYMENT_SETTINGS = {
 } as const;
 
 // ============================================
-// CURRENCY & FORMATTING
-// ============================================
-
-export const CURRENCY = {
-  /**
-   * Currency code
-   */
-  CODE: 'INR',
-
-  /**
-   * Currency symbol
-   */
-  SYMBOL: '₹',
-
-  /**
-   * Decimal places for currency display
-   */
-  DECIMAL_PLACES: 0, // Indian Rupee typically doesn't use decimals in restaurant context
-
-  /**
-   * Format a number as currency
-   */
-  format: (amount: number): string => {
-    return `₹${Math.round(amount).toLocaleString('en-IN')}`;
-  },
-} as const;
-
-// ============================================
 // MENU SETTINGS
 // ============================================
 

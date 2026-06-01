@@ -40,8 +40,8 @@ export function isValidEmail(email: string): boolean {
  * Validate phone number format
  */
 export function isValidPhone(phone: string): boolean {
-  const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,4}[-\s.]?[0-9]{0,9}$/;
-  return phoneRegex.test(phone) && phone.replace(/\D/g, '').length >= 7;
+  const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
+  return phoneRegex.test(phone);
 }
 
 /**

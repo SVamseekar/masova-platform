@@ -38,52 +38,72 @@ const mockRefund = {
 };
 
 export const paymentHandlers = [
-  http.post(`${API}/api/payments/initiate`, () =>
+  http.post(`${API}/payments/initiate`, () =>
     HttpResponse.json({ ...mockTransaction, status: 'INITIATED', paidAt: undefined }),
   ),
 
-  http.post(`${API}/api/payments/cash`, () =>
+  http.post(`${API}/payments/cash`, () =>
     HttpResponse.json({ ...mockTransaction, paymentMethod: 'CASH' }),
   ),
 
-  http.post(`${API}/api/payments/verify`, () =>
+  http.post(`${API}/payments/verify`, () =>
     HttpResponse.json(mockTransaction),
   ),
 
-  http.get(`${API}/api/payments`, ({ request }) => {
-    const url = new URL(request.url);
-    if (url.searchParams.get('reconciliation') === 'true') {
-      return HttpResponse.json({
-        totalTransactions: 50,
-        reconciledCount: 45,
-        unreconciledCount: 5,
-        totalAmount: 125000,
-        reconciledAmount: 112500,
-        unreconciledAmount: 12500,
-        date: url.searchParams.get('date') || '2025-01-15',
-        generatedAt: '2025-01-15T23:59:59Z',
-      });
-    }
-    return HttpResponse.json([mockTransaction]);
-  }),
+  http.get(`${API}/payments/:transactionId`, () =>
+    HttpResponse.json(mockTransaction),
+  ),
 
-  http.get(`${API}/api/payments/refund`, () =>
+  http.get(`${API}/payments/order/:orderId`, () =>
+    HttpResponse.json(mockTransaction),
+  ),
+
+  http.get(`${API}/payments/customer/:customerId`, () =>
+    HttpResponse.json([mockTransaction]),
+  ),
+
+  http.get(`${API}/payments/store`, () =>
+    HttpResponse.json([mockTransaction]),
+  ),
+
+  http.get(`${API}/payments/reconciliation`, () =>
+    HttpResponse.json({
+      reportDate: '2025-01-15',
+      storeId: '1',
+      totalTransactions: 50,
+      successfulTransactions: 48,
+      failedTransactions: 2,
+      refundedTransactions: 3,
+      totalAmount: 45000,
+      successfulAmount: 43000,
+      refundedAmount: 2000,
+      netAmount: 41000,
+      paymentMethodBreakdown: { UPI: 30, CARD: 15, CASH: 5 },
+      unreconciledCount: 1,
+    }),
+  ),
+
+  http.post(`${API}/payments/:transactionId/reconcile`, () =>
+    new HttpResponse(null, { status: 204 }),
+  ),
+
+  http.post(`${API}/payments/refund`, () =>
+    HttpResponse.json(mockRefund),
+  ),
+
+  http.get(`${API}/payments/refund/:refundId`, () =>
+    HttpResponse.json(mockRefund),
+  ),
+
+  http.get(`${API}/payments/refund/transaction/:transactionId`, () =>
     HttpResponse.json([mockRefund]),
   ),
 
-  http.get(`${API}/api/payments/refund/:refundId`, () =>
-    HttpResponse.json(mockRefund),
+  http.get(`${API}/payments/refund/order/:orderId`, () =>
+    HttpResponse.json([mockRefund]),
   ),
 
-  http.post(`${API}/api/payments/refund`, () =>
-    HttpResponse.json(mockRefund),
-  ),
-
-  http.get(`${API}/api/payments/:transactionId`, () =>
-    HttpResponse.json(mockTransaction),
-  ),
-
-  http.post(`${API}/api/payments/:transactionId/reconcile`, () =>
-    new HttpResponse(null, { status: 204 }),
+  http.get(`${API}/payments/refund/customer/:customerId`, () =>
+    HttpResponse.json([mockRefund]),
   ),
 ];

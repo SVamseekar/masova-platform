@@ -8,97 +8,57 @@ const mockEmployees = [
   { id: 'e3', name: 'Carol Inactive', email: 'carol@test.com', phone: '555-0003', type: 'STAFF', isActive: false, role: 'Server', storeId: 'store-1' },
 ];
 
-vi.mock('@/store/api/userApi', async () => {
-  const actual = await vi.importActual('@/store/api/userApi');
-  return {
-    ...actual,
-  useGetStoreEmployeesQuery: () => ({ data: mockEmployees, isLoading: false }),
-  useCreateUserMutation: () => ([vi.fn(), { isLoading: false }]),
-  useUpdateUserMutation: () => ([vi.fn()]),
-  useActivateUserMutation: () => ([vi.fn()]),
-  useDeactivateUserMutation: () => ([vi.fn()]),
-  };
-});
+vi.mock('@/store/api/userApi', () => ({
+  useGetStoreEmployeesQuery: vi.fn().mockReturnValue({ data: mockEmployees, isLoading: false }),
+  useCreateUserMutation: vi.fn().mockReturnValue([vi.fn(), { isLoading: false }]),
+  useUpdateUserMutation: vi.fn().mockReturnValue([vi.fn()]),
+  useActivateUserMutation: vi.fn().mockReturnValue([vi.fn()]),
+  useDeactivateUserMutation: vi.fn().mockReturnValue([vi.fn()]),
+}));
 
-vi.mock('@/store/api/sessionApi', async () => {
-  const actual = await vi.importActual('@/store/api/sessionApi');
-  return {
-    ...actual,
-  useGetActiveStoreSessionsQuery: () => ({ data: [], isLoading: false }),
-  useGetStoreSessionsQuery: () => ({ data: [], isLoading: false, refetch: vi.fn() }),
-  useGetEmployeeSessionReportQuery: () => ({ data: null }),
-  useGetEmployeeSessionStatusQuery: () => ({ data: null }),
-  };
-});
+vi.mock('@/store/api/sessionApi', () => ({
+  useGetActiveStoreSessionsQuery: vi.fn().mockReturnValue({ data: [], isLoading: false }),
+  useGetStoreSessionsQuery: vi.fn().mockReturnValue({ data: [], isLoading: false, refetch: vi.fn() }),
+  useGetEmployeeSessionReportQuery: vi.fn().mockReturnValue({ data: null }),
+  useGetEmployeeSessionStatusQuery: vi.fn().mockReturnValue({ data: null }),
+}));
 
-vi.mock('@/contexts/PageStoreContext', async () => {
-  const actual = await vi.importActual('@/contexts/PageStoreContext');
-  return {
-    ...actual,
-  usePageStore: () => ({ selectedStoreId: 'store-1', setSelectedStoreId: vi.fn() }),
-  };
-});
+vi.mock('@/contexts/PageStoreContext', () => ({
+  usePageStore: vi.fn().mockReturnValue({ selectedStoreId: 'store-1', setSelectedStoreId: vi.fn() }),
+}));
 
-vi.mock('@/hoc/withPageStoreContext', async () => {
-  const actual = await vi.importActual('@/hoc/withPageStoreContext');
-  return {
-    ...actual,
+vi.mock('@/hoc/withPageStoreContext', () => ({
   withPageStoreContext: (Component: React.ComponentType) => Component,
-  };
-});
+}));
 
-vi.mock('@/hooks/useSmartBackNavigation', async () => {
-  const actual = await vi.importActual('@/hooks/useSmartBackNavigation');
-  return {
-    ...actual,
-  useSmartBackNavigation: () => ({ handleBack: vi.fn() }),
-  };
-});
+vi.mock('@/hooks/useSmartBackNavigation', () => ({
+  useSmartBackNavigation: vi.fn().mockReturnValue({ handleBack: vi.fn() }),
+}));
 
-vi.mock('@/components/common/FilterBar', async () => {
-  const actual = await vi.importActual('@/components/common/FilterBar');
-  return {
-    ...actual,
+vi.mock('@/components/common/FilterBar', () => ({
   FilterBar: () => <div data-testid="filter-bar">FilterBar</div>,
-  };
-});
+}));
 
-vi.mock('@/utils/filterUtils', async () => {
-  const actual = await vi.importActual('@/utils/filterUtils');
-  return {
-    ...actual,
+vi.mock('@/utils/filterUtils', () => ({
   applyFilters: vi.fn((data: any[]) => data),
   applySort: vi.fn((data: any[]) => data),
   exportToCSV: vi.fn(),
   commonFilters: { searchText: vi.fn() },
-  };
-});
+}));
 
-vi.mock('@/components/backgrounds/AnimatedBackground', async () => {
-  const actual = await vi.importActual('@/components/backgrounds/AnimatedBackground');
-  return {
-    ...actual,
+vi.mock('@/components/backgrounds/AnimatedBackground', () => ({
   default: () => <div data-testid="animated-bg" />,
-  };
-});
+}));
 
-vi.mock('@/components/modals/PINDisplayModal', async () => {
-  const actual = await vi.importActual('@/components/modals/PINDisplayModal');
-  return {
-    ...actual,
+vi.mock('@/components/modals/PINDisplayModal', () => ({
   PINDisplayModal: () => null,
-  };
-});
+}));
 
-vi.mock('./components/ExpandableEmployeeRow', async () => {
-  const actual = await vi.importActual('./components/ExpandableEmployeeRow');
-  return {
-    ...actual,
+vi.mock('./components/ExpandableEmployeeRow', () => ({
   ExpandableEmployeeRow: ({ employeeName }: { employeeName: string }) => (
     <div data-testid="employee-row">{employeeName}</div>
   ),
-  };
-});
+}));
 
 describe('StaffManagementPage', () => {
   beforeEach(() => {
@@ -113,9 +73,9 @@ describe('StaffManagementPage', () => {
   it('displays statistics cards', () => {
     renderAsManager(<StaffManagementPage />);
     expect(screen.getByText('Total Employees')).toBeInTheDocument();
-    expect(screen.getAllByText('Active').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Active')).toBeInTheDocument();
     expect(screen.getByText('Staff Members')).toBeInTheDocument();
-    expect(screen.getAllByText('Drivers').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Drivers')).toBeInTheDocument();
   });
 
   it('renders employee names in the table', () => {

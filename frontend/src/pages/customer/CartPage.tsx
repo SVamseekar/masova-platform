@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import { removeFromCart, updateItemQuantity, clearCart, selectDeliveryFee } from '../../store/slices/cartSlice';
+import { removeFromCart, updateItemQuantity, clearCart, selectDeliveryFee, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 
 interface CartPageProps {
   onContinueShopping: () => void;
@@ -10,6 +11,8 @@ interface CartPageProps {
 const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPayment }) => {
   const dispatch = useAppDispatch();
   const cartItems = useAppSelector(state => state.cart.items);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
 
   const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
   const reduxDeliveryFee = useAppSelector(selectDeliveryFee);
@@ -130,7 +133,7 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
                     {item.name}
                   </p>
                   <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-3)' }}>
-                    ₹{item.price.toFixed(2)} each
+                    {formatMoney(Math.round(item.price * 100), currency, locale)} each
                   </p>
                 </div>
 
@@ -168,7 +171,7 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
                 {/* Line total */}
                 <div style={{ textAlign: 'right', flexShrink: 0, minWidth: '70px' }}>
                   <p style={{ margin: 0, fontWeight: 700, color: 'var(--gold)', fontSize: '0.9rem' }}>
-                    ₹{(item.price * item.quantity).toFixed(2)}
+                    {formatMoney(Math.round(item.price * item.quantity * 100), currency, locale)}
                   </p>
                 </div>
 
@@ -197,9 +200,9 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
               {[
-                { label: 'Subtotal', value: `₹${subtotal.toFixed(2)}` },
-                { label: 'Delivery Fee', value: `₹${deliveryFee.toFixed(2)}` },
-                { label: 'Tax (5%)', value: `₹${tax.toFixed(2)}` },
+                { label: 'Subtotal', value: formatMoney(Math.round(subtotal * 100), currency, locale) },
+                { label: 'Delivery Fee', value: formatMoney(Math.round(deliveryFee * 100), currency, locale) },
+                { label: 'Tax (5%)', value: formatMoney(Math.round(tax * 100), currency, locale) },
               ].map(row => (
                 <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-3)' }}>{row.label}</span>
@@ -212,7 +215,7 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '20px' }}>
               <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--text-1)', fontSize: '1.05rem' }}>Total</span>
-              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--gold)', fontSize: '1.35rem' }}>₹{total.toFixed(2)}</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--gold)', fontSize: '1.35rem' }}>{formatMoney(Math.round(total * 100), currency, locale)}</span>
             </div>
 
             <button

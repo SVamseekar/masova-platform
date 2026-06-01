@@ -242,7 +242,6 @@ export const createCartState = (items: any[] = []) => ({
     items,
     selectedStoreId: '1',
     totalItems: items.reduce((sum, item) => sum + item.quantity, 0),
-    deliveryFee: 0,
   },
 });
 

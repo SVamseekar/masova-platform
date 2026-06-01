@@ -77,8 +77,9 @@ describe('OrderPanel', () => {
         useMemoryRouter: true,
       });
 
-      // Prices are formatted as INR with 0 decimal places (₹13 and ₹5)
-      expect(screen.getAllByText(/₹/).length).toBeGreaterThan(0);
+      // Individual price per each
+      expect(screen.getAllByText(/12\.99/).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/4\.99/).length).toBeGreaterThan(0);
     });
   });
 
@@ -187,7 +188,8 @@ describe('OrderPanel', () => {
         useMemoryRouter: true,
       });
 
-      const deleteButtons = screen.getAllByRole('button', { name: /Remove item/i });
+      // The delete buttons use the trash emoji
+      const deleteButtons = screen.getAllByText(/\u{1F5D1}/u);
       await user.click(deleteButtons[0]);
 
       expect(defaultProps.onRemoveItem).toHaveBeenCalledWith('item-1');

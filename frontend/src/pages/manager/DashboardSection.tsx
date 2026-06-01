@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import { t, cardStyle, sectionTitleStyle, statusBadge } from './manager-tokens';
 import {
   useGetActiveStoreSessionsQuery,
@@ -27,6 +29,8 @@ interface Props {
 }
 
 const DashboardSection: React.FC<Props> = ({ storeId }) => {
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
   const { data: sessions = [], isLoading: loadingSessions, error: sessionsError, refetch: refetchSessions } = useGetActiveStoreSessionsQuery(storeId, {
     skip: !storeId, pollingInterval: 30000,
   });
@@ -85,7 +89,7 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
     try { await rejectSession({ sessionId, reason: 'Manager rejected' }).unwrap(); } catch { alert('Failed to reject session'); }
   };
 
-  const formatCurrency = (val: number) => `₹${val.toLocaleString('en-IN')}`;
+  const formatCurrency = (val: number) => formatMoney(Math.round(val * 100), currency, locale);
 
   return (
     <div>

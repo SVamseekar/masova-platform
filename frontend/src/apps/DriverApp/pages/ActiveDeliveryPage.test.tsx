@@ -14,10 +14,7 @@ const mockRefetch = vi.fn();
 let mockActiveOrders: any[] = [];
 let mockIsLoading = false;
 
-vi.mock('../../../store/api/orderApi', async () => {
-  const actual = await vi.importActual('../../../store/api/orderApi');
-  return {
-    ...actual,
+vi.mock('../../../store/api/orderApi', () => ({
   useGetOrdersByStatusQuery: () => ({
     data: mockActiveOrders,
     isLoading: mockIsLoading,
@@ -25,14 +22,10 @@ vi.mock('../../../store/api/orderApi', async () => {
   }),
   useUpdateOrderStatusMutation: () => [mockUpdateOrderStatus, { isLoading: false }],
   orderApi: { reducerPath: 'orderApi', reducer: () => ({}), middleware: () => (next: any) => (action: any) => next(action) },
-  };
-});
+}));
 
 // Mock CustomerContact component
-vi.mock('../components/CustomerContact', async () => {
-  const actual = await vi.importActual('../components/CustomerContact');
-  return {
-    ...actual,
+vi.mock('../components/CustomerContact', () => ({
   default: ({ open, onClose, customerName, customerPhone, orderNumber }: any) =>
     open ? (
       <div data-testid="customer-contact">
@@ -42,8 +35,7 @@ vi.mock('../components/CustomerContact', async () => {
         <button onClick={onClose}>Close Contact</button>
       </div>
     ) : null,
-  };
-});
+}));
 
 describe('ActiveDeliveryPage', () => {
   beforeEach(() => {
@@ -77,7 +69,7 @@ describe('ActiveDeliveryPage', () => {
       {
         id: 'order-1',
         orderNumber: 'ORD-001',
-        assignedDriver: '4', // matches mockDriverUser.id from testUtils
+        assignedDriverId: '4', // matches mockDriverUser.id from testUtils
         customerName: 'Alice Smith',
         customerPhone: '555-1234',
         deliveryAddress: '42 Curry Lane, Hyderabad',
@@ -99,7 +91,7 @@ describe('ActiveDeliveryPage', () => {
       {
         id: 'order-1',
         orderNumber: 'ORD-001',
-        assignedDriver: '4',
+        assignedDriverId: '4',
         customerName: 'Alice',
         customerPhone: '555-1111',
         deliveryAddress: '10 Main St',
@@ -109,7 +101,7 @@ describe('ActiveDeliveryPage', () => {
       {
         id: 'order-2',
         orderNumber: 'ORD-002',
-        assignedDriver: '4',
+        assignedDriverId: '4',
         customerName: 'Bob',
         customerPhone: '555-2222',
         deliveryAddress: '20 Oak Ave',
@@ -119,10 +111,7 @@ describe('ActiveDeliveryPage', () => {
     ];
 
     renderAsDriver(<ActiveDeliveryPage />);
-    const el = screen.queryAllByText((_, element) =>
-      element?.textContent?.includes('2 orders in queue') ?? false
-    );
-    expect(el.length).toBeGreaterThan(0);
+    expect(screen.getByText('2 orders in queue')).toBeInTheDocument();
   });
 
   it('formats object delivery address into a string', () => {
@@ -130,7 +119,7 @@ describe('ActiveDeliveryPage', () => {
       {
         id: 'order-1',
         orderNumber: 'ORD-001',
-        assignedDriver: '4',
+        assignedDriverId: '4',
         customerName: 'Charlie',
         customerPhone: '555-3333',
         deliveryAddress: {
@@ -146,10 +135,9 @@ describe('ActiveDeliveryPage', () => {
     ];
 
     renderAsDriver(<ActiveDeliveryPage />);
-    const addrEls = screen.queryAllByText((_, element) =>
-      element?.textContent?.includes('42 Curry Lane') ?? false
-    );
-    expect(addrEls.length).toBeGreaterThan(0);
+    expect(
+      screen.getByText('42 Curry Lane, Near Charminar, Hyderabad, Telangana, 500001')
+    ).toBeInTheDocument();
   });
 
   it('has view toggle buttons for list and map views', () => {
@@ -157,7 +145,7 @@ describe('ActiveDeliveryPage', () => {
       {
         id: 'order-1',
         orderNumber: 'ORD-001',
-        assignedDriver: '4',
+        assignedDriverId: '4',
         customerName: 'Test',
         customerPhone: '555-0000',
         deliveryAddress: 'Test Address',
@@ -180,7 +168,7 @@ describe('ActiveDeliveryPage', () => {
       {
         id: 'order-1',
         orderNumber: 'ORD-001',
-        assignedDriver: '4',
+        assignedDriverId: '4',
         customerName: 'Test',
         customerPhone: '555-0000',
         deliveryAddress: '123 Test St',
@@ -195,7 +183,7 @@ describe('ActiveDeliveryPage', () => {
     await user.click(navigateBtn);
 
     expect(openSpy).toHaveBeenCalledWith(
-      expect.stringContaining('google.com/maps'),
+      expect.stringContaining('openstreetmap.org'),
       '_blank'
     );
 

@@ -34,8 +34,7 @@ describe('Base Card Components', () => {
 
     it('merges custom style prop', () => {
       render(<CardHeader data-testid="header" style={{ backgroundColor: 'red' }}>Header</CardHeader>);
-      const header = screen.getByTestId('header');
-      expect(header.style.backgroundColor).toBe('red');
+      expect(screen.getByTestId('header')).toHaveStyle({ backgroundColor: 'red' });
     });
 
     it('spreads additional HTML attributes', () => {
@@ -68,8 +67,7 @@ describe('Base Card Components', () => {
 
     it('merges custom style prop', () => {
       render(<CardTitle style={{ color: 'blue' }}>Styled Title</CardTitle>);
-      const heading = screen.getByRole('heading');
-      expect(heading.style.color).toBe('blue');
+      expect(screen.getByRole('heading')).toHaveStyle({ color: 'blue' });
     });
 
     it('spreads additional HTML attributes', () => {

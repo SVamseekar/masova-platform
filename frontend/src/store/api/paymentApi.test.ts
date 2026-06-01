@@ -233,7 +233,7 @@ describe('paymentApi', () => {
   describe('error handling', () => {
     it('should handle payment initiation failure', async () => {
       server.use(
-        http.post(`${API}/api/payments/initiate`, () =>
+        http.post(`${API}/payments/initiate`, () =>
           HttpResponse.json({ message: 'Payment failed' }, { status: 500 }),
         ),
       );

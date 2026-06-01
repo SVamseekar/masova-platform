@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { t, cardStyle, tabStyle, tableHeaderStyle, tableCellStyle, sectionTitleStyle, statusBadge, selectStyle } from './manager-tokens';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import {
   useGetAllMenuItemsQuery,
   useUpdateMenuItemMutation,
@@ -185,6 +187,9 @@ const RecipesTab = ({ storeId }: { storeId: string }) => {
 
 // ======================== DRIVERS TAB ========================
 const DriversTab = ({ storeId }: { storeId: string }) => {
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const { data: allDrivers = [], isLoading } = useGetAllDriversQuery(storeId, { skip: !storeId, pollingInterval: 10000 });
   const { data: stats } = useGetDriverStatsQuery(storeId, { skip: !storeId, pollingInterval: 15000 });
   const [activateDriver] = useActivateDriverMutation();
@@ -305,7 +310,7 @@ const DriversTab = ({ storeId }: { storeId: string }) => {
                 {[['Total', driverPerformance.totalDeliveries || 0], ['Completed', driverPerformance.completedDeliveries || 0],
                   ['On-Time', `${(driverPerformance.onTimeDeliveryPercentage || 0).toFixed(1)}%`], ['Avg Time', `${driverPerformance.averageDeliveryTime || 0}m`],
                   ['Distance', `${(driverPerformance.totalDistanceCovered || 0).toFixed(1)}km`], ['Rating', (driverPerformance.averageRating || 0).toFixed(1)],
-                  ['Earnings', `₹${(driverPerformance.totalEarnings || 0).toFixed(0)}`], ['Today', driverPerformance.todayDeliveries || 0],
+                  ['Earnings', fmt(driverPerformance.totalEarnings || 0)], ['Today', driverPerformance.todayDeliveries || 0],
                 ].map(([l, v]) => (
                   <div key={l as string} style={miniStat}><p style={statLabel}>{l}</p><p style={statValue()}>{v}</p></div>
                 ))}
@@ -409,7 +414,7 @@ const StoresTab = ({ storeId }: { storeId: string }) => {
               <div><label style={{ fontSize: 11, color: t.gray }}>Delivery Radius (km)</label><input type="number" value={form.operatingConfig?.deliveryRadiusKm || 10} onChange={e => setForm({ ...form, operatingConfig: { ...form.operatingConfig, deliveryRadiusKm: parseFloat(e.target.value) }})} style={inputStyle} /></div>
               <div><label style={{ fontSize: 11, color: t.gray }}>Max Orders</label><input type="number" value={form.operatingConfig?.maxConcurrentOrders || 50} onChange={e => setForm({ ...form, operatingConfig: { ...form.operatingConfig, maxConcurrentOrders: parseInt(e.target.value) }})} style={inputStyle} /></div>
               <div><label style={{ fontSize: 11, color: t.gray }}>Prep Time (min)</label><input type="number" value={form.operatingConfig?.estimatedPrepTimeMinutes || 30} onChange={e => setForm({ ...form, operatingConfig: { ...form.operatingConfig, estimatedPrepTimeMinutes: parseInt(e.target.value) }})} style={inputStyle} /></div>
-              <div><label style={{ fontSize: 11, color: t.gray }}>Min Order (₹)</label><input type="number" value={form.operatingConfig?.minimumOrderValueINR || 100} onChange={e => setForm({ ...form, operatingConfig: { ...form.operatingConfig, minimumOrderValueINR: parseFloat(e.target.value) }})} style={inputStyle} /></div>
+              <div><label style={{ fontSize: 11, color: t.gray }}>Min Order</label><input type="number" value={form.operatingConfig?.minimumOrderValueINR || 100} onChange={e => setForm({ ...form, operatingConfig: { ...form.operatingConfig, minimumOrderValueINR: parseFloat(e.target.value) }})} style={inputStyle} /></div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
               <button style={btn()} onClick={() => setModalOpen(false)}>Cancel</button>

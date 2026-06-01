@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useGetActiveStoresQuery } from '../store/api/storeApi';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { setSelectedStore, selectSelectedStoreId, selectSelectedStoreName } from '../store/slices/cartSlice';
+import { setSelectedStore, setStoreCurrency, selectSelectedStoreId, selectSelectedStoreName } from '../store/slices/cartSlice';
 import { getTabStore, setTabStore } from '../utils/tabStorage';
 
 // Haversine formula — returns distance in km between two lat/lng points
@@ -70,9 +70,13 @@ const StoreSelector: React.FC<StoreSelectorProps> = ({ variant = 'customer', onS
 
   const { data: stores = [], isLoading } = useGetActiveStoresQuery();
 
-  const handleStoreSelect = (storeId: string, storeName: string) => {
+  const handleStoreSelect = (storeId: string, storeName: string, store?: any) => {
     // ALWAYS update Redux for API headers
     dispatch(setSelectedStore({ storeId, storeName }));
+    dispatch(setStoreCurrency({
+      currency: store?.currency || 'INR',
+      locale: store?.locale || 'en-IN',
+    }));
 
     if (useLocalStorage && contextKey) {
       // ALSO use page-specific tabStorage for local state
@@ -112,7 +116,7 @@ const StoreSelector: React.FC<StoreSelectorProps> = ({ variant = 'customer', onS
 
           if (withDistance.length > 0) {
             const nearest = withDistance[0].store;
-            handleStoreSelect(nearest.storeCode ?? nearest.id, nearest.name);
+            handleStoreSelect(nearest.storeCode ?? nearest.id, nearest.name, nearest);
           }
         }
       },
@@ -216,7 +220,7 @@ const StoreSelector: React.FC<StoreSelectorProps> = ({ variant = 'customer', onS
               return (
                 <div
                   key={store.id}
-                  onClick={() => handleStoreSelect(store.storeCode, store.name)}
+                  onClick={() => handleStoreSelect(store.storeCode, store.name, store)}
                   style={storeItemStyles(isSelected)}
                   onMouseEnter={(e) => {
                     if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'rgba(212,168,67,0.05)';

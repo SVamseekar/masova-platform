@@ -31,6 +31,9 @@ import {
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../../store/store';
+import { useAppSelector } from '../../../store/hooks';
+import { selectCartCurrency, selectCartLocale } from '../../../store/slices/cartSlice';
+import { formatMoney } from '../../../utils/currency';
 import { useGetDriverPerformanceQuery } from '../../../store/api/driverApi';
 import { useGetCurrentSessionQuery, useStartSessionMutation, useEndSessionMutation } from '../../../store/api/sessionApi';
 import { logout } from '../../../store/slices/authSlice';
@@ -42,6 +45,9 @@ import { skeletonStyles } from '../utils/animations';
 const DriverProfilePage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const navigate = useNavigate();
   const [chartPeriod, setChartPeriod] = useState<'day' | 'week' | 'month'>('week');
 
@@ -425,7 +431,7 @@ const DriverProfilePage: React.FC = () => {
             showPeriodToggle
             currentPeriod={chartPeriod}
             onPeriodChange={setChartPeriod}
-            valuePrefix="₹"
+            valuePrefix=""
           />
         </Box>
 
@@ -473,7 +479,7 @@ const DriverProfilePage: React.FC = () => {
                     mb: spacing.xs,
                   }}
                 >
-                  ₹{earning.value}
+                  {fmt(earning.value)}
                 </Typography>
                 <Typography
                   sx={{
