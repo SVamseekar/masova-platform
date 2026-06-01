@@ -16,6 +16,9 @@ import {
 import SalesTrendChart from '../../components/charts/SalesTrendChart';
 import RevenueBreakdownChart from '../../components/charts/RevenueBreakdownChart';
 import PeakHoursHeatmap from '../../components/charts/PeakHoursHeatmap';
+import { useAppSelector } from '../../store/hooks';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 
 interface Props { storeId: string; activeTab: string; onTabChange: (tab: string) => void; }
 
@@ -193,7 +196,9 @@ const ProductsTab = ({ storeId }: { storeId: string }) => {
 
   const { data, isLoading } = useGetTopProductsQuery({ storeId, period, sortBy }, { skip: !storeId });
 
-  const formatCurrency = (v: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(v);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const formatCurrency = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
 
   if (isLoading) return <p style={{ color: t.gray, fontSize: 13 }}>Loading product analytics...</p>;
   if (!data) return <p style={{ color: t.red, fontSize: 13 }}>Failed to load product analytics</p>;

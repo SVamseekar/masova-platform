@@ -1,7 +1,9 @@
 import { useSnackbar, VariantType, SnackbarKey, OptionsObject } from 'notistack';
 import { useCallback, useRef } from 'react';
-import { useAppDispatch } from '../store/hooks';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { addNotification } from '../store/slices/notificationSlice';
+import { selectCartCurrency, selectCartLocale } from '../store/slices/cartSlice';
+import { formatMoney } from '../utils/currency';
 
 interface ToastOptions {
   persist?: boolean;
@@ -43,6 +45,8 @@ interface UseToastReturn {
 export const useToast = (): UseToastReturn => {
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const dispatch = useAppDispatch();
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
   const recentMessages = useRef<Set<string>>(new Set());
 
   // Cleanup old messages from duplicate tracking after 5 seconds
@@ -132,10 +136,7 @@ export const useToast = (): UseToastReturn => {
   }, [showToast, addToStore]);
 
   const paymentSuccess = useCallback((amount: number) => {
-    const formattedAmount = new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-    }).format(amount);
+    const formattedAmount = formatMoney(Math.round(amount * 100), currency, locale);
     addToStore(`Payment of ${formattedAmount} successful`, 'success', 'Payment Success');
     return showToast(`Payment of ${formattedAmount} successful`, 'success');
   }, [showToast, addToStore]);

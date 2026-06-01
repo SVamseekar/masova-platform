@@ -61,6 +61,9 @@ const alertBox = (color: string, bg: string): React.CSSProperties => ({
 
 // ======================== STOCK TAB ========================
 const StockTab = ({ storeId }: { storeId: string }) => {
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const { data: allItems = [], isLoading } = useGetAllInventoryItemsQuery(storeId, { skip: !storeId, pollingInterval: 60000 });
   const { data: lowStockItems = [] } = useGetLowStockAlertsQuery(storeId, { skip: !storeId });
   const { data: outOfStockItems = [] } = useGetOutOfStockItemsQuery(storeId, { skip: !storeId });
@@ -98,7 +101,7 @@ const StockTab = ({ storeId }: { storeId: string }) => {
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
         <div style={miniStat}><p style={statLabel}>Total Items</p><p style={statValue()}>{allItems.length}</p></div>
-        <div style={miniStat}><p style={statLabel}>Total Value</p><p style={statValue(t.green)}>&#8377;{inventoryValue?.totalValue?.toLocaleString() || 0}</p></div>
+        <div style={miniStat}><p style={statLabel}>Total Value</p><p style={statValue(t.green)}>{fmt(inventoryValue?.totalValue || 0)}</p></div>
         <div style={miniStat}><p style={statLabel}>Low Stock</p><p style={statValue(t.yellow)}>{lowStockItems.length}</p></div>
         <div style={miniStat}><p style={statLabel}>Out of Stock</p><p style={statValue(t.red)}>{outOfStockItems.length}</p></div>
         <div style={miniStat}><p style={statLabel}>Expiring Soon</p><p style={statValue(t.orange)}>{expiringItems.length}</p></div>
@@ -154,7 +157,7 @@ const StockTab = ({ storeId }: { storeId: string }) => {
                   <td style={tableCellStyle}>{qty} {item.unit}</td>
                   <td style={tableCellStyle}>{avail.toFixed(2)} {item.unit}</td>
                   <td style={tableCellStyle}>{minQty} {item.unit}</td>
-                  <td style={tableCellStyle}>&#8377;{(item.unitCost ?? 0).toFixed(2)}</td>
+                  <td style={tableCellStyle}>{fmt(item.unitCost ?? 0)}</td>
                   <td style={tableCellStyle}>
                     <span style={statusBadge(st === 'AVAILABLE' ? 'COMPLETED' : st === 'LOW_STOCK' ? 'PREPARING' : 'CANCELLED')}>
                       {st.replace('_', ' ')}
@@ -336,7 +339,7 @@ const PurchaseOrdersTab = ({ storeId }: { storeId: string }) => {
         <div style={miniStat}><p style={statLabel}>Total POs</p><p style={statValue()}>{allOrders.length}</p></div>
         <div style={miniStat}><p style={statLabel}>Pending</p><p style={statValue(t.yellow)}>{pending}</p></div>
         <div style={miniStat}><p style={statLabel}>Sent</p><p style={statValue(t.blue)}>{sent}</p></div>
-        <div style={miniStat}><p style={statLabel}>Total Value</p><p style={statValue(t.green)}>&#8377;{totalVal.toLocaleString()}</p></div>
+        <div style={miniStat}><p style={statLabel}>Total Value</p><p style={statValue(t.green)}>{fmt(totalVal)}</p></div>
       </div>
 
       {/* Controls */}
@@ -374,7 +377,7 @@ const PurchaseOrdersTab = ({ storeId }: { storeId: string }) => {
           {/* Items preview */}
           <div style={{ background: t.bgMain, borderRadius: t.radius.sm, padding: 10, marginBottom: 10, fontSize: 12, color: t.gray }}>
             {po.items.slice(0, 3).map((item, i) => (
-              <div key={i}>- {item.itemName} - {item.orderedQuantity} {item.unit} @ &#8377;{item.unitPrice}</div>
+              <div key={i}>- {item.itemName} - {item.orderedQuantity} {item.unit} @ {fmt(item.unitPrice)}</div>
             ))}
             {po.items.length > 3 && <div style={{ color: t.grayMuted, marginTop: 4 }}>...and {po.items.length - 3} more</div>}
           </div>
@@ -401,6 +404,9 @@ const PurchaseOrdersTab = ({ storeId }: { storeId: string }) => {
 
 // ======================== WASTE TAB ========================
 const WasteTab = ({ storeId }: { storeId: string }) => {
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const [dateRange, setDateRange] = useState({ startDate: format(subDays(new Date(), 30), 'yyyy-MM-dd'), endDate: format(new Date(), 'yyyy-MM-dd') });
   const [recordOpen, setRecordOpen] = useState(false);
 
@@ -423,9 +429,9 @@ const WasteTab = ({ storeId }: { storeId: string }) => {
     <>
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
-        <div style={miniStat}><p style={statLabel}>Total Cost</p><p style={statValue(t.red)}>&#8377;{totalWaste?.totalWasteCost?.toLocaleString() || 0}</p></div>
+        <div style={miniStat}><p style={statLabel}>Total Cost</p><p style={statValue(t.red)}>{fmt(totalWaste?.totalWasteCost || 0)}</p></div>
         <div style={miniStat}><p style={statLabel}>Records</p><p style={statValue()}>{totalWaste?.totalRecords || 0}</p></div>
-        <div style={miniStat}><p style={statLabel}>Preventable Cost</p><p style={statValue(t.orange)}>&#8377;{preventableWaste?.preventableWasteCost?.toLocaleString() || 0}</p></div>
+        <div style={miniStat}><p style={statLabel}>Preventable Cost</p><p style={statValue(t.orange)}>{fmt(preventableWaste?.preventableWasteCost || 0)}</p></div>
         <div style={miniStat}><p style={statLabel}>Preventable %</p><p style={statValue(t.yellow)}>{preventableWaste?.preventablePercentage?.toFixed(1) || 0}%</p></div>
       </div>
 
@@ -448,7 +454,7 @@ const WasteTab = ({ storeId }: { storeId: string }) => {
               <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${pct}%`, background: `${t.orange}20` }} />
               <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
                 <span style={{ fontWeight: 600 }}>{cat}</span>
-                <span style={{ fontWeight: 700, color: t.orange }}>&#8377;{cost.toLocaleString()}</span>
+                <span style={{ fontWeight: 700, color: t.orange }}>{fmt(cost)}</span>
               </div>
             </div>
           );
@@ -468,7 +474,7 @@ const WasteTab = ({ storeId }: { storeId: string }) => {
                 <td style={tableCellStyle}>#{i + 1}</td>
                 <td style={{ ...tableCellStyle, fontWeight: 600 }}>{item.itemName}</td>
                 <td style={tableCellStyle}>{item.totalQuantity} {item.unit}</td>
-                <td style={tableCellStyle}>&#8377;{item.totalCost.toLocaleString()}</td>
+                <td style={tableCellStyle}>{fmt(item.totalCost)}</td>
               </tr>
             ))}
           </tbody>
@@ -488,7 +494,7 @@ const WasteTab = ({ storeId }: { storeId: string }) => {
                 <td style={{ ...tableCellStyle, fontWeight: 600 }}>{rec.itemName}</td>
                 <td style={tableCellStyle}><span style={wasteBadge(rec.wasteType)}>{rec.wasteType.replace('_', ' ')}</span></td>
                 <td style={tableCellStyle}>{rec.quantity} {rec.unit}</td>
-                <td style={tableCellStyle}>&#8377;{rec.wasteCost.toFixed(2)}</td>
+                <td style={tableCellStyle}>{fmt(rec.wasteCost)}</td>
                 <td style={tableCellStyle}>{rec.isPreventable ? 'Yes' : '-'}</td>
               </tr>
             ))}

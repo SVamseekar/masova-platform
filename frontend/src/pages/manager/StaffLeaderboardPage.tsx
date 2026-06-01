@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import { useGetStaffLeaderboardQuery } from '../../store/api/analyticsApi';
 import { createCard } from '../../styles/neumorphic-utils';
 import { colors, spacing, typography, shadows, borderRadius } from '../../styles/design-tokens';
@@ -47,13 +49,9 @@ const StaffLeaderboardPage: React.FC = () => {
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const formatCurrency = (value: number) => formatMoney(Math.round(value * 100), currency, locale);
 
   // Styles
   const containerStyles: React.CSSProperties = {

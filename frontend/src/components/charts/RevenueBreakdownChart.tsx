@@ -10,6 +10,9 @@ import {
 import { useGetOrderTypeBreakdownQuery } from '../../store/api/analyticsApi';
 import { createCard } from '../../styles/neumorphic-utils';
 import { colors } from '../../styles/design-tokens';
+import { useAppSelector } from '../../store/hooks';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 
 const COLORS = [
   colors.brand.primary,      // MaSoVa red for primary
@@ -30,14 +33,9 @@ interface RevenueBreakdownChartProps {
 
 export default function RevenueBreakdownChart({ storeId }: RevenueBreakdownChartProps) {
   const { data, isLoading, error } = useGetOrderTypeBreakdownQuery(storeId);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const formatCurrency = (value: number) => formatMoney(Math.round(value * 100), currency, locale);
 
   if (isLoading) {
     return (

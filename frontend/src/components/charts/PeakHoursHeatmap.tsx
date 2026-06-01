@@ -12,6 +12,9 @@ import {
 import { useGetPeakHoursQuery } from '../../store/api/analyticsApi';
 import { createCard } from '../../styles/neumorphic-utils';
 import { colors } from '../../styles/design-tokens';
+import { useAppSelector } from '../../store/hooks';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 
 interface PeakHoursHeatmapProps {
   storeId: string;
@@ -19,14 +22,9 @@ interface PeakHoursHeatmapProps {
 
 export default function PeakHoursHeatmap({ storeId }: PeakHoursHeatmapProps) {
   const { data, isLoading, error } = useGetPeakHoursQuery(storeId);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const formatCurrency = (value: number) => formatMoney(Math.round(value * 100), currency, locale);
 
   const getBarColor = (hour: number) => {
     if (!data) return colors.brand.secondary;
