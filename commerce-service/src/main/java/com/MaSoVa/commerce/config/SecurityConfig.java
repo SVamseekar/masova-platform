@@ -19,6 +19,8 @@ public class SecurityConfig extends SecurityConfigurationBase {
     protected String[] getPublicEndpoints() {
         return new String[]{
             // ── Menu public endpoints ──────────────────────────────────────
+            "/api/menu",           // public listing (no auth) — gateway route: commerce_menu_public
+            "/api/menu/*",         // public item detail (no auth)
             "/api/menu/public/**",
             "/api/menu/public",
             "/api/menu/items",
