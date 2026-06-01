@@ -54,7 +54,7 @@ public class GatewayConfig {
 
                 .route("core_auth_refresh", r -> r.path("/api/auth/refresh", "/api/users/refresh")
                         .and().method("POST")
-                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(20, "refresh"))))
+                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "refresh"))))
                         .uri("http://localhost:8085"))
 
                 .route("core_auth_logout", r -> r.path("/api/auth/logout", "/api/users/logout")
@@ -64,7 +64,7 @@ public class GatewayConfig {
 
                 .route("core_auth_google", r -> r.path("/api/auth/google", "/api/users/auth/google", "/api/users/google")
                         .and().method("POST")
-                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(20, "google_auth"))))
+                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "google_auth"))))
                         .uri("http://localhost:8085"))
 
                 .route("core_auth_change_password", r -> r.path("/api/auth/change-password")
@@ -74,11 +74,11 @@ public class GatewayConfig {
 
                 .route("core_auth_validate_pin", r -> r.path("/api/auth/validate-pin")
                         .and().method("POST")
-                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(30, "validate_pin"))))
+                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "validate_pin"))))
                         .uri("http://localhost:8085"))
 
                 .route("core_kiosk_public", r -> r.path("/api/users/kiosk/**")
-                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(20, "kiosk"))))
+                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "kiosk"))))
                         .uri("http://localhost:8085"))
 
                 // Stores — all stores routes served by core-service (no /public sub-path any more)
@@ -144,57 +144,57 @@ public class GatewayConfig {
                 // Users — all other protected user/store/session/shift operations
                 .route("core_users", r -> r.path("/api/users/**")
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(200, "core_users")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "core_users")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
 
                 .route("core_stores", r -> r.path("/api/stores/**")
                         .and().not(p -> p.path("/api/stores/public/**"))
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(100, "core_stores")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "core_stores")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
 
                 .route("core_sessions", r -> r.path("/api/sessions/**")
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(50, "core_sessions")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "core_sessions")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
 
                 .route("core_shifts", r -> r.path("/api/shifts/**")
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(60, "core_shifts")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "core_shifts")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
 
                 .route("core_customers", r -> r.path("/api/customers/**")
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(200, "core_customers")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "core_customers")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
 
                 .route("core_notifications", r -> r.path("/api/notifications/**")
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(150, "core_notifications")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "core_notifications")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
 
                 .route("core_campaigns", r -> r.path("/api/campaigns/**")
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(100, "core_campaigns")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "core_campaigns")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
 
                 .route("core_reviews", r -> r.path("/api/reviews/**")
                         .and().not(p -> p.path("/api/reviews/public/**"))
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(150, "core_reviews")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "core_reviews")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
 
                 .route("core_gdpr", r -> r.path("/api/gdpr/**")
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(30, "core_gdpr")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "core_gdpr")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
 
@@ -202,7 +202,7 @@ public class GatewayConfig {
 
                 .route("core_preferences", r -> r.path("/api/preferences/**")
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(100, "core_preferences")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "core_preferences")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
 
@@ -224,7 +224,7 @@ public class GatewayConfig {
                 .route("commerce_menu_get_protected", r -> r.path("/api/menu/**")
                         .and().method("GET")
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(60, "commerce_menu_get_protected")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "commerce_menu_get_protected")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8084"))
 
@@ -232,14 +232,14 @@ public class GatewayConfig {
                 .route("commerce_menu_modify", r -> r.path("/api/menu/**")
                         .and().method("POST", "PUT", "DELETE", "PATCH")
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(30, "commerce_menu_modify")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "commerce_menu_modify")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8084"))
 
                 // Orders — public tracking (email links, no auth)
                 .route("commerce_orders_track", r -> r.path("/api/orders/track/**")
                         .and().method("GET")
-                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(100, "commerce_track"))))
+                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "commerce_track"))))
                         .uri("http://localhost:8084"))
 
                 // Orders — protected (GDPR anonymize paths blocked above via dedicated routes)
@@ -249,14 +249,14 @@ public class GatewayConfig {
                         .and().not(p -> p.path("/api/orders/gdpr/**"))
                         .filters(f -> f
                             .removeRequestHeader("X-Internal-Service")
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(200, "commerce_orders")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "commerce_orders")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8084"))
 
                 // Kitchen queue and equipment (canonical path: /api/equipment)
                 .route("commerce_kitchen", r -> r.path("/api/kitchen/**", "/api/equipment/**")
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(150, "commerce_kitchen")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "commerce_kitchen")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8084"))
 
@@ -286,7 +286,7 @@ public class GatewayConfig {
                         .and().not(p -> p.path("/api/payments/gdpr/**"))
                         .filters(f -> f
                             .removeRequestHeader("X-Internal-Service")
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(50, "payments")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "payments")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8089"))
 
@@ -302,7 +302,7 @@ public class GatewayConfig {
                 // Delivery public tracking — no auth (driver app / customer tracking page)
                 .route("logistics_delivery_track", r -> r.path("/api/delivery/track/**")
                         .and().method("GET")
-                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(100, "logistics_delivery_track"))))
+                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "logistics_delivery_track"))))
                         .uri("http://localhost:8086"))
 
                 // Delivery (merged: dispatch + tracking + performance — now all at /api/delivery)
@@ -313,32 +313,32 @@ public class GatewayConfig {
                         .and().not(p -> p.path("/api/delivery/track/**"))
                         .filters(f -> f
                             .removeRequestHeader("X-Internal-Service")
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(150, "logistics_delivery")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "logistics_delivery")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8086"))
 
                 // Inventory, suppliers, purchase orders, waste
                 .route("logistics_inventory", r -> r.path("/api/inventory/**")
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(60, "logistics_inventory")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "logistics_inventory")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8086"))
 
                 .route("logistics_suppliers", r -> r.path("/api/suppliers/**")
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(60, "logistics_suppliers")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "logistics_suppliers")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8086"))
 
                 .route("logistics_purchase_orders", r -> r.path("/api/purchase-orders/**")
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(60, "logistics_purchase_orders")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "logistics_purchase_orders")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8086"))
 
                 .route("logistics_waste", r -> r.path("/api/waste/**")
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(60, "logistics_waste")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "logistics_waste")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8086"))
 
@@ -358,7 +358,7 @@ public class GatewayConfig {
 
                 .route("intelligence_analytics", r -> r.path("/api/analytics/**", "/api/bi/**", "/api/reports/**")
                         .filters(f -> f
-                            .filter(rateLimitingFilter.apply(createRateLimitConfig(100, "intelligence_analytics")))
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "intelligence_analytics")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8087"))
 
