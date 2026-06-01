@@ -25,6 +25,14 @@ if (-not $menuIds -or $menuIds.Count -eq 0) {
     exit 1
 }
 
+# Fetch real menu items so we can use correct prices
+Write-Host "Fetching menu item prices..." -NoNewline
+$menuItemsRaw = Invoke-RestMethod -Uri "$BASE/api/menu?storeId=DOM001" -Headers @{ "Authorization" = "Bearer $token" }
+$menuMap = @{}
+foreach ($m in $menuItemsRaw) { $menuMap[$m.id] = $m }
+Write-Host " $($menuMap.Count) items loaded" -ForegroundColor Green
+Write-Host ""
+
 function Invoke-Api {
     param([string]$Method, [string]$Path, [hashtable]$Body = $null, [string]$Token = $null)
     $headers = @{
@@ -74,14 +82,15 @@ for ($i = 0; $i -lt 120; $i++) {
     $selectedIds = $menuIds | Get-Random -Count ([math]::Min($itemCount, $menuIds.Count))
     if ($selectedIds -isnot [System.Array]) { $selectedIds = @($selectedIds) }
 
-    $items = $selectedIds | ForEach-Object {
+    $items = @($selectedIds | ForEach-Object {
+        $mi = $menuMap[$_]
         @{
             menuItemId = $_
-            name       = "Menu Item"
+            name       = if ($mi) { $mi.name } else { "Menu Item" }
             quantity   = (Get-Random -Minimum 1 -Maximum 3)
-            price      = (Get-Random -Minimum 490 -Maximum 2200) / 100.0
+            price      = if ($mi) { [math]::Round($mi.basePrice / 100.0, 2) } else { 9.90 }
         }
-    }
+    })
 
     $order = @{
         customerName   = $customer.name
@@ -105,8 +114,7 @@ for ($i = 0; $i -lt 120; $i++) {
         }
     }
     if ($orderType -eq "DINE_IN") {
-        $order["tableNumber"] = "T$((Get-Random -Minimum 1 -Maximum 12))"
-        $order["guestCount"]  = (Get-Random -Minimum 1 -Maximum 5)
+        $order["specialInstructions"] = "Table T$((Get-Random -Minimum 1 -Maximum 12)), $((Get-Random -Minimum 1 -Maximum 5)) guests"
     }
 
     $orders += @{ order = $order; targetStatus = "COMPLETED"; daysBack = $daysBack }
@@ -130,8 +138,9 @@ for ($i = 0; $i -lt 20; $i++) {
             paymentMethod       = "AGGREGATOR_COLLECTED"
             orderSource         = $source
             aggregatorOrderId   = "$source-$(Get-Random -Minimum 10000 -Maximum 99999)"
-            items               = ($selectedIds | ForEach-Object {
-                @{ menuItemId = $_; name = "Menu Item"; quantity = 1; price = 12.90 }
+            items               = @($selectedIds | ForEach-Object {
+                $mi = $menuMap[$_]
+                @{ menuItemId = $_; name = if ($mi) { $mi.name } else { "Menu Item" }; quantity = 1; price = if ($mi) { [math]::Round($mi.basePrice / 100.0, 2) } else { 9.90 } }
             })
             deliveryAddress = @{
                 street     = "Aggregator Street $i"
