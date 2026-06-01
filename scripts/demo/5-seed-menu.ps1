@@ -19,7 +19,7 @@ $state = Get-Content ".\demo-state.json" | ConvertFrom-Json
 $token = $state.managerToken
 
 function Invoke-Api {
-    param([string]$Method, [string]$Path, [hashtable]$Body = $null, [string]$Token = $null)
+    param([string]$Method, [string]$Path, $Body = $null, [string]$Token = $null)
     $headers = @{
         "Content-Type"    = "application/json"
         "X-User-Type"     = "MANAGER"
@@ -27,7 +27,7 @@ function Invoke-Api {
     }
     if ($Token) { $headers["Authorization"] = "Bearer $Token" }
     $params = @{ Uri = "$BASE$Path"; Method = $Method; Headers = $headers }
-    if ($Body) { $params["Body"] = ($Body | ConvertTo-Json -Depth 10) }
+    if ($Body -ne $null) { $params["Body"] = ($Body | ConvertTo-Json -Depth 10) }
     try {
         return Invoke-RestMethod @params
     } catch {
@@ -456,14 +456,13 @@ $menuItems = @(
 Write-Host "Sending $($menuItems.Count) menu items via bulk endpoint..." -ForegroundColor Cyan
 Write-Host ""
 
-$result = Invoke-Api -Method POST -Path "/api/menu/bulk" -Body @{ items = $menuItems } -Token $token
+$result = Invoke-Api -Method POST -Path "/api/menu/bulk" -Body $menuItems -Token $token
 
 $createdIds = @()
-if ($result.items) {
-    $createdIds = $result.items | ForEach-Object { $_.id }
+if ($result -is [System.Collections.IEnumerable] -and -not ($result -is [string])) {
+    $createdIds = @($result | ForEach-Object { $_.id } | Where-Object { $_ })
     Write-Host "Created $($createdIds.Count) items via bulk." -ForegroundColor Green
 } elseif ($result.id) {
-    # Fallback: bulk returned single item
     $createdIds = @($result.id)
     Write-Host "Created 1 item (bulk returned single)." -ForegroundColor Yellow
 } else {
