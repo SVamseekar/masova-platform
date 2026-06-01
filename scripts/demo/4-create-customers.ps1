@@ -152,13 +152,15 @@ foreach ($c in $customers) {
         $userId = $reg.user.id ?? $reg.id
         Write-Host " registered (userId: $userId)" -ForegroundColor Green
     } catch {
-        Write-Host " already exists, logging in..." -ForegroundColor Yellow
-        $loginResp = Invoke-Api -Method POST -Path "/api/auth/login" -Body @{
-            email    = $c.email
-            password = $c.password
+        Write-Host " already exists, looking up via manager..." -ForegroundColor Yellow
+        try {
+            $found = Invoke-Api -Method GET -Path "/api/customers?email=$([Uri]::EscapeDataString($c.email))" -Token $managerToken
+            $userId = $found[0].userId ?? $found.userId
+            Write-Host "  userId: $userId" -ForegroundColor Yellow
+        } catch {
+            Write-Host "  could not look up userId" -ForegroundColor Red
+            $userId = $null
         }
-        $userId = $loginResp.user.id
-        Write-Host "  userId: $userId" -ForegroundColor Yellow
     }
 
     # Create customer profile using manager token (POST /api/customers requires MANAGER role)
@@ -195,16 +197,16 @@ foreach ($c in $customers) {
         Write-Host "    Adding HOME address..." -NoNewline
         try {
             Invoke-Api -Method POST -Path "/api/customers/$customerId/addresses" -Body @{
-                label       = "HOME"
-                street      = $c.homeAddress.street
-                city        = $c.homeAddress.city
-                state       = $c.homeAddress.state
-                postalCode  = $c.homeAddress.pincode
-                country     = "Germany"
-                latitude    = $c.homeAddress.latitude
-                longitude   = $c.homeAddress.longitude
-                landmark    = $c.homeAddress.landmark
-                isDefault   = $true
+                label        = "HOME"
+                addressLine1 = $c.homeAddress.street
+                city         = $c.homeAddress.city
+                state        = $c.homeAddress.state
+                postalCode   = $c.homeAddress.pincode
+                country      = "Germany"
+                latitude     = $c.homeAddress.latitude
+                longitude    = $c.homeAddress.longitude
+                landmark     = $c.homeAddress.landmark
+                default      = $true
             } -Token $managerToken | Out-Null
             Write-Host " OK" -ForegroundColor Green
         } catch { Write-Host " skipped (may exist)" -ForegroundColor Yellow }
@@ -215,16 +217,16 @@ foreach ($c in $customers) {
         Write-Host "    Adding WORK address..." -NoNewline
         try {
             Invoke-Api -Method POST -Path "/api/customers/$customerId/addresses" -Body @{
-                label       = "WORK"
-                street      = $c.workAddress.street
-                city        = $c.workAddress.city
-                state       = $c.workAddress.state
-                postalCode  = $c.workAddress.pincode
-                country     = "Germany"
-                latitude    = $c.workAddress.latitude
-                longitude   = $c.workAddress.longitude
-                landmark    = $c.workAddress.landmark
-                isDefault   = $false
+                label        = "WORK"
+                addressLine1 = $c.workAddress.street
+                city         = $c.workAddress.city
+                state        = $c.workAddress.state
+                postalCode   = $c.workAddress.pincode
+                country      = "Germany"
+                latitude     = $c.workAddress.latitude
+                longitude    = $c.workAddress.longitude
+                landmark     = $c.workAddress.landmark
+                default      = $false
             } -Token $managerToken | Out-Null
             Write-Host " OK" -ForegroundColor Green
         } catch { Write-Host " skipped (may exist)" -ForegroundColor Yellow }
