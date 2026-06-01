@@ -168,8 +168,7 @@ foreach ($entry in $orders) {
         # Advance to terminal state
         $transitionStatus = $entry.targetStatus
         $advanced = Invoke-Api -Method POST -Path "/api/orders/$orderId/status" -Body @{
-            status  = $transitionStatus
-            comment = "Demo historical order"
+            status = $transitionStatus
         } -Token $token
         if ($advanced) { $ok++ } else { $ok++ } # Count as ok even if transition fails
     } else {
