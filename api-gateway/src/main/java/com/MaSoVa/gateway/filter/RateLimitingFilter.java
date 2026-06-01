@@ -159,7 +159,7 @@ public class RateLimitingFilter extends AbstractGatewayFilterFactory<RateLimitin
     }
 
     private boolean isLoginEndpoint(String path) {
-        return path.contains("/login") || path.contains("/register") || path.contains("/refresh");
+        return path.contains("/login");
     }
 
     private String getClientIp(java.net.InetSocketAddress remoteAddress) {

@@ -44,12 +44,12 @@ public class GatewayConfig {
                 // ── Canonical auth routes: POST /api/auth/* (+ legacy /api/users/* aliases) ─
                 .route("core_auth_login", r -> r.path("/api/auth/login", "/api/users/login")
                         .and().method("POST")
-                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(10, "auth"))))
+                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "auth"))))
                         .uri("http://localhost:8085"))
 
                 .route("core_auth_register", r -> r.path("/api/auth/register", "/api/users/register")
                         .and().method("POST")
-                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(5, "register"))))
+                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "register"))))
                         .uri("http://localhost:8085"))
 
                 .route("core_auth_refresh", r -> r.path("/api/auth/refresh", "/api/users/refresh")
