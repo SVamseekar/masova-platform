@@ -12,7 +12,7 @@ public class UpdateCustomerRequest {
     @Email(message = "Invalid email format")
     private String email;
 
-    @Pattern(regexp = "^[6-9]\\d{9}$", message = "Invalid Indian phone number")
+    @Pattern(regexp = "^\\+?[1-9]\\d{6,14}$", message = "Invalid phone number")
     private String phone;
 
     private LocalDate dateOfBirth;
