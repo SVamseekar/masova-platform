@@ -34,7 +34,7 @@ Write-Host " $($menuMap.Count) items loaded" -ForegroundColor Green
 Write-Host ""
 
 function Invoke-Api {
-    param([string]$Method, [string]$Path, [hashtable]$Body = $null, [string]$Token = $null)
+    param([string]$Method, [string]$Path, $Body = $null, [string]$Token = $null)
     $headers = @{
         "Content-Type"    = "application/json"
         "X-User-Type"     = "MANAGER"
@@ -42,7 +42,7 @@ function Invoke-Api {
     }
     if ($Token) { $headers["Authorization"] = "Bearer $Token" }
     $params = @{ Uri = "$BASE$Path"; Method = $Method; Headers = $headers }
-    if ($Body) { $params["Body"] = ($Body | ConvertTo-Json -Depth 10) }
+    if ($Body -ne $null) { $params["Body"] = ($Body | ConvertTo-Json -Depth 10) }
     try {
         return Invoke-RestMethod @params
     } catch {
