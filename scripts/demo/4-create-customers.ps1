@@ -136,8 +136,16 @@ $customers = @(
 )
 
 $customerIds = @{}
+$isFirst = $true
 
 foreach ($c in $customers) {
+    # Wait between customers to avoid gateway rate limit (5 req/min per IP)
+    if (-not $isFirst) {
+        Write-Host "  Waiting 65s for rate limit reset..." -ForegroundColor Gray
+        Start-Sleep -Seconds 65
+    }
+    $isFirst = $false
+
     Write-Host "  Registering $($c.name)..." -NoNewline
 
     # Register user account
@@ -233,7 +241,6 @@ foreach ($c in $customers) {
     }
 
     Write-Host ""
-    Start-Sleep -Seconds 13  # stay under 5 req/min gateway rate limit
 }
 
 # Save customer IDs to state
