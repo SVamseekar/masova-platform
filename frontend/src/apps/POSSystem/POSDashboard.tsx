@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import { selectSelectedStoreId, selectSelectedStoreName, setSelectedStore } from '../../store/slices/cartSlice';
+import { selectSelectedStoreId, selectSelectedStoreName, setSelectedStore, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import MenuPanel from './components/MenuPanel';
 import OrderPanel from './components/OrderPanel';
 import CustomerPanel from './components/CustomerPanel';
@@ -19,7 +20,6 @@ import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import PeopleIcon from '@mui/icons-material/People';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
-import { CURRENCY } from '../../config/business-config';
 import {
   useGetTodaySalesMetricsQuery,
   useGetSalesTrendsQuery,
@@ -44,6 +44,9 @@ import { useSnackbar } from 'notistack';
 const POSDashboard: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const [searchParams] = useSearchParams();
   const { user } = useAppSelector((state) => state.auth);
   const { enqueueSnackbar } = useSnackbar();
@@ -293,7 +296,7 @@ const POSDashboard: React.FC = () => {
     const confirmed = window.confirm(
       `Mark this order as PAID?\n\n` +
       `Order: #${order.orderNumber}\n` +
-      `Amount: ${CURRENCY.format(order.total)}\n` +
+      `Amount: ${fmt(order.total)}\n` +
       `Payment Method: ${order.paymentMethod}\n\n` +
       `This confirms that CASH payment has been received.`
     );
@@ -313,7 +316,7 @@ const POSDashboard: React.FC = () => {
         notes: `Cash payment recorded for Order #${order.orderNumber}`,
       }).unwrap();
 
-      enqueueSnackbar(`Order #${order.orderNumber} marked as PAID — Cash payment of ${CURRENCY.format(order.total)} recorded.`, { variant: 'success' });
+      enqueueSnackbar(`Order #${order.orderNumber} marked as PAID — Cash payment of ${fmt(order.total)} recorded.`, { variant: 'success' });
     } catch (error: any) {
       console.error('Failed to record cash payment:', error);
       enqueueSnackbar(`Failed to mark order as paid. ${error?.data?.message || 'Please try again.'}`, { variant: 'error' });
@@ -487,7 +490,7 @@ const POSDashboard: React.FC = () => {
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent'
               }}>
-                {CURRENCY.format(orderTotal)}
+                {fmt(orderTotal)}
               </div>
             </div>
           )}
@@ -708,7 +711,7 @@ const POSDashboard: React.FC = () => {
                 color: '#1a1a1a',
                 marginBottom: spacing[2]
               }}>
-                {CURRENCY.format(todayData?.todaySales || 0)}
+                {fmt(todayData?.todaySales || 0)}
               </div>
               <div style={{
                 fontSize: typography.fontSize.xs,
@@ -747,7 +750,7 @@ const POSDashboard: React.FC = () => {
                 color: '#1a1a1a',
                 marginBottom: spacing[2]
               }}>
-                {CURRENCY.format(weekData?.totalSales || 0)}
+                {fmt(weekData?.totalSales || 0)}
               </div>
               <div style={{
                 fontSize: typography.fontSize.xs,
@@ -781,7 +784,7 @@ const POSDashboard: React.FC = () => {
                 color: '#1a1a1a',
                 marginBottom: spacing[2]
               }}>
-                {CURRENCY.format(monthData?.totalSales || 0)}
+                {fmt(monthData?.totalSales || 0)}
               </div>
               <div style={{
                 fontSize: typography.fontSize.xs,
@@ -821,7 +824,7 @@ const POSDashboard: React.FC = () => {
                 fontSize: typography.fontSize.xs,
                 color: '#666'
               }}>
-                {CURRENCY.format(totalSales)} total
+                {fmt(totalSales)} total
               </div>
             </div>
           </div>
@@ -932,7 +935,7 @@ const POSDashboard: React.FC = () => {
                         fontWeight: typography.fontWeight.bold,
                         color: colors.semantic.success
                       }}>
-                        {CURRENCY.format(item.revenue)}
+                        {fmt(item.revenue)}
                       </div>
                     </div>
                   ))}
@@ -1038,7 +1041,7 @@ const POSDashboard: React.FC = () => {
                           fontWeight: typography.fontWeight.bold,
                           color: colors.brand.primary
                         }}>
-                          {CURRENCY.format(order.total || 0)}
+                          {fmt(order.total || 0)}
                         </div>
 
                         {/* Mark as Paid Button for PENDING CASH orders */}
@@ -1171,7 +1174,7 @@ const POSDashboard: React.FC = () => {
                       fontWeight: typography.fontWeight.bold,
                       color: colors.semantic.success
                     }}>
-                      {CURRENCY.format(staff.salesGenerated)}
+                      {fmt(staff.salesGenerated)}
                     </div>
                   </div>
                 ))}

@@ -9,7 +9,10 @@ import {
   selectCartSubtotal,
   selectCartItemCount,
   selectDeliveryFee,
+  selectCartCurrency,
+  selectCartLocale,
 } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 
 interface CartDrawerProps {
   open: boolean;
@@ -23,6 +26,8 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) =>
   const subtotal = useAppSelector(selectCartSubtotal);
   const itemCount = useAppSelector(selectCartItemCount);
   const deliveryFee = useAppSelector(selectDeliveryFee);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
 
   const tax = subtotal * 0.05;
   const total = subtotal + (itemCount > 0 ? deliveryFee : 0) + tax;
@@ -248,14 +253,14 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) =>
                       {item.name}
                     </p>
                     <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-3)' }}>
-                      ₹{item.price.toFixed(2)} each
+                      {formatMoney(Math.round(item.price * 100), currency, locale)} each
                     </p>
                   </div>
 
                   {/* Price + qty controls */}
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px', flexShrink: 0 }}>
                     <p style={{ margin: 0, fontWeight: 700, color: 'var(--gold)', fontFamily: 'var(--font-body)', fontSize: '0.9rem' }}>
-                      ₹{(item.price * item.quantity).toFixed(2)}
+                      {formatMoney(Math.round(item.price * item.quantity * 100), currency, locale)}
                     </p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <button
@@ -324,9 +329,9 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) =>
             background: 'var(--surface)',
           }}>
             {[
-              { label: `Subtotal (${itemCount} item${itemCount > 1 ? 's' : ''})`, value: `₹${subtotal.toFixed(2)}` },
-              { label: 'Delivery Fee', value: `₹${deliveryFee.toFixed(2)}` },
-              { label: 'Tax (5%)', value: `₹${tax.toFixed(2)}` },
+              { label: `Subtotal (${itemCount} item${itemCount > 1 ? 's' : ''})`, value: formatMoney(Math.round(subtotal * 100), currency, locale) },
+              { label: 'Delivery Fee', value: formatMoney(Math.round(deliveryFee * 100), currency, locale) },
+              { label: 'Tax (5%)', value: formatMoney(Math.round(tax * 100), currency, locale) },
             ].map(row => (
               <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span style={{ color: 'var(--text-3)', fontSize: '0.85rem', fontFamily: 'var(--font-body)' }}>{row.label}</span>
@@ -341,7 +346,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) =>
                 Total
               </span>
               <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--gold)', fontSize: '1.3rem' }}>
-                ₹{total.toFixed(2)}
+                {formatMoney(Math.round(total * 100), currency, locale)}
               </span>
             </div>
 

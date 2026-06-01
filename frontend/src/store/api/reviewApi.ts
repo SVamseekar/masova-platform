@@ -175,7 +175,7 @@ export interface PagedResponse<T> {
 export const reviewApi = createApi({
   reducerPath: 'reviewApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: API_CONFIG.BASE_URL,
+    baseUrl: API_CONFIG.REVIEW_SERVICE_URL,
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState;
       const token = state.auth.accessToken;
@@ -209,7 +209,7 @@ export const reviewApi = createApi({
     // Create review
     createReview: builder.mutation<Review, CreateReviewRequest>({
       query: (body) => ({
-        url: '/api/reviews',
+        url: '/reviews',
         method: 'POST',
         body,
       }),
@@ -218,13 +218,13 @@ export const reviewApi = createApi({
 
     // Get review by ID
     getReviewById: builder.query<Review, string>({
-      query: (reviewId) => `/api/reviews/${reviewId}`,
+      query: (reviewId) => `/reviews/${reviewId}`,
       providesTags: (result, error, id) => [{ type: 'Review', id }],
     }),
 
     // Get reviews by order ID
     getReviewsByOrderId: builder.query<Review[], string>({
-      query: (orderId) => `/api/reviews?orderId=${orderId}`,
+      query: (orderId) => `/reviews/order/${orderId}`,
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Review' as const, id })), 'Review']
@@ -237,7 +237,7 @@ export const reviewApi = createApi({
       { customerId: string; page?: number; size?: number }
     >({
       query: ({ customerId, page = 0, size = 20 }) =>
-        `/api/reviews?customerId=${customerId}&page=${page}&size=${size}`,
+        `/reviews/customer/${customerId}?page=${page}&size=${size}`,
       providesTags: ['Review'],
     }),
 
@@ -247,7 +247,7 @@ export const reviewApi = createApi({
       { driverId: string; page?: number; size?: number }
     >({
       query: ({ driverId, page = 0, size = 20 }) =>
-        `/api/reviews?driverId=${driverId}&page=${page}&size=${size}`,
+        `/reviews/driver/${driverId}?page=${page}&size=${size}`,
       providesTags: ['Review'],
     }),
 
@@ -257,7 +257,7 @@ export const reviewApi = createApi({
       { menuItemId: string; page?: number; size?: number }
     >({
       query: ({ menuItemId, page = 0, size = 20 }) =>
-        `/api/reviews?menuItemId=${menuItemId}&page=${page}&size=${size}`,
+        `/reviews/item/${menuItemId}?page=${page}&size=${size}`,
       providesTags: ['Review'],
     }),
 
@@ -271,7 +271,7 @@ export const reviewApi = createApi({
         if (storeId) params.append('storeId', storeId);
         params.append('page', page.toString());
         params.append('size', size.toString());
-        params.append("recent","true"); return `/api/reviews?${params.toString()}`;
+        return `/reviews/recent?${params.toString()}`;
       },
       providesTags: (result, error, { storeId }) => [{ type: 'Review', id: storeId || 'DEFAULT' }],
     }),
@@ -286,7 +286,7 @@ export const reviewApi = createApi({
         if (storeId) params.append('storeId', storeId);
         params.append('page', page.toString());
         params.append('size', size.toString());
-        params.append("needsResponse","true"); return `/api/reviews?${params.toString()}`;
+        return `/reviews/needs-response?${params.toString()}`;
       },
       providesTags: (result, error, { storeId }) => [{ type: 'Review', id: storeId || 'DEFAULT' }],
     }),
@@ -294,7 +294,7 @@ export const reviewApi = createApi({
     // Flag review
     flagReview: builder.mutation<Review, { reviewId: string; request: FlagReviewRequest }>({
       query: ({ reviewId, request }) => ({
-        url: `/api/reviews/${reviewId}`,
+        url: `/reviews/${reviewId}/flag`,
         method: 'PATCH',
         body: request,
       }),
@@ -307,7 +307,7 @@ export const reviewApi = createApi({
       { reviewId: string; status: ReviewStatus }
     >({
       query: ({ reviewId, status }) => ({
-        url: `/api/reviews/${reviewId}`,
+        url: `/reviews/${reviewId}/status?status=${status}`,
         method: 'PATCH',
       }),
       invalidatesTags: (result, error, { reviewId }) => [{ type: 'Review', id: reviewId }],
@@ -316,7 +316,7 @@ export const reviewApi = createApi({
     // Delete review
     deleteReview: builder.mutation<{ message: string }, string>({
       query: (reviewId) => ({
-        url: `/api/reviews/${reviewId}`,
+        url: `/reviews/${reviewId}`,
         method: 'DELETE',
       }),
       invalidatesTags: (result, error, id) => [{ type: 'Review', id }, 'Review'],
@@ -324,13 +324,13 @@ export const reviewApi = createApi({
 
     // Get overall stats
     getOverallStats: builder.query<ReviewStatsResponse, string | undefined>({
-      query: (storeId) => `/api/reviews/stats${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/reviews/stats/overall${storeId ? `?storeId=${storeId}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'ReviewStats', id: storeId || 'DEFAULT' }],
     }),
 
     // Get driver rating
     getDriverRating: builder.query<DriverRatingResponse, string>({
-      query: (driverId) => `/api/reviews/stats?driverId=${driverId}`,
+      query: (driverId) => `/reviews/stats/driver/${driverId}`,
       providesTags: (result, error, id) => [{ type: 'ReviewStats', id }],
     }),
 
@@ -341,7 +341,7 @@ export const reviewApi = createApi({
       averageRating: number;
       totalReviews: number;
     }, string>({
-      query: (staffId) => `/api/reviews/stats?staffId=${staffId}`,
+      query: (staffId) => `/reviews/staff/${staffId}/rating`,
       providesTags: (result, error, id) => [{ type: 'ReviewStats', id: `staff-${id}` }],
     }),
 
@@ -354,7 +354,7 @@ export const reviewApi = createApi({
       number: number;
     }, { staffId: string; page?: number; size?: number }>({
       query: ({ staffId, page = 0, size = 20 }) =>
-        `/api/reviews?staffId=${staffId}&page=${page}&size=${size}`,
+        `/reviews/staff/${staffId}?page=${page}&size=${size}`,
       providesTags: (result) =>
         result
           ? [
@@ -366,7 +366,7 @@ export const reviewApi = createApi({
 
     // Get item rating
     getItemRating: builder.query<ItemRatingResponse, string>({
-      query: (menuItemId) => `/api/reviews/stats?menuItemId=${menuItemId}`,
+      query: (menuItemId) => `/reviews/stats/item/${menuItemId}`,
       providesTags: (result, error, id) => [{ type: 'ReviewStats', id }],
     }),
 
@@ -375,7 +375,7 @@ export const reviewApi = createApi({
       { menuItemId: string; averageRating: number; totalReviews: number },
       string
     >({
-      query: (menuItemId) => `/api/reviews/public/token/${menuItemId}`,
+      query: (menuItemId) => `/reviews/public/item/${menuItemId}/average`,
     }),
 
     // Response endpoints
@@ -384,7 +384,7 @@ export const reviewApi = createApi({
       { reviewId: string; request: CreateResponseRequest }
     >({
       query: ({ reviewId, request }) => ({
-        url: `/api/reviews/${reviewId}/response`,
+        url: `/responses/review/${reviewId}`,
         method: 'POST',
         body: request,
       }),
@@ -395,12 +395,12 @@ export const reviewApi = createApi({
     }),
 
     getResponseByReviewId: builder.query<ReviewResponse, string>({
-      query: (reviewId) => `/api/reviews/${reviewId}/response`,
+      query: (reviewId) => `/responses/review/${reviewId}`,
       providesTags: (result, error, id) => [{ type: 'ReviewResponse', id }],
     }),
 
     getResponseTemplates: builder.query<Record<ResponseType, string>, void>({
-      query: () => '/api/reviews/response-templates',
+      query: () => '/responses/templates',
     }),
 
     updateResponse: builder.mutation<
@@ -408,7 +408,7 @@ export const reviewApi = createApi({
       { responseId: string; responseText: string }
     >({
       query: ({ responseId, responseText }) => ({
-        url: `/api/reviews/response/${responseId}`,
+        url: `/responses/${responseId}`,
         method: 'PUT',
         body: { responseText },
       }),
@@ -419,7 +419,7 @@ export const reviewApi = createApi({
 
     deleteResponse: builder.mutation<{ message: string }, string>({
       query: (responseId) => ({
-        url: `/api/reviews/response/${responseId}`,
+        url: `/responses/${responseId}`,
         method: 'DELETE',
       }),
       invalidatesTags: (result, error, id) => [{ type: 'ReviewResponse', id }],
@@ -435,7 +435,7 @@ export const reviewApi = createApi({
         if (storeId) params.append('storeId', storeId);
         params.append('page', page.toString());
         params.append('size', size.toString());
-        params.append("status","PENDING"); return `/api/reviews?${params.toString()}`;
+        return `/reviews/pending?${params.toString()}`;
       },
       providesTags: (result, error, { storeId }) => [{ type: 'Review', id: storeId || 'DEFAULT' }],
     }),
@@ -449,14 +449,14 @@ export const reviewApi = createApi({
         if (storeId) params.append('storeId', storeId);
         params.append('page', page.toString());
         params.append('size', size.toString());
-        params.append("status","FLAGGED"); return `/api/reviews?${params.toString()}`;
+        return `/reviews/flagged?${params.toString()}`;
       },
       providesTags: (result, error, { storeId }) => [{ type: 'Review', id: storeId || 'DEFAULT' }],
     }),
 
     approveReview: builder.mutation<Review, string>({
       query: (reviewId) => ({
-        url: `/api/reviews/${reviewId}`,
+        url: `/reviews/${reviewId}/approve`,
         method: 'POST',
       }),
       invalidatesTags: (result, error, id) => [{ type: 'Review', id }, 'Review'],
@@ -464,7 +464,7 @@ export const reviewApi = createApi({
 
     rejectReview: builder.mutation<Review, { reviewId: string; reason: string }>({
       query: ({ reviewId, reason }) => ({
-        url: `/api/reviews/${reviewId}`,
+        url: `/reviews/${reviewId}/reject?reason=${encodeURIComponent(reason)}`,
         method: 'POST',
       }),
       invalidatesTags: (result, error, { reviewId }) => [

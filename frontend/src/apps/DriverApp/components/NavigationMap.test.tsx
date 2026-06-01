@@ -19,14 +19,10 @@ const mockGetOptimizedRoute = vi.fn(() => ({
     }),
 }));
 
-vi.mock('../../../store/api/deliveryApi', async () => {
-  const actual = await vi.importActual('../../../store/api/deliveryApi');
-  return {
-    ...actual,
+vi.mock('../../../store/api/deliveryApi', () => ({
   useGetOptimizedRouteMutation: () => [mockGetOptimizedRoute, { isLoading: false }],
   deliveryApi: { reducerPath: 'deliveryApi', reducer: () => ({}), middleware: () => (next: any) => (action: any) => next(action) },
-  };
-});
+}));
 
 describe('NavigationMap', () => {
   const defaultProps = {
@@ -70,7 +66,7 @@ describe('NavigationMap', () => {
 
   it('renders "Open in Google Maps" button', () => {
     render(<NavigationMap {...defaultProps} />);
-    const gmapsButton = screen.getByRole('button', { name: /Open in Google Maps/ });
+    const gmapsButton = screen.getByText(/Open in Google Maps/);
     expect(gmapsButton).toBeInTheDocument();
   });
 
@@ -84,7 +80,7 @@ describe('NavigationMap', () => {
     const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
     render(<NavigationMap {...defaultProps} />);
-    await user.click(screen.getByRole('button', { name: /Open in Google Maps/ }));
+    await user.click(screen.getByText(/Open in Google Maps/));
 
     expect(openSpy).toHaveBeenCalledWith(
       expect.stringContaining('google.com/maps/dir'),
@@ -137,10 +133,10 @@ describe('NavigationMap', () => {
       />
     );
 
-    await user.click(screen.getByRole('button', { name: /Open in Google Maps/ }));
+    await user.click(screen.getByText(/Open in Google Maps/));
 
     expect(openSpy).toHaveBeenCalledWith(
-      expect.stringContaining('42'),
+      expect.stringContaining('42+Curry+Lane'),
       '_blank'
     );
 

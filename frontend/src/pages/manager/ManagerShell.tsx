@@ -7,7 +7,7 @@ import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import { clearReturnUrl } from '../../utils/security';
 import { t, Icons } from './manager-tokens';
 import { useGetActiveStoresQuery } from '../../store/api/storeApi';
-import { setSelectedStore, selectSelectedStoreId, selectSelectedStoreName } from '../../store/slices/cartSlice';
+import { setSelectedStore, setStoreCurrency, selectSelectedStoreId, selectSelectedStoreName } from '../../store/slices/cartSlice';
 
 const DashboardSection = React.lazy(() => import('./DashboardSection'));
 const OrdersSection = React.lazy(() => import('./OrdersSection'));
@@ -98,6 +98,11 @@ function ManagerShell() {
 
   const handleStoreSelect = (code: string, name: string) => {
     dispatch(setSelectedStore({ storeId: code, storeName: name }));
+    const store = stores.find((s: any) => s.storeCode === code);
+    dispatch(setStoreCurrency({
+      currency: store?.currency || 'INR',
+      locale: store?.locale || 'en-IN',
+    }));
     setStoreDropOpen(false);
   };
 

@@ -560,7 +560,7 @@ const StoreManagementPage: React.FC = () => {
                     }))}
                   />
                   <Input
-                    label="Minimum Order Value (₹)"
+                    label="Minimum Order Value"
                     name="minimumOrderValueINR"
                     type="number"
                     value={formData.operatingConfig?.minimumOrderValueINR || 100}

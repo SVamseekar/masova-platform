@@ -7,74 +7,42 @@ const mockPurchaseOrders = [
   { id: 'po-2', orderNumber: 'PO-002', supplierId: 'sup-2', status: 'SENT', totalAmount: 8500, orderDate: '2026-02-12T00:00:00Z', expectedDeliveryDate: '2026-02-19T00:00:00Z', items: [{ itemName: 'Cheese', orderedQuantity: 50, unit: 'kg', unitPrice: 170 }] },
 ];
 
-vi.mock('@/store/api/inventoryApi', async () => {
-  const actual = await vi.importActual('@/store/api/inventoryApi');
-  return {
-    ...actual,
-  useGetAllPurchaseOrdersQuery: () => ({ data: mockPurchaseOrders, isLoading: false, refetch: vi.fn() }),
-  useGetPendingApprovalPurchaseOrdersQuery: () => ({ data: [mockPurchaseOrders[0]], refetch: vi.fn() }),
-  useApprovePurchaseOrderMutation: () => ([vi.fn()]),
-  useRejectPurchaseOrderMutation: () => ([vi.fn()]),
-  useSendPurchaseOrderMutation: () => ([vi.fn()]),
-  useAutoGeneratePurchaseOrdersMutation: () => ([vi.fn(), { isLoading: false }]),
-  };
-});
+vi.mock('@/store/api/inventoryApi', () => ({
+  useGetAllPurchaseOrdersQuery: vi.fn().mockReturnValue({ data: mockPurchaseOrders, isLoading: false, refetch: vi.fn() }),
+  useGetPendingApprovalPurchaseOrdersQuery: vi.fn().mockReturnValue({ data: [mockPurchaseOrders[0]], refetch: vi.fn() }),
+  useApprovePurchaseOrderMutation: vi.fn().mockReturnValue([vi.fn()]),
+  useRejectPurchaseOrderMutation: vi.fn().mockReturnValue([vi.fn()]),
+  useSendPurchaseOrderMutation: vi.fn().mockReturnValue([vi.fn()]),
+  useAutoGeneratePurchaseOrdersMutation: vi.fn().mockReturnValue([vi.fn(), { isLoading: false }]),
+}));
 
-vi.mock('@/contexts/PageStoreContext', async () => {
-  const actual = await vi.importActual('@/contexts/PageStoreContext');
-  return {
-    ...actual,
-  usePageStore: () => ({ selectedStoreId: 'store-1', setSelectedStoreId: vi.fn() }),
-  };
-});
+vi.mock('@/contexts/PageStoreContext', () => ({
+  usePageStore: vi.fn().mockReturnValue({ selectedStoreId: 'store-1', setSelectedStoreId: vi.fn() }),
+}));
 
-vi.mock('@/hoc/withPageStoreContext', async () => {
-  const actual = await vi.importActual('@/hoc/withPageStoreContext');
-  return {
-    ...actual,
+vi.mock('@/hoc/withPageStoreContext', () => ({
   withPageStoreContext: (Component: React.ComponentType) => Component,
-  };
-});
+}));
 
-vi.mock('@/hooks/useSmartBackNavigation', async () => {
-  const actual = await vi.importActual('@/hooks/useSmartBackNavigation');
-  return {
-    ...actual,
-  useSmartBackNavigation: () => ({ handleBack: vi.fn() }),
-  };
-});
+vi.mock('@/hooks/useSmartBackNavigation', () => ({
+  useSmartBackNavigation: vi.fn().mockReturnValue({ handleBack: vi.fn() }),
+}));
 
-vi.mock('@/components/backgrounds/AnimatedBackground', async () => {
-  const actual = await vi.importActual('@/components/backgrounds/AnimatedBackground');
-  return {
-    ...actual,
+vi.mock('@/components/backgrounds/AnimatedBackground', () => ({
   default: () => <div data-testid="animated-bg" />,
-  };
-});
+}));
 
-vi.mock('@/components/inventory/CreatePurchaseOrderDialog', async () => {
-  const actual = await vi.importActual('@/components/inventory/CreatePurchaseOrderDialog');
-  return {
-    ...actual,
+vi.mock('@/components/inventory/CreatePurchaseOrderDialog', () => ({
   default: () => null,
-  };
-});
+}));
 
-vi.mock('@/components/inventory/ReceivePurchaseOrderDialog', async () => {
-  const actual = await vi.importActual('@/components/inventory/ReceivePurchaseOrderDialog');
-  return {
-    ...actual,
+vi.mock('@/components/inventory/ReceivePurchaseOrderDialog', () => ({
   default: () => null,
-  };
-});
+}));
 
-vi.mock('date-fns', async () => {
-  const actual = await vi.importActual('date-fns');
-  return {
-    ...actual,
+vi.mock('date-fns', () => ({
   format: vi.fn((date: Date, fmt: string) => date.toLocaleDateString()),
-  };
-});
+}));
 
 describe('PurchaseOrdersPage', () => {
   beforeEach(() => {
@@ -83,13 +51,13 @@ describe('PurchaseOrdersPage', () => {
 
   it('renders without crashing', () => {
     renderAsManager(<PurchaseOrdersPage />);
-    expect(screen.getAllByText('Purchase Orders').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Purchase Orders')).toBeInTheDocument();
   });
 
   it('displays statistics cards', () => {
     renderAsManager(<PurchaseOrdersPage />);
     expect(screen.getByText('Total Orders')).toBeInTheDocument();
-    expect(screen.getAllByText('Pending Approval').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Pending Approval')).toBeInTheDocument();
     expect(screen.getByText('Sent to Suppliers')).toBeInTheDocument();
     expect(screen.getByText('Total Value')).toBeInTheDocument();
   });
@@ -120,7 +88,7 @@ describe('PurchaseOrdersPage', () => {
 
   it('shows approve and reject buttons for pending orders', () => {
     renderAsManager(<PurchaseOrdersPage />);
-    expect(screen.getAllByText(/Approve/).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(/Reject/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/Approve/)).toBeInTheDocument();
+    expect(screen.getByText(/Reject/)).toBeInTheDocument();
   });
 });

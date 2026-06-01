@@ -27,25 +27,23 @@ vi.mock('@/components/backgrounds/AnimatedBackground', () => ({
   default: () => <div data-testid="animated-background" />,
 }));
 
+// Mock AppHeader
 vi.mock('@/components/common/AppHeader', () => ({
   default: () => <div data-testid="app-header" />,
 }));
 
-vi.mock('@/components/ui/neumorphic', async () => {
-  const actual = await vi.importActual('@/components/ui/neumorphic');
-  return {
-    ...actual,
-    Button: ({ children, onClick, ...props }: any) => (
-      <button onClick={onClick} {...props}>{children}</button>
-    ),
-    Checkbox: ({ label, checked, onChange }: any) => (
-      <label>
-        <input type="checkbox" checked={checked} onChange={onChange} />
-        {label}
-      </label>
-    ),
-  };
-});
+// Mock neumorphic components
+vi.mock('@/components/ui/neumorphic', () => ({
+  Button: ({ children, onClick, ...props }: any) => (
+    <button onClick={onClick} {...props}>{children}</button>
+  ),
+  Checkbox: ({ label, checked, onChange }: any) => (
+    <label>
+      <input type="checkbox" checked={checked} onChange={onChange} />
+      {label}
+    </label>
+  ),
+}));
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
@@ -113,7 +111,7 @@ describe('ProfilePage', () => {
     });
 
     renderAsCustomer(<ProfilePage />);
-    expect(screen.getByText('Loading…')).toBeInTheDocument();
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
   it('shows error state when customer profile cannot be loaded', () => {
@@ -126,7 +124,7 @@ describe('ProfilePage', () => {
 
     renderAsCustomer(<ProfilePage />);
     expect(screen.getByText('Unable to Load Profile')).toBeInTheDocument();
-    expect(screen.getByText('Retry')).toBeInTheDocument();
+    expect(screen.getByText('Refresh Page')).toBeInTheDocument();
     expect(screen.getByText('Back to Menu')).toBeInTheDocument();
   });
 
@@ -139,7 +137,7 @@ describe('ProfilePage', () => {
     });
 
     renderAsCustomer(<ProfilePage />);
-    expect(screen.getAllByText('Test Customer').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('My Profile')).toBeInTheDocument();
   });
 
   it('displays profile tabs', () => {
@@ -153,7 +151,7 @@ describe('ProfilePage', () => {
     renderAsCustomer(<ProfilePage />);
     expect(screen.getByText('Personal Info')).toBeInTheDocument();
     expect(screen.getByText('Addresses')).toBeInTheDocument();
-    expect(screen.getByText('Food Preferences')).toBeInTheDocument();
+    expect(screen.getByText('Preferences')).toBeInTheDocument();
   });
 
   it('displays personal information by default', () => {
@@ -165,7 +163,8 @@ describe('ProfilePage', () => {
     });
 
     renderAsCustomer(<ProfilePage />);
-    expect(screen.getAllByText('Test Customer').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Personal Information')).toBeInTheDocument();
+    expect(screen.getByText('Test Customer')).toBeInTheDocument();
     expect(screen.getByText('customer@test.com')).toBeInTheDocument();
   });
 
@@ -178,9 +177,9 @@ describe('ProfilePage', () => {
     });
 
     renderAsCustomer(<ProfilePage />);
-    expect(screen.getByText('Loyalty Balance')).toBeInTheDocument();
-    expect(screen.getByText('1,500')).toBeInTheDocument();
-    expect(screen.getAllByText('Silver').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Loyalty Points')).toBeInTheDocument();
+    expect(screen.getByText('1500')).toBeInTheDocument();
+    expect(screen.getByText('SILVER')).toBeInTheDocument();
   });
 
   it('displays order stats', () => {
@@ -205,7 +204,7 @@ describe('ProfilePage', () => {
     });
 
     renderAsCustomer(<ProfilePage />);
-    expect(screen.getByText('Edit →')).toBeInTheDocument();
+    expect(screen.getByText('Edit')).toBeInTheDocument();
   });
 
   it('shows email verified status', () => {

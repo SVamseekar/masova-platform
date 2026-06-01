@@ -132,10 +132,7 @@ describe('Tabs Components', () => {
 
     it('renders with no visible border', () => {
       renderTabs();
-      const btn = screen.getByRole('button', { name: 'Tab 1' });
-      // jsdom normalises 'none' to '' for shorthand border — check there's no border-width set
-      const borderWidth = btn.style.borderWidth || btn.style.border;
-      expect(['none', '', '0px', undefined].includes(borderWidth)).toBe(true);
+      expect(screen.getByRole('button', { name: 'Tab 1' })).toHaveStyle({ border: 'none' });
     });
 
     it('renders with cursor pointer', () => {

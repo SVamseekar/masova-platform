@@ -50,6 +50,9 @@ import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import RateReviewIcon from '@mui/icons-material/RateReview';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store/store';
+import { useAppSelector } from '../../store/hooks';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import { useGetStaffProfileQuery, useUpdateStaffProfileMutation } from '../../store/api/userApi';
 import { useGetEmployeeSessionsQuery } from '../../store/api/sessionApi';
 import { useGetEmployeeShiftsQuery } from '../../store/api/shiftApi';
@@ -60,6 +63,9 @@ const StaffProfilePage: React.FC = () => {
   const { staffId } = useParams<{ staffId: string }>();
   const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
 
   // Determine if viewing own profile or someone else's
   const isOwnProfile = !staffId || staffId === user?.id;
@@ -448,7 +454,7 @@ const StaffProfilePage: React.FC = () => {
                 <Box sx={{ textAlign: 'center' }}>
                   <AttachMoneyIcon sx={{ fontSize: 32, color: 'success.main', mb: 1 }} />
                   <Typography variant="h5" fontWeight="bold">
-                    ₹{posPerformance.totalRevenue.toLocaleString()}
+                    {fmt(posPerformance.totalRevenue)}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     Revenue Generated
@@ -460,7 +466,7 @@ const StaffProfilePage: React.FC = () => {
                 <Box sx={{ textAlign: 'center' }}>
                   <ShoppingCartIcon sx={{ fontSize: 32, color: 'info.main', mb: 1 }} />
                   <Typography variant="h5" fontWeight="bold">
-                    ₹{posPerformance.averageOrderValue.toFixed(2)}
+                    {fmt(posPerformance.averageOrderValue)}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     Avg Order Value

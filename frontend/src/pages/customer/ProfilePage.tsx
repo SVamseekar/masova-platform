@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import {
   useGetCustomerByUserIdQuery,
   useCreateCustomerMutation,
@@ -83,6 +85,8 @@ const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const currentUser = useAppSelector(selectCurrentUser);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
   const [activeSection, setActiveSection] = useState(() => searchParams.get('section') || 'overview');
   const [editing, setEditing] = useState(false);
   const [addressDialogOpen, setAddressDialogOpen] = useState(false);
@@ -419,8 +423,8 @@ const ProfilePage: React.FC = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
           {[
             { label: 'Total Orders', value: customer.orderStats.totalOrders, format: (v: number) => v.toString() },
-            { label: 'Total Spent', value: customer.orderStats.totalSpent, format: (v: number) => `₹${Math.round(v).toLocaleString()}` },
-            { label: 'Avg Order', value: customer.orderStats.averageOrderValue, format: (v: number) => `₹${Math.round(v)}` },
+            { label: 'Total Spent', value: customer.orderStats.totalSpent, format: (v: number) => formatMoney(Math.round(v * 100), currency, locale) },
+            { label: 'Avg Order', value: customer.orderStats.averageOrderValue, format: (v: number) => formatMoney(Math.round(v * 100), currency, locale) },
           ].map((stat) => (
             <div key={stat.label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '18px 16px' }}>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', fontWeight: 700, color: 'var(--gold)', marginBottom: 4, letterSpacing: '-0.02em' }}>{stat.format(stat.value)}</div>
@@ -663,7 +667,7 @@ const ProfilePage: React.FC = () => {
             return (
               <button
                 key={a}
-                onClick={() => editingPreferences && setPreferencesForm(p => ({ ...p, allergenAlerts: toggleArrayItem(p.allergenAlerts || [], a) }))}
+                onClick={() => editingPreferences && setPreferencesForm(p => ({ ...p, allergenAlerts: toggleArrayItem(p.allergenAlerts || [], a) as typeof p.allergenAlerts }))}
                 style={{
                   padding: '7px 16px', borderRadius: 99, fontSize: '0.8rem', fontWeight: 600, cursor: editingPreferences ? 'pointer' : 'default',
                   border: sel ? '1px solid rgba(229,62,62,0.5)' : '1px solid var(--border)',

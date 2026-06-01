@@ -56,7 +56,7 @@ export interface ChangePasswordRequest {
 export const userApi = createApi({
   reducerPath: 'userApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: API_CONFIG.BASE_URL,
+    baseUrl: API_CONFIG.USER_SERVICE_URL,
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState;
       const token = state.auth.accessToken;
@@ -89,15 +89,15 @@ export const userApi = createApi({
   endpoints: (builder) => ({
     // Get current user profile
     getProfile: builder.query<User, void>({
-      query: () => '/api/users/me',
+      query: () => '/users/profile',
       providesTags: ['User'],
     }),
 
     // Update current user profile
     updateProfile: builder.mutation<User, UpdateUserRequest>({
       query: (data) => ({
-        url: '/api/users/me',
-        method: 'PATCH',
+        url: '/users/profile',
+        method: 'PUT',
         body: data,
       }),
       invalidatesTags: ['User'],
@@ -106,7 +106,7 @@ export const userApi = createApi({
     // Change password
     changePassword: builder.mutation<void, ChangePasswordRequest>({
       query: (data) => ({
-        url: '/api/auth/change-password',
+        url: '/users/change-password',
         method: 'POST',
         body: data,
       }),
@@ -114,15 +114,15 @@ export const userApi = createApi({
 
     // Get user by ID
     getUser: builder.query<User, string>({
-      query: (userId) => `/api/users/${userId}`,
+      query: (userId) => `/users/${userId}`,
       providesTags: (result, error, userId) => [{ type: 'User', id: userId }],
     }),
 
     // Update user
     updateUser: builder.mutation<User, { userId: string; data: UpdateUserRequest }>({
       query: ({ userId, data }) => ({
-        url: `/api/users/${userId}`,
-        method: 'PATCH',
+        url: `/users/${userId}`,
+        method: 'PUT',
         body: data,
       }),
       invalidatesTags: (result, error, { userId }) => [
@@ -134,7 +134,7 @@ export const userApi = createApi({
     // Activate user
     activateUser: builder.mutation<void, string>({
       query: (userId) => ({
-        url: `/api/users/${userId}/activate`,
+        url: `/users/${userId}/activate`,
         method: 'POST',
       }),
       invalidatesTags: (result, error, userId) => [
@@ -146,7 +146,7 @@ export const userApi = createApi({
     // Deactivate user
     deactivateUser: builder.mutation<void, string>({
       query: (userId) => ({
-        url: `/api/users/${userId}/deactivate`,
+        url: `/users/${userId}/deactivate`,
         method: 'POST',
       }),
       invalidatesTags: (result, error, userId) => [
@@ -157,7 +157,7 @@ export const userApi = createApi({
 
     // Get users by type
     getUsersByType: builder.query<User[], string>({
-      query: (type) => `/api/users?type=${type}`,
+      query: (type) => `/users/type/${type}`,
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'User' as const, id })), { type: 'Users', id: 'LIST' }]
@@ -166,7 +166,7 @@ export const userApi = createApi({
 
     // Get store employees
     getStoreEmployees: builder.query<User[], string | undefined>({
-      query: (storeId) => `/api/users${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/users/store${storeId ? `?storeId=${storeId}` : ''}`,
       providesTags: (result, error, storeId) =>
         result
           ? [...result.map(({ id }) => ({ type: 'User' as const, id })), { type: 'Users', id: storeId || 'DEFAULT' }]
@@ -175,7 +175,7 @@ export const userApi = createApi({
 
     // Get active managers
     getManagers: builder.query<User[], void>({
-      query: () => '/api/users?type=MANAGER',
+      query: () => '/users/managers',
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'User' as const, id })), { type: 'Users', id: 'LIST' }]
@@ -184,12 +184,12 @@ export const userApi = createApi({
 
     // Check if user can take orders
     canTakeOrders: builder.query<{ canTakeOrders: boolean; reason?: string }, string>({
-      query: (userId) => `/api/users/${userId}/can-take-orders`,
+      query: (userId) => `/users/${userId}/can-take-orders`,
     }),
 
     // Get all users
     getUsers: builder.query<User[], void>({
-      query: () => '/api/users',
+      query: () => '/users',
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'User' as const, id })), { type: 'Users', id: 'LIST' }]
@@ -199,7 +199,7 @@ export const userApi = createApi({
     // Create new user (staff member)
     createUser: builder.mutation<User, CreateUserRequest>({
       query: (data) => ({
-        url: '/api/auth/register',
+        url: '/users/create',
         method: 'POST',
         body: data,
       }),
@@ -208,15 +208,15 @@ export const userApi = createApi({
 
     // Get staff profile by ID (for both staff viewing own profile and managers viewing staff)
     getStaffProfile: builder.query<User, string>({
-      query: (userId) => `/api/users/${userId}`,
+      query: (userId) => `/users/${userId}`,
       providesTags: (result, error, userId) => [{ type: 'User', id: userId }],
     }),
 
     // Update staff profile (for both staff and managers)
     updateStaffProfile: builder.mutation<User, { userId: string; data: UpdateUserRequest }>({
       query: ({ userId, data }) => ({
-        url: `/api/users/${userId}`,
-        method: 'PATCH',
+        url: `/users/${userId}`,
+        method: 'PUT',
         body: data,
       }),
       invalidatesTags: (result, error, { userId }) => [
@@ -231,7 +231,7 @@ export const userApi = createApi({
       { pin: string }
     >({
       query: (data) => ({
-        url: '/api/auth/validate-pin',
+        url: '/users/validate-pin',
         method: 'POST',
         body: data,
       }),

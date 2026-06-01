@@ -5,6 +5,9 @@
 
 import React, { useState } from 'react';
 import { Box, Typography, Collapse, IconButton, Divider } from '@mui/material';
+import { useAppSelector } from '../../../../store/hooks';
+import { selectCartCurrency, selectCartLocale } from '../../../../store/slices/cartSlice';
+import { formatMoney } from '../../../../utils/currency';
 import {
   ExpandMore as ExpandMoreIcon,
   Phone as PhoneIcon,
@@ -43,6 +46,8 @@ export const DeliveryCard: React.FC<DeliveryCardProps> = ({
   expanded: controlledExpanded,
 }) => {
   const [internalExpanded, setInternalExpanded] = useState(false);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
   const isExpanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
 
   const toggleExpanded = () => {
@@ -92,7 +97,7 @@ export const DeliveryCard: React.FC<DeliveryCardProps> = ({
               color: colors.primary.green,
             }}
           >
-            ₹{amount}
+            {formatMoney(Math.round(amount * 100), currency, locale)}
           </Typography>
 
           {onMenuClick && (

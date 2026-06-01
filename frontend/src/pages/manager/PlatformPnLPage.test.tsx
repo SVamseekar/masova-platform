@@ -20,18 +20,11 @@ const mockOrders = [
   },
 ];
 
-vi.mock('../../store/api/orderApi', async () => {
-  const actual = await vi.importActual('../../store/api/orderApi');
-  return {
-    ...actual,
+vi.mock('../../store/api/orderApi', () => ({
   useGetStoreOrdersQuery: vi.fn(() => ({ data: mockOrders, isLoading: false, error: null })),
-  };
-});
+}));
 
-vi.mock('../../store/hooks', async () => {
-  const actual = await vi.importActual('../../store/hooks');
-  return {
-    ...actual,
+vi.mock('../../store/hooks', () => ({
   useAppSelector: (selector: (s: unknown) => unknown) => {
     const fakeState = {
       auth: { token: 'tok', user: { storeId: 'store1', type: 'MANAGER' } },
@@ -40,8 +33,7 @@ vi.mock('../../store/hooks', async () => {
     return selector(fakeState);
   },
   useAppDispatch: () => vi.fn(),
-  };
-});
+}));
 
 describe('PlatformPnLPage', () => {
   it('renders platform P&L heading', () => {

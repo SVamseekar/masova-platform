@@ -80,7 +80,7 @@ describe('PromotionCard', () => {
   it('renders with a delivery category', () => {
     const deliveryPromo = { ...mockPromotion, id: 3, category: 'Delivery', title: 'Free Delivery', discount: 'Free Delivery' };
     renderCard(deliveryPromo);
-    expect(screen.getAllByText('Free Delivery').length).toBeGreaterThan(0);
+    expect(screen.getByText('Free Delivery')).toBeInTheDocument();
     expect(screen.getByText('Delivery')).toBeInTheDocument();
   });
 });

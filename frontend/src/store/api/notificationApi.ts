@@ -170,7 +170,7 @@ export const notificationApi = createApi({
     // Notification endpoints
     sendNotification: builder.mutation<Notification, NotificationRequest>({
       query: (notification) => ({
-        url: '/api/notifications',
+        url: '/notifications/send',
         method: 'POST',
         body: notification,
       }),
@@ -252,7 +252,7 @@ export const notificationApi = createApi({
     // Campaign endpoints
     createCampaign: builder.mutation<Campaign, Partial<Campaign>>({
       query: (campaign) => ({
-        url: '/api/campaigns',
+        url: '/campaigns',
         method: 'POST',
         body: campaign,
       }),

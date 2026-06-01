@@ -1,6 +1,8 @@
 // src/apps/POSSystem/components/OrderPanel.tsx
 import React from 'react';
-import { CURRENCY } from '../../../config/business-config';
+import { useAppSelector } from '../../../store/hooks';
+import { selectCartCurrency, selectCartLocale } from '../../../store/slices/cartSlice';
+import { formatMoney } from '../../../utils/currency';
 import Card from '../../../components/ui/neumorphic/Card';
 import Badge from '../../../components/ui/neumorphic/Badge';
 import Button from '../../../components/ui/neumorphic/Button';
@@ -37,6 +39,9 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
   selectedTable,
   onTableSelect,
 }) => {
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   // Calculate totals - matching customer side logic
   const subtotal = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -190,7 +195,7 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
                       fontSize: typography.fontSize.xs,
                       color: colors.text.secondary
                     }}>
-                      {CURRENCY.format(item.price)} each
+                      {fmt(item.price)} each
                     </div>
                   </div>
                   <div style={{
@@ -198,7 +203,7 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
                     fontWeight: typography.fontWeight.bold,
                     color: colors.brand.primary
                   }}>
-                    {CURRENCY.format(item.price * item.quantity)}
+                    {fmt(item.price * item.quantity)}
                   </div>
                 </div>
 
@@ -274,7 +279,6 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
                     </button>
                   </div>
                   <button
-                    aria-label="Remove item"
                     onClick={() => onRemoveItem(item.menuItemId)}
                     style={{
                       width: '28px',
@@ -354,7 +358,7 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
             color: colors.text.secondary
           }}>
             <span>Subtotal:</span>
-            <span style={{ fontWeight: typography.fontWeight.semibold }}>{CURRENCY.format(subtotal)}</span>
+            <span style={{ fontWeight: typography.fontWeight.semibold }}>{fmt(subtotal)}</span>
           </div>
 
           <div style={{
@@ -365,7 +369,7 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
             color: colors.text.secondary
           }}>
             <span>Tax (5%):</span>
-            <span style={{ fontWeight: typography.fontWeight.semibold }}>{CURRENCY.format(tax)}</span>
+            <span style={{ fontWeight: typography.fontWeight.semibold }}>{fmt(tax)}</span>
           </div>
 
           {orderType === 'DELIVERY' && (
@@ -378,7 +382,7 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
             }}>
               <span>Delivery Fee:</span>
               <span style={{ fontWeight: typography.fontWeight.semibold }}>
-                {deliveryFee === 0 ? 'FREE' : CURRENCY.format(deliveryFee)}
+                {deliveryFee === 0 ? 'FREE' : fmt(deliveryFee)}
               </span>
             </div>
           )}
@@ -438,7 +442,7 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
               fontWeight: typography.fontWeight.extrabold,
               color: colors.brand.primary
             }}>
-              {CURRENCY.format(total)}
+              {fmt(total)}
             </span>
           </div>
 

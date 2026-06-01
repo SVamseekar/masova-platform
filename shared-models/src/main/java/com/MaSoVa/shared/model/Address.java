@@ -16,7 +16,7 @@ public class Address {
     private String state;
     
     @NotNull
-    @Pattern(regexp = "^[1-9][0-9]{5}$", message = "Invalid Indian PIN code")
+    @Pattern(regexp = "^[A-Z0-9][A-Z0-9 \\-]{1,9}$", message = "Invalid postal code")
     private String pincode;
     
     private String landmark;

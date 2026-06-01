@@ -1,5 +1,8 @@
 import React from 'react';
 import { useGetStoreQuery } from '../store/api/storeApi';
+import { useAppSelector } from '../store/hooks';
+import { selectCartCurrency, selectCartLocale } from '../store/slices/cartSlice';
+import { formatMoney } from '../utils/currency';
 import { colors, spacing, typography } from '../styles/design-tokens';
 import { createNeumorphicSurface } from '../styles/neumorphic-utils';
 
@@ -10,6 +13,8 @@ interface StoreInfoProps {
 
 const StoreInfo: React.FC<StoreInfoProps> = ({ storeId, variant = 'compact' }) => {
   const { data: store, isLoading } = useGetStoreQuery(storeId, { skip: !storeId });
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
 
   if (isLoading) {
     return (
@@ -183,7 +188,7 @@ const StoreInfo: React.FC<StoreInfoProps> = ({ storeId, variant = 'compact' }) =
                   Min Order:
                 </span>
                 <span style={{ fontSize: typography.fontSize.sm, color: colors.text.primary, marginLeft: spacing[1] }}>
-                  ₹{store.operatingConfig.minimumOrderValueINR}
+                  {formatMoney(Math.round((store.operatingConfig.minimumOrderValueINR ?? 0) * 100), currency, locale)}
                 </span>
               </div>
               <div>

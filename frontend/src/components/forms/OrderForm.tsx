@@ -3,6 +3,8 @@ import { useCreateOrderMutation } from '../../store/api/orderApi';
 import { useGetAllMenuItemsQuery } from '../../store/api/menuApi';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import type { CreateOrderRequest, OrderType, PaymentMethod, DeliveryAddress } from '../../types/order';
 
 interface OrderFormProps {
@@ -21,6 +23,8 @@ interface CartItem {
 
 const OrderForm: React.FC<OrderFormProps> = ({ onSuccess, onCancel }) => {
   const currentUser = useAppSelector(selectCurrentUser);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
   const storeId = currentUser?.storeId || '';
 
   // Form state
@@ -609,7 +613,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSuccess, onCancel }) => {
                     <div key={item.id} className="menu-item-card">
                       <div className="menu-item-info">
                         <div className="menu-item-name">{item.name}</div>
-                        <div className="menu-item-price">₹{(item.price ?? item.basePrice ?? 0).toFixed(2)}</div>
+                        <div className="menu-item-price">{formatMoney(Math.round((item.price ?? item.basePrice ?? 0) * 100), currency, locale)}</div>
                       </div>
                       <div className="menu-item-controls">
                         {quantity === 0 ? (

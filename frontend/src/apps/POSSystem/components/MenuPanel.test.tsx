@@ -86,9 +86,9 @@ describe('MenuPanel', () => {
       });
 
       expect(screen.getAllByText('All').length).toBeGreaterThan(0);
-      expect(screen.getByText('Veg')).toBeInTheDocument();
-      expect(screen.getByText('Vegan')).toBeInTheDocument();
-      expect(screen.getByText('Non-Veg')).toBeInTheDocument();
+      expect(screen.getByText(/Veg$/)).toBeInTheDocument();
+      expect(screen.getByText(/Vegan/)).toBeInTheDocument();
+      expect(screen.getByText(/Non-Veg/)).toBeInTheDocument();
     });
 
     it('shows item count in footer', () => {

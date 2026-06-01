@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import { usePageStore } from '../../contexts/PageStoreContext';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
@@ -31,6 +33,9 @@ import {
 
 const DeliveryManagementPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const { handleBack } = useSmartBackNavigation();
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
   const [trackingOpen, setTrackingOpen] = useState(false);
@@ -137,7 +142,7 @@ const DeliveryManagementPage: React.FC = () => {
         { label: 'Customer Name', field: 'customerName' },
         { label: 'Customer Phone', field: 'customerPhone' },
         { label: 'Status', field: 'status' },
-        { label: 'Total Amount', field: 'total', format: (v) => `₹${v}` },
+        { label: 'Total Amount', field: 'total', format: (v) => fmt(Number(v)) },
         { label: 'Driver', field: 'driverId', format: (v) => v || 'Not Assigned' },
         { label: 'Created At', field: 'createdAt', format: (v) => new Date(v).toLocaleString() },
       ]
@@ -497,7 +502,7 @@ const DeliveryManagementPage: React.FC = () => {
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.bold, color: colors.brand.primary }}>
-                        ₹{order.total || order.totalAmount || 0}
+                        {fmt(order.total || order.totalAmount || 0)}
                       </div>
                       <span style={badgeStyles(colors.semantic.warning)}>READY</span>
                     </div>
@@ -567,7 +572,7 @@ const DeliveryManagementPage: React.FC = () => {
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.bold, color: colors.brand.primary }}>
-                        ₹{order.total || order.totalAmount || 0}
+                        {fmt(order.total || order.totalAmount || 0)}
                       </div>
                       <span style={badgeStyles(colors.semantic.info)}>OUT FOR DELIVERY</span>
                     </div>

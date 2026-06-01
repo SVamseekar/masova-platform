@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import { usePageStore } from '../../contexts/PageStoreContext';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
@@ -24,6 +26,9 @@ import ReceivePurchaseOrderDialog from '../../components/inventory/ReceivePurcha
 
 const PurchaseOrdersPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const { selectedStoreId } = usePageStore();
   const storeId = selectedStoreId || currentUser?.storeId || '';
   const { handleBack } = useSmartBackNavigation();
@@ -302,7 +307,7 @@ const PurchaseOrdersPage: React.FC = () => {
         </div>
         <div style={statCardStyles}>
           <div style={statLabelStyles}>Total Value</div>
-          <div style={statValueStyles}>₹{totalValue.toLocaleString()}</div>
+          <div style={statValueStyles}>{fmt(totalValue)}</div>
         </div>
       </div>
 
@@ -364,7 +369,7 @@ const PurchaseOrdersPage: React.FC = () => {
             </div>
             <div style={infoItemStyles}>
               <div style={labelStyles}>Total Amount</div>
-              <div style={valueStyles}>₹{po.totalAmount.toLocaleString()}</div>
+              <div style={valueStyles}>{fmt(po.totalAmount)}</div>
             </div>
           </div>
 
@@ -375,7 +380,7 @@ const PurchaseOrdersPage: React.FC = () => {
             </div>
             {po.items.slice(0, 3).map((item, idx) => (
               <div key={idx} style={{ fontSize: typography.fontSize.xs, color: colors.text.secondary, marginBottom: spacing[1] }}>
-                • {item.itemName} - {item.orderedQuantity} {item.unit} @ ₹{item.unitPrice}
+                • {item.itemName} - {item.orderedQuantity} {item.unit} @ {fmt(item.unitPrice)}
               </div>
             ))}
             {po.items.length > 3 && (

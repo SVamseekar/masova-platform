@@ -19,6 +19,8 @@ import {
 import { useState } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import { useGetTopProductsQuery } from '../../store/api/analyticsApi';
 import { usePageStore } from '../../contexts/PageStoreContext';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
@@ -69,13 +71,9 @@ function ProductAnalyticsPage() {
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const formatCurrency = (value: number) => formatMoney(Math.round(value * 100), currency, locale);
 
   if (isLoading) {
     return (

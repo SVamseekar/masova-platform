@@ -4,7 +4,8 @@ import AppHeader from '../../components/common/AppHeader';
 import OrderForm from '../../components/forms/OrderForm';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { setSelectedStore, selectSelectedStoreId } from '../../store/slices/cartSlice';
+import { setSelectedStore, selectSelectedStoreId, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import { usePageStore } from '../../contexts/PageStoreContext';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
@@ -36,6 +37,9 @@ const OrderManagementPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const currentUser = useAppSelector(selectCurrentUser);
   const reduxSelectedStoreId = useAppSelector(selectSelectedStoreId);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmtMoney = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const { selectedStoreId } = usePageStore();
   const { handleBack } = useSmartBackNavigation();
   const [isStoreInitialized, setIsStoreInitialized] = useState(false);
@@ -251,7 +255,7 @@ const OrderManagementPage: React.FC = () => {
         {
           label: 'Total Amount',
           field: 'total',
-          format: (value) => `₹${value}`,
+          format: (value) => fmtMoney(Number(value)),
         },
         {
           label: 'Payment Status',
@@ -1148,7 +1152,7 @@ const OrderManagementPage: React.FC = () => {
                         {item.variant && <span style={{ fontSize: typography.fontSize.xs, color: colors.text.tertiary, marginLeft: spacing[2] }}>({item.variant})</span>}
                       </div>
                       <div style={{ fontWeight: typography.fontWeight.bold, color: colors.brand.primary }}>
-                        ₹{formatCurrency(item.price * item.quantity)}
+                        {fmtMoney(item.price * item.quantity)}
                       </div>
                     </div>
                     {item.customizations && item.customizations.length > 0 && (
@@ -1165,21 +1169,21 @@ const OrderManagementPage: React.FC = () => {
             <div style={{ borderTop: `2px solid ${colors.surface.border}`, paddingTop: spacing[4], marginBottom: spacing[4] }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[2] }}>
                 <span style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>Subtotal:</span>
-                <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold }}>₹{formatCurrency(selectedOrder.subtotal || 0)}</span>
+                <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold }}>{fmtMoney(selectedOrder.subtotal || 0)}</span>
               </div>
               {selectedOrder.deliveryFee > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[2] }}>
                   <span style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>Delivery Fee:</span>
-                  <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold }}>₹{formatCurrency(selectedOrder.deliveryFee)}</span>
+                  <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold }}>{fmtMoney(selectedOrder.deliveryFee)}</span>
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[2] }}>
                 <span style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>Tax:</span>
-                <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold }}>₹{formatCurrency(selectedOrder.tax || 0)}</span>
+                <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold }}>{fmtMoney(selectedOrder.tax || 0)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: spacing[3], borderTop: `1px solid ${colors.surface.border}` }}>
                 <span style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold }}>Total:</span>
-                <span style={{ fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.extrabold, color: colors.brand.primary }}>₹{formatCurrency(selectedOrder.total)}</span>
+                <span style={{ fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.extrabold, color: colors.brand.primary }}>{fmtMoney(selectedOrder.total)}</span>
               </div>
             </div>
 

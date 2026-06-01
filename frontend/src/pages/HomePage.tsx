@@ -194,7 +194,7 @@ const HomePage: React.FC = () => {
     {
       icon: '⭐',
       title: 'Loyalty Rewards',
-      description: 'Earn 1 point per ₹10 spent. Redeem 100 points for ₹50 discount. Tier benefits up to 2x points!',
+      description: 'Earn 1 point per 10 spent. Redeem 100 points for 50 discount. Tier benefits up to 2x points!',
       action: () => navigate('/customer-login'),
       buttonText: 'Join Now'
     },
@@ -350,7 +350,7 @@ const HomePage: React.FC = () => {
               color: colors.text.primary,
               marginBottom: spacing[2],
             }}>
-              1 Point per ₹10
+              1 Point per 10
             </div>
             <p style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary, marginBottom: spacing[4] }}>
               Spend on food, earn valuable points
@@ -365,7 +365,7 @@ const HomePage: React.FC = () => {
                 Example:
               </div>
               <div style={{ fontSize: typography.fontSize.sm, color: colors.text.primary }}>
-                Order ₹500 = <strong>50 points</strong>
+                Order 500 = <strong>50 points</strong>
               </div>
             </div>
             <div style={{
@@ -402,7 +402,7 @@ const HomePage: React.FC = () => {
               color: colors.text.primary,
               marginBottom: spacing[2],
             }}>
-              100 Points = ₹50
+              100 Points = 50
             </div>
             <p style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary, marginBottom: spacing[4] }}>
               Use points at checkout for instant savings
@@ -417,7 +417,7 @@ const HomePage: React.FC = () => {
                 Example:
               </div>
               <div style={{ fontSize: typography.fontSize.sm, color: colors.text.primary }}>
-                200 points = <strong>₹100 off</strong>
+                200 points = <strong>100 off</strong>
               </div>
             </div>
             <div style={{
@@ -515,19 +515,19 @@ const HomePage: React.FC = () => {
           }}>
             <div style={{ padding: spacing[3], background: colors.surface.primary, borderRadius: borderRadius.base }}>
               <div style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold, color: colors.text.primary, marginBottom: spacing[2] }}>
-                Bronze Member Orders ₹1,000
+                Bronze Member Orders 1,000
               </div>
               <div style={{ fontSize: typography.fontSize.xs, color: colors.text.secondary }}>
-                Base: ₹1,000 ÷ 10 = 100 pts<br/>
+                Base: 1,000 ÷ 10 = 100 pts<br/>
                 Multiplier: 100 × 1x = <strong style={{ color: colors.brand.primary }}>100 points</strong>
               </div>
             </div>
             <div style={{ padding: spacing[3], background: colors.surface.primary, borderRadius: borderRadius.base }}>
               <div style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold, color: colors.text.primary, marginBottom: spacing[2] }}>
-                Gold Member Orders ₹1,000
+                Gold Member Orders 1,000
               </div>
               <div style={{ fontSize: typography.fontSize.xs, color: colors.text.secondary }}>
-                Base: ₹1,000 ÷ 10 = 100 pts<br/>
+                Base: 1,000 ÷ 10 = 100 pts<br/>
                 Multiplier: 100 × 1.5x = <strong style={{ color: colors.brand.primary }}>150 points</strong>
               </div>
             </div>
@@ -537,7 +537,7 @@ const HomePage: React.FC = () => {
               </div>
               <div style={{ fontSize: typography.fontSize.xs, color: colors.text.secondary }}>
                 500 ÷ 100 = 5 units<br/>
-                5 × ₹50 = <strong style={{ color: colors.semantic.success }}>₹250 discount</strong>
+                5 × 50 = <strong style={{ color: colors.semantic.success }}>250 discount</strong>
               </div>
             </div>
           </div>

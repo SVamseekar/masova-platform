@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppSelector } from '../store/hooks';
+import { selectCartCurrency, selectCartLocale } from '../store/slices/cartSlice';
+import { formatMoney } from '../utils/currency';
 
 // TypeScript interfaces
 interface SalesData {
@@ -36,6 +39,9 @@ interface Order {
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const [currentDate] = useState(new Date().toLocaleDateString('en-IN'));
 
   const handleLogout = () => {
@@ -127,7 +133,7 @@ const DashboardPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Today's Sales</p>
-              <p className="text-3xl font-bold text-gray-900">₹{salesData.today.toLocaleString('en-IN')}</p>
+              <p className="text-3xl font-bold text-gray-900">{fmt(salesData.today)}</p>
               <p className="text-sm text-green-600 font-medium">+{salesData.percentageChange}% vs Last Year</p>
             </div>
             <div className="text-3xl">💰</div>
@@ -138,7 +144,7 @@ const DashboardPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Yesterday's Sales</p>
-              <p className="text-3xl font-bold text-gray-900">₹{salesData.yesterday.toLocaleString('en-IN')}</p>
+              <p className="text-3xl font-bold text-gray-900">{fmt(salesData.yesterday)}</p>
               <p className="text-sm text-gray-500">Previous day performance</p>
             </div>
             <div className="text-3xl">📊</div>
@@ -149,7 +155,7 @@ const DashboardPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Weekly Total</p>
-              <p className="text-3xl font-bold text-gray-900">₹{salesData.weeklyTotal.toLocaleString('en-IN')}</p>
+              <p className="text-3xl font-bold text-gray-900">{fmt(salesData.weeklyTotal)}</p>
               <p className="text-sm text-gray-500">Last 7 days</p>
             </div>
             <div className="text-3xl">📈</div>
@@ -365,7 +371,7 @@ const DashboardPage: React.FC = () => {
             { day: 'Sun', value: 70, amount: '33K' }
           ].map(item => (
             <div key={item.day} className="flex-1 flex flex-col items-center">
-              <div className="text-sm font-medium text-gray-900 mb-2">₹{item.amount}</div>
+              <div className="text-sm font-medium text-gray-900 mb-2">{item.amount}</div>
               <div 
                 className="w-full bg-gradient-to-t from-red-600 to-red-400 rounded-t"
                 style={{ height: `${item.value}%` }}
@@ -381,7 +387,7 @@ const DashboardPage: React.FC = () => {
         <h3 className="text-xl font-bold text-gray-900 mb-6">Key Performance Indicators</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
-            { label: 'Average Order Value', value: '₹485', change: '+12%', positive: true },
+            { label: 'Average Order Value', value: '485', change: '+12%', positive: true },
             { label: 'Orders Today', value: '127', change: '+8%', positive: true },
             { label: 'Avg Prep Time', value: '18 mins', change: '-2 mins', positive: true },
             { label: 'Kitchen Efficiency', value: '94%', change: '+3%', positive: true },

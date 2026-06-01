@@ -94,13 +94,13 @@ describe('CartDrawer', () => {
     expect(screen.getByText('3 items')).toBeInTheDocument();
   });
 
-  it('renders Your Order heading', () => {
+  it('renders Your Cart heading', () => {
     renderWithProviders(
       <CartDrawer {...defaultProps} />,
       { preloadedState: createCartState(mockCartItems), useMemoryRouter: true }
     );
 
-    expect(screen.getByText('Your Order')).toBeInTheDocument();
+    expect(screen.getByText('Your Cart')).toBeInTheDocument();
   });
 
   it('renders bill details section when items exist', () => {
@@ -109,10 +109,11 @@ describe('CartDrawer', () => {
       { preloadedState: createCartState(mockCartItems), useMemoryRouter: true }
     );
 
+    expect(screen.getByText('Bill Details')).toBeInTheDocument();
     expect(screen.getByText(/Subtotal/)).toBeInTheDocument();
     expect(screen.getByText(/Delivery Fee/)).toBeInTheDocument();
     expect(screen.getByText(/Tax/)).toBeInTheDocument();
-    expect(screen.getByText('Total')).toBeInTheDocument();
+    expect(screen.getByText('Total Amount')).toBeInTheDocument();
   });
 
   it('renders Proceed to Checkout button', () => {
@@ -127,26 +128,13 @@ describe('CartDrawer', () => {
   it('calls onClose when close button is clicked', async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
-    const { container } = renderWithProviders(
+    renderWithProviders(
       <CartDrawer open onClose={onClose} onCheckout={vi.fn()} />,
       { preloadedState: createCartState(mockCartItems), useMemoryRouter: true }
     );
 
-    // Close button is an SVG button (no text) — find by role
-    const buttons = container.querySelectorAll('button');
-    // The close button is a circular button (32x32) near the header
-    const closeBtn = Array.from(buttons).find(b =>
-      b.style.width === '32px' || b.style.borderRadius === '50%'
-    );
-    if (closeBtn) {
-      await user.click(closeBtn);
-      expect(onClose).toHaveBeenCalledTimes(1);
-    } else {
-      // Fallback: click the overlay
-      const overlay = container.querySelector('div[style*="position: fixed"]');
-      if (overlay) await user.click(overlay as HTMLElement);
-      expect(onClose).toHaveBeenCalled();
-    }
+    await user.click(screen.getByText('×'));
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('calls onClose when overlay is clicked', async () => {
@@ -179,14 +167,13 @@ describe('CartDrawer', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('renders item names for items in the cart', () => {
+  it('renders category badge for items that have a category', () => {
     renderWithProviders(
       <CartDrawer {...defaultProps} />,
       { preloadedState: createCartState(mockCartItems), useMemoryRouter: true }
     );
 
-    expect(screen.getByText('Margherita Pizza')).toBeInTheDocument();
-    expect(screen.getByText('Garlic Bread')).toBeInTheDocument();
+    expect(screen.getByText('PIZZA')).toBeInTheDocument();
   });
 
   it('shows per-item price', () => {

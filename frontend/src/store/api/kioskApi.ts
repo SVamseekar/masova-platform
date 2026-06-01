@@ -35,25 +35,25 @@ export const kioskApi = createApi({
   endpoints: (builder) => ({
     createKiosk: builder.mutation<CreateKioskResponse, CreateKioskRequest>({
       query: (data) => ({
-        url: '/api/users/kiosk',
+        url: '/users/kiosk/create',
         method: 'POST',
         body: data,
       }),
       invalidatesTags: ['Kiosk'],
     }),
     listKioskAccounts: builder.query<KioskAccount[], string>({
-      query: (storeId) => `/api/users/kiosk?storeId=${storeId}`,
+      query: (storeId) => `/users/kiosk/list?storeId=${storeId}`,
       providesTags: ['Kiosk'],
     }),
     regenerateKioskTokens: builder.mutation<CreateKioskResponse, string>({
       query: (kioskUserId) => ({
-        url: `/api/users/kiosk/${kioskUserId}/regenerate`,
+        url: `/users/kiosk/${kioskUserId}/regenerate-tokens`,
         method: 'POST',
       }),
     }),
     deactivateKiosk: builder.mutation<{ success: string; message: string }, string>({
       query: (kioskUserId) => ({
-        url: `/api/users/kiosk/${kioskUserId}/deactivate`,
+        url: `/users/kiosk/${kioskUserId}/deactivate`,
         method: 'POST',
       }),
       invalidatesTags: ['Kiosk'],

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import { usePageStore } from '../../contexts/PageStoreContext';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
@@ -18,6 +20,9 @@ import { format } from 'date-fns';
 
 const RefundManagementPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const { selectedStoreId } = usePageStore();
   const storeId = selectedStoreId || currentUser?.storeId || '';
   const { handleBack } = useSmartBackNavigation();
@@ -233,7 +238,7 @@ const RefundManagementPage: React.FC = () => {
                       <td style={tableCellStyles}>{txn.orderId}</td>
                       <td style={tableCellStyles}>{txn.customerEmail || 'N/A'}</td>
                       <td style={{ ...tableCellStyles, fontWeight: typography.fontWeight.semibold }}>
-                        ₹{txn.amount.toFixed(2)}
+                        {fmt(txn.amount)}
                       </td>
                       <td style={tableCellStyles}>
                         <span style={statusBadgeStyles(txn.status)}>{txn.status}</span>
@@ -283,7 +288,7 @@ const RefundManagementPage: React.FC = () => {
                   <strong>Customer:</strong> {selectedTransaction.customerEmail || 'N/A'}
                 </div>
                 <div style={{ marginBottom: spacing[2] }}>
-                  <strong>Original Amount:</strong> ₹{selectedTransaction.amount.toFixed(2)}
+                  <strong>Original Amount:</strong> {fmt(selectedTransaction.amount)}
                 </div>
                 <div>
                   <strong>Payment Method:</strong> {selectedTransaction.paymentMethod || 'N/A'}
@@ -303,7 +308,7 @@ const RefundManagementPage: React.FC = () => {
                   >
                     <div style={{ fontWeight: typography.fontWeight.semibold }}>Full Refund</div>
                     <div style={{ fontSize: typography.fontSize.xs, color: colors.text.tertiary }}>
-                      ₹{selectedTransaction.amount.toFixed(2)}
+                      {fmt(selectedTransaction.amount)}
                     </div>
                   </div>
                   <div
@@ -366,7 +371,7 @@ const RefundManagementPage: React.FC = () => {
                   onClick={handleInitiateRefund}
                   disabled={refundLoading || !refundAmount || !refundReason}
                 >
-                  {refundLoading ? 'Processing...' : `Refund ₹${refundAmount}`}
+                  {refundLoading ? 'Processing...' : `Refund ${fmt(Number(refundAmount) || 0)}`}
                 </Button>
                 <Button
                   variant="secondary"

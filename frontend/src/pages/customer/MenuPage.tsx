@@ -37,7 +37,8 @@ import {
   SpiceLevel,
 } from '../../store/api/menuApi';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { addToCart, updateItemQuantity, selectCartItems, selectSelectedStoreId } from '../../store/slices/cartSlice';
+import { addToCart, updateItemQuantity, selectCartItems, selectSelectedStoreId, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import AppHeader from '../../components/common/AppHeader';
 import StoreSelector from '../../components/StoreSelector';
 
@@ -60,6 +61,8 @@ const MenuPage: React.FC<MenuPageProps> = ({
 
   const cartItems = useAppSelector(selectCartItems);
   const selectedStoreId = useAppSelector(selectSelectedStoreId);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
 
   // Sync menu quantities with cart
   useEffect(() => {
@@ -222,7 +225,7 @@ const MenuPage: React.FC<MenuPageProps> = ({
   };
 
   const formatPrice = (priceInPaise: number) => {
-    return `₹${(priceInPaise / 100).toFixed(2)}`;
+    return formatMoney(priceInPaise, currency, locale);
   };
 
   const getDietaryColor = (dietary: DietaryType): string => {

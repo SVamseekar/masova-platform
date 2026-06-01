@@ -7,77 +7,45 @@ const mockDrivers = [
   { id: 'd2', name: 'Driver Two', phone: '555-0002', email: 'driver2@test.com', status: 'OFFLINE', isActive: true, rating: 4.0, activeDeliveries: 0, totalDeliveries: 75 },
 ];
 
-vi.mock('@/store/api/driverApi', async () => {
-  const actual = await vi.importActual('@/store/api/driverApi');
-  return {
-    ...actual,
-  useGetAllDriversQuery: () => ({ data: mockDrivers, isLoading: false }),
-  useGetOnlineDriversQuery: () => ({ data: [mockDrivers[0]], isLoading: false }),
-  useGetDriverStatsQuery: () => ({ data: { totalDrivers: 2, onlineDrivers: 1, busyDrivers: 1 } }),
-  useGetDriverPerformanceQuery: () => ({ data: null }),
-  useActivateDriverMutation: () => ([vi.fn()]),
-  useDeactivateDriverMutation: () => ([vi.fn()]),
-  };
-});
+vi.mock('@/store/api/driverApi', () => ({
+  useGetAllDriversQuery: vi.fn().mockReturnValue({ data: mockDrivers, isLoading: false }),
+  useGetOnlineDriversQuery: vi.fn().mockReturnValue({ data: [mockDrivers[0]], isLoading: false }),
+  useGetDriverStatsQuery: vi.fn().mockReturnValue({ data: { totalDrivers: 2, onlineDrivers: 1, busyDrivers: 1 } }),
+  useGetDriverPerformanceQuery: vi.fn().mockReturnValue({ data: null }),
+  useActivateDriverMutation: vi.fn().mockReturnValue([vi.fn()]),
+  useDeactivateDriverMutation: vi.fn().mockReturnValue([vi.fn()]),
+}));
 
-vi.mock('@/contexts/PageStoreContext', async () => {
-  const actual = await vi.importActual('@/contexts/PageStoreContext');
-  return {
-    ...actual,
-  usePageStore: () => ({ selectedStoreId: 'store-1', setSelectedStoreId: vi.fn() }),
-  };
-});
+vi.mock('@/contexts/PageStoreContext', () => ({
+  usePageStore: vi.fn().mockReturnValue({ selectedStoreId: 'store-1', setSelectedStoreId: vi.fn() }),
+}));
 
-vi.mock('@/hoc/withPageStoreContext', async () => {
-  const actual = await vi.importActual('@/hoc/withPageStoreContext');
-  return {
-    ...actual,
+vi.mock('@/hoc/withPageStoreContext', () => ({
   withPageStoreContext: (Component: React.ComponentType) => Component,
-  };
-});
+}));
 
-vi.mock('@/hooks/useSmartBackNavigation', async () => {
-  const actual = await vi.importActual('@/hooks/useSmartBackNavigation');
-  return {
-    ...actual,
-  useSmartBackNavigation: () => ({ handleBack: vi.fn() }),
-  };
-});
+vi.mock('@/hooks/useSmartBackNavigation', () => ({
+  useSmartBackNavigation: vi.fn().mockReturnValue({ handleBack: vi.fn() }),
+}));
 
-vi.mock('@/components/common/FilterBar', async () => {
-  const actual = await vi.importActual('@/components/common/FilterBar');
-  return {
-    ...actual,
+vi.mock('@/components/common/FilterBar', () => ({
   FilterBar: () => <div data-testid="filter-bar">FilterBar</div>,
-  };
-});
+}));
 
-vi.mock('@/utils/filterUtils', async () => {
-  const actual = await vi.importActual('@/utils/filterUtils');
-  return {
-    ...actual,
+vi.mock('@/utils/filterUtils', () => ({
   applyFilters: vi.fn((data: any[]) => data),
   applySort: vi.fn((data: any[]) => data),
   exportToCSV: vi.fn(),
   commonFilters: { searchText: vi.fn() },
-  };
-});
+}));
 
-vi.mock('@/components/backgrounds/AnimatedBackground', async () => {
-  const actual = await vi.importActual('@/components/backgrounds/AnimatedBackground');
-  return {
-    ...actual,
+vi.mock('@/components/backgrounds/AnimatedBackground', () => ({
   default: () => <div data-testid="animated-bg" />,
-  };
-});
+}));
 
-vi.mock('@/components/delivery/ManagerDriverTrackingMap', async () => {
-  const actual = await vi.importActual('@/components/delivery/ManagerDriverTrackingMap');
-  return {
-    ...actual,
+vi.mock('@/components/delivery/ManagerDriverTrackingMap', () => ({
   ManagerDriverTrackingMap: () => <div data-testid="driver-tracking-map" />,
-  };
-});
+}));
 
 describe('DriverManagementPage', () => {
   beforeEach(() => {

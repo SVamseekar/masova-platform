@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import {
   useGetAllCustomersQuery,
@@ -22,6 +24,9 @@ import { applyFilters, applySort, exportToCSV, commonFilters } from '../../utils
 
 const CustomerManagementPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const { handleBack } = useSmartBackNavigation();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -156,7 +161,7 @@ const CustomerManagementPage: React.FC = () => {
       { label: 'Loyalty Tier', field: 'loyaltyInfo.tier' },
       { label: 'Loyalty Points', field: 'loyaltyInfo.totalPoints' },
       { label: 'Total Orders', field: 'orderStats.totalOrders' },
-      { label: 'Total Spent', field: 'orderStats.totalSpent', format: (v) => `₹${Math.round(v)}` },
+      { label: 'Total Spent', field: 'orderStats.totalSpent', format: (v) => fmt(Math.round(Number(v))) },
       { label: 'Status', field: 'active', format: (v) => v ? 'Active' : 'Inactive' },
       { label: 'Join Date', field: 'createdAt', format: (v) => new Date(v).toLocaleDateString() },
     ]);
@@ -350,10 +355,10 @@ const CustomerManagementPage: React.FC = () => {
               </div>
               <div style={statCardStyles}>
                 <div style={{ ...statValueStyles, color: colors.warning.main }}>{stats.highValueCustomers}</div>
-                <div style={statLabelStyles}>High Value (&gt;₹10k)</div>
+                <div style={statLabelStyles}>High Value (&gt;10k)</div>
               </div>
               <div style={statCardStyles}>
-                <div style={{ ...statValueStyles, color: colors.info.main }}>₹{Math.round(stats.averageLifetimeValue)}</div>
+                <div style={{ ...statValueStyles, color: colors.info.main }}>{fmt(Math.round(stats.averageLifetimeValue))}</div>
                 <div style={statLabelStyles}>Avg Lifetime Value</div>
               </div>
             </div>
@@ -421,7 +426,7 @@ const CustomerManagementPage: React.FC = () => {
                       </span>
                     </td>
                     <td style={tableCellStyles}>{customer.orderStats.totalOrders}</td>
-                    <td style={tableCellStyles}>₹{Math.round(customer.orderStats.totalSpent)}</td>
+                    <td style={tableCellStyles}>{fmt(Math.round(customer.orderStats.totalSpent))}</td>
                     <td style={tableCellStyles}>
                       <span style={badgeStyles(customer.active ? colors.success.main : colors.error.main)}>
                         {customer.active ? 'Active' : 'Inactive'}
@@ -556,7 +561,7 @@ const CustomerManagementPage: React.FC = () => {
                   <div style={{ marginBottom: spacing[4] }}>
                     <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>Total Spent</div>
                     <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>
-                      ₹{Math.round(selectedCustomer.orderStats.totalSpent)}
+                      {fmt(Math.round(selectedCustomer.orderStats.totalSpent))}
                     </div>
                   </div>
                 </div>

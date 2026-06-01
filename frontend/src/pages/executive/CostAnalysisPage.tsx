@@ -5,6 +5,9 @@ import { Badge } from '../../components/ui/badge';
 import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Package } from 'lucide-react';
 import axios from 'axios';
 import API_CONFIG from '../../config/api.config';
+import { useAppSelector } from '../../store/hooks';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 
 interface CostAnalysis {
   period: string;
@@ -62,6 +65,8 @@ interface CostAnalysis {
 }
 
 const CostAnalysisPage: React.FC = () => {
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
   const [analysis, setAnalysis] = useState<CostAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<string>('MONTH');
@@ -82,13 +87,7 @@ const CostAnalysisPage: React.FC = () => {
     }
   };
 
-  const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+  const formatCurrency = (value: number): string => formatMoney(Math.round(value * 100), currency, locale);
 
   const getTrendIcon = (trend: string) => {
     return trend === 'UP' ? (

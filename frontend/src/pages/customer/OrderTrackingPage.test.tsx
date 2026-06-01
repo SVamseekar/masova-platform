@@ -93,7 +93,7 @@ describe('OrderTrackingPage', () => {
 
     renderAsCustomer(<OrderTrackingPage />);
     expect(screen.getByText('Welcome!')).toBeInTheDocument();
-    expect(screen.getByText('Place your first order to see your order history here.')).toBeInTheDocument();
+    expect(screen.getByText('Please complete your first order to see your order history here.')).toBeInTheDocument();
   });
 
   it('shows Browse Menu button when no customer profile', () => {
@@ -110,7 +110,7 @@ describe('OrderTrackingPage', () => {
     });
 
     renderAsCustomer(<OrderTrackingPage />);
-    expect(screen.getByText('Browse Menu →')).toBeInTheDocument();
+    expect(screen.getByText('Browse Menu')).toBeInTheDocument();
   });
 
   it('shows empty orders state when customer exists but has no orders', () => {

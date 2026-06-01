@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import { usePageStore } from '../../contexts/PageStoreContext';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
@@ -25,6 +27,9 @@ import { createNeumorphicSurface, createCard, createBadge } from '../../styles/n
 
 const DriverManagementPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const { selectedStoreId } = usePageStore();
   const storeId = selectedStoreId || currentUser?.storeId || '';
   const { handleBack } = useSmartBackNavigation();
@@ -602,7 +607,7 @@ const DriverManagementPage: React.FC = () => {
                   </div>
                   <div>
                     <div style={infoLabelStyles}>Total Earnings</div>
-                    <div style={infoValueStyles}>₹{(driverPerformance.totalEarnings || 0).toFixed(0)}</div>
+                    <div style={infoValueStyles}>{fmt(driverPerformance.totalEarnings || 0)}</div>
                   </div>
                   <div>
                     <div style={infoLabelStyles}>Today's Deliveries</div>

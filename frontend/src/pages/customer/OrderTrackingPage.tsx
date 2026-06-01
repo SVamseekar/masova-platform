@@ -4,6 +4,8 @@ import AppHeader from '../../components/common/AppHeader';
 import StoreInfo from '../../components/StoreInfo';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import { useGetCustomerOrdersQuery, Order } from '../../store/api/orderApi';
 import { useGetCustomerByUserIdQuery } from '../../store/api/customerApi';
 import { ORDER_STATUS_CONFIG, ORDER_TYPE_CONFIG, PAYMENT_STATUS_CONFIG, ORDER_STATUS_FLOW } from '../../types/order';
@@ -13,6 +15,8 @@ import { OrderTrackingUpdate } from '../../services/websocketService';
 const OrderTrackingPage: React.FC = () => {
   const navigate = useNavigate();
   const currentUser = useAppSelector(selectCurrentUser);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month' | 'year'>('all');
 
   const { data: customer, isLoading: customerLoading } = useGetCustomerByUserIdQuery(
@@ -124,7 +128,7 @@ const OrderTrackingPage: React.FC = () => {
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: '6px' }}>
-              ₹{order.total.toFixed(2)}
+              {formatMoney(Math.round(order.total * 100), currency, locale)}
             </div>
             <span style={{
               display: 'inline-block',
@@ -197,7 +201,7 @@ const OrderTrackingPage: React.FC = () => {
               {order.items.slice(0, 3).map((item, idx) => (
                 <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.8rem' }}>
                   <span style={{ color: 'var(--text-1)' }}>{item.quantity}× {item.name}</span>
-                  <span style={{ color: 'var(--text-3)' }}>₹{(item.price * item.quantity).toFixed(2)}</span>
+                  <span style={{ color: 'var(--text-3)' }}>{formatMoney(Math.round(item.price * item.quantity * 100), currency, locale)}</span>
                 </div>
               ))}
               {order.items.length > 3 && (

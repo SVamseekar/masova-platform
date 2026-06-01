@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import { usePageStore } from '../../contexts/PageStoreContext';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
@@ -18,6 +20,9 @@ import { format } from 'date-fns';
 
 const PaymentDashboardPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const { selectedStoreId } = usePageStore();
   const storeId = selectedStoreId || currentUser?.storeId || '';
   const { handleBack } = useSmartBackNavigation();
@@ -315,13 +320,13 @@ const PaymentDashboardPage: React.FC = () => {
             <div style={statsGridStyles}>
               <Card elevation="md" padding="lg" style={statCardStyles}>
                 <div style={statLabelStyles}>Total Revenue</div>
-                <div style={statValueStyles}>₹{displayReport.successfulAmount.toFixed(2)}</div>
+                <div style={statValueStyles}>{fmt(displayReport.successfulAmount)}</div>
                 <div style={statSubtextStyles}>{displayReport.successfulTransactions} successful payments</div>
               </Card>
 
               <Card elevation="md" padding="lg" style={statCardStyles}>
                 <div style={statLabelStyles}>Net Amount</div>
-                <div style={statValueStyles}>₹{displayReport.netAmount.toFixed(2)}</div>
+                <div style={statValueStyles}>{fmt(displayReport.netAmount)}</div>
                 <div style={statSubtextStyles}>After {displayReport.refundedTransactions} refunds</div>
               </Card>
 
@@ -358,7 +363,7 @@ const PaymentDashboardPage: React.FC = () => {
                       {method}
                     </div>
                     <div style={{ fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.bold, color: colors.brand.primary }}>
-                      ₹{typeof amount === 'number' ? amount.toFixed(2) : '0.00'}
+                      {typeof amount === 'number' ? fmt(amount) : fmt(0)}
                     </div>
                   </div>
                 ))}
@@ -399,7 +404,7 @@ const PaymentDashboardPage: React.FC = () => {
                     <td style={tableCellStyles}>{txn.orderNumber || txn.orderId || 'N/A'}</td>
                     <td style={tableCellStyles}>{txn.customerName || txn.customerEmail || 'Walk-in'}</td>
                     <td style={{ ...tableCellStyles, fontWeight: typography.fontWeight.semibold }}>
-                      ₹{(txn.amount || 0).toFixed(2)}
+                      {fmt(txn.amount || 0)}
                     </td>
                     <td style={tableCellStyles}>{txn.paymentMethod || 'N/A'}</td>
                     <td style={tableCellStyles}>{txn.paymentGateway || 'RAZORPAY'}</td>

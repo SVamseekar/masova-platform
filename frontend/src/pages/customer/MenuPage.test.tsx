@@ -57,9 +57,9 @@ describe('MenuPage', () => {
 
   it('displays cuisine filter buttons', () => {
     renderAsCustomer(<MenuPage />);
-    expect(screen.getAllByText('SOUTH INDIAN').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('NORTH INDIAN').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('ITALIAN').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('SOUTH INDIAN')).toBeInTheDocument();
+    expect(screen.getByText('NORTH INDIAN')).toBeInTheDocument();
+    expect(screen.getByText('ITALIAN')).toBeInTheDocument();
   });
 
   it('displays dietary filter buttons', () => {
@@ -77,8 +77,7 @@ describe('MenuPage', () => {
       error: null,
     });
     renderAsCustomer(<MenuPage />);
-    // Loading state shows skeleton placeholders — no text sentinel
-    expect(screen.queryByText('No items found. Try adjusting your filters.')).not.toBeInTheDocument();
+    expect(screen.getByText('Loading delicious menu...')).toBeInTheDocument();
   });
 
   it('shows empty state when no items match filters', () => {
@@ -120,13 +119,13 @@ describe('MenuPage', () => {
 
   it('displays Add to Cart buttons for menu items', () => {
     renderAsCustomer(<MenuPage />);
-    const addButtons = screen.getAllByText('Add');
+    const addButtons = screen.getAllByText('Add to Cart');
     expect(addButtons.length).toBeGreaterThan(0);
   });
 
-  it('displays item price labels for menu items', () => {
+  it('displays View Recipe & Ingredients buttons', () => {
     renderAsCustomer(<MenuPage />);
-    // Items are displayed — at least one item name from mockMenuItems should be visible
-    expect(screen.getByText('Masala Dosa')).toBeInTheDocument();
+    const recipeButtons = screen.getAllByText('View Recipe & Ingredients');
+    expect(recipeButtons.length).toBeGreaterThan(0);
   });
 });

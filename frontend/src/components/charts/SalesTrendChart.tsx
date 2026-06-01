@@ -11,6 +11,9 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { useGetSalesTrendsQuery } from '../../store/api/analyticsApi';
+import { useAppSelector } from '../../store/hooks';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
@@ -44,13 +47,9 @@ export default function SalesTrendChart({ storeId }: SalesTrendChartProps) {
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const formatCurrency = (value: number) => formatMoney(Math.round(value * 100), currency, locale);
 
   if (isLoading) {
     return (

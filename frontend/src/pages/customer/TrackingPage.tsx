@@ -4,7 +4,8 @@ import { useTrackOrderQuery, OrderItem } from '../../store/api/orderApi';
 import { useTrackOrderQuery as useDeliveryTrackQuery } from '../../store/api/deliveryApi';
 import { useCreateReviewMutation } from '../../store/api/reviewApi';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { clearCart } from '../../store/slices/cartSlice';
+import { clearCart, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import CustomerPageHeader from '../../components/common/CustomerPageHeader';
 import { DriverTrackingMap } from '../../components/delivery/DriverTrackingMap';
 import { useOrderTrackingWebSocket } from '../../hooks/useOrderTrackingWebSocket';
@@ -143,6 +144,8 @@ const TrackingPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const currentUser = useAppSelector((state) => state.auth.user);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [ratingOpen, setRatingOpen] = useState(false);
   const [createReview] = useCreateReviewMutation();
@@ -521,13 +524,13 @@ const TrackingPage: React.FC = () => {
                       <span style={{ width: 22, height: 22, borderRadius: 6, background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.68rem', fontWeight: 700, color: 'var(--gold)', flexShrink: 0 }}>{item.quantity}</span>
                       <span style={{ fontSize: '0.86rem', color: 'var(--text-2)' }}>{item.name}</span>
                     </div>
-                    <span style={{ fontSize: '0.86rem', fontWeight: 600, color: 'var(--text-1)', flexShrink: 0 }}>₹{(item.price * item.quantity).toFixed(0)}</span>
+                    <span style={{ fontSize: '0.86rem', fontWeight: 600, color: 'var(--text-1)', flexShrink: 0 }}>{formatMoney(Math.round(item.price * item.quantity * 100), currency, locale)}</span>
                   </div>
                 ))}
               </div>
               <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-1)' }}>Total</span>
-                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold)' }}>₹{order.total?.toFixed(0)}</span>
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold)' }}>{formatMoney(Math.round((order.total ?? 0) * 100), currency, locale)}</span>
               </div>
             </div>
 

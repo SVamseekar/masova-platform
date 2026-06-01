@@ -18,11 +18,15 @@ const mockSession = {
 };
 
 export const sessionHandlers = [
-  http.post(`${API}/api/sessions`, () =>
+  http.get(`${API}/users/sessions/current`, () =>
+    HttpResponse.json(mockSession),
+  ),
+
+  http.post(`${API}/users/sessions/start`, () =>
     HttpResponse.json({ ...mockSession, loginTime: new Date().toISOString() }),
   ),
 
-  http.post(`${API}/api/sessions/end`, () =>
+  http.post(`${API}/users/sessions/end`, () =>
     HttpResponse.json({
       ...mockSession,
       logoutTime: new Date().toISOString(),
@@ -31,34 +35,62 @@ export const sessionHandlers = [
     }),
   ),
 
-  http.post(`${API}/api/sessions/clock-in`, () =>
+  http.post(`${API}/users/sessions/:employeeId/break`, () =>
+    HttpResponse.json({ ...mockSession, breakDurationMinutes: 45 }),
+  ),
+
+  http.get(`${API}/users/sessions/store/active`, () =>
+    HttpResponse.json([mockSession]),
+  ),
+
+  http.get(`${API}/users/sessions/store`, () =>
+    HttpResponse.json([
+      mockSession,
+      {
+        ...mockSession,
+        id: 'session-2',
+        employeeId: '4',
+        employeeName: 'Kitchen Staff',
+        logoutTime: '2025-01-15T16:00:00Z',
+        isActive: false,
+        status: 'COMPLETED',
+        totalHours: 8,
+      },
+    ]),
+  ),
+
+  http.get(`${API}/users/sessions/:employeeId`, () =>
+    HttpResponse.json([mockSession]),
+  ),
+
+  http.get(`${API}/users/sessions/pending-approval`, () =>
+    HttpResponse.json([]),
+  ),
+
+  http.post(`${API}/users/sessions/:sessionId/approve`, () =>
+    HttpResponse.json({ ...mockSession, status: 'COMPLETED' }),
+  ),
+
+  http.post(`${API}/users/sessions/:sessionId/reject`, () =>
+    HttpResponse.json({ ...mockSession, status: 'COMPLETED' }),
+  ),
+
+  http.post(`${API}/users/sessions/clock-in-with-pin`, () =>
     HttpResponse.json({ message: 'Clocked in successfully', session: mockSession }),
   ),
 
-  http.post(`${API}/api/sessions/clock-out`, () =>
+  http.post(`${API}/users/sessions/clock-out-employee`, () =>
     HttpResponse.json({
       message: 'Clocked out successfully',
       session: { ...mockSession, isActive: false, status: 'COMPLETED' },
     }),
   ),
 
-  http.get(`${API}/api/sessions`, () =>
-    HttpResponse.json([mockSession]),
+  http.get(`${API}/users/sessions/:employeeId/report`, () =>
+    HttpResponse.json({ totalHours: 40, totalSessions: 5, averageHoursPerDay: 8 }),
   ),
 
-  http.get(`${API}/api/sessions/pending`, () =>
-    HttpResponse.json([]),
-  ),
-
-  http.post(`${API}/api/sessions/:sessionId/approve`, () =>
-    HttpResponse.json({ ...mockSession, status: 'COMPLETED' }),
-  ),
-
-  http.post(`${API}/api/sessions/:sessionId/reject`, () =>
-    HttpResponse.json({ ...mockSession, status: 'COMPLETED' }),
-  ),
-
-  http.post(`${API}/api/sessions/:sessionId/break`, () =>
-    HttpResponse.json({ ...mockSession, breakDurationMinutes: 45 }),
+  http.get(`${API}/users/sessions/:employeeId/status`, () =>
+    HttpResponse.json({ hasActiveSession: true, session: mockSession }),
   ),
 ];

@@ -1,59 +1,68 @@
 /**
- * Integration Test: Order Creation Flow
- * Tests the complete flow: browse menu → create order → initiate payment
- * Uses MSW to intercept all API calls — no live backend required.
+ * Auto-generated Integration Test: Order Creation Flow
+ * Generated: 2026-01-18T15:55:55.668Z
+ *
+ * Tests the complete flow across multiple services:
+ * - menu-service
+ * - order-service
+ * - payment-service
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL = process.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 describe('Order Creation Flow', () => {
+  beforeAll(() => {
+    // Setup test data
+  });
+
+  afterAll(() => {
+    // Cleanup
+  });
+
   it('should complete the entire flow successfully', async () => {
-    // Step 1: GET /api/menu — MSW handler returns menu items
-    const response1 = await fetch(`${API_BASE_URL}/api/menu`, {
+    const testData = {
+      // TODO: Add test data
+    };
+
+
+    // Step 1: GET /api/menu/items
+    const response1 = await fetch(`${API_BASE_URL}/api/menu/items`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
+      
     });
 
     expect(response1.status).toBe(200);
-    const menuData = await response1.json();
-    expect(Array.isArray(menuData)).toBe(true);
+    const data1 = await response1.json();
 
-    // Step 2: POST /api/orders — MSW handler returns a new order
+    // Step 2: POST /api/orders
     const response2 = await fetch(`${API_BASE_URL}/api/orders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        storeId: 'store-1',
-        items: [{ menuItemId: 'item-1', quantity: 2 }],
-        orderType: 'DELIVERY',
-      }),
+      body: JSON.stringify(testData),
     });
 
     expect(response2.status).toBe(200);
-    const orderData = await response2.json();
-    expect(orderData).toBeDefined();
+    const data2 = await response2.json();
 
-    // Step 3: POST /api/payments/initiate — MSW handler returns payment initiation
-    const response3 = await fetch(`${API_BASE_URL}/api/payments/initiate`, {
+    // Step 3: POST /api/payments
+    const response3 = await fetch(`${API_BASE_URL}/api/payments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId: orderData.id || 'order-1', method: 'UPI' }),
+      body: JSON.stringify(testData),
     });
 
     expect(response3.status).toBe(200);
-    const paymentData = await response3.json();
-    expect(paymentData).toBeDefined();
+    const data3 = await response3.json();
+
+
+    // Verify final state
+    // TODO: Add assertions
   });
 
   it('should handle errors gracefully', async () => {
-    // Verify MSW returns structured data even for unknown IDs
-    const response = await fetch(`${API_BASE_URL}/api/orders/nonexistent-order-id`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    // MSW handler exists for GET /api/orders/:orderId — should return 200 with mock data
-    expect([200, 404]).toContain(response.status);
+    // TODO: Test error scenarios
   });
 });

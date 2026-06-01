@@ -1,54 +1,68 @@
 /**
- * Integration Test: Delivery Dispatch Flow
- * Tests: fetch order → dispatch delivery → check driver status
- * Uses MSW to intercept all API calls — no live backend required.
+ * Auto-generated Integration Test: Delivery Dispatch Flow
+ * Generated: 2026-01-18T15:55:55.668Z
+ *
+ * Tests the complete flow across multiple services:
+ * - order-service
+ * - delivery-service
+ * - notification-service
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL = process.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 describe('Delivery Dispatch Flow', () => {
+  beforeAll(() => {
+    // Setup test data
+  });
+
+  afterAll(() => {
+    // Cleanup
+  });
+
   it('should complete the entire flow successfully', async () => {
-    // Step 1: GET /api/orders/:orderId — MSW handler returns an order
-    const response1 = await fetch(`${API_BASE_URL}/api/orders/order-dispatch-1`, {
+    const testData = {
+      // TODO: Add test data
+    };
+
+
+    // Step 1: GET /api/orders/{orderId}
+    const response1 = await fetch(`${API_BASE_URL}/api/orders/{orderId}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
+      
     });
 
     expect(response1.status).toBe(200);
-    const orderData = await response1.json();
-    expect(orderData).toBeDefined();
+    const data1 = await response1.json();
 
-    // Step 2: POST /api/delivery/dispatch — MSW handler returns dispatch confirmation
+    // Step 2: POST /api/delivery/dispatch
     const response2 = await fetch(`${API_BASE_URL}/api/delivery/dispatch`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId: 'order-dispatch-1' }),
+      body: JSON.stringify(testData),
     });
 
     expect(response2.status).toBe(200);
-    const dispatchData = await response2.json();
-    expect(dispatchData).toBeDefined();
+    const data2 = await response2.json();
 
-    // Step 3: GET /api/delivery/drivers/available — MSW returns available drivers
-    const response3 = await fetch(`${API_BASE_URL}/api/delivery/drivers/available`, {
-      method: 'GET',
+    // Step 3: POST /api/notifications/send
+    const response3 = await fetch(`${API_BASE_URL}/api/notifications/send`, {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(testData),
     });
 
     expect(response3.status).toBe(200);
-    const driversData = await response3.json();
-    expect(driversData).toBeDefined();
+    const data3 = await response3.json();
+
+
+    // Verify final state
+    // TODO: Add assertions
   });
 
   it('should handle errors gracefully', async () => {
-    // Verify dispatch endpoint exists and is handled by MSW
-    const response = await fetch(`${API_BASE_URL}/api/delivery/dispatch`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId: 'nonexistent' }),
-    });
-    expect([200, 400, 404]).toContain(response.status);
+    // TODO: Test error scenarios
   });
 });

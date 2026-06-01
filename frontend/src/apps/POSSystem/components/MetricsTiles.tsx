@@ -1,6 +1,8 @@
 // src/apps/POSSystem/components/MetricsTiles.tsx
 import React from 'react';
-import { CURRENCY } from '../../../config/business-config';
+import { useAppSelector } from '../../../store/hooks';
+import { selectCartCurrency, selectCartLocale } from '../../../store/slices/cartSlice';
+import { formatMoney } from '../../../utils/currency';
 import {
   useGetTodaySalesMetricsQuery,
   useGetAverageOrderValueQuery,
@@ -25,6 +27,9 @@ interface MetricsTilesProps {
  * Shows today's sales, comparisons, and operational stats
  */
 const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   // Fetch real-time metrics from analytics service
   const {
     data: salesMetrics,
@@ -203,7 +208,7 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
       {/* Today's Sales */}
       <MetricCard
         title="Today's Sales"
-        value={salesMetrics ? CURRENCY.format(salesMetrics.todaySales) : '-'}
+        value={salesMetrics ? fmt(salesMetrics.todaySales) : '-'}
         subtitle={salesMetrics ? `${salesMetrics.todayOrderCount} orders` : 'Loading...'}
         icon={<CurrencyRupeeIcon style={{ fontSize: '28px' }} />}
         trend="vs yesterday"
@@ -214,7 +219,7 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
       {/* Average Order Value */}
       <MetricCard
         title="Avg Order Value"
-        value={avgOrderValue ? CURRENCY.format(avgOrderValue.averageOrderValue) : '-'}
+        value={avgOrderValue ? fmt(avgOrderValue.averageOrderValue) : '-'}
         subtitle={avgOrderValue ? `${avgOrderValue.totalOrders} orders` : 'Loading...'}
         icon={<ShoppingCartIcon style={{ fontSize: '28px' }} />}
         trend={avgOrderValue ? 'vs yesterday' : undefined}
@@ -225,7 +230,7 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
       {/* Year-over-Year Comparison */}
       <MetricCard
         title="Last Year (Same Day)"
-        value={salesMetrics ? CURRENCY.format(salesMetrics.lastYearSameDaySales) : '-'}
+        value={salesMetrics ? fmt(salesMetrics.lastYearSameDaySales) : '-'}
         trend="YoY growth"
         trendValue={salesMetrics?.percentChangeFromLastYear}
         icon={<BarChartIcon style={{ fontSize: '28px' }} />}

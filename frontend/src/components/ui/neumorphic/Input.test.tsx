@@ -66,13 +66,8 @@ describe('Neumorphic Input', () => {
 
     it('does not render helper text when omitted', () => {
       const { container } = render(<Input />);
-      // style tags contain CSS — ignore them; no user-visible text should be present
-      const visibleText = Array.from(container.querySelectorAll('*'))
-        .filter((el) => el.tagName !== 'STYLE' && el.children.length === 0)
-        .map((el) => el.textContent?.trim())
-        .filter(Boolean)
-        .join('');
-      expect(visibleText).toBe('');
+      // Only the input container and style element should be present
+      expect(container.textContent).toBe('');
     });
   });
 

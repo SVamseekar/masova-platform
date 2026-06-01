@@ -59,7 +59,7 @@ public class Customer implements Serializable {
     @Indexed
     private String email;
 
-    @Pattern(regexp = "^[6-9]\\d{9}$", message = "Invalid Indian phone number")
+    @Pattern(regexp = "^\\+?[1-9]\\d{6,14}$", message = "Invalid phone number")
     @Indexed
     private String phone;
 

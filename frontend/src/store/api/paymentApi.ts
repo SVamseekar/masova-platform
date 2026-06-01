@@ -93,7 +93,7 @@ export interface ReconciliationReport {
 export const paymentApi = createApi({
   reducerPath: 'paymentApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: API_CONFIG.BASE_URL,
+    baseUrl: `${API_CONFIG.PAYMENT_SERVICE_URL}/payments`,
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState;
       const token = state.auth.accessToken;
@@ -127,7 +127,7 @@ export const paymentApi = createApi({
     // Initiate payment
     initiatePayment: builder.mutation<PaymentResponse, InitiatePaymentRequest>({
       query: (request) => ({
-        url: '/api/payments/initiate',
+        url: '/initiate',
         method: 'POST',
         body: {
           ...request,
@@ -141,7 +141,7 @@ export const paymentApi = createApi({
     // Record cash payment
     recordCashPayment: builder.mutation<PaymentResponse, InitiatePaymentRequest>({
       query: (request) => ({
-        url: '/api/payments/cash',
+        url: '/cash',
         method: 'POST',
         body: {
           ...request,
@@ -155,7 +155,7 @@ export const paymentApi = createApi({
     // Verify payment
     verifyPayment: builder.mutation<PaymentResponse, PaymentCallbackRequest>({
       query: (request) => ({
-        url: '/api/payments/verify',
+        url: '/verify',
         method: 'POST',
         body: request,
       }),
@@ -164,19 +164,19 @@ export const paymentApi = createApi({
 
     // Get transaction by ID
     getTransaction: builder.query<PaymentResponse, string>({
-      query: (transactionId) => `/api/payments/${transactionId}`,
+      query: (transactionId) => `/${transactionId}`,
       providesTags: (result, error, transactionId) => [{ type: 'Payment', id: transactionId }],
     }),
 
     // Get transaction by order ID
     getTransactionByOrderId: builder.query<PaymentResponse, string>({
-      query: (orderId) => `/api/payments?orderId=${orderId}`,
+      query: (orderId) => `/order/${orderId}`,
       providesTags: (result, error, orderId) => [{ type: 'Payment', id: `order-${orderId}` }],
     }),
 
     // Get transactions by customer ID
     getTransactionsByCustomerId: builder.query<PaymentResponse[], string>({
-      query: (customerId) => `/api/payments?customerId=${customerId}`,
+      query: (customerId) => `/customer/${customerId}`,
       providesTags: (result) =>
         result
           ? [...result.map(({ transactionId }) => ({ type: 'Payment' as const, id: transactionId })), 'Payment']
@@ -185,7 +185,7 @@ export const paymentApi = createApi({
 
     // Get transactions by store ID
     getTransactionsByStoreId: builder.query<PaymentResponse[], string | undefined>({
-      query: (storeId) => `/api/payments${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/store${storeId ? `?storeId=${storeId}` : ''}`,
       providesTags: (result, error, storeId) =>
         result
           ? [...result.map(({ transactionId }) => ({ type: 'Payment' as const, id: transactionId })), { type: 'Payment', id: storeId || 'DEFAULT' }]
@@ -195,7 +195,7 @@ export const paymentApi = createApi({
     // Get reconciliation report
     getReconciliationReport: builder.query<ReconciliationReport, { date: string }>({
       query: ({ date }) => ({
-        url: '/api/payments?reconciliation=true',
+        url: '/reconciliation',
         params: { date },
       }),
       providesTags: ['Reconciliation'],
@@ -204,7 +204,7 @@ export const paymentApi = createApi({
     // Mark as reconciled
     markAsReconciled: builder.mutation<void, { transactionId: string; reconciledBy: string }>({
       query: ({ transactionId, reconciledBy }) => ({
-        url: `/api/payments/${transactionId}/reconcile`,
+        url: `/${transactionId}/reconcile`,
         method: 'POST',
         params: { reconciledBy },
       }),
@@ -214,7 +214,7 @@ export const paymentApi = createApi({
     // Initiate refund
     initiateRefund: builder.mutation<Refund, RefundRequest>({
       query: (request) => ({
-        url: '/api/payments/refund',
+        url: '/refund',
         method: 'POST',
         body: request,
       }),
@@ -223,27 +223,27 @@ export const paymentApi = createApi({
 
     // Get refund by ID
     getRefund: builder.query<Refund, string>({
-      query: (refundId) => `/api/payments/refund/${refundId}`,
+      query: (refundId) => `/refund/${refundId}`,
       providesTags: (result, error, refundId) => [{ type: 'Refund', id: refundId }],
     }),
 
     // Get refunds by transaction ID
     getRefundsByTransactionId: builder.query<Refund[], string>({
-      query: (transactionId) => `/api/payments/refund?transactionId=${transactionId}`,
+      query: (transactionId) => `/refund/transaction/${transactionId}`,
       providesTags: (result) =>
         result ? [...result.map(({ id }) => ({ type: 'Refund' as const, id })), 'Refund'] : ['Refund'],
     }),
 
     // Get refunds by order ID
     getRefundsByOrderId: builder.query<Refund[], string>({
-      query: (orderId) => `/api/payments/refund?orderId=${orderId}`,
+      query: (orderId) => `/refund/order/${orderId}`,
       providesTags: (result) =>
         result ? [...result.map(({ id }) => ({ type: 'Refund' as const, id })), 'Refund'] : ['Refund'],
     }),
 
     // Get refunds by customer ID
     getRefundsByCustomerId: builder.query<Refund[], string>({
-      query: (customerId) => `/api/payments/refund?customerId=${customerId}`,
+      query: (customerId) => `/refund/customer/${customerId}`,
       providesTags: (result) =>
         result ? [...result.map(({ id }) => ({ type: 'Refund' as const, id })), 'Refund'] : ['Refund'],
     }),

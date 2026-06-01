@@ -9,18 +9,11 @@ import POSDashboard from './POSDashboard';
 // ---------------------------------------------------------------------------
 
 const mockEnqueueSnackbar = vi.fn();
-vi.mock('notistack', async () => {
-  const actual = await vi.importActual('notistack');
-  return {
-    ...actual,
+vi.mock('notistack', () => ({
   useSnackbar: () => ({ enqueueSnackbar: mockEnqueueSnackbar }),
-  };
-});
+}));
 
-vi.mock('../../store/api/analyticsApi', async () => {
-  const actual = await vi.importActual('../../store/api/analyticsApi');
-  return {
-    ...actual,
+vi.mock('../../store/api/analyticsApi', () => ({
   useGetTodaySalesMetricsQuery: () => ({
     data: { todaySales: 5000, todayOrderCount: 25, percentChangeFromYesterday: 12.5, lastYearSameDaySales: 4000, percentChangeFromLastYear: 25 },
     isLoading: false,
@@ -37,45 +30,29 @@ vi.mock('../../store/api/analyticsApi', async () => {
     data: { topProducts: [] },
     isLoading: false,
   }),
-  };
-});
+}));
 
-vi.mock('../../store/api/orderApi', async () => {
-  const actual = await vi.importActual('../../store/api/orderApi');
-  return {
-    ...actual,
-    useGetStoreOrdersQuery: () => ({
-      data: [],
-      isLoading: false,
-    }),
-  };
-});
+vi.mock('../../store/api/orderApi', () => ({
+  useGetStoreOrdersQuery: () => ({
+    data: [],
+    isLoading: false,
+  }),
+}));
 
-vi.mock('../../store/api/paymentApi', async () => {
-  const actual = await vi.importActual('../../store/api/paymentApi');
-  return {
-    ...actual,
+vi.mock('../../store/api/paymentApi', () => ({
   useRecordCashPaymentMutation: () => [vi.fn(), { isLoading: false }],
-  };
-});
+}));
 
-vi.mock('../../store/api/sessionApi', async () => {
-  const actual = await vi.importActual('../../store/api/sessionApi');
-  return {
-    ...actual,
+vi.mock('../../store/api/sessionApi', () => ({
   useGetActiveStoreSessionsQuery: () => ({
     data: [],
     isLoading: false,
   }),
   useClockOutEmployeeMutation: () => [vi.fn(), { isLoading: false }],
-  };
-});
+}));
 
 // Mock child components to isolate POSDashboard behavior
-vi.mock('./components/MenuPanel', async () => {
-  const actual = await vi.importActual('./components/MenuPanel');
-  return {
-    ...actual,
+vi.mock('./components/MenuPanel', () => ({
   default: ({ onAddItem }: any) => (
     <div data-testid="menu-panel">
       <button
@@ -88,13 +65,9 @@ vi.mock('./components/MenuPanel', async () => {
       </button>
     </div>
   ),
-  };
-});
+}));
 
-vi.mock('./components/OrderPanel', async () => {
-  const actual = await vi.importActual('./components/OrderPanel');
-  return {
-    ...actual,
+vi.mock('./components/OrderPanel', () => ({
   default: ({ items, onNewOrder }: any) => (
     <div data-testid="order-panel">
       <span data-testid="order-item-count">{items.length}</span>
@@ -103,51 +76,30 @@ vi.mock('./components/OrderPanel', async () => {
       </button>
     </div>
   ),
-  };
-});
+}));
 
-vi.mock('./components/CustomerPanel', async () => {
-  const actual = await vi.importActual('./components/CustomerPanel');
-  return {
-    ...actual,
+vi.mock('./components/CustomerPanel', () => ({
   default: () => <div data-testid="customer-panel">CustomerPanel</div>,
-  };
-});
+}));
 
-vi.mock('./components/MetricsTiles', async () => {
-  const actual = await vi.importActual('./components/MetricsTiles');
-  return {
-    ...actual,
+vi.mock('./components/MetricsTiles', () => ({
   default: () => <div data-testid="metrics-tiles">MetricsTiles</div>,
-  };
-});
+}));
 
-vi.mock('./components/ClockInModal', async () => {
-  const actual = await vi.importActual('./components/ClockInModal');
-  return {
-    ...actual,
+vi.mock('./components/ClockInModal', () => ({
   default: ({ isOpen }: any) =>
     isOpen ? <div data-testid="clock-in-modal">ClockInModal</div> : null,
-  };
-});
+}));
 
-vi.mock('./components/ClockOutModal', async () => {
-  const actual = await vi.importActual('./components/ClockOutModal');
-  return {
-    ...actual,
+vi.mock('./components/ClockOutModal', () => ({
   default: ({ isOpen }: any) =>
     isOpen ? <div data-testid="clock-out-modal">ClockOutModal</div> : null,
-  };
-});
+}));
 
-vi.mock('./components/PINAuthModal', async () => {
-  const actual = await vi.importActual('./components/PINAuthModal');
-  return {
-    ...actual,
+vi.mock('./components/PINAuthModal', () => ({
   PINAuthModal: ({ isOpen }: any) =>
     isOpen ? <div data-testid="pin-auth-modal">PINAuthModal</div> : null,
-  };
-});
+}));
 
 // ---------------------------------------------------------------------------
 // Preloaded state helpers

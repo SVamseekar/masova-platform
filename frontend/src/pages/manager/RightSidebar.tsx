@@ -1,5 +1,8 @@
 import React from 'react';
 import { t, cardStyle, sectionTitleStyle } from './manager-tokens';
+import { useAppSelector } from '../../store/hooks';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import {
   useGetTopProductsQuery,
   useGetExecutiveSummaryQuery,
@@ -141,6 +144,9 @@ const OperationsSidebar = ({ storeId }: { storeId: string }) => {
 
 // === PEOPLE ===
 const PeopleSidebar = ({ storeId }: { storeId: string }) => {
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const { data: sessions } = useGetActiveStoreSessionsQuery(storeId, { skip: !storeId });
   const { data: leaderboard } = useGetStaffLeaderboardQuery({ storeId, period: 'TODAY' }, { skip: !storeId });
   const { data: customerStats } = useGetCustomerStatsQuery(storeId, { skip: !storeId });
@@ -158,7 +164,7 @@ const PeopleSidebar = ({ storeId }: { storeId: string }) => {
           <div style={miniCard}>
             <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: t.black }}>{topPerformer.staffName}</p>
             <p style={{ margin: '4px 0 0', fontSize: 12, color: t.gray }}>
-              {topPerformer.ordersProcessed} orders | ₹{topPerformer.salesGenerated.toFixed(0)} sales
+              {topPerformer.ordersProcessed} orders | {fmt(topPerformer.salesGenerated)} sales
             </p>
             <div style={{ marginTop: 8, padding: '4px 10px', background: t.orangeLight, borderRadius: t.radius.sm, display: 'inline-block', fontSize: 11, fontWeight: 600, color: t.orange }}>
               {topPerformer.performanceLevel}
@@ -175,6 +181,9 @@ const PeopleSidebar = ({ storeId }: { storeId: string }) => {
 
 // === ANALYTICS ===
 const AnalyticsSidebar = ({ storeId }: { storeId: string }) => {
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const { data: summary } = useGetExecutiveSummaryQuery(storeId, { skip: !storeId });
   const { data: salesMetrics } = useGetTodaySalesMetricsQuery(storeId, { skip: !storeId });
 
@@ -187,7 +196,7 @@ const AnalyticsSidebar = ({ storeId }: { storeId: string }) => {
         <>
           <div style={miniCard}>
             <p style={label}>Revenue</p>
-            <p style={value(trendColor(summary.revenue.change))}>₹{summary.revenue.total.toLocaleString()}</p>
+            <p style={value(trendColor(summary.revenue.change))}>{fmt(summary.revenue.total)}</p>
             <p style={{ margin: '2px 0 0', fontSize: 11, color: trendColor(summary.revenue.change) }}>
               {summary.revenue.change >= 0 ? '+' : ''}{summary.revenue.change.toFixed(1)}%
             </p>

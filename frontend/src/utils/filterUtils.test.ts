@@ -179,7 +179,7 @@ describe('exportToCSV', () => {
       { label: 'Price', field: 'price' },
     ];
 
-    const createObjectURLSpy = vi.fn(() => 'blob:url');
+    const createObjectURLSpy = vi.fn().mockReturnValue('blob:url');
     const appendChildSpy = vi.spyOn(document.body, 'appendChild').mockImplementation(() => null as any);
     const removeChildSpy = vi.spyOn(document.body, 'removeChild').mockImplementation(() => null as any);
 
@@ -217,7 +217,7 @@ describe('exportToCSV', () => {
       }
     };
 
-    const createObjectURLSpy = () => ('blob:url');
+    const createObjectURLSpy = vi.fn().mockReturnValue('blob:url');
     URL.createObjectURL = createObjectURLSpy;
 
     const appendChildSpy = vi.spyOn(document.body, 'appendChild').mockImplementation(() => null as any);

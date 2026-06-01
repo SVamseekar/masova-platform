@@ -3,6 +3,8 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem,
 import { Button } from '../ui/neumorphic';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMoney } from '../../utils/currency';
 import { useRecordWasteMutation, useGetAllInventoryItemsQuery } from '../../store/api/inventoryApi';
 import { colors, spacing, typography } from '../../styles/design-tokens';
 
@@ -14,6 +16,8 @@ interface RecordWasteDialogProps {
 
 const RecordWasteDialog: React.FC<RecordWasteDialogProps> = ({ open, onClose, storeId }) => {
   const currentUser = useAppSelector(selectCurrentUser);
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
   const [recordWaste, { isLoading }] = useRecordWasteMutation();
   const { data: inventoryItems = [] } = useGetAllInventoryItemsQuery(undefined);
 
@@ -73,8 +77,8 @@ const RecordWasteDialog: React.FC<RecordWasteDialogProps> = ({ open, onClose, st
 
   const selectedItem = inventoryItems.find((item) => item.id === formData.inventoryItemId);
   const estimatedCost = selectedItem && formData.quantity
-    ? (parseFloat(formData.quantity) * selectedItem.unitCost).toFixed(2)
-    : '0.00';
+    ? parseFloat(formData.quantity) * selectedItem.unitCost
+    : 0;
 
   const dialogContentStyles: React.CSSProperties = {
     fontFamily: typography.fontFamily.primary,
@@ -176,7 +180,7 @@ const RecordWasteDialog: React.FC<RecordWasteDialogProps> = ({ open, onClose, st
               fontSize: typography.fontSize.sm,
             }}
           >
-            <strong>Estimated Waste Cost:</strong> ₹{estimatedCost}
+            <strong>Estimated Waste Cost:</strong> {formatMoney(Math.round(estimatedCost * 100), currency, locale)}
           </div>
         )}
       </DialogContent>

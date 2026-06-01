@@ -3,7 +3,10 @@ import React, { useState, useImperativeHandle } from 'react';
 import { useCreateOrderMutation } from '../../../store/api/orderApi';
 import { useInitiatePaymentMutation, useVerifyPaymentMutation } from '../../../store/api/paymentApi';
 import { useGetOrCreateCustomerMutation } from '../../../store/api/customerApi';
-import { CURRENCY, isValidPhoneNumber } from '../../../config/business-config';
+import { isValidPhoneNumber } from '../../../config/business-config';
+import { useAppSelector } from '../../../store/hooks';
+import { selectCartCurrency, selectCartLocale } from '../../../store/slices/cartSlice';
+import { formatMoney } from '../../../utils/currency';
 import Card from '../../../components/ui/neumorphic/Card';
 import Button from '../../../components/ui/neumorphic/Button';
 import { colors, shadows, spacing, typography } from '../../../styles/design-tokens';
@@ -50,6 +53,9 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
   submitOrderRef,
   orderCreatedBy,
 }) => {
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -329,7 +335,7 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
         alert(
           `Order #${result.orderNumber} created successfully!\n\n` +
           `Payment Method: CASH\n` +
-          `Amount: ${CURRENCY.format(total)}\n\n` +
+          `Amount: ${fmt(total)}\n\n` +
           `Remember to collect cash and mark as paid in Order Management!`
         );
         resetForm();
@@ -999,7 +1005,7 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
             }}>
               <span>Subtotal:</span>
               <span style={{ fontWeight: typography.fontWeight.semibold, color: colors.text.primary }}>
-                {CURRENCY.format(subtotal)}
+                {fmt(subtotal)}
               </span>
             </div>
 
@@ -1013,7 +1019,7 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
               }}>
                 <span>Delivery Fee:</span>
                 <span style={{ fontWeight: typography.fontWeight.semibold, color: colors.text.primary }}>
-                  {CURRENCY.format(deliveryFee)}
+                  {fmt(deliveryFee)}
                 </span>
               </div>
             )}
@@ -1027,7 +1033,7 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
             }}>
               <span>Tax (5%):</span>
               <span style={{ fontWeight: typography.fontWeight.semibold, color: colors.text.primary }}>
-                {CURRENCY.format(tax)}
+                {fmt(tax)}
               </span>
             </div>
 
@@ -1052,7 +1058,7 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
                 fontWeight: typography.fontWeight.extrabold,
                 color: colors.semantic.success
               }}>
-                {CURRENCY.format(total)}
+                {fmt(total)}
               </span>
             </div>
           </Card>
@@ -1122,7 +1128,7 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
               }
             }}
           >
-            {isSubmitting ? 'Processing...' : `Place Order - ${CURRENCY.format(total)}`}
+            {isSubmitting ? 'Processing...' : `Place Order - ${fmt(total)}`}
           </button>
         </div>
 

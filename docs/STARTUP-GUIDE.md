@@ -14,35 +14,39 @@
 | MongoDB           | 7+      | `mongosh --version`           |
 | Redis             | 7+      | `redis-cli ping`              |
 | RabbitMQ          | 3.13+   | `rabbitmq-diagnostics status` |
-| Python            | 3.11+   | `python3 --version`           |
+| Python            | 3.12+   | `python3 --version`           |
 | Android SDK       | API 36  | `adb --version`               |
 
 ---
 
 ## Step 1 — Infrastructure (Start First)
 
-### MongoDB
+> **Architecture note:** In the standard dev setup, all infrastructure (MongoDB, PostgreSQL, Redis, RabbitMQ) runs via **Docker on the Dell** (`192.168.50.88`). If you're running everything on one machine, use Docker Compose below.
+
+### Option A — Docker Compose (Recommended)
 ```bash
-    brew services start mongodb-community
+# From the project root
+docker compose up -d mongodb redis rabbitmq postgres
+```
+
+Verify:
+```bash
+docker compose ps   # all four should show "Up"
+```
+
+### Option B — Homebrew (Mac, local dev only)
+```bash
+brew services start mongodb-community
+brew services start redis
+brew services start rabbitmq
+
 # Verify
 mongosh --eval "db.adminCommand('ping')"
-```
-
-### Redis
-```bash
-brew services start redis
-# Verify
 redis-cli ping   # → PONG
-```
-
-### RabbitMQ
-```bash
-brew services start rabbitmq
-# Verify (wait ~10 seconds after start)
 curl -s -u guest:guest http://localhost:15672/api/overview | python3 -c "import json,sys; d=json.load(sys.stdin); print('RabbitMQ OK:', d['rabbitmq_version'])"
 ```
 
-> **First-time only:** Create the `masova` RabbitMQ user:
+> **First-time only (Homebrew):** Create the `masova` RabbitMQ user:
 > ```bash
 > rabbitmqctl add_user masova masova_secret
 > rabbitmqctl set_permissions -p / masova ".*" ".*" ".*"
@@ -166,28 +170,31 @@ cd /Users/souravamseekarmarti/Projects/masova-mobile
 npx react-native run-android --port 8888 --active-arch-only
 ```
 
-> **Port 8888** is used to avoid conflict with commerce-service (8084).
-> **API URL:** Automatically uses `http://10.0.2.2:8080/api` for Android emulator, `http://localhost:8080/api` for iOS simulator.
+> **Port 8888** avoids conflict with backend services. Configured in `src/services/api.ts`.
+> **API URL:** Dev backend is at `http://192.168.50.88:8080/api` (Dell LAN). Update `API_BASE_URL` in `src/services/api.ts` if the Dell IP changes or you're running locally.
+> **Android emulator:** Use `http://10.0.2.2:8080/api` instead of the LAN IP.
 
 ---
 
-## Step 7 — Driver App (MaSoVaDriverApp)
+## Step 7 — Staff App (MaSoVaCrewApp)
 
-**Bare React Native** (not Expo Go). Requires Android emulator or connected device.
+**Bare React Native 0.83** (not Expo Go). Requires Android emulator or connected device.
+Covers all staff roles: Driver, Kitchen, Cashier, Manager — role is read from JWT `user.type`.
 
 **Terminal 1 — Start Metro bundler:**
 ```bash
-cd /Users/souravamseekarmarti/Projects/MaSoVaDriverApp
-npx react-native start --port 8099
+cd /Users/souravamseekarmarti/Projects/MaSoVaCrewApp
+npx react-native start
 ```
 
 **Terminal 2 — Build and install on Android:**
 ```bash
-cd /Users/souravamseekarmarti/Projects/MaSoVaDriverApp
-npx react-native run-android --port 8099 --active-arch-only
+cd /Users/souravamseekarmarti/Projects/MaSoVaCrewApp
+npx react-native run-android --active-arch-only
 ```
 
-> **Port 8099** is used to avoid conflicts with all backend services.
+> **API URL:** Points to `http://192.168.50.88:8080/api` (Dell backend). Update `src/config/api.config.ts` if running on a different machine.
+> **WebSocket:** `http://192.168.50.88:8090/ws` in dev, `wss://api.masova.com/ws` in prod.
 
 ---
 
@@ -229,8 +236,8 @@ echo -n "8000 masova-support: "; curl -s --max-time 2 http://localhost:8000/heal
 | 8086  | Logistics Service (delivery, dispatch, inventory, waste) |
 | 8087  | Intelligence Service (analytics, BI, reports)            |
 | 8089  | Payment Service (payments, refunds)                      |
-| 8888  | masova-mobile Metro bundler                              |
-| 8099  | MaSoVaDriverApp Metro bundler                            |
+| 8888  | masova-mobile Metro bundler (custom port to avoid conflicts) |
+| —     | MaSoVaCrewApp Metro bundler (default port)               |
 | 15672 | RabbitMQ Management UI                                   |
 | 27017 | MongoDB                                                  |
 | 6379  | Redis                                                    |
