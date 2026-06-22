@@ -101,6 +101,15 @@ public class Order {
     private LocalDateTime cancelledAt;
     private String cancellationReason;
 
+    // Manager-approval gate for customer/agent-initiated cancellation (security remediation Task 4).
+    // A request flag does NOT cancel the order — the order keeps functioning (kitchen still sees it)
+    // until a manager explicitly approves, which transitions the order to CANCELLED.
+    @Indexed
+    private boolean cancellationRequested;
+    private String cancellationRequestReason;
+    private String cancellationRequestedBy;
+    private LocalDateTime cancellationRequestedAt;
+
     // Kitchen workflow timestamps
     private LocalDateTime receivedAt;
     private LocalDateTime preparingStartedAt;
@@ -266,6 +275,18 @@ public class Order {
 
     public String getCancellationReason() { return cancellationReason; }
     public void setCancellationReason(String cancellationReason) { this.cancellationReason = cancellationReason; }
+
+    public boolean isCancellationRequested() { return cancellationRequested; }
+    public void setCancellationRequested(boolean cancellationRequested) { this.cancellationRequested = cancellationRequested; }
+
+    public String getCancellationRequestReason() { return cancellationRequestReason; }
+    public void setCancellationRequestReason(String cancellationRequestReason) { this.cancellationRequestReason = cancellationRequestReason; }
+
+    public String getCancellationRequestedBy() { return cancellationRequestedBy; }
+    public void setCancellationRequestedBy(String cancellationRequestedBy) { this.cancellationRequestedBy = cancellationRequestedBy; }
+
+    public LocalDateTime getCancellationRequestedAt() { return cancellationRequestedAt; }
+    public void setCancellationRequestedAt(LocalDateTime cancellationRequestedAt) { this.cancellationRequestedAt = cancellationRequestedAt; }
 
     public LocalDateTime getReceivedAt() { return receivedAt; }
     public void setReceivedAt(LocalDateTime receivedAt) { this.receivedAt = receivedAt; }

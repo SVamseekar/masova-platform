@@ -525,6 +525,108 @@ public class OrderService {
         return cancelledOrder;
     }
 
+    // ── CANCELLATION APPROVAL GATE (security remediation Task 4) ───────────────────
+    // Customer/agent-initiated cancellation must NOT take effect immediately. It records a
+    // pending request that a manager approves (→ real cancel) or rejects (→ flag cleared).
+    // The order keeps functioning normally (kitchen still sees it) while the request is pending.
+
+    /**
+     * Record a cancellation request without cancelling the order.
+     * Used by the CUSTOMER (via the app) or the AI agent on the customer's behalf.
+     * The order status is unchanged; only a pending-approval flag is set.
+     *
+     * @param orderId       order to request cancellation for
+     * @param reason        reason supplied by the requester
+     * @param requestedBy   identifier of the requester (customer id / "AGENT")
+     * @return the order with the cancellation request recorded
+     */
+    @Transactional
+    public Order requestCancellation(String orderId, String reason, String requestedBy) {
+        Order order = getOrderById(orderId);
+
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new RuntimeException("Order is already cancelled");
+        }
+        if (order.getStatus() == OrderStatus.DELIVERED) {
+            throw new RuntimeException("Cannot request cancellation of a delivered order");
+        }
+        if (order.isCancellationRequested()) {
+            throw new RuntimeException("A cancellation request is already pending manager approval");
+        }
+
+        log.info("Cancellation requested for order {} by {} (status stays {})",
+                order.getOrderNumber(), requestedBy, order.getStatus());
+
+        order.setCancellationRequested(true);
+        order.setCancellationRequestReason(reason);
+        order.setCancellationRequestedBy(requestedBy);
+        order.setCancellationRequestedAt(LocalDateTime.now());
+
+        Order savedOrder = orderRepository.save(order);
+
+        // Publish an event so other services (notifications, agents) can react. The order
+        // status is NOT changed — previous and new status are identical; the marker is the flag.
+        try {
+            orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
+                savedOrder.getId(), savedOrder.getCustomerId(),
+                savedOrder.getStatus().toString(), "CANCELLATION_REQUESTED", savedOrder.getStoreId()));
+        } catch (Exception e) {
+            log.warn("Failed to publish cancellation-requested event for order {} (requestedBy={}): {}",
+                    savedOrder.getOrderNumber(), requestedBy, e.getMessage());
+        }
+
+        return savedOrder;
+    }
+
+    /**
+     * Manager approval of a pending cancellation request — performs the real cancellation.
+     */
+    @Transactional
+    @CacheEvict(value = "salesMetrics", allEntries = true)
+    public Order approveCancellationRequest(String orderId) {
+        Order order = getOrderById(orderId);
+        if (!order.isCancellationRequested()) {
+            throw new RuntimeException("No pending cancellation request for this order");
+        }
+        String reason = order.getCancellationRequestReason();
+        // Clear the pending flag — the order is now being cancelled for real.
+        order.setCancellationRequested(false);
+        orderRepository.save(order);
+        log.info("Manager approved cancellation request for order {}", order.getOrderNumber());
+        return cancelOrder(orderId, reason);
+    }
+
+    /**
+     * Manager rejection of a pending cancellation request — clears the flag, order continues.
+     */
+    @Transactional
+    public Order rejectCancellationRequest(String orderId, String rejectionReason) {
+        Order order = getOrderById(orderId);
+        if (!order.isCancellationRequested()) {
+            throw new RuntimeException("No pending cancellation request for this order");
+        }
+        log.info("Manager rejected cancellation request for order {} (reason: {})",
+                order.getOrderNumber(), rejectionReason);
+
+        order.setCancellationRequested(false);
+        order.setCancellationRequestReason(null);
+        order.setCancellationRequestedBy(null);
+        order.setCancellationRequestedAt(null);
+
+        Order savedOrder = orderRepository.save(order);
+
+        try {
+            orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
+                savedOrder.getId(), savedOrder.getCustomerId(),
+                savedOrder.getStatus().toString(), "CANCELLATION_REJECTED", savedOrder.getStoreId()));
+        } catch (Exception e) {
+            log.warn("Failed to publish cancellation-rejected event for order {}: {}",
+                    savedOrder.getOrderNumber(), e.getMessage());
+        }
+
+        return savedOrder;
+    }
+
     @Transactional
     public Order assignDriver(String orderId, String driverId) {
         return assignDriver(orderId, driverId, null, null);

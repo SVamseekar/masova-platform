@@ -262,12 +262,71 @@ public class OrderController {
     // ── CANCEL ────────────────────────────────────────────────────────────────────
 
     @DeleteMapping("/{orderId}")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
-    @Operation(summary = "Cancel order")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
+    @Operation(summary = "Cancel order directly (staff/manager only)")
     public ResponseEntity<Order> cancelOrder(
             @PathVariable String orderId,
             @RequestParam(required = false) String reason) {
         return ResponseEntity.ok(orderService.cancelOrder(orderId, reason));
+    }
+
+    // ── CANCELLATION APPROVAL GATE (security remediation Task 4) ──────────────────
+    // A customer (or the AI agent on their behalf) may only REQUEST cancellation. The
+    // request does not change order status; a manager must approve/reject it.
+
+    /**
+     * POST /api/orders/{orderId}/cancel-request — request cancellation (no immediate effect).
+     * Open to CUSTOMER (own orders only), STAFF and managers. The AI agent calls this on a
+     * customer's behalf — it can never cancel directly.
+     */
+    @PostMapping("/{orderId}/cancel-request")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
+    @Operation(summary = "Request order cancellation (awaits manager approval)")
+    public ResponseEntity<Order> requestCancellation(
+            @PathVariable String orderId,
+            @RequestBody(required = false) Map<String, String> body,
+            HttpServletRequest request) {
+        String userType = StoreContextUtil.getUserTypeFromHeaders(request);
+        String userId = StoreContextUtil.getUserIdFromHeaders(request);
+
+        // Ownership check: a CUSTOMER may only request cancellation of their own order.
+        if ("CUSTOMER".equalsIgnoreCase(userType)) {
+            Order order = orderService.getOrderById(orderId);
+            if (order.getCustomerId() == null || !order.getCustomerId().equals(userId)) {
+                log.warn("Ownership violation: customer {} attempted to request cancellation of order {} (owner={})",
+                        userId, orderId, order.getCustomerId());
+                throw new AccessDeniedException("Cannot request cancellation of an order you do not own");
+            }
+        }
+
+        String reason = body != null ? body.get("reason") : null;
+        String requestedBy = (userId != null && !userId.isBlank()) ? userId : userType;
+        return ResponseEntity.ok(orderService.requestCancellation(orderId, reason, requestedBy));
+    }
+
+    /**
+     * POST /api/orders/{orderId}/cancel-request/approve — manager approves a pending
+     * cancellation request, performing the real cancellation.
+     */
+    @PostMapping("/{orderId}/cancel-request/approve")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Approve a pending cancellation request (manager only)")
+    public ResponseEntity<Order> approveCancellationRequest(@PathVariable String orderId) {
+        return ResponseEntity.ok(orderService.approveCancellationRequest(orderId));
+    }
+
+    /**
+     * POST /api/orders/{orderId}/cancel-request/reject — manager rejects a pending
+     * cancellation request, clearing the flag; the order continues normally.
+     */
+    @PostMapping("/{orderId}/cancel-request/reject")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Reject a pending cancellation request (manager only)")
+    public ResponseEntity<Order> rejectCancellationRequest(
+            @PathVariable String orderId,
+            @RequestBody(required = false) Map<String, String> body) {
+        String rejectionReason = body != null ? body.get("reason") : null;
+        return ResponseEntity.ok(orderService.rejectCancellationRequest(orderId, rejectionReason));
     }
 
     // ── PAYMENT STATUS (inter-service, called by payment-service) ─────────────────
@@ -392,6 +451,12 @@ public class OrderController {
         }
         orderService.anonymizeCustomerOrders(customerId);
         return ResponseEntity.ok().build();
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, String>> handleAccessDenied(AccessDeniedException ex) {
+        log.warn("Access denied on order request: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
     }
 
     @ExceptionHandler(RuntimeException.class)
