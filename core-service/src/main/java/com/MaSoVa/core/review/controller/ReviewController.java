@@ -1,5 +1,6 @@
 package com.MaSoVa.core.review.controller;
 
+import com.MaSoVa.core.review.dto.request.CreateComplaintRequest;
 import com.MaSoVa.core.review.dto.request.CreateResponseRequest;
 import com.MaSoVa.core.review.dto.request.CreateReviewRequest;
 import com.MaSoVa.core.review.dto.request.FlagReviewRequest;
@@ -96,6 +97,40 @@ public class ReviewController {
             return ResponseEntity.ok(reviewService.getReviewsByCustomerId(entityId, PageRequest.of(page, size, Sort.by("createdAt").descending())));
         }
         return ResponseEntity.ok(reviewService.getRecentReviews(PageRequest.of(page, size)));
+    }
+
+    /**
+     * POST /api/reviews/complaints — submit a complaint pending manager approval (Task 4).
+     * Used by the AI support agent and customer apps. Complaints are stored as reviews in
+     * PENDING status and do not become visible until a manager approves them.
+     */
+    @PostMapping("/complaints")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Submit a complaint (pending manager approval)")
+    public ResponseEntity<?> createComplaint(
+            @Valid @RequestBody CreateComplaintRequest request,
+            @RequestHeader(value = "X-User-ID", required = false) String userIdHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String userIdAlt,
+            @RequestHeader(value = "X-Customer-Id", required = false) String customerIdHeader,
+            @RequestHeader(value = "X-User-Name", required = false) String customerName) {
+        String customerId = resolveCustomerId(userIdHeader, userIdAlt, customerIdHeader, request.getCustomerId());
+        if (customerId == null || customerId.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Customer identity required"));
+        }
+        if (request.getCustomerId() != null && !request.getCustomerId().isBlank()
+                && !request.getCustomerId().equals(customerId)) {
+            log.warn("Complaint customerId mismatch: header={}, body={}", customerId, request.getCustomerId());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "customerId does not match authenticated identity"));
+        }
+        try {
+            String resolvedName = (customerName != null && !customerName.isBlank()) ? customerName : customerId;
+            Review review = reviewService.createComplaint(request, customerId, resolvedName);
+            return ResponseEntity.status(HttpStatus.CREATED).body(review);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping
@@ -269,5 +304,20 @@ public class ReviewController {
     @Operation(summary = "Get response templates")
     public ResponseEntity<Map<ReviewResponse.ResponseType, String>> getResponseTemplates() {
         return ResponseEntity.ok(responseService.getAllTemplates());
+    }
+
+    /** Prefer gateway-injected identity headers; fall back to body only when no header present. */
+    private static String resolveCustomerId(String userIdHeader, String userIdAlt,
+                                            String customerIdHeader, String bodyCustomerId) {
+        if (userIdHeader != null && !userIdHeader.isBlank()) {
+            return userIdHeader;
+        }
+        if (userIdAlt != null && !userIdAlt.isBlank()) {
+            return userIdAlt;
+        }
+        if (customerIdHeader != null && !customerIdHeader.isBlank()) {
+            return customerIdHeader;
+        }
+        return bodyCustomerId;
     }
 }

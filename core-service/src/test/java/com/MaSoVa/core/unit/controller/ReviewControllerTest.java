@@ -97,6 +97,30 @@ class ReviewControllerTest extends BaseServiceTest {
     }
 
     @Test
+    @DisplayName("POST /api/reviews/complaints creates pending complaint and returns 201")
+    void createComplaint_returns201() throws Exception {
+        Review pending = buildReview("complaint-1");
+        pending.setStatus(Review.ReviewStatus.PENDING);
+        when(reviewService.createComplaint(any(), anyString(), anyString())).thenReturn(pending);
+
+        mockMvc.perform(post("/api/reviews/complaints")
+                .header("X-Customer-Id", "cust-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"orderId\":\"ord-1\",\"description\":\"Food arrived cold and late\",\"type\":\"COMPLAINT\"}"))
+            .andExpect(status().isCreated());
+    }
+
+    @Test
+    @DisplayName("POST /api/reviews/complaints returns 403 when body customerId mismatches header")
+    void createComplaint_mismatchedCustomerId_returns403() throws Exception {
+        mockMvc.perform(post("/api/reviews/complaints")
+                .header("X-Customer-Id", "cust-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"orderId\":\"ord-1\",\"customerId\":\"other-cust\",\"description\":\"Food arrived cold and late\",\"type\":\"COMPLAINT\"}"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
     @DisplayName("POST /api/reviews creates review and returns 201")
     void createReview_returns201() throws Exception {
         when(reviewService.createReview(any(), anyString(), anyString())).thenReturn(buildReview("rev-1"));

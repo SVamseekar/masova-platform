@@ -1,5 +1,6 @@
 package com.MaSoVa.core.review.service;
 
+import com.MaSoVa.core.review.dto.request.CreateComplaintRequest;
 import com.MaSoVa.core.review.dto.request.CreateReviewRequest;
 import com.MaSoVa.core.review.entity.Review;
 import com.MaSoVa.core.review.repository.ReviewRepository;
@@ -80,6 +81,44 @@ public class ReviewService {
         review = reviewRepository.save(review);
         log.info("Review created successfully with ID: {}", review.getId());
 
+        return review;
+    }
+
+    /**
+     * Record a customer complaint as a review in PENDING status (security remediation Task 4).
+     * No complaint is visible or actionable until a manager approves it via moderation.
+     */
+    @Transactional
+    public Review createComplaint(CreateComplaintRequest request, String customerId, String customerName) {
+        log.info("Recording complaint for order: {} by customer: {}", request.getOrderId(), customerId);
+
+        reviewRepository.findByOrderIdAndCustomerIdAndIsDeletedFalse(request.getOrderId(), customerId)
+                .ifPresent(existing -> {
+                    if (existing.getStatus() == Review.ReviewStatus.PENDING) {
+                        throw new IllegalStateException("A complaint for this order is already pending manager review");
+                    }
+                    throw new IllegalStateException("You have already submitted feedback for this order");
+                });
+
+        Review.SentimentType sentiment = sentimentAnalysisService.analyzeSentiment(request.getDescription());
+        Double sentimentScore = sentimentAnalysisService.calculateSentimentScore(request.getDescription());
+
+        Review review = Review.builder()
+                .orderId(request.getOrderId())
+                .customerId(customerId)
+                .customerName(customerName)
+                .overallRating(1)
+                .comment(request.getDescription())
+                .isAnonymous(false)
+                .isVerifiedPurchase(true)
+                .status(Review.ReviewStatus.PENDING)
+                .sentiment(sentiment)
+                .sentimentScore(sentimentScore)
+                .isDeleted(false)
+                .build();
+
+        review = reviewRepository.save(review);
+        log.info("Complaint recorded as PENDING review with ID: {}", review.getId());
         return review;
     }
 
