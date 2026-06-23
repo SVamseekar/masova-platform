@@ -5,34 +5,8 @@ import { selectCartCurrency, selectCartLocale } from '../store/slices/cartSlice'
 import { formatMoney } from '../utils/currency';
 import { format } from 'date-fns';
 import { createCard, createButtonVariant } from '../styles/neumorphic-utils';
-import { colors, shadows } from '../styles/design-tokens';
-
-interface ReceiptItem {
-  itemName: string;
-  quantity: number;
-  price: number;
-  specialInstructions?: string;
-}
-
-interface ReceiptData {
-  orderNumber: string;
-  orderDate: string;
-  items: ReceiptItem[];
-  subtotal: number;
-  tax: number;
-  deliveryFee: number;
-  total: number;
-  paymentMethod: string;
-  paymentStatus: string;
-  customerName?: string;
-  customerPhone?: string;
-  deliveryAddress?: string;
-  tableNumber?: string;
-  orderType: string;
-  storeName?: string;
-  storeAddress?: string;
-  storePhone?: string;
-}
+import { colors } from '../styles/design-tokens';
+import { generateReceiptHTML, type ReceiptData } from '../utils/receiptHtml';
 
 interface ReceiptGeneratorProps {
   open: boolean;
@@ -69,8 +43,7 @@ export default function ReceiptGenerator({ open, onClose, receiptData }: Receipt
   };
 
   const handleDownloadPDF = () => {
-    // Create a simple HTML receipt for download
-    const receiptHTML = generateReceiptHTML();
+    const receiptHTML = generateReceiptHTML(receiptData, fmt);
     const blob = new Blob([receiptHTML], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -80,154 +53,6 @@ export default function ReceiptGenerator({ open, onClose, receiptData }: Receipt
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  };
-
-  const generateReceiptHTML = () => {
-    return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Receipt - Order #${orderNumber}</title>
-  <style>
-    body {
-      font-family: 'Courier New', monospace;
-      max-width: 400px;
-      margin: 20px auto;
-      padding: 20px;
-      background: white;
-    }
-    .header {
-      text-align: center;
-      margin-bottom: 20px;
-      border-bottom: 2px dashed #000;
-      padding-bottom: 10px;
-    }
-    .store-name {
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
-    .info-section {
-      margin: 15px 0;
-      padding: 10px 0;
-      border-bottom: 1px solid #ddd;
-    }
-    .items {
-      margin: 15px 0;
-    }
-    .item {
-      margin: 10px 0;
-    }
-    .item-header {
-      display: flex;
-      justify-content: space-between;
-      font-weight: bold;
-    }
-    .item-details {
-      font-size: 12px;
-      color: #666;
-      margin-left: 20px;
-    }
-    .totals {
-      margin-top: 15px;
-      border-top: 2px solid #000;
-      padding-top: 10px;
-    }
-    .total-row {
-      display: flex;
-      justify-content: space-between;
-      margin: 5px 0;
-    }
-    .grand-total {
-      font-size: 18px;
-      font-weight: bold;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 2px solid #000;
-    }
-    .footer {
-      text-align: center;
-      margin-top: 20px;
-      padding-top: 15px;
-      border-top: 2px dashed #000;
-      font-size: 12px;
-    }
-    @media print {
-      body { margin: 0; padding: 10px; }
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <div class="store-name">${storeName}</div>
-    <div>${storeAddress}</div>
-    <div>Phone: ${storePhone}</div>
-  </div>
-
-  <div class="info-section">
-    <div><strong>Order #:</strong> ${orderNumber}</div>
-    <div><strong>Date:</strong> ${format(new Date(orderDate), 'dd/MM/yyyy hh:mm a')}</div>
-    <div><strong>Type:</strong> ${orderType.replace('_', ' ')}</div>
-    ${tableNumber ? `<div><strong>Table:</strong> #${tableNumber}</div>` : ''}
-  </div>
-
-  ${customerName || customerPhone ? `
-  <div class="info-section">
-    ${customerName ? `<div><strong>Customer:</strong> ${customerName}</div>` : ''}
-    ${customerPhone ? `<div><strong>Phone:</strong> ${customerPhone}</div>` : ''}
-    ${deliveryAddress ? `<div><strong>Address:</strong> ${deliveryAddress}</div>` : ''}
-  </div>
-  ` : ''}
-
-  <div class="items">
-    <div style="font-weight: bold; margin-bottom: 10px;">ITEMS:</div>
-    ${items.map(item => `
-      <div class="item">
-        <div class="item-header">
-          <span>${item.quantity} × ${item.itemName}</span>
-          <span>${fmt(item.quantity * item.price)}</span>
-        </div>
-        <div class="item-details">@ ${fmt(item.price)} each</div>
-        ${item.specialInstructions ? `<div class="item-details">Note: ${item.specialInstructions}</div>` : ''}
-      </div>
-    `).join('')}
-  </div>
-
-  <div class="totals">
-    <div class="total-row">
-      <span>Subtotal:</span>
-      <span>${fmt(subtotal)}</span>
-    </div>
-    <div class="total-row">
-      <span>Tax (5%):</span>
-      <span>${fmt(tax)}</span>
-    </div>
-    ${deliveryFee > 0 ? `
-    <div class="total-row">
-      <span>Delivery Fee:</span>
-      <span>${fmt(deliveryFee)}</span>
-    </div>
-    ` : ''}
-    <div class="total-row grand-total">
-      <span>TOTAL:</span>
-      <span>${fmt(total)}</span>
-    </div>
-  </div>
-
-  <div class="info-section">
-    <div><strong>Payment Method:</strong> ${paymentMethod}</div>
-    <div><strong>Payment Status:</strong> ${paymentStatus}</div>
-  </div>
-
-  <div class="footer">
-    <div>Thank you for your order!</div>
-    <div>Please visit us again</div>
-    <div style="margin-top: 10px;">Generated on ${format(new Date(), 'dd/MM/yyyy hh:mm a')}</div>
-  </div>
-</body>
-</html>
-    `;
   };
 
   return (

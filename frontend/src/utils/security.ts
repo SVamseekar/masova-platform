@@ -6,6 +6,18 @@
 import DOMPurify from 'dompurify';
 
 /**
+ * Escape text for safe interpolation into raw HTML templates (attributes/text nodes).
+ */
+export function escapeHTML(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
  * Sanitize HTML to prevent XSS attacks
  */
 export function sanitizeHTML(dirty: string): string {
