@@ -116,16 +116,18 @@ public class AuthController {
             @RequestBody Map<String, String> request,
             HttpServletRequest httpRequest) {
         String pin = request.get("pin");
-        String clientIp = getClientIp(httpRequest);
 
         if (pin == null || pin.length() != 5) {
             return ResponseEntity.badRequest().body(Map.of("error", "Invalid PIN format. PIN must be 5 digits."));
         }
 
+        String clientIp = resolveClientIp(httpRequest);
+        String lockoutKey = pinLockoutKey(pin, clientIp);
+
         try {
-            Integer attempts = pinAttempts.getUnchecked(clientIp);
+            Integer attempts = pinAttempts.getUnchecked(lockoutKey);
             if (attempts >= 5) {
-                log.warn("PIN validation blocked for IP {} — too many attempts ({})", clientIp, attempts);
+                log.warn("PIN validation blocked for key {} — too many attempts ({})", lockoutKey, attempts);
                 return ResponseEntity.status(429).body(Map.of(
                         "error", "Too many failed attempts. Please try again in 15 minutes.",
                         "lockoutMinutes", 15));
@@ -134,21 +136,21 @@ public class AuthController {
             com.MaSoVa.shared.entity.User user = userService.findUserByPIN(pin);
 
             if (user == null || !user.isEmployee()) {
-                pinAttempts.put(clientIp, attempts + 1);
-                log.warn("Invalid PIN attempt from IP {}: {} total attempts", clientIp, attempts + 1);
+                pinAttempts.put(lockoutKey, attempts + 1);
+                log.warn("Invalid PIN attempt for key {}: {} total attempts", lockoutKey, attempts + 1);
                 return ResponseEntity.status(401).body(Map.of(
                         "error", "Invalid PIN",
                         "attemptsRemaining", Math.max(0, 5 - (attempts + 1))));
             }
 
             if (!user.isActive()) {
-                pinAttempts.put(clientIp, attempts + 1);
-                log.warn("PIN validation failed for inactive account from IP {}", clientIp);
+                pinAttempts.put(lockoutKey, attempts + 1);
+                log.warn("PIN validation failed for inactive account (key {})", lockoutKey);
                 return ResponseEntity.status(401).body(Map.of("error", "Employee account is inactive"));
             }
 
-            pinAttempts.invalidate(clientIp);
-            log.info("PIN validated successfully for user {} from IP {}", user.getId(), clientIp);
+            pinAttempts.invalidate(lockoutKey);
+            log.info("PIN validated successfully for user {} (key {})", user.getId(), lockoutKey);
 
             return ResponseEntity.ok(Map.of(
                     "userId", user.getId(),
@@ -163,15 +165,17 @@ public class AuthController {
         }
     }
 
-    private String getClientIp(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-        String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty()) {
-            return xRealIp;
-        }
-        return request.getRemoteAddr();
+    /**
+     * Use the socket peer address only — X-Forwarded-For is client-spoofable unless
+     * the gateway is the sole trusted proxy (security remediation Task 10).
+     */
+    static String resolveClientIp(HttpServletRequest request) {
+        String remoteAddr = request.getRemoteAddr();
+        return (remoteAddr != null && !remoteAddr.isBlank()) ? remoteAddr : "unknown";
+    }
+
+    /** Key lockout by targeted PIN plus peer IP so rotating spoofed headers cannot reset the bucket. */
+    static String pinLockoutKey(String pin, String clientIp) {
+        return pin + "|" + clientIp;
     }
 }
