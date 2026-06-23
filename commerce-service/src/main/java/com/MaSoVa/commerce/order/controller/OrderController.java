@@ -129,8 +129,9 @@ public class OrderController {
      */
     @GetMapping("/track/{orderId}")
     @Operation(summary = "Track order (public, no auth)")
-    public ResponseEntity<Order> trackOrder(@PathVariable String orderId) {
-        return ResponseEntity.ok(orderService.getOrderById(orderId));
+    public ResponseEntity<com.MaSoVa.commerce.order.dto.OrderTrackingDTO> trackOrder(@PathVariable String orderId) {
+        return ResponseEntity.ok(
+                com.MaSoVa.commerce.order.dto.OrderTrackingDTO.fromOrder(orderService.getOrderById(orderId)));
     }
 
     /**

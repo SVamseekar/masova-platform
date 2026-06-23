@@ -65,11 +65,11 @@ public class UserService {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private GoogleOAuthTokenVerifier googleOAuthTokenVerifier;
+
     @Value("${customer.service.url:http://localhost:8082}")
     private String customerServiceUrl;
-
-    @Value("${google.oauth.client-id:}")
-    private String googleOAuthClientId;
 
     private static final ZoneId IST = ZoneId.of("Asia/Kolkata");
     
@@ -347,19 +347,13 @@ public class UserService {
     public LoginResponse loginWithGoogle(String idToken) {
         logger.info("Google Sign-In attempt");
 
-        Map<String, Object> tokenInfo = verifyGoogleIdToken(idToken);
+        Map<String, Object> tokenInfo = googleOAuthTokenVerifier.verify(idToken);
+        GoogleOAuthTokenVerifier.validateEmailVerified(tokenInfo);
         String googleSub = (String) tokenInfo.get("sub");
         String email = (String) tokenInfo.get("email");
 
         if (googleSub == null || email == null) {
             throw new RuntimeException("Invalid Google ID token: missing sub or email");
-        }
-
-        if (googleOAuthClientId != null && !googleOAuthClientId.isEmpty()) {
-            String aud = (String) tokenInfo.get("aud");
-            if (!googleOAuthClientId.equals(aud)) {
-                throw new RuntimeException("Google ID token audience mismatch");
-            }
         }
 
         Optional<User> existingByEmail = userRepository.findByPersonalInfoEmail(email);
@@ -410,20 +404,14 @@ public class UserService {
     public LoginResponse registerWithGoogle(String idToken) {
         logger.info("Google Register attempt");
 
-        Map<String, Object> tokenInfo = verifyGoogleIdToken(idToken);
+        Map<String, Object> tokenInfo = googleOAuthTokenVerifier.verify(idToken);
+        GoogleOAuthTokenVerifier.validateEmailVerified(tokenInfo);
         String googleSub = (String) tokenInfo.get("sub");
         String email = (String) tokenInfo.get("email");
         String name = (String) tokenInfo.get("name");
 
         if (googleSub == null || email == null) {
             throw new RuntimeException("Invalid Google ID token: missing sub or email");
-        }
-
-        if (googleOAuthClientId != null && !googleOAuthClientId.isEmpty()) {
-            String aud = (String) tokenInfo.get("aud");
-            if (!googleOAuthClientId.equals(aud)) {
-                throw new RuntimeException("Google ID token audience mismatch");
-            }
         }
 
         Optional<User> existingByEmail = userRepository.findByPersonalInfoEmail(email);
@@ -437,7 +425,7 @@ public class UserService {
         User.PersonalInfo personalInfo = new User.PersonalInfo();
         personalInfo.setName(name != null ? name : email.split("@")[0]);
         personalInfo.setEmail(email);
-        personalInfo.setPhone("0000000000"); // placeholder; user must update in profile
+        personalInfo.setPhone(generateGoogleRegistrationPhone(googleSub, email));
         personalInfo.setPasswordHash(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));
         user.setPersonalInfo(personalInfo);
 
@@ -476,19 +464,13 @@ public class UserService {
         return new LoginResponse(accessToken, refreshToken, mapToUserResponse(user));
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> verifyGoogleIdToken(String idToken) {
-        String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken;
-        try {
-            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                throw new RuntimeException("Google token verification failed");
-            }
-            return response.getBody();
-        } catch (org.springframework.web.client.RestClientException e) {
-            logger.error("Google tokeninfo request failed: {}", e.getMessage());
-            throw new RuntimeException("Google token verification failed: " + e.getMessage());
-        }
+    /**
+     * Unique temporary phone for Google registration — passes {@code ^[6-9]\d{9}$} until
+     * the customer updates their profile (Task 16).
+     */
+    static String generateGoogleRegistrationPhone(String googleSub, String email) {
+        long suffix = Math.abs((long) (googleSub + email).hashCode()) % 1_000_000_000L;
+        return "9" + String.format("%09d", suffix);
     }
 
     public void logout(String userId, String accessToken) {

@@ -15,6 +15,11 @@ public class SecurityConfig extends SecurityConfigurationBase {
         super(tokenProvider);
     }
 
+    /** Package-visible for unit tests (Task 12). */
+    String[] getPublicEndpointsForTest() {
+        return getPublicEndpoints();
+    }
+
     @Override
     protected String[] getPublicEndpoints() {
         return new String[]{
@@ -31,13 +36,9 @@ public class SecurityConfig extends SecurityConfigurationBase {
             "/api/menu/recipes/**",
 
             // ── Order public endpoints ─────────────────────────────────────
-            // WebSocket for real-time KDS
+            // WebSocket for real-time KDS (auth enforced at STOMP subscribe layer)
             "/ws/**",
             "/api/ws/**",
-
-            // Kitchen Display System
-            "/api/orders/kitchen",
-            "/api/orders/kitchen/**",
 
             // Public order tracking (for email links)
             "/api/orders/track/**",
