@@ -14,6 +14,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Service for Proof of Delivery (POD) operations
@@ -23,6 +24,10 @@ import java.util.Optional;
 public class ProofOfDeliveryService {
 
     private static final Logger log = LoggerFactory.getLogger(ProofOfDeliveryService.class);
+
+    static final int MAX_OTP_VERIFY_ATTEMPTS = 5;
+
+    private final ConcurrentHashMap<String, Integer> otpFailedAttempts = new ConcurrentHashMap<>();
 
     private final DeliveryTrackingRepository deliveryTrackingRepository;
     private final OrderServiceClient orderServiceClient;
@@ -66,11 +71,19 @@ public class ProofOfDeliveryService {
     public DeliveryVerificationResponse verifyDeliveryOtp(DeliveryVerificationRequest request) {
         log.info("Verifying delivery OTP for order: {}", request.getOrderId());
 
+        String orderId = request.getOrderId();
+        int attempts = otpFailedAttempts.getOrDefault(orderId, 0);
+        if (attempts >= MAX_OTP_VERIFY_ATTEMPTS) {
+            log.warn("OTP verification locked for order {} after {} failed attempts", orderId, attempts);
+            return buildErrorResponse(
+                    orderId, "Too many failed OTP attempts. Please request a new OTP.");
+        }
+
         // Get order details
-        Map<String, Object> order = orderServiceClient.getOrderDetails(request.getOrderId());
+        Map<String, Object> order = orderServiceClient.getOrderDetails(orderId);
 
         if (order == null || order.isEmpty()) {
-            return buildErrorResponse(request.getOrderId(), "Order not found");
+            return buildErrorResponse(orderId, "Order not found");
         }
 
         String storedOtp = (String) order.get("deliveryOtp");
@@ -78,8 +91,9 @@ public class ProofOfDeliveryService {
 
         // Check if OTP matches
         if (storedOtp == null || !storedOtp.equals(request.getOtp())) {
-            log.warn("Invalid OTP for order: {}", request.getOrderId());
-            return buildErrorResponse(request.getOrderId(), "Invalid OTP");
+            otpFailedAttempts.put(orderId, attempts + 1);
+            log.warn("Invalid OTP for order: {} (attempt {}/{})", orderId, attempts + 1, MAX_OTP_VERIFY_ATTEMPTS);
+            return buildErrorResponse(orderId, "Invalid OTP");
         }
 
         // Check if OTP is expired
@@ -91,6 +105,8 @@ public class ProofOfDeliveryService {
                 return buildErrorResponse(request.getOrderId(), "OTP has expired. Please request a new one.");
             }
         }
+
+        otpFailedAttempts.remove(orderId);
 
         // Mark delivery as verified
         return completeDeliveryVerification(request, orderNumber, "OTP");
@@ -189,6 +205,7 @@ public class ProofOfDeliveryService {
             throw new RuntimeException("OTP can only be regenerated for dispatched orders");
         }
 
+        otpFailedAttempts.remove(orderId);
         return generateDeliveryOtp(orderId);
     }
 

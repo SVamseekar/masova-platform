@@ -31,8 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.security.SecureRandom;
 import java.util.List;
-import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.Comparator;
 
@@ -59,7 +59,7 @@ public class OrderService {
     private final EuVatEngine euVatEngine;
     private final AggregatorService aggregatorService;
     private final com.MaSoVa.commerce.fiscal.FiscalSigningService fiscalSigningService;
-    private final Random random = new Random();
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     public OrderService(OrderRepository orderRepository,
                        OrderJpaRepository orderJpaRepository,
@@ -452,7 +452,7 @@ public class OrderService {
 
         // Auto-generate delivery OTP when DELIVERY order is dispatched (Gap #12)
         if (nextStatus == OrderStatus.DISPATCHED && order.getOrderType() == Order.OrderType.DELIVERY) {
-            String otp = String.format("%04d", new java.util.Random().nextInt(10000));
+            String otp = generateDeliveryOtpCode();
             LocalDateTime now = LocalDateTime.now();
             order.setDeliveryOtp(otp);
             order.setDeliveryOtpGeneratedAt(now);
@@ -769,8 +769,13 @@ public class OrderService {
 
     private String generateOrderNumber() {
         String timestamp = String.valueOf(System.currentTimeMillis());
-        String randomNum = String.format("%04d", random.nextInt(10000));
+        String randomNum = String.format("%04d", SECURE_RANDOM.nextInt(10000));
         return "ORD" + timestamp.substring(timestamp.length() - 6) + randomNum;
+    }
+
+    /** 4-digit delivery OTP using SecureRandom (security remediation Task 11). */
+    static String generateDeliveryOtpCode() {
+        return String.format("%04d", SECURE_RANDOM.nextInt(10000));
     }
 
     /**
