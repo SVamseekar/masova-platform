@@ -4,6 +4,7 @@ import com.MaSoVa.logistics.delivery.client.UserServiceClient;
 import com.MaSoVa.logistics.delivery.dto.*;
 import com.MaSoVa.logistics.delivery.entity.DeliveryTracking;
 import com.MaSoVa.logistics.delivery.service.*;
+import com.MaSoVa.shared.util.StoreContextUtil;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -78,16 +79,6 @@ public class DeliveryController {
         this.performanceService = performanceService;
     }
 
-    private String getStoreIdFromHeaders(HttpServletRequest request) {
-        String userType = request.getHeader("X-User-Type");
-        String selectedStoreId = request.getHeader("X-Selected-Store-Id");
-        String userStoreId = request.getHeader("X-User-Store-Id");
-        if ("MANAGER".equals(userType) || "CUSTOMER".equals(userType)) {
-            return selectedStoreId != null ? selectedStoreId : userStoreId;
-        }
-        return userStoreId;
-    }
-
     // ── DISPATCH ──────────────────────────────────────────────────────────────────
 
     /**
@@ -100,7 +91,7 @@ public class DeliveryController {
     public ResponseEntity<AutoDispatchResponse> dispatch(
             @Valid @RequestBody AutoDispatchRequest request,
             HttpServletRequest httpRequest) {
-        String authorizedStoreId = getStoreIdFromHeaders(httpRequest);
+        String authorizedStoreId = StoreContextUtil.getStoreIdFromHeaders(httpRequest);
         if (!authorizedStoreId.equals(request.getStoreId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
@@ -216,7 +207,7 @@ public class DeliveryController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             HttpServletRequest request) {
-        String storeId = getStoreIdFromHeaders(request);
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
         LocalDate from = startDate != null ? startDate : LocalDate.now().minusDays(30);
         LocalDate to = endDate != null ? endDate : LocalDate.now();
         return ResponseEntity.ok(performanceService.getDriverPerformance(driverId, storeId, from, to));
@@ -335,7 +326,7 @@ public class DeliveryController {
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Today's delivery metrics for store")
     public ResponseEntity<DeliveryMetricsResponse> getMetrics(HttpServletRequest request) {
-        return ResponseEntity.ok(performanceService.getTodayMetrics(getStoreIdFromHeaders(request)));
+        return ResponseEntity.ok(performanceService.getTodayMetrics(StoreContextUtil.getStoreIdFromHeaders(request)));
     }
 
     // ── AVAILABLE DRIVERS ─────────────────────────────────────────────────────────

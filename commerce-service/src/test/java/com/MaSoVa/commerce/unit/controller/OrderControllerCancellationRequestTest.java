@@ -64,7 +64,7 @@ class OrderControllerCancellationRequestTest extends BaseServiceTest {
     @DisplayName("owning customer can request cancellation")
     void owningCustomerCanRequest() throws Exception {
         Order order = buildOrder("o1", "cust-1");
-        when(orderService.getOrderById("o1")).thenReturn(order);
+        when(orderService.assertCustomerOwnsOrder("o1", "cust-1")).thenReturn(order);
         when(orderService.requestCancellation(eq("o1"), any(), eq("cust-1"))).thenReturn(order);
 
         mockMvc.perform(post("/api/orders/o1/cancel-request")
@@ -80,8 +80,8 @@ class OrderControllerCancellationRequestTest extends BaseServiceTest {
     @Test
     @DisplayName("non-owning customer is denied (403) and service is not called")
     void nonOwningCustomerDenied() throws Exception {
-        Order order = buildOrder("o1", "owner-cust");
-        when(orderService.getOrderById("o1")).thenReturn(order);
+        when(orderService.assertCustomerOwnsOrder("o1", "intruder-cust"))
+                .thenThrow(new org.springframework.security.access.AccessDeniedException("Cannot access an order you do not own"));
 
         mockMvc.perform(post("/api/orders/o1/cancel-request")
                 .header("X-User-Type", "CUSTOMER")
@@ -94,20 +94,38 @@ class OrderControllerCancellationRequestTest extends BaseServiceTest {
     }
 
     @Test
-    @DisplayName("agent (no ownership header match) requesting on a customer order goes through with no direct cancel")
+    @DisplayName("agent on behalf of owning customer routes to cancel-request, not direct cancel")
     void agentRequestRoutesToRequestNotCancel() throws Exception {
         Order order = buildOrder("o1", "cust-1");
-        when(orderService.requestCancellation(eq("o1"), any(), any())).thenReturn(order);
+        when(orderService.assertCustomerOwnsOrder("o1", "cust-1")).thenReturn(order);
+        when(orderService.requestCancellation(eq("o1"), any(), eq("cust-1"))).thenReturn(order);
 
         mockMvc.perform(post("/api/orders/o1/cancel-request")
                 .header("X-User-Type", "AGENT")
-                .header("X-User-Id", "agent-bot")
+                .header("X-User-Id", "cust-1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"reason\":\"customer asked\"}"))
             .andExpect(status().isOk());
 
-        verify(orderService).requestCancellation(eq("o1"), eq("customer asked"), eq("agent-bot"));
+        verify(orderService).assertCustomerOwnsOrder("o1", "cust-1");
+        verify(orderService).requestCancellation(eq("o1"), eq("customer asked"), eq("cust-1"));
         verify(orderService, never()).cancelOrder(any(), any());
+    }
+
+    @Test
+    @DisplayName("agent acting for non-owner customer is denied (403)")
+    void agentNonOwnerDenied() throws Exception {
+        when(orderService.assertCustomerOwnsOrder("o1", "other-cust"))
+                .thenThrow(new org.springframework.security.access.AccessDeniedException("Cannot access an order you do not own"));
+
+        mockMvc.perform(post("/api/orders/o1/cancel-request")
+                .header("X-User-Type", "AGENT")
+                .header("X-User-Id", "other-cust")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"reason\":\"customer asked\"}"))
+            .andExpect(status().isForbidden());
+
+        verify(orderService, never()).requestCancellation(any(), any(), any());
     }
 
     @Test

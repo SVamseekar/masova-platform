@@ -25,6 +25,7 @@ import com.MaSoVa.shared.messaging.events.OrderStatusChangedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -297,6 +298,23 @@ public class OrderService {
     public Order getOrderById(String orderId) {
         return orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+    }
+
+    /**
+     * Verify that the requesting customer (or agent acting on their behalf) owns the order.
+     * Security remediation Task 6 — throws 403 when {@code customerId} does not match
+     * {@code order.customerId}.
+     */
+    public Order assertCustomerOwnsOrder(String orderId, String customerId) {
+        Order order = getOrderById(orderId);
+        if (customerId == null || customerId.isBlank()
+                || order.getCustomerId() == null
+                || !order.getCustomerId().equals(customerId)) {
+            log.warn("Ownership violation: caller {} attempted to access order {} (owner={})",
+                    customerId, orderId, order.getCustomerId());
+            throw new AccessDeniedException("Cannot access an order you do not own");
+        }
+        return order;
     }
 
     public Order getOrderByNumber(String orderNumber) {

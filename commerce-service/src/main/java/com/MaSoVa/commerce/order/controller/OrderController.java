@@ -7,6 +7,7 @@ import com.MaSoVa.commerce.order.entity.Order;
 import com.MaSoVa.commerce.order.entity.OrderItem;
 import com.MaSoVa.commerce.order.entity.QualityCheckpoint;
 import com.MaSoVa.commerce.order.service.OrderService;
+import com.MaSoVa.shared.util.StoreAccessValidator;
 import com.MaSoVa.shared.util.StoreContextUtil;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -79,6 +80,24 @@ public class OrderController {
         return userStoreId;
     }
 
+    /** CUSTOMER and AGENT callers are bound to order.customerId (Tasks 6–7). */
+    private static boolean requiresCustomerOwnership(String userType) {
+        return "CUSTOMER".equalsIgnoreCase(userType) || "AGENT".equalsIgnoreCase(userType);
+    }
+
+    private void enforceStaffStoreAccess(Order order, HttpServletRequest request) {
+        String userType = StoreContextUtil.getUserTypeFromHeaders(request);
+        if (!StoreAccessValidator.requiresStoreMembershipValidation(userType)) {
+            return;
+        }
+        String storeId = getStoreIdFromHeaders(request);
+        if (storeId != null && order.getStoreId() != null && !storeId.equals(order.getStoreId())) {
+            log.warn("Cross-store order access: userType={}, userStore={}, orderStore={}",
+                    userType, storeId, order.getStoreId());
+            throw new AccessDeniedException("Cannot access order from different store");
+        }
+    }
+
     // ── CREATE ────────────────────────────────────────────────────────────────────
 
     @PostMapping
@@ -94,8 +113,15 @@ public class OrderController {
     @GetMapping("/{orderId}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF', 'DRIVER')")
     @Operation(summary = "Get order by ID")
-    public ResponseEntity<Order> getOrder(@PathVariable String orderId) {
-        return ResponseEntity.ok(orderService.getOrderById(orderId));
+    public ResponseEntity<Order> getOrder(@PathVariable String orderId, HttpServletRequest request) {
+        String userType = StoreContextUtil.getUserTypeFromHeaders(request);
+        if (requiresCustomerOwnership(userType)) {
+            return ResponseEntity.ok(
+                    orderService.assertCustomerOwnsOrder(orderId, StoreContextUtil.getUserIdFromHeaders(request)));
+        }
+        Order order = orderService.getOrderById(orderId);
+        enforceStaffStoreAccess(order, request);
+        return ResponseEntity.ok(order);
     }
 
     /**
@@ -289,14 +315,9 @@ public class OrderController {
         String userType = StoreContextUtil.getUserTypeFromHeaders(request);
         String userId = StoreContextUtil.getUserIdFromHeaders(request);
 
-        // Ownership check: a CUSTOMER may only request cancellation of their own order.
-        if ("CUSTOMER".equalsIgnoreCase(userType)) {
-            Order order = orderService.getOrderById(orderId);
-            if (order.getCustomerId() == null || !order.getCustomerId().equals(userId)) {
-                log.warn("Ownership violation: customer {} attempted to request cancellation of order {} (owner={})",
-                        userId, orderId, order.getCustomerId());
-                throw new AccessDeniedException("Cannot request cancellation of an order you do not own");
-            }
+        // Ownership check: CUSTOMER and AGENT may only act on orders they own (Tasks 6–7).
+        if (requiresCustomerOwnership(userType)) {
+            orderService.assertCustomerOwnsOrder(orderId, userId);
         }
 
         String reason = body != null ? body.get("reason") : null;
