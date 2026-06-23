@@ -14,6 +14,16 @@ spring:
 server:
   port: 0
 
+jwt:
+  secret: test-secret-key-at-least-64-characters-long-for-hs512-algorithm-ok
+  access-token-expiration: 900000
+  refresh-token-expiration: 86400000
+
+razorpay:
+  key-id: rzp_test_fake_key_for_unit_tests_only
+  key-secret: fake_secret_for_tests_only_not_real
+  webhook-secret: whsec_fake_webhook_secret_for_tests
+
 logging:
   level:
     com.MaSoVa: DEBUG
