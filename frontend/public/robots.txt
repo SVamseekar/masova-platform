@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+Disallow: /manager
+Disallow: /kitchen
+Disallow: /driver
+Disallow: /pos
+Disallow: /staff-login
+Disallow: /customer-dashboard
+Disallow: /customer/
+Disallow: /checkout
+Disallow: /payment
+Disallow: /tracking
+Disallow: /live-tracking
+Disallow: /kiosk-setup
+
+Sitemap: https://masova.souravamseekar.com/sitemap.xml

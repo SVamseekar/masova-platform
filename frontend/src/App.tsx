@@ -13,6 +13,7 @@ import { TokenRefreshManager } from './components/auth/TokenRefreshManager';
 import { ConnectionMonitorProvider } from './components/common/ConnectionMonitorProvider';
 import { ChatWidget } from './components/chat/ChatWidget';
 import { GoogleAnalytics } from './components/GoogleAnalytics';
+import { AppSeo } from './components/seo/AppSeo';
 import { CustomerLayout } from './components/customer/CustomerLayout';
 
 // Lazy load components
@@ -88,6 +89,7 @@ const App: React.FC = () => {
           >
             <ErrorBoundary>
               <Router>
+                <AppSeo />
                 <div className="App">
                   <Suspense fallback={<AppLoader />}>
                     <Routes>
