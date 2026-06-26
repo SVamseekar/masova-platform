@@ -12,6 +12,7 @@ import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { TokenRefreshManager } from './components/auth/TokenRefreshManager';
 import { ConnectionMonitorProvider } from './components/common/ConnectionMonitorProvider';
 import { ChatWidget } from './components/chat/ChatWidget';
+import { GoogleAnalytics } from './components/GoogleAnalytics';
 import { CustomerLayout } from './components/customer/CustomerLayout';
 
 // Lazy load components
@@ -247,6 +248,7 @@ const App: React.FC = () => {
       </ThemeProvider>
       </ConnectionMonitorProvider>
     </Provider>
+      <GoogleAnalytics />
     </GoogleOAuthProvider>
   );
 };
