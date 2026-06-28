@@ -183,14 +183,17 @@ public class RefundService {
             throw new RuntimeException("Refund amount cannot exceed transaction amount");
         }
 
-        // Only money already refunded (PROCESSED) reduces what's available — pending requests do not.
+        // Money already refunded (PROCESSED) and amounts still awaiting manager approval
+        // (PENDING_APPROVAL) both reduce what's available, so concurrent pending requests
+        // can't jointly overcommit a transaction beyond its total.
         List<Refund> existingRefunds = refundRepository.findByTransactionId(request.getTransactionId());
-        BigDecimal totalRefunded = existingRefunds.stream()
-                .filter(r -> r.getStatus() == Refund.RefundStatus.PROCESSED)
+        BigDecimal totalCommitted = existingRefunds.stream()
+                .filter(r -> r.getStatus() == Refund.RefundStatus.PROCESSED
+                        || r.getStatus() == Refund.RefundStatus.PENDING_APPROVAL)
                 .map(Refund::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal availableForRefund = transaction.getAmount().subtract(totalRefunded);
+        BigDecimal availableForRefund = transaction.getAmount().subtract(totalCommitted);
         if (request.getAmount().compareTo(availableForRefund) > 0) {
             throw new RuntimeException("Refund amount exceeds available amount. Available: " + availableForRefund);
         }

@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -134,5 +135,46 @@ class OrderControllerOwnershipTest extends BaseServiceTest {
                 .header("X-User-Store-Id", "store-a")
                 .header("X-Selected-Store-Id", "store-a"))
             .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("CUSTOMER cannot list another customer's orders via ?customerId=")
+    void customerCannotListOtherCustomerOrders() throws Exception {
+        mockMvc.perform(get("/api/orders")
+                .param("customerId", "other-cust")
+                .header("X-User-Type", "CUSTOMER")
+                .header("X-User-Id", "cust-1"))
+            .andExpect(status().isForbidden());
+
+        verify(orderService, never()).getCustomerOrders(eq("other-cust"));
+    }
+
+    @Test
+    @DisplayName("CUSTOMER can list own orders via ?customerId=")
+    void customerCanListOwnOrders() throws Exception {
+        when(orderService.getCustomerOrders("cust-1")).thenReturn(List.of(buildOrder("o1", "cust-1", "store-a")));
+
+        mockMvc.perform(get("/api/orders")
+                .param("customerId", "cust-1")
+                .header("X-User-Type", "CUSTOMER")
+                .header("X-User-Id", "cust-1"))
+            .andExpect(status().isOk());
+
+        verify(orderService).getCustomerOrders("cust-1");
+    }
+
+    @Test
+    @DisplayName("MANAGER can list any customer's orders via ?customerId=")
+    void managerCanListAnyCustomerOrders() throws Exception {
+        when(orderService.getCustomerOrders("cust-1")).thenReturn(List.of(buildOrder("o1", "cust-1", "store-a")));
+
+        mockMvc.perform(get("/api/orders")
+                .param("customerId", "cust-1")
+                .header("X-User-Type", "MANAGER")
+                .header("X-User-Store-Id", "store-a")
+                .header("X-Selected-Store-Id", "store-a"))
+            .andExpect(status().isOk());
+
+        verify(orderService).getCustomerOrders("cust-1");
     }
 }

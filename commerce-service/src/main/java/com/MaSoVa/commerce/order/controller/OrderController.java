@@ -80,7 +80,12 @@ public class OrderController {
         return userStoreId;
     }
 
-    /** CUSTOMER and AGENT callers are bound to order.customerId (Tasks 6–7). */
+    /**
+     * CUSTOMER callers are bound to order.customerId (Tasks 6–7). "AGENT" is also accepted
+     * here for forward-compatibility with an X-User-Type: AGENT caller, but no such caller
+     * exists today — masova-support currently authenticates as MANAGER (see backend_tools.py),
+     * which is exempt from this binding and relies on its own @PreAuthorize role check instead.
+     */
     private static boolean requiresCustomerOwnership(String userType) {
         return "CUSTOMER".equalsIgnoreCase(userType) || "AGENT".equalsIgnoreCase(userType);
     }
@@ -163,6 +168,15 @@ public class OrderController {
             return ResponseEntity.ok(orderService.getKitchenQueue(resolvedStoreId));
         }
         if (customerId != null) {
+            String userType = StoreContextUtil.getUserTypeFromHeaders(request);
+            if (requiresCustomerOwnership(userType)) {
+                String callerId = StoreContextUtil.getUserIdFromHeaders(request);
+                if (callerId == null || !callerId.equals(customerId)) {
+                    log.warn("Cross-customer order list access attempt: caller={}, requestedCustomerId={}",
+                            callerId, customerId);
+                    throw new AccessDeniedException("Cannot access another customer's orders");
+                }
+            }
             return ResponseEntity.ok(orderService.getCustomerOrders(customerId));
         }
         if (search != null) {
