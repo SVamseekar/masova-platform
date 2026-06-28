@@ -14,6 +14,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -35,15 +36,19 @@ class GlobalExceptionHandlerTest {
     @Mock
     private HttpServletRequest request;
 
+    private MethodParameter methodParameter;
+
     @BeforeEach
     void setUp() {
+        methodParameter = new MethodParameter(
+                ReflectionUtils.findMethod(GlobalExceptionHandlerTest.class, "dummyMethod", String.class), 0);
         handler = new GlobalExceptionHandler();
         when(request.getRequestURI()).thenReturn("/api/test");
     }
 
-    /** Real MethodParameter (not a mock) — MethodArgumentNotValidException.getMessage() needs a real Executable. */
-    private MethodParameter dummyMethodParameter() throws NoSuchMethodException {
-        return new MethodParameter(GlobalExceptionHandlerTest.class.getDeclaredMethod("dummyMethodParameter"), -1);
+    @SuppressWarnings("unused")
+    private void dummyMethod(String arg) {
+        // used only to obtain a real MethodParameter for MethodArgumentNotValidException
     }
 
     // ---- Validation exception ----
@@ -54,12 +59,12 @@ class GlobalExceptionHandlerTest {
 
         @Test
         @DisplayName("Should return 400 BAD_REQUEST with validation error details")
-        void shouldReturn400_withFieldErrors() throws NoSuchMethodException {
+        void shouldReturn400_withFieldErrors() {
             BindingResult bindingResult = mock(BindingResult.class);
             FieldError fieldError = new FieldError("order", "quantity", "must be positive");
             when(bindingResult.getFieldErrors()).thenReturn(List.of(fieldError));
 
-            MethodArgumentNotValidException ex = new MethodArgumentNotValidException(dummyMethodParameter(), bindingResult);
+            MethodArgumentNotValidException ex = new MethodArgumentNotValidException(methodParameter, bindingResult);
 
             ResponseEntity<ErrorResponse> response = handler.handleValidationException(ex, request);
 
@@ -75,14 +80,14 @@ class GlobalExceptionHandlerTest {
 
         @Test
         @DisplayName("Should handle multiple validation errors")
-        void shouldHandleMultipleFieldErrors() throws NoSuchMethodException {
+        void shouldHandleMultipleFieldErrors() {
             BindingResult bindingResult = mock(BindingResult.class);
             when(bindingResult.getFieldErrors()).thenReturn(List.of(
                     new FieldError("order", "quantity", "must be positive"),
                     new FieldError("order", "itemId", "must not be null")
             ));
 
-            MethodArgumentNotValidException ex = new MethodArgumentNotValidException(dummyMethodParameter(), bindingResult);
+            MethodArgumentNotValidException ex = new MethodArgumentNotValidException(methodParameter, bindingResult);
             ResponseEntity<ErrorResponse> response = handler.handleValidationException(ex, request);
 
             assertThat(response.getBody().getValidationErrors()).hasSize(2);
