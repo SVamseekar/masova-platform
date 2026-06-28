@@ -120,15 +120,19 @@ class PaymentPactVerificationIT extends BaseFullIntegrationTest {
             throw new RuntimeException(e);
         }
 
-        Transaction transaction = Transaction.builder()
-                .orderId("ORDER-PACT-STATUS")
-                .razorpayOrderId("order_razorpay_status")
-                .amount(java.math.BigDecimal.valueOf(450))
-                .status(Transaction.PaymentStatus.PENDING)
-                .currency("INR")
-                .build();
-        transaction.setId("TXN-PACT-1");
-        transactionRepository.save(transaction);
+        // This state is shared by multiple Pact interactions, so the callback runs once per
+        // interaction - guard the seed so repeat invocations don't violate the _id unique index.
+        if (!transactionRepository.existsById("TXN-PACT-1")) {
+            Transaction transaction = Transaction.builder()
+                    .orderId("ORDER-PACT-STATUS")
+                    .razorpayOrderId("order_razorpay_status")
+                    .amount(java.math.BigDecimal.valueOf(450))
+                    .status(Transaction.PaymentStatus.PENDING)
+                    .currency("INR")
+                    .build();
+            transaction.setId("TXN-PACT-1");
+            transactionRepository.save(transaction);
+        }
     }
 
     @State("payment transaction exists with id txn-1")
