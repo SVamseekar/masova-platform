@@ -1,11 +1,14 @@
 package com.MaSoVa.payment.contract;
 
+import au.com.dius.pact.core.model.Interaction;
+import au.com.dius.pact.core.model.Pact;
+import au.com.dius.pact.provider.HttpClientFactory;
+import au.com.dius.pact.provider.IHttpClientFactory;
 import au.com.dius.pact.provider.junit5.HttpTestTarget;
 import au.com.dius.pact.provider.junit5.PactVerificationContext;
 import au.com.dius.pact.provider.junitsupport.IgnoreNoPactsToVerify;
 import au.com.dius.pact.provider.junitsupport.Provider;
 import au.com.dius.pact.provider.junitsupport.State;
-import au.com.dius.pact.provider.junitsupport.TargetRequestFilter;
 import au.com.dius.pact.provider.junitsupport.loader.PactFolder;
 import au.com.dius.pact.provider.spring.spring6.PactVerificationSpring6Provider;
 import com.MaSoVa.payment.entity.Transaction;
@@ -15,7 +18,8 @@ import com.MaSoVa.shared.test.BaseFullIntegrationTest;
 import com.razorpay.Payment;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
+import kotlin.Pair;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
@@ -30,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -56,7 +61,7 @@ class PaymentPactVerificationIT extends BaseFullIntegrationTest {
     @BeforeEach
     void before(PactVerificationContext context) {
         if (context != null) {
-            context.setTarget(new HttpTestTarget("localhost", port));
+            context.setTarget(new AuthInjectingTestTarget("localhost", port));
         }
     }
 
@@ -67,17 +72,27 @@ class PaymentPactVerificationIT extends BaseFullIntegrationTest {
     }
 
     /**
-     * Pact consumer contracts intentionally use a placeholder "Bearer test-token" since the
-     * frontend doesn't own a real signing key. Inject a real signed JWT here so requests pass
-     * payment-service's auth filter — Pact only checks headers declared in the contract, so this
-     * extra/overridden header does not break matching.
+     * Pact-jvm's junit5 HttpTestTarget has no @TargetRequestFilter support (that hook only
+     * exists in the junit4 module) - override prepareRequest to inject a real signed JWT so
+     * requests pass payment-service's auth filter. Pact only checks headers declared in the
+     * contract, so this extra/overridden header does not break matching.
      */
-    @TargetRequestFilter
-    void addAuthHeader(HttpUriRequestBase request) {
-        request.setHeader("Authorization", "Bearer " + generateTestJwt());
+    private static final class AuthInjectingTestTarget extends HttpTestTarget {
+        AuthInjectingTestTarget(String host, int port) {
+            super(host, port, "/", () -> (IHttpClientFactory) new HttpClientFactory());
+        }
+
+        @Override
+        public Pair<Object, Object> prepareRequest(Pact pact, Interaction interaction, Map<String, Object> context) {
+            Pair<Object, Object> result = super.prepareRequest(pact, interaction, context);
+            if (result != null && result.getFirst() instanceof HttpUriRequest httpRequest) {
+                httpRequest.setHeader("Authorization", "Bearer " + generateTestJwt());
+            }
+            return result;
+        }
     }
 
-    private String generateTestJwt() {
+    private static String generateTestJwt() {
         SecretKey key = Keys.hmacShaKeyFor(TEST_JWT_SECRET.getBytes(StandardCharsets.UTF_8));
         Date now = new Date();
         return Jwts.builder()
