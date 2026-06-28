@@ -25,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -45,9 +46,12 @@ import static org.mockito.Mockito.when;
 @IgnoreNoPactsToVerify
 class PaymentPactVerificationIT extends BaseFullIntegrationTest {
 
-    /** Must match jwt.secret in application-test.yml so the filter-injected token validates. */
-    private static final String TEST_JWT_SECRET =
-            "test-secret-key-at-least-64-characters-long-for-hs512-algorithm-ok";
+    /**
+     * Read from the live Spring environment (not hardcoded) so this always matches whatever
+     * jwt.secret is active - application-test.yml locally, or the JWT_SECRET env var override in CI.
+     */
+    @Value("${jwt.secret}")
+    private String jwtSecret;
 
     @LocalServerPort
     int port;
@@ -77,7 +81,7 @@ class PaymentPactVerificationIT extends BaseFullIntegrationTest {
      * requests pass payment-service's auth filter. Pact only checks headers declared in the
      * contract, so this extra/overridden header does not break matching.
      */
-    private static final class AuthInjectingTestTarget extends HttpTestTarget {
+    private final class AuthInjectingTestTarget extends HttpTestTarget {
         AuthInjectingTestTarget(String host, int port) {
             super(host, port, "/", () -> (IHttpClientFactory) new HttpClientFactory());
         }
@@ -92,8 +96,8 @@ class PaymentPactVerificationIT extends BaseFullIntegrationTest {
         }
     }
 
-    private static String generateTestJwt() {
-        SecretKey key = Keys.hmacShaKeyFor(TEST_JWT_SECRET.getBytes(StandardCharsets.UTF_8));
+    private String generateTestJwt() {
+        SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         Date now = new Date();
         return Jwts.builder()
                 .subject("pact-test-user")
