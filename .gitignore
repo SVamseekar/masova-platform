@@ -18,6 +18,12 @@ buildNumber.properties
 
 # IDE
 .idea/
+
+# Local-only docs (restored from history, not pushed)
+docs/ARCHITECTURE.md
+
+# Local scratch work (not part of MaSoVa codebase)
+scratch/
 *.iws
 *.iml
 *.ipr
