@@ -70,10 +70,23 @@ jobs:
             [logistics-service]=8086
             [intelligence-service]=8087
           )
+          # api-gateway has /actuator/health disabled (application.yml:
+          # "Disabled entirely to prevent timeout cascade" - it's a composite
+          # check that hangs if any downstream service is slow). Poll its
+          # OpenAPI doc endpoint instead, which is what this job actually needs.
+          declare -A HEALTH_PATHS=(
+            [api-gateway]=/v3/api-docs
+            [core-service]=/actuator/health
+            [commerce-service]=/actuator/health
+            [payment-service]=/actuator/health
+            [logistics-service]=/actuator/health
+            [intelligence-service]=/actuator/health
+          )
           for svc in "${!PORTS[@]}"; do
             port=${PORTS[$svc]}
+            path=${HEALTH_PATHS[$svc]}
             for i in $(seq 1 30); do
-              if curl -sf http://localhost:$port/actuator/health > /dev/null 2>&1; then
+              if curl -sf --max-time 5 http://localhost:$port$path > /dev/null 2>&1; then
                 echo "OK $svc ready on :$port"
                 break
               fi
@@ -201,6 +214,7 @@ jobs:
             -pl shared-models,shared-security,core-service,commerce-service,logistics-service,payment-service \
             -am \
             -Dtest=NONE \
+            -Dsurefire.failIfNoSpecifiedTests=false \
             -Dit.test="*PactVerificationIT" \
             --no-transfer-progress
         env:
