@@ -7,6 +7,7 @@ import com.MaSoVa.commerce.order.entity.Order;
 import com.MaSoVa.commerce.order.entity.OrderItem;
 import com.MaSoVa.commerce.order.entity.QualityCheckpoint;
 import com.MaSoVa.commerce.order.service.OrderService;
+import com.MaSoVa.shared.util.StoreAccessValidator;
 import com.MaSoVa.shared.util.StoreContextUtil;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -79,6 +80,29 @@ public class OrderController {
         return userStoreId;
     }
 
+    /**
+     * CUSTOMER callers are bound to order.customerId (Tasks 6–7). "AGENT" is also accepted
+     * here for forward-compatibility with an X-User-Type: AGENT caller, but no such caller
+     * exists today — masova-support currently authenticates as MANAGER (see backend_tools.py),
+     * which is exempt from this binding and relies on its own @PreAuthorize role check instead.
+     */
+    private static boolean requiresCustomerOwnership(String userType) {
+        return "CUSTOMER".equalsIgnoreCase(userType) || "AGENT".equalsIgnoreCase(userType);
+    }
+
+    private void enforceStaffStoreAccess(Order order, HttpServletRequest request) {
+        String userType = StoreContextUtil.getUserTypeFromHeaders(request);
+        if (!StoreAccessValidator.requiresStoreMembershipValidation(userType)) {
+            return;
+        }
+        String storeId = getStoreIdFromHeaders(request);
+        if (storeId != null && order.getStoreId() != null && !storeId.equals(order.getStoreId())) {
+            log.warn("Cross-store order access: userType={}, userStore={}, orderStore={}",
+                    userType, storeId, order.getStoreId());
+            throw new AccessDeniedException("Cannot access order from different store");
+        }
+    }
+
     // ── CREATE ────────────────────────────────────────────────────────────────────
 
     @PostMapping
@@ -94,8 +118,15 @@ public class OrderController {
     @GetMapping("/{orderId}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF', 'DRIVER')")
     @Operation(summary = "Get order by ID")
-    public ResponseEntity<Order> getOrder(@PathVariable String orderId) {
-        return ResponseEntity.ok(orderService.getOrderById(orderId));
+    public ResponseEntity<Order> getOrder(@PathVariable String orderId, HttpServletRequest request) {
+        String userType = StoreContextUtil.getUserTypeFromHeaders(request);
+        if (requiresCustomerOwnership(userType)) {
+            return ResponseEntity.ok(
+                    orderService.assertCustomerOwnsOrder(orderId, StoreContextUtil.getUserIdFromHeaders(request)));
+        }
+        Order order = orderService.getOrderById(orderId);
+        enforceStaffStoreAccess(order, request);
+        return ResponseEntity.ok(order);
     }
 
     /**
@@ -103,8 +134,9 @@ public class OrderController {
      */
     @GetMapping("/track/{orderId}")
     @Operation(summary = "Track order (public, no auth)")
-    public ResponseEntity<Order> trackOrder(@PathVariable String orderId) {
-        return ResponseEntity.ok(orderService.getOrderById(orderId));
+    public ResponseEntity<com.MaSoVa.commerce.order.dto.OrderTrackingDTO> trackOrder(@PathVariable String orderId) {
+        return ResponseEntity.ok(
+                com.MaSoVa.commerce.order.dto.OrderTrackingDTO.fromOrder(orderService.getOrderById(orderId)));
     }
 
     /**
@@ -136,6 +168,15 @@ public class OrderController {
             return ResponseEntity.ok(orderService.getKitchenQueue(resolvedStoreId));
         }
         if (customerId != null) {
+            String userType = StoreContextUtil.getUserTypeFromHeaders(request);
+            if (requiresCustomerOwnership(userType)) {
+                String callerId = StoreContextUtil.getUserIdFromHeaders(request);
+                if (callerId == null || !callerId.equals(customerId)) {
+                    log.warn("Cross-customer order list access attempt: caller={}, requestedCustomerId={}",
+                            callerId, customerId);
+                    throw new AccessDeniedException("Cannot access another customer's orders");
+                }
+            }
             return ResponseEntity.ok(orderService.getCustomerOrders(customerId));
         }
         if (search != null) {
@@ -262,12 +303,66 @@ public class OrderController {
     // ── CANCEL ────────────────────────────────────────────────────────────────────
 
     @DeleteMapping("/{orderId}")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
-    @Operation(summary = "Cancel order")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
+    @Operation(summary = "Cancel order directly (staff/manager only)")
     public ResponseEntity<Order> cancelOrder(
             @PathVariable String orderId,
             @RequestParam(required = false) String reason) {
         return ResponseEntity.ok(orderService.cancelOrder(orderId, reason));
+    }
+
+    // ── CANCELLATION APPROVAL GATE (security remediation Task 4) ──────────────────
+    // A customer (or the AI agent on their behalf) may only REQUEST cancellation. The
+    // request does not change order status; a manager must approve/reject it.
+
+    /**
+     * POST /api/orders/{orderId}/cancel-request — request cancellation (no immediate effect).
+     * Open to CUSTOMER (own orders only), STAFF and managers. The AI agent calls this on a
+     * customer's behalf — it can never cancel directly.
+     */
+    @PostMapping("/{orderId}/cancel-request")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
+    @Operation(summary = "Request order cancellation (awaits manager approval)")
+    public ResponseEntity<Order> requestCancellation(
+            @PathVariable String orderId,
+            @RequestBody(required = false) Map<String, String> body,
+            HttpServletRequest request) {
+        String userType = StoreContextUtil.getUserTypeFromHeaders(request);
+        String userId = StoreContextUtil.getUserIdFromHeaders(request);
+
+        // Ownership check: CUSTOMER and AGENT may only act on orders they own (Tasks 6–7).
+        if (requiresCustomerOwnership(userType)) {
+            orderService.assertCustomerOwnsOrder(orderId, userId);
+        }
+
+        String reason = body != null ? body.get("reason") : null;
+        String requestedBy = (userId != null && !userId.isBlank()) ? userId : userType;
+        return ResponseEntity.ok(orderService.requestCancellation(orderId, reason, requestedBy));
+    }
+
+    /**
+     * POST /api/orders/{orderId}/cancel-request/approve — manager approves a pending
+     * cancellation request, performing the real cancellation.
+     */
+    @PostMapping("/{orderId}/cancel-request/approve")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Approve a pending cancellation request (manager only)")
+    public ResponseEntity<Order> approveCancellationRequest(@PathVariable String orderId) {
+        return ResponseEntity.ok(orderService.approveCancellationRequest(orderId));
+    }
+
+    /**
+     * POST /api/orders/{orderId}/cancel-request/reject — manager rejects a pending
+     * cancellation request, clearing the flag; the order continues normally.
+     */
+    @PostMapping("/{orderId}/cancel-request/reject")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Reject a pending cancellation request (manager only)")
+    public ResponseEntity<Order> rejectCancellationRequest(
+            @PathVariable String orderId,
+            @RequestBody(required = false) Map<String, String> body) {
+        String rejectionReason = body != null ? body.get("reason") : null;
+        return ResponseEntity.ok(orderService.rejectCancellationRequest(orderId, rejectionReason));
     }
 
     // ── PAYMENT STATUS (inter-service, called by payment-service) ─────────────────
@@ -392,6 +487,12 @@ public class OrderController {
         }
         orderService.anonymizeCustomerOrders(customerId);
         return ResponseEntity.ok().build();
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, String>> handleAccessDenied(AccessDeniedException ex) {
+        log.warn("Access denied on order request: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
     }
 
     @ExceptionHandler(RuntimeException.class)

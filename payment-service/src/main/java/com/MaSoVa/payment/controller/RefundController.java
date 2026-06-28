@@ -3,11 +3,13 @@ package com.MaSoVa.payment.controller;
 import com.MaSoVa.payment.dto.RefundRequest;
 import com.MaSoVa.payment.entity.Refund;
 import com.MaSoVa.payment.service.RefundService;
+import com.MaSoVa.shared.util.StoreContextUtil;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 import org.slf4j.Logger;
@@ -18,6 +20,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Refunds — 3 canonical endpoints at /api/payments/refund.
@@ -40,13 +43,79 @@ public class RefundController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
-    @Operation(summary = "Initiate a refund via Razorpay")
-    public ResponseEntity<Refund> initiateRefund(@Valid @RequestBody RefundRequest request) {
+    @Operation(summary = "Initiate a refund via Razorpay (manager-initiated, immediate)")
+    public ResponseEntity<?> initiateRefund(@Valid @RequestBody RefundRequest request) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(refundService.initiateRefund(request));
         } catch (Exception e) {
             log.error("Error initiating refund for transaction {}", request.getTransactionId(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to initiate refund"));
+        }
+    }
+
+    /**
+     * POST /api/payments/refund/request — request a refund that requires manager approval
+     * (security remediation Task 4). Used by the AI agent / customer path. No money moves
+     * until a manager approves; the refund is recorded as PENDING_APPROVAL.
+     */
+    @PostMapping("/request")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
+    @Operation(summary = "Request a refund pending manager approval (no money moved)")
+    public ResponseEntity<?> requestRefund(
+            @Valid @RequestBody RefundRequest request,
+            HttpServletRequest httpRequest) {
+        // Stamp the requester so the audit trail reflects who asked (agent / customer / staff).
+        String userId = StoreContextUtil.getUserIdFromHeaders(httpRequest);
+        if (userId != null && !userId.isBlank()) {
+            request.setInitiatedBy(userId);
+        }
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(refundService.requestRefundApproval(request));
+        } catch (RuntimeException e) {
+            log.warn("Refund request rejected for transaction {}: {}",
+                    request.getTransactionId(), e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * POST /api/payments/refund/{refundId}/approve — manager approves a PENDING_APPROVAL
+     * refund, executing the actual Razorpay refund.
+     */
+    @PostMapping("/{refundId}/approve")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Approve a pending refund (manager only)")
+    public ResponseEntity<?> approveRefund(
+            @PathVariable String refundId,
+            HttpServletRequest httpRequest) {
+        String approvedBy = StoreContextUtil.getUserIdFromHeaders(httpRequest);
+        try {
+            return ResponseEntity.ok(refundService.approveRefund(refundId, approvedBy));
+        } catch (RuntimeException e) {
+            log.warn("Refund approval failed for {}: {}", refundId, e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * POST /api/payments/refund/{refundId}/reject — manager rejects a PENDING_APPROVAL refund.
+     */
+    @PostMapping("/{refundId}/reject")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Reject a pending refund (manager only)")
+    public ResponseEntity<?> rejectRefund(
+            @PathVariable String refundId,
+            @RequestBody(required = false) Map<String, String> body,
+            HttpServletRequest httpRequest) {
+        String rejectedBy = StoreContextUtil.getUserIdFromHeaders(httpRequest);
+        String reason = body != null ? body.get("reason") : null;
+        try {
+            return ResponseEntity.ok(refundService.rejectRefund(refundId, rejectedBy, reason));
+        } catch (RuntimeException e) {
+            log.warn("Refund rejection failed for {}: {}", refundId, e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 

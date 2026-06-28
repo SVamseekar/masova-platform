@@ -1,5 +1,6 @@
 package com.MaSoVa.core.unit.service;
 
+import com.MaSoVa.core.review.dto.request.CreateComplaintRequest;
 import com.MaSoVa.core.review.dto.request.CreateReviewRequest;
 import com.MaSoVa.core.review.entity.Review;
 import com.MaSoVa.core.review.repository.ReviewRepository;
@@ -86,6 +87,57 @@ class ReviewServiceTest {
 
             assertThatThrownBy(() -> reviewService.createReview(req, "c1", "Jane"))
                     .isInstanceOf(RuntimeException.class);
+        }
+    }
+
+    // ===========================
+    // createComplaint
+    // ===========================
+
+    @Nested
+    @DisplayName("createComplaint")
+    class CreateComplaint {
+
+        @Test
+        @DisplayName("saves complaint as PENDING review, not APPROVED")
+        void savesAsPending() {
+            when(reviewRepository.findByOrderIdAndCustomerIdAndIsDeletedFalse("order-1", "customer-1"))
+                    .thenReturn(Optional.empty());
+            when(sentimentAnalysisService.analyzeSentiment(any())).thenReturn(Review.SentimentType.NEGATIVE);
+            when(sentimentAnalysisService.calculateSentimentScore(any())).thenReturn(-0.5);
+            when(reviewRepository.save(any())).thenAnswer(inv -> {
+                Review r = inv.getArgument(0);
+                r.setId("complaint-1");
+                return r;
+            });
+
+            CreateComplaintRequest req = new CreateComplaintRequest();
+            req.setOrderId("order-1");
+            req.setDescription("Food arrived cold and two items were missing");
+
+            Review result = reviewService.createComplaint(req, "customer-1", "John");
+
+            assertThat(result.getId()).isEqualTo("complaint-1");
+            verify(reviewRepository).save(argThat(r ->
+                    r.getStatus() == Review.ReviewStatus.PENDING
+                            && r.getComment().equals(req.getDescription())));
+        }
+
+        @Test
+        @DisplayName("rejects duplicate pending complaint for same order")
+        void rejectsDuplicatePending() {
+            Review existing = buildReview("r1", "order-1");
+            existing.setStatus(Review.ReviewStatus.PENDING);
+            when(reviewRepository.findByOrderIdAndCustomerIdAndIsDeletedFalse("order-1", "customer-1"))
+                    .thenReturn(Optional.of(existing));
+
+            CreateComplaintRequest req = new CreateComplaintRequest();
+            req.setOrderId("order-1");
+            req.setDescription("Another complaint about the same order");
+
+            assertThatThrownBy(() -> reviewService.createComplaint(req, "customer-1", "John"))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("pending");
         }
     }
 

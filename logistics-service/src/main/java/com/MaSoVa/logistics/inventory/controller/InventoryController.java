@@ -6,6 +6,7 @@ import com.MaSoVa.logistics.inventory.dto.response.InventoryValueResponse;
 import com.MaSoVa.logistics.inventory.dto.response.MessageResponse;
 import com.MaSoVa.logistics.inventory.entity.InventoryItem;
 import com.MaSoVa.logistics.inventory.service.InventoryService;
+import com.MaSoVa.shared.util.StoreContextUtil;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -44,16 +45,6 @@ public class InventoryController {
         this.inventoryService = inventoryService;
     }
 
-    private String getStoreIdFromHeaders(HttpServletRequest request) {
-        String userType = request.getHeader("X-User-Type");
-        String selectedStoreId = request.getHeader("X-Selected-Store-Id");
-        String userStoreId = request.getHeader("X-User-Store-Id");
-        if ("MANAGER".equals(userType) || "CUSTOMER".equals(userType)) {
-            return selectedStoreId != null ? selectedStoreId : userStoreId;
-        }
-        return userStoreId;
-    }
-
     // ── LIST ──────────────────────────────────────────────────────────────────────
 
     /**
@@ -70,7 +61,7 @@ public class InventoryController {
             @RequestParam(required = false) Boolean outOfStock,
             @RequestParam(required = false) Integer expiringSoon,
             HttpServletRequest request) {
-        String storeId = getStoreIdFromHeaders(request);
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
         if (Boolean.TRUE.equals(outOfStock)) {
             return ResponseEntity.ok(inventoryService.getOutOfStockItems(storeId));
         }
@@ -117,7 +108,7 @@ public class InventoryController {
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Delete inventory item")
     public ResponseEntity<MessageResponse> deleteItem(@PathVariable String id, HttpServletRequest request) {
-        inventoryService.deleteInventoryItem(id, getStoreIdFromHeaders(request));
+        inventoryService.deleteInventoryItem(id, StoreContextUtil.getStoreIdFromHeaders(request));
         return ResponseEntity.ok(new MessageResponse("Inventory item deleted successfully"));
     }
 
@@ -176,7 +167,7 @@ public class InventoryController {
     public ResponseEntity<?> getValue(
             @RequestParam(required = false) Boolean byCategory,
             HttpServletRequest request) {
-        String storeId = getStoreIdFromHeaders(request);
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
         if (Boolean.TRUE.equals(byCategory)) {
             return ResponseEntity.ok(inventoryService.getInventoryValueByCategory(storeId));
         }

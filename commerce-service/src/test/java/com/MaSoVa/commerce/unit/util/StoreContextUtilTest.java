@@ -1,5 +1,6 @@
 package com.MaSoVa.commerce.unit.util;
 
+import com.MaSoVa.shared.util.StoreAccessValidator;
 import com.MaSoVa.shared.util.StoreContextUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
@@ -26,12 +27,12 @@ class StoreContextUtilTest {
     // MANAGER uses selected store
 
     @Test
-    void manager_uses_selected_store_id() {
-        setupHeaders("MANAGER", "store-selected", "store-assigned", "user-1");
+    void manager_uses_selected_store_id_when_it_matches_jwt_store() {
+        setupHeaders("MANAGER", "store-assigned", "store-assigned", "user-1");
 
         String result = StoreContextUtil.getStoreIdFromHeaders(request);
 
-        assertThat(result).isEqualTo("store-selected");
+        assertThat(result).isEqualTo("store-assigned");
     }
 
     @Test
@@ -44,12 +45,12 @@ class StoreContextUtilTest {
     }
 
     @Test
-    void assistant_manager_uses_selected_store() {
-        setupHeaders("ASSISTANT_MANAGER", "store-selected", "store-assigned", "user-1");
+    void assistant_manager_uses_selected_store_when_it_matches_jwt_store() {
+        setupHeaders("ASSISTANT_MANAGER", "store-assigned", "store-assigned", "user-1");
 
         String result = StoreContextUtil.getStoreIdFromHeaders(request);
 
-        assertThat(result).isEqualTo("store-selected");
+        assertThat(result).isEqualTo("store-assigned");
     }
 
     @Test
@@ -73,12 +74,28 @@ class StoreContextUtilTest {
     }
 
     @Test
-    void staff_uses_selected_store_when_explicitly_provided() {
-        setupHeaders("STAFF", "store-kds", "store-assigned", "user-1");
+    void staff_matching_selected_store_is_allowed() {
+        setupHeaders("STAFF", "store-assigned", "store-assigned", "user-1");
 
         String result = StoreContextUtil.getStoreIdFromHeaders(request);
 
-        assertThat(result).isEqualTo("store-kds");
+        assertThat(result).isEqualTo("store-assigned");
+    }
+
+    @Test
+    void staff_cross_store_selection_is_denied() {
+        setupHeaders("STAFF", "store-kds", "store-assigned", "user-1");
+
+        assertThatThrownBy(() -> StoreContextUtil.getStoreIdFromHeaders(request))
+                .isInstanceOf(StoreAccessValidator.StoreAccessDeniedException.class);
+    }
+
+    @Test
+    void manager_cross_store_selection_is_denied() {
+        setupHeaders("MANAGER", "store-b", "store-a", "user-1");
+
+        assertThatThrownBy(() -> StoreContextUtil.getStoreIdFromHeaders(request))
+                .isInstanceOf(StoreAccessValidator.StoreAccessDeniedException.class);
     }
 
     @Test
@@ -157,7 +174,7 @@ class StoreContextUtilTest {
 
     @Test
     void validateStoreIdPresent_passes_when_store_found() {
-        setupHeaders("MANAGER", "store-1", null, "user-1");
+        setupHeaders("MANAGER", "store-1", "store-1", "user-1");
 
         // Should not throw
         StoreContextUtil.validateStoreIdPresent(request);

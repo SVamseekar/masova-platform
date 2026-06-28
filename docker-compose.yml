@@ -149,6 +149,9 @@ services:
       - SPRING_RABBITMQ_USERNAME=masova
       - SPRING_RABBITMQ_PASSWORD=masova_secret
       - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+      - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET}
       - SPRING_DATASOURCE_URL=jdbc:postgresql://masova-postgres:5432/masova_db?currentSchema=payment_schema
       - SPRING_DATASOURCE_USERNAME=masova
       - SPRING_DATASOURCE_PASSWORD=masova_secret

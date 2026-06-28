@@ -14,7 +14,13 @@ import java.util.List;
 @Component
 public class JwtTokenProvider {
 
-    @Value("${jwt.secret:MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-256-bits-for-production-security}")
+    /** Known leaked default — denylisted for one release to catch stale environments. */
+    static final String DENYLISTED_LEAKED_SECRET =
+            "MaSoVa-secret-key-for-jwt-token-generation-very-long-key-must-be-at-least-256-bits-for-production-security";
+
+    private static final int MIN_SECRET_LENGTH = 64;
+
+    @Value("${jwt.secret}")
     private String jwtSecret;
 
     @Value("${jwt.access-token-expiration:3600000}")
@@ -24,7 +30,27 @@ public class JwtTokenProvider {
 
     @PostConstruct
     public void init() {
+        validateJwtSecret(jwtSecret);
         this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Fail-fast validation for JWT secret configuration (security remediation Task 8).
+     */
+    static void validateJwtSecret(String secret) {
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException(
+                    "JWT secret is not configured. Set JWT_SECRET or jwt.secret (min 64 chars).");
+        }
+        if (secret.length() < MIN_SECRET_LENGTH) {
+            throw new IllegalStateException(
+                    "JWT secret is too short (" + secret.length() + " chars). Minimum is "
+                            + MIN_SECRET_LENGTH + " for HS512.");
+        }
+        if (DENYLISTED_LEAKED_SECRET.equals(secret)) {
+            throw new IllegalStateException(
+                    "JWT secret matches a known leaked default. Generate a new secret and set JWT_SECRET.");
+        }
     }
 
     public boolean validateToken(String token) {
