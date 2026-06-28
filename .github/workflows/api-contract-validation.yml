@@ -193,7 +193,7 @@ jobs:
           path: frontend/pacts/
 
       - name: Copy pact files to backend services
-        run: ./scripts/copy-pacts.sh
+        run: bash scripts/copy-pacts.sh
 
       - name: Run Pact provider verification (all services)
         run: |
