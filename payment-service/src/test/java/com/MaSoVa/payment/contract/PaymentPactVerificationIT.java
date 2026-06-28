@@ -15,6 +15,7 @@ import com.MaSoVa.payment.entity.Transaction;
 import com.MaSoVa.payment.repository.TransactionRepository;
 import com.MaSoVa.payment.service.RazorpayService;
 import com.MaSoVa.shared.test.BaseFullIntegrationTest;
+import com.razorpay.Order;
 import com.razorpay.Payment;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -37,6 +38,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -111,6 +113,22 @@ class PaymentPactVerificationIT extends BaseFullIntegrationTest {
 
     @State("payment service is available")
     void paymentServiceAvailable() {
+        try {
+            when(razorpayService.createOrder(any(), anyString(), anyString()))
+                    .thenReturn(new Order(new JSONObject().put("id", "order_pact_generated")));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        Transaction transaction = Transaction.builder()
+                .orderId("ORDER-PACT-STATUS")
+                .razorpayOrderId("order_razorpay_status")
+                .amount(java.math.BigDecimal.valueOf(450))
+                .status(Transaction.PaymentStatus.PENDING)
+                .currency("INR")
+                .build();
+        transaction.setId("TXN-PACT-1");
+        transactionRepository.save(transaction);
     }
 
     @State("payment transaction exists with id txn-1")
