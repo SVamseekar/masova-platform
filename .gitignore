@@ -3,6 +3,7 @@
 
 # Log files
 *.log
+masova-logs/
 
 # Maven
 target/
