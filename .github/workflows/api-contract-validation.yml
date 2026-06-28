@@ -59,6 +59,9 @@ jobs:
           SPRING_DATASOURCE_PASSWORD: masova_secret
           RABBITMQ_USERNAME: masova
           RABBITMQ_PASSWORD: masova_secret
+          RAZORPAY_KEY_ID: rzp_test_ci_smoke_key_id
+          RAZORPAY_KEY_SECRET: ci_smoke_razorpay_secret_not_real
+          RAZORPAY_WEBHOOK_SECRET: whsec_ci_smoke_webhook_secret
 
       - name: Wait for services to be healthy
         run: |
