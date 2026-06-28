@@ -23,9 +23,9 @@ interface ManagerDriverTrackingMapProps {
 export const ManagerDriverTrackingMap: React.FC<ManagerDriverTrackingMapProps> = ({ driver, onClose }) => {
   const currentUser = useAppSelector(selectCurrentUser);
   const [driverPosition, setDriverPosition] = useState<[number, number]>([12.9716, 77.5946]); // Default to Bangalore
-  const [restaurantPosition, setRestaurantPosition] = useState<[number, number]>([12.9716, 77.5946]); // Store location
+  const [restaurantPosition] = useState<[number, number]>([12.9716, 77.5946]); // Store location
   const [customerPosition, setCustomerPosition] = useState<[number, number]>([12.9716, 77.5946]);
-  const [route, setRoute] = useState<[number, number][] | undefined>(undefined);
+  const [route] = useState<[number, number][] | undefined>(undefined);
   const [eta, setEta] = useState<string | undefined>(undefined);
 
   // Fetch active delivery tracking data if driver has active delivery

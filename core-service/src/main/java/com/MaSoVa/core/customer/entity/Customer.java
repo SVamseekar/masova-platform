@@ -50,7 +50,7 @@ public class Customer implements Serializable {
     private String storeId; // Legacy: Reference to store where customer is registered (kept for backward compatibility)
 
     @Indexed
-    private Set<String> storeIds = new HashSet<>(); // Multi-store support: All stores this customer has ordered from
+    private HashSet<String> storeIds = new HashSet<>(); // Multi-store support: All stores this customer has ordered from
 
     @NotBlank(message = "Name is required")
     private String name;
@@ -70,7 +70,7 @@ public class Customer implements Serializable {
     private String gender; // MALE, FEMALE, OTHER, PREFER_NOT_TO_SAY
 
     // Addresses
-    private List<CustomerAddress> addresses = new ArrayList<>();
+    private ArrayList<CustomerAddress> addresses = new ArrayList<>();
     private String defaultAddressId;
 
     // Loyalty Program
@@ -114,10 +114,10 @@ public class Customer implements Serializable {
     private String deletionReason;            // GDPR_REQUEST, ACCOUNT_CLOSURE, etc.
 
     // Tags for segmentation
-    private Set<String> tags = new HashSet<>();
+    private HashSet<String> tags = new HashSet<>();
 
     // Notes (manager/support notes)
-    private List<CustomerNote> notes = new ArrayList<>();
+    private ArrayList<CustomerNote> notes = new ArrayList<>();
 
     @CreatedDate
     @JsonSerialize(using = LocalDateTimeSerializer.class)
@@ -215,7 +215,9 @@ public class Customer implements Serializable {
         public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     }
 
-    public static class LoyaltyInfo {
+    public static class LoyaltyInfo implements Serializable {
+        private static final long serialVersionUID = 1L;
+
         private int totalPoints = 0;
         private int pointsEarned = 0;
         private int pointsRedeemed = 0;
@@ -230,7 +232,7 @@ public class Customer implements Serializable {
         @JsonDeserialize(using = LocalDateTimeDeserializer.class)
         @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
         private LocalDateTime lastPointsUpdate;
-        private List<PointTransaction> pointHistory = new ArrayList<>();
+        private ArrayList<PointTransaction> pointHistory = new ArrayList<>();
 
         public LoyaltyInfo() {}
 
@@ -254,10 +256,14 @@ public class Customer implements Serializable {
         public void setLastPointsUpdate(LocalDateTime lastPointsUpdate) { this.lastPointsUpdate = lastPointsUpdate; }
 
         public List<PointTransaction> getPointHistory() { return pointHistory; }
-        public void setPointHistory(List<PointTransaction> pointHistory) { this.pointHistory = pointHistory; }
+        public void setPointHistory(List<PointTransaction> pointHistory) {
+            this.pointHistory = pointHistory == null ? new ArrayList<>() : new ArrayList<>(pointHistory);
+        }
     }
 
-    public static class PointTransaction {
+    public static class PointTransaction implements Serializable {
+        private static final long serialVersionUID = 1L;
+
         private String id = java.util.UUID.randomUUID().toString();
         private int points;
         private String type; // EARNED, REDEEMED, EXPIRED, BONUS
@@ -297,12 +303,14 @@ public class Customer implements Serializable {
         public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
     }
 
-    public static class CustomerPreferences {
-        private Set<String> favoriteMenuItems = new HashSet<>();
-        private Set<String> cuisinePreferences = new HashSet<>();
-        private Set<String> dietaryRestrictions = new HashSet<>();
-        private Set<String> allergens = new HashSet<>();
-        private Set<AllergenType> allergenAlerts = new HashSet<>();
+    public static class CustomerPreferences implements Serializable {
+        private static final long serialVersionUID = 1L;
+
+        private HashSet<String> favoriteMenuItems = new HashSet<>();
+        private HashSet<String> cuisinePreferences = new HashSet<>();
+        private HashSet<String> dietaryRestrictions = new HashSet<>();
+        private HashSet<String> allergens = new HashSet<>();
+        private HashSet<AllergenType> allergenAlerts = new HashSet<>();
         private String preferredPaymentMethod; // CASH, CARD, UPI, WALLET
         private String spiceLevel = "MEDIUM"; // MILD, MEDIUM, HOT, EXTRA_HOT
         private boolean notifyOnOffers = true;
@@ -312,19 +320,29 @@ public class Customer implements Serializable {
 
         // Getters and Setters
         public Set<String> getFavoriteMenuItems() { return favoriteMenuItems; }
-        public void setFavoriteMenuItems(Set<String> favoriteMenuItems) { this.favoriteMenuItems = favoriteMenuItems; }
+        public void setFavoriteMenuItems(Set<String> favoriteMenuItems) {
+            this.favoriteMenuItems = favoriteMenuItems == null ? new HashSet<>() : new HashSet<>(favoriteMenuItems);
+        }
 
         public Set<String> getCuisinePreferences() { return cuisinePreferences; }
-        public void setCuisinePreferences(Set<String> cuisinePreferences) { this.cuisinePreferences = cuisinePreferences; }
+        public void setCuisinePreferences(Set<String> cuisinePreferences) {
+            this.cuisinePreferences = cuisinePreferences == null ? new HashSet<>() : new HashSet<>(cuisinePreferences);
+        }
 
         public Set<String> getDietaryRestrictions() { return dietaryRestrictions; }
-        public void setDietaryRestrictions(Set<String> dietaryRestrictions) { this.dietaryRestrictions = dietaryRestrictions; }
+        public void setDietaryRestrictions(Set<String> dietaryRestrictions) {
+            this.dietaryRestrictions = dietaryRestrictions == null ? new HashSet<>() : new HashSet<>(dietaryRestrictions);
+        }
 
         public Set<String> getAllergens() { return allergens; }
-        public void setAllergens(Set<String> allergens) { this.allergens = allergens; }
+        public void setAllergens(Set<String> allergens) {
+            this.allergens = allergens == null ? new HashSet<>() : new HashSet<>(allergens);
+        }
 
         public Set<AllergenType> getAllergenAlerts() { return allergenAlerts; }
-        public void setAllergenAlerts(Set<AllergenType> allergenAlerts) { this.allergenAlerts = allergenAlerts; }
+        public void setAllergenAlerts(Set<AllergenType> allergenAlerts) {
+            this.allergenAlerts = allergenAlerts == null ? new HashSet<>() : new HashSet<>(allergenAlerts);
+        }
 
         public String getPreferredPaymentMethod() { return preferredPaymentMethod; }
         public void setPreferredPaymentMethod(String preferredPaymentMethod) { this.preferredPaymentMethod = preferredPaymentMethod; }
@@ -339,7 +357,9 @@ public class Customer implements Serializable {
         public void setNotifyOnOrderStatus(boolean notifyOnOrderStatus) { this.notifyOnOrderStatus = notifyOnOrderStatus; }
     }
 
-    public static class OrderStats {
+    public static class OrderStats implements Serializable {
+        private static final long serialVersionUID = 1L;
+
         private int totalOrders = 0;
         private int completedOrders = 0;
         private int cancelledOrders = 0;
@@ -385,7 +405,9 @@ public class Customer implements Serializable {
         public void setLastOrderDate(LocalDateTime lastOrderDate) { this.lastOrderDate = lastOrderDate; }
     }
 
-    public static class CustomerNote {
+    public static class CustomerNote implements Serializable {
+        private static final long serialVersionUID = 1L;
+
         private String id = java.util.UUID.randomUUID().toString();
         private String note;
         private String addedBy; // staff/manager name or ID
@@ -458,7 +480,9 @@ public class Customer implements Serializable {
     }
 
     public Set<String> getStoreIds() { return storeIds; }
-    public void setStoreIds(Set<String> storeIds) { this.storeIds = storeIds; }
+    public void setStoreIds(Set<String> storeIds) {
+        this.storeIds = storeIds == null ? new HashSet<>() : new HashSet<>(storeIds);
+    }
 
     /**
      * Add a store to the customer's store list (for multi-store support)
@@ -489,7 +513,9 @@ public class Customer implements Serializable {
     public void setGender(String gender) { this.gender = gender; }
 
     public List<CustomerAddress> getAddresses() { return addresses; }
-    public void setAddresses(List<CustomerAddress> addresses) { this.addresses = addresses; }
+    public void setAddresses(List<CustomerAddress> addresses) {
+        this.addresses = addresses == null ? new ArrayList<>() : new ArrayList<>(addresses);
+    }
 
     public String getDefaultAddressId() { return defaultAddressId; }
     public void setDefaultAddressId(String defaultAddressId) { this.defaultAddressId = defaultAddressId; }
@@ -544,10 +570,14 @@ public class Customer implements Serializable {
     public void setDeletionReason(String deletionReason) { this.deletionReason = deletionReason; }
 
     public Set<String> getTags() { return tags; }
-    public void setTags(Set<String> tags) { this.tags = tags; }
+    public void setTags(Set<String> tags) {
+        this.tags = tags == null ? new HashSet<>() : new HashSet<>(tags);
+    }
 
     public List<CustomerNote> getNotes() { return notes; }
-    public void setNotes(List<CustomerNote> notes) { this.notes = notes; }
+    public void setNotes(List<CustomerNote> notes) {
+        this.notes = notes == null ? new ArrayList<>() : new ArrayList<>(notes);
+    }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

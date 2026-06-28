@@ -3,11 +3,11 @@
  * Synchronizes driver state (online status, GPS location) across multiple tabs
  */
 
-type TabSyncEventType = 'DRIVER_STATUS_CHANGE' | 'GPS_LOCATION_UPDATE' | 'SESSION_CHANGE';
+import type { TabSyncDataMap, TabSyncEventType } from '../types';
 
-interface TabSyncEvent {
-  type: TabSyncEventType;
-  data: any;
+interface TabSyncEvent<T extends TabSyncEventType = TabSyncEventType> {
+  type: T;
+  data: TabSyncDataMap[T];
   timestamp: number;
   tabId: string;
 }
@@ -15,7 +15,7 @@ interface TabSyncEvent {
 class TabSyncManager {
   private tabId: string;
   private channel: BroadcastChannel | null = null;
-  private listeners: Map<TabSyncEventType, Set<(data: any) => void>> = new Map();
+  private listeners: Map<TabSyncEventType, Set<(data: TabSyncDataMap[TabSyncEventType]) => void>> = new Map();
   private useLocalStorage: boolean = false;
 
   constructor() {
@@ -27,7 +27,7 @@ class TabSyncManager {
         this.channel = new BroadcastChannel('driver_app_sync');
         this.channel.onmessage = (event) => this.handleMessage(event.data);
         console.log('✅ TabSync: Using BroadcastChannel API');
-      } catch (error) {
+      } catch {
         console.warn('⚠️ TabSync: BroadcastChannel failed, falling back to localStorage');
         this.useLocalStorage = true;
         this.setupLocalStorageSync();
@@ -73,8 +73,8 @@ class TabSyncManager {
   /**
    * Broadcast an event to all other tabs
    */
-  broadcast(type: TabSyncEventType, data: any) {
-    const event: TabSyncEvent = {
+  broadcast<T extends TabSyncEventType>(type: T, data: TabSyncDataMap[T]) {
+    const event: TabSyncEvent<T> = {
       type,
       data,
       timestamp: Date.now(),
@@ -92,7 +92,7 @@ class TabSyncManager {
       setTimeout(() => {
         const current = localStorage.getItem('driver_app_sync_event');
         if (current) {
-          const currentEvent = JSON.parse(current);
+          const currentEvent = JSON.parse(current) as TabSyncEvent;
           if (currentEvent.tabId === this.tabId) {
             localStorage.removeItem('driver_app_sync_event');
           }
@@ -104,17 +104,17 @@ class TabSyncManager {
   /**
    * Subscribe to events from other tabs
    */
-  on(type: TabSyncEventType, callback: (data: any) => void) {
+  on<T extends TabSyncEventType>(type: T, callback: (data: TabSyncDataMap[T]) => void) {
     if (!this.listeners.has(type)) {
       this.listeners.set(type, new Set());
     }
-    this.listeners.get(type)!.add(callback);
+    this.listeners.get(type)!.add(callback as (data: TabSyncDataMap[TabSyncEventType]) => void);
 
     // Return unsubscribe function
     return () => {
       const listeners = this.listeners.get(type);
       if (listeners) {
-        listeners.delete(callback);
+        listeners.delete(callback as (data: TabSyncDataMap[TabSyncEventType]) => void);
       }
     };
   }

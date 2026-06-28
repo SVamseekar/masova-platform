@@ -34,6 +34,8 @@ import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpMethod;
+import org.springframework.core.ParameterizedTypeReference;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -43,6 +45,7 @@ import static org.mockito.ArgumentMatchers.contains;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("UserService Unit Tests")
+@SuppressWarnings("unchecked") // any(ParameterizedTypeReference.class) requires a raw-type Class<T> argument
 class UserServiceTest {
 
     @Mock private UserRepository userRepository;
@@ -363,8 +366,8 @@ class UserServiceTest {
     // ===========================
 
     @Nested
-    @DisplayName("getAllUsers")
-    class GetAllUsers {
+    @DisplayName("listActiveEmployees")
+    class ListActiveEmployees {
 
         @Test
         @DisplayName("returns mapped list from repository")
@@ -372,7 +375,7 @@ class UserServiceTest {
             when(userRepository.findAllActiveEmployees())
                     .thenReturn(List.of(buildUser("u1", "a@masova.com", UserType.STAFF)));
 
-            List<UserResponse> result = userService.getAllUsers();
+            List<UserResponse> result = userService.listActiveEmployees();
 
             assertThat(result).hasSize(1);
         }
@@ -381,7 +384,7 @@ class UserServiceTest {
         @DisplayName("returns empty list when no users")
         void returnsEmptyList() {
             when(userRepository.findAllActiveEmployees()).thenReturn(List.of());
-            assertThat(userService.getAllUsers()).isEmpty();
+            assertThat(userService.listActiveEmployees()).isEmpty();
         }
     }
 
@@ -1263,7 +1266,8 @@ class UserServiceTest {
         @DisplayName("throws when Google OAuth client ID is not configured")
         void throwsWhenClientIdMissing() {
             when(googleOAuthTokenVerifier.verify("valid-token"))
-                    .thenThrow(new IllegalStateException("Google OAuth client ID is not configured"));
+                    .thenThrow(new IllegalStateException(
+                            "Google OAuth client ID is not configured. Set GOOGLE_OAUTH_CLIENT_ID."));
 
             assertThatThrownBy(() -> userService.loginWithGoogle("valid-token"))
                     .isInstanceOf(IllegalStateException.class)
@@ -1367,7 +1371,7 @@ class UserServiceTest {
             when(jwtService.generateAccessToken(any(), any(), any())).thenReturn("access-token");
             when(jwtService.generateRefreshToken(any())).thenReturn("refresh-token");
             when(userJpaRepository.save(any())).thenReturn(null);
-            when(restTemplate.postForEntity(anyString(), any(), eq(Map.class)))
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(), any(ParameterizedTypeReference.class)))
                     .thenThrow(new org.springframework.web.client.RestClientException("Service unavailable"));
 
             LoginResponse result = userService.registerWithGoogle("valid-token");

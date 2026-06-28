@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useAppSelector } from '../../store/hooks';
-import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
 import { formatMoney } from '../../utils/currency';
 import { t, cardStyle, sectionTitleStyle, statusBadge } from './manager-tokens';
@@ -23,6 +22,7 @@ import {
   useGetExecutiveSummaryQuery,
   useGetDriverStatusQuery,
 } from '../../store/api/analyticsApi';
+import type { StaffRankingItem, ProductRankingItem, ChurnPredictionItem, SalesForecastItem, OrderTypeBreakdownEntry } from '../types/analytics';
 
 interface Props {
   storeId: string;
@@ -44,7 +44,7 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
   const { data: driverStatus } = useGetDriverStatusQuery(storeId, { skip: !storeId, pollingInterval: 30000 });
   const { data: salesTrends } = useGetSalesTrendsQuery({ period: 'WEEKLY', storeId }, { skip: !storeId, pollingInterval: 300000 });
   const { data: orderTypeBreakdown } = useGetOrderTypeBreakdownQuery(storeId, { skip: !storeId, pollingInterval: 300000 });
-  const { data: peakHours } = useGetPeakHoursQuery(storeId, { skip: !storeId, pollingInterval: 300000 });
+  const { data: _peakHours } = useGetPeakHoursQuery(storeId, { skip: !storeId, pollingInterval: 300000 });
   const { data: staffLeaderboard } = useGetStaffLeaderboardQuery({ storeId, period: 'TODAY' }, { skip: !storeId, pollingInterval: 120000 });
   const { data: topProducts } = useGetTopProductsQuery({ storeId, period: 'TODAY', sortBy: 'REVENUE' }, { skip: !storeId, pollingInterval: 300000 });
   const { data: salesForecast } = useGetSalesForecastQuery({ storeId, days: 7 }, { skip: !storeId, pollingInterval: 3600000 });
@@ -263,7 +263,7 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
               { stage: 'Received', count: orderQueue.filter(o => o.status === 'RECEIVED').length, color: t.blue },
               { stage: 'In Kitchen', count: orderQueue.filter(o => ['PREPARING', 'OVEN'].includes(o.status)).length, color: t.yellow },
               { stage: 'Ready', count: orderQueue.filter(o => o.status === 'READY').length, color: t.green },
-              { stage: 'Dispatched', count: orderQueue.filter(o => o.status === 'DISPATCHED').length, color: t.orange },
+              { stage: 'Dispatched', count: orderQueue.filter(o => ['DISPATCHED', 'OUT_FOR_DELIVERY'].includes(o.status)).length, color: t.orange },
             ].map(item => (
               <div key={item.stage} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 90, fontSize: 13, fontWeight: 600, color: t.gray }}>{item.stage}</div>
@@ -284,7 +284,7 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
           <div style={cardStyle}>
             <h3 style={sectionTitleStyle}>Order Types</h3>
             <div style={{ marginTop: 16 }}>
-              {Object.entries(orderTypeBreakdown).filter(([k]) => k !== 'storeId' && k !== 'period').map(([type, data]: [string, any]) => (
+              {Object.entries(orderTypeBreakdown).filter(([k]) => k !== 'storeId' && k !== 'period').map(([type, data]: [string, OrderTypeBreakdownEntry]) => (
                 <div key={type} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${t.grayLight}` }}>
                   <span style={{ fontSize: 13, color: t.black }}>{type}</span>
                   <span style={{ fontSize: 13, fontWeight: 600, color: t.orange }}>{typeof data === 'number' ? data : data?.count || 0}</span>
@@ -300,7 +300,7 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
         <div style={{ ...cardStyle, marginBottom: 24 }}>
           <h3 style={sectionTitleStyle}>Staff Leaderboard - {staffLeaderboard.period}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 12, marginTop: 16 }}>
-            {staffLeaderboard.rankings.slice(0, 6).map((staff: any, idx: number) => (
+            {staffLeaderboard.rankings.slice(0, 6).map((staff: StaffRankingItem, idx: number) => (
               <div key={staff.staffId} style={{
                 padding: 12, background: idx < 3 ? t.orangeLight : t.bgMain, borderRadius: t.radius.md,
                 border: idx === 0 ? `2px solid ${t.orange}` : `1px solid ${t.grayLight}`,
@@ -326,7 +326,7 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
         <div style={{ ...cardStyle, marginBottom: 24 }}>
           <h3 style={sectionTitleStyle}>Top Selling Products - {topProducts.period}</h3>
           <div style={{ marginTop: 16 }}>
-            {topProducts.topProducts.slice(0, 5).map((product: any) => (
+            {topProducts.topProducts.slice(0, 5).map((product: ProductRankingItem) => (
               <div key={product.itemId} style={{
                 display: 'flex', alignItems: 'center', gap: 12, padding: 10,
                 background: t.bgMain, borderRadius: t.radius.md, marginBottom: 8,
@@ -388,7 +388,7 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
           <div style={{ fontSize: 12, color: t.gray, marginBottom: 12 }}>
             High: {churnPrediction.highRiskCount} | Medium: {churnPrediction.mediumRiskCount} | Low: {churnPrediction.lowRiskCount}
           </div>
-          {churnPrediction.predictions.slice(0, 5).map((pred: any) => (
+          {churnPrediction.predictions.slice(0, 5).map((pred: ChurnPredictionItem) => (
             <div key={pred.customerId} style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               padding: 10, background: t.bgMain, borderRadius: t.radius.md, marginBottom: 6,
@@ -411,7 +411,7 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
         <div style={cardStyle}>
           <h3 style={sectionTitleStyle}>7-Day Sales Forecast</h3>
           <div style={{ marginTop: 12 }}>
-            {salesForecast.forecasts.map((forecast: any) => (
+            {salesForecast.forecasts.map((forecast: SalesForecastItem) => (
               <div key={forecast.date} style={{
                 display: 'flex', justifyContent: 'space-between', padding: 10,
                 background: t.bgMain, borderRadius: t.radius.md, marginBottom: 6,

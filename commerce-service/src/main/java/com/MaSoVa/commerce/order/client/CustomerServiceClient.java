@@ -1,12 +1,12 @@
 package com.MaSoVa.commerce.order.client;
 
+import com.MaSoVa.shared.http.HttpMethods;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -56,7 +56,7 @@ public class CustomerServiceClient {
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
 
             log.info("Updating customer email. Customer: {}", customerId);
-            restTemplate.patchForObject(url, entity, String.class);
+            restTemplate.exchange(url, HttpMethods.PATCH, entity, String.class);
             log.info("Successfully updated email for customer: {}", customerId);
         } catch (Exception e) {
             log.error("Error updating customer email for customer: {}", customerId, e);

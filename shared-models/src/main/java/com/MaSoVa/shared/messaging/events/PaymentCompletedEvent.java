@@ -6,6 +6,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 public class PaymentCompletedEvent extends DomainEvent {
+
+    private static final long serialVersionUID = 1L;
+
     private String paymentId;
     private String orderId;
     private String customerId;

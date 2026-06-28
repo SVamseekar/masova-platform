@@ -139,7 +139,7 @@ export const useToast = (): UseToastReturn => {
     const formattedAmount = formatMoney(Math.round(amount * 100), currency, locale);
     addToStore(`Payment of ${formattedAmount} successful`, 'success', 'Payment Success');
     return showToast(`Payment of ${formattedAmount} successful`, 'success');
-  }, [showToast, addToStore]);
+  }, [showToast, addToStore, currency, locale]);
 
   const paymentFailed = useCallback((reason?: string) => {
     const message = reason ? `Payment failed: ${reason}` : 'Payment failed. Please try again.';

@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import PromotionCard from './PromotionCard';
 
 vi.mock('../../../components/ui/neumorphic', () => ({
-  Button: ({ children, onClick, ...props }: any) => (
+  Button: ({ children, onClick, ...props }: MockButtonProps) => (
     <button onClick={onClick} {...props}>{children}</button>
   ),
 }));

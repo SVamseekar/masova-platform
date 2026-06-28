@@ -7,6 +7,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 public class OrderCreatedEvent extends DomainEvent {
+
+    private static final long serialVersionUID = 1L;
+
     private String orderId;
     private String customerId;
     private String storeId;

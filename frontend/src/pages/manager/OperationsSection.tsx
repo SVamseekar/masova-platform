@@ -8,7 +8,7 @@ import {
   useGetAllMenuItemsQuery,
   useUpdateMenuItemMutation,
 } from '../../store/api/menuApi';
-import type { MenuItem, Cuisine } from '../../store/api/menuApi';
+import type { MenuItem } from '../../store/api/menuApi';
 import {
   useGetAllDriversQuery,
   useGetDriverStatsQuery,
@@ -23,7 +23,9 @@ import {
   useCreateStoreMutation,
   useUpdateStoreMutation,
 } from '../../store/api/storeApi';
-import type { Store, CreateStoreRequest } from '../../store/api/storeApi';
+import type { Store, CreateStoreRequest, Address } from '../../store/api/storeApi';
+import type { KioskAccount } from '../../store/api/kioskApi';
+import { getApiErrorMessage } from '../utils/apiError';
 import { useGetActiveStoresProtectedQuery } from '../../store/api/storeApi';
 import {
   useCreateKioskMutation,
@@ -276,7 +278,12 @@ const DriversTab = ({ storeId }: { storeId: string }) => {
                       {driver.isOnline && <button style={{ ...btn(), color: t.blue, fontSize: 12, padding: '4px 10px' }} onClick={() => setTrackingDriver(driver)}>Track</button>}
                       <button style={{ ...btn(), fontSize: 12, padding: '4px 10px' }} onClick={() => { setSelectedDriver(driver); setDetailsOpen(true); }}>Details</button>
                       <button style={{ ...btn(), color: driver.isActive ? t.red : t.green, fontSize: 12, padding: '4px 10px' }}
-                        onClick={async () => { try { driver.isActive ? await deactivateDriver(driver.id).unwrap() : await activateDriver(driver.id).unwrap(); } catch (e) { console.error(e); }}}>
+                        onClick={async () => {
+                          try {
+                            if (driver.isActive) await deactivateDriver(driver.id).unwrap();
+                            else await activateDriver(driver.id).unwrap();
+                          } catch (e) { console.error(e); }
+                        }}>
                         {driver.isActive ? 'Deactivate' : 'Activate'}
                       </button>
                     </div>
@@ -326,7 +333,7 @@ const DriversTab = ({ storeId }: { storeId: string }) => {
 
 // ======================== STORES TAB ========================
 const StoresTab = ({ storeId }: { storeId: string }) => {
-  const currentUser = useAppSelector(selectCurrentUser);
+  const _currentUser = useAppSelector(selectCurrentUser);
   const { data: stores = [], isLoading } = useGetActiveStoresQuery();
   const [updateStore, { isLoading: updating }] = useUpdateStoreMutation();
   const [createStore, { isLoading: creating }] = useCreateStoreMutation();
@@ -334,15 +341,23 @@ const StoresTab = ({ storeId }: { storeId: string }) => {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
-  const defaultForm = {
-    name: '', storeCode: '', address: { street: '', city: '', state: '', pincode: '' } as any,
+  const defaultForm: CreateStoreRequest = {
+    name: '', storeCode: '', address: { street: '', city: '', state: '', pincode: '' } as Address,
     phoneNumber: '', regionId: '', areaManagerId: '', openingDate: '',
     operatingConfig: {
-      weeklySchedule: Object.fromEntries(['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY'].map(d => [d, { startTime: '09:00', endTime: '22:00', isOpen: true }])),
+      weeklySchedule: {
+        MONDAY: { startTime: '09:00', endTime: '22:00', isOpen: true },
+        TUESDAY: { startTime: '09:00', endTime: '22:00', isOpen: true },
+        WEDNESDAY: { startTime: '09:00', endTime: '22:00', isOpen: true },
+        THURSDAY: { startTime: '09:00', endTime: '22:00', isOpen: true },
+        FRIDAY: { startTime: '09:00', endTime: '22:00', isOpen: true },
+        SATURDAY: { startTime: '09:00', endTime: '22:00', isOpen: true },
+        SUNDAY: { startTime: '09:00', endTime: '22:00', isOpen: true },
+      },
       deliveryRadiusKm: 10, maxConcurrentOrders: 50, estimatedPrepTimeMinutes: 30, acceptsOnlineOrders: true, minimumOrderValueINR: 100,
     },
   };
-  const [form, setForm] = useState<any>(defaultForm);
+  const [form, setForm] = useState<CreateStoreRequest>(defaultForm);
 
   const openEdit = (store: Store) => {
     setSelectedStore(store);
@@ -358,7 +373,7 @@ const StoresTab = ({ storeId }: { storeId: string }) => {
       if (selectedStore) { await updateStore({ storeId: selectedStore.id, data }).unwrap(); }
       else { await createStore(data).unwrap(); }
       setModalOpen(false); refetch();
-    } catch (e: any) { alert(e?.data?.message || 'Failed to save store'); }
+    } catch (e: unknown) { alert(getApiErrorMessage(e, 'Failed to save store')); }
   };
 
   if (isLoading) return <div style={{ padding: 40, textAlign: 'center', color: t.gray }}>Loading stores...</div>;
@@ -445,12 +460,12 @@ const KiosksTab = ({ storeId }: { storeId: string }) => {
     try {
       const result = await createKiosk({ storeId: selectedStoreId, terminalId }).unwrap();
       setTokens(result); setShowTokens(true); setTerminalId(''); refetch();
-    } catch (e: any) { alert('Failed: ' + (e?.data?.error || e.message)); }
+    } catch (e: unknown) { alert('Failed: ' + getApiErrorMessage(e, 'Unknown error')); }
   };
 
   const handleDeactivate = async (id: string) => {
     if (!window.confirm('Deactivate this kiosk?')) return;
-    try { await deactivateKiosk(id).unwrap(); refetch(); } catch (e: any) { alert('Failed: ' + (e?.data?.error || e.message)); }
+    try { await deactivateKiosk(id).unwrap(); refetch(); } catch (e: unknown) { alert('Failed: ' + getApiErrorMessage(e, 'Unknown error')); }
   };
 
   const copy = (text: string) => { navigator.clipboard.writeText(text); alert('Copied!'); };
@@ -465,7 +480,7 @@ const KiosksTab = ({ storeId }: { storeId: string }) => {
             <label style={{ fontSize: 11, color: t.gray, display: 'block', marginBottom: 4 }}>Store</label>
             <select value={selectedStoreId} onChange={e => setSelectedStoreId(e.target.value)} style={{ ...selectStyle, width: '100%', padding: '8px 10px' }}>
               <option value="">Select store...</option>
-              {stores.map((s: any) => <option key={s.id} value={s.id}>{s.name} ({s.id.slice(-6)})</option>)}
+              {stores.map((s: Store) => <option key={s.id} value={s.id}>{s.name} ({s.id.slice(-6)})</option>)}
             </select>
           </div>
           <div style={{ flex: 1, minWidth: 200 }}>
@@ -486,15 +501,15 @@ const KiosksTab = ({ storeId }: { storeId: string }) => {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr>{['Terminal ID', 'Status', 'Last Access', 'Actions'].map(h => <th key={h} style={tableHeaderStyle}>{h}</th>)}</tr></thead>
               <tbody>
-                {kiosks.map((k: any) => (
+                {kiosks.map((k: KioskAccount) => (
                   <tr key={k.id}>
-                    <td style={{ ...tableCellStyle, fontWeight: 600 }}>{k.employeeDetails?.terminalId || 'N/A'}</td>
+                    <td style={{ ...tableCellStyle, fontWeight: 600 }}>{k.terminalId || 'N/A'}</td>
                     <td style={tableCellStyle}>
                       <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: k.isActive ? t.green : t.red, color: t.white }}>
                         {k.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td style={tableCellStyle}>{k.employeeDetails?.lastKioskAccess ? new Date(k.employeeDetails.lastKioskAccess).toLocaleString() : 'Never'}</td>
+                    <td style={tableCellStyle}>{k.lastKioskAccess ? new Date(k.lastKioskAccess).toLocaleString() : 'Never'}</td>
                     <td style={tableCellStyle}>
                       <button style={{ ...btn(), color: t.red, fontSize: 12, padding: '4px 10px' }} onClick={() => handleDeactivate(k.id)} disabled={!k.isActive}>Deactivate</button>
                     </td>

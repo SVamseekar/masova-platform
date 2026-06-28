@@ -165,8 +165,8 @@ export const useGeocoding = (): UseGeocodingReturn => {
       setError(null);
       return result;
 
-    } catch (err: any) {
-      const errorMessage = err.message || 'Failed to geocode address';
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to geocode address';
       console.error('❌ Geocoding error:', errorMessage);
       setError(errorMessage);
       setLastResult(null);

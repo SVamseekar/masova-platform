@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen } from '@testing-library/react';
+import type { PreloadedState } from '@reduxjs/toolkit';
 import { renderWithProviders } from '@/test/utils/testUtils';
+import type { RootState } from '../../store/store';
 import { mockAuthState, mockCustomerAuthState, mockUnauthenticatedState } from '@/test/fixtures';
 import { ProtectedRoute } from './ProtectedRoute';
 
@@ -107,7 +109,7 @@ describe('ProtectedRoute', () => {
             error: null,
             lastLoginAttempt: null,
           },
-        } as any,
+        } satisfies PreloadedState<RootState>,
         useMemoryRouter: true,
         initialEntries: ['/pos'],
       }

@@ -17,6 +17,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @ComponentScan(basePackages = {"com.MaSoVa.commerce", "com.MaSoVa.shared"})
 public class CommerceServiceApplication {
 
+    @SuppressWarnings("resource") // ApplicationContext lives for the JVM's lifetime; Spring Boot registers its own shutdown hook
     public static void main(String[] args) {
         SpringApplication.run(CommerceServiceApplication.class, args);
     }

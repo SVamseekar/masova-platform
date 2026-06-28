@@ -10,10 +10,9 @@ import CustomerPageHeader from '../../components/common/CustomerPageHeader';
 import { DriverTrackingMap } from '../../components/delivery/DriverTrackingMap';
 import { useOrderTrackingWebSocket } from '../../hooks/useOrderTrackingWebSocket';
 import { OrderTrackingUpdate } from '../../services/websocketService';
+import type { OrderStatus } from '../../types/order';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type OrderStatus = 'RECEIVED' | 'PREPARING' | 'OVEN' | 'BAKED' | 'READY' | 'DISPATCHED' | 'DELIVERED' | 'SERVED' | 'COMPLETED' | 'CANCELLED';
-
 type StepDef = { status: OrderStatus; label: string; description: string };
 
 const SHARED_STEPS: StepDef[] = [
@@ -26,8 +25,9 @@ const SHARED_STEPS: StepDef[] = [
 
 const DELIVERY_STEPS: StepDef[] = [
   ...SHARED_STEPS,
-  { status: 'DISPATCHED', label: 'Out for Delivery', description: 'Driver is on the way'  },
-  { status: 'DELIVERED',  label: 'Delivered',        description: 'Enjoy your meal!'       },
+  { status: 'DISPATCHED',       label: 'Dispatched',       description: 'Driver is heading to the restaurant' },
+  { status: 'OUT_FOR_DELIVERY', label: 'Out for Delivery', description: 'Driver is on the way to you'         },
+  { status: 'DELIVERED',        label: 'Delivered',        description: 'Enjoy your meal!'                    },
 ];
 
 const DINE_IN_STEPS: StepDef[] = [
@@ -159,8 +159,8 @@ const TrackingPage: React.FC = () => {
     pollingInterval: 10000,
   });
 
-  // Delivery-service poll (driver location + ETA) — only when DISPATCHED
-  const isDispatched = order?.status === 'DISPATCHED';
+  // Delivery-service poll (driver location + ETA) — once a driver is assigned and en route
+  const isDispatched = order?.status === 'DISPATCHED' || order?.status === 'OUT_FOR_DELIVERY';
   const { data: delivery, isLoading: deliveryLoading } = useDeliveryTrackQuery(orderId!, {
     skip: !orderId || !isDispatched,
     pollingInterval: 8000,

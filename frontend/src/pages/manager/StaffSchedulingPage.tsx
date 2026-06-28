@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { usePageStore } from '../../contexts/PageStoreContext';
+import { usePageStore } from '../../hooks/usePageStore';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import {
@@ -13,6 +13,7 @@ import {
   type Shift,
   type CreateShiftRequest,
 } from '../../store/api/shiftApi';
+import { getApiErrorMessage } from '../utils/apiError';
 import { useGetStoreEmployeesQuery } from '../../store/api/userApi';
 import { Card, Button } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
@@ -54,6 +55,7 @@ interface ShiftFormData {
   isMandatory: boolean;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- page component with HOC export
 const StaffSchedulingPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
   const { handleBack } = useSmartBackNavigation();
@@ -79,8 +81,8 @@ const StaffSchedulingPage: React.FC = () => {
   });
 
   // Bulk creation state
-  const [bulkShifts, setBulkShifts] = useState<CreateShiftRequest[]>([]);
-  const [bulkCreateDialogOpen, setBulkCreateDialogOpen] = useState(false);
+  const [_bulkShifts, _setBulkShifts] = useState<CreateShiftRequest[]>([]);
+  const [_bulkCreateDialogOpen, _setBulkCreateDialogOpen] = useState(false);
 
   // API queries and mutations
   const { data: weeklyShifts = [], isLoading: shiftsLoading } = useGetWeeklyScheduleQuery(
@@ -95,7 +97,7 @@ const StaffSchedulingPage: React.FC = () => {
   const [bulkCreateShifts, { isLoading: bulkCreating }] = useBulkCreateShiftsMutation();
   const [copyPreviousWeek, { isLoading: copying }] = useCopyPreviousWeekScheduleMutation();
   const [deleteShift] = useDeleteShiftMutation();
-  const [updateShift] = useUpdateShiftMutation();
+  const [_updateShift] = useUpdateShiftMutation();
 
   // Filter employees to only show staff and drivers
   const staffMembers = useMemo(() => {
@@ -166,9 +168,9 @@ const StaffSchedulingPage: React.FC = () => {
     try {
       await copyPreviousWeek({ targetWeekStart: weekStartStr }).unwrap();
       alert('Previous week schedule copied successfully!');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error copying schedule:', error);
-      alert(`Failed to copy schedule: ${error?.data?.message || error.message}`);
+      alert(`Failed to copy schedule: ${getApiErrorMessage(error, 'Unknown error')}`);
     }
   };
 
@@ -212,9 +214,9 @@ const StaffSchedulingPage: React.FC = () => {
         isMandatory: true,
       });
       alert('Shift created successfully!');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating shift:', error);
-      alert(`Failed to create shift: ${error?.data?.message || error.message}`);
+      alert(`Failed to create shift: ${getApiErrorMessage(error, 'Unknown error')}`);
     }
   };
 
@@ -227,9 +229,9 @@ const StaffSchedulingPage: React.FC = () => {
     try {
       await deleteShift(shiftId).unwrap();
       alert('Shift cancelled successfully!');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting shift:', error);
-      alert(`Failed to cancel shift: ${error?.data?.message || error.message}`);
+      alert(`Failed to cancel shift: ${getApiErrorMessage(error, 'Unknown error')}`);
     }
   };
 
@@ -405,7 +407,7 @@ const StaffSchedulingPage: React.FC = () => {
                 <label style={styles.label}>Shift Type *</label>
                 <select
                   value={shiftFormData.type}
-                  onChange={(e) => setShiftFormData({ ...shiftFormData, type: e.target.value as any })}
+                  onChange={(e) => setShiftFormData({ ...shiftFormData, type: e.target.value as Shift['type'] })}
                   style={styles.select}
                 >
                   <option value="REGULAR">Regular</option>
@@ -740,4 +742,5 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- HOC default export
 export default withPageStoreContext(StaffSchedulingPage, 'staff-scheduling');

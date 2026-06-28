@@ -1,14 +1,14 @@
 package com.MaSoVa.intelligence.dto;
+
 import java.io.Serializable;
-
-
+import java.util.ArrayList;
 import java.math.BigDecimal;
 import java.util.List;
 
 public class StaffLeaderboardResponse implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private List<StaffRanking> rankings;
+    private ArrayList<StaffRanking> rankings = new ArrayList<>();
     private String period; // "TODAY", "WEEK", "MONTH"
     private int totalStaff;
 
@@ -16,7 +16,7 @@ public class StaffLeaderboardResponse implements Serializable {
     }
 
     public StaffLeaderboardResponse(List<StaffRanking> rankings, String period, int totalStaff) {
-        this.rankings = rankings;
+        this.rankings = rankings != null ? new ArrayList<>((rankings)) : new ArrayList<>();
         this.period = period;
         this.totalStaff = totalStaff;
     }
@@ -26,7 +26,7 @@ public class StaffLeaderboardResponse implements Serializable {
     }
 
     public void setRankings(List<StaffRanking> rankings) {
-        this.rankings = rankings;
+        this.rankings = rankings != null ? new ArrayList<>((rankings)) : new ArrayList<>();
     }
 
     public String getPeriod() {
@@ -50,12 +50,12 @@ public class StaffLeaderboardResponse implements Serializable {
     }
 
     public static class Builder {
-        private List<StaffRanking> rankings;
+        private ArrayList<StaffRanking> rankings = new ArrayList<>();
         private String period;
         private int totalStaff;
 
         public Builder rankings(List<StaffRanking> rankings) {
-            this.rankings = rankings;
+            this.rankings = rankings != null ? new ArrayList<>((rankings)) : new ArrayList<>();
             return this;
         }
 

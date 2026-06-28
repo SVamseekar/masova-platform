@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { usePageStore } from '../../contexts/PageStoreContext';
+import { usePageStore } from '../../hooks/usePageStore';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import {
   useGetRecentReviewsQuery,
@@ -38,6 +38,7 @@ import { colors, shadows, spacing, typography, borderRadius } from '../../styles
 import { FilterBar, FilterConfig, FilterValues, SortConfig } from '../../components/common/FilterBar';
 import { applyFilters, applySort, exportToCSV, commonFilters } from '../../utils/filterUtils';
 
+// eslint-disable-next-line react-refresh/only-export-components -- page component with HOC export
 const ReviewManagementPage: React.FC = () => {
   const { handleBack } = useSmartBackNavigation();
   const [activeTab, setActiveTab] = useState<'all' | 'needs-response' | 'pending' | 'flagged'>(
@@ -273,7 +274,7 @@ const ReviewManagementPage: React.FC = () => {
       { label: 'Service', field: 'serviceRating' },
       { label: 'Ambiance', field: 'ambianceRating' },
       { label: 'Responded', field: 'response', format: (v) => v ? 'Yes' : 'No' },
-      { label: 'Date', field: 'createdAt', format: (v) => new Date(v).toLocaleDateString() },
+      { label: 'Date', field: 'createdAt', format: (v) => new Date(String(v)).toLocaleDateString() },
     ]);
   };
 
@@ -860,4 +861,5 @@ const ReviewManagementPage: React.FC = () => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- HOC default export
 export default withPageStoreContext(ReviewManagementPage, 'reviews');

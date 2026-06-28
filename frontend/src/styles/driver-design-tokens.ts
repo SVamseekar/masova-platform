@@ -268,7 +268,7 @@ export const createCard = () => ({
 /**
  * Creates a pulse animation for online status
  */
-export const createPulseAnimation = (color: string = colors.primary.green) => ({
+export const createPulseAnimation = (_color: string = colors.primary.green) => ({
   '@keyframes pulse': {
     '0%, 100%': {
       opacity: 1,

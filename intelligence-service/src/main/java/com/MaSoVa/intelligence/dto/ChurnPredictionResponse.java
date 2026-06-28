@@ -1,7 +1,7 @@
 package com.MaSoVa.intelligence.dto;
+
 import java.io.Serializable;
-
-
+import java.util.ArrayList;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,8 +14,8 @@ public class ChurnPredictionResponse implements Serializable {
     private int mediumRiskCustomers;
     private int lowRiskCustomers;
     private BigDecimal predictedChurnRate; // Percentage
-    private List<ChurnRiskCustomer> atRiskCustomers;
-    private List<ChurnFactor> churnFactors;
+    private ArrayList<ChurnRiskCustomer> atRiskCustomers = new ArrayList<>();
+    private ArrayList<ChurnFactor> churnFactors = new ArrayList<>();
 
     public ChurnPredictionResponse() {}
 
@@ -64,7 +64,7 @@ public class ChurnPredictionResponse implements Serializable {
     }
 
     public void setAtRiskCustomers(List<ChurnRiskCustomer> atRiskCustomers) {
-        this.atRiskCustomers = atRiskCustomers;
+        this.atRiskCustomers = atRiskCustomers != null ? new ArrayList<>((atRiskCustomers)) : new ArrayList<>();
     }
 
     public List<ChurnFactor> getChurnFactors() {
@@ -72,7 +72,7 @@ public class ChurnPredictionResponse implements Serializable {
     }
 
     public void setChurnFactors(List<ChurnFactor> churnFactors) {
-        this.churnFactors = churnFactors;
+        this.churnFactors = churnFactors != null ? new ArrayList<>((churnFactors)) : new ArrayList<>();
     }
 
     public static Builder builder() {
@@ -108,12 +108,12 @@ public class ChurnPredictionResponse implements Serializable {
         }
 
         public Builder atRiskCustomers(List<ChurnRiskCustomer> atRiskCustomers) {
-            obj.atRiskCustomers = atRiskCustomers;
+            obj.atRiskCustomers = atRiskCustomers != null ? new ArrayList<>((atRiskCustomers)) : new ArrayList<>();
             return this;
         }
 
         public Builder churnFactors(List<ChurnFactor> churnFactors) {
-            obj.churnFactors = churnFactors;
+            obj.churnFactors = churnFactors != null ? new ArrayList<>((churnFactors)) : new ArrayList<>();
             return this;
         }
 
@@ -122,7 +122,8 @@ public class ChurnPredictionResponse implements Serializable {
         }
     }
 
-    public static class ChurnRiskCustomer {
+    public static class ChurnRiskCustomer implements Serializable {
+        private static final long serialVersionUID = 1L;
         private String customerId;
         private String customerName;
         private String email;
@@ -132,7 +133,7 @@ public class ChurnPredictionResponse implements Serializable {
         private BigDecimal lifetimeValue;
         private int totalOrders;
         private LocalDateTime lastOrderDate;
-        private List<String> riskFactors;
+        private ArrayList<String> riskFactors = new ArrayList<>();
 
         public ChurnRiskCustomer() {}
 
@@ -213,7 +214,7 @@ public class ChurnPredictionResponse implements Serializable {
         }
 
         public void setRiskFactors(List<String> riskFactors) {
-            this.riskFactors = riskFactors;
+            this.riskFactors = riskFactors != null ? new ArrayList<>((riskFactors)) : new ArrayList<>();
         }
 
         public static Builder builder() {
@@ -269,7 +270,7 @@ public class ChurnPredictionResponse implements Serializable {
             }
 
             public Builder riskFactors(List<String> riskFactors) {
-                obj.riskFactors = riskFactors;
+                obj.riskFactors = riskFactors != null ? new ArrayList<>((riskFactors)) : new ArrayList<>();
                 return this;
             }
 
@@ -279,7 +280,8 @@ public class ChurnPredictionResponse implements Serializable {
         }
     }
 
-    public static class ChurnFactor {
+    public static class ChurnFactor implements Serializable {
+        private static final long serialVersionUID = 1L;
         private String factorName;
         private String description;
         private BigDecimal impactScore; // 0-100

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.MethodParameter;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,6 +41,11 @@ class GlobalExceptionHandlerTest {
         when(request.getRequestURI()).thenReturn("/api/test");
     }
 
+    /** Real MethodParameter (not a mock) — MethodArgumentNotValidException.getMessage() needs a real Executable. */
+    private MethodParameter dummyMethodParameter() throws NoSuchMethodException {
+        return new MethodParameter(GlobalExceptionHandlerTest.class.getDeclaredMethod("dummyMethodParameter"), -1);
+    }
+
     // ---- Validation exception ----
 
     @Nested
@@ -48,12 +54,12 @@ class GlobalExceptionHandlerTest {
 
         @Test
         @DisplayName("Should return 400 BAD_REQUEST with validation error details")
-        void shouldReturn400_withFieldErrors() {
+        void shouldReturn400_withFieldErrors() throws NoSuchMethodException {
             BindingResult bindingResult = mock(BindingResult.class);
             FieldError fieldError = new FieldError("order", "quantity", "must be positive");
             when(bindingResult.getFieldErrors()).thenReturn(List.of(fieldError));
 
-            MethodArgumentNotValidException ex = new MethodArgumentNotValidException(null, bindingResult);
+            MethodArgumentNotValidException ex = new MethodArgumentNotValidException(dummyMethodParameter(), bindingResult);
 
             ResponseEntity<ErrorResponse> response = handler.handleValidationException(ex, request);
 
@@ -69,14 +75,14 @@ class GlobalExceptionHandlerTest {
 
         @Test
         @DisplayName("Should handle multiple validation errors")
-        void shouldHandleMultipleFieldErrors() {
+        void shouldHandleMultipleFieldErrors() throws NoSuchMethodException {
             BindingResult bindingResult = mock(BindingResult.class);
             when(bindingResult.getFieldErrors()).thenReturn(List.of(
                     new FieldError("order", "quantity", "must be positive"),
                     new FieldError("order", "itemId", "must not be null")
             ));
 
-            MethodArgumentNotValidException ex = new MethodArgumentNotValidException(null, bindingResult);
+            MethodArgumentNotValidException ex = new MethodArgumentNotValidException(dummyMethodParameter(), bindingResult);
             ResponseEntity<ErrorResponse> response = handler.handleValidationException(ex, request);
 
             assertThat(response.getBody().getValidationErrors()).hasSize(2);

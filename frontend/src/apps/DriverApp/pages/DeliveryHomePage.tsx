@@ -3,13 +3,12 @@
  * Complete visual transformation while maintaining all functionality
  */
 
-import React, { useState, useEffect } from 'react';
-import { Box, Container, Typography, Alert, CircularProgress, IconButton, Switch, FormControlLabel } from '@mui/material';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Box, Container, Typography, Alert, IconButton, Switch, FormControlLabel } from '@mui/material';
 import {
   Refresh as RefreshIcon,
   Phone as PhoneIcon,
   Navigation as NavigationIcon,
-  Bolt as BoltIcon,
   CheckCircle as CheckCircleIcon,
   LocationOn as LocationIcon,
   Timer as TimerIcon,
@@ -22,9 +21,9 @@ import { useStartSessionMutation, useEndSessionMutation } from '../../../store/a
 import { useGetDriverPerformanceQuery, useUpdateDriverStatusMutation } from '../../../store/api/driverApi';
 import { useUpdateLocationMutation } from '../../../store/api/deliveryApi';
 import { websocketService } from '../../../services/websocketService';
-import { MetricCard, ActionButton, StatsChart } from '../components/shared';
+import { ActionButton } from '../components/shared';
 import LocationMapModal from '../components/LocationMapModal';
-import { colors, spacing, borderRadius, typography, shadows, animations, createNeumorphicSurface } from '../../../styles/driver-design-tokens';
+import { colors, spacing, borderRadius, typography, shadows } from '../../../styles/driver-design-tokens';
 
 interface DeliveryHomePageProps {
   isOnline: boolean;
@@ -32,27 +31,26 @@ interface DeliveryHomePageProps {
   setActiveDeliveries: (value: number) => void;
 }
 
-const DeliveryHomePage: React.FC<DeliveryHomePageProps> = ({ isOnline, setIsOnline, setActiveDeliveries }) => {
+const DeliveryHomePage: React.FC<DeliveryHomePageProps> = ({ isOnline, setIsOnline: _setIsOnline, setActiveDeliveries: _setActiveDeliveries }) => {
   const { user } = useSelector((state: RootState) => state.auth);
-  const [startSession] = useStartSessionMutation();
-  const [endSession] = useEndSessionMutation();
-  const [updateDriverStatus] = useUpdateDriverStatusMutation();
+  const [_startSession] = useStartSessionMutation();
+  const [_endSession] = useEndSessionMutation();
+  const [_updateDriverStatus] = useUpdateDriverStatusMutation();
   const [updateLocation] = useUpdateLocationMutation();
 
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [_isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [isUsingFallback, setIsUsingFallback] = useState(false);
   const [locationError, setLocationError] = useState<string>('');
   const [locationMode, setLocationMode] = useState<'auto' | 'manual'>('auto');
   // Session start time comes from backend when manager clocks in the driver
-  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
+  const [sessionStartTime, _setSessionStartTime] = useState<Date | null>(null);
   const [elapsedTime, setElapsedTime] = useState('00:00:00');
-  const [chartPeriod, setChartPeriod] = useState<'day' | 'week' | 'month'>('day');
   const [showLocationMap, setShowLocationMap] = useState(false);
 
   // Fetch real driver performance data
   const today = new Date().toISOString().split('T')[0];
-  const { data: performanceData, isLoading: isLoadingPerformance } = useGetDriverPerformanceQuery(
+  const { data: _performanceData, isLoading: _isLoadingPerformance } = useGetDriverPerformanceQuery(
     {
       driverId: user?.id || '',
       startDate: today,
@@ -64,44 +62,13 @@ const DeliveryHomePage: React.FC<DeliveryHomePageProps> = ({ isOnline, setIsOnli
     }
   );
 
-  // Calculate today's stats
-  const todayStats = {
-    deliveries: performanceData?.totalDeliveries || 0,
-    earnings: performanceData?.totalEarnings || 0,
-    distance: performanceData?.totalDistanceCovered || 0,
-    avgDeliveryTime: Math.round(performanceData?.averageDeliveryTime || 0)
-  };
-
-  // Generate earnings chart data from performance data
-  // Create last 7 days data (replace with actual API call if available)
-  const earningsChartData = React.useMemo(() => {
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const today = new Date().getDay();
-    const data = [];
-
-    for (let i = 6; i >= 0; i--) {
-      const dayIndex = (today - i + 7) % 7;
-      const dayLabel = days[dayIndex];
-
-      // For today, use real data; for past days, use estimated values
-      // In production, this should come from a weekly performance API endpoint
-      const value = i === 0
-        ? todayStats.earnings
-        : Math.round(todayStats.earnings * (0.7 + Math.random() * 0.6)); // Simulated past data
-
-      data.push({ label: dayLabel, value });
-    }
-
-    return data;
-  }, [todayStats.earnings]);
-
-  const getDefaultLocation = (): { latitude: number; longitude: number } => {
+  const getDefaultLocation = useCallback((): { latitude: number; longitude: number } => {
     const savedLocation = localStorage.getItem(`driver_default_location_${user?.id}`);
     if (savedLocation) {
       return JSON.parse(savedLocation);
     }
     return { latitude: 12.9716, longitude: 77.5946 };
-  };
+  }, [user?.id]);
 
   const getCurrentLocation = (): Promise<{ latitude: number; longitude: number }> => {
     return new Promise((resolve) => {
@@ -269,13 +236,14 @@ const DeliveryHomePage: React.FC<DeliveryHomePageProps> = ({ isOnline, setIsOnli
 
           let errorMsg = 'GPS signal lost. ';
           switch (error.code) {
-            case error.PERMISSION_DENIED:
+            case error.PERMISSION_DENIED: {
               // Permanent failure - use fallback
               errorMsg += 'Enable location permissions.';
               const fallbackCoords = getDefaultLocation();
               setLocation(fallbackCoords);
               setIsUsingFallback(true);
               break;
+            }
             case error.POSITION_UNAVAILABLE:
               // Temporary failure - keep last known location, don't send updates
               errorMsg += 'GPS signal unavailable.';
@@ -343,7 +311,7 @@ const DeliveryHomePage: React.FC<DeliveryHomePageProps> = ({ isOnline, setIsOnli
         websocketService.disconnect();
       }
     };
-  }, [isOnline, locationMode, user?.id]);
+  }, [isOnline, locationMode, user?.id, location, updateLocation, getDefaultLocation]);
 
   // Online/Offline status is now controlled by backend via POS clock-in
   // Drivers cannot manually toggle - manager clocks them in with 5-digit PIN

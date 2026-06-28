@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { orderWebSocket, OrderUpdateCallback } from '../services/websocket/orderWebSocket';
+import type { Order } from '../types/order';
 import { useAppDispatch } from '../store/hooks';
 import { orderApi } from '../store/api/orderApi';
 
@@ -42,7 +43,7 @@ export const useOrderWebSocket = (options: UseOrderWebSocketOptions = {}) => {
   const connectionAttemptedRef = useRef(false);
 
   // Default callback that invalidates RTK Query cache
-  const defaultCallback = useCallback((order: any) => {
+  const defaultCallback = useCallback((order: Order) => {
     console.log('Order update received via WebSocket:', order.orderNumber);
 
     // Invalidate relevant caches to trigger refetch

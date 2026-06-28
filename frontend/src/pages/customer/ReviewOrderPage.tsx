@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useCreateReviewMutation, useGetReviewsByOrderIdQuery } from '../../store/api/reviewApi';
+import { useCreateReviewMutation, useGetReviewsByOrderIdQuery, type CreateReviewRequest } from '../../store/api/reviewApi';
+import { getApiErrorMessage } from '../utils/apiError';
 import { useGetOrderQuery } from '../../store/api/orderApi';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
@@ -119,7 +120,7 @@ const ReviewOrderPage: React.FC = () => {
     name: item.name,
   })) || [];
 
-  const handleSubmit = async (reviewData: any) => {
+  const handleSubmit = async (reviewData: CreateReviewRequest) => {
     try {
       await createReview(reviewData).unwrap();
     } catch (err) {
@@ -181,7 +182,7 @@ const ReviewOrderPage: React.FC = () => {
         {isError && (
           <Card className="p-4 mt-4 bg-red-50 border border-red-200">
             <p className="text-red-600">
-              Failed to submit review: {(error as any)?.data?.error || 'Unknown error'}
+              Failed to submit review: {getApiErrorMessage(error, 'Unknown error')}
             </p>
           </Card>
         )}

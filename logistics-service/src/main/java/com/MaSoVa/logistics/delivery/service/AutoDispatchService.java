@@ -29,17 +29,14 @@ public class AutoDispatchService {
     private final UserServiceClient userServiceClient;
     private final OrderServiceClient orderServiceClient;
     private final DeliveryTrackingRepository deliveryTrackingRepository;
-    private final RouteOptimizationService routeOptimizationService;
     private final FreeRoutingService freeRoutingService;
 
     public AutoDispatchService(UserServiceClient userServiceClient, OrderServiceClient orderServiceClient,
                                DeliveryTrackingRepository deliveryTrackingRepository,
-                               RouteOptimizationService routeOptimizationService,
                                FreeRoutingService freeRoutingService) {
         this.userServiceClient = userServiceClient;
         this.orderServiceClient = orderServiceClient;
         this.deliveryTrackingRepository = deliveryTrackingRepository;
-        this.routeOptimizationService = routeOptimizationService;
         this.freeRoutingService = freeRoutingService;
     }
 
@@ -80,10 +77,9 @@ public class AutoDispatchService {
         orderServiceClient.assignDriverToOrder(request.getOrderId(), (String) bestDriver.get("id"));
 
         // Calculate route details
-        BigDecimal distance = calculateDistance(
-                getDriverLocation(bestDriver),
-                effectiveDeliveryAddress
-        );
+        AddressDTO driverLocation = getDriverLocation(bestDriver);
+        BigDecimal distance = calculateDistance(driverLocation, effectiveDeliveryAddress);
+        Integer estimatedPickupTime = calculateEstimatedTimeFromRoute(driverLocation, effectiveDeliveryAddress);
 
         return AutoDispatchResponse.builder()
                 .orderId(request.getOrderId())
@@ -91,8 +87,8 @@ public class AutoDispatchService {
                 .driverName((String) bestDriver.get("name"))
                 .driverPhone((String) bestDriver.get("phone"))
                 .distanceToPickup(distance)
-                .estimatedPickupTime(calculateEstimatedTime(distance))
-                .estimatedDeliveryTime(calculateEstimatedTime(distance) + 15) // +15 min for order prep
+                .estimatedPickupTime(estimatedPickupTime)
+                .estimatedDeliveryTime(estimatedPickupTime + 15) // +15 min for order prep
                 .assignedAt(LocalDateTime.now())
                 .dispatchMethod("AUTO")
                 .status("ASSIGNED")
@@ -248,10 +244,9 @@ public class AutoDispatchService {
 
         orderServiceClient.assignDriverToOrder(request.getOrderId(), request.getPreferredDriverId());
 
-        BigDecimal distance = calculateDistance(
-                getDriverLocation(driver),
-                effectiveDeliveryAddress
-        );
+        AddressDTO driverLocation = getDriverLocation(driver);
+        BigDecimal distance = calculateDistance(driverLocation, effectiveDeliveryAddress);
+        Integer estimatedPickupTime = calculateEstimatedTimeFromRoute(driverLocation, effectiveDeliveryAddress);
 
         return AutoDispatchResponse.builder()
                 .orderId(request.getOrderId())
@@ -259,8 +254,8 @@ public class AutoDispatchService {
                 .driverName((String) driver.get("name"))
                 .driverPhone((String) driver.get("phone"))
                 .distanceToPickup(distance)
-                .estimatedPickupTime(calculateEstimatedTime(distance))
-                .estimatedDeliveryTime(calculateEstimatedTime(distance) + 15)
+                .estimatedPickupTime(estimatedPickupTime)
+                .estimatedDeliveryTime(estimatedPickupTime + 15)
                 .assignedAt(LocalDateTime.now())
                 .dispatchMethod("MANUAL")
                 .status("ASSIGNED")

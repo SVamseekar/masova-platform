@@ -19,7 +19,7 @@ vi.mock('../../store/api/analyticsApi', () => ({
     },
     isLoading: false,
   }),
-  useGetSalesTrendsQuery: ({ period }: any) => ({
+  useGetSalesTrendsQuery: ({ period }: { period: string }) => ({
     data: {
       totalSales: period === 'WEEKLY' ? 80000 : 320000,
       totalOrders: period === 'WEEKLY' ? 450 : 1800,
@@ -67,7 +67,7 @@ vi.mock('../../store/api/analyticsApi', () => ({
 }));
 
 vi.mock('../../components/common/AppHeader', () => ({
-  default: ({ title }: any) => <div data-testid="app-header">{title}</div>,
+  default: ({ title }: { title?: string }) => <div data-testid="app-header">{title}</div>,
 }));
 
 const managerState = {
@@ -111,7 +111,7 @@ describe('Reports', () => {
     it('shows access denied for non-manager users', () => {
       renderWithProviders(<Reports />, {
         useMemoryRouter: true,
-        preloadedState: staffState as any,
+        preloadedState: staffState,
       });
 
       expect(screen.getByText('Access Denied')).toBeInTheDocument();
@@ -123,7 +123,7 @@ describe('Reports', () => {
     it('shows back to POS button on access denied screen', () => {
       renderWithProviders(<Reports />, {
         useMemoryRouter: true,
-        preloadedState: staffState as any,
+        preloadedState: staffState,
       });
 
       expect(
@@ -136,7 +136,7 @@ describe('Reports', () => {
     it('renders without crashing', () => {
       renderWithProviders(<Reports />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(screen.getByTestId('app-header')).toBeInTheDocument();
@@ -145,7 +145,7 @@ describe('Reports', () => {
     it('displays the header with manager name', () => {
       renderWithProviders(<Reports />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(
@@ -156,7 +156,7 @@ describe('Reports', () => {
     it('shows the sales tab by default', () => {
       renderWithProviders(<Reports />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(screen.getByText("Today's Sales")).toBeInTheDocument();
@@ -167,7 +167,7 @@ describe('Reports', () => {
     it('displays top selling items', () => {
       renderWithProviders(<Reports />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(screen.getByText('Margherita Pizza')).toBeInTheDocument();
@@ -179,7 +179,7 @@ describe('Reports', () => {
     it('renders three tab buttons', () => {
       renderWithProviders(<Reports />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(screen.getByText(/Sales/)).toBeInTheDocument();
@@ -192,7 +192,7 @@ describe('Reports', () => {
 
       renderWithProviders(<Reports />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       await user.click(screen.getByText(/Staff/));
@@ -207,7 +207,7 @@ describe('Reports', () => {
 
       renderWithProviders(<Reports />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       await user.click(screen.getByText(/Inventory/));
@@ -223,7 +223,7 @@ describe('Reports', () => {
     it('shows Back to POS button', () => {
       renderWithProviders(<Reports />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(
@@ -234,7 +234,7 @@ describe('Reports', () => {
     it('shows View Full Analytics button', () => {
       renderWithProviders(<Reports />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(
@@ -245,7 +245,7 @@ describe('Reports', () => {
     it('shows View Advanced Reports button', () => {
       renderWithProviders(<Reports />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(

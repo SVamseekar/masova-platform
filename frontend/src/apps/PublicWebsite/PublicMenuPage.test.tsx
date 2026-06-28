@@ -4,7 +4,7 @@ import PublicMenuPage from './PublicMenuPage';
 
 // Mock MenuPage since it is tested separately
 vi.mock('../../pages/customer/MenuPage', () => ({
-  default: ({ hideStaffLogin, showPublicNav, onCartClick }: any) => (
+  default: ({ hideStaffLogin, showPublicNav, onCartClick }: { hideStaffLogin?: boolean; showPublicNav?: boolean; onCartClick: () => void }) => (
     <div data-testid="menu-page" data-hide-staff-login={hideStaffLogin} data-show-public-nav={showPublicNav}>
       <button onClick={onCartClick} data-testid="open-cart-btn">Open Cart</button>
     </div>

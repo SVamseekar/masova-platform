@@ -3,11 +3,31 @@ import { FilterValues, SortConfig } from '../components/common/FilterBar';
 /**
  * Generic filter function that applies multiple filter criteria to a dataset
  */
-export function applyFilters<T extends Record<string, any>>(
+type FilterFieldValue = FilterValues[string];
+type NestedFieldValue = string | number | boolean | null | undefined;
+
+function isDateRangeValue(
+  value: FilterFieldValue
+): value is { from?: string; to?: string } {
+  return typeof value === 'object' && !Array.isArray(value) && value !== null;
+}
+
+function toDateValue(value: unknown): Date | null {
+  if (value instanceof Date) {
+    return isNaN(value.getTime()) ? null : value;
+  }
+  if (typeof value === 'string' || typeof value === 'number') {
+    const date = new Date(value);
+    return isNaN(date.getTime()) ? null : date;
+  }
+  return null;
+}
+
+export function applyFilters<T extends object>(
   data: T[],
   filterValues: FilterValues,
   filterConfig: {
-    [field: string]: (item: T, value: any) => boolean;
+    [field: string]: (item: T, value: FilterFieldValue) => boolean;
   }
 ): T[] {
   return data.filter((item) => {
@@ -45,7 +65,8 @@ export function applyFilters<T extends Record<string, any>>(
         if (!itemValue) return true;
 
         // Normalize dates to midnight for consistent comparison
-        const itemDate = new Date(itemValue);
+        const itemDate = toDateValue(itemValue);
+        if (!itemDate) return true;
         itemDate.setHours(0, 0, 0, 0);
 
         if (value.from && value.to) {
@@ -75,7 +96,7 @@ export function applyFilters<T extends Record<string, any>>(
 /**
  * Generic sort function that applies sorting to a dataset
  */
-export function applySort<T extends Record<string, any>>(
+export function applySort<T extends object>(
   data: T[],
   sortConfig?: SortConfig
 ): T[] {
@@ -103,9 +124,9 @@ export function applySort<T extends Record<string, any>>(
     }
 
     // Date comparison
-    const aDate = new Date(aValue);
-    const bDate = new Date(bValue);
-    if (!isNaN(aDate.getTime()) && !isNaN(bDate.getTime())) {
+    const aDate = toDateValue(aValue);
+    const bDate = toDateValue(bValue);
+    if (aDate && bDate) {
       return sortConfig.direction === 'asc'
         ? aDate.getTime() - bDate.getTime()
         : bDate.getTime() - aDate.getTime();
@@ -121,17 +142,38 @@ export function applySort<T extends Record<string, any>>(
 /**
  * Get nested value from object using dot notation (e.g., 'user.name')
  */
-export function getNestedValue(obj: any, path: string): any {
-  return path.split('.').reduce((current, key) => current?.[key], obj);
+export function getNestedValue(obj: object, path: string): NestedFieldValue {
+  const value = path.split('.').reduce<unknown>((current, key) => {
+    if (current !== null && typeof current === 'object') {
+      return (current as Record<string, unknown>)[key];
+    }
+    return undefined;
+  }, obj as Record<string, unknown>);
+
+  if (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean' ||
+    value === null ||
+    value === undefined
+  ) {
+    return value;
+  }
+
+  return String(value);
 }
 
 /**
  * Export data to CSV
  */
-export function exportToCSV<T extends Record<string, any>>(
+export function exportToCSV<T extends object>(
   data: T[],
   filename: string,
-  columns: { label: string; field: string; format?: (value: any) => string }[]
+  columns: {
+    label: string;
+    field: string;
+    format?: (value: NestedFieldValue) => string | number | boolean | null | undefined;
+  }[]
 ): void {
   if (data.length === 0) {
     alert('No data to export');
@@ -177,7 +219,7 @@ export function exportToCSV<T extends Record<string, any>>(
  * Common filter configurations for reuse
  */
 export const commonFilters = {
-  searchText: <T extends Record<string, any>>(
+  searchText: <T extends object>(
     item: T,
     value: string,
     fields: string[]
@@ -189,7 +231,7 @@ export const commonFilters = {
     });
   },
 
-  status: <T extends Record<string, any>>(
+  status: <T extends object>(
     item: T,
     value: string,
     statusField: string = 'status'
@@ -197,16 +239,21 @@ export const commonFilters = {
     return getNestedValue(item, statusField) === value;
   },
 
-  dateRange: <T extends Record<string, any>>(
+  dateRange: <T extends object>(
     item: T,
-    value: { from?: string; to?: string },
+    value: FilterFieldValue,
     dateField: string
   ): boolean => {
+    if (!isDateRangeValue(value)) {
+      return true;
+    }
+
     const itemDateValue = getNestedValue(item, dateField);
     if (!itemDateValue) return true;
 
     // Normalize all dates to midnight UTC for consistent comparison
-    const itemDate = new Date(itemDateValue);
+    const itemDate = toDateValue(itemDateValue);
+    if (!itemDate) return true;
     itemDate.setHours(0, 0, 0, 0);
 
     if (value.from && value.to) {
@@ -230,7 +277,7 @@ export const commonFilters = {
     return true;
   },
 
-  multiSelect: <T extends Record<string, any>>(
+  multiSelect: <T extends object>(
     item: T,
     value: string[],
     field: string

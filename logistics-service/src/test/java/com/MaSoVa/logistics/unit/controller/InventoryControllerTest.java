@@ -3,6 +3,7 @@ package com.MaSoVa.logistics.unit.controller;
 import com.MaSoVa.logistics.inventory.controller.InventoryController;
 import com.MaSoVa.logistics.inventory.entity.InventoryItem;
 import com.MaSoVa.logistics.inventory.service.InventoryService;
+import com.MaSoVa.shared.exception.GlobalExceptionHandler;
 import com.MaSoVa.shared.test.BaseServiceTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,6 +41,7 @@ class InventoryControllerTest extends BaseServiceTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(inventoryController)
+            .setControllerAdvice(new GlobalExceptionHandler())
             .setMessageConverters(new MappingJackson2HttpMessageConverter())
             .build();
     }
@@ -126,7 +128,7 @@ class InventoryControllerTest extends BaseServiceTest {
         }
 
         @Test
-        @DisplayName("uses selectedStoreId for MANAGER user type")
+        @DisplayName("uses selectedStoreId for MANAGER user type when it matches JWT store membership")
         void usesSelectedStoreIdForManager() throws Exception {
             when(inventoryService.getAllInventoryItems(eq("store-selected")))
                 .thenReturn(List.of(buildItem("item-1")));
@@ -134,8 +136,18 @@ class InventoryControllerTest extends BaseServiceTest {
             mockMvc.perform(get("/api/inventory")
                     .header("X-User-Type", "MANAGER")
                     .header("X-Selected-Store-Id", "store-selected")
-                    .header("X-User-Store-Id", "store-default"))
+                    .header("X-User-Store-Id", "store-selected"))
                 .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("denies selectedStoreId for MANAGER outside their JWT store membership")
+        void deniesSelectedStoreIdOutsideMembership() throws Exception {
+            mockMvc.perform(get("/api/inventory")
+                    .header("X-User-Type", "MANAGER")
+                    .header("X-Selected-Store-Id", "store-selected")
+                    .header("X-User-Store-Id", "store-default"))
+                .andExpect(status().isForbidden());
         }
     }
 

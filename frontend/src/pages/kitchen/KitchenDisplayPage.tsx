@@ -178,7 +178,7 @@ const KitchenDisplayPage: React.FC = () => {
     });
   }, []);
 
-  const { isConnected: wsConnected, error: wsError } = useKitchenWebSocket({
+  const { isConnected: wsConnected, error: _wsError } = useKitchenWebSocket({
     storeId,
     onOrderUpdate: handleWebSocketOrderUpdate,
     enabled: !!storeId,
@@ -206,9 +206,10 @@ const KitchenDisplayPage: React.FC = () => {
   const playNewOrderChime = useCallback(() => {
     if (isMuted) return;
     try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContext) return;
-      const audioCtx = new AudioContext();
+      const AudioContextCtor = window.AudioContext
+        || (window as Window & { webkitAudioContext?: typeof window.AudioContext }).webkitAudioContext;
+      if (!AudioContextCtor) return;
+      const audioCtx = new AudioContextCtor();
       const oscillator = audioCtx.createOscillator();
       const gainNode = audioCtx.createGain();
       oscillator.connect(gainNode);
@@ -305,7 +306,7 @@ const KitchenDisplayPage: React.FC = () => {
 
   const moveOrderToNext = async (orderId: string, currentStatus: Order['status']): Promise<void> => {
     // Kitchen flow (all types share RECEIVED→PREPARING→OVEN→BAKED→READY, then diverge):
-    // DELIVERY:   RECEIVED -> PREPARING -> OVEN -> BAKED -> READY -> DISPATCHED -> DELIVERED
+    // DELIVERY:   RECEIVED -> PREPARING -> OVEN -> BAKED -> READY -> DISPATCHED -> OUT_FOR_DELIVERY (driver pickup) -> DELIVERED
     // DINE_IN:    RECEIVED -> PREPARING -> OVEN -> BAKED -> READY -> SERVED (via markAsCompleted)
     // COLLECTION: RECEIVED -> PREPARING -> OVEN -> BAKED -> READY -> COMPLETED (via markAsCompleted)
     const order = orders.find(o => o.id === orderId);
@@ -462,7 +463,7 @@ const KitchenDisplayPage: React.FC = () => {
             <span className="next-icon">→</span>
           </button>
         )}
-        {/* DELIVERY orders at DISPATCHED: DELIVERED is set by the driver app after OTP verification — no KDS button */}
+        {/* DELIVERY orders at DISPATCHED/OUT_FOR_DELIVERY: status advances via driver pickup and OTP verification — no KDS button */}
         {/* Show Mark as Served for DINE_IN orders at READY */}
         {order.status === 'READY' && order.orderType === 'DINE_IN' && (
           <button
@@ -498,6 +499,7 @@ const KitchenDisplayPage: React.FC = () => {
     { status: 'BAKED', title: 'Baked', Icon: CheckCircleIcon, color: '#10b981' },
     { status: 'READY', title: 'Ready', Icon: CheckCircleIcon, color: '#22c55e' },
     { status: 'DISPATCHED', title: 'Dispatched', Icon: LocalShippingIcon, color: '#8b5cf6' },
+    { status: 'OUT_FOR_DELIVERY', title: 'Out for Delivery', Icon: LocalShippingIcon, color: '#7c3aed' },
     { status: 'SERVED', title: 'Served', Icon: RestaurantIcon, color: '#607D8B' },
     { status: 'COMPLETED', title: 'Picked Up', Icon: CheckCircleIcon, color: '#4caf50' }
   ];

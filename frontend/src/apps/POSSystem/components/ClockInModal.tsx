@@ -1,13 +1,14 @@
 // src/apps/POSSystem/components/ClockInModal.tsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import { colors, shadows, spacing } from '../../../styles/design-tokens';
+import { colors, spacing } from '../../../styles/design-tokens';
 import Button from '../../../components/ui/neumorphic/Button';
 import { useValidatePINMutation } from '../../../store/api/userApi';
 import { useClockInWithPinMutation } from '../../../store/api/sessionApi';
 import { useSnackbar } from 'notistack';
+import { getRtkErrorMessage } from '../../shared/rtkError';
 
 interface ClockInModalProps {
   isOpen: boolean;
@@ -26,7 +27,13 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
 
   // Employee PIN state
   const [employeePIN, setEmployeePIN] = useState<string>('');
-  const [employeeData, setEmployeeData] = useState<any>(null);
+  const [employeeData, setEmployeeData] = useState<{
+    userId: string;
+    name: string;
+    type: string;
+    role: string;
+    storeId: string;
+  } | null>(null);
 
   // Manager PIN state
   const [managerPIN, setManagerPIN] = useState<string>('');
@@ -35,21 +42,25 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const employeePinRefs = [
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-  ];
+  const employeePinRef0 = useRef<HTMLInputElement>(null);
+  const employeePinRef1 = useRef<HTMLInputElement>(null);
+  const employeePinRef2 = useRef<HTMLInputElement>(null);
+  const employeePinRef3 = useRef<HTMLInputElement>(null);
+  const employeePinRef4 = useRef<HTMLInputElement>(null);
+  const employeePinRefs = useMemo(
+    () => [employeePinRef0, employeePinRef1, employeePinRef2, employeePinRef3, employeePinRef4],
+    [employeePinRef0, employeePinRef1, employeePinRef2, employeePinRef3, employeePinRef4]
+  );
 
-  const managerPinRefs = [
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-  ];
+  const managerPinRef0 = useRef<HTMLInputElement>(null);
+  const managerPinRef1 = useRef<HTMLInputElement>(null);
+  const managerPinRef2 = useRef<HTMLInputElement>(null);
+  const managerPinRef3 = useRef<HTMLInputElement>(null);
+  const managerPinRef4 = useRef<HTMLInputElement>(null);
+  const managerPinRefs = useMemo(
+    () => [managerPinRef0, managerPinRef1, managerPinRef2, managerPinRef3, managerPinRef4],
+    [managerPinRef0, managerPinRef1, managerPinRef2, managerPinRef3, managerPinRef4]
+  );
 
   const [validatePIN] = useValidatePINMutation();
   const [clockInWithPin] = useClockInWithPinMutation();
@@ -69,7 +80,7 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
         setTimeout(() => managerPinRefs[0].current?.focus(), 100);
       }
     }
-  }, [step, isOpen]);
+  }, [step, isOpen, employeePinRefs, managerPinRefs]);
 
   const resetModal = () => {
     setStep('employee');
@@ -148,8 +159,8 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
         // Staff/Driver - need manager auth
         setStep('manager');
       }
-    } catch (err: any) {
-      setError(err?.data?.error || 'Invalid PIN');
+    } catch (err: unknown) {
+      setError(getRtkErrorMessage(err, 'Invalid PIN'));
       setEmployeePIN('');
       employeePinRefs[0].current?.focus();
     } finally {
@@ -179,6 +190,13 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
         return;
       }
 
+      if (!employeeData) {
+        setError('Employee session expired. Please start over.');
+        setStep('employee');
+        setIsLoading(false);
+        return;
+      }
+
       // Verify same store
       if (managerResult.storeId !== employeeData.storeId && managerResult.storeId !== storeId) {
         setError('Manager must be from same store');
@@ -190,8 +208,8 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
 
       // Clock in staff with manager authorization
       await performClockIn(employeeData.userId, employeePIN, managerResult.userId);
-    } catch (err: any) {
-      setError(err?.data?.error || 'Invalid manager PIN');
+    } catch (err: unknown) {
+      setError(getRtkErrorMessage(err, 'Invalid manager PIN'));
       setManagerPIN('');
       managerPinRefs[0].current?.focus();
     } finally {
@@ -199,13 +217,12 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
     }
   };
 
-  const performClockIn = async (employeeId: string, pin: string, managerId?: string) => {
+  const performClockIn = async (employeeId: string, pin: string, _managerId?: string) => {
     try {
       await clockInWithPin({
         employeeId,
         pin,
-        authorizedBy: managerId,
-      } as any).unwrap();
+      }).unwrap();
 
       enqueueSnackbar(`${employeeData?.name || 'Employee'} clocked in successfully`, { variant: 'success' });
 
@@ -216,8 +233,8 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
 
       onClose();
       resetModal();
-    } catch (err: any) {
-      setError(err?.data?.error || 'Failed to clock in');
+    } catch (err: unknown) {
+      setError(getRtkErrorMessage(err, 'Failed to clock in'));
     }
   };
 

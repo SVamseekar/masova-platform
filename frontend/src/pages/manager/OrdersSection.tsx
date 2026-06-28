@@ -16,19 +16,38 @@ import {
   useGetTransactionsByStoreIdQuery,
   useGetReconciliationReportQuery,
   useInitiateRefundMutation,
+  type PaymentResponse,
 } from '../../store/api/paymentApi';
 import {
-  useGetTodayMetricsQuery,
   useAutoDispatchMutation,
   useTrackOrderQuery,
   useGetAvailableDriversQuery,
+  type TrackingResponse,
 } from '../../store/api/deliveryApi';
+import { getApiErrorMessage } from '../utils/apiError';
 import { useGetTodaySalesMetricsQuery } from '../../store/api/analyticsApi';
 import { ORDER_STATUS_CONFIG, ORDER_TYPE_CONFIG, PAYMENT_STATUS_CONFIG } from '../../types/order';
 import type { OrderStatus, OrderPriority } from '../../types/order';
 import { format } from 'date-fns';
 
 interface Props { storeId: string; activeTab: string; onTabChange: (tab: string) => void; }
+
+type OrderPaymentSummary = {
+  id: string;
+  orderNumber: string;
+  amount: number;
+  paymentMethod: string;
+  status: 'SUCCESS' | 'FAILED' | 'PENDING';
+  createdAt: string;
+  customerName: string;
+};
+
+type ExtendedTrackingResponse = TrackingResponse & {
+  driver?: { driverName?: string; driverPhone?: string };
+  orderStatus?: string;
+  estimatedArrivalMinutes?: number;
+  distanceRemainingKm?: number;
+};
 
 const tabs = [
   { id: 'orders', label: 'Orders' },
@@ -249,7 +268,7 @@ const OrdersTab = ({ storeId }: { storeId: string }) => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16, fontSize: 13 }}>
               <div><span style={{ color: t.gray }}>Customer: </span><strong>{selectedOrder.customerName}</strong></div>
               {selectedOrder.customerPhone && <div><span style={{ color: t.gray }}>Phone: </span>{selectedOrder.customerPhone}</div>}
-              {(selectedOrder as any).customerEmail && <div><span style={{ color: t.gray }}>Email: </span>{(selectedOrder as any).customerEmail}</div>}
+              {selectedOrder.customerEmail && <div><span style={{ color: t.gray }}>Email: </span>{selectedOrder.customerEmail}</div>}
               <div><span style={{ color: t.gray }}>Status: </span><span style={statusBadge(selectedOrder.status)}>{ORDER_STATUS_CONFIG[selectedOrder.status]?.label}</span></div>
               <div><span style={{ color: t.gray }}>Type: </span>{ORDER_TYPE_CONFIG[selectedOrder.orderType]?.label}</div>
               <div><span style={{ color: t.gray }}>Payment: </span><span style={statusBadge(selectedOrder.paymentStatus)}>{PAYMENT_STATUS_CONFIG[selectedOrder.paymentStatus]?.label}</span></div>
@@ -334,26 +353,26 @@ const PaymentsTab = ({ storeId }: { storeId: string }) => {
   );
 
   const dateOrders = dateMode === 'all'
-    ? allOrders.filter((o: any) => { const d = new Date(o.createdAt); const ago = new Date(); ago.setDate(ago.getDate() - 30); return d >= ago; })
-    : allOrders.filter((o: any) => new Date(o.createdAt).toISOString().split('T')[0] === selectedDate);
+    ? allOrders.filter((o) => { const d = new Date(o.createdAt); const ago = new Date(); ago.setDate(ago.getDate() - 30); return d >= ago; })
+    : allOrders.filter((o) => new Date(o.createdAt).toISOString().split('T')[0] === selectedDate);
 
-  const orderPayments = dateOrders.map((o: any) => ({
+  const orderPayments: OrderPaymentSummary[] = dateOrders.map((o) => ({
     id: o.id, orderNumber: o.orderNumber, amount: o.total || 0,
     paymentMethod: o.paymentMethod || 'CASH',
-    status: o.paymentStatus === 'PAID' ? 'SUCCESS' : o.paymentStatus === 'FAILED' ? 'FAILED' : 'PENDING',
+    status: (o.paymentStatus === 'PAID' ? 'SUCCESS' : o.paymentStatus === 'FAILED' ? 'FAILED' : 'PENDING') as OrderPaymentSummary['status'],
     createdAt: o.createdAt, customerName: o.customerName,
-  })).sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  })).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  const isSuccess = (p: any) => p.status === 'SUCCESS' || (p.paymentMethod === 'CASH' && p.status === 'PENDING');
+  const isSuccess = (p: OrderPaymentSummary) => p.status === 'SUCCESS' || (p.paymentMethod === 'CASH' && p.status === 'PENDING');
 
   const customReport = dateMode === 'all' ? {
     totalTransactions: orderPayments.length,
     successfulTransactions: orderPayments.filter(isSuccess).length,
-    successfulAmount: orderPayments.filter(isSuccess).reduce((s: number, p: any) => s + p.amount, 0),
-    failedTransactions: orderPayments.filter((p: any) => p.status === 'FAILED').length,
-    unreconciledCount: orderPayments.filter((p: any) => p.status === 'PENDING' && p.paymentMethod !== 'CASH').length,
-    netAmount: orderPayments.filter(isSuccess).reduce((s: number, p: any) => s + p.amount, 0),
-    paymentMethodBreakdown: orderPayments.reduce((acc: any, p: any) => {
+    successfulAmount: orderPayments.filter(isSuccess).reduce((s, p) => s + p.amount, 0),
+    failedTransactions: orderPayments.filter((p) => p.status === 'FAILED').length,
+    unreconciledCount: orderPayments.filter((p) => p.status === 'PENDING' && p.paymentMethod !== 'CASH').length,
+    netAmount: orderPayments.filter(isSuccess).reduce((s, p) => s + p.amount, 0),
+    paymentMethodBreakdown: orderPayments.reduce((acc, p) => {
       if (isSuccess(p)) acc[p.paymentMethod] = (acc[p.paymentMethod] || 0) + p.amount;
       return acc;
     }, {} as Record<string, number>),
@@ -375,7 +394,7 @@ const PaymentsTab = ({ storeId }: { storeId: string }) => {
     <>
       {/* Date filter */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, justifyContent: 'flex-end', alignItems: 'center' }}>
-        <select value={dateMode} onChange={e => setDateMode(e.target.value as any)} style={selectStyle}>
+        <select value={dateMode} onChange={e => setDateMode(e.target.value as 'all' | 'date')} style={selectStyle}>
           <option value="all">All (Last 30 Days)</option>
           <option value="date">Specific Date</option>
         </select>
@@ -420,7 +439,7 @@ const PaymentsTab = ({ storeId }: { storeId: string }) => {
               <tr>{['Order', 'Customer', 'Amount', 'Method', 'Status', 'Date'].map(h => <th key={h} style={tableHeaderStyle}>{h}</th>)}</tr>
             </thead>
             <tbody>
-              {orderPayments.slice(0, 50).map((txn: any) => (
+              {orderPayments.slice(0, 50).map((txn) => (
                 <tr key={txn.id}>
                   <td style={tableCellStyle}>{txn.orderNumber || txn.id?.substring(0, 8)}</td>
                   <td style={tableCellStyle}>{txn.customerName || 'Walk-in'}</td>
@@ -443,12 +462,12 @@ const RefundsTab = ({ storeId }: { storeId: string }) => {
   const { data: transactions = [], isLoading } = useGetTransactionsByStoreIdQuery(storeId, { skip: !storeId });
   const [initiateRefund, { isLoading: refundLoading }] = useInitiateRefundMutation();
 
-  const [selectedTxn, setSelectedTxn] = useState<any>(null);
+  const [selectedTxn, setSelectedTxn] = useState<PaymentResponse | null>(null);
   const [refundAmount, setRefundAmount] = useState('');
   const [refundReason, setRefundReason] = useState('');
   const [refundType, setRefundType] = useState<'FULL' | 'PARTIAL'>('FULL');
 
-  const refundable = transactions.filter((t: any) => t.status === 'SUCCESS' || t.status === 'PARTIAL_REFUND');
+  const refundable = transactions.filter((t) => t.status === 'SUCCESS' || t.status === 'PARTIAL_REFUND');
 
   const handleRefund = async () => {
     if (!selectedTxn || !refundAmount || !refundReason) { alert('Fill all fields'); return; }
@@ -485,7 +504,7 @@ const RefundsTab = ({ storeId }: { storeId: string }) => {
               <tr>{['Order', 'Customer', 'Amount', 'Status', 'Date', ''].map(h => <th key={h} style={tableHeaderStyle}>{h}</th>)}</tr>
             </thead>
             <tbody>
-              {refundable.map((txn: any) => (
+              {refundable.map((txn) => (
                 <tr key={txn.transactionId} style={{ background: selectedTxn?.transactionId === txn.transactionId ? t.orangeLight : 'transparent', cursor: 'pointer' }}
                   onClick={() => { setSelectedTxn(txn); setRefundAmount(txn.amount.toString()); setRefundType('FULL'); }}>
                   <td style={tableCellStyle}>{txn.orderId}</td>
@@ -544,24 +563,23 @@ const RefundsTab = ({ storeId }: { storeId: string }) => {
 // ─── DELIVERIES TAB ───
 const DeliveriesTab = ({ storeId }: { storeId: string }) => {
   const { data: allOrders = [], isLoading } = useGetStoreOrdersQuery(storeId, { skip: !storeId, pollingInterval: 30000 });
-  const { data: todayMetrics } = useGetTodayMetricsQuery(storeId, { skip: !storeId });
   const { data: availableDrivers = [] } = useGetAvailableDriversQuery(storeId, { skip: !storeId, pollingInterval: 30000 });
   const [autoDispatch, { isLoading: dispatching }] = useAutoDispatchMutation();
   const [trackingOrderId, setTrackingOrderId] = useState('');
   const { data: trackingData, isError: trackingError } = useTrackOrderQuery(trackingOrderId, { skip: !trackingOrderId, pollingInterval: 10000 });
 
-  const deliveryOrders = allOrders.filter((o: any) => o.orderType === 'DELIVERY');
-  const readyOrders = deliveryOrders.filter((o: any) => o.status === 'READY');
-  const outOrders = deliveryOrders.filter((o: any) => o.status === 'DISPATCHED');
+  const deliveryOrders = allOrders.filter((o) => o.orderType === 'DELIVERY');
+  const readyOrders = deliveryOrders.filter((o) => o.status === 'READY');
+  const outOrders = deliveryOrders.filter((o) => o.status === 'DISPATCHED');
   const today = new Date().toDateString();
-  const completedToday = deliveryOrders.filter((o: any) => ['DELIVERED', 'SERVED', 'COMPLETED'].includes(o.status) && new Date(o.createdAt).toDateString() === today).length;
+  const completedToday = deliveryOrders.filter((o) => ['DELIVERED', 'SERVED', 'COMPLETED'].includes(o.status) && new Date(o.createdAt).toDateString() === today).length;
 
   const handleDispatch = async (orderId: string) => {
     try {
       await autoDispatch({ orderId, storeId, priorityLevel: 'MEDIUM' }).unwrap();
       alert('Driver dispatched');
-    } catch (err: any) {
-      alert(`Failed: ${err?.data?.message || 'Unknown error'}`);
+    } catch (err: unknown) {
+      alert(`Failed: ${getApiErrorMessage(err, 'Unknown error')}`);
     }
   };
 
@@ -583,7 +601,7 @@ const DeliveriesTab = ({ storeId }: { storeId: string }) => {
         <div style={{ ...cardStyle, textAlign: 'center', padding: 20, marginBottom: 20 }}><p style={{ color: t.grayMuted }}>No orders ready</p></div>
       ) : (
         <div style={{ marginBottom: 20 }}>
-          {readyOrders.map((order: any) => (
+          {readyOrders.map((order) => (
             <div key={order.id} style={orderRow}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
@@ -615,7 +633,7 @@ const DeliveriesTab = ({ storeId }: { storeId: string }) => {
         <div style={{ ...cardStyle, textAlign: 'center', padding: 20 }}><p style={{ color: t.grayMuted }}>No orders out for delivery</p></div>
       ) : (
         <div>
-          {outOrders.map((order: any) => (
+          {outOrders.map((order) => (
             <div key={order.id} style={orderRow}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
@@ -653,24 +671,27 @@ const DeliveriesTab = ({ storeId }: { storeId: string }) => {
               </div>
             ) : !trackingData ? (
               <p style={{ color: t.gray, textAlign: 'center', padding: 20 }}>Loading tracking data...</p>
-            ) : (
+            ) : (() => {
+              const tracking = trackingData as ExtendedTrackingResponse;
+              return (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 13 }}>
-                <div><span style={{ color: t.gray }}>Driver: </span><strong>{(trackingData as any).driver?.driverName || trackingData.driverName || 'N/A'}</strong></div>
-                <div><span style={{ color: t.gray }}>Phone: </span>{(trackingData as any).driver?.driverPhone || trackingData.driverPhone || 'N/A'}</div>
-                <div><span style={{ color: t.gray }}>Status: </span><span style={statusBadge((trackingData as any).orderStatus || 'DISPATCHED')}>{(trackingData as any).orderStatus || trackingData.status || 'N/A'}</span></div>
+                <div><span style={{ color: t.gray }}>Driver: </span><strong>{tracking.driver?.driverName || tracking.driverName || 'N/A'}</strong></div>
+                <div><span style={{ color: t.gray }}>Phone: </span>{tracking.driver?.driverPhone || tracking.driverPhone || 'N/A'}</div>
+                <div><span style={{ color: t.gray }}>Status: </span><span style={statusBadge(tracking.orderStatus || 'DISPATCHED')}>{tracking.orderStatus || tracking.status || 'N/A'}</span></div>
                 <div><span style={{ color: t.gray }}>ETA: </span>{
-                  (trackingData as any).estimatedArrivalMinutes != null
-                    ? new Date(Date.now() + (trackingData as any).estimatedArrivalMinutes * 60000).toLocaleTimeString()
-                    : trackingData.estimatedArrival ? new Date(trackingData.estimatedArrival).toLocaleTimeString() : 'Calculating...'
+                  tracking.estimatedArrivalMinutes != null
+                    ? new Date(Date.now() + tracking.estimatedArrivalMinutes * 60000).toLocaleTimeString()
+                    : tracking.estimatedArrival ? new Date(tracking.estimatedArrival).toLocaleTimeString() : 'Calculating...'
                 }</div>
                 <div><span style={{ color: t.gray }}>Distance: </span>{
-                  (trackingData as any).distanceRemainingKm != null
-                    ? Number((trackingData as any).distanceRemainingKm).toFixed(2) + ' km'
-                    : trackingData.distanceRemaining ? (trackingData.distanceRemaining / 1000).toFixed(2) + ' km' : 'N/A'
+                  tracking.distanceRemainingKm != null
+                    ? Number(tracking.distanceRemainingKm).toFixed(2) + ' km'
+                    : tracking.distanceRemaining ? (tracking.distanceRemaining / 1000).toFixed(2) + ' km' : 'N/A'
                 }</div>
-                <div><span style={{ color: t.gray }}>Updated: </span>{trackingData.lastUpdated ? new Date(trackingData.lastUpdated).toLocaleTimeString() : 'N/A'}</div>
+                <div><span style={{ color: t.gray }}>Updated: </span>{tracking.lastUpdated ? new Date(tracking.lastUpdated).toLocaleTimeString() : 'N/A'}</div>
               </div>
-            )}
+              );
+            })()}
           </div>
         </div>
       )}

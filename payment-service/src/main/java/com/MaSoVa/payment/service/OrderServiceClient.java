@@ -1,14 +1,15 @@
 package com.MaSoVa.payment.service;
 
+import com.MaSoVa.shared.http.HttpMethods;
 import com.MaSoVa.payment.dto.UpdateOrderPaymentRequest;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -58,7 +59,7 @@ public class OrderServiceClient {
 
             ResponseEntity<String> response = restTemplate.exchange(
                     url,
-                    HttpMethod.PATCH,
+                    HttpMethods.PATCH,
                     entity,
                     String.class
             );
@@ -79,18 +80,22 @@ public class OrderServiceClient {
     /**
      * Get order details
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     @Retry(name = "orderService")
     @CircuitBreaker(name = "orderService", fallbackMethod = "getOrderDetailsFallback")
     public Map<String, Object> getOrderDetails(String orderId) {
         try {
             String url = orderServiceUrl + "/api/orders/" + orderId;
 
-            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    url,
+                    HttpMethods.GET,
+                    null,
+                    new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
 
             if (response.getStatusCode().is2xxSuccessful()) {
                 log.info("Successfully retrieved order details for: {}", orderId);
-                return (Map<String, Object>) response.getBody();
+                return response.getBody();
             } else {
                 log.error("Failed to retrieve order details for: {}. Status: {}",
                          orderId, response.getStatusCode());

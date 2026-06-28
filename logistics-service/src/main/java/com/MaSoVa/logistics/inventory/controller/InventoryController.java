@@ -1,6 +1,5 @@
 package com.MaSoVa.logistics.inventory.controller;
 
-import com.MaSoVa.logistics.inventory.dto.request.ReserveStockRequest;
 import com.MaSoVa.logistics.inventory.dto.request.StockAdjustmentRequest;
 import com.MaSoVa.logistics.inventory.dto.response.InventoryValueResponse;
 import com.MaSoVa.logistics.inventory.dto.response.MessageResponse;
@@ -13,8 +12,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -36,8 +33,6 @@ import java.util.Map;
 @Tag(name = "Inventory", description = "Inventory management and stock control")
 @SecurityRequirement(name = "bearerAuth")
 public class InventoryController {
-
-    private static final Logger log = LoggerFactory.getLogger(InventoryController.class);
 
     private final InventoryService inventoryService;
 

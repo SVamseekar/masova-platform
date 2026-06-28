@@ -215,6 +215,13 @@ export interface WasteTrend {
   recordCount: number;
 }
 
+export interface TopWastedItem {
+  itemName: string;
+  totalQuantity: number;
+  unit: string;
+  totalCost: number;
+}
+
 export interface ReceivePurchaseOrderRequest {
   items: {
     itemId: string;
@@ -723,7 +730,7 @@ export const inventoryApi = createApi({
     }),
 
     // Get top wasted items
-    getTopWastedItems: builder.query<any[], { startDate: string; endDate: string; limit: number }>({
+    getTopWastedItems: builder.query<TopWastedItem[], { startDate: string; endDate: string; limit: number }>({
       query: ({ startDate, endDate, limit }) =>
         `/waste/top-items?startDate=${startDate}&endDate=${endDate}&limit=${limit}`,
       providesTags: ['WasteRecord'],

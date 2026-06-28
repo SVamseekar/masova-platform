@@ -7,7 +7,6 @@ import {
   Switch,
   FormControlLabel,
   FormGroup,
-  Divider,
   Button,
   Alert,
   Snackbar,
@@ -31,8 +30,6 @@ import {
   useGetUserPreferencesQuery,
   useUpdateUserPreferencesMutation,
   useUpdateChannelPreferenceMutation,
-  NotificationChannel,
-  NotificationType,
 } from '../../store/api/notificationApi';
 import { useAppSelector } from '../../store/hooks';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
@@ -114,7 +111,7 @@ const NotificationSettingsPage: React.FC = () => {
       }).unwrap();
 
       setSuccessMessage('Notification preferences saved successfully');
-    } catch (error) {
+    } catch {
       setErrorMessage('Failed to save preferences. Please try again.');
     }
   };
@@ -139,7 +136,7 @@ const NotificationSettingsPage: React.FC = () => {
           setInAppEnabled(enabled);
           break;
       }
-    } catch (error) {
+    } catch {
       setErrorMessage(`Failed to update ${channel} preference`);
     }
   };

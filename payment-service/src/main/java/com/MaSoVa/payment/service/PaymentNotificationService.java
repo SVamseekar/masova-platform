@@ -1,13 +1,16 @@
 package com.MaSoVa.payment.service;
 
 import com.MaSoVa.payment.entity.Transaction;
+import com.MaSoVa.shared.http.HttpMethods;
 import com.MaSoVa.shared.util.PiiMasker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -304,17 +307,20 @@ public class PaymentNotificationService {
     private String fetchOrderItems(String orderId) {
         try {
             String url = orderServiceUrl + "/api/orders/track/" + orderId;
-            @SuppressWarnings("unchecked")
-            Map<String, Object> orderResponse = restTemplate.getForObject(url, Map.class);
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    url,
+                    HttpMethods.GET,
+                    null,
+                    new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+            Map<String, Object> orderResponse = response.getBody();
 
             if (orderResponse == null || !orderResponse.containsKey("items")) {
                 return "";
             }
 
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> items = (List<Map<String, Object>>) orderResponse.get("items");
-
-            if (items == null || items.isEmpty()) {
+            Object itemsObj = orderResponse.get("items");
+            if (!(itemsObj instanceof List<?> rawItems) || rawItems.isEmpty()) {
                 return "";
             }
 
@@ -323,12 +329,15 @@ public class PaymentNotificationService {
             itemsHtml.append("  <h3 style='margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #333;'>Your Order</h3>");
             itemsHtml.append("  <table width='100%' cellpadding='0' cellspacing='0' style='border-top: 1px solid #E5E5E5;'>");
 
-            for (Map<String, Object> item : items) {
-                String itemName = (String) item.get("name");  // Fixed: was "itemName", should be "name"
-                Integer quantity = (Integer) item.get("quantity");
-                Double price = item.get("price") instanceof Integer ?
-                    ((Integer) item.get("price")).doubleValue() :
-                    (Double) item.get("price");
+            for (Object itemObj : rawItems) {
+                if (!(itemObj instanceof Map<?, ?> item)) {
+                    continue;
+                }
+                String itemName = item.get("name") instanceof String name ? name : null;
+                Integer quantity = item.get("quantity") instanceof Number quantityNumber
+                        ? quantityNumber.intValue() : null;
+                Double price = item.get("price") instanceof Number priceNumber
+                        ? priceNumber.doubleValue() : null;
 
                 if (itemName != null && quantity != null && price != null) {
                     double itemTotal = quantity * price;
@@ -451,7 +460,7 @@ public class PaymentNotificationService {
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
 
             String url = notificationServiceUrl + "/api/notifications/send";
-            restTemplate.postForEntity(url, entity, Map.class);
+            restTemplate.exchange(url, HttpMethods.POST, entity, Void.class);
 
             log.debug("Notification sent to notification-service for customer: {}",
                     PiiMasker.mask(notification.getCustomerId(), 4));

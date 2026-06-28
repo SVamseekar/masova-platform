@@ -9,7 +9,7 @@ import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
 // Fix Leaflet default marker icon issue with webpack
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+delete (L.Icon.Default.prototype as L.Icon.Default & { _getIconUrl?: string })._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
   iconRetinaUrl: markerIcon2x,
@@ -72,7 +72,7 @@ export const FreeMap: React.FC<FreeMapProps> = ({
   markers = [],
   route,
   height = '400px',
-  onMapClick,
+  onMapClick: _onMapClick,
 }) => {
   return (
     <MapContainer

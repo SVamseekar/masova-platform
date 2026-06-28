@@ -117,6 +117,7 @@ public class Order {
     private LocalDateTime bakedAt;
     private LocalDateTime readyAt;        // When order is ready (READY status for all order types)
     private LocalDateTime dispatchedAt;
+    private LocalDateTime outForDeliveryAt;   // Driver assigned and en route (DELIVERY orders)
     private LocalDateTime deliveredAt;
 
     // Proof of Delivery (POD) fields - DELIV-002
@@ -305,6 +306,9 @@ public class Order {
 
     public LocalDateTime getDispatchedAt() { return dispatchedAt; }
     public void setDispatchedAt(LocalDateTime dispatchedAt) { this.dispatchedAt = dispatchedAt; }
+
+    public LocalDateTime getOutForDeliveryAt() { return outForDeliveryAt; }
+    public void setOutForDeliveryAt(LocalDateTime outForDeliveryAt) { this.outForDeliveryAt = outForDeliveryAt; }
 
     public LocalDateTime getDeliveredAt() { return deliveredAt; }
     public void setDeliveredAt(LocalDateTime deliveredAt) { this.deliveredAt = deliveredAt; }

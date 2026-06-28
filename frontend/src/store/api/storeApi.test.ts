@@ -192,7 +192,7 @@ describe('storeApi', () => {
         name: 'New Store',
         storeCode: 'MVD-002',
         address: { street: '456 Ave', city: 'Hyderabad', state: 'Telangana', pincode: '500002' },
-        operatingConfig: { weeklySchedule: {} as any },
+        operatingConfig: { weeklySchedule: mockStore.operatingConfig.weeklySchedule },
       });
 
       await waitFor(() => expect(result.current[1].isSuccess).toBe(true));

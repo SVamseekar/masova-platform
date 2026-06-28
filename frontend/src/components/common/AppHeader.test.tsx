@@ -3,7 +3,6 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   renderWithProviders,
-  renderAsCustomer,
   renderAsManager,
   renderUnauthenticated,
 } from '@/test/utils/testUtils';

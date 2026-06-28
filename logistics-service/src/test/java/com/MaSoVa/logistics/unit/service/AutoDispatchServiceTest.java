@@ -5,11 +5,9 @@ import com.MaSoVa.logistics.delivery.client.UserServiceClient;
 import com.MaSoVa.logistics.delivery.dto.AddressDTO;
 import com.MaSoVa.logistics.delivery.dto.AutoDispatchRequest;
 import com.MaSoVa.logistics.delivery.dto.AutoDispatchResponse;
-import com.MaSoVa.logistics.delivery.entity.DeliveryTracking;
 import com.MaSoVa.logistics.delivery.repository.DeliveryTrackingRepository;
 import com.MaSoVa.logistics.delivery.service.AutoDispatchService;
 import com.MaSoVa.logistics.delivery.service.FreeRoutingService;
-import com.MaSoVa.logistics.delivery.service.RouteOptimizationService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -18,7 +16,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -41,7 +38,6 @@ class AutoDispatchServiceTest {
     @Mock private UserServiceClient userServiceClient;
     @Mock private OrderServiceClient orderServiceClient;
     @Mock private DeliveryTrackingRepository deliveryTrackingRepository;
-    @Mock private RouteOptimizationService routeOptimizationService;
     @Mock private FreeRoutingService freeRoutingService;
 
     @InjectMocks private AutoDispatchService autoDispatchService;

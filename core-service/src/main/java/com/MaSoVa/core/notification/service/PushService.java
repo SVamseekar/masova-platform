@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -66,7 +65,7 @@ public class PushService {
                     .addAllTokens(deviceTokens)
                     .build();
 
-            BatchResponse response = FirebaseMessaging.getInstance().sendMulticast(message);
+            BatchResponse response = FirebaseMessaging.getInstance().sendEachForMulticast(message);
             logger.info("Bulk push notification sent. Success: {}, Failure: {}",
                     response.getSuccessCount(), response.getFailureCount());
 

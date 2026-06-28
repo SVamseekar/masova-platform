@@ -1,5 +1,6 @@
 package com.MaSoVa.payment.unit.service;
 
+import com.MaSoVa.shared.http.HttpMethods;
 import com.MaSoVa.payment.service.OrderServiceClient;
 import com.MaSoVa.payment.dto.UpdateOrderPaymentRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,8 +13,8 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -32,6 +33,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("OrderServiceClient Unit Tests")
+@SuppressWarnings("unchecked") // any(ParameterizedTypeReference.class) requires a raw-type Class<T> argument
 class OrderServiceClientTest {
 
     @Mock
@@ -57,7 +59,7 @@ class OrderServiceClientTest {
         void shouldSendPatchRequestSuccessfully() {
             // Given
             when(restTemplate.exchange(
-                    anyString(), eq(HttpMethod.PATCH), any(HttpEntity.class), eq(String.class)))
+                    anyString(), eq(HttpMethods.PATCH), any(HttpEntity.class), eq(String.class)))
                     .thenReturn(ResponseEntity.ok("updated"));
 
             // When
@@ -66,7 +68,7 @@ class OrderServiceClientTest {
             // Then
             verify(restTemplate).exchange(
                     eq("http://localhost:8083/api/orders/order-123/payment"),
-                    eq(HttpMethod.PATCH),
+                    eq(HttpMethods.PATCH),
                     httpEntityCaptor.capture(),
                     eq(String.class));
 
@@ -81,7 +83,7 @@ class OrderServiceClientTest {
         void shouldPropagateExceptionOnFailure() {
             // Given
             when(restTemplate.exchange(
-                    anyString(), eq(HttpMethod.PATCH), any(HttpEntity.class), eq(String.class)))
+                    anyString(), eq(HttpMethods.PATCH), any(HttpEntity.class), eq(String.class)))
                     .thenThrow(new RestClientException("Connection refused"));
 
             // When / Then
@@ -97,14 +99,17 @@ class OrderServiceClientTest {
 
         @Test
         @DisplayName("Should fetch order details successfully")
-        @SuppressWarnings("unchecked")
         void shouldFetchOrderDetailsSuccessfully() {
             // Given
             Map<String, Object> orderDetails = Map.of(
                     "id", "order-123",
                     "status", "CONFIRMED",
                     "totalAmount", 500.00);
-            when(restTemplate.getForEntity(anyString(), eq(Map.class)))
+            when(restTemplate.exchange(
+                    anyString(),
+                    eq(HttpMethods.GET),
+                    any(),
+                    any(ParameterizedTypeReference.class)))
                     .thenReturn(new ResponseEntity<>(orderDetails, HttpStatus.OK));
 
             // When
@@ -113,15 +118,22 @@ class OrderServiceClientTest {
             // Then
             assertThat(result).isNotNull();
             assertThat(result.get("id")).isEqualTo("order-123");
-            verify(restTemplate).getForEntity(
-                    eq("http://localhost:8083/api/orders/order-123"), eq(Map.class));
+            verify(restTemplate).exchange(
+                    eq("http://localhost:8083/api/orders/order-123"),
+                    eq(HttpMethods.GET),
+                    any(),
+                    any(ParameterizedTypeReference.class));
         }
 
         @Test
         @DisplayName("Should propagate exception when order service is unavailable")
         void shouldPropagateExceptionWhenUnavailable() {
             // Given
-            when(restTemplate.getForEntity(anyString(), eq(Map.class)))
+            when(restTemplate.exchange(
+                    anyString(),
+                    eq(HttpMethods.GET),
+                    any(),
+                    any(ParameterizedTypeReference.class)))
                     .thenThrow(new RestClientException("Service unavailable"));
 
             // When / Then
@@ -131,10 +143,13 @@ class OrderServiceClientTest {
 
         @Test
         @DisplayName("Should return null when order service returns non-2xx status")
-        @SuppressWarnings("unchecked")
         void shouldReturnNullOnNon2xxStatus() {
             // Given
-            when(restTemplate.getForEntity(anyString(), eq(Map.class)))
+            when(restTemplate.exchange(
+                    anyString(),
+                    eq(HttpMethods.GET),
+                    any(),
+                    any(ParameterizedTypeReference.class)))
                     .thenReturn(new ResponseEntity<>(null, HttpStatus.NOT_FOUND));
 
             // When

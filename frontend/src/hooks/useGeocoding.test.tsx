@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { useGeocoding, buildAddressString } from './useGeocoding';
 
 // Mock import.meta.env
@@ -67,7 +67,7 @@ describe('useGeocoding', () => {
   it('returns error for address shorter than 3 characters', async () => {
     const { result } = renderHook(() => useGeocoding());
 
-    let geocodeResult: any;
+    let geocodeResult: { latitude: number; longitude: number; displayName: string } | null;
     await act(async () => {
       geocodeResult = await result.current.geocode('ab');
     });
@@ -79,7 +79,7 @@ describe('useGeocoding', () => {
   it('returns null for empty address', async () => {
     const { result } = renderHook(() => useGeocoding());
 
-    let geocodeResult: any;
+    let geocodeResult: { latitude: number; longitude: number; displayName: string } | null;
     await act(async () => {
       geocodeResult = await result.current.geocode('');
     });
@@ -106,7 +106,7 @@ describe('useGeocoding', () => {
 
     const { result } = renderHook(() => useGeocoding());
 
-    let geocodeResult: any;
+    let geocodeResult: { latitude: number; longitude: number; displayName: string } | null;
     await act(async () => {
       geocodeResult = await result.current.geocode('Hyderabad');
     });
@@ -118,7 +118,7 @@ describe('useGeocoding', () => {
   it('fetches geocoding data when no cache available', async () => {
     const { result } = renderHook(() => useGeocoding());
 
-    let geocodeResult: any;
+    let geocodeResult: { latitude: number; longitude: number; displayName: string } | null;
     await act(async () => {
       geocodeResult = await result.current.geocode('Hyderabad, India');
     });
@@ -130,7 +130,7 @@ describe('useGeocoding', () => {
   });
 
   it('handles API errors gracefully', async () => {
-    (global.fetch as any).mockResolvedValue({
+    vi.mocked(global.fetch).mockResolvedValue({
       ok: false,
       status: 500,
       statusText: 'Server Error',
@@ -138,7 +138,7 @@ describe('useGeocoding', () => {
 
     const { result } = renderHook(() => useGeocoding());
 
-    let geocodeResult: any;
+    let geocodeResult: { latitude: number; longitude: number; displayName: string } | null;
     await act(async () => {
       geocodeResult = await result.current.geocode('Hyderabad, India');
     });
@@ -148,14 +148,14 @@ describe('useGeocoding', () => {
   });
 
   it('handles empty API response (address not found)', async () => {
-    (global.fetch as any).mockResolvedValue({
+    vi.mocked(global.fetch).mockResolvedValue({
       ok: true,
       json: () => Promise.resolve([]),
     });
 
     const { result } = renderHook(() => useGeocoding());
 
-    let geocodeResult: any;
+    let geocodeResult: { latitude: number; longitude: number; displayName: string } | null;
     await act(async () => {
       geocodeResult = await result.current.geocode('Nonexistent Address XYZ');
     });

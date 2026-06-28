@@ -34,6 +34,7 @@ import type { RootState } from '../store/store';
 /**
  * Creates a test store with optional preloaded state
  */
+// eslint-disable-next-line react-refresh/only-export-components -- test utility, not a React component module
 export function createTestStore(preloadedState?: PreloadedState<RootState>) {
   return configureStore({
     reducer: {

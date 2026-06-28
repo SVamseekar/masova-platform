@@ -182,4 +182,13 @@ class OrderServiceCreateOrderTest {
         orderService.createOrder(buildTakeawayRequest());
         verify(orderEventPublisher).publishOrderCreated(any());
     }
+
+    @Test
+    void createOrder_dualWrites_postgres_row_linked_by_mongoId() {
+        Order result = orderService.createOrder(buildTakeawayRequest());
+
+        org.mockito.ArgumentCaptor<OrderJpaEntity> captor = org.mockito.ArgumentCaptor.forClass(OrderJpaEntity.class);
+        verify(orderJpaRepository).save(captor.capture());
+        assertThat(captor.getValue().getMongoId()).isEqualTo(result.getId());
+    }
 }

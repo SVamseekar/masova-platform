@@ -1,7 +1,8 @@
 package com.MaSoVa.intelligence.dto;
+
 import java.io.Serializable;
-
-
+import java.util.HashMap;
+import java.util.ArrayList;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -15,10 +16,10 @@ public class ExecutiveSummaryResponse implements Serializable {
     private LocalDate endDate;
     private FinancialSummary financialSummary;
     private OperationalMetrics operationalMetrics;
-    private List<KPITile> kpiTiles;
+    private ArrayList<KPITile> kpiTiles = new ArrayList<>();
     private GrowthMetrics growthMetrics;
-    private List<TopPerformer> topPerformers;
-    private List<ActionableInsight> insights;
+    private ArrayList<TopPerformer> topPerformers = new ArrayList<>();
+    private ArrayList<ActionableInsight> insights = new ArrayList<>();
 
     public ExecutiveSummaryResponse() {}
 
@@ -67,7 +68,7 @@ public class ExecutiveSummaryResponse implements Serializable {
     }
 
     public void setKpiTiles(List<KPITile> kpiTiles) {
-        this.kpiTiles = kpiTiles;
+        this.kpiTiles = kpiTiles != null ? new ArrayList<>((kpiTiles)) : new ArrayList<>();
     }
 
     public GrowthMetrics getGrowthMetrics() {
@@ -83,7 +84,7 @@ public class ExecutiveSummaryResponse implements Serializable {
     }
 
     public void setTopPerformers(List<TopPerformer> topPerformers) {
-        this.topPerformers = topPerformers;
+        this.topPerformers = topPerformers != null ? new ArrayList<>((topPerformers)) : new ArrayList<>();
     }
 
     public List<ActionableInsight> getInsights() {
@@ -91,7 +92,7 @@ public class ExecutiveSummaryResponse implements Serializable {
     }
 
     public void setInsights(List<ActionableInsight> insights) {
-        this.insights = insights;
+        this.insights = insights != null ? new ArrayList<>((insights)) : new ArrayList<>();
     }
 
     public static Builder builder() {
@@ -127,7 +128,7 @@ public class ExecutiveSummaryResponse implements Serializable {
         }
 
         public Builder kpiTiles(List<KPITile> kpiTiles) {
-            obj.kpiTiles = kpiTiles;
+            obj.kpiTiles = kpiTiles != null ? new ArrayList<>((kpiTiles)) : new ArrayList<>();
             return this;
         }
 
@@ -137,12 +138,12 @@ public class ExecutiveSummaryResponse implements Serializable {
         }
 
         public Builder topPerformers(List<TopPerformer> topPerformers) {
-            obj.topPerformers = topPerformers;
+            obj.topPerformers = topPerformers != null ? new ArrayList<>((topPerformers)) : new ArrayList<>();
             return this;
         }
 
         public Builder insights(List<ActionableInsight> insights) {
-            obj.insights = insights;
+            obj.insights = insights != null ? new ArrayList<>((insights)) : new ArrayList<>();
             return this;
         }
 
@@ -151,7 +152,8 @@ public class ExecutiveSummaryResponse implements Serializable {
         }
     }
 
-    public static class FinancialSummary {
+    public static class FinancialSummary implements Serializable {
+        private static final long serialVersionUID = 1L;
         private BigDecimal totalRevenue; // INR
         private BigDecimal totalCosts; // INR
         private BigDecimal grossProfit; // INR
@@ -161,7 +163,7 @@ public class ExecutiveSummaryResponse implements Serializable {
         private BigDecimal operatingExpenses; // INR
         private BigDecimal ebitda; // INR
         private BigDecimal roi; // Percentage - Return on Investment
-        private Map<String, BigDecimal> revenueByChannel; // "DINE_IN", "DELIVERY", "PICKUP"
+        private HashMap<String, BigDecimal> revenueByChannel = new HashMap<>(); // "DINE_IN", "DELIVERY", "PICKUP"
 
         public FinancialSummary() {}
 
@@ -242,7 +244,7 @@ public class ExecutiveSummaryResponse implements Serializable {
         }
 
         public void setRevenueByChannel(Map<String, BigDecimal> revenueByChannel) {
-            this.revenueByChannel = revenueByChannel;
+            this.revenueByChannel = revenueByChannel != null ? new HashMap<>((revenueByChannel)) : new HashMap<>();
         }
 
         public static Builder builder() {
@@ -298,7 +300,7 @@ public class ExecutiveSummaryResponse implements Serializable {
             }
 
             public Builder revenueByChannel(Map<String, BigDecimal> revenueByChannel) {
-                obj.revenueByChannel = revenueByChannel;
+                obj.revenueByChannel = revenueByChannel != null ? new HashMap<>((revenueByChannel)) : new HashMap<>();
                 return this;
             }
 
@@ -308,7 +310,8 @@ public class ExecutiveSummaryResponse implements Serializable {
         }
     }
 
-    public static class OperationalMetrics {
+    public static class OperationalMetrics implements Serializable {
+        private static final long serialVersionUID = 1L;
         private int totalOrders;
         private BigDecimal averageOrderValue; // INR
         private int totalCustomers;
@@ -465,7 +468,8 @@ public class ExecutiveSummaryResponse implements Serializable {
         }
     }
 
-    public static class KPITile {
+    public static class KPITile implements Serializable {
+        private static final long serialVersionUID = 1L;
         private String kpiName;
         private String category; // "Financial", "Operational", "Customer", "Growth"
         private BigDecimal currentValue;
@@ -608,14 +612,15 @@ public class ExecutiveSummaryResponse implements Serializable {
         }
     }
 
-    public static class GrowthMetrics {
+    public static class GrowthMetrics implements Serializable {
+        private static final long serialVersionUID = 1L;
         private BigDecimal revenueGrowthRate; // Percentage
         private BigDecimal customerGrowthRate; // Percentage
         private BigDecimal orderGrowthRate; // Percentage
         private BigDecimal profitGrowthRate; // Percentage
         private BigDecimal marketShareGrowth; // Percentage (if applicable)
         private String projectedAnnualRevenue; // INR - Based on current growth
-        private List<GrowthDriver> topDrivers;
+        private ArrayList<GrowthDriver> topDrivers = new ArrayList<>();
 
         public GrowthMetrics() {}
 
@@ -672,7 +677,7 @@ public class ExecutiveSummaryResponse implements Serializable {
         }
 
         public void setTopDrivers(List<GrowthDriver> topDrivers) {
-            this.topDrivers = topDrivers;
+            this.topDrivers = topDrivers != null ? new ArrayList<>((topDrivers)) : new ArrayList<>();
         }
 
         public static Builder builder() {
@@ -713,7 +718,7 @@ public class ExecutiveSummaryResponse implements Serializable {
             }
 
             public Builder topDrivers(List<GrowthDriver> topDrivers) {
-                obj.topDrivers = topDrivers;
+                obj.topDrivers = topDrivers != null ? new ArrayList<>((topDrivers)) : new ArrayList<>();
                 return this;
             }
 
@@ -723,7 +728,8 @@ public class ExecutiveSummaryResponse implements Serializable {
         }
     }
 
-    public static class GrowthDriver {
+    public static class GrowthDriver implements Serializable {
+        private static final long serialVersionUID = 1L;
         private String driverName;
         private String description;
         private BigDecimal contribution; // Percentage of total growth
@@ -782,7 +788,8 @@ public class ExecutiveSummaryResponse implements Serializable {
         }
     }
 
-    public static class TopPerformer {
+    public static class TopPerformer implements Serializable {
+        private static final long serialVersionUID = 1L;
         private String category; // "Store", "Staff", "Product", "Customer"
         private String name;
         private String id;
@@ -883,7 +890,8 @@ public class ExecutiveSummaryResponse implements Serializable {
         }
     }
 
-    public static class ActionableInsight {
+    public static class ActionableInsight implements Serializable {
+        private static final long serialVersionUID = 1L;
         private String priority; // "HIGH", "MEDIUM", "LOW"
         private String category; // "Revenue", "Cost", "Customer", "Operations"
         private String title;

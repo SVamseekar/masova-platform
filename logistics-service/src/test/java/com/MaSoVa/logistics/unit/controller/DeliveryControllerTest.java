@@ -41,7 +41,6 @@ class DeliveryControllerTest extends BaseServiceTest {
     @Mock private DeliveryZoneService deliveryZoneService;
     @Mock private UserServiceClient userServiceClient;
     @Mock private LiveTrackingService liveTrackingService;
-    @Mock private ETACalculationService etaCalculationService;
     @Mock private ProofOfDeliveryService proofOfDeliveryService;
     @Mock private DriverAcceptanceService driverAcceptanceService;
     @Mock private PerformanceService performanceService;

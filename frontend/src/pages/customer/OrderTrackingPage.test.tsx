@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderAsCustomer, screen } from '@/test/utils/testUtils';
-import { mockOrderList, mockCustomerUser } from '@/test/fixtures';
+import { mockOrderList } from '@/test/fixtures';
 import OrderTrackingPage from './OrderTrackingPage';
 
 // Mock the APIs
@@ -11,7 +11,7 @@ vi.mock('@/store/api/customerApi', async () => {
   const actual = await vi.importActual('@/store/api/customerApi');
   return {
     ...actual,
-    useGetCustomerByUserIdQuery: (...args: any[]) => mockUseGetCustomerByUserIdQuery(...args),
+    useGetCustomerByUserIdQuery: (...args: unknown[]) => mockUseGetCustomerByUserIdQuery(...args),
   };
 });
 
@@ -19,7 +19,7 @@ vi.mock('@/store/api/orderApi', async () => {
   const actual = await vi.importActual('@/store/api/orderApi');
   return {
     ...actual,
-    useGetCustomerOrdersQuery: (...args: any[]) => mockUseGetCustomerOrdersQuery(...args),
+    useGetCustomerOrdersQuery: (...args: unknown[]) => mockUseGetCustomerOrdersQuery(...args),
   };
 });
 

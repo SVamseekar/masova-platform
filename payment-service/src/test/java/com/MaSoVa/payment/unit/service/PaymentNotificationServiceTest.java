@@ -12,7 +12,9 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestClientException;
@@ -32,6 +34,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("PaymentNotificationService Unit Tests")
+@SuppressWarnings("unchecked") // any(ParameterizedTypeReference.class) requires a raw-type Class<T> argument
 class PaymentNotificationServiceTest {
 
     @Mock
@@ -73,7 +76,7 @@ class PaymentNotificationServiceTest {
         @DisplayName("Should send success notification with valid email")
         void shouldSendSuccessNotificationWithValidEmail() {
             // Given
-            when(restTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(Map.class)))
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(Void.class)))
                     .thenReturn(ResponseEntity.ok(null));
 
             // When
@@ -81,10 +84,11 @@ class PaymentNotificationServiceTest {
                     transaction, "customer@valid.com", "+31612345678");
 
             // Then
-            verify(restTemplate).postForEntity(
+            verify(restTemplate).exchange(
                     eq("http://localhost:8092/api/notifications/send"),
+                    eq(HttpMethod.POST),
                     httpEntityCaptor.capture(),
-                    eq(Map.class));
+                    eq(Void.class));
 
             Map<String, Object> body = httpEntityCaptor.getValue().getBody();
             assertThat(body).isNotNull();
@@ -105,7 +109,7 @@ class PaymentNotificationServiceTest {
                     transaction, "customer@valid.com", "+31612345678");
 
             // Then
-            verify(restTemplate, never()).postForEntity(anyString(), any(), any());
+            verify(restTemplate, never()).exchange(anyString(), eq(HttpMethod.POST), any(), eq(Void.class));
         }
 
         @Test
@@ -119,7 +123,7 @@ class PaymentNotificationServiceTest {
                     transaction, "customer@valid.com", "+31612345678");
 
             // Then
-            verify(restTemplate, never()).postForEntity(anyString(), any(), any());
+            verify(restTemplate, never()).exchange(anyString(), eq(HttpMethod.POST), any(), eq(Void.class));
         }
 
         @Test
@@ -133,7 +137,7 @@ class PaymentNotificationServiceTest {
                     transaction, "customer@valid.com", "+31612345678");
 
             // Then
-            verify(restTemplate, never()).postForEntity(anyString(), any(), any());
+            verify(restTemplate, never()).exchange(anyString(), eq(HttpMethod.POST), any(), eq(Void.class));
         }
 
         @Test
@@ -144,7 +148,7 @@ class PaymentNotificationServiceTest {
                     transaction, "guest@walkin.local", "+31612345678");
 
             // Then
-            verify(restTemplate, never()).postForEntity(anyString(), any(), any());
+            verify(restTemplate, never()).exchange(anyString(), eq(HttpMethod.POST), any(), eq(Void.class));
         }
 
         @Test
@@ -155,14 +159,14 @@ class PaymentNotificationServiceTest {
                     transaction, "test@test.local", null);
 
             // Then
-            verify(restTemplate, never()).postForEntity(anyString(), any(), any());
+            verify(restTemplate, never()).exchange(anyString(), eq(HttpMethod.POST), any(), eq(Void.class));
         }
 
         @Test
         @DisplayName("Should not throw when notification service is unavailable")
         void shouldNotThrowWhenNotificationServiceUnavailable() {
             // Given
-            when(restTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(Map.class)))
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(Void.class)))
                     .thenThrow(new RestClientException("Connection refused"));
 
             // When / Then - should not throw
@@ -179,7 +183,7 @@ class PaymentNotificationServiceTest {
         @DisplayName("Should send failure notification with reason")
         void shouldSendFailureNotification() {
             // Given
-            when(restTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(Map.class)))
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(Void.class)))
                     .thenReturn(ResponseEntity.ok(null));
 
             // When
@@ -187,10 +191,11 @@ class PaymentNotificationServiceTest {
                     transaction, "customer@valid.com", "+31612345678", "Insufficient funds");
 
             // Then
-            verify(restTemplate).postForEntity(
+            verify(restTemplate).exchange(
                     eq("http://localhost:8092/api/notifications/send"),
+                    eq(HttpMethod.POST),
                     httpEntityCaptor.capture(),
-                    eq(Map.class));
+                    eq(Void.class));
 
             Map<String, Object> body = httpEntityCaptor.getValue().getBody();
             assertThat(body).isNotNull();
@@ -209,7 +214,7 @@ class PaymentNotificationServiceTest {
                     transaction, "customer@valid.com", "+31612345678", "reason");
 
             // Then
-            verify(restTemplate, never()).postForEntity(anyString(), any(), any());
+            verify(restTemplate, never()).exchange(anyString(), eq(HttpMethod.POST), any(), eq(Void.class));
         }
 
         @Test
@@ -223,7 +228,7 @@ class PaymentNotificationServiceTest {
                     transaction, "customer@valid.com", "+31612345678", "reason");
 
             // Then
-            verify(restTemplate, never()).postForEntity(anyString(), any(), any());
+            verify(restTemplate, never()).exchange(anyString(), eq(HttpMethod.POST), any(), eq(Void.class));
         }
     }
 
@@ -235,7 +240,7 @@ class PaymentNotificationServiceTest {
         @DisplayName("Should send refund notification with refund amount")
         void shouldSendRefundNotification() {
             // Given
-            when(restTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(Map.class)))
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(Void.class)))
                     .thenReturn(ResponseEntity.ok(null));
 
             // When
@@ -243,10 +248,11 @@ class PaymentNotificationServiceTest {
                     transaction, "customer@valid.com", "+31612345678", BigDecimal.valueOf(150.00));
 
             // Then
-            verify(restTemplate).postForEntity(
+            verify(restTemplate).exchange(
                     eq("http://localhost:8092/api/notifications/send"),
+                    eq(HttpMethod.POST),
                     httpEntityCaptor.capture(),
-                    eq(Map.class));
+                    eq(Void.class));
 
             Map<String, Object> body = httpEntityCaptor.getValue().getBody();
             assertThat(body).isNotNull();
@@ -265,14 +271,14 @@ class PaymentNotificationServiceTest {
                     transaction, "customer@valid.com", "+31612345678", BigDecimal.valueOf(100));
 
             // Then
-            verify(restTemplate, never()).postForEntity(anyString(), any(), any());
+            verify(restTemplate, never()).exchange(anyString(), eq(HttpMethod.POST), any(), eq(Void.class));
         }
 
         @Test
         @DisplayName("Should not throw when notification service call fails")
         void shouldNotThrowOnNotificationFailure() {
             // Given
-            when(restTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(Map.class)))
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(Void.class)))
                     .thenThrow(new RestClientException("Timeout"));
 
             // When / Then - should not throw
@@ -292,7 +298,7 @@ class PaymentNotificationServiceTest {
             notificationService.sendPaymentSuccessNotification(transaction, null, "+31612345678");
 
             // Then
-            verify(restTemplate, never()).postForEntity(anyString(), any(), any());
+            verify(restTemplate, never()).exchange(anyString(), eq(HttpMethod.POST), any(), eq(Void.class));
         }
 
         @Test
@@ -302,7 +308,7 @@ class PaymentNotificationServiceTest {
             notificationService.sendPaymentSuccessNotification(transaction, "", "+31612345678");
 
             // Then
-            verify(restTemplate, never()).postForEntity(anyString(), any(), any());
+            verify(restTemplate, never()).exchange(anyString(), eq(HttpMethod.POST), any(), eq(Void.class));
         }
 
         @Test
@@ -313,7 +319,7 @@ class PaymentNotificationServiceTest {
                     transaction, "test@example.com", "+31612345678");
 
             // Then
-            verify(restTemplate, never()).postForEntity(anyString(), any(), any());
+            verify(restTemplate, never()).exchange(anyString(), eq(HttpMethod.POST), any(), eq(Void.class));
         }
 
         @Test
@@ -324,7 +330,7 @@ class PaymentNotificationServiceTest {
                     transaction, "noreply@masova.com", "+31612345678");
 
             // Then
-            verify(restTemplate, never()).postForEntity(anyString(), any(), any());
+            verify(restTemplate, never()).exchange(anyString(), eq(HttpMethod.POST), any(), eq(Void.class));
         }
 
         @Test
@@ -335,7 +341,7 @@ class PaymentNotificationServiceTest {
                     transaction, "notanemail", "+31612345678");
 
             // Then
-            verify(restTemplate, never()).postForEntity(anyString(), any(), any());
+            verify(restTemplate, never()).exchange(anyString(), eq(HttpMethod.POST), any(), eq(Void.class));
         }
 
         @Test
@@ -346,7 +352,7 @@ class PaymentNotificationServiceTest {
                     transaction, "no-reply@masova.com", "+31612345678");
 
             // Then
-            verify(restTemplate, never()).postForEntity(anyString(), any(), any());
+            verify(restTemplate, never()).exchange(anyString(), eq(HttpMethod.POST), any(), eq(Void.class));
         }
 
         @Test
@@ -357,7 +363,7 @@ class PaymentNotificationServiceTest {
                     transaction, "user@nodot", "+31612345678");
 
             // Then
-            verify(restTemplate, never()).postForEntity(anyString(), any(), any());
+            verify(restTemplate, never()).exchange(anyString(), eq(HttpMethod.POST), any(), eq(Void.class));
         }
     }
 
@@ -378,11 +384,11 @@ class PaymentNotificationServiceTest {
             items.add(item);
             orderResponse.put("items", items);
 
-            // First call: getForObject (order items fetch)
-            when(restTemplate.getForObject(anyString(), eq(java.util.Map.class)))
-                    .thenReturn(orderResponse);
-            // Second call: postForEntity (notification send)
-            when(restTemplate.postForEntity(anyString(), any(org.springframework.http.HttpEntity.class), eq(java.util.Map.class)))
+            // First call: exchange GET (order items fetch)
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), any(ParameterizedTypeReference.class)))
+                    .thenReturn(org.springframework.http.ResponseEntity.ok(orderResponse));
+            // Second call: exchange POST (notification send)
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(org.springframework.http.HttpEntity.class), eq(Void.class)))
                     .thenReturn(org.springframework.http.ResponseEntity.ok(null));
 
             // When
@@ -390,16 +396,16 @@ class PaymentNotificationServiceTest {
                     transaction, "customer@valid.com", "+31612345678");
 
             // Then — notification was sent (not skipped)
-            verify(restTemplate).postForEntity(anyString(), any(), eq(java.util.Map.class));
+            verify(restTemplate).exchange(anyString(), eq(HttpMethod.POST), any(), eq(Void.class));
         }
 
         @Test
         @DisplayName("Should proceed gracefully when order items fetch fails")
         void shouldProceedWhenOrderItemsFetchFails() {
             // Given — order fetch throws, notification still sends
-            when(restTemplate.getForObject(anyString(), eq(java.util.Map.class)))
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), any(ParameterizedTypeReference.class)))
                     .thenThrow(new org.springframework.web.client.RestClientException("Order service down"));
-            when(restTemplate.postForEntity(anyString(), any(org.springframework.http.HttpEntity.class), eq(java.util.Map.class)))
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(org.springframework.http.HttpEntity.class), eq(Void.class)))
                     .thenReturn(org.springframework.http.ResponseEntity.ok(null));
 
             // When — should not throw
@@ -407,15 +413,16 @@ class PaymentNotificationServiceTest {
                     transaction, "customer@valid.com", "+31612345678");
 
             // Then — notification still sent
-            verify(restTemplate).postForEntity(anyString(), any(), eq(java.util.Map.class));
+            verify(restTemplate).exchange(anyString(), eq(HttpMethod.POST), any(), eq(Void.class));
         }
 
         @Test
         @DisplayName("Should handle null order response gracefully")
         void shouldHandleNullOrderResponse() {
             // Given
-            when(restTemplate.getForObject(anyString(), eq(java.util.Map.class))).thenReturn(null);
-            when(restTemplate.postForEntity(anyString(), any(org.springframework.http.HttpEntity.class), eq(java.util.Map.class)))
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), any(ParameterizedTypeReference.class)))
+                    .thenReturn(org.springframework.http.ResponseEntity.ok(null));
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(org.springframework.http.HttpEntity.class), eq(Void.class)))
                     .thenReturn(org.springframework.http.ResponseEntity.ok(null));
 
             // When
@@ -423,7 +430,7 @@ class PaymentNotificationServiceTest {
                     transaction, "customer@valid.com", "+31612345678");
 
             // Then
-            verify(restTemplate).postForEntity(anyString(), any(), eq(java.util.Map.class));
+            verify(restTemplate).exchange(anyString(), eq(HttpMethod.POST), any(), eq(Void.class));
         }
 
         @Test
@@ -439,8 +446,9 @@ class PaymentNotificationServiceTest {
             items.add(item);
             orderResponse.put("items", items);
 
-            when(restTemplate.getForObject(anyString(), eq(java.util.Map.class))).thenReturn(orderResponse);
-            when(restTemplate.postForEntity(anyString(), any(org.springframework.http.HttpEntity.class), eq(java.util.Map.class)))
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), any(ParameterizedTypeReference.class)))
+                    .thenReturn(org.springframework.http.ResponseEntity.ok(orderResponse));
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(org.springframework.http.HttpEntity.class), eq(Void.class)))
                     .thenReturn(org.springframework.http.ResponseEntity.ok(null));
 
             // When
@@ -448,7 +456,7 @@ class PaymentNotificationServiceTest {
                     transaction, "customer@valid.com", "+31612345678");
 
             // Then — sent without error
-            verify(restTemplate).postForEntity(anyString(), any(), eq(java.util.Map.class));
+            verify(restTemplate).exchange(anyString(), eq(HttpMethod.POST), any(), eq(Void.class));
         }
     }
 
@@ -460,7 +468,7 @@ class PaymentNotificationServiceTest {
         @DisplayName("Should include phone in notification when phone is non-empty")
         void shouldIncludePhoneWhenNonEmpty() {
             // Given
-            when(restTemplate.postForEntity(anyString(), any(org.springframework.http.HttpEntity.class), eq(java.util.Map.class)))
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(org.springframework.http.HttpEntity.class), eq(Void.class)))
                     .thenReturn(org.springframework.http.ResponseEntity.ok(null));
 
             // When
@@ -468,7 +476,7 @@ class PaymentNotificationServiceTest {
                     transaction, "customer@valid.com", "+31612345678");
 
             // Then
-            verify(restTemplate).postForEntity(anyString(), httpEntityCaptor.capture(), eq(java.util.Map.class));
+            verify(restTemplate).exchange(anyString(), eq(HttpMethod.POST), httpEntityCaptor.capture(), eq(Void.class));
             java.util.Map<String, Object> body = httpEntityCaptor.getValue().getBody();
             assertThat(body).containsKey("recipientPhone");
         }
@@ -477,7 +485,7 @@ class PaymentNotificationServiceTest {
         @DisplayName("Should not include phone in notification when phone is null")
         void shouldNotIncludePhoneWhenNull() {
             // Given
-            when(restTemplate.postForEntity(anyString(), any(org.springframework.http.HttpEntity.class), eq(java.util.Map.class)))
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(org.springframework.http.HttpEntity.class), eq(Void.class)))
                     .thenReturn(org.springframework.http.ResponseEntity.ok(null));
 
             // When
@@ -485,7 +493,7 @@ class PaymentNotificationServiceTest {
                     transaction, "customer@valid.com", null);
 
             // Then
-            verify(restTemplate).postForEntity(anyString(), httpEntityCaptor.capture(), eq(java.util.Map.class));
+            verify(restTemplate).exchange(anyString(), eq(HttpMethod.POST), httpEntityCaptor.capture(), eq(Void.class));
             java.util.Map<String, Object> body = httpEntityCaptor.getValue().getBody();
             assertThat(body).doesNotContainKey("recipientPhone");
         }

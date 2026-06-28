@@ -6,10 +6,13 @@ import com.MaSoVa.commerce.order.entity.OrderItem;
 import com.MaSoVa.commerce.order.websocket.OrderWebSocketController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.MaSoVa.shared.http.HttpMethods;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -319,7 +322,7 @@ public class CustomerNotificationService {
                     headers.setContentType(MediaType.APPLICATION_JSON);
                     HttpEntity<Map<String, Object>> entity = new HttpEntity<>(emailPayload, headers);
 
-                    restTemplate.postForObject(notificationServiceUrl + "/api/notifications/send", entity, Object.class);
+                    postNotification(notificationServiceUrl + "/api/notifications/send", entity);
                     log.info("Delivery OTP email sent to customer {} for order {}",
                             order.getCustomerId(), order.getOrderNumber());
                 } catch (Exception emailEx) {
@@ -649,7 +652,7 @@ public class CustomerNotificationService {
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
             String url = notificationServiceUrl + "/api/notifications/send";
 
-            restTemplate.postForEntity(url, entity, Map.class);
+            postNotification(url, entity);
             log.info("Order confirmation email sent for order: {} to {}",
                     order.getOrderNumber(), customerEmail);
 
@@ -794,7 +797,7 @@ public class CustomerNotificationService {
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
 
             String url = notificationServiceUrl + "/api/notifications/send";
-            restTemplate.postForEntity(url, entity, Map.class);
+            postNotification(url, entity);
 
             log.info("Payment confirmation email sent for order: {}", order.getOrderNumber());
 
@@ -1027,7 +1030,7 @@ public class CustomerNotificationService {
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
             String url = notificationServiceUrl + "/api/notifications/send";
 
-            restTemplate.postForEntity(url, entity, Map.class);
+            postNotification(url, entity);
             log.info("Order status update email sent for order: {} to {} (status: {})",
                     order.getOrderNumber(), customerEmail, order.getStatus());
 
@@ -1169,8 +1172,7 @@ public class CustomerNotificationService {
             String customerUrl = customerServiceUrl + "/api/customers/" + customerId;
             log.debug("Fetching customer email from customer-service: {}", customerUrl);
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> customerResponse = restTemplate.getForObject(customerUrl, Map.class);
+            Map<String, Object> customerResponse = getJsonMap(customerUrl);
 
             if (customerResponse != null && customerResponse.containsKey("email")) {
                 String email = (String) customerResponse.get("email");
@@ -1193,8 +1195,7 @@ public class CustomerNotificationService {
             String userUrl = userServiceUrl + "/api/users/" + customerId;
             log.debug("Fetching customer email from user-service: {}", userUrl);
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> userResponse = restTemplate.getForObject(userUrl, Map.class);
+            Map<String, Object> userResponse = getJsonMap(userUrl);
 
             if (userResponse != null && userResponse.containsKey("email")) {
                 String email = (String) userResponse.get("email");
@@ -1280,5 +1281,19 @@ public class CustomerNotificationService {
         }
 
         return true;
+    }
+
+    private void postNotification(String url, HttpEntity<Map<String, Object>> entity) {
+        restTemplate.exchange(url, HttpMethods.POST, entity, Void.class);
+    }
+
+    private Map<String, Object> getJsonMap(String url) {
+        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                url,
+                HttpMethods.GET,
+                null,
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+        );
+        return response.getBody();
     }
 }

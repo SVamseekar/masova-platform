@@ -9,12 +9,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -46,6 +50,18 @@ class DeliveryZoneServiceTest {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private void mockStoreDetails(Map<String, Object> storeData) {
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), any(ParameterizedTypeReference.class)))
+            .thenReturn(ResponseEntity.ok(storeData));
+    }
+
+    @SuppressWarnings("unchecked")
+    private void mockStoreDetailsThrows(RuntimeException ex) {
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), any(ParameterizedTypeReference.class)))
+            .thenThrow(ex);
+    }
+
     private Map<String, Object> buildStoreData(double storeLat, double storeLng, double radiusKm) {
         return Map.of(
             "id", STORE_ID,
@@ -66,8 +82,7 @@ class DeliveryZoneServiceTest {
         @Test
         @DisplayName("returns true for address within radius")
         void returnsTrueWhenWithin() {
-            when(restTemplate.getForObject(anyString(), eq(Map.class)))
-                .thenReturn(buildStoreData(STORE_LAT, STORE_LNG, 10.0));
+            mockStoreDetails(buildStoreData(STORE_LAT, STORE_LNG, 10.0));
 
             // Address ~2km from store
             boolean result = deliveryZoneService.isWithinDeliveryZone(STORE_ID, 19.076, 72.855);
@@ -78,8 +93,7 @@ class DeliveryZoneServiceTest {
         @Test
         @DisplayName("returns false for address outside radius")
         void returnsFalseWhenOutside() {
-            when(restTemplate.getForObject(anyString(), eq(Map.class)))
-                .thenReturn(buildStoreData(STORE_LAT, STORE_LNG, 5.0));
+            mockStoreDetails(buildStoreData(STORE_LAT, STORE_LNG, 5.0));
 
             // Address ~25km away (Pune direction)
             boolean result = deliveryZoneService.isWithinDeliveryZone(STORE_ID, 18.520, 73.856);
@@ -90,7 +104,7 @@ class DeliveryZoneServiceTest {
         @Test
         @DisplayName("returns false when store not found")
         void returnsFalseWhenStoreNull() {
-            when(restTemplate.getForObject(anyString(), eq(Map.class))).thenReturn(null);
+            mockStoreDetails(null);
 
             boolean result = deliveryZoneService.isWithinDeliveryZone(STORE_ID, 19.076, 72.855);
 
@@ -100,8 +114,7 @@ class DeliveryZoneServiceTest {
         @Test
         @DisplayName("returns false when store data has no address")
         void returnsFalseWhenNoAddress() {
-            when(restTemplate.getForObject(anyString(), eq(Map.class)))
-                .thenReturn(Map.of("id", STORE_ID));
+            mockStoreDetails(Map.of("id", STORE_ID));
 
             boolean result = deliveryZoneService.isWithinDeliveryZone(STORE_ID, 19.076, 72.855);
 
@@ -111,8 +124,7 @@ class DeliveryZoneServiceTest {
         @Test
         @DisplayName("returns false when RestTemplate throws")
         void returnsFalseOnException() {
-            when(restTemplate.getForObject(anyString(), eq(Map.class)))
-                .thenThrow(new RuntimeException("Connection refused"));
+            mockStoreDetailsThrows(new RuntimeException("Connection refused"));
 
             boolean result = deliveryZoneService.isWithinDeliveryZone(STORE_ID, 19.076, 72.855);
 
@@ -122,8 +134,7 @@ class DeliveryZoneServiceTest {
         @Test
         @DisplayName("uses default radius of 10km when no config key")
         void usesDefaultRadiusWhenNoConfig() {
-            when(restTemplate.getForObject(anyString(), eq(Map.class)))
-                .thenReturn(Map.of(
+            mockStoreDetails(Map.of(
                     "id", STORE_ID,
                     "address", Map.of("latitude", STORE_LAT, "longitude", STORE_LNG)
                 ));
@@ -142,8 +153,7 @@ class DeliveryZoneServiceTest {
         @Test
         @DisplayName("returns Zone A fee for distance <= 3km")
         void returnsZoneAFee() {
-            when(restTemplate.getForObject(anyString(), eq(Map.class)))
-                .thenReturn(buildStoreData(STORE_LAT, STORE_LNG, 10.0));
+            mockStoreDetails(buildStoreData(STORE_LAT, STORE_LNG, 10.0));
 
             // Very close — same lat/lng = 0km
             DeliveryFeeResponse result = deliveryZoneService.calculateDeliveryFee(STORE_ID, STORE_LAT, STORE_LNG);
@@ -158,8 +168,7 @@ class DeliveryZoneServiceTest {
         @DisplayName("returns Zone B fee for distance 3-6km")
         void returnsZoneBFee() {
             // Store at Mumbai, deliver ~4km south
-            when(restTemplate.getForObject(anyString(), eq(Map.class)))
-                .thenReturn(buildStoreData(STORE_LAT, STORE_LNG, 10.0));
+            mockStoreDetails(buildStoreData(STORE_LAT, STORE_LNG, 10.0));
 
             // ~4km south: 19.0400, 72.877
             DeliveryFeeResponse result = deliveryZoneService.calculateDeliveryFee(STORE_ID, 19.0400, 72.8777);
@@ -173,8 +182,7 @@ class DeliveryZoneServiceTest {
         @Test
         @DisplayName("returns Zone C fee for distance 6-10km")
         void returnsZoneCFee() {
-            when(restTemplate.getForObject(anyString(), eq(Map.class)))
-                .thenReturn(buildStoreData(STORE_LAT, STORE_LNG, 10.0));
+            mockStoreDetails(buildStoreData(STORE_LAT, STORE_LNG, 10.0));
 
             // ~8km south: 18.9970, 72.877
             DeliveryFeeResponse result = deliveryZoneService.calculateDeliveryFee(STORE_ID, 18.9970, 72.8777);
@@ -188,8 +196,7 @@ class DeliveryZoneServiceTest {
         @Test
         @DisplayName("returns error when address outside delivery area")
         void returnsErrorWhenOutside() {
-            when(restTemplate.getForObject(anyString(), eq(Map.class)))
-                .thenReturn(buildStoreData(STORE_LAT, STORE_LNG, 5.0));
+            mockStoreDetails(buildStoreData(STORE_LAT, STORE_LNG, 5.0));
 
             // Pune — ~140km away
             DeliveryFeeResponse result = deliveryZoneService.calculateDeliveryFee(STORE_ID, 18.5204, 73.8567);
@@ -201,7 +208,7 @@ class DeliveryZoneServiceTest {
         @Test
         @DisplayName("returns error when store not found")
         void returnsErrorWhenStoreNull() {
-            when(restTemplate.getForObject(anyString(), eq(Map.class))).thenReturn(null);
+            mockStoreDetails(null);
 
             DeliveryFeeResponse result = deliveryZoneService.calculateDeliveryFee(STORE_ID, 19.076, 72.855);
 
@@ -212,8 +219,7 @@ class DeliveryZoneServiceTest {
         @Test
         @DisplayName("returns error when store has no address")
         void returnsErrorWhenNoAddress() {
-            when(restTemplate.getForObject(anyString(), eq(Map.class)))
-                .thenReturn(Map.of("id", STORE_ID));
+            mockStoreDetails(Map.of("id", STORE_ID));
 
             DeliveryFeeResponse result = deliveryZoneService.calculateDeliveryFee(STORE_ID, 19.076, 72.855);
 
@@ -237,7 +243,7 @@ class DeliveryZoneServiceTest {
                     )
                 )
             );
-            when(restTemplate.getForObject(anyString(), eq(Map.class))).thenReturn(storeDataWithCustomZones);
+            mockStoreDetails(storeDataWithCustomZones);
 
             DeliveryFeeResponse result = deliveryZoneService.calculateDeliveryFee(STORE_ID, STORE_LAT, STORE_LNG);
 
@@ -262,7 +268,7 @@ class DeliveryZoneServiceTest {
                     )
                 )
             );
-            when(restTemplate.getForObject(anyString(), eq(Map.class))).thenReturn(storeDataWithInactiveZone);
+            mockStoreDetails(storeDataWithInactiveZone);
 
             // Falls through to default zone pricing
             DeliveryFeeResponse result = deliveryZoneService.calculateDeliveryFee(STORE_ID, STORE_LAT, STORE_LNG);
@@ -279,8 +285,7 @@ class DeliveryZoneServiceTest {
         @Test
         @DisplayName("returns default zones when store has no config")
         void returnsDefaultZones() {
-            when(restTemplate.getForObject(anyString(), eq(Map.class)))
-                .thenReturn(Map.of("id", STORE_ID));
+            mockStoreDetails(Map.of("id", STORE_ID));
 
             List<Map<String, Object>> result = deliveryZoneService.getDeliveryZones(STORE_ID);
 
@@ -304,7 +309,7 @@ class DeliveryZoneServiceTest {
                     )
                 )
             );
-            when(restTemplate.getForObject(anyString(), eq(Map.class))).thenReturn(storeData);
+            mockStoreDetails(storeData);
 
             List<Map<String, Object>> result = deliveryZoneService.getDeliveryZones(STORE_ID);
 
@@ -315,7 +320,7 @@ class DeliveryZoneServiceTest {
         @Test
         @DisplayName("returns null when store not found")
         void returnsNullWhenStoreNull() {
-            when(restTemplate.getForObject(anyString(), eq(Map.class))).thenReturn(null);
+            mockStoreDetails(null);
 
             List<Map<String, Object>> result = deliveryZoneService.getDeliveryZones(STORE_ID);
 
@@ -325,8 +330,7 @@ class DeliveryZoneServiceTest {
         @Test
         @DisplayName("returns null when restTemplate throws (getStoreDetails catches and returns null)")
         void returnsNullOnException() {
-            when(restTemplate.getForObject(anyString(), eq(Map.class)))
-                .thenThrow(new RuntimeException("Network error"));
+            mockStoreDetailsThrows(new RuntimeException("Network error"));
 
             // getStoreDetails catches the exception and returns null
             // getDeliveryZones sees null storeData and returns null
@@ -343,8 +347,7 @@ class DeliveryZoneServiceTest {
         @Test
         @DisplayName("returns valid=true for address within zone and no pincode restriction")
         void returnsValidWhenWithinZone() {
-            when(restTemplate.getForObject(anyString(), eq(Map.class)))
-                .thenReturn(buildStoreData(STORE_LAT, STORE_LNG, 10.0));
+            mockStoreDetails(buildStoreData(STORE_LAT, STORE_LNG, 10.0));
 
             DeliveryZoneService.ValidationResult result =
                 deliveryZoneService.validateDeliveryAddress(STORE_ID, STORE_LAT, STORE_LNG, null);
@@ -357,8 +360,7 @@ class DeliveryZoneServiceTest {
         @Test
         @DisplayName("returns valid=false when address outside zone")
         void returnsInvalidWhenOutside() {
-            when(restTemplate.getForObject(anyString(), eq(Map.class)))
-                .thenReturn(buildStoreData(STORE_LAT, STORE_LNG, 2.0));
+            mockStoreDetails(buildStoreData(STORE_LAT, STORE_LNG, 2.0));
 
             // 8km away — outside 2km radius
             DeliveryZoneService.ValidationResult result =
@@ -382,7 +384,7 @@ class DeliveryZoneServiceTest {
                     )
                 )
             );
-            when(restTemplate.getForObject(anyString(), eq(Map.class))).thenReturn(storeWithRestrictedPincode);
+            mockStoreDetails(storeWithRestrictedPincode);
 
             DeliveryZoneService.ValidationResult result =
                 deliveryZoneService.validateDeliveryAddress(STORE_ID, STORE_LAT, STORE_LNG, "400001");
@@ -399,8 +401,7 @@ class DeliveryZoneServiceTest {
         @Test
         @DisplayName("returns false when store has no restricted pincodes")
         void returnsFalseWithNoRestrictions() {
-            when(restTemplate.getForObject(anyString(), eq(Map.class)))
-                .thenReturn(buildStoreData(STORE_LAT, STORE_LNG, 10.0));
+            mockStoreDetails(buildStoreData(STORE_LAT, STORE_LNG, 10.0));
 
             boolean result = deliveryZoneService.isPincodeRestricted(STORE_ID, "400001");
 
@@ -410,7 +411,7 @@ class DeliveryZoneServiceTest {
         @Test
         @DisplayName("returns false when store is null")
         void returnsFalseWhenStoreNull() {
-            when(restTemplate.getForObject(anyString(), eq(Map.class))).thenReturn(null);
+            mockStoreDetails(null);
 
             boolean result = deliveryZoneService.isPincodeRestricted(STORE_ID, "400001");
 
@@ -428,7 +429,7 @@ class DeliveryZoneServiceTest {
                     )
                 )
             );
-            when(restTemplate.getForObject(anyString(), eq(Map.class))).thenReturn(storeWithRestrictedPincode);
+            mockStoreDetails(storeWithRestrictedPincode);
 
             boolean result = deliveryZoneService.isPincodeRestricted(STORE_ID, "400001");
 
@@ -446,7 +447,7 @@ class DeliveryZoneServiceTest {
                     )
                 )
             );
-            when(restTemplate.getForObject(anyString(), eq(Map.class))).thenReturn(storeData);
+            mockStoreDetails(storeData);
 
             boolean result = deliveryZoneService.isPincodeRestricted(STORE_ID, "400001");
 

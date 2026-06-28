@@ -5,8 +5,6 @@ import com.MaSoVa.core.review.dto.response.ItemRatingResponse;
 import com.MaSoVa.core.review.dto.response.ReviewStatsResponse;
 import com.MaSoVa.core.review.entity.Review;
 import com.MaSoVa.core.review.repository.ReviewRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -15,8 +13,6 @@ import java.util.stream.Collectors;
 
 @Service
 public class AnalyticsService {
-
-    private static final Logger log = LoggerFactory.getLogger(AnalyticsService.class);
 
     private final ReviewRepository reviewRepository;
     private final SentimentAnalysisService sentimentAnalysisService;
@@ -126,13 +122,20 @@ public class AnalyticsService {
 
         long neutralReviews = itemReviews.size() - positiveReviews - negativeReviews;
 
-        // Extract common themes from comments
-        List<String> comments = itemReviews.stream()
+        // Extract common themes separately from positive and negative comments
+        List<String> praiseComments = itemReviews.stream()
+                .filter(ir -> ir.getRating() >= 4)
+                .map(Review.ItemReview::getComment)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        List<String> complaintComments = itemReviews.stream()
+                .filter(ir -> ir.getRating() <= 2)
                 .map(Review.ItemReview::getComment)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        List<String> commonThemes = sentimentAnalysisService.extractCommonThemes(comments);
+        List<String> commonPraises = sentimentAnalysisService.extractCommonThemes(praiseComments);
+        List<String> commonComplaints = sentimentAnalysisService.extractCommonThemes(complaintComments);
 
         // Determine trend
         LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
@@ -166,8 +169,8 @@ public class AnalyticsService {
                 .positiveReviews(positiveReviews)
                 .neutralReviews(neutralReviews)
                 .negativeReviews(negativeReviews)
-                .commonPraises(new ArrayList<>())
-                .commonComplaints(new ArrayList<>())
+                .commonPraises(commonPraises)
+                .commonComplaints(commonComplaints)
                 .trendStatus(trendStatus)
                 .recentRatingChange(Math.round(recentRatingChange * 100.0) / 100.0)
                 .build();

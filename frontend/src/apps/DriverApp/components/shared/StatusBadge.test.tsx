@@ -44,7 +44,7 @@ describe('StatusBadge', () => {
   });
 
   it('hides status dot when showDot is false', () => {
-    const { container } = render(<StatusBadge status="online" showDot={false} />);
+    render(<StatusBadge status="online" showDot={false} />);
     // With showDot=false, there should be fewer Box elements
     // The label should still appear
     expect(screen.getByText('Online')).toBeInTheDocument();

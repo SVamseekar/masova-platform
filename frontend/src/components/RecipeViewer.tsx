@@ -1,5 +1,5 @@
 import React from 'react';
-import { colors, spacing, typography, shadows, borderRadius } from '../styles/design-tokens';
+import { colors, spacing, typography } from '../styles/design-tokens';
 import { createNeumorphicSurface, createCard } from '../styles/neumorphic-utils';
 import { MenuItem } from '../store/api/menuApi';
 

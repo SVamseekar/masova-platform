@@ -243,6 +243,7 @@ public class OrderService {
         // PostgreSQL dual-write (Global-3: includes currency)
         try {
             OrderJpaEntity jpaEntity = OrderJpaEntity.builder()
+                    .mongoId(savedOrder.getId())
                     .orderNumber(savedOrder.getOrderNumber())
                     .customerId(savedOrder.getCustomerId())
                     .customerName(savedOrder.getCustomerName())
@@ -261,6 +262,7 @@ public class OrderService {
                     .receivedAt(savedOrder.getReceivedAt() != null
                             ? savedOrder.getReceivedAt().atOffset(java.time.ZoneOffset.UTC) : null)
                     .build();
+            jpaEntity.setItems(orderItemSyncService.buildItemEntities(savedOrder.getItems(), jpaEntity));
             orderJpaRepository.save(jpaEntity);
         } catch (Exception e) {
             log.warn("PostgreSQL dual-write failed for order {}: {}", savedOrder.getOrderNumber(), e.getMessage());
@@ -295,6 +297,22 @@ public class OrderService {
         return savedOrder;
     }
 
+    /**
+     * Re-syncs status/payment/totals/timestamps + line items to the PostgreSQL dual-write
+     * row for an order, keyed by mongoId. No-op (with a warn log) if the PG row is missing,
+     * since createOrder's dual-write may have failed independently.
+     */
+    private void syncToPostgres(Order order) {
+        try {
+            orderJpaRepository.findByMongoId(order.getId()).ifPresentOrElse(
+                pgOrder -> orderItemSyncService.syncOrderItems(pgOrder, order),
+                () -> log.warn("PG dual-write: no PG row for order {} — skipping item sync", order.getId())
+            );
+        } catch (Exception e) {
+            log.warn("PG dual-write sync failed for order {}: {}", order.getId(), e.getMessage());
+        }
+    }
+
     public Order getOrderById(String orderId) {
         return orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
@@ -323,13 +341,14 @@ public class OrderService {
     }
 
     public List<Order> getKitchenQueue(String storeId) {
-        // Kitchen queue shows orders in RECEIVED, PREPARING, OVEN, BAKED, DISPATCHED (Completed) stages
+        // Kitchen queue shows orders in RECEIVED, PREPARING, OVEN, BAKED, DISPATCHED, OUT_FOR_DELIVERY stages
         List<OrderStatus> kitchenStatuses = List.of(
                 OrderStatus.RECEIVED,
                 OrderStatus.PREPARING,
                 OrderStatus.OVEN,
                 OrderStatus.BAKED,
-                OrderStatus.DISPATCHED
+                OrderStatus.DISPATCHED,
+                OrderStatus.OUT_FOR_DELIVERY
         );
 
         List<Order> orders = orderRepository.findByStoreIdAndStatusIn(storeId, kitchenStatuses);
@@ -382,6 +401,7 @@ public class OrderService {
         Order updatedOrder = orderRepository.save(order);
         log.info("Order status updated: {} → {} - Analytics cache evicted",
                  updatedOrder.getOrderNumber(), updatedOrder.getStatus());
+        syncToPostgres(updatedOrder);
 
         // Publish status changed event to RabbitMQ
         try {
@@ -520,6 +540,7 @@ public class OrderService {
         order.setCancellationReason(reason);
 
         Order cancelledOrder = orderRepository.save(order);
+        syncToPostgres(cancelledOrder);
 
         // Publish status changed event to RabbitMQ
         try {
@@ -660,6 +681,7 @@ public class OrderService {
 
         order.setAssignedDriverId(driverId);
         Order updatedOrder = orderRepository.save(order);
+        syncToPostgres(updatedOrder);
 
         // Send driver assignment notification to customer
         customerNotificationService.sendDriverAssignmentNotification(updatedOrder, driverName, driverPhone);
@@ -679,6 +701,7 @@ public class OrderService {
         order.setPaymentTransactionId(transactionId);
 
         Order updatedOrder = orderRepository.save(order);
+        syncToPostgres(updatedOrder);
 
         // Broadcast payment update via WebSocket
         if (updatedOrder.getCustomerId() != null) {
@@ -727,6 +750,7 @@ public class OrderService {
         order.setPreparationTime(calculatePreparationTime(newItems.size()));
 
         Order updatedOrder = orderRepository.save(order);
+        syncToPostgres(updatedOrder);
 
         // Broadcast modification via WebSocket
         webSocketController.sendKitchenQueueUpdate(updatedOrder.getStoreId(), updatedOrder);
@@ -748,6 +772,7 @@ public class OrderService {
         order.setPriority(priority);
 
         Order updatedOrder = orderRepository.save(order);
+        syncToPostgres(updatedOrder);
 
         // Broadcast priority change via WebSocket
         webSocketController.sendKitchenQueueUpdate(updatedOrder.getStoreId(), updatedOrder);
@@ -842,7 +867,8 @@ public class OrderService {
             case OVEN -> List.of(OrderStatus.PREPARING, OrderStatus.BAKED, OrderStatus.CANCELLED);
             case BAKED -> List.of(OrderStatus.OVEN, OrderStatus.READY, OrderStatus.CANCELLED);  // Unified: go to READY
             case READY -> List.of(OrderStatus.DISPATCHED, OrderStatus.SERVED, OrderStatus.COMPLETED, OrderStatus.CANCELLED);  // Different final states per order type
-            case DISPATCHED -> List.of(OrderStatus.READY, OrderStatus.DELIVERED);  // DELIVERY orders
+            case DISPATCHED -> List.of(OrderStatus.READY, OrderStatus.OUT_FOR_DELIVERY, OrderStatus.DELIVERED);  // DELIVERY orders
+            case OUT_FOR_DELIVERY -> List.of(OrderStatus.DELIVERED);  // Driver en route
             case DELIVERED -> List.of();  // Terminal state
             case SERVED -> List.of();  // Terminal state (DINE_IN)
             case COMPLETED -> List.of();  // Terminal state (TAKEAWAY)
@@ -859,6 +885,7 @@ public class OrderService {
             case BAKED -> order.setBakedAt(now);
             case READY -> order.setReadyAt(now);  // Ready for pickup (TAKEAWAY) or serving (DINE_IN) or dispatch (DELIVERY)
             case DISPATCHED -> order.setDispatchedAt(now);
+            case OUT_FOR_DELIVERY -> order.setOutForDeliveryAt(now);
             case DELIVERED -> order.setDeliveredAt(now);
             case SERVED -> order.setCompletedAt(now);  // DINE_IN final state
             case COMPLETED -> order.setCompletedAt(now);  // TAKEAWAY final state
@@ -1247,6 +1274,7 @@ public class OrderService {
         order.setDeliveryOtpExpiresAt(expiresAt);
 
         Order savedOrder = orderRepository.save(order);
+        syncToPostgres(savedOrder);
         log.info("Delivery OTP set for order {}. Expires at {}", orderId, expiresAt);
 
         // Send OTP to customer via notification service
@@ -1274,6 +1302,7 @@ public class OrderService {
         }
 
         Order savedOrder = orderRepository.save(order);
+        syncToPostgres(savedOrder);
         log.info("Delivery proof set for order {}. Type: {}", orderId, proofType);
 
         return savedOrder;
@@ -1293,6 +1322,7 @@ public class OrderService {
         order.setDeliveryProofType(proofType);
 
         Order savedOrder = orderRepository.save(order);
+        syncToPostgres(savedOrder);
         log.info("Order {} marked as delivered at {} using {} verification", orderId, deliveredAt, proofType);
 
         // Send delivery confirmation notification

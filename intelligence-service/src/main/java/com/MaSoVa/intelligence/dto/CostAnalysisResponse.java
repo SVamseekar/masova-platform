@@ -1,7 +1,7 @@
 package com.MaSoVa.intelligence.dto;
+
 import java.io.Serializable;
-
-
+import java.util.ArrayList;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -15,10 +15,10 @@ public class CostAnalysisResponse implements Serializable {
     private BigDecimal totalProfit; // INR
     private BigDecimal profitMargin; // Percentage
     private CostBreakdown costBreakdown;
-    private List<IngredientCost> ingredientCosts;
-    private List<WasteCost> wasteCosts;
-    private List<OrderCostAnalysis> topCostOrders;
-    private List<SupplierComparison> supplierComparisons;
+    private ArrayList<IngredientCost> ingredientCosts = new ArrayList<>();
+    private ArrayList<WasteCost> wasteCosts = new ArrayList<>();
+    private ArrayList<OrderCostAnalysis> topCostOrders = new ArrayList<>();
+    private ArrayList<SupplierComparison> supplierComparisons = new ArrayList<>();
 
     public CostAnalysisResponse() {}
 
@@ -75,7 +75,7 @@ public class CostAnalysisResponse implements Serializable {
     }
 
     public void setIngredientCosts(List<IngredientCost> ingredientCosts) {
-        this.ingredientCosts = ingredientCosts;
+        this.ingredientCosts = ingredientCosts != null ? new ArrayList<>((ingredientCosts)) : new ArrayList<>();
     }
 
     public List<WasteCost> getWasteCosts() {
@@ -83,7 +83,7 @@ public class CostAnalysisResponse implements Serializable {
     }
 
     public void setWasteCosts(List<WasteCost> wasteCosts) {
-        this.wasteCosts = wasteCosts;
+        this.wasteCosts = wasteCosts != null ? new ArrayList<>((wasteCosts)) : new ArrayList<>();
     }
 
     public List<OrderCostAnalysis> getTopCostOrders() {
@@ -91,7 +91,7 @@ public class CostAnalysisResponse implements Serializable {
     }
 
     public void setTopCostOrders(List<OrderCostAnalysis> topCostOrders) {
-        this.topCostOrders = topCostOrders;
+        this.topCostOrders = topCostOrders != null ? new ArrayList<>((topCostOrders)) : new ArrayList<>();
     }
 
     public List<SupplierComparison> getSupplierComparisons() {
@@ -99,7 +99,7 @@ public class CostAnalysisResponse implements Serializable {
     }
 
     public void setSupplierComparisons(List<SupplierComparison> supplierComparisons) {
-        this.supplierComparisons = supplierComparisons;
+        this.supplierComparisons = supplierComparisons != null ? new ArrayList<>((supplierComparisons)) : new ArrayList<>();
     }
 
     public static Builder builder() {
@@ -140,22 +140,22 @@ public class CostAnalysisResponse implements Serializable {
         }
 
         public Builder ingredientCosts(List<IngredientCost> ingredientCosts) {
-            obj.ingredientCosts = ingredientCosts;
+            obj.ingredientCosts = ingredientCosts != null ? new ArrayList<>((ingredientCosts)) : new ArrayList<>();
             return this;
         }
 
         public Builder wasteCosts(List<WasteCost> wasteCosts) {
-            obj.wasteCosts = wasteCosts;
+            obj.wasteCosts = wasteCosts != null ? new ArrayList<>((wasteCosts)) : new ArrayList<>();
             return this;
         }
 
         public Builder topCostOrders(List<OrderCostAnalysis> topCostOrders) {
-            obj.topCostOrders = topCostOrders;
+            obj.topCostOrders = topCostOrders != null ? new ArrayList<>((topCostOrders)) : new ArrayList<>();
             return this;
         }
 
         public Builder supplierComparisons(List<SupplierComparison> supplierComparisons) {
-            obj.supplierComparisons = supplierComparisons;
+            obj.supplierComparisons = supplierComparisons != null ? new ArrayList<>((supplierComparisons)) : new ArrayList<>();
             return this;
         }
 
@@ -164,7 +164,8 @@ public class CostAnalysisResponse implements Serializable {
         }
     }
 
-    public static class CostBreakdown {
+    public static class CostBreakdown implements Serializable {
+        private static final long serialVersionUID = 1L;
         private BigDecimal ingredientCosts; // INR
         private BigDecimal wasteCosts; // INR
         private BigDecimal laborCosts; // INR
@@ -265,7 +266,8 @@ public class CostAnalysisResponse implements Serializable {
         }
     }
 
-    public static class IngredientCost {
+    public static class IngredientCost implements Serializable {
+        private static final long serialVersionUID = 1L;
         private String ingredientId;
         private String ingredientName;
         private BigDecimal quantityUsed;
@@ -394,7 +396,8 @@ public class CostAnalysisResponse implements Serializable {
         }
     }
 
-    public static class WasteCost {
+    public static class WasteCost implements Serializable {
+        private static final long serialVersionUID = 1L;
         private String itemName;
         private BigDecimal quantityWasted;
         private String unit;
@@ -495,7 +498,8 @@ public class CostAnalysisResponse implements Serializable {
         }
     }
 
-    public static class OrderCostAnalysis {
+    public static class OrderCostAnalysis implements Serializable {
+        private static final long serialVersionUID = 1L;
         private String orderId;
         private BigDecimal revenue; // INR
         private BigDecimal cost; // INR
@@ -596,9 +600,10 @@ public class CostAnalysisResponse implements Serializable {
         }
     }
 
-    public static class SupplierComparison {
+    public static class SupplierComparison implements Serializable {
+        private static final long serialVersionUID = 1L;
         private String ingredientName;
-        private List<SupplierPrice> suppliers;
+        private ArrayList<SupplierPrice> suppliers = new ArrayList<>();
         private String recommendedSupplier;
         private BigDecimal potentialSavings; // INR per month
 
@@ -617,7 +622,7 @@ public class CostAnalysisResponse implements Serializable {
         }
 
         public void setSuppliers(List<SupplierPrice> suppliers) {
-            this.suppliers = suppliers;
+            this.suppliers = suppliers != null ? new ArrayList<>((suppliers)) : new ArrayList<>();
         }
 
         public String getRecommendedSupplier() {
@@ -649,7 +654,7 @@ public class CostAnalysisResponse implements Serializable {
             }
 
             public Builder suppliers(List<SupplierPrice> suppliers) {
-                obj.suppliers = suppliers;
+                obj.suppliers = suppliers != null ? new ArrayList<>((suppliers)) : new ArrayList<>();
                 return this;
             }
 
@@ -669,7 +674,8 @@ public class CostAnalysisResponse implements Serializable {
         }
     }
 
-    public static class SupplierPrice {
+    public static class SupplierPrice implements Serializable {
+        private static final long serialVersionUID = 1L;
         private String supplierId;
         private String supplierName;
         private BigDecimal pricePerUnit; // INR

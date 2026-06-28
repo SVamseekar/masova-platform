@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
@@ -76,54 +77,54 @@ class CustomerNotificationExtendedTest {
     void sendOrderStatusNotification_OVEN_no_email() {
         Order order = buildOrderWithItems(OrderStatus.OVEN, OrderType.TAKEAWAY);
         notificationService.sendOrderStatusNotification(order, OrderStatus.PREPARING);
-        verify(restTemplate, never()).postForEntity(any(String.class), any(), any());
+        verify(restTemplate, never()).exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class));
     }
 
     @Test
     void sendOrderStatusNotification_BAKED_sends_email() {
         Order order = buildOrderWithItems(OrderStatus.BAKED, OrderType.DELIVERY);
-        when(restTemplate.postForEntity(any(String.class), any(), any(Class.class)))
+        when(restTemplate.exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class)))
                 .thenReturn(org.springframework.http.ResponseEntity.ok(null));
         notificationService.sendOrderStatusNotification(order, OrderStatus.OVEN);
-        verify(restTemplate, atLeastOnce()).postForEntity(any(String.class), any(), any(Class.class));
+        verify(restTemplate, atLeastOnce()).exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class));
     }
 
     @Test
     void sendOrderStatusNotification_DISPATCHED_sends_email() {
         Order order = buildOrderWithItems(OrderStatus.DISPATCHED, OrderType.DELIVERY);
-        when(restTemplate.postForEntity(any(String.class), any(), any(Class.class)))
+        when(restTemplate.exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class)))
                 .thenReturn(org.springframework.http.ResponseEntity.ok(null));
         notificationService.sendOrderStatusNotification(order, OrderStatus.BAKED);
-        verify(restTemplate, atLeastOnce()).postForEntity(any(String.class), any(), any(Class.class));
+        verify(restTemplate, atLeastOnce()).exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class));
     }
 
     @Test
     void sendOrderStatusNotification_DELIVERED_sends_email() {
         Order order = buildOrderWithItems(OrderStatus.DELIVERED, OrderType.DELIVERY);
-        when(restTemplate.postForEntity(any(String.class), any(), any(Class.class)))
+        when(restTemplate.exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class)))
                 .thenReturn(org.springframework.http.ResponseEntity.ok(null));
         notificationService.sendOrderStatusNotification(order, OrderStatus.DISPATCHED);
-        verify(restTemplate, atLeastOnce()).postForEntity(any(String.class), any(), any(Class.class));
+        verify(restTemplate, atLeastOnce()).exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class));
     }
 
     @Test
     void sendOrderStatusNotification_CANCELLED_sends_email() {
         Order order = buildOrderWithItems(OrderStatus.CANCELLED, OrderType.TAKEAWAY);
-        when(restTemplate.postForEntity(any(String.class), any(), any(Class.class)))
+        when(restTemplate.exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class)))
                 .thenReturn(org.springframework.http.ResponseEntity.ok(null));
         notificationService.sendOrderStatusNotification(order, OrderStatus.PREPARING);
-        verify(restTemplate, atLeastOnce()).postForEntity(any(String.class), any(), any(Class.class));
+        verify(restTemplate, atLeastOnce()).exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class));
     }
 
     @Test
     void sendOrderStatusNotification_invalid_email_skips_email() {
         Order order = buildOrderWithItems(OrderStatus.PREPARING, OrderType.TAKEAWAY);
         order.setCustomerEmail("fake@walkin.local"); // placeholder email
-        when(restTemplate.postForEntity(any(String.class), any(), any(Class.class)))
+        when(restTemplate.exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class)))
                 .thenReturn(org.springframework.http.ResponseEntity.ok(null));
         notificationService.sendOrderStatusNotification(order, OrderStatus.RECEIVED);
         // Walkin.local email should be rejected — no email sent
-        verify(restTemplate, never()).postForEntity(any(String.class), any(), any(Class.class));
+        verify(restTemplate, never()).exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class));
     }
 
     @Test
@@ -133,25 +134,25 @@ class CustomerNotificationExtendedTest {
         // No email on order + no customerId = no email call
         order.setCustomerId(null);
         notificationService.sendOrderStatusNotification(order, OrderStatus.RECEIVED);
-        verify(restTemplate, never()).postForEntity(any(String.class), any(), any(Class.class));
+        verify(restTemplate, never()).exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class));
     }
 
     // sendPaymentConfirmationEmail
     @Test
     void sendPaymentConfirmationEmail_sends_email_to_valid_address() {
         Order order = buildOrderWithItems(OrderStatus.RECEIVED, OrderType.TAKEAWAY);
-        when(restTemplate.postForEntity(any(String.class), any(), any(Class.class)))
+        when(restTemplate.exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class)))
                 .thenReturn(org.springframework.http.ResponseEntity.ok(null));
 
         notificationService.sendPaymentConfirmationEmail(order, "txn-123");
 
-        verify(restTemplate, atLeastOnce()).postForEntity(any(String.class), any(), any(Class.class));
+        verify(restTemplate, atLeastOnce()).exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class));
     }
 
     @Test
     void sendPaymentConfirmationEmail_publishes_amqp_event() {
         Order order = buildOrderWithItems(OrderStatus.RECEIVED, OrderType.TAKEAWAY);
-        when(restTemplate.postForEntity(any(String.class), any(), any(Class.class)))
+        when(restTemplate.exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class)))
                 .thenReturn(org.springframework.http.ResponseEntity.ok(null));
 
         notificationService.sendPaymentConfirmationEmail(order, "txn-123");
@@ -168,14 +169,14 @@ class CustomerNotificationExtendedTest {
         // Should not throw — just skip
         notificationService.sendPaymentConfirmationEmail(order, "txn-123");
 
-        verify(restTemplate, never()).postForEntity(any(String.class), any(), any(Class.class));
+        verify(restTemplate, never()).exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class));
     }
 
     // BAKED status for TAKEAWAY (different message than DELIVERY)
     @Test
     void sendOrderStatusNotification_BAKED_takeaway_has_correct_message() {
         Order order = buildOrderWithItems(OrderStatus.BAKED, OrderType.TAKEAWAY);
-        when(restTemplate.postForEntity(any(String.class), any(), any(Class.class)))
+        when(restTemplate.exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class)))
                 .thenReturn(org.springframework.http.ResponseEntity.ok(null));
         // Should not throw
         notificationService.sendOrderStatusNotification(order, OrderStatus.OVEN);

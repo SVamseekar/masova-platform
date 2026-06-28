@@ -1,15 +1,15 @@
 import React from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { usePageStore } from '../../contexts/PageStoreContext';
+import { usePageStore } from '../../hooks/usePageStore';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import {
   useGetStoreOrdersQuery,
+  type Order,
 } from '../../store/api/orderApi';
+
 import {
   useGetTodaySalesMetricsQuery,
-  useGetOrderTypeBreakdownQuery,
-  useGetPeakHoursQuery,
   useGetTopProductsQuery,
 } from '../../store/api/analyticsApi';
 
@@ -45,6 +45,7 @@ const I = {
   Down: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>,
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- page component with HOC export
 const ConsolidatedOrdersDashboard: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
   const { selectedStoreId } = usePageStore();
@@ -299,7 +300,7 @@ const ConsolidatedOrdersDashboard: React.FC = () => {
                     { id: '1', orderNumber: '#ORD1025', items: [{ name: 'Salmon Sushi Roll' }], total: 15, customerName: 'Dina White', status: 'READY' },
                     { id: '2', orderNumber: '#ORD1024', items: [{ name: 'Spaghetti Carbonara' }], total: 12, customerName: 'Earl Carter', status: 'DELIVERED' },
                     { id: '3', orderNumber: '#ORD1023', items: [{ name: 'Classic Cheeseburger' }], total: 8, customerName: 'Chelsea Brown', status: 'CANCELLED' },
-                  ] as any[]).map((order: any) => (
+                  ] as Order[]).map((order) => (
                     <tr key={order.id} style={{ borderBottom: `1px solid ${c.grayLight}` }}>
                       <td style={{ padding: '14px 8px', fontSize: 13, color: c.black, fontWeight: 500 }}>{order.orderNumber}</td>
                       <td style={{ padding: '14px 8px' }}>
@@ -369,7 +370,7 @@ const ConsolidatedOrdersDashboard: React.FC = () => {
               <select style={{ padding: '4px 8px', border: `1px solid ${c.grayLight}`, borderRadius: 6, fontSize: 11, color: c.gray, background: c.white, outline: 'none' }}><option>This Week</option></select>
             </div>
 
-            {trendingMenus.map((p: any) => (
+            {trendingMenus.map((p) => (
               <div key={p.itemId} style={{ marginBottom: 16, borderRadius: 14, overflow: 'hidden', background: c.bgMain }}>
                 <div style={{ width: '100%', height: 130, background: c.beige }} />
                 <div style={{ padding: 14 }}>
@@ -412,4 +413,5 @@ const ConsolidatedOrdersDashboard: React.FC = () => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- HOC default export
 export default withPageStoreContext(ConsolidatedOrdersDashboard, 'consolidated-orders');

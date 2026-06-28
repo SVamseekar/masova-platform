@@ -35,6 +35,7 @@ public class MongoConfig {
 
     @Primary
     @Bean(name = "ordersMongoClient")
+    @SuppressWarnings("resource") // Spring container manages this bean's lifecycle and closes it on context shutdown
     public MongoClient ordersMongoClient() {
         return MongoClients.create(ordersMongoUri);
     }
@@ -59,6 +60,7 @@ public class MongoConfig {
     // ── Menu MongoDB (secondary) ──────────────────────────────────────────────
 
     @Bean(name = "menuMongoClient")
+    @SuppressWarnings("resource") // Spring container manages this bean's lifecycle and closes it on context shutdown
     public MongoClient menuMongoClient() {
         return MongoClients.create(menuMongoUri);
     }

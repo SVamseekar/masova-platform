@@ -16,6 +16,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @ComponentScan(basePackages = {"com.MaSoVa.logistics", "com.MaSoVa.shared"})
 public class LogisticsServiceApplication {
 
+    @SuppressWarnings("resource") // ApplicationContext lives for the JVM's lifetime; Spring Boot registers its own shutdown hook
     public static void main(String[] args) {
         SpringApplication.run(LogisticsServiceApplication.class, args);
     }

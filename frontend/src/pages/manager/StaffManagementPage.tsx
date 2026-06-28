@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { usePageStore } from '../../contexts/PageStoreContext';
+import { usePageStore } from '../../hooks/usePageStore';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import {
@@ -14,8 +14,9 @@ import {
   type Address,
   type WorkSchedule,
 } from '../../store/api/userApi';
-import { useGetActiveStoreSessionsQuery, useGetStoreSessionsQuery } from '../../store/api/sessionApi';
-import { Card, Button } from '../../components/ui/neumorphic';
+import { useGetStoreSessionsQuery, type WorkingSession } from '../../store/api/sessionApi';
+import { getApiErrorMessage } from '../utils/apiError';
+import { Button } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
 import { FilterBar, type FilterConfig, type FilterValues, type SortConfig } from '../../components/common/FilterBar';
@@ -45,6 +46,7 @@ interface StaffFormData {
   licenseNumber: string;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- page component with HOC export
 const StaffManagementPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
   const { handleBack } = useSmartBackNavigation();
@@ -109,7 +111,7 @@ const StaffManagementPage: React.FC = () => {
     return allSessions.filter(session => session.storeId === storeId);
   }, [allSessions, storeId]);
   const [createUser, { isLoading: creating }] = useCreateUserMutation();
-  const [updateUser] = useUpdateUserMutation();
+  const [_updateUser] = useUpdateUserMutation();
   const [activateUser] = useActivateUserMutation();
   const [deactivateUser] = useDeactivateUserMutation();
 
@@ -136,9 +138,9 @@ const StaffManagementPage: React.FC = () => {
   // Group sessions by date, then by employee
   const sessionsByDateAndEmployee = useMemo(() => {
     // First group by date
-    const byDate = new Map<string, typeof storeSessions>();
+    const byDate = new Map<string, WorkingSession[]>();
 
-    storeSessions.forEach((session: any) => {
+    storeSessions.forEach((session) => {
       // Use loginTime to determine the date, format as DD/MM/YYYY
       const sessionDate = session.loginTime ? formatDate(session.loginTime) : 'Unknown Date';
       if (!byDate.has(sessionDate)) {
@@ -148,11 +150,11 @@ const StaffManagementPage: React.FC = () => {
     });
 
     // Then group each date's sessions by employee
-    const result = new Map<string, Map<string, typeof storeSessions>>();
+    const result = new Map<string, Map<string, WorkingSession[]>>();
 
     byDate.forEach((sessions, date) => {
-      const employeeMap = new Map<string, typeof storeSessions>();
-      sessions.forEach((session: any) => {
+      const employeeMap = new Map<string, WorkingSession[]>();
+      sessions.forEach((session) => {
         const employeeKey = session.employeeId || session.employeeName || 'unknown';
         if (!employeeMap.has(employeeKey)) {
           employeeMap.set(employeeKey, []);
@@ -177,7 +179,7 @@ const StaffManagementPage: React.FC = () => {
   // For backward compatibility - total unique employees across all dates
   const sessionsByEmployee = useMemo(() => {
     const grouped = new Map<string, typeof storeSessions>();
-    storeSessions.forEach((session: any) => {
+    storeSessions.forEach((session) => {
       const key = session.employeeId || session.employeeName || 'unknown';
       if (!grouped.has(key)) {
         grouped.set(key, []);
@@ -316,17 +318,11 @@ const StaffManagementPage: React.FC = () => {
         licenseNumber: '',
       });
       alert('Staff member created successfully!');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating staff:', error);
 
       // Extract validation errors from the response
-      let errorMessage = 'Failed to create staff member';
-
-      if (error?.data?.message) {
-        errorMessage = error.data.message;
-      } else if (error?.message) {
-        errorMessage = error.message;
-      }
+      let errorMessage = getApiErrorMessage(error, 'Failed to create staff member');
 
       // Check for specific validation errors
       if (errorMessage.includes('phone') || errorMessage.includes('Phone')) {
@@ -370,9 +366,9 @@ const StaffManagementPage: React.FC = () => {
         console.log('Activation result:', result);
         alert('User activated successfully!');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error toggling staff status:', error);
-      alert(`Error: ${error?.data?.message || error?.message || 'Failed to update user status'}`);
+      alert(`Error: ${getApiErrorMessage(error, 'Failed to update user status')}`);
     }
   };
 
@@ -1097,7 +1093,7 @@ const StaffManagementPage: React.FC = () => {
               <label style={labelStyles}>Employee Type *</label>
               <select
                 value={formData.userType}
-                onChange={(e) => setFormData({ ...formData, userType: e.target.value as any })}
+                onChange={(e) => setFormData({ ...formData, userType: e.target.value as 'STAFF' | 'DRIVER' | 'ASSISTANT_MANAGER' })}
                 style={selectStyles}
               >
                 <option value="STAFF">Staff Member</option>
@@ -1259,4 +1255,5 @@ const StaffManagementPage: React.FC = () => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- HOC default export
 export default withPageStoreContext(StaffManagementPage, 'staff');

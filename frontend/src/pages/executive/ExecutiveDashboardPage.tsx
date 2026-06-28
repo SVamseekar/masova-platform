@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import AppHeader from '../../components/common/AppHeader';
 import axios from 'axios';
 import API_CONFIG from '../../config/api.config';
@@ -76,11 +76,7 @@ const ExecutiveDashboardPage: React.FC = () => {
   const [period, setPeriod] = useState<string>('MONTH');
   const [activeTab, setActiveTab] = useState<string>('overview');
 
-  useEffect(() => {
-    fetchExecutiveSummary();
-  }, [period]);
-
-  const fetchExecutiveSummary = async () => {
+  const fetchExecutiveSummary = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get<ExecutiveSummary>(`${API_CONFIG.BASE_URL}/bi/executive-summary?period=${period}`);
@@ -90,7 +86,11 @@ const ExecutiveDashboardPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [period]);
+
+  useEffect(() => {
+    fetchExecutiveSummary();
+  }, [fetchExecutiveSummary]);
 
   const formatCurrency = (value: number): string => {
     return formatMoney(Math.round(value * 100), currency, locale);

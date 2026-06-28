@@ -21,7 +21,7 @@ import {
 // DOMPurify is an external dependency; mock it
 vi.mock('dompurify', () => ({
   default: {
-    sanitize: (dirty: string, _config: any) => dirty.replace(/<script.*?<\/script>/gi, ''),
+    sanitize: (dirty: string, _config: unknown) => dirty.replace(/<script.*?<\/script>/gi, ''),
   },
 }));
 
@@ -48,8 +48,8 @@ describe('sanitizeInput', () => {
   });
 
   it('returns empty string for null-like input', () => {
-    expect(sanitizeInput(null as any)).toBe('');
-    expect(sanitizeInput(undefined as any)).toBe('');
+    expect(sanitizeInput(null as unknown as string)).toBe('');
+    expect(sanitizeInput(undefined as unknown as string)).toBe('');
   });
 });
 
@@ -189,7 +189,7 @@ describe('maskEmail', () => {
 
   it('returns empty/null input unchanged', () => {
     expect(maskEmail('')).toBe('');
-    expect(maskEmail(null as any)).toBe(null);
+    expect(maskEmail(null as unknown as string)).toBe(null);
   });
 });
 

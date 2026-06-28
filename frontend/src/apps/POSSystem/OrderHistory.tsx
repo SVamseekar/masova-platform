@@ -9,7 +9,8 @@ import MoneyOffIcon from '@mui/icons-material/MoneyOff';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import PrintIcon from '@mui/icons-material/Print';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { useGetStoreOrdersQuery } from '../../store/api/orderApi';
+import { useGetStoreOrdersQuery, type Order } from '../../store/api/orderApi';
+import { getRtkErrorMessage } from '../shared/rtkError';
 import { useRecordCashPaymentMutation } from '../../store/api/paymentApi';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
@@ -41,7 +42,7 @@ const OrderHistory: React.FC = () => {
   );
 
   // Handler for marking cash orders as paid
-  const handleMarkAsPaid = async (order: any) => {
+  const handleMarkAsPaid = async (order: Order) => {
     const confirmed = window.confirm(
       `Mark this order as PAID?\n\n` +
       `Order: #${order.orderNumber}\n` +
@@ -66,21 +67,21 @@ const OrderHistory: React.FC = () => {
       }).unwrap();
 
       alert(`Order #${order.orderNumber} marked as PAID!\n\nCash payment of ${fmt(order.total)} recorded.`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to record cash payment:', error);
-      alert(`Failed to mark order as paid.\n\n${error?.data?.message || 'Please try again.'}`);
+      alert(`Failed to mark order as paid.\n\n${getRtkErrorMessage(error, 'Please try again.')}`);
     }
   };
 
   // Filter today's orders
   const today = new Date().toDateString();
-  const todayOrders = orders.filter((order: any) => {
+  const todayOrders = orders.filter((order: Order) => {
     const orderDate = new Date(order.createdAt).toDateString();
     return orderDate === today;
   });
 
   // Search filter
-  const filteredOrders = todayOrders.filter((order: any) => {
+  const filteredOrders = todayOrders.filter((order: Order) => {
     const searchLower = searchTerm.toLowerCase();
     return (
       order.orderNumber.toLowerCase().includes(searchLower) ||
@@ -107,7 +108,7 @@ const OrderHistory: React.FC = () => {
     alert(`Print functionality for order ${orderId} coming soon!`);
   };
 
-  const totalSales = filteredOrders.reduce((sum: number, order: any) => sum + (order.total || 0), 0);
+  const totalSales = filteredOrders.reduce((sum: number, order: Order) => sum + (order.total || 0), 0);
 
   return (
     <div style={{
@@ -275,7 +276,7 @@ const OrderHistory: React.FC = () => {
 
         {!isLoading && !error && filteredOrders.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
-            {filteredOrders.map((order: any) => (
+            {filteredOrders.map((order: Order) => (
               <Card
                 key={order.id}
                 elevation="md"

@@ -60,7 +60,6 @@ describe('PINAuthModal', () => {
         useMemoryRouter: true,
       });
 
-      const inputs = screen.getAllByRole('textbox', { hidden: true });
       // password inputs are not textboxes, let's query by type
       const passwordInputs = document.querySelectorAll(
         'input[type="password"]'

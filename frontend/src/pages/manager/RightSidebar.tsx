@@ -12,7 +12,9 @@ import {
 } from '../../store/api/analyticsApi';
 import { useGetActiveStoreSessionsQuery } from '../../store/api/sessionApi';
 import { useGetStoreOrdersQuery, useGetActiveDeliveriesCountQuery } from '../../store/api/orderApi';
-import { useListKioskAccountsQuery } from '../../store/api/kioskApi';
+import { useListKioskAccountsQuery, type KioskAccount } from '../../store/api/kioskApi';
+import type { WorkingSession } from '../../store/api/sessionApi';
+import type { ProductRankingItem } from '../types/analytics';
 import { useGetCustomerStatsQuery } from '../../store/api/customerApi';
 
 interface Props {
@@ -43,7 +45,7 @@ const DashboardSidebar = ({ storeId }: { storeId: string }) => {
     <>
       <Heading title="Trending Menus" />
       <div style={miniCard}>
-        {topProducts?.topProducts?.slice(0, 5).map((p: any, i: number) => (
+        {topProducts?.topProducts?.slice(0, 5).map((p: ProductRankingItem, i: number) => (
           <div key={p.itemId} style={{ ...listItem, borderBottom: i < 4 ? `1px solid ${t.grayLight}` : 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 11, fontWeight: 600, color: t.gray, width: 18 }}>#{p.rank}</span>
@@ -56,7 +58,7 @@ const DashboardSidebar = ({ storeId }: { storeId: string }) => {
 
       <Heading title="Recent Activity" />
       <div style={miniCard}>
-        {sessions?.slice(0, 5).map((s: any, i: number) => (
+        {sessions?.slice(0, 5).map((s: WorkingSession, i: number) => (
           <div key={s.id} style={{ ...listItem, borderBottom: i < 4 ? `1px solid ${t.grayLight}` : 'none' }}>
             <div>
               <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: t.black }}>{s.employeeName}</p>
@@ -117,8 +119,8 @@ const OperationsSidebar = ({ storeId }: { storeId: string }) => {
   const { data: driverStatus } = useGetDriverStatusQuery(storeId, { skip: !storeId });
   const { data: kiosks } = useListKioskAccountsQuery(storeId, { skip: !storeId });
 
-  const onlineKiosks = kiosks?.filter((k: any) => k.isActive).length ?? 0;
-  const offlineKiosks = kiosks?.filter((k: any) => !k.isActive).length ?? 0;
+  const onlineKiosks = kiosks?.filter((k: KioskAccount) => k.isActive).length ?? 0;
+  const offlineKiosks = kiosks?.filter((k: KioskAccount) => !k.isActive).length ?? 0;
 
   return (
     <>
@@ -151,7 +153,7 @@ const PeopleSidebar = ({ storeId }: { storeId: string }) => {
   const { data: leaderboard } = useGetStaffLeaderboardQuery({ storeId, period: 'TODAY' }, { skip: !storeId });
   const { data: customerStats } = useGetCustomerStatsQuery(storeId, { skip: !storeId });
 
-  const onShiftCount = sessions?.filter((s: any) => s.isActive).length ?? 0;
+  const onShiftCount = sessions?.filter((s: WorkingSession) => s.isActive).length ?? 0;
   const topPerformer = leaderboard?.rankings?.[0];
 
   return (

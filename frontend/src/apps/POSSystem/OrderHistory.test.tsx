@@ -49,9 +49,9 @@ const mockOrders = [
   },
 ];
 
-let mockOrdersData: any[] = mockOrders;
+let mockOrdersData: Order[] = mockOrders;
 let mockIsLoading = false;
-let mockError: any = null;
+let mockError: unknown = null;
 
 vi.mock('../../store/api/orderApi', () => ({
   useGetStoreOrdersQuery: () => ({
@@ -62,7 +62,7 @@ vi.mock('../../store/api/orderApi', () => ({
 }));
 
 vi.mock('../../components/common/AppHeader', () => ({
-  default: ({ title }: any) => <div data-testid="app-header">{title}</div>,
+  default: ({ title }: { title?: string }) => <div data-testid="app-header">{title}</div>,
 }));
 
 const managerState = {
@@ -95,7 +95,7 @@ describe('OrderHistory', () => {
     it('renders without crashing', () => {
       renderWithProviders(<OrderHistory />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(screen.getByTestId('app-header')).toBeInTheDocument();
@@ -104,7 +104,7 @@ describe('OrderHistory', () => {
     it('displays the header with user name', () => {
       renderWithProviders(<OrderHistory />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(
@@ -115,7 +115,7 @@ describe('OrderHistory', () => {
     it('shows order count and total sales', () => {
       renderWithProviders(<OrderHistory />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(screen.getByText('2 orders')).toBeInTheDocument();
@@ -124,7 +124,7 @@ describe('OrderHistory', () => {
     it('displays the back to POS button', () => {
       renderWithProviders(<OrderHistory />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(
@@ -137,7 +137,7 @@ describe('OrderHistory', () => {
     it('renders order numbers for each order', () => {
       renderWithProviders(<OrderHistory />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(screen.getByText('Order #ORD-001')).toBeInTheDocument();
@@ -147,7 +147,7 @@ describe('OrderHistory', () => {
     it('displays status badges', () => {
       renderWithProviders(<OrderHistory />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(screen.getByText('PENDING')).toBeInTheDocument();
@@ -157,7 +157,7 @@ describe('OrderHistory', () => {
     it('shows payment method badges', () => {
       renderWithProviders(<OrderHistory />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(screen.getByText('CASH')).toBeInTheDocument();
@@ -167,7 +167,7 @@ describe('OrderHistory', () => {
     it('shows unpaid badge for pending payment status', () => {
       renderWithProviders(<OrderHistory />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       // The first order has PENDING payment status
@@ -177,7 +177,7 @@ describe('OrderHistory', () => {
     it('shows paid badge for paid orders', () => {
       renderWithProviders(<OrderHistory />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(screen.getByText(/Paid/)).toBeInTheDocument();
@@ -186,7 +186,7 @@ describe('OrderHistory', () => {
     it('shows Mark as Paid button for pending cash orders', () => {
       renderWithProviders(<OrderHistory />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(
@@ -199,7 +199,7 @@ describe('OrderHistory', () => {
     it('renders the search input', () => {
       renderWithProviders(<OrderHistory />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(
@@ -214,7 +214,7 @@ describe('OrderHistory', () => {
 
       renderWithProviders(<OrderHistory />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       const searchInput = screen.getByPlaceholderText(
@@ -231,7 +231,7 @@ describe('OrderHistory', () => {
 
       renderWithProviders(<OrderHistory />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       const searchInput = screen.getByPlaceholderText(
@@ -248,7 +248,7 @@ describe('OrderHistory', () => {
 
       renderWithProviders(<OrderHistory />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       const searchInput = screen.getByPlaceholderText(
@@ -269,7 +269,7 @@ describe('OrderHistory', () => {
 
       const { container } = renderWithProviders(<OrderHistory />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       // The spinner is rendered as a div with animation
@@ -284,7 +284,7 @@ describe('OrderHistory', () => {
 
       renderWithProviders(<OrderHistory />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(screen.getByText(/Failed to load orders/i)).toBeInTheDocument();
@@ -297,7 +297,7 @@ describe('OrderHistory', () => {
 
       renderWithProviders(<OrderHistory />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(screen.getByText(/No orders today yet/i)).toBeInTheDocument();

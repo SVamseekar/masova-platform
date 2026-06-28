@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { colors, spacing, typography, borderRadius } from '../../../styles/design-tokens';
 import { createCard, createNeumorphicSurface } from '../../../styles/neumorphic-utils';
 import { useGetOptimizedRouteMutation, RouteOptimizationResponse, RouteSegment, AddressDTO } from '../../../store/api/deliveryApi';
+import { getRtkErrorMessage } from '../../shared/rtkError';
 
 interface NavigationMapProps {
   destination: string;
@@ -22,7 +23,7 @@ const NavigationMap: React.FC<NavigationMapProps> = ({
   destination,
   destinationCoords,
   currentLocation,
-  orderId,
+  orderId: _orderId,
   autoRefresh = true,
   refreshIntervalMs = 30000, // Refresh route every 30 seconds
 }) => {
@@ -90,9 +91,9 @@ const NavigationMap: React.FC<NavigationMapProps> = ({
         duration: formatDuration(response.duration),
         steps: response.segments?.length || response.steps?.length || 0,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[NavigationMap] Route optimization failed:', err);
-      setRouteError(err.data?.message || err.message || 'Failed to fetch route');
+      setRouteError(getRtkErrorMessage(err, 'Failed to fetch route'));
     }
   }, [currentLocation, destinationCoords, getOptimizedRoute]);
 

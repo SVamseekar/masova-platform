@@ -7,7 +7,6 @@ import com.MaSoVa.shared.enums.AllergenType;
 import com.MaSoVa.shared.enums.Cuisine;
 import com.MaSoVa.shared.enums.MenuCategory;
 import com.MaSoVa.shared.exception.BusinessException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -162,7 +161,7 @@ class MenuServiceExtendedTest {
         when(menuItemRepository.findByStoreId("store-source")).thenReturn(List.of(source));
         when(menuItemRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        List<MenuItem> result = menuService.copyMenuBetweenStores("store-source", "store-target");
+        menuService.copyMenuBetweenStores("store-source", "store-target");
 
         verify(menuItemRepository).saveAll(argThat((List<MenuItem> items) ->
                 items.size() == 1 && "store-target".equals(items.get(0).getStoreId())
@@ -296,7 +295,7 @@ class MenuServiceExtendedTest {
         MenuItem i2 = buildItem("m2", false, false);
         when(menuItemRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        List<MenuItem> result = menuService.createMenuItems(List.of(i1, i2));
+        menuService.createMenuItems(List.of(i1, i2));
 
         verify(menuItemRepository).saveAll(anyList());
     }

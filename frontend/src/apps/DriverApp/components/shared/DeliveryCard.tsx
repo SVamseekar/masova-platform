@@ -15,7 +15,7 @@ import {
   CheckCircle as CheckCircleIcon,
   MoreVert as MoreVertIcon,
 } from '@mui/icons-material';
-import { colors, spacing, borderRadius, typography, animations, createCard } from '../../../../styles/driver-design-tokens';
+import { colors, spacing, typography, animations, createCard } from '../../../../styles/driver-design-tokens';
 import { ActionButton } from './ActionButton';
 
 export interface DeliveryCardProps {

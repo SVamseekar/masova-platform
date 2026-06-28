@@ -237,7 +237,14 @@ export const createAuthState = (
 /**
  * Helper to create preloaded cart state
  */
-export const createCartState = (items: any[] = []) => ({
+interface TestCartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+export const createCartState = (items: TestCartItem[] = []) => ({
   cart: {
     items,
     selectedStoreId: '1',
@@ -313,6 +320,7 @@ export function renderUnauthenticated(
 }
 
 // Re-export testing library utilities
+// eslint-disable-next-line react-refresh/only-export-components -- test utility re-exports
 export * from '@testing-library/react';
 export { default as userEvent } from '@testing-library/user-event';
 export { vi } from 'vitest';

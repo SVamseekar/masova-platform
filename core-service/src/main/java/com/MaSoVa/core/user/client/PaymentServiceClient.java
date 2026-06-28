@@ -1,5 +1,6 @@
 package com.MaSoVa.core.user.client;
 
+import com.MaSoVa.shared.http.HttpMethods;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 import org.slf4j.Logger;
@@ -46,7 +47,7 @@ public class PaymentServiceClient {
 
             ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
                 url,
-                HttpMethod.GET,
+                HttpMethods.GET,
                 entity,
                 new ParameterizedTypeReference<List<Map<String, Object>>>() {}
             );
@@ -83,7 +84,7 @@ public class PaymentServiceClient {
 
             ResponseEntity<Void> response = restTemplate.exchange(
                 url,
-                HttpMethod.POST,
+                HttpMethods.POST,
                 entity,
                 Void.class
             );

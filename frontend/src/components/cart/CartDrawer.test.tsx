@@ -4,7 +4,14 @@ import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@/test/utils/testUtils';
 import CartDrawer from './CartDrawer';
 
-function createCartState(items: any[] = []) {
+interface TestCartItem {
+  menuItemId: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+function createCartState(items: TestCartItem[] = []) {
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
   const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   return {

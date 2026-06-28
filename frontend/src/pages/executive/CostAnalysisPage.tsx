@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Badge } from '../../components/ui/badge';
@@ -71,11 +71,7 @@ const CostAnalysisPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<string>('MONTH');
 
-  useEffect(() => {
-    fetchCostAnalysis();
-  }, [period]);
-
-  const fetchCostAnalysis = async () => {
+  const fetchCostAnalysis = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get<CostAnalysis>(`${API_CONFIG.BASE_URL}/bi/cost-analysis?period=${period}`);
@@ -85,7 +81,11 @@ const CostAnalysisPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [period]);
+
+  useEffect(() => {
+    fetchCostAnalysis();
+  }, [fetchCostAnalysis]);
 
   const formatCurrency = (value: number): string => formatMoney(Math.round(value * 100), currency, locale);
 

@@ -289,8 +289,10 @@ public class OrderController {
 
         // Items update — body.get("items") is List<LinkedHashMap>, not List<OrderItem>
         if (body.containsKey("items")) {
-            @SuppressWarnings("unchecked")
-            List<Object> rawItems = (List<Object>) body.get("items");
+            Object itemsValue = body.get("items");
+            if (!(itemsValue instanceof List<?> rawItems)) {
+                return ResponseEntity.badRequest().body(null);
+            }
             List<OrderItem> items = rawItems.stream()
                     .map(raw -> objectMapper.convertValue(raw, OrderItem.class))
                     .toList();

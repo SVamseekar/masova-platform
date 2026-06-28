@@ -7,7 +7,7 @@
  */
 
 import { pactWith } from 'jest-pact';
-import { like, string, integer, boolean } from '@pact-foundation/pact/src/dsl/matchers';
+import { like } from '@pact-foundation/pact/src/dsl/matchers';
 
 pactWith(
   {
@@ -36,7 +36,7 @@ pactWith(
         });
 
       // Verify interaction
-      const baseUrl = interaction.mockService.baseUrl;
+      const _baseUrl = interaction.mockService.baseUrl;
       // TODO: Add actual API call verification
     });
 
@@ -59,7 +59,7 @@ pactWith(
         });
 
       // Verify interaction
-      const baseUrl = interaction.mockService.baseUrl;
+      const _baseUrl = interaction.mockService.baseUrl;
       // TODO: Add actual API call verification
     });
 
@@ -82,7 +82,7 @@ pactWith(
         });
 
       // Verify interaction
-      const baseUrl = interaction.mockService.baseUrl;
+      const _baseUrl = interaction.mockService.baseUrl;
       // TODO: Add actual API call verification
     });
 
@@ -105,7 +105,7 @@ pactWith(
         });
 
       // Verify interaction
-      const baseUrl = interaction.mockService.baseUrl;
+      const _baseUrl = interaction.mockService.baseUrl;
       // TODO: Add actual API call verification
     });
 
@@ -128,7 +128,7 @@ pactWith(
         });
 
       // Verify interaction
-      const baseUrl = interaction.mockService.baseUrl;
+      const _baseUrl = interaction.mockService.baseUrl;
       // TODO: Add actual API call verification
     });
 
@@ -151,7 +151,7 @@ pactWith(
         });
 
       // Verify interaction
-      const baseUrl = interaction.mockService.baseUrl;
+      const _baseUrl = interaction.mockService.baseUrl;
       // TODO: Add actual API call verification
     });
 
@@ -174,7 +174,7 @@ pactWith(
         });
 
       // Verify interaction
-      const baseUrl = interaction.mockService.baseUrl;
+      const _baseUrl = interaction.mockService.baseUrl;
       // TODO: Add actual API call verification
     });
 
@@ -197,7 +197,7 @@ pactWith(
         });
 
       // Verify interaction
-      const baseUrl = interaction.mockService.baseUrl;
+      const _baseUrl = interaction.mockService.baseUrl;
       // TODO: Add actual API call verification
     });
 

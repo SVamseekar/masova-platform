@@ -37,13 +37,13 @@ vi.mock('../../../hooks/useGeocoding', () => ({
     error: null,
   }),
   buildAddressString: vi.fn(
-    (street: string, city: string, _: any, pincode: string) =>
+    (street: string, city: string, _landmark: string, pincode: string) =>
       `${street}, ${city}, ${pincode}`
   ),
 }));
 
 vi.mock('./PINAuthModal', () => ({
-  PINAuthModal: ({ isOpen, onAuthenticated }: any) =>
+  PINAuthModal: ({ isOpen, onAuthenticated }: { isOpen: boolean; onAuthenticated: (user: { userId: string; name: string; type: string; role: string; storeId: string }) => void }) =>
     isOpen ? (
       <div data-testid="pin-auth-modal">
         <button
@@ -84,7 +84,7 @@ describe('CustomerPanel', () => {
     onOrderComplete: vi.fn(),
     userId: 'user-1',
     storeId: 'store-1',
-    submitOrderRef: { current: null } as any,
+    submitOrderRef: { current: null },
     orderCreatedBy: null,
   };
 

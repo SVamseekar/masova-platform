@@ -7,7 +7,7 @@
  * Debounce function to limit function execution rate
  * Use for search inputs, scroll events, resize events
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -30,7 +30,7 @@ export function debounce<T extends (...args: any[]) => any>(
  * Throttle function to ensure function is not called more than once in specified time
  * Use for scroll events, mouse move events
  */
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {
@@ -85,7 +85,7 @@ export function measureRenderTime(componentName: string, callback: () => void): 
  * Cache API responses in localStorage
  */
 export const cacheStorage = {
-  set: (key: string, data: any, ttl: number = 3600000): void => {
+  set: (key: string, data: unknown, ttl: number = 3600000): void => {
     const item = {
       data,
       timestamp: Date.now(),
@@ -94,7 +94,7 @@ export const cacheStorage = {
     localStorage.setItem(`cache_${key}`, JSON.stringify(item));
   },
 
-  get: (key: string): any | null => {
+  get: (key: string): unknown | null => {
     const itemStr = localStorage.getItem(`cache_${key}`);
     if (!itemStr) return null;
 
@@ -192,7 +192,7 @@ export function isInViewport(element: HTMLElement): boolean {
 /**
  * Memoize function results
  */
-export function memoize<T extends (...args: any[]) => any>(fn: T): T {
+export function memoize<T extends (...args: unknown[]) => unknown>(fn: T): T {
   const cache = new Map<string, ReturnType<T>>();
 
   return ((...args: Parameters<T>): ReturnType<T> => {
@@ -201,7 +201,7 @@ export function memoize<T extends (...args: any[]) => any>(fn: T): T {
       return cache.get(key)!;
     }
 
-    const result = fn(...args);
+    const result = fn(...args) as ReturnType<T>;
     cache.set(key, result);
     return result;
   }) as T;

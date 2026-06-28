@@ -145,7 +145,7 @@ public class ShiftService {
         }
 
         // Save all shifts at once
-        return (List<Shift>) shiftRepository.saveAll(shifts);
+        return shiftRepository.saveAll(shifts);
     }
 
     public List<Shift> getWeeklySchedule(String storeId, LocalDate startDate) {
@@ -194,7 +194,7 @@ public class ShiftService {
                 })
                 .toList();
 
-        return (List<Shift>) shiftRepository.saveAll(newShifts);
+        return shiftRepository.saveAll(newShifts);
     }
 
     private void validateShiftCreation(Shift shift) {

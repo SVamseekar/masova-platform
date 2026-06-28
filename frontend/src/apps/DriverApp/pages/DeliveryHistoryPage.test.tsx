@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { DriverDeliveryOrder, RtkMiddleware } from '../../shared/testTypes';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderAsDriver } from '@/test/utils/testUtils';
 import DeliveryHistoryPage from './DeliveryHistoryPage';
 
-let mockDeliveredOrders: any[] = [];
+let mockDeliveredOrders: DriverDeliveryOrder[] = [];
 let mockIsLoading = false;
 
 vi.mock('../../../store/api/orderApi', () => ({
@@ -12,7 +13,7 @@ vi.mock('../../../store/api/orderApi', () => ({
     data: mockDeliveredOrders,
     isLoading: mockIsLoading,
   }),
-  orderApi: { reducerPath: 'orderApi', reducer: () => ({}), middleware: () => (next: any) => (action: any) => next(action) },
+  orderApi: { reducerPath: 'orderApi', reducer: () => ({}), middleware: () => (next: RtkMiddleware) => (action: unknown) => next(action) },
 }));
 
 describe('DeliveryHistoryPage', () => {
@@ -50,7 +51,7 @@ describe('DeliveryHistoryPage', () => {
   });
 
   it('renders time filter dropdown with options', async () => {
-    const user = userEvent.setup();
+    userEvent.setup();
     renderAsDriver(<DeliveryHistoryPage />);
 
     // The default time filter value is "today" displayed as "Today"

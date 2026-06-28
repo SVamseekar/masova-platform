@@ -28,7 +28,6 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
   ...props
 }, ref) => {
   const [showPassword, setShowPassword] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
 
   // Handle null value - React expects string or undefined, never null
   const safeValue = value === null ? '' : value;
@@ -113,14 +112,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
           type={actualType}
           style={combinedInputStyles}
           value={safeValue}
-          onFocus={(e) => {
-            setIsFocused(true);
-            props.onFocus?.(e);
-          }}
-          onBlur={(e) => {
-            setIsFocused(false);
-            props.onBlur?.(e);
-          }}
+          onFocus={props.onFocus}
+          onBlur={props.onBlur}
           {...props}
         />
         

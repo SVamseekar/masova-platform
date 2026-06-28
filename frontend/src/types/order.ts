@@ -10,6 +10,7 @@ export type OrderStatus =
   | 'BAKED'
   | 'READY'
   | 'DISPATCHED'
+  | 'OUT_FOR_DELIVERY'
   | 'DELIVERED'
   | 'COMPLETED'
   | 'SERVED'
@@ -30,7 +31,8 @@ export type PaymentMethod =
   | 'CASH'
   | 'CARD'
   | 'UPI'
-  | 'WALLET';
+  | 'WALLET'
+  | 'AGGREGATOR_COLLECTED';
 
 export type OrderPriority =
   | 'NORMAL'
@@ -170,7 +172,7 @@ export interface OrderStats {
 
 // Status flow for kitchen workflow
 // Note: After READY, the flow diverges based on order type:
-// - DELIVERY: READY → DISPATCHED → DELIVERED
+// - DELIVERY: READY → DISPATCHED → OUT_FOR_DELIVERY → DELIVERED
 // - TAKEAWAY: READY → COMPLETED
 // - DINE_IN: READY → SERVED
 export const ORDER_STATUS_FLOW: OrderStatus[] = [
@@ -179,10 +181,11 @@ export const ORDER_STATUS_FLOW: OrderStatus[] = [
   'OVEN',
   'BAKED',
   'READY',
-  'DISPATCHED',  // DELIVERY only
-  'DELIVERED',   // DELIVERY final state
-  'COMPLETED',   // TAKEAWAY final state
-  'SERVED'       // DINE_IN final state
+  'DISPATCHED',        // DELIVERY only
+  'OUT_FOR_DELIVERY',  // DELIVERY only — driver en route
+  'DELIVERED',         // DELIVERY final state
+  'COMPLETED',         // TAKEAWAY final state
+  'SERVED'             // DINE_IN final state
 ];
 
 // Helper to get next status in workflow
@@ -202,6 +205,7 @@ export const ORDER_STATUS_CONFIG: Record<OrderStatus, { label: string; color: st
   BAKED: { label: 'Baked', color: '#f97316', icon: '🍕' },
   READY: { label: 'Ready', color: '#10b981', icon: '✅' },
   DISPATCHED: { label: 'Dispatched', color: '#8b5cf6', icon: '🚚' },
+  OUT_FOR_DELIVERY: { label: 'Out for Delivery', color: '#8b5cf6', icon: '🛵' },
   DELIVERED: { label: 'Delivered', color: '#059669', icon: '📦' },
   COMPLETED: { label: 'Completed', color: '#059669', icon: '✅' },
   SERVED: { label: 'Served', color: '#10b981', icon: '🍽️' },

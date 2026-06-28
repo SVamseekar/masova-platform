@@ -15,8 +15,9 @@ import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
-import { usePageStore } from '../../contexts/PageStoreContext';
+import { usePageStore } from '../../hooks/usePageStore';
 
+// eslint-disable-next-line react-refresh/only-export-components -- page component with HOC export
 const EquipmentMonitoringPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
   const { selectedStoreId } = usePageStore();
@@ -120,7 +121,7 @@ const EquipmentMonitoringPage: React.FC = () => {
     setCreateEditDialog({ open: true, equipment: null });
   };
 
-  const handleOpenEditDialog = (equipment: KitchenEquipment) => {
+  const _handleOpenEditDialog = (equipment: KitchenEquipment) => {
     setFormData({
       equipmentName: equipment.equipmentName,
       type: equipment.type,
@@ -600,4 +601,5 @@ const EquipmentMonitoringPage: React.FC = () => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- HOC default export
 export default withPageStoreContext(EquipmentMonitoringPage, 'equipment-monitoring');

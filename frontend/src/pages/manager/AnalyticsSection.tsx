@@ -50,7 +50,7 @@ interface PrepTimeByItem { [itemName: string]: number; }
 interface PrepTimeDistribution { min: number; max: number; average: number; median: number; p90: number; p95: number; totalOrders: number; }
 interface StaffPerf { staffId: string; totalOrders: number; completedOrders: number; averagePreparationTime: number; failedQualityChecks: number; completionRate: number; }
 
-const KitchenTab = ({ storeId }: { storeId: string }) => {
+const KitchenTab = ({ storeId: _storeId }: { storeId: string }) => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Mock data - backend kitchen analytics endpoints would replace these

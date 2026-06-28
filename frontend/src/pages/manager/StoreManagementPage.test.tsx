@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderAsManager, screen, userEvent } from '@/test/utils/testUtils';
+import { renderAsManager, screen } from '@/test/utils/testUtils';
 import StoreManagementPage from './StoreManagementPage';
 
 const mockStores = [
@@ -51,11 +51,11 @@ describe('StoreManagementPage', () => {
     expect(activeStatuses.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('shows loading state', () => {
+  it('shows loading state', async () => {
     const { useGetActiveStoresQuery } = vi.mocked(
       await import('@/store/api/storeApi')
     );
-    (useGetActiveStoresQuery as any).mockReturnValueOnce({ data: [], isLoading: true });
+    vi.mocked(useGetActiveStoresQuery).mockReturnValueOnce({ data: [], isLoading: true } as ReturnType<typeof useGetActiveStoresQuery>);
     renderAsManager(<StoreManagementPage />);
     expect(screen.getByText('Loading stores...')).toBeInTheDocument();
   });

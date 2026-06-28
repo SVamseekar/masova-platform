@@ -4,9 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { renderAsKitchenStaff } from '@/test/utils/testUtils';
 import OrderQueuePage from './OrderQueuePage';
 
-let mockOrders: any[] = [];
+let mockOrders: import("../../store/api/orderApi").Order[] = [];
 let mockIsLoading = false;
-let mockError: any = null;
+let mockError: unknown = null;
 const mockMoveToNextStage = vi.fn(() => ({
   unwrap: () => Promise.resolve(),
 }));
@@ -18,7 +18,7 @@ vi.mock('../../store/api/orderApi', () => ({
     error: mockError,
   }),
   useMoveToNextStageMutation: () => [mockMoveToNextStage, { isLoading: false }],
-  orderApi: { reducerPath: 'orderApi', reducer: () => ({}), middleware: () => (next: any) => (action: any) => next(action) },
+  orderApi: { reducerPath: 'orderApi', reducer: () => ({}), middleware: () => (next: unknown) => (action: unknown) => next(action) },
 }));
 
 vi.mock('../../components/common/AppHeader', () => ({

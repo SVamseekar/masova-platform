@@ -1,5 +1,6 @@
 package com.MaSoVa.core.user.client;
 
+import com.MaSoVa.shared.http.HttpMethods;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
@@ -49,7 +50,7 @@ public class OrderServiceClient {
 
             ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
                 url,
-                HttpMethod.GET,
+                HttpMethods.GET,
                 entity,
                 new ParameterizedTypeReference<List<Map<String, Object>>>() {}
             );
@@ -88,7 +89,7 @@ public class OrderServiceClient {
 
             ResponseEntity<Void> response = restTemplate.exchange(
                 url,
-                HttpMethod.POST,
+                HttpMethods.POST,
                 entity,
                 Void.class
             );

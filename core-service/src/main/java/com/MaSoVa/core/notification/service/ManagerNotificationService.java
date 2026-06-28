@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -30,9 +29,6 @@ public class ManagerNotificationService {
 
     @Autowired
     private EmailService emailService;
-
-    @Autowired
-    private RestTemplate restTemplate;
 
     // ======================== LOW STOCK ALERTS ========================
 
@@ -294,7 +290,7 @@ public class ManagerNotificationService {
             // Example REST call to user-service
             // ResponseEntity<List<String>> response = restTemplate.exchange(
             //     userServiceUrl + "/api/users/store/" + storeId + "/managers/emails",
-            //     HttpMethod.GET, null, new ParameterizedTypeReference<List<String>>() {}
+            //     HttpMethods.GET, null, new ParameterizedTypeReference<List<String>>() {}
             // );
             // return response.getBody();
 

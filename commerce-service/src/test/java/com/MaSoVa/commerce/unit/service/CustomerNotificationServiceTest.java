@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
@@ -108,15 +109,14 @@ class CustomerNotificationServiceTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void sendOrderStatusNotification_sends_email_for_PREPARING_status() {
         Order order = buildOrder("o1", OrderStatus.PREPARING, OrderType.TAKEAWAY);
-        when(restTemplate.postForEntity(any(String.class), any(), any(Class.class)))
+        when(restTemplate.exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class)))
                 .thenReturn(org.springframework.http.ResponseEntity.ok(null));
 
         notificationService.sendOrderStatusNotification(order, OrderStatus.RECEIVED);
 
-        verify(restTemplate, atLeastOnce()).postForEntity(any(String.class), any(), any(Class.class));
+        verify(restTemplate, atLeastOnce()).exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class));
     }
 
     @Test
@@ -126,7 +126,7 @@ class CustomerNotificationServiceTest {
         notificationService.sendOrderStatusNotification(order, OrderStatus.PREPARING);
 
         // OVEN is not an important status milestone — no email
-        verify(restTemplate, never()).postForEntity(any(), any(), any());
+        verify(restTemplate, never()).exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class));
     }
 
     @Test
@@ -161,13 +161,14 @@ class CustomerNotificationServiceTest {
     @Test
     void sendDeliveryOtpNotification_sends_websocket_and_email() {
         Order order = buildOrder("o1", OrderStatus.DISPATCHED, OrderType.DELIVERY);
-        when(restTemplate.postForObject(any(String.class), any(), any())).thenReturn(null);
+        when(restTemplate.exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class)))
+                .thenReturn(org.springframework.http.ResponseEntity.ok(null));
 
         notificationService.sendDeliveryOtpNotification(order, "1234");
 
         verify(webSocketController).sendOrderUpdateToCustomer(eq("cust-1"), any(Order.class));
         // Email sent since customerEmail is set
-        verify(restTemplate).postForObject(any(String.class), any(), any());
+        verify(restTemplate).exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class));
     }
 
     @Test
@@ -188,7 +189,7 @@ class CustomerNotificationServiceTest {
         notificationService.sendDeliveryOtpNotification(order, "9999");
 
         verify(webSocketController).sendOrderUpdateToCustomer(eq("cust-1"), any(Order.class));
-        verify(restTemplate, never()).postForObject(any(String.class), any(), any());
+        verify(restTemplate, never()).exchange(any(String.class), eq(HttpMethod.POST), any(), any(Class.class));
     }
 
     @Test

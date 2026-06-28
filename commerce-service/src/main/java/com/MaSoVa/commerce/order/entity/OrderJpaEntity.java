@@ -182,6 +182,9 @@ public class OrderJpaEntity {
     @Column(name = "dispatched_at")
     private OffsetDateTime dispatchedAt;
 
+    @Column(name = "out_for_delivery_at")
+    private OffsetDateTime outForDeliveryAt;
+
     @Column(name = "delivered_at")
     private OffsetDateTime deliveredAt;
 

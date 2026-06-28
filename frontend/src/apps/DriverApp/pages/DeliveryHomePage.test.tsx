@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { RtkMiddleware } from '../../shared/testTypes';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderAsDriver } from '@/test/utils/testUtils';
@@ -8,7 +9,7 @@ import DeliveryHomePage from './DeliveryHomePage';
 vi.mock('../../../store/api/sessionApi', () => ({
   useStartSessionMutation: () => [vi.fn(), { isLoading: false }],
   useEndSessionMutation: () => [vi.fn(), { isLoading: false }],
-  sessionApi: { reducerPath: 'sessionApi', reducer: () => ({}), middleware: () => (next: any) => (action: any) => next(action) },
+  sessionApi: { reducerPath: 'sessionApi', reducer: () => ({}), middleware: () => (next: RtkMiddleware) => (action: unknown) => next(action) },
 }));
 
 vi.mock('../../../store/api/driverApi', () => ({
@@ -21,12 +22,12 @@ vi.mock('../../../store/api/driverApi', () => ({
     },
     isLoading: false,
   }),
-  driverApi: { reducerPath: 'driverApi', reducer: () => ({}), middleware: () => (next: any) => (action: any) => next(action) },
+  driverApi: { reducerPath: 'driverApi', reducer: () => ({}), middleware: () => (next: RtkMiddleware) => (action: unknown) => next(action) },
 }));
 
 vi.mock('../../../store/api/deliveryApi', () => ({
   useUpdateLocationMutation: () => [vi.fn(() => ({ unwrap: () => Promise.resolve() })), { isLoading: false }],
-  deliveryApi: { reducerPath: 'deliveryApi', reducer: () => ({}), middleware: () => (next: any) => (action: any) => next(action) },
+  deliveryApi: { reducerPath: 'deliveryApi', reducer: () => ({}), middleware: () => (next: RtkMiddleware) => (action: unknown) => next(action) },
 }));
 
 vi.mock('../../../services/websocketService', () => ({

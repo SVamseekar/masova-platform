@@ -1,6 +1,8 @@
 package com.MaSoVa.shared.model;
 
+import java.io.Serializable;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -8,7 +10,9 @@ import java.util.Map;
  * isRequired=false: passthrough or not-applicable signers.
  * signingFailed=true: signing was attempted but failed (alert manager).
  */
-public class FiscalSignature {
+public class FiscalSignature implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private String signerCountry;       // ISO 3166-1 alpha-2
     private String signerSystem;        // "TSE", "NF525", "RT", "FDM", "NTCA", "MTD", "STRIPE_TAX", "PASSTHROUGH"
@@ -20,7 +24,7 @@ public class FiscalSignature {
     private boolean required;           // false = passthrough countries
     private boolean signingFailed;      // true = signing was attempted but failed
     private String signingError;        // Error message if signingFailed
-    private Map<String, String> extras; // Country-specific extra fields
+    private HashMap<String, String> extras; // Country-specific extra fields
 
     public FiscalSignature() {}
 
@@ -91,5 +95,7 @@ public class FiscalSignature {
     public void setSigningError(String signingError) { this.signingError = signingError; }
 
     public Map<String, String> getExtras() { return extras; }
-    public void setExtras(Map<String, String> extras) { this.extras = extras; }
+    public void setExtras(Map<String, String> extras) {
+        this.extras = extras == null ? null : new HashMap<>(extras);
+    }
 }

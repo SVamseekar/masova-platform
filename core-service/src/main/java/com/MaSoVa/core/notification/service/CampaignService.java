@@ -13,7 +13,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,33 +23,32 @@ public class CampaignService {
     private final CampaignRepository campaignRepository;
     private final UserPreferencesRepository userPreferencesRepository;
     private final NotificationService notificationService;
-    private final SmsService smsService;
-    private final EmailService emailService;
 
     public CampaignService(CampaignRepository campaignRepository,
                           UserPreferencesRepository userPreferencesRepository,
-                          NotificationService notificationService,
-                          SmsService smsService,
-                          EmailService emailService) {
+                          NotificationService notificationService) {
         this.campaignRepository = campaignRepository;
         this.userPreferencesRepository = userPreferencesRepository;
         this.notificationService = notificationService;
-        this.smsService = smsService;
-        this.emailService = emailService;
     }
 
-    public Campaign createCampaign(Campaign campaign) {
+    public Campaign createCampaign(Campaign campaign, String storeId) {
+        campaign.setStoreId(storeId);
         campaign.setStatus(Campaign.CampaignStatus.DRAFT);
         return campaignRepository.save(campaign);
     }
 
-    public Campaign updateCampaign(String id, Campaign campaign) {
-        Optional<Campaign> existingOpt = campaignRepository.findById(id);
-        if (existingOpt.isEmpty()) {
+    private Campaign requireCampaignInStore(String id, String storeId) {
+        Campaign existing = campaignRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Campaign not found"));
+        if (!existing.getStoreId().equals(storeId)) {
             throw new RuntimeException("Campaign not found");
         }
+        return existing;
+    }
 
-        Campaign existing = existingOpt.get();
+    public Campaign updateCampaign(String id, Campaign campaign, String storeId) {
+        Campaign existing = requireCampaignInStore(id, storeId);
         existing.setName(campaign.getName());
         existing.setDescription(campaign.getDescription());
         existing.setChannel(campaign.getChannel());
@@ -62,22 +60,17 @@ public class CampaignService {
         return campaignRepository.save(existing);
     }
 
-    public void scheduleCampaign(String campaignId, LocalDateTime scheduledFor) {
-        Optional<Campaign> campaignOpt = campaignRepository.findById(campaignId);
-        if (campaignOpt.isEmpty()) {
-            throw new RuntimeException("Campaign not found");
-        }
-
-        Campaign campaign = campaignOpt.get();
+    public void scheduleCampaign(String campaignId, LocalDateTime scheduledFor, String storeId) {
+        Campaign campaign = requireCampaignInStore(campaignId, storeId);
         campaign.setScheduledFor(scheduledFor);
         campaign.setStatus(Campaign.CampaignStatus.SCHEDULED);
         campaignRepository.save(campaign);
     }
 
     @Async
-    public void executeCampaign(String campaignId) {
+    public void executeCampaign(String campaignId, String storeId) {
         Optional<Campaign> campaignOpt = campaignRepository.findById(campaignId);
-        if (campaignOpt.isEmpty()) {
+        if (campaignOpt.isEmpty() || !campaignOpt.get().getStoreId().equals(storeId)) {
             logger.error("Campaign not found: {}", campaignId);
             return;
         }
@@ -159,26 +152,23 @@ public class CampaignService {
                 .toList();
     }
 
-    public Page<Campaign> getAllCampaigns(Pageable pageable) {
-        return campaignRepository.findAll(pageable);
+    public Page<Campaign> getAllCampaigns(Pageable pageable, String storeId) {
+        return campaignRepository.findByStoreIdOrderByCreatedAtDesc(storeId, pageable);
     }
 
-    public Optional<Campaign> getCampaignById(String id) {
-        return campaignRepository.findById(id);
+    public Optional<Campaign> getCampaignById(String id, String storeId) {
+        return campaignRepository.findById(id)
+                .filter(campaign -> campaign.getStoreId().equals(storeId));
     }
 
-    public void cancelCampaign(String campaignId) {
-        Optional<Campaign> campaignOpt = campaignRepository.findById(campaignId);
-        if (campaignOpt.isEmpty()) {
-            throw new RuntimeException("Campaign not found");
-        }
-
-        Campaign campaign = campaignOpt.get();
+    public void cancelCampaign(String campaignId, String storeId) {
+        Campaign campaign = requireCampaignInStore(campaignId, storeId);
         campaign.setStatus(Campaign.CampaignStatus.CANCELLED);
         campaignRepository.save(campaign);
     }
 
-    public void deleteCampaign(String campaignId) {
+    public void deleteCampaign(String campaignId, String storeId) {
+        requireCampaignInStore(campaignId, storeId);
         campaignRepository.deleteById(campaignId);
     }
 }

@@ -1,7 +1,8 @@
 package com.MaSoVa.intelligence.dto;
+
 import java.io.Serializable;
-
-
+import java.util.HashMap;
+import java.util.ArrayList;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -14,8 +15,8 @@ public class CustomerBehaviorResponse implements Serializable {
     private int newCustomers; // Registered in last 30 days
     private BigDecimal averageLifetimeValue;
     private BigDecimal averageOrderFrequency; // Orders per month
-    private List<CustomerSegment> segments;
-    private List<BehaviorPattern> patterns;
+    private ArrayList<CustomerSegment> segments = new ArrayList<>();
+    private ArrayList<BehaviorPattern> patterns = new ArrayList<>();
 
     public CustomerBehaviorResponse() {}
 
@@ -64,7 +65,7 @@ public class CustomerBehaviorResponse implements Serializable {
     }
 
     public void setSegments(List<CustomerSegment> segments) {
-        this.segments = segments;
+        this.segments = segments != null ? new ArrayList<>((segments)) : new ArrayList<>();
     }
 
     public List<BehaviorPattern> getPatterns() {
@@ -72,7 +73,7 @@ public class CustomerBehaviorResponse implements Serializable {
     }
 
     public void setPatterns(List<BehaviorPattern> patterns) {
-        this.patterns = patterns;
+        this.patterns = patterns != null ? new ArrayList<>((patterns)) : new ArrayList<>();
     }
 
     public static Builder builder() {
@@ -108,12 +109,12 @@ public class CustomerBehaviorResponse implements Serializable {
         }
 
         public Builder segments(List<CustomerSegment> segments) {
-            obj.segments = segments;
+            obj.segments = segments != null ? new ArrayList<>((segments)) : new ArrayList<>();
             return this;
         }
 
         public Builder patterns(List<BehaviorPattern> patterns) {
-            obj.patterns = patterns;
+            obj.patterns = patterns != null ? new ArrayList<>((patterns)) : new ArrayList<>();
             return this;
         }
 
@@ -122,7 +123,8 @@ public class CustomerBehaviorResponse implements Serializable {
         }
     }
 
-    public static class CustomerSegment {
+    public static class CustomerSegment implements Serializable {
+        private static final long serialVersionUID = 1L;
         private String segmentName; // "VIP", "Regular", "Occasional", "At Risk", "New"
         private int customerCount;
         private BigDecimal percentOfTotal;
@@ -223,10 +225,11 @@ public class CustomerBehaviorResponse implements Serializable {
         }
     }
 
-    public static class BehaviorPattern {
+    public static class BehaviorPattern implements Serializable {
+        private static final long serialVersionUID = 1L;
         private String patternType; // "Peak Ordering Time", "Preferred Order Type", "Favorite Category"
         private String description;
-        private Map<String, Object> data;
+        private HashMap<String, Object> data = new HashMap<>();
         private BigDecimal significance; // 0-100
 
         public BehaviorPattern() {}
@@ -252,7 +255,7 @@ public class CustomerBehaviorResponse implements Serializable {
         }
 
         public void setData(Map<String, Object> data) {
-            this.data = data;
+            this.data = data != null ? new HashMap<>((data)) : new HashMap<>();
         }
 
         public BigDecimal getSignificance() {
@@ -281,7 +284,7 @@ public class CustomerBehaviorResponse implements Serializable {
             }
 
             public Builder data(Map<String, Object> data) {
-                obj.data = data;
+                obj.data = data != null ? new HashMap<>((data)) : new HashMap<>();
                 return this;
             }
 

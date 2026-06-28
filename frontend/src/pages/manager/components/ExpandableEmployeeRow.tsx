@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { colors, spacing, typography, borderRadius } from '../../../styles/design-tokens';
 
 interface WorkingSession {
@@ -21,7 +21,7 @@ interface ExpandableEmployeeRowProps {
 
 export const ExpandableEmployeeRow: React.FC<ExpandableEmployeeRowProps> = ({
   employeeName,
-  employeeId,
+  employeeId: _employeeId,
   sessions,
   currentTime,
   onClockOut,
@@ -36,12 +36,12 @@ export const ExpandableEmployeeRow: React.FC<ExpandableEmployeeRowProps> = ({
   }, [sessions]);
 
   // Format duration as HH:MM:SS - defined before use in useMemo
-  const formatDuration = (ms: number): string => {
+  const formatDuration = useCallback((ms: number): string => {
     const hours = Math.floor(ms / (1000 * 60 * 60));
     const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((ms % (1000 * 60)) / 1000);
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-  };
+  }, []);
 
   // Calculate aggregate stats
   const aggregateStats = useMemo(() => {

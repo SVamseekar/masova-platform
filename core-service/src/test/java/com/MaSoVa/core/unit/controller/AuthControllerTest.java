@@ -5,7 +5,6 @@ import com.MaSoVa.core.user.dto.LoginRequest;
 import com.MaSoVa.core.user.dto.LoginResponse;
 import com.MaSoVa.core.user.dto.UserCreateRequest;
 import com.MaSoVa.core.user.dto.UserResponse;
-import com.MaSoVa.core.user.service.JwtService;
 import com.MaSoVa.core.user.service.UserService;
 import com.MaSoVa.shared.test.BaseServiceTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,7 +21,6 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.Map;
 import java.util.NoSuchElementException;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -38,9 +36,6 @@ class AuthControllerTest extends BaseServiceTest {
 
     @Mock
     private UserService userService;
-
-    @Mock
-    private JwtService jwtService;
 
     @InjectMocks
     private AuthController authController;

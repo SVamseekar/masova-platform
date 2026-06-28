@@ -298,9 +298,12 @@ class AnalyticsServiceTest {
             when(reviewRepository.findByMenuItemId("item-1")).thenReturn(List.of(r));
             when(sentimentAnalysisService.extractCommonThemes(any())).thenReturn(List.of("Food Quality"));
 
-            analyticsService.getItemRating("item-1");
+            ItemRatingResponse result = analyticsService.getItemRating("item-1");
 
-            verify(sentimentAnalysisService).extractCommonThemes(any());
+            // Called once for praise comments (rating >= 4) and once for complaint comments (rating <= 2)
+            verify(sentimentAnalysisService).extractCommonThemes(List.of("Excellent quality fresh fish"));
+            verify(sentimentAnalysisService).extractCommonThemes(List.of());
+            assertThat(result.getCommonPraises()).containsExactly("Food Quality");
         }
     }
 }

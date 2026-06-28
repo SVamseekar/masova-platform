@@ -1,5 +1,6 @@
 package com.MaSoVa.core.user.client;
 
+import com.MaSoVa.shared.http.HttpMethods;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
@@ -10,7 +11,9 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -47,7 +50,7 @@ public class CustomerServiceClient {
 
             ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                 url,
-                HttpMethod.GET,
+                HttpMethods.GET,
                 entity,
                 new ParameterizedTypeReference<Map<String, Object>>() {}
             );
@@ -69,13 +72,7 @@ public class CustomerServiceClient {
     public Map<String, Object> getCustomerLoyalty(String customerId, String authToken) {
         try {
             Map<String, Object> profile = getCustomerProfile(customerId, authToken);
-            Object loyalty = profile.get("loyaltyInfo");
-            if (loyalty instanceof Map) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> loyaltyMap = (Map<String, Object>) loyalty;
-                return loyaltyMap;
-            }
-            return Collections.emptyMap();
+            return toStringObjectMap(profile.get("loyaltyInfo"));
         } catch (Exception e) {
             logger.error("Error fetching loyalty info for customer {}: {}", customerId, e.getMessage());
             throw e;
@@ -92,13 +89,7 @@ public class CustomerServiceClient {
     public List<Map<String, Object>> getCustomerAddresses(String customerId, String authToken) {
         try {
             Map<String, Object> profile = getCustomerProfile(customerId, authToken);
-            Object addresses = profile.get("savedAddresses");
-            if (addresses instanceof List) {
-                @SuppressWarnings("unchecked")
-                List<Map<String, Object>> list = (List<Map<String, Object>>) addresses;
-                return list;
-            }
-            return Collections.emptyList();
+            return toMapList(profile.get("savedAddresses"));
         } catch (Exception e) {
             logger.error("Error fetching addresses for customer {}: {}", customerId, e.getMessage());
             throw e;
@@ -119,7 +110,7 @@ public class CustomerServiceClient {
 
             ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                 url,
-                HttpMethod.GET,
+                HttpMethods.GET,
                 entity,
                 new ParameterizedTypeReference<Map<String, Object>>() {}
             );
@@ -156,6 +147,33 @@ public class CustomerServiceClient {
             logger.error("Error anonymizing customer {}: {}", customerId, e.getMessage());
             throw e;
         }
+    }
+
+    private static Map<String, Object> toStringObjectMap(Object value) {
+        if (!(value instanceof Map<?, ?> rawMap)) {
+            return Collections.emptyMap();
+        }
+        Map<String, Object> result = new HashMap<>();
+        for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
+            if (entry.getKey() instanceof String key) {
+                result.put(key, entry.getValue());
+            }
+        }
+        return result;
+    }
+
+    private static List<Map<String, Object>> toMapList(Object value) {
+        if (!(value instanceof List<?> list)) {
+            return Collections.emptyList();
+        }
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Object item : list) {
+            Map<String, Object> converted = toStringObjectMap(item);
+            if (!converted.isEmpty()) {
+                result.add(converted);
+            }
+        }
+        return result;
     }
 
     private HttpHeaders createHttpHeaders(String authToken) {

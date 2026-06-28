@@ -170,6 +170,11 @@ class LiveTrackingServiceTest {
             when(deliveryTrackingRepository.findByOrderId("order-1")).thenReturn(Optional.of(tracking));
             when(driverLocationRepository.findTopByDriverIdOrderByTimestampDesc("driver-1"))
                 .thenReturn(Optional.of(location));
+            when(etaCalculationService.calculateETA("order-1")).thenReturn(
+                com.MaSoVa.logistics.delivery.dto.ETAResponse.builder()
+                    .estimatedMinutes(12)
+                    .distanceRemainingKm(java.math.BigDecimal.valueOf(2.5))
+                    .build());
 
             TrackingResponse result = liveTrackingService.getOrderTracking("order-1");
 

@@ -12,7 +12,6 @@ import { selectCurrentUser } from '../../store/slices/authSlice';
 import {
   useGetKitchenQueueQuery,
   useMoveToNextStageMutation,
-  Order,
 } from '../../store/api/orderApi';
 import { ORDER_STATUS_CONFIG } from '../../types/order';
 
@@ -48,7 +47,7 @@ const OrderQueuePage: React.FC = () => {
     }
   };
 
-  const formatTime = (dateStr: string) => {
+  const _formatTime = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleTimeString('en-IN', {
       hour: '2-digit',

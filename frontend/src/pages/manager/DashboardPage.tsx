@@ -9,13 +9,12 @@ import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
 import { formatMoney } from '../../utils/currency';
-import { usePageStore } from '../../contexts/PageStoreContext';
+import { usePageStore } from '../../hooks/usePageStore';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import {
   useGetActiveStoreSessionsQuery,
   useApproveSessionMutation,
-  useRejectSessionMutation,
-  WorkingSession
+  useRejectSessionMutation
 } from '../../store/api/sessionApi';
 import { useGetStoreMetricsQuery } from '../../store/api/storeApi';
 import { useGetStoreOrdersQuery } from '../../store/api/orderApi';
@@ -38,6 +37,8 @@ import {
 } from '../../store/api/analyticsApi';
 import { pushNotificationService } from '../../services/pushNotificationService';
 import { colors, shadows, spacing, typography } from '../../styles/design-tokens';
+import type { StaffRankingItem, ProductRankingItem, ChurnPredictionItem, SalesForecastItem } from '../types/analytics';
+import type { OrderStatus } from '../../types/order';
 
 // TypeScript interfaces
 interface SalesData {
@@ -50,20 +51,21 @@ interface SalesData {
 
 interface Order {
   id: string;
-  status: 'RECEIVED' | 'PREPARING' | 'OVEN' | 'BAKED' | 'READY' | 'DISPATCHED' | 'DELIVERED' | 'SERVED' | 'COMPLETED' | 'CANCELLED';
+  status: OrderStatus;
   items: number;
   time: string;
   customer: string;
   priority: 'normal' | 'urgent';
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- page wrapped by withPageStoreContext HOC
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
   const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
-  const [currentDate] = useState(new Date().toLocaleDateString('en-IN', {
+  const [_currentDate] = useState(new Date().toLocaleDateString('en-IN', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -71,18 +73,18 @@ const DashboardPage: React.FC = () => {
   }));
 
   // Determine active tab from URL
-  const getTabFromPath = () => {
+  const getTabFromPath = React.useCallback(() => {
     if (location.pathname.includes('/staff')) return 'staff';
     if (location.pathname.includes('/analytics')) return 'analytics';
     return 'overview';
-  };
+  }, [location.pathname]);
 
   const [activeTab, setActiveTab] = useState(getTabFromPath());
 
   // Update tab when URL changes
   useEffect(() => {
     setActiveTab(getTabFromPath());
-  }, [location.pathname]);
+  }, [getTabFromPath]);
 
   const currentUser = useAppSelector(selectCurrentUser);
   const { selectedStoreId } = usePageStore();
@@ -104,23 +106,23 @@ const DashboardPage: React.FC = () => {
   });
 
   // Pass storeId to trigger refetch when store changes
-  const { data: liveOrders = [], isLoading: loadingOrders, refetch: refetchOrders } = useGetStoreOrdersQuery(storeId, {
+  const { data: liveOrders = [], isLoading: _loadingOrders, refetch: refetchOrders } = useGetStoreOrdersQuery(storeId, {
     skip: !storeId,
     pollingInterval: 10000, // Poll every 10 seconds for live updates
   });
 
   // Analytics API queries
-  const { data: todaySalesMetrics, isLoading: loadingSales } = useGetTodaySalesMetricsQuery(storeId, {
+  const { data: todaySalesMetrics, isLoading: _loadingSales } = useGetTodaySalesMetricsQuery(storeId, {
     skip: !storeId,
     pollingInterval: 60000, // Poll every minute
   });
 
-  const { data: avgOrderValue } = useGetAverageOrderValueQuery(storeId, {
+  const { data: _avgOrderValue } = useGetAverageOrderValueQuery(storeId, {
     skip: !storeId,
     pollingInterval: 60000,
   });
 
-  const { data: driverStatus } = useGetDriverStatusQuery(storeId, {
+  const { data: _driverStatus } = useGetDriverStatusQuery(storeId, {
     skip: !storeId,
     pollingInterval: 30000, // Poll every 30 seconds
   });
@@ -130,12 +132,12 @@ const DashboardPage: React.FC = () => {
     { skip: !storeId, pollingInterval: 300000 } // Poll every 5 minutes
   );
 
-  const { data: orderTypeBreakdown } = useGetOrderTypeBreakdownQuery(storeId, {
+  const { data: _orderTypeBreakdown } = useGetOrderTypeBreakdownQuery(storeId, {
     skip: !storeId,
     pollingInterval: 300000,
   });
 
-  const { data: peakHours } = useGetPeakHoursQuery(storeId, {
+  const { data: _peakHours } = useGetPeakHoursQuery(storeId, {
     skip: !storeId,
     pollingInterval: 300000,
   });
@@ -166,17 +168,17 @@ const DashboardPage: React.FC = () => {
     pollingInterval: 600000, // Refresh every 10 minutes
   });
 
-  const { data: customerBehavior } = useGetCustomerBehaviorAnalysisQuery(storeId, {
+  const { data: _customerBehavior } = useGetCustomerBehaviorAnalysisQuery(storeId, {
     skip: !storeId,
     pollingInterval: 3600000, // Refresh every hour
   });
 
-  const { data: demandForecast } = useGetDemandForecastQuery(
+  const { data: _demandForecast } = useGetDemandForecastQuery(
     { storeId, days: 7 },
     { skip: !storeId, pollingInterval: 3600000 }
   );
 
-  const { data: costAnalysis } = useGetCostAnalysisQuery(
+  const { data: _costAnalysis } = useGetCostAnalysisQuery(
     { storeId, period: 'MONTH' },
     { skip: !storeId, pollingInterval: 3600000 }
   );
@@ -960,7 +962,7 @@ const DashboardPage: React.FC = () => {
               Staff Leaderboard - {staffLeaderboard.period}
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: spacing[4] }}>
-              {staffLeaderboard.rankings.slice(0, 6).map((staff: any, idx: number) => (
+              {staffLeaderboard.rankings.slice(0, 6).map((staff: StaffRankingItem, idx: number) => (
                 <Card key={staff.staffId} elevation="sm" padding="base">
                   <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2], marginBottom: spacing[2] }}>
                     <div style={{
@@ -1002,7 +1004,7 @@ const DashboardPage: React.FC = () => {
               Top Selling Products - {topProducts.period}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
-              {topProducts.topProducts.slice(0, 5).map((product: any) => (
+              {topProducts.topProducts.slice(0, 5).map((product: ProductRankingItem) => (
                 <div key={product.itemId} style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -1111,7 +1113,7 @@ const DashboardPage: React.FC = () => {
               High Risk: {churnPrediction.highRiskCount} | Medium: {churnPrediction.mediumRiskCount} | Low: {churnPrediction.lowRiskCount}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
-              {churnPrediction.predictions.slice(0, 5).map((pred: any) => (
+              {churnPrediction.predictions.slice(0, 5).map((pred: ChurnPredictionItem) => (
                 <div key={pred.customerId} style={{
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -1156,7 +1158,7 @@ const DashboardPage: React.FC = () => {
               7-Day Sales Forecast
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
-              {salesForecast.forecasts.map((forecast: any) => (
+              {salesForecast.forecasts.map((forecast: SalesForecastItem) => (
                 <div key={forecast.date} style={{
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -1313,4 +1315,5 @@ const DashboardPage: React.FC = () => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- HOC default export
 export default withPageStoreContext(DashboardPage, 'dashboard');

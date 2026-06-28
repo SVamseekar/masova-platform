@@ -3,8 +3,6 @@ package com.MaSoVa.core.review.controller;
 import com.MaSoVa.core.review.dto.request.CreateComplaintRequest;
 import com.MaSoVa.core.review.dto.request.CreateResponseRequest;
 import com.MaSoVa.core.review.dto.request.CreateReviewRequest;
-import com.MaSoVa.core.review.dto.request.FlagReviewRequest;
-import com.MaSoVa.core.review.dto.response.ReviewStatsResponse;
 import com.MaSoVa.core.review.entity.Review;
 import com.MaSoVa.core.review.entity.ReviewResponse;
 import com.MaSoVa.core.review.service.AnalyticsService;
@@ -26,7 +24,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 // Reviews — 10 canonical endpoints at /api/reviews.

@@ -8,7 +8,6 @@
 
 import { Pact, Matchers } from '@pact-foundation/pact';
 import { pactConfig, providers } from '../pact-config';
-import path from 'path';
 
 const { like, eachLike, term } = Matchers;
 

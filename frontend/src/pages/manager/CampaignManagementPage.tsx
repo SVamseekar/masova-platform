@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import AppHeader from '../../components/common/AppHeader';
-import { usePageStore } from '../../contexts/PageStoreContext';
+import { usePageStore } from '../../hooks/usePageStore';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import {
   Box,
@@ -25,7 +25,6 @@ import {
   Tabs,
   Tab,
   CircularProgress,
-  Tooltip,
   Menu,
   MenuItem,
   LinearProgress,
@@ -37,7 +36,6 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   PlayArrow as ExecuteIcon,
-  Schedule as ScheduleIcon,
   Cancel as CancelIcon,
   MoreVert as MoreIcon,
   Visibility as ViewIcon,
@@ -55,10 +53,11 @@ import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 import { format } from 'date-fns';
 import CampaignBuilder from '../../components/notifications/CampaignBuilder';
 
+// eslint-disable-next-line react-refresh/only-export-components -- page component with HOC export
 const CampaignManagementPage: React.FC = () => {
   const { handleBack } = useSmartBackNavigation();
   const [currentTab, setCurrentTab] = useState(0);
-  const [page, setPage] = useState(0);
+  const [page, _setPage] = useState(0);
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -616,4 +615,5 @@ const CampaignManagementPage: React.FC = () => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- HOC default export
 export default withPageStoreContext(CampaignManagementPage, 'campaigns');

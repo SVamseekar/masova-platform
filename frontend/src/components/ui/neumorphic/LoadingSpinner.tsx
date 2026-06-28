@@ -1,5 +1,5 @@
 import React, { forwardRef, HTMLAttributes } from 'react';
-import { colors, borderRadius, shadows } from '../../../styles/design-tokens';
+import { colors } from '../../../styles/design-tokens';
 
 export interface LoadingSpinnerProps extends HTMLAttributes<HTMLDivElement> {
   size?: 'sm' | 'base' | 'lg' | 'xl';

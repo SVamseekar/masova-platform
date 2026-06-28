@@ -262,7 +262,7 @@ const MenuPage: React.FC<MenuPageProps> = ({
     fontFamily: 'var(--font-body)',
   };
 
-  const filterSectionStyles: React.CSSProperties = {
+  const _filterSectionStyles: React.CSSProperties = {
     padding: '24px',
     marginBottom: '24px',
     background: 'var(--surface)',
@@ -436,7 +436,7 @@ const MenuPage: React.FC<MenuPageProps> = ({
     marginTop: '6px',
   };
 
-  const loadingStyles: React.CSSProperties = {
+  const _loadingStyles: React.CSSProperties = {
     textAlign: 'center' as const,
     padding: '64px',
     fontSize: '1.1rem',

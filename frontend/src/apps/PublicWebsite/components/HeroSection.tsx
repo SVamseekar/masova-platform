@@ -5,7 +5,7 @@ import LocalPizzaIcon from '@mui/icons-material/LocalPizza';
 import RamenDiningIcon from '@mui/icons-material/RamenDining';
 import IcecreamIcon from '@mui/icons-material/Icecream';
 import { Button } from '../../../components/ui/neumorphic';
-import { colors, spacing, typography } from '../../../styles/design-tokens';
+import { colors, spacing } from '../../../styles/design-tokens';
 
 interface HeroSectionProps {
   onOrderNow: () => void;

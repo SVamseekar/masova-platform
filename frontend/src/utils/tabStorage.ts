@@ -164,7 +164,7 @@ export function cleanupStaleTabs(): void {
     const currentTabId = getTabId();
     const allKeys = Object.keys(sessionStorage);
 
-    let cleanedCount = 0;
+    const cleanedCount = 0;
     allKeys.forEach((key) => {
       // Find store_context keys for other tabs
       if (key.startsWith('store_context_') && !key.endsWith(`_${currentTabId}`)) {

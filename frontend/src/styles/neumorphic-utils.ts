@@ -326,7 +326,7 @@ export const createTooltip = () => ({
 });
 
 // Responsive helper
-export const createResponsive = (styles: Record<string, any>) => {
+export const createResponsive = (styles: Record<string, Record<string, unknown>>) => {
   const breakpointMap = {
     xs: '0px',
     sm: '640px',
@@ -337,7 +337,7 @@ export const createResponsive = (styles: Record<string, any>) => {
   };
 
   const breakpointKeys = ['xs', 'sm', 'md', 'lg', 'xl', '2xl'] as const;
-  const result: Record<string, any> = {};
+  const result: Record<string, unknown> = {};
 
   breakpointKeys.forEach(bp => {
     if (styles[bp]) {

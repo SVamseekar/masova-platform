@@ -25,8 +25,7 @@ public class FirebaseConfig {
     @PostConstruct
     public void init() {
         if (enabled && credentialsPath != null && !credentialsPath.isEmpty()) {
-            try {
-                FileInputStream serviceAccount = new FileInputStream(credentialsPath);
+            try (FileInputStream serviceAccount = new FileInputStream(credentialsPath)) {
                 FirebaseOptions options = FirebaseOptions.builder()
                         .setCredentials(GoogleCredentials.fromStream(serviceAccount))
                         .build();

@@ -1,12 +1,12 @@
 package com.MaSoVa.intelligence.client;
 
+import com.MaSoVa.shared.http.HttpMethods;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
@@ -48,7 +48,7 @@ public class UserServiceClient {
             String url = userServiceUrl + "/api/users?type=DRIVER&storeId=" + storeId;
             ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
                 url,
-                HttpMethod.GET,
+                HttpMethods.GET,
                 null,
                 new ParameterizedTypeReference<List<Map<String, Object>>>() {}
             );
@@ -62,14 +62,18 @@ public class UserServiceClient {
     /**
      * Get staff member details
      */
-    @SuppressWarnings("unchecked")
     @Retry(name = "userService")
     @CircuitBreaker(name = "userService", fallbackMethod = "getStaffDetailsFallback")
     public Map<String, Object> getStaffDetails(String staffId) {
         try {
             String url = userServiceUrl + "/api/users/" + staffId;
-            Map<String, Object> result = restTemplate.getForObject(url, Map.class);
-            return Objects.requireNonNullElse(result, Map.of());
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                url,
+                HttpMethods.GET,
+                null,
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+            return Objects.requireNonNullElse(response.getBody(), Map.of());
         } catch (RestClientException e) {
             log.error("Failed to fetch staff details for: {}", staffId, e);
             throw e;
@@ -88,7 +92,7 @@ public class UserServiceClient {
             String url = userServiceUrl + "/api/users?storeId=" + storeId;
             ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
                 url,
-                HttpMethod.GET,
+                HttpMethods.GET,
                 null,
                 new ParameterizedTypeReference<List<Map<String, Object>>>() {}
             );

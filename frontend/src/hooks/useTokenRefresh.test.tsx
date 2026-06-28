@@ -25,15 +25,21 @@ vi.mock('../store/slices/authSlice', () => ({
 
 import { useTokenRefresh } from './useTokenRefresh';
 
-function createMockStore(authState: any) {
+interface MockAuthState {
+  isAuthenticated: boolean;
+  accessToken?: string | null;
+  refreshToken?: string | null;
+}
+
+function createMockStore(authState: MockAuthState) {
   return configureStore({
     reducer: {
-      auth: (_state = authState, _action: any) => authState,
+      auth: (_state = authState, _action: unknown) => authState,
     },
   });
 }
 
-function createWrapper(store: any) {
+function createWrapper(store: ReturnType<typeof createMockStore>) {
   return function Wrapper({ children }: { children: React.ReactNode }) {
     return <Provider store={store}>{children}</Provider>;
   };

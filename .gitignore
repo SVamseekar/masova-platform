@@ -21,8 +21,10 @@ buildNumber.properties
 *.iws
 *.iml
 *.ipr
-.vscode/settings.json
-.vscode/launch.json
+.vscode/
+.settings/
+.serena/
+META-INF/
 
 # OS
 .DS_Store

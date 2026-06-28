@@ -143,7 +143,7 @@ const Reports: React.FC = () => {
           ].map((tab) => (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key as any)}
+              onClick={() => setActiveTab(tab.key as 'sales' | 'staff' | 'inventory')}
               style={{
                 padding: `${spacing[2]} ${spacing[4]}`,
                 borderRadius: '10px',

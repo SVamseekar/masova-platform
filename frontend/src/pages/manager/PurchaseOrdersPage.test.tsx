@@ -41,7 +41,7 @@ vi.mock('@/components/inventory/ReceivePurchaseOrderDialog', () => ({
 }));
 
 vi.mock('date-fns', () => ({
-  format: vi.fn((date: Date, fmt: string) => date.toLocaleDateString()),
+  format: vi.fn((date: Date, _fmt: string) => date.toLocaleDateString()),
 }));
 
 describe('PurchaseOrdersPage', () => {

@@ -29,7 +29,7 @@ const AddSupplierDialog: React.FC<AddSupplierDialogProps> = ({ open, onClose }) 
     deliveryCharges: '0',
   });
 
-  const handleChange = (field: string, value: any) => {
+  const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -53,7 +53,7 @@ const AddSupplierDialog: React.FC<AddSupplierDialogProps> = ({ open, onClose }) 
         deliveryRating: 3,
         totalOrders: 0,
         onTimeDeliveries: 0,
-      } as any).unwrap();
+      }).unwrap();
 
       setFormData({
         supplierName: '',

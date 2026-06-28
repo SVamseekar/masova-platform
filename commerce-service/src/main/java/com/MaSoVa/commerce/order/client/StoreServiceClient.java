@@ -1,9 +1,12 @@
 package com.MaSoVa.commerce.order.client;
 
 import com.MaSoVa.shared.entity.Store;
+import com.MaSoVa.shared.http.HttpMethods;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -38,7 +41,8 @@ public class StoreServiceClient {
                 .pathSegment("api", "stores", storeId)
                 .build()
                 .toUriString();
-            Store store = restTemplate.getForObject(url, Store.class);
+            ResponseEntity<Store> response = restTemplate.exchange(url, HttpMethods.GET, null, Store.class);
+            Store store = response.getBody();
             return store != null ? store : new Store();
         } catch (Exception e) {
             log.warn("getStore failed for store {} — falling back to India GST: {}", storeId, e.getMessage());
@@ -52,7 +56,6 @@ public class StoreServiceClient {
      * Phase 1: /api/stores/{id}/delivery-radius-check removed →
      *          GET /api/delivery/zones?check=true&storeId=&lat=&lng= (logistics-service)
      */
-    @SuppressWarnings("unchecked")
     public boolean isWithinDeliveryRadius(String storeId, double latitude, double longitude) {
         try {
             String url = UriComponentsBuilder
@@ -65,8 +68,13 @@ public class StoreServiceClient {
                 .build()
                 .toUriString();
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> result = restTemplate.getForObject(url, Map.class);
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    url,
+                    HttpMethods.GET,
+                    null,
+                    new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+            Map<String, Object> result = response.getBody();
             if (result == null) return true;
             Boolean within = (Boolean) result.get("withinDeliveryZone");
             return within == null || within;

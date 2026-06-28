@@ -44,40 +44,40 @@ public class CampaignController {
     @PostMapping
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Create campaign")
-    public ResponseEntity<Campaign> createCampaign(@RequestBody Campaign campaign) {
-        Campaign created = campaignService.createCampaign(campaign);
+    public ResponseEntity<Campaign> createCampaign(@RequestBody Campaign campaign, HttpServletRequest request) {
+        Campaign created = campaignService.createCampaign(campaign, getStoreIdFromHeaders(request));
         return ResponseEntity.ok(created);
     }
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Update campaign")
-    public ResponseEntity<Campaign> updateCampaign(@PathVariable String id, @RequestBody Campaign campaign) {
-        Campaign updated = campaignService.updateCampaign(id, campaign);
+    public ResponseEntity<Campaign> updateCampaign(@PathVariable String id, @RequestBody Campaign campaign, HttpServletRequest request) {
+        Campaign updated = campaignService.updateCampaign(id, campaign, getStoreIdFromHeaders(request));
         return ResponseEntity.ok(updated);
     }
 
     @PostMapping("/{id}/schedule")
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Schedule campaign")
-    public ResponseEntity<Void> scheduleCampaign(@PathVariable String id, @RequestBody ScheduleRequest request) {
-        campaignService.scheduleCampaign(id, request.getScheduledFor());
+    public ResponseEntity<Void> scheduleCampaign(@PathVariable String id, @RequestBody ScheduleRequest request, HttpServletRequest httpRequest) {
+        campaignService.scheduleCampaign(id, request.getScheduledFor(), getStoreIdFromHeaders(httpRequest));
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{id}/execute")
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Execute campaign immediately")
-    public ResponseEntity<Void> executeCampaign(@PathVariable String id) {
-        campaignService.executeCampaign(id);
+    public ResponseEntity<Void> executeCampaign(@PathVariable String id, HttpServletRequest request) {
+        campaignService.executeCampaign(id, getStoreIdFromHeaders(request));
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{id}/cancel")
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Cancel scheduled campaign")
-    public ResponseEntity<Void> cancelCampaign(@PathVariable String id) {
-        campaignService.cancelCampaign(id);
+    public ResponseEntity<Void> cancelCampaign(@PathVariable String id, HttpServletRequest request) {
+        campaignService.cancelCampaign(id, getStoreIdFromHeaders(request));
         return ResponseEntity.ok().build();
     }
 
@@ -86,17 +86,18 @@ public class CampaignController {
     @Operation(summary = "List campaigns (paged)")
     public ResponseEntity<Page<Campaign>> getAllCampaigns(
             @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "size", defaultValue = "20") int size) {
+            @RequestParam(name = "size", defaultValue = "20") int size,
+            HttpServletRequest request) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Campaign> campaigns = campaignService.getAllCampaigns(pageable);
+        Page<Campaign> campaigns = campaignService.getAllCampaigns(pageable, getStoreIdFromHeaders(request));
         return ResponseEntity.ok(campaigns);
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Get campaign by ID")
-    public ResponseEntity<Campaign> getCampaign(@PathVariable String id) {
-        return campaignService.getCampaignById(id)
+    public ResponseEntity<Campaign> getCampaign(@PathVariable String id, HttpServletRequest request) {
+        return campaignService.getCampaignById(id, getStoreIdFromHeaders(request))
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -104,8 +105,8 @@ public class CampaignController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('MANAGER')")
     @Operation(summary = "Delete campaign")
-    public ResponseEntity<Void> deleteCampaign(@PathVariable String id) {
-        campaignService.deleteCampaign(id);
+    public ResponseEntity<Void> deleteCampaign(@PathVariable String id, HttpServletRequest request) {
+        campaignService.deleteCampaign(id, getStoreIdFromHeaders(request));
         return ResponseEntity.ok().build();
     }
 

@@ -83,14 +83,20 @@ public class JwtTokenProvider {
         return claims.get("email", String.class);
     }
 
-    @SuppressWarnings("unchecked")
     public List<String> getRolesFromToken(String token) {
         Claims claims = Jwts.parser()
             .verifyWith(key)
             .build()
             .parseSignedClaims(token)
             .getPayload();
-        return claims.get("roles", List.class);
+        Object roles = claims.get("roles");
+        if (roles instanceof List<?> roleList) {
+            return roleList.stream()
+                .filter(String.class::isInstance)
+                .map(String.class::cast)
+                .toList();
+        }
+        return List.of();
     }
 
     public String getStoreIdFromToken(String token) {

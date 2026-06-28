@@ -1,5 +1,5 @@
 import React, { forwardRef, ButtonHTMLAttributes } from 'react';
-import { createButtonVariant, createNeumorphicStates } from '../../../styles/neumorphic-utils';
+import { createButtonVariant } from '../../../styles/neumorphic-utils';
 import { spacing, components } from '../../../styles/design-tokens';
 
 export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'size'> {

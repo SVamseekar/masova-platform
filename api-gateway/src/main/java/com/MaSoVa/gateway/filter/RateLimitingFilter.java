@@ -303,7 +303,6 @@ public class RateLimitingFilter extends AbstractGatewayFilterFactory<RateLimitin
             return lastAttemptTime;
         }
 
-        @SuppressWarnings("unused")
         public void resetOnSuccess() {
             attemptCount.set(0);
             lockedOut = false;

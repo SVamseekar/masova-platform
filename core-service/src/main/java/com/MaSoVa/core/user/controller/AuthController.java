@@ -36,9 +36,6 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
-    @Autowired
-    private com.MaSoVa.core.user.service.JwtService jwtService;
-
     // Rate limiting: IP -> failed PIN attempt count (expires after 15 min)
     private final LoadingCache<String, Integer> pinAttempts = CacheBuilder.newBuilder()
             .expireAfterWrite(15, java.util.concurrent.TimeUnit.MINUTES)

@@ -53,7 +53,6 @@ public class DeliveryController {
     private final DeliveryZoneService deliveryZoneService;
     private final UserServiceClient userServiceClient;
     private final LiveTrackingService liveTrackingService;
-    private final ETACalculationService etaCalculationService;
     private final ProofOfDeliveryService proofOfDeliveryService;
     private final DriverAcceptanceService driverAcceptanceService;
     private final PerformanceService performanceService;
@@ -64,7 +63,6 @@ public class DeliveryController {
             DeliveryZoneService deliveryZoneService,
             UserServiceClient userServiceClient,
             LiveTrackingService liveTrackingService,
-            ETACalculationService etaCalculationService,
             ProofOfDeliveryService proofOfDeliveryService,
             DriverAcceptanceService driverAcceptanceService,
             PerformanceService performanceService) {
@@ -73,7 +71,6 @@ public class DeliveryController {
         this.deliveryZoneService = deliveryZoneService;
         this.userServiceClient = userServiceClient;
         this.liveTrackingService = liveTrackingService;
-        this.etaCalculationService = etaCalculationService;
         this.proofOfDeliveryService = proofOfDeliveryService;
         this.driverAcceptanceService = driverAcceptanceService;
         this.performanceService = performanceService;

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, within } from '@testing-library/react';
+import type { DriverDeliveryOrder, RtkMiddleware } from '../../shared/testTypes';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderAsDriver } from '@/test/utils/testUtils';
 import ActiveDeliveryPage from './ActiveDeliveryPage';
@@ -11,7 +12,7 @@ const mockUpdateOrderStatus = vi.fn(() => ({
 const mockRefetch = vi.fn();
 
 // Default: no active deliveries
-let mockActiveOrders: any[] = [];
+let mockActiveOrders: DriverDeliveryOrder[] = [];
 let mockIsLoading = false;
 
 vi.mock('../../../store/api/orderApi', () => ({
@@ -21,12 +22,12 @@ vi.mock('../../../store/api/orderApi', () => ({
     refetch: mockRefetch,
   }),
   useUpdateOrderStatusMutation: () => [mockUpdateOrderStatus, { isLoading: false }],
-  orderApi: { reducerPath: 'orderApi', reducer: () => ({}), middleware: () => (next: any) => (action: any) => next(action) },
+  orderApi: { reducerPath: 'orderApi', reducer: () => ({}), middleware: () => (next: RtkMiddleware) => (action: unknown) => next(action) },
 }));
 
 // Mock CustomerContact component
 vi.mock('../components/CustomerContact', () => ({
-  default: ({ open, onClose, customerName, customerPhone, orderNumber }: any) =>
+  default: ({ open, onClose, customerName, customerPhone, orderNumber }: { open: boolean; onClose: () => void; customerName: string; customerPhone: string; orderNumber: string }) =>
     open ? (
       <div data-testid="customer-contact">
         <span>{customerName}</span>

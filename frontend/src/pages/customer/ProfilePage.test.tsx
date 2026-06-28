@@ -11,7 +11,7 @@ vi.mock('@/store/api/customerApi', async () => {
   const actual = await vi.importActual('@/store/api/customerApi');
   return {
     ...actual,
-    useGetCustomerByUserIdQuery: (...args: any[]) => mockUseGetCustomerByUserIdQuery(...args),
+    useGetCustomerByUserIdQuery: (...args: unknown[]) => mockUseGetCustomerByUserIdQuery(...args),
     useCreateCustomerMutation: () => [mockCreateCustomer, { isLoading: false }],
     useUpdateCustomerMutation: () => [mockUpdateCustomer, { isLoading: false }],
     useAddAddressMutation: () => [vi.fn(), { isLoading: false }],
@@ -34,10 +34,10 @@ vi.mock('@/components/common/AppHeader', () => ({
 
 // Mock neumorphic components
 vi.mock('@/components/ui/neumorphic', () => ({
-  Button: ({ children, onClick, ...props }: any) => (
+  Button: ({ children, onClick, ...props }: React.ComponentProps<"button">) => (
     <button onClick={onClick} {...props}>{children}</button>
   ),
-  Checkbox: ({ label, checked, onChange }: any) => (
+  Checkbox: ({ label, checked, onChange }: unknown) => (
     <label>
       <input type="checkbox" checked={checked} onChange={onChange} />
       {label}

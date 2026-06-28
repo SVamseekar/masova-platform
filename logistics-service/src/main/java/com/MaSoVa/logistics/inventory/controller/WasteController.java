@@ -11,8 +11,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,8 +32,6 @@ import java.util.Map;
 @Tag(name = "Waste", description = "Waste tracking and analysis")
 @SecurityRequirement(name = "bearerAuth")
 public class WasteController {
-
-    private static final Logger log = LoggerFactory.getLogger(WasteController.class);
 
     private final WasteAnalysisService wasteAnalysisService;
 

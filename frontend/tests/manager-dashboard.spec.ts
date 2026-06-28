@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole, DEMO_ACCOUNTS } from './helpers/auth';
+import { loginAsRole } from './helpers/auth';
 
 /**
  * Manager Dashboard Tests

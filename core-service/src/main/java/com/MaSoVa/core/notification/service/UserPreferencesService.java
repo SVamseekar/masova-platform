@@ -2,16 +2,12 @@ package com.MaSoVa.core.notification.service;
 
 import com.MaSoVa.core.notification.entity.UserPreferences;
 import com.MaSoVa.core.notification.repository.UserPreferencesRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
 @Service
 public class UserPreferencesService {
-    private static final Logger logger = LoggerFactory.getLogger(UserPreferencesService.class);
-
     private final UserPreferencesRepository userPreferencesRepository;
 
     public UserPreferencesService(UserPreferencesRepository userPreferencesRepository) {

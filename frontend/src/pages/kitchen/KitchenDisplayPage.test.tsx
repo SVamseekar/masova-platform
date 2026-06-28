@@ -4,9 +4,11 @@ import userEvent from '@testing-library/user-event';
 import { renderAsKitchenStaff } from '@/test/utils/testUtils';
 import KitchenDisplayPage from './KitchenDisplayPage';
 
-let mockKitchenOrders: any[] = [];
+import type { Order } from '../../store/api/orderApi';
+
+let mockKitchenOrders: Order[] = [];
 let mockIsLoading = false;
-let mockError: any = null;
+let mockError: unknown = null;
 const mockUpdateOrderStatus = vi.fn(() => ({
   unwrap: () => Promise.resolve(),
 }));
@@ -21,7 +23,7 @@ vi.mock('../../store/api/orderApi', () => ({
   }),
   useUpdateOrderStatusMutation: () => [mockUpdateOrderStatus, { isLoading: false }],
   useGetAllMenuItemsQuery: () => ({ data: [], isLoading: false }),
-  orderApi: { reducerPath: 'orderApi', reducer: () => ({}), middleware: () => (next: any) => (action: any) => next(action) },
+  orderApi: { reducerPath: 'orderApi', reducer: () => ({}), middleware: () => (next: unknown) => (action: unknown) => next(action) },
 }));
 
 vi.mock('../../hooks/useKitchenWebSocket', () => ({
@@ -36,7 +38,7 @@ vi.mock('../../components/common/AppHeader', () => ({
 }));
 
 vi.mock('../../components/RecipeViewer', () => ({
-  default: ({ menuItem, onClose }: any) => (
+  default: ({ menuItem, onClose }: { menuItem: { name: string }; onClose: () => void }) => (
     <div data-testid="recipe-viewer">
       <span>{menuItem.name}</span>
       <button onClick={onClose}>Close Recipe</button>

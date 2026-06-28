@@ -70,7 +70,7 @@ describe('Tabs Components', () => {
     });
 
     it('renders with flex display', () => {
-      const { container } = render(
+      render(
         <Tabs defaultValue="t1">
           <TabsList data-testid="list">
             <TabsTrigger value="t1">T1</TabsTrigger>

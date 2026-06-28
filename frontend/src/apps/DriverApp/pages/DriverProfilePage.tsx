@@ -11,7 +11,6 @@ import {
   Avatar,
   Divider,
   LinearProgress,
-  CircularProgress,
   Alert,
   IconButton,
 } from '@mui/material';
@@ -23,7 +22,6 @@ import {
   Star as StarIcon,
   CheckCircle as CheckIcon,
   Speed as SpeedIcon,
-  AccessTime as ClockIcon,
   LocationOn as LocationIcon,
   Email as EmailIcon,
   Phone as PhoneIcon,

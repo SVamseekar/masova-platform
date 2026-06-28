@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import AppHeader from '../../components/common/AppHeader';
-import { usePageStore } from '../../contexts/PageStoreContext';
+import { usePageStore } from '../../hooks/usePageStore';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
-import { colors, spacing, typography, shadows, borderRadius } from '../../styles/design-tokens';
+import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
 import { createNeumorphicSurface, createCard, createBadge } from '../../styles/neumorphic-utils';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import {
@@ -194,7 +194,7 @@ const RecipeManagementPage: React.FC = () => {
 
     try {
       const text = await file.text();
-      let recipes: any[];
+      let recipes: Array<Record<string, string | string[]>>;
 
       // Try parsing as JSON
       if (file.name.endsWith('.json')) {
@@ -205,7 +205,7 @@ const RecipeManagementPage: React.FC = () => {
         const headers = lines[0].split(',');
         recipes = lines.slice(1).map(line => {
           const values = line.split(',');
-          const recipe: any = {};
+          const recipe: Record<string, string | string[]> = {};
           headers.forEach((header, index) => {
             const value = values[index]?.trim();
             if (header.includes('ingredients') || header.includes('preparationInstructions')) {
@@ -222,8 +222,16 @@ const RecipeManagementPage: React.FC = () => {
 
       let successCount = 0;
 
+      const recipeText = (value: string | string[] | undefined): string =>
+        Array.isArray(value) ? value.join(' ') : (value ?? '');
+      const recipeList = (value: string | string[] | undefined): string[] | undefined => {
+        if (Array.isArray(value)) return value;
+        if (typeof value === 'string' && value.length > 0) return value.split('|').map((v) => v.trim());
+        return undefined;
+      };
+
       for (const recipe of recipes) {
-        const itemName = recipe.itemName || recipe.name;
+        const itemName = recipeText(recipe.itemName) || recipeText(recipe.name);
         if (!itemName) continue;
 
         const menuItem = menuItems.find(item =>
@@ -245,8 +253,8 @@ const RecipeManagementPage: React.FC = () => {
               isAvailable: menuItem.isAvailable,
               preparationTime: menuItem.preparationTime,
               servingSize: menuItem.servingSize,
-              ingredients: recipe.ingredients || menuItem.ingredients,
-              preparationInstructions: recipe.preparationInstructions || menuItem.preparationInstructions,
+              ingredients: recipeList(recipe.ingredients) || menuItem.ingredients,
+              preparationInstructions: recipeList(recipe.preparationInstructions) || menuItem.preparationInstructions,
               allergens: menuItem.allergens,
               dietaryInfo: menuItem.dietaryInfo,
               spiceLevel: menuItem.spiceLevel,
@@ -926,4 +934,5 @@ const RecipeManagementPage: React.FC = () => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- HOC default export
 export default withPageStoreContext(RecipeManagementPage, 'recipes');

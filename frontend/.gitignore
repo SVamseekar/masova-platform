@@ -9,6 +9,9 @@ lerna-debug.log*
 
 node_modules
 dist
+coverage
+playwright-report
+test-results
 dist-ssr
 *.local
 
@@ -23,3 +26,4 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+.env*.local

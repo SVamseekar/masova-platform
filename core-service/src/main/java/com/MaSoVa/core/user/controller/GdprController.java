@@ -26,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -184,8 +185,7 @@ public class GdprController {
                 }
                 case "portability" -> ResponseEntity.ok(dataRequestService.processPortabilityRequest(requestId));
                 case "rectification" -> {
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> updates = (Map<String, Object>) body.getOrDefault("updates", Map.of());
+                    Map<String, Object> updates = toStringObjectMap(body.getOrDefault("updates", Map.of()));
                     dataRequestService.processRectificationRequest(requestId, updates);
                     yield ResponseEntity.ok(Map.of("message", "Rectification request processed successfully"));
                 }
@@ -235,5 +235,18 @@ public class GdprController {
     private String getClientIp(HttpServletRequest request) {
         String xfHeader = request.getHeader("X-Forwarded-For");
         return xfHeader != null ? xfHeader.split(",")[0] : request.getRemoteAddr();
+    }
+
+    private static Map<String, Object> toStringObjectMap(Object value) {
+        if (!(value instanceof Map<?, ?> rawMap)) {
+            return Map.of();
+        }
+        Map<String, Object> result = new HashMap<>();
+        for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
+            if (entry.getKey() instanceof String key) {
+                result.put(key, entry.getValue());
+            }
+        }
+        return result;
     }
 }

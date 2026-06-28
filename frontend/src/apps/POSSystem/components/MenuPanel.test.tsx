@@ -9,13 +9,13 @@ import MenuPanel from './MenuPanel';
 // Mock RTK Query hooks
 // ---------------------------------------------------------------------------
 
-let mockMenuData: any[] = [];
+let mockMenuData: MenuItem[] = [];
 let mockIsLoading = false;
-let mockError: any = null;
+let mockError: unknown = null;
 const mockRefetch = vi.fn();
 
 vi.mock('../../../store/api/menuApi', async () => {
-  const actual = await vi.importActual<any>('../../../store/api/menuApi');
+  const actual = await vi.importActual<typeof import('../../../store/api/menuApi')>('../../../store/api/menuApi');
   return {
     ...actual,
     useGetAvailableMenuQuery: () => ({
@@ -51,7 +51,7 @@ describe('MenuPanel', () => {
     it('renders without crashing', () => {
       renderWithProviders(<MenuPanel onAddItem={mockOnAddItem} />, {
         useMemoryRouter: true,
-        preloadedState: defaultCartState as any,
+        preloadedState: defaultCartState,
       });
 
       expect(screen.getByText('Menu Items')).toBeInTheDocument();
@@ -60,7 +60,7 @@ describe('MenuPanel', () => {
     it('displays the search input', () => {
       renderWithProviders(<MenuPanel onAddItem={mockOnAddItem} />, {
         useMemoryRouter: true,
-        preloadedState: defaultCartState as any,
+        preloadedState: defaultCartState,
       });
 
       expect(
@@ -71,7 +71,7 @@ describe('MenuPanel', () => {
     it('renders cuisine tabs', () => {
       renderWithProviders(<MenuPanel onAddItem={mockOnAddItem} />, {
         useMemoryRouter: true,
-        preloadedState: defaultCartState as any,
+        preloadedState: defaultCartState,
       });
 
       expect(screen.getByText('SOUTH INDIAN')).toBeInTheDocument();
@@ -82,7 +82,7 @@ describe('MenuPanel', () => {
     it('renders dietary filter buttons', () => {
       renderWithProviders(<MenuPanel onAddItem={mockOnAddItem} />, {
         useMemoryRouter: true,
-        preloadedState: defaultCartState as any,
+        preloadedState: defaultCartState,
       });
 
       expect(screen.getAllByText('All').length).toBeGreaterThan(0);
@@ -94,7 +94,7 @@ describe('MenuPanel', () => {
     it('shows item count in footer', () => {
       renderWithProviders(<MenuPanel onAddItem={mockOnAddItem} />, {
         useMemoryRouter: true,
-        preloadedState: defaultCartState as any,
+        preloadedState: defaultCartState,
       });
 
       expect(screen.getByText(/items available/)).toBeInTheDocument();
@@ -110,7 +110,7 @@ describe('MenuPanel', () => {
         <MenuPanel onAddItem={mockOnAddItem} />,
         {
           useMemoryRouter: true,
-          preloadedState: defaultCartState as any,
+          preloadedState: defaultCartState,
         }
       );
 
@@ -126,7 +126,7 @@ describe('MenuPanel', () => {
 
       renderWithProviders(<MenuPanel onAddItem={mockOnAddItem} />, {
         useMemoryRouter: true,
-        preloadedState: defaultCartState as any,
+        preloadedState: defaultCartState,
       });
 
       expect(
@@ -141,7 +141,7 @@ describe('MenuPanel', () => {
 
       renderWithProviders(<MenuPanel onAddItem={mockOnAddItem} />, {
         useMemoryRouter: true,
-        preloadedState: defaultCartState as any,
+        preloadedState: defaultCartState,
       });
 
       expect(
@@ -154,7 +154,7 @@ describe('MenuPanel', () => {
     it('defaults to South Indian cuisine', () => {
       renderWithProviders(<MenuPanel onAddItem={mockOnAddItem} />, {
         useMemoryRouter: true,
-        preloadedState: defaultCartState as any,
+        preloadedState: defaultCartState,
       });
 
       // South Indian items (Masala Dosa) should be visible
@@ -166,7 +166,7 @@ describe('MenuPanel', () => {
 
       renderWithProviders(<MenuPanel onAddItem={mockOnAddItem} />, {
         useMemoryRouter: true,
-        preloadedState: defaultCartState as any,
+        preloadedState: defaultCartState,
       });
 
       await user.click(screen.getByText('ITALIAN'));
@@ -184,7 +184,7 @@ describe('MenuPanel', () => {
 
       renderWithProviders(<MenuPanel onAddItem={mockOnAddItem} />, {
         useMemoryRouter: true,
-        preloadedState: defaultCartState as any,
+        preloadedState: defaultCartState,
       });
 
       // Switch to Italian to see Pizza
@@ -200,7 +200,7 @@ describe('MenuPanel', () => {
 
       renderWithProviders(<MenuPanel onAddItem={mockOnAddItem} />, {
         useMemoryRouter: true,
-        preloadedState: defaultCartState as any,
+        preloadedState: defaultCartState,
       });
 
       const searchInput = screen.getByPlaceholderText('Search menu items...');
@@ -218,7 +218,7 @@ describe('MenuPanel', () => {
 
       renderWithProviders(<MenuPanel onAddItem={mockOnAddItem} />, {
         useMemoryRouter: true,
-        preloadedState: defaultCartState as any,
+        preloadedState: defaultCartState,
       });
 
       // Find and click the first "Add" button

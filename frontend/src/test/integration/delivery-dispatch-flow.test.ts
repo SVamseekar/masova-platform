@@ -35,7 +35,7 @@ describe('Delivery Dispatch Flow', () => {
     });
 
     expect(response1.status).toBe(200);
-    const data1 = await response1.json();
+    const _data1 = await response1.json();
 
     // Step 2: POST /api/delivery/dispatch
     const response2 = await fetch(`${API_BASE_URL}/api/delivery/dispatch`, {
@@ -45,7 +45,7 @@ describe('Delivery Dispatch Flow', () => {
     });
 
     expect(response2.status).toBe(200);
-    const data2 = await response2.json();
+    const _data2 = await response2.json();
 
     // Step 3: POST /api/notifications/send
     const response3 = await fetch(`${API_BASE_URL}/api/notifications/send`, {
@@ -55,7 +55,7 @@ describe('Delivery Dispatch Flow', () => {
     });
 
     expect(response3.status).toBe(200);
-    const data3 = await response3.json();
+    const _data3 = await response3.json();
 
 
     // Verify final state

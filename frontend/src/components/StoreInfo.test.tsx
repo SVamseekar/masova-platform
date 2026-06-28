@@ -12,7 +12,7 @@ vi.mock('../store/api/storeApi', async () => {
   };
 });
 
-const { useGetStoreQuery } = require('../store/api/storeApi');
+import { useGetStoreQuery } from '../store/api/storeApi';
 
 describe('StoreInfo', () => {
   it('shows loading state', () => {

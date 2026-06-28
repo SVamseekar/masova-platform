@@ -58,10 +58,14 @@ export default defineConfig({
     // Hooks timeout
     hookTimeout: 15000,
 
-    // Mock reset between tests
-    clearMocks: true,
-    restoreMocks: true,
-    mockReset: true,
+    // Mock reset between tests is disabled: most test files set return values once
+    // inside vi.mock() factories (module load time) and reuse them across every test
+    // in the file. With mockReset/clearMocks/restoreMocks on, those values are wiped
+    // after the first test, silently breaking every subsequent test in the file unless
+    // it re-applies the mock in beforeEach (which most files don't do).
+    clearMocks: false,
+    restoreMocks: false,
+    mockReset: false,
 
     // Pool config: forks prevents OOM by isolating each worker in its own process
     pool: 'forks',

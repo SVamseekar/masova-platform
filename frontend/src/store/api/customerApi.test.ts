@@ -1,7 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { http, HttpResponse } from 'msw';
-import { server } from '../../test/mocks/server';
 import { DefaultTestWrapper } from '../../test/TestWrapper';
 import {
   customerApi,
@@ -44,7 +42,7 @@ import {
   useDeleteCustomerMutation,
 } from './customerApi';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const _API = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 describe('customerApi', () => {
   describe('endpoint definitions', () => {

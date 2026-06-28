@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useSnackbar } from 'notistack';
+
 import { useTrackOrderQuery } from '../../store/api/deliveryApi';
 import { useCreateReviewMutation } from '../../store/api/reviewApi';
 import AppHeader from '../../components/common/AppHeader';
@@ -12,7 +12,7 @@ import { OrderTrackingUpdate } from '../../services/websocketService';
 const LiveTrackingPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
-  const { enqueueSnackbar } = useSnackbar();
+
   const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
   const [createReview] = useCreateReviewMutation();
   const [localStatus, setLocalStatus] = useState<string | null>(null);
@@ -64,7 +64,7 @@ const LiveTrackingPage: React.FC = () => {
     }
   };
 
-  const getStatusBg = (status: string) => {
+  const _getStatusBg = (status: string) => {
     switch (status?.toUpperCase()) {
       case 'PICKED_UP': return 'rgba(var(--info-rgb), 0.13)';
       case 'IN_TRANSIT': return 'rgba(var(--warning-rgb), 0.13)';

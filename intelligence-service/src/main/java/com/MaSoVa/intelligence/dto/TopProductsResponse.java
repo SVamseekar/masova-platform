@@ -1,14 +1,14 @@
 package com.MaSoVa.intelligence.dto;
+
 import java.io.Serializable;
-
-
+import java.util.ArrayList;
 import java.math.BigDecimal;
 import java.util.List;
 
 public class TopProductsResponse implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private List<ProductData> topProducts;
+    private ArrayList<ProductData> topProducts = new ArrayList<>();
     private String period; // "TODAY", "WEEK", "MONTH"
     private String sortBy; // "QUANTITY" or "REVENUE"
 
@@ -17,7 +17,7 @@ public class TopProductsResponse implements Serializable {
 
     // Getters and Setters
     public List<ProductData> getTopProducts() { return topProducts; }
-    public void setTopProducts(List<ProductData> topProducts) { this.topProducts = topProducts; }
+    public void setTopProducts(List<ProductData> topProducts) { this.topProducts = topProducts != null ? new ArrayList<>((topProducts)) : new ArrayList<>(); }
 
     public String getPeriod() { return period; }
     public void setPeriod(String period) { this.period = period; }
@@ -31,7 +31,7 @@ public class TopProductsResponse implements Serializable {
     public static class Builder {
         private final TopProductsResponse response = new TopProductsResponse();
 
-        public Builder topProducts(List<ProductData> topProducts) { response.topProducts = topProducts; return this; }
+        public Builder topProducts(List<ProductData> topProducts) { response.topProducts = topProducts != null ? new ArrayList<>((topProducts)) : new ArrayList<>(); return this; }
         public Builder period(String period) { response.period = period; return this; }
         public Builder sortBy(String sortBy) { response.sortBy = sortBy; return this; }
 

@@ -44,10 +44,10 @@ vi.mock('../../components/backgrounds/AnimatedBackground', () => ({
 }));
 
 vi.mock('../../components/ui/neumorphic', () => ({
-  Button: ({ children, onClick, ...props }: any) => (
+  Button: ({ children, onClick, ...props }: MockButtonProps) => (
     <button onClick={onClick} {...props}>{children}</button>
   ),
-  Card: ({ children, ...props }: any) => <div data-testid="neumorphic-card" {...props}>{children}</div>,
+  Card: ({ children, ...props }: MockDivProps) => <div data-testid="neumorphic-card" {...props}>{children}</div>,
 }));
 
 const mockNavigate = vi.fn();

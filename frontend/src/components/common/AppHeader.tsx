@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { logout, selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartItemCount } from '../../store/slices/cartSlice';
-import { colors, spacing, typography, shadows, borderRadius, components } from '../../styles/design-tokens';
+import { colors, spacing, typography, shadows, components } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 import StoreSelector from '../StoreSelector';
 import ManagementHubSidebar from './ManagementHubSidebar';
@@ -539,57 +539,6 @@ const AppHeader: React.FC<AppHeaderProps> = ({
     alignItems: 'center',
     gap: spacing[2],
     height: '36px',
-  };
-
-  const dropdownContainerStyles: React.CSSProperties = {
-    position: 'relative',
-    display: 'inline-block',
-  };
-
-  const userButtonStyles: React.CSSProperties = {
-    ...buttonStyles,
-    display: 'flex',
-    alignItems: 'center',
-    gap: spacing[2],
-    padding: `${spacing[2]} ${spacing[4]}`,
-    cursor: 'pointer',
-  };
-
-  const dropdownMenuStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('raised', 'md', 'lg'),
-    position: 'absolute',
-    top: 'calc(100% + 8px)',
-    right: 0,
-    minWidth: '220px',
-    backgroundColor: colors.surface.primary,
-    zIndex: 1000,
-    opacity: isDropdownOpen ? 1 : 0,
-    visibility: isDropdownOpen ? 'visible' : 'hidden',
-    transform: isDropdownOpen ? 'translateY(0)' : 'translateY(-10px)',
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-  };
-
-  const dropdownItemStyles: React.CSSProperties = {
-    padding: `${spacing[3]} ${spacing[4]}`,
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.primary,
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    display: 'flex',
-    alignItems: 'center',
-    gap: spacing[3],
-  };
-
-  const dropdownItemHoverStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('inset', 'sm', 'base'),
-    backgroundColor: colors.brand.primaryLight + '10',
-  };
-
-  const logoutItemStyles: React.CSSProperties = {
-    ...dropdownItemStyles,
-    color: colors.semantic.error,
-    fontWeight: typography.fontWeight.semibold,
   };
 
   return (

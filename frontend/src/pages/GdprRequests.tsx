@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -16,8 +16,6 @@ import {
   TextField,
   Alert,
   List,
-  ListItem,
-  ListItemText,
   Chip,
 } from '@mui/material';
 import axios from '../utils/axios';
@@ -45,20 +43,21 @@ export const GdprRequests: React.FC = () => {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const userId = localStorage.getItem('userId');
 
-  useEffect(() => {
-    if (userId) {
-      fetchRequests();
-    }
-  }, [userId]);
-
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
+    if (!userId) return;
     try {
       const response = await axios.get<GdprRequest[]>(`/api/gdpr/request/user/${userId}`);
       setRequests(response.data);
     } catch (error) {
       console.error('Error fetching requests:', error);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    if (userId) {
+      fetchRequests();
+    }
+  }, [userId, fetchRequests]);
 
   const handleCreateRequest = async (requestType: string) => {
     setSelectedType(requestType);
@@ -80,7 +79,7 @@ export const GdprRequests: React.FC = () => {
       setOpenDialog(false);
       setReason('');
       fetchRequests();
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: 'Failed to submit request' });
     } finally {
       setLoading(false);

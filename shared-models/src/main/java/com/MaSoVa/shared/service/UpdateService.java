@@ -75,7 +75,9 @@ public class UpdateService {
             ClassPathResource resource = new ClassPathResource("version.properties");
             if (resource.exists()) {
                 Properties props = new Properties();
-                props.load(resource.getInputStream());
+                try (java.io.InputStream in = resource.getInputStream()) {
+                    props.load(in);
+                }
 
                 currentVersion = props.getProperty("version", "1.0.0");
                 String buildDateStr = props.getProperty("buildDate");

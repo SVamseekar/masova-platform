@@ -118,14 +118,14 @@ const StaffProfilePage: React.FC = () => {
   }, { skip: !profileUserId });
 
   // Fetch POS staff performance (last 3 months)
-  const { data: posPerformance, isLoading: posPerformanceLoading } = useGetPosStaffPerformanceQuery({
+  const { data: posPerformance, isLoading: _posPerformanceLoading } = useGetPosStaffPerformanceQuery({
     staffId: profileUserId || '',
     startDate: startDate.toISOString().split('T')[0],
     endDate: endDate.toISOString().split('T')[0],
   }, { skip: !profileUserId });
 
   // Fetch staff rating
-  const { data: staffRating, isLoading: staffRatingLoading } = useGetStaffRatingQuery(
+  const { data: staffRating, isLoading: _staffRatingLoading } = useGetStaffRatingQuery(
     profileUserId || '',
     { skip: !profileUserId }
   );

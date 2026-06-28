@@ -272,12 +272,12 @@ export const deliveryApi = createApi({
         body: data,
       }),
       // Transform backend response to include computed fields for frontend convenience
-      transformResponse: (response: any): RouteOptimizationResponse => {
+      transformResponse: (response: RouteOptimizationResponse): RouteOptimizationResponse => {
         const distanceMeters = (response.distanceKm || 0) * 1000;
         const durationSeconds = (response.durationMinutes || 0) * 60;
 
         // Map steps to segments for backward compatibility
-        const segments: RouteSegment[] = (response.steps || []).map((step: any) => ({
+        const segments: RouteSegment[] = (response.steps || []).map((step: RouteStep) => ({
           distance: step.distanceMeters || 0,
           duration: step.durationSeconds || 0,
           instruction: step.instruction || '',

@@ -5,7 +5,7 @@ import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
 import { formatMoney } from '../../utils/currency';
-import { useRecordWasteMutation, useGetAllInventoryItemsQuery } from '../../store/api/inventoryApi';
+import { useRecordWasteMutation, useGetAllInventoryItemsQuery, type WasteRecord } from '../../store/api/inventoryApi';
 import { colors, spacing, typography } from '../../styles/design-tokens';
 
 interface RecordWasteDialogProps {
@@ -21,7 +21,14 @@ const RecordWasteDialog: React.FC<RecordWasteDialogProps> = ({ open, onClose, st
   const [recordWaste, { isLoading }] = useRecordWasteMutation();
   const { data: inventoryItems = [] } = useGetAllInventoryItemsQuery(undefined);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    inventoryItemId: string;
+    quantity: string;
+    wasteType: WasteRecord['wasteType'];
+    isPreventable: boolean;
+    reason: string;
+    notes: string;
+  }>({
     inventoryItemId: '',
     quantity: '',
     wasteType: 'EXPIRED',
@@ -30,7 +37,7 @@ const RecordWasteDialog: React.FC<RecordWasteDialogProps> = ({ open, onClose, st
     notes: '',
   });
 
-  const handleChange = (field: string, value: any) => {
+  const handleChange = (field: keyof typeof formData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -58,7 +65,7 @@ const RecordWasteDialog: React.FC<RecordWasteDialogProps> = ({ open, onClose, st
         status: 'PENDING',
         reason: formData.reason,
         notes: formData.notes,
-      } as any).unwrap();
+      }).unwrap();
 
       setFormData({
         inventoryItemId: '',

@@ -11,7 +11,7 @@ interface NotificationOptions {
   icon?: string;
   badge?: string;
   tag?: string;
-  data?: any;
+  data?: Record<string, unknown>;
   requireInteraction?: boolean;
   silent?: boolean;
 }
@@ -114,8 +114,9 @@ class PushNotificationService {
         window.focus();
 
         // Navigate to specific page if URL provided in data
-        if (options.data?.url) {
-          window.location.href = options.data.url;
+        const url = options.data?.url;
+        if (typeof url === 'string') {
+          window.location.href = url;
         }
 
         notification.close();

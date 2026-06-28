@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
+import { colors, spacing, typography } from '../../styles/design-tokens';
 import { createCard, createNeumorphicSurface } from '../../styles/neumorphic-utils';
 
 interface RatingDialogProps {

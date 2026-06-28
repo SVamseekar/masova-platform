@@ -23,7 +23,7 @@ describe('POSSystem (router)', () => {
     renderWithProviders(<POSSystem />, {
       useMemoryRouter: true,
       initialEntries: ['/'],
-      preloadedState: createAuthState(managerUser as any, true),
+      preloadedState: createAuthState({ ...managerUser, isActive: true }, true),
     });
 
     expect(screen.getByTestId('pos-dashboard')).toBeInTheDocument();
@@ -33,7 +33,7 @@ describe('POSSystem (router)', () => {
     renderWithProviders(<POSSystem />, {
       useMemoryRouter: true,
       initialEntries: ['/history'],
-      preloadedState: createAuthState(managerUser as any, true),
+      preloadedState: createAuthState({ ...managerUser, isActive: true }, true),
     });
 
     // After redirect, should render dashboard
@@ -44,7 +44,7 @@ describe('POSSystem (router)', () => {
     renderWithProviders(<POSSystem />, {
       useMemoryRouter: true,
       initialEntries: ['/reports'],
-      preloadedState: createAuthState(managerUser as any, true),
+      preloadedState: createAuthState({ ...managerUser, isActive: true }, true),
     });
 
     expect(screen.getByTestId('pos-dashboard')).toBeInTheDocument();
@@ -54,7 +54,7 @@ describe('POSSystem (router)', () => {
     renderWithProviders(<POSSystem />, {
       useMemoryRouter: true,
       initialEntries: ['/unknown-route'],
-      preloadedState: createAuthState(managerUser as any, true),
+      preloadedState: createAuthState({ ...managerUser, isActive: true }, true),
     });
 
     expect(screen.getByTestId('pos-dashboard')).toBeInTheDocument();

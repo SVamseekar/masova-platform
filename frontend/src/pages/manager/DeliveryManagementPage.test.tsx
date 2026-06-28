@@ -41,8 +41,8 @@ vi.mock('@/components/common/FilterBar', () => ({
 }));
 
 vi.mock('@/utils/filterUtils', () => ({
-  applyFilters: vi.fn((data: any[]) => data),
-  applySort: vi.fn((data: any[]) => data),
+  applyFilters: vi.fn((data: unknown[]) => data),
+  applySort: vi.fn((data: unknown[]) => data),
   exportToCSV: vi.fn(),
   commonFilters: { searchText: vi.fn() },
 }));

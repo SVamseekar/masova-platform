@@ -1,5 +1,6 @@
 package com.MaSoVa.core.user.service;
 
+import com.MaSoVa.shared.http.HttpMethods;
 import com.MaSoVa.shared.entity.User;
 import com.MaSoVa.shared.enums.UserType;
 import com.MaSoVa.shared.util.PiiMasker;
@@ -7,18 +8,16 @@ import com.MaSoVa.core.user.dto.LoginRequest;
 import com.MaSoVa.core.user.dto.LoginResponse;
 import com.MaSoVa.core.user.dto.UserCreateRequest;
 import com.MaSoVa.core.user.dto.UserResponse;
-import com.MaSoVa.core.user.entity.UserAuthProviderEntity;
 import com.MaSoVa.core.user.entity.UserEntity;
 import com.MaSoVa.core.user.repository.UserJpaRepository;
 import com.MaSoVa.core.user.repository.UserRepository;
-import com.MaSoVa.core.user.repository.WorkingSessionRepository;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -48,10 +47,6 @@ public class UserService {
     /** Phase 2 dual-write: PostgreSQL secondary write (non-blocking). MongoDB remains primary. */
     @Autowired
     private UserJpaRepository userJpaRepository;
-
-    @SuppressWarnings("unused")
-    @Autowired
-    private WorkingSessionRepository sessionRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -167,8 +162,8 @@ public class UserService {
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(customerRequest, headers);
 
         String url = customerServiceUrl + "/api/customers";
-        @SuppressWarnings("rawtypes")
-        ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
+        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                url, HttpMethods.POST, request, new ParameterizedTypeReference<>() {});
 
         if (response.getStatusCode().is2xxSuccessful()) {
             logger.info("Customer profile created successfully for user: {}", user.getId());
@@ -510,15 +505,32 @@ public class UserService {
     }
     
     /**
-     * WARNING: This method loads all users - should use pagination in production
-     * Consider using getUsersByType() or getStoreEmployees() for filtered queries
+     * List active employees. Prefer filtered queries via getUsersByType() or getStoreEmployees().
      */
-    @Deprecated
-    public List<UserResponse> getAllUsers() {
-        // For now, limit to active employees only to reduce memory footprint
+    public List<UserResponse> listActiveEmployees() {
         return userRepository.findAllActiveEmployees().stream()
                 .map(this::mapToUserResponse)
                 .toList();
+    }
+
+    /**
+     * @deprecated Use {@link #listActiveEmployees()} or filtered query methods instead.
+     */
+    @Deprecated
+    public List<UserResponse> getAllUsers() {
+        return listActiveEmployees();
+    }
+
+    /**
+     * Resolve the store ID for an employee (required for store-scoped PIN generation).
+     */
+    public String resolveEmployeeStoreId(String userId) {
+        User user = getUserById(userId);
+        if (!user.isEmployee() || user.getEmployeeDetails() == null
+                || user.getEmployeeDetails().getStoreId() == null) {
+            throw new RuntimeException("Employee must be assigned to a store before generating PIN");
+        }
+        return user.getEmployeeDetails().getStoreId();
     }
 
     public List<UserResponse> getUsersByType(UserType type) {

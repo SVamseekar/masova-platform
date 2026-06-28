@@ -1,5 +1,6 @@
 package com.MaSoVa.core.user.client;
 
+import com.MaSoVa.shared.http.HttpMethods;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 import org.slf4j.Logger;
@@ -59,7 +60,7 @@ public class DeliveryServiceClient {
 
             ResponseEntity<Void> response = restTemplate.exchange(
                 url,
-                HttpMethod.POST,
+                HttpMethods.POST,
                 entity,
                 Void.class
             );
