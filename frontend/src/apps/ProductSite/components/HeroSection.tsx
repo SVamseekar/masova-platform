@@ -121,7 +121,7 @@ function EyebrowBadge() {
 
 function Headline() {
   return (
-    <div style={{ marginBottom: 24 }}>
+    <h1 style={{ margin: 0, marginBottom: 24, fontWeight: 800, lineHeight: 1 }}>
       <motion.div
         variants={headlineVariant(0.05)}
         initial="initial"
@@ -161,7 +161,7 @@ function Headline() {
           Built for Growth.
         </span>
       </motion.div>
-    </div>
+    </h1>
   )
 }
 
