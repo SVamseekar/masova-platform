@@ -38,10 +38,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String jwt = getJwtFromRequest(request);
             if ("/api/payments/initiate".equals(request.getRequestURI())) {
-                java.util.List<String> authHeaders = java.util.Collections.list(request.getHeaders("Authorization"));
+                int authHeaderCount = java.util.Collections.list(request.getHeaders("Authorization")).size();
                 System.err.println("[PACT-DEBUG] " + request.getMethod() + " " + request.getRequestURI()
-                        + " authHeaderCount=" + authHeaders.size() + " authHeaders=" + authHeaders
-                        + " parsedJwt=" + jwt
+                        + " authHeaderCount=" + authHeaderCount
+                        + " hasJwt=" + StringUtils.hasText(jwt)
                         + " validates=" + (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)));
             }
 
