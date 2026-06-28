@@ -1,7 +1,22 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, type RenderOptions } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
+import cartReducer from '../../../../store/slices/cartSlice';
 import { DeliveryCard } from './DeliveryCard';
+
+function renderDeliveryCard(ui: React.ReactElement, options?: RenderOptions) {
+  const store = configureStore({
+    reducer: { cart: cartReducer },
+  });
+
+  return render(ui, {
+    wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
+    ...options,
+  });
+}
 
 describe('DeliveryCard', () => {
   const defaultProps = {
@@ -24,37 +39,37 @@ describe('DeliveryCard', () => {
   });
 
   it('renders without crashing', () => {
-    render(<DeliveryCard {...defaultProps} />);
+    renderDeliveryCard(<DeliveryCard {...defaultProps} />);
     expect(screen.getByText('#ORD-001')).toBeInTheDocument();
   });
 
   it('displays the order number', () => {
-    render(<DeliveryCard {...defaultProps} />);
+    renderDeliveryCard(<DeliveryCard {...defaultProps} />);
     expect(screen.getByText('#ORD-001')).toBeInTheDocument();
   });
 
   it('displays the order amount with currency symbol', () => {
-    render(<DeliveryCard {...defaultProps} />);
+    renderDeliveryCard(<DeliveryCard {...defaultProps} />);
     expect(screen.getByText('₹39.07')).toBeInTheDocument();
   });
 
   it('displays the customer name', () => {
-    render(<DeliveryCard {...defaultProps} />);
+    renderDeliveryCard(<DeliveryCard {...defaultProps} />);
     expect(screen.getByText('Test Customer')).toBeInTheDocument();
   });
 
   it('displays the customer phone', () => {
-    render(<DeliveryCard {...defaultProps} />);
+    renderDeliveryCard(<DeliveryCard {...defaultProps} />);
     expect(screen.getByText('555-1234')).toBeInTheDocument();
   });
 
   it('displays the delivery address', () => {
-    render(<DeliveryCard {...defaultProps} />);
+    renderDeliveryCard(<DeliveryCard {...defaultProps} />);
     expect(screen.getByText('42 Curry Lane, Hyderabad')).toBeInTheDocument();
   });
 
   it('displays order items', () => {
-    render(<DeliveryCard {...defaultProps} />);
+    renderDeliveryCard(<DeliveryCard {...defaultProps} />);
     expect(screen.getByText('Margherita Pizza')).toBeInTheDocument();
     expect(screen.getByText('x2')).toBeInTheDocument();
     expect(screen.getByText('Garlic Bread')).toBeInTheDocument();
@@ -62,7 +77,7 @@ describe('DeliveryCard', () => {
   });
 
   it('renders Navigate, Contact, and Complete action buttons', () => {
-    render(<DeliveryCard {...defaultProps} />);
+    renderDeliveryCard(<DeliveryCard {...defaultProps} />);
     expect(screen.getByText('Navigate')).toBeInTheDocument();
     expect(screen.getByText('Contact')).toBeInTheDocument();
     expect(screen.getByText('Complete')).toBeInTheDocument();
@@ -70,7 +85,7 @@ describe('DeliveryCard', () => {
 
   it('calls onNavigate when Navigate button is clicked', async () => {
     const user = userEvent.setup();
-    render(<DeliveryCard {...defaultProps} />);
+    renderDeliveryCard(<DeliveryCard {...defaultProps} />);
 
     await user.click(screen.getByText('Navigate'));
     expect(defaultProps.onNavigate).toHaveBeenCalledTimes(1);
@@ -78,7 +93,7 @@ describe('DeliveryCard', () => {
 
   it('calls onContact when Contact button is clicked', async () => {
     const user = userEvent.setup();
-    render(<DeliveryCard {...defaultProps} />);
+    renderDeliveryCard(<DeliveryCard {...defaultProps} />);
 
     await user.click(screen.getByText('Contact'));
     expect(defaultProps.onContact).toHaveBeenCalledTimes(1);
@@ -86,7 +101,7 @@ describe('DeliveryCard', () => {
 
   it('calls onComplete when Complete button is clicked', async () => {
     const user = userEvent.setup();
-    render(<DeliveryCard {...defaultProps} />);
+    renderDeliveryCard(<DeliveryCard {...defaultProps} />);
 
     await user.click(screen.getByText('Complete'));
     expect(defaultProps.onComplete).toHaveBeenCalledTimes(1);
@@ -100,7 +115,7 @@ describe('DeliveryCard', () => {
       { name: 'Fries', quantity: 3 },
     ];
 
-    render(<DeliveryCard {...defaultProps} items={manyItems} />);
+    renderDeliveryCard(<DeliveryCard {...defaultProps} items={manyItems} />);
     expect(screen.getByText('Pizza')).toBeInTheDocument();
     expect(screen.getByText('Burger')).toBeInTheDocument();
     // The extra items text should show
@@ -115,7 +130,7 @@ describe('DeliveryCard', () => {
       { name: 'Salad', quantity: 1 },
     ];
 
-    render(<DeliveryCard {...defaultProps} items={manyItems} />);
+    renderDeliveryCard(<DeliveryCard {...defaultProps} items={manyItems} />);
 
     // Click to expand
     await user.click(screen.getByText(/\+1 more item/));
@@ -131,7 +146,7 @@ describe('DeliveryCard', () => {
       { name: 'Burger', quantity: 2 },
     ];
 
-    render(<DeliveryCard {...defaultProps} items={fewItems} />);
+    renderDeliveryCard(<DeliveryCard {...defaultProps} items={fewItems} />);
     expect(screen.queryByText(/more item/)).not.toBeInTheDocument();
   });
 
@@ -142,7 +157,7 @@ describe('DeliveryCard', () => {
       { name: 'Salad', quantity: 1 },
     ];
 
-    render(<DeliveryCard {...defaultProps} items={manyItems} expanded={true} />);
+    renderDeliveryCard(<DeliveryCard {...defaultProps} items={manyItems} expanded={true} />);
     expect(screen.getByText('Salad')).toBeInTheDocument();
     expect(screen.getByText('Show less')).toBeInTheDocument();
   });
