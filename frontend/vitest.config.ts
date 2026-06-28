@@ -43,6 +43,8 @@ export default defineConfig({
     include: ['**/*.{test,spec}.{ts,tsx}'],
 
     // Exclude files
+    // src/pact is excluded here: it has its own runner (vitest.pact.config.ts,
+    // `npm run test:pact`) that skips MSW setup — see that file for why.
     exclude: [
       'node_modules',
       'dist',
@@ -50,6 +52,7 @@ export default defineConfig({
       '.git',
       '.cache',
       'tests/**',
+      'src/pact/**',
     ],
 
     // Test timeout

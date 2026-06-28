@@ -1,136 +1,91 @@
 /**
- * Auto-generated Pact Contract Test for PaymentService
- * Generated: 2026-01-18T15:55:55.666Z
+ * Pact Contract Test: Payment Service
+ * Defines the contract between the frontend and payment-service.
  *
- * This test ensures the frontend and backend API contracts match.
- * DO NOT EDIT MANUALLY - Regenerate using automated-testing-suite.js
+ * Provider states here must match the @State annotations in
+ * payment-service/src/test/java/com/MaSoVa/payment/contract/PaymentPactVerificationIT.java
  */
 
-import { pactWith } from 'jest-pact';
-import { like } from '@pact-foundation/pact/src/dsl/matchers';
+import { PactV3, MatchersV3 } from '@pact-foundation/pact';
+import path from 'path';
+import axios from 'axios';
 
-pactWith(
-  {
-    consumer: 'MaSoVa-Frontend',
-    provider: 'PaymentService',
-    port: 8086,
-  },
-  (interaction) => {
+const { like, regex } = MatchersV3;
 
-    test('markAsReconciled', async () => {
-      await interaction
-        .given('payment-service is available')
-        .uponReceiving('POST request to /api/payments/{transactionId}/reconcile')
-        .withRequest({
-          method: 'POST',
-          path: '/api/payments/{transactionId}/reconcile',
-          headers: { 'Content-Type': 'application/json' },
-        })
-        .willRespondWith({
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-          body: like({
-            // Auto-generated from OpenAPI schema
-            data: {}
-          }),
-        });
+const provider = new PactV3({
+  consumer: 'masova-frontend',
+  provider: 'payment-service',
+  dir: path.resolve(process.cwd(), 'pacts'),
+});
 
-      // Verify interaction
-      const _baseUrl = interaction.mockService.baseUrl;
-      // TODO: Add actual API call verification
-    });
-
-    test('markAsReconciled_1', async () => {
-      await interaction
-        .given('payment-service is available')
-        .uponReceiving('POST request to /api/v1/payments/{transactionId}/reconcile')
-        .withRequest({
-          method: 'POST',
-          path: '/api/v1/payments/{transactionId}/reconcile',
-          headers: { 'Content-Type': 'application/json' },
-        })
-        .willRespondWith({
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-          body: like({
-            // Auto-generated from OpenAPI schema
-            data: {}
-          }),
-        });
-
-      // Verify interaction
-      const _baseUrl = interaction.mockService.baseUrl;
-      // TODO: Add actual API call verification
-    });
-
-    test('verifyPayment', async () => {
-      await interaction
-        .given('payment-service is available')
-        .uponReceiving('POST request to /api/payments/verify')
-        .withRequest({
-          method: 'POST',
-          path: '/api/payments/verify',
-          headers: { 'Content-Type': 'application/json' },
-        })
-        .willRespondWith({
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-          body: like({
-            // Auto-generated from OpenAPI schema
-            data: {}
-          }),
-        });
-
-      // Verify interaction
-      const _baseUrl = interaction.mockService.baseUrl;
-      // TODO: Add actual API call verification
-    });
-
-    test('verifyPayment_1', async () => {
-      await interaction
-        .given('payment-service is available')
-        .uponReceiving('POST request to /api/v1/payments/verify')
-        .withRequest({
-          method: 'POST',
-          path: '/api/v1/payments/verify',
-          headers: { 'Content-Type': 'application/json' },
-        })
-        .willRespondWith({
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-          body: like({
-            // Auto-generated from OpenAPI schema
-            data: {}
-          }),
-        });
-
-      // Verify interaction
-      const _baseUrl = interaction.mockService.baseUrl;
-      // TODO: Add actual API call verification
-    });
-
-    test('initiatePayment', async () => {
-      await interaction
-        .given('payment-service is available')
-        .uponReceiving('POST request to /api/payments/initiate')
+describe('Payment Service Contract Tests', () => {
+  describe('POST /api/payments/initiate', () => {
+    it('initiates a payment successfully', async () => {
+      provider
+        .given('payment service is available')
+        .uponReceiving('a request to initiate a payment')
         .withRequest({
           method: 'POST',
           path: '/api/payments/initiate',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: regex(/^Bearer .+$/, 'Bearer test-token'),
+          },
+          body: {
+            orderId: like('ORDER-PACT-1'),
+            amount: like(450.0),
+            paymentMethod: like('CARD'),
+          },
         })
         .willRespondWith({
           status: 200,
           headers: { 'Content-Type': 'application/json' },
-          body: like({
-            // Auto-generated from OpenAPI schema
-            data: {}
-          }),
+          body: {
+            transactionId: like('TXN-PACT-1'),
+            status: like('PENDING'),
+          },
         });
 
-      // Verify interaction
-      const _baseUrl = interaction.mockService.baseUrl;
-      // TODO: Add actual API call verification
+      await provider.executeTest(async (mockServer) => {
+        const response = await axios.post(
+          `${mockServer.url}/api/payments/initiate`,
+          { orderId: 'ORDER-PACT-1', amount: 450.0, paymentMethod: 'CARD' },
+          { headers: { Authorization: 'Bearer test-token', 'Content-Type': 'application/json' } }
+        );
+        expect(response.status).toBe(200);
+        expect(response.data.transactionId).toBeDefined();
+      });
     });
+  });
 
-  }
-);
+  describe('GET /api/payments/{transactionId}', () => {
+    it('returns payment status successfully', async () => {
+      provider
+        .given('payment service is available')
+        .uponReceiving('a request to get payment status')
+        .withRequest({
+          method: 'GET',
+          path: '/api/payments/TXN-PACT-1',
+          headers: {
+            Authorization: regex(/^Bearer .+$/, 'Bearer test-token'),
+          },
+        })
+        .willRespondWith({
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+          body: {
+            transactionId: 'TXN-PACT-1',
+            status: like('SUCCESS'),
+          },
+        });
+
+      await provider.executeTest(async (mockServer) => {
+        const response = await axios.get(`${mockServer.url}/api/payments/TXN-PACT-1`, {
+          headers: { Authorization: 'Bearer test-token' },
+        });
+        expect(response.status).toBe(200);
+        expect(response.data.transactionId).toBe('TXN-PACT-1');
+      });
+    });
+  });
+});
