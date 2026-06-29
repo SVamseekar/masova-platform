@@ -17,8 +17,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import com.MaSoVa.shared.messaging.events.OrderCreatedEvent;
-import com.MaSoVa.shared.messaging.events.OrderStatusChangedEvent;
+
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -95,11 +94,10 @@ public class CustomerNotificationService {
 
             // [AMQP] Dual-publish status change event
             try {
-                orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
-                    order.getId(), order.getCustomerId(),
+                orderEventPublisher.publishOrderStatusChanged(OrderEventBuilder.buildStatusChangedEvent(
+                    order,
                     previousStatus != null ? previousStatus.name() : null,
-                    order.getStatus() != null ? order.getStatus().name() : null,
-                    order.getStoreId()
+                    order.getStatus() != null ? order.getStatus().name() : null
                 ));
             } catch (Exception e) {
                 log.warn("[AMQP] dual-publish status change failed for order {}: {}", order.getId(), e.getMessage());
@@ -803,11 +801,7 @@ public class CustomerNotificationService {
 
             // [AMQP] Dual-publish order created event
             try {
-                orderEventPublisher.publishOrderCreated(new OrderCreatedEvent(
-                    order.getId(), order.getCustomerId(), order.getStoreId(),
-                    order.getOrderType() != null ? order.getOrderType().name() : "UNKNOWN",
-                    order.getTotal(), "INR"
-                ));
+                orderEventPublisher.publishOrderCreated(OrderEventBuilder.buildOrderCreatedEvent(order));
             } catch (Exception e) {
                 log.warn("[AMQP] dual-publish failed for order {}: {}", order.getId(), e.getMessage());
             }

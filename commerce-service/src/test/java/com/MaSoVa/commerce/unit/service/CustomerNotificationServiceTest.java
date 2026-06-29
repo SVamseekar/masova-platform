@@ -5,6 +5,7 @@ import com.MaSoVa.commerce.order.entity.Order.OrderStatus;
 import com.MaSoVa.commerce.order.entity.Order.OrderType;
 import com.MaSoVa.commerce.order.service.CustomerNotificationService;
 import com.MaSoVa.commerce.order.service.OrderEventPublisher;
+import com.MaSoVa.shared.messaging.events.OrderStatusChangedEvent;
 import com.MaSoVa.commerce.order.websocket.OrderWebSocketController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,8 @@ import java.math.BigDecimal;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import org.mockito.ArgumentCaptor;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -96,6 +99,23 @@ class CustomerNotificationServiceTest {
         notificationService.sendOrderStatusNotification(order, OrderStatus.BAKED);
 
         verify(orderEventPublisher).publishOrderStatusChanged(any());
+    }
+
+    @Test
+    void sendOrderStatusNotification_publishes_vat_fields_on_amqp_event() {
+        Order order = buildOrder("o1", OrderStatus.DISPATCHED, OrderType.DELIVERY);
+        order.setVatCountryCode("DE");
+        order.setTotalVatAmount(BigDecimal.valueOf(1.90));
+        order.setCurrency("EUR");
+
+        notificationService.sendOrderStatusNotification(order, OrderStatus.BAKED);
+
+        ArgumentCaptor<OrderStatusChangedEvent> captor = ArgumentCaptor.forClass(OrderStatusChangedEvent.class);
+        verify(orderEventPublisher).publishOrderStatusChanged(captor.capture());
+        OrderStatusChangedEvent event = captor.getValue();
+        assertThat(event.getVatCountryCode()).isEqualTo("DE");
+        assertThat(event.getTotalVatAmount().doubleValue()).isCloseTo(1.90, org.assertj.core.data.Offset.offset(0.01));
+        assertThat(event.getCurrency()).isEqualTo("EUR");
     }
 
     @Test

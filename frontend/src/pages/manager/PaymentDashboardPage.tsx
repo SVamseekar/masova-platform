@@ -105,6 +105,12 @@ const PaymentDashboardPage: React.FC = () => {
   const isSuccessfulPayment = (p: OrderPaymentRecord) =>
     p.status === 'SUCCESS' || (p.paymentMethod === 'CASH' && p.status === 'PENDING');
 
+  const orderById = new Map(selectedDateOrders.map((order) => [order.id, order]));
+  const totalVatCollected = selectedDateOrders.reduce(
+    (sum, order) => sum + (order.totalVatAmount ?? 0),
+    0
+  );
+
   const customReport = selectedDate === 'all' ? {
     totalTransactions: orderPayments.length,
     successfulTransactions: orderPayments.filter(isSuccessfulPayment).length,
@@ -113,6 +119,7 @@ const PaymentDashboardPage: React.FC = () => {
     refundedTransactions: 0,
     unreconciledCount: orderPayments.filter((p) => p.status === 'PENDING' && p.paymentMethod !== 'CASH').length,
     netAmount: orderPayments.filter(isSuccessfulPayment).reduce((sum, p) => sum + (p.amount || 0), 0),
+    totalVatCollected,
     paymentMethodBreakdown: orderPayments.reduce((acc: Record<string, number>, p) => {
       const method = p.paymentMethod || 'CASH';
       if (isSuccessfulPayment(p)) {
@@ -345,6 +352,14 @@ const PaymentDashboardPage: React.FC = () => {
                 <div style={statValueStyles}>{displayReport.unreconciledCount}</div>
                 <div style={statSubtextStyles}>Needs reconciliation</div>
               </Card>
+
+              {'totalVatCollected' in displayReport && displayReport.totalVatCollected > 0 && (
+                <Card elevation="md" padding="lg" style={statCardStyles}>
+                  <div style={statLabelStyles}>VAT Collected</div>
+                  <div style={statValueStyles}>{fmt(displayReport.totalVatCollected)}</div>
+                  <div style={statSubtextStyles}>EU store orders in period</div>
+                </Card>
+              )}
             </div>
 
             {/* Payment Method Breakdown */}
@@ -388,6 +403,7 @@ const PaymentDashboardPage: React.FC = () => {
                   <th style={tableHeaderStyles}>Order Number</th>
                   <th style={tableHeaderStyles}>Customer</th>
                   <th style={tableHeaderStyles}>Amount</th>
+                  <th style={tableHeaderStyles}>VAT</th>
                   <th style={tableHeaderStyles}>Method</th>
                   <th style={tableHeaderStyles}>Gateway</th>
                   <th style={tableHeaderStyles}>Method Type</th>
@@ -407,6 +423,12 @@ const PaymentDashboardPage: React.FC = () => {
                     <td style={tableCellStyles}>{txn.customerName || txn.customerEmail || 'Walk-in'}</td>
                     <td style={{ ...tableCellStyles, fontWeight: typography.fontWeight.semibold }}>
                       {fmt(txn.amount || 0)}
+                    </td>
+                    <td style={tableCellStyles}>
+                      {(() => {
+                        const order = orderById.get(txn.orderId || txn.id || '');
+                        return order?.totalVatAmount != null ? fmt(order.totalVatAmount) : '—';
+                      })()}
                     </td>
                     <td style={tableCellStyles}>{txn.paymentMethod || 'N/A'}</td>
                     <td style={tableCellStyles}>{txn.paymentGateway || 'RAZORPAY'}</td>

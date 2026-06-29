@@ -1,7 +1,16 @@
 import React from 'react';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import { removeFromCart, updateItemQuantity, clearCart, selectDeliveryFee, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import {
+  removeFromCart,
+  updateItemQuantity,
+  clearCart,
+  selectDeliveryFee,
+  selectCartCurrency,
+  selectCartLocale,
+  selectStoreCountryCode,
+} from '../../store/slices/cartSlice';
 import { formatMoney } from '../../utils/currency';
+import { computePreCheckoutTotals, formatTaxDisplay } from '../../utils/orderTax';
 
 interface CartPageProps {
   onContinueShopping: () => void;
@@ -13,12 +22,13 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
   const cartItems = useAppSelector(state => state.cart.items);
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
+  const storeCountryCode = useAppSelector(selectStoreCountryCode);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
 
   const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
   const reduxDeliveryFee = useAppSelector(selectDeliveryFee);
   const deliveryFee = subtotal > 0 ? reduxDeliveryFee : 0;
-  const tax = subtotal * 0.05;
-  const total = subtotal + deliveryFee + tax;
+  const { tax, taxLabel, total } = computePreCheckoutTotals(subtotal, deliveryFee, storeCountryCode);
 
   const handleRemove = (id: string) => dispatch(removeFromCart(id));
   const handleClearAll = () => dispatch(clearCart());
@@ -200,9 +210,9 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
               {[
-                { label: 'Subtotal', value: formatMoney(Math.round(subtotal * 100), currency, locale) },
-                { label: 'Delivery Fee', value: formatMoney(Math.round(deliveryFee * 100), currency, locale) },
-                { label: 'Tax (5%)', value: formatMoney(Math.round(tax * 100), currency, locale) },
+                { label: 'Subtotal', value: fmt(subtotal) },
+                { label: 'Delivery Fee', value: fmt(deliveryFee) },
+                { label: taxLabel, value: formatTaxDisplay(tax, fmt) },
               ].map(row => (
                 <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-3)' }}>{row.label}</span>

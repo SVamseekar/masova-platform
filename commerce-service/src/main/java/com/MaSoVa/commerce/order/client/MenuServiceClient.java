@@ -1,6 +1,7 @@
 package com.MaSoVa.commerce.order.client;
 
 import com.MaSoVa.commerce.menu.service.MenuService;
+import com.MaSoVa.commerce.order.service.VatCategoryMapper;
 import com.MaSoVa.shared.entity.MenuItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +57,21 @@ public class MenuServiceClient {
         } catch (Exception e) {
             log.warn("Failed to validate price for {}: {} — failing open", menuItemId, e.getMessage());
             return true;
+        }
+    }
+
+    /**
+     * Resolve VAT routing category (FOOD, BEVERAGE, ALCOHOL) from menu metadata.
+     * Fails-open: returns FOOD if item not found.
+     */
+    public String resolveVatCategory(String menuItemId) {
+        try {
+            Optional<MenuItem> item = menuService.getMenuItemById(menuItemId);
+            return item.map(VatCategoryMapper::fromMenuItem).orElse("FOOD");
+        } catch (Exception e) {
+            log.warn("Failed to resolve VAT category for {}: {} — defaulting to FOOD",
+                    menuItemId, e.getMessage());
+            return "FOOD";
         }
     }
 

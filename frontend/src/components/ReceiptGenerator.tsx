@@ -21,6 +21,8 @@ export default function ReceiptGenerator({ open, onClose, receiptData }: Receipt
     items,
     subtotal,
     tax,
+    taxLabel = 'Tax (5% GST)',
+    vatLines,
     deliveryFee,
     total,
     paymentMethod,
@@ -193,10 +195,17 @@ export default function ReceiptGenerator({ open, onClose, receiptData }: Receipt
               <Typography variant="body2">Subtotal:</Typography>
               <Typography variant="body2">{fmt(subtotal)}</Typography>
             </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-              <Typography variant="body2">Tax (5%):</Typography>
-              <Typography variant="body2">{fmt(tax)}</Typography>
-            </Box>
+            {vatLines && vatLines.length > 0 ? vatLines.map((line) => (
+              <Box key={line.itemName} sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                <Typography variant="body2">{line.itemName} ({line.vatRate}% VAT):</Typography>
+                <Typography variant="body2">{fmt(line.vatAmount)}</Typography>
+              </Box>
+            )) : (
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                <Typography variant="body2">{taxLabel}:</Typography>
+                <Typography variant="body2">{tax === 0 ? '—' : fmt(tax)}</Typography>
+              </Box>
+            )}
             {deliveryFee > 0 && (
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                 <Typography variant="body2">Delivery Fee:</Typography>

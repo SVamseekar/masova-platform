@@ -175,6 +175,31 @@ class OrderServiceEuVatTest {
     }
 
     @Test
+    void EU_store_enriches_missing_category_from_menu_for_beverage_vat() {
+        when(storeServiceClient.getStore("store-de-001")).thenReturn(buildDeStore());
+        when(menuServiceClient.resolveVatCategory("item-beer")).thenReturn("ALCOHOL");
+
+        CreateOrderRequest.OrderItemRequest item = new CreateOrderRequest.OrderItemRequest();
+        item.setMenuItemId("item-beer");
+        item.setName("House Lager");
+        item.setQuantity(1);
+        item.setPrice(10.0);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setCustomerName("Hans Müller");
+        request.setCustomerPhone("4915112345678");
+        request.setStoreId("store-de-001");
+        request.setOrderType(Order.OrderType.TAKEAWAY);
+        request.setPaymentMethod(Order.PaymentMethod.CARD);
+        request.setItems(List.of(item));
+
+        Order result = orderService.createOrder(request);
+
+        assertThat(result.getItems().get(0).getCategory()).isEqualTo("ALCOHOL");
+        assertThat(result.getTotalVatAmount().doubleValue()).isCloseTo(1.90, within(0.01));
+    }
+
+    @Test
     void India_store_without_countryCode_still_uses_GST() {
         Store indiaStore = new Store("Mumbai Store", "DOM001", null, "9876543210");
         when(storeServiceClient.getStore("store-001")).thenReturn(indiaStore);
