@@ -14,4 +14,6 @@ export interface OrderPaymentRecord {
   transactionId?: string;
   paymentGateway?: string;
   paymentMethodType?: string;
+  currency?: string;
+  stripeFeeMinorUnits?: number;
 }

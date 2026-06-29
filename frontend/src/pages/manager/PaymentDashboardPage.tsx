@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import {formatMoney, formatMajorAmount} from '../../utils/currency';
+import { formatMoney, formatMajorAmount } from '../../utils/currency';
+import type { PaymentResponse } from '../../store/api/paymentApi';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import { usePageStore } from '../../hooks/usePageStore';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
@@ -33,7 +34,7 @@ const PaymentDashboardPage: React.FC = () => {
 
   // Fetch today's transactions
   // Pass storeId to trigger refetch when store changes
-  const { data: _transactions = [] } =
+  const { data: transactions = [] } =
     useGetTransactionsByStoreIdQuery(storeId, {
       skip: !storeId,
       pollingInterval: 30000, // Poll every 30 seconds
@@ -69,36 +70,52 @@ const PaymentDashboardPage: React.FC = () => {
         return orderDate === selectedDate;
       });
 
-  // Create payment records from ALL orders (not just CASH)
-  // This allows tracking of all payment methods including CASH
+  const txnByOrderId = new Map(transactions.map((t: PaymentResponse) => [t.orderId, t]));
+
+  const mapTxnStatus = (status: PaymentResponse['status']): OrderPaymentRecord['status'] => {
+    if (status === 'SUCCESS') return 'SUCCESS';
+    if (status === 'FAILED' || status === 'CANCELLED') return 'FAILED';
+    if (status === 'REFUNDED' || status === 'PARTIAL_REFUND') return 'REFUNDED';
+    return 'PENDING';
+  };
+
+  const formatStripeFee = (feeMinor: number | undefined, txnCurrency: string): string => {
+    if (feeMinor == null) return '—';
+    return formatMoney(feeMinor, txnCurrency, locale);
+  };
+
+  // Merge order rows with payment-service transactions (Stripe fee, gateway, method type)
   const orderPayments: OrderPaymentRecord[] = selectedDateOrders
-    .map((order: Order) => ({
-      id: order.id,
-      orderId: order.id,
-      orderNumber: order.orderNumber,
-      amount: order.total || order.totalAmount || 0,
-      paymentMethod: order.paymentMethod || 'CASH',
-      status: (order.paymentStatus === 'PAID' ? 'SUCCESS' :
+    .map((order: Order) => {
+      const txn = txnByOrderId.get(order.id);
+      const txnCurrency = txn?.currency ?? currency;
+      return {
+        id: order.id,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        amount: txn?.amount ?? order.total ?? order.totalAmount ?? 0,
+        paymentMethod: txn?.paymentMethod ?? order.paymentMethod ?? 'CASH',
+        status: txn
+          ? mapTxnStatus(txn.status)
+          : ((order.paymentStatus === 'PAID' ? 'SUCCESS' :
               order.paymentStatus === 'FAILED' ? 'FAILED' :
-              'PENDING') as OrderPaymentRecord['status'],
-      createdAt: order.createdAt,
-      customerName: order.customerName,
-      isOrderPayment: true, // Flag to identify order-based payments
-    }));
+              'PENDING') as OrderPaymentRecord['status']),
+        createdAt: order.createdAt,
+        customerName: order.customerName,
+        isOrderPayment: !txn,
+        transactionId: txn?.transactionId,
+        paymentGateway: txn?.paymentGateway ?? (order.paymentMethod === 'CASH' ? 'CASH' : undefined),
+        paymentMethodType: txn?.paymentMethodType,
+        currency: txnCurrency,
+        stripeFeeMinorUnits: txn?.stripeFeeMinorUnits,
+      };
+    });
 
   // For now, just show order payments (which includes all payment methods)
   // In the future, we can deduplicate with actual payment service transactions
   const allPayments = orderPayments.sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
-
-  // Debug: Check payment statuses
-  console.log('[PaymentDashboard] Payment statuses:', orderPayments.map((p) => ({
-    orderNumber: p.orderNumber,
-    status: p.status,
-    amount: p.amount,
-    paymentMethod: p.paymentMethod
-  })));
 
   // Calculate custom metrics from order payments when "all" is selected
   // For revenue calculation: Include SUCCESS payments AND CASH/PENDING (since cash is collected on delivery)
@@ -407,6 +424,7 @@ const PaymentDashboardPage: React.FC = () => {
                   <th style={tableHeaderStyles}>Method</th>
                   <th style={tableHeaderStyles}>Gateway</th>
                   <th style={tableHeaderStyles}>Method Type</th>
+                  <th style={tableHeaderStyles}>Stripe Fee</th>
                   <th style={tableHeaderStyles}>Status</th>
                   <th style={tableHeaderStyles}>Date</th>
                 </tr>
@@ -433,6 +451,9 @@ const PaymentDashboardPage: React.FC = () => {
                     <td style={tableCellStyles}>{txn.paymentMethod || 'N/A'}</td>
                     <td style={tableCellStyles}>{txn.paymentGateway || 'RAZORPAY'}</td>
                     <td style={tableCellStyles}>{txn.paymentMethodType || '—'}</td>
+                    <td style={tableCellStyles}>
+                      {formatStripeFee(txn.stripeFeeMinorUnits, txn.currency ?? currency)}
+                    </td>
                     <td style={tableCellStyles}>
                       <span style={statusBadgeStyles(txn.status)}>{txn.status}</span>
                     </td>

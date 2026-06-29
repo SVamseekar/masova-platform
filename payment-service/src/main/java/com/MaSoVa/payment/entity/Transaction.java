@@ -75,6 +75,9 @@ public class Transaction {
     /** Stripe platform fee in minor units (cents, pence). Null for Razorpay and non-Stripe. */
     private Long stripeFeeMinorUnits;
 
+    /** Gateway-specific method type: card, ideal, upi, etc. */
+    private String paymentMethodType;
+
     // Timestamps
     @CreatedDate
     @Indexed
@@ -160,6 +163,9 @@ public class Transaction {
     public Long getStripeFeeMinorUnits() { return stripeFeeMinorUnits; }
     public void setStripeFeeMinorUnits(Long stripeFeeMinorUnits) { this.stripeFeeMinorUnits = stripeFeeMinorUnits; }
 
+    public String getPaymentMethodType() { return paymentMethodType; }
+    public void setPaymentMethodType(String paymentMethodType) { this.paymentMethodType = paymentMethodType; }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
@@ -193,6 +199,21 @@ public class Transaction {
 
         public Builder razorpayOrderId(String razorpayOrderId) {
             transaction.razorpayOrderId = razorpayOrderId;
+            return this;
+        }
+
+        public Builder paymentGateway(String paymentGateway) {
+            transaction.paymentGateway = paymentGateway;
+            return this;
+        }
+
+        public Builder stripePaymentIntentId(String stripePaymentIntentId) {
+            transaction.stripePaymentIntentId = stripePaymentIntentId;
+            return this;
+        }
+
+        public Builder paymentMethodType(String paymentMethodType) {
+            transaction.paymentMethodType = paymentMethodType;
             return this;
         }
 

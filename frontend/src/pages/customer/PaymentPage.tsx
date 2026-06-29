@@ -252,6 +252,7 @@ const PaymentPage: React.FC = () => {
         orderType: orderType,
         paymentMethod: paymentMethod,
         countryCode: storeCountryCode ?? undefined,
+        currency,
       }).unwrap();
 
       // If Stripe gateway — show Stripe PaymentElement in-page instead of opening Razorpay modal

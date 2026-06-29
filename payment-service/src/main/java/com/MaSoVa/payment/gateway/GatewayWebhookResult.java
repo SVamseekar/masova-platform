@@ -19,15 +19,24 @@ public class GatewayWebhookResult {
     private final String gatewayPaymentId;  // Razorpay payment ID or Stripe charge ID
     private final String failureReason;     // null unless PAYMENT_FAILED / REFUND_FAILED
     private final Long stripeFeeAmountMinor; // Stripe fee in minor units (null for Razorpay)
+    /** Stripe: card, ideal, bancontact, etc. Razorpay: upi, card, netbanking, etc. */
+    private final String paymentMethodType;
 
     public GatewayWebhookResult(EventType eventType, String gatewayOrderId,
                                   String gatewayPaymentId, String failureReason,
                                   Long stripeFeeAmountMinor) {
+        this(eventType, gatewayOrderId, gatewayPaymentId, failureReason, stripeFeeAmountMinor, null);
+    }
+
+    public GatewayWebhookResult(EventType eventType, String gatewayOrderId,
+                                  String gatewayPaymentId, String failureReason,
+                                  Long stripeFeeAmountMinor, String paymentMethodType) {
         this.eventType = eventType;
         this.gatewayOrderId = gatewayOrderId;
         this.gatewayPaymentId = gatewayPaymentId;
         this.failureReason = failureReason;
         this.stripeFeeAmountMinor = stripeFeeAmountMinor;
+        this.paymentMethodType = paymentMethodType;
     }
 
     public EventType getEventType() { return eventType; }
@@ -35,4 +44,5 @@ public class GatewayWebhookResult {
     public String getGatewayPaymentId() { return gatewayPaymentId; }
     public String getFailureReason() { return failureReason; }
     public Long getStripeFeeAmountMinor() { return stripeFeeAmountMinor; }
+    public String getPaymentMethodType() { return paymentMethodType; }
 }

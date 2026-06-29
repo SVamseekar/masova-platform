@@ -6,7 +6,13 @@ import com.MaSoVa.payment.dto.PaymentCallbackRequest;
 import com.MaSoVa.payment.dto.PaymentResponse;
 import com.MaSoVa.payment.dto.ReconciliationReportResponse;
 import com.MaSoVa.payment.entity.Transaction;
+import com.MaSoVa.payment.gateway.GatewayPaymentRequest;
+import com.MaSoVa.payment.gateway.GatewayPaymentResult;
+import com.MaSoVa.payment.gateway.GatewayWebhookResult;
+import com.MaSoVa.payment.gateway.PaymentGateway;
+import com.MaSoVa.payment.gateway.PaymentGatewayResolver;
 import com.MaSoVa.payment.repository.TransactionRepository;
+import com.MaSoVa.payment.util.StoreCurrencyResolver;
 import com.razorpay.Order;
 import com.razorpay.Payment;
 import com.razorpay.RazorpayException;
@@ -46,12 +52,14 @@ public class PaymentService {
     private final PiiEncryptionService encryptionService;
     private final PaymentNotificationService paymentNotificationService;
     private final com.MaSoVa.payment.messaging.PaymentEventPublisher paymentEventPublisher;
+    private final PaymentGatewayResolver paymentGatewayResolver;
 
     public PaymentService(TransactionRepository transactionRepository, RazorpayService razorpayService,
                          OrderServiceClient orderServiceClient, RazorpayConfig razorpayConfig,
                          PiiEncryptionService encryptionService,
                          PaymentNotificationService paymentNotificationService,
-                         com.MaSoVa.payment.messaging.PaymentEventPublisher paymentEventPublisher) {
+                         com.MaSoVa.payment.messaging.PaymentEventPublisher paymentEventPublisher,
+                         PaymentGatewayResolver paymentGatewayResolver) {
         this.transactionRepository = transactionRepository;
         this.razorpayService = razorpayService;
         this.orderServiceClient = orderServiceClient;
@@ -59,6 +67,7 @@ public class PaymentService {
         this.encryptionService = encryptionService;
         this.paymentNotificationService = paymentNotificationService;
         this.paymentEventPublisher = paymentEventPublisher;
+        this.paymentGatewayResolver = paymentGatewayResolver;
     }
 
     /**
@@ -67,8 +76,9 @@ public class PaymentService {
     @Transactional
     public PaymentResponse initiatePayment(InitiatePaymentRequest request) {
         try {
-            log.info("Initiating payment for order: {}, amount: {}, orderType: {}, paymentMethod: {}",
-                     request.getOrderId(), request.getAmount(), request.getOrderType(), request.getPaymentMethod());
+            log.info("Initiating payment for order: {}, amount: {}, orderType: {}, paymentMethod: {}, countryCode: {}",
+                     request.getOrderId(), request.getAmount(), request.getOrderType(), request.getPaymentMethod(),
+                     request.getCountryCode());
 
             // Validate payment method based on order type
             if ("DELIVERY".equals(request.getOrderType()) && "CASH".equals(request.getPaymentMethod())) {
@@ -84,16 +94,29 @@ public class PaymentService {
                 throw new RuntimeException("Payment already completed for this order");
             }
 
+            PaymentGateway gateway = paymentGatewayResolver.resolve(request.getCountryCode());
+
             // Generate receipt number
             String receipt = "RCP_" + UUID.randomUUID().toString().substring(0, 8);
 
-            // Create Razorpay order
-            Order razorpayOrder = razorpayService.createOrder(request.getAmount(), request.getOrderId(), receipt);
+            boolean isIndia = paymentGatewayResolver.isIndiaStore(request.getCountryCode());
+            String currency = isIndia
+                    ? "INR"
+                    : StoreCurrencyResolver.resolveCurrency(request.getCountryCode(), request.getCurrency());
+
+            GatewayPaymentResult gatewayResult = gateway.initiatePayment(new GatewayPaymentRequest(
+                    request.getOrderId(),
+                    request.getAmount(),
+                    currency,
+                    request.getCustomerEmail(),
+                    request.getCustomerPhone(),
+                    request.getCustomerId(),
+                    receipt
+            ));
 
             // Create transaction record with encrypted PII (GDPR compliance)
-            Transaction transaction = Transaction.builder()
+            Transaction.Builder builder = Transaction.builder()
                     .orderId(request.getOrderId())
-                    .razorpayOrderId(razorpayOrder.get("id"))
                     .amount(request.getAmount())
                     .status(Transaction.PaymentStatus.INITIATED)
                     .customerId(request.getCustomerId())
@@ -101,14 +124,20 @@ public class PaymentService {
                     .customerPhone(encryptionService.encrypt(request.getCustomerPhone()))
                     .storeId(request.getStoreId())
                     .receipt(receipt)
-                    .currency("INR")
-                    .reconciled(false)
-                    .build();
+                    .currency(currency)
+                    .paymentGateway(gatewayResult.getGatewayName())
+                    .reconciled(false);
 
-            transaction = Objects.requireNonNull(transactionRepository.save(transaction));
+            if ("STRIPE".equals(gatewayResult.getGatewayName())) {
+                builder.stripePaymentIntentId(gatewayResult.getGatewayOrderId());
+            } else {
+                builder.razorpayOrderId(gatewayResult.getGatewayOrderId());
+            }
 
-            log.info("Payment initiated successfully. Transaction ID: {}, Razorpay Order ID: {}",
-                     transaction.getId(), transaction.getRazorpayOrderId());
+            Transaction transaction = Objects.requireNonNull(transactionRepository.save(builder.build()));
+
+            log.info("Payment initiated successfully. Transaction ID: {}, Gateway: {}, Gateway Order ID: {}",
+                     transaction.getId(), gatewayResult.getGatewayName(), gatewayResult.getGatewayOrderId());
 
             // Build response (return original unencrypted values to client)
             return PaymentResponse.builder()
@@ -123,7 +152,10 @@ public class PaymentService {
                     .storeId(transaction.getStoreId())
                     .currency(transaction.getCurrency())
                     .createdAt(transaction.getCreatedAt())
-                    .razorpayKeyId(razorpayConfig.getKeyId()) // Public key for frontend
+                    .razorpayKeyId(isIndia ? razorpayConfig.getKeyId() : null) // Public key for frontend
+                    .paymentGateway(transaction.getPaymentGateway())
+                    .stripeClientSecret(gatewayResult.getClientSecret())
+                    .stripePublishableKey(isIndia ? null : gatewayResult.getPublishableKey())
                     .build();
 
         } catch (RazorpayException e) {
@@ -152,6 +184,12 @@ public class PaymentService {
             Transaction transaction = transactionRepository.findByRazorpayOrderId(request.getRazorpayOrderId())
                     .orElseThrow(() -> new RuntimeException("Transaction not found for Razorpay order: " +
                                                             request.getRazorpayOrderId()));
+
+            // Stripe transactions confirm via PaymentElement on the frontend + webhook — never via this endpoint
+            if ("STRIPE".equals(transaction.getPaymentGateway())) {
+                throw new IllegalArgumentException(
+                        "Transaction " + transaction.getId() + " uses Stripe — verify via webhook, not /api/payments/verify");
+            }
 
             // IDEMPOTENCY CHECK: If payment already processed successfully, return existing response
             if (transaction.getStatus() == Transaction.PaymentStatus.SUCCESS &&
@@ -266,6 +304,96 @@ public class PaymentService {
             log.error("Error verifying payment", e);
             throw new RuntimeException("Failed to verify payment", e);
         }
+    }
+
+    /**
+     * Handle a normalised Stripe webhook event (called by StripeWebhookController after
+     * signature verification). Stripe retries webhook delivery, so this must be idempotent.
+     */
+    @Transactional
+    public void handleStripeWebhookEvent(GatewayWebhookResult result) {
+        if (result.getGatewayOrderId() == null) {
+            log.warn("Stripe webhook event {} has no PaymentIntent ID — ignoring", result.getEventType());
+            return;
+        }
+
+        Optional<Transaction> transactionOpt = transactionRepository.findByStripePaymentIntentId(result.getGatewayOrderId());
+        if (transactionOpt.isEmpty()) {
+            log.warn("No transaction found for Stripe PaymentIntent {} — ignoring webhook event {}",
+                    result.getGatewayOrderId(), result.getEventType());
+            return;
+        }
+        Transaction transaction = transactionOpt.get();
+
+        switch (result.getEventType()) {
+            case PAYMENT_CAPTURED -> handleStripePaymentCaptured(transaction, result);
+            case PAYMENT_FAILED -> handleStripePaymentFailed(transaction, result);
+            case REFUND_PROCESSED -> {
+                transaction.setStatus(Transaction.PaymentStatus.REFUNDED);
+                transactionRepository.save(transaction);
+                log.info("Stripe refund processed for transaction: {}", transaction.getId());
+            }
+            case REFUND_FAILED -> log.warn("Stripe refund failed for transaction: {}, reason: {}",
+                    transaction.getId(), result.getFailureReason());
+            default -> log.info("Unhandled Stripe webhook event type: {} for transaction: {}",
+                    result.getEventType(), transaction.getId());
+        }
+    }
+
+    private void handleStripePaymentCaptured(Transaction transaction, GatewayWebhookResult result) {
+        if (transaction.getStatus() == Transaction.PaymentStatus.SUCCESS) {
+            log.info("Stripe PaymentIntent {} already processed for transaction: {}. Ignoring duplicate webhook.",
+                    result.getGatewayOrderId(), transaction.getId());
+            return;
+        }
+
+        transaction.setRazorpayPaymentId(result.getGatewayPaymentId()); // reused field holds gateway charge ID
+        transaction.setStatus(Transaction.PaymentStatus.SUCCESS);
+        transaction.setPaidAt(LocalDateTime.now());
+        if (result.getStripeFeeAmountMinor() != null) {
+            transaction.setStripeFeeMinorUnits(result.getStripeFeeAmountMinor());
+        }
+        String methodType = result.getPaymentMethodType() != null ? result.getPaymentMethodType() : "card";
+        transaction.setPaymentMethodType(methodType);
+        transaction.setPaymentMethod(mapStripeMethodType(methodType));
+        transaction = transactionRepository.save(transaction);
+
+        log.info("Stripe payment captured and transaction completed. Transaction ID: {}", transaction.getId());
+
+        orderServiceClient.updateOrderPaymentStatus(transaction.getOrderId(), "PAID", transaction.getId());
+
+        String customerEmail = encryptionService.decrypt(transaction.getCustomerEmail());
+        String customerPhone = encryptionService.decrypt(transaction.getCustomerPhone());
+        paymentNotificationService.sendPaymentSuccessNotification(transaction, customerEmail, customerPhone);
+
+        paymentEventPublisher.publishPaymentCompleted(new PaymentCompletedEvent(
+                transaction.getId(), transaction.getOrderId(), transaction.getCustomerId(),
+                transaction.getAmount(), transaction.getCurrency(), transaction.getPaymentMethod().name(),
+                transaction.getStripePaymentIntentId(), "STRIPE", methodType));
+    }
+
+    private void handleStripePaymentFailed(Transaction transaction, GatewayWebhookResult result) {
+        if (transaction.getStatus() == Transaction.PaymentStatus.FAILED) {
+            log.info("Stripe PaymentIntent {} already marked failed for transaction: {}. Ignoring duplicate webhook.",
+                    result.getGatewayOrderId(), transaction.getId());
+            return;
+        }
+
+        transaction.setStatus(Transaction.PaymentStatus.FAILED);
+        transaction.setErrorCode("STRIPE_PAYMENT_FAILED");
+        transaction.setErrorDescription(result.getFailureReason());
+        transactionRepository.save(transaction);
+
+        log.error("Stripe payment failed for transaction: {}, reason: {}", transaction.getId(), result.getFailureReason());
+
+        String customerEmail = encryptionService.decrypt(transaction.getCustomerEmail());
+        String customerPhone = encryptionService.decrypt(transaction.getCustomerPhone());
+        paymentNotificationService.sendPaymentFailureNotification(
+                transaction, customerEmail, customerPhone, result.getFailureReason());
+
+        paymentEventPublisher.publishPaymentFailed(new PaymentFailedEvent(
+                transaction.getId(), transaction.getOrderId(), transaction.getCustomerId(),
+                transaction.getAmount(), result.getFailureReason(), "STRIPE"));
     }
 
     /**
@@ -485,7 +613,23 @@ public class PaymentService {
                 .currency(transaction.getCurrency())
                 .createdAt(transaction.getCreatedAt())
                 .paidAt(transaction.getPaidAt())
+                .paymentGateway(transaction.getPaymentGateway())
+                .stripeFeeMinorUnits(transaction.getStripeFeeMinorUnits())
+                .paymentMethodType(transaction.getPaymentMethodType())
                 .build();
+    }
+
+    private static Transaction.PaymentMethod mapStripeMethodType(String methodType) {
+        if (methodType == null) {
+            return Transaction.PaymentMethod.CARD;
+        }
+        return switch (methodType.toLowerCase()) {
+            case "card" -> Transaction.PaymentMethod.CARD;
+            case "upi" -> Transaction.PaymentMethod.UPI;
+            case "netbanking" -> Transaction.PaymentMethod.NETBANKING;
+            case "wallet" -> Transaction.PaymentMethod.WALLET;
+            default -> Transaction.PaymentMethod.OTHER;
+        };
     }
 
     /**
