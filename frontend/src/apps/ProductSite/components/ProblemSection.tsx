@@ -1,6 +1,8 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { CheckCircle2, AlertCircle, Clock } from 'lucide-react'
+import SectionLabel from './SectionLabel'
+import { colors } from '../tokens'
 
 const chaosOrders = [
   { id: '#1042', label: 'MISSED', color: '#E53E3E', bg: 'rgba(229,62,62,0.15)', icon: AlertCircle },
@@ -30,9 +32,13 @@ export default function ProblemSection() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-4">
-            Running a restaurant is chaos.{' '}
-            <span style={{ color: '#E53E3E' }}>Until now.</span>
+          <SectionLabel>The problem</SectionLabel>
+          <h2
+            className="text-4xl md:text-5xl font-bold text-white leading-tight mb-4"
+            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+          >
+            Running restaurants is chaos.{' '}
+            <span style={{ color: colors.gold }}>It doesn&apos;t have to be.</span>
           </h2>
           <p className="text-gray-400 text-lg">
             Every shift, the same firefighting. MaSoVa ends it.

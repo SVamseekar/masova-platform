@@ -33,7 +33,7 @@ export default function ScreenshotPanel({
           style={{ background: 'rgba(17,17,17,0.92)', borderBottom: `1px solid ${colors.border}` }}
         >
           <span className="w-2 h-2 rounded-full" style={{ background: accentColor }} />
-          <span className="text-[10px] text-gray-500 font-mono">{label}</span>
+          <span className="text-[10px] text-gray-500">{label}</span>
         </div>
         <img src={src} alt={alt} className="w-full h-full object-cover object-top pt-8" loading="lazy" />
       </motion.div>

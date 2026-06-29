@@ -3,16 +3,15 @@ import './product-site.css'
 import Navbar from './components/Navbar'
 import HeroSection from './components/HeroSection'
 import MarqueeStrip from './components/MarqueeStrip'
+import ProblemSection from './components/ProblemSection'
+import ProductTour from './components/ProductTour'
 import AgentCommandCenter from './components/AgentCommandCenter'
 import AgentDemoTheater from './components/AgentDemoTheater'
 import AgentScrollStory from './components/AgentScrollStory'
-import ProblemSection from './components/ProblemSection'
-import ProductTour from './components/ProductTour'
 import MobileEcosystemSection from './components/MobileEcosystemSection'
 import AggregatorHubSection from './components/AggregatorHubSection'
-import FeaturesGrid from './components/FeaturesGrid'
-import AIAgentsSection from './components/AIAgentsSection'
 import OrderFlowSection from './components/OrderFlowSection'
+import FeaturesGrid from './components/FeaturesGrid'
 import DeveloperSection from './components/DeveloperSection'
 import PricingSection from './components/PricingSection'
 import TestimonialsSection from './components/TestimonialsSection'
@@ -25,16 +24,15 @@ export default function ProductSitePage() {
       <Navbar />
       <HeroSection />
       <MarqueeStrip />
+      <ProblemSection />
+      <ProductTour />
       <AgentCommandCenter />
       <AgentDemoTheater />
       <AgentScrollStory />
-      <ProblemSection />
-      <ProductTour />
       <MobileEcosystemSection />
       <AggregatorHubSection />
-      <AIAgentsSection />
-      <FeaturesGrid />
       <OrderFlowSection />
+      <FeaturesGrid />
       <DeveloperSection />
       <PricingSection />
       <TestimonialsSection />

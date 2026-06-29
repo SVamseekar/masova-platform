@@ -81,7 +81,7 @@ export default function AggregatorHubSection() {
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-white text-sm font-mono">{order.id}</span>
+                      <span className="text-white text-sm">{order.id}</span>
                       <span
                         className="text-[10px] font-bold px-1.5 py-0.5 rounded"
                         style={{ background: `${channel.color}22`, color: channel.color }}

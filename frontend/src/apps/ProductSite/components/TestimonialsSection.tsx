@@ -2,6 +2,8 @@ import React from 'react'
 import { motion } from 'framer-motion'
 import { Quote } from 'lucide-react'
 import { TESTIMONIALS } from '../constants'
+import SectionLabel from './SectionLabel'
+import { colors } from '../tokens'
 
 export default function TestimonialsSection() {
   return (
@@ -13,25 +15,33 @@ export default function TestimonialsSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <p className="text-sm font-medium mb-4 tracking-wide uppercase" style={{ color: '#E53E3E' }}>Testimonials</p>
-          <h2 className="text-4xl md:text-5xl font-bold text-white">Loved by restaurant owners</h2>
+          <SectionLabel>Testimonials</SectionLabel>
+          <h2
+            className="text-4xl md:text-5xl font-bold text-white"
+            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+          >
+            Loved by restaurant owners
+          </h2>
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-6">
           {TESTIMONIALS.map(({ quote, name, role, restaurant, avatar }, i) => (
             <motion.div
               key={name}
-              className="p-6 rounded-2xl bg-[#111111] flex flex-col"
-              style={{ border: '1px solid rgba(255,255,255,0.08)' }}
+              className="p-6 rounded-2xl flex flex-col"
+              style={{ border: `1px solid ${colors.border}`, background: colors.bgElevated }}
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
             >
-              <Quote size={24} style={{ color: '#E53E3E' }} className="mb-4 opacity-60" />
-              <p className="text-gray-300 text-sm leading-relaxed flex-1 mb-6">"{quote}"</p>
+              <Quote size={24} style={{ color: colors.gold }} className="mb-4 opacity-60" />
+              <p className="text-gray-300 text-sm leading-relaxed flex-1 mb-6">&ldquo;{quote}&rdquo;</p>
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0" style={{ background: '#E53E3E' }}>
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
+                  style={{ background: colors.gold, color: colors.bg }}
+                >
                   {avatar}
                 </div>
                 <div>

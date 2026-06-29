@@ -185,7 +185,7 @@ export const FEATURES: Feature[] = [
   {
     icon: Utensils,
     title: 'POS + Kiosk',
-    desc: 'Full POS system with PIN auth for staff. Self-service kiosk mode for walk-in customers.',
+    desc: 'Counter POS with staff PIN login. Self-service kiosk for walk-in guests.',
     size: 'small',
     screenshot: null,
   },
@@ -226,8 +226,8 @@ export const FEATURES: Feature[] = [
   },
   {
     icon: Smartphone,
-    title: 'Android Driver App',
-    desc: 'Native Android app for delivery drivers. Turn-by-turn navigation, live order updates, earnings dashboard.',
+    title: 'Driver app',
+    desc: 'Drivers get live orders, turn-by-turn navigation, and a clear earnings view on their phone.',
     size: 'small',
     screenshot: '/screenshots/customer-menu.png',
   },
@@ -372,8 +372,8 @@ export const PRICING_TIERS = [
     badge: undefined as string | undefined,
     features: [
       { icon: ShoppingCart, text: 'Online ordering (web + mobile)', included: true },
-      { icon: Cpu, text: 'POS system with PIN auth', included: true },
-      { icon: ChefHat, text: 'Kitchen Display System (KDS)', included: true },
+      { icon: Cpu, text: 'POS with staff PIN login', included: true },
+      { icon: ChefHat, text: 'Kitchen display screen', included: true },
       { icon: Utensils, text: 'Menu management', included: true },
       { icon: BarChart3, text: 'Basic order analytics', included: true },
       { icon: Star, text: 'Customer loyalty points', included: true },
@@ -464,6 +464,10 @@ export const FAQS = [
   {
     q: 'What happens if I need more than 3 locations on Growth?',
     a: 'You can add extra locations at €99/location/month on Growth, or upgrade to Enterprise for unlimited locations with a custom price.',
+  },
+  {
+    q: 'Do the smart assistants change things without asking?',
+    a: 'No. MaSoVa only suggests actions — reorder lists, review replies, shift plans, and the like. A manager approves before anything goes live.',
   },
 ]
 

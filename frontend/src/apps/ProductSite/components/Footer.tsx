@@ -19,7 +19,7 @@ const FOOTER_SECTIONS: { title: string; links: FooterLink[] }[] = [
   {
     title: 'Your business',
     links: [
-      { label: 'Smart assistants', href: '#ai-agents' },
+      { label: 'Smart assistants', href: '#agent-brain' },
       { label: 'Features', href: '#features' },
       { label: 'Order journey', href: '#order-flow' },
       { label: 'Pricing', href: '#pricing' },
