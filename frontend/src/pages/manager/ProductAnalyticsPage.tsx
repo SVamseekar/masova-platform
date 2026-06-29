@@ -17,7 +17,7 @@ import { useState } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../utils/currency';
 import { useGetTopProductsQuery } from '../../store/api/analyticsApi';
 import { usePageStore } from '../../hooks/usePageStore';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
@@ -71,7 +71,7 @@ function ProductAnalyticsPage() {
 
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const formatCurrency = (value: number) => formatMoney(Math.round(value * 100), currency, locale);
+  const formatCurrency = (value: number) => formatMajorAmount(value , currency, locale);
 
   if (isLoading) {
     return (

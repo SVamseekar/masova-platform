@@ -4,8 +4,10 @@ import AppHeader from '../../components/common/AppHeader';
 import OrderForm from '../../components/forms/OrderForm';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { setSelectedStore, selectSelectedStoreId, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import { setSelectedStore, setStoreCurrency, selectSelectedStoreId, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { useGetActiveStoresQuery } from '../../store/api/storeApi';
+import { storeCurrencyPayload } from '../../utils/storeCurrency';
+import {formatMoney, formatMajorAmount} from '../../utils/currency';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import { usePageStore } from '../../hooks/usePageStore';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
@@ -39,20 +41,22 @@ const OrderManagementPage: React.FC = () => {
   const reduxSelectedStoreId = useAppSelector(selectSelectedStoreId);
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmtMoney = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmtMoney = (v: number) => formatMajorAmount(v , currency, locale);
   const { selectedStoreId } = usePageStore();
   const { handleBack } = useSmartBackNavigation();
   const [isStoreInitialized, setIsStoreInitialized] = useState(false);
+  const { data: stores = [] } = useGetActiveStoresQuery();
 
   // Initialize Redux store selection IMMEDIATELY if not set (for API headers)
   // This must happen BEFORE any API calls are made
   useEffect(() => {
     if (!reduxSelectedStoreId && currentUser?.storeId) {
-      // Set user's assigned store as default in Redux for API headers
+      const match = stores.find((s) => s.storeCode === currentUser.storeId || s.id === currentUser.storeId);
       dispatch(setSelectedStore({
         storeId: currentUser.storeId,
-        storeName: currentUser.storeId // Use storeId as storeName for now
+        storeName: match?.name ?? currentUser.storeId,
       }));
+      dispatch(setStoreCurrency(storeCurrencyPayload(match)));
       setIsStoreInitialized(true);
     } else if (reduxSelectedStoreId) {
       // Redux store already has a selected store
@@ -63,7 +67,7 @@ const OrderManagementPage: React.FC = () => {
       // Mark as initialized so component can render, but skip will prevent API call
       setIsStoreInitialized(true);
     }
-  }, [reduxSelectedStoreId, currentUser, dispatch]);
+  }, [reduxSelectedStoreId, currentUser, dispatch, stores]);
 
   // Use selected store or fallback to user's store
   const storeId = selectedStoreId || currentUser?.storeId || '';

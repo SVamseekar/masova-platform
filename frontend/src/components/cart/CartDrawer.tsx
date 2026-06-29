@@ -14,7 +14,7 @@ import {
   selectCartLocale,
   selectStoreCountryCode,
 } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../utils/currency';
 import { computePreCheckoutTotals, formatTaxDisplay } from '../../utils/orderTax';
 
 interface CartDrawerProps {
@@ -33,7 +33,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) =>
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
   const storeCountryCode = useAppSelector(selectStoreCountryCode);
-  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
 
   const { tax, taxLabel, total } = computePreCheckoutTotals(
     subtotal,
@@ -113,7 +113,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) =>
                 fontSize: '1.3rem',
                 color: 'var(--text-1)',
               }}>
-                Your Order
+                {t('cart.your_order')}
               </h2>
               {itemCount > 0 && (
                 <span style={{ color: 'var(--text-3)', fontSize: '0.75rem', fontFamily: 'var(--font-body)' }}>
@@ -142,7 +142,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) =>
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(198,42,9,0.15)'; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(198,42,9,0.08)'; }}
               >
-                Clear All
+                {t('cart.clear_all')}
               </button>
             )}
             <button
@@ -194,7 +194,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) =>
                 {t('cart.empty')}
               </h3>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-3)', marginBottom: '24px' }}>
-                Add some delicious items from our menu
+                {t('cart.empty_hint')}
               </p>
               <button
                 onClick={onClose}
@@ -213,7 +213,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) =>
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--red-light)'; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--red)'; }}
               >
-                Browse Menu
+                {t('cart.browse_menu')}
               </button>
             </div>
           ) : (
@@ -262,14 +262,14 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) =>
                       {item.name}
                     </p>
                     <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-3)' }}>
-                      {formatMoney(Math.round(item.price * 100), currency, locale)} each
+                      {formatMajorAmount(item.price , currency, locale)} each
                     </p>
                   </div>
 
                   {/* Price + qty controls */}
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px', flexShrink: 0 }}>
                     <p style={{ margin: 0, fontWeight: 700, color: 'var(--gold)', fontFamily: 'var(--font-body)', fontSize: '0.9rem' }}>
-                      {formatMoney(Math.round(item.price * item.quantity * 100), currency, locale)}
+                      {formatMajorAmount(item.price * item.quantity , currency, locale)}
                     </p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <button
@@ -338,8 +338,8 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) =>
             background: 'var(--surface)',
           }}>
             {[
-              { label: `${t('cart.subtotal')} (${itemCount} item${itemCount > 1 ? 's' : ''})`, value: formatMoney(Math.round(subtotal * 100), currency, locale) },
-              { label: t('cart.delivery_fee'), value: formatMoney(Math.round(deliveryFee * 100), currency, locale) },
+              { label: `${t('cart.subtotal')} (${itemCount} item${itemCount > 1 ? 's' : ''})`, value: formatMajorAmount(subtotal , currency, locale) },
+              { label: t('cart.delivery_fee'), value: formatMajorAmount(deliveryFee , currency, locale) },
               { label: taxLabel, value: formatTaxDisplay(tax, fmt) },
             ].map(row => (
               <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
@@ -355,7 +355,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) =>
                 {t('cart.total')}
               </span>
               <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--gold)', fontSize: '1.3rem' }}>
-                {formatMoney(Math.round(total * 100), currency, locale)}
+                {formatMajorAmount(total , currency, locale)}
               </span>
             </div>
 
@@ -382,7 +382,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) =>
             </button>
 
             <p style={{ margin: '10px 0 0', fontSize: '0.72rem', color: 'var(--text-3)', textAlign: 'center', fontFamily: 'var(--font-body)' }}>
-              Items reserved for 15 minutes
+              {t('cart.reservation_notice')}
             </p>
           </div>
         )}

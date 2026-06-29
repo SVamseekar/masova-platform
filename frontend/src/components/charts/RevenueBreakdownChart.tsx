@@ -12,7 +12,7 @@ import { createCard } from '../../styles/neumorphic-utils';
 import { colors } from '../../styles/design-tokens';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../utils/currency';
 
 const COLORS = [
   colors.brand.primary,      // MaSoVa red for primary
@@ -35,7 +35,7 @@ export default function RevenueBreakdownChart({ storeId }: RevenueBreakdownChart
   const { data, isLoading, error } = useGetOrderTypeBreakdownQuery(storeId);
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const formatCurrency = (value: number) => formatMoney(Math.round(value * 100), currency, locale);
+  const formatCurrency = (value: number) => formatMajorAmount(value , currency, locale);
 
   if (isLoading) {
     return (

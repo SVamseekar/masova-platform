@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectSelectedStoreId, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../utils/currency';
 import { useGetStoreOrdersQuery, type Order } from '../../store/api/orderApi';
 import { cardStyle, t, sectionTitleStyle, tableCellStyle, tableHeaderStyle } from './manager-tokens';
 
@@ -66,7 +66,7 @@ const PlatformPnLPage: React.FC = () => {
   const totalNetPayout = summaries.reduce((s, p) => s + p.netPayout, 0);
   const totalCommission = summaries.reduce((s, p) => s + p.totalCommission, 0);
 
-  const fmt = (n: number) => formatMoney(Math.round(n * 100), currency, locale);
+  const fmt = (n: number) => formatMajorAmount(n , currency, locale);
 
   if (isLoading) return <div style={{ padding: 24 }}>Loading platform P&L…</div>;
   if (error) return <div style={{ padding: 24, color: t.red }}>Failed to load orders.</div>;

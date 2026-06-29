@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../utils/currency';
 import { t, cardStyle, sectionTitleStyle, statusBadge } from './manager-tokens';
 import {
   useGetActiveStoreSessionsQuery,
@@ -89,7 +89,7 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
     try { await rejectSession({ sessionId, reason: 'Manager rejected' }).unwrap(); } catch { alert('Failed to reject session'); }
   };
 
-  const formatCurrency = (val: number) => formatMoney(Math.round(val * 100), currency, locale);
+  const formatCurrency = (val: number) => formatMajorAmount(val , currency, locale);
 
   return (
     <div>

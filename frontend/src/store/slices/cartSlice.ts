@@ -173,6 +173,18 @@ const cartSlice = createSlice({
     },
 
     setStoreCurrency: (state, action: PayloadAction<{ currency: string; locale: string; countryCode?: string | null }>) => {
+      const nextCountry =
+        action.payload.countryCode !== undefined ? action.payload.countryCode : state.storeCountryCode;
+      const storeContextChanged =
+        action.payload.currency !== state.currency || nextCountry !== state.storeCountryCode;
+
+      if (storeContextChanged && state.items.length > 0) {
+        state.items = [];
+        state.total = 0;
+        state.itemCount = 0;
+        state.deliveryFee = 0;
+      }
+
       state.currency = action.payload.currency;
       state.locale = action.payload.locale;
       if (action.payload.countryCode !== undefined) {

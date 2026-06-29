@@ -2,7 +2,7 @@ import { Box, Button, Dialog, DialogContent, DialogTitle, Typography, Divider, I
 import { Print as PrintIcon, Close as CloseIcon, Download as DownloadIcon } from '@mui/icons-material';
 import { useAppSelector } from '../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../store/slices/cartSlice';
-import { formatMoney } from '../utils/currency';
+import {formatMoney, formatMajorAmount} from '../utils/currency';
 import { format } from 'date-fns';
 import { createCard, createButtonVariant } from '../styles/neumorphic-utils';
 import { colors } from '../styles/design-tokens';
@@ -38,7 +38,7 @@ export default function ReceiptGenerator({ open, onClose, receiptData }: Receipt
   } = receiptData;
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
 
   const handlePrint = () => {
     window.print();

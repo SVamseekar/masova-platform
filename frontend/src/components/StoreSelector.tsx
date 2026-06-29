@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useGetActiveStoresQuery, type Store } from '../store/api/storeApi';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { setSelectedStore, setStoreCurrency, selectSelectedStoreId, selectSelectedStoreName } from '../store/slices/cartSlice';
+import { storeCurrencyPayload } from '../utils/storeCurrency';
 import { getTabStore, setTabStore } from '../utils/tabStorage';
 
 // Haversine formula — returns distance in km between two lat/lng points
@@ -85,11 +86,7 @@ const StoreSelector: React.FC<StoreSelectorProps> = ({ variant: _variant = 'cust
   const handleStoreSelect = useCallback((storeId: string, storeName: string, store?: StoreWithHours) => {
     // ALWAYS update Redux for API headers
     dispatch(setSelectedStore({ storeId, storeName }));
-    dispatch(setStoreCurrency({
-      currency: store?.currency || 'INR',
-      locale: store?.locale || 'en-IN',
-      countryCode: store?.countryCode ?? null,
-    }));
+    dispatch(setStoreCurrency(storeCurrencyPayload(store)));
 
     if (useLocalStorage && contextKey) {
       // ALSO use page-specific tabStorage for local state

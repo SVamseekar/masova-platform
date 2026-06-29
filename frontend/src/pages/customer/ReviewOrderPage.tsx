@@ -5,7 +5,7 @@ import { getApiErrorMessage } from '../utils/apiError';
 import { useGetOrderQuery } from '../../store/api/orderApi';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import { formatMajorAmount } from '../../utils/currency';
 import ReviewForm from '../../components/reviews/ReviewForm';
 import { Card } from '../../components/ui/neumorphic/Card';
 import { Button } from '../../components/ui/neumorphic/Button';
@@ -158,7 +158,7 @@ const ReviewOrderPage: React.FC = () => {
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Total Amount:</span>
-              <span className="font-medium">{formatMoney(Math.round((order.totalAmount ?? order.total ?? 0) * 100), currency, locale)}</span>
+              <span className="font-medium">{formatMajorAmount(order.totalAmount ?? order.total ?? 0, currency, locale)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Items:</span>

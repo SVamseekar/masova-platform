@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../utils/currency';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import {
   useGetAllCustomersQuery,
@@ -25,7 +25,7 @@ const CustomerManagementPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
   const { handleBack } = useSmartBackNavigation();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);

@@ -27,7 +27,7 @@ import type { InventoryItem, Supplier, PurchaseOrder } from '../../store/api/inv
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../utils/currency';
 import StockAdjustmentDialog from '../../components/inventory/StockAdjustmentDialog';
 import AddInventoryItemDialog from '../../components/inventory/AddInventoryItemDialog';
 import AddSupplierDialog from '../../components/inventory/AddSupplierDialog';
@@ -63,7 +63,7 @@ const alertBox = (color: string, bg: string): React.CSSProperties => ({
 const StockTab = ({ storeId }: { storeId: string }) => {
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
   const { data: allItems = [], isLoading } = useGetAllInventoryItemsQuery(storeId, { skip: !storeId, pollingInterval: 60000 });
   const { data: lowStockItems = [] } = useGetLowStockAlertsQuery(storeId, { skip: !storeId });
   const { data: outOfStockItems = [] } = useGetOutOfStockItemsQuery(storeId, { skip: !storeId });
@@ -287,7 +287,7 @@ const PurchaseOrdersTab = ({ storeId }: { storeId: string }) => {
   const currentUser = useAppSelector(selectCurrentUser);
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
   const { data: allOrders = [], isLoading } = useGetAllPurchaseOrdersQuery(storeId, { skip: !storeId, pollingInterval: 60000 });
   const [approvePO] = useApprovePurchaseOrderMutation();
   const [rejectPO] = useRejectPurchaseOrderMutation();
@@ -406,7 +406,7 @@ const PurchaseOrdersTab = ({ storeId }: { storeId: string }) => {
 const WasteTab = ({ storeId }: { storeId: string }) => {
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
   const [dateRange, setDateRange] = useState({ startDate: format(subDays(new Date(), 30), 'yyyy-MM-dd'), endDate: format(new Date(), 'yyyy-MM-dd') });
   const [recordOpen, setRecordOpen] = useState(false);
 
@@ -512,7 +512,7 @@ const InventorySection: React.FC<Props> = ({ storeId, activeTab, onTabChange }) 
   const currentTab = activeTab || 'stock';
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const _fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const _fmt = (v: number) => formatMajorAmount(v , currency, locale);
 
   return (
     <div>

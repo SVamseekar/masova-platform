@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../store/slices/cartSlice';
-import { formatMoney } from '../utils/currency';
+import {formatMoney, formatMajorAmount} from '../utils/currency';
 
 // TypeScript interfaces
 interface MenuItem {
@@ -37,7 +37,7 @@ const CustomerApp: React.FC = () => {
   const navigate = useNavigate();
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
   const [activeSection, setActiveSection] = useState('menu');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState(false);

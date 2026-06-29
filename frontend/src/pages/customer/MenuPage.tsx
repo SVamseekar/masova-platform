@@ -38,7 +38,7 @@ import {
 } from '../../store/api/menuApi';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { addToCart, updateItemQuantity, selectCartItems, selectSelectedStoreId, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import { formatApiPrice, apiPriceToCartMajor } from '../../utils/currency';
 import AppHeader from '../../components/common/AppHeader';
 import StoreSelector from '../../components/StoreSelector';
 
@@ -214,7 +214,7 @@ const MenuPage: React.FC<MenuPageProps> = ({
     dispatch(addToCart({
       id: item.id,
       name: item.name,
-      price: item.basePrice / 100,
+      price: apiPriceToCartMajor(item.basePrice, currency),
       quantity,
       imageUrl: item.imageUrl,
       category: item.category,
@@ -224,9 +224,7 @@ const MenuPage: React.FC<MenuPageProps> = ({
     // Green state will persist while item is in cart
   };
 
-  const formatPrice = (priceInPaise: number) => {
-    return formatMoney(priceInPaise, currency, locale);
-  };
+  const formatPrice = (apiPrice: number) => formatApiPrice(apiPrice, currency, locale);
 
   const getDietaryColor = (dietary: DietaryType): string => {
     switch (dietary) {

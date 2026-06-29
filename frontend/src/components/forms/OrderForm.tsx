@@ -4,7 +4,7 @@ import { useGetAllMenuItemsQuery, type MenuItem } from '../../store/api/menuApi'
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale, selectStoreCountryCode } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import { formatApiPrice, formatMajorAmount, apiPriceToCartMajor } from '../../utils/currency';
 import { computePreCheckoutTotals, formatTaxDisplay } from '../../utils/orderTax';
 import type { CreateOrderRequest, OrderType, PaymentMethod, DeliveryAddress } from '../../types/order';
 
@@ -28,7 +28,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSuccess, onCancel }) => {
   const locale = useAppSelector(selectCartLocale);
   const storeCountryCode = useAppSelector(selectStoreCountryCode);
   const storeId = currentUser?.storeId || '';
-  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
 
   // Form state
   const [customerName, setCustomerName] = useState('');
@@ -79,7 +79,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSuccess, onCancel }) => {
       setCart([...cart, {
         menuItemId: menuItem.id,
         name: menuItem.name,
-        price: menuItem.price ?? menuItem.basePrice,
+        price: apiPriceToCartMajor(menuItem.price ?? menuItem.basePrice, currency),
         quantity: 1,
         variant: menuItem.variants?.[0]?.name,
         customizations: [],
@@ -616,7 +616,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSuccess, onCancel }) => {
                     <div key={item.id} className="menu-item-card">
                       <div className="menu-item-info">
                         <div className="menu-item-name">{item.name}</div>
-                        <div className="menu-item-price">{formatMoney(Math.round((item.price ?? item.basePrice ?? 0) * 100), currency, locale)}</div>
+                        <div className="menu-item-price">{formatApiPrice(item.price ?? item.basePrice ?? 0, currency, locale)}</div>
                       </div>
                       <div className="menu-item-controls">
                         {quantity === 0 ? (
@@ -824,7 +824,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSuccess, onCancel }) => {
                   <div key={item.menuItemId} className="cart-item">
                     <div className="cart-item-info">
                       <div className="cart-item-name">{item.name}</div>
-                      <div className="cart-item-price">�{item.price.toFixed(2)} each</div>
+                      <div className="cart-item-price">{fmt(item.price)} each</div>
                     </div>
                     <div className="cart-item-controls">
                       <button

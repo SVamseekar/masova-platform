@@ -327,6 +327,15 @@ describe('cartSlice', () => {
       expect(emptyState.locale).toBe('en-IN');
     });
 
-
+    it('clears cart items when currency changes', () => {
+      const withItems = cartReducer(emptyState, addToCart({ id: '1', name: 'Pizza', price: 10 }));
+      const cleared = cartReducer(
+        withItems,
+        setStoreCurrency({ currency: 'EUR', locale: 'de-DE', countryCode: 'DE' })
+      );
+      expect(cleared.items).toHaveLength(0);
+      expect(cleared.currency).toBe('EUR');
+      expect(cleared.storeCountryCode).toBe('DE');
+    });
   });
 });

@@ -4,7 +4,19 @@
     "subtotal": "Sous-total",
     "total": "Total",
     "empty": "Votre panier est vide",
-    "checkout": "Commander"
+    "checkout": "Commander",
+    "your_order": "Votre commande",
+    "clear_all": "Tout effacer",
+    "browse_menu": "Parcourir le menu",
+    "empty_hint": "Ajoutez des plats délicieux de notre menu",
+    "order_summary": "Récapitulatif",
+    "reservation_notice": "Articles réservés 15 minutes",
+    "proceed_to_payment": "Payer",
+    "continue_shopping": "Continuer vos achats",
+    "qty_label": "Qté :",
+    "each": "{{price}} l'unité",
+    "subtotal_with_count": "Sous-total ({{count}} articles)",
+    "subtotal_with_count_one": "Sous-total ({{count}} article)"
   },
   "order": {
     "status": {
@@ -22,7 +34,9 @@
       "DINE_IN": "Sur place",
       "TAKEAWAY": "À emporter",
       "DELIVERY": "Livraison"
-    }
+    },
+    "tracking_title": "Suivi de commande",
+    "no_orders": "Aucune commande"
   },
   "common": {
     "save": "Enregistrer",
@@ -31,5 +45,20 @@
     "loading": "Chargement…",
     "error": "Une erreur s'est produite",
     "no_data": "Aucune donnée disponible"
+  },
+  "checkout": {
+    "order_summary": "Récapitulatif",
+    "reservation_notice": "Articles réservés pendant 15 minutes",
+    "title": "Commander",
+    "back_to_menu": "← Retour au menu",
+    "choose_how": "Choisissez comment continuer"
+  },
+  "payment": {
+    "delivery_fee": "Frais de livraison",
+    "place_order": "Commander — {{total}}",
+    "pay_razorpay": "Payer {{total}} via Razorpay",
+    "pay_stripe": "Payer avec Stripe",
+    "processing": "Traitement...",
+    "secure_payment": "Paiement sécurisé"
   }
 }

@@ -20,7 +20,7 @@ import {
 } from '../../store/api/analyticsApi';
 import { useAppSelector } from '../../store/hooks';
 import { selectSelectedStoreId, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../utils/currency';
 
 interface StatCardProps {
   title: string;
@@ -56,7 +56,7 @@ const AnalyticsDashboard: React.FC = () => {
   const storeId = useAppSelector(selectSelectedStoreId) ?? undefined;
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const formatCurrency = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const formatCurrency = (v: number) => formatMajorAmount(v , currency, locale);
 
   const {
     data: salesMetrics,

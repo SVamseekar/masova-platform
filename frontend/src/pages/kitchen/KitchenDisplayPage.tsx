@@ -6,7 +6,9 @@ import AppHeader from '../../components/common/AppHeader';
 import RecipeViewer from '../../components/RecipeViewer';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { selectSelectedStoreId, setSelectedStore } from '../../store/slices/cartSlice';
+import { selectSelectedStoreId, setSelectedStore, setStoreCurrency } from '../../store/slices/cartSlice';
+import { useGetActiveStoresQuery } from '../../store/api/storeApi';
+import { storeCurrencyPayload } from '../../utils/storeCurrency';
 import {
   useGetKitchenQueueQuery,
   useUpdateOrderStatusMutation,
@@ -99,17 +101,24 @@ const KitchenDisplayPage: React.FC = () => {
   const prevOrderCountRef = useRef(0);
   const currentUser = useAppSelector(selectCurrentUser);
   const selectedStoreIdFromRedux = useAppSelector(selectSelectedStoreId);
+  const { data: stores = [] } = useGetActiveStoresQuery();
 
   // Get storeId from URL parameters (highest priority)
   const { storeId: urlStoreId } = useParams<{ storeId?: string }>();
+
+  const syncStoreContext = useCallback((storeId: string, storeName: string) => {
+    const match = stores.find((s) => s.storeCode === storeId || s.id === storeId);
+    dispatch(setSelectedStore({ storeId, storeName }));
+    dispatch(setStoreCurrency(storeCurrencyPayload(match)));
+  }, [dispatch, stores]);
 
   // Sync URL storeId with Redux state on mount or when URL changes
   useEffect(() => {
     if (urlStoreId && urlStoreId !== selectedStoreIdFromRedux) {
       console.log(`[KitchenDisplay] Syncing store ID from URL (${urlStoreId}) to Redux`);
-      dispatch(setSelectedStore({ storeId: urlStoreId, storeName: urlStoreId.toUpperCase() }));
+      syncStoreContext(urlStoreId, urlStoreId.toUpperCase());
     }
-  }, [urlStoreId, selectedStoreIdFromRedux, dispatch]);
+  }, [urlStoreId, selectedStoreIdFromRedux, syncStoreContext]);
 
   // Prioritize: URL param > Redux state > User's assigned store
   const storeId = urlStoreId || selectedStoreIdFromRedux || currentUser?.storeId || '';

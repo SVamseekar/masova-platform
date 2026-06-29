@@ -2,7 +2,7 @@ import React from 'react';
 import { t, cardStyle, sectionTitleStyle } from './manager-tokens';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../utils/currency';
 import {
   useGetTopProductsQuery,
   useGetExecutiveSummaryQuery,
@@ -148,7 +148,7 @@ const OperationsSidebar = ({ storeId }: { storeId: string }) => {
 const PeopleSidebar = ({ storeId }: { storeId: string }) => {
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
   const { data: sessions } = useGetActiveStoreSessionsQuery(storeId, { skip: !storeId });
   const { data: leaderboard } = useGetStaffLeaderboardQuery({ storeId, period: 'TODAY' }, { skip: !storeId });
   const { data: customerStats } = useGetCustomerStatsQuery(storeId, { skip: !storeId });
@@ -185,7 +185,7 @@ const PeopleSidebar = ({ storeId }: { storeId: string }) => {
 const AnalyticsSidebar = ({ storeId }: { storeId: string }) => {
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
   const { data: summary } = useGetExecutiveSummaryQuery(storeId, { skip: !storeId });
   const { data: salesMetrics } = useGetTodaySalesMetricsQuery(storeId, { skip: !storeId });
 

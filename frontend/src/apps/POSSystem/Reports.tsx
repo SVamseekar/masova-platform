@@ -10,7 +10,7 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../utils/currency';
 import {
   useGetTodaySalesMetricsQuery,
   useGetSalesTrendsQuery,
@@ -31,7 +31,7 @@ const Reports: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
   const [activeTab, setActiveTab] = useState<'sales' | 'staff' | 'inventory'>('sales');
 
   // Fetch real data from APIs

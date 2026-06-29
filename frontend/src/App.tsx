@@ -15,6 +15,7 @@ import { ChatWidget } from './components/chat/ChatWidget';
 import { GoogleAnalytics } from './components/GoogleAnalytics';
 import { AppSeo } from './components/seo/AppSeo';
 import { CustomerLayout } from './components/customer/CustomerLayout';
+import { StoreLocaleSync } from './components/i18n/StoreLocaleSync';
 
 // Lazy load components
 const ProductSitePage = React.lazy(() => import('./apps/ProductSite/ProductSitePage'))
@@ -75,6 +76,7 @@ const App: React.FC = () => {
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID ?? ''}>
     <Provider store={store}>
+      <StoreLocaleSync />
       <TokenRefreshManager />
       <KioskModeInitializer />
       <ConnectionMonitorProvider>

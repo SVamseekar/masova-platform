@@ -25,7 +25,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../../store/store';
 import { useAppSelector } from '../../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../../store/slices/cartSlice';
-import { formatMoney } from '../../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../../utils/currency';
 import { StatsChart } from '../components/shared';
 import { colors, spacing, typography, borderRadius, shadows, animations } from '../../../styles/driver-design-tokens';
 import { skeletonStyles } from '../utils/animations';
@@ -43,7 +43,7 @@ const DeliveryHistoryPage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
   const [timeFilter, setTimeFilter] = useState('today');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);

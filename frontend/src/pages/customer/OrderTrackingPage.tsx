@@ -1,11 +1,13 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import AppHeader from '../../components/common/AppHeader';
 import StoreInfo from '../../components/StoreInfo';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import { formatMajorAmount } from '../../utils/currency';
+import { formatDateLocale } from '../../utils/dateTime';
 import { useGetCustomerOrdersQuery, Order } from '../../store/api/orderApi';
 import { useGetCustomerByUserIdQuery } from '../../store/api/customerApi';
 import { ORDER_STATUS_CONFIG, ORDER_TYPE_CONFIG, PAYMENT_STATUS_CONFIG, ORDER_STATUS_FLOW } from '../../types/order';
@@ -13,6 +15,7 @@ import { useCustomerOrdersWebSocket } from '../../hooks/useCustomerOrdersWebSock
 import { OrderTrackingUpdate } from '../../services/websocketService';
 
 const OrderTrackingPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const currentUser = useAppSelector(selectCurrentUser);
   const currency = useAppSelector(selectCartCurrency);
@@ -68,12 +71,22 @@ const OrderTrackingPage: React.FC = () => {
   }, [customerOrders, dateFilter]);
 
   const formatDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    formatDateLocale(dateStr, locale);
 
   const formatTime = (dateStr: string) =>
-    new Date(dateStr).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    new Date(dateStr).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
 
   const TERMINAL_STATUSES = ['DELIVERED', 'SERVED', 'COMPLETED', 'CANCELLED'];
+
+  const statusLabel = (status: string) =>
+    t(`order.status.${status}`, {
+      defaultValue: ORDER_STATUS_CONFIG[status as keyof typeof ORDER_STATUS_CONFIG]?.label ?? status,
+    });
+
+  const orderTypeLabel = (orderType: string) =>
+    t(`order.type.${orderType}`, {
+      defaultValue: ORDER_TYPE_CONFIG[orderType as keyof typeof ORDER_TYPE_CONFIG]?.label ?? orderType,
+    });
 
   const getStepsForOrderType = (orderType: string): typeof ORDER_STATUS_FLOW => {
     const shared: typeof ORDER_STATUS_FLOW = ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED', 'READY'];
@@ -128,7 +141,7 @@ const OrderTrackingPage: React.FC = () => {
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: '6px' }}>
-              {formatMoney(Math.round(order.total * 100), currency, locale)}
+              {formatMajorAmount(order.total , currency, locale)}
             </div>
             <span style={{
               display: 'inline-block',
@@ -139,7 +152,7 @@ const OrderTrackingPage: React.FC = () => {
               fontSize: '0.75rem',
               fontWeight: 700,
             }}>
-              {statusCfg?.icon} {statusCfg?.label}
+              {statusCfg?.icon} {statusLabel(order.status)}
             </span>
           </div>
         </div>
@@ -182,7 +195,7 @@ const OrderTrackingPage: React.FC = () => {
                       color: done ? 'var(--text-2)' : 'var(--text-3)',
                       textAlign: 'center', maxWidth: '60px', lineHeight: 1.2,
                     }}>
-                      {cfg.label}
+                      {statusLabel(status)}
                     </div>
                   </div>
                 );
@@ -201,7 +214,7 @@ const OrderTrackingPage: React.FC = () => {
               {order.items.slice(0, 3).map((item, idx) => (
                 <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.8rem' }}>
                   <span style={{ color: 'var(--text-1)' }}>{item.quantity}× {item.name}</span>
-                  <span style={{ color: 'var(--text-3)' }}>{formatMoney(Math.round(item.price * item.quantity * 100), currency, locale)}</span>
+                  <span style={{ color: 'var(--text-3)' }}>{formatMajorAmount(item.price * item.quantity , currency, locale)}</span>
                 </div>
               ))}
               {order.items.length > 3 && (
@@ -215,7 +228,7 @@ const OrderTrackingPage: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
                 <span style={{ color: 'var(--text-3)' }}>Type</span>
                 <span style={{ color: ORDER_TYPE_CONFIG[order.orderType]?.color || 'var(--text-1)', fontWeight: 600 }}>
-                  {ORDER_TYPE_CONFIG[order.orderType]?.icon} {ORDER_TYPE_CONFIG[order.orderType]?.label}
+                  {ORDER_TYPE_CONFIG[order.orderType]?.icon} {orderTypeLabel(order.orderType)}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>

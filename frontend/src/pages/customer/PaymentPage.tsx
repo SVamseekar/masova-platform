@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 import CustomerPageHeader from '../../components/common/CustomerPageHeader';
@@ -16,11 +17,11 @@ import {
   selectCartLocale,
   selectStoreCountryCode,
 } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../utils/currency';
 import { computePreCheckoutTotals, formatTaxDisplay } from '../../utils/orderTax';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { colors } from '../../styles/design-tokens';
-import { loadStripe } from '@stripe/stripe-js';
+import { loadStripe, type StripeElementLocale } from '@stripe/stripe-js';
 import {
   Elements,
   PaymentElement,
@@ -42,6 +43,7 @@ interface GuestInfo {
 }
 
 const PaymentPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -53,7 +55,7 @@ const PaymentPage: React.FC = () => {
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
   const storeCountryCode = useAppSelector(selectStoreCountryCode);
-  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
 
   // Get guest info from navigation state (passed from GuestCheckoutPage)
   const guestInfo = location.state?.guestInfo as GuestInfo | undefined;
@@ -447,7 +449,7 @@ const PaymentPage: React.FC = () => {
                   </svg>
                 }
                 title="Delivery"
-                sub={`+${formatMoney(Math.round(baseDeliveryFee * 100), currency, locale)} delivery`}
+                sub={`+${formatMajorAmount(baseDeliveryFee , currency, locale)} delivery`}
               />
               <OrderTypeCard
                 active={orderType === 'TAKEAWAY'}
@@ -514,6 +516,7 @@ const PaymentPage: React.FC = () => {
                 clientSecret={stripeData.clientSecret}
                 publishableKey={stripeData.publishableKey}
                 orderId={stripeData.orderId}
+                locale={locale}
                 onSuccess={() => {
                   setOrderPlaced(true);
                   navigate(`/payment/success?order_id=${stripeData!.orderId}`);
@@ -593,7 +596,7 @@ const PaymentPage: React.FC = () => {
         {/* RIGHT COLUMN — Order Summary */}
         <div style={{ position: 'sticky', top: '84px' }}>
           <div style={{ ...cardStyle, padding: '24px' }}>
-            <SectionLabel>Order Summary</SectionLabel>
+            <SectionLabel>{t('cart.order_summary')}</SectionLabel>
 
             {/* Items list */}
             <div style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -604,7 +607,7 @@ const PaymentPage: React.FC = () => {
                     {item.name}
                   </div>
                   <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-1)' }}>
-                    {formatMoney(Math.round(item.price * item.quantity * 100), currency, locale)}
+                    {formatMajorAmount(item.price * item.quantity , currency, locale)}
                   </span>
                 </div>
               ))}
@@ -614,9 +617,9 @@ const PaymentPage: React.FC = () => {
 
             {/* Breakdown */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
-              <SummaryRow label={`Subtotal (${cartItems.length} items)`} value={formatMoney(Math.round(subtotal * 100), currency, locale)} />
+              <SummaryRow label={t('cart.subtotal_with_count', { count: cartItems.length })} value={formatMajorAmount(subtotal , currency, locale)} />
               {orderType === 'DELIVERY' && (
-                <SummaryRow label="Delivery fee" value={formatMoney(Math.round(deliveryFee * 100), currency, locale)} />
+                <SummaryRow label={t('cart.delivery_fee')} value={formatMajorAmount(deliveryFee , currency, locale)} />
               )}
               <SummaryRow label={taxLabel} value={formatTaxDisplay(tax, fmt)} />
             </div>
@@ -625,8 +628,8 @@ const PaymentPage: React.FC = () => {
 
             {/* Total */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-1)' }}>Total</span>
-              <span style={{ fontWeight: 800, fontSize: '1.4rem', color: 'var(--gold)' }}>{formatMoney(Math.round(total * 100), currency, locale)}</span>
+              <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-1)' }}>{t('cart.total')}</span>
+              <span style={{ fontWeight: 800, fontSize: '1.4rem', color: 'var(--gold)' }}>{formatMajorAmount(total , currency, locale)}</span>
             </div>
             <p style={{ fontSize: '0.72rem', color: 'var(--text-3)', marginBottom: '20px', lineHeight: 1.4 }}>
               Delivery charges may vary based on distance.
@@ -676,8 +679,8 @@ const PaymentPage: React.FC = () => {
               {isLoading
                 ? 'Processing...'
                 : paymentMethod === 'CASH'
-                  ? `Place Order — ${formatMoney(Math.round(total * 100), currency, locale)}`
-                  : `Pay ${formatMoney(Math.round(total * 100), currency, locale)} via Razorpay`}
+                  ? t('payment.place_order', { total: formatMajorAmount(total, currency, locale) })
+                  : t('payment.pay_razorpay', { total: formatMajorAmount(total, currency, locale) })}
             </button>
 
             <button
@@ -809,16 +812,18 @@ interface StripePaymentFormProps {
   onError: (msg: string) => void;
 }
 
-function StripePaymentForm({ clientSecret, publishableKey, orderId, onSuccess, onError }: StripePaymentFormProps) {
+function StripePaymentForm({ clientSecret, publishableKey, orderId, onSuccess, onError, locale }: StripePaymentFormProps & { locale: string }) {
   const stripePromise = loadStripe(publishableKey);
+  const stripeLocale = locale.split('-')[0];
   return (
-    <Elements stripe={stripePromise} options={{ clientSecret }}>
+    <Elements stripe={stripePromise} options={{ clientSecret, locale: stripeLocale as StripeElementLocale }}>
       <StripeCheckoutInner orderId={orderId} onSuccess={onSuccess} onError={onError} />
     </Elements>
   );
 }
 
 function StripeCheckoutInner({ orderId, onSuccess, onError }: { orderId: string; onSuccess: () => void; onError: (msg: string) => void }) {
+  const { t } = useTranslation();
   const stripe = useStripe();
   const elements = useElements();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -852,7 +857,7 @@ function StripeCheckoutInner({ orderId, onSuccess, onError }: { orderId: string;
           color: '#fff', fontSize: '0.95rem', fontWeight: 700, cursor: isSubmitting ? 'not-allowed' : 'pointer',
         }}
       >
-        {isSubmitting ? 'Processing...' : 'Pay with Stripe'}
+        {isSubmitting ? t('payment.processing') : t('payment.pay_stripe')}
       </button>
     </div>
   );

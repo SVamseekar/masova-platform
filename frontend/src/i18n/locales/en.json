@@ -4,7 +4,37 @@
     "subtotal": "Subtotal",
     "total": "Total",
     "empty": "Your cart is empty",
-    "checkout": "Checkout"
+    "checkout": "Checkout",
+    "your_order": "Your Order",
+    "clear_all": "Clear All",
+    "browse_menu": "Browse Menu",
+    "empty_hint": "Add some delicious items from our menu",
+    "order_summary": "Order Summary",
+    "reservation_notice": "Items reserved for 15 minutes",
+    "proceed_to_payment": "Proceed to Payment",
+    "continue_shopping": "Continue Shopping",
+    "qty_label": "Qty:",
+    "each": "{{price}} each",
+    "subtotal_with_count_one": "Subtotal ({{count}} item)",
+    "subtotal_with_count_other": "Subtotal ({{count}} items)"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "back_to_menu": "← Back to Menu",
+    "choose_how": "Choose how you'd like to continue with your order",
+    "order_summary": "Order Summary",
+    "reservation_notice": "Items reserved for 15 minutes",
+    "sign_in": "Sign In",
+    "create_account": "Create Account",
+    "guest_checkout": "Guest Checkout"
+  },
+  "payment": {
+    "delivery_fee": "Delivery fee",
+    "place_order": "Place Order — {{total}}",
+    "pay_razorpay": "Pay {{total}} via Razorpay",
+    "pay_stripe": "Pay with Stripe",
+    "processing": "Processing...",
+    "secure_payment": "Secure Payment"
   },
   "order": {
     "status": {
@@ -22,7 +52,9 @@
       "DINE_IN": "Dine in",
       "TAKEAWAY": "Takeaway",
       "DELIVERY": "Delivery"
-    }
+    },
+    "tracking_title": "Order Tracking",
+    "no_orders": "No orders found"
   },
   "common": {
     "save": "Save",

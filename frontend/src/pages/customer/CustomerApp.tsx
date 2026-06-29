@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../utils/currency';
 
 // TypeScript interfaces
 interface MenuItem {
@@ -147,7 +147,7 @@ const CustomerApp: React.FC = () => {
               <p className="item-description">{item.description}</p>
               <div className="item-footer">
                 <div className="price-container">
-                  <span className="price">{formatMoney(Math.round(item.price * 100), currency, locale)}</span>
+                  <span className="price">{formatMajorAmount(item.price , currency, locale)}</span>
                 </div>
                 <button className="add-btn" onClick={() => addToCart(item)}>
                   <span className="add-icon">+</span>
@@ -188,7 +188,7 @@ const CustomerApp: React.FC = () => {
                   <p className="cart-item-category">{item.category}</p>
                 </div>
                 <div className="cart-item-actions">
-                  <div className="cart-item-price">{formatMoney(Math.round(item.price * 100), currency, locale)}</div>
+                  <div className="cart-item-price">{formatMajorAmount(item.price , currency, locale)}</div>
                   <button className="remove-btn" onClick={() => removeFromCart(item.cartId)}>
                     ×
                   </button>
@@ -200,15 +200,15 @@ const CustomerApp: React.FC = () => {
           <div className="cart-summary">
             <div className="summary-row">
               <span>Subtotal</span>
-              <span>{formatMoney(Math.round(getTotalPrice() * 100), currency, locale)}</span>
+              <span>{formatMajorAmount(getTotalPrice(), currency, locale)}</span>
             </div>
             <div className="summary-row">
               <span>Delivery Fee</span>
-              <span>{formatMoney(2900, currency, locale)}</span>
+              <span>{formatMajorAmount(29, currency, locale)}</span>
             </div>
             <div className="summary-row total-row">
               <span>Total</span>
-              <span>{formatMoney(Math.round((getTotalPrice() + 29) * 100), currency, locale)}</span>
+              <span>{formatMajorAmount(getTotalPrice() + 29, currency, locale)}</span>
             </div>
             <button className="checkout-btn" onClick={() => setCurrentView('payment')}>
               <span>Proceed to Payment</span>
@@ -256,22 +256,22 @@ const CustomerApp: React.FC = () => {
         <div className="summary-details">
           <div className="summary-line">
             <span>Items ({cart.length})</span>
-            <span>{formatMoney(Math.round(getTotalPrice() * 100), currency, locale)}</span>
+            <span>{formatMajorAmount(getTotalPrice(), currency, locale)}</span>
           </div>
           <div className="summary-line">
             <span>Delivery Charges</span>
-            <span>{formatMoney(2900, currency, locale)}</span>
+            <span>{formatMajorAmount(29, currency, locale)}</span>
           </div>
           <div className="summary-divider"></div>
           <div className="summary-line total">
             <span>Total Amount</span>
-            <span>{formatMoney(Math.round((getTotalPrice() + 29) * 100), currency, locale)}</span>
+            <span>{formatMajorAmount(getTotalPrice() + 29, currency, locale)}</span>
           </div>
         </div>
       </div>
 
       <button className="pay-btn" onClick={() => setCurrentView('tracking')}>
-        <span>Pay {formatMoney(Math.round((getTotalPrice() + 29) * 100), currency, locale)}</span>
+        <span>Pay {formatMajorAmount(getTotalPrice() + 29, currency, locale)}</span>
         <span className="btn-icon">→</span>
       </button>
     </div>

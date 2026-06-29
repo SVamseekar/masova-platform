@@ -3,7 +3,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { selectSelectedStoreId, selectSelectedStoreName, setSelectedStore, setStoreCurrency, selectCartCurrency, selectCartLocale, selectStoreCountryCode } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import { formatApiPrice, formatMajorAmount, apiPriceToCartMajor } from '../../utils/currency';
+import { storeCurrencyPayload } from '../../utils/storeCurrency';
 import { computePreCheckoutTotals } from '../../utils/orderTax';
 import { useGetStoreQuery } from '../../store/api/storeApi';
 import MenuPanel from './components/MenuPanel';
@@ -50,7 +51,7 @@ const POSDashboard: React.FC = () => {
   const dispatch = useAppDispatch();
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
   const [searchParams] = useSearchParams();
   const { user } = useAppSelector((state) => state.auth);
   const { enqueueSnackbar } = useSnackbar();
@@ -79,11 +80,7 @@ const POSDashboard: React.FC = () => {
   useEffect(() => {
     if (!storeProfile || !storeId) return;
     dispatch(setSelectedStore({ storeId, storeName: storeProfile.name }));
-    dispatch(setStoreCurrency({
-      currency: storeProfile.currency || 'INR',
-      locale: storeProfile.locale || 'en-IN',
-      countryCode: storeProfile.countryCode ?? null,
-    }));
+    dispatch(setStoreCurrency(storeCurrencyPayload(storeProfile)));
   }, [storeProfile, storeId, dispatch]);
 
   // Tab state
@@ -250,7 +247,7 @@ const POSDashboard: React.FC = () => {
         {
           menuItemId: item.id,
           name: item.name,
-          price: item.basePrice / 100, // Convert from paisa to rupees
+          price: apiPriceToCartMajor(item.basePrice, currency),
           quantity,
           specialInstructions: '',
           image: item.imageUrl,

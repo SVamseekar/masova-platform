@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../utils/currency';
 import { useGetStaffLeaderboardQuery } from '../../store/api/analyticsApi';
 import { createCard } from '../../styles/neumorphic-utils';
 import { colors, spacing, typography, shadows, borderRadius } from '../../styles/design-tokens';
@@ -51,7 +51,7 @@ const StaffLeaderboardPage: React.FC = () => {
 
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const formatCurrency = (value: number) => formatMoney(Math.round(value * 100), currency, locale);
+  const formatCurrency = (value: number) => formatMajorAmount(value , currency, locale);
 
   // Styles
   const containerStyles: React.CSSProperties = {

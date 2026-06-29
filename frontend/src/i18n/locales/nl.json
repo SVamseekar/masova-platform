@@ -4,7 +4,19 @@
     "subtotal": "Subtotaal",
     "total": "Totaal",
     "empty": "Uw winkelwagen is leeg",
-    "checkout": "Afrekenen"
+    "checkout": "Afrekenen",
+    "your_order": "Uw bestelling",
+    "clear_all": "Alles wissen",
+    "browse_menu": "Menu bekijken",
+    "empty_hint": "Voeg gerechten uit ons menu toe",
+    "order_summary": "Besteloverzicht",
+    "reservation_notice": "Items 15 minuten gereserveerd",
+    "proceed_to_payment": "Naar betaling",
+    "continue_shopping": "Verder winkelen",
+    "qty_label": "Aantal:",
+    "each": "{{price}} per stuk",
+    "subtotal_with_count": "Subtotaal ({{count}} items)",
+    "subtotal_with_count_one": "Subtotaal ({{count}} item)"
   },
   "order": {
     "status": {
@@ -22,7 +34,9 @@
       "DINE_IN": "Ter plaatse",
       "TAKEAWAY": "Afhalen",
       "DELIVERY": "Bezorging"
-    }
+    },
+    "tracking_title": "Bestelling volgen",
+    "no_orders": "Geen bestellingen"
   },
   "common": {
     "save": "Opslaan",
@@ -31,5 +45,20 @@
     "loading": "Laden…",
     "error": "Er is iets misgegaan",
     "no_data": "Geen gegevens beschikbaar"
+  },
+  "checkout": {
+    "order_summary": "Besteloverzicht",
+    "reservation_notice": "Items 15 minuten gereserveerd",
+    "title": "Afrekenen",
+    "back_to_menu": "← Terug naar menu",
+    "choose_how": "Kies hoe u wilt doorgaan"
+  },
+  "payment": {
+    "delivery_fee": "Bezorgkosten",
+    "place_order": "Bestellen — {{total}}",
+    "pay_razorpay": "Betaal {{total}} via Razorpay",
+    "pay_stripe": "Betaal met Stripe",
+    "processing": "Verwerken...",
+    "secure_payment": "Veilige betaling"
   }
 }
