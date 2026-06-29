@@ -16,8 +16,11 @@ import {
   useGetOperationalStatusQuery,
   useGetStoreMetricsQuery,
 } from './storeApi';
+import { TEST_API_BASE } from '../../test/testApiBase';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API = TEST_API_BASE;
+
+
 
 const mockStore = {
   id: 'store-1',

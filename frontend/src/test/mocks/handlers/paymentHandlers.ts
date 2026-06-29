@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
+import { apiUrl } from '../../testApiBase';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 const mockTransaction = {
   transactionId: 'txn-1',
@@ -38,35 +38,35 @@ const mockRefund = {
 };
 
 export const paymentHandlers = [
-  http.post(`${API}/payments/initiate`, () =>
+  http.post(apiUrl('/payments/initiate'), () =>
     HttpResponse.json({ ...mockTransaction, status: 'INITIATED', paidAt: undefined }),
   ),
 
-  http.post(`${API}/payments/cash`, () =>
+  http.post(apiUrl('/payments/cash'), () =>
     HttpResponse.json({ ...mockTransaction, paymentMethod: 'CASH' }),
   ),
 
-  http.post(`${API}/payments/verify`, () =>
+  http.post(apiUrl('/payments/verify'), () =>
     HttpResponse.json(mockTransaction),
   ),
 
-  http.get(`${API}/payments/:transactionId`, () =>
+  http.get(apiUrl('/payments/:transactionId'), () =>
     HttpResponse.json(mockTransaction),
   ),
 
-  http.get(`${API}/payments/order/:orderId`, () =>
+  http.get(apiUrl('/payments/order/:orderId'), () =>
     HttpResponse.json(mockTransaction),
   ),
 
-  http.get(`${API}/payments/customer/:customerId`, () =>
+  http.get(apiUrl('/payments/customer/:customerId'), () =>
     HttpResponse.json([mockTransaction]),
   ),
 
-  http.get(`${API}/payments/store`, () =>
+  http.get(apiUrl('/payments/store'), () =>
     HttpResponse.json([mockTransaction]),
   ),
 
-  http.get(`${API}/payments/reconciliation`, () =>
+  http.get(apiUrl('/payments/reconciliation'), () =>
     HttpResponse.json({
       reportDate: '2025-01-15',
       storeId: '1',
@@ -83,27 +83,27 @@ export const paymentHandlers = [
     }),
   ),
 
-  http.post(`${API}/payments/:transactionId/reconcile`, () =>
+  http.post(apiUrl('/payments/:transactionId/reconcile'), () =>
     new HttpResponse(null, { status: 204 }),
   ),
 
-  http.post(`${API}/payments/refund`, () =>
+  http.post(apiUrl('/payments/refund'), () =>
     HttpResponse.json(mockRefund),
   ),
 
-  http.get(`${API}/payments/refund/:refundId`, () =>
+  http.get(apiUrl('/payments/refund/:refundId'), () =>
     HttpResponse.json(mockRefund),
   ),
 
-  http.get(`${API}/payments/refund/transaction/:transactionId`, () =>
+  http.get(apiUrl('/payments/refund/transaction/:transactionId'), () =>
     HttpResponse.json([mockRefund]),
   ),
 
-  http.get(`${API}/payments/refund/order/:orderId`, () =>
+  http.get(apiUrl('/payments/refund/order/:orderId'), () =>
     HttpResponse.json([mockRefund]),
   ),
 
-  http.get(`${API}/payments/refund/customer/:customerId`, () =>
+  http.get(apiUrl('/payments/refund/customer/:customerId'), () =>
     HttpResponse.json([mockRefund]),
   ),
 ];

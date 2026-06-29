@@ -31,8 +31,11 @@ import {
   useGetAllWasteRecordsQuery,
   useGetWasteTrendQuery,
 } from './inventoryApi';
+import { TEST_API_BASE } from '../../test/testApiBase';
 
-const _API = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API = TEST_API_BASE;
+
+
 
 describe('inventoryApi', () => {
   describe('endpoint definitions', () => {

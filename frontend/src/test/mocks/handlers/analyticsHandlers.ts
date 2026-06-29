@@ -1,9 +1,9 @@
 import { http, HttpResponse } from 'msw';
+import { apiUrl } from '../../testApiBase';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 export const analyticsHandlers = [
-  http.get(`${API}/api/analytics/sales/today`, () =>
+  http.get(apiUrl('/analytics/sales/today'), () =>
     HttpResponse.json({
       todaySales: 15000,
       yesterdaySalesAtSameTime: 13500,
@@ -17,7 +17,7 @@ export const analyticsHandlers = [
     }),
   ),
 
-  http.get(`${API}/api/analytics/avgOrderValue/today`, () =>
+  http.get(apiUrl('/analytics/avgOrderValue/today'), () =>
     HttpResponse.json({
       averageOrderValue: 333,
       yesterdayAverageOrderValue: 337,
@@ -28,7 +28,7 @@ export const analyticsHandlers = [
     }),
   ),
 
-  http.get(`${API}/api/analytics/drivers/status`, () =>
+  http.get(apiUrl('/analytics/drivers/status'), () =>
     HttpResponse.json({
       totalDrivers: 8,
       availableDrivers: 5,
@@ -38,7 +38,7 @@ export const analyticsHandlers = [
     }),
   ),
 
-  http.get(`${API}/api/analytics/staff/:staffId/performance/today`, () =>
+  http.get(apiUrl('/analytics/staff/:staffId/performance/today'), () =>
     HttpResponse.json({
       staffId: '2',
       staffName: 'Staff Member',
@@ -50,7 +50,7 @@ export const analyticsHandlers = [
     }),
   ),
 
-  http.get(`${API}/api/analytics/sales/trends/:period`, () =>
+  http.get(apiUrl('/analytics/sales/trends/:period'), () =>
     HttpResponse.json({
       period: 'WEEKLY',
       dataPoints: [
@@ -66,7 +66,7 @@ export const analyticsHandlers = [
     }),
   ),
 
-  http.get(`${API}/api/analytics/sales/breakdown/order-type`, () =>
+  http.get(apiUrl('/analytics/sales/breakdown/order-type'), () =>
     HttpResponse.json({
       breakdown: [
         { orderType: 'DELIVERY', count: 20, sales: 7500, percentage: 50, averageOrderValue: 375 },
@@ -78,7 +78,7 @@ export const analyticsHandlers = [
     }),
   ),
 
-  http.get(`${API}/api/analytics/sales/peak-hours`, () =>
+  http.get(apiUrl('/analytics/sales/peak-hours'), () =>
     HttpResponse.json({
       hourlyData: [
         { hour: 12, label: '12 PM', orderCount: 15, sales: 5000, averageOrderValue: 333 },
@@ -92,7 +92,7 @@ export const analyticsHandlers = [
     }),
   ),
 
-  http.get(`${API}/api/analytics/staff/leaderboard`, () =>
+  http.get(apiUrl('/analytics/staff/leaderboard'), () =>
     HttpResponse.json({
       rankings: [
         {
@@ -111,7 +111,7 @@ export const analyticsHandlers = [
     }),
   ),
 
-  http.get(`${API}/api/analytics/products/top-selling`, () =>
+  http.get(apiUrl('/analytics/products/top-selling'), () =>
     HttpResponse.json({
       topProducts: [
         {
@@ -131,7 +131,7 @@ export const analyticsHandlers = [
     }),
   ),
 
-  http.post(`${API}/api/analytics/cache/clear`, () =>
+  http.post(apiUrl('/analytics/cache/clear'), () =>
     HttpResponse.json({ status: 'success', message: 'Cache cleared', storeId: '1' }),
   ),
 ];

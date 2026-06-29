@@ -22,8 +22,11 @@ import {
   useSearchUsersQuery,
   useGetUserStatsQuery,
 } from './userApi';
+import { TEST_API_BASE } from '../../test/testApiBase';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API = TEST_API_BASE;
+
+
 
 describe('userApi', () => {
   describe('endpoint definitions', () => {

@@ -1,9 +1,9 @@
 import { http, HttpResponse } from 'msw';
+import { apiUrl } from '../../testApiBase';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 export const authHandlers = [
-  http.post(`${API}/users/login`, () =>
+  http.post(apiUrl('/users/login'), () =>
     HttpResponse.json({
       accessToken: 'mock-access-token',
       refreshToken: 'mock-refresh-token',
@@ -18,7 +18,7 @@ export const authHandlers = [
     }),
   ),
 
-  http.post(`${API}/users/register`, () =>
+  http.post(apiUrl('/users/register'), () =>
     HttpResponse.json({
       accessToken: 'mock-access-token',
       refreshToken: 'mock-refresh-token',
@@ -33,7 +33,7 @@ export const authHandlers = [
     }),
   ),
 
-  http.post(`${API}/users/refresh-token`, () =>
+  http.post(apiUrl('/users/refresh-token'), () =>
     HttpResponse.json({
       accessToken: 'mock-refreshed-access-token',
       refreshToken: 'mock-refreshed-refresh-token',
@@ -48,11 +48,11 @@ export const authHandlers = [
     }),
   ),
 
-  http.post(`${API}/users/logout`, () =>
+  http.post(apiUrl('/users/logout'), () =>
     new HttpResponse(null, { status: 204 }),
   ),
 
-  http.get(`${API}/users/profile`, () =>
+  http.get(apiUrl('/users/profile'), () =>
     HttpResponse.json({
       id: '1',
       name: 'Test User',

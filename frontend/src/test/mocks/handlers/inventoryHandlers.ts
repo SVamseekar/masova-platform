@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
+import { apiUrl } from '../../testApiBase';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 const mockInventoryItem = {
   id: 'inv-1',
@@ -39,63 +39,63 @@ const mockLowStockItem = {
 };
 
 export const inventoryHandlers = [
-  http.post(`${API}/inventory/items`, () =>
+  http.post(apiUrl('/inventory/items'), () =>
     HttpResponse.json(mockInventoryItem),
   ),
 
-  http.get(`${API}/inventory/items`, () =>
+  http.get(apiUrl('/inventory/items'), () =>
     HttpResponse.json([mockInventoryItem, mockLowStockItem]),
   ),
 
-  http.get(`${API}/inventory/items/:id`, () =>
+  http.get(apiUrl('/inventory/items/:id'), () =>
     HttpResponse.json(mockInventoryItem),
   ),
 
-  http.get(`${API}/inventory/items/category/:category`, () =>
+  http.get(apiUrl('/inventory/items/category/:category'), () =>
     HttpResponse.json([mockInventoryItem]),
   ),
 
-  http.get(`${API}/inventory/items/search`, () =>
+  http.get(apiUrl('/inventory/items/search'), () =>
     HttpResponse.json([mockInventoryItem]),
   ),
 
-  http.put(`${API}/inventory/items/:id`, () =>
+  http.put(apiUrl('/inventory/items/:id'), () =>
     HttpResponse.json(mockInventoryItem),
   ),
 
-  http.patch(`${API}/inventory/items/:id/adjust`, () =>
+  http.patch(apiUrl('/inventory/items/:id/adjust'), () =>
     HttpResponse.json(mockInventoryItem),
   ),
 
-  http.patch(`${API}/inventory/items/:id/reserve`, () =>
+  http.patch(apiUrl('/inventory/items/:id/reserve'), () =>
     HttpResponse.json(mockInventoryItem),
   ),
 
-  http.patch(`${API}/inventory/items/:id/release`, () =>
+  http.patch(apiUrl('/inventory/items/:id/release'), () =>
     HttpResponse.json(mockInventoryItem),
   ),
 
-  http.patch(`${API}/inventory/items/:id/consume`, () =>
+  http.patch(apiUrl('/inventory/items/:id/consume'), () =>
     HttpResponse.json(mockInventoryItem),
   ),
 
-  http.get(`${API}/inventory/low-stock`, () =>
+  http.get(apiUrl('/inventory/low-stock'), () =>
     HttpResponse.json([mockLowStockItem]),
   ),
 
-  http.get(`${API}/inventory/out-of-stock`, () =>
+  http.get(apiUrl('/inventory/out-of-stock'), () =>
     HttpResponse.json([]),
   ),
 
-  http.get(`${API}/inventory/expiring-soon`, () =>
+  http.get(apiUrl('/inventory/expiring-soon'), () =>
     HttpResponse.json([mockInventoryItem]),
   ),
 
-  http.get(`${API}/inventory/alerts/low-stock`, () =>
+  http.get(apiUrl('/inventory/alerts/low-stock'), () =>
     HttpResponse.json([mockLowStockItem]),
   ),
 
-  http.get(`${API}/inventory/value`, () =>
+  http.get(apiUrl('/inventory/value'), () =>
     HttpResponse.json({
       totalValue: 125000,
       totalItems: 45,
@@ -103,7 +103,7 @@ export const inventoryHandlers = [
     }),
   ),
 
-  http.get(`${API}/inventory/value/by-category`, () =>
+  http.get(apiUrl('/inventory/value/by-category'), () =>
     HttpResponse.json({
       totalValue: 125000,
       totalItems: 45,
@@ -111,61 +111,61 @@ export const inventoryHandlers = [
     }),
   ),
 
-  http.delete(`${API}/inventory/items/:id`, () =>
+  http.delete(apiUrl('/inventory/items/:id'), () =>
     new HttpResponse(null, { status: 204 }),
   ),
 
   // Suppliers
-  http.post(`${API}/inventory/suppliers`, () =>
+  http.post(apiUrl('/inventory/suppliers'), () =>
     HttpResponse.json({ id: 'sup-1', supplierName: 'Fresh Farms', status: 'ACTIVE' }),
   ),
 
-  http.get(`${API}/inventory/suppliers`, () =>
+  http.get(apiUrl('/inventory/suppliers'), () =>
     HttpResponse.json([
       { id: 'sup-1', supplierName: 'Fresh Farms', status: 'ACTIVE', qualityRating: 4.5 },
       { id: 'sup-2', supplierName: 'Veggie World', status: 'ACTIVE', qualityRating: 4.2 },
     ]),
   ),
 
-  http.get(`${API}/inventory/suppliers/:id`, () =>
+  http.get(apiUrl('/inventory/suppliers/:id'), () =>
     HttpResponse.json({ id: 'sup-1', supplierName: 'Fresh Farms', status: 'ACTIVE' }),
   ),
 
-  http.get(`${API}/inventory/suppliers/active`, () =>
+  http.get(apiUrl('/inventory/suppliers/active'), () =>
     HttpResponse.json([{ id: 'sup-1', supplierName: 'Fresh Farms', status: 'ACTIVE' }]),
   ),
 
-  http.get(`${API}/inventory/suppliers/preferred`, () =>
+  http.get(apiUrl('/inventory/suppliers/preferred'), () =>
     HttpResponse.json([{ id: 'sup-1', supplierName: 'Fresh Farms', isPreferred: true }]),
   ),
 
-  http.get(`${API}/inventory/suppliers/reliable`, () =>
+  http.get(apiUrl('/inventory/suppliers/reliable'), () =>
     HttpResponse.json([{ id: 'sup-1', supplierName: 'Fresh Farms', reliability: 'HIGH' }]),
   ),
 
-  http.get(`${API}/inventory/suppliers/search`, () =>
+  http.get(apiUrl('/inventory/suppliers/search'), () =>
     HttpResponse.json([{ id: 'sup-1', supplierName: 'Fresh Farms' }]),
   ),
 
   // Purchase Orders
-  http.get(`${API}/inventory/purchase-orders`, () =>
+  http.get(apiUrl('/inventory/purchase-orders'), () =>
     HttpResponse.json([]),
   ),
 
-  http.post(`${API}/inventory/purchase-orders`, () =>
+  http.post(apiUrl('/inventory/purchase-orders'), () =>
     HttpResponse.json({ id: 'po-1', orderNumber: 'PO-001', status: 'DRAFT' }),
   ),
 
   // Waste
-  http.get(`${API}/inventory/waste`, () =>
+  http.get(apiUrl('/inventory/waste'), () =>
     HttpResponse.json([]),
   ),
 
-  http.post(`${API}/inventory/waste`, () =>
+  http.post(apiUrl('/inventory/waste'), () =>
     HttpResponse.json({ id: 'waste-1', itemName: 'Tomatoes', quantity: 2, wasteCost: 80 }),
   ),
 
-  http.get(`${API}/inventory/waste/trend`, () =>
+  http.get(apiUrl('/inventory/waste/trend'), () =>
     HttpResponse.json([
       { month: '2025-01', totalWasteCost: 5000, recordCount: 12 },
       { month: '2024-12', totalWasteCost: 4500, recordCount: 10 },
