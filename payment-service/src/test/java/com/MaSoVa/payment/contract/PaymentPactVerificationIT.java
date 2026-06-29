@@ -114,8 +114,12 @@ class PaymentPactVerificationIT extends BaseFullIntegrationTest {
     @State("payment service is available")
     void paymentServiceAvailable() {
         try {
+            // This state is shared by both "initiate" interactions, each of which places a real
+            // order via PaymentService - return a unique razorpayOrderId per call so their
+            // Transaction inserts don't collide on the unique razorpayOrderId index.
             when(razorpayService.createOrder(any(), anyString(), anyString()))
-                    .thenReturn(new Order(new JSONObject().put("id", "order_pact_generated")));
+                    .thenAnswer(invocation -> new Order(new JSONObject()
+                            .put("id", "order_pact_generated_" + java.util.UUID.randomUUID())));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -147,7 +151,7 @@ class PaymentPactVerificationIT extends BaseFullIntegrationTest {
         }
 
         Transaction transaction = Transaction.builder()
-                .orderId("ORDER-PACT-1")
+                .orderId("ORDER-PACT-VERIFY")
                 .razorpayOrderId("order_razorpay_1")
                 .amount(java.math.BigDecimal.valueOf(450))
                 .status(Transaction.PaymentStatus.PENDING)
