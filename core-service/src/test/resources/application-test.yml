@@ -1,4 +1,6 @@
 spring:
+  main:
+    allow-bean-definition-overriding: true
   data:
     mongodb:
       # Overridden by @DynamicPropertySource in BaseIntegrationTest

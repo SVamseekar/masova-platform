@@ -1,4 +1,6 @@
 spring:
+  main:
+    allow-bean-definition-overriding: true
   data:
     mongodb:
       uri: mongodb://localhost:27017/masova_logistics_test
