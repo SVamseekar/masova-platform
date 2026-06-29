@@ -43,13 +43,15 @@ Dedicated plans (untracked → committed with this summary):
 - `2026-06-29-pr17-local-first-ci-gate-plan.md` — backend/Pact/Dell gate
 - `2026-06-29-pr17-frontend-tests-fix-plan.md` — frontend Vitest fix
 
-## Branches intentionally kept (unmerged work — rebase onto post-PR#17 `main` required)
+## Global feature branches — rebased 2026-06-29 (pre-merge onto PR #17 tip)
 
-| Branch | Ahead of old `main` | Action after PR #17 merge |
+| Branch | Unique commits after rebase | Notes |
 |---|---|---|
-| `feature/global-2-eu-vat-engine` | 11 commits | `git rebase origin/main`, resolve conflicts, `git push --force-with-lease` |
-| `feature/global-3-currency-locale-i18n` | 12 commits | same |
-| `feature/global-4-stripe-payments` | 10 commits | same |
+| `feature/global-2-eu-vat-engine` | **0** (tip = PR #17) | All work already absorbed into PR #17; branch is a pointer at current tip — safe to delete after merge or keep for future Global-2 work |
+| `feature/global-3-currency-locale-i18n` | **0** (tip = PR #17) | Same — fully absorbed |
+| `feature/global-4-stripe-payments` | **1** (`da3a2b82` docs: mark Global-4 DONE) | Rebased cleanly; only a stale docs commit remains — drop or cherry-pick after merge |
+
+Remote updated via `git push --force-with-lease`. After PR #17 merges, run `git fetch && git rebase origin/main` on any branch still in use (should be no-op for global-2/3).
 
 See `scripts/rebase-global-features.ps1` (Dell) / `scripts/rebase-global-features.sh` (Mac).
 
