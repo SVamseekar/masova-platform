@@ -318,25 +318,27 @@ class DeliveryZoneServiceTest {
         }
 
         @Test
-        @DisplayName("returns null when store not found")
-        void returnsNullWhenStoreNull() {
+        @DisplayName("returns default zones when store not found")
+        void returnsDefaultZonesWhenStoreNull() {
             mockStoreDetails(null);
 
             List<Map<String, Object>> result = deliveryZoneService.getDeliveryZones(STORE_ID);
 
-            assertThat(result).isNull();
+            assertThat(result).hasSize(3);
+            assertThat(result.get(0).get("zoneName")).isEqualTo("A");
         }
 
         @Test
-        @DisplayName("returns null when restTemplate throws (getStoreDetails catches and returns null)")
-        void returnsNullOnException() {
+        @DisplayName("returns default zones when restTemplate throws (getStoreDetails catches and returns null)")
+        void returnsDefaultZonesOnException() {
             mockStoreDetailsThrows(new RuntimeException("Network error"));
 
             // getStoreDetails catches the exception and returns null
-            // getDeliveryZones sees null storeData and returns null
+            // getDeliveryZones falls back to getDefaultZones() when storeData is null
             List<Map<String, Object>> result = deliveryZoneService.getDeliveryZones(STORE_ID);
 
-            assertThat(result).isNull();
+            assertThat(result).hasSize(3);
+            assertThat(result.get(0).get("zoneName")).isEqualTo("A");
         }
     }
 
