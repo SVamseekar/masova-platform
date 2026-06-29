@@ -1,26 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderUnauthenticated, renderAsCustomer, screen } from '@/test/utils/testUtils';
 import userEvent from '@testing-library/user-event';
 import HomePage from './HomePage';
-
-// Mock child components to isolate the page under test
-vi.mock('./components/HeroSection', () => ({
-  default: ({ onOrderNow, onBrowseMenu }: { onOrderNow: () => void; onBrowseMenu: () => void }) => (
-    <div data-testid="hero-section">
-      <button onClick={onOrderNow}>Order Now</button>
-      <button onClick={onBrowseMenu}>Browse Menu</button>
-    </div>
-  ),
-}));
-
-vi.mock('./components/PromotionCard', () => ({
-  default: ({ promotion, onOrderNow }: { promotion: { title: string }; onOrderNow: () => void }) => (
-    <div data-testid="promotion-card">
-      <span>{promotion.title}</span>
-      <button onClick={onOrderNow}>Order Now</button>
-    </div>
-  ),
-}));
 
 vi.mock('../../components/common/AppHeader', () => ({
   default: ({ showPublicNav }: { showPublicNav?: boolean }) => (
@@ -29,25 +10,13 @@ vi.mock('../../components/common/AppHeader', () => ({
 }));
 
 vi.mock('../../components/cart/CartDrawer', () => ({
-  default: ({ open, onClose, onCheckout }: { open: boolean; onClose: () => void; onCheckout: () => void }) => (
+  default: ({ open, onClose, onCheckout }: { open: boolean; onClose: () => void; onCheckout: () => void }) =>
     open ? (
       <div data-testid="cart-drawer">
         <button onClick={onClose}>Close Cart</button>
         <button onClick={onCheckout}>Checkout</button>
       </div>
-    ) : null
-  ),
-}));
-
-vi.mock('../../components/backgrounds/AnimatedBackground', () => ({
-  default: () => <div data-testid="animated-background" />,
-}));
-
-vi.mock('../../components/ui/neumorphic', () => ({
-  Button: ({ children, onClick, ...props }: MockButtonProps) => (
-    <button onClick={onClick} {...props}>{children}</button>
-  ),
-  Card: ({ children, ...props }: MockDivProps) => <div data-testid="neumorphic-card" {...props}>{children}</div>,
+    ) : null,
 }));
 
 const mockNavigate = vi.fn();
@@ -57,119 +26,81 @@ vi.mock('react-router-dom', async () => {
 });
 
 describe('PublicWebsite HomePage', () => {
+  beforeEach(() => {
+    mockNavigate.mockClear();
+  });
+
   it('renders without crashing', () => {
     renderUnauthenticated(<HomePage />);
     expect(screen.getByTestId('app-header')).toBeInTheDocument();
   });
 
-  it('renders the hero section', () => {
+  it('renders hero headline and CTAs', () => {
     renderUnauthenticated(<HomePage />);
-    expect(screen.getByTestId('hero-section')).toBeInTheDocument();
+    expect(screen.getByText(/Your Go-To Spot/)).toBeInTheDocument();
+    expect(screen.getByText(/Tasty Eats!/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Order Now/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /View Deals/i })).toBeInTheDocument();
   });
 
-  it('renders featured promotions section', () => {
+  it('renders category and menu sections', () => {
     renderUnauthenticated(<HomePage />);
-    expect(screen.getByText("Today's Special Offers")).toBeInTheDocument();
-    expect(screen.getByText("Don't miss out on our amazing deals!")).toBeInTheDocument();
+    expect(screen.getByText(/What are you/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Our.*Popular.*Menu/i })).toBeInTheDocument();
+    expect(screen.getByText('Masala Dosa')).toBeInTheDocument();
   });
 
-  it('renders three promotion cards', () => {
+  it('renders feature cards', () => {
     renderUnauthenticated(<HomePage />);
-    const cards = screen.getAllByTestId('promotion-card');
-    expect(cards).toHaveLength(3);
+    expect(screen.getByText('Quality Ingredients')).toBeInTheDocument();
+    expect(screen.getByText('30-Min Delivery')).toBeInTheDocument();
+    expect(screen.getByText('Live Order Tracking')).toBeInTheDocument();
+    expect(screen.getByText('Easy Reordering')).toBeInTheDocument();
   });
 
-  it('renders the "Why Choose MaSoVa?" section', () => {
+  it('renders hot offer banner', () => {
     renderUnauthenticated(<HomePage />);
-    expect(screen.getByText('Why Choose MaSoVa?')).toBeInTheDocument();
-    expect(screen.getByText("We're committed to serving you the best food experience")).toBeInTheDocument();
+    expect(screen.getByText(/Hot Offer/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Claim Offer/i })).toBeInTheDocument();
   });
 
-  it('renders feature cards with titles', () => {
+  it('renders footer content', () => {
     renderUnauthenticated(<HomePage />);
-    expect(screen.getByText('Multi-Cuisine Menu')).toBeInTheDocument();
-    expect(screen.getByText('Fast Delivery')).toBeInTheDocument();
-    expect(screen.getByText('Great Offers')).toBeInTheDocument();
-    expect(screen.getByText('Dine-In & Takeaway')).toBeInTheDocument();
+    expect(screen.getByText('MaSoVa')).toBeInTheDocument();
+    expect(screen.getByText(/© 2026 MaSoVa/)).toBeInTheDocument();
+    expect(screen.getByText('Explore')).toBeInTheDocument();
+    expect(screen.getByText('Support')).toBeInTheDocument();
   });
 
-  it('renders the call-to-action section', () => {
-    renderUnauthenticated(<HomePage />);
-    expect(screen.getByText("Hungry? Let's Order!")).toBeInTheDocument();
-    expect(screen.getByText('Browse our menu and get your favorite food delivered in minutes')).toBeInTheDocument();
-  });
-
-  it('renders the footer with contact information', () => {
-    renderUnauthenticated(<HomePage />);
-    expect(screen.getByText('MaSoVa Restaurant')).toBeInTheDocument();
-    expect(screen.getByText('Phone: +91 9876543210')).toBeInTheDocument();
-    expect(screen.getByText('Email: info@masova.com')).toBeInTheDocument();
-    expect(screen.getByText('Address: Hyderabad, India')).toBeInTheDocument();
-  });
-
-  it('renders the footer copyright text', () => {
-    renderUnauthenticated(<HomePage />);
-    expect(screen.getByText(/2025 MaSoVa Restaurant Management System/)).toBeInTheDocument();
-  });
-
-  it('renders "View All Offers" button', () => {
-    renderUnauthenticated(<HomePage />);
-    expect(screen.getByText('View All Offers')).toBeInTheDocument();
-  });
-
-  it('navigates to /promotions when "View All Offers" is clicked', async () => {
+  it('navigates to /menu from Order Now', async () => {
     const user = userEvent.setup();
     renderUnauthenticated(<HomePage />);
-    await user.click(screen.getByText('View All Offers'));
-    expect(mockNavigate).toHaveBeenCalledWith('/promotions');
-  });
-
-  it('navigates to /checkout from hero "Order Now" button', async () => {
-    const user = userEvent.setup();
-    renderUnauthenticated(<HomePage />);
-    // Hero section has an Order Now button
-    const orderButtons = screen.getAllByText('Order Now');
-    await user.click(orderButtons[0]);
-    expect(mockNavigate).toHaveBeenCalledWith('/checkout');
-  });
-
-  it('navigates to /menu from hero "Browse Menu" button', async () => {
-    const user = userEvent.setup();
-    renderUnauthenticated(<HomePage />);
-    const browseButtons = screen.getAllByText('Browse Menu');
-    await user.click(browseButtons[0]);
+    await user.click(screen.getByRole('button', { name: /Order Now/i }));
     expect(mockNavigate).toHaveBeenCalledWith('/menu');
   });
 
-  it('renders footer quick links', () => {
-    renderUnauthenticated(<HomePage />);
-    expect(screen.getByText('Quick Links')).toBeInTheDocument();
-    expect(screen.getByText('Promotions')).toBeInTheDocument();
-    expect(screen.getByText('Staff Login')).toBeInTheDocument();
-  });
-
-  it('navigates to /login from footer "Staff Login" link', async () => {
+  it('navigates to /promotions from View Deals', async () => {
     const user = userEvent.setup();
     renderUnauthenticated(<HomePage />);
-    await user.click(screen.getByText('Staff Login'));
-    expect(mockNavigate).toHaveBeenCalledWith('/login');
+    await user.click(screen.getByRole('button', { name: /View Deals/i }));
+    expect(mockNavigate).toHaveBeenCalledWith('/promotions');
+  });
+
+  it('navigates to /menu from View All', async () => {
+    const user = userEvent.setup();
+    renderUnauthenticated(<HomePage />);
+    await user.click(screen.getByRole('button', { name: 'View All' }));
+    expect(mockNavigate).toHaveBeenCalledWith('/menu');
   });
 
   it('is accessible without authentication', () => {
     renderUnauthenticated(<HomePage />);
-    expect(screen.getByTestId('hero-section')).toBeInTheDocument();
-    expect(screen.getByText("Today's Special Offers")).toBeInTheDocument();
+    expect(screen.getByText(/Your Go-To Spot/)).toBeInTheDocument();
   });
 
   it('renders the same content for authenticated users', () => {
     renderAsCustomer(<HomePage />);
-    expect(screen.getByTestId('hero-section')).toBeInTheDocument();
-    expect(screen.getByText("Today's Special Offers")).toBeInTheDocument();
-  });
-
-  it('shows the animated background', () => {
-    renderUnauthenticated(<HomePage />);
-    expect(screen.getByTestId('animated-background')).toBeInTheDocument();
+    expect(screen.getByText(/Your Go-To Spot/)).toBeInTheDocument();
   });
 
   it('passes showPublicNav to AppHeader', () => {
