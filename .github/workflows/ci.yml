@@ -104,14 +104,4 @@ jobs:
           VITE_WS_URL: http://localhost:8080/ws
         run: cd frontend && npm run test:run
 
-  # ============================================================
-  # Job 3: Trigger deployment (main branch only, after both pass)
-  # ============================================================
-  trigger-deploy:
-    name: Trigger Deploy
-    needs: [backend, frontend]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy triggered
-        run: echo "CI passed on main — deploy.yml will handle Cloud Run + Firebase deployment"
+
