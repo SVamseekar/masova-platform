@@ -64,7 +64,7 @@ export const PINAuthModal: React.FC<PINAuthModalProps> = ({
       onClose();
     } catch (err: unknown) {
       setError(getRtkErrorMessage(err, 'Invalid PIN'));
-      resetPIN();
+      setPin(['', '', '', '', '']);
       inputRefs[0].current?.focus();
     } finally {
       setLoading(false);

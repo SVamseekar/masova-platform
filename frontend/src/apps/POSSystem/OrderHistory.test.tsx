@@ -10,9 +10,13 @@ import OrderHistory from './OrderHistory';
 
 const mockRecordCashPayment = vi.fn().mockReturnValue({ unwrap: vi.fn() });
 
-vi.mock('../../store/api/paymentApi', () => ({
-  useRecordCashPaymentMutation: () => [mockRecordCashPayment, { isLoading: false }],
-}));
+vi.mock('../../store/api/paymentApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../store/api/paymentApi')>();
+  return {
+    ...actual,
+    useRecordCashPaymentMutation: () => [mockRecordCashPayment, { isLoading: false }],
+  };
+});
 
 const today = new Date().toISOString();
 
@@ -53,13 +57,17 @@ let mockOrdersData: Order[] = mockOrders;
 let mockIsLoading = false;
 let mockError: unknown = null;
 
-vi.mock('../../store/api/orderApi', () => ({
-  useGetStoreOrdersQuery: () => ({
-    data: mockOrdersData,
-    isLoading: mockIsLoading,
-    error: mockError,
-  }),
-}));
+vi.mock('../../store/api/orderApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../store/api/orderApi')>();
+  return {
+    ...actual,
+    useGetStoreOrdersQuery: () => ({
+      data: mockOrdersData,
+      isLoading: mockIsLoading,
+      error: mockError,
+    }),
+  };
+});
 
 vi.mock('../../components/common/AppHeader', () => ({
   default: ({ title }: { title?: string }) => <div data-testid="app-header">{title}</div>,
@@ -180,7 +188,7 @@ describe('OrderHistory', () => {
         preloadedState: managerState,
       });
 
-      expect(screen.getByText(/Paid/)).toBeInTheDocument();
+      expect(screen.getByText('Paid')).toBeInTheDocument();
     });
 
     it('shows Mark as Paid button for pending cash orders', () => {

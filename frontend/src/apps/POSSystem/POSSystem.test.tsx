@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { screen } from '@testing-library/react';
+import { Routes, Route } from 'react-router-dom';
 import { renderWithProviders, createAuthState } from '@/test/utils/testUtils';
 import POSSystem from './POSSystem';
 
@@ -18,45 +19,36 @@ const managerUser = {
   storeId: '1',
 };
 
+const renderPosRoutes = (initialEntry: string) =>
+  renderWithProviders(
+    <Routes>
+      <Route path="/pos/*" element={<POSSystem />} />
+    </Routes>,
+    {
+      useMemoryRouter: true,
+      initialEntries: [initialEntry],
+      preloadedState: createAuthState({ ...managerUser, isActive: true }, true),
+    }
+  );
+
 describe('POSSystem (router)', () => {
   it('renders POSDashboard at the root route', () => {
-    renderWithProviders(<POSSystem />, {
-      useMemoryRouter: true,
-      initialEntries: ['/'],
-      preloadedState: createAuthState({ ...managerUser, isActive: true }, true),
-    });
-
+    renderPosRoutes('/pos');
     expect(screen.getByTestId('pos-dashboard')).toBeInTheDocument();
   });
 
   it('redirects /history to the root dashboard', () => {
-    renderWithProviders(<POSSystem />, {
-      useMemoryRouter: true,
-      initialEntries: ['/history'],
-      preloadedState: createAuthState({ ...managerUser, isActive: true }, true),
-    });
-
-    // After redirect, should render dashboard
+    renderPosRoutes('/pos/history');
     expect(screen.getByTestId('pos-dashboard')).toBeInTheDocument();
   });
 
   it('redirects /reports to the root dashboard', () => {
-    renderWithProviders(<POSSystem />, {
-      useMemoryRouter: true,
-      initialEntries: ['/reports'],
-      preloadedState: createAuthState({ ...managerUser, isActive: true }, true),
-    });
-
+    renderPosRoutes('/pos/reports');
     expect(screen.getByTestId('pos-dashboard')).toBeInTheDocument();
   });
 
   it('redirects unknown routes to the root dashboard', () => {
-    renderWithProviders(<POSSystem />, {
-      useMemoryRouter: true,
-      initialEntries: ['/unknown-route'],
-      preloadedState: createAuthState({ ...managerUser, isActive: true }, true),
-    });
-
+    renderPosRoutes('/pos/unknown-route');
     expect(screen.getByTestId('pos-dashboard')).toBeInTheDocument();
   });
 });

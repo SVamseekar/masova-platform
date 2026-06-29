@@ -13,43 +13,59 @@ vi.mock('notistack', () => ({
   useSnackbar: () => ({ enqueueSnackbar: mockEnqueueSnackbar }),
 }));
 
-vi.mock('../../store/api/analyticsApi', () => ({
-  useGetTodaySalesMetricsQuery: () => ({
-    data: { todaySales: 5000, todayOrderCount: 25, percentChangeFromYesterday: 12.5, lastYearSameDaySales: 4000, percentChangeFromLastYear: 25 },
-    isLoading: false,
-  }),
-  useGetSalesTrendsQuery: () => ({
-    data: { totalSales: 35000, totalOrders: 180 },
-    isLoading: false,
-  }),
-  useGetStaffLeaderboardQuery: () => ({
-    data: { rankings: [] },
-    isLoading: false,
-  }),
-  useGetTopProductsQuery: () => ({
-    data: { topProducts: [] },
-    isLoading: false,
-  }),
-}));
+vi.mock('../../store/api/analyticsApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../store/api/analyticsApi')>();
+  return {
+    ...actual,
+    useGetTodaySalesMetricsQuery: () => ({
+      data: { todaySales: 5000, todayOrderCount: 25, percentChangeFromYesterday: 12.5, lastYearSameDaySales: 4000, percentChangeFromLastYear: 25 },
+      isLoading: false,
+    }),
+    useGetSalesTrendsQuery: () => ({
+      data: { totalSales: 35000, totalOrders: 180 },
+      isLoading: false,
+    }),
+    useGetStaffLeaderboardQuery: () => ({
+      data: { rankings: [] },
+      isLoading: false,
+    }),
+    useGetTopProductsQuery: () => ({
+      data: { topProducts: [] },
+      isLoading: false,
+    }),
+  };
+});
 
-vi.mock('../../store/api/orderApi', () => ({
-  useGetStoreOrdersQuery: () => ({
-    data: [],
-    isLoading: false,
-  }),
-}));
+vi.mock('../../store/api/orderApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../store/api/orderApi')>();
+  return {
+    ...actual,
+    useGetStoreOrdersQuery: () => ({
+      data: [],
+      isLoading: false,
+    }),
+  };
+});
 
-vi.mock('../../store/api/paymentApi', () => ({
-  useRecordCashPaymentMutation: () => [vi.fn(), { isLoading: false }],
-}));
+vi.mock('../../store/api/paymentApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../store/api/paymentApi')>();
+  return {
+    ...actual,
+    useRecordCashPaymentMutation: () => [vi.fn(), { isLoading: false }],
+  };
+});
 
-vi.mock('../../store/api/sessionApi', () => ({
-  useGetActiveStoreSessionsQuery: () => ({
-    data: [],
-    isLoading: false,
-  }),
-  useClockOutEmployeeMutation: () => [vi.fn(), { isLoading: false }],
-}));
+vi.mock('../../store/api/sessionApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../store/api/sessionApi')>();
+  return {
+    ...actual,
+    useGetActiveStoreSessionsQuery: () => ({
+      data: [],
+      isLoading: false,
+    }),
+    useClockOutEmployeeMutation: () => [vi.fn(), { isLoading: false }],
+  };
+});
 
 // Mock child components to isolate POSDashboard behavior
 vi.mock('./components/MenuPanel', () => ({

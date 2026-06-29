@@ -188,9 +188,10 @@ describe('OrderPanel', () => {
         useMemoryRouter: true,
       });
 
-      // The delete buttons use the trash emoji
-      const deleteButtons = screen.getAllByText(/\u{1F5D1}/u);
-      await user.click(deleteButtons[0]);
+      const removeButtons = screen
+        .getAllByRole('button')
+        .filter((button) => button.querySelector('[data-testid="DeleteOutlineIcon"]'));
+      await user.click(removeButtons[0]);
 
       expect(defaultProps.onRemoveItem).toHaveBeenCalledWith('item-1');
     });
