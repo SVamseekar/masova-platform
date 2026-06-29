@@ -31,8 +31,8 @@ public class StoreServiceClient {
     }
 
     /**
-     * Fetches Store from core-service. Returns an empty Store (null countryCode) on error so
-     * order placement is not blocked — India GST fallback will apply.
+     * Fetches Store from core-service. Returns null on error/unreachable core-service so callers
+     * can distinguish "store not found/unreachable" from "store found, no currency set" (legacy India).
      */
     public Store getStore(String storeId) {
         try {
@@ -42,11 +42,10 @@ public class StoreServiceClient {
                 .build()
                 .toUriString();
             ResponseEntity<Store> response = restTemplate.exchange(url, HttpMethods.GET, null, Store.class);
-            Store store = response.getBody();
-            return store != null ? store : new Store();
+            return response.getBody();
         } catch (Exception e) {
-            log.warn("getStore failed for store {} — falling back to India GST: {}", storeId, e.getMessage());
-            return new Store();
+            log.warn("getStore failed for store {}: {}", storeId, e.getMessage());
+            return null;
         }
     }
 

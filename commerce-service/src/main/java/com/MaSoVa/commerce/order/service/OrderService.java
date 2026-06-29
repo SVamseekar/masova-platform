@@ -222,14 +222,12 @@ public class OrderService {
         initializeQualityCheckpoints(order);
 
         // Global-3: propagate store currency (null = India/INR legacy)
-        try {
-            Store store = storeServiceClient.getStore(request.getStoreId());
-            if (store != null && store.getCurrency() != null) {
-                order.setCurrency(store.getCurrency());
-            }
-        } catch (Exception e) {
-            log.warn("Could not fetch store for currency propagation, defaulting to INR: {}", e.getMessage());
+        Store store = storeServiceClient.getStore(request.getStoreId());
+        if (store == null) {
+            log.warn("Could not fetch store {} for currency propagation, defaulting to INR", request.getStoreId());
             order.setCurrency("INR");
+        } else if (store.getCurrency() != null) {
+            order.setCurrency(store.getCurrency());
         }
 
         // Update customer email if provided (for walk-in customers)
