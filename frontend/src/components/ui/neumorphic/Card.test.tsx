@@ -90,7 +90,7 @@ describe('Neumorphic Card', () => {
 
     it('merges custom style prop', () => {
       render(<Card data-testid="card" style={{ border: '1px solid red' }}>Content</Card>);
-      expect(screen.getByTestId('card')).toHaveStyle({ border: '1px solid red' });
+      expect(screen.getByTestId('card').getAttribute('style')).toContain('border: 1px solid red');
     });
   });
 });
