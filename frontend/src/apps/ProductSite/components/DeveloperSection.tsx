@@ -65,7 +65,7 @@ function DevCard({ icon, title, description, accentColor, children }: DevCardPro
 export default function DeveloperSection() {
   return (
     <section
-      id="about"
+      id="developers"
       style={{
         background: '#0A0A0A',
         padding: '96px 24px',
@@ -161,7 +161,7 @@ export default function DeveloperSection() {
             accentColor="#8B5CF6"
           >
             <a
-              href="#contact"
+              href="mailto:hello@masova.com"
               style={{
                 display: 'inline-block',
                 marginTop: 'auto',

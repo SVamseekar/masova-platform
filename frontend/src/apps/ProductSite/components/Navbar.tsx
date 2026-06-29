@@ -91,12 +91,21 @@ export default function Navbar() {
             </a>
           ))}
           <a
-            href="#pricing"
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-gray-400 hover:text-white transition-colors"
+            onClick={() => setMobileOpen(false)}
+          >
+            GitHub
+          </a>
+          <a
+            href="#agent-brain"
             className="text-sm px-4 py-2 rounded-lg text-center font-medium"
             style={{ background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.5)', color: '#D4AF37' }}
             onClick={() => setMobileOpen(false)}
           >
-            Book a Demo
+            Agent brain
           </a>
         </motion.div>
       )}

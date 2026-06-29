@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useChatMutation } from '../../store/api/agentApi';
 import { useAppSelector } from '../../store/hooks';
+
+const PRODUCT_GOLD = '#D4AF37';
 
 interface Message {
   id: string;
@@ -51,13 +54,15 @@ const MicOffIcon = () => (
   </svg>
 );
 
-const VoiceModeIcon = ({ active }: { active: boolean }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill={active ? 'var(--red)' : 'currentColor'}>
+const VoiceModeIcon = ({ active, accent }: { active: boolean; accent: string }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill={active ? accent : 'currentColor'}>
     <path d="M12 3c-4.97 0-9 4.03-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7c0-4.97-4.03-9-9-9z"/>
   </svg>
 );
 
 export const ChatWidget: React.FC = () => {
+  const { pathname } = useLocation();
+  const isProductSite = pathname === '/';
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
@@ -203,31 +208,47 @@ export const ChatWidget: React.FC = () => {
   };
 
   // ── Derived style values (extracted from JSX to avoid IIFE in JSX) ─────────
-  const listeningColor = isListening ? '#ef4444' : 'rgba(255,255,255,0.55)';
+  const accent = isProductSite ? PRODUCT_GOLD : 'var(--red)';
+  const mutedIcon = isProductSite ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.55)';
+  const listeningColor = isListening ? '#ef4444' : mutedIcon;
   const listeningAnimation = isListening ? 'micPulse 1s ease-in-out infinite' : 'none';
-  const voiceModeColor = voiceMode ? 'var(--gold)' : 'rgba(255,255,255,0.55)';
-  const sendBg = input.trim() && !isLoading ? 'var(--red)' : 'var(--surface-3)';
+  const voiceModeColor = voiceMode ? (isProductSite ? PRODUCT_GOLD : 'var(--gold)') : mutedIcon;
+  const sendBg = input.trim() && !isLoading ? accent : (isProductSite ? '#2a2a2a' : 'var(--surface-3)');
+  const sendColor = isProductSite && input.trim() && !isLoading ? '#080808' : '#fff';
   const sendCursor = input.trim() && !isLoading ? 'pointer' : 'not-allowed';
+
+  const fabBottom = isProductSite ? 32 : 24;
+  const fabRight = isProductSite ? 32 : 24;
+  const fabSize = isProductSite ? 56 : 52;
+  const panelBottom = isProductSite ? 100 : 88;
+  const panelRight = isProductSite ? 32 : 24;
 
   return (
     <>
       {/* Chat panel */}
       {open && (
         <div style={{
-          position: 'fixed', bottom: 88, right: 24,
+          position: 'fixed', bottom: panelBottom, right: panelRight,
           width: 360, maxHeight: 520,
           display: 'flex', flexDirection: 'column',
-          background: 'var(--surface)', border: '1px solid var(--border)',
+          background: isProductSite ? '#141414' : 'var(--surface)',
+          border: isProductSite ? '1px solid rgba(212,175,55,0.25)' : '1px solid var(--border)',
           borderRadius: 20, zIndex: 9999, overflow: 'hidden',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.8)',
-          fontFamily: 'var(--font-body)',
+          boxShadow: isProductSite
+            ? '0 24px 64px rgba(0,0,0,0.85), 0 0 0 1px rgba(212,175,55,0.1)'
+            : '0 24px 64px rgba(0,0,0,0.8)',
+          fontFamily: isProductSite ? 'Inter, system-ui, sans-serif' : 'var(--font-body)',
         }}>
           {/* Header */}
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             padding: '14px 18px',
-            background: 'linear-gradient(135deg, var(--red) 0%, #8B1D06 100%)',
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            background: isProductSite
+              ? 'linear-gradient(135deg, rgba(212,175,55,0.22) 0%, rgba(20,20,20,0.95) 100%)'
+              : 'linear-gradient(135deg, var(--red) 0%, #8B1D06 100%)',
+            borderBottom: isProductSite
+              ? '1px solid rgba(212,175,55,0.2)'
+              : '1px solid rgba(255,255,255,0.08)',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{
@@ -242,9 +263,11 @@ export const ChatWidget: React.FC = () => {
                 </svg>
               </div>
               <div>
-                <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.875rem' }}>MaSoVa Support</div>
+                <div style={{ color: isProductSite ? PRODUCT_GOLD : '#fff', fontWeight: 700, fontSize: '0.875rem' }}>
+                  {isProductSite ? 'Support Agent' : 'MaSoVa Support'}
+                </div>
                 <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.72rem' }}>
-                  {voiceMode ? '🎙 Voice mode active' : 'AI assistant · usually instant'}
+                  {voiceMode ? 'Voice mode active' : 'AI assistant · usually instant'}
                 </div>
               </div>
             </div>
@@ -254,20 +277,34 @@ export const ChatWidget: React.FC = () => {
           </div>
 
           {/* Messages */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+            background: isProductSite ? '#0f0f0f' : undefined,
+          }}>
             {messages.map((msg) => (
               <div key={msg.id} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
                 <div style={{
                   maxWidth: '82%',
                   padding: '9px 14px',
                   borderRadius: msg.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                  background: msg.role === 'user' ? 'var(--red)' : 'var(--surface-2)',
-                  color: msg.role === 'user' ? '#fff' : 'var(--text-1)',
+                  background: msg.role === 'user'
+                    ? (isProductSite ? PRODUCT_GOLD : 'var(--red)')
+                    : (isProductSite ? '#1a1a1a' : 'var(--surface-2)'),
+                  color: msg.role === 'user'
+                    ? (isProductSite ? '#080808' : '#fff')
+                    : (isProductSite ? '#e5e5e5' : 'var(--text-1)'),
                   fontSize: '0.875rem',
                   lineHeight: 1.5,
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',
-                  border: msg.role === 'agent' ? '1px solid var(--border)' : 'none',
+                  border: msg.role === 'agent'
+                    ? (isProductSite ? '1px solid rgba(255,255,255,0.08)' : '1px solid var(--border)')
+                    : 'none',
                 }}>
                   {msg.text}
                 </div>
@@ -276,10 +313,15 @@ export const ChatWidget: React.FC = () => {
 
             {isLoading && (
               <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-                <div style={{ padding: '9px 14px', borderRadius: '16px 16px 16px 4px', background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                <div style={{
+                  padding: '9px 14px',
+                  borderRadius: '16px 16px 16px 4px',
+                  background: isProductSite ? '#1a1a1a' : 'var(--surface-2)',
+                  border: isProductSite ? '1px solid rgba(255,255,255,0.08)' : '1px solid var(--border)',
+                }}>
                   <span style={{ display: 'inline-flex', gap: 4 }}>
                     {[0, 1, 2].map(i => (
-                      <span key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--text-3)', display: 'inline-block', animation: `pulse 1.2s ${i * 0.2}s ease-in-out infinite` }} />
+                      <span key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: isProductSite ? '#6b7280' : 'var(--text-3)', display: 'inline-block', animation: `pulse 1.2s ${i * 0.2}s ease-in-out infinite` }} />
                     ))}
                   </span>
                 </div>
@@ -289,20 +331,30 @@ export const ChatWidget: React.FC = () => {
           </div>
 
           {/* Input row */}
-          <div style={{ display: 'flex', gap: 6, padding: '12px 14px', borderTop: '1px solid var(--border)', background: 'var(--surface)', alignItems: 'center' }}>
+          <div style={{
+            display: 'flex',
+            gap: 6,
+            padding: '12px 14px',
+            borderTop: isProductSite ? '1px solid rgba(255,255,255,0.08)' : '1px solid var(--border)',
+            background: isProductSite ? '#141414' : 'var(--surface)',
+            alignItems: 'center',
+          }}>
             {/* Voice mode toggle (full conversation mode) */}
             <button
               onClick={toggleVoiceMode}
               title={voiceMode ? 'Exit voice mode' : 'Start voice conversation'}
               style={{
-                width: 32, height: 32, borderRadius: '50%', border: '1px solid var(--border)',
-                background: voiceMode ? 'rgba(198,42,9,0.15)' : 'var(--surface-2)',
+                width: 32, height: 32, borderRadius: '50%',
+                border: isProductSite ? '1px solid rgba(255,255,255,0.1)' : '1px solid var(--border)',
+                background: voiceMode
+                  ? (isProductSite ? 'rgba(212,175,55,0.15)' : 'rgba(198,42,9,0.15)')
+                  : (isProductSite ? '#1a1a1a' : 'var(--surface-2)'),
                 color: voiceModeColor,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0, transition: 'background 0.2s, color 0.2s',
               }}
             >
-              <VoiceModeIcon active={voiceMode} />
+              <VoiceModeIcon active={voiceMode} accent={accent} />
             </button>
 
             <input
@@ -314,13 +366,15 @@ export const ChatWidget: React.FC = () => {
               disabled={isLoading}
               style={{
                 flex: 1, padding: '9px 14px', borderRadius: 99,
-                border: '1px solid var(--border)',
-                background: 'var(--surface-2)',
-                color: 'var(--text-1)', fontSize: '0.875rem',
-                outline: 'none', fontFamily: 'var(--font-body)',
+                border: isProductSite ? '1px solid rgba(255,255,255,0.1)' : '1px solid var(--border)',
+                background: isProductSite ? '#1a1a1a' : 'var(--surface-2)',
+                color: isProductSite ? '#f3f4f6' : 'var(--text-1)',
+                fontSize: '0.875rem',
+                outline: 'none',
+                fontFamily: isProductSite ? 'Inter, system-ui, sans-serif' : 'var(--font-body)',
               }}
-              onFocus={e => { e.currentTarget.style.borderColor = 'var(--gold)'; }}
-              onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)'; }}
+              onFocus={e => { e.currentTarget.style.borderColor = isProductSite ? PRODUCT_GOLD : 'var(--gold)'; }}
+              onBlur={e => { e.currentTarget.style.borderColor = isProductSite ? 'rgba(255,255,255,0.1)' : 'var(--border)'; }}
             />
 
             {/* Tap-to-talk mic button */}
@@ -328,8 +382,9 @@ export const ChatWidget: React.FC = () => {
               onClick={isListening ? stopListening : startListeningFn}
               title={isListening ? 'Stop listening' : 'Voice input'}
               style={{
-                width: 32, height: 32, borderRadius: '50%', border: '1px solid var(--border)',
-                background: isListening ? 'rgba(239,68,68,0.15)' : 'var(--surface-2)',
+                width: 32, height: 32, borderRadius: '50%',
+                border: isProductSite ? '1px solid rgba(255,255,255,0.1)' : '1px solid var(--border)',
+                background: isListening ? 'rgba(239,68,68,0.15)' : (isProductSite ? '#1a1a1a' : 'var(--surface-2)'),
                 color: listeningColor,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0, transition: 'background 0.2s',
@@ -346,7 +401,7 @@ export const ChatWidget: React.FC = () => {
               style={{
                 width: 38, height: 38, borderRadius: '50%', border: 'none', flexShrink: 0,
                 background: sendBg,
-                color: '#fff', cursor: sendCursor,
+                color: sendColor, cursor: sendCursor,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'background 0.2s',
               }}
@@ -358,24 +413,46 @@ export const ChatWidget: React.FC = () => {
       )}
 
       {/* FAB toggle button */}
-      <button
-        onClick={() => setOpen(o => !o)}
+      <div
+        className={isProductSite && !open ? 'chat-widget-fab-wrap' : undefined}
         style={{
-          position: 'fixed', bottom: 24, right: 24,
-          width: 52, height: 52, borderRadius: '50%',
-          border: open ? '1px solid var(--border)' : 'none',
-          background: open ? 'var(--surface-2)' : 'var(--red)',
-          color: '#fff', cursor: 'pointer',
-          boxShadow: open ? '0 4px 16px rgba(0,0,0,0.6)' : '0 8px 32px rgba(198,42,9,0.55)',
-          zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          transition: 'transform 0.2s, box-shadow 0.2s, background 0.2s',
+          position: 'fixed',
+          bottom: fabBottom,
+          right: fabRight,
+          zIndex: 9999,
         }}
-        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.08)'; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
-        aria-label={open ? 'Close support chat' : 'Open support chat'}
       >
-        {open ? <CloseIcon /> : <ChatIcon />}
-      </button>
+        <button
+          onClick={() => setOpen(o => !o)}
+          style={{
+            width: fabSize,
+            height: fabSize,
+            borderRadius: '50%',
+            border: isProductSite
+              ? '1px solid rgba(212, 175, 55, 0.35)'
+              : (open ? '1px solid var(--border)' : 'none'),
+            background: isProductSite
+              ? (open ? '#1a1a1a' : 'rgba(20, 20, 20, 0.9)')
+              : (open ? 'var(--surface-2)' : 'var(--red)'),
+            color: isProductSite ? PRODUCT_GOLD : '#fff',
+            cursor: 'pointer',
+            backdropFilter: isProductSite ? 'blur(12px)' : undefined,
+            WebkitBackdropFilter: isProductSite ? 'blur(12px)' : undefined,
+            boxShadow: isProductSite
+              ? '0 8px 32px rgba(0,0,0,0.55)'
+              : (open ? '0 4px 16px rgba(0,0,0,0.6)' : '0 8px 32px rgba(198,42,9,0.55)'),
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'transform 0.2s, box-shadow 0.2s, background 0.2s',
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.08)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
+          aria-label={open ? 'Close support chat' : 'Open support chat'}
+        >
+          {open ? <CloseIcon /> : <ChatIcon />}
+        </button>
+      </div>
 
       <style>{`
         @keyframes pulse {
@@ -385,6 +462,19 @@ export const ChatWidget: React.FC = () => {
         @keyframes micPulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.4; }
+        }
+        .chat-widget-fab-wrap::before {
+          content: '';
+          position: absolute;
+          inset: -4px;
+          border-radius: 50%;
+          border: 1px solid rgba(212, 175, 55, 0.35);
+          animation: fabRingPulse 2.5s ease-in-out infinite;
+          pointer-events: none;
+        }
+        @keyframes fabRingPulse {
+          0%, 100% { transform: scale(1); opacity: 0.7; }
+          50% { transform: scale(1.18); opacity: 0; }
         }
       `}</style>
     </>
