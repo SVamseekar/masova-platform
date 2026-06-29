@@ -17,6 +17,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import io.lettuce.core.api.StatefulConnection;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 import java.time.Duration;
@@ -56,7 +57,7 @@ public class AdvancedCacheConfig {
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
         // Configure connection pool
-        GenericObjectPoolConfig<?> poolConfig = new GenericObjectPoolConfig<>();
+        GenericObjectPoolConfig<StatefulConnection<?, ?>> poolConfig = new GenericObjectPoolConfig<>();
         poolConfig.setMaxTotal(maxTotal);
         poolConfig.setMaxIdle(maxIdle);
         poolConfig.setMinIdle(minIdle);

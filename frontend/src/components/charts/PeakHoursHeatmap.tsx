@@ -90,9 +90,10 @@ export default function PeakHoursHeatmap({ storeId }: PeakHoursHeatmapProps) {
           <XAxis dataKey="label" angle={-45} textAnchor="end" height={80} />
           <YAxis />
           <Tooltip
-            formatter={(value: number, name: string) => {
-              if (name === 'sales') return formatCurrency(value);
-              return value;
+            formatter={(value, name) => {
+              const n = typeof value === 'number' ? value : Number(value ?? 0);
+              if (name === 'sales') return formatCurrency(n);
+              return n;
             }}
             labelStyle={{ color: '#000' }}
           />

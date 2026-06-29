@@ -187,9 +187,10 @@ const AnalyticsDashboard: React.FC = () => {
               <XAxis dataKey="date" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => formatCurrency(v / 1000) + 'k'} />
               <Tooltip
-                formatter={(value: number, name: string) =>
-                  name === 'revenue' ? [formatCurrency(value), 'Revenue'] : [value, 'Orders']
-                }
+                formatter={(value, name) => {
+                  const n = typeof value === 'number' ? value : Number(value ?? 0);
+                  return name === 'revenue' ? [formatCurrency(n), 'Revenue'] : [n, 'Orders'];
+                }}
               />
               <Legend />
               <Line
@@ -238,9 +239,10 @@ const AnalyticsDashboard: React.FC = () => {
               <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-30} textAnchor="end" />
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip
-                formatter={(value: number, name: string) =>
-                  name === 'revenue' ? [formatCurrency(value), 'Revenue'] : [value, 'Units Sold']
-                }
+                formatter={(value, name) => {
+                  const n = typeof value === 'number' ? value : Number(value ?? 0);
+                  return name === 'revenue' ? [formatCurrency(n), 'Revenue'] : [n, 'Units Sold'];
+                }}
               />
               <Legend verticalAlign="top" />
               <Bar dataKey="quantity" fill="#D32F2F" name="Units Sold" radius={[4, 4, 0, 0]} />
