@@ -12,6 +12,8 @@ import au.com.dius.pact.provider.junitsupport.State;
 import au.com.dius.pact.provider.junitsupport.StateChangeAction;
 import au.com.dius.pact.provider.junitsupport.loader.PactFolder;
 import au.com.dius.pact.provider.spring.spring6.PactVerificationSpring6Provider;
+import com.MaSoVa.logistics.delivery.entity.DeliveryTracking;
+import com.MaSoVa.logistics.delivery.repository.DeliveryTrackingRepository;
 import com.MaSoVa.shared.test.BaseMessagingIntegrationTest;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -20,6 +22,7 @@ import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -46,6 +49,9 @@ class LogisticsPactVerificationIT extends BaseMessagingIntegrationTest {
 
     @LocalServerPort
     int port;
+
+    @Autowired
+    private DeliveryTrackingRepository deliveryTrackingRepository;
 
     @BeforeEach
     void before(PactVerificationContext context) {
@@ -100,9 +106,17 @@ class LogisticsPactVerificationIT extends BaseMessagingIntegrationTest {
 
     @State("delivery tracking exists")
     void deliveryTrackingExists() {
+        DeliveryTracking tracking = new DeliveryTracking();
+        tracking.setOrderId("ORDER-PACT-1");
+        tracking.setDriverId("driver-pact-1");
+        tracking.setDriverName("Pact Test Driver");
+        tracking.setStatus("OUT_FOR_DELIVERY");
+        deliveryTrackingRepository.save(tracking);
     }
 
     @State(value = "delivery tracking exists", action = StateChangeAction.TEARDOWN)
     void cleanupDeliveryTracking() {
+        deliveryTrackingRepository.findByOrderId("ORDER-PACT-1")
+                .ifPresent(deliveryTrackingRepository::delete);
     }
 }

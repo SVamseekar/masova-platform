@@ -65,7 +65,7 @@ describe('Logistics Service Contract Tests', () => {
           headers: { 'Content-Type': 'application/json' },
           body: {
             orderId: 'ORDER-PACT-1',
-            status: like('OUT_FOR_DELIVERY'),
+            orderStatus: like('OUT_FOR_DELIVERY'),
           },
         });
 

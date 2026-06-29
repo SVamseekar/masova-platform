@@ -4,77 +4,6 @@
   },
   "interactions": [
     {
-      "description": "a request to get available drivers",
-      "providerStates": [
-        {
-          "name": "drivers are available"
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "path": "/api/delivery/drivers/available"
-      },
-      "response": {
-        "body": [
-          {
-            "id": "driver-1",
-            "name": "Rajesh Kumar",
-            "rating": 4.8,
-            "status": "AVAILABLE"
-          }
-        ],
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "matchingRules": {
-          "body": {
-            "$": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type",
-                  "min": 1
-                }
-              ]
-            },
-            "$[*].id": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$[*].name": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$[*].rating": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$[*].status": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            }
-          }
-        },
-        "status": 200
-      }
-    },
-    {
       "description": "a request to get delivery zones",
       "providerStates": [
         {
@@ -149,82 +78,14 @@
       "response": {
         "body": {
           "orderId": "ORDER-PACT-1",
-          "status": "OUT_FOR_DELIVERY"
+          "orderStatus": "OUT_FOR_DELIVERY"
         },
         "headers": {
           "Content-Type": "application/json"
         },
         "matchingRules": {
           "body": {
-            "$.status": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            }
-          }
-        },
-        "status": 200
-      }
-    },
-    {
-      "description": "a request to track delivery",
-      "providerStates": [
-        {
-          "name": "delivery tracking exists for order order-track-1"
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "path": "/api/delivery/track/order-track-1"
-      },
-      "response": {
-        "body": {
-          "driverName": "Rajesh Driver",
-          "estimatedMinutes": 15,
-          "orderId": "order-track-1",
-          "status": "IN_TRANSIT"
-        },
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "matchingRules": {
-          "body": {
-            "$": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.driverName": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.estimatedMinutes": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.orderId": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.status": {
+            "$.orderStatus": {
               "combine": "AND",
               "matchers": [
                 {

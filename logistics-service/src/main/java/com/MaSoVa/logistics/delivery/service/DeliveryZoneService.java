@@ -198,7 +198,7 @@ public class DeliveryZoneService {
     public List<Map<String, Object>> getDeliveryZones(String storeId) {
         try {
             Map<String, Object> storeData = getStoreDetails(storeId);
-            if (storeData == null) return null;
+            if (storeData == null) return getDefaultZones();
 
             Map<String, Object> config = asStringObjectMap(storeData.get("configuration"));
             if (config == null) return getDefaultZones();
