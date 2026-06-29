@@ -63,8 +63,10 @@
       "request": {
         "body": {
           "amount": 450,
+          "customerId": "CUSTOMER-PACT-1",
           "orderId": "ORDER-PACT-1",
-          "paymentMethod": "CARD"
+          "paymentMethod": "CARD",
+          "storeId": "STORE-PACT-1"
         },
         "headers": {
           "Authorization": "Bearer test-token",
@@ -73,6 +75,14 @@
         "matchingRules": {
           "body": {
             "$.amount": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.customerId": {
               "combine": "AND",
               "matchers": [
                 {
@@ -89,6 +99,14 @@
               ]
             },
             "$.paymentMethod": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.storeId": {
               "combine": "AND",
               "matchers": [
                 {

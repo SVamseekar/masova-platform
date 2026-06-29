@@ -35,6 +35,8 @@ describe('Payment Service Contract Tests', () => {
             orderId: like('ORDER-PACT-1'),
             amount: like(450.0),
             paymentMethod: like('CARD'),
+            customerId: like('CUSTOMER-PACT-1'),
+            storeId: like('STORE-PACT-1'),
           },
         })
         .willRespondWith({
@@ -49,7 +51,13 @@ describe('Payment Service Contract Tests', () => {
       await provider.executeTest(async (mockServer) => {
         const response = await axios.post(
           `${mockServer.url}/api/payments/initiate`,
-          { orderId: 'ORDER-PACT-1', amount: 450.0, paymentMethod: 'CARD' },
+          {
+            orderId: 'ORDER-PACT-1',
+            amount: 450.0,
+            paymentMethod: 'CARD',
+            customerId: 'CUSTOMER-PACT-1',
+            storeId: 'STORE-PACT-1',
+          },
           { headers: { Authorization: 'Bearer test-token', 'Content-Type': 'application/json' } }
         );
         expect(response.status).toBe(200);
