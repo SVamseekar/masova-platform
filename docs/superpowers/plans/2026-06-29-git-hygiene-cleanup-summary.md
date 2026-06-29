@@ -55,11 +55,17 @@ Feature code for Global-2/3/4 is **on `main`** (absorbed via PR #17). Branches a
 
 See `scripts/rebase-global-features.ps1` / `.sh` after each branch fast-forwards to `main`.
 
-## Local-only state (Task 3.5 — not destroyed)
+## Task 3.5 — local cleanup (completed 2026-06-29, Mac)
 
-- 3 stashes — pending manual worktree review (git-hygiene plan Task 3.5 Step 4)
-- Local `security-remediation-plan-a` — delete with `git branch -d` only after confirming commit is on `main` post-merge
-- Upstream tracking for `feature/global-2` and `feature/global-3` — set per Task 3.5 Step 2
+| Action | Result |
+|---|---|
+| Upstream tracking | ✅ `feature/global-2` and `feature/global-3` → origin |
+| `security-remediation-plan-a` | ✅ Deleted locally (`0d777389` already on `main`) |
+| Stash `@{0}` plan-a WIP | ✅ Dropped — worktree review: no net diff on current `main` (absorbed in PR #17) |
+| Stash `@{1}` plan-b WIP | ✅ Dropped — same |
+| Stash `@{2}` Analytics Dashboard | ✅ Dropped — obsolete vs current `main` |
+| Global branches | ✅ Reset to `f8e1ece7` (`main`) on remote — ready for adaptation PRs |
+| Stale local branches | ✅ Deleted `chore/sync-local-main-and-log-cleanup`, `chore/dell-path-doc`, `docs/git-hygiene-task8-complete`, `chore/git-hygiene-safeguards` |
 
 ## Safeguards (Tasks 4–8)
 
@@ -70,7 +76,7 @@ See `scripts/rebase-global-features.ps1` / `.sh` after each branch fast-forwards
 | 6 | Pre-commit secret scan + API validation | ✅ `scripts/git-hooks/pre-commit` + install scripts (Mac install deferred) |
 | 7 | Razorpay key in `phase5-env-vars.md` | ✅ placeholders |
 | 8 | Branch protection tightening | ✅ 2026-06-29 — linear history, code owners, conversation resolution |
-| 3.5 | Stash audit | ⏳ Pending manual review |
+| 3.5 | Stash audit + local cleanup | ✅ 2026-06-29 |
 
 ### Install git hooks (Mac — when ready; scripts ship in PR #19)
 
