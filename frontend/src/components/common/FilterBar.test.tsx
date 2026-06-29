@@ -124,14 +124,10 @@ describe('FilterBar', () => {
     };
 
     render(<FilterBar {...props} />);
-    const dateInputs = screen.getAllByRole('textbox').length > 0
-      ? screen.getAllByRole('textbox')
-      : document.querySelectorAll('input[type="date"]');
-
-    if (dateInputs.length >= 2) {
-      fireEvent.change(dateInputs[0], { target: { value: '2026-01-01' } });
-      expect(onFilterChange).toHaveBeenCalledWith('dateRange', { from: '2026-01-01' });
-    }
+    const dateInputs = document.querySelectorAll('input[type="date"]');
+    expect(dateInputs.length).toBeGreaterThanOrEqual(2);
+    fireEvent.change(dateInputs[0], { target: { value: '2026-01-01' } });
+    expect(onFilterChange).toHaveBeenCalledWith('dateRange', { from: '2026-01-01' });
   });
 
   it('renders multi-select filter with checkboxes', () => {

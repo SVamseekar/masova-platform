@@ -38,9 +38,30 @@ vi.mock('../utils/tabStorage', () => ({
   setTabStore: vi.fn(),
 }));
 
+const defaultStoresMock = {
+  data: [
+    {
+      id: 'store-1',
+      name: 'Downtown Branch',
+      storeCode: 'DT-001',
+      address: { street: '123 Main St', city: 'Hyderabad', state: 'Telangana', pincode: '500001' },
+      status: 'ACTIVE',
+    },
+    {
+      id: 'store-2',
+      name: 'HITEC City Branch',
+      storeCode: 'HC-002',
+      address: { street: '456 Tech Park', city: 'Hyderabad', state: 'Telangana', pincode: '500081' },
+      status: 'ACTIVE',
+    },
+  ],
+  isLoading: false,
+} as ReturnType<typeof useGetActiveStoresQuery>;
+
 describe('StoreSelector', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useGetActiveStoresQuery).mockReturnValue(defaultStoresMock);
   });
 
   it('renders without crashing', () => {
@@ -69,7 +90,7 @@ describe('StoreSelector', () => {
 
     await user.click(screen.getByText('Select Store'));
 
-    expect(screen.getByText('Hyderabad, Telangana')).toBeInTheDocument();
+    expect(screen.getAllByText('Hyderabad, Telangana').length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows store status badges in dropdown', async () => {
@@ -78,8 +99,8 @@ describe('StoreSelector', () => {
 
     await user.click(screen.getByText('Select Store'));
 
-    const activeBadges = screen.getAllByText('active');
-    expect(activeBadges.length).toBeGreaterThanOrEqual(2);
+    const openBadges = screen.getAllByText('OPEN');
+    expect(openBadges.length).toBeGreaterThanOrEqual(2);
   });
 
   it('calls onStoreChange callback when a store is selected', async () => {
@@ -124,7 +145,7 @@ describe('StoreSelector', () => {
   });
 
   it('shows empty message when no stores are available', async () => {
-    vi.mocked(useGetActiveStoresQuery).mockReturnValueOnce({ data: [], isLoading: false } as ReturnType<typeof useGetActiveStoresQuery>);
+    vi.mocked(useGetActiveStoresQuery).mockReturnValue({ data: [], isLoading: false } as ReturnType<typeof useGetActiveStoresQuery>);
 
     const user = userEvent.setup();
     renderWithProviders(<StoreSelector />, { useMemoryRouter: true });

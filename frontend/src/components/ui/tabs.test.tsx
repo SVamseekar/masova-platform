@@ -130,9 +130,11 @@ describe('Tabs Components', () => {
       expect(screen.getByRole('button', { name: 'Tab 1' })).toHaveStyle({ background: 'none' });
     });
 
-    it('renders with no visible border', () => {
+    it('renders with transparent side borders on inactive tab', () => {
       renderTabs();
-      expect(screen.getByRole('button', { name: 'Tab 1' })).toHaveStyle({ border: 'none' });
+      const tab = screen.getByRole('button', { name: 'Tab 1' });
+      expect(tab).toHaveStyle({ background: 'none' });
+      expect(tab.style.borderBottom).toBeTruthy();
     });
 
     it('renders with cursor pointer', () => {

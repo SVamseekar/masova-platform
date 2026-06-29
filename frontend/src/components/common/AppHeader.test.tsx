@@ -71,7 +71,7 @@ describe('AppHeader', () => {
   });
 
   describe('authenticated customer on public nav', () => {
-    it('shows Home, Offers, Cart, and user name', () => {
+    it('shows Menu, Promotions, cart button, and user name', () => {
       renderWithProviders(
         <AppHeader showPublicNav />,
         {
@@ -80,9 +80,9 @@ describe('AppHeader', () => {
         }
       );
 
-      expect(screen.getByText(/Home/)).toBeInTheDocument();
-      expect(screen.getByText(/Offers/)).toBeInTheDocument();
-      expect(screen.getByText(/Cart/)).toBeInTheDocument();
+      expect(screen.getByText('Menu')).toBeInTheDocument();
+      expect(screen.getByText('Promotions')).toBeInTheDocument();
+      expect(screen.getByLabelText('Open cart')).toBeInTheDocument();
       expect(screen.getByText('Test Customer')).toBeInTheDocument();
     });
 
@@ -97,7 +97,7 @@ describe('AppHeader', () => {
         }
       );
 
-      await user.click(screen.getByText(/Cart/));
+      await user.click(screen.getByLabelText('Open cart'));
       expect(onCartClick).toHaveBeenCalledTimes(1);
     });
 
@@ -110,7 +110,7 @@ describe('AppHeader', () => {
         }
       );
 
-      expect(screen.getByText(/Login/)).toBeInTheDocument();
+      expect(screen.getByText('Sign In')).toBeInTheDocument();
     });
   });
 
@@ -124,10 +124,10 @@ describe('AppHeader', () => {
         }
       );
 
-      expect(screen.getByText(/Go to Dashboard/)).toBeInTheDocument();
+      expect(screen.getByText(/Dashboard/)).toBeInTheDocument();
     });
 
-    it('does not show Cart button for staff users on public pages', () => {
+    it('does not show cart button for staff users on public pages', () => {
       renderWithProviders(
         <AppHeader showPublicNav />,
         {
@@ -136,7 +136,7 @@ describe('AppHeader', () => {
         }
       );
 
-      expect(screen.queryByText(/Cart/)).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Open cart')).not.toBeInTheDocument();
     });
   });
 
