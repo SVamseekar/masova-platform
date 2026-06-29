@@ -229,6 +229,7 @@ public class OrderService {
             }
         } catch (Exception e) {
             log.warn("Could not fetch store for currency propagation, defaulting to INR: {}", e.getMessage());
+            order.setCurrency("INR");
         }
 
         // Update customer email if provided (for walk-in customers)

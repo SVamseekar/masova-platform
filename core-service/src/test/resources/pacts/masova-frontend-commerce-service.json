@@ -141,168 +141,6 @@
                 }
               ]
             },
-            "$.orderNumber": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.status": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.storeId": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.total": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            }
-          }
-        },
-        "status": 201
-      }
-    },
-    {
-      "description": "a request to create a new order",
-      "providerStates": [
-        {
-          "name": "store exists with id store-1"
-        }
-      ],
-      "request": {
-        "body": {
-          "customerName": "Test Customer",
-          "items": [
-            {
-              "menuItemId": "item-1",
-              "name": "Pizza",
-              "price": 299,
-              "quantity": 1
-            }
-          ],
-          "orderType": "DELIVERY",
-          "storeId": "store-1"
-        },
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "matchingRules": {
-          "body": {
-            "$.customerName": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.items": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type",
-                  "min": 1
-                }
-              ]
-            },
-            "$.items[*].menuItemId": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.items[*].name": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.items[*].price": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.items[*].quantity": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.orderType": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.storeId": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            }
-          }
-        },
-        "method": "POST",
-        "path": "/api/orders"
-      },
-      "response": {
-        "body": {
-          "customerName": "Test Customer",
-          "id": "order-pact-new",
-          "orderNumber": "ORD-20250101-002",
-          "status": "RECEIVED",
-          "total": 299
-        },
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "matchingRules": {
-          "body": {
-            "$": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.customerName": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
             "$.id": {
               "combine": "AND",
               "matchers": [
@@ -320,6 +158,14 @@
               ]
             },
             "$.status": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.storeId": {
               "combine": "AND",
               "matchers": [
                 {
@@ -352,7 +198,7 @@
           "allergenFree": false,
           "allergens": [
             "MILK",
-            "GLUTEN"
+            "CEREALS_GLUTEN"
           ]
         },
         "headers": {
@@ -391,14 +237,6 @@
         },
         "matchingRules": {
           "body": {
-            "$": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
             "$.allergensDeclared": {
               "combine": "AND",
               "matchers": [
@@ -523,14 +361,6 @@
         },
         "matchingRules": {
           "body": {
-            "$": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
             "$.basePrice": {
               "combine": "AND",
               "matchers": [
@@ -626,6 +456,14 @@
                 }
               ]
             },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
             "$.orderNumber": {
               "combine": "AND",
               "matchers": [
@@ -699,14 +537,6 @@
         },
         "matchingRules": {
           "body": {
-            "$": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
             "$.createdAt": {
               "combine": "AND",
               "matchers": [
@@ -735,8 +565,7 @@
               "combine": "AND",
               "matchers": [
                 {
-                  "match": "type",
-                  "min": 1
+                  "match": "type"
                 }
               ]
             },
@@ -897,6 +726,14 @@
                 }
               ]
             },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
             "$.orderNumber": {
               "combine": "AND",
               "matchers": [
@@ -974,14 +811,6 @@
         },
         "matchingRules": {
           "body": {
-            "$": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
             "$.id": {
               "combine": "AND",
               "matchers": [

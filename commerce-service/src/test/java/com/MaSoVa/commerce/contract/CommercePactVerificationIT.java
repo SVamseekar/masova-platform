@@ -176,6 +176,7 @@ class CommercePactVerificationIT extends BaseFullIntegrationTest {
         order.setStatus(Order.OrderStatus.RECEIVED);
         order.setOrderType(Order.OrderType.DELIVERY);
         order.setPaymentStatus(Order.PaymentStatus.PENDING);
+        order.setCurrency("INR");
         order.setTotal(BigDecimal.valueOf(299));
         order.setItems(List.of(
                 OrderItem.builder()
