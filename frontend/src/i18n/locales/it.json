@@ -38,6 +38,17 @@
     "tracking_title": "Tracciamento ordine",
     "no_orders": "Nessun ordine"
   },
+  "staff": {
+    "total_orders": "Ordini totali",
+    "total_revenue": "Ricavi totali",
+    "total_amount": "Importo totale",
+    "tax": "Imposta",
+    "pickup": "Asporto",
+    "delivery": "Consegna",
+    "dine_in": "Al tavolo",
+    "your_order": "Il tuo ordine",
+    "new_order": "Nuovo ordine"
+  },
   "common": {
     "save": "Salva",
     "cancel": "Annulla",

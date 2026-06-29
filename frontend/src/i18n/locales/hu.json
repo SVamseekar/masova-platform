@@ -38,6 +38,17 @@
     "tracking_title": "Rendelés követése",
     "no_orders": "Nincs rendelés"
   },
+  "staff": {
+    "total_orders": "Összes rendelés",
+    "total_revenue": "Összes bevétel",
+    "total_amount": "Végösszeg",
+    "tax": "Adó",
+    "pickup": "Elvitel",
+    "delivery": "Házhozszállítás",
+    "dine_in": "Helyben fogyasztás",
+    "your_order": "Rendelésed",
+    "new_order": "Új rendelés"
+  },
   "common": {
     "save": "Mentés",
     "cancel": "Mégse",

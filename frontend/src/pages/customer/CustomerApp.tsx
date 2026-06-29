@@ -1,7 +1,14 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppSelector } from '../../store/hooks';
-import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import {formatMoney, formatMajorAmount} from '../../utils/currency';
+import {
+  selectCartCurrency,
+  selectCartLocale,
+  selectDeliveryFee,
+  selectStoreCountryCode,
+} from '../../store/slices/cartSlice';
+import { formatMajorAmount } from '../../utils/currency';
+import { computePreCheckoutTotals } from '../../utils/orderTax';
 
 // TypeScript interfaces
 interface MenuItem {
@@ -25,9 +32,12 @@ interface OrderTracking {
 }
 
 const CustomerApp: React.FC = () => {
+  const { t } = useTranslation();
   const [currentView, setCurrentView] = useState<string>('menu');
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
+  const deliveryFee = useAppSelector(selectDeliveryFee);
+  const storeCountryCode = useAppSelector(selectStoreCountryCode);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [activeFilter, setActiveFilter] = useState<string>('All');
   const [orderTracking] = useState<OrderTracking>({
@@ -110,6 +120,14 @@ const CustomerApp: React.FC = () => {
   const getTotalPrice = (): number => {
     return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
   };
+
+  const subtotal = getTotalPrice();
+  const appliedDeliveryFee = cart.length > 0 ? deliveryFee : 0;
+  const { total: checkoutTotal } = useMemo(
+    () => computePreCheckoutTotals(subtotal, appliedDeliveryFee, storeCountryCode),
+    [subtotal, appliedDeliveryFee, storeCountryCode]
+  );
+  const fmt = (v: number) => formatMajorAmount(v, currency, locale);
 
   const getFilteredItems = (): MenuItem[] => {
     return activeFilter === 'All' ? menuItems : menuItems.filter(item => item.category === activeFilter);
@@ -199,19 +217,19 @@ const CustomerApp: React.FC = () => {
 
           <div className="cart-summary">
             <div className="summary-row">
-              <span>Subtotal</span>
-              <span>{formatMajorAmount(getTotalPrice(), currency, locale)}</span>
+              <span>{t('cart.subtotal')}</span>
+              <span>{fmt(subtotal)}</span>
             </div>
             <div className="summary-row">
-              <span>Delivery Fee</span>
-              <span>{formatMajorAmount(29, currency, locale)}</span>
+              <span>{t('cart.delivery_fee')}</span>
+              <span>{fmt(appliedDeliveryFee)}</span>
             </div>
             <div className="summary-row total-row">
-              <span>Total</span>
-              <span>{formatMajorAmount(getTotalPrice() + 29, currency, locale)}</span>
+              <span>{t('cart.total')}</span>
+              <span>{fmt(checkoutTotal)}</span>
             </div>
             <button className="checkout-btn" onClick={() => setCurrentView('payment')}>
-              <span>Proceed to Payment</span>
+              <span>{t('cart.proceed_to_payment')}</span>
               <span className="btn-icon">→</span>
             </button>
           </div>
@@ -223,7 +241,7 @@ const CustomerApp: React.FC = () => {
   const PaymentView: React.FC = () => (
     <div className="payment-container">
       <div className="payment-header">
-        <h2 className="section-title">Secure Payment</h2>
+        <h2 className="section-title">{t('payment.secure_payment')}</h2>
         <p className="section-subtitle">Choose your preferred payment method</p>
       </div>
 
@@ -252,26 +270,26 @@ const CustomerApp: React.FC = () => {
       </div>
 
       <div className="order-summary-card">
-        <h3 className="summary-title">Order Summary</h3>
+        <h3 className="summary-title">{t('cart.order_summary')}</h3>
         <div className="summary-details">
           <div className="summary-line">
-            <span>Items ({cart.length})</span>
-            <span>{formatMajorAmount(getTotalPrice(), currency, locale)}</span>
+            <span>{t('cart.subtotal_with_count', { count: cart.length })}</span>
+            <span>{fmt(subtotal)}</span>
           </div>
           <div className="summary-line">
-            <span>Delivery Charges</span>
-            <span>{formatMajorAmount(29, currency, locale)}</span>
+            <span>{t('cart.delivery_fee')}</span>
+            <span>{fmt(appliedDeliveryFee)}</span>
           </div>
           <div className="summary-divider"></div>
           <div className="summary-line total">
-            <span>Total Amount</span>
-            <span>{formatMajorAmount(getTotalPrice() + 29, currency, locale)}</span>
+            <span>{t('cart.total')}</span>
+            <span>{fmt(checkoutTotal)}</span>
           </div>
         </div>
       </div>
 
       <button className="pay-btn" onClick={() => setCurrentView('tracking')}>
-        <span>Pay {formatMajorAmount(getTotalPrice() + 29, currency, locale)}</span>
+        <span>{t('payment.pay_razorpay', { total: fmt(checkoutTotal) })}</span>
         <span className="btn-icon">→</span>
       </button>
     </div>

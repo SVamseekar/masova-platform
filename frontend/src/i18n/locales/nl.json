@@ -38,6 +38,17 @@
     "tracking_title": "Bestelling volgen",
     "no_orders": "Geen bestellingen"
   },
+  "staff": {
+    "total_orders": "Totaal bestellingen",
+    "total_revenue": "Totale omzet",
+    "total_amount": "Totaalbedrag",
+    "tax": "Belasting",
+    "pickup": "Afhalen",
+    "delivery": "Bezorging",
+    "dine_in": "Ter plaatse",
+    "your_order": "Uw bestelling",
+    "new_order": "Nieuwe bestelling"
+  },
   "common": {
     "save": "Opslaan",
     "cancel": "Annuleren",

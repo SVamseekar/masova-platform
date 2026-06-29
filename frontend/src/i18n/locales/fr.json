@@ -38,6 +38,17 @@
     "tracking_title": "Suivi de commande",
     "no_orders": "Aucune commande"
   },
+  "staff": {
+    "total_orders": "Commandes totales",
+    "total_revenue": "Revenu total",
+    "total_amount": "Montant total",
+    "tax": "Taxe",
+    "pickup": "À emporter",
+    "delivery": "Livraison",
+    "dine_in": "Sur place",
+    "your_order": "Votre commande",
+    "new_order": "Nouvelle commande"
+  },
   "common": {
     "save": "Enregistrer",
     "cancel": "Annuler",

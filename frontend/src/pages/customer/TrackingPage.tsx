@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTrackOrderQuery, OrderItem } from '../../store/api/orderApi';
 import { useTrackOrderQuery as useDeliveryTrackQuery } from '../../store/api/deliveryApi';
 import { useCreateReviewMutation } from '../../store/api/reviewApi';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { clearCart, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import {formatMoney, formatMajorAmount} from '../../utils/currency';
+import { formatMajorAmount } from '../../utils/currency';
+import { formatOrderAmount } from '../../utils/orderMoney';
 import CustomerPageHeader from '../../components/common/CustomerPageHeader';
 import { DriverTrackingMap } from '../../components/delivery/DriverTrackingMap';
 import { useOrderTrackingWebSocket } from '../../hooks/useOrderTrackingWebSocket';
@@ -140,6 +142,7 @@ const RatingDialog: React.FC<{
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const TrackingPage: React.FC = () => {
+  const { t } = useTranslation();
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -524,13 +527,13 @@ const TrackingPage: React.FC = () => {
                       <span style={{ width: 22, height: 22, borderRadius: 6, background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.68rem', fontWeight: 700, color: 'var(--gold)', flexShrink: 0 }}>{item.quantity}</span>
                       <span style={{ fontSize: '0.86rem', color: 'var(--text-2)' }}>{item.name}</span>
                     </div>
-                    <span style={{ fontSize: '0.86rem', fontWeight: 600, color: 'var(--text-1)', flexShrink: 0 }}>{formatMajorAmount(item.price * item.quantity , currency, locale)}</span>
+                    <span style={{ fontSize: '0.86rem', fontWeight: 600, color: 'var(--text-1)', flexShrink: 0 }}>{formatOrderAmount(item.price * item.quantity, order, currency, locale)}</span>
                   </div>
                 ))}
               </div>
               <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-1)' }}>Total</span>
-                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold)' }}>{formatMajorAmount(order.total ?? 0, currency, locale)}</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-1)' }}>{t('cart.total')}</span>
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold)' }}>{formatOrderAmount(order.total ?? 0, order, currency, locale)}</span>
               </div>
             </div>
 

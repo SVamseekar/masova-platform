@@ -1,5 +1,6 @@
 // src/apps/POSSystem/components/OrderPanel.tsx
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppSelector } from '../../../store/hooks';
 import { selectCartCurrency, selectCartLocale, selectStoreCountryCode } from '../../../store/slices/cartSlice';
 import {formatMoney, formatMajorAmount} from '../../../utils/currency';
@@ -41,6 +42,7 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
   selectedTable: _selectedTable,
   onTableSelect: _onTableSelect,
 }) => {
+  const { t } = useTranslation();
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
   const storeCountryCode = useAppSelector(selectStoreCountryCode);
@@ -101,9 +103,9 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
           marginBottom: spacing[3]
         }}>
           {[
-            { value: 'PICKUP', label: 'Pickup', Icon: ShoppingBagIcon },
-            { value: 'DELIVERY', label: 'Delivery', Icon: LocalShippingIcon },
-            { value: 'DINE_IN', label: 'Dine In', Icon: TableRestaurantIcon }
+            { value: 'PICKUP', label: t('staff.pickup'), Icon: ShoppingBagIcon },
+            { value: 'DELIVERY', label: t('staff.delivery'), Icon: LocalShippingIcon },
+            { value: 'DINE_IN', label: t('staff.dine_in'), Icon: TableRestaurantIcon }
           ].map(type => (
             <button
               key={type.value}
@@ -358,7 +360,7 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
             fontSize: typography.fontSize.xs,
             color: colors.text.secondary
           }}>
-            <span>Subtotal:</span>
+            <span>{t('cart.subtotal')}:</span>
             <span style={{ fontWeight: typography.fontWeight.semibold }}>{fmt(subtotal)}</span>
           </div>
 
@@ -381,7 +383,7 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
               fontSize: typography.fontSize.xs,
               color: colors.text.secondary
             }}>
-              <span>Delivery Fee:</span>
+              <span>{t('cart.delivery_fee')}:</span>
               <span style={{ fontWeight: typography.fontWeight.semibold }}>
                 {deliveryFee === 0 ? 'FREE' : fmt(deliveryFee)}
               </span>
@@ -436,7 +438,7 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
               fontWeight: typography.fontWeight.extrabold,
               color: colors.text.primary
             }}>
-              Total:
+              {t('cart.total')}:
             </span>
             <span style={{
               fontSize: typography.fontSize.base,

@@ -6,7 +6,7 @@ import StoreInfo from '../../components/StoreInfo';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMajorAmount } from '../../utils/currency';
+import { formatOrderAmount } from '../../utils/orderMoney';
 import { formatDateLocale } from '../../utils/dateTime';
 import { useGetCustomerOrdersQuery, Order } from '../../store/api/orderApi';
 import { useGetCustomerByUserIdQuery } from '../../store/api/customerApi';
@@ -141,7 +141,7 @@ const OrderTrackingPage: React.FC = () => {
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: '6px' }}>
-              {formatMajorAmount(order.total , currency, locale)}
+              {formatOrderAmount(order.total, order, currency, locale)}
             </div>
             <span style={{
               display: 'inline-block',
@@ -214,7 +214,7 @@ const OrderTrackingPage: React.FC = () => {
               {order.items.slice(0, 3).map((item, idx) => (
                 <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.8rem' }}>
                   <span style={{ color: 'var(--text-1)' }}>{item.quantity}× {item.name}</span>
-                  <span style={{ color: 'var(--text-3)' }}>{formatMajorAmount(item.price * item.quantity , currency, locale)}</span>
+                  <span style={{ color: 'var(--text-3)' }}>{formatOrderAmount(item.price * item.quantity, order, currency, locale)}</span>
                 </div>
               ))}
               {order.items.length > 3 && (

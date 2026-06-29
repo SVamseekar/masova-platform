@@ -172,7 +172,7 @@ export function exportToCSV<T extends object>(
   columns: {
     label: string;
     field: string;
-    format?: (value: NestedFieldValue) => string | number | boolean | null | undefined;
+    format?: (value: NestedFieldValue, row?: T) => string | number | boolean | null | undefined;
   }[]
 ): void {
   if (data.length === 0) {
@@ -188,7 +188,7 @@ export function exportToCSV<T extends object>(
   data.forEach((item) => {
     const values = columns.map((col) => {
       const value = getNestedValue(item, col.field);
-      const formattedValue = col.format ? col.format(value) : value;
+      const formattedValue = col.format ? col.format(value, item) : value;
 
       // Escape quotes and wrap in quotes if contains comma
       const stringValue = String(formattedValue ?? '');

@@ -38,6 +38,17 @@
     "tracking_title": "Bestellverfolgung",
     "no_orders": "Keine Bestellungen gefunden"
   },
+  "staff": {
+    "total_orders": "Bestellungen gesamt",
+    "total_revenue": "Umsatz gesamt",
+    "total_amount": "Gesamtbetrag",
+    "tax": "Steuer",
+    "pickup": "Abholung",
+    "delivery": "Lieferung",
+    "dine_in": "Im Restaurant",
+    "your_order": "Ihre Bestellung",
+    "new_order": "Neue Bestellung"
+  },
   "common": {
     "save": "Speichern",
     "cancel": "Abbrechen",

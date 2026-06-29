@@ -38,6 +38,17 @@
     "tracking_title": "Order Tracking",
     "no_orders": "No orders found"
   },
+  "staff": {
+    "total_orders": "Total Bestellungen",
+    "total_revenue": "Total Ëmsaz",
+    "total_amount": "Gesamtbetrag",
+    "tax": "Steier",
+    "pickup": "Ofhuelen",
+    "delivery": "Liwwerung",
+    "dine_in": "Am Dësch",
+    "your_order": "Är Bestellung",
+    "new_order": "Nei Bestellung"
+  },
   "common": {
     "save": "Save",
     "cancel": "Cancel",

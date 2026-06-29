@@ -8,7 +8,7 @@ import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import {formatMoney, formatMajorAmount} from '../../utils/currency';
+import { formatOrderAmount } from '../../utils/orderMoney';
 import { useGetCustomerByUserIdQuery } from '../../store/api/customerApi';
 import { useGetCustomerOrdersQuery } from '../../store/api/orderApi';
 
@@ -202,7 +202,7 @@ const CustomerDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div style={{ fontSize: typography.fontSize.base, color: colors.text.secondary }}>
-                  {activeOrder.items.length} items • {formatMajorAmount(activeOrder.total , currency, locale)}
+                  {activeOrder.items.length} items • {formatOrderAmount(activeOrder.total, activeOrder, currency, locale)}
                 </div>
                 <div style={{ marginTop: spacing[2], color: colors.brand.primary, fontWeight: typography.fontWeight.semibold }}>
                   Track Order →
@@ -234,7 +234,7 @@ const CustomerDashboard: React.FC = () => {
                       Order #{order.orderNumber}
                     </div>
                     <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
-                      {formatMajorAmount(order.total , currency, locale)}
+                      {formatOrderAmount(order.total, order, currency, locale)}
                     </div>
                   </div>
                   <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
