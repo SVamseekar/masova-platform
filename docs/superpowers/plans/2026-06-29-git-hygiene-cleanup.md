@@ -652,3 +652,24 @@ git add docs/superpowers/plans/2026-06-29-git-hygiene-cleanup-summary.md
 git commit -m "docs: summarize git hygiene cleanup decisions"
 git push
 ```
+
+---
+
+## Completion Record (2026-06-29)
+
+| Task | Status |
+|---|---|
+| 0 — Tag backups | ✅ |
+| 1 — Delete stale branches | ✅ |
+| 2 — Close PRs #15/#16 | ✅ |
+| 2.5 — PR #17 CI green | ✅ |
+| 3 — Merge PR #17 | ✅ `e9a2c992` |
+| 3.5 — Stash audit | ⏳ Manual |
+| 4 — `.gitattributes` | ✅ `chore/git-hygiene-safeguards` PR |
+| 5 — `CODEOWNERS` | ✅ same PR |
+| 6 — Pre-commit hook | ✅ `scripts/git-hooks/pre-commit` + install scripts |
+| 7 — Razorpay doc cleanup | ✅ `phase5-env-vars.md` (yml + .env.example done in PR #17) |
+| 8 — Branch protection | ⏳ After safeguards PR merges — see summary Task 8 commands |
+| 9 — Summary doc | ✅ `2026-06-29-git-hygiene-cleanup-summary.md` |
+
+**Next after safeguards PR merges:** Run Task 8 `gh api` commands (in summary), install hooks on Mac + Dell, optional Task 3.5 stash review.

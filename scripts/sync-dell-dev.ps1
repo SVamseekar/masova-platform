@@ -49,5 +49,6 @@ Write-Host ""
 Write-Host "Sync complete. Next steps:" -ForegroundColor Green
 Write-Host "  Backend:  cd <service> && mvn spring-boot:run `"-Dmaven.test.skip=true`""
 Write-Host "  Frontend: cd frontend && npm run dev   # http://localhost:3000"
-Write-Host "  Env:      copy frontend/.env.example frontend/.env.local if missing"
+Write-Host "  Hooks:    .\scripts\install-git-hooks.ps1"
+Write-Host "  Env:      copy frontend\.env.example frontend\.env.local if missing"
 Write-Host "  Gateway:  VITE_API_GATEWAY_URL=http://localhost:8080/api (or Dell LAN IP if testing from phone)"

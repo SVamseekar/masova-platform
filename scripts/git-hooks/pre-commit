@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# MaSoVa Pre-Commit Hook (tracked — install via scripts/install-git-hooks.sh)
+# 1. Blocks obvious hardcoded secrets in staged changes
+# 2. Validates API contracts before allowing commits
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+
+if [ -n "$STAGED" ]; then
+  SECRET_HITS=$(git diff --cached -U0 -- $STAGED | grep -inE "^\+.*(password|secret|api[_-]?key|private[_-]?key)\s*[:=]\s*['\"]?[A-Za-z0-9+/_-]{12,}" | grep -ivE "\\\$\{|changeme|your-secret|example|placeholder|REPLACE_ME|REDACTED|YOUR_")
+  if [ -n "$SECRET_HITS" ]; then
+    echo ""
+    echo "❌ Pre-commit hook failed: possible hardcoded secret detected in staged changes"
+    echo ""
+    echo "$SECRET_HITS"
+    echo ""
+    echo "Use an env var placeholder (e.g. \${VAR_NAME}) instead of a literal value."
+    echo "To skip (NOT recommended): git commit --no-verify"
+    echo ""
+    exit 1
+  fi
+fi
+
+if [ -f "./scripts/validate-api-contracts.sh" ]; then
+  ./scripts/validate-api-contracts.sh
+  if [ $? -ne 0 ]; then
+    echo ""
+    echo "❌ Pre-commit hook failed: API contracts are out of sync"
+    echo ""
+    echo "To fix: npm run sync-api-types (from frontend/), review, commit again"
+    echo "To skip (NOT recommended): git commit --no-verify"
+    echo ""
+    exit 1
+  fi
+fi
+
+exit 0
