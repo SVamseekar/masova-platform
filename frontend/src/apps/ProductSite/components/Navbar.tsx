@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Menu, X, Store } from 'lucide-react'
 import { NAV_LINKS, GOLD_GRADIENT_TEXT } from '../constants'
+import { colors } from '../tokens'
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
@@ -52,7 +53,7 @@ export default function Navbar() {
           <a
             href="#pricing"
             className="text-sm px-4 py-2 rounded-lg font-medium transition-all duration-200"
-            style={{ background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.5)', color: '#D4AF37' }}
+            style={{ background: colors.red, color: '#fff' }}
           >
             Book a demo
           </a>
@@ -85,7 +86,7 @@ export default function Navbar() {
           <a
             href="#pricing"
             className="text-sm px-4 py-2 rounded-lg text-center font-medium"
-            style={{ background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.5)', color: '#D4AF37' }}
+            style={{ background: colors.red, color: '#fff' }}
             onClick={() => setMobileOpen(false)}
           >
             Book a demo

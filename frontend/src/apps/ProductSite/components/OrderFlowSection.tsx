@@ -69,7 +69,7 @@ export default function OrderFlowSection() {
           >
             From tap to doorstep
             <br />
-            <span style={{ color: colors.gold }}>without the phone calls.</span>
+            <span style={{ color: colors.red }}>without the phone calls.</span>
           </h2>
         </motion.div>
 

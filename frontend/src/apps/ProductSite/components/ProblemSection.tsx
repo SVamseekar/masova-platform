@@ -38,7 +38,7 @@ export default function ProblemSection() {
             style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
           >
             Running restaurants is chaos.{' '}
-            <span style={{ color: colors.gold }}>It doesn&apos;t have to be.</span>
+            <span style={{ color: colors.red }}>It doesn&apos;t have to be.</span>
           </h2>
           <p className="text-gray-400 text-lg">
             Every shift, the same firefighting. MaSoVa ends it.

@@ -44,7 +44,7 @@ export default function FAQSection() {
               >
                 <span className="text-white text-sm font-medium">{q}</span>
                 {open === i
-                  ? <Minus size={16} style={{ color: colors.gold }} className="flex-shrink-0" />
+                  ? <Minus size={16} style={{ color: colors.red }} className="flex-shrink-0" />
                   : <Plus size={16} className="text-gray-500 flex-shrink-0" />
                 }
               </button>

@@ -38,7 +38,7 @@ export default function ProductTour() {
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200 text-left"
                 style={
                   active === i
-                    ? { background: colors.goldMuted, color: colors.gold, border: `1px solid ${colors.goldBorder}` }
+                    ? { background: colors.red, color: '#fff' }
                     : { color: colors.textMuted, border: '1px solid transparent' }
                 }
               >
@@ -62,7 +62,7 @@ export default function ProductTour() {
                 <ul className="space-y-3">
                   {tab.bullets.map(b => (
                     <li key={b} className="flex items-center gap-2 text-sm text-gray-300">
-                      <CheckCircle2 size={16} style={{ color: colors.gold }} className="flex-shrink-0" />
+                      <CheckCircle2 size={16} style={{ color: colors.red }} className="flex-shrink-0" />
                       {b}
                     </li>
                   ))}

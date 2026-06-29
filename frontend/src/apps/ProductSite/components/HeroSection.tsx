@@ -121,13 +121,14 @@ export default function HeroSection() {
           <a
             href="#agent-brain"
             style={{
-              background: colors.gold,
-              color: colors.bg,
+              background: colors.red,
+              color: '#fff',
               fontWeight: 700,
               fontSize: 15,
               padding: '14px 28px',
               borderRadius: 10,
               textDecoration: 'none',
+              boxShadow: '0 8px 28px rgba(229,62,62,0.35)',
             }}
           >
             See how it works
@@ -135,12 +136,12 @@ export default function HeroSection() {
           <a
             href="#demo"
             style={{
-              color: colors.textSecondary,
+              color: colors.gold,
               fontSize: 15,
               fontWeight: 500,
               textDecoration: 'none',
               padding: '14px 20px',
-              border: `1px solid ${colors.borderStrong}`,
+              border: `1px solid ${colors.goldBorder}`,
               borderRadius: 10,
             }}
           >
@@ -152,13 +153,13 @@ export default function HeroSection() {
           {...fadeUpVariant(0.48)}
           className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto mb-16"
         >
-          {STATS.map(({ value, label, icon: Icon }) => (
+          {STATS.map(({ value, label, icon: Icon }, i) => (
             <div
               key={label}
               className="rounded-xl py-4 px-3"
               style={{ background: colors.bgElevated, border: `1px solid ${colors.border}` }}
             >
-              <Icon size={16} style={{ color: colors.gold, margin: '0 auto 8px' }} />
+              <Icon size={16} style={{ color: i % 2 === 0 ? colors.red : colors.gold, margin: '0 auto 8px' }} />
               <p className="text-2xl font-bold text-white">{value}</p>
               <p className="text-[11px] text-gray-500 mt-1">{label}</p>
             </div>

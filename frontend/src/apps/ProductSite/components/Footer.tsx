@@ -2,6 +2,7 @@ import React from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, Shield, Globe } from 'lucide-react'
 import { GOLD_GRADIENT_TEXT, SITE_URL } from '../constants'
+import { colors } from '../tokens'
 
 type FooterLink = { label: string; href: string; external?: boolean }
 
@@ -70,11 +71,8 @@ export default function Footer() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
               href="#pricing"
-              className="group inline-flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-sm hover:gap-3 transition-all duration-200"
-              style={{
-                background: '#D4AF37',
-                color: '#080808',
-              }}
+              className="group inline-flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-sm hover:gap-3 transition-all duration-200 text-white"
+              style={{ background: colors.red }}
             >
               Start free trial
               <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
@@ -84,8 +82,8 @@ export default function Footer() {
               className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-medium text-sm transition-colors duration-200"
               style={{
                 background: '#1a1a1a',
-                border: '1px solid rgba(212,175,55,0.35)',
-                color: '#D4AF37',
+                border: `1px solid ${colors.goldBorder}`,
+                color: colors.gold,
               }}
             >
               Book a demo

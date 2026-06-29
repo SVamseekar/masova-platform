@@ -30,7 +30,7 @@ export default function PricingSection() {
               type="button"
               onClick={() => setAnnual(false)}
               className="px-4 py-1.5 rounded-full text-sm font-medium transition-all"
-              style={!annual ? { background: colors.gold, color: colors.bg } : { color: '#9CA3AF' }}
+              style={!annual ? { background: colors.red, color: '#fff' } : { color: '#9CA3AF' }}
             >
               Monthly
             </button>
@@ -38,10 +38,10 @@ export default function PricingSection() {
               type="button"
               onClick={() => setAnnual(true)}
               className="px-4 py-1.5 rounded-full text-sm font-medium transition-all"
-              style={annual ? { background: colors.gold, color: colors.bg } : { color: '#9CA3AF' }}
+              style={annual ? { background: colors.red, color: '#fff' } : { color: '#9CA3AF' }}
             >
               Annual
-              <span className="ml-2 text-xs font-semibold" style={{ color: annual ? colors.bg : colors.gold }}>
+              <span className="ml-2 text-xs font-semibold" style={{ color: annual ? '#fff' : colors.gold }}>
                 −17%
               </span>
             </button>
@@ -59,7 +59,7 @@ export default function PricingSection() {
                 className="relative p-6 rounded-2xl flex flex-col"
                 style={
                   highlight
-                    ? { border: `1px solid ${colors.goldBorderStrong}`, background: colors.goldMuted }
+                    ? { border: `1px solid ${colors.redBorderStrong}`, background: colors.redMuted }
                     : { border: `1px solid ${colors.border}`, background: colors.bgElevated }
                 }
                 initial={{ opacity: 0, y: 24 }}
@@ -70,8 +70,8 @@ export default function PricingSection() {
               >
                 {badge && (
                   <div
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-semibold px-3 py-1 rounded-full"
-                    style={{ background: colors.gold, color: colors.bg }}
+                    className="absolute -top-3 left-1/2 -translate-x-1/2 text-white text-xs font-semibold px-3 py-1 rounded-full"
+                    style={{ background: colors.red }}
                   >
                     {badge}
                   </div>
@@ -97,7 +97,7 @@ export default function PricingSection() {
                   {features.map(({ icon: Icon, text, included }) => (
                     <li key={text} className="flex items-start gap-2.5">
                       {included
-                        ? <CheckCircle2 size={15} style={{ color: colors.gold }} className="flex-shrink-0 mt-0.5" />
+                        ? <CheckCircle2 size={15} style={{ color: colors.red }} className="flex-shrink-0 mt-0.5" />
                         : <XCircle size={15} className="text-gray-700 flex-shrink-0 mt-0.5" />
                       }
                       <span className={`text-sm flex items-center gap-1.5 ${included ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -110,12 +110,18 @@ export default function PricingSection() {
 
                 <a
                   href={ctaHref}
-                  className="group flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all duration-200"
+                  className="group flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all duration-200 text-white"
                   style={
                     highlight
-                      ? { background: colors.gold, color: colors.bg }
-                      : { background: 'rgba(255,255,255,0.08)', color: '#fff' }
+                      ? { background: colors.red }
+                      : { background: 'rgba(255,255,255,0.08)' }
                   }
+                  onMouseEnter={e => {
+                    if (highlight) (e.currentTarget as HTMLAnchorElement).style.background = colors.redDark
+                  }}
+                  onMouseLeave={e => {
+                    if (highlight) (e.currentTarget as HTMLAnchorElement).style.background = colors.red
+                  }}
                 >
                   {cta}
                   <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />

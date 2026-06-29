@@ -61,11 +61,11 @@ export default function AgentDemoTheater() {
             >
               <motion.div
                 className="w-16 h-16 rounded-full flex items-center justify-center"
-                style={{ background: colors.goldMuted, border: `1px solid ${colors.goldBorderStrong}` }}
+                style={{ background: colors.redMuted, border: `1px solid ${colors.redBorder}` }}
                 animate={playing ? { scale: [1, 1.1, 1] } : {}}
                 transition={{ duration: 1.5, repeat: playing ? Infinity : 0 }}
               >
-                <Play size={28} style={{ color: colors.gold, marginLeft: 4 }} fill={colors.gold} />
+                <Play size={28} style={{ color: colors.red, marginLeft: 4 }} fill={colors.red} />
               </motion.div>
               <p className="text-white font-medium">Customer chat · 2 min preview</p>
               <p className="text-gray-500 text-sm">Video demo uploading — click to try the chat</p>
@@ -96,11 +96,11 @@ export default function AgentDemoTheater() {
                     style={
                       msg.role === 'customer'
                         ? { background: '#1f2937', color: '#e5e7eb' }
-                        : { background: `${colors.gold}18`, color: '#f3f4f6', border: `1px solid ${colors.goldBorder}` }
+                        : { background: colors.redMuted, color: '#f3f4f6', border: `1px solid ${colors.redBorder}` }
                     }
                   >
                     {msg.role === 'agent' && (
-                      <MessageCircle size={12} className="inline mr-1.5 opacity-60" style={{ color: colors.gold }} />
+                      <MessageCircle size={12} className="inline mr-1.5 opacity-60" style={{ color: colors.red }} />
                     )}
                     {msg.text}
                   </div>

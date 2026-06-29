@@ -35,12 +35,12 @@ export default function TestimonialsSection() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
             >
-              <Quote size={24} style={{ color: colors.gold }} className="mb-4 opacity-60" />
+              <Quote size={24} style={{ color: colors.red }} className="mb-4 opacity-60" />
               <p className="text-gray-300 text-sm leading-relaxed flex-1 mb-6">&ldquo;{quote}&rdquo;</p>
               <div className="flex items-center gap-3">
                 <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
-                  style={{ background: colors.gold, color: colors.bg }}
+                  className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0 text-white"
+                  style={{ background: colors.red }}
                 >
                   {avatar}
                 </div>

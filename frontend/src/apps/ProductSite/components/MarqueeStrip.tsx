@@ -11,7 +11,7 @@ export default function MarqueeStrip() {
       <div className="flex animate-marquee whitespace-nowrap">
         {doubled.map(({ label, icon: Icon }, i) => (
           <span key={i} className="inline-flex items-center gap-2 mx-8 text-sm text-gray-500">
-            <Icon size={14} style={{ color: colors.gold }} className="flex-shrink-0" />
+            <Icon size={14} style={{ color: colors.red }} className="flex-shrink-0" />
             {label}
           </span>
         ))}

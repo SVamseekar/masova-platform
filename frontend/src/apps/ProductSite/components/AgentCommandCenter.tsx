@@ -123,7 +123,7 @@ export default function AgentCommandCenter() {
               className="px-4 py-3 flex items-center gap-2 text-xs"
               style={{ borderTop: `1px solid ${colors.border}`, background: `${colors.gold}08` }}
             >
-              <ShieldCheck size={14} style={{ color: colors.gold }} />
+              <ShieldCheck size={14} style={{ color: colors.red }} />
               <span className="text-gray-400">
                 Suggested action · <span className="text-gray-300">waiting for manager approval</span>
               </span>

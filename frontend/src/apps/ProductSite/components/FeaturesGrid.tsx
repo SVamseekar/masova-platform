@@ -40,9 +40,9 @@ export default function FeaturesGrid() {
               <div className="p-6">
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
-                  style={{ background: colors.goldMuted }}
+                  style={{ background: colors.redMuted }}
                 >
-                  <Icon size={20} style={{ color: colors.gold }} />
+                  <Icon size={20} style={{ color: colors.red }} />
                 </div>
                 <h3 className="text-white font-semibold mb-2">{title}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
