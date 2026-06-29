@@ -8,12 +8,22 @@ export interface ReceiptItem {
   specialInstructions?: string;
 }
 
+export interface ReceiptVatLine {
+  itemName: string;
+  vatRate: number;
+  netAmount: number;
+  vatAmount: number;
+  grossAmount: number;
+}
+
 export interface ReceiptData {
   orderNumber: string;
   orderDate: string;
   items: ReceiptItem[];
   subtotal: number;
   tax: number;
+  taxLabel?: string;
+  vatLines?: ReceiptVatLine[];
   deliveryFee: number;
   total: number;
   paymentMethod: string;
@@ -38,6 +48,8 @@ export function generateReceiptHTML(
     items,
     subtotal,
     tax,
+    taxLabel = 'Tax (5% GST)',
+    vatLines,
     deliveryFee,
     total,
     paymentMethod,
@@ -170,10 +182,15 @@ export function generateReceiptHTML(
       <span>Subtotal:</span>
       <span>${fmt(subtotal)}</span>
     </div>
+    ${vatLines && vatLines.length > 0 ? vatLines.map(line => `
     <div class="total-row">
-      <span>Tax (5%):</span>
-      <span>${fmt(tax)}</span>
-    </div>
+      <span>${esc(line.itemName)} (${line.vatRate}% VAT):</span>
+      <span>${fmt(line.vatAmount)}</span>
+    </div>`).join('') : `
+    <div class="total-row">
+      <span>${esc(taxLabel)}:</span>
+      <span>${tax === 0 ? '—' : fmt(tax)}</span>
+    </div>`}
     ${deliveryFee > 0 ? `
     <div class="total-row">
       <span>Delivery Fee:</span>

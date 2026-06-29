@@ -1,4 +1,4 @@
-import { Box, Container, Grid, Typography } from '@mui/material';
+import { Box, Button, Container, Grid, Typography } from '@mui/material';
 import SalesTrendChart from '../../components/charts/SalesTrendChart';
 import RevenueBreakdownChart from '../../components/charts/RevenueBreakdownChart';
 import PeakHoursHeatmap from '../../components/charts/PeakHoursHeatmap';
@@ -9,6 +9,8 @@ import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import { usePageStore } from '../../hooks/usePageStore';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
+import { useGetStoreOrdersQuery } from '../../store/api/orderApi';
+import { exportVatCsv, buildVatExportRows } from '../../utils/vatCsvExport';
 import ManagerMetricTemplate, { KPICardData } from './ManagerMetricTemplate';
 
 // eslint-disable-next-line react-refresh/only-export-components -- page component with HOC export
@@ -18,23 +20,47 @@ function AdvancedReportsPage() {
   const { handleBack } = useSmartBackNavigation();
   const storeId = selectedStoreId || currentUser?.storeId || '';
 
+  const { data: orders = [] } = useGetStoreOrdersQuery(storeId, { skip: !storeId });
+  const vatRowCount = buildVatExportRows(orders).length;
+  const euOrderCount = orders.filter((order) => order.vatCountryCode).length;
+
   const reportKPIs: KPICardData[] = [
     { label: 'Sales Trend', value: '7-Day', sub: 'Weekly comparison', accentColor: '#e53e3e' },
     { label: 'Revenue Breakdown', value: 'By Type', sub: 'Dine-in / Delivery / Takeaway', accentColor: '#7B1FA2' },
     { label: 'Peak Hours', value: 'Heatmap', sub: 'Busiest time slots', accentColor: '#FF6B35' },
+    {
+      label: 'VAT Orders',
+      value: String(euOrderCount),
+      sub: `${vatRowCount} line items exportable`,
+      accentColor: '#2196F3',
+    },
   ];
+
+  const handleExportVatCsv = () => {
+    exportVatCsv(orders);
+  };
 
   return (
     <>
       <AppHeader title="Advanced Reports" showBackButton={true} onBack={handleBack} showManagerNav={true} />
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, color: colors.text.primary }}>
-          Advanced Reports
-        </Typography>
-        <Typography variant="body1" sx={{ color: colors.text.secondary }}>
-          Comprehensive analytics and insights for your restaurant
-        </Typography>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
+        <Box>
+          <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, color: colors.text.primary }}>
+            Advanced Reports
+          </Typography>
+          <Typography variant="body1" sx={{ color: colors.text.secondary }}>
+            Comprehensive analytics and insights for your restaurant
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          onClick={handleExportVatCsv}
+          disabled={vatRowCount === 0}
+          sx={{ flexShrink: 0 }}
+        >
+          Export VAT CSV
+        </Button>
       </Box>
 
       <ManagerMetricTemplate kpis={reportKPIs} />

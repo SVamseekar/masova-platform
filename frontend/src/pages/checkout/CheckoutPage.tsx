@@ -8,8 +8,10 @@ import {
   selectDeliveryFee,
   selectCartCurrency,
   selectCartLocale,
+  selectStoreCountryCode,
 } from '../../store/slices/cartSlice';
 import { formatMoney } from '../../utils/currency';
+import { computePreCheckoutTotals, formatTaxDisplay } from '../../utils/orderTax';
 import { selectIsAuthenticated, selectCurrentUser } from '../../store/slices/authSlice';
 
 const CheckoutPage: React.FC = () => {
@@ -20,11 +22,16 @@ const CheckoutPage: React.FC = () => {
   const deliveryFee = useAppSelector(selectDeliveryFee);
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
+  const storeCountryCode = useAppSelector(selectStoreCountryCode);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const currentUser = useAppSelector(selectCurrentUser);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
 
-  const tax = subtotal * 0.05;
-  const total = subtotal + (itemCount > 0 ? deliveryFee : 0) + tax;
+  const { tax, taxLabel, total } = computePreCheckoutTotals(
+    subtotal,
+    itemCount > 0 ? deliveryFee : 0,
+    storeCountryCode
+  );
 
   useEffect(() => {
     if (isAuthenticated && currentUser) {
@@ -190,9 +197,9 @@ const CheckoutPage: React.FC = () => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {[
-                { label: `Subtotal (${itemCount} items)`, value: formatMoney(Math.round(subtotal * 100), currency, locale) },
-                { label: 'Delivery Fee', value: formatMoney(Math.round(deliveryFee * 100), currency, locale) },
-                { label: 'Tax (5%)', value: formatMoney(Math.round(tax * 100), currency, locale) },
+                { label: `Subtotal (${itemCount} items)`, value: fmt(subtotal) },
+                { label: 'Delivery Fee', value: fmt(deliveryFee) },
+                { label: taxLabel, value: formatTaxDisplay(tax, fmt) },
               ].map(row => (
                 <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-3)' }}>{row.label}</span>

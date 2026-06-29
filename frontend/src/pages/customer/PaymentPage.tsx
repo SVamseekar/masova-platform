@@ -7,8 +7,17 @@ import { useInitiatePaymentMutation, type PaymentResponse } from '../../store/ap
 import { getApiErrorMessage } from '../utils/apiError';
 import { useGetCustomerByUserIdQuery, useGetOrCreateCustomerMutation, useUpdatePreferencesMutation } from '../../store/api/customerApi';
 import { useCheckDeliveryRadiusQuery } from '../../store/api/storeApi';
-import { selectCartItems, selectCartSubtotal, selectDeliveryFee, selectSelectedStoreId, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import {
+  selectCartItems,
+  selectCartSubtotal,
+  selectDeliveryFee,
+  selectSelectedStoreId,
+  selectCartCurrency,
+  selectCartLocale,
+  selectStoreCountryCode,
+} from '../../store/slices/cartSlice';
 import { formatMoney } from '../../utils/currency';
+import { computePreCheckoutTotals, formatTaxDisplay } from '../../utils/orderTax';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { colors } from '../../styles/design-tokens';
 import { loadStripe } from '@stripe/stripe-js';
@@ -43,12 +52,11 @@ const PaymentPage: React.FC = () => {
   const selectedStoreId = useAppSelector(selectSelectedStoreId);
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
+  const storeCountryCode = useAppSelector(selectStoreCountryCode);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
 
   // Get guest info from navigation state (passed from GuestCheckoutPage)
   const guestInfo = location.state?.guestInfo as GuestInfo | undefined;
-
-  // countryCode from store selection — null for India stores (Razorpay), set for EU stores (Stripe)
-  const storeCountryCode = (location.state?.storeCountryCode as string | undefined) ?? null;
 
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'UPI'>('CARD');
   const [stripeData, setStripeData] = React.useState<{
@@ -136,8 +144,7 @@ const PaymentPage: React.FC = () => {
   }, [customerProfile?.preferences?.preferredPaymentMethod, orderType]);
 
   const deliveryFee = orderType === 'DELIVERY' ? baseDeliveryFee : 0;
-  const tax = subtotal * 0.05;
-  const total = subtotal + deliveryFee + tax;
+  const { tax, taxLabel, total } = computePreCheckoutTotals(subtotal, deliveryFee, storeCountryCode);
 
   const handlePlaceOrder = async () => {
     try {
@@ -611,7 +618,7 @@ const PaymentPage: React.FC = () => {
               {orderType === 'DELIVERY' && (
                 <SummaryRow label="Delivery fee" value={formatMoney(Math.round(deliveryFee * 100), currency, locale)} />
               )}
-              <SummaryRow label="Tax (5%)" value={formatMoney(Math.round(tax * 100), currency, locale)} />
+              <SummaryRow label={taxLabel} value={formatTaxDisplay(tax, fmt)} />
             </div>
 
             <div style={{ height: '1px', background: 'var(--border)', marginBottom: '16px' }} />

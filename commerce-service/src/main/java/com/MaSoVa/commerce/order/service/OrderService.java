@@ -121,6 +121,8 @@ public class OrderService {
                         .build())
                 .collect(Collectors.toList());
 
+        enrichOrderItemCategories(orderItems);
+
         // Calculate totals
         double subtotal = orderItems.stream()
                 .mapToDouble(OrderItem::getItemTotal)
@@ -304,15 +306,7 @@ public class OrderService {
 
         // Publish order created event to RabbitMQ
         try {
-            OrderCreatedEvent event = new OrderCreatedEvent(
-                savedOrder.getId(), savedOrder.getCustomerId(), savedOrder.getStoreId(),
-                savedOrder.getOrderType().toString(), savedOrder.getTotal(),
-                savedOrder.getCurrency() != null ? savedOrder.getCurrency() : "INR");
-            if (savedOrder.getVatCountryCode() != null) {
-                event.setVatCountryCode(savedOrder.getVatCountryCode());
-                event.setTotalVatAmount(savedOrder.getTotalVatAmount());
-            }
-            orderEventPublisher.publishOrderCreated(event);
+            orderEventPublisher.publishOrderCreated(OrderEventBuilder.buildOrderCreatedEvent(savedOrder));
         } catch (Exception e) {
             log.warn("Failed to publish order created event for {}: {}", savedOrder.getOrderNumber(), e.getMessage());
         }
@@ -340,16 +334,16 @@ public class OrderService {
     private OrderStatusChangedEvent buildStatusChangedEvent(Order order,
                                                             String previousStatus,
                                                             String newStatus) {
-        OrderStatusChangedEvent event = new OrderStatusChangedEvent(
-                order.getId(), order.getCustomerId(), previousStatus, newStatus, order.getStoreId());
-        if (order.getVatCountryCode() != null) {
-            event.setVatCountryCode(order.getVatCountryCode());
-            event.setTotalVatAmount(order.getTotalVatAmount());
+        return OrderEventBuilder.buildStatusChangedEvent(order, previousStatus, newStatus);
+    }
+
+    /** Enriches missing item categories from menu metadata for EU VAT routing. */
+    private void enrichOrderItemCategories(List<OrderItem> orderItems) {
+        for (OrderItem item : orderItems) {
+            if (item.getCategory() == null || item.getCategory().isBlank()) {
+                item.setCategory(menuServiceClient.resolveVatCategory(item.getMenuItemId()));
+            }
         }
-        if (order.getCurrency() != null) {
-            event.setCurrency(order.getCurrency());
-        }
-        return event;
     }
 
     /** Serializes order.vatBreakdown to JSON for the PostgreSQL jsonb column. Returns null for India orders. */

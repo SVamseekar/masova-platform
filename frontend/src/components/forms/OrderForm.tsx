@@ -3,8 +3,9 @@ import { useCreateOrderMutation } from '../../store/api/orderApi';
 import { useGetAllMenuItemsQuery, type MenuItem } from '../../store/api/menuApi';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { selectCartCurrency, selectCartLocale, selectStoreCountryCode } from '../../store/slices/cartSlice';
 import { formatMoney } from '../../utils/currency';
+import { computePreCheckoutTotals, formatTaxDisplay } from '../../utils/orderTax';
 import type { CreateOrderRequest, OrderType, PaymentMethod, DeliveryAddress } from '../../types/order';
 
 interface OrderFormProps {
@@ -25,7 +26,9 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSuccess, onCancel }) => {
   const currentUser = useAppSelector(selectCurrentUser);
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
+  const storeCountryCode = useAppSelector(selectStoreCountryCode);
   const storeId = currentUser?.storeId || '';
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
 
   // Form state
   const [customerName, setCustomerName] = useState('');
@@ -53,9 +56,8 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSuccess, onCancel }) => {
 
   // Calculate totals
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const tax = subtotal * 0.05; // 5% GST
   const deliveryFee = orderType === 'DELIVERY' ? 40 : 0;
-  const total = subtotal + tax + deliveryFee;
+  const { tax, taxLabel, total } = computePreCheckoutTotals(subtotal, deliveryFee, storeCountryCode);
 
   // Get quantity for a menu item (0 if not in cart)
   const getItemQuantity = (menuItemId: string): number => {
@@ -858,21 +860,21 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSuccess, onCancel }) => {
               <div className="cart-summary">
                 <div className="summary-row">
                   <span>Subtotal:</span>
-                  <span>�{subtotal.toFixed(2)}</span>
+                  <span>{fmt(subtotal)}</span>
                 </div>
                 <div className="summary-row">
-                  <span>Tax (5%):</span>
-                  <span>�{tax.toFixed(2)}</span>
+                  <span>{taxLabel}:</span>
+                  <span>{formatTaxDisplay(tax, fmt)}</span>
                 </div>
                 {orderType === 'DELIVERY' && (
                   <div className="summary-row">
                     <span>Delivery Fee:</span>
-                    <span>�{deliveryFee.toFixed(2)}</span>
+                    <span>{fmt(deliveryFee)}</span>
                   </div>
                 )}
                 <div className="summary-row total">
                   <span>Total:</span>
-                  <span>�{total.toFixed(2)}</span>
+                  <span>{fmt(total)}</span>
                 </div>
               </div>
             )}
