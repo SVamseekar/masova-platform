@@ -21,7 +21,7 @@ export default function AggregatorHubSection() {
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
         >
-          <SectionLabel>Aggregator hub</SectionLabel>
+          <SectionLabel>Delivery channels</SectionLabel>
           <h2
             className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight"
             style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
@@ -31,8 +31,8 @@ export default function AggregatorHubSection() {
             <span style={{ color: colors.gold }}>One kitchen screen.</span>
           </h2>
           <p className="text-gray-400 text-lg leading-relaxed mb-8">
-            Wolt, Deliveroo, Just Eat, and Uber Eats orders normalise into the same order model as your
-            direct web and mobile traffic. Commission tracking preserved. Kitchen sees one queue.
+            Wolt, Deliveroo, Just Eat, and Uber Eats — plus your own website and app — all land on
+            one kitchen screen. No more juggling tablets. Commission tracked per channel.
           </p>
           <div className="flex flex-wrap gap-2">
             {AGGREGATOR_CHANNELS.map(ch => (

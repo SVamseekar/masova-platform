@@ -32,16 +32,16 @@ export default function AgentDemoTheater() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <SectionLabel>Live agent demo</SectionLabel>
+          <SectionLabel>See it live</SectionLabel>
           <h2
             className="text-4xl md:text-5xl font-bold text-white mb-4"
             style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
           >
-            Watch the Support Agent think
+            See how customers get help — instantly
           </h2>
           <p className="text-gray-400 max-w-xl mx-auto">
-            Full video walkthroughs coming soon. For now — trigger a simulated chat powered by the same tool
-            loop as production <span className="text-gray-300">masova-support</span>.
+            Full video walkthroughs coming soon. For now, click the preview to watch a sample chat —
+            the same experience your guests get in the app.
           </p>
         </motion.div>
 
@@ -67,8 +67,8 @@ export default function AgentDemoTheater() {
               >
                 <Play size={28} style={{ color: colors.gold, marginLeft: 4 }} fill={colors.gold} />
               </motion.div>
-              <p className="text-white font-medium">Agent orchestration · 2 min preview</p>
-              <p className="text-gray-500 text-sm">Video demo uploading — click to simulate chat</p>
+              <p className="text-white font-medium">Customer chat · 2 min preview</p>
+              <p className="text-gray-500 text-sm">Video demo uploading — click to try the chat</p>
             </div>
             <div className="absolute inset-0 agent-demo-grid opacity-40" />
           </motion.div>
@@ -80,7 +80,7 @@ export default function AgentDemoTheater() {
           >
             <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${colors.border}` }}>
               <Sparkles size={16} style={{ color: colors.gold }} />
-              <span className="text-sm text-white font-medium">Support Agent</span>
+              <span className="text-sm text-white font-medium">Customer chat</span>
               <span className="ml-auto text-[10px] text-green-400">● online</span>
             </div>
             <div className="p-4 flex-1 space-y-3 overflow-y-auto">
@@ -107,7 +107,7 @@ export default function AgentDemoTheater() {
                 </motion.div>
               ))}
               {visibleLines === 0 && (
-                <p className="text-gray-600 text-sm text-center py-8">Click the preview to run the agent demo</p>
+                <p className="text-gray-600 text-sm text-center py-8">Click the preview to start the demo chat</p>
               )}
             </div>
           </div>

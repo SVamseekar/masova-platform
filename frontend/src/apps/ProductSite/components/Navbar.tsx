@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Menu, X, Github, Bot } from 'lucide-react'
-import { NAV_LINKS, GOLD_GRADIENT_TEXT, GITHUB_URL } from '../constants'
+import { Menu, X, Store } from 'lucide-react'
+import { NAV_LINKS, GOLD_GRADIENT_TEXT } from '../constants'
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
@@ -23,18 +23,16 @@ export default function Navbar() {
       transition={{ duration: 0.5 }}
     >
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        {/* Logo */}
         <a href="/" className="flex items-center gap-2 group">
           <div style={{ width: 32, height: 32, background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.4)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ ...GOLD_GRADIENT_TEXT, fontSize: 16 }}>M</span>
           </div>
           <span style={{ ...GOLD_GRADIENT_TEXT, fontSize: 22 }}>MaSoVa</span>
           <span className="hidden sm:inline-flex items-center gap-1 text-[10px] text-gray-600 ml-1 px-2 py-0.5 rounded-full border border-white/10">
-            <Bot size={10} style={{ color: '#D4AF37' }} /> agents
+            <Store size={10} style={{ color: '#D4AF37' }} /> multi-location
           </span>
         </a>
 
-        {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-8">
           {NAV_LINKS.map(link => (
             <a
@@ -47,24 +45,19 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* CTAs */}
         <div className="hidden md:flex items-center gap-3">
-          <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-white p-2" aria-label="GitHub">
-            <Github size={18} />
-          </a>
           <a href="#demo" className="text-sm text-gray-400 hover:text-white px-3 py-2">
-            Live demo
+            See it live
           </a>
           <a
-            href="#agent-brain"
+            href="#pricing"
             className="text-sm px-4 py-2 rounded-lg font-medium transition-all duration-200"
             style={{ background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.5)', color: '#D4AF37' }}
           >
-            Agent brain
+            Book a demo
           </a>
         </div>
 
-        {/* Mobile toggle */}
         <button
           className="md:hidden text-gray-400 hover:text-white"
           onClick={() => setMobileOpen(v => !v)}
@@ -73,7 +66,6 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Mobile menu */}
       {mobileOpen && (
         <motion.div
           className="md:hidden bg-[#111111] border-t border-white/5 px-6 py-4 flex flex-col gap-4"
@@ -91,21 +83,12 @@ export default function Navbar() {
             </a>
           ))}
           <a
-            href={GITHUB_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-gray-400 hover:text-white transition-colors"
-            onClick={() => setMobileOpen(false)}
-          >
-            GitHub
-          </a>
-          <a
-            href="#agent-brain"
+            href="#pricing"
             className="text-sm px-4 py-2 rounded-lg text-center font-medium"
             style={{ background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.5)', color: '#D4AF37' }}
             onClick={() => setMobileOpen(false)}
           >
-            Agent brain
+            Book a demo
           </a>
         </motion.div>
       )}

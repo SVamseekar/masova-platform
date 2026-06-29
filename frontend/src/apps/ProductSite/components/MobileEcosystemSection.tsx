@@ -38,7 +38,7 @@ export default function MobileEcosystemSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <SectionLabel>Mobile ecosystem</SectionLabel>
+          <SectionLabel>Mobile apps</SectionLabel>
           <h2
             className="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight"
             style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
@@ -46,8 +46,8 @@ export default function MobileEcosystemSection() {
             Your brand in every pocket
           </h2>
           <p className="text-gray-400 text-lg">
-            Customers order on <strong className="text-gray-300">masova-mobile</strong>. Staff run the floor on{' '}
-            <strong className="text-gray-300">MaSoVa Crew</strong> — one login, role-routed by JWT.
+            Customers order on your branded app. Kitchen, drivers, cashiers, and managers each get
+            the right screen — no confusion, no extra logins.
           </p>
         </motion.div>
 
@@ -77,7 +77,7 @@ export default function MobileEcosystemSection() {
               </div>
             </PhoneMock>
             <p className="text-center lg:text-right text-gray-500 text-sm mt-6 max-w-xs">
-              Glassmorphism UI · Stripe checkout · live map tracking · AI chat
+              Card payments · live delivery tracking · in-app chat support
             </p>
           </motion.div>
 
@@ -119,7 +119,7 @@ export default function MobileEcosystemSection() {
               </div>
             </PhoneMock>
             <p className="text-center lg:text-left text-gray-500 text-sm mt-6 max-w-xs">
-              Offline queue · background GPS for drivers · push notifications · WebSocket KDS
+              Works when Wi‑Fi drops · driver GPS · instant kitchen alerts
             </p>
           </motion.div>
         </div>

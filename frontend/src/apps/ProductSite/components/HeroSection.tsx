@@ -64,7 +64,7 @@ export default function HeroSection() {
         >
           <Bot size={14} style={{ color: colors.gold }} />
           <span style={{ fontSize: 13, color: colors.gold, fontWeight: 600 }}>
-            Agentic Restaurant OS
+            Built for multi-location restaurants
           </span>
           <Sparkles size={12} style={{ color: colors.goldLight }} />
         </motion.div>
@@ -82,7 +82,7 @@ export default function HeroSection() {
               fontFamily: "'Playfair Display', Georgia, serif",
             }}
           >
-            Eight AI agents.
+            Run every location.
           </motion.span>
           <motion.span
             variants={headlineVariant(0.15)}
@@ -96,7 +96,7 @@ export default function HeroSection() {
               fontFamily: "'Playfair Display', Georgia, serif",
             }}
           >
-            One restaurant brain.
+            With less chaos.
           </motion.span>
         </h1>
 
@@ -110,8 +110,8 @@ export default function HeroSection() {
             margin: '0 auto 36px',
           }}
         >
-          MaSoVa is the operating system where agents forecast demand, draft schedules, answer customers,
-          and flag stockouts — while your team runs service on web, kitchen, and mobile.
+          Orders, kitchen, delivery, and customer questions — in one calm system. Smart assistants
+          handle the busywork; you and your managers approve every important decision.
         </motion.p>
 
         <motion.div
@@ -130,7 +130,7 @@ export default function HeroSection() {
               textDecoration: 'none',
             }}
           >
-            Meet the agents
+            See how it works
           </a>
           <a
             href="#demo"
@@ -144,7 +144,7 @@ export default function HeroSection() {
               borderRadius: 10,
             }}
           >
-            Watch live demo →
+            Watch a quick demo →
           </a>
         </motion.div>
 
@@ -195,13 +195,13 @@ export default function HeroSection() {
               <span className="w-3 h-3 rounded-full bg-amber-500/40 inline-block" />
               <span className="w-3 h-3 rounded-full bg-green-500/40 inline-block" />
             </div>
-            <span className="text-xs text-gray-600 font-mono flex-1 text-center">
-              masova.souravamseekar.com · agent mesh active
+            <span className="text-xs text-gray-600 flex-1 text-center">
+              masova.souravamseekar.com · live ordering
             </span>
           </div>
           <img
             src="/screenshots/customer-home.png"
-            alt="MaSoVa customer experience with AI agent layer"
+            alt="MaSoVa customer ordering experience"
             style={{ width: '100%', display: 'block' }}
           />
         </div>

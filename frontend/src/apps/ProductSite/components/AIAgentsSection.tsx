@@ -30,19 +30,19 @@ export default function AIAgentsSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <SectionLabel>Agent roster</SectionLabel>
+          <SectionLabel>Your digital team</SectionLabel>
           <h2
             className="text-4xl md:text-5xl font-bold text-white mb-4"
             style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
           >
-            The full agent mesh
+            Eight assistants. One calm operation.
           </h2>
           <div
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm text-gray-400"
             style={{ border: `1px solid ${colors.goldBorder}`, background: colors.goldMuted }}
           >
             <ShieldCheck size={14} style={{ color: colors.gold }} />
-            Propose → Manager approves → System executes
+            MaSoVa suggests · You approve · Then it happens
           </div>
         </motion.div>
 
@@ -83,7 +83,7 @@ function AgentCard({ agent, index }: { agent: Agent; index: number }) {
           {Icon && <Icon size={20} style={{ color: agent.color }} />}
         </div>
         <h3 className="text-white font-semibold text-sm mb-1">{agent.name}</h3>
-        <p className="text-[10px] font-mono uppercase tracking-wider mb-2" style={{ color: agent.color }}>
+        <p className="text-[10px] uppercase tracking-wider mb-2" style={{ color: agent.color }}>
           {agent.role}
         </p>
         <p className="text-gray-500 text-xs leading-relaxed flex-1">{agent.description}</p>

@@ -41,14 +41,14 @@ export default function AgentScrollStory() {
 
         <div className="max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <SectionLabel>A day with agents</SectionLabel>
+            <SectionLabel>A day in your business</SectionLabel>
             <h2
               className="text-3xl md:text-4xl font-bold text-white mb-6"
               style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
             >
-              Your restaurant never sleeps.
+              Your restaurants never sleep.
               <br />
-              <span style={{ color: colors.gold }}>Your agents don&apos;t either.</span>
+              <span style={{ color: colors.gold }}>MaSoVa keeps watch.</span>
             </h2>
 
             <div className="space-y-2 mb-8">
@@ -59,7 +59,7 @@ export default function AgentScrollStory() {
                   style={{ opacity: i === active ? 1 : 0.35 }}
                 >
                   <span
-                    className="text-xs font-mono w-14 shrink-0"
+                    className="text-xs w-16 shrink-0"
                     style={{ color: i === active ? s.color : colors.textMuted }}
                   >
                     {s.time}
@@ -81,7 +81,7 @@ export default function AgentScrollStory() {
               className="rounded-xl p-5"
               style={{ background: colors.bgElevated, border: `1px solid ${step.color}44` }}
             >
-              <p className="text-xs font-mono mb-2" style={{ color: step.color }}>
+              <p className="text-xs mb-2" style={{ color: step.color }}>
                 {step.time} · {step.agent}
               </p>
               <p className="text-white text-lg font-medium mb-2">{step.headline}</p>

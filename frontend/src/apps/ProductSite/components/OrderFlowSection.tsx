@@ -25,13 +25,13 @@ const FLOW_NODES: FlowNode[] = [
   {
     icon: ChefHat,
     title: 'Kitchen Notified',
-    description: 'KDS lights up. Prep timer starts. No phone calls.',
+    description: 'Kitchen screen lights up. Prep timer starts. No phone calls.',
     color: '#F59E0B',
   },
   {
     icon: Car,
     title: 'Driver Dispatched',
-    description: 'Nearest driver assigned. Route optimised by Driver Agent.',
+    description: 'Nearest driver assigned automatically. Smart routing on busy runs.',
     color: '#10B981',
   },
   {

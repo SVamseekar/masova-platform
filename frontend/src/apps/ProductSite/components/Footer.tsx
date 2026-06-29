@@ -1,46 +1,44 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, Shield, Globe } from 'lucide-react'
-import { GOLD_GRADIENT_TEXT, GITHUB_URL, SITE_URL } from '../constants'
+import { GOLD_GRADIENT_TEXT, SITE_URL } from '../constants'
 
 type FooterLink = { label: string; href: string; external?: boolean }
 
 const FOOTER_SECTIONS: { title: string; links: FooterLink[] }[] = [
   {
-    title: 'Platform',
+    title: 'Explore',
     links: [
-      { label: 'Agent Brain', href: '#agent-brain' },
-      { label: 'Live Demo', href: '#demo' },
-      { label: 'Product Tour', href: '#product-tour' },
-      { label: 'Mobile Apps', href: '#mobile' },
-      { label: 'Channels', href: '#channels' },
+      { label: 'How it works', href: '#agent-brain' },
+      { label: 'See it live', href: '#demo' },
+      { label: 'Capabilities', href: '#product-tour' },
+      { label: 'Mobile apps', href: '#mobile' },
+      { label: 'Delivery channels', href: '#channels' },
     ],
   },
   {
-    title: 'AI & Ops',
+    title: 'Your business',
     links: [
-      { label: 'AI Agents', href: '#ai-agents' },
+      { label: 'Smart assistants', href: '#ai-agents' },
       { label: 'Features', href: '#features' },
-      { label: 'Order Flow', href: '#order-flow' },
+      { label: 'Order journey', href: '#order-flow' },
       { label: 'Pricing', href: '#pricing' },
       { label: 'FAQ', href: '#faq' },
     ],
   },
   {
-    title: 'Developers',
+    title: 'Getting started',
     links: [
-      { label: 'API Reference', href: '/api-docs' },
-      { label: 'GitHub', href: GITHUB_URL, external: true },
-      { label: 'Platform Overview', href: '#developers' },
-      { label: 'Live Site', href: SITE_URL, external: true },
+      { label: 'Onboarding & support', href: '#getting-started' },
+      { label: 'Try ordering live', href: SITE_URL, external: true },
+      { label: 'Book a demo', href: '#pricing' },
     ],
   },
   {
     title: 'Contact',
     links: [
       { label: 'hello@masova.com', href: 'mailto:hello@masova.com' },
-      { label: 'Book a demo', href: '#pricing' },
-      { label: 'Watch agents', href: '#demo' },
+      { label: 'Talk to sales', href: 'mailto:hello@masova.com' },
     ],
   },
 ]
@@ -63,11 +61,11 @@ export default function Footer() {
           viewport={{ once: true }}
         >
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Ready to put agents on your floor?
+            Ready to simplify how you run your restaurants?
           </h2>
           <p className="text-gray-400 mb-8 text-lg max-w-xl mx-auto">
-            Eight specialised agents propose actions — your managers approve. Start with a free trial
-            or talk to us about multi-location rollout.
+            Join operators who moved off WhatsApp tickets and spreadsheet chaos. Start a free trial
+            or book a walkthrough for your team.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
@@ -90,7 +88,7 @@ export default function Footer() {
                 color: '#D4AF37',
               }}
             >
-              Contact sales
+              Book a demo
             </a>
           </div>
         </motion.div>
@@ -118,8 +116,8 @@ export default function Footer() {
                 <span style={{ ...GOLD_GRADIENT_TEXT, fontSize: 18 }}>MaSoVa</span>
               </div>
               <p className="text-gray-500 text-xs leading-relaxed max-w-xs">
-                The agentic restaurant operating system — eight AI agents on a propose-then-approve
-                loop, wired to your live orders, kitchen, and mobile apps.
+                The restaurant platform for owners and managers running one location or many —
+                ordering, kitchen, delivery, and customer care in one place.
               </p>
             </div>
 

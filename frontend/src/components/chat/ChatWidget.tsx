@@ -264,7 +264,7 @@ export const ChatWidget: React.FC = () => {
               </div>
               <div>
                 <div style={{ color: isProductSite ? PRODUCT_GOLD : '#fff', fontWeight: 700, fontSize: '0.875rem' }}>
-                  {isProductSite ? 'Support Agent' : 'MaSoVa Support'}
+                  {isProductSite ? 'MaSoVa chat' : 'MaSoVa Support'}
                 </div>
                 <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.72rem' }}>
                   {voiceMode ? 'Voice mode active' : 'AI assistant · usually instant'}

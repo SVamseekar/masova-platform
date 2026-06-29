@@ -27,18 +27,18 @@ export default function AgentCommandCenter() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <SectionLabel>Agent command center</SectionLabel>
+          <SectionLabel>How it works</SectionLabel>
           <h2
             className="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight"
             style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
           >
-            Eight specialists.
+            Eight helpers on your team.
             <br />
-            <span style={{ color: colors.gold }}>One manager in control.</span>
+            <span style={{ color: colors.gold }}>You stay in charge.</span>
           </h2>
           <p className="text-gray-400 text-lg">
-            <strong className="text-gray-300 font-normal">masova-support</strong> runs on Google ADK + Gemini.
-            Agents draft. Managers approve. Nothing hits production without a human sign-off.
+            MaSoVa suggests what to do next — reorder stock, reply to a review, tweak a busy-hour price.
+            Your managers review and approve. Nothing changes until they say yes.
           </p>
         </motion.div>
 
@@ -85,12 +85,12 @@ export default function AgentCommandCenter() {
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-500/50" />
                   <span className="w-2.5 h-2.5 rounded-full bg-green-500/50" />
                 </div>
-                <span className="text-xs font-mono text-gray-500 ml-2">masova-support · agent stream</span>
+                <span className="text-xs text-gray-500 ml-2">Live activity · today</span>
               </div>
-              <span className="text-[10px] text-gray-600 font-mono">POST /agents/{'{name}'}/trigger</span>
+              <span className="text-[10px] text-green-400/80">● updating</span>
             </div>
 
-            <div className="p-5 flex-1 font-mono text-sm space-y-3 overflow-hidden">
+            <div className="p-5 flex-1 text-sm space-y-3 overflow-hidden">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={agent.name}
@@ -125,7 +125,7 @@ export default function AgentCommandCenter() {
             >
               <ShieldCheck size={14} style={{ color: colors.gold }} />
               <span className="text-gray-400">
-                Propose-then-approve · <span className="text-gray-300">awaiting manager</span>
+                Suggested action · <span className="text-gray-300">waiting for manager approval</span>
               </span>
             </div>
           </div>
