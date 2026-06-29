@@ -22,5 +22,5 @@ labels: enhancement
 - [ ]
 - [ ]
 
-## Related plans / docs
-<!-- Link to any relevant plan files in docs/plans/ -->
+## Related docs
+<!-- Link to relevant docs: ARCHITECTURE.md, api-contracts, issue numbers -->

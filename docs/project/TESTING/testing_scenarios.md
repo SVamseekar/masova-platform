@@ -1,11 +1,8 @@
-Testing
+# MaSoVa End-to-End Testing Scenarios
 
+Complete system flow verification scenarios for manual and integration testing.
 
-User approved Claude's plan
-  ⎿  Plan saved to: ~/.claude/plans/cuddly-sniffing-lampson.md · /plan to edit
-     MaSoVa End-to-End Testing Plan: Complete System Flow Verification
-
-     ## Recent Fixes Applied (Latest Update)
+## Recent Fixes Applied
 
      ✅ **POS Staff Attribution**: Fixed missing `createdByStaffId` and `createdByStaffName` fields
      - Orders created via POS now track which staff member created them

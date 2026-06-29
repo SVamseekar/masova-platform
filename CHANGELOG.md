@@ -6,9 +6,16 @@ All notable changes to MaSoVa are documented here.
 
 ## [Unreleased]
 
-### In Progress
-- Store selection with Domino's-style delivery radius
-- Distance-based delivery pricing
+### Added
+- Stripe multi-currency payment routing (Global-4): `StoreCurrencyResolver` for 12 EU countries
+- `StripePaymentFlowIT` integration tests for DE initiate, HU HUF resolve, webhook auth
+
+### Changed
+- Spring Boot 3.5.16, Spring Cloud 2025.0.3 (Dependabot stack)
+- Repository documentation overhaul: README, DEMO, ARCHITECTURE, STARTUP-GUIDE
+
+### Removed
+- Internal AI tooling artifacts and stale session docs from version control
 
 ---
 
