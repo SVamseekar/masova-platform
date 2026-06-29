@@ -85,7 +85,7 @@ describe('Neumorphic Card', () => {
   describe('styles', () => {
     it('applies position relative', () => {
       render(<Card data-testid="card">Content</Card>);
-      expect(screen.getByTestId('card')).toHaveStyle({ position: 'relative' });
+      expect(screen.getByTestId('card').getAttribute('style')).toContain('position: relative');
     });
 
     it('merges custom style prop', () => {
