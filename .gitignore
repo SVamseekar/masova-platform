@@ -20,9 +20,6 @@ buildNumber.properties
 # IDE
 .idea/
 
-# Local-only docs (restored from history, not pushed)
-docs/ARCHITECTURE.md
-
 # Local scratch work (not part of MaSoVa codebase)
 scratch/
 *.iws
@@ -87,10 +84,27 @@ frontend/tsconfig.tsbuildinfo
 *.jpg
 *.jpeg
 
-# Claude AI tooling
+# Local AI / IDE tooling (never commit)
+.claude/
 .claude-context.md
+CLAUDE.md
+.mcp.json
+.superpowers/
+.cursor/
 .playwright-mcp/
 .VSCodeCounter/
+.serena/
+GITHUB_REVAMP_PLAN.md
+docs/plans/
+docs/superpowers/
+docs/archive/
+docs/MASTER_INDEX.md
+docs/DOCUMENTATION_INDEX.md
+docs/full_codebase_security_audit.md
+docs/project/kiosk.md
+docs/project/pos_iss
+docs/project/MULTIISSUE_FIXES/plan.md
+scripts/node_modules/
 
 # Scripts/tooling artifacts
 mvn21

@@ -63,7 +63,7 @@ Free delivery threshold: ₹500+ order value
 
 | Machine         | Runs                                                               | Notes                |
 | --------------- | ------------------------------------------------------------------ | -------------------- |
-| Mac M1          | Frontend (:3000), Mobile apps, Claude Code, masova-support (:8000) | LAN IP auto-detected |
+| Mac M1          | Frontend (:3000), Mobile apps, masova-support (:8000) | LAN IP auto-detected |
 | Dell i3 Windows | All 6 backend services + Docker                                    | IP: 192.168.50.88    |
 
 ### Service Ports

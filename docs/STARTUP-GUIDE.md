@@ -21,7 +21,7 @@
 
 ## Step 1 — Infrastructure (Start First)
 
-> **Architecture note:** In the standard dev setup, all infrastructure (MongoDB, PostgreSQL, Redis, RabbitMQ) runs via **Docker on the Dell** (`192.168.50.88`). If you're running everything on one machine, use Docker Compose below.
+> **Architecture note:** For multi-machine setups, infrastructure can run on a dedicated backend host while frontend and mobile run locally. For single-machine development, use Docker Compose below.
 
 ### Option A — Docker Compose (Recommended)
 ```bash
@@ -56,42 +56,27 @@ curl -s -u guest:guest http://localhost:15672/api/overview | python3 -c "import 
 
 ## Step 2 — Backend Services (Spring Boot)
 
-All services live in `/Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/`
+All services live in this repository root.
 
-There are **5 consolidated services** (not the old individual microservices):
+There are **6 consolidated services**:
 
 ### Option A — Start All (Recommended)
 
 Open 6 terminal tabs and run one command per tab:
 
 ```bash
-BASE=/Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system
-JH=$(ls -d /Library/Java/JavaVirtualMachines/temurin-21.*/Contents/Home | head -1)
-
-# Tab 1 — API Gateway (port 8080)
-cd $BASE/api-gateway && JAVA_HOME=$JH mvn spring-boot:run -q
-
-# Tab 2 — Core Service (port 8085) [users, stores, auth, customers, reviews, notifications, campaigns]
-cd $BASE/core-service && JAVA_HOME=$JH mvn spring-boot:run -q
-
-# Tab 3 — Commerce Service (port 8084) [menu, orders, kitchen, kiosk]
-cd $BASE/commerce-service && JAVA_HOME=$JH mvn spring-boot:run -q
-
-# Tab 4 — Payment Service (port 8089) [payments, refunds]
-cd $BASE/payment-service && JAVA_HOME=$JH mvn spring-boot:run -q
-
-# Tab 5 — Logistics Service (port 8086) [delivery, dispatch, tracking, inventory, suppliers, waste]
-cd $BASE/logistics-service && JAVA_HOME=$JH mvn spring-boot:run -q
-
-# Tab 6 — Intelligence Service (port 8087) [analytics, BI, reports]
-cd $BASE/intelligence-service && JAVA_HOME=$JH mvn spring-boot:run -q
+# From the project root — one terminal per service
+cd api-gateway      && mvn spring-boot:run "-Dmaven.test.skip=true"   # :8080
+cd core-service     && mvn spring-boot:run "-Dmaven.test.skip=true"   # :8085
+cd commerce-service && mvn spring-boot:run "-Dmaven.test.skip=true"   # :8084
+cd payment-service  && mvn spring-boot:run "-Dmaven.test.skip=true"   # :8089
+cd logistics-service && mvn spring-boot:run "-Dmaven.test.skip=true"  # :8086
+cd intelligence-service && mvn spring-boot:run "-Dmaven.test.skip=true" # :8087
 ```
 
 > **Build shared libs first** (only needed once or after changes to shared-models/shared-security):
 > ```bash
-> cd /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system
-> JAVA_HOME=$(ls -d /Library/Java/JavaVirtualMachines/temurin-21.*/Contents/Home | head -1) \
->   mvn install -pl shared-models,shared-security -DskipTests -q
+> mvn install -pl shared-models,shared-security -DskipTests -q
 > ```
 
 ### Verify Backend
@@ -112,7 +97,6 @@ curl -s http://localhost:8087/actuator/health | python3 -c "import json,sys; pri
 ## Step 3 — Seed the Database (First Time Only)
 
 ```bash
-cd /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system
 node scripts/seed-database.js
 ```
 
@@ -130,7 +114,7 @@ This creates stores, menu items, and test users. Only needs to run once unless y
 ## Step 4 — Web Frontend
 
 ```bash
-cd /Users/souravamseekarmarti/Projects/MaSoVa-restaurant-management-system/frontend
+cd frontend
 npm install   # first time only
 npm run dev
 ```
@@ -142,8 +126,9 @@ Open: **http://localhost:3000**
 ## Step 5 — AI Support Agent
 
 ```bash
-cd /Users/souravamseekarmarti/Projects/masova-support
-source .venv/bin/activate
+# From the masova-support repository (sibling project)
+cd ../masova-support
+source .venv/bin/activate   # optional
 uvicorn src.masova_agent.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
@@ -160,19 +145,20 @@ curl -s http://localhost:8000/health
 
 **Terminal 1 — Start Metro bundler:**
 ```bash
-cd /Users/souravamseekarmarti/Projects/masova-mobile
+# From the masova-mobile repository (sibling project)
+cd ../masova-mobile
 npx react-native start --port 8888
 ```
 
 **Terminal 2 — Build and install on Android:**
 ```bash
-cd /Users/souravamseekarmarti/Projects/masova-mobile
+cd ../masova-mobile
 npx react-native run-android --port 8888 --active-arch-only
 ```
 
-> **Port 8888** avoids conflict with backend services. Configured in `src/services/api.ts`.
-> **API URL:** Dev backend is at `http://192.168.50.88:8080/api` (Dell LAN). Update `API_BASE_URL` in `src/services/api.ts` if the Dell IP changes or you're running locally.
-> **Android emulator:** Use `http://10.0.2.2:8080/api` instead of the LAN IP.
+> **Port 8888** avoids conflict with backend services.
+> **API URL:** Set `API_BASE_URL` in `src/services/api.ts` (e.g. `http://localhost:8080/api` or your LAN gateway).
+> **Android emulator:** Use `http://10.0.2.2:8080/api`.
 
 ---
 
@@ -183,18 +169,18 @@ Covers all staff roles: Driver, Kitchen, Cashier, Manager — role is read from 
 
 **Terminal 1 — Start Metro bundler:**
 ```bash
-cd /Users/souravamseekarmarti/Projects/MaSoVaCrewApp
+# From the MaSoVaCrewApp repository (sibling project)
+cd ../MaSoVaCrewApp
 npx react-native start
 ```
 
 **Terminal 2 — Build and install on Android:**
 ```bash
-cd /Users/souravamseekarmarti/Projects/MaSoVaCrewApp
+cd ../MaSoVaCrewApp
 npx react-native run-android --active-arch-only
 ```
 
-> **API URL:** Points to `http://192.168.50.88:8080/api` (Dell backend). Update `src/config/api.config.ts` if running on a different machine.
-> **WebSocket:** `http://192.168.50.88:8090/ws` in dev, `wss://api.masova.com/ws` in prod.
+> **API URL:** Set `API_GATEWAY_URL` in `src/config/api.config.ts` to your gateway (e.g. `http://localhost:8080/api`).
 
 ---
 

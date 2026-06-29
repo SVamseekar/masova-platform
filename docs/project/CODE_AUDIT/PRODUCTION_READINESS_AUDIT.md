@@ -2032,7 +2032,7 @@ Before production deployment, verify:
 
 ---
 
-**Prepared by:** Claude Code Assistant
+**Prepared by:** MaSoVa Engineering
 **Review Required:** Development Team Lead, Security Team, Legal/Compliance
 
 ---
