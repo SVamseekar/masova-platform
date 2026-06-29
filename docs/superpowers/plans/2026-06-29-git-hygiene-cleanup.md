@@ -664,12 +664,12 @@ git push
 | 2 — Close PRs #15/#16 | ✅ |
 | 2.5 — PR #17 CI green | ✅ |
 | 3 — Merge PR #17 | ✅ `e9a2c992` |
-| 3.5 — Stash audit | ⏳ Manual |
-| 4 — `.gitattributes` | ✅ `chore/git-hygiene-safeguards` PR |
-| 5 — `CODEOWNERS` | ✅ same PR |
+| 3.5 — Stash audit | ✅ 2026-06-29 — 3 stashes dropped, security branch deleted, globals reset to `main` |
+| 4 — `.gitattributes` | ✅ PR #19 squash `6e61032f` |
+| 5 — `CODEOWNERS` | ✅ same |
 | 6 — Pre-commit hook | ✅ `scripts/git-hooks/pre-commit` + install scripts |
 | 7 — Razorpay doc cleanup | ✅ `phase5-env-vars.md` (yml + .env.example done in PR #17) |
 | 8 — Branch protection | ✅ 2026-06-29 (linear history, CODEOWNERS reviews, conversation resolution) |
 | 9 — Summary doc | ✅ `2026-06-29-git-hygiene-cleanup-summary.md` |
 
-**Next after safeguards PR merges:** Run Task 8 `gh api` commands (in summary), install hooks on Mac + Dell, optional Task 3.5 stash review.
+**Git hygiene plan complete.** Deferred: Mac hook install (`./scripts/install-git-hooks.sh`), Dell items (see summary). **Next:** Global-2/3/4 adaptation branches.
