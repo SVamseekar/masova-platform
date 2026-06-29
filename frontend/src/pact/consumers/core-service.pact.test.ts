@@ -38,7 +38,7 @@ describe('Core Service Contract Tests', () => {
             id: 'USER-PACT-1',
             name: like('John Manager'),
             email: like('john.manager@example.com'),
-            userType: like('MANAGER'),
+            type: like('MANAGER'),
           },
         });
 
@@ -70,7 +70,9 @@ describe('Core Service Contract Tests', () => {
           body: {
             id: 'STORE-PACT-1',
             name: like('MaSoVa Berlin'),
-            city: like('Berlin'),
+            address: {
+              city: like('Berlin'),
+            },
           },
         });
 

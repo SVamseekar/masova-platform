@@ -12,6 +12,12 @@ import au.com.dius.pact.provider.junitsupport.State;
 import au.com.dius.pact.provider.junitsupport.StateChangeAction;
 import au.com.dius.pact.provider.junitsupport.loader.PactFolder;
 import au.com.dius.pact.provider.spring.spring6.PactVerificationSpring6Provider;
+import com.MaSoVa.core.user.repository.StoreRepository;
+import com.MaSoVa.core.user.repository.UserRepository;
+import com.MaSoVa.shared.entity.Store;
+import com.MaSoVa.shared.entity.User;
+import com.MaSoVa.shared.enums.UserType;
+import com.MaSoVa.shared.model.Address;
 import com.MaSoVa.shared.test.BaseFullIntegrationTest;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -20,6 +26,7 @@ import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -46,6 +53,12 @@ class CorePactVerificationIT extends BaseFullIntegrationTest {
 
     @LocalServerPort
     int port;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private StoreRepository storeRepository;
 
     @BeforeEach
     void before(PactVerificationContext context) {
@@ -81,13 +94,17 @@ class CorePactVerificationIT extends BaseFullIntegrationTest {
         }
     }
 
+    /**
+     * UserController#getUser requires #userId == authentication.name or hasRole('MANAGER')/
+     * 'ASSISTANT_MANAGER' - MANAGER lets this token read any seeded user, including USER-PACT-1.
+     */
     private String generateTestJwt() {
         SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         Date now = new Date();
         return Jwts.builder()
                 .subject("pact-test-user")
                 .claim("email", "pact-test@masova.com")
-                .claim("roles", List.of("CUSTOMER"))
+                .claim("roles", List.of("MANAGER"))
                 .issuedAt(now)
                 .expiration(new Date(now.getTime() + Duration.ofMinutes(5).toMillis()))
                 .signWith(key)
@@ -96,18 +113,42 @@ class CorePactVerificationIT extends BaseFullIntegrationTest {
 
     @State("user exists with id USER-PACT-1")
     void userExists() {
+        User user = new User();
+        user.setId("USER-PACT-1");
+        user.setType(UserType.MANAGER);
+        User.PersonalInfo personalInfo = new User.PersonalInfo();
+        personalInfo.setName("John Manager");
+        personalInfo.setEmail("john.manager@example.com");
+        personalInfo.setPhone("9876543210");
+        user.setPersonalInfo(personalInfo);
+        user.setActive(true);
+        userRepository.save(user);
     }
 
     @State(value = "user exists with id USER-PACT-1", action = StateChangeAction.TEARDOWN)
     void cleanupUser() {
+        userRepository.deleteById("USER-PACT-1");
     }
 
     @State("store exists with id STORE-PACT-1")
     void storeExists() {
+        Store store = new Store();
+        store.setId("STORE-PACT-1");
+        store.setName("MaSoVa Berlin");
+        store.setCode("DOM999");
+        Address address = new Address();
+        address.setStreet("Pact Test Street 1");
+        address.setCity("Berlin");
+        address.setState("Berlin");
+        address.setPincode("10115");
+        store.setAddress(address);
+        store.setPhoneNumber("+4930123456");
+        storeRepository.save(store);
     }
 
     @State(value = "store exists with id STORE-PACT-1", action = StateChangeAction.TEARDOWN)
     void cleanupStore() {
+        storeRepository.deleteById("STORE-PACT-1");
     }
 
     @State("no data")

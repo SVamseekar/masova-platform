@@ -4,198 +4,6 @@
   },
   "interactions": [
     {
-      "description": "a login request with valid credentials",
-      "providerStates": [
-        {
-          "name": "user exists with email test@masova.com"
-        }
-      ],
-      "request": {
-        "body": {
-          "email": "test@masova.com",
-          "password": "Test1234!"
-        },
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "matchingRules": {
-          "body": {
-            "$.email": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.password": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            }
-          }
-        },
-        "method": "POST",
-        "path": "/api/auth/login"
-      },
-      "response": {
-        "body": {
-          "accessToken": "access.token.value",
-          "refreshToken": "refresh.token.value",
-          "user": {
-            "email": "test@masova.com",
-            "id": "user-1",
-            "type": "CUSTOMER"
-          }
-        },
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "matchingRules": {
-          "body": {
-            "$": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.accessToken": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.refreshToken": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.user": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.user.email": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.user.id": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.user.type": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            }
-          }
-        },
-        "status": 200
-      }
-    },
-    {
-      "description": "a request to get customer by id",
-      "providerStates": [
-        {
-          "name": "customer exists with id cust-pact-1"
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "path": "/api/customers/cust-pact-1"
-      },
-      "response": {
-        "body": {
-          "email": "customer@masova.com",
-          "id": "cust-pact-1",
-          "loyaltyInfo": {
-            "tier": "SILVER",
-            "totalPoints": 100
-          }
-        },
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "matchingRules": {
-          "body": {
-            "$": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.email": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.id": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.loyaltyInfo": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.loyaltyInfo.tier": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$.loyaltyInfo.totalPoints": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            }
-          }
-        },
-        "status": 200
-      }
-    },
-    {
       "description": "a request to get store by ID",
       "providerStates": [
         {
@@ -224,7 +32,9 @@
       },
       "response": {
         "body": {
-          "city": "Berlin",
+          "address": {
+            "city": "Berlin"
+          },
           "id": "STORE-PACT-1",
           "name": "MaSoVa Berlin"
         },
@@ -233,7 +43,7 @@
         },
         "matchingRules": {
           "body": {
-            "$.city": {
+            "$.address.city": {
               "combine": "AND",
               "matchers": [
                 {
@@ -286,7 +96,7 @@
           "email": "john.manager@example.com",
           "id": "USER-PACT-1",
           "name": "John Manager",
-          "userType": "MANAGER"
+          "type": "MANAGER"
         },
         "headers": {
           "Content-Type": "application/json"
@@ -309,131 +119,7 @@
                 }
               ]
             },
-            "$.userType": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            }
-          }
-        },
-        "status": 200
-      }
-    },
-    {
-      "description": "a request to list customers",
-      "providerStates": [
-        {
-          "name": "customers exist"
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "path": "/api/customers"
-      },
-      "response": {
-        "body": [
-          {
-            "active": true,
-            "email": "customer@masova.com",
-            "id": "cust-1"
-          }
-        ],
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "matchingRules": {
-          "body": {
-            "$": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type",
-                  "min": 1
-                }
-              ]
-            },
-            "$[*].active": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$[*].email": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$[*].id": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            }
-          }
-        },
-        "status": 200
-      }
-    },
-    {
-      "description": "a request to list stores",
-      "providerStates": [
-        {
-          "name": "stores exist"
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "path": "/api/stores"
-      },
-      "response": {
-        "body": [
-          {
-            "code": "MUM001",
-            "id": "store-1",
-            "name": "MaSoVa Mumbai"
-          }
-        ],
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "matchingRules": {
-          "body": {
-            "$": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type",
-                  "min": 1
-                }
-              ]
-            },
-            "$[*].code": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$[*].id": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
-                }
-              ]
-            },
-            "$[*].name": {
+            "$.type": {
               "combine": "AND",
               "matchers": [
                 {
