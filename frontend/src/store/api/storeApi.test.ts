@@ -84,7 +84,7 @@ describe('storeApi', () => {
 
     it('should fetch active stores (public)', async () => {
       server.use(
-        http.get(`${API}/stores/public`, () => HttpResponse.json([mockStore])),
+        http.get(`${API}/stores`, () => HttpResponse.json([mockStore])),
       );
 
       const { result } = renderHook(() => useGetActiveStoresQuery(), {

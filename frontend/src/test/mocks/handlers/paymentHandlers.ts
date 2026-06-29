@@ -1,7 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { apiUrl } from '../../testApiBase';
 
-
 const mockTransaction = {
   transactionId: 'txn-1',
   orderId: 'order-1',
@@ -50,22 +49,6 @@ export const paymentHandlers = [
     HttpResponse.json(mockTransaction),
   ),
 
-  http.get(apiUrl('/payments/:transactionId'), () =>
-    HttpResponse.json(mockTransaction),
-  ),
-
-  http.get(apiUrl('/payments/order/:orderId'), () =>
-    HttpResponse.json(mockTransaction),
-  ),
-
-  http.get(apiUrl('/payments/customer/:customerId'), () =>
-    HttpResponse.json([mockTransaction]),
-  ),
-
-  http.get(apiUrl('/payments/store'), () =>
-    HttpResponse.json([mockTransaction]),
-  ),
-
   http.get(apiUrl('/payments/reconciliation'), () =>
     HttpResponse.json({
       reportDate: '2025-01-15',
@@ -83,8 +66,12 @@ export const paymentHandlers = [
     }),
   ),
 
-  http.post(apiUrl('/payments/:transactionId/reconcile'), () =>
-    new HttpResponse(null, { status: 204 }),
+  http.get(apiUrl('/payments/store'), () =>
+    HttpResponse.json([mockTransaction]),
+  ),
+
+  http.get(apiUrl('/payments/customer/:customerId'), () =>
+    HttpResponse.json([mockTransaction]),
   ),
 
   http.post(apiUrl('/payments/refund'), () =>
@@ -105,5 +92,18 @@ export const paymentHandlers = [
 
   http.get(apiUrl('/payments/refund/customer/:customerId'), () =>
     HttpResponse.json([mockRefund]),
+  ),
+
+  http.post(apiUrl('/payments/:transactionId/reconcile'), () =>
+    new HttpResponse(null, { status: 204 }),
+  ),
+
+  // Parameterized route last — :transactionId would match "store" / "reconciliation" otherwise
+  http.get(apiUrl('/payments/:transactionId'), () =>
+    HttpResponse.json(mockTransaction),
+  ),
+
+  http.get(apiUrl('/payments/order/:orderId'), () =>
+    HttpResponse.json(mockTransaction),
   ),
 ];

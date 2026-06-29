@@ -1,7 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { apiUrl } from '../../testApiBase';
 
-
 const mockUsers = [
   {
     id: '1',
@@ -33,6 +32,7 @@ const mockUsers = [
 ];
 
 export const userHandlers = [
+  // Static / multi-segment routes before :userId (MSW matches in registration order)
   http.get(apiUrl('/users/profile'), () =>
     HttpResponse.json(mockUsers[0]),
   ),
@@ -43,6 +43,43 @@ export const userHandlers = [
 
   http.post(apiUrl('/users/change-password'), () =>
     new HttpResponse(null, { status: 204 }),
+  ),
+
+  http.get(apiUrl('/users/managers'), () =>
+    HttpResponse.json(mockUsers.filter((u) => u.type === 'MANAGER')),
+  ),
+
+  http.get(apiUrl('/users/store'), () =>
+    HttpResponse.json(mockUsers.filter((u) => u.storeId === '1')),
+  ),
+
+  http.get(apiUrl('/users/search'), () =>
+    HttpResponse.json(mockUsers),
+  ),
+
+  http.get(apiUrl('/users/stats'), () =>
+    HttpResponse.json({ totalUsers: 50, activeUsers: 45, staffCount: 12, driverCount: 8 }),
+  ),
+
+  http.get(apiUrl('/users/type/:type'), ({ params }) =>
+    HttpResponse.json(mockUsers.filter((u) => u.type === params.type)),
+  ),
+
+  http.get(apiUrl('/users'), () =>
+    HttpResponse.json(mockUsers),
+  ),
+
+  http.post(apiUrl('/users/create'), () =>
+    HttpResponse.json({ ...mockUsers[1], id: '99' }),
+  ),
+
+  http.post(apiUrl('/users/validate-pin'), () =>
+    HttpResponse.json({ userId: '2', name: 'Staff Member', type: 'STAFF', role: 'CASHIER', storeId: '1' }),
+  ),
+
+  // Parameterized routes last
+  http.get(apiUrl('/users/:userId/can-take-orders'), () =>
+    HttpResponse.json({ canTakeOrders: true }),
   ),
 
   http.get(apiUrl('/users/:userId'), ({ params }) =>
@@ -59,41 +96,5 @@ export const userHandlers = [
 
   http.post(apiUrl('/users/:userId/deactivate'), () =>
     new HttpResponse(null, { status: 204 }),
-  ),
-
-  http.get(apiUrl('/users/type/:type'), ({ params }) =>
-    HttpResponse.json(mockUsers.filter((u) => u.type === params.type)),
-  ),
-
-  http.get(apiUrl('/users/store'), () =>
-    HttpResponse.json(mockUsers.filter((u) => u.storeId === '1')),
-  ),
-
-  http.get(apiUrl('/users/managers'), () =>
-    HttpResponse.json(mockUsers.filter((u) => u.type === 'MANAGER')),
-  ),
-
-  http.get(apiUrl('/users/:userId/can-take-orders'), () =>
-    HttpResponse.json({ canTakeOrders: true }),
-  ),
-
-  http.get(apiUrl('/users'), () =>
-    HttpResponse.json(mockUsers),
-  ),
-
-  http.post(apiUrl('/users/create'), () =>
-    HttpResponse.json({ ...mockUsers[1], id: '99' }),
-  ),
-
-  http.post(apiUrl('/users/validate-pin'), () =>
-    HttpResponse.json({ userId: '2', name: 'Staff Member', type: 'STAFF', role: 'CASHIER', storeId: '1' }),
-  ),
-
-  http.get(apiUrl('/users/search'), () =>
-    HttpResponse.json(mockUsers),
-  ),
-
-  http.get(apiUrl('/users/stats'), () =>
-    HttpResponse.json({ totalUsers: 50, activeUsers: 45, staffCount: 12, driverCount: 8 }),
   ),
 ];

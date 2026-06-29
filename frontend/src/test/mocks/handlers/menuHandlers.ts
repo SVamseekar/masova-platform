@@ -1,7 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { apiUrl } from '../../testApiBase';
 
-
 const mockMenuItems = [
   {
     id: '1',
@@ -57,13 +56,17 @@ const mockMenuItems = [
 ];
 
 export const menuHandlers = [
-  // Public endpoints
+  // Public endpoints — static routes before :id
   http.get(apiUrl('/menu/public'), () =>
     HttpResponse.json(mockMenuItems),
   ),
 
-  http.get(apiUrl('/menu/public/:id'), ({ params }) =>
-    HttpResponse.json({ ...mockMenuItems[0], id: params.id }),
+  http.get(apiUrl('/menu/public/recommended'), () =>
+    HttpResponse.json(mockMenuItems.filter((item) => item.isRecommended)),
+  ),
+
+  http.get(apiUrl('/menu/public/search'), () =>
+    HttpResponse.json(mockMenuItems),
   ),
 
   http.get(apiUrl('/menu/public/cuisine/:cuisine'), () =>
@@ -78,16 +81,12 @@ export const menuHandlers = [
     HttpResponse.json(mockMenuItems.filter((item) => item.dietaryInfo.includes('VEGETARIAN'))),
   ),
 
-  http.get(apiUrl('/menu/public/recommended'), () =>
-    HttpResponse.json(mockMenuItems.filter((item) => item.isRecommended)),
-  ),
-
-  http.get(apiUrl('/menu/public/search'), () =>
-    HttpResponse.json(mockMenuItems),
-  ),
-
   http.get(apiUrl('/menu/public/tag/:tag'), () =>
     HttpResponse.json(mockMenuItems),
+  ),
+
+  http.get(apiUrl('/menu/public/:id'), ({ params }) =>
+    HttpResponse.json({ ...mockMenuItems[0], id: params.id }),
   ),
 
   // Manager endpoints
@@ -107,12 +106,12 @@ export const menuHandlers = [
     HttpResponse.json({ ...mockMenuItems[0], id: params.id }),
   ),
 
-  http.patch(apiUrl('/menu/items/:id/availability'), ({ params }) =>
-    HttpResponse.json({ ...mockMenuItems[0], id: params.id, isAvailable: false }),
-  ),
-
   http.patch(apiUrl('/menu/items/:id/availability/:status'), ({ params }) =>
     HttpResponse.json({ ...mockMenuItems[0], id: params.id, isAvailable: params.status === 'true' }),
+  ),
+
+  http.patch(apiUrl('/menu/items/:id/availability'), ({ params }) =>
+    HttpResponse.json({ ...mockMenuItems[0], id: params.id, isAvailable: false }),
   ),
 
   http.delete(apiUrl('/menu/items/:id'), () =>
