@@ -189,7 +189,7 @@ describe('Neumorphic Input', () => {
   describe('custom styles', () => {
     it('merges custom style prop with computed styles', () => {
       render(<Input style={{ border: '2px solid blue' }} data-testid="input" />);
-      expect(screen.getByTestId('input')).toHaveStyle({ border: '2px solid blue' });
+      expect(screen.getByTestId('input').getAttribute('style')).toContain('border: 2px solid blue');
     });
   });
 });

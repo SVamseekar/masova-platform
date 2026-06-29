@@ -209,21 +209,13 @@ describe('PINAuthModal', () => {
         useMemoryRouter: true,
       });
 
-      // Enter all 5 digits
       const inputs = document.querySelectorAll('input[type="password"]');
       await user.click(inputs[0] as HTMLElement);
-      await user.keyboard('1');
-      await user.click(inputs[1] as HTMLElement);
-      await user.keyboard('2');
-      await user.click(inputs[2] as HTMLElement);
-      await user.keyboard('3');
-      await user.click(inputs[3] as HTMLElement);
-      await user.keyboard('4');
-      await user.click(inputs[4] as HTMLElement);
-      await user.keyboard('5');
+      await user.keyboard('12345');
 
-      // Click Continue
-      await user.click(screen.getByRole('button', { name: 'Continue' }));
+      const continueBtn = await screen.findByRole('button', { name: 'Continue' });
+      await waitFor(() => expect(continueBtn).toBeEnabled());
+      await user.click(continueBtn);
 
       await waitFor(() => {
         expect(defaultProps.onAuthenticated).toHaveBeenCalledWith({
