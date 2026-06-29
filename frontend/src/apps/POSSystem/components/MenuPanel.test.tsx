@@ -3,6 +3,7 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@/test/utils/testUtils';
 import { mockMenuItems } from '@/test/fixtures/mockMenu';
+import type { MenuItem } from '@/store/api/menuApi';
 import MenuPanel from './MenuPanel';
 
 // ---------------------------------------------------------------------------

@@ -30,6 +30,7 @@ import cartReducer from '../store/slices/cartSlice';
 import notificationReducer from '../store/slices/notificationSlice';
 
 import type { RootState } from '../store/store';
+import { mergePreloadedState } from './defaultPreloadedState';
 
 /**
  * Creates a test store with optional preloaded state
@@ -85,7 +86,7 @@ export function createTestStore(preloadedState?: PreloadedState<RootState>) {
         notificationApi.middleware,
         kioskApi.middleware
       ),
-    preloadedState,
+    preloadedState: mergePreloadedState(preloadedState),
   });
 }
 

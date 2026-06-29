@@ -92,7 +92,7 @@ describe('KitchenDisplayPage', () => {
     expect(screen.getByText('Preparing')).toBeInTheDocument();
     expect(screen.getByText('In Oven')).toBeInTheDocument();
     expect(screen.getByText('Ready')).toBeInTheDocument();
-    expect(screen.getByText('Completed')).toBeInTheDocument();
+    expect(screen.getByText('Picked Up')).toBeInTheDocument();
   });
 
   it('shows "No orders" text in empty columns', () => {

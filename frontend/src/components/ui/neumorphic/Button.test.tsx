@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { user, userNoPointerCheck } from '@/test/utils/userEvent';
 import { Button } from './Button';
 
 describe('Neumorphic Button', () => {
@@ -135,17 +135,15 @@ describe('Neumorphic Button', () => {
     });
 
     it('prevents click events when disabled', async () => {
-      const user = userEvent.setup();
       const handleClick = vi.fn();
       render(<Button disabled onClick={handleClick}>Disabled</Button>);
-      await user.click(screen.getByRole('button'));
+      await userNoPointerCheck.click(screen.getByRole('button'));
       expect(handleClick).not.toHaveBeenCalled();
     });
   });
 
   describe('interaction', () => {
     it('calls onClick handler when clicked', async () => {
-      const user = userEvent.setup();
       const handleClick = vi.fn();
       render(<Button onClick={handleClick}>Click me</Button>);
       await user.click(screen.getByRole('button'));
@@ -153,10 +151,9 @@ describe('Neumorphic Button', () => {
     });
 
     it('does not call onClick when loading', async () => {
-      const user = userEvent.setup();
       const handleClick = vi.fn();
       render(<Button isLoading onClick={handleClick}>Loading</Button>);
-      await user.click(screen.getByRole('button'));
+      await userNoPointerCheck.click(screen.getByRole('button'));
       expect(handleClick).not.toHaveBeenCalled();
     });
   });

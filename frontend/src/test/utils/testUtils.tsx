@@ -3,6 +3,7 @@ import { render, RenderOptions } from '@testing-library/react';
 import { vi } from 'vitest';
 import { TestWrapper } from '../TestWrapper';
 import type { RootState } from '../../store/store';
+export { defaultCartPreload, mergePreloadedState } from '../defaultPreloadedState';
 
 // PreloadedState type for Redux store
 type PreloadedState<S> = {
