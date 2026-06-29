@@ -8,7 +8,7 @@
   position: absolute;
   inset: -5px;
   border-radius: 999px;
-  border: 1px solid rgba(212, 175, 55, 0.45);
+  border: 1px solid rgba(250, 45, 72, 0.45);
   animation: masova-chat-fab-ring 2.4s ease-in-out infinite;
   pointer-events: none;
 }
@@ -28,23 +28,19 @@
 }
 
 .masova-chat-fab--closed {
-  gap: 0;
+  gap: 8px;
+}
+
+.masova-chat-fab-agent-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .masova-chat-fab-label {
-  max-width: 0;
-  opacity: 0;
-  overflow: hidden;
   white-space: nowrap;
   font-size: 13px;
   font-weight: 600;
-  transition: max-width 0.25s ease, opacity 0.2s ease, margin 0.25s ease;
-}
-
-.masova-chat-fab-wrap:hover .masova-chat-fab-label {
-  max-width: 80px;
-  opacity: 1;
-  margin-left: 4px;
 }
 
 .masova-chat-panel {
@@ -76,17 +72,83 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.masova-chat-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+.masova-chat-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.masova-chat-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.masova-chat-agent-core {
+  position: relative;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Playfair Display', Georgia, serif;
-  font-weight: 700;
-  font-size: 18px;
   flex-shrink: 0;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.masova-chat-agent-core--header {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+}
+
+.masova-chat-agent-core--row {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+}
+
+.masova-chat-agent-core--thinking {
+  animation: masova-chat-agent-pulse 1.6s ease-in-out infinite;
+}
+
+.masova-chat-agent-core-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 1px solid;
+  opacity: 0.5;
+  animation: masova-chat-agent-ring 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes masova-chat-agent-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+@keyframes masova-chat-agent-ring {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0;
+  }
 }
 
 .masova-chat-status {
@@ -95,6 +157,10 @@
   gap: 6px;
   font-size: 11px;
   color: rgba(255, 255, 255, 0.55);
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .masova-chat-status-dot {
@@ -103,6 +169,37 @@
   border-radius: 50%;
   background: #10b981;
   box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  flex-shrink: 0;
+}
+
+.masova-chat-status-dot--working {
+  background: #FA2D48;
+  box-shadow: 0 0 8px rgba(250, 45, 72, 0.6);
+  animation: masova-chat-status-blink 1s ease-in-out infinite;
+}
+
+@keyframes masova-chat-status-blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.masova-chat-capabilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 14px;
+}
+
+.masova-chat-capability-pill {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 3px 8px;
+  border-radius: 999px;
 }
 
 .masova-chat-messages {
@@ -127,28 +224,30 @@
 .masova-chat-row {
   display: flex;
   gap: 8px;
-  align-items: flex-end;
+  align-items: flex-start;
 }
 
 .masova-chat-row--user {
   justify-content: flex-end;
 }
 
-.masova-chat-row-avatar {
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Playfair Display', Georgia, serif;
-  font-weight: 700;
-  font-size: 11px;
-  flex-shrink: 0;
+.masova-chat-msg-body {
+  min-width: 0;
+  max-width: 82%;
+}
+
+.masova-chat-row--user .masova-chat-msg-body {
+  max-width: 82%;
+}
+
+.masova-chat-msg-label {
+  font-size: 10px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  letter-spacing: 0.02em;
 }
 
 .masova-chat-bubble {
-  max-width: 82%;
   padding: 10px 14px;
   font-size: 0.875rem;
   line-height: 1.55;
@@ -164,11 +263,51 @@
   border-radius: 16px 16px 4px 16px;
 }
 
+.masova-chat-tool-trace {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  margin-top: 5px;
+  padding-left: 2px;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  letter-spacing: -0.01em;
+}
+
+.masova-chat-tool-trace-icon {
+  display: flex;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.masova-chat-timestamp {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+}
+
+.masova-chat-row--user .masova-chat-timestamp {
+  padding-right: 2px;
+}
+
+.masova-chat-quick-actions-wrap {
+  padding: 0 4px 4px;
+}
+
+.masova-chat-quick-actions-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
 .masova-chat-quick-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  padding: 0 4px 4px;
 }
 
 .masova-chat-chip {
@@ -183,6 +322,50 @@
 
 .masova-chat-chip:hover {
   filter: brightness(1.08);
+}
+
+.masova-chat-thinking {
+  border-radius: 16px 16px 16px 4px;
+  padding: 12px 14px;
+  min-width: 200px;
+}
+
+.masova-chat-thinking-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.masova-chat-thinking-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35);
+  transition: color 0.3s ease, opacity 0.3s ease;
+}
+
+.masova-chat-thinking-step--active {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+.masova-chat-thinking-step--done {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.masova-chat-thinking-step--tool {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 11px;
+}
+
+.masova-chat-thinking-step-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
 .masova-chat-input-bar {
@@ -243,34 +426,6 @@
 
 .masova-chat-send:not(:disabled):hover {
   transform: scale(1.05);
-}
-
-.masova-chat-typing span {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  margin: 0 2px;
-  animation: masova-chat-typing 1.2s ease-in-out infinite;
-}
-
-.masova-chat-typing span:nth-child(2) {
-  animation-delay: 0.15s;
-}
-
-.masova-chat-typing span:nth-child(3) {
-  animation-delay: 0.3s;
-}
-
-@keyframes masova-chat-typing {
-  0%, 100% {
-    opacity: 0.35;
-    transform: translateY(0);
-  }
-  50% {
-    opacity: 1;
-    transform: translateY(-3px);
-  }
 }
 
 @keyframes masova-chat-fab-ring {

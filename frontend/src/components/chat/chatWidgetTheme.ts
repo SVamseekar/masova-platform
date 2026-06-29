@@ -1,6 +1,7 @@
 export interface ChatQuickAction {
   label: string
   message: string
+  icon?: 'sparkles' | 'package' | 'calendar'
 }
 
 export interface ChatTheme {
@@ -20,15 +21,18 @@ export interface ChatTheme {
   userBubbleText: string
   inputBg: string
   fontFamily: string
-  title: string
+  agentName: string
+  agentRole: string
   subtitle: string
   welcome: string
+  fabLabel: string
+  inputPlaceholder: string
+  quickActionsLabel: string
   quickActions: ChatQuickAction[]
   fabShadow: string
   panelShadow: string
 }
 
-/** Apple Music–style rose-red — matches ProductSite tokens */
 const ACCENT = '#FA2D48'
 const ACCENT_DARK = '#D41E3A'
 const ACCENT_MUTED = 'rgba(250, 45, 72, 0.14)'
@@ -36,15 +40,15 @@ const ACCENT_BORDER = 'rgba(250, 45, 72, 0.32)'
 const ACCENT_SHADOW = 'rgba(250, 45, 72, 0.32)'
 
 const PRODUCT_QUICK_ACTIONS: ChatQuickAction[] = [
-  { label: 'How does it work?', message: 'How does MaSoVa work for multi-location restaurants?' },
-  { label: 'Pricing', message: 'What are your pricing plans?' },
-  { label: 'Book a demo', message: 'I would like to book a demo for my restaurant.' },
+  { label: 'Explain the agents', message: 'How do MaSoVa smart assistants work for restaurant managers?', icon: 'sparkles' },
+  { label: 'Compare plans', message: 'What are your pricing plans and what is included in each?', icon: 'package' },
+  { label: 'Book a walkthrough', message: 'I would like to book a demo for my restaurant group.', icon: 'calendar' },
 ]
 
 const APP_QUICK_ACTIONS: ChatQuickAction[] = [
-  { label: 'Track order', message: 'Where is my order?' },
-  { label: 'Menu help', message: 'Can you help me with the menu and allergens?' },
-  { label: 'Refund', message: 'I need help with a refund.' },
+  { label: 'Track my order', message: 'Where is my order right now?', icon: 'package' },
+  { label: 'Menu & allergens', message: 'Can you help me with the menu and allergen information?', icon: 'sparkles' },
+  { label: 'Start a refund', message: 'I need help with a refund on my order.', icon: 'calendar' },
 ]
 
 export function getChatTheme(isProductSite: boolean): ChatTheme {
@@ -57,6 +61,10 @@ export function getChatTheme(isProductSite: boolean): ChatTheme {
     userBubbleText: '#ffffff',
     fabShadow: `0 10px 32px ${ACCENT_SHADOW}`,
     panelShadow: `0 28px 80px rgba(0,0,0,0.75), 0 0 0 1px ${ACCENT_MUTED}`,
+    agentName: 'Support Agent',
+    agentRole: 'On-demand · chat',
+    inputPlaceholder: 'Tell the agent what to check…',
+    quickActionsLabel: 'Agent can do this now',
   }
 
   if (isProductSite) {
@@ -68,14 +76,14 @@ export function getChatTheme(isProductSite: boolean): ChatTheme {
       panelBg: '#121212',
       panelBorder: 'rgba(255,255,255,0.1)',
       messagesBg: '#0a0a0a',
-      agentBubbleBg: '#1a1a1a',
-      agentBubbleBorder: 'rgba(255,255,255,0.08)',
+      agentBubbleBg: '#141414',
+      agentBubbleBorder: 'rgba(212,175,55,0.15)',
       inputBg: '#1a1a1a',
       fontFamily: 'Inter, system-ui, sans-serif',
-      title: 'MaSoVa Assistant',
-      subtitle: 'Usually replies in seconds',
+      subtitle: '8 tools wired · proposes, never auto-acts',
       welcome:
-        "Hello! I can answer questions about MaSoVa, pricing, and how we help restaurant teams. What would you like to know?",
+        "I'm the Support Agent — not a FAQ bot. I reason over your question and pull real product context before I answer. What should I look into?",
+      fabLabel: 'Agent',
       quickActions: PRODUCT_QUICK_ACTIONS,
     }
   }
@@ -89,13 +97,13 @@ export function getChatTheme(isProductSite: boolean): ChatTheme {
     panelBorder: 'rgba(255,255,255,0.08)',
     messagesBg: '#0f0e0c',
     agentBubbleBg: '#1C1916',
-    agentBubbleBorder: 'rgba(255,255,255,0.08)',
+    agentBubbleBorder: 'rgba(212,168,67,0.12)',
     inputBg: '#1C1916',
     fontFamily: 'var(--font-body)',
-    title: 'MaSoVa Support',
-    subtitle: 'Order help · menu · refunds',
+    subtitle: 'Live APIs · order · menu · refunds',
     welcome:
-      "Hi! I'm here for order status, menu questions, complaints, and refunds. How can I help you today?",
+      "I'm the Support Agent. I call live tools on your orders and menu — then reply with facts, not scripts. What should I check for you?",
+    fabLabel: 'Agent',
     quickActions: APP_QUICK_ACTIONS,
   }
 }

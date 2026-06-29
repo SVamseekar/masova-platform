@@ -3,6 +3,11 @@ import { useLocation } from 'react-router-dom'
 import { useChatMutation } from '../../store/api/agentApi'
 import { useAppSelector } from '../../store/hooks'
 import { getChatTheme } from './chatWidgetTheme'
+import {
+  getThinkingSteps,
+  inferToolTrace,
+  getCapabilityPills,
+} from './chatAgentUtils'
 import './ChatWidget.css'
 
 interface Message {
@@ -10,9 +15,11 @@ interface Message {
   role: 'user' | 'agent'
   text: string
   ts: number
+  toolTrace?: string
 }
 
 const SESSION_KEY = 'masova_chat_session_id'
+const THINKING_STEP_MS = 1400
 
 function getOrCreateSessionId(): string {
   let id = sessionStorage.getItem(SESSION_KEY)
@@ -23,9 +30,15 @@ function getOrCreateSessionId(): string {
   return id
 }
 
-const ChatIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+const SparklesIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <path d="M12 2l1.09 3.36L16.5 6.5l-3.36 1.09L12 11l-1.09-3.41L7.5 6.5l3.41-1.14L12 2zm7 5l.55 1.7L21 9.25l-1.7.55L18 12l-.55-1.7L15.75 9.5l1.7-.55L18 7zm-14 0l.55 1.7L7 9.25l-1.7.55L4.5 12l-.55-1.7L2.25 9.5l1.7-.55L4.5 7zm10 9l1.36 4.18L20 22l-4.18-1.36L14.5 16l1.36-4.18L20 10.5l-4.18 1.36L14.5 16zM9.5 16l1.36 4.18L15 22l-4.18-1.36L9.5 16l1.36-4.18L15 10.5l-4.18 1.36L9.5 16z" />
+  </svg>
+)
+
+const AgentIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M12 8V4H8" /><rect x="4" y="8" width="16" height="12" rx="2" /><path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" />
   </svg>
 )
 
@@ -63,10 +76,37 @@ function formatTime(ts: number): string {
   return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
+function isToolStep(step: string): boolean {
+  return step.startsWith('Tool:')
+}
+
+interface AgentAvatarProps {
+  theme: ReturnType<typeof getChatTheme>
+  thinking?: boolean
+  size?: 'header' | 'row'
+}
+
+const AgentAvatar: React.FC<AgentAvatarProps> = ({ theme, thinking = false, size = 'row' }) => (
+  <div
+    className={`masova-chat-agent-core masova-chat-agent-core--${size}${thinking ? ' masova-chat-agent-core--thinking' : ''}`}
+    style={{
+      background: theme.brandMuted,
+      border: `1px solid ${thinking ? theme.accent : theme.brand}`,
+      color: thinking ? theme.accent : theme.brand,
+      boxShadow: thinking ? `0 0 12px ${theme.accentMuted}` : undefined,
+    }}
+    aria-hidden
+  >
+    <AgentIcon />
+    {thinking && <span className="masova-chat-agent-core-ring" style={{ borderColor: theme.accent }} />}
+  </div>
+)
+
 export const ChatWidget: React.FC = () => {
   const { pathname } = useLocation()
   const isProductSite = pathname === '/'
   const theme = useMemo(() => getChatTheme(isProductSite), [isProductSite])
+  const capabilityPills = useMemo(() => getCapabilityPills(isProductSite), [isProductSite])
 
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState('')
@@ -75,6 +115,8 @@ export const ChatWidget: React.FC = () => {
   ])
   const [isListening, setIsListening] = useState(false)
   const [voiceMode, setVoiceMode] = useState(false)
+  const [thinkingStepIndex, setThinkingStepIndex] = useState(0)
+  const [pendingUserMessage, setPendingUserMessage] = useState('')
 
   const sessionId = useRef(getOrCreateSessionId())
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -87,15 +129,39 @@ export const ChatWidget: React.FC = () => {
   const customerId = useAppSelector((s) => s.auth.user?.id as string | undefined)
   const [sendChat, { isLoading }] = useChatMutation()
 
+  const thinkingSteps = useMemo(
+    () => getThinkingSteps(pendingUserMessage, isProductSite),
+    [pendingUserMessage, isProductSite],
+  )
+
   const showQuickActions = messages.length === 1 && messages[0].id === 'welcome'
 
   useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length !== 1 || prev[0].id !== 'welcome') return prev
+      if (prev[0].text === theme.welcome) return prev
+      return [{ ...prev[0], text: theme.welcome }]
+    })
+  }, [theme.welcome])
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isLoading])
+  }, [messages, isLoading, thinkingStepIndex])
 
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 120)
   }, [open])
+
+  useEffect(() => {
+    if (!isLoading) {
+      setThinkingStepIndex(0)
+      return
+    }
+    const id = window.setInterval(() => {
+      setThinkingStepIndex((i) => (i + 1) % thinkingSteps.length)
+    }, THINKING_STEP_MS)
+    return () => window.clearInterval(id)
+  }, [isLoading, thinkingSteps.length])
 
   const getSpeechRecognitionAPI = (): typeof SpeechRecognition | null => {
     const w = window as Window & {
@@ -155,6 +221,7 @@ export const ChatWidget: React.FC = () => {
     if (!text || isLoading) return
 
     setInput('')
+    setPendingUserMessage(text)
     const userMsg: Message = { id: crypto.randomUUID(), role: 'user', text, ts: Date.now() }
     setMessages((prev) => [...prev, userMsg])
 
@@ -163,14 +230,21 @@ export const ChatWidget: React.FC = () => {
       sessionId.current = res.sessionId
       sessionStorage.setItem(SESSION_KEY, res.sessionId)
       const reply = res.reply
-      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'agent', text: reply, ts: Date.now() }])
+      const toolTrace = inferToolTrace(text, isProductSite)
+      setMessages((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), role: 'agent', text: reply, ts: Date.now(), toolTrace },
+      ])
       if (voiceModeRef.current) speakResponse(reply)
     } catch {
       const errorText = "Sorry — I'm having trouble connecting. Try again in a moment, or email hello@masova.com."
-      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'agent', text: errorText, ts: Date.now() }])
+      setMessages((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), role: 'agent', text: errorText, ts: Date.now() },
+      ])
       if (voiceModeRef.current) speakResponse(errorText)
     }
-  }, [input, isLoading, sendChat, customerId, speakResponse])
+  }, [input, isLoading, sendChat, customerId, speakResponse, isProductSite])
 
   useEffect(() => { handleSendRef.current = handleSend }, [handleSend])
 
@@ -197,6 +271,7 @@ export const ChatWidget: React.FC = () => {
   const panelRight = isProductSite ? 32 : 24
 
   const headerGradient = `linear-gradient(180deg, ${theme.accent} 0%, ${theme.accentDark} 100%)`
+  const currentThinkingStep = thinkingSteps[thinkingStepIndex] ?? thinkingSteps[0]
 
   return (
     <>
@@ -204,7 +279,7 @@ export const ChatWidget: React.FC = () => {
         <div
           className="masova-chat-panel"
           role="dialog"
-          aria-label={theme.title}
+          aria-label={theme.agentName}
           style={{
             bottom: panelBottom,
             right: panelRight,
@@ -218,21 +293,24 @@ export const ChatWidget: React.FC = () => {
         >
           <div className="masova-chat-header" style={{ background: headerGradient }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div
-                className="masova-chat-avatar"
-                style={{
-                  background: theme.brandMuted,
-                  border: `1px solid ${theme.brand}`,
-                  color: theme.brand,
-                }}
-              >
-                M
-              </div>
+              <AgentAvatar theme={theme} size="header" thinking={isLoading} />
               <div>
-                <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem' }}>{theme.title}</div>
+                <div className="masova-chat-header-title">
+                  <span>{theme.agentName}</span>
+                  <span className="masova-chat-header-badge">
+                    <SparklesIcon />
+                    Agent
+                  </span>
+                </div>
                 <div className="masova-chat-status">
-                  <span className="masova-chat-status-dot" />
-                  {voiceMode ? 'Voice mode on' : theme.subtitle}
+                  <span
+                    className={`masova-chat-status-dot${isLoading ? ' masova-chat-status-dot--working' : ''}`}
+                  />
+                  {isLoading
+                    ? currentThinkingStep
+                    : voiceMode
+                      ? 'Voice mode on'
+                      : theme.subtitle}
                 </div>
               </div>
             </div>
@@ -240,11 +318,27 @@ export const ChatWidget: React.FC = () => {
               type="button"
               className="masova-chat-icon-btn"
               onClick={() => setOpen(false)}
-              aria-label="Close chat"
+              aria-label="Close agent"
               style={{ background: 'rgba(255,255,255,0.12)', color: '#fff', width: 32, height: 32 }}
             >
               <CloseIcon />
             </button>
+          </div>
+
+          <div className="masova-chat-capabilities" style={{ borderBottom: `1px solid ${theme.panelBorder}` }}>
+            {capabilityPills.map((pill) => (
+              <span
+                key={pill}
+                className="masova-chat-capability-pill"
+                style={{
+                  background: theme.accentMuted,
+                  border: `1px solid ${theme.accentBorder}`,
+                  color: theme.accent,
+                }}
+              >
+                {pill}
+              </span>
+            ))}
           </div>
 
           <div className="masova-chat-messages" style={{ background: theme.messagesBg }}>
@@ -253,19 +347,13 @@ export const ChatWidget: React.FC = () => {
                 key={msg.id}
                 className={`masova-chat-row ${msg.role === 'user' ? 'masova-chat-row--user' : ''}`}
               >
-                {msg.role === 'agent' && (
-                  <div
-                    className="masova-chat-row-avatar"
-                    style={{
-                      background: theme.brandMuted,
-                      border: `1px solid ${theme.brand}`,
-                      color: theme.brand,
-                    }}
-                  >
-                    M
-                  </div>
-                )}
-                <div>
+                {msg.role === 'agent' && <AgentAvatar theme={theme} />}
+                <div className="masova-chat-msg-body">
+                  {msg.role === 'agent' && msg.id !== 'welcome' && (
+                    <div className="masova-chat-msg-label" style={{ color: theme.brand }}>
+                      {theme.agentName}
+                    </div>
+                  )}
                   <div
                     className={`masova-chat-bubble masova-chat-bubble--${msg.role}`}
                     style={
@@ -280,14 +368,18 @@ export const ChatWidget: React.FC = () => {
                   >
                     {msg.text}
                   </div>
+                  {msg.role === 'agent' && msg.toolTrace && (
+                    <div className="masova-chat-tool-trace" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                      <span className="masova-chat-tool-trace-icon" style={{ color: theme.accent }}>
+                        <SparklesIcon />
+                      </span>
+                      {msg.toolTrace}
+                    </div>
+                  )}
                   <div
+                    className="masova-chat-timestamp"
                     style={{
-                      fontSize: 10,
-                      color: 'rgba(255,255,255,0.35)',
-                      marginTop: 4,
                       textAlign: msg.role === 'user' ? 'right' : 'left',
-                      paddingLeft: msg.role === 'agent' ? 2 : 0,
-                      paddingRight: msg.role === 'user' ? 2 : 0,
                     }}
                   >
                     {formatTime(msg.ts)}
@@ -297,46 +389,75 @@ export const ChatWidget: React.FC = () => {
             ))}
 
             {showQuickActions && (
-              <div className="masova-chat-quick-actions">
-                {theme.quickActions.map((action) => (
-                  <button
-                    key={action.label}
-                    type="button"
-                    className="masova-chat-chip"
-                    style={{
-                      border: `1px solid ${theme.accentBorder}`,
-                      color: theme.accent,
-                    }}
-                    onClick={() => handleSend(action.message)}
-                  >
-                    {action.label}
-                  </button>
-                ))}
+              <div className="masova-chat-quick-actions-wrap">
+                <div className="masova-chat-quick-actions-label" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  {theme.quickActionsLabel}
+                </div>
+                <div className="masova-chat-quick-actions">
+                  {theme.quickActions.map((action) => (
+                    <button
+                      key={action.label}
+                      type="button"
+                      className="masova-chat-chip"
+                      style={{
+                        border: `1px solid ${theme.accentBorder}`,
+                        color: theme.accent,
+                      }}
+                      onClick={() => handleSend(action.message)}
+                    >
+                      {action.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
             {isLoading && (
               <div className="masova-chat-row">
-                <div
-                  className="masova-chat-row-avatar"
-                  style={{
-                    background: theme.brandMuted,
-                    border: `1px solid ${theme.brand}`,
-                    color: theme.brand,
-                  }}
-                >
-                  M
-                </div>
-                <div
-                  className="masova-chat-bubble masova-chat-bubble--agent masova-chat-typing"
-                  style={{
-                    background: theme.agentBubbleBg,
-                    border: `1px solid ${theme.agentBubbleBorder}`,
-                  }}
-                >
-                  <span style={{ background: theme.accent }} />
-                  <span style={{ background: theme.accent }} />
-                  <span style={{ background: theme.accent }} />
+                <AgentAvatar theme={theme} thinking />
+                <div className="masova-chat-msg-body">
+                  <div className="masova-chat-msg-label" style={{ color: theme.brand }}>
+                    {theme.agentName}
+                  </div>
+                  <div
+                    className="masova-chat-thinking"
+                    style={{
+                      background: theme.agentBubbleBg,
+                      border: `1px solid ${theme.agentBubbleBorder}`,
+                    }}
+                    aria-live="polite"
+                    aria-busy="true"
+                  >
+                    <div className="masova-chat-thinking-steps">
+                      {thinkingSteps.map((step, i) => (
+                        <div
+                          key={step}
+                          className={`masova-chat-thinking-step${
+                            i === thinkingStepIndex ? ' masova-chat-thinking-step--active' : ''
+                          }${i < thinkingStepIndex ? ' masova-chat-thinking-step--done' : ''}${
+                            isToolStep(step) ? ' masova-chat-thinking-step--tool' : ''
+                          }`}
+                          style={
+                            i === thinkingStepIndex
+                              ? { color: theme.accent }
+                              : undefined
+                          }
+                        >
+                          <span
+                            className="masova-chat-thinking-step-dot"
+                            style={
+                              i === thinkingStepIndex
+                                ? { background: theme.accent, boxShadow: `0 0 6px ${theme.accent}` }
+                                : i < thinkingStepIndex
+                                  ? { background: '#10b981' }
+                                  : undefined
+                            }
+                          />
+                          {step}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -364,7 +485,7 @@ export const ChatWidget: React.FC = () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={isListening ? 'Listening…' : 'Type your message…'}
+              placeholder={isListening ? 'Listening…' : theme.inputPlaceholder}
               disabled={isLoading}
               style={{
                 background: theme.inputBg,
@@ -397,7 +518,7 @@ export const ChatWidget: React.FC = () => {
                 background: input.trim() && !isLoading ? theme.accent : theme.inputBg,
                 color: input.trim() && !isLoading ? '#fff' : 'rgba(255,255,255,0.35)',
               }}
-              aria-label="Send message"
+              aria-label="Send to agent"
             >
               <SendIcon />
             </button>
@@ -413,7 +534,7 @@ export const ChatWidget: React.FC = () => {
           type="button"
           className={`masova-chat-fab ${open ? '' : 'masova-chat-fab--closed'}`}
           onClick={() => setOpen((o) => !o)}
-          aria-label={open ? 'Close chat' : 'Open chat'}
+          aria-label={open ? 'Close agent' : `Open ${theme.fabLabel}`}
           style={{
             width: open ? 52 : 'auto',
             height: 52,
@@ -426,10 +547,14 @@ export const ChatWidget: React.FC = () => {
             border: open ? `1px solid ${theme.panelBorder}` : 'none',
           }}
         >
-          {open ? <CloseIcon /> : (
+          {open ? (
+            <CloseIcon />
+          ) : (
             <>
-              <ChatIcon />
-              <span className="masova-chat-fab-label">Chat</span>
+              <span className="masova-chat-fab-agent-icon">
+                <AgentIcon />
+              </span>
+              <span className="masova-chat-fab-label">{theme.fabLabel}</span>
             </>
           )}
         </button>
