@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Menu, X } from 'lucide-react'
-import { NAV_LINKS, GOLD_GRADIENT_TEXT } from '../constants'
+import { Menu, X, Github, Bot } from 'lucide-react'
+import { NAV_LINKS, GOLD_GRADIENT_TEXT, GITHUB_URL } from '../constants'
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
@@ -29,6 +29,9 @@ export default function Navbar() {
             <span style={{ ...GOLD_GRADIENT_TEXT, fontSize: 16 }}>M</span>
           </div>
           <span style={{ ...GOLD_GRADIENT_TEXT, fontSize: 22 }}>MaSoVa</span>
+          <span className="hidden sm:inline-flex items-center gap-1 text-[10px] text-gray-600 ml-1 px-2 py-0.5 rounded-full border border-white/10">
+            <Bot size={10} style={{ color: '#D4AF37' }} /> agents
+          </span>
         </a>
 
         {/* Desktop Nav */}
@@ -46,20 +49,18 @@ export default function Navbar() {
 
         {/* CTAs */}
         <div className="hidden md:flex items-center gap-3">
-          <a
-            href="/customer-login"
-            className="text-sm text-gray-400 hover:text-white transition-colors px-4 py-2"
-          >
-            Sign in
+          <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-white p-2" aria-label="GitHub">
+            <Github size={18} />
+          </a>
+          <a href="#demo" className="text-sm text-gray-400 hover:text-white px-3 py-2">
+            Live demo
           </a>
           <a
-            href="#pricing"
+            href="#agent-brain"
             className="text-sm px-4 py-2 rounded-lg font-medium transition-all duration-200"
             style={{ background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.5)', color: '#D4AF37' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(212,175,55,0.8)' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(212,175,55,0.5)' }}
           >
-            Book a Demo
+            Agent brain
           </a>
         </div>
 

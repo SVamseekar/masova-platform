@@ -20,33 +20,64 @@ interface Feature {
   screenshot: string | null
 }
 
+export const SITE_URL = 'https://masova.souravamseekar.com'
+export const GITHUB_URL = 'https://github.com/SVamseekar/masova-platform'
+
 export const NAV_LINKS = [
-  { label: 'About', href: '#about' },
-  { label: 'Features', href: '#product-tour' },
-  { label: 'AI Agents', href: '#ai-agents' },
+  { label: 'Agent Brain', href: '#agent-brain' },
+  { label: 'Live Demo', href: '#demo' },
+  { label: 'Product', href: '#product-tour' },
+  { label: 'Mobile', href: '#mobile' },
   { label: 'Pricing', href: '#pricing' },
-  { label: 'FAQ', href: '#faq' },
-  { label: 'API Reference', href: '/api-docs' },
 ]
 
 export const STATS = [
-  { value: '6', label: 'Integrated Apps', icon: Layers },
-  { value: '9', label: 'Order Stages', icon: CheckCircle2 },
-  { value: '< 8s', label: 'Dispatch Time', icon: Zap },
-  { value: '100%', label: 'GDPR Compliant', icon: Shield },
+  { value: '8', label: 'AI Agents', icon: Bot },
+  { value: '6', label: 'Web Apps', icon: Layers },
+  { value: '11', label: 'Order States', icon: CheckCircle2 },
+  { value: 'Zero', label: 'Auto-writes to DB', icon: Shield },
 ]
 
 export const MARQUEE_ITEMS = [
-  { label: 'Multi-store operations', icon: Store },
-  { label: 'Real-time kitchen display', icon: ChefHat },
-  { label: 'AI-powered agents', icon: Bot },
-  { label: 'Live delivery tracking', icon: Navigation },
-  { label: 'GDPR compliant', icon: Shield },
-  { label: 'EU-ready payments', icon: CreditCard },
-  { label: 'Predictive analytics', icon: TrendingUp },
-  { label: 'Waste analysis', icon: Leaf },
-  { label: 'Driver auto-dispatch', icon: Truck },
-  { label: 'Loyalty programs', icon: Star },
+  { label: 'Support Agent — 24/7 chat', icon: Bot },
+  { label: 'Demand forecasting · 2am daily', icon: TrendingUp },
+  { label: 'Inventory reorder drafts', icon: Package },
+  { label: 'Churn prevention offers', icon: HeartHandshake },
+  { label: 'Review response drafts', icon: Star },
+  { label: 'Shift optimisation · Sundays', icon: Users },
+  { label: 'Propose-then-approve only', icon: Shield },
+  { label: 'Google ADK + Gemini', icon: Sparkles },
+  { label: 'RabbitMQ event triggers', icon: Zap },
+  { label: 'Manager command center', icon: Cpu },
+]
+
+export const AGGREGATOR_CHANNELS = [
+  { id: 'MASOVA', label: 'Direct', color: '#D4AF37' },
+  { id: 'WOLT', label: 'Wolt', color: '#00C2E8' },
+  { id: 'DELIVEROO', label: 'Deliveroo', color: '#00CCBC' },
+  { id: 'JUST_EAT', label: 'Just Eat', color: '#FF8000' },
+  { id: 'UBER_EATS', label: 'Uber Eats', color: '#06C167' },
+]
+
+export const MOBILE_APPS = [
+  {
+    name: 'masova-mobile',
+    tagline: 'Customer app with embedded Support Agent chat.',
+    accentColor: '#D4AF37',
+    highlights: ['Live map tracking', 'Stripe / Razorpay', 'AI chat session', 'Guest checkout'],
+  },
+  {
+    name: 'MaSoVa Crew',
+    tagline: 'Staff app — role-routed from JWT.',
+    accentColor: '#D4AF37',
+    roles: [
+      { label: 'Driver', color: '#00B14F' },
+      { label: 'Kitchen', color: '#FF6B35' },
+      { label: 'Cashier', color: '#2196F3' },
+      { label: 'Manager', color: '#7B1FA2' },
+    ],
+    highlights: ['Mobile KDS', 'OTP delivery', 'Offline queue'],
+  },
 ]
 
 export const PAIN_POINTS = [
@@ -202,43 +233,131 @@ export const FEATURES: Feature[] = [
   },
 ]
 
-export type AgentIconKey = 'MessageCircle' | 'BarChart3' | 'ChefHat' | 'Navigation' | 'MapPin'
+export type AgentIconKey =
+  | 'MessageCircle'
+  | 'TrendingUp'
+  | 'Sparkles'
+  | 'Package'
+  | 'ChefHat'
+  | 'HeartHandshake'
+  | 'Star'
+  | 'Users'
 
 export const AI_AGENTS = [
   {
     lucideIcon: 'MessageCircle' as const,
-    name: 'Customer Agent',
-    role: 'Real-Time Support',
-    description: 'Handles order status, complaints, refund requests, and live tracking — 24/7, in plain language.',
+    name: 'Support Agent',
+    role: 'On-demand · chat',
+    description: 'Embedded in web + mobile. Eight registered tools call live order, menu, and refund APIs.',
     color: '#3B82F6',
   },
   {
-    lucideIcon: 'BarChart3' as const,
-    name: 'Manager Agent',
-    role: 'Business Intelligence',
-    description: 'Surfaces revenue anomalies, inventory alerts, and staff performance — before you even ask.',
+    lucideIcon: 'TrendingUp' as const,
+    name: 'Demand Forecasting',
+    role: 'Scheduled · 02:00',
+    description: '90-day moving average + day-of-week seasonality. Item-level predictions per store.',
     color: '#8B5CF6',
   },
   {
-    lucideIcon: 'ChefHat' as const,
-    name: 'Kitchen Agent',
-    role: 'Prep Intelligence',
-    description: 'Predicts rush periods, optimises prep queue, and flags equipment issues before they stall service.',
-    color: '#F59E0B',
+    lucideIcon: 'Sparkles' as const,
+    name: 'Dynamic Pricing',
+    role: 'Every 30 min',
+    description: 'Drafts peak-hour price nudges from demand signals. Manager approves before publish.',
+    color: '#D4AF37',
   },
   {
-    lucideIcon: 'Navigation' as const,
-    name: 'Driver Agent',
-    role: 'Logistics Optimisation',
-    description: 'Assigns routes in real-time, reroutes around traffic, and ensures on-time delivery across the fleet.',
+    lucideIcon: 'Package' as const,
+    name: 'Inventory Reorder',
+    role: 'Every 6 hours',
+    description: 'Detects stockout trajectories and drafts purchase orders for manager review.',
     color: '#10B981',
   },
   {
-    lucideIcon: 'MapPin' as const,
-    name: 'Store Selection Agent',
-    role: 'Smart Routing',
-    description: 'Selects the nearest store with capacity and assigns delivery zones dynamically — no manual config needed.',
+    lucideIcon: 'ChefHat' as const,
+    name: 'Kitchen Coach',
+    role: 'Nightly · 23:00',
+    description: 'Analyses prep throughput and surfaces efficiency gaps in a morning brief.',
+    color: '#F59E0B',
+  },
+  {
+    lucideIcon: 'HeartHandshake' as const,
+    name: 'Churn Prevention',
+    role: 'Daily · 10:00',
+    description: 'Flags high-value customers with dropping frequency. Drafts personalised retention offers.',
     color: '#EC4899',
+  },
+  {
+    lucideIcon: 'Star' as const,
+    name: 'Review Response',
+    role: 'Event · review.created',
+    description: 'RabbitMQ trigger on ≤3★ reviews. Drafts empathetic replies — never auto-sends.',
+    color: '#F97316',
+  },
+  {
+    lucideIcon: 'Users' as const,
+    name: 'Shift Optimisation',
+    role: 'Sunday · 20:00',
+    description: 'Drafts next week\'s schedule from forecasted footfall and historical throughput.',
+    color: '#2196F3',
+  },
+]
+
+export const AGENT_LIVE_FEED: string[][] = [
+  ['tool: get_order_status(#2041) → OUT_FOR_DELIVERY', 'tool: get_driver_eta() → 8 min', 'draft reply sent to manager queue'],
+  ['store: amsterdam-central · 142 SKUs analysed', 'forecast: +34% butter chicken Sat 18-21h', 'action: prep suggestion → PENDING'],
+  ['signal: demand index 1.4× baseline', 'draft: +8% paneer tikka 19:00-21:00', 'awaiting: manager approval'],
+  ['mozzarella: 2.1 days to stockout', 'draft PO: supplier Milano Dairy · 12kg', 'status: PENDING_APPROVAL'],
+  ['avg prep: tikka masala 14.2m (+18%)', 'bottleneck: oven slot 3 · 22:00 peak', 'brief queued for head chef'],
+  ['12 customers · LTV > €400 · frequency drop', 'draft offer: 15% next order', 'campaign: PENDING'],
+  ['review: 2★ · "cold delivery"', 'draft: personalised apology + refund option', 'manager notified via dashboard'],
+  ['forecast: +22% footfall Thu–Sun', 'draft schedule: +2 kitchen · Fri eve', 'shift plan: PENDING'],
+]
+
+export const AGENT_STORY_STEPS = [
+  {
+    time: '02:00',
+    agent: 'Demand Forecasting',
+    iconKey: 'TrendingUp' as AgentIconKey,
+    color: '#8B5CF6',
+    headline: 'While you sleep, agents prep tomorrow',
+    body: 'Forecasting runs across every store — which items spike on Friday, which hours need extra oven capacity.',
+    action: 'Publishing prep brief to Kitchen Coach',
+  },
+  {
+    time: '10:00',
+    agent: 'Churn Prevention',
+    iconKey: 'HeartHandshake' as AgentIconKey,
+    color: '#EC4899',
+    headline: 'Loyalty drops get caught early',
+    body: 'Twelve high-LTV customers slowed down this month. Retention offers are drafted — not blasted.',
+    action: '3 offers awaiting manager tap',
+  },
+  {
+    time: '14:30',
+    agent: 'Support Agent',
+    iconKey: 'MessageCircle' as AgentIconKey,
+    color: '#3B82F6',
+    headline: 'Customers chat. Staff stay on the floor.',
+    body: 'Order status, allergens, refunds — resolved in seconds via tools wired to your live backend.',
+    action: '847 sessions this week · 0 DB writes',
+  },
+  {
+    time: '18:00',
+    agent: 'Dynamic Pricing',
+    iconKey: 'Sparkles' as AgentIconKey,
+    color: '#D4AF37',
+    headline: 'Peak hour intelligence, not guesswork',
+    body: 'Demand index hits 1.4×. Agent drafts a small price adjustment on high-velocity items.',
+    action: 'Manager approves or dismisses in one click',
+  },
+  {
+    time: '23:00',
+    agent: 'Kitchen Coach',
+    iconKey: 'ChefHat' as AgentIconKey,
+    color: '#F59E0B',
+    headline: 'The kitchen gets a morning brief',
+    body: 'Prep times, bottlenecks, equipment flags — distilled from today\'s service into actionable notes.',
+    action: 'Nightly brief delivered to KDS managers',
   },
 ]
 
