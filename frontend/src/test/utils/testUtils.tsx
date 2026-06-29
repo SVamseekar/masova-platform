@@ -245,13 +245,23 @@ interface TestCartItem {
   quantity: number;
 }
 
-export const createCartState = (items: TestCartItem[] = []) => ({
-  cart: {
-    items,
-    selectedStoreId: '1',
-    totalItems: items.reduce((sum, item) => sum + item.quantity, 0),
-  },
-});
+export const createCartState = (items: TestCartItem[] = []) => {
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  return {
+    cart: {
+      items,
+      total,
+      itemCount,
+      deliveryFee: 29,
+      isLoading: false,
+      selectedStoreId: '1',
+      selectedStoreName: 'Downtown Branch',
+      currency: 'INR',
+      locale: 'en-IN',
+    },
+  };
+};
 
 /**
  * Role-specific render helpers

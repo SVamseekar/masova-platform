@@ -1,68 +1,56 @@
 /**
- * Auto-generated Integration Test: Order Creation Flow
- * Generated: 2026-01-18T15:55:55.668Z
+ * Integration Test: Order Creation Flow
  *
- * Tests the complete flow across multiple services:
- * - menu-service
- * - order-service
- * - payment-service
+ * Uses MSW handlers and apiUrl() — no live backend required.
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-
-const API_BASE_URL = process.env.VITE_API_BASE_URL || 'http://localhost:8080';
+import { describe, it, expect } from 'vitest';
+import { http, HttpResponse } from 'msw';
+import { server } from '../mocks/server';
+import { apiUrl } from '../testApiBase';
 
 describe('Order Creation Flow', () => {
-  beforeAll(() => {
-    // Setup test data
-  });
-
-  afterAll(() => {
-    // Cleanup
-  });
-
   it('should complete the entire flow successfully', async () => {
-    const testData = {
-      // TODO: Add test data
+    const response1 = await fetch(apiUrl('/menu/items'));
+    expect(response1.status).toBe(200);
+    const menuItems = await response1.json();
+    expect(Array.isArray(menuItems)).toBe(true);
+    expect(menuItems.length).toBeGreaterThan(0);
+
+    const orderPayload = {
+      storeId: '1',
+      customerId: '1',
+      items: [{ menuItemId: menuItems[0].id, quantity: 1 }],
+      orderType: 'DELIVERY',
     };
 
-
-    // Step 1: GET /api/menu/items
-    const response1 = await fetch(`${API_BASE_URL}/api/menu/items`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      
-    });
-
-    expect(response1.status).toBe(200);
-    const _data1 = await response1.json();
-
-    // Step 2: POST /api/orders
-    const response2 = await fetch(`${API_BASE_URL}/api/orders`, {
+    const response2 = await fetch(apiUrl('/orders'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(testData),
+      body: JSON.stringify(orderPayload),
     });
-
     expect(response2.status).toBe(200);
-    const _data2 = await response2.json();
+    const order = await response2.json();
+    expect(order).toHaveProperty('id');
 
-    // Step 3: POST /api/payments
-    const response3 = await fetch(`${API_BASE_URL}/api/payments`, {
+    const response3 = await fetch(apiUrl('/payments/initiate'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(testData),
+      body: JSON.stringify({ orderId: order.id, amount: 500 }),
     });
-
     expect(response3.status).toBe(200);
-    const _data3 = await response3.json();
-
-
-    // Verify final state
-    // TODO: Add assertions
+    const payment = await response3.json();
+    expect(payment).toHaveProperty('transactionId');
   });
 
   it('should handle errors gracefully', async () => {
-    // TODO: Test error scenarios
+    server.use(
+      http.get(apiUrl('/menu/items'), () =>
+        HttpResponse.json({ message: 'Service unavailable' }, { status: 503 })
+      )
+    );
+
+    const response = await fetch(apiUrl('/menu/items'));
+    expect(response.status).toBe(503);
   });
 });

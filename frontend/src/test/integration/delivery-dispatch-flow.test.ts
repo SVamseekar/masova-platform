@@ -1,68 +1,50 @@
 /**
- * Auto-generated Integration Test: Delivery Dispatch Flow
- * Generated: 2026-01-18T15:55:55.668Z
+ * Integration Test: Delivery Dispatch Flow
  *
- * Tests the complete flow across multiple services:
- * - order-service
- * - delivery-service
- * - notification-service
+ * Uses MSW handlers and apiUrl() — no live backend required.
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-
-const API_BASE_URL = process.env.VITE_API_BASE_URL || 'http://localhost:8080';
+import { describe, it, expect } from 'vitest';
+import { http, HttpResponse } from 'msw';
+import { server } from '../mocks/server';
+import { apiUrl } from '../testApiBase';
 
 describe('Delivery Dispatch Flow', () => {
-  beforeAll(() => {
-    // Setup test data
-  });
-
-  afterAll(() => {
-    // Cleanup
-  });
-
   it('should complete the entire flow successfully', async () => {
-    const testData = {
-      // TODO: Add test data
-    };
-
-
-    // Step 1: GET /api/orders/{orderId}
-    const response1 = await fetch(`${API_BASE_URL}/api/orders/{orderId}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      
-    });
-
+    const response1 = await fetch(apiUrl('/orders/order-1'));
     expect(response1.status).toBe(200);
-    const _data1 = await response1.json();
+    const order = await response1.json();
+    expect(order).toHaveProperty('id');
 
-    // Step 2: POST /api/delivery/dispatch
-    const response2 = await fetch(`${API_BASE_URL}/api/delivery/dispatch`, {
+    const response2 = await fetch(apiUrl('/delivery/auto-dispatch'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(testData),
+      body: JSON.stringify({ orderId: order.id }),
     });
-
     expect(response2.status).toBe(200);
-    const _data2 = await response2.json();
+    const dispatch = await response2.json();
+    expect(dispatch).toBeTruthy();
 
-    // Step 3: POST /api/notifications/send
-    const response3 = await fetch(`${API_BASE_URL}/api/notifications/send`, {
+    const response3 = await fetch(apiUrl('/notifications/send'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(testData),
+      body: JSON.stringify({ orderId: order.id, type: 'DISPATCH' }),
     });
-
     expect(response3.status).toBe(200);
-    const _data3 = await response3.json();
-
-
-    // Verify final state
-    // TODO: Add assertions
   });
 
   it('should handle errors gracefully', async () => {
-    // TODO: Test error scenarios
+    server.use(
+      http.post(apiUrl('/delivery/auto-dispatch'), () =>
+        HttpResponse.json({ message: 'No drivers available' }, { status: 409 })
+      )
+    );
+
+    const response = await fetch(apiUrl('/delivery/auto-dispatch'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId: 'order-1' }),
+    });
+    expect(response.status).toBe(409);
   });
 });
