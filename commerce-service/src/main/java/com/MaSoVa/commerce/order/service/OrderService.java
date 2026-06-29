@@ -257,6 +257,11 @@ public class OrderService {
                     .tax(savedOrder.getTax())
                     .total(savedOrder.getTotal())
                     .currency(savedOrder.getCurrency())
+                    .vatCountryCode(savedOrder.getVatCountryCode())
+                    .totalNetAmount(savedOrder.getTotalNetAmount())
+                    .totalVatAmount(savedOrder.getTotalVatAmount())
+                    .totalGrossAmount(savedOrder.getTotalGrossAmount())
+                    .vatBreakdown(serializeVatBreakdown(savedOrder))
                     .specialInstructions(savedOrder.getSpecialInstructions())
                     .receivedAt(savedOrder.getReceivedAt() != null
                             ? savedOrder.getReceivedAt().atOffset(java.time.ZoneOffset.UTC) : null)
@@ -269,9 +274,15 @@ public class OrderService {
 
         // Publish order created event to RabbitMQ
         try {
-            orderEventPublisher.publishOrderCreated(new OrderCreatedEvent(
+            OrderCreatedEvent event = new OrderCreatedEvent(
                 savedOrder.getId(), savedOrder.getCustomerId(), savedOrder.getStoreId(),
-                savedOrder.getOrderType().toString(), savedOrder.getTotal(), "INR"));
+                savedOrder.getOrderType().toString(), savedOrder.getTotal(),
+                savedOrder.getCurrency() != null ? savedOrder.getCurrency() : "INR");
+            if (savedOrder.getVatCountryCode() != null) {
+                event.setVatCountryCode(savedOrder.getVatCountryCode());
+                event.setTotalVatAmount(savedOrder.getTotalVatAmount());
+            }
+            orderEventPublisher.publishOrderCreated(event);
         } catch (Exception e) {
             log.warn("Failed to publish order created event for {}: {}", savedOrder.getOrderNumber(), e.getMessage());
         }
@@ -294,6 +305,19 @@ public class OrderService {
         }
 
         return savedOrder;
+    }
+
+    /** Serializes order.vatBreakdown to JSON for the PostgreSQL jsonb column. Returns null for India orders. */
+    private String serializeVatBreakdown(Order order) {
+        if (order.getVatBreakdown() == null) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(order.getVatBreakdown());
+        } catch (Exception e) {
+            log.warn("Failed to serialize vatBreakdown for order {}: {}", order.getOrderNumber(), e.getMessage());
+            return null;
+        }
     }
 
     /**
