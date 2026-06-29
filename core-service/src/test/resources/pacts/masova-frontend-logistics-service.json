@@ -38,12 +38,18 @@
       "response": {
         "body": [
           {
-            "feeINR": 29,
-            "zone": "ZONE_A"
+            "deliveryFeeINR": 29,
+            "estimatedDeliveryMinutes": 15,
+            "maxDistanceKm": 3,
+            "minDistanceKm": 0,
+            "zoneName": "A"
           },
           {
-            "feeINR": 49,
-            "zone": "ZONE_B"
+            "deliveryFeeINR": 49,
+            "estimatedDeliveryMinutes": 25,
+            "maxDistanceKm": 6,
+            "minDistanceKm": 3,
+            "zoneName": "B"
           }
         ],
         "headers": {

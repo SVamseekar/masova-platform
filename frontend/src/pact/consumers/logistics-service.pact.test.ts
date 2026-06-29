@@ -36,8 +36,8 @@ describe('Logistics Service Contract Tests', () => {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
           body: like([
-            { zone: 'ZONE_A', feeINR: 29 },
-            { zone: 'ZONE_B', feeINR: 49 },
+            { zoneName: 'A', minDistanceKm: 0.0, maxDistanceKm: 3.0, deliveryFeeINR: 29, estimatedDeliveryMinutes: 15 },
+            { zoneName: 'B', minDistanceKm: 3.0, maxDistanceKm: 6.0, deliveryFeeINR: 49, estimatedDeliveryMinutes: 25 },
           ]),
         });
 
