@@ -55,7 +55,7 @@ describe('applyFilters', () => {
 
   it('uses custom filter function when provided', () => {
     const filterConfig = {
-      name: (item: any, value: string) => item.name.startsWith(value),
+      name: (item: { name: string }, value: string) => item.name.startsWith(value),
     };
     const result = applyFilters(data, { name: 'B' }, filterConfig);
     expect(result).toHaveLength(1);
@@ -149,7 +149,10 @@ describe('applySort', () => {
       { id: '1', name: 'Alice', value: null },
       { id: '2', name: 'Bob', value: 5 },
     ];
-    const result = applySort(dataWithNull as any, { field: 'value', direction: 'asc' });
+    const result = applySort(
+      dataWithNull as Array<{ id: string; name: string; value: number | null }>,
+      { field: 'value', direction: 'asc' }
+    );
     expect(result[0].id).toBe('2');
     expect(result[1].id).toBe('1');
   });
@@ -180,8 +183,8 @@ describe('exportToCSV', () => {
     ];
 
     const createObjectURLSpy = vi.fn().mockReturnValue('blob:url');
-    const appendChildSpy = vi.spyOn(document.body, 'appendChild').mockImplementation(() => null as any);
-    const removeChildSpy = vi.spyOn(document.body, 'removeChild').mockImplementation(() => null as any);
+    const appendChildSpy = vi.spyOn(document.body, 'appendChild').mockImplementation(() => null as unknown as Node);
+    const removeChildSpy = vi.spyOn(document.body, 'removeChild').mockImplementation(() => null as unknown as Node);
 
     // Mock URL.createObjectURL
     const originalCreateObjectURL = URL.createObjectURL;
@@ -192,7 +195,7 @@ describe('exportToCSV', () => {
       setAttribute: vi.fn(),
       click: clickSpy,
       style: {},
-    } as any);
+    } as unknown as HTMLAnchorElement);
 
     exportToCSV(data, 'test', columns);
 
@@ -211,22 +214,22 @@ describe('exportToCSV', () => {
 
     const blobContent: string[] = [];
     const originalBlob = global.Blob;
-    (global as any).Blob = class MockBlob {
+    globalThis.Blob = class MockBlob {
       constructor(parts: string[]) {
         blobContent.push(...parts);
       }
-    };
+    } as unknown as typeof Blob;
 
     const createObjectURLSpy = vi.fn().mockReturnValue('blob:url');
     URL.createObjectURL = createObjectURLSpy;
 
-    const appendChildSpy = vi.spyOn(document.body, 'appendChild').mockImplementation(() => null as any);
-    const removeChildSpy = vi.spyOn(document.body, 'removeChild').mockImplementation(() => null as any);
+    const appendChildSpy = vi.spyOn(document.body, 'appendChild').mockImplementation(() => null as unknown as Node);
+    const removeChildSpy = vi.spyOn(document.body, 'removeChild').mockImplementation(() => null as unknown as Node);
     const createElementSpy = vi.spyOn(document, 'createElement').mockReturnValue({
       setAttribute: vi.fn(),
       click: vi.fn(),
       style: {},
-    } as any);
+    } as unknown as HTMLAnchorElement);
 
     exportToCSV(data, 'test', columns);
 

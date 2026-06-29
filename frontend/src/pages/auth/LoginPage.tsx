@@ -4,6 +4,7 @@ import { Button, Input, Checkbox } from '../../components/ui/neumorphic';
 import { colors, spacing, typography } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 import { useLoginMutation } from '../../store/api/authApi';
+import { getApiErrorMessage } from '../utils/apiError';
 import { useAppSelector } from '../../store/hooks';
 import { useToast } from '../../hooks/useToast';
 import { getSavedReturnUrl, clearReturnUrl } from '../../utils/security';
@@ -81,7 +82,7 @@ const LoginPage: React.FC = () => {
   const { isAuthenticated, user } = useAppSelector(state => state.auth);
   const [error, setError] = useState<string>('');
   const [activeDemo, setActiveDemo] = useState<string>('');
-  const toast = useToast();
+  const _toast = useToast();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -143,9 +144,9 @@ const LoginPage: React.FC = () => {
         setTimeout(() => navigate('/customer-login'), 2000);
         return;
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Login error:', err);
-      const errorMessage = err?.data?.message || err?.message || 'Login failed. Please check your credentials.';
+      const errorMessage = getApiErrorMessage(err, 'Login failed. Please check your credentials.');
       setError(errorMessage);
     }
   };

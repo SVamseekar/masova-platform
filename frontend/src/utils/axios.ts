@@ -12,7 +12,7 @@ const axiosInstance = axios.create({
 
 // Request interceptor - Add JWT token to requests
 axiosInstance.interceptors.request.use(
-  (config: any) => {
+  (config) => {
     const token = localStorage.getItem('auth_accessToken') || sessionStorage.getItem('auth_accessToken');
 
     if (token && config.headers) {
@@ -21,15 +21,15 @@ axiosInstance.interceptors.request.use(
 
     return config;
   },
-  (error: any) => {
+  (error: unknown) => {
     return Promise.reject(error);
   }
 );
 
 // Response interceptor - pass through; RTK Query baseQueryWithAuth handles token refresh
 axiosInstance.interceptors.response.use(
-  (response: any) => response,
-  (error: any) => Promise.reject(error)
+  (response) => response,
+  (error: unknown) => Promise.reject(error)
 );
 
 export default axiosInstance;

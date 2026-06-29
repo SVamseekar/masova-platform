@@ -1,7 +1,6 @@
 package com.MaSoVa.core.unit.service;
 
 import com.MaSoVa.shared.entity.GdprAuditLog;
-import com.MaSoVa.shared.entity.GdprConsent;
 import com.MaSoVa.shared.entity.GdprDataRequest;
 import com.MaSoVa.shared.entity.User;
 import com.MaSoVa.shared.enums.GdprRequestStatus;
@@ -25,8 +24,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

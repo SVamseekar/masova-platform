@@ -47,7 +47,7 @@ declare class Razorpay {
   open(): void;
   close(): void;
   on(event: 'payment.failed', handler: (response: RazorpayFailedResponse) => void): void;
-  on(event: string, handler: (...args: any[]) => void): void;
+  on(event: string, handler: (...args: unknown[]) => void): void;
 }
 
 interface Window {

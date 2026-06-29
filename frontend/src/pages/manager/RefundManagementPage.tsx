@@ -4,12 +4,12 @@ import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
 import { formatMoney } from '../../utils/currency';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
-import { usePageStore } from '../../contexts/PageStoreContext';
+import { usePageStore } from '../../hooks/usePageStore';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import {
   useGetTransactionsByStoreIdQuery,
   useInitiateRefundMutation,
-  useGetRefundsByTransactionIdQuery,
+  type PaymentResponse,
 } from '../../store/api/paymentApi';
 import { Card, Button, Input } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
@@ -18,6 +18,7 @@ import { colors, spacing, typography, borderRadius } from '../../styles/design-t
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 import { format } from 'date-fns';
 
+// eslint-disable-next-line react-refresh/only-export-components -- page wrapped by withPageStoreContext HOC
 const RefundManagementPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
   const currency = useAppSelector(selectCartCurrency);
@@ -27,7 +28,7 @@ const RefundManagementPage: React.FC = () => {
   const storeId = selectedStoreId || currentUser?.storeId || '';
   const { handleBack } = useSmartBackNavigation();
 
-  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<PaymentResponse | null>(null);
   const [refundAmount, setRefundAmount] = useState<string>('');
   const [refundReason, setRefundReason] = useState<string>('');
   const [refundType, setRefundType] = useState<'FULL' | 'PARTIAL'>('FULL');
@@ -38,7 +39,7 @@ const RefundManagementPage: React.FC = () => {
 
   // Filter only successful transactions that can be refunded
   const refundableTransactions = transactions?.filter(
-    (txn: any) => txn.status === 'SUCCESS' || txn.status === 'PARTIAL_REFUND'
+    (txn) => txn.status === 'SUCCESS' || txn.status === 'PARTIAL_REFUND'
   );
 
   const handleInitiateRefund = async () => {
@@ -224,7 +225,7 @@ const RefundManagementPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {refundableTransactions.map((txn: any) => (
+                  {refundableTransactions.map((txn) => (
                     <tr
                       key={txn.transactionId}
                       style={tableRowStyles(selectedTransaction?.transactionId === txn.transactionId)}
@@ -399,4 +400,5 @@ const RefundManagementPage: React.FC = () => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- HOC default export
 export default withPageStoreContext(RefundManagementPage, 'refunds');

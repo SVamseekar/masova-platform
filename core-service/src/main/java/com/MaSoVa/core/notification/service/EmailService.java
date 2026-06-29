@@ -6,7 +6,7 @@ import com.MaSoVa.shared.util.PiiMasker;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.slf4j.Logger;
@@ -177,20 +177,21 @@ public class EmailService {
             String jsonBody = objectMapper.writeValueAsString(requestBody);
             httpPost.setEntity(new StringEntity(jsonBody, StandardCharsets.UTF_8));
 
-            // Execute request
-            try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
+            // Execute request using response handler (non-deprecated API)
+            return httpClient.execute(httpPost, response -> {
                 int statusCode = response.getCode();
 
                 if (statusCode >= 200 && statusCode < 300) {
                     logger.debug("Brevo API response: {}", statusCode);
                     return true;
-                } else {
-                    String errorBody = new String(response.getEntity().getContent().readAllBytes(),
-                        StandardCharsets.UTF_8);
-                    logger.error("Brevo API error. Status: {}, Body: {}", statusCode, errorBody);
-                    return false;
                 }
-            }
+                String errorBody;
+                try (java.io.InputStream content = response.getEntity().getContent()) {
+                    errorBody = new String(content.readAllBytes(), StandardCharsets.UTF_8);
+                }
+                logger.error("Brevo API error. Status: {}, Body: {}", statusCode, errorBody);
+                return false;
+            });
         }
     }
 

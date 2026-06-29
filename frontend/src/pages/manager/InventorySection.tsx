@@ -183,7 +183,7 @@ const StockTab = ({ storeId }: { storeId: string }) => {
 };
 
 // ======================== SUPPLIERS TAB ========================
-const SuppliersTab = ({ storeId }: { storeId: string }) => {
+const SuppliersTab = ({ storeId: _storeId }: { storeId: string }) => {
   const { data: allSuppliers = [], isLoading: allLoading } = useGetAllSuppliersQuery('', { pollingInterval: 60000 });
   const { data: activeSuppliers = [] } = useGetActiveSuppliersQuery('');
   const { data: preferredSuppliers = [] } = useGetPreferredSuppliersQuery('');
@@ -512,7 +512,7 @@ const InventorySection: React.FC<Props> = ({ storeId, activeTab, onTabChange }) 
   const currentTab = activeTab || 'stock';
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const _fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
 
   return (
     <div>

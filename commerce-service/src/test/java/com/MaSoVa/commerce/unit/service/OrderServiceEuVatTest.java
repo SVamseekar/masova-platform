@@ -1,16 +1,11 @@
 package com.MaSoVa.commerce.unit.service;
 
-import com.MaSoVa.commerce.order.service.OrderService;
 import com.MaSoVa.commerce.order.service.EuVatEngine;
 import com.MaSoVa.commerce.order.config.EuVatConfiguration;
-import com.MaSoVa.commerce.order.dto.CreateOrderRequest;
-import com.MaSoVa.commerce.order.entity.Order;
 import com.MaSoVa.shared.entity.Store;
 import com.MaSoVa.shared.model.VatBreakdown;
-import com.MaSoVa.shared.model.VatLineItem;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -36,16 +31,6 @@ class OrderServiceEuVatTest {
         profile.setContextRates(contextRates);
         config.setCountries(Map.of(countryCode, profile));
         return new EuVatEngine(config);
-    }
-
-    private CreateOrderRequest.OrderItemRequest item(String id, String name, double price, int qty, String category) {
-        CreateOrderRequest.OrderItemRequest r = new CreateOrderRequest.OrderItemRequest();
-        r.setMenuItemId(id);
-        r.setName(name);
-        r.setPrice(price);
-        r.setQuantity(qty);
-        r.setCategory(category);
-        return r;
     }
 
     // --- tests -------------------------------------------------------------

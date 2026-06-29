@@ -1,6 +1,5 @@
 package com.MaSoVa.payment.converter;
 
-import com.MaSoVa.payment.service.PiiEncryptionService;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.lang.NonNull;
@@ -16,13 +15,6 @@ import org.springframework.stereotype.Component;
 @Component
 @ReadingConverter
 public class EncryptedStringReadingConverter implements Converter<String, String> {
-
-    @SuppressWarnings("unused")
-    private final PiiEncryptionService encryptionService;
-
-    public EncryptedStringReadingConverter(PiiEncryptionService encryptionService) {
-        this.encryptionService = encryptionService;
-    }
 
     @Override
     public String convert(@NonNull String source) {

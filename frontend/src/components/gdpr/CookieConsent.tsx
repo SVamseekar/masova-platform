@@ -41,7 +41,7 @@ export const CookieConsent: React.FC = () => {
     } else {
       try {
         setPreferences(JSON.parse(consent));
-      } catch (error) {
+      } catch {
         setOpen(true);
       }
     }

@@ -4,20 +4,22 @@ import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
 import { formatMoney } from '../../utils/currency';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
-import { usePageStore } from '../../contexts/PageStoreContext';
+import { usePageStore } from '../../hooks/usePageStore';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import {
   useGetTransactionsByStoreIdQuery,
   useGetReconciliationReportQuery,
 } from '../../store/api/paymentApi';
-import { useGetStoreOrdersQuery } from '../../store/api/orderApi';
-import { Card, Button } from '../../components/ui/neumorphic';
+import { useGetStoreOrdersQuery, type Order } from '../../store/api/orderApi';
+import type { OrderPaymentRecord } from '../types/payments';
+import { Card } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
 import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 import { format } from 'date-fns';
 
+// eslint-disable-next-line react-refresh/only-export-components -- page component with HOC export
 const PaymentDashboardPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
   const currency = useAppSelector(selectCartCurrency);
@@ -31,7 +33,7 @@ const PaymentDashboardPage: React.FC = () => {
 
   // Fetch today's transactions
   // Pass storeId to trigger refetch when store changes
-  const { data: transactions = [], isLoading: transactionsLoading, refetch: refetchTransactions } =
+  const { data: _transactions = [] } =
     useGetTransactionsByStoreIdQuery(storeId, {
       skip: !storeId,
       pollingInterval: 30000, // Poll every 30 seconds
@@ -45,7 +47,7 @@ const PaymentDashboardPage: React.FC = () => {
     });
 
   // Fetch reconciliation report - only if specific date is selected
-  const { data: report, isLoading: reportLoading, refetch: refetchReport } =
+  const { data: report, refetch: refetchReport } =
     useGetReconciliationReportQuery(
       { date: selectedDate === 'all' ? format(new Date(), 'yyyy-MM-dd') : selectedDate },
       {
@@ -56,29 +58,29 @@ const PaymentDashboardPage: React.FC = () => {
 
   // Filter orders - if "all" is selected, show last 30 days, otherwise filter by selected date
   const selectedDateOrders = selectedDate === 'all'
-    ? allOrders.filter((order: any) => {
+    ? allOrders.filter((order) => {
         const orderDate = new Date(order.createdAt);
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         return orderDate >= thirtyDaysAgo;
       })
-    : allOrders.filter((order: any) => {
+    : allOrders.filter((order) => {
         const orderDate = new Date(order.createdAt).toISOString().split('T')[0];
         return orderDate === selectedDate;
       });
 
   // Create payment records from ALL orders (not just CASH)
   // This allows tracking of all payment methods including CASH
-  const orderPayments = selectedDateOrders
-    .map((order: any) => ({
+  const orderPayments: OrderPaymentRecord[] = selectedDateOrders
+    .map((order: Order) => ({
       id: order.id,
       orderId: order.id,
       orderNumber: order.orderNumber,
-      amount: order.total || order.totalAmount,
+      amount: order.total || order.totalAmount || 0,
       paymentMethod: order.paymentMethod || 'CASH',
-      status: order.paymentStatus === 'PAID' ? 'SUCCESS' :
+      status: (order.paymentStatus === 'PAID' ? 'SUCCESS' :
               order.paymentStatus === 'FAILED' ? 'FAILED' :
-              'PENDING',
+              'PENDING') as OrderPaymentRecord['status'],
       createdAt: order.createdAt,
       customerName: order.customerName,
       isOrderPayment: true, // Flag to identify order-based payments
@@ -87,11 +89,11 @@ const PaymentDashboardPage: React.FC = () => {
   // For now, just show order payments (which includes all payment methods)
   // In the future, we can deduplicate with actual payment service transactions
   const allPayments = orderPayments.sort(
-    (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
   // Debug: Check payment statuses
-  console.log('[PaymentDashboard] Payment statuses:', orderPayments.map((p: any) => ({
+  console.log('[PaymentDashboard] Payment statuses:', orderPayments.map((p) => ({
     orderNumber: p.orderNumber,
     status: p.status,
     amount: p.amount,
@@ -100,18 +102,18 @@ const PaymentDashboardPage: React.FC = () => {
 
   // Calculate custom metrics from order payments when "all" is selected
   // For revenue calculation: Include SUCCESS payments AND CASH/PENDING (since cash is collected on delivery)
-  const isSuccessfulPayment = (p: any) =>
+  const isSuccessfulPayment = (p: OrderPaymentRecord) =>
     p.status === 'SUCCESS' || (p.paymentMethod === 'CASH' && p.status === 'PENDING');
 
   const customReport = selectedDate === 'all' ? {
     totalTransactions: orderPayments.length,
     successfulTransactions: orderPayments.filter(isSuccessfulPayment).length,
-    successfulAmount: orderPayments.filter(isSuccessfulPayment).reduce((sum: number, p: any) => sum + (p.amount || 0), 0),
-    failedTransactions: orderPayments.filter((p: any) => p.status === 'FAILED').length,
+    successfulAmount: orderPayments.filter(isSuccessfulPayment).reduce((sum, p) => sum + (p.amount || 0), 0),
+    failedTransactions: orderPayments.filter((p) => p.status === 'FAILED').length,
     refundedTransactions: 0,
-    unreconciledCount: orderPayments.filter((p: any) => p.status === 'PENDING' && p.paymentMethod !== 'CASH').length,
-    netAmount: orderPayments.filter(isSuccessfulPayment).reduce((sum: number, p: any) => sum + (p.amount || 0), 0),
-    paymentMethodBreakdown: orderPayments.reduce((acc: any, p: any) => {
+    unreconciledCount: orderPayments.filter((p) => p.status === 'PENDING' && p.paymentMethod !== 'CASH').length,
+    netAmount: orderPayments.filter(isSuccessfulPayment).reduce((sum, p) => sum + (p.amount || 0), 0),
+    paymentMethodBreakdown: orderPayments.reduce((acc: Record<string, number>, p) => {
       const method = p.paymentMethod || 'CASH';
       if (isSuccessfulPayment(p)) {
         acc[method] = (acc[method] || 0) + (p.amount || 0);
@@ -394,7 +396,7 @@ const PaymentDashboardPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {allPayments.slice(0, 50).map((txn: any, index: number) => (
+                {allPayments.slice(0, 50).map((txn, index: number) => (
                   <tr key={txn.transactionId || txn.id || index} style={tableRowStyles}>
                     <td style={tableCellStyles}>
                       {txn.isOrderPayment
@@ -430,4 +432,5 @@ const PaymentDashboardPage: React.FC = () => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- HOC default export
 export default withPageStoreContext(PaymentDashboardPage, 'payments');

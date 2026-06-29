@@ -13,47 +13,63 @@ vi.mock('notistack', () => ({
   useSnackbar: () => ({ enqueueSnackbar: mockEnqueueSnackbar }),
 }));
 
-vi.mock('../../store/api/analyticsApi', () => ({
-  useGetTodaySalesMetricsQuery: () => ({
-    data: { todaySales: 5000, todayOrderCount: 25, percentChangeFromYesterday: 12.5, lastYearSameDaySales: 4000, percentChangeFromLastYear: 25 },
-    isLoading: false,
-  }),
-  useGetSalesTrendsQuery: () => ({
-    data: { totalSales: 35000, totalOrders: 180 },
-    isLoading: false,
-  }),
-  useGetStaffLeaderboardQuery: () => ({
-    data: { rankings: [] },
-    isLoading: false,
-  }),
-  useGetTopProductsQuery: () => ({
-    data: { topProducts: [] },
-    isLoading: false,
-  }),
-}));
+vi.mock('../../store/api/analyticsApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../store/api/analyticsApi')>();
+  return {
+    ...actual,
+    useGetTodaySalesMetricsQuery: () => ({
+      data: { todaySales: 5000, todayOrderCount: 25, percentChangeFromYesterday: 12.5, lastYearSameDaySales: 4000, percentChangeFromLastYear: 25 },
+      isLoading: false,
+    }),
+    useGetSalesTrendsQuery: () => ({
+      data: { totalSales: 35000, totalOrders: 180 },
+      isLoading: false,
+    }),
+    useGetStaffLeaderboardQuery: () => ({
+      data: { rankings: [] },
+      isLoading: false,
+    }),
+    useGetTopProductsQuery: () => ({
+      data: { topProducts: [] },
+      isLoading: false,
+    }),
+  };
+});
 
-vi.mock('../../store/api/orderApi', () => ({
-  useGetStoreOrdersQuery: () => ({
-    data: [],
-    isLoading: false,
-  }),
-}));
+vi.mock('../../store/api/orderApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../store/api/orderApi')>();
+  return {
+    ...actual,
+    useGetStoreOrdersQuery: () => ({
+      data: [],
+      isLoading: false,
+    }),
+  };
+});
 
-vi.mock('../../store/api/paymentApi', () => ({
-  useRecordCashPaymentMutation: () => [vi.fn(), { isLoading: false }],
-}));
+vi.mock('../../store/api/paymentApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../store/api/paymentApi')>();
+  return {
+    ...actual,
+    useRecordCashPaymentMutation: () => [vi.fn(), { isLoading: false }],
+  };
+});
 
-vi.mock('../../store/api/sessionApi', () => ({
-  useGetActiveStoreSessionsQuery: () => ({
-    data: [],
-    isLoading: false,
-  }),
-  useClockOutEmployeeMutation: () => [vi.fn(), { isLoading: false }],
-}));
+vi.mock('../../store/api/sessionApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../store/api/sessionApi')>();
+  return {
+    ...actual,
+    useGetActiveStoreSessionsQuery: () => ({
+      data: [],
+      isLoading: false,
+    }),
+    useClockOutEmployeeMutation: () => [vi.fn(), { isLoading: false }],
+  };
+});
 
 // Mock child components to isolate POSDashboard behavior
 vi.mock('./components/MenuPanel', () => ({
-  default: ({ onAddItem }: any) => (
+  default: ({ onAddItem }: { onAddItem: (item: { id: string; name: string; basePrice: number }) => void }) => (
     <div data-testid="menu-panel">
       <button
         data-testid="add-pizza-btn"
@@ -68,7 +84,7 @@ vi.mock('./components/MenuPanel', () => ({
 }));
 
 vi.mock('./components/OrderPanel', () => ({
-  default: ({ items, onNewOrder }: any) => (
+  default: ({ items, onNewOrder }: { items: unknown[]; onNewOrder: () => void }) => (
     <div data-testid="order-panel">
       <span data-testid="order-item-count">{items.length}</span>
       <button data-testid="clear-order-btn" onClick={onNewOrder}>
@@ -87,17 +103,17 @@ vi.mock('./components/MetricsTiles', () => ({
 }));
 
 vi.mock('./components/ClockInModal', () => ({
-  default: ({ isOpen }: any) =>
+  default: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="clock-in-modal">ClockInModal</div> : null,
 }));
 
 vi.mock('./components/ClockOutModal', () => ({
-  default: ({ isOpen }: any) =>
+  default: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="clock-out-modal">ClockOutModal</div> : null,
 }));
 
 vi.mock('./components/PINAuthModal', () => ({
-  PINAuthModal: ({ isOpen }: any) =>
+  PINAuthModal: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="pin-auth-modal">PINAuthModal</div> : null,
 }));
 
@@ -178,7 +194,7 @@ describe('POSDashboard', () => {
     it('renders without crashing for a manager', () => {
       renderWithProviders(<POSDashboard />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(screen.getByText('MaSoVa POS')).toBeInTheDocument();
@@ -187,7 +203,7 @@ describe('POSDashboard', () => {
     it('displays the store name in the header', () => {
       renderWithProviders(<POSDashboard />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(screen.getByText('Downtown Branch')).toBeInTheDocument();
@@ -196,7 +212,7 @@ describe('POSDashboard', () => {
     it('renders the orders tab by default', () => {
       renderWithProviders(<POSDashboard />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(screen.getByTestId('menu-panel')).toBeInTheDocument();
@@ -207,7 +223,7 @@ describe('POSDashboard', () => {
     it('shows tab navigation for managers', () => {
       renderWithProviders(<POSDashboard />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(screen.getByText('Orders')).toBeInTheDocument();
@@ -217,7 +233,7 @@ describe('POSDashboard', () => {
     it('does not show tab navigation for staff users', () => {
       renderWithProviders(<POSDashboard />, {
         useMemoryRouter: true,
-        preloadedState: staffState as any,
+        preloadedState: staffState,
       });
 
       expect(screen.queryByText('Analytics')).not.toBeInTheDocument();
@@ -230,7 +246,7 @@ describe('POSDashboard', () => {
 
       renderWithProviders(<POSDashboard />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       await user.click(screen.getByText('Analytics'));
@@ -246,7 +262,7 @@ describe('POSDashboard', () => {
 
       renderWithProviders(<POSDashboard />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       await user.click(screen.getByText('Analytics'));
@@ -260,7 +276,7 @@ describe('POSDashboard', () => {
     it('switches to orders tab on F1', () => {
       renderWithProviders(<POSDashboard />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       // First switch to analytics
@@ -275,7 +291,7 @@ describe('POSDashboard', () => {
     it('switches to analytics tab on F2', () => {
       renderWithProviders(<POSDashboard />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       fireEvent.keyDown(window, { key: 'F2' });
@@ -287,7 +303,7 @@ describe('POSDashboard', () => {
 
       renderWithProviders(<POSDashboard />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       // Add an item to the order
@@ -309,7 +325,7 @@ describe('POSDashboard', () => {
 
       renderWithProviders(<POSDashboard />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       await user.click(screen.getByTestId('add-pizza-btn'));
@@ -321,7 +337,7 @@ describe('POSDashboard', () => {
 
       renderWithProviders(<POSDashboard />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       await user.click(screen.getByTestId('add-pizza-btn'));
@@ -336,7 +352,7 @@ describe('POSDashboard', () => {
     it('renders clock in and clock out buttons for managers', () => {
       renderWithProviders(<POSDashboard />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       expect(screen.getByText('Clock In')).toBeInTheDocument();
@@ -346,7 +362,7 @@ describe('POSDashboard', () => {
     it('does not render clock buttons for staff users', () => {
       renderWithProviders(<POSDashboard />, {
         useMemoryRouter: true,
-        preloadedState: staffState as any,
+        preloadedState: staffState,
       });
 
       expect(screen.queryByText('Clock In')).not.toBeInTheDocument();
@@ -357,7 +373,7 @@ describe('POSDashboard', () => {
 
       renderWithProviders(<POSDashboard />, {
         useMemoryRouter: true,
-        preloadedState: managerState as any,
+        preloadedState: managerState,
       });
 
       await user.click(screen.getByText('Clock In'));
@@ -369,7 +385,7 @@ describe('POSDashboard', () => {
     it('renders for unauthenticated users', () => {
       renderWithProviders(<POSDashboard />, {
         useMemoryRouter: true,
-        preloadedState: unauthenticatedState as any,
+        preloadedState: unauthenticatedState,
       });
 
       expect(screen.getByText('MaSoVa POS')).toBeInTheDocument();

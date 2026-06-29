@@ -13,6 +13,7 @@ import {
   selectCartLocale,
 } from '../../store/slices/cartSlice';
 import { formatMoney } from '../../utils/currency';
+import { getApiErrorMessage } from '../utils/apiError';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import {
   useGetCustomerByUserIdQuery,
@@ -204,8 +205,8 @@ const GuestCheckoutPage: React.FC = () => {
       await removeAddress({ customerId: customerData.id, addressId }).unwrap();
       if (selectedAddressId === addressId) setSelectedAddressId('new');
       setAddressToDelete(null);
-    } catch (err: any) {
-      setError(err?.data?.message || 'Failed to delete address. Please try again.');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Failed to delete address. Please try again.'));
     } finally {
       setDeletingAddress(false);
     }
@@ -216,8 +217,8 @@ const GuestCheckoutPage: React.FC = () => {
     if (!customerData?.id) return;
     try {
       await setDefaultAddress({ customerId: customerData.id, addressId }).unwrap();
-    } catch (err: any) {
-      setError(err?.data?.message || 'Failed to set default address. Please try again.');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Failed to set default address. Please try again.'));
     }
   };
 
@@ -299,7 +300,7 @@ const GuestCheckoutPage: React.FC = () => {
         }
       }
       navigate('/payment', { state: { guestInfo } });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Checkout error:', err);
       setError('An error occurred. Please try again.');
     } finally {

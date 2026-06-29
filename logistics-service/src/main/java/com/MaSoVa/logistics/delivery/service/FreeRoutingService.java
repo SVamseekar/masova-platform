@@ -1,10 +1,12 @@
 package com.MaSoVa.logistics.delivery.service;
 
+import com.MaSoVa.shared.http.HttpMethods;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -63,7 +65,7 @@ public class FreeRoutingService {
 
             log.debug("OSRM route request: ({},{}) -> ({},{})", startLat, startLon, endLat, endLon);
 
-            String response = restTemplate.getForObject(url, String.class);
+            String response = fetchString(url);
             JsonNode root = objectMapper.readTree(response);
 
             if (!"Ok".equals(root.get("code").asText())) {
@@ -129,7 +131,7 @@ public class FreeRoutingService {
 
             log.debug("OSRM distance matrix request for {} locations", locations.size());
 
-            String response = restTemplate.getForObject(url, String.class);
+            String response = fetchString(url);
             JsonNode root = objectMapper.readTree(response);
 
             if (!"Ok".equals(root.get("code").asText())) {
@@ -176,7 +178,7 @@ public class FreeRoutingService {
 
             log.debug("Nominatim geocode request: {}", address);
 
-            String response = restTemplate.getForObject(url, String.class);
+            String response = fetchString(url);
             JsonNode results = objectMapper.readTree(response);
 
             if (results.isEmpty()) {
@@ -215,7 +217,7 @@ public class FreeRoutingService {
 
             log.debug("Nominatim reverse geocode request: ({}, {})", lat, lon);
 
-            String response = restTemplate.getForObject(url, String.class);
+            String response = fetchString(url);
             JsonNode result = objectMapper.readTree(response);
 
             String displayName = result.get("display_name").asText();
@@ -228,6 +230,11 @@ public class FreeRoutingService {
             log.error("❌ Reverse geocoding failed: {}", e.getMessage());
             throw new RuntimeException("Reverse geocoding failed: " + e.getMessage(), e);
         }
+    }
+
+    private String fetchString(String url) {
+        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethods.GET, null, String.class);
+        return response.getBody();
     }
 
     /**

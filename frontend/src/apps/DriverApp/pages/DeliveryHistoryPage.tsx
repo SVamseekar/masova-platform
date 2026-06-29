@@ -19,7 +19,6 @@ import {
   Search as SearchIcon,
   ExpandMore as ExpandMoreIcon,
   CheckCircle as CheckCircleIcon,
-  Schedule as ScheduleIcon,
 } from '@mui/icons-material';
 import { useGetOrdersByStatusQuery } from '../../../store/api/orderApi';
 import { useSelector } from 'react-redux';
@@ -27,9 +26,18 @@ import { RootState } from '../../../store/store';
 import { useAppSelector } from '../../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../../store/slices/cartSlice';
 import { formatMoney } from '../../../utils/currency';
-import { MetricCard, StatsChart } from '../components/shared';
+import { StatsChart } from '../components/shared';
 import { colors, spacing, typography, borderRadius, shadows, animations } from '../../../styles/driver-design-tokens';
 import { skeletonStyles } from '../utils/animations';
+import type { DriverDeliveryOrder, OrderItem } from '../types';
+import {
+  getAssignedDriverId,
+  getOrderDisplayNumber,
+  getOrderId,
+  getOrderTotal,
+  formatDeliveryAddress,
+  toDriverDeliveryOrders,
+} from '../utils/driverOrderUtils';
 
 const DeliveryHistoryPage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -47,21 +55,22 @@ const DeliveryHistoryPage: React.FC = () => {
   });
 
   // Filter orders for this driver
-  const myDeliveries = deliveredOrders?.filter((order: any) =>
-    order.assignedDriver?.id === user?.id || order.assignedDriver === user?.id
-  ) || [];
+  const myDeliveries = toDriverDeliveryOrders(deliveredOrders).filter(
+    (order) => getAssignedDriverId(order) === user?.id
+  );
 
   // Apply time filter
-  const filteredByTime = myDeliveries.filter((order: any) => {
+  const filteredByTime = myDeliveries.filter((order: DriverDeliveryOrder) => {
     const orderDate = new Date(order.deliveredAt || order.updatedAt);
     const now = new Date();
 
     switch (timeFilter) {
       case 'today':
         return orderDate.toDateString() === now.toDateString();
-      case 'week':
+      case 'week': {
         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         return orderDate >= weekAgo;
+      }
       case 'month':
         return orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
       default:
@@ -70,10 +79,10 @@ const DeliveryHistoryPage: React.FC = () => {
   });
 
   // Apply search filter
-  const filteredDeliveries = filteredByTime.filter((order: any) => {
+  const filteredDeliveries = filteredByTime.filter((order: DriverDeliveryOrder) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
-    const orderNumber = (order.orderNumber || (order.id || order._id).slice(-6)).toLowerCase();
+    const orderNumber = getOrderDisplayNumber(order).toLowerCase();
     const customerName = (order.customer?.name || '').toLowerCase();
     return orderNumber.includes(query) || customerName.includes(query);
   });
@@ -81,7 +90,7 @@ const DeliveryHistoryPage: React.FC = () => {
   // Calculate stats
   const stats = {
     totalDeliveries: filteredDeliveries.length,
-    totalEarnings: filteredDeliveries.reduce((sum: number, order: any) => sum + (order.totalAmount * 0.2), 0),
+    totalEarnings: filteredDeliveries.reduce((sum, order) => sum + getOrderTotal(order) * 0.2, 0),
     totalDistance: filteredDeliveries.length * 5.5,
     avgDeliveryTime: 28
   };
@@ -98,7 +107,7 @@ const DeliveryHistoryPage: React.FC = () => {
   ];
 
   // Group deliveries by date
-  const groupedDeliveries = filteredDeliveries.reduce((groups: any, order: any) => {
+  const groupedDeliveries = filteredDeliveries.reduce<Record<string, DriverDeliveryOrder[]>>((groups, order) => {
     const date = new Date(order.deliveredAt || order.updatedAt);
     const dateKey = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
@@ -261,7 +270,7 @@ const DeliveryHistoryPage: React.FC = () => {
           </Box>
         ) : (
           <Box>
-            {Object.entries(groupedDeliveries).map(([date, orders]: [string, any]) => (
+            {Object.entries(groupedDeliveries).map(([date, orders]) => (
               <Box key={date} sx={{ mb: spacing.lg }}>
                 {/* Date Header */}
                 <Box
@@ -289,14 +298,15 @@ const DeliveryHistoryPage: React.FC = () => {
 
                 {/* Timeline Items */}
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: spacing.md }}>
-                  {orders.map((order: any) => {
+                  {orders.map((order) => {
                     const deliveryTime = new Date(order.deliveredAt || order.updatedAt);
-                    const earnings = Math.round(order.totalAmount * 0.2);
-                    const isExpanded = expandedOrder === (order.id || order._id);
+                    const earnings = Math.round(getOrderTotal(order) * 0.2);
+                    const orderId = getOrderId(order);
+                    const isExpanded = expandedOrder === orderId;
 
                     return (
                       <Box
-                        key={order.id || order._id}
+                        key={orderId}
                         sx={{
                           display: 'flex',
                           gap: spacing.base,
@@ -355,7 +365,7 @@ const DeliveryHistoryPage: React.FC = () => {
                                   color: colors.text.primary,
                                 }}
                               >
-                                #{order.orderNumber || (order.id || order._id).slice(-6).toUpperCase()} · {fmt(order.totalAmount)}
+                                #{getOrderDisplayNumber(order)} · {fmt(getOrderTotal(order))}
                               </Typography>
                             </Box>
 
@@ -388,7 +398,7 @@ const DeliveryHistoryPage: React.FC = () => {
                               mb: spacing.xs,
                             }}
                           >
-                            {order.customer?.name || 'Customer'} · {(stats.totalDistance / stats.totalDeliveries).toFixed(1)} km · {stats.avgDeliveryTime} min
+                            {order.customer?.name || 'Customer'} · {(stats.totalDeliveries > 0 ? stats.totalDistance / stats.totalDeliveries : 0).toFixed(1)} km · {stats.avgDeliveryTime} min
                           </Typography>
 
                           {/* Expandable Details */}
@@ -396,12 +406,12 @@ const DeliveryHistoryPage: React.FC = () => {
                             <Divider sx={{ my: spacing.sm }} />
                             <Box sx={{ fontSize: typography.fontSize.caption, color: colors.text.secondary }}>
                               <Box sx={{ mb: spacing.xs }}>
-                                <strong>Address:</strong> {order.deliveryAddress || 'N/A'}
+                                <strong>Address:</strong> {formatDeliveryAddress(order.deliveryAddress)}
                               </Box>
                               {order.items && order.items.length > 0 && (
                                 <Box>
                                   <strong>Items ({order.items.length}):</strong>
-                                  {order.items.slice(0, 3).map((item: any, idx: number) => (
+                                  {order.items.slice(0, 3).map((item: OrderItem, idx: number) => (
                                     <Box key={idx} sx={{ ml: spacing.sm }}>
                                       • {item.quantity}x {item.name}
                                     </Box>
@@ -418,7 +428,7 @@ const DeliveryHistoryPage: React.FC = () => {
 
                           <IconButton
                             size="small"
-                            onClick={() => setExpandedOrder(isExpanded ? null : (order.id || order._id))}
+                            onClick={() => setExpandedOrder(isExpanded ? null : orderId)}
                             sx={{
                               marginTop: spacing.xs,
                               color: colors.text.tertiary,

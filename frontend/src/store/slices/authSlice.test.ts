@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock external dependencies before importing the slice
-vi.mock('../../contexts/PageStoreContext', () => ({
+vi.mock('../../contexts/pageStoreUtils', () => ({
   clearAllStoreContexts: vi.fn(),
 }));
 
@@ -9,7 +9,7 @@ vi.mock('../api/authApi', () => ({
   authApi: {
     reducerPath: 'authApi',
     reducer: (state = {}) => state,
-    middleware: () => (next: any) => (action: any) => next(action),
+    middleware: () => (next: (action: unknown) => unknown) => (action: unknown) => next(action),
     endpoints: {
       login: {
         matchPending: () => false,

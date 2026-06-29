@@ -10,9 +10,13 @@ import { PINAuthModal } from './PINAuthModal';
 
 const mockValidatePIN = vi.fn();
 
-vi.mock('../../../store/api/userApi', () => ({
-  useValidatePINMutation: () => [mockValidatePIN, { isLoading: false }],
-}));
+vi.mock('../../../store/api/userApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../store/api/userApi')>();
+  return {
+    ...actual,
+    useValidatePINMutation: () => [mockValidatePIN, { isLoading: false }],
+  };
+});
 
 describe('PINAuthModal', () => {
   const defaultProps = {
@@ -60,7 +64,6 @@ describe('PINAuthModal', () => {
         useMemoryRouter: true,
       });
 
-      const inputs = screen.getAllByRole('textbox', { hidden: true });
       // password inputs are not textboxes, let's query by type
       const passwordInputs = document.querySelectorAll(
         'input[type="password"]'

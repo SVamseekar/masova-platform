@@ -6,7 +6,10 @@ import {
   useListKioskAccountsQuery,
   useDeactivateKioskMutation,
   CreateKioskResponse,
+  type KioskAccount,
 } from '../../store/api/kioskApi';
+import type { Store } from '../../store/api/storeApi';
+import { getApiErrorMessage } from '../utils/apiError';
 
 /**
  * Kiosk Management Page
@@ -49,8 +52,8 @@ const KioskManagementPage: React.FC = () => {
       refetch();
 
       alert('Kiosk account created successfully! Copy the tokens from the modal.');
-    } catch (error: any) {
-      alert('Failed to create kiosk account: ' + (error?.data?.error || error.message));
+    } catch (error: unknown) {
+      alert('Failed to create kiosk account: ' + getApiErrorMessage(error, 'Unknown error'));
     }
   };
 
@@ -63,8 +66,8 @@ const KioskManagementPage: React.FC = () => {
       await deactivateKiosk(kioskId).unwrap();
       refetch();
       alert('Kiosk account deactivated successfully');
-    } catch (error: any) {
-      alert('Failed to deactivate kiosk: ' + (error?.data?.error || error.message));
+    } catch (error: unknown) {
+      alert('Failed to deactivate kiosk: ' + getApiErrorMessage(error, 'Unknown error'));
     }
   };
 
@@ -122,7 +125,7 @@ const KioskManagementPage: React.FC = () => {
             }}
           >
             <option value="">Select a store...</option>
-            {stores.map((store: any) => (
+            {stores.map((store: Store) => (
               <option key={store.id} value={store.id}>
                 {store.name} ({store.id})
               </option>
@@ -203,10 +206,10 @@ const KioskManagementPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {kiosks.map((kiosk: any) => (
+                  {kiosks.map((kiosk: KioskAccount) => (
                     <tr key={kiosk.id} style={{ borderBottom: '1px solid #eee' }}>
                       <td style={{ padding: '12px', fontWeight: 500 }}>
-                        {kiosk.employeeDetails?.terminalId || 'N/A'}
+                        {kiosk.terminalId || 'N/A'}
                       </td>
                       <td style={{ padding: '12px' }}>
                         <span
@@ -223,8 +226,8 @@ const KioskManagementPage: React.FC = () => {
                         </span>
                       </td>
                       <td style={{ padding: '12px', color: '#666' }}>
-                        {kiosk.employeeDetails?.lastKioskAccess
-                          ? new Date(kiosk.employeeDetails.lastKioskAccess).toLocaleString()
+                        {kiosk.lastKioskAccess
+                          ? new Date(kiosk.lastKioskAccess).toLocaleString()
                           : 'Never'}
                       </td>
                       <td style={{ padding: '12px' }}>

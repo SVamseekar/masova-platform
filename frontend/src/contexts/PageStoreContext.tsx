@@ -1,14 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getTabStore, setTabStore, clearTabStore, clearAllTabStores } from '../utils/tabStorage';
-
-interface PageStoreContextType {
-  selectedStoreId: string | null;
-  selectedStoreName: string | null;
-  setStore: (storeId: string, storeName: string) => void;
-  clearStore: () => void;
-}
-
-const PageStoreContext = createContext<PageStoreContextType | undefined>(undefined);
+import React, { useState, useEffect, useRef, ReactNode } from 'react';
+import { getTabStore, setTabStore, clearTabStore } from '../utils/tabStorage';
+import { PageStoreContext, type PageStoreContextType } from './pageStoreContext.shared';
 
 interface PageStoreProviderProps {
   children: ReactNode;
@@ -16,7 +8,6 @@ interface PageStoreProviderProps {
 }
 
 export const PageStoreProvider: React.FC<PageStoreProviderProps> = ({ children, contextKey }) => {
-  // Initialize state from tab-specific storage
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(() => {
     const stored = getTabStore(contextKey);
     return stored ? stored.storeId : null;
@@ -27,34 +18,39 @@ export const PageStoreProvider: React.FC<PageStoreProviderProps> = ({ children, 
     return stored ? stored.storeName : null;
   });
 
+  const selectedStoreIdRef = useRef(selectedStoreId);
+  const selectedStoreNameRef = useRef(selectedStoreName);
+
+  useEffect(() => {
+    selectedStoreIdRef.current = selectedStoreId;
+  }, [selectedStoreId]);
+
+  useEffect(() => {
+    selectedStoreNameRef.current = selectedStoreName;
+  }, [selectedStoreName]);
+
   // Listen for storage changes (when StoreSelector updates tabStorage)
   useEffect(() => {
-    let lastStoreId = selectedStoreId;
-    let lastStoreName = selectedStoreName;
-
     const checkStorage = () => {
       const stored = getTabStore(contextKey);
       if (stored) {
-        if (stored.storeId !== lastStoreId || stored.storeName !== lastStoreName) {
-          lastStoreId = stored.storeId;
-          lastStoreName = stored.storeName;
+        if (
+          stored.storeId !== selectedStoreIdRef.current ||
+          stored.storeName !== selectedStoreNameRef.current
+        ) {
           setSelectedStoreId(stored.storeId);
           setSelectedStoreName(stored.storeName);
         }
       }
     };
 
-    // Check storage periodically (since we can't listen to sessionStorage events in same tab)
-    const interval = setInterval(checkStorage, 100); // Check every 100ms
-
+    const interval = setInterval(checkStorage, 100);
     return () => clearInterval(interval);
-  }, [contextKey]); // Only depend on contextKey, not the state values
+  }, [contextKey]);
 
   const setStore = (storeId: string, storeName: string) => {
     setSelectedStoreId(storeId);
     setSelectedStoreName(storeName);
-
-    // Persist to tab-specific storage
     setTabStore(contextKey, storeId, storeName);
   };
 
@@ -76,17 +72,4 @@ export const PageStoreProvider: React.FC<PageStoreProviderProps> = ({ children, 
       {children}
     </PageStoreContext.Provider>
   );
-};
-
-export const usePageStore = (): PageStoreContextType => {
-  const context = useContext(PageStoreContext);
-  if (context === undefined) {
-    throw new Error('usePageStore must be used within a PageStoreProvider');
-  }
-  return context;
-};
-
-// Utility function to clear all store contexts for current tab (used on logout)
-export const clearAllStoreContexts = (): void => {
-  clearAllTabStores();
 };

@@ -6,6 +6,18 @@
 import DOMPurify from 'dompurify';
 
 /**
+ * Escape text for safe interpolation into raw HTML templates (attributes/text nodes).
+ */
+export function escapeHTML(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
  * Sanitize HTML to prevent XSS attacks
  */
 export function sanitizeHTML(dirty: string): string {
@@ -94,7 +106,7 @@ export function checkPasswordStrength(password: string): PasswordStrength {
   }
 
   // Contains special character
-  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+  if (/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) {
     score++;
   } else {
     feedback.push('Add special characters');
@@ -226,7 +238,7 @@ export function setCSP(): void {
  */
 export function secureFormSubmit(
   url: string,
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   method: 'POST' | 'PUT' | 'DELETE' = 'POST'
 ): Promise<Response> {
   return fetch(url, {
@@ -358,7 +370,7 @@ export class ConnectionMonitor {
   /**
    * Start monitoring API connection health
    */
-  start(baseUrl: string): void {
+  start(_baseUrl: string): void {
     // Don't start if already running
     if (this.healthCheckInterval) {
       return;

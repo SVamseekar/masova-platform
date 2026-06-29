@@ -70,7 +70,7 @@ describe('Tabs Components', () => {
     });
 
     it('renders with flex display', () => {
-      const { container } = render(
+      render(
         <Tabs defaultValue="t1">
           <TabsList data-testid="list">
             <TabsTrigger value="t1">T1</TabsTrigger>
@@ -130,9 +130,11 @@ describe('Tabs Components', () => {
       expect(screen.getByRole('button', { name: 'Tab 1' })).toHaveStyle({ background: 'none' });
     });
 
-    it('renders with no visible border', () => {
+    it('renders with transparent side borders on inactive tab', () => {
       renderTabs();
-      expect(screen.getByRole('button', { name: 'Tab 1' })).toHaveStyle({ border: 'none' });
+      const tab = screen.getByRole('button', { name: 'Tab 1' });
+      expect(tab).toHaveStyle({ background: 'none' });
+      expect(tab.style.borderBottom).toBeTruthy();
     });
 
     it('renders with cursor pointer', () => {

@@ -57,7 +57,7 @@ const CreatePurchaseOrderDialog: React.FC<CreatePurchaseOrderDialogProps> = ({ o
         expectedDeliveryDate: expectedDeliveryDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         createdBy: currentUser?.id || 'unknown',
         notes,
-      } as any).unwrap();
+      }).unwrap();
 
       setSupplierId('');
       setExpectedDeliveryDate('');

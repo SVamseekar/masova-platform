@@ -6,12 +6,12 @@ import { formatMoney } from '../../utils/currency';
 import { useGetStaffLeaderboardQuery } from '../../store/api/analyticsApi';
 import { createCard } from '../../styles/neumorphic-utils';
 import { colors, spacing, typography, shadows, borderRadius } from '../../styles/design-tokens';
-import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 import AppHeader from '../../components/common/AppHeader';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
-import { usePageStore } from '../../contexts/PageStoreContext';
+import { usePageStore } from '../../hooks/usePageStore';
 
+// eslint-disable-next-line react-refresh/only-export-components -- page component with HOC export
 const StaffLeaderboardPage: React.FC = () => {
   const { handleBack } = useSmartBackNavigation();
   const [period, setPeriod] = useState('TODAY');
@@ -282,4 +282,5 @@ const StaffLeaderboardPage: React.FC = () => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- HOC default export
 export default withPageStoreContext(StaffLeaderboardPage, 'staff-leaderboard');

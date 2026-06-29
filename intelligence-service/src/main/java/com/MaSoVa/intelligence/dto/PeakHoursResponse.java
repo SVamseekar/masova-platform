@@ -1,14 +1,14 @@
 package com.MaSoVa.intelligence.dto;
+
 import java.io.Serializable;
-
-
+import java.util.ArrayList;
 import java.math.BigDecimal;
 import java.util.List;
 
 public class PeakHoursResponse implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private List<HourData> hourlyData;
+    private ArrayList<HourData> hourlyData = new ArrayList<>();
     private int peakHour; // Hour of day (0-23)
     private int slowestHour;
     private BigDecimal peakHourSales;
@@ -18,7 +18,7 @@ public class PeakHoursResponse implements Serializable {
     }
 
     public PeakHoursResponse(List<HourData> hourlyData, int peakHour, int slowestHour, BigDecimal peakHourSales, int peakHourOrders) {
-        this.hourlyData = hourlyData;
+        this.hourlyData = hourlyData != null ? new ArrayList<>((hourlyData)) : new ArrayList<>();
         this.peakHour = peakHour;
         this.slowestHour = slowestHour;
         this.peakHourSales = peakHourSales;
@@ -30,7 +30,7 @@ public class PeakHoursResponse implements Serializable {
     }
 
     public void setHourlyData(List<HourData> hourlyData) {
-        this.hourlyData = hourlyData;
+        this.hourlyData = hourlyData != null ? new ArrayList<>((hourlyData)) : new ArrayList<>();
     }
 
     public int getPeakHour() {
@@ -70,14 +70,14 @@ public class PeakHoursResponse implements Serializable {
     }
 
     public static class Builder {
-        private List<HourData> hourlyData;
+        private ArrayList<HourData> hourlyData = new ArrayList<>();
         private int peakHour;
         private int slowestHour;
         private BigDecimal peakHourSales;
         private int peakHourOrders;
 
         public Builder hourlyData(List<HourData> hourlyData) {
-            this.hourlyData = hourlyData;
+            this.hourlyData = hourlyData != null ? new ArrayList<>((hourlyData)) : new ArrayList<>();
             return this;
         }
 

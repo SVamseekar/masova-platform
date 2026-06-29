@@ -1,11 +1,10 @@
 // src/apps/POSSystem/components/MenuPanel.tsx
 import React, { useState, useEffect } from 'react';
-import { useGetAvailableMenuQuery, Cuisine, MenuCategory, DietaryType } from '../../../store/api/menuApi';
+import { useGetAvailableMenuQuery, Cuisine, MenuCategory, DietaryType, type MenuItem } from '../../../store/api/menuApi';
 import { useAppSelector } from '../../../store/hooks';
 import { selectSelectedStoreId, selectCartCurrency, selectCartLocale } from '../../../store/slices/cartSlice';
 import { formatMoney } from '../../../utils/currency';
 import Card from '../../../components/ui/neumorphic/Card';
-import Badge from '../../../components/ui/neumorphic/Badge';
 import { colors, shadows, spacing, typography } from '../../../styles/design-tokens';
 import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
 import SearchIcon from '@mui/icons-material/Search';
@@ -13,7 +12,7 @@ import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import BarChartIcon from '@mui/icons-material/BarChart';
 
 interface MenuPanelProps {
-  onAddItem: (item: any, quantity?: number) => void;
+  onAddItem: (item: MenuItem, quantity?: number) => void;
 }
 
 const MenuPanel: React.FC<MenuPanelProps> = ({ onAddItem }) => {
@@ -101,7 +100,7 @@ const MenuPanel: React.FC<MenuPanelProps> = ({ onAddItem }) => {
   const availableCategories = getCategoriesForCuisine(selectedCuisine);
 
   // Filter menu items (same logic as customer page)
-  const filteredItems = menuItems.filter((item: any) => {
+  const filteredItems = menuItems.filter((item: MenuItem) => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCuisine = item.cuisine === selectedCuisine;
     const matchesCategory = selectedCategory === null || item.category === selectedCategory;
@@ -113,7 +112,7 @@ const MenuPanel: React.FC<MenuPanelProps> = ({ onAddItem }) => {
 
   // Quick add popular items
   const popularItems = menuItems
-    .filter((item: any) => item.isRecommended && item.isAvailable && item.cuisine === selectedCuisine)
+    .filter((item: MenuItem) => item.isRecommended && item.isAvailable && item.cuisine === selectedCuisine)
     .slice(0, 4);
 
   return (
@@ -410,7 +409,7 @@ const MenuPanel: React.FC<MenuPanelProps> = ({ onAddItem }) => {
             Popular Items
           </p>
           <div style={{ display: 'flex', gap: spacing[2], flexWrap: 'wrap' }}>
-            {popularItems.map((item: any) => (
+            {popularItems.map((item: MenuItem) => (
               <button
                 key={item.id}
                 onClick={() => onAddItem(item)}
@@ -506,7 +505,7 @@ const MenuPanel: React.FC<MenuPanelProps> = ({ onAddItem }) => {
           gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
           gap: spacing[2]
         }}>
-          {filteredItems.map((item: any) => (
+          {filteredItems.map((item: MenuItem) => (
             <Card
               key={item.id}
               elevation="sm"

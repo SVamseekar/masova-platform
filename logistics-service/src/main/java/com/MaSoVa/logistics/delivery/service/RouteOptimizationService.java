@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -25,8 +26,11 @@ public class RouteOptimizationService {
 
     private static final Logger log = LoggerFactory.getLogger(RouteOptimizationService.class);
 
-    @Autowired(required = false)
-    private GeoApiContext geoApiContext;
+    private final GeoApiContext geoApiContext;
+
+    public RouteOptimizationService(@Autowired(required = false) @Nullable GeoApiContext geoApiContext) {
+        this.geoApiContext = geoApiContext;
+    }
 
     /**
      * Get optimized route from origin to destination
@@ -86,7 +90,6 @@ public class RouteOptimizationService {
     /**
      * Parse Google Maps steps into our format
      */
-    @SuppressWarnings("deprecation")
     private List<RouteOptimizationResponse.Step> parseSteps(DirectionsStep[] steps) {
         List<RouteOptimizationResponse.Step> parsedSteps = new ArrayList<>();
 
@@ -95,7 +98,7 @@ public class RouteOptimizationService {
                     .instruction(step.htmlInstructions.replaceAll("<[^>]*>", "")) // Strip HTML tags
                     .distanceMeters(BigDecimal.valueOf(step.distance.inMeters))
                     .durationSeconds((int) step.duration.inSeconds)
-                    .maneuver(step.maneuver != null ? step.maneuver : "")
+                    .maneuver("")
                     .build());
         }
 

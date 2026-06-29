@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderAsCustomer, screen } from '@/test/utils/testUtils';
-import { mockOrderList, mockCustomerUser } from '@/test/fixtures';
+import { mockOrderList } from '@/test/fixtures';
 import OrderTrackingPage from './OrderTrackingPage';
 
 // Mock the APIs
@@ -11,7 +11,7 @@ vi.mock('@/store/api/customerApi', async () => {
   const actual = await vi.importActual('@/store/api/customerApi');
   return {
     ...actual,
-    useGetCustomerByUserIdQuery: (...args: any[]) => mockUseGetCustomerByUserIdQuery(...args),
+    useGetCustomerByUserIdQuery: (...args: unknown[]) => mockUseGetCustomerByUserIdQuery(...args),
   };
 });
 
@@ -19,7 +19,7 @@ vi.mock('@/store/api/orderApi', async () => {
   const actual = await vi.importActual('@/store/api/orderApi');
   return {
     ...actual,
-    useGetCustomerOrdersQuery: (...args: any[]) => mockUseGetCustomerOrdersQuery(...args),
+    useGetCustomerOrdersQuery: (...args: unknown[]) => mockUseGetCustomerOrdersQuery(...args),
   };
 });
 
@@ -93,7 +93,7 @@ describe('OrderTrackingPage', () => {
 
     renderAsCustomer(<OrderTrackingPage />);
     expect(screen.getByText('Welcome!')).toBeInTheDocument();
-    expect(screen.getByText('Please complete your first order to see your order history here.')).toBeInTheDocument();
+    expect(screen.getByText('Place your first order to see your order history here.')).toBeInTheDocument();
   });
 
   it('shows Browse Menu button when no customer profile', () => {
@@ -110,7 +110,7 @@ describe('OrderTrackingPage', () => {
     });
 
     renderAsCustomer(<OrderTrackingPage />);
-    expect(screen.getByText('Browse Menu')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Browse Menu/i })).toBeInTheDocument();
   });
 
   it('shows empty orders state when customer exists but has no orders', () => {

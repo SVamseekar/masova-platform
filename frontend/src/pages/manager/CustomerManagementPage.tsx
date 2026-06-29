@@ -6,7 +6,6 @@ import { formatMoney } from '../../utils/currency';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import {
   useGetAllCustomersQuery,
-  useSearchCustomersQuery,
   useDeactivateCustomerMutation,
   useActivateCustomerMutation,
   useAddNoteMutation,
@@ -14,7 +13,7 @@ import {
   Customer,
   AddCustomerNoteRequest,
 } from '../../store/api/customerApi';
-import { Card, Button } from '../../components/ui/neumorphic';
+import { Button } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
 import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
@@ -163,7 +162,7 @@ const CustomerManagementPage: React.FC = () => {
       { label: 'Total Orders', field: 'orderStats.totalOrders' },
       { label: 'Total Spent', field: 'orderStats.totalSpent', format: (v) => fmt(Math.round(Number(v))) },
       { label: 'Status', field: 'active', format: (v) => v ? 'Active' : 'Inactive' },
-      { label: 'Join Date', field: 'createdAt', format: (v) => new Date(v).toLocaleDateString() },
+      { label: 'Join Date', field: 'createdAt', format: (v) => new Date(String(v)).toLocaleDateString() },
     ]);
   };
 
@@ -652,7 +651,7 @@ const CustomerManagementPage: React.FC = () => {
               </label>
               <select
                 value={noteCategory}
-                onChange={(e) => setNoteCategory(e.target.value as any)}
+                onChange={(e) => setNoteCategory(e.target.value as 'GENERAL' | 'COMPLAINT' | 'PREFERENCE' | 'OTHER')}
                 style={{ ...searchInputStyles, width: '100%' }}
               >
                 <option value="GENERAL">General</option>

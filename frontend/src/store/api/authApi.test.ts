@@ -11,8 +11,11 @@ import {
   useLogoutMutation,
   useGetProfileQuery,
 } from './authApi';
+import { TEST_API_BASE } from '../../test/testApiBase';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API = TEST_API_BASE;
+
+
 
 describe('authApi', () => {
   describe('endpoint definitions', () => {
@@ -79,7 +82,7 @@ describe('authApi', () => {
 
     it('should handle login failure', async () => {
       server.use(
-        http.post(`${API}/users/login`, () =>
+        http.post(`${API}/auth/login`, () =>
           HttpResponse.json({ message: 'Invalid credentials' }, { status: 401 }),
         ),
       );
@@ -122,7 +125,7 @@ describe('authApi', () => {
 
     it('should handle registration failure', async () => {
       server.use(
-        http.post(`${API}/users/register`, () =>
+        http.post(`${API}/auth/register`, () =>
           HttpResponse.json({ message: 'Email already exists' }, { status: 409 }),
         ),
       );
@@ -182,8 +185,8 @@ describe('authApi', () => {
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
       expect(result.current.data).toBeDefined();
-      expect(result.current.data?.name).toBe('Test User');
-      expect(result.current.data?.email).toBe('test@example.com');
+      expect(result.current.data?.name).toBe('Test Customer');
+      expect(result.current.data?.email).toBe('customer@example.com');
     });
 
     it('should handle profile fetch error', async () => {

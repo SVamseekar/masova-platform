@@ -13,7 +13,7 @@ vi.mock('../config/api.config', () => ({
 
 // Mock authSlice
 vi.mock('../store/slices/authSlice', () => ({
-  loginSuccess: (payload: any) => ({ type: 'auth/loginSuccess', payload }),
+  loginSuccess: (payload: unknown) => ({ type: 'auth/loginSuccess', payload }),
 }));
 
 import { useKioskMode } from './useKioskMode';
@@ -21,12 +21,12 @@ import { useKioskMode } from './useKioskMode';
 function createMockStore() {
   return configureStore({
     reducer: {
-      auth: (state = { isAuthenticated: false }, _action: any) => state,
+      auth: (state = { isAuthenticated: false }, _action: unknown) => state,
     },
   });
 }
 
-function createWrapper(store: any) {
+function createWrapper(store: ReturnType<typeof createMockStore>) {
   return function Wrapper({ children }: { children: React.ReactNode }) {
     return <Provider store={store}>{children}</Provider>;
   };

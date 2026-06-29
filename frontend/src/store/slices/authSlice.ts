@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { User } from '../../types/user';
 import { authApi } from '../api/authApi';
-import { clearAllStoreContexts } from '../../contexts/PageStoreContext';
+import { clearAllStoreContexts } from '../../contexts/pageStoreUtils';
 
 interface AuthState {
   isAuthenticated: boolean;

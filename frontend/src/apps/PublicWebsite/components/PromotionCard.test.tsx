@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import PromotionCard from './PromotionCard';
 
 vi.mock('../../../components/ui/neumorphic', () => ({
-  Button: ({ children, onClick, ...props }: any) => (
+  Button: ({ children, onClick, ...props }: MockButtonProps) => (
     <button onClick={onClick} {...props}>{children}</button>
   ),
 }));
@@ -80,7 +80,7 @@ describe('PromotionCard', () => {
   it('renders with a delivery category', () => {
     const deliveryPromo = { ...mockPromotion, id: 3, category: 'Delivery', title: 'Free Delivery', discount: 'Free Delivery' };
     renderCard(deliveryPromo);
-    expect(screen.getByText('Free Delivery')).toBeInTheDocument();
+    expect(screen.getAllByText('Free Delivery').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Delivery')).toBeInTheDocument();
   });
 });

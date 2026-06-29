@@ -1,5 +1,6 @@
 package com.MaSoVa.gateway.filter;
 
+import com.MaSoVa.shared.util.StoreAccessValidator;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -129,10 +130,14 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
                     requestBuilder.header("X-User-Store-Id", storeId);
                 }
 
-                // Also forward X-Selected-Store-Id if present in the original request
-                // This allows managers/customers to select a different store to view
+                // Validate X-Selected-Store-Id against JWT-attested store membership (Task 5)
                 String selectedStoreId = request.getHeaders().getFirst("X-Selected-Store-Id");
                 if (selectedStoreId != null && !selectedStoreId.trim().isEmpty()) {
+                    if (!StoreAccessValidator.isSelectedStoreAllowed(userType, storeId, selectedStoreId)) {
+                        logger.warn("Store access denied at gateway for user {} ({}): jwtStore={}, requestedStore={}",
+                                userId, userType, storeId, selectedStoreId);
+                        return onError(exchange, "Access denied to requested store", HttpStatus.FORBIDDEN);
+                    }
                     requestBuilder.header("X-Selected-Store-Id", selectedStoreId);
                 }
 

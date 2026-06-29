@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { colors, shadows, spacing, typography } from '../../../styles/design-tokens';
 import Button from '../../../components/ui/neumorphic/Button';
-import { useGetActiveStoreSessionsQuery, useClockOutEmployeeMutation } from '../../../store/api/sessionApi';
+import { useGetActiveStoreSessionsQuery, useClockOutEmployeeMutation, type WorkingSession } from '../../../store/api/sessionApi';
+import { getRtkErrorMessage } from '../../shared/rtkError';
 
 interface ClockOutModalProps {
   isOpen: boolean;
@@ -40,7 +41,7 @@ const ClockOutModal: React.FC<ClockOutModalProps> = ({ isOpen, onClose, storeId 
       return;
     }
 
-    const session = activeSessions.find((s: any) => s.employeeId === selectedEmployee);
+    const session = activeSessions.find((s: WorkingSession) => s.employeeId === selectedEmployee);
     if (!session) {
       setError('Employee session not found');
       return;
@@ -60,8 +61,8 @@ const ClockOutModal: React.FC<ClockOutModalProps> = ({ isOpen, onClose, storeId 
         refetch();
         onClose();
       }, 2000);
-    } catch (err: any) {
-      setError(err?.data?.error || 'Failed to clock out employee');
+    } catch (err: unknown) {
+      setError(getRtkErrorMessage(err, 'Failed to clock out employee'));
     }
   };
 
@@ -94,7 +95,7 @@ const ClockOutModal: React.FC<ClockOutModalProps> = ({ isOpen, onClose, storeId 
               </div>
             ) : (
               <div style={styles.employeeList}>
-                {activeSessions.map((session: any) => (
+                {activeSessions.map((session: WorkingSession) => (
                   <button
                     key={session.employeeId}
                     onClick={() => setSelectedEmployee(session.employeeId)}
@@ -105,11 +106,11 @@ const ClockOutModal: React.FC<ClockOutModalProps> = ({ isOpen, onClose, storeId 
                   >
                     <div style={styles.employeeInfo}>
                       <div style={styles.avatar}>
-                        {(session.employeeName || session.name)?.charAt(0).toUpperCase() || 'E'}
+                        {session.employeeName?.charAt(0).toUpperCase() || 'E'}
                       </div>
                       <div style={styles.employeeDetails}>
                         <div style={styles.employeeName}>
-                          {session.employeeName || session.name || 'Employee'}
+                          {session.employeeName || 'Employee'}
                         </div>
                         <div style={styles.employeeRole}>
                           {session.role || 'Staff'}

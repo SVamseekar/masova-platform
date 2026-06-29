@@ -1,6 +1,6 @@
 // src/pages/pos/POSSystem.tsx
 import React from 'react';
-import { Container, Typography, Paper, Box } from '@mui/material';
+import { Container, Typography, Paper } from '@mui/material';
 import { PointOfSale as POSIcon } from '@mui/icons-material';
 
 const POSSystem: React.FC = () => {

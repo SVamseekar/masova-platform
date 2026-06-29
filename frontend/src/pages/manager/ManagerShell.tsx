@@ -2,11 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { selectCurrentUser, logout } from '../../store/slices/authSlice';
-import { usePageStore } from '../../contexts/PageStoreContext';
+import { usePageStore } from '../../hooks/usePageStore';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import { clearReturnUrl } from '../../utils/security';
 import { t, Icons } from './manager-tokens';
-import { useGetActiveStoresQuery } from '../../store/api/storeApi';
+import { useGetActiveStoresQuery, type Store } from '../../store/api/storeApi';
 import { setSelectedStore, setStoreCurrency, selectSelectedStoreId, selectSelectedStoreName } from '../../store/slices/cartSlice';
 
 const DashboardSection = React.lazy(() => import('./DashboardSection'));
@@ -40,12 +40,13 @@ const glass = (opacity = 0.6, blur = 20): React.CSSProperties => ({
   WebkitBackdropFilter: `blur(${blur}px)`,
 });
 
+// eslint-disable-next-line react-refresh/only-export-components -- page component with HOC export
 function ManagerShell() {
   const [searchParams, setSearchParams] = useSearchParams();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const currentUser = useAppSelector(selectCurrentUser);
-  const { selectedStoreId } = usePageStore();
+  const { selectedStoreId, setStore: setPageStore } = usePageStore();
   const storeId = selectedStoreId || currentUser?.storeId || '';
 
   const activeSection = searchParams.get('section') || 'dashboard';
@@ -63,6 +64,19 @@ function ManagerShell() {
   const reduxStoreId = useAppSelector(selectSelectedStoreId);
   const reduxStoreName = useAppSelector(selectSelectedStoreName);
   const { data: stores = [], isLoading: storesLoading } = useGetActiveStoresQuery();
+
+  // Auto-select the manager's assigned store on first load
+  useEffect(() => {
+    if (storesLoading || stores.length === 0 || selectedStoreId) return;
+    const userStoreId = currentUser?.storeId;
+    if (!userStoreId) return;
+    const match = stores.find((s: Store) => s.storeCode === userStoreId || s.id === userStoreId);
+    if (match) {
+      dispatch(setSelectedStore({ storeId: match.storeCode, storeName: match.name }));
+      dispatch(setStoreCurrency({ currency: match.currency || 'INR', locale: match.locale || 'en-IN' }));
+      setPageStore(match.storeCode, match.name);
+    }
+  }, [stores, storesLoading, selectedStoreId, currentUser?.storeId, dispatch, setPageStore]);
 
   const setSection = (id: string) => {
     const params = new URLSearchParams(searchParams);
@@ -98,7 +112,7 @@ function ManagerShell() {
 
   const handleStoreSelect = (code: string, name: string) => {
     dispatch(setSelectedStore({ storeId: code, storeName: name }));
-    const store = stores.find((s: any) => s.storeCode === code);
+    const store = stores.find((s: Store) => s.storeCode === code);
     dispatch(setStoreCurrency({
       currency: store?.currency || 'INR',
       locale: store?.locale || 'en-IN',
@@ -409,4 +423,5 @@ function ManagerShell() {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- HOC default export
 export default withPageStoreContext(ManagerShell, 'manager-shell');

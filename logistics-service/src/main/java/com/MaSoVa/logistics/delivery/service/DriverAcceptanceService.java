@@ -44,7 +44,6 @@ public class DriverAcceptanceService {
 
     private final DeliveryTrackingRepository deliveryTrackingRepository;
     private final UserServiceClient userServiceClient;
-    @SuppressWarnings("unused")
     private final OrderServiceClient orderServiceClient;
     private final AutoDispatchService autoDispatchService;
     private final SimpMessagingTemplate messagingTemplate;
@@ -409,6 +408,12 @@ public class DriverAcceptanceService {
         tracking.setUpdatedAt(LocalDateTime.now());
 
         DeliveryTracking saved = deliveryTrackingRepository.save(tracking);
+
+        try {
+            orderServiceClient.updateOrderDeliveryStatus(tracking.getOrderId(), "OUT_FOR_DELIVERY");
+        } catch (Exception e) {
+            log.warn("Failed to sync OUT_FOR_DELIVERY status to order {}: {}", tracking.getOrderId(), e.getMessage());
+        }
 
         // Notify customer
         Map<String, Object> notification = Map.of(

@@ -161,8 +161,9 @@ services:
       - SPRING_PROFILES_ACTIVE=test
       - PAYMENT_MONGODB_URI=mongodb://mongodb:27017/masova_payment
       - REDIS_HOST=redis
-      - RAZORPAY_KEY_ID=${RAZORPAY_TEST_KEY_ID}
-      - RAZORPAY_KEY_SECRET=${RAZORPAY_TEST_KEY_SECRET}
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+      - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET}
       - JAVA_OPTS=-Xmx384m -Xms256m
     profiles: ["order", "full"]
 

@@ -13,10 +13,10 @@ import {
   type WorkSchedule,
 } from '../../store/api/userApi';
 import {
-  useGetActiveStoreSessionsQuery,
   useGetStoreSessionsQuery,
   useGetEmployeeSessionReportQuery,
   useGetEmployeeSessionStatusQuery,
+  type WorkingSession,
 } from '../../store/api/sessionApi';
 
 // Scheduling APIs
@@ -26,7 +26,6 @@ import {
   useCopyPreviousWeekScheduleMutation,
   useDeleteShiftMutation,
   type Shift,
-  type CreateShiftRequest,
 } from '../../store/api/shiftApi';
 
 // Leaderboard API
@@ -40,12 +39,14 @@ import {
   useActivateCustomerMutation,
   useAddNoteMutation,
   useAddAddressMutation,
-  useUpdateAddressMutation,
   useRemoveAddressMutation,
   useSetDefaultAddressMutation,
   Customer,
   type AddCustomerNoteRequest,
+  type CustomerAddress,
+  type CustomerNote,
 } from '../../store/api/customerApi';
+import { getApiErrorMessage } from '../utils/apiError';
 
 // Campaign APIs
 import {
@@ -127,7 +128,7 @@ const StaffTab = ({ storeId }: { storeId: string }) => {
   const { data: allSessions = [], isLoading: sessionsLoading, refetch: refetchSessions } = useGetStoreSessionsQuery(
     { date: selectedDate }, { skip: !storeId, pollingInterval: 30000 }
   );
-  const storeSessions = useMemo(() => allSessions.filter((s: any) => s.storeId === storeId), [allSessions, storeId]);
+  const storeSessions = useMemo(() => allSessions.filter((s) => s.storeId === storeId), [allSessions, storeId]);
 
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const { data: employeeReport } = useGetEmployeeSessionReportQuery(
@@ -148,7 +149,7 @@ const StaffTab = ({ storeId }: { storeId: string }) => {
 
   const filtered = useMemo(() => {
     if (!employees) return [];
-    return employees.filter((e: any) => {
+    return employees.filter((e) => {
       if (search && !e.name.toLowerCase().includes(search.toLowerCase()) && !e.email.toLowerCase().includes(search.toLowerCase())) return false;
       if (typeFilter && e.type !== typeFilter) return false;
       return true;
@@ -180,27 +181,27 @@ const StaffTab = ({ storeId }: { storeId: string }) => {
       if (result.generatedPIN) { setPinData({ pin: result.generatedPIN, employeeName: result.name, employeeType: result.type }); setPinModalOpen(true); }
       else { alert('Staff member created successfully!'); }
       setFormData({ name: '', email: '', phone: '', password: '', userType: 'STAFF', role: 'Server', street: '', city: '', state: '', pincode: '', landmark: '', maxHoursPerWeek: 40, vehicleType: '', licenseNumber: '' });
-    } catch (err: any) { alert(err?.data?.message || 'Failed to create staff'); }
+    } catch (err: unknown) { alert(getApiErrorMessage(err, 'Failed to create staff')); }
   };
 
   const handleToggle = async (id: string, isActive: boolean) => {
     try {
       if (isActive) await deactivateUser(id).unwrap(); else await activateUser(id).unwrap();
-    } catch (err: any) { alert(err?.data?.message || 'Failed to update status'); }
+    } catch (err: unknown) { alert(getApiErrorMessage(err, 'Failed to update status')); }
   };
 
   // Group sessions by date then employee
   const sessionsByDateAndEmployee = useMemo(() => {
-    const byDate = new Map<string, typeof storeSessions>();
-    storeSessions.forEach((s: any) => {
+    const byDate = new Map<string, WorkingSession[]>();
+    storeSessions.forEach((s) => {
       const d = s.loginTime ? new Date(s.loginTime).toLocaleDateString('en-GB') : 'Unknown';
       if (!byDate.has(d)) byDate.set(d, []);
       byDate.get(d)!.push(s);
     });
-    const result = new Map<string, Map<string, typeof storeSessions>>();
+    const result = new Map<string, Map<string, WorkingSession[]>>();
     byDate.forEach((sessions, date) => {
-      const empMap = new Map<string, typeof storeSessions>();
-      sessions.forEach((s: any) => {
+      const empMap = new Map<string, WorkingSession[]>();
+      sessions.forEach((s) => {
         const key = s.employeeId || s.employeeName || 'unknown';
         if (!empMap.has(key)) empMap.set(key, []);
         empMap.get(key)!.push(s);
@@ -210,8 +211,8 @@ const StaffTab = ({ storeId }: { storeId: string }) => {
     return result;
   }, [storeSessions]);
 
-  const activeCount = storeSessions.filter((s: any) => s.isActive).length;
-  const completedCount = storeSessions.filter((s: any) => !s.isActive).length;
+  const activeCount = storeSessions.filter((s) => s.isActive).length;
+  const completedCount = storeSessions.filter((s) => !s.isActive).length;
 
   return (
     <>
@@ -220,9 +221,9 @@ const StaffTab = ({ storeId }: { storeId: string }) => {
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 20 }}>
         <div style={miniStat}><p style={statLabel}>Total</p><p style={statValue()}>{filtered.length}</p></div>
-        <div style={miniStat}><p style={statLabel}>Active</p><p style={statValue(t.green)}>{filtered.filter((e: any) => e.isActive).length}</p></div>
-        <div style={miniStat}><p style={statLabel}>Staff</p><p style={statValue(t.blue)}>{filtered.filter((e: any) => e.type === 'STAFF').length}</p></div>
-        <div style={miniStat}><p style={statLabel}>Drivers</p><p style={statValue(t.orange)}>{filtered.filter((e: any) => e.type === 'DRIVER').length}</p></div>
+        <div style={miniStat}><p style={statLabel}>Active</p><p style={statValue(t.green)}>{filtered.filter((e) => e.isActive).length}</p></div>
+        <div style={miniStat}><p style={statLabel}>Staff</p><p style={statValue(t.blue)}>{filtered.filter((e) => e.type === 'STAFF').length}</p></div>
+        <div style={miniStat}><p style={statLabel}>Drivers</p><p style={statValue(t.orange)}>{filtered.filter((e) => e.type === 'DRIVER').length}</p></div>
       </div>
 
       {/* Filters + Add */}
@@ -244,7 +245,7 @@ const StaffTab = ({ storeId }: { storeId: string }) => {
           <tbody>
             {isLoading && <tr><td colSpan={7} style={{ ...tableCellStyle, textAlign: 'center' }}>Loading...</td></tr>}
             {!isLoading && filtered.length === 0 && <tr><td colSpan={7} style={{ ...tableCellStyle, textAlign: 'center' }}>No staff found</td></tr>}
-            {filtered.map((emp: any) => (
+            {filtered.map((emp) => (
               <tr key={emp.id}>
                 <td style={tableCellStyle}><span style={{ fontFamily: 'monospace', color: t.gray }}>{emp.id.slice(-4)}</span></td>
                 <td style={tableCellStyle}><a href={`/manager/staff/${emp.id}/profile`} style={{ color: t.orange, fontWeight: 600, textDecoration: 'none' }}>{emp.name}</a></td>
@@ -304,12 +305,12 @@ const StaffTab = ({ storeId }: { storeId: string }) => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, paddingBottom: 8, borderBottom: `1px solid ${t.grayLight}` }}>
                   <div><h4 style={{ margin: 0, fontSize: 14, color: t.black }}>{date}</h4><p style={{ margin: '2px 0 0', fontSize: 12, color: t.gray }}>{empMap.size} employees</p></div>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <span style={statusBadge(t.green)}>{Array.from(empMap.values()).flat().filter((s: any) => s.isActive).length} Active</span>
-                    <span style={statusBadge(t.gray)}>{Array.from(empMap.values()).flat().filter((s: any) => !s.isActive).length} Done</span>
+                    <span style={statusBadge(t.green)}>{Array.from(empMap.values()).flat().filter((s) => s.isActive).length} Active</span>
+                    <span style={statusBadge(t.gray)}>{Array.from(empMap.values()).flat().filter((s) => !s.isActive).length} Done</span>
                   </div>
                 </div>
                 {Array.from(empMap.entries()).map(([key, sessions]) => (
-                  <ExpandableEmployeeRow key={`${date}-${key}`} employeeName={(sessions[0] as any).employeeName || 'Unknown'} employeeId={(sessions[0] as any).employeeId || key} sessions={sessions} currentTime={currentTime} />
+                  <ExpandableEmployeeRow key={`${date}-${key}`} employeeName={sessions[0]?.employeeName || 'Unknown'} employeeId={sessions[0]?.employeeId || key} sessions={sessions} currentTime={currentTime} />
                 ))}
               </div>
             ))}
@@ -327,7 +328,7 @@ const StaffTab = ({ storeId }: { storeId: string }) => {
             <div style={formGroup}><label style={label}>Phone *</label><input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} style={input} maxLength={10} /></div>
             <div style={formGroup}><label style={label}>Password *</label><input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} style={input} /></div>
             <div style={formGroup}><label style={label}>Type *</label>
-              <select value={formData.userType} onChange={e => setFormData({...formData, userType: e.target.value as any})} style={selectStyle}>
+              <select value={formData.userType} onChange={e => setFormData({...formData, userType: e.target.value as 'STAFF' | 'DRIVER' | 'ASSISTANT_MANAGER'})} style={selectStyle}>
                 <option value="STAFF">Staff</option><option value="DRIVER">Driver</option><option value="ASSISTANT_MANAGER">Asst Manager</option>
               </select>
             </div>
@@ -381,7 +382,7 @@ const SchedulingTab = ({ storeId }: { storeId: string }) => {
   const [copyPrev, { isLoading: copying }] = useCopyPreviousWeekScheduleMutation();
   const [deleteShift] = useDeleteShiftMutation();
 
-  const staff = useMemo(() => employees.filter((e: any) => ['STAFF', 'DRIVER', 'ASSISTANT_MANAGER'].includes(e.type)), [employees]);
+  const staff = useMemo(() => employees.filter((e) => ['STAFF', 'DRIVER', 'ASSISTANT_MANAGER'].includes(e.type)), [employees]);
   const weekDates = useMemo(() => Array.from({ length: 7 }, (_, i) => { const d = new Date(weekStart); d.setDate(d.getDate() + i); return d; }), [weekStart]);
 
   const shiftGrid = useMemo(() => {
@@ -400,12 +401,12 @@ const SchedulingTab = ({ storeId }: { storeId: string }) => {
     try {
       const sd = new Date(formData.date); const [sh, sm] = formData.startTime.split(':'); const [eh, em] = formData.endTime.split(':');
       const start = new Date(sd); start.setHours(+sh, +sm, 0); const end = new Date(sd); end.setHours(+eh, +em, 0);
-      await bulkCreate([{ storeId, employeeId: formData.employeeId, type: formData.type as any, scheduledStart: start.toISOString(), scheduledEnd: end.toISOString(), notes: formData.notes || undefined, isMandatory: formData.isMandatory }]).unwrap();
+      await bulkCreate([{ storeId, employeeId: formData.employeeId, type: formData.type as Shift['type'], scheduledStart: start.toISOString(), scheduledEnd: end.toISOString(), notes: formData.notes || undefined, isMandatory: formData.isMandatory }]).unwrap();
       setCreateOpen(false); alert('Shift created!');
-    } catch (err: any) { alert(err?.data?.message || 'Failed'); }
+    } catch (err: unknown) { alert(getApiErrorMessage(err, 'Failed')); }
   };
 
-  const handleCopy = async () => { if (!confirm('Copy previous week?')) return; try { await copyPrev({ targetWeekStart: fmtDate(weekStart) }).unwrap(); alert('Copied!'); } catch (err: any) { alert('Failed'); } };
+  const handleCopy = async () => { if (!confirm('Copy previous week?')) return; try { await copyPrev({ targetWeekStart: fmtDate(weekStart) }).unwrap(); alert('Copied!'); } catch { alert('Failed'); } };
   const handleDelete = async (id: string) => { if (!confirm('Cancel this shift?')) return; try { await deleteShift(id).unwrap(); } catch { alert('Failed'); } };
 
   const shiftStatusColor = (s: string) => s === 'SCHEDULED' ? t.blue : s === 'CONFIRMED' ? t.green : s === 'IN_PROGRESS' ? t.yellow : s === 'MISSED' ? t.red : t.gray;
@@ -437,7 +438,7 @@ const SchedulingTab = ({ storeId }: { storeId: string }) => {
               {weekDates.map(d => <div key={d.toISOString()} style={{ textAlign: 'center', padding: 8 }}><div style={{ fontSize: 12, fontWeight: 600, color: t.gray }}>{d.toLocaleDateString('en-US', { weekday: 'short' })}</div><div style={{ fontSize: 16, fontWeight: 700, color: t.black }}>{d.getDate()}</div></div>)}
             </div>
             {/* Rows */}
-            {staff.map((emp: any) => (
+            {staff.map((emp) => (
               <div key={emp.id} style={{ display: 'grid', gridTemplateColumns: '160px repeat(7, 1fr)', gap: 8, marginBottom: 8 }}>
                 <div style={{ padding: 8, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: t.black }}>{emp.name}</div>
@@ -471,7 +472,7 @@ const SchedulingTab = ({ storeId }: { storeId: string }) => {
             <h3 style={{ ...sectionTitleStyle, marginBottom: 20 }}>Create New Shift</h3>
             <div style={formGroup}><label style={label}>Employee *</label>
               <select value={formData.employeeId} onChange={e => setFormData({...formData, employeeId: e.target.value})} style={selectStyle}>
-                <option value="">Select</option>{staff.map((e: any) => <option key={e.id} value={e.id}>{e.name} ({e.role || e.type})</option>)}
+                <option value="">Select</option>{staff.map((e) => <option key={e.id} value={e.id}>{e.name} ({e.role || e.type})</option>)}
               </select>
             </div>
             <div style={formGroup}><label style={label}>Type</label>
@@ -525,7 +526,7 @@ const LeaderboardTab = ({ storeId }: { storeId: string }) => {
           </tr></thead>
           <tbody>
             {data.rankings.length === 0 && <tr><td colSpan={7} style={{ ...tableCellStyle, textAlign: 'center' }}>No data for this period</td></tr>}
-            {data.rankings.map((s: any) => (
+            {data.rankings.map((s) => (
               <tr key={s.staffId} style={{ background: s.rank <= 3 ? `${t.orange}08` : 'transparent' }}>
                 <td style={tableCellStyle}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -565,15 +566,15 @@ const CustomersTab = ({ storeId }: { storeId: string }) => {
   const [deactivateCustomer] = useDeactivateCustomerMutation();
   const [activateCustomer] = useActivateCustomerMutation();
   const [addNote] = useAddNoteMutation();
-  const [addAddress] = useAddAddressMutation();
-  const [removeAddress] = useRemoveAddressMutation();
-  const [setDefaultAddress] = useSetDefaultAddressMutation();
+  const [_addAddress] = useAddAddressMutation();
+  const [_removeAddress] = useRemoveAddressMutation();
+  const [_setDefaultAddress] = useSetDefaultAddressMutation();
 
   const filtered = useMemo(() => {
     if (!allCustomers) return [];
     if (!search) return allCustomers;
     const s = search.toLowerCase();
-    return allCustomers.filter((c: any) => c.name.toLowerCase().includes(s) || c.email.toLowerCase().includes(s) || c.phone?.includes(s));
+    return allCustomers.filter((c) => c.name.toLowerCase().includes(s) || c.email.toLowerCase().includes(s) || c.phone?.includes(s));
   }, [allCustomers, search]);
 
   const handleToggle = async (c: Customer) => {
@@ -604,7 +605,7 @@ const CustomersTab = ({ storeId }: { storeId: string }) => {
           <tbody>
             {isLoading && <tr><td colSpan={8} style={{ ...tableCellStyle, textAlign: 'center' }}>Loading...</td></tr>}
             {!isLoading && filtered.length === 0 && <tr><td colSpan={8} style={{ ...tableCellStyle, textAlign: 'center' }}>No customers found</td></tr>}
-            {filtered.map((c: any) => (
+            {filtered.map((c) => (
               <tr key={c.id}>
                 <td style={tableCellStyle}>{c.name}</td>
                 <td style={tableCellStyle}>{c.email}</td>
@@ -662,7 +663,7 @@ const CustomersTab = ({ storeId }: { storeId: string }) => {
 
             {detailTab === 2 && (
               <div>
-                {selectedCustomer.addresses?.length === 0 ? <p style={{ color: t.gray }}>No addresses</p> : selectedCustomer.addresses?.map((a: any) => (
+                {selectedCustomer.addresses?.length === 0 ? <p style={{ color: t.gray }}>No addresses</p> : selectedCustomer.addresses?.map((a: CustomerAddress) => (
                   <div key={a.id} style={{ ...cardStyle, padding: 12, marginBottom: 8 }}>
                     <div style={{ fontWeight: 600 }}>{a.label} {a.isDefault && <span style={statusBadge(t.orange)}>Default</span>}</div>
                     <div style={{ fontSize: 13, color: t.gray }}>{a.addressLine1}, {a.city}, {a.state} - {a.postalCode}</div>
@@ -688,7 +689,7 @@ const CustomersTab = ({ storeId }: { storeId: string }) => {
             {detailTab === 4 && (
               <div>
                 <button onClick={() => setNoteOpen(true)} style={{ ...btn(true), marginBottom: 12 }}>Add Note</button>
-                {selectedCustomer.notes?.length === 0 ? <p style={{ color: t.gray }}>No notes</p> : selectedCustomer.notes?.map((n: any) => (
+                {selectedCustomer.notes?.length === 0 ? <p style={{ color: t.gray }}>No notes</p> : selectedCustomer.notes?.map((n: CustomerNote) => (
                   <div key={n.id} style={{ ...cardStyle, padding: 12, marginBottom: 8 }}>
                     <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}><span style={statusBadge(t.blue)}>{n.category}</span><span style={{ fontSize: 11, color: t.gray }}>by {n.addedBy} on {new Date(n.createdAt).toLocaleDateString()}</span></div>
                     <div style={{ fontSize: 13 }}>{n.note}</div>
@@ -710,7 +711,7 @@ const CustomersTab = ({ storeId }: { storeId: string }) => {
           <div style={{ ...modalBox, maxWidth: 460 }} onClick={e => e.stopPropagation()}>
             <h3 style={{ ...sectionTitleStyle, marginBottom: 16 }}>Add Note</h3>
             <div style={formGroup}><label style={label}>Category</label>
-              <select value={noteCategory} onChange={e => setNoteCategory(e.target.value as any)} style={selectStyle}>
+              <select value={noteCategory} onChange={e => setNoteCategory(e.target.value as 'GENERAL' | 'COMPLAINT' | 'PREFERENCE' | 'OTHER')} style={selectStyle}>
                 <option value="GENERAL">General</option><option value="COMPLAINT">Complaint</option><option value="PREFERENCE">Preference</option><option value="OTHER">Other</option>
               </select>
             </div>
@@ -731,7 +732,7 @@ const CustomersTab = ({ storeId }: { storeId: string }) => {
 // =============================================
 const CampaignsTab = ({ storeId }: { storeId: string }) => {
   const [subTab, setSubTab] = useState(0); // 0=All, 1=Draft, 2=Scheduled, 3=Sent
-  const [page, setPage] = useState(0);
+  const [page, _setPage] = useState(0);
   const [builderOpen, setBuilderOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [viewOpen, setViewOpen] = useState(false);

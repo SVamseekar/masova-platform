@@ -12,9 +12,6 @@ import {
   Chip,
   ToggleButton,
   ToggleButtonGroup,
-  Grid,
-  Card,
-  CardContent,
 } from '@mui/material';
 import { useState } from 'react';
 import { useAppSelector } from '../../store/hooks';
@@ -22,7 +19,7 @@ import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
 import { formatMoney } from '../../utils/currency';
 import { useGetTopProductsQuery } from '../../store/api/analyticsApi';
-import { usePageStore } from '../../contexts/PageStoreContext';
+import { usePageStore } from '../../hooks/usePageStore';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
@@ -34,6 +31,7 @@ import ManagerMetricTemplate, { KPICardData } from './ManagerMetricTemplate';
 import AppHeader from '../../components/common/AppHeader';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 
+// eslint-disable-next-line react-refresh/only-export-components -- page component with HOC export
 function ProductAnalyticsPage() {
   const { handleBack } = useSmartBackNavigation();
   const [period, setPeriod] = useState('TODAY');
@@ -245,4 +243,5 @@ function ProductAnalyticsPage() {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- HOC default export
 export default withPageStoreContext(ProductAnalyticsPage, 'product-analytics');

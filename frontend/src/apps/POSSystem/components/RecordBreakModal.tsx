@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { colors, shadows, spacing, typography, borderRadius } from '../../../styles/design-tokens';
 import Button from '../../../components/ui/neumorphic/Button';
 import { useRecordBreakMutation } from '../../../store/api/sessionApi';
+import { getRtkErrorMessage } from '../../shared/rtkError';
 
 interface RecordBreakModalProps {
   employeeId: string;
@@ -39,8 +40,8 @@ const RecordBreakModal: React.FC<RecordBreakModalProps> = ({
       await recordBreak({ employeeId, breakMinutes: finalMinutes }).unwrap();
       onSuccess();
       onClose();
-    } catch (err: any) {
-      alert(err?.data?.error || err?.data?.message || 'Failed to record break');
+    } catch (err: unknown) {
+      alert(getRtkErrorMessage(err, 'Failed to record break'));
     }
   };
 

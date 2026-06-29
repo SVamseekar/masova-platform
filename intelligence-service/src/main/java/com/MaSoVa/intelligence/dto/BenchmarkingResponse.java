@@ -1,7 +1,8 @@
 package com.MaSoVa.intelligence.dto;
+
 import java.io.Serializable;
-
-
+import java.util.HashMap;
+import java.util.ArrayList;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -10,10 +11,10 @@ public class BenchmarkingResponse implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String period; // "WEEK", "MONTH", "QUARTER"
-    private List<StoreComparison> storeComparisons;
+    private ArrayList<StoreComparison> storeComparisons = new ArrayList<>();
     private IndustryBenchmarks industryBenchmarks;
-    private List<KPIComparison> kpiComparisons;
-    private List<PerformanceInsight> insights;
+    private ArrayList<KPIComparison> kpiComparisons = new ArrayList<>();
+    private ArrayList<PerformanceInsight> insights = new ArrayList<>();
 
     public BenchmarkingResponse() {}
 
@@ -30,7 +31,7 @@ public class BenchmarkingResponse implements Serializable {
     }
 
     public void setStoreComparisons(List<StoreComparison> storeComparisons) {
-        this.storeComparisons = storeComparisons;
+        this.storeComparisons = storeComparisons != null ? new ArrayList<>((storeComparisons)) : new ArrayList<>();
     }
 
     public IndustryBenchmarks getIndustryBenchmarks() {
@@ -46,7 +47,7 @@ public class BenchmarkingResponse implements Serializable {
     }
 
     public void setKpiComparisons(List<KPIComparison> kpiComparisons) {
-        this.kpiComparisons = kpiComparisons;
+        this.kpiComparisons = kpiComparisons != null ? new ArrayList<>((kpiComparisons)) : new ArrayList<>();
     }
 
     public List<PerformanceInsight> getInsights() {
@@ -54,7 +55,7 @@ public class BenchmarkingResponse implements Serializable {
     }
 
     public void setInsights(List<PerformanceInsight> insights) {
-        this.insights = insights;
+        this.insights = insights != null ? new ArrayList<>((insights)) : new ArrayList<>();
     }
 
     public static Builder builder() {
@@ -70,7 +71,7 @@ public class BenchmarkingResponse implements Serializable {
         }
 
         public Builder storeComparisons(List<StoreComparison> storeComparisons) {
-            obj.storeComparisons = storeComparisons;
+            obj.storeComparisons = storeComparisons != null ? new ArrayList<>((storeComparisons)) : new ArrayList<>();
             return this;
         }
 
@@ -80,12 +81,12 @@ public class BenchmarkingResponse implements Serializable {
         }
 
         public Builder kpiComparisons(List<KPIComparison> kpiComparisons) {
-            obj.kpiComparisons = kpiComparisons;
+            obj.kpiComparisons = kpiComparisons != null ? new ArrayList<>((kpiComparisons)) : new ArrayList<>();
             return this;
         }
 
         public Builder insights(List<PerformanceInsight> insights) {
-            obj.insights = insights;
+            obj.insights = insights != null ? new ArrayList<>((insights)) : new ArrayList<>();
             return this;
         }
 
@@ -94,7 +95,8 @@ public class BenchmarkingResponse implements Serializable {
         }
     }
 
-    public static class StoreComparison {
+    public static class StoreComparison implements Serializable {
+        private static final long serialVersionUID = 1L;
         private String storeId;
         private String storeName;
         private String location;
@@ -106,7 +108,7 @@ public class BenchmarkingResponse implements Serializable {
         private int activeCustomers;
         private BigDecimal customerSatisfaction; // 0-5
         private String performanceLevel; // "Excellent", "Good", "Average", "Needs Improvement"
-        private Map<String, BigDecimal> kpiScores; // KPI name -> Score
+        private HashMap<String, BigDecimal> kpiScores = new HashMap<>(); // KPI name -> Score
 
         public StoreComparison() {}
 
@@ -203,7 +205,7 @@ public class BenchmarkingResponse implements Serializable {
         }
 
         public void setKpiScores(Map<String, BigDecimal> kpiScores) {
-            this.kpiScores = kpiScores;
+            this.kpiScores = kpiScores != null ? new HashMap<>((kpiScores)) : new HashMap<>();
         }
 
         public static Builder builder() {
@@ -269,7 +271,7 @@ public class BenchmarkingResponse implements Serializable {
             }
 
             public Builder kpiScores(Map<String, BigDecimal> kpiScores) {
-                obj.kpiScores = kpiScores;
+                obj.kpiScores = kpiScores != null ? new HashMap<>((kpiScores)) : new HashMap<>();
                 return this;
             }
 
@@ -279,7 +281,8 @@ public class BenchmarkingResponse implements Serializable {
         }
     }
 
-    public static class IndustryBenchmarks {
+    public static class IndustryBenchmarks implements Serializable {
+        private static final long serialVersionUID = 1L;
         private BigDecimal averageAOV; // INR - Industry average
         private BigDecimal averageProfitMargin; // Percentage
         private BigDecimal averageCustomerRetention; // Percentage
@@ -380,7 +383,8 @@ public class BenchmarkingResponse implements Serializable {
         }
     }
 
-    public static class KPIComparison {
+    public static class KPIComparison implements Serializable {
+        private static final long serialVersionUID = 1L;
         private String kpiName;
         private String unit;
         private BigDecimal yourValue;
@@ -509,7 +513,8 @@ public class BenchmarkingResponse implements Serializable {
         }
     }
 
-    public static class PerformanceInsight {
+    public static class PerformanceInsight implements Serializable {
+        private static final long serialVersionUID = 1L;
         private String insightType; // "Strength", "Weakness", "Opportunity", "Threat"
         private String title;
         private String description;

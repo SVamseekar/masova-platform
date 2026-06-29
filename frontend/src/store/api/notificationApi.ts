@@ -11,7 +11,7 @@ export interface Notification {
   status: NotificationStatus;
   priority: NotificationPriority;
   templateId?: string;
-  templateData?: Record<string, any>;
+  templateData?: Record<string, unknown>;
   recipientEmail?: string;
   recipientPhone?: string;
   recipientDeviceToken?: string;
@@ -130,7 +130,7 @@ export enum CampaignStatus {
 
 export interface CustomerSegment {
   type: SegmentType;
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
 }
 
 export enum SegmentType {

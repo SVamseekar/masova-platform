@@ -15,9 +15,10 @@ import TableRestaurantIcon from '@mui/icons-material/TableRestaurant';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { AllergenType, ALLERGEN_LABELS } from '../../../constants/allergens';
+import type { POSOrderItem } from '../types';
 
 interface OrderPanelProps {
-  items: any[];
+  items: POSOrderItem[];
   onUpdateQuantity: (menuItemId: string, quantity: number) => void;
   onRemoveItem: (menuItemId: string) => void;
   onUpdateInstructions: (menuItemId: string, instructions: string) => void;
@@ -36,8 +37,8 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
   onNewOrder,
   orderType,
   onOrderTypeChange,
-  selectedTable,
-  onTableSelect,
+  selectedTable: _selectedTable,
+  onTableSelect: _onTableSelect,
 }) => {
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
@@ -106,7 +107,7 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
           ].map(type => (
             <button
               key={type.value}
-              onClick={() => onOrderTypeChange(type.value as any)}
+              onClick={() => onOrderTypeChange(type.value as 'PICKUP' | 'DELIVERY' | 'DINE_IN')}
               style={{
                 flex: 1,
                 padding: `${spacing[3]} ${spacing[2]}`,
@@ -169,7 +170,7 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
           </Card>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
-            {items.map((item, index) => (
+            {items.map((item) => (
               <Card
                 key={item.menuItemId}
                 elevation="md"

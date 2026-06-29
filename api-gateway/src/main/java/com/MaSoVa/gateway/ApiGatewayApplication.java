@@ -16,6 +16,7 @@ public class ApiGatewayApplication {
 
     private static final Logger logger = LoggerFactory.getLogger(ApiGatewayApplication.class);
 
+    @SuppressWarnings("resource") // ApplicationContext lives for the JVM's lifetime; Spring Boot registers its own shutdown hook
     public static void main(String[] args) {
         SpringApplication.run(ApiGatewayApplication.class, args);
         logger.info("================================================================================");

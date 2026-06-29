@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useValidatePINMutation } from '../../../store/api/userApi';
+import { getRtkErrorMessage } from '../../shared/rtkError';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
 interface PINAuthModalProps {
@@ -16,13 +17,15 @@ export const PINAuthModal: React.FC<PINAuthModalProps> = ({
   const [pin, setPin] = useState<string[]>(['', '', '', '', '']);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const inputRefs = [
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null)
-  ];
+  const inputRef0 = useRef<HTMLInputElement>(null);
+  const inputRef1 = useRef<HTMLInputElement>(null);
+  const inputRef2 = useRef<HTMLInputElement>(null);
+  const inputRef3 = useRef<HTMLInputElement>(null);
+  const inputRef4 = useRef<HTMLInputElement>(null);
+  const inputRefs = useMemo(
+    () => [inputRef0, inputRef1, inputRef2, inputRef3, inputRef4],
+    [inputRef0, inputRef1, inputRef2, inputRef3, inputRef4]
+  );
 
   const [validatePIN] = useValidatePINMutation();
 
@@ -31,7 +34,7 @@ export const PINAuthModal: React.FC<PINAuthModalProps> = ({
     if (isOpen && inputRefs[0].current) {
       setTimeout(() => inputRefs[0].current?.focus(), 100);
     }
-  }, [isOpen]);
+  }, [isOpen, inputRefs]);
 
   const handleSubmit = async () => {
     const pinString = pin.join('');
@@ -59,9 +62,9 @@ export const PINAuthModal: React.FC<PINAuthModalProps> = ({
       // Reset and close
       resetPIN();
       onClose();
-    } catch (err: any) {
-      setError(err?.data?.error || 'Invalid PIN');
-      resetPIN();
+    } catch (err: unknown) {
+      setError(getRtkErrorMessage(err, 'Invalid PIN'));
+      setPin(['', '', '', '', '']);
       inputRefs[0].current?.focus();
     } finally {
       setLoading(false);

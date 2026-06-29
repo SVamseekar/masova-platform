@@ -65,7 +65,7 @@ class UserControllerTest extends BaseServiceTest {
         @Test
         @DisplayName("returns 200 with list of users")
         void returns200WithUsers() throws Exception {
-            when(userService.getAllUsers()).thenReturn(List.of(buildUser("u1")));
+            when(userService.listActiveEmployees()).thenReturn(List.of(buildUser("u1")));
 
             mockMvc.perform(get("/api/users"))
                 .andExpect(status().isOk())
@@ -75,7 +75,7 @@ class UserControllerTest extends BaseServiceTest {
         @Test
         @DisplayName("returns 200 with empty list when no users")
         void returns200WithEmptyList() throws Exception {
-            when(userService.getAllUsers()).thenReturn(List.of());
+            when(userService.listActiveEmployees()).thenReturn(List.of());
 
             mockMvc.perform(get("/api/users"))
                 .andExpect(status().isOk())
@@ -135,7 +135,8 @@ class UserControllerTest extends BaseServiceTest {
         @Test
         @DisplayName("returns 200 with generated PIN")
         void returns200WithPin() throws Exception {
-            when(userService.generateEmployeePIN("user-1")).thenReturn("12345");
+            when(userService.resolveEmployeeStoreId("user-1")).thenReturn("store-1");
+            when(userService.generateEmployeePIN("user-1", "store-1")).thenReturn("12345");
 
             mockMvc.perform(post("/api/users/user-1/generate-pin")
                     .contentType(MediaType.APPLICATION_JSON)

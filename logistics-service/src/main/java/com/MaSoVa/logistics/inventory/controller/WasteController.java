@@ -4,14 +4,13 @@ import com.MaSoVa.logistics.inventory.dto.response.MessageResponse;
 import com.MaSoVa.logistics.inventory.dto.response.WasteSummaryResponse;
 import com.MaSoVa.logistics.inventory.entity.WasteRecord;
 import com.MaSoVa.logistics.inventory.service.WasteAnalysisService;
+import com.MaSoVa.shared.util.StoreContextUtil;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,22 +33,10 @@ import java.util.Map;
 @SecurityRequirement(name = "bearerAuth")
 public class WasteController {
 
-    private static final Logger log = LoggerFactory.getLogger(WasteController.class);
-
     private final WasteAnalysisService wasteAnalysisService;
 
     public WasteController(WasteAnalysisService wasteAnalysisService) {
         this.wasteAnalysisService = wasteAnalysisService;
-    }
-
-    private String getStoreIdFromHeaders(HttpServletRequest request) {
-        String userType = request.getHeader("X-User-Type");
-        String selectedStoreId = request.getHeader("X-Selected-Store-Id");
-        String userStoreId = request.getHeader("X-User-Store-Id");
-        if ("MANAGER".equals(userType) || "CUSTOMER".equals(userType)) {
-            return selectedStoreId != null ? selectedStoreId : userStoreId;
-        }
-        return userStoreId;
     }
 
     // ── LIST ──────────────────────────────────────────────────────────────────────
@@ -65,7 +52,7 @@ public class WasteController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             HttpServletRequest request) {
-        String storeId = getStoreIdFromHeaders(request);
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
         if (startDate != null && endDate != null) {
             return ResponseEntity.ok(wasteAnalysisService.getWasteRecordsByDateRange(storeId, startDate, endDate));
         }
@@ -140,7 +127,7 @@ public class WasteController {
             @RequestParam(required = false, defaultValue = "10") Integer limit,
             @RequestParam(required = false, defaultValue = "6") Integer months,
             HttpServletRequest request) {
-        String storeId = getStoreIdFromHeaders(request);
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
         return switch (type != null ? type : "") {
             case "total-cost" -> ResponseEntity.ok(new WasteSummaryResponse(
                     wasteAnalysisService.getTotalWasteCost(storeId, startDate, endDate)));

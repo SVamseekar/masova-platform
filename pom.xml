@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    
+
     <groupId>com.MaSoVa</groupId>
     <artifactId>restaurant-management-system</artifactId>
     <version>1.0.0</version>
@@ -12,7 +12,7 @@
 
     <name>MaSoVa Restaurant Management System</name>
     <description>Comprehensive restaurant management platform</description>
-    
+
     <properties>
         <java.version>21</java.version>
         <maven.compiler.source>21</maven.compiler.source>
@@ -48,7 +48,7 @@
             **/websocket/**,**/filter/**
         </sonar.coverage.exclusions>
     </properties>
-    
+
     <modules>
         <module>shared-models</module>
         <module>shared-security</module>
@@ -59,7 +59,7 @@
         <module>intelligence-service</module>
         <module>core-service</module>
     </modules>
-    
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -83,7 +83,7 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-    
+
     <build>
         <pluginManagement>
             <plugins>

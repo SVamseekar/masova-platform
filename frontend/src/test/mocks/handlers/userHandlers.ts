@@ -1,6 +1,5 @@
 import { http, HttpResponse } from 'msw';
-
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+import { apiUrl } from '../../testApiBase';
 
 const mockUsers = [
   {
@@ -33,67 +32,69 @@ const mockUsers = [
 ];
 
 export const userHandlers = [
-  http.get(`${API}/users/profile`, () =>
+  // Static / multi-segment routes before :userId (MSW matches in registration order)
+  http.get(apiUrl('/users/profile'), () =>
     HttpResponse.json(mockUsers[0]),
   ),
 
-  http.put(`${API}/users/profile`, () =>
+  http.put(apiUrl('/users/profile'), () =>
     HttpResponse.json(mockUsers[0]),
   ),
 
-  http.post(`${API}/users/change-password`, () =>
+  http.post(apiUrl('/users/change-password'), () =>
     new HttpResponse(null, { status: 204 }),
   ),
 
-  http.get(`${API}/users/:userId`, ({ params }) =>
-    HttpResponse.json(mockUsers.find((u) => u.id === params.userId) ?? mockUsers[0]),
-  ),
-
-  http.put(`${API}/users/:userId`, ({ params }) =>
-    HttpResponse.json({ ...mockUsers[0], id: params.userId }),
-  ),
-
-  http.post(`${API}/users/:userId/activate`, () =>
-    new HttpResponse(null, { status: 204 }),
-  ),
-
-  http.post(`${API}/users/:userId/deactivate`, () =>
-    new HttpResponse(null, { status: 204 }),
-  ),
-
-  http.get(`${API}/users/type/:type`, ({ params }) =>
-    HttpResponse.json(mockUsers.filter((u) => u.type === params.type)),
-  ),
-
-  http.get(`${API}/users/store`, () =>
-    HttpResponse.json(mockUsers.filter((u) => u.storeId === '1')),
-  ),
-
-  http.get(`${API}/users/managers`, () =>
+  http.get(apiUrl('/users/managers'), () =>
     HttpResponse.json(mockUsers.filter((u) => u.type === 'MANAGER')),
   ),
 
-  http.get(`${API}/users/:userId/can-take-orders`, () =>
-    HttpResponse.json({ canTakeOrders: true }),
+  http.get(apiUrl('/users/store'), () =>
+    HttpResponse.json(mockUsers.filter((u) => u.storeId === '1')),
   ),
 
-  http.get(`${API}/users`, () =>
+  http.get(apiUrl('/users/search'), () =>
     HttpResponse.json(mockUsers),
   ),
 
-  http.post(`${API}/users/create`, () =>
+  http.get(apiUrl('/users/stats'), () =>
+    HttpResponse.json({ totalUsers: 50, activeUsers: 45, staffCount: 12, driverCount: 8 }),
+  ),
+
+  http.get(apiUrl('/users/type/:type'), ({ params }) =>
+    HttpResponse.json(mockUsers.filter((u) => u.type === params.type)),
+  ),
+
+  http.get(apiUrl('/users'), () =>
+    HttpResponse.json(mockUsers),
+  ),
+
+  http.post(apiUrl('/users/create'), () =>
     HttpResponse.json({ ...mockUsers[1], id: '99' }),
   ),
 
-  http.post(`${API}/users/validate-pin`, () =>
+  http.post(apiUrl('/users/validate-pin'), () =>
     HttpResponse.json({ userId: '2', name: 'Staff Member', type: 'STAFF', role: 'CASHIER', storeId: '1' }),
   ),
 
-  http.get(`${API}/users/search`, () =>
-    HttpResponse.json(mockUsers),
+  // Parameterized routes last
+  http.get(apiUrl('/users/:userId/can-take-orders'), () =>
+    HttpResponse.json({ canTakeOrders: true }),
   ),
 
-  http.get(`${API}/users/stats`, () =>
-    HttpResponse.json({ totalUsers: 50, activeUsers: 45, staffCount: 12, driverCount: 8 }),
+  http.get(apiUrl('/users/:userId'), ({ params }) =>
+    HttpResponse.json(mockUsers.find((u) => u.id === params.userId) ?? mockUsers[0]),
+  ),
+
+  http.put(apiUrl('/users/:userId'), ({ params }) =>
+    HttpResponse.json({ ...mockUsers[0], id: params.userId }),
+  ),
+
+  http.post(apiUrl('/users/:userId/activate'), () =>
+    new HttpResponse(null, { status: 204 }),
+  ),
+
+  http.post(apiUrl('/users/:userId/deactivate'), () =>
+    new HttpResponse(null, { status: 204 }),
   ),
 ];

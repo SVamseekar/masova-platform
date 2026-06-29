@@ -139,9 +139,9 @@ export const storeApi = createApi({
       providesTags: (result) => result ? [{ type: 'Store', id: result.id }] : [],
     }),
 
-    // Get all active stores (public - no auth required)
+    // Get all active stores — /stores/public was removed, canonical is GET /stores
     getActiveStores: builder.query<Store[], void>({
-      query: () => `/stores/public`,
+      query: () => `/stores`,
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Store' as const, id })), { type: 'Stores', id: 'LIST' }]

@@ -25,13 +25,14 @@ import com.MaSoVa.shared.messaging.events.OrderStatusChangedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.security.SecureRandom;
 import java.util.List;
-import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.Comparator;
 
@@ -58,7 +59,7 @@ public class OrderService {
     private final EuVatEngine euVatEngine;
     private final AggregatorService aggregatorService;
     private final com.MaSoVa.commerce.fiscal.FiscalSigningService fiscalSigningService;
-    private final Random random = new Random();
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     public OrderService(OrderRepository orderRepository,
                        OrderJpaRepository orderJpaRepository,
@@ -221,13 +222,12 @@ public class OrderService {
         initializeQualityCheckpoints(order);
 
         // Global-3: propagate store currency (null = India/INR legacy)
-        try {
-            Store store = storeServiceClient.getStore(request.getStoreId());
-            if (store != null && store.getCurrency() != null) {
-                order.setCurrency(store.getCurrency());
-            }
-        } catch (Exception e) {
-            log.warn("Could not fetch store for currency propagation, defaulting to INR: {}", e.getMessage());
+        Store store = storeServiceClient.getStore(request.getStoreId());
+        if (store == null) {
+            log.warn("Could not fetch store {} for currency propagation, defaulting to INR", request.getStoreId());
+            order.setCurrency("INR");
+        } else if (store.getCurrency() != null) {
+            order.setCurrency(store.getCurrency());
         }
 
         // Update customer email if provided (for walk-in customers)
@@ -242,6 +242,7 @@ public class OrderService {
         // PostgreSQL dual-write (Global-3: includes currency)
         try {
             OrderJpaEntity jpaEntity = OrderJpaEntity.builder()
+                    .mongoId(savedOrder.getId())
                     .orderNumber(savedOrder.getOrderNumber())
                     .customerId(savedOrder.getCustomerId())
                     .customerName(savedOrder.getCustomerName())
@@ -260,6 +261,7 @@ public class OrderService {
                     .receivedAt(savedOrder.getReceivedAt() != null
                             ? savedOrder.getReceivedAt().atOffset(java.time.ZoneOffset.UTC) : null)
                     .build();
+            jpaEntity.setItems(orderItemSyncService.buildItemEntities(savedOrder.getItems(), jpaEntity));
             orderJpaRepository.save(jpaEntity);
         } catch (Exception e) {
             log.warn("PostgreSQL dual-write failed for order {}: {}", savedOrder.getOrderNumber(), e.getMessage());
@@ -294,9 +296,42 @@ public class OrderService {
         return savedOrder;
     }
 
+    /**
+     * Re-syncs status/payment/totals/timestamps + line items to the PostgreSQL dual-write
+     * row for an order, keyed by mongoId. No-op (with a warn log) if the PG row is missing,
+     * since createOrder's dual-write may have failed independently.
+     */
+    private void syncToPostgres(Order order) {
+        try {
+            orderJpaRepository.findByMongoId(order.getId()).ifPresentOrElse(
+                pgOrder -> orderItemSyncService.syncOrderItems(pgOrder, order),
+                () -> log.warn("PG dual-write: no PG row for order {} — skipping item sync", order.getId())
+            );
+        } catch (Exception e) {
+            log.warn("PG dual-write sync failed for order {}: {}", order.getId(), e.getMessage());
+        }
+    }
+
     public Order getOrderById(String orderId) {
         return orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+    }
+
+    /**
+     * Verify that the requesting customer (or agent acting on their behalf) owns the order.
+     * Security remediation Task 6 — throws 403 when {@code customerId} does not match
+     * {@code order.customerId}.
+     */
+    public Order assertCustomerOwnsOrder(String orderId, String customerId) {
+        Order order = getOrderById(orderId);
+        if (customerId == null || customerId.isBlank()
+                || order.getCustomerId() == null
+                || !order.getCustomerId().equals(customerId)) {
+            log.warn("Ownership violation: caller {} attempted to access order {} (owner={})",
+                    customerId, orderId, order.getCustomerId());
+            throw new AccessDeniedException("Cannot access an order you do not own");
+        }
+        return order;
     }
 
     public Order getOrderByNumber(String orderNumber) {
@@ -305,13 +340,14 @@ public class OrderService {
     }
 
     public List<Order> getKitchenQueue(String storeId) {
-        // Kitchen queue shows orders in RECEIVED, PREPARING, OVEN, BAKED, DISPATCHED (Completed) stages
+        // Kitchen queue shows orders in RECEIVED, PREPARING, OVEN, BAKED, DISPATCHED, OUT_FOR_DELIVERY stages
         List<OrderStatus> kitchenStatuses = List.of(
                 OrderStatus.RECEIVED,
                 OrderStatus.PREPARING,
                 OrderStatus.OVEN,
                 OrderStatus.BAKED,
-                OrderStatus.DISPATCHED
+                OrderStatus.DISPATCHED,
+                OrderStatus.OUT_FOR_DELIVERY
         );
 
         List<Order> orders = orderRepository.findByStoreIdAndStatusIn(storeId, kitchenStatuses);
@@ -364,6 +400,7 @@ public class OrderService {
         Order updatedOrder = orderRepository.save(order);
         log.info("Order status updated: {} → {} - Analytics cache evicted",
                  updatedOrder.getOrderNumber(), updatedOrder.getStatus());
+        syncToPostgres(updatedOrder);
 
         // Publish status changed event to RabbitMQ
         try {
@@ -434,7 +471,7 @@ public class OrderService {
 
         // Auto-generate delivery OTP when DELIVERY order is dispatched (Gap #12)
         if (nextStatus == OrderStatus.DISPATCHED && order.getOrderType() == Order.OrderType.DELIVERY) {
-            String otp = String.format("%04d", new java.util.Random().nextInt(10000));
+            String otp = generateDeliveryOtpCode();
             LocalDateTime now = LocalDateTime.now();
             order.setDeliveryOtp(otp);
             order.setDeliveryOtpGeneratedAt(now);
@@ -502,6 +539,7 @@ public class OrderService {
         order.setCancellationReason(reason);
 
         Order cancelledOrder = orderRepository.save(order);
+        syncToPostgres(cancelledOrder);
 
         // Publish status changed event to RabbitMQ
         try {
@@ -525,6 +563,108 @@ public class OrderService {
         return cancelledOrder;
     }
 
+    // ── CANCELLATION APPROVAL GATE (security remediation Task 4) ───────────────────
+    // Customer/agent-initiated cancellation must NOT take effect immediately. It records a
+    // pending request that a manager approves (→ real cancel) or rejects (→ flag cleared).
+    // The order keeps functioning normally (kitchen still sees it) while the request is pending.
+
+    /**
+     * Record a cancellation request without cancelling the order.
+     * Used by the CUSTOMER (via the app) or the AI agent on the customer's behalf.
+     * The order status is unchanged; only a pending-approval flag is set.
+     *
+     * @param orderId       order to request cancellation for
+     * @param reason        reason supplied by the requester
+     * @param requestedBy   identifier of the requester (customer id / "AGENT")
+     * @return the order with the cancellation request recorded
+     */
+    @Transactional
+    public Order requestCancellation(String orderId, String reason, String requestedBy) {
+        Order order = getOrderById(orderId);
+
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new RuntimeException("Order is already cancelled");
+        }
+        if (order.getStatus() == OrderStatus.DELIVERED) {
+            throw new RuntimeException("Cannot request cancellation of a delivered order");
+        }
+        if (order.isCancellationRequested()) {
+            throw new RuntimeException("A cancellation request is already pending manager approval");
+        }
+
+        log.info("Cancellation requested for order {} by {} (status stays {})",
+                order.getOrderNumber(), requestedBy, order.getStatus());
+
+        order.setCancellationRequested(true);
+        order.setCancellationRequestReason(reason);
+        order.setCancellationRequestedBy(requestedBy);
+        order.setCancellationRequestedAt(LocalDateTime.now());
+
+        Order savedOrder = orderRepository.save(order);
+
+        // Publish an event so other services (notifications, agents) can react. The order
+        // status is NOT changed — previous and new status are identical; the marker is the flag.
+        try {
+            orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
+                savedOrder.getId(), savedOrder.getCustomerId(),
+                savedOrder.getStatus().toString(), "CANCELLATION_REQUESTED", savedOrder.getStoreId()));
+        } catch (Exception e) {
+            log.warn("Failed to publish cancellation-requested event for order {} (requestedBy={}): {}",
+                    savedOrder.getOrderNumber(), requestedBy, e.getMessage());
+        }
+
+        return savedOrder;
+    }
+
+    /**
+     * Manager approval of a pending cancellation request — performs the real cancellation.
+     */
+    @Transactional
+    @CacheEvict(value = "salesMetrics", allEntries = true)
+    public Order approveCancellationRequest(String orderId) {
+        Order order = getOrderById(orderId);
+        if (!order.isCancellationRequested()) {
+            throw new RuntimeException("No pending cancellation request for this order");
+        }
+        String reason = order.getCancellationRequestReason();
+        // Clear the pending flag — the order is now being cancelled for real.
+        order.setCancellationRequested(false);
+        orderRepository.save(order);
+        log.info("Manager approved cancellation request for order {}", order.getOrderNumber());
+        return cancelOrder(orderId, reason);
+    }
+
+    /**
+     * Manager rejection of a pending cancellation request — clears the flag, order continues.
+     */
+    @Transactional
+    public Order rejectCancellationRequest(String orderId, String rejectionReason) {
+        Order order = getOrderById(orderId);
+        if (!order.isCancellationRequested()) {
+            throw new RuntimeException("No pending cancellation request for this order");
+        }
+        log.info("Manager rejected cancellation request for order {} (reason: {})",
+                order.getOrderNumber(), rejectionReason);
+
+        order.setCancellationRequested(false);
+        order.setCancellationRequestReason(null);
+        order.setCancellationRequestedBy(null);
+        order.setCancellationRequestedAt(null);
+
+        Order savedOrder = orderRepository.save(order);
+
+        try {
+            orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
+                savedOrder.getId(), savedOrder.getCustomerId(),
+                savedOrder.getStatus().toString(), "CANCELLATION_REJECTED", savedOrder.getStoreId()));
+        } catch (Exception e) {
+            log.warn("Failed to publish cancellation-rejected event for order {}: {}",
+                    savedOrder.getOrderNumber(), e.getMessage());
+        }
+
+        return savedOrder;
+    }
+
     @Transactional
     public Order assignDriver(String orderId, String driverId) {
         return assignDriver(orderId, driverId, null, null);
@@ -540,6 +680,7 @@ public class OrderService {
 
         order.setAssignedDriverId(driverId);
         Order updatedOrder = orderRepository.save(order);
+        syncToPostgres(updatedOrder);
 
         // Send driver assignment notification to customer
         customerNotificationService.sendDriverAssignmentNotification(updatedOrder, driverName, driverPhone);
@@ -559,6 +700,7 @@ public class OrderService {
         order.setPaymentTransactionId(transactionId);
 
         Order updatedOrder = orderRepository.save(order);
+        syncToPostgres(updatedOrder);
 
         // Broadcast payment update via WebSocket
         if (updatedOrder.getCustomerId() != null) {
@@ -607,6 +749,7 @@ public class OrderService {
         order.setPreparationTime(calculatePreparationTime(newItems.size()));
 
         Order updatedOrder = orderRepository.save(order);
+        syncToPostgres(updatedOrder);
 
         // Broadcast modification via WebSocket
         webSocketController.sendKitchenQueueUpdate(updatedOrder.getStoreId(), updatedOrder);
@@ -628,6 +771,7 @@ public class OrderService {
         order.setPriority(priority);
 
         Order updatedOrder = orderRepository.save(order);
+        syncToPostgres(updatedOrder);
 
         // Broadcast priority change via WebSocket
         webSocketController.sendKitchenQueueUpdate(updatedOrder.getStoreId(), updatedOrder);
@@ -649,8 +793,13 @@ public class OrderService {
 
     private String generateOrderNumber() {
         String timestamp = String.valueOf(System.currentTimeMillis());
-        String randomNum = String.format("%04d", random.nextInt(10000));
+        String randomNum = String.format("%04d", SECURE_RANDOM.nextInt(10000));
         return "ORD" + timestamp.substring(timestamp.length() - 6) + randomNum;
+    }
+
+    /** 4-digit delivery OTP using SecureRandom (security remediation Task 11). */
+    static String generateDeliveryOtpCode() {
+        return String.format("%04d", SECURE_RANDOM.nextInt(10000));
     }
 
     /**
@@ -717,7 +866,8 @@ public class OrderService {
             case OVEN -> List.of(OrderStatus.PREPARING, OrderStatus.BAKED, OrderStatus.CANCELLED);
             case BAKED -> List.of(OrderStatus.OVEN, OrderStatus.READY, OrderStatus.CANCELLED);  // Unified: go to READY
             case READY -> List.of(OrderStatus.DISPATCHED, OrderStatus.SERVED, OrderStatus.COMPLETED, OrderStatus.CANCELLED);  // Different final states per order type
-            case DISPATCHED -> List.of(OrderStatus.READY, OrderStatus.DELIVERED);  // DELIVERY orders
+            case DISPATCHED -> List.of(OrderStatus.READY, OrderStatus.OUT_FOR_DELIVERY, OrderStatus.DELIVERED);  // DELIVERY orders
+            case OUT_FOR_DELIVERY -> List.of(OrderStatus.DELIVERED);  // Driver en route
             case DELIVERED -> List.of();  // Terminal state
             case SERVED -> List.of();  // Terminal state (DINE_IN)
             case COMPLETED -> List.of();  // Terminal state (TAKEAWAY)
@@ -734,6 +884,7 @@ public class OrderService {
             case BAKED -> order.setBakedAt(now);
             case READY -> order.setReadyAt(now);  // Ready for pickup (TAKEAWAY) or serving (DINE_IN) or dispatch (DELIVERY)
             case DISPATCHED -> order.setDispatchedAt(now);
+            case OUT_FOR_DELIVERY -> order.setOutForDeliveryAt(now);
             case DELIVERED -> order.setDeliveredAt(now);
             case SERVED -> order.setCompletedAt(now);  // DINE_IN final state
             case COMPLETED -> order.setCompletedAt(now);  // TAKEAWAY final state
@@ -1122,6 +1273,7 @@ public class OrderService {
         order.setDeliveryOtpExpiresAt(expiresAt);
 
         Order savedOrder = orderRepository.save(order);
+        syncToPostgres(savedOrder);
         log.info("Delivery OTP set for order {}. Expires at {}", orderId, expiresAt);
 
         // Send OTP to customer via notification service
@@ -1149,6 +1301,7 @@ public class OrderService {
         }
 
         Order savedOrder = orderRepository.save(order);
+        syncToPostgres(savedOrder);
         log.info("Delivery proof set for order {}. Type: {}", orderId, proofType);
 
         return savedOrder;
@@ -1168,6 +1321,7 @@ public class OrderService {
         order.setDeliveryProofType(proofType);
 
         Order savedOrder = orderRepository.save(order);
+        syncToPostgres(savedOrder);
         log.info("Order {} marked as delivered at {} using {} verification", orderId, deliveredAt, proofType);
 
         // Send delivery confirmation notification

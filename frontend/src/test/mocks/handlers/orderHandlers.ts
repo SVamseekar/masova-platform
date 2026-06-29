@@ -1,6 +1,5 @@
 import { http, HttpResponse } from 'msw';
-
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+import { apiUrl } from '../../testApiBase';
 
 const mockOrder = {
   id: 'order-1',
@@ -42,111 +41,113 @@ const mockOrders = [
 ];
 
 export const orderHandlers = [
-  http.get(`${API}/orders`, () =>
+  http.get(apiUrl('/orders'), () =>
     HttpResponse.json(mockOrders),
   ),
 
-  http.get(`${API}/orders/:orderId`, ({ params }) =>
-    HttpResponse.json({ ...mockOrder, id: params.orderId }),
-  ),
-
-  http.get(`${API}/orders/track/:orderId`, ({ params }) =>
-    HttpResponse.json({ ...mockOrder, id: params.orderId, status: 'DISPATCHED' }),
-  ),
-
-  http.get(`${API}/orders/kitchen`, () =>
+  // Static / multi-segment routes before :orderId
+  http.get(apiUrl('/orders/kitchen'), () =>
     HttpResponse.json(mockOrders.filter((o) => ['RECEIVED', 'PREPARING'].includes(o.status))),
   ),
 
-  http.get(`${API}/orders/status/:status`, ({ params }) =>
-    HttpResponse.json(mockOrders.filter((o) => o.status === params.status)),
-  ),
-
-  http.post(`${API}/orders`, () =>
-    HttpResponse.json(mockOrder),
-  ),
-
-  http.patch(`${API}/orders/:orderId/status`, ({ params }) =>
-    HttpResponse.json({ ...mockOrder, id: params.orderId, status: 'PREPARING' }),
-  ),
-
-  http.delete(`${API}/orders/:orderId`, ({ params }) =>
-    HttpResponse.json({ ...mockOrder, id: params.orderId, status: 'CANCELLED' }),
-  ),
-
-  http.get(`${API}/orders/customer/:customerId`, () =>
-    HttpResponse.json(mockOrders),
-  ),
-
-  http.get(`${API}/orders/number/:orderNumber`, () =>
-    HttpResponse.json(mockOrder),
-  ),
-
-  http.get(`${API}/orders/store`, () =>
-    HttpResponse.json(mockOrders),
-  ),
-
-  http.patch(`${API}/orders/:orderId/next-stage`, ({ params }) =>
-    HttpResponse.json({ ...mockOrder, id: params.orderId, status: 'PREPARING' }),
-  ),
-
-  http.patch(`${API}/orders/:orderId/assign-driver`, ({ params }) =>
-    HttpResponse.json({ ...mockOrder, id: params.orderId, assignedDriverId: 'driver-1' }),
-  ),
-
-  http.patch(`${API}/orders/:orderId/payment`, ({ params }) =>
-    HttpResponse.json({ ...mockOrder, id: params.orderId, paymentStatus: 'PAID' }),
-  ),
-
-  http.patch(`${API}/orders/:orderId/items`, ({ params }) =>
-    HttpResponse.json({ ...mockOrder, id: params.orderId }),
-  ),
-
-  http.patch(`${API}/orders/:orderId/priority`, ({ params }) =>
-    HttpResponse.json({ ...mockOrder, id: params.orderId, priority: 'URGENT' }),
-  ),
-
-  http.get(`${API}/orders/search`, () =>
-    HttpResponse.json(mockOrders),
-  ),
-
-  http.post(`${API}/orders/:orderId/quality-checkpoint`, ({ params }) =>
-    HttpResponse.json({ ...mockOrder, id: params.orderId }),
-  ),
-
-  http.patch(`${API}/orders/:orderId/quality-checkpoint/:checkpointName`, ({ params }) =>
-    HttpResponse.json({ ...mockOrder, id: params.orderId }),
-  ),
-
-  http.get(`${API}/orders/:orderId/quality-checkpoints`, () =>
+  http.get(apiUrl('/orders/store/failed-quality-checks'), () =>
     HttpResponse.json([]),
   ),
 
-  http.get(`${API}/orders/store/failed-quality-checks`, () =>
-    HttpResponse.json([]),
-  ),
-
-  http.get(`${API}/orders/store/avg-prep-time`, () =>
+  http.get(apiUrl('/orders/store/avg-prep-time'), () =>
     HttpResponse.json(18),
   ),
 
-  http.patch(`${API}/orders/:orderId/assign-make-table`, ({ params }) =>
-    HttpResponse.json({ ...mockOrder, id: params.orderId, assignedMakeTableStation: 'Station A' }),
-  ),
-
-  http.get(`${API}/orders/store/make-table/:station`, () =>
+  http.get(apiUrl('/orders/store/make-table/:station'), () =>
     HttpResponse.json(mockOrders),
   ),
 
-  http.get(`${API}/orders/date/:date`, () =>
+  http.get(apiUrl('/orders/store'), () =>
     HttpResponse.json(mockOrders),
   ),
 
-  http.get(`${API}/orders/range`, () =>
+  http.get(apiUrl('/orders/search'), () =>
     HttpResponse.json(mockOrders),
   ),
 
-  http.get(`${API}/orders/active-deliveries/count`, () =>
+  http.get(apiUrl('/orders/customer/:customerId'), () =>
+    HttpResponse.json(mockOrders),
+  ),
+
+  http.get(apiUrl('/orders/number/:orderNumber'), () =>
+    HttpResponse.json(mockOrder),
+  ),
+
+  http.get(apiUrl('/orders/track/:orderId'), ({ params }) =>
+    HttpResponse.json({ ...mockOrder, id: params.orderId, status: 'DISPATCHED' }),
+  ),
+
+  http.get(apiUrl('/orders/status/:status'), ({ params }) =>
+    HttpResponse.json(mockOrders.filter((o) => o.status === params.status)),
+  ),
+
+  http.get(apiUrl('/orders/date/:date'), () =>
+    HttpResponse.json(mockOrders),
+  ),
+
+  http.get(apiUrl('/orders/range'), () =>
+    HttpResponse.json(mockOrders),
+  ),
+
+  http.get(apiUrl('/orders/active-deliveries/count'), () =>
     HttpResponse.json({ count: 3 }),
+  ),
+
+  http.post(apiUrl('/orders'), () =>
+    HttpResponse.json(mockOrder),
+  ),
+
+  // Parameterized :orderId routes last
+  http.get(apiUrl('/orders/:orderId/quality-checkpoints'), () =>
+    HttpResponse.json([]),
+  ),
+
+  http.get(apiUrl('/orders/:orderId'), ({ params }) =>
+    HttpResponse.json({ ...mockOrder, id: params.orderId }),
+  ),
+
+  http.patch(apiUrl('/orders/:orderId/status'), ({ params }) =>
+    HttpResponse.json({ ...mockOrder, id: params.orderId, status: 'PREPARING' }),
+  ),
+
+  http.delete(apiUrl('/orders/:orderId'), ({ params }) =>
+    HttpResponse.json({ ...mockOrder, id: params.orderId, status: 'CANCELLED' }),
+  ),
+
+  http.patch(apiUrl('/orders/:orderId/next-stage'), ({ params }) =>
+    HttpResponse.json({ ...mockOrder, id: params.orderId, status: 'PREPARING' }),
+  ),
+
+  http.patch(apiUrl('/orders/:orderId/assign-driver'), ({ params }) =>
+    HttpResponse.json({ ...mockOrder, id: params.orderId, assignedDriverId: 'driver-1' }),
+  ),
+
+  http.patch(apiUrl('/orders/:orderId/payment'), ({ params }) =>
+    HttpResponse.json({ ...mockOrder, id: params.orderId, paymentStatus: 'PAID' }),
+  ),
+
+  http.patch(apiUrl('/orders/:orderId/items'), ({ params }) =>
+    HttpResponse.json({ ...mockOrder, id: params.orderId }),
+  ),
+
+  http.patch(apiUrl('/orders/:orderId/priority'), ({ params }) =>
+    HttpResponse.json({ ...mockOrder, id: params.orderId, priority: 'URGENT' }),
+  ),
+
+  http.post(apiUrl('/orders/:orderId/quality-checkpoint'), ({ params }) =>
+    HttpResponse.json({ ...mockOrder, id: params.orderId }),
+  ),
+
+  http.patch(apiUrl('/orders/:orderId/quality-checkpoint/:checkpointName'), ({ params }) =>
+    HttpResponse.json({ ...mockOrder, id: params.orderId }),
+  ),
+
+  http.patch(apiUrl('/orders/:orderId/assign-make-table'), ({ params }) =>
+    HttpResponse.json({ ...mockOrder, id: params.orderId, assignedMakeTableStation: 'Station A' }),
   ),
 ];

@@ -4,7 +4,7 @@ import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
 import { formatMoney } from '../../utils/currency';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
-import { usePageStore } from '../../contexts/PageStoreContext';
+import { usePageStore } from '../../hooks/usePageStore';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import {
   useGetAllInventoryItemsQuery,
@@ -15,7 +15,7 @@ import {
   useDeleteInventoryItemMutation,
   InventoryItem,
 } from '../../store/api/inventoryApi';
-import { Card, Button } from '../../components/ui/neumorphic';
+import { Button } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
 import { FilterBar, type FilterConfig, type FilterValues, type SortConfig } from '../../components/common/FilterBar';
@@ -25,6 +25,7 @@ import { createNeumorphicSurface, createCard } from '../../styles/neumorphic-uti
 import StockAdjustmentDialog from '../../components/inventory/StockAdjustmentDialog';
 import AddInventoryItemDialog from '../../components/inventory/AddInventoryItemDialog';
 
+// eslint-disable-next-line react-refresh/only-export-components -- page component with HOC export
 const InventoryDashboardPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
   const currency = useAppSelector(selectCartCurrency);
@@ -169,7 +170,7 @@ const InventoryDashboardPage: React.FC = () => {
         {
           label: 'Total Value',
           field: 'quantity',
-          format: (v: any) => {
+          format: (v) => {
             // Note: This is a simplified version. Full implementation would need item context
             return fmt(Number(v));
           },
@@ -250,7 +251,7 @@ const InventoryDashboardPage: React.FC = () => {
     alignItems: 'center',
   };
 
-  const searchInputStyles: React.CSSProperties = {
+  const _searchInputStyles: React.CSSProperties = {
     ...createNeumorphicSurface('inset', 'sm', 'lg'),
     padding: spacing[3],
     fontSize: typography.fontSize.base,
@@ -263,7 +264,7 @@ const InventoryDashboardPage: React.FC = () => {
     flex: 1,
   };
 
-  const categoryButtonStyles = (isActive: boolean): React.CSSProperties => ({
+  const _categoryButtonStyles = (isActive: boolean): React.CSSProperties => ({
     ...createNeumorphicSurface(isActive ? 'inset' : 'raised', 'sm', 'lg'),
     padding: `${spacing[2]} ${spacing[4]}`,
     fontSize: typography.fontSize.sm,
@@ -524,4 +525,5 @@ const InventoryDashboardPage: React.FC = () => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- HOC default export
 export default withPageStoreContext(InventoryDashboardPage, 'inventory');

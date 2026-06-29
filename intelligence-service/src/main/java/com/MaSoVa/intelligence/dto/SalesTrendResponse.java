@@ -1,7 +1,7 @@
 package com.MaSoVa.intelligence.dto;
+
 import java.io.Serializable;
-
-
+import java.util.ArrayList;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -10,7 +10,7 @@ public class SalesTrendResponse implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String period; // "WEEKLY" or "MONTHLY"
-    private List<DailyDataPoint> dataPoints;
+    private ArrayList<DailyDataPoint> dataPoints = new ArrayList<>();
     private BigDecimal totalSales;
     private int totalOrders;
     private BigDecimal averageOrderValue;
@@ -23,7 +23,7 @@ public class SalesTrendResponse implements Serializable {
     public SalesTrendResponse(String period, List<DailyDataPoint> dataPoints, BigDecimal totalSales, int totalOrders,
                              BigDecimal averageOrderValue, BigDecimal percentChangeFromPreviousPeriod, String trend) {
         this.period = period;
-        this.dataPoints = dataPoints;
+        this.dataPoints = dataPoints != null ? new ArrayList<>((dataPoints)) : new ArrayList<>();
         this.totalSales = totalSales;
         this.totalOrders = totalOrders;
         this.averageOrderValue = averageOrderValue;
@@ -44,7 +44,7 @@ public class SalesTrendResponse implements Serializable {
     }
 
     public void setDataPoints(List<DailyDataPoint> dataPoints) {
-        this.dataPoints = dataPoints;
+        this.dataPoints = dataPoints != null ? new ArrayList<>((dataPoints)) : new ArrayList<>();
     }
 
     public BigDecimal getTotalSales() {
@@ -93,7 +93,7 @@ public class SalesTrendResponse implements Serializable {
 
     public static class Builder {
         private String period;
-        private List<DailyDataPoint> dataPoints;
+        private ArrayList<DailyDataPoint> dataPoints = new ArrayList<>();
         private BigDecimal totalSales;
         private int totalOrders;
         private BigDecimal averageOrderValue;
@@ -106,7 +106,7 @@ public class SalesTrendResponse implements Serializable {
         }
 
         public Builder dataPoints(List<DailyDataPoint> dataPoints) {
-            this.dataPoints = dataPoints;
+            this.dataPoints = dataPoints != null ? new ArrayList<>((dataPoints)) : new ArrayList<>();
             return this;
         }
 

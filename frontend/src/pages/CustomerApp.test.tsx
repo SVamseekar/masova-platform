@@ -82,7 +82,7 @@ describe('CustomerApp', () => {
     await user.click(addButtons[0]); // Add Margherita Pizza
 
     // Cart badge should show 1
-    expect(screen.getByText('Cart (1)')).toBeInTheDocument();
+    expect(screen.getByText(/Cart \(1\)/)).toBeInTheDocument();
   });
 
   it('shows cart items when switching to cart section', async () => {

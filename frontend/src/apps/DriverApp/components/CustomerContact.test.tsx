@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { MockButtonProps } from '../../shared/testTypes';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CustomerContact from './CustomerContact';
 
 // Mock the shared ActionButton to render a simple button
 vi.mock('./shared', () => ({
-  ActionButton: ({ children, onClick, startIcon, ...props }: any) => (
+  ActionButton: ({ children, onClick, startIcon: _startIcon, ...props }: MockButtonProps) => (
     <button onClick={onClick} {...props}>
       {children}
     </button>

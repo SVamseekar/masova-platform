@@ -1,7 +1,7 @@
 package com.MaSoVa.intelligence.dto;
+
 import java.io.Serializable;
-
-
+import java.util.ArrayList;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -10,8 +10,8 @@ public class DemandForecastResponse implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String forecastPeriod; // "WEEKLY", "MONTHLY"
-    private List<ItemDemandForecast> itemForecasts;
-    private List<CategoryDemandForecast> categoryForecasts;
+    private ArrayList<ItemDemandForecast> itemForecasts = new ArrayList<>();
+    private ArrayList<CategoryDemandForecast> categoryForecasts = new ArrayList<>();
     private LocalDate forecastGeneratedAt;
 
     // Constructors
@@ -22,10 +22,10 @@ public class DemandForecastResponse implements Serializable {
     public void setForecastPeriod(String forecastPeriod) { this.forecastPeriod = forecastPeriod; }
 
     public List<ItemDemandForecast> getItemForecasts() { return itemForecasts; }
-    public void setItemForecasts(List<ItemDemandForecast> itemForecasts) { this.itemForecasts = itemForecasts; }
+    public void setItemForecasts(List<ItemDemandForecast> itemForecasts) { this.itemForecasts = itemForecasts != null ? new ArrayList<>((itemForecasts)) : new ArrayList<>(); }
 
     public List<CategoryDemandForecast> getCategoryForecasts() { return categoryForecasts; }
-    public void setCategoryForecasts(List<CategoryDemandForecast> categoryForecasts) { this.categoryForecasts = categoryForecasts; }
+    public void setCategoryForecasts(List<CategoryDemandForecast> categoryForecasts) { this.categoryForecasts = categoryForecasts != null ? new ArrayList<>((categoryForecasts)) : new ArrayList<>(); }
 
     public LocalDate getForecastGeneratedAt() { return forecastGeneratedAt; }
     public void setForecastGeneratedAt(LocalDate forecastGeneratedAt) { this.forecastGeneratedAt = forecastGeneratedAt; }
@@ -37,14 +37,15 @@ public class DemandForecastResponse implements Serializable {
         private final DemandForecastResponse response = new DemandForecastResponse();
 
         public Builder forecastPeriod(String forecastPeriod) { response.forecastPeriod = forecastPeriod; return this; }
-        public Builder itemForecasts(List<ItemDemandForecast> itemForecasts) { response.itemForecasts = itemForecasts; return this; }
-        public Builder categoryForecasts(List<CategoryDemandForecast> categoryForecasts) { response.categoryForecasts = categoryForecasts; return this; }
+        public Builder itemForecasts(List<ItemDemandForecast> itemForecasts) { response.itemForecasts = itemForecasts != null ? new ArrayList<>((itemForecasts)) : new ArrayList<>(); return this; }
+        public Builder categoryForecasts(List<CategoryDemandForecast> categoryForecasts) { response.categoryForecasts = categoryForecasts != null ? new ArrayList<>((categoryForecasts)) : new ArrayList<>(); return this; }
         public Builder forecastGeneratedAt(LocalDate forecastGeneratedAt) { response.forecastGeneratedAt = forecastGeneratedAt; return this; }
 
         public DemandForecastResponse build() { return response; }
     }
 
-    public static class ItemDemandForecast {
+    public static class ItemDemandForecast implements Serializable {
+        private static final long serialVersionUID = 1L;
         private String itemId;
         private String itemName;
         private String category;
@@ -53,7 +54,7 @@ public class DemandForecastResponse implements Serializable {
         private int historicalAverageQuantity;
         private BigDecimal growthTrend; // Percentage
         private String recommendation; // "Stock Up", "Normal", "Reduce Stock"
-        private List<DailyForecast> dailyBreakdown;
+        private ArrayList<DailyForecast> dailyBreakdown = new ArrayList<>();
 
         // Constructors
         public ItemDemandForecast() {}
@@ -84,7 +85,7 @@ public class DemandForecastResponse implements Serializable {
         public void setRecommendation(String recommendation) { this.recommendation = recommendation; }
 
         public List<DailyForecast> getDailyBreakdown() { return dailyBreakdown; }
-        public void setDailyBreakdown(List<DailyForecast> dailyBreakdown) { this.dailyBreakdown = dailyBreakdown; }
+        public void setDailyBreakdown(List<DailyForecast> dailyBreakdown) { this.dailyBreakdown = dailyBreakdown != null ? new ArrayList<>((dailyBreakdown)) : new ArrayList<>(); }
 
         // Builder pattern
         public static Builder builder() { return new Builder(); }
@@ -100,13 +101,14 @@ public class DemandForecastResponse implements Serializable {
             public Builder historicalAverageQuantity(int historicalAverageQuantity) { forecast.historicalAverageQuantity = historicalAverageQuantity; return this; }
             public Builder growthTrend(BigDecimal growthTrend) { forecast.growthTrend = growthTrend; return this; }
             public Builder recommendation(String recommendation) { forecast.recommendation = recommendation; return this; }
-            public Builder dailyBreakdown(List<DailyForecast> dailyBreakdown) { forecast.dailyBreakdown = dailyBreakdown; return this; }
+            public Builder dailyBreakdown(List<DailyForecast> dailyBreakdown) { forecast.dailyBreakdown = dailyBreakdown != null ? new ArrayList<>(dailyBreakdown) : new ArrayList<>(); return this; }
 
             public ItemDemandForecast build() { return forecast; }
         }
     }
 
-    public static class CategoryDemandForecast {
+    public static class CategoryDemandForecast implements Serializable {
+        private static final long serialVersionUID = 1L;
         private String category;
         private int forecastedQuantity;
         private BigDecimal forecastedRevenue;
@@ -148,7 +150,8 @@ public class DemandForecastResponse implements Serializable {
         }
     }
 
-    public static class DailyForecast {
+    public static class DailyForecast implements Serializable {
+        private static final long serialVersionUID = 1L;
         private LocalDate date;
         private int quantity;
         private BigDecimal confidence; // 0-100

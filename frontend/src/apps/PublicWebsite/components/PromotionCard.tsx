@@ -2,7 +2,6 @@ import React from 'react';
 import {
   Card as MuiCard,
   CardContent,
-  CardMedia,
   Typography,
   Chip,
   Stack,

@@ -80,6 +80,24 @@ class OrderServiceStatusTransitionTest {
         return order;
     }
 
+    // PostgreSQL dual-write sync
+
+    @Test
+    void updateOrderStatus_syncs_to_postgres_when_pg_row_exists() {
+        Order order = buildOrder("o1", OrderStatus.RECEIVED, OrderType.TAKEAWAY);
+        when(orderRepository.findById("o1")).thenReturn(Optional.of(order));
+
+        com.MaSoVa.commerce.order.entity.OrderJpaEntity pgOrder =
+                com.MaSoVa.commerce.order.entity.OrderJpaEntity.builder().id("pg-1").mongoId("o1").build();
+        when(orderJpaRepository.findByMongoId("o1")).thenReturn(Optional.of(pgOrder));
+
+        UpdateOrderStatusRequest req = new UpdateOrderStatusRequest();
+        req.setStatus(OrderStatus.PREPARING);
+        Order result = orderService.updateOrderStatus("o1", req);
+
+        verify(orderItemSyncService).syncOrderItems(pgOrder, result);
+    }
+
     // updateOrderStatus — valid transitions
 
     @Test

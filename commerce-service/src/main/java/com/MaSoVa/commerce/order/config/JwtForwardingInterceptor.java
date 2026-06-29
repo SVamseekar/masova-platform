@@ -13,6 +13,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Interceptor to forward JWT tokens from incoming requests to outgoing RestTemplate calls
@@ -49,7 +50,7 @@ public class JwtForwardingInterceptor implements ClientHttpRequestInterceptor {
             log.info("Authorization header value: {}", authHeader != null ? "Bearer ***" + authHeader.substring(Math.max(0, authHeader.length() - 20)) : "NULL");
 
             if (authHeader != null && !authHeader.isEmpty()) {
-                request.getHeaders().add(AUTHORIZATION_HEADER, authHeader);
+                request.getHeaders().add(Objects.requireNonNull(AUTHORIZATION_HEADER), authHeader);
                 log.info("✅ Forwarding JWT token (length: {}) to: {}", authHeader.length(), request.getURI());
             } else {
                 log.warn("⚠️  NO JWT TOKEN found in request context to forward to: {}", request.getURI());
@@ -59,7 +60,7 @@ public class JwtForwardingInterceptor implements ClientHttpRequestInterceptor {
             for (String headerName : HEADERS_TO_FORWARD) {
                 String headerValue = currentRequest.getHeader(headerName);
                 if (headerValue != null && !headerValue.isEmpty()) {
-                    request.getHeaders().add(headerName, headerValue);
+                    request.getHeaders().add(Objects.requireNonNull(headerName), headerValue);
                     log.debug("Forwarding {}: {} to: {}", headerName, headerValue, request.getURI());
                 }
             }

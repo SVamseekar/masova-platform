@@ -1,5 +1,5 @@
 // src/apps/POSSystem/POSDashboard.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { selectSelectedStoreId, selectSelectedStoreName, setSelectedStore, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
@@ -26,11 +26,13 @@ import {
   useGetStaffLeaderboardQuery,
   useGetTopProductsQuery,
 } from '../../store/api/analyticsApi';
-import { useGetStoreOrdersQuery } from '../../store/api/orderApi';
+import { useGetStoreOrdersQuery, type Order } from '../../store/api/orderApi';
+import type { MenuItem } from '../../store/api/menuApi';
+import type { POSCustomer, POSOrderItem } from './types';
+import { getRtkErrorMessage } from '../shared/rtkError';
 import { useRecordCashPaymentMutation } from '../../store/api/paymentApi';
 import {
-  useGetActiveStoreSessionsQuery,
-  useClockOutEmployeeMutation
+  useGetActiveStoreSessionsQuery
 } from '../../store/api/sessionApi';
 import { useSnackbar } from 'notistack';
 
@@ -89,11 +91,11 @@ const POSDashboard: React.FC = () => {
   } | null>(null);
 
   // Current order state
-  const [orderItems, setOrderItems] = useState<any[]>([]);
-  const [customer, setCustomer] = useState<any>(null);
+  const [orderItems, setOrderItems] = useState<POSOrderItem[]>([]);
+  const [customer, setCustomer] = useState<POSCustomer | null>(null);
   const [orderType, setOrderType] = useState<'PICKUP' | 'DELIVERY' | 'DINE_IN'>('PICKUP');
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm] = useState('');
 
 
   // Ref for triggering submit from keyboard shortcut
@@ -137,12 +139,12 @@ const POSDashboard: React.FC = () => {
 
   // Filter today's orders for history
   const today = new Date().toDateString();
-  const todayOrders = orders.filter((order: any) => {
+  const todayOrders = orders.filter((order: Order) => {
     const orderDate = new Date(order.createdAt).toDateString();
     return orderDate === today;
   });
 
-  const filteredOrders = todayOrders.filter((order: any) => {
+  const filteredOrders = todayOrders.filter((order: Order) => {
     const searchLower = searchTerm.toLowerCase();
     return (
       order.orderNumber.toLowerCase().includes(searchLower) ||
@@ -164,6 +166,30 @@ const POSDashboard: React.FC = () => {
     };
     return statusColors[status] || 'secondary';
   };
+
+  const handleNewOrder = useCallback(() => {
+    // Clear existing order
+    setOrderItems([]);
+    setCustomer(null);
+    setSelectedTable(null);
+    setOrderUser(null);
+
+    // For public POS (no logged-in user), require PIN authentication
+    // For logged-in users, use their credentials automatically
+    if (!user) {
+      setShowPINModal(true);
+    } else {
+      // Logged-in user - set them as order user
+      setOrderUser({
+        userId: user.id,
+        name: user.name,
+        type: user.type,
+        role: user.role || 'Staff',
+        storeId: user.storeId || storeId || ''
+      });
+      enqueueSnackbar(`Order started by ${user.name}`, { variant: 'success' });
+    }
+  }, [user, storeId, enqueueSnackbar]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -194,9 +220,9 @@ const POSDashboard: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [activeTab]);
+  }, [activeTab, handleNewOrder]);
 
-  const handleAddItem = (item: any, quantity: number = 1) => {
+  const handleAddItem = (item: MenuItem, quantity: number = 1) => {
     const existingIndex = orderItems.findIndex(
       (orderItem) => orderItem.menuItemId === item.id
     );
@@ -214,7 +240,7 @@ const POSDashboard: React.FC = () => {
           price: item.basePrice / 100, // Convert from paisa to rupees
           quantity,
           specialInstructions: '',
-          image: item.image,
+          image: item.imageUrl,
           allergens: item.allergens ?? [],
         },
       ]);
@@ -247,30 +273,6 @@ const POSDashboard: React.FC = () => {
     );
   };
 
-  const handleNewOrder = () => {
-    // Clear existing order
-    setOrderItems([]);
-    setCustomer(null);
-    setSelectedTable(null);
-    setOrderUser(null);
-
-    // For public POS (no logged-in user), require PIN authentication
-    // For logged-in users, use their credentials automatically
-    if (!user) {
-      setShowPINModal(true);
-    } else {
-      // Logged-in user - set them as order user
-      setOrderUser({
-        userId: user.id,
-        name: user.name,
-        type: user.type,
-        role: user.role || 'Staff',
-        storeId: user.storeId || storeId || ''
-      });
-      enqueueSnackbar(`Order started by ${user.name}`, { variant: 'success' });
-    }
-  };
-
   const handlePINAuthenticated = (userData: {
     userId: string;
     name: string;
@@ -292,7 +294,7 @@ const POSDashboard: React.FC = () => {
     enqueueSnackbar('Order completed successfully!', { variant: 'success' });
   };
 
-  const handleMarkAsPaid = async (order: any) => {
+  const handleMarkAsPaid = async (order: Order) => {
     const confirmed = window.confirm(
       `Mark this order as PAID?\n\n` +
       `Order: #${order.orderNumber}\n` +
@@ -317,14 +319,14 @@ const POSDashboard: React.FC = () => {
       }).unwrap();
 
       enqueueSnackbar(`Order #${order.orderNumber} marked as PAID — Cash payment of ${fmt(order.total)} recorded.`, { variant: 'success' });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to record cash payment:', error);
-      enqueueSnackbar(`Failed to mark order as paid. ${error?.data?.message || 'Please try again.'}`, { variant: 'error' });
+      enqueueSnackbar(`Failed to mark order as paid. ${getRtkErrorMessage(error, 'Please try again.')}`, { variant: 'error' });
     }
   };
 
 
-  const totalSales = filteredOrders.reduce((sum: number, order: any) => sum + order.totalAmount, 0);
+  const totalSales = filteredOrders.reduce((sum: number, order: Order) => sum + (order.totalAmount ?? order.total), 0);
 
   // Calculate order total - matching customer side logic
   const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -393,7 +395,7 @@ const POSDashboard: React.FC = () => {
             ].map((tab) => (
               <button
                 key={tab.key}
-                onClick={() => setActiveTab(tab.key as any)}
+                onClick={() => setActiveTab(tab.key as 'orders' | 'analytics')}
                 style={{
                   padding: `${spacing[2]} ${spacing[5]}`,
                   borderRadius: '10px',
@@ -970,7 +972,7 @@ const POSDashboard: React.FC = () => {
               </h3>
               {filteredOrders.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
-                  {filteredOrders.slice(0, 5).map((order: any) => (
+                  {filteredOrders.slice(0, 5).map((order: Order) => (
                     <div
                       key={order.id}
                       style={{

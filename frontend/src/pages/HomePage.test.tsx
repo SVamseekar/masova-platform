@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { renderUnauthenticated, renderAsCustomer, screen } from '@/test/utils/testUtils';
+import { renderUnauthenticated, screen } from '@/test/utils/testUtils';
 import userEvent from '@testing-library/user-event';
 import HomePage from './HomePage';
 

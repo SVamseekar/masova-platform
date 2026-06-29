@@ -1,12 +1,12 @@
 package com.MaSoVa.logistics.delivery.client;
 
+import com.MaSoVa.shared.http.HttpMethods;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -43,7 +43,7 @@ public class UserServiceClient {
         try {
             ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
                     url,
-                    HttpMethod.GET,
+                    HttpMethods.GET,
                     null,
                     new ParameterizedTypeReference<List<Map<String, Object>>>() {}
             );
@@ -65,7 +65,7 @@ public class UserServiceClient {
         try {
             ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                     url,
-                    HttpMethod.GET,
+                    HttpMethods.GET,
                     null,
                     new ParameterizedTypeReference<Map<String, Object>>() {}
             );
@@ -123,7 +123,7 @@ public class UserServiceClient {
         try {
             ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                     url,
-                    HttpMethod.GET,
+                    HttpMethods.GET,
                     null,
                     new ParameterizedTypeReference<Map<String, Object>>() {}
             );
@@ -147,7 +147,7 @@ public class UserServiceClient {
         try {
             ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
                     url,
-                    HttpMethod.GET,
+                    HttpMethods.GET,
                     null,
                     new ParameterizedTypeReference<List<Map<String, Object>>>() {}
             );

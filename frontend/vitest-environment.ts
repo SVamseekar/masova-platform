@@ -1,4 +1,4 @@
-import { builtinEnvironments, populateGlobal } from 'vitest/environments';
+import { builtinEnvironments } from 'vitest/environments';
 
 export default {
   name: 'jsdom-with-native-abort',

@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -104,6 +103,25 @@ class ProofOfDeliveryServiceTest {
 
             assertThat(result.isVerified()).isFalse();
             assertThat(result.getMessage()).contains("Invalid OTP");
+        }
+
+        @Test
+        @DisplayName("locks out after max failed OTP attempts")
+        void locksOutAfterMaxFailedAttempts() {
+            when(orderServiceClient.getOrderDetails("order-lock"))
+                .thenReturn(Map.of("deliveryOtp", "1234", "orderNumber", "ORD-LOCK"));
+
+            for (int i = 0; i < 5; i++) {
+                DeliveryVerificationResponse attempt =
+                        proofOfDeliveryService.verifyDeliveryOtp(buildRequest("order-lock", "9999"));
+                assertThat(attempt.isVerified()).isFalse();
+                assertThat(attempt.getMessage()).contains("Invalid OTP");
+            }
+
+            DeliveryVerificationResponse locked =
+                    proofOfDeliveryService.verifyDeliveryOtp(buildRequest("order-lock", "9999"));
+            assertThat(locked.isVerified()).isFalse();
+            assertThat(locked.getMessage()).contains("Too many failed OTP attempts");
         }
 
         @Test

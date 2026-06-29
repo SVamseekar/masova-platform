@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
@@ -23,12 +23,12 @@ const CustomerDashboard: React.FC = () => {
   const locale = useAppSelector(selectCartLocale);
 
   // Fetch customer data
-  const { data: customer, isLoading: customerLoading } = useGetCustomerByUserIdQuery(currentUser?.id || '', {
+  const { data: customer, isLoading: _customerLoading } = useGetCustomerByUserIdQuery(currentUser?.id || '', {
     skip: !currentUser?.id,
   });
 
   // Fetch recent orders
-  const { data: orders = [], isLoading: ordersLoading } = useGetCustomerOrdersQuery(customer?.id || '', {
+  const { data: orders = [], isLoading: _ordersLoading } = useGetCustomerOrdersQuery(customer?.id || '', {
     skip: !customer?.id,
   });
 

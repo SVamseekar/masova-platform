@@ -1,6 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { screen } from '@testing-library/react';
+import type { PreloadedState } from '@reduxjs/toolkit';
 import { renderWithProviders } from '@/test/utils/testUtils';
+import type { RootState } from '../../store/store';
 import { NotificationSystem } from './NotificationSystem';
 
 describe('NotificationSystem', () => {
@@ -10,7 +12,7 @@ describe('NotificationSystem', () => {
         notifications: {
           notifications: [],
         },
-      } as any,
+      } satisfies PreloadedState<RootState>,
       useMemoryRouter: true,
     });
 
@@ -32,7 +34,7 @@ describe('NotificationSystem', () => {
             },
           ],
         },
-      } as any,
+      } satisfies PreloadedState<RootState>,
       useMemoryRouter: true,
     });
 
@@ -49,7 +51,7 @@ describe('NotificationSystem', () => {
             { id: '3', type: 'warning', message: 'Third notification', autoHide: true },
           ],
         },
-      } as any,
+      } satisfies PreloadedState<RootState>,
       useMemoryRouter: true,
     });
 
@@ -69,7 +71,7 @@ describe('NotificationSystem', () => {
     renderWithProviders(<NotificationSystem />, {
       preloadedState: {
         notifications: { notifications },
-      } as any,
+      } satisfies PreloadedState<RootState>,
       useMemoryRouter: true,
     });
 
@@ -93,7 +95,7 @@ describe('NotificationSystem', () => {
             },
           ],
         },
-      } as any,
+      } satisfies PreloadedState<RootState>,
       useMemoryRouter: true,
     });
 

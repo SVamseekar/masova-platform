@@ -1,7 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { http, HttpResponse } from 'msw';
-import { server } from '../../test/mocks/server';
 import { DefaultTestWrapper } from '../../test/TestWrapper';
 import {
   customerApi,
@@ -37,14 +35,13 @@ import {
   useGetBirthdayCustomersTodayQuery,
   useGetMarketingOptInCustomersQuery,
   useGetCustomerStatsQuery,
-  useGetCustomerOrderStatsQuery,
-  useGetCustomerPreferencesQuery,
-  useGetCustomerLoyaltyPointsQuery,
-  useGetCustomerAddressesQuery,
   useDeleteCustomerMutation,
 } from './customerApi';
+import { TEST_API_BASE } from '../../test/testApiBase';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API = TEST_API_BASE;
+
+
 
 describe('customerApi', () => {
   describe('endpoint definitions', () => {
@@ -118,6 +115,9 @@ describe('customerApi', () => {
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
       expect(result.current.data).toBeDefined();
+      expect(Array.isArray(result.current.data)).toBe(true);
+      expect(result.current.data!.length).toBeGreaterThan(0);
+      expect(result.current.data![0].id).toBe('cust-1');
     });
 
     it('should search customers', async () => {
@@ -225,44 +225,17 @@ describe('customerApi', () => {
       expect(result.current.data!.totalCustomers).toBe(150);
     });
 
-    it('should fetch customer order stats', async () => {
-      const { result } = renderHook(() => useGetCustomerOrderStatsQuery('cust-1'), {
+    it('should include order stats, preferences, loyalty, and addresses on customer profile', async () => {
+      const { result } = renderHook(() => useGetCustomerByIdQuery('cust-1'), {
         wrapper: DefaultTestWrapper,
       });
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-      expect(result.current.data).toBeDefined();
-    });
-
-    it('should fetch customer preferences', async () => {
-      const { result } = renderHook(() => useGetCustomerPreferencesQuery('cust-1'), {
-        wrapper: DefaultTestWrapper,
-      });
-
-      await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-      expect(result.current.data).toBeDefined();
-    });
-
-    it('should fetch customer loyalty points', async () => {
-      const { result } = renderHook(() => useGetCustomerLoyaltyPointsQuery('cust-1'), {
-        wrapper: DefaultTestWrapper,
-      });
-
-      await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-      expect(result.current.data).toBeDefined();
-    });
-
-    it('should fetch customer addresses', async () => {
-      const { result } = renderHook(() => useGetCustomerAddressesQuery('cust-1'), {
-        wrapper: DefaultTestWrapper,
-      });
-
-      await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-      expect(result.current.data).toBeDefined();
+      expect(result.current.data?.orderStats?.totalOrders).toBe(15);
+      expect(result.current.data?.preferences?.spiceLevel).toBe('MEDIUM');
+      expect(result.current.data?.loyaltyInfo?.totalPoints).toBe(500);
+      expect(result.current.data?.addresses).toHaveLength(1);
     });
   });
 

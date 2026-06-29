@@ -19,7 +19,6 @@ import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -213,7 +212,7 @@ class CustomerServiceTest {
             when(customerRepository.save(any())).thenReturn(saved);
 
             CreateCustomerRequest req = buildCreateRequest("new-user", "new@example.com", "9876543210");
-            Customer result = customerService.createCustomer(req);
+            customerService.createCustomer(req);
 
             verify(customerRepository).save(argThat(c ->
                     c.getLoyaltyInfo().getTotalPoints() == 100 &&

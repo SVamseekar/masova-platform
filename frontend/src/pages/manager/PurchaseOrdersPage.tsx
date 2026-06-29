@@ -4,7 +4,7 @@ import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
 import { formatMoney } from '../../utils/currency';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
-import { usePageStore } from '../../contexts/PageStoreContext';
+import { usePageStore } from '../../hooks/usePageStore';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import {
   useGetAllPurchaseOrdersQuery,
@@ -24,6 +24,7 @@ import { format } from 'date-fns';
 import CreatePurchaseOrderDialog from '../../components/inventory/CreatePurchaseOrderDialog';
 import ReceivePurchaseOrderDialog from '../../components/inventory/ReceivePurchaseOrderDialog';
 
+// eslint-disable-next-line react-refresh/only-export-components -- page component with HOC export
 const PurchaseOrdersPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
   const currency = useAppSelector(selectCartCurrency);
@@ -45,7 +46,7 @@ const PurchaseOrdersPage: React.FC = () => {
     pollingInterval: 60000,
   });
   // Pass storeId to trigger refetch when store changes
-  const { data: pendingOrders = [], refetch: refetchPending } = useGetPendingApprovalPurchaseOrdersQuery(storeId, { skip: !storeId });
+  const { data: _pendingOrders = [], refetch: refetchPending } = useGetPendingApprovalPurchaseOrdersQuery(storeId, { skip: !storeId });
 
   const [approvePO] = useApprovePurchaseOrderMutation();
   const [rejectPO] = useRejectPurchaseOrderMutation();
@@ -446,4 +447,5 @@ const PurchaseOrdersPage: React.FC = () => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- HOC default export
 export default withPageStoreContext(PurchaseOrdersPage, 'purchase-orders');

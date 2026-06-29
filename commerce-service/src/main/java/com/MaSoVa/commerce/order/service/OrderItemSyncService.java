@@ -83,6 +83,7 @@ public class OrderItemSyncService {
         pgOrder.setPreparingStartedAt(toOdt(order.getPreparingStartedAt()));
         pgOrder.setReadyAt(toOdt(order.getReadyAt()));
         pgOrder.setDispatchedAt(toOdt(order.getDispatchedAt()));
+        pgOrder.setOutForDeliveryAt(toOdt(order.getOutForDeliveryAt()));
         pgOrder.setDeliveredAt(toOdt(order.getDeliveredAt()));
         pgOrder.setCancelledAt(toOdt(order.getCancelledAt()));
     }

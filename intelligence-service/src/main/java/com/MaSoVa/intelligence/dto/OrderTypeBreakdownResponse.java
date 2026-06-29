@@ -1,14 +1,14 @@
 package com.MaSoVa.intelligence.dto;
+
 import java.io.Serializable;
-
-
+import java.util.ArrayList;
 import java.math.BigDecimal;
 import java.util.List;
 
 public class OrderTypeBreakdownResponse implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private List<OrderTypeData> breakdown;
+    private ArrayList<OrderTypeData> breakdown = new ArrayList<>();
     private BigDecimal totalSales;
     private int totalOrders;
 
@@ -16,7 +16,7 @@ public class OrderTypeBreakdownResponse implements Serializable {
     }
 
     public OrderTypeBreakdownResponse(List<OrderTypeData> breakdown, BigDecimal totalSales, int totalOrders) {
-        this.breakdown = breakdown;
+        this.breakdown = breakdown != null ? new ArrayList<>((breakdown)) : new ArrayList<>();
         this.totalSales = totalSales;
         this.totalOrders = totalOrders;
     }
@@ -26,7 +26,7 @@ public class OrderTypeBreakdownResponse implements Serializable {
     }
 
     public void setBreakdown(List<OrderTypeData> breakdown) {
-        this.breakdown = breakdown;
+        this.breakdown = breakdown != null ? new ArrayList<>((breakdown)) : new ArrayList<>();
     }
 
     public BigDecimal getTotalSales() {
@@ -50,12 +50,12 @@ public class OrderTypeBreakdownResponse implements Serializable {
     }
 
     public static class Builder {
-        private List<OrderTypeData> breakdown;
+        private ArrayList<OrderTypeData> breakdown = new ArrayList<>();
         private BigDecimal totalSales;
         private int totalOrders;
 
         public Builder breakdown(List<OrderTypeData> breakdown) {
-            this.breakdown = breakdown;
+            this.breakdown = breakdown != null ? new ArrayList<>((breakdown)) : new ArrayList<>();
             return this;
         }
 
@@ -74,7 +74,8 @@ public class OrderTypeBreakdownResponse implements Serializable {
         }
     }
 
-    public static class OrderTypeData {
+    public static class OrderTypeData implements Serializable {
+        private static final long serialVersionUID = 1L;
         private String orderType; // "DINE_IN", "PICKUP", "DELIVERY"
         private int count;
         private BigDecimal sales;

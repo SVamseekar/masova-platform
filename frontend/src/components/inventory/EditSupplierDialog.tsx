@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem } from '@mui/material';
 import { Button } from '../ui/neumorphic';
 import { useUpdateSupplierMutation, Supplier } from '../../store/api/inventoryApi';
-import { colors, spacing, typography } from '../../styles/design-tokens';
+import { spacing, typography } from '../../styles/design-tokens';
 
 interface EditSupplierDialogProps {
   open: boolean;
@@ -45,7 +45,7 @@ const EditSupplierDialog: React.FC<EditSupplierDialogProps> = ({ open, onClose, 
     });
   }, [supplier]);
 
-  const handleChange = (field: string, value: any) => {
+  const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 

@@ -7,7 +7,7 @@ import { selectCurrentUser } from '../../store/slices/authSlice';
 import { setSelectedStore, selectSelectedStoreId, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
 import { formatMoney } from '../../utils/currency';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
-import { usePageStore } from '../../contexts/PageStoreContext';
+import { usePageStore } from '../../hooks/usePageStore';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import {
   useGetStoreOrdersQuery,
@@ -15,7 +15,6 @@ import {
   useUpdateOrderPriorityMutation,
   useCancelOrderMutation,
   useAssignDriverMutation,
-  useUpdatePaymentStatusMutation,
   Order,
 } from '../../store/api/orderApi';
 import { useGetUsersQuery } from '../../store/api/userApi';
@@ -23,7 +22,7 @@ import { useGetTodaySalesMetricsQuery } from '../../store/api/analyticsApi';
 import { ORDER_STATUS_CONFIG, ORDER_TYPE_CONFIG, PAYMENT_STATUS_CONFIG } from '../../types/order';
 import type { OrderStatus, OrderPriority } from '../../types/order';
 import { FilterBar, type FilterConfig, type FilterValues, type SortConfig } from '../../components/common/FilterBar';
-import { applyFilters, applySort, exportToCSV, commonFilters } from '../../utils/filterUtils';
+import { applyFilters, exportToCSV, commonFilters } from '../../utils/filterUtils';
 import { colors, spacing, typography, shadows } from '../../styles/design-tokens';
 
 const AGGREGATOR_BADGE: Record<string, { label: string; bg: string; color: string }> = {
@@ -33,6 +32,7 @@ const AGGREGATOR_BADGE: Record<string, { label: string; bg: string; color: strin
   UBER_EATS: { label: 'Uber Eats', bg: '#000000', color: '#fff' },
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- page component with HOC export
 const OrderManagementPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const currentUser = useAppSelector(selectCurrentUser);
@@ -104,10 +104,10 @@ const OrderManagementPage: React.FC = () => {
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
   const [updateOrderPriority] = useUpdateOrderPriorityMutation();
   const [cancelOrder] = useCancelOrderMutation();
-  const [assignDriver] = useAssignDriverMutation();
+  const [_assignDriver] = useAssignDriverMutation();
 
   // Get drivers
-  const drivers = users.filter(user => user.type === 'DRIVER');
+  const _drivers = users.filter(user => user.type === 'DRIVER');
 
   // Filter configuration
   const filterConfigs: FilterConfig[] = [
@@ -265,7 +265,7 @@ const OrderManagementPage: React.FC = () => {
         {
           label: 'Created At',
           field: 'createdAt',
-          format: (value) => new Date(value).toLocaleString(),
+          format: (value) => new Date(String(value)).toLocaleString(),
         },
       ]
     );
@@ -359,7 +359,7 @@ const OrderManagementPage: React.FC = () => {
       <div style={{ paddingTop: '80px' }}>
         <AppHeader title="Create New Order" showManagerNav={true} />
         <OrderForm
-          onSuccess={(orderId) => {
+          onSuccess={(_orderId) => {
             setShowOrderForm(false);
             refetch();
           }}
@@ -948,8 +948,8 @@ const OrderManagementPage: React.FC = () => {
                 <div className="order-actions">
                   {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
                     <>
-                      {/* Show prominent "Mark as Completed" button for DISPATCHED orders */}
-                      {order.status === 'DISPATCHED' && (
+                      {/* Show prominent "Mark as Completed" button for DISPATCHED/OUT_FOR_DELIVERY orders */}
+                      {(order.status === 'DISPATCHED' || order.status === 'OUT_FOR_DELIVERY') && (
                         <button
                           className="action-btn success"
                           onClick={() => handleMarkAsCompleted(order.id)}
@@ -1473,4 +1473,5 @@ const OrderManagementPage: React.FC = () => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- HOC default export
 export default withPageStoreContext(OrderManagementPage, 'orders');

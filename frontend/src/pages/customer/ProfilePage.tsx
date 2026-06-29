@@ -16,7 +16,9 @@ import {
   UpdateCustomerRequest,
   AddAddressRequest,
   UpdatePreferencesRequest,
+  type CustomerAddress,
 } from '../../store/api/customerApi';
+import { getApiErrorMessage } from '../utils/apiError';
 import AppHeader from '../../components/common/AppHeader';
 import { AllergenType, ALLERGEN_LABELS, ALL_ALLERGENS } from '../../constants/allergens';
 
@@ -137,8 +139,8 @@ const ProfilePage: React.FC = () => {
         try {
           await createCustomer({ userId: currentUser.id, name: currentUser.name, email: currentUser.email, phone: cleanPhone, marketingOptIn: false, smsOptIn: false }).unwrap();
           setTimeout(async () => { await refetch(); setCreatingProfile(false); }, 500);
-        } catch (err: any) {
-          const msg = err?.data?.message || '';
+        } catch (err: unknown) {
+          const msg = getApiErrorMessage(err, '');
           setCreationError(msg.includes('already exists') ? 'A profile with your phone/email already exists. Contact support.' : 'Unable to create profile. Please try again.');
           setCreatingProfile(false);
         }
@@ -201,7 +203,7 @@ const ProfilePage: React.FC = () => {
     } catch { alert('Failed to save address.'); }
   };
 
-  const handleEditAddress = (address: any) => {
+  const handleEditAddress = (address: CustomerAddress) => {
     setAddressForm({ label: address.label, addressLine1: address.addressLine1, addressLine2: address.addressLine2, city: address.city, state: address.state, postalCode: address.postalCode, country: address.country, landmark: address.landmark });
     setEditingAddressId(address.id); setAddressDialogOpen(true);
   };

@@ -8,6 +8,7 @@ import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * RestTemplate interceptor to propagate correlation ID to downstream services.
@@ -40,7 +41,7 @@ public class CorrelationIdInterceptor implements ClientHttpRequestInterceptor {
 
         // Add to outgoing request headers if present
         if (correlationId != null && !correlationId.isEmpty()) {
-            request.getHeaders().add(CORRELATION_ID_HEADER, correlationId);
+            request.getHeaders().add(Objects.requireNonNull(CORRELATION_ID_HEADER), correlationId);
         }
 
         // Continue with the request

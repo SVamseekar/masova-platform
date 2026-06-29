@@ -1,7 +1,6 @@
 package com.MaSoVa.intelligence.dto;
+
 import java.io.Serializable;
-
-
 import java.math.BigDecimal;
 
 public class StaffPerformanceResponse implements Serializable {

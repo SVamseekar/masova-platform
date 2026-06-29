@@ -9,7 +9,7 @@ vi.mock('@/store/api/customerApi', async () => {
   const actual = await vi.importActual('@/store/api/customerApi');
   return {
     ...actual,
-    useGetCustomerByUserIdQuery: (...args: any[]) => mockUseGetCustomerByUserIdQuery(...args),
+    useGetCustomerByUserIdQuery: (...args: unknown[]) => mockUseGetCustomerByUserIdQuery(...args),
   };
 });
 
@@ -17,7 +17,7 @@ vi.mock('@/store/api/orderApi', async () => {
   const actual = await vi.importActual('@/store/api/orderApi');
   return {
     ...actual,
-    useGetCustomerOrdersQuery: (...args: any[]) => mockUseGetCustomerOrdersQuery(...args),
+    useGetCustomerOrdersQuery: (...args: unknown[]) => mockUseGetCustomerOrdersQuery(...args),
   };
 });
 
@@ -30,7 +30,7 @@ vi.mock('@/components/common/AppHeader', () => ({
 }));
 
 vi.mock('@/components/ui/neumorphic', () => ({
-  Button: ({ children, onClick, ...props }: any) => (
+  Button: ({ children, onClick, ...props }: React.ComponentProps<"button">) => (
     <button onClick={onClick} {...props}>{children}</button>
   ),
 }));

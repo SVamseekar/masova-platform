@@ -73,13 +73,13 @@ public class MenuItem implements Serializable {
     private Long basePrice;  // Price in paise (₹)
 
     @Field("variants")
-    private List<MenuVariant> variants = new ArrayList<>();
+    private ArrayList<MenuVariant> variants = new ArrayList<>();
 
     @Field("customizations")
-    private List<MenuCustomization> customizations = new ArrayList<>();
+    private ArrayList<MenuCustomization> customizations = new ArrayList<>();
 
     @Field("dietaryInfo")
-    private List<DietaryType> dietaryInfo = new ArrayList<>();
+    private ArrayList<DietaryType> dietaryInfo = new ArrayList<>();
 
     @Field("spiceLevel")
     private SpiceLevel spiceLevel;
@@ -110,16 +110,16 @@ public class MenuItem implements Serializable {
     private Integer yieldPerRecipe;  // How many portions one recipe makes
 
     @Field("ingredients")
-    private List<String> ingredients = new ArrayList<>();
+    private ArrayList<String> ingredients = new ArrayList<>();
 
     @Field("allergens")
-    private Set<AllergenType> allergens = new HashSet<>();
+    private HashSet<AllergenType> allergens = new HashSet<>();
 
     @Field("allergensDeclared")
     private boolean allergensDeclared = false;
 
     @Field("preparationInstructions")
-    private List<String> preparationInstructions = new ArrayList<>();  // Step-by-step recipe instructions
+    private ArrayList<String> preparationInstructions = new ArrayList<>();  // Step-by-step recipe instructions
 
     @Field("storeId")
     @Indexed
@@ -129,7 +129,7 @@ public class MenuItem implements Serializable {
     private Integer displayOrder = 0;
 
     @Field("tags")
-    private List<String> tags = new ArrayList<>();  // e.g., "popular", "new", "chef-special"
+    private ArrayList<String> tags = new ArrayList<>();  // e.g., "popular", "new", "chef-special"
 
     @Field("isRecommended")
     private Boolean isRecommended = false;
@@ -176,13 +176,19 @@ public class MenuItem implements Serializable {
     public void setBasePrice(Long basePrice) { this.basePrice = basePrice; }
 
     public List<MenuVariant> getVariants() { return variants; }
-    public void setVariants(List<MenuVariant> variants) { this.variants = variants; }
+    public void setVariants(List<MenuVariant> variants) {
+        this.variants = variants == null ? new ArrayList<>() : new ArrayList<>(variants);
+    }
 
     public List<MenuCustomization> getCustomizations() { return customizations; }
-    public void setCustomizations(List<MenuCustomization> customizations) { this.customizations = customizations; }
+    public void setCustomizations(List<MenuCustomization> customizations) {
+        this.customizations = customizations == null ? new ArrayList<>() : new ArrayList<>(customizations);
+    }
 
     public List<DietaryType> getDietaryInfo() { return dietaryInfo; }
-    public void setDietaryInfo(List<DietaryType> dietaryInfo) { this.dietaryInfo = dietaryInfo; }
+    public void setDietaryInfo(List<DietaryType> dietaryInfo) {
+        this.dietaryInfo = dietaryInfo == null ? new ArrayList<>() : new ArrayList<>(dietaryInfo);
+    }
 
     public SpiceLevel getSpiceLevel() { return spiceLevel; }
     public void setSpiceLevel(SpiceLevel spiceLevel) { this.spiceLevel = spiceLevel; }
@@ -212,16 +218,22 @@ public class MenuItem implements Serializable {
     public void setYieldPerRecipe(Integer yieldPerRecipe) { this.yieldPerRecipe = yieldPerRecipe; }
 
     public List<String> getIngredients() { return ingredients; }
-    public void setIngredients(List<String> ingredients) { this.ingredients = ingredients; }
+    public void setIngredients(List<String> ingredients) {
+        this.ingredients = ingredients == null ? new ArrayList<>() : new ArrayList<>(ingredients);
+    }
 
     public Set<AllergenType> getAllergens() { return allergens; }
-    public void setAllergens(Set<AllergenType> allergens) { this.allergens = allergens; }
+    public void setAllergens(Set<AllergenType> allergens) {
+        this.allergens = allergens == null ? new HashSet<>() : new HashSet<>(allergens);
+    }
 
     public boolean isAllergensDeclared() { return allergensDeclared; }
     public void setAllergensDeclared(boolean allergensDeclared) { this.allergensDeclared = allergensDeclared; }
 
     public List<String> getPreparationInstructions() { return preparationInstructions; }
-    public void setPreparationInstructions(List<String> preparationInstructions) { this.preparationInstructions = preparationInstructions; }
+    public void setPreparationInstructions(List<String> preparationInstructions) {
+        this.preparationInstructions = preparationInstructions == null ? new ArrayList<>() : new ArrayList<>(preparationInstructions);
+    }
 
     public String getStoreId() { return storeId; }
     public void setStoreId(String storeId) { this.storeId = storeId; }
@@ -230,7 +242,9 @@ public class MenuItem implements Serializable {
     public void setDisplayOrder(Integer displayOrder) { this.displayOrder = displayOrder; }
 
     public List<String> getTags() { return tags; }
-    public void setTags(List<String> tags) { this.tags = tags; }
+    public void setTags(List<String> tags) {
+        this.tags = tags == null ? new ArrayList<>() : new ArrayList<>(tags);
+    }
 
     public Boolean getIsRecommended() { return isRecommended; }
     public void setIsRecommended(Boolean isRecommended) { this.isRecommended = isRecommended; }

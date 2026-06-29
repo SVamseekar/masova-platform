@@ -19,11 +19,12 @@ import {
   useGetUsersQuery,
   useCreateUserMutation,
   useValidatePINMutation,
-  useSearchUsersQuery,
-  useGetUserStatsQuery,
 } from './userApi';
+import { TEST_API_BASE } from '../../test/testApiBase';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API = TEST_API_BASE;
+
+
 
 describe('userApi', () => {
   describe('endpoint definitions', () => {
@@ -47,8 +48,6 @@ describe('userApi', () => {
       expect(endpoints.getUsers).toBeDefined();
       expect(endpoints.createUser).toBeDefined();
       expect(endpoints.validatePIN).toBeDefined();
-      expect(endpoints.searchUsers).toBeDefined();
-      expect(endpoints.getUserStats).toBeDefined();
     });
   });
 
@@ -125,26 +124,6 @@ describe('userApi', () => {
       expect(result.current.data!.length).toBeGreaterThan(0);
     });
 
-    it('should search users', async () => {
-      const { result } = renderHook(
-        () => useSearchUsersQuery({ query: 'test' }),
-        { wrapper: DefaultTestWrapper },
-      );
-
-      await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-      expect(result.current.data).toBeDefined();
-    });
-
-    it('should fetch user stats', async () => {
-      const { result } = renderHook(() => useGetUserStatsQuery(undefined), {
-        wrapper: DefaultTestWrapper,
-      });
-
-      await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-      expect(result.current.data).toBeDefined();
-    });
   });
 
   describe('mutation endpoints', () => {

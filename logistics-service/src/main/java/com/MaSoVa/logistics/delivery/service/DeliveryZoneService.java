@@ -1,12 +1,17 @@
 package com.MaSoVa.logistics.delivery.service;
 
 import com.MaSoVa.logistics.delivery.dto.DeliveryFeeResponse;
+import com.MaSoVa.shared.http.HttpMethods;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +29,8 @@ import java.util.Map;
 public class DeliveryZoneService {
 
     private static final Logger log = LoggerFactory.getLogger(DeliveryZoneService.class);
+    private static final ParameterizedTypeReference<Map<String, Object>> STORE_DETAILS_TYPE =
+            new ParameterizedTypeReference<>() {};
 
     private final RestTemplate restTemplate;
 
@@ -59,14 +66,11 @@ public class DeliveryZoneService {
                 return false;
             }
 
-            // Get store location
-            Object addressObj = storeData.get("address");
-            if (!(addressObj instanceof Map)) {
+            Map<String, Object> address = asStringObjectMap(storeData.get("address"));
+            if (address == null) {
                 log.warn("Store address not found or invalid for: {}", storeId);
                 return false;
             }
-            @SuppressWarnings("unchecked")
-            Map<String, Object> address = (Map<String, Object>) addressObj;
 
             Double storeLat = ((Number) address.get("latitude")).doubleValue();
             Double storeLon = ((Number) address.get("longitude")).doubleValue();
@@ -97,22 +101,14 @@ public class DeliveryZoneService {
             Map<String, Object> storeData = getStoreDetails(storeId);
             if (storeData == null) return false;
 
-            Object configObj = storeData.get("configuration");
-            if (!(configObj instanceof Map)) return false;
-            @SuppressWarnings("unchecked")
-            Map<String, Object> config = (Map<String, Object>) configObj;
+            Map<String, Object> config = asStringObjectMap(storeData.get("configuration"));
+            if (config == null) return false;
 
-            Object serviceAreaObj = config.get("serviceArea");
-            if (!(serviceAreaObj instanceof Map)) return false;
-            @SuppressWarnings("unchecked")
-            Map<String, Object> serviceArea = (Map<String, Object>) serviceAreaObj;
+            Map<String, Object> serviceArea = asStringObjectMap(config.get("serviceArea"));
+            if (serviceArea == null) return false;
 
-            Object pincodesObj = serviceArea.get("restrictedPincodes");
-            if (!(pincodesObj instanceof List)) return false;
-            @SuppressWarnings("unchecked")
-            List<String> restrictedPincodes = (List<String>) pincodesObj;
-
-            if (restrictedPincodes.isEmpty()) {
+            List<String> restrictedPincodes = asStringList(serviceArea.get("restrictedPincodes"));
+            if (restrictedPincodes == null || restrictedPincodes.isEmpty()) {
                 return false;
             }
 
@@ -135,13 +131,10 @@ public class DeliveryZoneService {
                 return DeliveryFeeResponse.error("Store not found");
             }
 
-            // Get store location
-            Object addressObj = storeData.get("address");
-            if (!(addressObj instanceof Map)) {
+            Map<String, Object> address = asStringObjectMap(storeData.get("address"));
+            if (address == null) {
                 return DeliveryFeeResponse.error("Store address not configured");
             }
-            @SuppressWarnings("unchecked")
-            Map<String, Object> address = (Map<String, Object>) addressObj;
 
             Double storeLat = ((Number) address.get("latitude")).doubleValue();
             Double storeLon = ((Number) address.get("longitude")).doubleValue();
@@ -205,23 +198,16 @@ public class DeliveryZoneService {
     public List<Map<String, Object>> getDeliveryZones(String storeId) {
         try {
             Map<String, Object> storeData = getStoreDetails(storeId);
-            if (storeData == null) return null;
+            if (storeData == null) return getDefaultZones();
 
-            Object configObj = storeData.get("configuration");
-            if (!(configObj instanceof Map)) return getDefaultZones();
-            @SuppressWarnings("unchecked")
-            Map<String, Object> config = (Map<String, Object>) configObj;
+            Map<String, Object> config = asStringObjectMap(storeData.get("configuration"));
+            if (config == null) return getDefaultZones();
 
-            Object serviceAreaObj = config.get("serviceArea");
-            if (!(serviceAreaObj instanceof Map)) return getDefaultZones();
-            @SuppressWarnings("unchecked")
-            Map<String, Object> serviceArea = (Map<String, Object>) serviceAreaObj;
+            Map<String, Object> serviceArea = asStringObjectMap(config.get("serviceArea"));
+            if (serviceArea == null) return getDefaultZones();
 
-            Object zonesObj = serviceArea.get("zones");
-            if (!(zonesObj instanceof List)) return getDefaultZones();
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> zones = (List<Map<String, Object>>) zonesObj;
-            return zones;
+            List<Map<String, Object>> zones = asMapList(serviceArea.get("zones"));
+            return zones != null ? zones : getDefaultZones();
 
         } catch (Exception e) {
             log.error("Error getting delivery zones for store {}: {}", storeId, e.getMessage());
@@ -270,11 +256,12 @@ public class DeliveryZoneService {
     // Private helper methods
     // ===========================================
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> getStoreDetails(String storeId) {
         try {
             String url = userServiceUrl + "/api/stores/" + storeId;
-            return restTemplate.getForObject(url, Map.class);
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    url, HttpMethods.GET, null, STORE_DETAILS_TYPE);
+            return response.getBody();
         } catch (Exception e) {
             log.error("Failed to fetch store details: {}", e.getMessage());
             return null;
@@ -283,13 +270,9 @@ public class DeliveryZoneService {
 
     private double getMaxDeliveryRadius(Map<String, Object> storeData) {
         try {
-            Object configObj = storeData.get("configuration");
-            if (configObj instanceof Map) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> config = (Map<String, Object>) configObj;
-                if (config.get("deliveryRadiusKm") != null) {
-                    return ((Number) config.get("deliveryRadiusKm")).doubleValue();
-                }
+            Map<String, Object> config = asStringObjectMap(storeData.get("configuration"));
+            if (config != null && config.get("deliveryRadiusKm") != null) {
+                return ((Number) config.get("deliveryRadiusKm")).doubleValue();
             }
         } catch (Exception e) {
             log.debug("Using default delivery radius");
@@ -299,21 +282,14 @@ public class DeliveryZoneService {
 
     private DeliveryFeeResponse getCustomZoneFee(Map<String, Object> storeData, double distance) {
         try {
-            Object configObj = storeData.get("configuration");
-            if (!(configObj instanceof Map)) return null;
-            @SuppressWarnings("unchecked")
-            Map<String, Object> config = (Map<String, Object>) configObj;
+            Map<String, Object> config = asStringObjectMap(storeData.get("configuration"));
+            if (config == null) return null;
 
-            Object serviceAreaObj = config.get("serviceArea");
-            if (!(serviceAreaObj instanceof Map)) return null;
-            @SuppressWarnings("unchecked")
-            Map<String, Object> serviceArea = (Map<String, Object>) serviceAreaObj;
+            Map<String, Object> serviceArea = asStringObjectMap(config.get("serviceArea"));
+            if (serviceArea == null) return null;
 
-            Object zonesObj = serviceArea.get("zones");
-            if (!(zonesObj instanceof List)) return null;
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> zones = (List<Map<String, Object>>) zonesObj;
-            if (zones.isEmpty()) return null;
+            List<Map<String, Object>> zones = asMapList(serviceArea.get("zones"));
+            if (zones == null || zones.isEmpty()) return null;
 
             for (Map<String, Object> zone : zones) {
                 double minDist = ((Number) zone.get("minDistanceKm")).doubleValue();
@@ -336,6 +312,40 @@ public class DeliveryZoneService {
             log.debug("Error parsing custom zones: {}", e.getMessage());
         }
         return null;
+    }
+
+    private static Map<String, Object> asStringObjectMap(Object value) {
+        if (!(value instanceof Map<?, ?> map)) {
+            return null;
+        }
+        Map<String, Object> result = new HashMap<>();
+        map.forEach((key, entryValue) -> result.put(String.valueOf(key), entryValue));
+        return result;
+    }
+
+    private static List<String> asStringList(Object value) {
+        if (!(value instanceof List<?> list)) {
+            return null;
+        }
+        List<String> result = new ArrayList<>();
+        for (Object item : list) {
+            result.add(String.valueOf(item));
+        }
+        return result;
+    }
+
+    private static List<Map<String, Object>> asMapList(Object value) {
+        if (!(value instanceof List<?> list)) {
+            return null;
+        }
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Object item : list) {
+            Map<String, Object> map = asStringObjectMap(item);
+            if (map != null) {
+                result.add(map);
+            }
+        }
+        return result;
     }
 
     private List<Map<String, Object>> getDefaultZones() {

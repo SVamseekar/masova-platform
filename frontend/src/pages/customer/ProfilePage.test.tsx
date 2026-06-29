@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderAsCustomer, screen } from '@/test/utils/testUtils';
+import userEvent from '@testing-library/user-event';
 import ProfilePage from './ProfilePage';
 
-// Mock customer API hooks
 const mockUseGetCustomerByUserIdQuery = vi.fn();
 const mockCreateCustomer = vi.fn();
 const mockUpdateCustomer = vi.fn();
@@ -11,7 +11,7 @@ vi.mock('@/store/api/customerApi', async () => {
   const actual = await vi.importActual('@/store/api/customerApi');
   return {
     ...actual,
-    useGetCustomerByUserIdQuery: (...args: any[]) => mockUseGetCustomerByUserIdQuery(...args),
+    useGetCustomerByUserIdQuery: (...args: unknown[]) => mockUseGetCustomerByUserIdQuery(...args),
     useCreateCustomerMutation: () => [mockCreateCustomer, { isLoading: false }],
     useUpdateCustomerMutation: () => [mockUpdateCustomer, { isLoading: false }],
     useAddAddressMutation: () => [vi.fn(), { isLoading: false }],
@@ -22,27 +22,12 @@ vi.mock('@/store/api/customerApi', async () => {
   };
 });
 
-// Mock AnimatedBackground
 vi.mock('@/components/backgrounds/AnimatedBackground', () => ({
   default: () => <div data-testid="animated-background" />,
 }));
 
-// Mock AppHeader
 vi.mock('@/components/common/AppHeader', () => ({
   default: () => <div data-testid="app-header" />,
-}));
-
-// Mock neumorphic components
-vi.mock('@/components/ui/neumorphic', () => ({
-  Button: ({ children, onClick, ...props }: any) => (
-    <button onClick={onClick} {...props}>{children}</button>
-  ),
-  Checkbox: ({ label, checked, onChange }: any) => (
-    <label>
-      <input type="checkbox" checked={checked} onChange={onChange} />
-      {label}
-    </label>
-  ),
 }));
 
 const mockNavigate = vi.fn();
@@ -111,7 +96,7 @@ describe('ProfilePage', () => {
     });
 
     renderAsCustomer(<ProfilePage />);
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    expect(screen.getByText('Loading…')).toBeInTheDocument();
   });
 
   it('shows error state when customer profile cannot be loaded', () => {
@@ -124,7 +109,7 @@ describe('ProfilePage', () => {
 
     renderAsCustomer(<ProfilePage />);
     expect(screen.getByText('Unable to Load Profile')).toBeInTheDocument();
-    expect(screen.getByText('Refresh Page')).toBeInTheDocument();
+    expect(screen.getByText('Retry')).toBeInTheDocument();
     expect(screen.getByText('Back to Menu')).toBeInTheDocument();
   });
 
@@ -137,10 +122,11 @@ describe('ProfilePage', () => {
     });
 
     renderAsCustomer(<ProfilePage />);
-    expect(screen.getByText('My Profile')).toBeInTheDocument();
+    expect(screen.getAllByText('Test Customer').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/Silver.*Member/i)).toBeInTheDocument();
   });
 
-  it('displays profile tabs', () => {
+  it('displays profile navigation sections', () => {
     mockUseGetCustomerByUserIdQuery.mockReturnValue({
       data: mockCustomer,
       isLoading: false,
@@ -149,12 +135,14 @@ describe('ProfilePage', () => {
     });
 
     renderAsCustomer(<ProfilePage />);
+    expect(screen.getByText('Overview')).toBeInTheDocument();
     expect(screen.getByText('Personal Info')).toBeInTheDocument();
     expect(screen.getByText('Addresses')).toBeInTheDocument();
-    expect(screen.getByText('Preferences')).toBeInTheDocument();
+    expect(screen.getByText('Food Preferences')).toBeInTheDocument();
+    expect(screen.getByText('Notifications')).toBeInTheDocument();
   });
 
-  it('displays personal information by default', () => {
+  it('displays overview with loyalty balance by default', () => {
     mockUseGetCustomerByUserIdQuery.mockReturnValue({
       data: mockCustomer,
       isLoading: false,
@@ -163,12 +151,29 @@ describe('ProfilePage', () => {
     });
 
     renderAsCustomer(<ProfilePage />);
-    expect(screen.getByText('Personal Information')).toBeInTheDocument();
-    expect(screen.getByText('Test Customer')).toBeInTheDocument();
+    expect(screen.getByText('Loyalty Balance')).toBeInTheDocument();
+    expect(screen.getByText('1,500')).toBeInTheDocument();
+    expect(screen.getByText('Total Orders')).toBeInTheDocument();
+    expect(screen.getByText('25')).toBeInTheDocument();
+  });
+
+  it('shows Edit button on Personal Info tab', async () => {
+    const user = userEvent.setup();
+    mockUseGetCustomerByUserIdQuery.mockReturnValue({
+      data: mockCustomer,
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+
+    renderAsCustomer(<ProfilePage />);
+    await user.click(screen.getByText('Personal Info'));
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
     expect(screen.getByText('customer@test.com')).toBeInTheDocument();
   });
 
-  it('displays loyalty card when loyalty info exists', () => {
+  it('shows email verified status on personal info', async () => {
+    const user = userEvent.setup();
     mockUseGetCustomerByUserIdQuery.mockReturnValue({
       data: mockCustomer,
       isLoading: false,
@@ -177,46 +182,7 @@ describe('ProfilePage', () => {
     });
 
     renderAsCustomer(<ProfilePage />);
-    expect(screen.getByText('Loyalty Points')).toBeInTheDocument();
-    expect(screen.getByText('1500')).toBeInTheDocument();
-    expect(screen.getByText('SILVER')).toBeInTheDocument();
-  });
-
-  it('displays order stats', () => {
-    mockUseGetCustomerByUserIdQuery.mockReturnValue({
-      data: mockCustomer,
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-    });
-
-    renderAsCustomer(<ProfilePage />);
-    expect(screen.getByText('25')).toBeInTheDocument();
-    expect(screen.getByText('Total Orders')).toBeInTheDocument();
-  });
-
-  it('shows Edit button on Personal Info tab', () => {
-    mockUseGetCustomerByUserIdQuery.mockReturnValue({
-      data: mockCustomer,
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-    });
-
-    renderAsCustomer(<ProfilePage />);
-    expect(screen.getByText('Edit')).toBeInTheDocument();
-  });
-
-  it('shows email verified status', () => {
-    mockUseGetCustomerByUserIdQuery.mockReturnValue({
-      data: mockCustomer,
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-    });
-
-    renderAsCustomer(<ProfilePage />);
-    // The verified checkmark
+    await user.click(screen.getByText('Personal Info'));
     const verifiedElements = screen.getAllByText(/Verified/i);
     expect(verifiedElements.length).toBeGreaterThan(0);
   });

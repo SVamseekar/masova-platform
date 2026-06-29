@@ -1,5 +1,5 @@
 // src/apps/POSSystem/components/CustomerPanel.tsx
-import React, { useState, useImperativeHandle } from 'react';
+import React, { useState, useImperativeHandle, useCallback } from 'react';
 import { useCreateOrderMutation } from '../../../store/api/orderApi';
 import { useInitiatePaymentMutation, useVerifyPaymentMutation } from '../../../store/api/paymentApi';
 import { useGetOrCreateCustomerMutation } from '../../../store/api/customerApi';
@@ -8,7 +8,6 @@ import { useAppSelector } from '../../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../../store/slices/cartSlice';
 import { formatMoney } from '../../../utils/currency';
 import Card from '../../../components/ui/neumorphic/Card';
-import Button from '../../../components/ui/neumorphic/Button';
 import { colors, shadows, spacing, typography } from '../../../styles/design-tokens';
 import { useGeocoding, buildAddressString } from '../../../hooks/useGeocoding';
 import { PINAuthModal } from './PINAuthModal';
@@ -20,10 +19,13 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import SyncIcon from '@mui/icons-material/Sync';
 
+import type { POSCustomer, POSOrderItem } from '../types';
+import { getRtkErrorMessage } from '../../shared/rtkError';
+
 interface CustomerPanelProps {
-  items: any[];
-  customer: any;
-  onCustomerChange: (customer: any) => void;
+  items: POSOrderItem[];
+  customer: POSCustomer | null;
+  onCustomerChange: (customer: POSCustomer | null) => void;
   orderType: 'PICKUP' | 'DELIVERY' | 'DINE_IN';
   selectedTable?: string | null;
   onOrderComplete: () => void;
@@ -44,14 +46,14 @@ const PAYMENT_METHODS = ['CASH', 'CARD', 'UPI', 'WALLET'] as const;
 const CustomerPanel: React.FC<CustomerPanelProps> = ({
   items,
   customer,
-  onCustomerChange,
+  onCustomerChange: _onCustomerChange,
   orderType,
-  selectedTable,
+  selectedTable: _selectedTable,
   onOrderComplete,
-  userId,
+  userId: _userId,
   storeId,
   submitOrderRef,
-  orderCreatedBy,
+  orderCreatedBy: _orderCreatedBy,
 }) => {
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
@@ -80,7 +82,7 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
 
   // PIN Authentication for order submission
   const [showPINModal, setShowPINModal] = useState(false);
-  const [authenticatedStaff, setAuthenticatedStaff] = useState<{
+  const [_authenticatedStaff, setAuthenticatedStaff] = useState<{
     userId: string;
     name: string;
     type: string;
@@ -162,40 +164,7 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
     submitOrderAfterAuth(userData);
   };
 
-  // Handler for "Place Order" button click - opens PIN modal first
-  const handlePlaceOrderClick = () => {
-    if (items.length === 0) {
-      alert('Please add items to the order');
-      return;
-    }
-
-    if (!validateForm()) {
-      return;
-    }
-
-    // Open PIN modal for authentication
-    setShowPINModal(true);
-  };
-
-  // Expose handlePlaceOrderClick to parent via ref for keyboard shortcut
-  useImperativeHandle(submitOrderRef, () => handlePlaceOrderClick, [
-    items,
-    customerName,
-    customerEmail,
-    customerPhone,
-    deliveryStreet,
-    deliveryCity,
-    deliveryPincode,
-    specialInstructions,
-    orderType,
-    selectedTable,
-    paymentMethod,
-    userId,
-    storeId,
-    customer,
-  ]);
-
-  const validateForm = (): boolean => {
+  const validateForm = useCallback((): boolean => {
     let isValid = true;
 
     // Validate phone number if provided
@@ -237,7 +206,25 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
     }
 
     return isValid;
-  };
+  }, [customerPhone, customerEmail, paymentMethod, orderType, deliveryStreet, deliveryCity, deliveryPincode]);
+
+  // Handler for "Place Order" button click - opens PIN modal first
+  const handlePlaceOrderClick = useCallback(() => {
+    if (items.length === 0) {
+      alert('Please add items to the order');
+      return;
+    }
+
+    if (!validateForm()) {
+      return;
+    }
+
+    // Open PIN modal for authentication
+    setShowPINModal(true);
+  }, [items.length, validateForm]);
+
+  // Expose handlePlaceOrderClick to parent via ref for keyboard shortcut
+  useImperativeHandle(submitOrderRef, () => handlePlaceOrderClick, [handlePlaceOrderClick]);
 
   const submitOrderAfterAuth = async (staffData: { userId: string; name: string; type: string; role: string; storeId: string }) => {
     // Validation already done in handlePlaceOrderClick, proceed with order creation
@@ -276,14 +263,20 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
       }
 
       // Step 2: Transform items to match backend expectations
-      const transformedItems = items.map((item) => ({
-        menuItemId: item.menuItemId || item.id, // Use menuItemId if available, fallback to id
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-        variant: item.variant,
-        customizations: item.customizations,
-      }));
+      const transformedItems = items.map((item) => {
+        const menuItemId = item.menuItemId || item.id;
+        if (!menuItemId) {
+          throw new Error(`Missing menu item ID for "${item.name}"`);
+        }
+        return {
+          menuItemId,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          variant: item.variant,
+          customizations: item.customizations,
+        };
+      });
 
       // Parse delivery address if provided - NOW WITH GEOCODED COORDINATES!
       let parsedDeliveryAddress = null;
@@ -345,9 +338,9 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
 
       // For online payments (CARD, UPI, WALLET), initiate Razorpay
       await handleOnlinePayment(result.id, result.orderNumber);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to create order:', error);
-      alert(`Failed to create order: ${error.message || 'Unknown error'}`);
+      alert(`Failed to create order: ${getRtkErrorMessage(error, 'Unknown error')}`);
     }
   };
 
@@ -388,7 +381,7 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
         name: 'MaSoVa Restaurant',
         description: `Order #${orderNumber}`,
         order_id: paymentResponse.razorpayOrderId,
-        handler: async (response: any) => {
+        handler: async (response: RazorpaySuccessResponse) => {
           try {
             // Verify payment
             await verifyPayment({
@@ -401,9 +394,9 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
             alert(`Order #${orderNumber} created and paid successfully!`);
             resetForm();
             onOrderComplete();
-          } catch (error: any) {
+          } catch (error: unknown) {
             console.error('Payment verification failed:', error);
-            alert(`Payment verification failed: ${error.message || 'Unknown error'}\nOrder created but payment pending.`);
+            alert(`Payment verification failed: ${getRtkErrorMessage(error, 'Unknown error')}\nOrder created but payment pending.`);
           }
         },
         prefill: {
@@ -425,9 +418,9 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
       // Open Razorpay checkout
       const rzp = new window.Razorpay(options);
       rzp.open();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to initiate payment:', error);
-      alert(`Failed to initiate payment: ${error.message || 'Unknown error'}\nPlease try again or use cash payment.`);
+      alert(`Failed to initiate payment: ${getRtkErrorMessage(error, 'Unknown error')}\nPlease try again or use cash payment.`);
     }
   };
 

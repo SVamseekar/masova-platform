@@ -129,7 +129,7 @@ export const shiftApi = createApi({
     // Get employee shifts
     getEmployeeShifts: builder.query<Shift[], { employeeId: string; startDate?: string; endDate?: string }>({
       query: ({ employeeId, startDate, endDate }) => {
-        let url = `/shifts/employee/${employeeId}`;
+        const url = `/shifts/employee/${employeeId}`;
         const params = new URLSearchParams();
         if (startDate) params.append('startDate', startDate);
         if (endDate) params.append('endDate', endDate);
@@ -145,7 +145,7 @@ export const shiftApi = createApi({
     // Get store shifts
     getStoreShifts: builder.query<Shift[], { storeId: string; startDate?: string; endDate?: string }>({
       query: ({ storeId, startDate, endDate }) => {
-        let url = `/shifts/store/${storeId}`;
+        const url = `/shifts/store/${storeId}`;
         const params = new URLSearchParams();
         if (startDate) params.append('startDate', startDate);
         if (endDate) params.append('endDate', endDate);

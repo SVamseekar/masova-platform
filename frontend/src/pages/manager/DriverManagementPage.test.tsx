@@ -2,21 +2,27 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderAsManager, screen } from '@/test/utils/testUtils';
 import DriverManagementPage from './DriverManagementPage';
 
-const mockDrivers = [
-  { id: 'd1', name: 'Driver One', phone: '555-0001', email: 'driver1@test.com', status: 'ONLINE', isActive: true, rating: 4.5, activeDeliveries: 1, totalDeliveries: 100 },
-  { id: 'd2', name: 'Driver Two', phone: '555-0002', email: 'driver2@test.com', status: 'OFFLINE', isActive: true, rating: 4.0, activeDeliveries: 0, totalDeliveries: 75 },
-];
-
-vi.mock('@/store/api/driverApi', () => ({
-  useGetAllDriversQuery: vi.fn().mockReturnValue({ data: mockDrivers, isLoading: false }),
-  useGetOnlineDriversQuery: vi.fn().mockReturnValue({ data: [mockDrivers[0]], isLoading: false }),
-  useGetDriverStatsQuery: vi.fn().mockReturnValue({ data: { totalDrivers: 2, onlineDrivers: 1, busyDrivers: 1 } }),
-  useGetDriverPerformanceQuery: vi.fn().mockReturnValue({ data: null }),
-  useActivateDriverMutation: vi.fn().mockReturnValue([vi.fn()]),
-  useDeactivateDriverMutation: vi.fn().mockReturnValue([vi.fn()]),
+const { mockDrivers } = vi.hoisted(() => ({
+  mockDrivers: [
+    { id: 'd1', name: 'Driver One', phone: '555-0001', email: 'driver1@test.com', status: 'ONLINE', isActive: true, rating: 4.5, activeDeliveries: 1, totalDeliveries: 100 },
+    { id: 'd2', name: 'Driver Two', phone: '555-0002', email: 'driver2@test.com', status: 'OFFLINE', isActive: true, rating: 4.0, activeDeliveries: 0, totalDeliveries: 75 },
+  ],
 }));
 
-vi.mock('@/contexts/PageStoreContext', () => ({
+vi.mock('@/store/api/driverApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/store/api/driverApi')>();
+  return {
+    ...actual,
+    useGetAllDriversQuery: vi.fn().mockReturnValue({ data: mockDrivers, isLoading: false }),
+    useGetOnlineDriversQuery: vi.fn().mockReturnValue({ data: [mockDrivers[0]], isLoading: false }),
+    useGetDriverStatsQuery: vi.fn().mockReturnValue({ data: { totalDrivers: 2, onlineDrivers: 1, busyDrivers: 1 } }),
+    useGetDriverPerformanceQuery: vi.fn().mockReturnValue({ data: null }),
+    useActivateDriverMutation: vi.fn().mockReturnValue([vi.fn()]),
+    useDeactivateDriverMutation: vi.fn().mockReturnValue([vi.fn()]),
+  };
+});
+
+vi.mock('@/hooks/usePageStore', () => ({
   usePageStore: vi.fn().mockReturnValue({ selectedStoreId: 'store-1', setSelectedStoreId: vi.fn() }),
 }));
 
@@ -33,8 +39,8 @@ vi.mock('@/components/common/FilterBar', () => ({
 }));
 
 vi.mock('@/utils/filterUtils', () => ({
-  applyFilters: vi.fn((data: any[]) => data),
-  applySort: vi.fn((data: any[]) => data),
+  applyFilters: vi.fn((data: unknown[]) => data),
+  applySort: vi.fn((data: unknown[]) => data),
   exportToCSV: vi.fn(),
   commonFilters: { searchText: vi.fn() },
 }));

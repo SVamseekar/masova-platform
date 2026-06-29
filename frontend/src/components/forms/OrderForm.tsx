@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCreateOrderMutation } from '../../store/api/orderApi';
-import { useGetAllMenuItemsQuery } from '../../store/api/menuApi';
+import { useGetAllMenuItemsQuery, type MenuItem } from '../../store/api/menuApi';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
@@ -43,7 +43,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSuccess, onCancel }) => {
 
   // API hooks
   const { data: menuItems = [], isLoading: isLoadingMenu } = useGetAllMenuItemsQuery(storeId);
-  const [createOrder, { isLoading: isCreating, isSuccess, error }] = useCreateOrderMutation();
+  const [createOrder, { isLoading: isCreating, isSuccess }] = useCreateOrderMutation();
 
   // Filter menu items by search
   const filteredMenuItems = menuItems.filter(item =>
@@ -64,7 +64,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSuccess, onCancel }) => {
   };
 
   // Add or increment item in cart
-  const addToCart = (menuItem: any) => {
+  const addToCart = (menuItem: MenuItem) => {
     const existingItem = cart.find(item => item.menuItemId === menuItem.id);
 
     if (existingItem) {
@@ -77,7 +77,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSuccess, onCancel }) => {
       setCart([...cart, {
         menuItemId: menuItem.id,
         name: menuItem.name,
-        price: menuItem.price,
+        price: menuItem.price ?? menuItem.basePrice,
         quantity: 1,
         variant: menuItem.variants?.[0]?.name,
         customizations: [],
@@ -173,9 +173,10 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSuccess, onCancel }) => {
       if (onSuccess) {
         onSuccess(result.id);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to create order:', err);
-      alert(`Failed to create order: ${err?.data?.error || err.message || 'Unknown error'}`);
+      const apiError = err as { data?: { error?: string }; message?: string };
+      alert(`Failed to create order: ${apiError?.data?.error || apiError.message || 'Unknown error'}`);
     }
   };
 

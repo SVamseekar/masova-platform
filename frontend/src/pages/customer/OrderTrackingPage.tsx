@@ -79,7 +79,7 @@ const OrderTrackingPage: React.FC = () => {
     const shared: typeof ORDER_STATUS_FLOW = ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED', 'READY'];
     if (orderType === 'DINE_IN') return [...shared, 'SERVED'];
     if (orderType === 'PICKUP' || orderType === 'COLLECTION' || orderType === 'TAKEAWAY') return [...shared, 'COMPLETED'];
-    return [...shared, 'DISPATCHED', 'DELIVERED']; // DELIVERY default
+    return [...shared, 'DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED']; // DELIVERY default
   };
 
   const OrderCard: React.FC<{ order: Order }> = ({ order }) => {
@@ -363,7 +363,7 @@ const OrderTrackingPage: React.FC = () => {
           </div>
           <select
             value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value as any)}
+            onChange={(e) => setDateFilter(e.target.value as 'all' | 'today' | 'week' | 'month' | 'year')}
             style={{
               background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px',
               color: 'var(--text-1)', padding: '9px 14px', fontSize: '0.875rem',

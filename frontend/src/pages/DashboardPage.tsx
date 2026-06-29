@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../store/slices/cartSlice';
 import { formatMoney } from '../utils/currency';
+import type { OrderStatus } from '../types/order';
 
 // TypeScript interfaces
 interface SalesData {
@@ -29,7 +30,7 @@ interface WorkingSession {
 
 interface Order {
   id: string;
-  status: 'RECEIVED' | 'PREPARING' | 'OVEN' | 'BAKED' | 'READY' | 'DISPATCHED' | 'DELIVERED' | 'SERVED' | 'COMPLETED' | 'CANCELLED';
+  status: OrderStatus;
   items: number;
   time: string;
   customer: string;

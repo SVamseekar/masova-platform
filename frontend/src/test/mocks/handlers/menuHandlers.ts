@@ -1,6 +1,5 @@
 import { http, HttpResponse } from 'msw';
-
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+import { apiUrl } from '../../testApiBase';
 
 const mockMenuItems = [
   {
@@ -57,73 +56,73 @@ const mockMenuItems = [
 ];
 
 export const menuHandlers = [
-  // Public endpoints
-  http.get(`${API}/menu/public`, () =>
+  // Public endpoints — static routes before :id
+  http.get(apiUrl('/menu/public'), () =>
     HttpResponse.json(mockMenuItems),
   ),
 
-  http.get(`${API}/menu/public/:id`, ({ params }) =>
-    HttpResponse.json({ ...mockMenuItems[0], id: params.id }),
-  ),
-
-  http.get(`${API}/menu/public/cuisine/:cuisine`, () =>
-    HttpResponse.json(mockMenuItems),
-  ),
-
-  http.get(`${API}/menu/public/category/:category`, () =>
-    HttpResponse.json(mockMenuItems),
-  ),
-
-  http.get(`${API}/menu/public/dietary/:dietaryType`, () =>
-    HttpResponse.json(mockMenuItems.filter((item) => item.dietaryInfo.includes('VEGETARIAN'))),
-  ),
-
-  http.get(`${API}/menu/public/recommended`, () =>
+  http.get(apiUrl('/menu/public/recommended'), () =>
     HttpResponse.json(mockMenuItems.filter((item) => item.isRecommended)),
   ),
 
-  http.get(`${API}/menu/public/search`, () =>
+  http.get(apiUrl('/menu/public/search'), () =>
     HttpResponse.json(mockMenuItems),
   ),
 
-  http.get(`${API}/menu/public/tag/:tag`, () =>
+  http.get(apiUrl('/menu/public/cuisine/:cuisine'), () =>
     HttpResponse.json(mockMenuItems),
   ),
 
-  // Manager endpoints
-  http.get(`${API}/menu/items`, () =>
+  http.get(apiUrl('/menu/public/category/:category'), () =>
     HttpResponse.json(mockMenuItems),
   ),
 
-  http.post(`${API}/menu/items`, () =>
-    HttpResponse.json({ ...mockMenuItems[0], id: '99' }),
+  http.get(apiUrl('/menu/public/dietary/:dietaryType'), () =>
+    HttpResponse.json(mockMenuItems.filter((item) => item.dietaryInfo.includes('VEGETARIAN'))),
   ),
 
-  http.post(`${API}/menu/items/bulk`, () =>
+  http.get(apiUrl('/menu/public/tag/:tag'), () =>
     HttpResponse.json(mockMenuItems),
   ),
 
-  http.put(`${API}/menu/items/:id`, ({ params }) =>
+  http.get(apiUrl('/menu/public/:id'), ({ params }) =>
     HttpResponse.json({ ...mockMenuItems[0], id: params.id }),
   ),
 
-  http.patch(`${API}/menu/items/:id/availability`, ({ params }) =>
-    HttpResponse.json({ ...mockMenuItems[0], id: params.id, isAvailable: false }),
+  // Manager endpoints
+  http.get(apiUrl('/menu/items'), () =>
+    HttpResponse.json(mockMenuItems),
   ),
 
-  http.patch(`${API}/menu/items/:id/availability/:status`, ({ params }) =>
+  http.post(apiUrl('/menu/items'), () =>
+    HttpResponse.json({ ...mockMenuItems[0], id: '99' }),
+  ),
+
+  http.post(apiUrl('/menu/items/bulk'), () =>
+    HttpResponse.json(mockMenuItems),
+  ),
+
+  http.put(apiUrl('/menu/items/:id'), ({ params }) =>
+    HttpResponse.json({ ...mockMenuItems[0], id: params.id }),
+  ),
+
+  http.patch(apiUrl('/menu/items/:id/availability/:status'), ({ params }) =>
     HttpResponse.json({ ...mockMenuItems[0], id: params.id, isAvailable: params.status === 'true' }),
   ),
 
-  http.delete(`${API}/menu/items/:id`, () =>
+  http.patch(apiUrl('/menu/items/:id/availability'), ({ params }) =>
+    HttpResponse.json({ ...mockMenuItems[0], id: params.id, isAvailable: false }),
+  ),
+
+  http.delete(apiUrl('/menu/items/:id'), () =>
     new HttpResponse(null, { status: 204 }),
   ),
 
-  http.delete(`${API}/menu/items`, () =>
+  http.delete(apiUrl('/menu/items'), () =>
     new HttpResponse(null, { status: 204 }),
   ),
 
-  http.get(`${API}/menu/stats`, () =>
+  http.get(apiUrl('/menu/stats'), () =>
     HttpResponse.json({
       totalItems: 25,
       availableItems: 22,

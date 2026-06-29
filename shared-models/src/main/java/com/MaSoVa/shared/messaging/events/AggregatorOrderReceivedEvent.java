@@ -6,6 +6,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 public class AggregatorOrderReceivedEvent extends DomainEvent {
+
+    private static final long serialVersionUID = 1L;
+
     private String orderId;
     private String storeId;
     private String orderSource;    // e.g. "WOLT"

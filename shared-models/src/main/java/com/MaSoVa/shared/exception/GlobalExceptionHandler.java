@@ -1,6 +1,7 @@
 package com.MaSoVa.shared.exception;
 
 import com.MaSoVa.shared.dto.ErrorResponse;
+import com.MaSoVa.shared.util.StoreAccessValidator;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -123,6 +124,29 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.FORBIDDEN.value())
                 .error("ACCESS_DENIED")
                 .message("You do not have permission to access this resource")
+                .path(request.getRequestURI())
+                .correlationId(MDC.get("correlationId"))
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(error);
+    }
+
+    /**
+     * Handle store membership violations from {@link StoreAccessValidator} (403)
+     */
+    @ExceptionHandler(StoreAccessValidator.StoreAccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleStoreAccessDenied(
+            StoreAccessValidator.StoreAccessDeniedException ex,
+            HttpServletRequest request) {
+
+        log.warn("Store access denied for request {}: {}", request.getRequestURI(), ex.getMessage());
+
+        ErrorResponse error = ErrorResponse.builder()
+                .status(HttpStatus.FORBIDDEN.value())
+                .error("STORE_ACCESS_DENIED")
+                .message("You do not have permission to access this store")
                 .path(request.getRequestURI())
                 .correlationId(MDC.get("correlationId"))
                 .build();

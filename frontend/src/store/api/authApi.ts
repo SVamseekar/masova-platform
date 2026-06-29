@@ -44,7 +44,7 @@ export const authApi = createApi({
   endpoints: (builder) => ({
     login: builder.mutation<AuthResponse, LoginRequest>({
       query: ({ email, password }) => ({
-        url: '/users/login',
+        url: '/auth/login',
         method: 'POST',
         body: { email, password },
       }),
@@ -55,8 +55,8 @@ export const authApi = createApi({
       invalidatesTags: ['Auth'],
     }),
     register: builder.mutation<AuthResponse, RegisterRequest>({
-      query: ({ rememberMe, ...userData }) => ({
-        url: '/users/register',
+      query: ({ rememberMe: _rememberMe, ...userData }) => ({
+        url: '/auth/register',
         method: 'POST',
         body: userData,
       }),
@@ -68,14 +68,14 @@ export const authApi = createApi({
     }),
     refreshToken: builder.mutation<AuthResponse, RefreshTokenRequest>({
       query: (data) => ({
-        url: '/users/refresh',
+        url: '/auth/refresh',
         method: 'POST',
         body: data,
       }),
     }),
     logout: builder.mutation<void, void>({
       query: () => ({
-        url: '/users/logout',
+        url: '/auth/logout',
         method: 'POST',
       }),
       invalidatesTags: ['Auth', 'User'],

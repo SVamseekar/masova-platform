@@ -1,5 +1,6 @@
 package com.MaSoVa.core.user.service;
 
+import com.MaSoVa.shared.http.HttpMethods;
 import com.MaSoVa.shared.entity.User;
 import com.MaSoVa.shared.enums.UserType;
 import com.MaSoVa.shared.util.PiiMasker;
@@ -7,18 +8,16 @@ import com.MaSoVa.core.user.dto.LoginRequest;
 import com.MaSoVa.core.user.dto.LoginResponse;
 import com.MaSoVa.core.user.dto.UserCreateRequest;
 import com.MaSoVa.core.user.dto.UserResponse;
-import com.MaSoVa.core.user.entity.UserAuthProviderEntity;
 import com.MaSoVa.core.user.entity.UserEntity;
 import com.MaSoVa.core.user.repository.UserJpaRepository;
 import com.MaSoVa.core.user.repository.UserRepository;
-import com.MaSoVa.core.user.repository.WorkingSessionRepository;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -49,10 +48,6 @@ public class UserService {
     @Autowired
     private UserJpaRepository userJpaRepository;
 
-    @SuppressWarnings("unused")
-    @Autowired
-    private WorkingSessionRepository sessionRepository;
-
     @Autowired
     private PasswordEncoder passwordEncoder;
 
@@ -65,11 +60,11 @@ public class UserService {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private GoogleOAuthTokenVerifier googleOAuthTokenVerifier;
+
     @Value("${customer.service.url:http://localhost:8082}")
     private String customerServiceUrl;
-
-    @Value("${google.oauth.client-id:}")
-    private String googleOAuthClientId;
 
     private static final ZoneId IST = ZoneId.of("Asia/Kolkata");
     
@@ -167,8 +162,8 @@ public class UserService {
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(customerRequest, headers);
 
         String url = customerServiceUrl + "/api/customers";
-        @SuppressWarnings("rawtypes")
-        ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
+        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                url, HttpMethods.POST, request, new ParameterizedTypeReference<>() {});
 
         if (response.getStatusCode().is2xxSuccessful()) {
             logger.info("Customer profile created successfully for user: {}", user.getId());
@@ -347,19 +342,13 @@ public class UserService {
     public LoginResponse loginWithGoogle(String idToken) {
         logger.info("Google Sign-In attempt");
 
-        Map<String, Object> tokenInfo = verifyGoogleIdToken(idToken);
+        Map<String, Object> tokenInfo = googleOAuthTokenVerifier.verify(idToken);
+        GoogleOAuthTokenVerifier.validateEmailVerified(tokenInfo);
         String googleSub = (String) tokenInfo.get("sub");
         String email = (String) tokenInfo.get("email");
 
         if (googleSub == null || email == null) {
             throw new RuntimeException("Invalid Google ID token: missing sub or email");
-        }
-
-        if (googleOAuthClientId != null && !googleOAuthClientId.isEmpty()) {
-            String aud = (String) tokenInfo.get("aud");
-            if (!googleOAuthClientId.equals(aud)) {
-                throw new RuntimeException("Google ID token audience mismatch");
-            }
         }
 
         Optional<User> existingByEmail = userRepository.findByPersonalInfoEmail(email);
@@ -410,20 +399,14 @@ public class UserService {
     public LoginResponse registerWithGoogle(String idToken) {
         logger.info("Google Register attempt");
 
-        Map<String, Object> tokenInfo = verifyGoogleIdToken(idToken);
+        Map<String, Object> tokenInfo = googleOAuthTokenVerifier.verify(idToken);
+        GoogleOAuthTokenVerifier.validateEmailVerified(tokenInfo);
         String googleSub = (String) tokenInfo.get("sub");
         String email = (String) tokenInfo.get("email");
         String name = (String) tokenInfo.get("name");
 
         if (googleSub == null || email == null) {
             throw new RuntimeException("Invalid Google ID token: missing sub or email");
-        }
-
-        if (googleOAuthClientId != null && !googleOAuthClientId.isEmpty()) {
-            String aud = (String) tokenInfo.get("aud");
-            if (!googleOAuthClientId.equals(aud)) {
-                throw new RuntimeException("Google ID token audience mismatch");
-            }
         }
 
         Optional<User> existingByEmail = userRepository.findByPersonalInfoEmail(email);
@@ -437,7 +420,7 @@ public class UserService {
         User.PersonalInfo personalInfo = new User.PersonalInfo();
         personalInfo.setName(name != null ? name : email.split("@")[0]);
         personalInfo.setEmail(email);
-        personalInfo.setPhone("0000000000"); // placeholder; user must update in profile
+        personalInfo.setPhone(generateGoogleRegistrationPhone(googleSub, email));
         personalInfo.setPasswordHash(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));
         user.setPersonalInfo(personalInfo);
 
@@ -476,19 +459,13 @@ public class UserService {
         return new LoginResponse(accessToken, refreshToken, mapToUserResponse(user));
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> verifyGoogleIdToken(String idToken) {
-        String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken;
-        try {
-            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                throw new RuntimeException("Google token verification failed");
-            }
-            return response.getBody();
-        } catch (org.springframework.web.client.RestClientException e) {
-            logger.error("Google tokeninfo request failed: {}", e.getMessage());
-            throw new RuntimeException("Google token verification failed: " + e.getMessage());
-        }
+    /**
+     * Unique temporary phone for Google registration — passes {@code ^[6-9]\d{9}$} until
+     * the customer updates their profile (Task 16).
+     */
+    static String generateGoogleRegistrationPhone(String googleSub, String email) {
+        long suffix = Math.abs((long) (googleSub + email).hashCode()) % 1_000_000_000L;
+        return "9" + String.format("%09d", suffix);
     }
 
     public void logout(String userId, String accessToken) {
@@ -528,15 +505,32 @@ public class UserService {
     }
     
     /**
-     * WARNING: This method loads all users - should use pagination in production
-     * Consider using getUsersByType() or getStoreEmployees() for filtered queries
+     * List active employees. Prefer filtered queries via getUsersByType() or getStoreEmployees().
      */
-    @Deprecated
-    public List<UserResponse> getAllUsers() {
-        // For now, limit to active employees only to reduce memory footprint
+    public List<UserResponse> listActiveEmployees() {
         return userRepository.findAllActiveEmployees().stream()
                 .map(this::mapToUserResponse)
                 .toList();
+    }
+
+    /**
+     * @deprecated Use {@link #listActiveEmployees()} or filtered query methods instead.
+     */
+    @Deprecated
+    public List<UserResponse> getAllUsers() {
+        return listActiveEmployees();
+    }
+
+    /**
+     * Resolve the store ID for an employee (required for store-scoped PIN generation).
+     */
+    public String resolveEmployeeStoreId(String userId) {
+        User user = getUserById(userId);
+        if (!user.isEmployee() || user.getEmployeeDetails() == null
+                || user.getEmployeeDetails().getStoreId() == null) {
+            throw new RuntimeException("Employee must be assigned to a store before generating PIN");
+        }
+        return user.getEmployeeDetails().getStoreId();
     }
 
     public List<UserResponse> getUsersByType(UserType type) {

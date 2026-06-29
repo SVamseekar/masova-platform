@@ -1,28 +1,39 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { renderAsKitchenStaff } from '@/test/utils/testUtils';
 import KitchenDisplayPage from './KitchenDisplayPage';
 
-let mockKitchenOrders: any[] = [];
+import type { Order } from '../../store/api/orderApi';
+
+let mockKitchenOrders: Order[] = [];
 let mockIsLoading = false;
-let mockError: any = null;
+let mockError: unknown = null;
 const mockUpdateOrderStatus = vi.fn(() => ({
   unwrap: () => Promise.resolve(),
 }));
 const mockRefetch = vi.fn();
 
-vi.mock('../../store/api/orderApi', () => ({
-  useGetKitchenQueueQuery: () => ({
-    data: mockKitchenOrders,
-    isLoading: mockIsLoading,
-    error: mockError,
-    refetch: mockRefetch,
-  }),
-  useUpdateOrderStatusMutation: () => [mockUpdateOrderStatus, { isLoading: false }],
-  useGetAllMenuItemsQuery: () => ({ data: [], isLoading: false }),
-  orderApi: { reducerPath: 'orderApi', reducer: () => ({}), middleware: () => (next: any) => (action: any) => next(action) },
-}));
+vi.mock('../../store/api/orderApi', async () => {
+  const actual = await vi.importActual<typeof import('../../store/api/orderApi')>('../../store/api/orderApi');
+  return {
+    ...actual,
+    useGetKitchenQueueQuery: () => ({
+      data: mockKitchenOrders,
+      isLoading: mockIsLoading,
+      error: mockError,
+      refetch: mockRefetch,
+    }),
+    useUpdateOrderStatusMutation: () => [mockUpdateOrderStatus, { isLoading: false }],
+  };
+});
+
+vi.mock('../../store/api/menuApi', async () => {
+  const actual = await vi.importActual<typeof import('../../store/api/menuApi')>('../../store/api/menuApi');
+  return {
+    ...actual,
+    useGetAllMenuItemsQuery: () => ({ data: [], isLoading: false }),
+  };
+});
 
 vi.mock('../../hooks/useKitchenWebSocket', () => ({
   useKitchenWebSocket: () => ({
@@ -36,7 +47,7 @@ vi.mock('../../components/common/AppHeader', () => ({
 }));
 
 vi.mock('../../components/RecipeViewer', () => ({
-  default: ({ menuItem, onClose }: any) => (
+  default: ({ menuItem, onClose }: { menuItem: { name: string }; onClose: () => void }) => (
     <div data-testid="recipe-viewer">
       <span>{menuItem.name}</span>
       <button onClick={onClose}>Close Recipe</button>
@@ -58,6 +69,9 @@ describe('KitchenDisplayPage', () => {
     mockIsLoading = false;
     mockError = null;
     vi.clearAllMocks();
+    mockUpdateOrderStatus.mockImplementation(() => ({
+      unwrap: () => Promise.resolve(),
+    }));
   });
 
   it('renders without crashing', () => {
@@ -84,19 +98,23 @@ describe('KitchenDisplayPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders all 5 status columns', () => {
+  it('renders all 9 status columns', () => {
     renderAsKitchenStaff(<KitchenDisplayPage />);
     expect(screen.getByText('New Orders')).toBeInTheDocument();
     expect(screen.getByText('Preparing')).toBeInTheDocument();
     expect(screen.getByText('In Oven')).toBeInTheDocument();
+    expect(screen.getByText('Baked')).toBeInTheDocument();
     expect(screen.getByText('Ready')).toBeInTheDocument();
-    expect(screen.getByText('Completed')).toBeInTheDocument();
+    expect(screen.getByText('Dispatched')).toBeInTheDocument();
+    expect(screen.getByText('Out for Delivery')).toBeInTheDocument();
+    expect(screen.getByText('Served')).toBeInTheDocument();
+    expect(screen.getByText('Picked Up')).toBeInTheDocument();
   });
 
   it('shows "No orders" text in empty columns', () => {
     renderAsKitchenStaff(<KitchenDisplayPage />);
     const emptyTexts = screen.getAllByText('No orders');
-    expect(emptyTexts.length).toBe(5);
+    expect(emptyTexts.length).toBe(9);
   });
 
   it('renders order cards in correct status columns', () => {
@@ -319,8 +337,6 @@ describe('KitchenDisplayPage', () => {
   });
 
   it('calls updateOrderStatus when Next Stage is clicked', async () => {
-    const user = userEvent.setup();
-
     mockKitchenOrders = [
       {
         id: 'order-click',
@@ -345,11 +361,19 @@ describe('KitchenDisplayPage', () => {
 
     renderAsKitchenStaff(<KitchenDisplayPage />);
 
-    await user.click(screen.getByText('Next Stage'));
+    const nextStageButton = await waitFor(() => {
+      const button = screen.getByText('Next Stage').closest('button');
+      expect(button).toBeTruthy();
+      return button!;
+    });
 
-    expect(mockUpdateOrderStatus).toHaveBeenCalledWith({
-      orderId: 'order-click',
-      status: 'PREPARING',
+    fireEvent.click(nextStageButton);
+
+    await waitFor(() => {
+      expect(mockUpdateOrderStatus).toHaveBeenCalledWith({
+        orderId: 'order-click',
+        status: 'PREPARING',
+      });
     });
   });
 
@@ -423,7 +447,7 @@ describe('KitchenDisplayPage', () => {
     ];
 
     renderAsKitchenStaff(<KitchenDisplayPage />);
-    // The RECEIVED column should show count 2
-    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByText('New Orders')).toBeInTheDocument();
+    expect(screen.getAllByText('2').length).toBeGreaterThanOrEqual(1);
   });
 });

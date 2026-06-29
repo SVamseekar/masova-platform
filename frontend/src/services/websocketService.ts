@@ -1,4 +1,4 @@
-import { Client } from '@stomp/stompjs';
+import { Client, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import API_CONFIG from '../config/api.config';
 
@@ -52,7 +52,7 @@ type OrderTrackingCallback = (update: OrderTrackingUpdate) => void;
 class WebSocketService {
   private client: Client | null = null;
   private orderClient: Client | null = null;
-  private subscriptions: Map<string, any> = new Map();
+  private subscriptions: Map<string, StompSubscription> = new Map();
   private locationCallbacks: Map<string, LocationCallback[]> = new Map();
   private kitchenCallbacks: Map<string, KitchenOrderCallback[]> = new Map();
   private orderTrackingCallbacks: Map<string, OrderTrackingCallback[]> = new Map();
@@ -136,7 +136,7 @@ class WebSocketService {
         const socket = new SockJS(`${API_CONFIG.WS_URL}/delivery`);
 
         this.client = new Client({
-          webSocketFactory: () => socket as any,
+          webSocketFactory: () => socket as unknown as WebSocket,
           debug: (str) => {
             console.log('STOMP Debug:', str);
           },
@@ -257,7 +257,7 @@ class WebSocketService {
         const socket = new SockJS(`${API_CONFIG.WS_URL}/orders`);
 
         this.orderClient = new Client({
-          webSocketFactory: () => socket as any,
+          webSocketFactory: () => socket as unknown as WebSocket,
           debug: (str) => {
             if (str.includes('error') || str.includes('Error')) {
               console.error('Order STOMP Debug:', str);

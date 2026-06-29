@@ -16,8 +16,11 @@ import {
   useGetOperationalStatusQuery,
   useGetStoreMetricsQuery,
 } from './storeApi';
+import { TEST_API_BASE } from '../../test/testApiBase';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API = TEST_API_BASE;
+
+
 
 const mockStore = {
   id: 'store-1',
@@ -81,7 +84,7 @@ describe('storeApi', () => {
 
     it('should fetch active stores (public)', async () => {
       server.use(
-        http.get(`${API}/stores/public`, () => HttpResponse.json([mockStore])),
+        http.get(`${API}/stores`, () => HttpResponse.json([mockStore])),
       );
 
       const { result } = renderHook(() => useGetActiveStoresQuery(), {
@@ -192,7 +195,7 @@ describe('storeApi', () => {
         name: 'New Store',
         storeCode: 'MVD-002',
         address: { street: '456 Ave', city: 'Hyderabad', state: 'Telangana', pincode: '500002' },
-        operatingConfig: { weeklySchedule: {} as any },
+        operatingConfig: { weeklySchedule: mockStore.operatingConfig.weeklySchedule },
       });
 
       await waitFor(() => expect(result.current[1].isSuccess).toBe(true));

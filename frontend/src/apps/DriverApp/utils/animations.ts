@@ -495,7 +495,7 @@ export const getStaggerDelay = (index: number, baseDelay: number = 50): string =
 /**
  * Debounce function for animations
  */
-export const debounce = <T extends (...args: any[]) => any>(
+export const debounce = <T extends (...args: never[]) => unknown>(
   func: T,
   wait: number
 ): ((...args: Parameters<T>) => void) => {

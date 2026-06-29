@@ -2,7 +2,6 @@ package com.MaSoVa.payment.unit.controller;
 
 import com.MaSoVa.payment.config.RazorpayConfig;
 import com.MaSoVa.payment.controller.WebhookController;
-import com.MaSoVa.payment.service.PaymentService;
 import com.MaSoVa.payment.service.RazorpayService;
 import com.MaSoVa.payment.service.RefundService;
 import com.MaSoVa.shared.test.BaseServiceTest;
@@ -29,7 +28,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class WebhookControllerTest extends BaseServiceTest {
 
     @Mock private RazorpayService razorpayService;
-    @Mock private PaymentService paymentService;
     @Mock private RefundService refundService;
     @Mock private RazorpayConfig razorpayConfig;
 

@@ -1,7 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { http, HttpResponse } from 'msw';
-import { server } from '../../test/mocks/server';
 import { DefaultTestWrapper } from '../../test/TestWrapper';
 import {
   inventoryApi,
@@ -33,8 +31,11 @@ import {
   useGetAllWasteRecordsQuery,
   useGetWasteTrendQuery,
 } from './inventoryApi';
+import { TEST_API_BASE } from '../../test/testApiBase';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API = TEST_API_BASE;
+
+
 
 describe('inventoryApi', () => {
   describe('endpoint definitions', () => {

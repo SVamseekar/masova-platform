@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import API_CONFIG from '../../config/api.config';
 import type { RootState } from '../store';
-import type { DeliveryAddress } from '../../types/order';
+import type { DeliveryAddress, OrderStatus } from '../../types/order';
 
 // Types
 export interface OrderItem {
@@ -39,7 +39,7 @@ export interface Order {
   tax: number;
   total: number;
   totalAmount?: number; // Alias for total (for backwards compatibility)
-  status: 'RECEIVED' | 'PREPARING' | 'OVEN' | 'BAKED' | 'READY' | 'DISPATCHED' | 'DELIVERED' | 'COMPLETED' | 'SERVED' | 'CANCELLED';
+  status: OrderStatus;
   orderType: 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY';
   paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
   paymentMethod?: 'CASH' | 'CARD' | 'UPI' | 'WALLET' | 'AGGREGATOR_COLLECTED';
@@ -53,6 +53,7 @@ export interface Order {
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
+  deliveredAt?: string;
   deliveryAddress?: DeliveryAddress;
   assignedDriverId?: string;
   driverId?: string; // Alias for assignedDriverId (for backwards compatibility)
@@ -73,6 +74,7 @@ export interface CreateOrderRequest {
   storeId: string; // Required by backend
   customerName: string;
   customerPhone?: string;
+  customerEmail?: string;
   customerId?: string;
   items: Array<{
     menuItemId: string;
@@ -95,14 +97,14 @@ export interface CreateOrderRequest {
 
 export interface UpdateOrderStatusRequest {
   orderId: string;
-  status: 'RECEIVED' | 'PREPARING' | 'OVEN' | 'BAKED' | 'READY' | 'DISPATCHED' | 'DELIVERED' | 'COMPLETED' | 'SERVED' | 'CANCELLED';
+  status: OrderStatus;
 }
 
 export const orderApi = createApi({
   reducerPath: 'orderApi',
   baseQuery: fetchBaseQuery({
     baseUrl: API_CONFIG.ORDER_SERVICE_URL,
-    prepareHeaders: (headers, { getState, endpoint }) => {
+    prepareHeaders: (headers, { getState, endpoint: _endpoint }) => {
       const state = getState() as RootState;
       const token = state.auth.accessToken;
       const user = state.auth.user;
@@ -243,7 +245,7 @@ export const orderApi = createApi({
     // Takes storeId as parameter to ensure refetch when store changes
     // Note: storeId is passed via headers (X-Selected-Store-Id), not query params
     getStoreOrders: builder.query<Order[], string | undefined>({
-      query: (storeId) => '/orders/store',
+      query: (_storeId) => '/orders/store',
       providesTags: (result, error, storeId) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Order' as const, id })), { type: 'Orders', id: storeId || 'DEFAULT' }]

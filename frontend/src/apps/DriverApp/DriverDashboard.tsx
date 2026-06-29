@@ -1,26 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { Box, Avatar, IconButton, Badge, BottomNavigation, BottomNavigationAction } from '@mui/material';
+import { useSelector } from 'react-redux';
+import { Box, Avatar, Badge, BottomNavigation, BottomNavigationAction } from '@mui/material';
 import {
   Home as HomeIcon,
   LocalShipping as ActiveIcon,
   History as HistoryIcon,
   Person as PersonIcon,
-  Settings as SettingsIcon,
   HomeOutlined as HomeOutlinedIcon,
   LocalShippingOutlined as ActiveOutlinedIcon,
   HistoryOutlined as HistoryOutlinedIcon,
   PersonOutline as PersonOutlinedIcon,
 } from '@mui/icons-material';
 import { RootState } from '../../store/store';
-import { logout } from '../../store/slices/authSlice';
+
 import DeliveryHomePage from './pages/DeliveryHomePage';
 import ActiveDeliveryPage from './pages/ActiveDeliveryPage';
 import DeliveryHistoryPage from './pages/DeliveryHistoryPage';
 import DriverProfilePage from './pages/DriverProfilePage';
 import { StatusBadge } from './components/shared';
-import { colors, spacing, typography, borderRadius, shadows, components, animations } from '../../styles/driver-design-tokens';
+import { colors, spacing, typography, shadows, components, animations } from '../../styles/driver-design-tokens';
 import { useGetDriverStatusQuery } from '../../store/api/driverApi';
 import { injectKeyframes } from './utils/animations';
 import { getTabSync } from './utils/tabSync';
@@ -28,7 +27,7 @@ import { getTabSync } from './utils/tabSync';
 const DriverDashboard: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const dispatch = useDispatch();
+
   const { user } = useSelector((state: RootState) => state.auth);
   const [currentNavValue, setCurrentNavValue] = useState(0);
 
@@ -124,20 +123,10 @@ const DriverDashboard: React.FC = () => {
     }
   }, [location]);
 
-  const handleLogout = () => {
-    dispatch(logout());
-    navigate('/login');
-  };
-
   const handleNavigationChange = (_event: React.SyntheticEvent, newValue: number) => {
     setCurrentNavValue(newValue);
     const routes = ['/driver', '/driver/active', '/driver/history', '/driver/profile'];
     navigate(routes[newValue]);
-  };
-
-  const handleSettingsClick = () => {
-    // Navigate to settings or show settings dialog
-    console.log('Settings clicked');
   };
 
   // Get user initials for avatar
@@ -158,8 +147,8 @@ const DriverDashboard: React.FC = () => {
   // Get employee ID or user ID
   const getEmployeeId = () => {
     if (!user) return '';
-    // @ts-ignore - employeeId might exist on user
-    return user.employeeId || `#EMP${user.id.slice(-6).toUpperCase()}`;
+    const staffUser = user as typeof user & { employeeId?: string };
+    return staffUser.employeeId || `#EMP${user.id.slice(-6).toUpperCase()}`;
   };
 
   return (

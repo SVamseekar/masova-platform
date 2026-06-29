@@ -3,14 +3,13 @@ package com.MaSoVa.logistics.inventory.controller;
 import com.MaSoVa.logistics.inventory.dto.response.MessageResponse;
 import com.MaSoVa.logistics.inventory.entity.PurchaseOrder;
 import com.MaSoVa.logistics.inventory.service.PurchaseOrderService;
+import com.MaSoVa.shared.util.StoreContextUtil;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,22 +33,10 @@ import java.util.Map;
 @SecurityRequirement(name = "bearerAuth")
 public class PurchaseOrderController {
 
-    private static final Logger log = LoggerFactory.getLogger(PurchaseOrderController.class);
-
     private final PurchaseOrderService purchaseOrderService;
 
     public PurchaseOrderController(PurchaseOrderService purchaseOrderService) {
         this.purchaseOrderService = purchaseOrderService;
-    }
-
-    private String getStoreIdFromHeaders(HttpServletRequest request) {
-        String userType = request.getHeader("X-User-Type");
-        String selectedStoreId = request.getHeader("X-Selected-Store-Id");
-        String userStoreId = request.getHeader("X-User-Store-Id");
-        if ("MANAGER".equals(userType) || "CUSTOMER".equals(userType)) {
-            return selectedStoreId != null ? selectedStoreId : userStoreId;
-        }
-        return userStoreId;
     }
 
     // ── LIST ──────────────────────────────────────────────────────────────────────
@@ -68,7 +55,7 @@ public class PurchaseOrderController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             HttpServletRequest request) {
-        String storeId = getStoreIdFromHeaders(request);
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
         if (number != null) return ResponseEntity.ok(List.of(purchaseOrderService.getPurchaseOrderByNumber(number)));
         if (Boolean.TRUE.equals(pending)) return ResponseEntity.ok(purchaseOrderService.getPendingApprovalOrders(storeId));
         if (Boolean.TRUE.equals(overdue)) return ResponseEntity.ok(purchaseOrderService.getOverdueOrders(storeId));
@@ -105,7 +92,7 @@ public class PurchaseOrderController {
             @PathVariable String id,
             @RequestBody Map<String, Object> body,
             HttpServletRequest request) {
-        String storeId = (String) body.getOrDefault("storeId", getStoreIdFromHeaders(request));
+        String storeId = (String) body.getOrDefault("storeId", StoreContextUtil.getStoreIdFromHeaders(request));
         String action = body.containsKey("action") ? ((String) body.get("action")).toUpperCase() : null;
         if (action != null) {
             return switch (action) {
@@ -137,7 +124,7 @@ public class PurchaseOrderController {
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Delete purchase order")
     public ResponseEntity<MessageResponse> delete(@PathVariable String id, HttpServletRequest request) {
-        purchaseOrderService.deletePurchaseOrder(id, getStoreIdFromHeaders(request));
+        purchaseOrderService.deletePurchaseOrder(id, StoreContextUtil.getStoreIdFromHeaders(request));
         return ResponseEntity.ok(new MessageResponse("Purchase order deleted successfully"));
     }
 

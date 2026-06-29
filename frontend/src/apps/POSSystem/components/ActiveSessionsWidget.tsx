@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { colors, shadows, spacing } from '../../../styles/design-tokens';
 import Button from '../../../components/ui/neumorphic/Button';
-import { useGetActiveStoreSessionsQuery, useClockOutEmployeeMutation } from '../../../store/api/sessionApi';
+import { useGetActiveStoreSessionsQuery, useClockOutEmployeeMutation, type WorkingSession } from '../../../store/api/sessionApi';
+import { getRtkErrorMessage } from '../../shared/rtkError';
 import { useAppSelector } from '../../../store/hooks';
 import RecordBreakModal from './RecordBreakModal';
 
@@ -38,8 +39,8 @@ const ActiveSessionsWidget: React.FC<ActiveSessionsWidgetProps> = ({ storeId, on
     try {
       await clockOutEmployee({ employeeId }).unwrap();
       refetch(); // Refresh the list
-    } catch (err: any) {
-      alert(err?.data?.error || 'Failed to clock out employee');
+    } catch (err: unknown) {
+      alert(getRtkErrorMessage(err, 'Failed to clock out employee'));
     } finally {
       setSelectedEmployeeId(null);
     }
@@ -106,7 +107,7 @@ const ActiveSessionsWidget: React.FC<ActiveSessionsWidgetProps> = ({ storeId, on
         </div>
       ) : (
         <div style={styles.sessionsList}>
-          {activeSessions.map((session: any) => (
+          {activeSessions.map((session: WorkingSession) => (
             <div key={session.id} style={styles.sessionCard}>
               <div style={styles.sessionInfo}>
                 <div style={styles.employeeInfo}>
@@ -128,7 +129,7 @@ const ActiveSessionsWidget: React.FC<ActiveSessionsWidgetProps> = ({ storeId, on
                     <span style={styles.detailLabel}>Duration:</span>
                     <span style={styles.durationValue}>{formatDuration(session.loginTime)}</span>
                   </div>
-                  {(session.breakDurationMinutes || session.breakTime) > 0 && (
+                  {((session.breakDurationMinutes ?? session.breakTime ?? 0) > 0) && (
                     <div style={styles.detailRow}>
                       <span style={styles.detailLabel}>Break:</span>
                       <span style={styles.breakValue}>{session.breakDurationMinutes || session.breakTime || 0} min</span>
@@ -142,14 +143,14 @@ const ActiveSessionsWidget: React.FC<ActiveSessionsWidgetProps> = ({ storeId, on
                   <Button
                     variant="primary"
                     size="sm"
-                    onClick={() => handleRecordBreak(session.employeeId, session.name)}
+                    onClick={() => handleRecordBreak(session.employeeId, session.employeeName)}
                   >
                     ⏱ Record Break
                   </Button>
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => handleClockOut(session.employeeId, session.name)}
+                    onClick={() => handleClockOut(session.employeeId, session.employeeName)}
                     disabled={isClockingOut && selectedEmployeeId === session.employeeId}
                   >
                     {isClockingOut && selectedEmployeeId === session.employeeId

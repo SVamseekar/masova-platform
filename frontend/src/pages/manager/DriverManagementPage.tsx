@@ -4,7 +4,7 @@ import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
 import { formatMoney } from '../../utils/currency';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
-import { usePageStore } from '../../contexts/PageStoreContext';
+import { usePageStore } from '../../hooks/usePageStore';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import {
   useGetAllDriversQuery,
@@ -14,17 +14,17 @@ import {
   useActivateDriverMutation,
   useDeactivateDriverMutation,
   Driver,
-  DriverPerformance,
 } from '../../store/api/driverApi';
-import { Card, Button } from '../../components/ui/neumorphic';
+import { Button } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
 import { ManagerDriverTrackingMap } from '../../components/delivery/ManagerDriverTrackingMap';
 import { FilterBar, type FilterConfig, type FilterValues, type SortConfig } from '../../components/common/FilterBar';
 import { applyFilters, applySort, exportToCSV, commonFilters } from '../../utils/filterUtils';
 import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
-import { createNeumorphicSurface, createCard, createBadge } from '../../styles/neumorphic-utils';
+import { createCard, createBadge } from '../../styles/neumorphic-utils';
 
+// eslint-disable-next-line react-refresh/only-export-components -- page component with HOC export
 const DriverManagementPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
   const currency = useAppSelector(selectCartCurrency);
@@ -55,7 +55,7 @@ const DriverManagementPage: React.FC = () => {
     skip: !storeId,
     pollingInterval: 10000 // Poll every 10 seconds for real-time status updates
   });
-  const { data: onlineDrivers } = useGetOnlineDriversQuery(storeId, {
+  const { data: _onlineDrivers } = useGetOnlineDriversQuery(storeId, {
     skip: !storeId,
     pollingInterval: 10000
   });
@@ -629,4 +629,5 @@ const DriverManagementPage: React.FC = () => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- HOC default export
 export default withPageStoreContext(DriverManagementPage, 'driver-management');

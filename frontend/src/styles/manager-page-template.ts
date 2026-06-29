@@ -3,7 +3,7 @@
  * Use this as the foundation for all manager pages
  */
 
-import { colors, spacing, typography, shadows, borderRadius } from './design-tokens';
+import { colors, spacing, typography, borderRadius } from './design-tokens';
 import { createNeumorphicSurface, createCard } from './neumorphic-utils';
 
 export const managerPageStyles = {

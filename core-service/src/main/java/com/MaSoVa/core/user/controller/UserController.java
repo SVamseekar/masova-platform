@@ -84,7 +84,7 @@ public class UserController {
         if (resolvedStore != null) {
             return ResponseEntity.ok(userService.getStoreEmployees(resolvedStore));
         }
-        return ResponseEntity.ok(userService.getAllUsers());
+        return ResponseEntity.ok(userService.listActiveEmployees());
     }
 
     // ── SINGLE USER ─────────────────────────────────────────────────────────────
@@ -148,7 +148,7 @@ public class UserController {
                     "totalProcessed", results.size(),
                     "results", results));
         }
-        String pin = userService.generateEmployeePIN(userId);
+        String pin = userService.generateEmployeePIN(userId, userService.resolveEmployeeStoreId(userId));
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "PIN generated successfully",

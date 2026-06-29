@@ -64,6 +64,26 @@
             <version>2.2.0</version>
         </dependency>
 
+        <!-- Shared store-access validation (security remediation Task 5).
+             api-gateway is WebFlux-only; exclude shared-models' MVC/servlet
+             dependencies so they don't conflict with Spring Cloud Gateway's
+             reactive-stack requirement at runtime. -->
+        <dependency>
+            <groupId>com.MaSoVa</groupId>
+            <artifactId>shared-models</artifactId>
+            <version>1.0.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-web</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>jakarta.servlet</groupId>
+                    <artifactId>jakarta.servlet-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <!-- Test Dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -89,6 +109,16 @@
             <version>1.0.0</version>
             <type>test-jar</type>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-web</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>jakarta.servlet</groupId>
+                    <artifactId>jakarta.servlet-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
     

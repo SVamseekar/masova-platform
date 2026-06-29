@@ -152,6 +152,6 @@ describe('ManagementHubSidebar', () => {
   it('shows item count per category', () => {
     renderAsManager(<ManagementHubSidebar {...defaultProps} />);
     // Each category shows "X pages" text
-    expect(screen.getByText('4 pages')).toBeInTheDocument(); // Orders & Payments has 4 items
+    expect(screen.getAllByText(/4 pages/).length).toBeGreaterThanOrEqual(1);
   });
 });

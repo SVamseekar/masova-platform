@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.config.EnableMongoAuditing;
 @EnableMongoAuditing
 public class PaymentServiceApplication {
 
+    @SuppressWarnings("resource") // ApplicationContext lives for the JVM's lifetime; Spring Boot registers its own shutdown hook
     public static void main(String[] args) {
         SpringApplication.run(PaymentServiceApplication.class, args);
     }

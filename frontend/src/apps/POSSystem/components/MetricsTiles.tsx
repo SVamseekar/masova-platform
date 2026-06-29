@@ -9,7 +9,7 @@ import {
   useGetDriverStatusQuery,
 } from '../../../store/api/analyticsApi';
 import Card from '../../../components/ui/neumorphic/Card';
-import { colors, shadows, spacing, typography } from '../../../styles/design-tokens';
+import { colors, spacing, typography } from '../../../styles/design-tokens';
 import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import BarChartIcon from '@mui/icons-material/BarChart';
@@ -76,15 +76,25 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
     );
   }
 
+  interface MetricCardProps {
+    title: string;
+    value: string;
+    subtitle?: string;
+    icon: React.ReactNode;
+    trendLabel?: string;
+    trendValue?: number;
+    bgColor?: string;
+  }
+
   const MetricCard = ({
     title,
     value,
     subtitle,
     icon,
-    trend,
+    trendLabel,
     trendValue,
     bgColor = colors.brand.primary
-  }: any) => (
+  }: MetricCardProps) => (
     <Card
       elevation="md"
       padding="lg"
@@ -157,7 +167,7 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
             {subtitle}
           </p>
         )}
-        {trend && trendValue !== undefined && (
+        {trendLabel && trendValue !== undefined && (
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -181,7 +191,7 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
               fontSize: typography.fontSize.xs,
               color: colors.text.secondary
             }}>
-              {trend}
+              {trendLabel}
             </span>
           </div>
         )}
@@ -211,7 +221,7 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
         value={salesMetrics ? fmt(salesMetrics.todaySales) : '-'}
         subtitle={salesMetrics ? `${salesMetrics.todayOrderCount} orders` : 'Loading...'}
         icon={<CurrencyRupeeIcon style={{ fontSize: '28px' }} />}
-        trend="vs yesterday"
+        trendLabel="vs yesterday"
         trendValue={salesMetrics?.percentChangeFromYesterday}
         bgColor={colors.semantic.success}
       />
@@ -222,7 +232,7 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
         value={avgOrderValue ? fmt(avgOrderValue.averageOrderValue) : '-'}
         subtitle={avgOrderValue ? `${avgOrderValue.totalOrders} orders` : 'Loading...'}
         icon={<ShoppingCartIcon style={{ fontSize: '28px' }} />}
-        trend={avgOrderValue ? 'vs yesterday' : undefined}
+        trendLabel={avgOrderValue ? 'vs yesterday' : undefined}
         trendValue={avgOrderValue?.percentChange}
         bgColor={colors.semantic.info}
       />
@@ -231,7 +241,7 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
       <MetricCard
         title="Last Year (Same Day)"
         value={salesMetrics ? fmt(salesMetrics.lastYearSameDaySales) : '-'}
-        trend="YoY growth"
+        trendLabel="YoY growth"
         trendValue={salesMetrics?.percentChangeFromLastYear}
         icon={<BarChartIcon style={{ fontSize: '28px' }} />}
         bgColor={colors.semantic.warning}
@@ -240,7 +250,7 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
       {/* Active Deliveries */}
       <MetricCard
         title="Active Deliveries"
-        value={driverStatus?.activeDeliveries ?? '-'}
+        value={driverStatus?.activeDeliveries != null ? String(driverStatus.activeDeliveries) : '-'}
         subtitle={driverStatus ? `${driverStatus.availableDrivers}/${driverStatus.totalDrivers} drivers available` : 'Loading...'}
         icon={<LocalShippingIcon style={{ fontSize: '28px' }} />}
         bgColor={colors.brand.secondary}

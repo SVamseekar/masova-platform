@@ -275,8 +275,32 @@ class JwtAuthenticationFilterTest {
         }
 
         @Test
-        @DisplayName("Should forward X-Selected-Store-Id if present in original request")
-        void shouldForwardSelectedStoreId_ifPresent() {
+        @DisplayName("Should forward X-Selected-Store-Id when it matches JWT store")
+        void shouldForwardSelectedStoreId_whenMatchingJwtStore() {
+            String token = generateValidToken("mgr-001", "MANAGER", "store-abc");
+            GatewayFilter gatewayFilter = filter.apply(new JwtAuthenticationFilter.Config());
+
+            MockServerHttpRequest request = MockServerHttpRequest.get("/api/orders")
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .header("X-Selected-Store-Id", "store-abc")
+                    .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+            when(chain.filter(any())).thenAnswer(invocation -> {
+                org.springframework.web.server.ServerWebExchange modifiedExchange = invocation.getArgument(0);
+                HttpHeaders headers = modifiedExchange.getRequest().getHeaders();
+
+                assertThat(headers.getFirst("X-Selected-Store-Id")).isEqualTo("store-abc");
+                return Mono.empty();
+            });
+
+            StepVerifier.create(gatewayFilter.filter(exchange, chain))
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("Should return 403 when X-Selected-Store-Id does not match JWT store")
+        void shouldRejectCrossStoreSelection() {
             String token = generateValidToken("mgr-001", "MANAGER", "store-abc");
             GatewayFilter gatewayFilter = filter.apply(new JwtAuthenticationFilter.Config());
 
@@ -286,16 +310,10 @@ class JwtAuthenticationFilterTest {
                     .build();
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
-            when(chain.filter(any())).thenAnswer(invocation -> {
-                org.springframework.web.server.ServerWebExchange modifiedExchange = invocation.getArgument(0);
-                HttpHeaders headers = modifiedExchange.getRequest().getHeaders();
-
-                assertThat(headers.getFirst("X-Selected-Store-Id")).isEqualTo("store-xyz");
-                return Mono.empty();
-            });
-
             StepVerifier.create(gatewayFilter.filter(exchange, chain))
                     .verifyComplete();
+
+            assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
     }
 

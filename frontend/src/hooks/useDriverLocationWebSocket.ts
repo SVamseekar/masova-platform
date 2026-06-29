@@ -24,7 +24,7 @@ interface UseDriverLocationWebSocketReturn {
  */
 export const useDriverLocationWebSocket = ({
   driverId,
-  orderId,
+  orderId: _orderId,
   onLocationUpdate,
   enabled = true,
 }: UseDriverLocationWebSocketOptions): UseDriverLocationWebSocketReturn => {

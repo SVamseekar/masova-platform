@@ -214,10 +214,12 @@ public class Refund {
     }
 
     public enum RefundStatus {
-        INITIATED,   // Refund initiated
-        PROCESSING,  // Refund being processed
-        PROCESSED,   // Refund processed successfully
-        FAILED       // Refund failed
+        PENDING_APPROVAL, // Agent/customer-requested refund awaiting manager approval (no money moved)
+        INITIATED,        // Refund initiated
+        PROCESSING,       // Refund being processed
+        PROCESSED,        // Refund processed successfully
+        FAILED,           // Refund failed
+        REJECTED          // Pending-approval refund rejected by a manager (no money moved)
     }
 
     public enum RefundType {

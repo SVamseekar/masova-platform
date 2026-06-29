@@ -4,9 +4,7 @@ import com.MaSoVa.core.notification.entity.Campaign;
 import com.MaSoVa.core.notification.repository.CampaignRepository;
 import com.MaSoVa.core.notification.repository.UserPreferencesRepository;
 import com.MaSoVa.core.notification.service.CampaignService;
-import com.MaSoVa.core.notification.service.EmailService;
 import com.MaSoVa.core.notification.service.NotificationService;
-import com.MaSoVa.core.notification.service.SmsService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -33,14 +31,15 @@ class CampaignServiceTest {
     @Mock private CampaignRepository campaignRepository;
     @Mock private UserPreferencesRepository userPreferencesRepository;
     @Mock private NotificationService notificationService;
-    @Mock private SmsService smsService;
-    @Mock private EmailService emailService;
 
     @InjectMocks private CampaignService campaignService;
+
+    private static final String STORE_ID = "store-1";
 
     private Campaign buildCampaign(String id) {
         Campaign c = new Campaign();
         c.setId(id);
+        c.setStoreId(STORE_ID);
         c.setName("Test Campaign");
         c.setMessage("Hello!");
         c.setSubject("Subject");
@@ -63,9 +62,10 @@ class CampaignServiceTest {
             Campaign c = buildCampaign(null);
             when(campaignRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-            Campaign result = campaignService.createCampaign(c);
+            Campaign result = campaignService.createCampaign(c, STORE_ID);
 
             assertThat(result.getStatus()).isEqualTo(Campaign.CampaignStatus.DRAFT);
+            assertThat(result.getStoreId()).isEqualTo(STORE_ID);
         }
     }
 
@@ -82,7 +82,18 @@ class CampaignServiceTest {
         void throwsWhenNotFound() {
             when(campaignRepository.findById("missing")).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> campaignService.updateCampaign("missing", buildCampaign("missing")))
+            assertThatThrownBy(() -> campaignService.updateCampaign("missing", buildCampaign("missing"), STORE_ID))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("not found");
+        }
+
+        @Test
+        @DisplayName("throws when campaign belongs to a different store")
+        void throwsWhenWrongStore() {
+            Campaign existing = buildCampaign("c1");
+            when(campaignRepository.findById("c1")).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> campaignService.updateCampaign("c1", buildCampaign("c1"), "other-store"))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("not found");
         }
@@ -98,7 +109,7 @@ class CampaignServiceTest {
             update.setName("Updated Name");
             update.setMessage("New message");
 
-            Campaign result = campaignService.updateCampaign("c1", update);
+            Campaign result = campaignService.updateCampaign("c1", update, STORE_ID);
 
             assertThat(result.getName()).isEqualTo("Updated Name");
             assertThat(result.getMessage()).isEqualTo("New message");
@@ -118,7 +129,7 @@ class CampaignServiceTest {
         void throwsWhenNotFound() {
             when(campaignRepository.findById("missing")).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> campaignService.scheduleCampaign("missing", LocalDateTime.now().plusDays(1)))
+            assertThatThrownBy(() -> campaignService.scheduleCampaign("missing", LocalDateTime.now().plusDays(1), STORE_ID))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("not found");
         }
@@ -131,7 +142,7 @@ class CampaignServiceTest {
             when(campaignRepository.findById("c1")).thenReturn(Optional.of(c));
             when(campaignRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-            campaignService.scheduleCampaign("c1", scheduledFor);
+            campaignService.scheduleCampaign("c1", scheduledFor, STORE_ID);
 
             verify(campaignRepository).save(argThat(saved ->
                     saved.getStatus() == Campaign.CampaignStatus.SCHEDULED &&
@@ -152,7 +163,7 @@ class CampaignServiceTest {
         void throwsWhenNotFound() {
             when(campaignRepository.findById("missing")).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> campaignService.cancelCampaign("missing"))
+            assertThatThrownBy(() -> campaignService.cancelCampaign("missing", STORE_ID))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("not found");
         }
@@ -164,7 +175,7 @@ class CampaignServiceTest {
             when(campaignRepository.findById("c1")).thenReturn(Optional.of(c));
             when(campaignRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-            campaignService.cancelCampaign("c1");
+            campaignService.cancelCampaign("c1", STORE_ID);
 
             verify(campaignRepository).save(argThat(saved ->
                     saved.getStatus() == Campaign.CampaignStatus.CANCELLED));
@@ -182,7 +193,9 @@ class CampaignServiceTest {
         @Test
         @DisplayName("calls deleteById on repository")
         void deletesById() {
-            campaignService.deleteCampaign("c1");
+            when(campaignRepository.findById("c1")).thenReturn(Optional.of(buildCampaign("c1")));
+
+            campaignService.deleteCampaign("c1", STORE_ID);
             verify(campaignRepository).deleteById("c1");
         }
     }
@@ -201,7 +214,7 @@ class CampaignServiceTest {
             Campaign c = buildCampaign("c1");
             when(campaignRepository.findById("c1")).thenReturn(Optional.of(c));
 
-            assertThat(campaignService.getCampaignById("c1")).isPresent();
+            assertThat(campaignService.getCampaignById("c1", STORE_ID)).isPresent();
         }
 
         @Test
@@ -209,7 +222,16 @@ class CampaignServiceTest {
         void returnsEmpty() {
             when(campaignRepository.findById("missing")).thenReturn(Optional.empty());
 
-            assertThat(campaignService.getCampaignById("missing")).isEmpty();
+            assertThat(campaignService.getCampaignById("missing", STORE_ID)).isEmpty();
+        }
+
+        @Test
+        @DisplayName("returns empty when campaign belongs to a different store")
+        void returnsEmptyForWrongStore() {
+            Campaign c = buildCampaign("c1");
+            when(campaignRepository.findById("c1")).thenReturn(Optional.of(c));
+
+            assertThat(campaignService.getCampaignById("c1", "other-store")).isEmpty();
         }
     }
 
@@ -226,7 +248,7 @@ class CampaignServiceTest {
         void doesNotThrowWhenNotFound() {
             when(campaignRepository.findById("missing")).thenReturn(Optional.empty());
 
-            assertThatCode(() -> campaignService.executeCampaign("missing"))
+            assertThatCode(() -> campaignService.executeCampaign("missing", STORE_ID))
                     .doesNotThrowAnyException();
         }
 
@@ -239,7 +261,7 @@ class CampaignServiceTest {
             when(userPreferencesRepository.findByPromotionalEnabledTrue()).thenReturn(List.of());
             when(campaignRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-            campaignService.executeCampaign("c1");
+            campaignService.executeCampaign("c1", STORE_ID);
 
             verify(campaignRepository, atLeastOnce()).save(argThat(saved ->
                     saved.getStatus() == Campaign.CampaignStatus.SENDING ||

@@ -4,33 +4,38 @@ import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
 import { formatMoney } from '../../utils/currency';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
-import { usePageStore } from '../../contexts/PageStoreContext';
+import { usePageStore } from '../../hooks/usePageStore';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import {
-  useGetDeliveryMetricsQuery,
   useGetTodayMetricsQuery,
   useAutoDispatchMutation,
   useTrackOrderQuery,
   useGetAvailableDriversQuery,
 } from '../../store/api/deliveryApi';
-import { useGetStoreOrdersQuery } from '../../store/api/orderApi';
-import { Card, Button } from '../../components/ui/neumorphic';
+import { useGetStoreOrdersQuery, type Order } from '../../store/api/orderApi';
+import type { AvailableDriver } from '../../store/api/deliveryApi';
+import { getApiErrorMessage } from '../utils/apiError';
+
+type DeliveryOrderView = Order & {
+  _id?: string;
+  customer?: { name?: string; phone?: string; firstName?: string; phoneNumber?: string };
+  assignedDriver?: { name?: string; phone?: string; firstName?: string; lastName?: string; phoneNumber?: string };
+};
+import { Button } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
 import { FilterBar, type FilterConfig, type FilterValues, type SortConfig } from '../../components/common/FilterBar';
 import { applyFilters, applySort, exportToCSV, commonFilters } from '../../utils/filterUtils';
 import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
-import { createNeumorphicSurface, createCard, createBadge } from '../../styles/neumorphic-utils';
+import { createCard, createBadge } from '../../styles/neumorphic-utils';
 import {
   MOCK_STORE_LOCATION,
   getRandomCustomerLocation,
   toGeoJSONPoint,
-  toAddressDTO,
   isTestMode,
-  TEST_SCENARIOS,
-  type TestLocation,
 } from '../../config/test-locations';
 
+// eslint-disable-next-line react-refresh/only-export-components -- page component with HOC export
 const DeliveryManagementPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
   const currency = useAppSelector(selectCartCurrency);
@@ -59,7 +64,7 @@ const DeliveryManagementPage: React.FC = () => {
   const storeId = selectedStoreId || currentUser?.storeId || '';
 
   // API queries
-  const { data: todayMetrics, isLoading: loadingMetrics } = useGetTodayMetricsQuery(storeId, { skip: !storeId });
+  const { data: _todayMetrics, isLoading: _loadingMetrics } = useGetTodayMetricsQuery(storeId, { skip: !storeId });
 
   // Get all store orders and filter by delivery type
   const { data: allOrders = [], isLoading: loadingOrders } = useGetStoreOrdersQuery(storeId, {
@@ -68,7 +73,7 @@ const DeliveryManagementPage: React.FC = () => {
   });
 
   // Filter for delivery orders only
-  const deliveryOrders = allOrders.filter((order: any) => order.orderType === 'DELIVERY');
+  const deliveryOrders = allOrders.filter((order) => order.orderType === 'DELIVERY') as DeliveryOrderView[];
 
   // Filter configuration
   const filterConfigs: FilterConfig[] = [
@@ -84,7 +89,8 @@ const DeliveryManagementPage: React.FC = () => {
       field: 'status',
       options: [
         { label: 'Ready for Dispatch', value: 'READY' },
-        { label: 'Out for Delivery (Dispatched)', value: 'DISPATCHED' },
+        { label: 'Dispatched (Awaiting Pickup)', value: 'DISPATCHED' },
+        { label: 'Out for Delivery', value: 'OUT_FOR_DELIVERY' },
         { label: 'Delivered', value: 'DELIVERED' },
       ],
     },
@@ -144,32 +150,32 @@ const DeliveryManagementPage: React.FC = () => {
         { label: 'Status', field: 'status' },
         { label: 'Total Amount', field: 'total', format: (v) => fmt(Number(v)) },
         { label: 'Driver', field: 'driverId', format: (v) => v || 'Not Assigned' },
-        { label: 'Created At', field: 'createdAt', format: (v) => new Date(v).toLocaleString() },
+        { label: 'Created At', field: 'createdAt', format: (v) => new Date(String(v)).toLocaleString() },
       ]
     );
   };
 
   // Filter today's delivery orders
   const today = new Date().toDateString();
-  const todayDeliveryOrders = filteredAndSortedDeliveries.filter((order: any) => {
+  const todayDeliveryOrders = filteredAndSortedDeliveries.filter((order: DeliveryOrderView) => {
     const orderDate = new Date(order.createdAt).toDateString();
     return orderDate === today;
   });
 
   // Ready for dispatch: READY status (kitchen complete, awaiting driver pickup)
-  const readyOrders = filteredAndSortedDeliveries.filter((order: any) =>
+  const readyOrders = filteredAndSortedDeliveries.filter((order: DeliveryOrderView) =>
     order.status === 'READY'
   );
 
-  // Out for delivery: DISPATCHED status
-  const outForDeliveryOrders = filteredAndSortedDeliveries.filter((order: any) =>
-    order.status === 'DISPATCHED'
+  // Out for delivery: DISPATCHED (awaiting pickup) or OUT_FOR_DELIVERY (driver en route)
+  const outForDeliveryOrders = filteredAndSortedDeliveries.filter((order: DeliveryOrderView) =>
+    order.status === 'DISPATCHED' || order.status === 'OUT_FOR_DELIVERY'
   );
 
   // Calculate metrics from actual orders
   const calculatedMetrics = {
-    activeDeliveries: outForDeliveryOrders.length, // Only count dispatched orders as active
-    completedDeliveries: todayDeliveryOrders.filter((order: any) => order.status === 'DELIVERED').length,
+    activeDeliveries: outForDeliveryOrders.length, // Dispatched + out-for-delivery orders count as active
+    completedDeliveries: todayDeliveryOrders.filter((order: DeliveryOrderView) => order.status === 'DELIVERED').length,
     averageDeliveryTime: 0, // Would need actual delivery time data
     averageDeliveryDistance: 0, // Would need actual distance data
     onTimeDeliveryRate: 0, // Would need actual timing data
@@ -199,7 +205,7 @@ const DeliveryManagementPage: React.FC = () => {
   const handleAutoDispatch = async (orderId: string, preferredDriverId?: string) => {
     try {
       // Find the order to get its details
-      const order = readyOrders.find((o: any) => (o.id || o._id) === orderId);
+      const order = readyOrders.find((o: DeliveryOrderView) => (o.id || o._id) === orderId);
       if (!order) {
         alert('Order not found');
         return;
@@ -256,9 +262,9 @@ const DeliveryManagementPage: React.FC = () => {
       }).unwrap();
 
       alert('Driver dispatched successfully!');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error dispatching driver:', error);
-      alert(`Failed to dispatch driver: ${error.data?.message || error.message || 'Unknown error'}`);
+      alert(`Failed to dispatch driver: ${getApiErrorMessage(error, 'Unknown error')}`);
     } finally {
       setShowDriverSelector(false);
       setPendingOrderId('');
@@ -489,7 +495,7 @@ const DeliveryManagementPage: React.FC = () => {
             </div>
           ) : (
             <div>
-              {readyOrders.map((order: any) => (
+              {readyOrders.map((order: DeliveryOrderView) => (
                 <div key={order.id || order._id} style={orderCardStyles}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[3] }}>
                     <div>
@@ -530,7 +536,7 @@ const DeliveryManagementPage: React.FC = () => {
                     <Button
                       variant="primary"
                       size="sm"
-                      onClick={() => handleAutoDispatch(order.id || order._id)}
+                      onClick={() => { const orderId = order.id || order._id; if (orderId) handleAutoDispatch(orderId); }}
                       disabled={dispatching}
                     >
                       {dispatching ? 'Dispatching...' : '🤖 Auto-Dispatch'}
@@ -538,7 +544,7 @@ const DeliveryManagementPage: React.FC = () => {
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => handleManualDispatch(order.id || order._id)}
+                      onClick={() => { const orderId = order.id || order._id; if (orderId) handleManualDispatch(orderId); }}
                       disabled={dispatching || availableDrivers.length === 0}
                     >
                       👤 Choose Driver
@@ -559,7 +565,7 @@ const DeliveryManagementPage: React.FC = () => {
             </div>
           ) : (
             <div>
-              {outForDeliveryOrders.map((order: any) => (
+              {outForDeliveryOrders.map((order: DeliveryOrderView) => (
                 <div key={order.id || order._id} style={orderCardStyles}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[3] }}>
                     <div>
@@ -605,7 +611,7 @@ const DeliveryManagementPage: React.FC = () => {
                   </div>
 
                   <div style={{ display: 'flex', gap: spacing[2] }}>
-                    <Button variant="secondary" size="sm" onClick={() => handleTrackOrder(order.id || order._id)}>
+                    <Button variant="secondary" size="sm" onClick={() => { const orderId = order.id || order._id; if (orderId) handleTrackOrder(orderId); }}>
                       Track Order
                     </Button>
                   </div>
@@ -633,7 +639,7 @@ const DeliveryManagementPage: React.FC = () => {
                 </div>
               ) : (
                 <div>
-                  {availableDrivers.map((driver: any) => (
+                  {availableDrivers.map((driver: AvailableDriver) => (
                     <div
                       key={driver.id}
                       onClick={() => setSelectedDriverId(driver.id)}
@@ -758,4 +764,5 @@ const DeliveryManagementPage: React.FC = () => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- HOC default export
 export default withPageStoreContext(DeliveryManagementPage, 'deliveries');

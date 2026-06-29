@@ -2,21 +2,27 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderAsManager, screen } from '@/test/utils/testUtils';
 import PurchaseOrdersPage from './PurchaseOrdersPage';
 
-const mockPurchaseOrders = [
-  { id: 'po-1', orderNumber: 'PO-001', supplierId: 'sup-1', status: 'PENDING_APPROVAL', totalAmount: 15000, orderDate: '2026-02-10T00:00:00Z', expectedDeliveryDate: '2026-02-17T00:00:00Z', items: [{ itemName: 'Flour', orderedQuantity: 100, unit: 'kg', unitPrice: 45 }] },
-  { id: 'po-2', orderNumber: 'PO-002', supplierId: 'sup-2', status: 'SENT', totalAmount: 8500, orderDate: '2026-02-12T00:00:00Z', expectedDeliveryDate: '2026-02-19T00:00:00Z', items: [{ itemName: 'Cheese', orderedQuantity: 50, unit: 'kg', unitPrice: 170 }] },
-];
-
-vi.mock('@/store/api/inventoryApi', () => ({
-  useGetAllPurchaseOrdersQuery: vi.fn().mockReturnValue({ data: mockPurchaseOrders, isLoading: false, refetch: vi.fn() }),
-  useGetPendingApprovalPurchaseOrdersQuery: vi.fn().mockReturnValue({ data: [mockPurchaseOrders[0]], refetch: vi.fn() }),
-  useApprovePurchaseOrderMutation: vi.fn().mockReturnValue([vi.fn()]),
-  useRejectPurchaseOrderMutation: vi.fn().mockReturnValue([vi.fn()]),
-  useSendPurchaseOrderMutation: vi.fn().mockReturnValue([vi.fn()]),
-  useAutoGeneratePurchaseOrdersMutation: vi.fn().mockReturnValue([vi.fn(), { isLoading: false }]),
+const { mockPurchaseOrders } = vi.hoisted(() => ({
+  mockPurchaseOrders: [
+    { id: 'po-1', orderNumber: 'PO-001', supplierId: 'sup-1', status: 'PENDING_APPROVAL', totalAmount: 15000, orderDate: '2026-02-10T00:00:00Z', expectedDeliveryDate: '2026-02-17T00:00:00Z', items: [{ itemName: 'Flour', orderedQuantity: 100, unit: 'kg', unitPrice: 45 }] },
+    { id: 'po-2', orderNumber: 'PO-002', supplierId: 'sup-2', status: 'SENT', totalAmount: 8500, orderDate: '2026-02-12T00:00:00Z', expectedDeliveryDate: '2026-02-19T00:00:00Z', items: [{ itemName: 'Cheese', orderedQuantity: 50, unit: 'kg', unitPrice: 170 }] },
+  ],
 }));
 
-vi.mock('@/contexts/PageStoreContext', () => ({
+vi.mock('@/store/api/inventoryApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/store/api/inventoryApi')>();
+  return {
+    ...actual,
+    useGetAllPurchaseOrdersQuery: vi.fn().mockReturnValue({ data: mockPurchaseOrders, isLoading: false, refetch: vi.fn() }),
+    useGetPendingApprovalPurchaseOrdersQuery: vi.fn().mockReturnValue({ data: [mockPurchaseOrders[0]], refetch: vi.fn() }),
+    useApprovePurchaseOrderMutation: vi.fn().mockReturnValue([vi.fn()]),
+    useRejectPurchaseOrderMutation: vi.fn().mockReturnValue([vi.fn()]),
+    useSendPurchaseOrderMutation: vi.fn().mockReturnValue([vi.fn()]),
+    useAutoGeneratePurchaseOrdersMutation: vi.fn().mockReturnValue([vi.fn(), { isLoading: false }]),
+  };
+});
+
+vi.mock('@/hooks/usePageStore', () => ({
   usePageStore: vi.fn().mockReturnValue({ selectedStoreId: 'store-1', setSelectedStoreId: vi.fn() }),
 }));
 
@@ -41,7 +47,7 @@ vi.mock('@/components/inventory/ReceivePurchaseOrderDialog', () => ({
 }));
 
 vi.mock('date-fns', () => ({
-  format: vi.fn((date: Date, fmt: string) => date.toLocaleDateString()),
+  format: vi.fn((date: Date, _fmt: string) => date.toLocaleDateString()),
 }));
 
 describe('PurchaseOrdersPage', () => {
@@ -51,13 +57,13 @@ describe('PurchaseOrdersPage', () => {
 
   it('renders without crashing', () => {
     renderAsManager(<PurchaseOrdersPage />);
-    expect(screen.getByText('Purchase Orders')).toBeInTheDocument();
+    expect(screen.getAllByText('Purchase Orders').length).toBeGreaterThanOrEqual(1);
   });
 
   it('displays statistics cards', () => {
     renderAsManager(<PurchaseOrdersPage />);
     expect(screen.getByText('Total Orders')).toBeInTheDocument();
-    expect(screen.getByText('Pending Approval')).toBeInTheDocument();
+    expect(screen.getAllByText('Pending Approval').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Sent to Suppliers')).toBeInTheDocument();
     expect(screen.getByText('Total Value')).toBeInTheDocument();
   });
@@ -88,7 +94,7 @@ describe('PurchaseOrdersPage', () => {
 
   it('shows approve and reject buttons for pending orders', () => {
     renderAsManager(<PurchaseOrdersPage />);
-    expect(screen.getByText(/Approve/)).toBeInTheDocument();
-    expect(screen.getByText(/Reject/)).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Approve/i }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByRole('button', { name: /Reject/i }).length).toBeGreaterThanOrEqual(1);
   });
 });

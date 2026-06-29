@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useVerifyPaymentMutation } from '../../store/api/paymentApi';
 import { Button, Card } from '../../components/ui/neumorphic';
-import AppHeader from '../../components/common/AppHeader';
 import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
 import { colors, spacing, typography } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
@@ -12,9 +11,9 @@ import { clearCart } from '../../store/slices/cartSlice';
 const PaymentSuccessPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const currentUser = useAppSelector((state) => state.auth.user);
+  const _currentUser = useAppSelector((state) => state.auth.user);
   const [searchParams] = useSearchParams();
-  const [verifyPayment, { isLoading, isError, isSuccess }] = useVerifyPaymentMutation();
+  const [verifyPayment, { isLoading, isError }] = useVerifyPaymentMutation();
 
   // Get payment details from URL params (sent by Razorpay)
   const razorpayPaymentId = searchParams.get('razorpay_payment_id');

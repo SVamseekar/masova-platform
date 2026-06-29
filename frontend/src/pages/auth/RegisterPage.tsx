@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import { useRegisterMutation, useGoogleRegisterMutation } from '../../store/api/authApi';
+import { getApiErrorMessage } from '../utils/apiError';
 import { useCreateCustomerMutation } from '../../store/api/customerApi';
 
 interface RegisterFormData {
@@ -40,7 +41,7 @@ const labelStyle: React.CSSProperties = {
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as any)?.from || '/checkout';
+  const from = (location.state as { from?: string } | null)?.from || '/checkout';
   const [register, { isLoading }] = useRegisterMutation();
   const [googleRegister, { isLoading: isGoogleLoading }] = useGoogleRegisterMutation();
   const [createCustomer] = useCreateCustomerMutation();
@@ -58,8 +59,8 @@ const RegisterPage: React.FC = () => {
       setError('');
       await googleRegister({ idToken: credentialResponse.credential }).unwrap();
       navigate(from);
-    } catch (err: any) {
-      setError(err?.data?.message || 'Google sign-up failed. Please try again.');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Google sign-up failed. Please try again.'));
     }
   };
 
@@ -103,8 +104,8 @@ const RegisterPage: React.FC = () => {
         await createCustomer({ userId: result.user.id, name: result.user.name, email: result.user.email, phone: cleanPhone, marketingOptIn: false, smsOptIn: false }).unwrap();
       } catch { /* non-blocking */ }
       navigate(from);
-    } catch (err: any) {
-      let msg = err?.data?.message || err?.data?.error || err?.message || 'Registration failed.';
+    } catch (err: unknown) {
+      let msg = getApiErrorMessage(err, 'Registration failed.');
       if (msg.toLowerCase().includes('email already exists')) msg = 'Email already registered. Try logging in instead.';
       else if (msg.toLowerCase().includes('phone') && msg.toLowerCase().includes('exists')) msg = 'Phone number already registered.';
       setError(msg);

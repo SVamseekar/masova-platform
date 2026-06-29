@@ -45,7 +45,12 @@ export const StatsChart: React.FC<StatsChartProps> = ({
   valueSuffix = '',
   loading = false,
 }) => {
-  const CustomTooltip = ({ active, payload }: any) => {
+  interface ChartTooltipProps {
+    active?: boolean;
+    payload?: Array<{ value: number; payload: { label: string; value: number } }>;
+  }
+
+  const CustomTooltip = ({ active, payload }: ChartTooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <Box

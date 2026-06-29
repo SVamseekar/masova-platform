@@ -11,7 +11,7 @@ import {
   Navigation as NavigationIcon,
   Close as CloseIcon,
 } from '@mui/icons-material';
-import { colors, spacing, typography, borderRadius, shadows, animations } from '../../../styles/driver-design-tokens';
+import { colors, spacing, typography, borderRadius, shadows } from '../../../styles/driver-design-tokens';
 import { ActionButton } from './shared';
 
 interface CustomerContactProps {

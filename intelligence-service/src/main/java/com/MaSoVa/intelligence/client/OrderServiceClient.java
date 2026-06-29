@@ -1,12 +1,12 @@
 package com.MaSoVa.intelligence.client;
 
+import com.MaSoVa.shared.http.HttpMethods;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
@@ -44,7 +44,7 @@ public class OrderServiceClient {
             String url = orderServiceUrl + "/api/orders?date=" + date;
             ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
                 url,
-                HttpMethod.GET,
+                HttpMethods.GET,
                 null,
                 new ParameterizedTypeReference<List<Map<String, Object>>>() {}
             );
@@ -62,7 +62,7 @@ public class OrderServiceClient {
             String url = orderServiceUrl + "/api/orders?startDate=" + startDate + "&endDate=" + endDate;
             ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
                 url,
-                HttpMethod.GET,
+                HttpMethods.GET,
                 null,
                 new ParameterizedTypeReference<List<Map<String, Object>>>() {}
             );
@@ -81,7 +81,7 @@ public class OrderServiceClient {
             String url = orderServiceUrl + "/api/orders/analytics?type=kitchen&staffId=" + staffId + "&date=" + date;
             ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
                 url,
-                HttpMethod.GET,
+                HttpMethods.GET,
                 null,
                 new ParameterizedTypeReference<List<Map<String, Object>>>() {}
             );
@@ -99,10 +99,15 @@ public class OrderServiceClient {
             // Phase 1: /api/orders/active-deliveries/count → /api/orders/analytics?type=active-deliveries
             // Response is a JSON object {count: N}, not a bare integer
             String url = orderServiceUrl + "/api/orders/analytics?type=active-deliveries";
-            @SuppressWarnings("unchecked")
-            java.util.Map<String, Object> response = restTemplate.getForObject(url, java.util.Map.class);
-            if (response != null && response.containsKey("count")) {
-                return ((Number) response.get("count")).intValue();
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                url,
+                HttpMethods.GET,
+                null,
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+            Map<String, Object> body = response.getBody();
+            if (body != null && body.containsKey("count")) {
+                return ((Number) body.get("count")).intValue();
             }
             return 0;
         } catch (RestClientException e) {

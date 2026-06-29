@@ -1,16 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { RtkMiddleware } from '../../shared/testTypes';
+import type { WorkingSession } from '../../../store/api/sessionApi';
 import { screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { renderAsDriver } from '@/test/utils/testUtils';
 import DriverProfilePage from './DriverProfilePage';
 
 const mockStartSession = vi.fn(() => ({ unwrap: () => Promise.resolve() }));
 const mockEndSession = vi.fn(() => ({ unwrap: () => Promise.resolve() }));
 
-let mockPerformanceData: any = null;
+interface DriverPerformanceData {
+  totalDeliveries: number;
+  totalEarnings: number;
+  totalDistanceCovered: number;
+  averageDeliveryTime: number;
+}
+
+let mockPerformanceData: DriverPerformanceData | null = null;
 let mockIsLoading = false;
-let mockError: any = null;
-let mockCurrentSession: any = null;
+let mockError: unknown = null;
+let mockCurrentSession: WorkingSession | null = null;
 
 vi.mock('../../../store/api/driverApi', () => ({
   useGetDriverPerformanceQuery: () => ({
@@ -18,7 +26,7 @@ vi.mock('../../../store/api/driverApi', () => ({
     isLoading: mockIsLoading,
     error: mockError,
   }),
-  driverApi: { reducerPath: 'driverApi', reducer: () => ({}), middleware: () => (next: any) => (action: any) => next(action) },
+  driverApi: { reducerPath: 'driverApi', reducer: () => ({}), middleware: () => (next: RtkMiddleware) => (action: unknown) => next(action) },
 }));
 
 vi.mock('../../../store/api/sessionApi', () => ({
@@ -28,7 +36,7 @@ vi.mock('../../../store/api/sessionApi', () => ({
   }),
   useStartSessionMutation: () => [mockStartSession, { isLoading: false }],
   useEndSessionMutation: () => [mockEndSession, { isLoading: false }],
-  sessionApi: { reducerPath: 'sessionApi', reducer: () => ({}), middleware: () => (next: any) => (action: any) => next(action) },
+  sessionApi: { reducerPath: 'sessionApi', reducer: () => ({}), middleware: () => (next: RtkMiddleware) => (action: unknown) => next(action) },
 }));
 
 const mockNavigate = vi.fn();

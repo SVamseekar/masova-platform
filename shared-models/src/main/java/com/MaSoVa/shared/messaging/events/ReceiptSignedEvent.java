@@ -9,6 +9,8 @@ import com.MaSoVa.shared.model.FiscalSignature;
  */
 public class ReceiptSignedEvent extends DomainEvent {
 
+    private static final long serialVersionUID = 1L;
+
     private String orderId;
     private String storeId;
     private String countryCode;

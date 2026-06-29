@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { Box, Typography } from '@mui/material';
-import { colors, spacing, borderRadius, shadows, createCard, createNeumorphicSurface, typography, animations } from '../../../../styles/driver-design-tokens';
+import { colors, spacing, shadows, createCard, createNeumorphicSurface, typography, animations } from '../../../../styles/driver-design-tokens';
 
 export interface MetricCardProps {
   icon?: React.ReactNode;

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useGetActiveStoresQuery } from '../store/api/storeApi';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useGetActiveStoresQuery, type Store } from '../store/api/storeApi';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { setSelectedStore, setStoreCurrency, selectSelectedStoreId, selectSelectedStoreName } from '../store/slices/cartSlice';
 import { getTabStore, setTabStore } from '../utils/tabStorage';
@@ -13,8 +13,20 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+interface DayOperatingHours {
+  isOpen?: boolean;
+  open?: string;
+  close?: string;
+  startTime?: string;
+  endTime?: string;
+}
+
+type StoreWithHours = Store & {
+  operatingHours?: Record<string, DayOperatingHours>;
+};
+
 // Checks if a store is currently open based on operatingHours
-function isStoreOpen(store: any): boolean {
+function isStoreOpen(store: StoreWithHours): boolean {
   if (!store.operatingHours) return true; // assume open if no hours data
   const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const today = days[new Date().getDay()];
@@ -36,7 +48,7 @@ interface StoreSelectorProps {
   contextKey?: string; // If provided, uses page-specific context instead of global Redux
 }
 
-const StoreSelector: React.FC<StoreSelectorProps> = ({ variant = 'customer', onStoreChange, contextKey }) => {
+const StoreSelector: React.FC<StoreSelectorProps> = ({ variant: _variant = 'customer', onStoreChange, contextKey }) => {
   const dispatch = useAppDispatch();
 
   // Use tabStorage-based store selection if contextKey is provided, otherwise use Redux
@@ -70,7 +82,7 @@ const StoreSelector: React.FC<StoreSelectorProps> = ({ variant = 'customer', onS
 
   const { data: stores = [], isLoading } = useGetActiveStoresQuery();
 
-  const handleStoreSelect = (storeId: string, storeName: string, store?: any) => {
+  const handleStoreSelect = useCallback((storeId: string, storeName: string, store?: StoreWithHours) => {
     // ALWAYS update Redux for API headers
     dispatch(setSelectedStore({ storeId, storeName }));
     dispatch(setStoreCurrency({
@@ -92,7 +104,7 @@ const StoreSelector: React.FC<StoreSelectorProps> = ({ variant = 'customer', onS
     if (onStoreChange) {
       onStoreChange(storeId, storeName);
     }
-  };
+  }, [dispatch, useLocalStorage, contextKey, onStoreChange]);
 
   // Auto-detect nearest open store via browser Geolocation API
   useEffect(() => {
@@ -105,10 +117,10 @@ const StoreSelector: React.FC<StoreSelectorProps> = ({ variant = 'customer', onS
         // Auto-select nearest OPEN store only if nothing is currently selected
         if (!selectedStoreId && stores.length > 0) {
           const withDistance = stores
-            .filter((s: any) => s.address?.latitude && s.address?.longitude)
-            .map((s: any) => ({
+            .filter((s) => s.address?.latitude && s.address?.longitude)
+            .map((s) => ({
               store: s,
-              dist: haversineKm(latitude, longitude, s.address.latitude, s.address.longitude),
+              dist: haversineKm(latitude, longitude, s.address.latitude!, s.address.longitude!),
               open: isStoreOpen(s),
             }))
             .filter(x => x.open)
@@ -123,7 +135,7 @@ const StoreSelector: React.FC<StoreSelectorProps> = ({ variant = 'customer', onS
       () => { /* silently fail if user denies location */ },
       { timeout: 5000, maximumAge: 60000 }
     );
-  }, [stores.length]); // run once when stores load
+  }, [stores, selectedStoreId, handleStoreSelect]);
 
   const buttonStyles: React.CSSProperties = {
     padding: '7px 14px',
@@ -206,16 +218,18 @@ const StoreSelector: React.FC<StoreSelectorProps> = ({ variant = 'customer', onS
               No stores available
             </div>
           ) : (
-            ([...stores].sort((a: any, b: any) => {
+            ([...stores].sort((a, b) => {
               if (!userLocation) return 0;
-              const da = a.address?.latitude ? haversineKm(userLocation.lat, userLocation.lon, a.address.latitude, a.address.longitude) : 999;
-              const db = b.address?.latitude ? haversineKm(userLocation.lat, userLocation.lon, b.address.latitude, b.address.longitude) : 999;
+              const da = a.address?.latitude != null && a.address?.longitude != null
+                ? haversineKm(userLocation.lat, userLocation.lon, a.address.latitude, a.address.longitude) : 999;
+              const db = b.address?.latitude != null && b.address?.longitude != null
+                ? haversineKm(userLocation.lat, userLocation.lon, b.address.latitude, b.address.longitude) : 999;
               return da - db;
             })).map((store) => {
               const isSelected = selectedStoreId === store.storeCode;
               const open = isStoreOpen(store);
-              const dist = userLocation && (store as any).address?.latitude
-                ? haversineKm(userLocation.lat, userLocation.lon, (store as any).address.latitude, (store as any).address.longitude)
+              const dist = userLocation && store.address?.latitude && store.address?.longitude
+                ? haversineKm(userLocation.lat, userLocation.lon, store.address.latitude, store.address.longitude)
                 : null;
               return (
                 <div

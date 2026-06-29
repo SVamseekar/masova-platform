@@ -34,7 +34,7 @@ const AddInventoryItemDialog: React.FC<AddInventoryItemDialogProps> = ({ open, o
     storageLocation: '',
   });
 
-  const handleChange = (field: string, value: any) => {
+  const handleChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -69,7 +69,7 @@ const AddInventoryItemDialog: React.FC<AddInventoryItemDialogProps> = ({ open, o
         description: formData.description,
         storageLocation: formData.storageLocation,
         lastUpdatedBy: currentUser?.id || 'unknown',
-      } as any).unwrap();
+      }).unwrap();
 
       // Reset form
       setFormData({

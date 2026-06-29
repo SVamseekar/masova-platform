@@ -210,7 +210,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           </div>
         );
 
-      case 'dateRange':
+      case 'dateRange': {
         const dateValue = (value as { from?: string; to?: string }) || {};
         return (
           <div key={filter.field} style={{ flex: '1 1 auto', minWidth: '280px', maxWidth: '380px' }}>
@@ -318,8 +318,9 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             )}
           </div>
         );
+      }
 
-      case 'multiSelect':
+      case 'multiSelect': {
         const multiValue = (value as string[]) || [];
         return (
           <div key={filter.field} style={{ flex: 1, minWidth: '200px' }}>
@@ -375,6 +376,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             </div>
           </div>
         );
+      }
 
       default:
         return null;

@@ -19,7 +19,11 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import com.MaSoVa.commerce.order.entity.OrderItem;
+
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -106,10 +110,28 @@ class OrderControllerTest extends BaseServiceTest {
         @Test
         @DisplayName("returns 200 for public order tracking")
         void returns200Public() throws Exception {
-            when(orderService.getOrderById("order-1")).thenReturn(buildOrder("order-1", Order.OrderStatus.DISPATCHED));
+            Order order = buildOrder("order-1", Order.OrderStatus.DISPATCHED);
+            order.setCustomerName("Secret Customer");
+            order.setCustomerPhone("9876543210");
+            order.setCustomerEmail("secret@example.com");
+            order.setPaymentStatus(Order.PaymentStatus.PAID);
+            order.setEstimatedDeliveryTime(LocalDateTime.parse("2026-06-23T18:00:00"));
+            OrderItem item = new OrderItem();
+            item.setName("Margherita Pizza");
+            item.setQuantity(2);
+            order.setItems(List.of(item));
+            when(orderService.getOrderById("order-1")).thenReturn(order);
 
             mockMvc.perform(get("/api/orders/track/order-1"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("DISPATCHED"))
+                .andExpect(jsonPath("$.estimatedDeliveryTime").exists())
+                .andExpect(jsonPath("$.items[0].name").value("Margherita Pizza"))
+                .andExpect(jsonPath("$.customerName").doesNotExist())
+                .andExpect(jsonPath("$.customerPhone").doesNotExist())
+                .andExpect(jsonPath("$.customerEmail").doesNotExist())
+                .andExpect(jsonPath("$.paymentStatus").doesNotExist())
+                .andExpect(jsonPath("$.deliveryAddress").doesNotExist());
         }
     }
 

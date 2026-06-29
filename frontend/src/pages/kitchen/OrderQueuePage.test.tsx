@@ -4,9 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { renderAsKitchenStaff } from '@/test/utils/testUtils';
 import OrderQueuePage from './OrderQueuePage';
 
-let mockOrders: any[] = [];
+let mockOrders: import("../../store/api/orderApi").Order[] = [];
 let mockIsLoading = false;
-let mockError: any = null;
+let mockError: unknown = null;
 const mockMoveToNextStage = vi.fn(() => ({
   unwrap: () => Promise.resolve(),
 }));
@@ -18,7 +18,7 @@ vi.mock('../../store/api/orderApi', () => ({
     error: mockError,
   }),
   useMoveToNextStageMutation: () => [mockMoveToNextStage, { isLoading: false }],
-  orderApi: { reducerPath: 'orderApi', reducer: () => ({}), middleware: () => (next: any) => (action: any) => next(action) },
+  orderApi: { reducerPath: 'orderApi', reducer: () => ({}), middleware: () => (next: unknown) => (action: unknown) => next(action) },
 }));
 
 vi.mock('../../components/common/AppHeader', () => ({
@@ -111,8 +111,8 @@ describe('OrderQueuePage', () => {
     ];
 
     renderAsKitchenStaff(<OrderQueuePage />);
-    expect(screen.getByText('Urgent')).toBeInTheDocument();
-    expect(screen.getByText('Preparing')).toBeInTheDocument();
+    expect(screen.getAllByText('Urgent').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Preparing').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('In Oven')).toBeInTheDocument();
   });
 
@@ -253,12 +253,11 @@ describe('OrderQueuePage', () => {
 
     renderAsKitchenStaff(<OrderQueuePage />);
 
-    const urgentNode = screen.getByText('Urgent');
-    const normalNode = screen.getByText('Normal');
+    const urgentOrder = screen.getByText('#002');
+    const normalOrder = screen.getByText('#001');
 
-    // Urgent should appear before Normal in DOM
     expect(
-      urgentNode.compareDocumentPosition(normalNode) & Node.DOCUMENT_POSITION_FOLLOWING
+      urgentOrder.compareDocumentPosition(normalOrder) & Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
   });
 

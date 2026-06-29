@@ -3,6 +3,7 @@ import { render, RenderOptions } from '@testing-library/react';
 import { vi } from 'vitest';
 import { TestWrapper } from '../TestWrapper';
 import type { RootState } from '../../store/store';
+export { defaultCartPreload, mergePreloadedState } from '../defaultPreloadedState';
 
 // PreloadedState type for Redux store
 type PreloadedState<S> = {
@@ -237,13 +238,30 @@ export const createAuthState = (
 /**
  * Helper to create preloaded cart state
  */
-export const createCartState = (items: any[] = []) => ({
-  cart: {
-    items,
-    selectedStoreId: '1',
-    totalItems: items.reduce((sum, item) => sum + item.quantity, 0),
-  },
-});
+interface TestCartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+export const createCartState = (items: TestCartItem[] = []) => {
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  return {
+    cart: {
+      items,
+      total,
+      itemCount,
+      deliveryFee: 29,
+      isLoading: false,
+      selectedStoreId: '1',
+      selectedStoreName: 'Downtown Branch',
+      currency: 'INR',
+      locale: 'en-IN',
+    },
+  };
+};
 
 /**
  * Role-specific render helpers
@@ -313,6 +331,7 @@ export function renderUnauthenticated(
 }
 
 // Re-export testing library utilities
+// eslint-disable-next-line react-refresh/only-export-components -- test utility re-exports
 export * from '@testing-library/react';
 export { default as userEvent } from '@testing-library/user-event';
 export { vi } from 'vitest';

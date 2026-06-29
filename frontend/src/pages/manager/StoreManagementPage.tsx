@@ -10,7 +10,9 @@ import {
   useUpdateStoreMutation,
   Store,
   CreateStoreRequest,
+  type StoreOperatingConfig,
 } from '../../store/api/storeApi';
+import { getApiErrorMessage } from '../utils/apiError';
 import { Button, Card, Input } from '../../components/ui/neumorphic';
 import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
@@ -23,12 +25,12 @@ const StoreManagementPage: React.FC = () => {
   const storeId = currentUser?.storeId || '';
 
   // Get manager's own store
-  const { data: myStore, isLoading: loadingMyStore, refetch } = useGetStoreQuery(storeId, { skip: !storeId });
+  const { data: myStore, isLoading: _loadingMyStore, refetch } = useGetStoreQuery(storeId, { skip: !storeId });
   const { data: stores = [], isLoading } = useGetActiveStoresQuery();
   const [updateStore, { isLoading: isUpdating }] = useUpdateStoreMutation();
   const [createStore, { isLoading: isCreating }] = useCreateStoreMutation();
 
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, _setIsEditing] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [formData, setFormData] = useState<Partial<CreateStoreRequest>>({
@@ -74,7 +76,7 @@ const StoreManagementPage: React.FC = () => {
       const addressField = name.split('.')[1];
       setFormData(prev => ({
         ...prev,
-        address: { ...(prev.address || {}), [addressField]: value } as any,
+        address: { ...(prev.address || { street: '', city: '', state: '', pincode: '' }), [addressField]: value },
       }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -111,13 +113,14 @@ const StoreManagementPage: React.FC = () => {
         operatingConfig: formData.operatingConfig ? {
           ...formData.operatingConfig,
           weeklySchedule: Object.entries(formData.operatingConfig.weeklySchedule).reduce((acc, [day, schedule]) => {
-            acc[day] = {
+            const scheduleDay = day as keyof StoreOperatingConfig['weeklySchedule'];
+            acc[scheduleDay] = {
               startTime: schedule.startTime || '09:00',
               endTime: schedule.endTime || '22:00',
               isOpen: schedule.isOpen !== undefined ? schedule.isOpen : true
             };
             return acc;
-          }, {} as any)
+          }, {} as StoreOperatingConfig['weeklySchedule'])
         } : undefined
       };
 
@@ -138,9 +141,9 @@ const StoreManagementPage: React.FC = () => {
       setSelectedStore(null);
       resetForm();
       refetch();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving store:', error);
-      alert(error?.data?.message || 'Failed to save store');
+      alert(getApiErrorMessage(error, 'Failed to save store'));
     }
   };
 

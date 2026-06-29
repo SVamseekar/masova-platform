@@ -1,16 +1,12 @@
 package com.MaSoVa.core.review.service;
 
 import com.MaSoVa.core.review.entity.Review;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 
 @Service
 public class SentimentAnalysisService {
-
-    private static final Logger log = LoggerFactory.getLogger(SentimentAnalysisService.class);
 
     // Simple keyword-based sentiment analysis
     // In production, you would use a proper NLP library or API
@@ -106,28 +102,28 @@ public class SentimentAnalysisService {
 
             // Check for common themes
             if (containsAny(lowerComment, Arrays.asList("spicy", "hot", "spice"))) {
-                themeCount.merge("Spice Level", 1, Integer::sum);
+                themeCount.merge("Spice Level", 1, (a, b) -> a + b);
             }
             if (containsAny(lowerComment, Arrays.asList("portion", "size", "quantity"))) {
-                themeCount.merge("Portion Size", 1, Integer::sum);
+                themeCount.merge("Portion Size", 1, (a, b) -> a + b);
             }
             if (containsAny(lowerComment, Arrays.asList("cold", "warm", "temperature"))) {
-                themeCount.merge("Temperature", 1, Integer::sum);
+                themeCount.merge("Temperature", 1, (a, b) -> a + b);
             }
             if (containsAny(lowerComment, Arrays.asList("late", "delay", "time", "slow"))) {
-                themeCount.merge("Delivery Time", 1, Integer::sum);
+                themeCount.merge("Delivery Time", 1, (a, b) -> a + b);
             }
             if (containsAny(lowerComment, Arrays.asList("fresh", "quality", "ingredient"))) {
-                themeCount.merge("Food Quality", 1, Integer::sum);
+                themeCount.merge("Food Quality", 1, (a, b) -> a + b);
             }
             if (containsAny(lowerComment, Arrays.asList("service", "staff", "friendly", "polite"))) {
-                themeCount.merge("Service", 1, Integer::sum);
+                themeCount.merge("Service", 1, (a, b) -> a + b);
             }
             if (containsAny(lowerComment, Arrays.asList("price", "value", "expensive", "cheap"))) {
-                themeCount.merge("Pricing", 1, Integer::sum);
+                themeCount.merge("Pricing", 1, (a, b) -> a + b);
             }
             if (containsAny(lowerComment, Arrays.asList("packaging", "presentation", "packed"))) {
-                themeCount.merge("Packaging", 1, Integer::sum);
+                themeCount.merge("Packaging", 1, (a, b) -> a + b);
             }
         }
 

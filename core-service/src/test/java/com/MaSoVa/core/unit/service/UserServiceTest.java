@@ -8,6 +8,7 @@ import com.MaSoVa.shared.entity.User;
 import com.MaSoVa.core.user.repository.UserJpaRepository;
 import com.MaSoVa.core.user.repository.UserRepository;
 import com.MaSoVa.core.user.repository.WorkingSessionRepository;
+import com.MaSoVa.core.user.service.GoogleOAuthTokenVerifier;
 import com.MaSoVa.core.user.service.JwtService;
 import com.MaSoVa.core.user.service.UserService;
 import com.MaSoVa.core.user.service.WorkingSessionService;
@@ -33,14 +34,18 @@ import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpMethod;
+import org.springframework.core.ParameterizedTypeReference;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.contains;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("UserService Unit Tests")
+@SuppressWarnings("unchecked") // any(ParameterizedTypeReference.class) requires a raw-type Class<T> argument
 class UserServiceTest {
 
     @Mock private UserRepository userRepository;
@@ -50,6 +55,7 @@ class UserServiceTest {
     @Mock private JwtService jwtService;
     @Mock private WorkingSessionService sessionService;
     @Mock private RestTemplate restTemplate;
+    @Mock private GoogleOAuthTokenVerifier googleOAuthTokenVerifier;
 
     @InjectMocks private UserService userService;
 
@@ -360,8 +366,8 @@ class UserServiceTest {
     // ===========================
 
     @Nested
-    @DisplayName("getAllUsers")
-    class GetAllUsers {
+    @DisplayName("listActiveEmployees")
+    class ListActiveEmployees {
 
         @Test
         @DisplayName("returns mapped list from repository")
@@ -369,7 +375,7 @@ class UserServiceTest {
             when(userRepository.findAllActiveEmployees())
                     .thenReturn(List.of(buildUser("u1", "a@masova.com", UserType.STAFF)));
 
-            List<UserResponse> result = userService.getAllUsers();
+            List<UserResponse> result = userService.listActiveEmployees();
 
             assertThat(result).hasSize(1);
         }
@@ -378,7 +384,7 @@ class UserServiceTest {
         @DisplayName("returns empty list when no users")
         void returnsEmptyList() {
             when(userRepository.findAllActiveEmployees()).thenReturn(List.of());
-            assertThat(userService.getAllUsers()).isEmpty();
+            assertThat(userService.listActiveEmployees()).isEmpty();
         }
     }
 
@@ -1248,12 +1254,38 @@ class UserServiceTest {
         @Test
         @DisplayName("throws when Google token verification fails")
         void throwsWhenTokenVerificationFails() {
-            when(restTemplate.getForEntity(anyString(), eq(Map.class)))
-                    .thenThrow(new org.springframework.web.client.RestClientException("Connection failed"));
+            when(googleOAuthTokenVerifier.verify("bad-token"))
+                    .thenThrow(new RuntimeException("Google token verification failed"));
 
             assertThatThrownBy(() -> userService.loginWithGoogle("bad-token"))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("Google token verification failed");
+        }
+
+        @Test
+        @DisplayName("throws when Google OAuth client ID is not configured")
+        void throwsWhenClientIdMissing() {
+            when(googleOAuthTokenVerifier.verify("valid-token"))
+                    .thenThrow(new IllegalStateException(
+                            "Google OAuth client ID is not configured. Set GOOGLE_OAUTH_CLIENT_ID."));
+
+            assertThatThrownBy(() -> userService.loginWithGoogle("valid-token"))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("GOOGLE_OAUTH_CLIENT_ID");
+        }
+
+        @Test
+        @DisplayName("throws when Google email is not verified")
+        void throwsWhenEmailNotVerified() {
+            Map<String, Object> tokenInfo = new HashMap<>();
+            tokenInfo.put("sub", "google-sub-123");
+            tokenInfo.put("email", "user@gmail.com");
+            tokenInfo.put("email_verified", false);
+            when(googleOAuthTokenVerifier.verify("valid-token")).thenReturn(tokenInfo);
+
+            assertThatThrownBy(() -> userService.loginWithGoogle("valid-token"))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("not verified");
         }
 
         @Test
@@ -1262,8 +1294,8 @@ class UserServiceTest {
             Map<String, Object> tokenInfo = new HashMap<>();
             tokenInfo.put("sub", "google-sub-123");
             tokenInfo.put("email", "notfound@gmail.com");
-            when(restTemplate.getForEntity(anyString(), eq(Map.class)))
-                    .thenReturn(ResponseEntity.ok(tokenInfo));
+            tokenInfo.put("email_verified", true);
+            when(googleOAuthTokenVerifier.verify("valid-token")).thenReturn(tokenInfo);
             when(userRepository.findByPersonalInfoEmail("notfound@gmail.com")).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> userService.loginWithGoogle("valid-token"))
@@ -1277,8 +1309,8 @@ class UserServiceTest {
             Map<String, Object> tokenInfo = new HashMap<>();
             tokenInfo.put("sub", "google-sub-123");
             tokenInfo.put("email", "user@gmail.com");
-            when(restTemplate.getForEntity(anyString(), eq(Map.class)))
-                    .thenReturn(ResponseEntity.ok(tokenInfo));
+            tokenInfo.put("email_verified", true);
+            when(googleOAuthTokenVerifier.verify("valid-token")).thenReturn(tokenInfo);
             User user = buildUser("u1", "user@gmail.com", UserType.CUSTOMER);
             user.setAuthProviders(new java.util.ArrayList<>());
             when(userRepository.findByPersonalInfoEmail("user@gmail.com")).thenReturn(Optional.of(user));
@@ -1290,6 +1322,7 @@ class UserServiceTest {
             LoginResponse result = userService.loginWithGoogle("valid-token");
 
             assertThat(result.getAccessToken()).isEqualTo("access-token");
+            verify(restTemplate, never()).getForEntity(contains("tokeninfo"), eq(Map.class));
         }
     }
 
@@ -1307,8 +1340,8 @@ class UserServiceTest {
             Map<String, Object> tokenInfo = new HashMap<>();
             tokenInfo.put("sub", "google-sub-123");
             tokenInfo.put("email", "existing@gmail.com");
-            when(restTemplate.getForEntity(anyString(), eq(Map.class)))
-                    .thenReturn(ResponseEntity.ok(tokenInfo));
+            tokenInfo.put("email_verified", true);
+            when(googleOAuthTokenVerifier.verify("valid-token")).thenReturn(tokenInfo);
             User existing = buildUser("u1", "existing@gmail.com", UserType.CUSTOMER);
             when(userRepository.findByPersonalInfoEmail("existing@gmail.com")).thenReturn(Optional.of(existing));
 
@@ -1324,23 +1357,29 @@ class UserServiceTest {
             tokenInfo.put("sub", "google-sub-123");
             tokenInfo.put("email", "newuser@gmail.com");
             tokenInfo.put("name", "New User");
-            when(restTemplate.getForEntity(anyString(), eq(Map.class)))
-                    .thenReturn(ResponseEntity.ok(tokenInfo));
+            tokenInfo.put("email_verified", true);
+            when(googleOAuthTokenVerifier.verify("valid-token")).thenReturn(tokenInfo);
             when(userRepository.findByPersonalInfoEmail("newuser@gmail.com")).thenReturn(Optional.empty());
             when(passwordEncoder.encode(any())).thenReturn("hashed-random");
             User saved = buildUser("u2", "newuser@gmail.com", UserType.CUSTOMER);
             saved.setAuthProviders(new ArrayList<>());
-            when(userRepository.save(any())).thenReturn(saved);
+            when(userRepository.save(any())).thenAnswer(invocation -> {
+                User arg = invocation.getArgument(0);
+                arg.setId("u2");
+                return arg;
+            });
             when(jwtService.generateAccessToken(any(), any(), any())).thenReturn("access-token");
             when(jwtService.generateRefreshToken(any())).thenReturn("refresh-token");
             when(userJpaRepository.save(any())).thenReturn(null);
-            when(restTemplate.postForEntity(anyString(), any(), eq(Map.class)))
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(), any(ParameterizedTypeReference.class)))
                     .thenThrow(new org.springframework.web.client.RestClientException("Service unavailable"));
 
             LoginResponse result = userService.registerWithGoogle("valid-token");
 
             assertThat(result.getAccessToken()).isEqualTo("access-token");
+            verify(restTemplate, never()).getForEntity(contains("tokeninfo"), eq(Map.class));
         }
+
     }
 
     // ===========================

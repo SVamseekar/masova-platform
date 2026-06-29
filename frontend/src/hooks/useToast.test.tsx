@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import React from 'react';
 
 const mockEnqueueSnackbar = vi.fn().mockReturnValue('snackbar-key');
 const mockCloseSnackbar = vi.fn();
@@ -15,10 +14,12 @@ vi.mock('notistack', () => ({
 
 vi.mock('../store/hooks', () => ({
   useAppDispatch: () => mockDispatch,
+  useAppSelector: (selector: (state: { cart: { currency: string; locale: string } }) => unknown) =>
+    selector({ cart: { currency: 'INR', locale: 'en-IN' } }),
 }));
 
 vi.mock('../store/slices/notificationSlice', () => ({
-  addNotification: (payload: any) => ({ type: 'notifications/addNotification', payload }),
+  addNotification: (payload: unknown) => ({ type: 'notifications/addNotification', payload }),
 }));
 
 import { useToast } from './useToast';

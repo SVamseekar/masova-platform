@@ -20,7 +20,6 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -229,7 +228,8 @@ class OrderServiceDeliveryOrderTest {
 
     @Test
     void createOrder_handles_store_fetch_failure_gracefully() {
-        when(storeServiceClient.getStore("store-1")).thenThrow(new RuntimeException("Store service down"));
+        // StoreServiceClient.getStore() catches its own errors and returns null — never throws.
+        when(storeServiceClient.getStore("store-1")).thenReturn(null);
 
         CreateOrderRequest req = new CreateOrderRequest();
         req.setCustomerName("Test");
@@ -237,11 +237,11 @@ class OrderServiceDeliveryOrderTest {
         req.setOrderType(Order.OrderType.TAKEAWAY);
         req.setItems(List.of(buildItem()));
 
-        // Should not throw — store fetch failure is swallowed
         Order result = orderService.createOrder(req);
 
         assertThat(result).isNotNull();
         assertThat(result.getStatus()).isEqualTo(Order.OrderStatus.RECEIVED);
+        assertThat(result.getCurrency()).isEqualTo("INR");
     }
 
     // Quality checkpoints initialization

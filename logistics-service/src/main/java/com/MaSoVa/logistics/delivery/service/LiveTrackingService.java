@@ -1,5 +1,6 @@
 package com.MaSoVa.logistics.delivery.service;
 
+import com.MaSoVa.logistics.delivery.dto.ETAResponse;
 import com.MaSoVa.logistics.delivery.dto.LocationUpdateRequest;
 import com.MaSoVa.logistics.delivery.dto.TrackingResponse;
 import com.MaSoVa.logistics.delivery.entity.DeliveryTracking;
@@ -13,7 +14,6 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -27,7 +27,6 @@ public class LiveTrackingService {
 
     private final DriverLocationRepository driverLocationRepository;
     private final DeliveryTrackingRepository deliveryTrackingRepository;
-    @SuppressWarnings("unused")
     private final ETACalculationService etaCalculationService;
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -99,16 +98,14 @@ public class LiveTrackingService {
                     .timestamp(location.getTimestamp())
                     .build();
 
-            // Calculate ETA and distance remaining
             if (tracking.getDeliveryAddress() != null) {
-                distanceRemaining = calculateDistance(
-                        location.getLatitude(),
-                        location.getLongitude(),
-                        tracking.getDeliveryAddress().getLatitude(),
-                        tracking.getDeliveryAddress().getLongitude()
-                );
-
-                eta = calculateETA(distanceRemaining);
+                try {
+                    ETAResponse etaResponse = etaCalculationService.calculateETA(orderId);
+                    eta = etaResponse.getEstimatedMinutes();
+                    distanceRemaining = etaResponse.getDistanceRemainingKm();
+                } catch (Exception e) {
+                    log.debug("ETA calculation unavailable for order {}: {}", orderId, e.getMessage());
+                }
             }
         }
 
@@ -141,33 +138,5 @@ public class LiveTrackingService {
         } catch (Exception e) {
             log.error("Error broadcasting location update: {}", e.getMessage());
         }
-    }
-
-    /**
-     * Calculate distance using Haversine formula
-     */
-    private BigDecimal calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-        lat1 = Math.toRadians(lat1);
-        lat2 = Math.toRadians(lat2);
-        lon1 = Math.toRadians(lon1);
-        lon2 = Math.toRadians(lon2);
-
-        double dLat = lat2 - lat1;
-        double dLon = lon2 - lon1;
-
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                   Math.cos(lat1) * Math.cos(lat2) *
-                   Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        double distanceKm = 6371 * c; // Earth radius in km
-
-        return BigDecimal.valueOf(distanceKm).setScale(2, RoundingMode.HALF_UP);
-    }
-
-    private Integer calculateETA(BigDecimal distanceKm) {
-        // Assume average speed of 30 km/h
-        double hours = distanceKm.doubleValue() / 30.0;
-        return (int) Math.ceil(hours * 60); // Convert to minutes
     }
 }

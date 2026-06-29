@@ -8,8 +8,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -30,8 +28,6 @@ import java.util.Map;
 @Tag(name = "Suppliers", description = "Supplier management")
 @SecurityRequirement(name = "bearerAuth")
 public class SupplierController {
-
-    private static final Logger log = LoggerFactory.getLogger(SupplierController.class);
 
     private final SupplierService supplierService;
 

@@ -71,7 +71,7 @@ const LiveMap: React.FC<LiveMapProps> = ({
       lat: driverLocation.latitude,
       lng: driverLocation.longitude,
     };
-  }, [driverLocation?.latitude, driverLocation?.longitude]);
+  }, [driverLocation]);
 
   // Map load callback
   const onLoad = useCallback((map: google.maps.Map) => {

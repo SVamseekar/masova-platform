@@ -4,7 +4,9 @@ package com.MaSoVa.core.user.exception;
  * Exception thrown when store operations fail or encounter business rule violations
  */
 public class StoreOperationException extends RuntimeException {
-    
+
+    private static final long serialVersionUID = 1L;
+
     private final String storeId;
     private final String operationType;
     private final String errorCode;

@@ -1,7 +1,6 @@
 package com.MaSoVa.core.unit.controller;
 
 import com.MaSoVa.core.user.controller.WorkingSessionController;
-import com.MaSoVa.core.user.dto.WorkingSessionResponse;
 import com.MaSoVa.core.user.service.WorkingSessionService;
 import com.MaSoVa.shared.test.BaseServiceTest;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,11 +15,9 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import com.MaSoVa.core.user.dto.WorkingHoursReport;
 import com.MaSoVa.shared.entity.WorkingSession;
 import com.MaSoVa.shared.enums.WorkingSessionStatus;
 
-import java.time.LocalDate;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;

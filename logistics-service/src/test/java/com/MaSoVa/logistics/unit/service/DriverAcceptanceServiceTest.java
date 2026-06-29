@@ -27,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -277,6 +278,22 @@ class DriverAcceptanceServiceTest {
 
             assertThat(result.getStatus()).isEqualTo("PICKED_UP");
             assertThat(result.getPickedUpAt()).isNotNull();
+            verify(orderServiceClient).updateOrderDeliveryStatus("order-1", "OUT_FOR_DELIVERY");
+        }
+
+        @Test
+        @DisplayName("does not throw when order status sync fails")
+        void doesNotThrowWhenOrderSyncFails() {
+            DeliveryTracking tracking = buildTracking("track-1", "driver-1", "ACCEPTED");
+            tracking.setOrderId("order-1");
+            when(deliveryTrackingRepository.findById("track-1")).thenReturn(Optional.of(tracking));
+            when(deliveryTrackingRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            doThrow(new RuntimeException("order-service down"))
+                    .when(orderServiceClient).updateOrderDeliveryStatus("order-1", "OUT_FOR_DELIVERY");
+
+            DeliveryTracking result = driverAcceptanceService.markAsPickedUp("track-1", "driver-1");
+
+            assertThat(result.getStatus()).isEqualTo("PICKED_UP");
         }
 
         @Test

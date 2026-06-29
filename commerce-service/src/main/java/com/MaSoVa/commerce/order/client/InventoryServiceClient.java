@@ -1,10 +1,10 @@
 package com.MaSoVa.commerce.order.client;
 
+import com.MaSoVa.shared.http.HttpMethods;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
 
 import java.util.Map;
 
@@ -22,6 +22,6 @@ public class InventoryServiceClient {
 
     public void adjustStock(String menuItemId, Map<String, Object> body) {
         String url = logisticsServiceUrl + "/api/inventory/items/" + menuItemId + "/adjust";
-        restTemplate.exchange(url, HttpMethod.PATCH, new HttpEntity<>(body), Void.class);
+        restTemplate.exchange(url, HttpMethods.PATCH, new HttpEntity<>(body), Void.class);
     }
 }

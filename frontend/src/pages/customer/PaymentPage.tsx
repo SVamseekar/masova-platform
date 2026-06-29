@@ -3,7 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 import CustomerPageHeader from '../../components/common/CustomerPageHeader';
 import { useCreateOrderMutation } from '../../store/api/orderApi';
-import { useInitiatePaymentMutation } from '../../store/api/paymentApi';
+import { useInitiatePaymentMutation, type PaymentResponse } from '../../store/api/paymentApi';
+import { getApiErrorMessage } from '../utils/apiError';
 import { useGetCustomerByUserIdQuery, useGetOrCreateCustomerMutation, useUpdatePreferencesMutation } from '../../store/api/customerApi';
 import { useCheckDeliveryRadiusQuery } from '../../store/api/storeApi';
 import { selectCartItems, selectCartSubtotal, selectDeliveryFee, selectSelectedStoreId, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
@@ -153,8 +154,8 @@ const PaymentPage: React.FC = () => {
             phone: cleanPhone,
           }).unwrap();
           customerId = customer.id;
-        } catch (err: any) {
-          const errorMessage = err?.data?.message || 'Unable to retrieve customer profile';
+        } catch (err: unknown) {
+          const errorMessage = getApiErrorMessage(err, 'Unable to retrieve customer profile');
           alert(`Unable to retrieve your customer profile. Please try again or contact support.\n\nError: ${errorMessage}`);
           return;
         }
@@ -256,26 +257,30 @@ const PaymentPage: React.FC = () => {
 
       openRazorpayCheckout(paymentResult, orderId);
 
-    } catch (err: any) {
-      const errorMessage = err?.data?.message || err?.message || 'Failed to create order. Please try again.';
+    } catch (err: unknown) {
+      const errorMessage = getApiErrorMessage(err, 'Failed to create order. Please try again.');
       alert(errorMessage);
     }
   };
 
-  const openRazorpayCheckout = (paymentData: any, orderId: string) => {
+  const openRazorpayCheckout = (paymentData: PaymentResponse, orderId: string) => {
     if (!window.Razorpay) {
       alert('Razorpay SDK not loaded. Please refresh the page.');
       return;
     }
+    if (!paymentData.razorpayKeyId || !paymentData.razorpayOrderId) {
+      alert('Payment configuration is incomplete. Please try again.');
+      return;
+    }
 
-    const options = {
+    const options: RazorpayOptions = {
       key: paymentData.razorpayKeyId,
       amount: paymentData.amount * 100,
       currency: 'INR',
       name: 'MaSoVa Restaurant',
       description: `Order #${orderId}`,
       order_id: paymentData.razorpayOrderId,
-      handler: function (response: any) {
+      handler: function (response: RazorpaySuccessResponse) {
         if (customerProfile?.id) {
           updatePreferences({
             customerId: customerProfile.id,
@@ -300,7 +305,7 @@ const PaymentPage: React.FC = () => {
     };
 
     const razorpay = new window.Razorpay(options);
-    razorpay.on('payment.failed', function (response: any) {
+    razorpay.on('payment.failed', function (response: RazorpayFailedResponse) {
       navigate(`/payment/failed?order_id=${orderId}&error=${response.error.description || 'Payment failed'}`);
     });
     razorpay.open();

@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import API_CONFIG from '../../config/api.config';
+import type { RootState } from '../store';
 
 interface SalesMetricsResponse {
   todaySales: number;
@@ -232,7 +233,7 @@ export const analyticsApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: `${API_CONFIG.BASE_URL}/analytics`,
     prepareHeaders: (headers, { getState }) => {
-      const state = getState() as any;
+      const state = getState() as RootState;
       const token = state.auth.accessToken;
       const user = state.auth.user;
       const selectedStoreId = state.cart?.selectedStoreId;

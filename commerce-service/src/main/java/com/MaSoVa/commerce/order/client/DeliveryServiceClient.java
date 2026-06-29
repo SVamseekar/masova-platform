@@ -1,10 +1,13 @@
 package com.MaSoVa.commerce.order.client;
 
+import com.MaSoVa.shared.http.HttpMethods;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -66,8 +69,7 @@ public class DeliveryServiceClient {
 
             log.debug("Calculating delivery fee from URL: {}", url);
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+            Map<String, Object> response = getJsonMap(url);
 
             if (response == null) {
                 log.warn("Null response from delivery service for store: {}", storeId);
@@ -126,8 +128,7 @@ public class DeliveryServiceClient {
                 builder.queryParam("pincode", pincode);
             }
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> response = restTemplate.getForObject(builder.toUriString(), Map.class);
+            Map<String, Object> response = getJsonMap(builder.toUriString());
 
             if (response == null) {
                 return true; // Default to allowing delivery if service is unavailable
@@ -184,6 +185,16 @@ public class DeliveryServiceClient {
         public Integer getEstimatedMinutes() { return estimatedMinutes; }
         public String getError() { return error; }
         public boolean isUsedDefault() { return usedDefault; }
+    }
+
+    private Map<String, Object> getJsonMap(String url) {
+        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                url,
+                HttpMethods.GET,
+                null,
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+        );
+        return response.getBody();
     }
 
     /**

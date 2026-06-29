@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import AppHeader from '../../components/common/AppHeader';
 import ManagerMetricTemplate, { KPICardData } from './ManagerMetricTemplate';
-import { colors, spacing, typography, shadows, borderRadius } from '../../styles/design-tokens';
+import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
 import { createNeumorphicSurface, createCard } from '../../styles/neumorphic-utils';
 import { useAppSelector } from '../../store/hooks';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
@@ -31,10 +31,11 @@ interface PrepTimeDistribution {
   totalOrders: number;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- page component with HOC export
 const KitchenAnalyticsPage: React.FC = () => {
   const user = useAppSelector((state) => state.auth.user);
   const { handleBack } = useSmartBackNavigation();
-  const storeId = user?.storeId || 'default-store';
+  const _storeId = user?.storeId || 'default-store';
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Mock data - in real app, these would use RTK Query hooks
@@ -111,21 +112,21 @@ const KitchenAnalyticsPage: React.FC = () => {
     border: 'none',
   };
 
-  const statCardStyles = (bgColor: string): React.CSSProperties => ({
+  const _statCardStyles = (bgColor: string): React.CSSProperties => ({
     ...createCard('base', 'base'),
     textAlign: 'center' as const,
     backgroundColor: bgColor + '15',
     padding: spacing[4],
   });
 
-  const statValueStyles = (color: string): React.CSSProperties => ({
+  const _statValueStyles = (color: string): React.CSSProperties => ({
     fontSize: typography.fontSize['4xl'],
     fontWeight: typography.fontWeight.bold,
     color: color,
     marginBottom: spacing[1],
   });
 
-  const statLabelStyles: React.CSSProperties = {
+  const _statLabelStyles: React.CSSProperties = {
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
   };
@@ -191,7 +192,7 @@ const KitchenAnalyticsPage: React.FC = () => {
     borderLeft: `4px solid ${bgColor}`,
   });
 
-  const getChipColor = (time: number, average: number): string => {
+  const getChipColor = (time: number, _average: number): string => {
     if (time > 20) return colors.semantic.error;
     if (time > 15) return colors.semantic.warning;
     return colors.semantic.success;
@@ -365,4 +366,5 @@ const KitchenAnalyticsPage: React.FC = () => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- HOC default export
 export default withPageStoreContext(KitchenAnalyticsPage, 'kitchen-analytics');

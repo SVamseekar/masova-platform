@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { Box } from '@mui/material';
 import { calculateVisibleRange, throttle } from '../../utils/performance';
 
@@ -39,12 +39,11 @@ export function VirtualList<T>({
   const totalHeight = items.length * itemHeight;
   const offsetY = start * itemHeight;
 
-  const handleScroll = useCallback(
-    throttle((e: React.UIEvent<HTMLDivElement>) => {
+  const handleScroll = useMemo(() => {
+    const onScroll = (e: React.UIEvent<HTMLDivElement>) => {
       const target = e.target as HTMLDivElement;
       setScrollTop(target.scrollTop);
 
-      // Check if scrolled to bottom
       if (onScrollEnd) {
         const isAtBottom =
           target.scrollHeight - target.scrollTop <= target.clientHeight + 50;
@@ -52,16 +51,9 @@ export function VirtualList<T>({
           onScrollEnd();
         }
       }
-    }, 16), // ~60fps
-    [onScrollEnd]
-  );
-
-  useEffect(() => {
-    // Cleanup
-    return () => {
-      handleScroll.cancel?.();
     };
-  }, [handleScroll]);
+    return throttle(onScroll as (...args: unknown[]) => unknown, 16) as typeof onScroll;
+  }, [onScrollEnd]);
 
   return (
     <Box
@@ -100,12 +92,4 @@ export function VirtualList<T>({
       </Box>
     </Box>
   );
-}
-
-// Add cancel method type
-declare module '../../utils/performance' {
-  export function throttle<T extends (...args: any[]) => any>(
-    func: T,
-    limit: number
-  ): ((...args: Parameters<T>) => void) & { cancel?: () => void };
 }

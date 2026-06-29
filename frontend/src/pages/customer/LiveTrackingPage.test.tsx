@@ -7,7 +7,7 @@ vi.mock('@/store/api/deliveryApi', async () => {
   const actual = await vi.importActual('@/store/api/deliveryApi');
   return {
     ...actual,
-    useTrackOrderQuery: (...args: any[]) => mockUseTrackOrderQuery(...args),
+    useTrackOrderQuery: (...args: unknown[]) => mockUseTrackOrderQuery(...args),
   };
 });
 
@@ -35,8 +35,8 @@ vi.mock('@/components/delivery/RatingDialog', () => ({
 }));
 
 vi.mock('@/components/ui/neumorphic', () => ({
-  Card: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  Button: ({ children, onClick, ...props }: any) => (
+  Card: ({ children, ...props }: unknown) => <div {...props}>{children}</div>,
+  Button: ({ children, onClick, ...props }: React.ComponentProps<"button">) => (
     <button onClick={onClick} {...props}>{children}</button>
   ),
 }));

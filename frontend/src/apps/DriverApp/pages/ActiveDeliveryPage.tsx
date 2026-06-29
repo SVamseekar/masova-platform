@@ -3,7 +3,7 @@
  * Clean delivery cards with modern layout and actions
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Container,
@@ -11,7 +11,6 @@ import {
   IconButton,
   ToggleButtonGroup,
   ToggleButton,
-  CircularProgress,
 } from '@mui/material';
 import {
   ViewList as ListIcon,
@@ -23,15 +22,22 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../../store/store';
 import { DeliveryCard } from '../components/shared';
 import CustomerContact from '../components/CustomerContact';
-import { colors, spacing, typography, borderRadius, shadows } from '../../../styles/driver-design-tokens';
+import { colors, spacing, typography, borderRadius } from '../../../styles/driver-design-tokens';
 import { skeletonStyles } from '../utils/animations';
+import type { DeliveryAddress, DriverDeliveryOrder } from '../types';
+import {
+  getAssignedDriverId,
+  getOrderDisplayNumber,
+  getOrderId,
+  getOrderTotal,
+  toDriverDeliveryOrders,
+} from '../utils/driverOrderUtils';
 
 const ActiveDeliveryPage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [selectedOrder, setSelectedOrder] = useState<DriverDeliveryOrder | null>(null);
   const [showContactDialog, setShowContactDialog] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
-  const [sortBy, setSortBy] = useState<'time' | 'distance' | 'amount'>('time');
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
 
   // Fetch orders assigned to this driver with status DISPATCHED
@@ -40,9 +46,13 @@ const ActiveDeliveryPage: React.FC = () => {
   });
 
   // Filter orders assigned to current driver
-  const myDeliveries = activeOrders?.filter((order: any) =>
-    order.assignedDriver?.id === user?.id || order.assignedDriver === user?.id
-  ) || [];
+  const myDeliveries = useMemo(
+    () =>
+      toDriverDeliveryOrders(activeOrders).filter(
+        (order) => getAssignedDriverId(order) === user?.id
+      ),
+    [activeOrders, user?.id]
+  );
 
   useEffect(() => {
     // Auto-select first order if available
@@ -71,7 +81,7 @@ const ActiveDeliveryPage: React.FC = () => {
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
   };
 
-  const formatAddress = (rawAddress: any): string => {
+  const formatAddress = (rawAddress: string | DeliveryAddress | undefined): string => {
     if (typeof rawAddress === 'string') {
       return rawAddress;
     } else if (rawAddress && typeof rawAddress === 'object') {
@@ -272,22 +282,22 @@ const ActiveDeliveryPage: React.FC = () => {
             gap: spacing.md,
           }}
         >
-          {myDeliveries.map((order: any) => {
+          {myDeliveries.map((order) => {
             const rawAddress = order.deliveryAddress || order.customer?.address;
             const customerAddress = formatAddress(rawAddress);
             const customerPhone = order.customer?.phone || 'Phone not provided';
             const customerName = order.customer?.name || 'Customer';
 
-            const items = order.items?.map((item: any) => ({
+            const items = order.items?.map((item) => ({
               name: item.name,
               quantity: item.quantity,
             })) || [];
 
             return (
               <DeliveryCard
-                key={order.id || order._id}
-                orderNumber={`#${order.orderNumber || (order.id || order._id).slice(-6).toUpperCase()}`}
-                amount={order.totalAmount}
+                key={getOrderId(order)}
+                orderNumber={`#${getOrderDisplayNumber(order)}`}
+                amount={getOrderTotal(order)}
                 customerName={customerName}
                 customerPhone={customerPhone}
                 address={customerAddress}
@@ -297,7 +307,7 @@ const ActiveDeliveryPage: React.FC = () => {
                   setSelectedOrder(order);
                   setShowContactDialog(true);
                 }}
-                onComplete={() => handleMarkDelivered(order.id || order._id)}
+                onComplete={() => handleMarkDelivered(getOrderId(order))}
               />
             );
           })}
@@ -362,7 +372,7 @@ const ActiveDeliveryPage: React.FC = () => {
             onClose={() => setShowContactDialog(false)}
             customerName={selectedOrder.customer?.name || 'Customer'}
             customerPhone={selectedOrder.customer?.phone || 'Phone not provided'}
-            orderNumber={selectedOrder.orderNumber || (selectedOrder.id || selectedOrder._id).slice(-6).toUpperCase()}
+            orderNumber={getOrderDisplayNumber(selectedOrder)}
           />
         )}
       </Container>

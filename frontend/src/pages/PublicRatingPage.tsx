@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { getApiErrorMessage } from './utils/apiError';
 import { useParams, useNavigate } from 'react-router-dom';
 import { colors, spacing, typography, borderRadius } from '../styles/design-tokens';
 import { createCard, createNeumorphicSurface } from '../styles/neumorphic-utils';
@@ -13,7 +14,7 @@ interface TokenDetails {
 
 const PublicRatingPage: React.FC = () => {
   const { orderId, token } = useParams<{ orderId: string; token: string }>();
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -31,11 +32,8 @@ const PublicRatingPage: React.FC = () => {
   const [comment, setComment] = useState('');
   const [driverComment, setDriverComment] = useState('');
 
-  useEffect(() => {
-    validateToken();
-  }, [token]);
-
-  const validateToken = async () => {
+  const validateToken = useCallback(async () => {
+    if (!token) return;
     try {
       const response = await fetch(`/api/reviews/public/token/${token}`);
       const data = await response.json();
@@ -45,12 +43,16 @@ const PublicRatingPage: React.FC = () => {
       } else {
         setTokenDetails(data);
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load rating page. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    validateToken();
+  }, [validateToken]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,8 +90,8 @@ const PublicRatingPage: React.FC = () => {
       }
 
       setSubmitted(true);
-    } catch (err: any) {
-      setError(err.message || 'Failed to submit rating. Please try again.');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Failed to submit rating. Please try again.'));
     } finally {
       setSubmitting(false);
     }

@@ -60,6 +60,8 @@ export default function RevenueBreakdownChart({ storeId }: RevenueBreakdownChart
     percentage: item.percentage,
   }));
 
+  type ChartDatum = (typeof chartData)[number];
+
   return (
     <Paper sx={{ ...createCard('md', 'lg') }}>
       <Box sx={{ mb: 2 }}>
@@ -81,7 +83,10 @@ export default function RevenueBreakdownChart({ storeId }: RevenueBreakdownChart
             cx="50%"
             cy="50%"
             labelLine={false}
-            label={(entry: any) => `${entry.name}: ${entry.percentage.toFixed(1)}%`}
+            label={(entry) => {
+              const datum = entry as unknown as ChartDatum;
+              return `${datum.name}: ${datum.percentage.toFixed(1)}%`;
+            }}
             outerRadius={100}
             fill="#8884d8"
             dataKey="value"

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import { useLoginMutation, useGoogleLoginMutation } from '../../store/api/authApi';
+import { getApiErrorMessage } from '../utils/apiError';
 import { useAppSelector } from '../../store/hooks';
 import { getSavedReturnUrl, clearReturnUrl } from '../../utils/security';
 
@@ -63,8 +64,8 @@ const CustomerLoginPage: React.FC = () => {
     try {
       setError('');
       await login({ email: formData.email, password: formData.password, rememberMe: formData.rememberMe }).unwrap();
-    } catch (err: any) {
-      setError(err?.data?.message || err?.message || 'Login failed. Please check your credentials.');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Login failed. Please check your credentials.'));
     }
   };
 
@@ -73,8 +74,8 @@ const CustomerLoginPage: React.FC = () => {
     try {
       setError('');
       await googleLogin({ idToken: credentialResponse.credential }).unwrap();
-    } catch (err: any) {
-      setError(err?.data?.message || 'Google sign-in failed. Please try again.');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Google sign-in failed. Please try again.'));
     }
   };
 

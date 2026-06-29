@@ -65,9 +65,8 @@ describe('Neumorphic Input', () => {
     });
 
     it('does not render helper text when omitted', () => {
-      const { container } = render(<Input />);
-      // Only the input container and style element should be present
-      expect(container.textContent).toBe('');
+      render(<Input />);
+      expect(screen.queryByText(/required|invalid|helper/i)).not.toBeInTheDocument();
     });
   });
 

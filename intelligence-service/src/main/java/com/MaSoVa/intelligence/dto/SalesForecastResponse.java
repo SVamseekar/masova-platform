@@ -1,7 +1,7 @@
 package com.MaSoVa.intelligence.dto;
+
 import java.io.Serializable;
-
-
+import java.util.ArrayList;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -10,7 +10,7 @@ public class SalesForecastResponse implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String forecastPeriod; // "DAILY", "WEEKLY", "MONTHLY"
-    private List<ForecastDataPoint> forecasts;
+    private ArrayList<ForecastDataPoint> forecasts = new ArrayList<>();
     private BigDecimal totalForecastedSales;
     private BigDecimal confidenceLevel; // 0-100
     private String modelAccuracy; // "HIGH", "MEDIUM", "LOW"
@@ -23,7 +23,7 @@ public class SalesForecastResponse implements Serializable {
                                 BigDecimal totalForecastedSales, BigDecimal confidenceLevel,
                                 String modelAccuracy, LocalDate forecastGeneratedAt) {
         this.forecastPeriod = forecastPeriod;
-        this.forecasts = forecasts;
+        this.forecasts = forecasts != null ? new ArrayList<>((forecasts)) : new ArrayList<>();
         this.totalForecastedSales = totalForecastedSales;
         this.confidenceLevel = confidenceLevel;
         this.modelAccuracy = modelAccuracy;
@@ -43,7 +43,7 @@ public class SalesForecastResponse implements Serializable {
     }
 
     public void setForecasts(List<ForecastDataPoint> forecasts) {
-        this.forecasts = forecasts;
+        this.forecasts = forecasts != null ? new ArrayList<>((forecasts)) : new ArrayList<>();
     }
 
     public BigDecimal getTotalForecastedSales() {
@@ -84,7 +84,7 @@ public class SalesForecastResponse implements Serializable {
 
     public static class Builder {
         private String forecastPeriod;
-        private List<ForecastDataPoint> forecasts;
+        private ArrayList<ForecastDataPoint> forecasts = new ArrayList<>();
         private BigDecimal totalForecastedSales;
         private BigDecimal confidenceLevel;
         private String modelAccuracy;
@@ -96,7 +96,7 @@ public class SalesForecastResponse implements Serializable {
         }
 
         public Builder forecasts(List<ForecastDataPoint> forecasts) {
-            this.forecasts = forecasts;
+            this.forecasts = forecasts != null ? new ArrayList<>((forecasts)) : new ArrayList<>();
             return this;
         }
 
@@ -126,7 +126,8 @@ public class SalesForecastResponse implements Serializable {
         }
     }
 
-    public static class ForecastDataPoint {
+    public static class ForecastDataPoint implements Serializable {
+        private static final long serialVersionUID = 1L;
         private LocalDate date;
         private String label;
         private BigDecimal forecastedSales;

@@ -29,6 +29,8 @@ public class StoreContextUtil {
      */
     @Nullable
     public static String getStoreIdFromHeaders(HttpServletRequest request) {
+        validateStoreAccess(request);
+
         String userType = request.getHeader(HEADER_USER_TYPE);
         String selectedStoreId = request.getHeader(HEADER_SELECTED_STORE_ID);
         String userStoreId = request.getHeader(HEADER_USER_STORE_ID);
@@ -97,6 +99,26 @@ public class StoreContextUtil {
     @Nullable
     public static String getUserTypeFromHeaders(HttpServletRequest request) {
         return request.getHeader(HEADER_USER_TYPE);
+    }
+
+    /**
+     * Reject spoofed {@code X-Selected-Store-Id} for staff/manager roles (Task 5).
+     *
+     * @throws StoreAccessDeniedException when the selected store is outside JWT membership
+     */
+    public static void validateStoreAccess(HttpServletRequest request) {
+        String userType = request.getHeader(HEADER_USER_TYPE);
+        String selectedStoreId = request.getHeader(HEADER_SELECTED_STORE_ID);
+        String userStoreId = request.getHeader(HEADER_USER_STORE_ID);
+        String userId = request.getHeader(HEADER_USER_ID);
+
+        try {
+            StoreAccessValidator.assertSelectedStoreAllowed(userType, userStoreId, selectedStoreId);
+        } catch (StoreAccessValidator.StoreAccessDeniedException e) {
+            logger.warn("Store access denied for userId={}, userType={}, jwtStore={}, requestedStore={}",
+                    userId, userType, userStoreId, selectedStoreId);
+            throw e;
+        }
     }
 
     /**

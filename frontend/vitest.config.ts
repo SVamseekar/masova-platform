@@ -43,6 +43,8 @@ export default defineConfig({
     include: ['**/*.{test,spec}.{ts,tsx}'],
 
     // Exclude files
+    // src/pact is excluded here: it has its own runner (vitest.pact.config.ts,
+    // `npm run test:pact`) that skips MSW setup — see that file for why.
     exclude: [
       'node_modules',
       'dist',
@@ -50,6 +52,7 @@ export default defineConfig({
       '.git',
       '.cache',
       'tests/**',
+      'src/pact/**',
     ],
 
     // Test timeout
@@ -58,10 +61,14 @@ export default defineConfig({
     // Hooks timeout
     hookTimeout: 15000,
 
-    // Mock reset between tests
-    clearMocks: true,
-    restoreMocks: true,
-    mockReset: true,
+    // Mock reset between tests is disabled: most test files set return values once
+    // inside vi.mock() factories (module load time) and reuse them across every test
+    // in the file. With mockReset/clearMocks/restoreMocks on, those values are wiped
+    // after the first test, silently breaking every subsequent test in the file unless
+    // it re-applies the mock in beforeEach (which most files don't do).
+    clearMocks: false,
+    restoreMocks: false,
+    mockReset: false,
 
     // Pool config: forks prevents OOM by isolating each worker in its own process
     pool: 'forks',
