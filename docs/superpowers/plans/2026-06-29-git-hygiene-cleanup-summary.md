@@ -65,11 +65,11 @@ See `scripts/rebase-global-features.ps1` / `.sh` after each branch fast-forwards
 
 | Task | Item | Status |
 |---|---|---|
-| 4 | `.gitattributes` | ✅ PR `chore/git-hygiene-safeguards` |
-| 5 | `.github/CODEOWNERS` | ✅ same PR |
-| 6 | Pre-commit secret scan + API validation | ✅ `scripts/git-hooks/pre-commit` + install scripts |
-| 7 | Razorpay key in `phase5-env-vars.md` | ✅ placeholders (application.yml + .env.example already clean from PR #17) |
-| 8 | Branch protection tightening | ⏳ **After safeguards PR merges** — see below |
+| 4 | `.gitattributes` | ✅ `main` via PR #19 squash `6e61032f` |
+| 5 | `.github/CODEOWNERS` | ✅ same |
+| 6 | Pre-commit secret scan + API validation | ✅ `scripts/git-hooks/pre-commit` + install scripts (Mac install deferred) |
+| 7 | Razorpay key in `phase5-env-vars.md` | ✅ placeholders |
+| 8 | Branch protection tightening | ✅ 2026-06-29 — linear history, code owners, conversation resolution |
 | 3.5 | Stash audit | ⏳ Pending manual review |
 
 ### Install git hooks (Mac — when ready; scripts ship in PR #19)
@@ -80,26 +80,11 @@ See `scripts/rebase-global-features.ps1` / `.sh` after each branch fast-forwards
 
 Run once on Mac after PR #19 merges. Not required for git/GitHub hygiene closure.
 
-### Task 8 — run after safeguards PR merges to `main`
+### Task 8 — applied 2026-06-29
 
-```bash
-gh api repos/SVamseekar/masova-platform/branches/main/protection > /tmp/main-protection-before.json
+`main` protection now: `required_linear_history`, `required_conversation_resolution`, `require_code_owner_reviews`, 1 approving review, Backend + Frontend Tests (strict).
 
-gh api -X PUT repos/SVamseekar/masova-platform/branches/main/protection \
-  -F required_status_checks[strict]=true \
-  -F 'required_status_checks[contexts][]=Backend Tests' \
-  -F 'required_status_checks[contexts][]=Frontend Tests' \
-  -F enforce_admins=true \
-  -F required_pull_request_reviews[dismiss_stale_reviews]=true \
-  -F required_pull_request_reviews[require_code_owner_reviews]=true \
-  -F required_pull_request_reviews[required_approving_review_count]=1 \
-  -F required_linear_history=true \
-  -F required_conversation_resolution=true \
-  -F allow_force_pushes=false \
-  -F allow_deletions=false
-```
-
-**Merge habit going forward:** Use **Squash merge** on PRs (solo-friendly, pairs with `required_linear_history`). Full PR history stays on GitHub; `main` gets one clean commit per PR. PR #17 used merge commit intentionally to preserve absorbed Plan A/B history — that was a one-time exception.
+**Merge habit going forward:** **Squash merge** on PRs. Full PR history stays on GitHub; `main` gets one commit per PR. PR #17 merge commit was a one-time exception for absorbed Plan A/B history.
 
 ## Deferred — handle later (not blocking git hygiene or Globals)
 
