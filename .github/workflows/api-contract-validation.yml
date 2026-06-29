@@ -203,7 +203,7 @@ jobs:
           cache: maven
 
       - name: Download Pact contracts from consumer job
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: pact-contracts
           path: frontend/pacts/
@@ -243,7 +243,7 @@ jobs:
           path: main-branch
 
       - name: Download current branch specs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: openapi-specs
           path: current-specs/
