@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { CheckCircle2, XCircle, ArrowRight } from 'lucide-react'
 import { PRICING_TIERS } from '../constants'
+import SectionLabel from './SectionLabel'
+import { colors } from '../tokens'
 
 export default function PricingSection() {
   const [annual, setAnnual] = useState(false)
@@ -15,25 +17,33 @@ export default function PricingSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <p className="text-sm font-medium mb-4 tracking-wide uppercase" style={{ color: '#E53E3E' }}>Pricing</p>
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Simple, transparent pricing</h2>
+          <SectionLabel>Pricing</SectionLabel>
+          <h2
+            className="text-4xl md:text-5xl font-bold text-white mb-6"
+            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+          >
+            Simple, transparent pricing
+          </h2>
 
-          {/* Annual toggle */}
           <div className="inline-flex items-center gap-3 rounded-full p-1" style={{ background: 'rgba(255,255,255,0.05)' }}>
             <button
+              type="button"
               onClick={() => setAnnual(false)}
               className="px-4 py-1.5 rounded-full text-sm font-medium transition-all"
-              style={!annual ? { background: 'white', color: 'black' } : { color: '#9CA3AF' }}
+              style={!annual ? { background: colors.red, color: '#fff' } : { color: '#9CA3AF' }}
             >
               Monthly
             </button>
             <button
+              type="button"
               onClick={() => setAnnual(true)}
               className="px-4 py-1.5 rounded-full text-sm font-medium transition-all"
-              style={annual ? { background: 'white', color: 'black' } : { color: '#9CA3AF' }}
+              style={annual ? { background: colors.red, color: '#fff' } : { color: '#9CA3AF' }}
             >
               Annual
-              <span className="ml-2 text-xs font-semibold" style={{ color: '#E53E3E' }}>−17%</span>
+              <span className="ml-2 text-xs font-semibold" style={{ color: annual ? '#fff' : colors.gold }}>
+                −17%
+              </span>
             </button>
           </div>
         </motion.div>
@@ -41,14 +51,16 @@ export default function PricingSection() {
         <div className="grid md:grid-cols-3 gap-6">
           {PRICING_TIERS.map(({ name, price, tagline, highlight, badge, features, cta }, i) => {
             const displayPrice = price ? (annual ? Math.round(price * 0.83) : price) : null
+            const ctaHref = cta === 'Contact sales' ? 'mailto:hello@masova.com' : 'mailto:hello@masova.com?subject=MaSoVa%20free%20trial'
+
             return (
               <motion.div
                 key={name}
                 className="relative p-6 rounded-2xl flex flex-col"
                 style={
                   highlight
-                    ? { border: '1px solid #E53E3E', background: 'rgba(229,62,62,0.05)' }
-                    : { border: '1px solid rgba(255,255,255,0.08)', background: '#111111' }
+                    ? { border: `1px solid ${colors.redBorderStrong}`, background: colors.redMuted }
+                    : { border: `1px solid ${colors.border}`, background: colors.bgElevated }
                 }
                 initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -59,7 +71,7 @@ export default function PricingSection() {
                 {badge && (
                   <div
                     className="absolute -top-3 left-1/2 -translate-x-1/2 text-white text-xs font-semibold px-3 py-1 rounded-full"
-                    style={{ background: '#E53E3E' }}
+                    style={{ background: colors.red }}
                   >
                     {badge}
                   </div>
@@ -85,7 +97,7 @@ export default function PricingSection() {
                   {features.map(({ icon: Icon, text, included }) => (
                     <li key={text} className="flex items-start gap-2.5">
                       {included
-                        ? <CheckCircle2 size={15} style={{ color: '#E53E3E' }} className="flex-shrink-0 mt-0.5" />
+                        ? <CheckCircle2 size={15} style={{ color: colors.red }} className="flex-shrink-0 mt-0.5" />
                         : <XCircle size={15} className="text-gray-700 flex-shrink-0 mt-0.5" />
                       }
                       <span className={`text-sm flex items-center gap-1.5 ${included ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -97,14 +109,18 @@ export default function PricingSection() {
                 </ul>
 
                 <a
-                  href="#"
+                  href={ctaHref}
                   className="group flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all duration-200 text-white"
-                  style={highlight ? { background: '#E53E3E' } : { background: 'rgba(255,255,255,0.08)' }}
+                  style={
+                    highlight
+                      ? { background: colors.red }
+                      : { background: 'rgba(255,255,255,0.08)' }
+                  }
                   onMouseEnter={e => {
-                    e.currentTarget.style.background = highlight ? '#C0392B' : 'rgba(255,255,255,0.15)'
+                    if (highlight) (e.currentTarget as HTMLAnchorElement).style.background = colors.redDark
                   }}
                   onMouseLeave={e => {
-                    e.currentTarget.style.background = highlight ? '#E53E3E' : 'rgba(255,255,255,0.08)'
+                    if (highlight) (e.currentTarget as HTMLAnchorElement).style.background = colors.red
                   }}
                 >
                   {cta}

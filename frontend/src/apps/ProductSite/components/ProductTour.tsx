@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle2 } from 'lucide-react'
 import { PRODUCT_TOUR_TABS } from '../constants'
+import SectionLabel from './SectionLabel'
+import ScreenshotPanel from './ScreenshotPanel'
+import { colors } from '../tokens'
 
 export default function ProductTour() {
   const [active, setActive] = useState(0)
@@ -16,35 +19,28 @@ export default function ProductTour() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <p className="text-sm font-medium mb-4 tracking-wide uppercase" style={{ color: '#E53E3E' }}>Product tour</p>
-          <h2 className="text-4xl md:text-5xl font-bold text-white">Everything your restaurant needs</h2>
+          <SectionLabel>Capabilities</SectionLabel>
+          <h2
+            className="text-4xl md:text-5xl font-bold text-white"
+            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+          >
+            Everything your restaurant needs
+          </h2>
         </motion.div>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Tab list */}
           <div className="lg:w-64 flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">
             {PRODUCT_TOUR_TABS.map(({ id, label, icon: Icon }, i) => (
               <button
                 key={id}
+                type="button"
                 onClick={() => setActive(i)}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200 text-left"
                 style={
                   active === i
-                    ? { background: '#E53E3E', color: 'white' }
-                    : { color: '#6B7280' }
+                    ? { background: colors.red, color: '#fff' }
+                    : { color: colors.textMuted, border: '1px solid transparent' }
                 }
-                onMouseEnter={e => {
-                  if (active !== i) {
-                    e.currentTarget.style.color = 'white'
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)'
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (active !== i) {
-                    e.currentTarget.style.color = '#6B7280'
-                    e.currentTarget.style.background = 'transparent'
-                  }
-                }}
               >
                 <Icon size={16} />
                 {label}
@@ -52,7 +48,6 @@ export default function ProductTour() {
             ))}
           </div>
 
-          {/* Content */}
           <div className="flex-1 grid md:grid-cols-2 gap-8 items-center">
             <AnimatePresence mode="wait">
               <motion.div
@@ -67,7 +62,7 @@ export default function ProductTour() {
                 <ul className="space-y-3">
                   {tab.bullets.map(b => (
                     <li key={b} className="flex items-center gap-2 text-sm text-gray-300">
-                      <CheckCircle2 size={16} style={{ color: '#E53E3E' }} className="flex-shrink-0" />
+                      <CheckCircle2 size={16} style={{ color: colors.red }} className="flex-shrink-0" />
                       {b}
                     </li>
                   ))}
@@ -75,18 +70,15 @@ export default function ProductTour() {
               </motion.div>
             </AnimatePresence>
 
-            {/* Screenshot placeholder */}
             <AnimatePresence mode="wait">
-              <motion.div
-                key={tab.id + '-img'}
-                initial={{ opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.97 }}
-                transition={{ duration: 0.35 }}
-                className="rounded-2xl bg-[#111111] aspect-[4/3] flex items-center justify-center overflow-hidden"
-                style={{ border: '1px solid rgba(255,255,255,0.08)' }}
-              >
-                <p className="text-gray-600 text-sm">[ {tab.label} Screenshot ]</p>
+              <motion.div key={tab.id + '-img'}>
+                <ScreenshotPanel
+                  src={tab.screenshot ?? tab.image}
+                  alt={tab.headline}
+                  label={tab.label}
+                  accentColor={tab.accentColor}
+                  icon={tab.icon}
+                />
               </motion.div>
             </AnimatePresence>
           </div>

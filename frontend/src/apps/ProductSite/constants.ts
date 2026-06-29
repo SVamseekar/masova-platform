@@ -20,33 +20,64 @@ interface Feature {
   screenshot: string | null
 }
 
+export const SITE_URL = 'https://masova.souravamseekar.com'
+export const GITHUB_URL = 'https://github.com/SVamseekar/masova-platform'
+
 export const NAV_LINKS = [
-  { label: 'About', href: '#about' },
-  { label: 'Features', href: '#product-tour' },
-  { label: 'AI Agents', href: '#ai-agents' },
+  { label: 'How it works', href: '#agent-brain' },
+  { label: 'See it live', href: '#demo' },
+  { label: 'Capabilities', href: '#product-tour' },
+  { label: 'Apps', href: '#mobile' },
   { label: 'Pricing', href: '#pricing' },
-  { label: 'FAQ', href: '#faq' },
-  { label: 'API Reference', href: '/api-docs' },
 ]
 
 export const STATS = [
-  { value: '6', label: 'Integrated Apps', icon: Layers },
-  { value: '9', label: 'Order Stages', icon: CheckCircle2 },
-  { value: '< 8s', label: 'Dispatch Time', icon: Zap },
-  { value: '100%', label: 'GDPR Compliant', icon: Shield },
+  { value: '8', label: 'Smart assistants', icon: Bot },
+  { value: '1', label: 'Dashboard for all locations', icon: Layers },
+  { value: '24/7', label: 'Customer chat', icon: Clock },
+  { value: 'You', label: 'Approve every change', icon: Shield },
 ]
 
 export const MARQUEE_ITEMS = [
-  { label: 'Multi-store operations', icon: Store },
-  { label: 'Real-time kitchen display', icon: ChefHat },
-  { label: 'AI-powered agents', icon: Bot },
-  { label: 'Live delivery tracking', icon: Navigation },
-  { label: 'GDPR compliant', icon: Shield },
-  { label: 'EU-ready payments', icon: CreditCard },
-  { label: 'Predictive analytics', icon: TrendingUp },
-  { label: 'Waste analysis', icon: Leaf },
-  { label: 'Driver auto-dispatch', icon: Truck },
-  { label: 'Loyalty programs', icon: Star },
+  { label: '24/7 customer chat — your staff stay on the floor', icon: Bot },
+  { label: 'Tomorrow\'s busy hours forecasted overnight', icon: TrendingUp },
+  { label: 'Low-stock alerts before you run out', icon: Package },
+  { label: 'Win back regulars before they drift away', icon: HeartHandshake },
+  { label: 'Review replies drafted — you send them', icon: Star },
+  { label: 'Next week\'s shifts suggested every Sunday', icon: Users },
+  { label: 'Nothing goes live without manager approval', icon: Shield },
+  { label: 'Wolt · Deliveroo · Uber Eats in one place', icon: Store },
+  { label: 'Orders from app to kitchen in seconds', icon: Zap },
+  { label: 'One view across every location', icon: Cpu },
+]
+
+export const AGGREGATOR_CHANNELS = [
+  { id: 'MASOVA', label: 'Direct', color: '#D4AF37' },
+  { id: 'WOLT', label: 'Wolt', color: '#00C2E8' },
+  { id: 'DELIVEROO', label: 'Deliveroo', color: '#00CCBC' },
+  { id: 'JUST_EAT', label: 'Just Eat', color: '#FF8000' },
+  { id: 'UBER_EATS', label: 'Uber Eats', color: '#06C167' },
+]
+
+export const MOBILE_APPS = [
+  {
+    name: 'Customer app',
+    tagline: 'Your customers order, track delivery, and get help — without calling the restaurant.',
+    accentColor: '#D4AF37',
+    highlights: ['Live map tracking', 'Card & wallet payments', 'In-app chat support', 'Guest checkout'],
+  },
+  {
+    name: 'Staff app',
+    tagline: 'Kitchen, drivers, cashiers, and managers — each sees exactly what they need.',
+    accentColor: '#D4AF37',
+    roles: [
+      { label: 'Driver', color: '#00B14F' },
+      { label: 'Kitchen', color: '#FF6B35' },
+      { label: 'Cashier', color: '#2196F3' },
+      { label: 'Manager', color: '#7B1FA2' },
+    ],
+    highlights: ['Kitchen display on tablet', 'Delivery proof codes', 'Works offline'],
+  },
 ]
 
 export const PAIN_POINTS = [
@@ -131,15 +162,15 @@ export const PRODUCT_TOUR_TABS: ProductTourTab[] = [
   },
   {
     id: 'ai',
-    label: 'AI Agents',
+    label: 'Smart assistants',
     icon: Bot,
-    headline: 'Your restaurant runs itself.',
-    desc: 'Five AI agents work 24/7 — handling customers, optimising the kitchen, dispatching drivers, routing orders, and surfacing insights for managers.',
+    headline: 'Help that never clocks off.',
+    desc: 'Eight assistants handle customer questions, flag slow prep times, suggest reorders, and surface what matters — while you stay in control of every decision.',
     image: '/screenshots/ai-agent.png',
     screenshot: null,
     accentColor: '#D4AF37',
-    featureDesc: 'Five specialised agents. One restaurant that runs itself.',
-    bullets: ['Customer support agent', 'Kitchen prep agent', 'Manager insights agent', 'Driver logistics agent', 'Store selection agent'],
+    featureDesc: 'Less firefighting. More time leading your team.',
+    bullets: ['24/7 customer chat', 'Demand & prep insights', 'Stock alerts before shortages', 'Shift suggestions you approve'],
   },
 ]
 
@@ -154,7 +185,7 @@ export const FEATURES: Feature[] = [
   {
     icon: Utensils,
     title: 'POS + Kiosk',
-    desc: 'Full POS system with PIN auth for staff. Self-service kiosk mode for walk-in customers.',
+    desc: 'Counter POS with staff PIN login. Self-service kiosk for walk-in guests.',
     size: 'small',
     screenshot: null,
   },
@@ -195,50 +226,138 @@ export const FEATURES: Feature[] = [
   },
   {
     icon: Smartphone,
-    title: 'Android Driver App',
-    desc: 'Native Android app for delivery drivers. Turn-by-turn navigation, live order updates, earnings dashboard.',
+    title: 'Driver app',
+    desc: 'Drivers get live orders, turn-by-turn navigation, and a clear earnings view on their phone.',
     size: 'small',
     screenshot: '/screenshots/customer-menu.png',
   },
 ]
 
-export type AgentIconKey = 'MessageCircle' | 'BarChart3' | 'ChefHat' | 'Navigation' | 'MapPin'
+export type AgentIconKey =
+  | 'MessageCircle'
+  | 'TrendingUp'
+  | 'Sparkles'
+  | 'Package'
+  | 'ChefHat'
+  | 'HeartHandshake'
+  | 'Star'
+  | 'Users'
 
 export const AI_AGENTS = [
   {
     lucideIcon: 'MessageCircle' as const,
-    name: 'Customer Agent',
-    role: 'Real-Time Support',
-    description: 'Handles order status, complaints, refund requests, and live tracking — 24/7, in plain language.',
+    name: 'Customer chat',
+    role: 'Always on',
+    description: 'Answers order status, menu questions, and refund requests in your app — so your team isn\'t glued to the phone.',
     color: '#3B82F6',
   },
   {
-    lucideIcon: 'BarChart3' as const,
-    name: 'Manager Agent',
-    role: 'Business Intelligence',
-    description: 'Surfaces revenue anomalies, inventory alerts, and staff performance — before you even ask.',
+    lucideIcon: 'TrendingUp' as const,
+    name: 'Demand planner',
+    role: 'Every night',
+    description: 'Spots which dishes and hours will be busy tomorrow, so prep and staffing aren\'t guesswork.',
     color: '#8B5CF6',
   },
   {
-    lucideIcon: 'ChefHat' as const,
-    name: 'Kitchen Agent',
-    role: 'Prep Intelligence',
-    description: 'Predicts rush periods, optimises prep queue, and flags equipment issues before they stall service.',
-    color: '#F59E0B',
+    lucideIcon: 'Sparkles' as const,
+    name: 'Peak-hour pricing',
+    role: 'During service',
+    description: 'Suggests small menu price tweaks when demand spikes. You approve before anything goes live.',
+    color: '#D4AF37',
   },
   {
-    lucideIcon: 'Navigation' as const,
-    name: 'Driver Agent',
-    role: 'Logistics Optimisation',
-    description: 'Assigns routes in real-time, reroutes around traffic, and ensures on-time delivery across the fleet.',
+    lucideIcon: 'Package' as const,
+    name: 'Stock watch',
+    role: 'Throughout the day',
+    description: 'Warns you before ingredients run out and drafts reorder lists for your sign-off.',
     color: '#10B981',
   },
   {
-    lucideIcon: 'MapPin' as const,
-    name: 'Store Selection Agent',
-    role: 'Smart Routing',
-    description: 'Selects the nearest store with capacity and assigns delivery zones dynamically — no manual config needed.',
+    lucideIcon: 'ChefHat' as const,
+    name: 'Kitchen insights',
+    role: 'End of day',
+    description: 'Summarises what slowed the line today and what to fix before the next rush.',
+    color: '#F59E0B',
+  },
+  {
+    lucideIcon: 'HeartHandshake' as const,
+    name: 'Loyalty keeper',
+    role: 'Every morning',
+    description: 'Notices regulars who haven\'t ordered lately and drafts a personal offer — you choose whether to send it.',
     color: '#EC4899',
+  },
+  {
+    lucideIcon: 'Star' as const,
+    name: 'Review helper',
+    role: 'When reviews arrive',
+    description: 'Drafts thoughtful replies to low ratings. Nothing is posted until a manager approves it.',
+    color: '#F97316',
+  },
+  {
+    lucideIcon: 'Users' as const,
+    name: 'Shift planner',
+    role: 'Weekly',
+    description: 'Proposes next week\'s rota based on forecasted footfall. Adjust and publish when you\'re happy.',
+    color: '#2196F3',
+  },
+]
+
+export const AGENT_LIVE_FEED: string[][] = [
+  ['Customer asked where order #2041 is — on the way, 8 min ETA', 'Tracking link sent automatically', 'Your manager was notified — no action needed'],
+  ['Amsterdam Central: butter chicken likely +34% this Saturday 6–9pm', 'Prep suggestion ready for head chef', 'Waiting for your approval'],
+  ['Friday dinner rush building — small price tweak suggested on bestsellers', 'You can approve or ignore in one tap', 'Nothing changes until you say so'],
+  ['Mozzarella may run out in 2 days at Milano Central', 'Draft order prepared for Milano Dairy · 12kg', 'Review and send when ready'],
+  ['Tikka masala prep ran 18% slower than usual tonight', 'Oven bottleneck flagged for tomorrow\'s brief', 'Morning summary queued for kitchen lead'],
+  ['12 valued regulars ordered less this month', 'Personal 15% offers drafted', '3 waiting for your go-ahead'],
+  ['2-star review: "cold delivery"', 'Apology and refund option drafted', 'Manager notified — reply not sent yet'],
+  ['Busier Thu–Sun expected — +2 kitchen staff suggested Friday eve', 'Draft schedule ready for next week', 'Shift plan awaiting approval'],
+]
+
+export const AGENT_STORY_STEPS = [
+  {
+    time: '2:00 AM',
+    agent: 'Demand planner',
+    iconKey: 'TrendingUp' as AgentIconKey,
+    color: '#8B5CF6',
+    headline: 'While you sleep, tomorrow gets planned',
+    body: 'Every location gets a forecast — which dishes spike on Friday, which hours need extra hands in the kitchen.',
+    action: 'Prep notes ready for your morning',
+  },
+  {
+    time: '10:00 AM',
+    agent: 'Loyalty keeper',
+    iconKey: 'HeartHandshake' as AgentIconKey,
+    color: '#EC4899',
+    headline: 'Regulars who drift away get noticed early',
+    body: 'A dozen loyal customers ordered less this month. Personal offers are drafted — never blasted without your OK.',
+    action: '3 offers waiting for your tap',
+  },
+  {
+    time: '2:30 PM',
+    agent: 'Customer chat',
+    iconKey: 'MessageCircle' as AgentIconKey,
+    color: '#3B82F6',
+    headline: 'Customers get answers. Your team stays on the floor.',
+    body: 'Order tracking, allergens, refunds — handled in the app so servers aren\'t running to the phone.',
+    action: '847 helpful chats this week',
+  },
+  {
+    time: '6:00 PM',
+    agent: 'Peak-hour pricing',
+    iconKey: 'Sparkles' as AgentIconKey,
+    color: '#D4AF37',
+    headline: 'Busy hour? You get a heads-up, not a surprise.',
+    body: 'When demand jumps, MaSoVa suggests a small menu tweak. You approve or dismiss in one click.',
+    action: 'You stay in control',
+  },
+  {
+    time: '11:00 PM',
+    agent: 'Kitchen insights',
+    iconKey: 'ChefHat' as AgentIconKey,
+    color: '#F59E0B',
+    headline: 'The kitchen gets a clear morning brief',
+    body: 'Prep times, bottlenecks, and equipment flags from tonight — turned into notes your team can act on.',
+    action: 'Delivered before the lunch rush',
   },
 ]
 
@@ -253,8 +372,8 @@ export const PRICING_TIERS = [
     badge: undefined as string | undefined,
     features: [
       { icon: ShoppingCart, text: 'Online ordering (web + mobile)', included: true },
-      { icon: Cpu, text: 'POS system with PIN auth', included: true },
-      { icon: ChefHat, text: 'Kitchen Display System (KDS)', included: true },
+      { icon: Cpu, text: 'POS with staff PIN login', included: true },
+      { icon: ChefHat, text: 'Kitchen display screen', included: true },
       { icon: Utensils, text: 'Menu management', included: true },
       { icon: BarChart3, text: 'Basic order analytics', included: true },
       { icon: Star, text: 'Customer loyalty points', included: true },
@@ -263,7 +382,7 @@ export const PRICING_TIERS = [
       { icon: Shield, text: 'GDPR compliance tools', included: true },
       { icon: Building2, text: '1 location', included: true },
       { icon: Users, text: 'Up to 10 staff accounts', included: true },
-      { icon: Bot, text: 'AI agents', included: false },
+      { icon: Bot, text: 'Smart assistants', included: false },
       { icon: TrendingUp, text: 'Advanced analytics + BI', included: false },
       { icon: Globe, text: 'Custom branding', included: false },
     ],
@@ -278,8 +397,8 @@ export const PRICING_TIERS = [
     badge: 'Most Popular' as string | undefined,
     features: [
       { icon: ShoppingCart, text: 'Everything in Starter', included: true },
-      { icon: Bot, text: 'AI Customer Agent (chat ordering + support)', included: true },
-      { icon: Sparkles, text: 'AI Manager Agent (natural language analytics)', included: true },
+      { icon: Bot, text: '24/7 customer chat assistant', included: true },
+      { icon: Sparkles, text: 'Manager insights — ask in plain English', included: true },
       { icon: TrendingUp, text: 'Advanced analytics + BI dashboard', included: true },
       { icon: PieChart, text: 'Sales forecasting + demand prediction', included: true },
       { icon: Store, text: 'Multi-store management (up to 3)', included: true },
@@ -303,8 +422,8 @@ export const PRICING_TIERS = [
     badge: undefined as string | undefined,
     features: [
       { icon: Sparkles, text: 'Everything in Growth', included: true },
-      { icon: Bot, text: 'AI Kitchen Agent (queue optimisation)', included: true },
-      { icon: Truck, text: 'AI Delivery Agent (multi-order batching)', included: true },
+      { icon: Bot, text: 'Kitchen & delivery assistants', included: true },
+      { icon: Truck, text: 'Smarter dispatch across busy runs', included: true },
       { icon: Building2, text: 'Unlimited locations', included: true },
       { icon: Users, text: 'Unlimited staff accounts', included: true },
       { icon: Lock, text: 'White-label (your brand)', included: true },
@@ -346,6 +465,10 @@ export const FAQS = [
     q: 'What happens if I need more than 3 locations on Growth?',
     a: 'You can add extra locations at €99/location/month on Growth, or upgrade to Enterprise for unlimited locations with a custom price.',
   },
+  {
+    q: 'Do the smart assistants change things without asking?',
+    a: 'No. MaSoVa only suggests actions — reorder lists, review replies, shift plans, and the like. A manager approves before anything goes live.',
+  },
 ]
 
 
@@ -365,7 +488,7 @@ export const TESTIMONIALS = [
     avatar: 'S',
   },
   {
-    quote: "The AI customer agent handles 80% of support queries automatically. Refunds, order status, menu questions — all resolved without my staff touching them. It's remarkable.",
+    quote: "The chat assistant handles most customer questions on its own. Refunds, order status, menu questions — my team barely touches the phone anymore. It's remarkable.",
     name: "Liam O'Brien",
     role: 'Founder',
     restaurant: 'The Dublin Kitchen',

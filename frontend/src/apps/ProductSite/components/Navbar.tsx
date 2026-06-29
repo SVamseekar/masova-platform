@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, Store } from 'lucide-react'
 import { NAV_LINKS, GOLD_GRADIENT_TEXT } from '../constants'
+import { colors } from '../tokens'
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
@@ -23,15 +24,16 @@ export default function Navbar() {
       transition={{ duration: 0.5 }}
     >
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        {/* Logo */}
         <a href="/" className="flex items-center gap-2 group">
           <div style={{ width: 32, height: 32, background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.4)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ ...GOLD_GRADIENT_TEXT, fontSize: 16 }}>M</span>
           </div>
           <span style={{ ...GOLD_GRADIENT_TEXT, fontSize: 22 }}>MaSoVa</span>
+          <span className="hidden sm:inline-flex items-center gap-1 text-[10px] text-gray-600 ml-1 px-2 py-0.5 rounded-full border border-white/10">
+            <Store size={10} style={{ color: '#D4AF37' }} /> multi-location
+          </span>
         </a>
 
-        {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-8">
           {NAV_LINKS.map(link => (
             <a
@@ -44,26 +46,19 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* CTAs */}
         <div className="hidden md:flex items-center gap-3">
-          <a
-            href="/customer-login"
-            className="text-sm text-gray-400 hover:text-white transition-colors px-4 py-2"
-          >
-            Sign in
+          <a href="#demo" className="text-sm text-gray-400 hover:text-white px-3 py-2">
+            See it live
           </a>
           <a
             href="#pricing"
             className="text-sm px-4 py-2 rounded-lg font-medium transition-all duration-200"
-            style={{ background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.5)', color: '#D4AF37' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(212,175,55,0.8)' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(212,175,55,0.5)' }}
+            style={{ background: colors.red, color: '#fff' }}
           >
-            Book a Demo
+            Book a demo
           </a>
         </div>
 
-        {/* Mobile toggle */}
         <button
           className="md:hidden text-gray-400 hover:text-white"
           onClick={() => setMobileOpen(v => !v)}
@@ -72,7 +67,6 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Mobile menu */}
       {mobileOpen && (
         <motion.div
           className="md:hidden bg-[#111111] border-t border-white/5 px-6 py-4 flex flex-col gap-4"
@@ -92,10 +86,10 @@ export default function Navbar() {
           <a
             href="#pricing"
             className="text-sm px-4 py-2 rounded-lg text-center font-medium"
-            style={{ background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.5)', color: '#D4AF37' }}
+            style={{ background: colors.red, color: '#fff' }}
             onClick={() => setMobileOpen(false)}
           >
-            Book a Demo
+            Book a demo
           </a>
         </motion.div>
       )}

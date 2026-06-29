@@ -1,6 +1,8 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { Smartphone, CreditCard, ChefHat, Car, MapPin, Star } from 'lucide-react'
+import SectionLabel from './SectionLabel'
+import { colors } from '../tokens'
 
 type FlowNode = {
   icon: React.ComponentType<{ size?: number; color?: string }>
@@ -19,19 +21,19 @@ const FLOW_NODES: FlowNode[] = [
   {
     icon: CreditCard,
     title: 'Payment Confirmed',
-    description: 'Stripe processes in <2s. Receipt sent automatically.',
+    description: 'Card payment clears in seconds. Receipt sent automatically.',
     color: '#8B5CF6',
   },
   {
     icon: ChefHat,
     title: 'Kitchen Notified',
-    description: 'KDS lights up. Prep timer starts. No phone calls.',
+    description: 'Kitchen screen lights up. Prep timer starts. No phone calls.',
     color: '#F59E0B',
   },
   {
     icon: Car,
     title: 'Driver Dispatched',
-    description: 'Nearest driver assigned. Route optimised by Driver Agent.',
+    description: 'Nearest driver assigned automatically. Smart routing on busy runs.',
     color: '#10B981',
   },
   {
@@ -60,16 +62,14 @@ export default function OrderFlowSection() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <p
-            className="text-sm font-medium mb-4 tracking-widest uppercase"
-            style={{ color: '#E53E3E' }}
+          <SectionLabel>Order journey</SectionLabel>
+          <h2
+            className="text-4xl md:text-5xl font-bold text-white leading-tight"
+            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
           >
-            Order Flow
-          </p>
-          <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight">
-            From tap to doorstep.
+            From tap to doorstep
             <br />
-            <span style={{ color: '#555' }}>in 30 minutes.</span>
+            <span style={{ color: colors.red }}>without the phone calls.</span>
           </h2>
         </motion.div>
 

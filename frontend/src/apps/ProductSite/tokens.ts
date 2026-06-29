@@ -9,12 +9,20 @@ export const colors = {
   bgElevated: '#111111',
   bgSurface: '#1A1A1A',
 
-  // Brand
+  // Brand — gold for identity, red for action (use both; avoid all-gold pages)
   gold: '#D4AF37',
   goldLight: '#F0CC6A',
   goldMuted: 'rgba(212,175,55,0.15)',
   goldBorder: 'rgba(212,175,55,0.3)',
   goldBorderStrong: 'rgba(212,175,55,0.5)',
+
+  // Apple Music–style rose-red: vivid, clean, premium (not orange-coral, not muddy)
+  red: '#FA2D48',
+  redDark: '#D41E3A',
+  redLight: '#FF5C72',
+  redMuted: 'rgba(250, 45, 72, 0.14)',
+  redBorder: 'rgba(250, 45, 72, 0.32)',
+  redBorderStrong: 'rgba(250, 45, 72, 0.5)',
 
   // Text
   textPrimary: '#FFFFFF',

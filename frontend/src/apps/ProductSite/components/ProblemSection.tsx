@@ -1,14 +1,16 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { CheckCircle2, AlertCircle, Clock } from 'lucide-react'
+import SectionLabel from './SectionLabel'
+import { colors } from '../tokens'
 
 const chaosOrders = [
-  { id: '#1042', label: 'MISSED', color: '#E53E3E', bg: 'rgba(229,62,62,0.15)', icon: AlertCircle },
+  { id: '#1042', label: 'MISSED', color: colors.red, bg: colors.redMuted, icon: AlertCircle },
   { id: '#1043', label: 'DELAYED', color: '#DD6B20', bg: 'rgba(221,107,32,0.15)', icon: Clock },
-  { id: '#1044', label: 'WRONG ADDRESS', color: '#E53E3E', bg: 'rgba(229,62,62,0.15)', icon: AlertCircle },
+  { id: '#1044', label: 'WRONG ADDRESS', color: colors.red, bg: colors.redMuted, icon: AlertCircle },
   { id: '#1045', label: 'BOTTLENECK', color: '#DD6B20', bg: 'rgba(221,107,32,0.15)', icon: Clock },
-  { id: '#1046', label: 'UNREACHABLE', color: '#E53E3E', bg: 'rgba(229,62,62,0.15)', icon: AlertCircle },
-  { id: '#1047', label: 'REFUND REQUESTED', color: '#E53E3E', bg: 'rgba(229,62,62,0.15)', icon: AlertCircle },
+  { id: '#1046', label: 'UNREACHABLE', color: colors.red, bg: colors.redMuted, icon: AlertCircle },
+  { id: '#1047', label: 'REFUND REQUESTED', color: colors.red, bg: colors.redMuted, icon: AlertCircle },
 ]
 
 const pipeline = [
@@ -30,9 +32,13 @@ export default function ProblemSection() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-4">
-            Running a restaurant is chaos.{' '}
-            <span style={{ color: '#E53E3E' }}>Until now.</span>
+          <SectionLabel>The problem</SectionLabel>
+          <h2
+            className="text-4xl md:text-5xl font-bold text-white leading-tight mb-4"
+            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+          >
+            Running restaurants is chaos.{' '}
+            <span style={{ color: colors.red }}>It doesn&apos;t have to be.</span>
           </h2>
           <p className="text-gray-400 text-lg">
             Every shift, the same firefighting. MaSoVa ends it.
@@ -43,7 +49,7 @@ export default function ProblemSection() {
           {/* LEFT PANEL — The Old Way */}
           <motion.div
             className="rounded-2xl overflow-hidden"
-            style={{ background: '#1a0a0a', border: '1px solid rgba(229,62,62,0.2)' }}
+            style={{ background: '#1a0a0a', border: `1px solid ${colors.redBorder}` }}
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
@@ -52,13 +58,13 @@ export default function ProblemSection() {
             {/* Panel header */}
             <div
               className="px-6 py-4 flex items-center gap-3"
-              style={{ borderBottom: '1px solid rgba(229,62,62,0.15)' }}
+              style={{ borderBottom: `1px solid ${colors.redBorder}` }}
             >
               <span
                 className="w-3 h-3 rounded-full"
-                style={{ background: '#E53E3E', boxShadow: '0 0 8px #E53E3E' }}
+                style={{ background: colors.red, boxShadow: `0 0 8px ${colors.redMuted}` }}
               />
-              <span className="text-sm font-semibold tracking-widest uppercase" style={{ color: '#E53E3E' }}>
+              <span className="text-sm font-semibold tracking-widest uppercase" style={{ color: colors.red }}>
                 The Old Way
               </span>
             </div>
@@ -78,7 +84,7 @@ export default function ProblemSection() {
                     {/* Pulsing red dot */}
                     <motion.span
                       className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                      style={{ background: '#E53E3E' }}
+                      style={{ background: colors.red }}
                       animate={{ opacity: [1, 0.3, 1] }}
                       transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.25 }}
                     />
