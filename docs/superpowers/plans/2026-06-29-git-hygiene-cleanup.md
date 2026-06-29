@@ -669,7 +669,7 @@ git push
 | 5 — `CODEOWNERS` | ✅ same PR |
 | 6 — Pre-commit hook | ✅ `scripts/git-hooks/pre-commit` + install scripts |
 | 7 — Razorpay doc cleanup | ✅ `phase5-env-vars.md` (yml + .env.example done in PR #17) |
-| 8 — Branch protection | ⏳ After safeguards PR merges — see summary Task 8 commands |
+| 8 — Branch protection | ✅ 2026-06-29 (linear history, CODEOWNERS reviews, conversation resolution) |
 | 9 — Summary doc | ✅ `2026-06-29-git-hygiene-cleanup-summary.md` |
 
 **Next after safeguards PR merges:** Run Task 8 `gh api` commands (in summary), install hooks on Mac + Dell, optional Task 3.5 stash review.
