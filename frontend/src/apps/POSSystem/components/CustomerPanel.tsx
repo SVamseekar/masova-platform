@@ -6,7 +6,7 @@ import { useGetOrCreateCustomerMutation } from '../../../store/api/customerApi';
 import { isValidPhoneNumber } from '../../../config/business-config';
 import { useAppSelector } from '../../../store/hooks';
 import { selectCartCurrency, selectCartLocale, selectStoreCountryCode } from '../../../store/slices/cartSlice';
-import { formatMoney } from '../../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../../utils/currency';
 import { computePreCheckoutTotals, formatTaxDisplay } from '../../../utils/orderTax';
 import Card from '../../../components/ui/neumorphic/Card';
 import { colors, shadows, spacing, typography } from '../../../styles/design-tokens';
@@ -59,7 +59,7 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
   const storeCountryCode = useAppSelector(selectStoreCountryCode);
-  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');

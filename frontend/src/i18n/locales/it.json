@@ -4,7 +4,19 @@
     "subtotal": "Subtotale",
     "total": "Totale",
     "empty": "Il tuo carrello è vuoto",
-    "checkout": "Checkout"
+    "checkout": "Checkout",
+    "your_order": "Il tuo ordine",
+    "clear_all": "Svuota tutto",
+    "browse_menu": "Sfoglia il menu",
+    "empty_hint": "Aggiungi piatti dal nostro menu",
+    "order_summary": "Riepilogo ordine",
+    "reservation_notice": "Articoli riservati per 15 minuti",
+    "proceed_to_payment": "Procedi al pagamento",
+    "continue_shopping": "Continua lo shopping",
+    "qty_label": "Qtà:",
+    "each": "{{price}} cad.",
+    "subtotal_with_count": "Subtotale ({{count}} articoli)",
+    "subtotal_with_count_one": "Subtotale ({{count}} articolo)"
   },
   "order": {
     "status": {
@@ -22,7 +34,20 @@
       "DINE_IN": "Al tavolo",
       "TAKEAWAY": "Da asporto",
       "DELIVERY": "Consegna"
-    }
+    },
+    "tracking_title": "Tracciamento ordine",
+    "no_orders": "Nessun ordine"
+  },
+  "staff": {
+    "total_orders": "Ordini totali",
+    "total_revenue": "Ricavi totali",
+    "total_amount": "Importo totale",
+    "tax": "Imposta",
+    "pickup": "Asporto",
+    "delivery": "Consegna",
+    "dine_in": "Al tavolo",
+    "your_order": "Il tuo ordine",
+    "new_order": "Nuovo ordine"
   },
   "common": {
     "save": "Salva",
@@ -31,5 +56,20 @@
     "loading": "Caricamento…",
     "error": "Qualcosa è andato storto",
     "no_data": "Nessun dato disponibile"
+  },
+  "checkout": {
+    "order_summary": "Riepilogo ordine",
+    "reservation_notice": "Articoli riservati per 15 minuti",
+    "title": "Checkout",
+    "back_to_menu": "← Torna al menu",
+    "choose_how": "Scegli come continuare"
+  },
+  "payment": {
+    "delivery_fee": "Spese di consegna",
+    "place_order": "Ordina — {{total}}",
+    "pay_razorpay": "Paga {{total}} via Razorpay",
+    "pay_stripe": "Paga con Stripe",
+    "processing": "Elaborazione...",
+    "secure_payment": "Pagamento sicuro"
   }
 }

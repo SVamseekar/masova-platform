@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { Box, Typography, Collapse, IconButton, Divider } from '@mui/material';
 import { useAppSelector } from '../../../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../../../store/slices/cartSlice';
-import { formatMoney } from '../../../../utils/currency';
+import { formatMajorAmount } from '../../../../utils/currency';
 import {
   ExpandMore as ExpandMoreIcon,
   Phone as PhoneIcon,
@@ -97,7 +97,7 @@ export const DeliveryCard: React.FC<DeliveryCardProps> = ({
               color: colors.primary.green,
             }}
           >
-            {formatMoney(Math.round(amount * 100), currency, locale)}
+            {formatMajorAmount(amount , currency, locale)}
           </Typography>
 
           {onMenuClick && (

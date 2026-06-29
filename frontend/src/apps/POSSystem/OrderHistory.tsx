@@ -14,7 +14,7 @@ import { getRtkErrorMessage } from '../shared/rtkError';
 import { useRecordCashPaymentMutation } from '../../store/api/paymentApi';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../utils/currency';
 import AppHeader from '../../components/common/AppHeader';
 import Card from '../../components/ui/neumorphic/Card';
 import Badge from '../../components/ui/neumorphic/Badge';
@@ -30,7 +30,7 @@ const OrderHistory: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
   const storeId = user?.storeId;
 
   const [searchTerm, setSearchTerm] = useState('');

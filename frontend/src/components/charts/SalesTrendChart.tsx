@@ -13,7 +13,7 @@ import {
 import { useGetSalesTrendsQuery } from '../../store/api/analyticsApi';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../utils/currency';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
@@ -49,7 +49,7 @@ export default function SalesTrendChart({ storeId }: SalesTrendChartProps) {
 
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const formatCurrency = (value: number) => formatMoney(Math.round(value * 100), currency, locale);
+  const formatCurrency = (value: number) => formatMajorAmount(value , currency, locale);
 
   if (isLoading) {
     return (

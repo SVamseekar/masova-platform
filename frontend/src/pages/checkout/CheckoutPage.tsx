@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 import {
@@ -10,11 +11,12 @@ import {
   selectCartLocale,
   selectStoreCountryCode,
 } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../utils/currency';
 import { computePreCheckoutTotals, formatTaxDisplay } from '../../utils/orderTax';
 import { selectIsAuthenticated, selectCurrentUser } from '../../store/slices/authSlice';
 
 const CheckoutPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const cartItems = useAppSelector(selectCartItems);
   const subtotal = useAppSelector(selectCartSubtotal);
@@ -25,7 +27,7 @@ const CheckoutPage: React.FC = () => {
   const storeCountryCode = useAppSelector(selectStoreCountryCode);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const currentUser = useAppSelector(selectCurrentUser);
-  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
 
   const { tax, taxLabel, total } = computePreCheckoutTotals(
     subtotal,
@@ -176,7 +178,7 @@ const CheckoutPage: React.FC = () => {
           {/* Order summary sidebar */}
           <div style={{ position: 'sticky', top: '24px', background: 'var(--surface)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border)', padding: '24px' }}>
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-1)', margin: '0 0 16px 0' }}>
-              Order Summary
+              {t('checkout.order_summary')}
             </h3>
 
             <div style={{ height: '1px', background: 'var(--border)', margin: '0 0 16px 0' }} />
@@ -186,9 +188,9 @@ const CheckoutPage: React.FC = () => {
                 <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                   <div style={{ flex: 1 }}>
                     <p style={{ margin: '0 0 2px', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-1)' }}>{item.name}</p>
-                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-3)' }}>Qty: {item.quantity} × {formatMoney(Math.round(item.price * 100), currency, locale)}</p>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-3)' }}>Qty: {item.quantity} × {formatMajorAmount(item.price , currency, locale)}</p>
                   </div>
-                  <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-1)', flexShrink: 0 }}>{formatMoney(Math.round(item.price * item.quantity * 100), currency, locale)}</span>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-1)', flexShrink: 0 }}>{formatMajorAmount(item.price * item.quantity , currency, locale)}</span>
                 </div>
               ))}
             </div>
@@ -197,8 +199,8 @@ const CheckoutPage: React.FC = () => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {[
-                { label: `Subtotal (${itemCount} items)`, value: fmt(subtotal) },
-                { label: 'Delivery Fee', value: fmt(deliveryFee) },
+                { label: `${t('cart.subtotal')} (${itemCount} item${itemCount > 1 ? 's' : ''})`, value: fmt(subtotal) },
+                { label: t('cart.delivery_fee'), value: fmt(deliveryFee) },
                 { label: taxLabel, value: formatTaxDisplay(tax, fmt) },
               ].map(row => (
                 <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -208,13 +210,13 @@ const CheckoutPage: React.FC = () => {
               ))}
               <div style={{ height: '1px', background: 'var(--border)', margin: '6px 0' }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--text-1)', fontSize: '1.05rem' }}>Total</span>
-                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--gold)', fontSize: '1.35rem' }}>{formatMoney(Math.round(total * 100), currency, locale)}</span>
+                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--text-1)', fontSize: '1.05rem' }}>{t('cart.total')}</span>
+                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--gold)', fontSize: '1.35rem' }}>{formatMajorAmount(total , currency, locale)}</span>
               </div>
             </div>
 
             <div style={{ marginTop: '16px', padding: '10px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border)', textAlign: 'center' }}>
-              <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-3)' }}>Items reserved for 15 minutes</p>
+              <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-3)' }}>{t('cart.reservation_notice')}</p>
             </div>
           </div>
         </div>

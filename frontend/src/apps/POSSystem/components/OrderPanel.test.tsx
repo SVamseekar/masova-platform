@@ -267,7 +267,7 @@ describe('OrderPanel', () => {
         { useMemoryRouter: true }
       );
 
-      expect(screen.getByText('Delivery Fee:')).toBeInTheDocument();
+      expect(screen.getByText('Delivery fee:')).toBeInTheDocument();
     });
 
     it('does not show delivery fee for PICKUP orders', () => {
@@ -275,7 +275,7 @@ describe('OrderPanel', () => {
         useMemoryRouter: true,
       });
 
-      expect(screen.queryByText('Delivery Fee:')).not.toBeInTheDocument();
+      expect(screen.queryByText('Delivery fee:')).not.toBeInTheDocument();
     });
 
     it('displays item count', () => {

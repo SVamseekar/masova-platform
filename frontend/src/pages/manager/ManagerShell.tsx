@@ -8,6 +8,7 @@ import { clearReturnUrl } from '../../utils/security';
 import { t, Icons } from './manager-tokens';
 import { useGetActiveStoresQuery, type Store } from '../../store/api/storeApi';
 import { setSelectedStore, setStoreCurrency, selectSelectedStoreId, selectSelectedStoreName } from '../../store/slices/cartSlice';
+import { storeCurrencyPayload } from '../../utils/storeCurrency';
 
 const DashboardSection = React.lazy(() => import('./DashboardSection'));
 const OrdersSection = React.lazy(() => import('./OrdersSection'));
@@ -73,11 +74,7 @@ function ManagerShell() {
     const match = stores.find((s: Store) => s.storeCode === userStoreId || s.id === userStoreId);
     if (match) {
       dispatch(setSelectedStore({ storeId: match.storeCode, storeName: match.name }));
-      dispatch(setStoreCurrency({
-        currency: match.currency || 'INR',
-        locale: match.locale || 'en-IN',
-        countryCode: match.countryCode ?? null,
-      }));
+      dispatch(setStoreCurrency(storeCurrencyPayload(match)));
       setPageStore(match.storeCode, match.name);
     }
   }, [stores, storesLoading, selectedStoreId, currentUser?.storeId, dispatch, setPageStore]);
@@ -117,11 +114,7 @@ function ManagerShell() {
   const handleStoreSelect = (code: string, name: string) => {
     dispatch(setSelectedStore({ storeId: code, storeName: name }));
     const store = stores.find((s: Store) => s.storeCode === code);
-    dispatch(setStoreCurrency({
-      currency: store?.currency || 'INR',
-      locale: store?.locale || 'en-IN',
-      countryCode: store?.countryCode ?? null,
-    }));
+    dispatch(setStoreCurrency(storeCurrencyPayload(store)));
     setStoreDropOpen(false);
   };
 

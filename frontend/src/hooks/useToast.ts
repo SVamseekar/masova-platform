@@ -3,7 +3,7 @@ import { useCallback, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { addNotification } from '../store/slices/notificationSlice';
 import { selectCartCurrency, selectCartLocale } from '../store/slices/cartSlice';
-import { formatMoney } from '../utils/currency';
+import {formatMoney, formatMajorAmount} from '../utils/currency';
 
 interface ToastOptions {
   persist?: boolean;
@@ -136,7 +136,7 @@ export const useToast = (): UseToastReturn => {
   }, [showToast, addToStore]);
 
   const paymentSuccess = useCallback((amount: number) => {
-    const formattedAmount = formatMoney(Math.round(amount * 100), currency, locale);
+    const formattedAmount = formatMajorAmount(amount , currency, locale);
     addToStore(`Payment of ${formattedAmount} successful`, 'success', 'Payment Success');
     return showToast(`Payment of ${formattedAmount} successful`, 'success');
   }, [showToast, addToStore, currency, locale]);

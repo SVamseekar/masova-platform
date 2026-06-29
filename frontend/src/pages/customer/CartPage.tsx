@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import {
   removeFromCart,
@@ -9,7 +10,7 @@ import {
   selectCartLocale,
   selectStoreCountryCode,
 } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../utils/currency';
 import { computePreCheckoutTotals, formatTaxDisplay } from '../../utils/orderTax';
 
 interface CartPageProps {
@@ -18,12 +19,13 @@ interface CartPageProps {
 }
 
 const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPayment }) => {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const cartItems = useAppSelector(state => state.cart.items);
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
   const storeCountryCode = useAppSelector(selectStoreCountryCode);
-  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
 
   const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
   const reduxDeliveryFee = useAppSelector(selectDeliveryFee);
@@ -143,7 +145,7 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
                     {item.name}
                   </p>
                   <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-3)' }}>
-                    {formatMoney(Math.round(item.price * 100), currency, locale)} each
+                    {formatMajorAmount(item.price , currency, locale)} each
                   </p>
                 </div>
 
@@ -181,7 +183,7 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
                 {/* Line total */}
                 <div style={{ textAlign: 'right', flexShrink: 0, minWidth: '70px' }}>
                   <p style={{ margin: 0, fontWeight: 700, color: 'var(--gold)', fontSize: '0.9rem' }}>
-                    {formatMoney(Math.round(item.price * item.quantity * 100), currency, locale)}
+                    {formatMajorAmount(item.price * item.quantity , currency, locale)}
                   </p>
                 </div>
 
@@ -205,13 +207,13 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
           {/* Summary */}
           <div style={{ position: 'sticky', top: '24px', background: 'var(--surface)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border)', padding: '24px' }}>
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-1)', margin: '0 0 16px 0' }}>
-              Order Summary
+              {t('cart.order_summary')}
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
               {[
-                { label: 'Subtotal', value: fmt(subtotal) },
-                { label: 'Delivery Fee', value: fmt(deliveryFee) },
+                { label: t('cart.subtotal'), value: fmt(subtotal) },
+                { label: t('cart.delivery_fee'), value: fmt(deliveryFee) },
                 { label: taxLabel, value: formatTaxDisplay(tax, fmt) },
               ].map(row => (
                 <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -224,8 +226,8 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
             <div style={{ height: '1px', background: 'var(--border)', margin: '0 0 14px 0' }} />
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '20px' }}>
-              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--text-1)', fontSize: '1.05rem' }}>Total</span>
-              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--gold)', fontSize: '1.35rem' }}>{formatMoney(Math.round(total * 100), currency, locale)}</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--text-1)', fontSize: '1.05rem' }}>{t('cart.total')}</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--gold)', fontSize: '1.35rem' }}>{formatMajorAmount(total , currency, locale)}</span>
             </div>
 
             <button

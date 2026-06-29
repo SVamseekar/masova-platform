@@ -1,11 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import AssignDriverModal from '../../components/modals/AssignDriverModal';
 import AppHeader from '../../components/common/AppHeader';
 import OrderForm from '../../components/forms/OrderForm';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { setSelectedStore, selectSelectedStoreId, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import { setSelectedStore, setStoreCurrency, selectSelectedStoreId, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { useGetActiveStoresQuery } from '../../store/api/storeApi';
+import { storeCurrencyPayload } from '../../utils/storeCurrency';
+import { formatOrderAmount } from '../../utils/orderMoney';
 import { useSmartBackNavigation } from '../../hooks/useSmartBackNavigation';
 import { usePageStore } from '../../hooks/usePageStore';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
@@ -34,25 +37,29 @@ const AGGREGATOR_BADGE: Record<string, { label: string; bg: string; color: strin
 
 // eslint-disable-next-line react-refresh/only-export-components -- page component with HOC export
 const OrderManagementPage: React.FC = () => {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const currentUser = useAppSelector(selectCurrentUser);
   const reduxSelectedStoreId = useAppSelector(selectSelectedStoreId);
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmtMoney = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmtOrder = (amount: number, order: Order) =>
+    formatOrderAmount(amount, order, currency, locale);
   const { selectedStoreId } = usePageStore();
   const { handleBack } = useSmartBackNavigation();
   const [isStoreInitialized, setIsStoreInitialized] = useState(false);
+  const { data: stores = [] } = useGetActiveStoresQuery();
 
   // Initialize Redux store selection IMMEDIATELY if not set (for API headers)
   // This must happen BEFORE any API calls are made
   useEffect(() => {
     if (!reduxSelectedStoreId && currentUser?.storeId) {
-      // Set user's assigned store as default in Redux for API headers
+      const match = stores.find((s) => s.storeCode === currentUser.storeId || s.id === currentUser.storeId);
       dispatch(setSelectedStore({
         storeId: currentUser.storeId,
-        storeName: currentUser.storeId // Use storeId as storeName for now
+        storeName: match?.name ?? currentUser.storeId,
       }));
+      dispatch(setStoreCurrency(storeCurrencyPayload(match)));
       setIsStoreInitialized(true);
     } else if (reduxSelectedStoreId) {
       // Redux store already has a selected store
@@ -63,7 +70,7 @@ const OrderManagementPage: React.FC = () => {
       // Mark as initialized so component can render, but skip will prevent API call
       setIsStoreInitialized(true);
     }
-  }, [reduxSelectedStoreId, currentUser, dispatch]);
+  }, [reduxSelectedStoreId, currentUser, dispatch, stores]);
 
   // Use selected store or fallback to user's store
   const storeId = selectedStoreId || currentUser?.storeId || '';
@@ -255,7 +262,7 @@ const OrderManagementPage: React.FC = () => {
         {
           label: 'Total Amount',
           field: 'total',
-          format: (value) => fmtMoney(Number(value)),
+          format: (value, row) => fmtOrder(Number(value), row as Order),
         },
         {
           label: 'Payment Status',
@@ -781,7 +788,7 @@ const OrderManagementPage: React.FC = () => {
       {/* Statistics */}
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-label">Total Orders</div>
+          <div className="stat-label">{t('staff.total_orders')}</div>
           <div className="stat-value">{stats.total}</div>
         </div>
         <div className="stat-card">
@@ -797,7 +804,7 @@ const OrderManagementPage: React.FC = () => {
           <div className="stat-value">{stats.cancelled}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Total Revenue</div>
+          <div className="stat-label">{t('staff.total_revenue')}</div>
           <div className="stat-value">{formatCurrency(stats.revenue)}</div>
         </div>
       </div>
@@ -916,7 +923,7 @@ const OrderManagementPage: React.FC = () => {
                     </div>
                   )}
                   <div className="info-item">
-                    <div className="info-label">Total</div>
+                    <div className="info-label">{t('cart.total')}</div>
                     <div className="info-value" style={{ color: '#e53e3e', fontSize: '16px' }}>
                       {formatCurrency(order.total)}
                     </div>
@@ -1152,7 +1159,7 @@ const OrderManagementPage: React.FC = () => {
                         {item.variant && <span style={{ fontSize: typography.fontSize.xs, color: colors.text.tertiary, marginLeft: spacing[2] }}>({item.variant})</span>}
                       </div>
                       <div style={{ fontWeight: typography.fontWeight.bold, color: colors.brand.primary }}>
-                        {fmtMoney(item.price * item.quantity)}
+                        {fmtOrder(item.price * item.quantity, selectedOrder)}
                       </div>
                     </div>
                     {item.customizations && item.customizations.length > 0 && (
@@ -1168,22 +1175,22 @@ const OrderManagementPage: React.FC = () => {
             {/* Order Total */}
             <div style={{ borderTop: `2px solid ${colors.surface.border}`, paddingTop: spacing[4], marginBottom: spacing[4] }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[2] }}>
-                <span style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>Subtotal:</span>
-                <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold }}>{fmtMoney(selectedOrder.subtotal || 0)}</span>
+                <span style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>{t('cart.subtotal')}:</span>
+                <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold }}>{fmtOrder(selectedOrder.subtotal || 0, selectedOrder)}</span>
               </div>
               {selectedOrder.deliveryFee > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[2] }}>
-                  <span style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>Delivery Fee:</span>
-                  <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold }}>{fmtMoney(selectedOrder.deliveryFee)}</span>
+                  <span style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>{t('cart.delivery_fee')}:</span>
+                  <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold }}>{fmtOrder(selectedOrder.deliveryFee, selectedOrder)}</span>
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[2] }}>
-                <span style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>Tax:</span>
-                <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold }}>{fmtMoney(selectedOrder.tax || 0)}</span>
+                <span style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>{t('staff.tax')}:</span>
+                <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold }}>{fmtOrder(selectedOrder.tax || 0, selectedOrder)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: spacing[3], borderTop: `1px solid ${colors.surface.border}` }}>
-                <span style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold }}>Total:</span>
-                <span style={{ fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.extrabold, color: colors.brand.primary }}>{fmtMoney(selectedOrder.total)}</span>
+                <span style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold }}>{t('cart.total')}:</span>
+                <span style={{ fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.extrabold, color: colors.brand.primary }}>{fmtOrder(selectedOrder.total, selectedOrder)}</span>
               </div>
             </div>
 

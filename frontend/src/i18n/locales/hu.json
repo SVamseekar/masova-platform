@@ -4,7 +4,19 @@
     "subtotal": "Részösszeg",
     "total": "Összesen",
     "empty": "A kosár üres",
-    "checkout": "Pénztár"
+    "checkout": "Pénztár",
+    "your_order": "Rendelésed",
+    "clear_all": "Összes törlése",
+    "browse_menu": "Menü böngészése",
+    "empty_hint": "Adj hozzá finom ételeket a menüből",
+    "order_summary": "Rendelés összesítő",
+    "reservation_notice": "Tételek 15 percre lefoglalva",
+    "proceed_to_payment": "Tovább a fizetéshez",
+    "continue_shopping": "Vásárlás folytatása",
+    "qty_label": "Menny.:",
+    "each": "{{price}} / db",
+    "subtotal_with_count": "Részösszeg ({{count}} tétel)",
+    "subtotal_with_count_one": "Részösszeg ({{count}} tétel)"
   },
   "order": {
     "status": {
@@ -22,7 +34,20 @@
       "DINE_IN": "Helyben fogyasztás",
       "TAKEAWAY": "Elvitel",
       "DELIVERY": "Házhozszállítás"
-    }
+    },
+    "tracking_title": "Rendelés követése",
+    "no_orders": "Nincs rendelés"
+  },
+  "staff": {
+    "total_orders": "Összes rendelés",
+    "total_revenue": "Összes bevétel",
+    "total_amount": "Végösszeg",
+    "tax": "Adó",
+    "pickup": "Elvitel",
+    "delivery": "Házhozszállítás",
+    "dine_in": "Helyben fogyasztás",
+    "your_order": "Rendelésed",
+    "new_order": "Új rendelés"
   },
   "common": {
     "save": "Mentés",
@@ -31,5 +56,20 @@
     "loading": "Betöltés…",
     "error": "Valami hiba történt",
     "no_data": "Nincs elérhető adat"
+  },
+  "checkout": {
+    "order_summary": "Rendelés összesítő",
+    "reservation_notice": "A tételek 15 percre vannak fenntartva",
+    "title": "Pénztár",
+    "back_to_menu": "← Vissza a menühöz",
+    "choose_how": "Válaszd ki, hogyan folytatod"
+  },
+  "payment": {
+    "delivery_fee": "Szállítási díj",
+    "place_order": "Rendelés — {{total}}",
+    "pay_razorpay": "Fizetés {{total}} Razorpay-jal",
+    "pay_stripe": "Fizetés Stripe-pal",
+    "processing": "Feldolgozás...",
+    "secure_payment": "Biztonságos fizetés"
   }
 }

@@ -4,7 +4,19 @@
     "subtotal": "Zwischensumme",
     "total": "Gesamt",
     "empty": "Ihr Warenkorb ist leer",
-    "checkout": "Zur Kasse"
+    "checkout": "Zur Kasse",
+    "your_order": "Ihre Bestellung",
+    "clear_all": "Alles löschen",
+    "browse_menu": "Menü durchsuchen",
+    "empty_hint": "Fügen Sie leckere Gerichte aus unserem Menü hinzu",
+    "order_summary": "Bestellübersicht",
+    "reservation_notice": "Artikel für 15 Minuten reserviert",
+    "proceed_to_payment": "Zur Zahlung",
+    "continue_shopping": "Weiter einkaufen",
+    "qty_label": "Menge:",
+    "each": "{{price}} pro Stück",
+    "subtotal_with_count": "Zwischensumme ({{count}} Artikel)",
+    "subtotal_with_count_one": "Zwischensumme ({{count}} Artikel)"
   },
   "order": {
     "status": {
@@ -22,7 +34,20 @@
       "DINE_IN": "Im Restaurant",
       "TAKEAWAY": "Zum Mitnehmen",
       "DELIVERY": "Lieferung"
-    }
+    },
+    "tracking_title": "Bestellverfolgung",
+    "no_orders": "Keine Bestellungen gefunden"
+  },
+  "staff": {
+    "total_orders": "Bestellungen gesamt",
+    "total_revenue": "Umsatz gesamt",
+    "total_amount": "Gesamtbetrag",
+    "tax": "Steuer",
+    "pickup": "Abholung",
+    "delivery": "Lieferung",
+    "dine_in": "Im Restaurant",
+    "your_order": "Ihre Bestellung",
+    "new_order": "Neue Bestellung"
   },
   "common": {
     "save": "Speichern",
@@ -31,5 +56,20 @@
     "loading": "Lädt…",
     "error": "Etwas ist schiefgelaufen",
     "no_data": "Keine Daten verfügbar"
+  },
+  "checkout": {
+    "order_summary": "Bestellübersicht",
+    "reservation_notice": "Artikel für 15 Minuten reserviert",
+    "title": "Kasse",
+    "back_to_menu": "← Zurück zum Menü",
+    "choose_how": "Wählen Sie, wie Sie fortfahren möchten"
+  },
+  "payment": {
+    "delivery_fee": "Liefergebühr",
+    "place_order": "Bestellen — {{total}}",
+    "pay_razorpay": "{{total}} via Razorpay bezahlen",
+    "pay_stripe": "Mit Stripe bezahlen",
+    "processing": "Wird verarbeitet...",
+    "secure_payment": "Sichere Zahlung"
   }
 }

@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAppSelector } from '../../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../../store/slices/cartSlice';
-import { formatMoney } from '../../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../../utils/currency';
 import {
   useGetTodaySalesMetricsQuery,
   useGetAverageOrderValueQuery,
@@ -29,7 +29,7 @@ interface MetricsTilesProps {
 const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
   // Fetch real-time metrics from analytics service
   const {
     data: salesMetrics,

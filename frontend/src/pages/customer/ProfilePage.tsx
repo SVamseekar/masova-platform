@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../utils/currency';
 import {
   useGetCustomerByUserIdQuery,
   useCreateCustomerMutation,
@@ -425,8 +425,8 @@ const ProfilePage: React.FC = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
           {[
             { label: 'Total Orders', value: customer.orderStats.totalOrders, format: (v: number) => v.toString() },
-            { label: 'Total Spent', value: customer.orderStats.totalSpent, format: (v: number) => formatMoney(Math.round(v * 100), currency, locale) },
-            { label: 'Avg Order', value: customer.orderStats.averageOrderValue, format: (v: number) => formatMoney(Math.round(v * 100), currency, locale) },
+            { label: 'Total Spent', value: customer.orderStats.totalSpent, format: (v: number) => formatMajorAmount(v , currency, locale) },
+            { label: 'Avg Order', value: customer.orderStats.averageOrderValue, format: (v: number) => formatMajorAmount(v , currency, locale) },
           ].map((stat) => (
             <div key={stat.label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '18px 16px' }}>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', fontWeight: 700, color: 'var(--gold)', marginBottom: 4, letterSpacing: '-0.02em' }}>{stat.format(stat.value)}</div>

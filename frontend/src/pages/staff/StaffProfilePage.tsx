@@ -52,7 +52,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../store/store';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../utils/currency';
 import { useGetStaffProfileQuery, useUpdateStaffProfileMutation } from '../../store/api/userApi';
 import { useGetEmployeeSessionsQuery } from '../../store/api/sessionApi';
 import { useGetEmployeeShiftsQuery } from '../../store/api/shiftApi';
@@ -65,7 +65,7 @@ const StaffProfilePage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
 
   // Determine if viewing own profile or someone else's
   const isOwnProfile = !staffId || staffId === user?.id;

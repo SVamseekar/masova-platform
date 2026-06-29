@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../store/slices/cartSlice';
-import { formatMoney } from '../utils/currency';
+import {formatMoney, formatMajorAmount} from '../utils/currency';
 import type { OrderStatus } from '../types/order';
 
 // TypeScript interfaces
@@ -42,7 +42,7 @@ const DashboardPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
   const [currentDate] = useState(new Date().toLocaleDateString('en-IN'));
 
   const handleLogout = () => {

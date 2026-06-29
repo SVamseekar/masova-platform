@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { formatINR, formatMoney } from './currency';
+import {
+  formatINR,
+  formatMoney,
+  formatMajorAmount,
+  formatApiPrice,
+  apiPriceToCartMajor,
+  cartMajorToMinorUnits,
+  usesMinorSubdivision,
+} from './currency';
 
 describe('formatINR', () => {
   it('formats a positive integer correctly', () => {
@@ -72,5 +80,32 @@ describe('formatMoney', () => {
   it('formats 0 minor units as zero amount', () => {
     const result = formatMoney(0, 'EUR', 'en-IE');
     expect(result).toMatch(/0/);
+  });
+});
+
+describe('currency conversion helpers', () => {
+  it('usesMinorSubdivision distinguishes EUR and HUF', () => {
+    expect(usesMinorSubdivision('EUR')).toBe(true);
+    expect(usesMinorSubdivision('HUF')).toBe(false);
+  });
+
+  it('apiPriceToCartMajor divides EUR cents, keeps HUF face value', () => {
+    expect(apiPriceToCartMajor(1999, 'EUR')).toBeCloseTo(19.99);
+    expect(apiPriceToCartMajor(2000, 'HUF')).toBe(2000);
+  });
+
+  it('cartMajorToMinorUnits inverts for EUR and HUF', () => {
+    expect(cartMajorToMinorUnits(19.99, 'EUR')).toBe(1999);
+    expect(cartMajorToMinorUnits(2000, 'HUF')).toBe(2000);
+  });
+
+  it('formatMajorAmount formats cart major units', () => {
+    expect(formatMajorAmount(299, 'INR', 'en-IN')).toMatch(/299/);
+    expect(formatMajorAmount(19.99, 'EUR', 'en-IE')).toMatch(/19[,.]99/);
+  });
+
+  it('formatApiPrice formats menu API storage units', () => {
+    expect(formatApiPrice(29900, 'INR', 'en-IN')).toMatch(/299/);
+    expect(formatApiPrice(2000, 'HUF', 'hu-HU')).toMatch(/2[\s,.]?000|2000/);
   });
 });

@@ -4,7 +4,7 @@ import { Button } from '../ui/neumorphic';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../utils/currency';
 import { useRecordWasteMutation, useGetAllInventoryItemsQuery, type WasteRecord } from '../../store/api/inventoryApi';
 import { colors, spacing, typography } from '../../styles/design-tokens';
 
@@ -187,7 +187,7 @@ const RecordWasteDialog: React.FC<RecordWasteDialogProps> = ({ open, onClose, st
               fontSize: typography.fontSize.sm,
             }}
           >
-            <strong>Estimated Waste Cost:</strong> {formatMoney(Math.round(estimatedCost * 100), currency, locale)}
+            <strong>Estimated Waste Cost:</strong> {formatMajorAmount(estimatedCost , currency, locale)}
           </div>
         )}
       </DialogContent>

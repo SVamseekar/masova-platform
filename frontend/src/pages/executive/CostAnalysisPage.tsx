@@ -7,7 +7,7 @@ import axios from 'axios';
 import API_CONFIG from '../../config/api.config';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMoney } from '../../utils/currency';
+import {formatMoney, formatMajorAmount} from '../../utils/currency';
 
 interface CostAnalysis {
   period: string;
@@ -87,7 +87,7 @@ const CostAnalysisPage: React.FC = () => {
     fetchCostAnalysis();
   }, [fetchCostAnalysis]);
 
-  const formatCurrency = (value: number): string => formatMoney(Math.round(value * 100), currency, locale);
+  const formatCurrency = (value: number): string => formatMajorAmount(value , currency, locale);
 
   const getTrendIcon = (trend: string) => {
     return trend === 'UP' ? (
