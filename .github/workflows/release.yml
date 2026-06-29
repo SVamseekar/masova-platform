@@ -88,7 +88,7 @@ jobs:
             ${{ env.DOCKER_IMAGE }}:latest
 
       - name: Set up Node for frontend build
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: 'npm'
