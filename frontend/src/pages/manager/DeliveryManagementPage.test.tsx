@@ -2,29 +2,37 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderAsManager, screen } from '@/test/utils/testUtils';
 import DeliveryManagementPage from './DeliveryManagementPage';
 
-vi.mock('@/store/api/deliveryApi', () => ({
-  useGetDeliveryMetricsQuery: vi.fn().mockReturnValue({ data: { totalDeliveries: 150, activeDeliveries: 8, completedDeliveries: 135, averageDeliveryTime: 28.5, onTimeDeliveryRate: 0.92 }, isLoading: false }),
-  useGetTodayMetricsQuery: vi.fn().mockReturnValue({ data: { totalDeliveries: 25, averageTime: 30 }, isLoading: false }),
-  useAutoDispatchMutation: vi.fn().mockReturnValue([vi.fn(), { isLoading: false }]),
-  useTrackOrderQuery: vi.fn().mockReturnValue({ data: null }),
-  useGetAvailableDriversQuery: vi.fn().mockReturnValue({ data: [], isLoading: false }),
-  useListDeliveryZonesQuery: vi.fn().mockReturnValue({ data: [] }),
-  useGetDriverPerformanceQuery: vi.fn().mockReturnValue({ data: null }),
-  useGetDriverStatusQuery: vi.fn().mockReturnValue({ data: null }),
-  useAcceptDeliveryMutation: vi.fn().mockReturnValue([vi.fn()]),
-  useRejectDeliveryMutation: vi.fn().mockReturnValue([vi.fn()]),
-}));
+vi.mock('@/store/api/deliveryApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/store/api/deliveryApi')>();
+  return {
+    ...actual,
+    useGetDeliveryMetricsQuery: vi.fn().mockReturnValue({ data: { totalDeliveries: 150, activeDeliveries: 8, completedDeliveries: 135, averageDeliveryTime: 28.5, onTimeDeliveryRate: 0.92 }, isLoading: false }),
+    useGetTodayMetricsQuery: vi.fn().mockReturnValue({ data: { totalDeliveries: 25, averageTime: 30 }, isLoading: false }),
+    useAutoDispatchMutation: vi.fn().mockReturnValue([vi.fn(), { isLoading: false }]),
+    useTrackOrderQuery: vi.fn().mockReturnValue({ data: null }),
+    useGetAvailableDriversQuery: vi.fn().mockReturnValue({ data: [], isLoading: false }),
+    useListDeliveryZonesQuery: vi.fn().mockReturnValue({ data: [] }),
+    useGetDriverPerformanceQuery: vi.fn().mockReturnValue({ data: null }),
+    useGetDriverStatusQuery: vi.fn().mockReturnValue({ data: null }),
+    useAcceptDeliveryMutation: vi.fn().mockReturnValue([vi.fn()]),
+    useRejectDeliveryMutation: vi.fn().mockReturnValue([vi.fn()]),
+  };
+});
 
-vi.mock('@/store/api/orderApi', () => ({
-  useGetStoreOrdersQuery: vi.fn().mockReturnValue({
-    data: [
-      { id: 'o1', orderNumber: 'ORD-001', status: 'DISPATCHED', orderType: 'DELIVERY', customerName: 'Test', items: [], total: 100, createdAt: '2026-02-15T10:00:00Z', updatedAt: '2026-02-15T10:00:00Z', priority: 'NORMAL', storeId: 'store-1' },
-    ],
-    isLoading: false,
-  }),
-}));
+vi.mock('@/store/api/orderApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/store/api/orderApi')>();
+  return {
+    ...actual,
+    useGetStoreOrdersQuery: vi.fn().mockReturnValue({
+      data: [
+        { id: 'o1', orderNumber: 'ORD-001', status: 'DISPATCHED', orderType: 'DELIVERY', customerName: 'Test', items: [], total: 100, createdAt: '2026-02-15T10:00:00Z', updatedAt: '2026-02-15T10:00:00Z', priority: 'NORMAL', storeId: 'store-1' },
+      ],
+      isLoading: false,
+    }),
+  };
+});
 
-vi.mock('@/contexts/PageStoreContext', () => ({
+vi.mock('@/hooks/usePageStore', () => ({
   usePageStore: vi.fn().mockReturnValue({ selectedStoreId: 'store-1', setSelectedStoreId: vi.fn() }),
 }));
 

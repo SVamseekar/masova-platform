@@ -2,21 +2,27 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderAsManager, screen } from '@/test/utils/testUtils';
 import InventoryDashboardPage from './InventoryDashboardPage';
 
-const mockItems = [
-  { id: 'inv-1', itemCode: 'RM-001', itemName: 'Flour', category: 'RAW_MATERIAL', currentStock: 50, reservedStock: 5, minimumStock: 10, unitCost: 45, unit: 'kg', status: 'AVAILABLE', isPerishable: false, quantity: 50, reorderLevel: 10 },
-  { id: 'inv-2', itemCode: 'RM-002', itemName: 'Tomatoes', category: 'INGREDIENT', currentStock: 3, reservedStock: 0, minimumStock: 10, unitCost: 30, unit: 'kg', status: 'LOW_STOCK', isPerishable: true, quantity: 3, reorderLevel: 10 },
-];
-
-vi.mock('@/store/api/inventoryApi', () => ({
-  useGetAllInventoryItemsQuery: vi.fn().mockReturnValue({ data: mockItems, isLoading: false, refetch: vi.fn() }),
-  useGetLowStockAlertsQuery: vi.fn().mockReturnValue({ data: [mockItems[1]], refetch: vi.fn() }),
-  useGetOutOfStockItemsQuery: vi.fn().mockReturnValue({ data: [], refetch: vi.fn() }),
-  useGetExpiringItemsQuery: vi.fn().mockReturnValue({ data: [], refetch: vi.fn() }),
-  useGetTotalInventoryValueQuery: vi.fn().mockReturnValue({ data: { totalValue: 125000 }, refetch: vi.fn() }),
-  useDeleteInventoryItemMutation: vi.fn().mockReturnValue([vi.fn()]),
+const { mockItems } = vi.hoisted(() => ({
+  mockItems: [
+    { id: 'inv-1', itemCode: 'RM-001', itemName: 'Flour', category: 'RAW_MATERIAL', currentStock: 50, reservedStock: 5, minimumStock: 10, unitCost: 45, unit: 'kg', status: 'AVAILABLE', isPerishable: false, quantity: 50, reorderLevel: 10 },
+    { id: 'inv-2', itemCode: 'RM-002', itemName: 'Tomatoes', category: 'INGREDIENT', currentStock: 3, reservedStock: 0, minimumStock: 10, unitCost: 30, unit: 'kg', status: 'LOW_STOCK', isPerishable: true, quantity: 3, reorderLevel: 10 },
+  ],
 }));
 
-vi.mock('@/contexts/PageStoreContext', () => ({
+vi.mock('@/store/api/inventoryApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/store/api/inventoryApi')>();
+  return {
+    ...actual,
+    useGetAllInventoryItemsQuery: vi.fn().mockReturnValue({ data: mockItems, isLoading: false, refetch: vi.fn() }),
+    useGetLowStockAlertsQuery: vi.fn().mockReturnValue({ data: [mockItems[1]], refetch: vi.fn() }),
+    useGetOutOfStockItemsQuery: vi.fn().mockReturnValue({ data: [], refetch: vi.fn() }),
+    useGetExpiringItemsQuery: vi.fn().mockReturnValue({ data: [], refetch: vi.fn() }),
+    useGetTotalInventoryValueQuery: vi.fn().mockReturnValue({ data: { totalValue: 125000 }, refetch: vi.fn() }),
+    useDeleteInventoryItemMutation: vi.fn().mockReturnValue([vi.fn()]),
+  };
+});
+
+vi.mock('@/hooks/usePageStore', () => ({
   usePageStore: vi.fn().mockReturnValue({ selectedStoreId: 'store-1', setSelectedStoreId: vi.fn() }),
 }));
 

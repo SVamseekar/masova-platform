@@ -3,59 +3,79 @@ import { renderAsManager, screen } from '@/test/utils/testUtils';
 import DashboardPage from './DashboardPage';
 
 // Mock all RTK Query hooks used by DashboardPage
-vi.mock('@/store/api/sessionApi', () => ({
-  useGetActiveStoreSessionsQuery: vi.fn().mockReturnValue({
-    data: [
-      { id: 's1', employeeName: 'Alice Smith', role: 'STAFF', isActive: true, loginTime: '2026-02-15T08:00:00Z', breakTime: 15, storeId: 'store-1', status: 'APPROVED' },
-      { id: 's2', employeeName: 'Bob Jones', role: 'DRIVER', isActive: true, loginTime: '2026-02-15T09:00:00Z', breakTime: 0, storeId: 'store-1', status: 'APPROVED' },
-    ],
-    isLoading: false,
-    error: null,
-    refetch: vi.fn(),
-  }),
-  useApproveSessionMutation: vi.fn().mockReturnValue([vi.fn(), { isLoading: false }]),
-  useRejectSessionMutation: vi.fn().mockReturnValue([vi.fn(), { isLoading: false }]),
-}));
+vi.mock('@/store/api/sessionApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/store/api/sessionApi')>();
+  return {
+    ...actual,
+    useGetActiveStoreSessionsQuery: vi.fn().mockReturnValue({
+      data: [
+        { id: 's1', employeeName: 'Alice Smith', role: 'STAFF', isActive: true, loginTime: '2026-02-15T08:00:00Z', breakTime: 15, storeId: 'store-1', status: 'APPROVED' },
+        { id: 's2', employeeName: 'Bob Jones', role: 'DRIVER', isActive: true, loginTime: '2026-02-15T09:00:00Z', breakTime: 0, storeId: 'store-1', status: 'APPROVED' },
+      ],
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    }),
+    useApproveSessionMutation: vi.fn().mockReturnValue([vi.fn(), { isLoading: false }]),
+    useRejectSessionMutation: vi.fn().mockReturnValue([vi.fn(), { isLoading: false }]),
+  };
+});
 
-vi.mock('@/store/api/storeApi', () => ({
-  useGetStoreMetricsQuery: vi.fn().mockReturnValue({
-    data: { activeEmployees: 5, activeOrders: 12, totalOrders: 150, averageOrderValue: 450 },
-    isLoading: false,
-    refetch: vi.fn(),
-  }),
-}));
+vi.mock('@/store/api/storeApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/store/api/storeApi')>();
+  return {
+    ...actual,
+    useGetStoreMetricsQuery: vi.fn().mockReturnValue({
+      data: { activeEmployees: 5, activeOrders: 12, totalOrders: 150, averageOrderValue: 450 },
+      isLoading: false,
+      refetch: vi.fn(),
+    }),
+  };
+});
 
-vi.mock('@/store/api/orderApi', () => ({
-  useGetStoreOrdersQuery: vi.fn().mockReturnValue({
-    data: [
-      { id: 'o1', orderNumber: 'ORD-001', status: 'PREPARING', items: [{ name: 'Pizza' }], createdAt: '2026-02-15T10:00:00Z', customerName: 'Test Customer', priority: 'NORMAL' },
-      { id: 'o2', orderNumber: 'ORD-002', status: 'DISPATCHED', items: [{ name: 'Burger' }], createdAt: '2026-02-15T10:05:00Z', customerName: 'Jane Doe', priority: 'URGENT' },
-    ],
-    isLoading: false,
-    refetch: vi.fn(),
-  }),
-}));
+vi.mock('@/store/api/orderApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/store/api/orderApi')>();
+  return {
+    ...actual,
+    useGetStoreOrdersQuery: vi.fn().mockReturnValue({
+      data: [
+        { id: 'o1', orderNumber: 'ORD-001', status: 'PREPARING', items: [{ name: 'Pizza' }], createdAt: '2026-02-15T10:00:00Z', customerName: 'Test Customer', priority: 'NORMAL' },
+        { id: 'o2', orderNumber: 'ORD-002', status: 'DISPATCHED', items: [{ name: 'Burger' }], createdAt: '2026-02-15T10:05:00Z', customerName: 'Jane Doe', priority: 'URGENT' },
+      ],
+      isLoading: false,
+      refetch: vi.fn(),
+    }),
+  };
+});
 
-vi.mock('@/store/api/shiftApi', () => ({
-  useCheckWeeklyScheduleExistsQuery: vi.fn().mockReturnValue({ data: null }),
-}));
+vi.mock('@/store/api/shiftApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/store/api/shiftApi')>();
+  return {
+    ...actual,
+    useCheckWeeklyScheduleExistsQuery: vi.fn().mockReturnValue({ data: null }),
+  };
+});
 
-vi.mock('@/store/api/analyticsApi', () => ({
-  useGetTodaySalesMetricsQuery: vi.fn().mockReturnValue({ data: { todaySales: 25000, lastYearSameDaySales: 20000, percentChangeFromLastYear: 25, yesterdaySalesAtSameTime: 22000 }, isLoading: false }),
-  useGetAverageOrderValueQuery: vi.fn().mockReturnValue({ data: { averageOrderValue: 450 } }),
-  useGetDriverStatusQuery: vi.fn().mockReturnValue({ data: {} }),
-  useGetSalesTrendsQuery: vi.fn().mockReturnValue({ data: { totalSales: 175000 } }),
-  useGetOrderTypeBreakdownQuery: vi.fn().mockReturnValue({ data: {} }),
-  useGetPeakHoursQuery: vi.fn().mockReturnValue({ data: {} }),
-  useGetStaffLeaderboardQuery: vi.fn().mockReturnValue({ data: null }),
-  useGetTopProductsQuery: vi.fn().mockReturnValue({ data: null }),
-  useGetSalesForecastQuery: vi.fn().mockReturnValue({ data: null }),
-  useGetChurnPredictionQuery: vi.fn().mockReturnValue({ data: null }),
-  useGetExecutiveSummaryQuery: vi.fn().mockReturnValue({ data: null }),
-  useGetCustomerBehaviorAnalysisQuery: vi.fn().mockReturnValue({ data: null }),
-  useGetDemandForecastQuery: vi.fn().mockReturnValue({ data: null }),
-  useGetCostAnalysisQuery: vi.fn().mockReturnValue({ data: null }),
-}));
+vi.mock('@/store/api/analyticsApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/store/api/analyticsApi')>();
+  return {
+    ...actual,
+    useGetTodaySalesMetricsQuery: vi.fn().mockReturnValue({ data: { todaySales: 25000, lastYearSameDaySales: 20000, percentChangeFromLastYear: 25, yesterdaySalesAtSameTime: 22000 }, isLoading: false }),
+    useGetAverageOrderValueQuery: vi.fn().mockReturnValue({ data: { averageOrderValue: 450 } }),
+    useGetDriverStatusQuery: vi.fn().mockReturnValue({ data: {} }),
+    useGetSalesTrendsQuery: vi.fn().mockReturnValue({ data: { totalSales: 175000 } }),
+    useGetOrderTypeBreakdownQuery: vi.fn().mockReturnValue({ data: {} }),
+    useGetPeakHoursQuery: vi.fn().mockReturnValue({ data: {} }),
+    useGetStaffLeaderboardQuery: vi.fn().mockReturnValue({ data: null }),
+    useGetTopProductsQuery: vi.fn().mockReturnValue({ data: null }),
+    useGetSalesForecastQuery: vi.fn().mockReturnValue({ data: null }),
+    useGetChurnPredictionQuery: vi.fn().mockReturnValue({ data: null }),
+    useGetExecutiveSummaryQuery: vi.fn().mockReturnValue({ data: null }),
+    useGetCustomerBehaviorAnalysisQuery: vi.fn().mockReturnValue({ data: null }),
+    useGetDemandForecastQuery: vi.fn().mockReturnValue({ data: null }),
+    useGetCostAnalysisQuery: vi.fn().mockReturnValue({ data: null }),
+  };
+});
 
 vi.mock('@/services/pushNotificationService', () => ({
   pushNotificationService: {
@@ -65,7 +85,7 @@ vi.mock('@/services/pushNotificationService', () => ({
   },
 }));
 
-vi.mock('@/contexts/PageStoreContext', () => ({
+vi.mock('@/hooks/usePageStore', () => ({
   usePageStore: vi.fn().mockReturnValue({ selectedStoreId: 'store-1', setSelectedStoreId: vi.fn() }),
 }));
 

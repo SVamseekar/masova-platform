@@ -2,28 +2,38 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderAsManager, screen, userEvent } from '@/test/utils/testUtils';
 import StaffManagementPage from './StaffManagementPage';
 
-const mockEmployees = [
-  { id: 'e1', name: 'Alice Kitchen', email: 'alice@test.com', phone: '555-0001', type: 'STAFF', isActive: true, role: 'Chef', storeId: 'store-1' },
-  { id: 'e2', name: 'Bob Driver', email: 'bob@test.com', phone: '555-0002', type: 'DRIVER', isActive: true, role: 'Delivery', storeId: 'store-1' },
-  { id: 'e3', name: 'Carol Inactive', email: 'carol@test.com', phone: '555-0003', type: 'STAFF', isActive: false, role: 'Server', storeId: 'store-1' },
-];
-
-vi.mock('@/store/api/userApi', () => ({
-  useGetStoreEmployeesQuery: vi.fn().mockReturnValue({ data: mockEmployees, isLoading: false }),
-  useCreateUserMutation: vi.fn().mockReturnValue([vi.fn(), { isLoading: false }]),
-  useUpdateUserMutation: vi.fn().mockReturnValue([vi.fn()]),
-  useActivateUserMutation: vi.fn().mockReturnValue([vi.fn()]),
-  useDeactivateUserMutation: vi.fn().mockReturnValue([vi.fn()]),
+const { mockEmployees } = vi.hoisted(() => ({
+  mockEmployees: [
+    { id: 'e1', name: 'Alice Kitchen', email: 'alice@test.com', phone: '555-0001', type: 'STAFF', isActive: true, role: 'Chef', storeId: 'store-1' },
+    { id: 'e2', name: 'Bob Driver', email: 'bob@test.com', phone: '555-0002', type: 'DRIVER', isActive: true, role: 'Delivery', storeId: 'store-1' },
+    { id: 'e3', name: 'Carol Inactive', email: 'carol@test.com', phone: '555-0003', type: 'STAFF', isActive: false, role: 'Server', storeId: 'store-1' },
+  ],
 }));
 
-vi.mock('@/store/api/sessionApi', () => ({
-  useGetActiveStoreSessionsQuery: vi.fn().mockReturnValue({ data: [], isLoading: false }),
-  useGetStoreSessionsQuery: vi.fn().mockReturnValue({ data: [], isLoading: false, refetch: vi.fn() }),
-  useGetEmployeeSessionReportQuery: vi.fn().mockReturnValue({ data: null }),
-  useGetEmployeeSessionStatusQuery: vi.fn().mockReturnValue({ data: null }),
-}));
+vi.mock('@/store/api/userApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/store/api/userApi')>();
+  return {
+    ...actual,
+    useGetStoreEmployeesQuery: vi.fn().mockReturnValue({ data: mockEmployees, isLoading: false }),
+    useCreateUserMutation: vi.fn().mockReturnValue([vi.fn(), { isLoading: false }]),
+    useUpdateUserMutation: vi.fn().mockReturnValue([vi.fn()]),
+    useActivateUserMutation: vi.fn().mockReturnValue([vi.fn()]),
+    useDeactivateUserMutation: vi.fn().mockReturnValue([vi.fn()]),
+  };
+});
 
-vi.mock('@/contexts/PageStoreContext', () => ({
+vi.mock('@/store/api/sessionApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/store/api/sessionApi')>();
+  return {
+    ...actual,
+    useGetActiveStoreSessionsQuery: vi.fn().mockReturnValue({ data: [], isLoading: false }),
+    useGetStoreSessionsQuery: vi.fn().mockReturnValue({ data: [], isLoading: false, refetch: vi.fn() }),
+    useGetEmployeeSessionReportQuery: vi.fn().mockReturnValue({ data: null }),
+    useGetEmployeeSessionStatusQuery: vi.fn().mockReturnValue({ data: null }),
+  };
+});
+
+vi.mock('@/hooks/usePageStore', () => ({
   usePageStore: vi.fn().mockReturnValue({ selectedStoreId: 'store-1', setSelectedStoreId: vi.fn() }),
 }));
 
