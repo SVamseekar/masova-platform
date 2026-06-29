@@ -16,13 +16,13 @@ export const colors = {
   goldBorder: 'rgba(212,175,55,0.3)',
   goldBorderStrong: 'rgba(212,175,55,0.5)',
 
-  // Muted terracotta — still reads as red, easier on dark backgrounds than bright coral
-  red: '#B86558',
-  redDark: '#8F4F45',
-  redLight: '#D08078',
-  redMuted: 'rgba(184, 101, 88, 0.12)',
-  redBorder: 'rgba(184, 101, 88, 0.28)',
-  redBorderStrong: 'rgba(184, 101, 88, 0.42)',
+  // Apple Music–style rose-red: vivid, clean, premium (not orange-coral, not muddy)
+  red: '#FA2D48',
+  redDark: '#D41E3A',
+  redLight: '#FF5C72',
+  redMuted: 'rgba(250, 45, 72, 0.14)',
+  redBorder: 'rgba(250, 45, 72, 0.32)',
+  redBorderStrong: 'rgba(250, 45, 72, 0.5)',
 
   // Text
   textPrimary: '#FFFFFF',

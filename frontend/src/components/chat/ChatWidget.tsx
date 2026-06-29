@@ -196,7 +196,7 @@ export const ChatWidget: React.FC = () => {
   const panelBottom = isProductSite ? 100 : 88
   const panelRight = isProductSite ? 32 : 24
 
-  const headerGradient = `linear-gradient(135deg, ${theme.accent} 0%, ${theme.accentDark} 55%, #0a0a0a 100%)`
+  const headerGradient = `linear-gradient(180deg, ${theme.accent} 0%, ${theme.accentDark} 100%)`
 
   return (
     <>

@@ -28,12 +28,12 @@ export interface ChatTheme {
   panelShadow: string
 }
 
-/** Shared muted terracotta — matches ProductSite tokens */
-const ACCENT = '#B86558'
-const ACCENT_DARK = '#8F4F45'
-const ACCENT_MUTED = 'rgba(184, 101, 88, 0.14)'
-const ACCENT_BORDER = 'rgba(184, 101, 88, 0.3)'
-const ACCENT_SHADOW = 'rgba(184, 101, 88, 0.28)'
+/** Apple Music–style rose-red — matches ProductSite tokens */
+const ACCENT = '#FA2D48'
+const ACCENT_DARK = '#D41E3A'
+const ACCENT_MUTED = 'rgba(250, 45, 72, 0.14)'
+const ACCENT_BORDER = 'rgba(250, 45, 72, 0.32)'
+const ACCENT_SHADOW = 'rgba(250, 45, 72, 0.32)'
 
 const PRODUCT_QUICK_ACTIONS: ChatQuickAction[] = [
   { label: 'How does it work?', message: 'How does MaSoVa work for multi-location restaurants?' },
