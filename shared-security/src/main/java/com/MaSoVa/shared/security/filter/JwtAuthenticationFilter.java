@@ -37,13 +37,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         try {
             String jwt = getJwtFromRequest(request);
-            if ("/api/payments/initiate".equals(request.getRequestURI())) {
-                int authHeaderCount = java.util.Collections.list(request.getHeaders("Authorization")).size();
-                System.err.println("[PACT-DEBUG] " + request.getMethod() + " " + request.getRequestURI()
-                        + " authHeaderCount=" + authHeaderCount
-                        + " hasJwt=" + StringUtils.hasText(jwt)
-                        + " validates=" + (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)));
-            }
 
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt) && !isBlacklisted(jwt)) {
                 String userId = tokenProvider.getUserIdFromToken(jwt);
