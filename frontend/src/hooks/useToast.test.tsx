@@ -14,6 +14,8 @@ vi.mock('notistack', () => ({
 
 vi.mock('../store/hooks', () => ({
   useAppDispatch: () => mockDispatch,
+  useAppSelector: (selector: (state: { cart: { currency: string; locale: string } }) => unknown) =>
+    selector({ cart: { currency: 'INR', locale: 'en-IN' } }),
 }));
 
 vi.mock('../store/slices/notificationSlice', () => ({

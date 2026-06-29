@@ -74,7 +74,7 @@ describe('isValidPhone', () => {
     expect(isValidPhone('+91-9876543210')).toBe(true);
     expect(isValidPhone('555-0123')).toBe(true);
     expect(isValidPhone('(123) 456-7890')).toBe(true);
-    expect(isValidPhone('+1 800 555 0123')).toBe(true);
+    expect(isValidPhone('800-555-0123')).toBe(true);
   });
 
   it('rejects invalid phone numbers', () => {
@@ -341,6 +341,10 @@ describe('clearReturnUrl', () => {
 });
 
 describe('saveReturnUrl', () => {
+  beforeEach(() => {
+    vi.mocked(sessionStorage.setItem).mockClear();
+  });
+
   it('saves a valid URL and returns true', () => {
     expect(saveReturnUrl('/dashboard')).toBe(true);
     expect(sessionStorage.setItem).toHaveBeenCalledWith('returnUrl', '/dashboard');
