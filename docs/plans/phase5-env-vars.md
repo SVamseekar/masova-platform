@@ -80,7 +80,7 @@ Extracted from each service's `src/main/resources/application.yml`.
 | **payment-service** | `MONGODB_URI` | `mongodb://localhost:27017/masova_payment` | MongoDB URI |
 | payment-service | `JWT_SECRET` | *(long dev key)* | JWT signing secret (shared var) |
 | payment-service | `RAZORPAY_KEY_ID` | `rzp_test_RjYYkXMmoArj4C` | Razorpay key ID (test key in default) |
-| payment-service | `RAZORPAY_KEY_SECRET` | `Asbe0hf12kZn0VSX4ykn3Nvq` | Razorpay key secret (test secret in default) |
+| payment-service | `RAZORPAY_KEY_SECRET` | `your-razorpay-test-key-secret-here` | Razorpay key secret (set via env — no default in application.yml) |
 | payment-service | `RAZORPAY_WEBHOOK_SECRET` | `whsec_YOUR_WEBHOOK_SECRET_HERE` | Razorpay webhook HMAC secret |
 | payment-service | `RABBITMQ_HOST` | `localhost` | RabbitMQ host (shared var) |
 | payment-service | `RABBITMQ_PORT` | `5672` | RabbitMQ port (shared var) |
@@ -261,7 +261,7 @@ JWT_SECRET=<256-bit-min key>
 
 # Razorpay — REPLACE test credentials in production
 RAZORPAY_KEY_ID=rzp_test_RjYYkXMmoArj4C
-RAZORPAY_KEY_SECRET=Asbe0hf12kZn0VSX4ykn3Nvq
+RAZORPAY_KEY_SECRET=your-razorpay-test-key-secret-here
 RAZORPAY_WEBHOOK_SECRET=whsec_YOUR_WEBHOOK_SECRET_HERE
 
 # Infrastructure (shared across services)

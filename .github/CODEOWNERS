@@ -1,0 +1,18 @@
+# Default owner for everything not matched below
+*                           @SVamseekar
+
+# Backend services
+core-service/               @SVamseekar
+commerce-service/           @SVamseekar
+payment-service/            @SVamseekar
+logistics-service/          @SVamseekar
+intelligence-service/       @SVamseekar
+api-gateway/                @SVamseekar
+shared-models/              @SVamseekar
+
+# Frontend
+frontend/                   @SVamseekar
+
+# CI/CD and infra
+.github/workflows/          @SVamseekar
+docker-compose.yml          @SVamseekar
