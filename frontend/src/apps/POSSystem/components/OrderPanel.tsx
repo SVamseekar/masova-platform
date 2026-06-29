@@ -1,8 +1,9 @@
 // src/apps/POSSystem/components/OrderPanel.tsx
 import React from 'react';
 import { useAppSelector } from '../../../store/hooks';
-import { selectCartCurrency, selectCartLocale } from '../../../store/slices/cartSlice';
+import { selectCartCurrency, selectCartLocale, selectStoreCountryCode } from '../../../store/slices/cartSlice';
 import { formatMoney } from '../../../utils/currency';
+import { computePreCheckoutTotals, formatTaxDisplay } from '../../../utils/orderTax';
 import Card from '../../../components/ui/neumorphic/Card';
 import Badge from '../../../components/ui/neumorphic/Badge';
 import Button from '../../../components/ui/neumorphic/Button';
@@ -42,15 +43,14 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
 }) => {
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
+  const storeCountryCode = useAppSelector(selectStoreCountryCode);
   const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
-  // Calculate totals - matching customer side logic
   const subtotal = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  const tax = subtotal * 0.05; // 5% GST (estimate; actual calculated by backend)
-  const deliveryFee = orderType === 'DELIVERY' && subtotal > 0 ? 50 : 0; // Estimate; actual fee from backend
-  const total = subtotal + tax + deliveryFee;
+  const deliveryFee = orderType === 'DELIVERY' && subtotal > 0 ? 50 : 0;
+  const { tax, taxLabel, total } = computePreCheckoutTotals(subtotal, deliveryFee, storeCountryCode);
 
   // Collect unique allergens across all order items
   const orderAllergens: AllergenType[] = Array.from(
@@ -369,8 +369,8 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
             fontSize: typography.fontSize.xs,
             color: colors.text.secondary
           }}>
-            <span>Tax (5%):</span>
-            <span style={{ fontWeight: typography.fontWeight.semibold }}>{fmt(tax)}</span>
+            <span>{taxLabel}:</span>
+            <span style={{ fontWeight: typography.fontWeight.semibold }}>{formatTaxDisplay(tax, fmt)}</span>
           </div>
 
           {orderType === 'DELIVERY' && (

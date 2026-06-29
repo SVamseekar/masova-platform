@@ -5,8 +5,9 @@ import { useInitiatePaymentMutation, useVerifyPaymentMutation } from '../../../s
 import { useGetOrCreateCustomerMutation } from '../../../store/api/customerApi';
 import { isValidPhoneNumber } from '../../../config/business-config';
 import { useAppSelector } from '../../../store/hooks';
-import { selectCartCurrency, selectCartLocale } from '../../../store/slices/cartSlice';
+import { selectCartCurrency, selectCartLocale, selectStoreCountryCode } from '../../../store/slices/cartSlice';
 import { formatMoney } from '../../../utils/currency';
+import { computePreCheckoutTotals, formatTaxDisplay } from '../../../utils/orderTax';
 import Card from '../../../components/ui/neumorphic/Card';
 import { colors, shadows, spacing, typography } from '../../../styles/design-tokens';
 import { useGeocoding, buildAddressString } from '../../../hooks/useGeocoding';
@@ -57,6 +58,7 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
 }) => {
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
+  const storeCountryCode = useAppSelector(selectStoreCountryCode);
   const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
@@ -99,9 +101,8 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
   const [getOrCreateCustomer] = useGetOrCreateCustomerMutation();
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const tax = subtotal * 0.05; // 5% tax
   const deliveryFee = orderType === 'DELIVERY' && subtotal > 0 ? 40 : 0;
-  const total = subtotal + tax + deliveryFee;
+  const { tax, taxLabel, total } = computePreCheckoutTotals(subtotal, deliveryFee, storeCountryCode);
 
   // Update payment method when order type changes (PICKUP = CASH default, DELIVERY = CARD)
   React.useEffect(() => {
@@ -324,11 +325,16 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
 
       // For CASH payments, just create the order with PENDING status
       // Staff will mark as paid after collecting cash
+      const orderTotal = typeof result.total === 'number' ? result.total : total;
+      const vatLine = result.totalVatAmount != null
+        ? `\nVAT: ${fmt(result.totalVatAmount)}`
+        : (result.tax != null ? `\nTax: ${fmt(result.tax)}` : '');
+
       if (paymentMethod === 'CASH') {
         alert(
           `Order #${result.orderNumber} created successfully!\n\n` +
           `Payment Method: CASH\n` +
-          `Amount: ${fmt(total)}\n\n` +
+          `Amount: ${fmt(orderTotal)}${vatLine}\n\n` +
           `Remember to collect cash and mark as paid in Order Management!`
         );
         resetForm();
@@ -337,14 +343,14 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
       }
 
       // For online payments (CARD, UPI, WALLET), initiate Razorpay
-      await handleOnlinePayment(result.id, result.orderNumber);
+      await handleOnlinePayment(result.id, result.orderNumber, orderTotal);
     } catch (error: unknown) {
       console.error('Failed to create order:', error);
       alert(`Failed to create order: ${getRtkErrorMessage(error, 'Unknown error')}`);
     }
   };
 
-  const handleOnlinePayment = async (orderId: string, orderNumber: string) => {
+  const handleOnlinePayment = async (orderId: string, orderNumber: string, orderTotal: number) => {
     try {
       // Transform orderType from PICKUP to TAKEAWAY for backend
       const backendOrderType = orderType === 'PICKUP' ? 'TAKEAWAY' : orderType;
@@ -352,7 +358,7 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
       // Initiate payment with Razorpay
       const paymentResponse = await initiatePayment({
         orderId,
-        amount: total,
+        amount: orderTotal,
         customerId: customer?.id || 'walk-in',
         customerEmail: customerEmail || customer?.email || undefined,
         customerPhone: customerPhone || undefined,
@@ -1024,9 +1030,9 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
               fontSize: typography.fontSize.sm,
               color: colors.text.secondary
             }}>
-              <span>Tax (5%):</span>
+              <span>{taxLabel}:</span>
               <span style={{ fontWeight: typography.fontWeight.semibold, color: colors.text.primary }}>
-                {fmt(tax)}
+                {formatTaxDisplay(tax, fmt)}
               </span>
             </div>
 

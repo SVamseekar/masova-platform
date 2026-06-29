@@ -23,6 +23,7 @@ interface CartState {
   selectedStoreName: string | null;
   currency: string;   // ISO 4217 — default 'INR' for India stores
   locale: string;     // BCP 47 — default 'en-IN' for India stores
+  storeCountryCode: string | null; // ISO 3166-1 alpha-2; null = India GST legacy
 }
 
 // Load cart from localStorage
@@ -41,6 +42,7 @@ const loadCartFromStorage = (): CartState => {
         selectedStoreName: savedCart.selectedStoreName || null,
         currency: savedCart.currency || 'INR',
         locale: savedCart.locale || 'en-IN',
+        storeCountryCode: savedCart.storeCountryCode ?? null,
       };
     }
   } catch (e) {
@@ -56,6 +58,7 @@ const loadCartFromStorage = (): CartState => {
     selectedStoreName: null,
     currency: 'INR',
     locale: 'en-IN',
+    storeCountryCode: null,
   };
 };
 
@@ -70,6 +73,7 @@ const saveCartToStorage = (state: CartState) => {
       selectedStoreName: state.selectedStoreName,
       currency: state.currency,
       locale: state.locale,
+      storeCountryCode: state.storeCountryCode,
     }));
   } catch (e) {
     console.error('Failed to save cart to localStorage:', e);
@@ -168,9 +172,12 @@ const cartSlice = createSlice({
       saveCartToStorage(state);
     },
 
-    setStoreCurrency: (state, action: PayloadAction<{ currency: string; locale: string }>) => {
+    setStoreCurrency: (state, action: PayloadAction<{ currency: string; locale: string; countryCode?: string | null }>) => {
       state.currency = action.payload.currency;
       state.locale = action.payload.locale;
+      if (action.payload.countryCode !== undefined) {
+        state.storeCountryCode = action.payload.countryCode;
+      }
       saveCartToStorage(state);
     },
   },
@@ -202,5 +209,6 @@ export const selectCartCurrency = (state: { cart: CartState }) => state.cart.cur
 export const selectCartLocale = (state: { cart: CartState }) => state.cart.locale;
 export const selectSelectedStoreId = (state: { cart: CartState }) => state.cart.selectedStoreId;
 export const selectSelectedStoreName = (state: { cart: CartState }) => state.cart.selectedStoreName;
+export const selectStoreCountryCode = (state: { cart: CartState }) => state.cart.storeCountryCode;
 
 export default cartSlice.reducer;

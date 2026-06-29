@@ -88,6 +88,7 @@ const StoreSelector: React.FC<StoreSelectorProps> = ({ variant: _variant = 'cust
     dispatch(setStoreCurrency({
       currency: store?.currency || 'INR',
       locale: store?.locale || 'en-IN',
+      countryCode: store?.countryCode ?? null,
     }));
 
     if (useLocalStorage && contextKey) {
