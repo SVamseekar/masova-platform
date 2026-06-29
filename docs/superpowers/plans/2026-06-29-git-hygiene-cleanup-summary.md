@@ -72,15 +72,13 @@ See `scripts/rebase-global-features.ps1` / `.sh` after each branch fast-forwards
 | 8 | Branch protection tightening | ⏳ **After safeguards PR merges** — see below |
 | 3.5 | Stash audit | ⏳ Pending manual review |
 
-### Install git hooks (Mac + Dell, once per clone)
+### Install git hooks (Mac — when ready; scripts ship in PR #19)
 
 ```bash
-./scripts/install-git-hooks.sh          # Mac / Git Bash
+./scripts/install-git-hooks.sh
 ```
 
-```powershell
-.\scripts\install-git-hooks.ps1         # Dell PowerShell
-```
+Run once on Mac after PR #19 merges. Not required for git/GitHub hygiene closure.
 
 ### Task 8 — run after safeguards PR merges to `main`
 
@@ -101,29 +99,19 @@ gh api -X PUT repos/SVamseekar/masova-platform/branches/main/protection \
   -F allow_deletions=false
 ```
 
-**Note:** `required_linear_history=true` means future PRs should use **Squash merge** (solo maintainer friendly). Merge commits will be blocked going forward.
+**Merge habit going forward:** Use **Squash merge** on PRs (solo-friendly, pairs with `required_linear_history`). Full PR history stays on GitHub; `main` gets one clean commit per PR. PR #17 used merge commit intentionally to preserve absorbed Plan A/B history — that was a one-time exception.
 
-## Dell dev environment sync — NEW (2026-06-29)
+## Deferred — handle later (not blocking git hygiene or Globals)
 
-**Policy change:** Frontend dev moves from Mac M1 → Dell (`192.168.50.88`). Mac remains valid for mobile apps and AI agent.
+| Item | Notes |
+|---|---|
+| **Dell git hooks** | `install-git-hooks.ps1` — run when you want local secret scan on Dell |
+| **Dell sync scripts** | `sync-dell-dev.ps1` — optional automation beyond `git pull origin main` |
+| **Frontend on Dell policy** | Dev layout change (frontend :3000 on Dell vs Mac) — document in CLAUDE.md when you switch |
+| **Dell Tier 1B** | Testcontainers/docker-java local verify — CI Pact is authoritative until fixed |
+| **Task 3.5 stash audit** | 3 stashes — manual worktree review when convenient |
 
-After every `main` merge (or when switching machines):
-
-```powershell
-# On Dell (PowerShell) — repo: D:\projects\masova-platform — see scripts/sync-dell-dev.ps1
-cd D:\projects\masova-platform
-git fetch origin --prune
-git checkout main
-git pull origin main
-docker compose up -d mongodb redis rabbitmq postgres
-cd frontend && npm ci
-cd ..
-.\scripts\install-git-hooks.ps1
-# Backend: start services per CLAUDE.md
-# Frontend: cd frontend && npm run dev  # :3000
-```
-
-Tier 1B (Testcontainers on Dell) still broken over SSH — use Tier 1A + CI Pact until docker-java is fixed.
+**Dell minimum today:** `cd D:\projects\masova-platform && git pull origin main` after each `main` merge.
 
 ## Known leaked test credential
 
