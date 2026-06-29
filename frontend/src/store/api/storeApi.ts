@@ -71,6 +71,10 @@ export interface CreateStoreRequest {
   areaManagerId?: string;
   operatingConfig: StoreOperatingConfig;
   openingDate?: string;
+  countryCode?: string;
+  vatNumber?: string;
+  currency?: string;
+  locale?: string;
 }
 
 export interface UpdateStoreRequest extends Partial<CreateStoreRequest> {

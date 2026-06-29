@@ -39,6 +39,7 @@ describe('cartSlice', () => {
     selectedStoreName: null,
     currency: 'INR',
     locale: 'en-IN',
+    storeCountryCode: null,
   };
 
   const stateWithItems = {

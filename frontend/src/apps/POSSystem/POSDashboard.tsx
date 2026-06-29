@@ -2,8 +2,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import { selectSelectedStoreId, selectSelectedStoreName, setSelectedStore, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { selectSelectedStoreId, selectSelectedStoreName, setSelectedStore, setStoreCurrency, selectCartCurrency, selectCartLocale, selectStoreCountryCode } from '../../store/slices/cartSlice';
 import { formatMoney } from '../../utils/currency';
+import { computePreCheckoutTotals } from '../../utils/orderTax';
+import { useGetStoreQuery } from '../../store/api/storeApi';
 import MenuPanel from './components/MenuPanel';
 import OrderPanel from './components/OrderPanel';
 import CustomerPanel from './components/CustomerPanel';
@@ -65,13 +67,24 @@ const POSDashboard: React.FC = () => {
   // CRITICAL: Always prioritize URL storeId first to ensure correct store context
   const storeId = urlStoreId || selectedStoreId || user?.storeId;
 
+  const { data: storeProfile } = useGetStoreQuery(storeId ?? '', { skip: !storeId });
+
   // Sync URL store ID with Redux state on mount
   useEffect(() => {
     if (urlStoreId && urlStoreId !== selectedStoreId) {
-      // Update Redux state to match URL
       dispatch(setSelectedStore({ storeId: urlStoreId, storeName: 'Store ' + urlStoreId }));
     }
   }, [urlStoreId, selectedStoreId, dispatch]);
+
+  useEffect(() => {
+    if (!storeProfile || !storeId) return;
+    dispatch(setSelectedStore({ storeId, storeName: storeProfile.name }));
+    dispatch(setStoreCurrency({
+      currency: storeProfile.currency || 'INR',
+      locale: storeProfile.locale || 'en-IN',
+      countryCode: storeProfile.countryCode ?? null,
+    }));
+  }, [storeProfile, storeId, dispatch]);
 
   // Tab state
   const [activeTab, setActiveTab] = useState<'orders' | 'analytics'>('orders');
@@ -329,10 +342,10 @@ const POSDashboard: React.FC = () => {
   const totalSales = filteredOrders.reduce((sum: number, order: Order) => sum + (order.totalAmount ?? order.total), 0);
 
   // Calculate order total - matching customer side logic
+  const storeCountryCode = useAppSelector(selectStoreCountryCode);
   const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const tax = subtotal * 0.05; // 5% tax
   const deliveryFee = orderType === 'DELIVERY' && subtotal > 0 ? 40 : 0;
-  const orderTotal = subtotal + tax + deliveryFee;
+  const { total: orderTotal } = computePreCheckoutTotals(subtotal, deliveryFee, storeCountryCode);
 
   return (
     <div style={{

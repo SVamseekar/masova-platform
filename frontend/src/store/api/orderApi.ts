@@ -68,6 +68,26 @@ export interface Order {
   createdByStaffName?: string;
   assignedKitchenStaffName?: string;
   assignedToKitchenAt?: string;
+  currency?: string;
+  vatCountryCode?: string;
+  totalNetAmount?: number;
+  totalVatAmount?: number;
+  totalGrossAmount?: number;
+  vatBreakdown?: {
+    vatCountryCode: string;
+    orderContext: string;
+    totalNetAmount: number;
+    totalVatAmount: number;
+    totalGrossAmount: number;
+    lines: Array<{
+      menuItemId: string;
+      itemName: string;
+      vatRate: number;
+      netAmount: number;
+      vatAmount: number;
+      grossAmount: number;
+    }>;
+  };
 }
 
 export interface CreateOrderRequest {
@@ -83,6 +103,7 @@ export interface CreateOrderRequest {
     price: number; // Required by backend - in rupees (Double)
     variant?: string;
     customizations?: string[];
+    category?: string;
   }>;
   orderType: 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY';
   paymentMethod?: 'CASH' | 'CARD' | 'UPI' | 'WALLET' | 'AGGREGATOR_COLLECTED';

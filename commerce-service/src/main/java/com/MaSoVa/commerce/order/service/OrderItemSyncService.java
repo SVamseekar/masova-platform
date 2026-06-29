@@ -73,6 +73,18 @@ public class OrderItemSyncService {
         pgOrder.setDeliveryFee(order.getDeliveryFee());
         pgOrder.setTax(order.getTax());
         pgOrder.setTotal(order.getTotal());
+        pgOrder.setVatCountryCode(order.getVatCountryCode());
+        pgOrder.setTotalNetAmount(order.getTotalNetAmount());
+        pgOrder.setTotalVatAmount(order.getTotalVatAmount());
+        pgOrder.setTotalGrossAmount(order.getTotalGrossAmount());
+        if (order.getVatBreakdown() != null) {
+            try {
+                pgOrder.setVatBreakdown(objectMapper.writeValueAsString(order.getVatBreakdown()));
+            } catch (Exception e) {
+                log.warn("PG dual-write: failed to serialize vatBreakdown for order {}: {}",
+                        order.getOrderNumber(), e.getMessage());
+            }
+        }
         pgOrder.setTableNumber(order.getTableNumber());
         pgOrder.setGuestCount(order.getGuestCount());
         pgOrder.setPreparationTime(order.getPreparationTime());

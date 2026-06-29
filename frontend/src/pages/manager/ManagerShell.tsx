@@ -73,7 +73,11 @@ function ManagerShell() {
     const match = stores.find((s: Store) => s.storeCode === userStoreId || s.id === userStoreId);
     if (match) {
       dispatch(setSelectedStore({ storeId: match.storeCode, storeName: match.name }));
-      dispatch(setStoreCurrency({ currency: match.currency || 'INR', locale: match.locale || 'en-IN' }));
+      dispatch(setStoreCurrency({
+        currency: match.currency || 'INR',
+        locale: match.locale || 'en-IN',
+        countryCode: match.countryCode ?? null,
+      }));
       setPageStore(match.storeCode, match.name);
     }
   }, [stores, storesLoading, selectedStoreId, currentUser?.storeId, dispatch, setPageStore]);
@@ -116,6 +120,7 @@ function ManagerShell() {
     dispatch(setStoreCurrency({
       currency: store?.currency || 'INR',
       locale: store?.locale || 'en-IN',
+      countryCode: store?.countryCode ?? null,
     }));
     setStoreDropOpen(false);
   };

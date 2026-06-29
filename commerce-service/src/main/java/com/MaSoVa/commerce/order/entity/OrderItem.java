@@ -59,6 +59,7 @@ public class OrderItem {
         private Double price;
         private String variant;
         private List<String> customizations;
+        private String category;
 
         public Builder menuItemId(String menuItemId) { this.menuItemId = menuItemId; return this; }
         public Builder name(String name) { this.name = name; return this; }
@@ -66,9 +67,12 @@ public class OrderItem {
         public Builder price(Double price) { this.price = price; return this; }
         public Builder variant(String variant) { this.variant = variant; return this; }
         public Builder customizations(List<String> customizations) { this.customizations = customizations; return this; }
+        public Builder category(String category) { this.category = category; return this; }
 
         public OrderItem build() {
-            return new OrderItem(menuItemId, name, quantity, price, variant, customizations);
+            OrderItem item = new OrderItem(menuItemId, name, quantity, price, variant, customizations);
+            item.setCategory(category);
+            return item;
         }
     }
 }

@@ -250,7 +250,7 @@ describe('OrderPanel', () => {
         useMemoryRouter: true,
       });
 
-      expect(screen.getByText('Tax (5%):')).toBeInTheDocument();
+      expect(screen.getByText('Tax (5% GST):')).toBeInTheDocument();
     });
 
     it('displays total', () => {

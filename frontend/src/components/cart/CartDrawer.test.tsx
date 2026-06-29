@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders, mergePreloadedState } from '@/test/utils/testUtils';
+import i18n from '../../i18n';
 import CartDrawer from './CartDrawer';
 
 interface TestCartItem {
@@ -116,18 +117,18 @@ describe('CartDrawer', () => {
     );
 
     expect(screen.getByText(/Subtotal/)).toBeInTheDocument();
-    expect(screen.getByText(/Delivery Fee/)).toBeInTheDocument();
+    expect(screen.getByText(/Delivery fee/i)).toBeInTheDocument();
     expect(screen.getByText(/Tax/)).toBeInTheDocument();
     expect(screen.getByText('Total')).toBeInTheDocument();
   });
 
-  it('renders Proceed to Checkout button', () => {
+  it('renders Checkout button', () => {
     renderWithProviders(
       <CartDrawer {...defaultProps} />,
       { preloadedState: createCartState(mockCartItems), useMemoryRouter: true }
     );
 
-    expect(screen.getByRole('button', { name: /Proceed to Checkout/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Checkout/i })).toBeInTheDocument();
   });
 
   it('calls onClose when close button is clicked', async () => {
@@ -145,7 +146,7 @@ describe('CartDrawer', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('calls onCheckout and onClose when Proceed to Checkout is clicked', async () => {
+  it('calls onCheckout and onClose when Checkout is clicked', async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     const onCheckout = vi.fn();
@@ -154,7 +155,7 @@ describe('CartDrawer', () => {
       { preloadedState: createCartState(mockCartItems), useMemoryRouter: true }
     );
 
-    await user.click(screen.getByRole('button', { name: /Proceed to Checkout/i }));
+    await user.click(screen.getByRole('button', { name: /Checkout/i }));
     expect(onCheckout).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -175,5 +176,24 @@ describe('CartDrawer', () => {
     );
 
     expect(screen.getByText(/reserved for 15 minutes/)).toBeInTheDocument();
+  });
+
+  describe('i18n', () => {
+    afterEach(() => {
+      i18n.changeLanguage('en');
+    });
+
+    it('renders German translations for cart labels when locale is de', () => {
+      i18n.changeLanguage('de');
+      renderWithProviders(
+        <CartDrawer {...defaultProps} />,
+        { preloadedState: createCartState(mockCartItems), useMemoryRouter: true }
+      );
+
+      expect(screen.getByText(/Zwischensumme/)).toBeInTheDocument();
+      expect(screen.getByText(/Liefergebühr/)).toBeInTheDocument();
+      expect(screen.getByText('Gesamt')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Zur Kasse/i })).toBeInTheDocument();
+    });
   });
 });

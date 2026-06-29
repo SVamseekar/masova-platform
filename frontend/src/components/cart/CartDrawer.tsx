@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import {
   removeFromCart,
@@ -11,8 +12,10 @@ import {
   selectDeliveryFee,
   selectCartCurrency,
   selectCartLocale,
+  selectStoreCountryCode,
 } from '../../store/slices/cartSlice';
 import { formatMoney } from '../../utils/currency';
+import { computePreCheckoutTotals, formatTaxDisplay } from '../../utils/orderTax';
 
 interface CartDrawerProps {
   open: boolean;
@@ -21,6 +24,7 @@ interface CartDrawerProps {
 }
 
 const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) => {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const cartItems = useAppSelector(selectCartItems);
   const subtotal = useAppSelector(selectCartSubtotal);
@@ -28,9 +32,14 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) =>
   const deliveryFee = useAppSelector(selectDeliveryFee);
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
+  const storeCountryCode = useAppSelector(selectStoreCountryCode);
+  const fmt = (v: number) => formatMoney(Math.round(v * 100), currency, locale);
 
-  const tax = subtotal * 0.05;
-  const total = subtotal + (itemCount > 0 ? deliveryFee : 0) + tax;
+  const { tax, taxLabel, total } = computePreCheckoutTotals(
+    subtotal,
+    itemCount > 0 ? deliveryFee : 0,
+    storeCountryCode
+  );
 
   const handleIncreaseQuantity = (itemId: string, itemName: string, itemPrice: number) => {
     dispatch(addToCart({ id: itemId, name: itemName, price: itemPrice }));
@@ -182,7 +191,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) =>
                 color: 'var(--text-2)',
                 marginBottom: '8px',
               }}>
-                Your cart is empty
+                {t('cart.empty')}
               </h3>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-3)', marginBottom: '24px' }}>
                 Add some delicious items from our menu
@@ -329,9 +338,9 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) =>
             background: 'var(--surface)',
           }}>
             {[
-              { label: `Subtotal (${itemCount} item${itemCount > 1 ? 's' : ''})`, value: formatMoney(Math.round(subtotal * 100), currency, locale) },
-              { label: 'Delivery Fee', value: formatMoney(Math.round(deliveryFee * 100), currency, locale) },
-              { label: 'Tax (5%)', value: formatMoney(Math.round(tax * 100), currency, locale) },
+              { label: `${t('cart.subtotal')} (${itemCount} item${itemCount > 1 ? 's' : ''})`, value: formatMoney(Math.round(subtotal * 100), currency, locale) },
+              { label: t('cart.delivery_fee'), value: formatMoney(Math.round(deliveryFee * 100), currency, locale) },
+              { label: taxLabel, value: formatTaxDisplay(tax, fmt) },
             ].map(row => (
               <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span style={{ color: 'var(--text-3)', fontSize: '0.85rem', fontFamily: 'var(--font-body)' }}>{row.label}</span>
@@ -343,7 +352,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) =>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'baseline' }}>
               <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--text-1)', fontSize: '1.05rem' }}>
-                Total
+                {t('cart.total')}
               </span>
               <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--gold)', fontSize: '1.3rem' }}>
                 {formatMoney(Math.round(total * 100), currency, locale)}
@@ -369,7 +378,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) =>
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--red-light)'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--red)'; }}
             >
-              Proceed to Checkout →
+              {t('cart.checkout')} →
             </button>
 
             <p style={{ margin: '10px 0 0', fontSize: '0.72rem', color: 'var(--text-3)', textAlign: 'center', fontFamily: 'var(--font-body)' }}>

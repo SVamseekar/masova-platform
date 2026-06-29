@@ -10,6 +10,7 @@ import com.MaSoVa.commerce.order.entity.OrderJpaEntity;
 import com.MaSoVa.commerce.order.repository.OrderRepository;
 import com.MaSoVa.commerce.order.repository.OrderJpaRepository;
 import com.MaSoVa.shared.entity.Store;
+import com.MaSoVa.shared.model.VatBreakdown;
 import com.MaSoVa.commerce.order.websocket.OrderWebSocketController;
 import com.MaSoVa.commerce.order.client.MenuServiceClient;
 import com.MaSoVa.commerce.order.client.CustomerServiceClient;
@@ -116,6 +117,7 @@ public class OrderService {
                         .price(item.getPrice())
                         .variant(item.getVariant())
                         .customizations(item.getCustomizations())
+                        .category(item.getCategory())
                         .build())
                 .collect(Collectors.toList());
 
@@ -166,17 +168,38 @@ public class OrderService {
             }
         }
 
-        // HARD-002: Dynamic tax calculation using TaxConfiguration
-        // Get state from delivery address or default
-        String state = (request.getDeliveryAddress() != null && request.getDeliveryAddress().getState() != null)
-                ? request.getDeliveryAddress().getState()
-                : "Maharashtra"; // Default state
+        // Global-2: Route to EU VAT engine for non-India stores, GST for India stores
+        Store store = null;
+        try {
+            store = storeServiceClient.getStore(request.getStoreId());
+        } catch (Exception e) {
+            log.warn("Could not fetch store for tax routing storeId={}: {}", request.getStoreId(), e.getMessage());
+        }
 
-        double tax = taxConfiguration.calculateTax(subtotal, state, true); // Assuming AC restaurant
-        log.debug("Tax calculated for state {}: ₹{} ({} GST)",
-                state, tax, taxConfiguration.getTaxRateForState(state));
+        String countryCode = (store != null) ? store.getCountryCode() : null;
+        double tax;
+        double total;
+        VatBreakdown vatBreakdown = null;
+        String vatCountryCode = null;
 
-        double total = subtotal + deliveryFee + tax;
+        if (countryCode != null) {
+            String orderContext = request.getOrderType() != null ? request.getOrderType().name() : "TAKEAWAY";
+            vatBreakdown = euVatEngine.calculate(countryCode, orderContext, orderItems);
+            vatCountryCode = countryCode;
+            tax = 0.0;
+            total = vatBreakdown.getTotalGrossAmount()
+                    .add(BigDecimal.valueOf(deliveryFee))
+                    .doubleValue();
+            log.info("EU VAT applied for country={} context={} totalVat={}",
+                    countryCode, orderContext, vatBreakdown.getTotalVatAmount());
+        } else {
+            String state = (request.getDeliveryAddress() != null && request.getDeliveryAddress().getState() != null)
+                    ? request.getDeliveryAddress().getState()
+                    : "Maharashtra";
+            tax = taxConfiguration.calculateTax(subtotal, state, true);
+            total = subtotal + deliveryFee + tax;
+            log.debug("India GST applied for state={}: tax={}", state, tax);
+        }
 
         // Generate unique order number
         String orderNumber = generateOrderNumber();
@@ -207,6 +230,14 @@ public class OrderService {
                 .receivedAt(LocalDateTime.now())
                 .build();
 
+        if (vatBreakdown != null) {
+            order.setVatCountryCode(vatCountryCode);
+            order.setVatBreakdown(vatBreakdown);
+            order.setTotalNetAmount(vatBreakdown.getTotalNetAmount());
+            order.setTotalVatAmount(vatBreakdown.getTotalVatAmount());
+            order.setTotalGrossAmount(vatBreakdown.getTotalGrossAmount());
+        }
+
         // Calculate estimated delivery time
         if (Order.OrderType.DELIVERY.equals(request.getOrderType())) {
             // Use dynamic delivery time from DeliveryZoneService if available, otherwise default to 30 minutes
@@ -222,7 +253,6 @@ public class OrderService {
         initializeQualityCheckpoints(order);
 
         // Global-3: propagate store currency (null = India/INR legacy)
-        Store store = storeServiceClient.getStore(request.getStoreId());
         if (store == null) {
             log.warn("Could not fetch store {} for currency propagation, defaulting to INR", request.getStoreId());
             order.setCurrency("INR");
@@ -305,6 +335,21 @@ public class OrderService {
         }
 
         return savedOrder;
+    }
+
+    private OrderStatusChangedEvent buildStatusChangedEvent(Order order,
+                                                            String previousStatus,
+                                                            String newStatus) {
+        OrderStatusChangedEvent event = new OrderStatusChangedEvent(
+                order.getId(), order.getCustomerId(), previousStatus, newStatus, order.getStoreId());
+        if (order.getVatCountryCode() != null) {
+            event.setVatCountryCode(order.getVatCountryCode());
+            event.setTotalVatAmount(order.getTotalVatAmount());
+        }
+        if (order.getCurrency() != null) {
+            event.setCurrency(order.getCurrency());
+        }
+        return event;
     }
 
     /** Serializes order.vatBreakdown to JSON for the PostgreSQL jsonb column. Returns null for India orders. */
@@ -428,9 +473,8 @@ public class OrderService {
 
         // Publish status changed event to RabbitMQ
         try {
-            orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
-                updatedOrder.getId(), updatedOrder.getCustomerId(),
-                currentStatus.toString(), newStatus.toString(), updatedOrder.getStoreId()));
+            orderEventPublisher.publishOrderStatusChanged(
+                    buildStatusChangedEvent(updatedOrder, currentStatus.toString(), newStatus.toString()));
         } catch (Exception e) {
             log.warn("Failed to publish status changed event for {}: {}", updatedOrder.getOrderNumber(), e.getMessage());
         }
@@ -507,9 +551,8 @@ public class OrderService {
 
         // Publish status changed event to RabbitMQ
         try {
-            orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
-                updatedOrder.getId(), updatedOrder.getCustomerId(),
-                currentStatus.toString(), nextStatus.toString(), updatedOrder.getStoreId()));
+            orderEventPublisher.publishOrderStatusChanged(
+                    buildStatusChangedEvent(updatedOrder, currentStatus.toString(), nextStatus.toString()));
         } catch (Exception e) {
             log.warn("Failed to publish status changed event for {}: {}", updatedOrder.getOrderNumber(), e.getMessage());
         }
@@ -567,9 +610,8 @@ public class OrderService {
 
         // Publish status changed event to RabbitMQ
         try {
-            orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
-                cancelledOrder.getId(), cancelledOrder.getCustomerId(),
-                previousStatus.toString(), "CANCELLED", cancelledOrder.getStoreId()));
+            orderEventPublisher.publishOrderStatusChanged(
+                    buildStatusChangedEvent(cancelledOrder, previousStatus.toString(), "CANCELLED"));
         } catch (Exception e) {
             log.warn("Failed to publish cancel event for {}: {}", cancelledOrder.getOrderNumber(), e.getMessage());
         }
@@ -629,9 +671,8 @@ public class OrderService {
         // Publish an event so other services (notifications, agents) can react. The order
         // status is NOT changed — previous and new status are identical; the marker is the flag.
         try {
-            orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
-                savedOrder.getId(), savedOrder.getCustomerId(),
-                savedOrder.getStatus().toString(), "CANCELLATION_REQUESTED", savedOrder.getStoreId()));
+            orderEventPublisher.publishOrderStatusChanged(
+                    buildStatusChangedEvent(savedOrder, savedOrder.getStatus().toString(), "CANCELLATION_REQUESTED"));
         } catch (Exception e) {
             log.warn("Failed to publish cancellation-requested event for order {} (requestedBy={}): {}",
                     savedOrder.getOrderNumber(), requestedBy, e.getMessage());
@@ -678,9 +719,8 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
 
         try {
-            orderEventPublisher.publishOrderStatusChanged(new OrderStatusChangedEvent(
-                savedOrder.getId(), savedOrder.getCustomerId(),
-                savedOrder.getStatus().toString(), "CANCELLATION_REJECTED", savedOrder.getStoreId()));
+            orderEventPublisher.publishOrderStatusChanged(
+                    buildStatusChangedEvent(savedOrder, savedOrder.getStatus().toString(), "CANCELLATION_REJECTED"));
         } catch (Exception e) {
             log.warn("Failed to publish cancellation-rejected event for order {}: {}",
                     savedOrder.getOrderNumber(), e.getMessage());

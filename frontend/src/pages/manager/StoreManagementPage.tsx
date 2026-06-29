@@ -46,6 +46,8 @@ const StoreManagementPage: React.FC = () => {
     regionId: '',
     areaManagerId: '',
     openingDate: '',
+    countryCode: '',
+    vatNumber: '',
     operatingConfig: {
       weeklySchedule: {
         MONDAY: { startTime: '09:00', endTime: '22:00', isOpen: true },
@@ -64,11 +66,9 @@ const StoreManagementPage: React.FC = () => {
     },
   });
 
-  // Global-5: Fiscal device configuration — separate state as these aren't in CreateStoreRequest
-  const [fiscalCountryCode, setFiscalCountryCode] = React.useState('');
+  // Global-5: Fiscal device configuration — device-specific fields not on Store entity
   const [fiscalDeviceIp, setFiscalDeviceIp] = React.useState('');
   const [ntcaApiCredentials, setNtcaApiCredentials] = React.useState('');
-  const [mtdVatNumber, setMtdVatNumber] = React.useState('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -94,6 +94,8 @@ const StoreManagementPage: React.FC = () => {
         regionId: myStore.regionId || '',
         areaManagerId: myStore.areaManagerId || '',
         openingDate: myStore.openingDate || '',
+        countryCode: myStore.countryCode || '',
+        vatNumber: myStore.vatNumber || '',
         operatingConfig: myStore.operatingConfig,
       });
     }
@@ -107,6 +109,8 @@ const StoreManagementPage: React.FC = () => {
       // Ensure all time strings are in HH:mm format for LocalTime parsing
       const submissionData = {
         ...formData,
+        countryCode: formData.countryCode?.trim() || undefined,
+        vatNumber: formData.vatNumber?.trim() || undefined,
         openingDate: formData.openingDate
           ? `${formData.openingDate}T00:00:00`
           : undefined,
@@ -156,6 +160,8 @@ const StoreManagementPage: React.FC = () => {
       regionId: '',
       areaManagerId: '',
       openingDate: '',
+      countryCode: '',
+      vatNumber: '',
       operatingConfig: {
         weeklySchedule: {
           MONDAY: { startTime: '09:00', endTime: '22:00', isOpen: true },
@@ -185,6 +191,8 @@ const StoreManagementPage: React.FC = () => {
       regionId: store.regionId || '',
       areaManagerId: store.areaManagerId || '',
       openingDate: store.openingDate || '',
+      countryCode: store.countryCode || '',
+      vatNumber: store.vatNumber || '',
       operatingConfig: store.operatingConfig,
     });
     setShowCreateModal(true);
@@ -322,6 +330,11 @@ const StoreManagementPage: React.FC = () => {
                 {store.phoneNumber && (
                   <p style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
                     📞 {store.phoneNumber}
+                  </p>
+                )}
+                {store.countryCode && (
+                  <p style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
+                    🌍 {store.countryCode}{store.vatNumber ? ` · VAT ${store.vatNumber}` : ''}
                   </p>
                 )}
               </div>
@@ -466,19 +479,40 @@ const StoreManagementPage: React.FC = () => {
                 />
               </div>
 
+              {/* Global-2: International / VAT settings */}
+              <div style={{ marginBottom: spacing[4] }}>
+                <h3 style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, marginBottom: spacing[3], color: colors.text.primary }}>
+                  International / VAT
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[4] }}>
+                  <Input
+                    label="Country Code (ISO — leave blank for India)"
+                    name="countryCode"
+                    value={formData.countryCode || ''}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      countryCode: e.target.value.toUpperCase().slice(0, 2),
+                    }))}
+                    placeholder="DE"
+                    helperText="Drives EU VAT routing on orders. Blank = India GST."
+                  />
+                  <Input
+                    label="VAT Registration Number"
+                    name="vatNumber"
+                    value={formData.vatNumber || ''}
+                    onChange={handleInputChange}
+                    placeholder="DE123456789"
+                    helperText="Required for EU/UK fiscal receipts"
+                  />
+                </div>
+              </div>
+
               {/* Global-5: Fiscal Device Configuration */}
               <div style={{ marginBottom: spacing[4] }}>
                 <h3 style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, marginBottom: spacing[3], color: colors.text.primary }}>
                   Fiscal Compliance
                 </h3>
-                <Input
-                  label="Country Code (e.g. DE, FR, GB — leave blank for India)"
-                  name="fiscalCountryCode"
-                  value={fiscalCountryCode}
-                  onChange={(e) => setFiscalCountryCode(e.target.value.toUpperCase())}
-                  placeholder="IN"
-                />
-                {['DE', 'IT', 'BE'].includes(fiscalCountryCode) && (
+                {['DE', 'IT', 'BE'].includes(formData.countryCode || '') && (
                   <div style={{ marginTop: spacing[3] }}>
                     <Input
                       label="Fiscal Device IP Address (TSE / RT / FDM)"
@@ -496,7 +530,7 @@ const StoreManagementPage: React.FC = () => {
                     </button>
                   </div>
                 )}
-                {fiscalCountryCode === 'HU' && (
+                {(formData.countryCode || '') === 'HU' && (
                   <div style={{ marginTop: spacing[3] }}>
                     <Input
                       label="NTCA API Credentials"
@@ -507,18 +541,7 @@ const StoreManagementPage: React.FC = () => {
                     />
                   </div>
                 )}
-                {fiscalCountryCode === 'GB' && (
-                  <div style={{ marginTop: spacing[3] }}>
-                    <Input
-                      label="HMRC VAT Registration Number"
-                      name="mtdVatNumber"
-                      value={mtdVatNumber}
-                      onChange={(e) => setMtdVatNumber(e.target.value)}
-                      placeholder="GB123456789"
-                    />
-                  </div>
-                )}
-                {fiscalCountryCode === 'FR' && (
+                {(formData.countryCode || '') === 'FR' && (
                   <div style={{ marginTop: spacing[3], padding: spacing[3], background: 'rgba(255,193,7,0.1)', borderRadius: 6 }}>
                     <strong>NF525 Notice:</strong> Once an order is fiscally signed, it is immutable.
                     Corrections must be submitted as new credit note orders.
