@@ -35,10 +35,6 @@ import {
   useGetBirthdayCustomersTodayQuery,
   useGetMarketingOptInCustomersQuery,
   useGetCustomerStatsQuery,
-  useGetCustomerOrderStatsQuery,
-  useGetCustomerPreferencesQuery,
-  useGetCustomerLoyaltyPointsQuery,
-  useGetCustomerAddressesQuery,
   useDeleteCustomerMutation,
 } from './customerApi';
 
@@ -116,6 +112,9 @@ describe('customerApi', () => {
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
       expect(result.current.data).toBeDefined();
+      expect(Array.isArray(result.current.data)).toBe(true);
+      expect(result.current.data!.length).toBeGreaterThan(0);
+      expect(result.current.data![0].id).toBe('cust-1');
     });
 
     it('should search customers', async () => {
@@ -223,44 +222,17 @@ describe('customerApi', () => {
       expect(result.current.data!.totalCustomers).toBe(150);
     });
 
-    it('should fetch customer order stats', async () => {
-      const { result } = renderHook(() => useGetCustomerOrderStatsQuery('cust-1'), {
+    it('should include order stats, preferences, loyalty, and addresses on customer profile', async () => {
+      const { result } = renderHook(() => useGetCustomerByIdQuery('cust-1'), {
         wrapper: DefaultTestWrapper,
       });
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-      expect(result.current.data).toBeDefined();
-    });
-
-    it('should fetch customer preferences', async () => {
-      const { result } = renderHook(() => useGetCustomerPreferencesQuery('cust-1'), {
-        wrapper: DefaultTestWrapper,
-      });
-
-      await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-      expect(result.current.data).toBeDefined();
-    });
-
-    it('should fetch customer loyalty points', async () => {
-      const { result } = renderHook(() => useGetCustomerLoyaltyPointsQuery('cust-1'), {
-        wrapper: DefaultTestWrapper,
-      });
-
-      await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-      expect(result.current.data).toBeDefined();
-    });
-
-    it('should fetch customer addresses', async () => {
-      const { result } = renderHook(() => useGetCustomerAddressesQuery('cust-1'), {
-        wrapper: DefaultTestWrapper,
-      });
-
-      await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-      expect(result.current.data).toBeDefined();
+      expect(result.current.data?.orderStats?.totalOrders).toBe(15);
+      expect(result.current.data?.preferences?.spiceLevel).toBe('MEDIUM');
+      expect(result.current.data?.loyaltyInfo?.totalPoints).toBe(500);
+      expect(result.current.data?.addresses).toHaveLength(1);
     });
   });
 

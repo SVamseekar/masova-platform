@@ -57,39 +57,33 @@ const mockCustomer = {
 };
 
 export const customerHandlers = [
-  http.post(`${API}/api/customers`, () =>
+  http.post(`${API}/customers`, () =>
     HttpResponse.json(mockCustomer),
   ),
 
-  http.post(`${API}/api/customers/get-or-create`, () =>
+  http.post(`${API}/customers/get-or-create`, () =>
     HttpResponse.json(mockCustomer),
   ),
 
-  http.get(`${API}/api/customers/:id`, () =>
+  // Literal path segments must be registered before /customers/:id — otherwise MSW
+  // treats "active", "stats", "search", etc. as customer IDs.
+  http.get(`${API}/customers/user/:userId`, () =>
     HttpResponse.json(mockCustomer),
   ),
 
-  http.get(`${API}/api/customers/user/:userId`, () =>
+  http.get(`${API}/customers/email/:email`, () =>
     HttpResponse.json(mockCustomer),
   ),
 
-  http.get(`${API}/api/customers/email/:email`, () =>
+  http.get(`${API}/customers/phone/:phone`, () =>
     HttpResponse.json(mockCustomer),
   ),
 
-  http.get(`${API}/api/customers/phone/:phone`, () =>
-    HttpResponse.json(mockCustomer),
-  ),
-
-  http.get(`${API}/api/customers`, () =>
+  http.get(`${API}/customers/active`, () =>
     HttpResponse.json([mockCustomer]),
   ),
 
-  http.get(`${API}/api/customers/active`, () =>
-    HttpResponse.json([mockCustomer]),
-  ),
-
-  http.get(`${API}/api/customers/search`, () =>
+  http.get(`${API}/customers/search`, () =>
     HttpResponse.json({
       content: [mockCustomer],
       totalElements: 1,
@@ -99,111 +93,43 @@ export const customerHandlers = [
     }),
   ),
 
-  http.put(`${API}/api/customers/:id`, () =>
-    HttpResponse.json(mockCustomer),
-  ),
-
-  http.patch(`${API}/api/customers/:id/deactivate`, () =>
-    HttpResponse.json({ ...mockCustomer, active: false }),
-  ),
-
-  http.patch(`${API}/api/customers/:id/activate`, () =>
-    HttpResponse.json(mockCustomer),
-  ),
-
-  http.post(`${API}/api/customers/:customerId/addresses`, () =>
-    HttpResponse.json(mockCustomer),
-  ),
-
-  http.patch(`${API}/api/customers/:customerId/addresses/:addressId`, () =>
-    HttpResponse.json(mockCustomer),
-  ),
-
-  http.delete(`${API}/api/customers/:customerId/addresses/:addressId`, () =>
-    HttpResponse.json(mockCustomer),
-  ),
-
-  http.patch(`${API}/api/customers/:customerId/addresses/:addressId/set-default`, () =>
-    HttpResponse.json(mockCustomer),
-  ),
-
-  http.post(`${API}/api/customers/:customerId/loyalty/points`, () =>
-    HttpResponse.json(mockCustomer),
-  ),
-
-  http.post(`${API}/api/customers/:customerId/loyalty/redeem`, () =>
-    HttpResponse.json({ customer: mockCustomer, pointsRedeemed: 100, discountAmount: 50 }),
-  ),
-
-  http.get(`${API}/api/customers/:customerId/loyalty/max-redeemable`, () =>
-    HttpResponse.json({ maxRedeemablePoints: 300, maxDiscountAmount: 150, redemptionRate: '2:1' }),
-  ),
-
-  http.get(`${API}/api/customers/loyalty/tier/:tier`, () =>
+  http.get(`${API}/customers/loyalty/tier/:tier`, () =>
     HttpResponse.json([mockCustomer]),
   ),
 
-  http.put(`${API}/api/customers/:customerId/preferences`, () =>
-    HttpResponse.json(mockCustomer),
-  ),
-
-  http.post(`${API}/api/customers/:customerId/order-stats`, () =>
-    HttpResponse.json(mockCustomer),
-  ),
-
-  http.post(`${API}/api/customers/:customerId/notes`, () =>
-    HttpResponse.json(mockCustomer),
-  ),
-
-  http.patch(`${API}/api/customers/:customerId/verify-email`, () =>
-    HttpResponse.json(mockCustomer),
-  ),
-
-  http.patch(`${API}/api/customers/:customerId/verify-phone`, () =>
-    HttpResponse.json(mockCustomer),
-  ),
-
-  http.post(`${API}/api/customers/:customerId/tags`, () =>
-    HttpResponse.json(mockCustomer),
-  ),
-
-  http.delete(`${API}/api/customers/:customerId/tags`, () =>
-    HttpResponse.json(mockCustomer),
-  ),
-
-  http.get(`${API}/api/customers/tags`, () =>
+  http.get(`${API}/customers/tags`, () =>
     HttpResponse.json([mockCustomer]),
   ),
 
-  http.get(`${API}/api/customers/high-value`, () =>
+  http.get(`${API}/customers/high-value`, () =>
     HttpResponse.json([mockCustomer]),
   ),
 
-  http.get(`${API}/api/customers/top-spenders`, () =>
+  http.get(`${API}/customers/top-spenders`, () =>
     HttpResponse.json([mockCustomer]),
   ),
 
-  http.get(`${API}/api/customers/recently-active`, () =>
+  http.get(`${API}/customers/recently-active`, () =>
     HttpResponse.json([mockCustomer]),
   ),
 
-  http.get(`${API}/api/customers/inactive`, () =>
+  http.get(`${API}/customers/inactive`, () =>
     HttpResponse.json([]),
   ),
 
-  http.get(`${API}/api/customers/birthdays/today`, () =>
+  http.get(`${API}/customers/birthdays/today`, () =>
     HttpResponse.json([]),
   ),
 
-  http.get(`${API}/api/customers/marketing-opt-in`, () =>
+  http.get(`${API}/customers/marketing-opt-in`, () =>
     HttpResponse.json([mockCustomer]),
   ),
 
-  http.get(`${API}/api/customers/sms-opt-in`, () =>
+  http.get(`${API}/customers/sms-opt-in`, () =>
     HttpResponse.json([]),
   ),
 
-  http.get(`${API}/api/customers/stats`, () =>
+  http.get(`${API}/customers/stats`, () =>
     HttpResponse.json({
       totalCustomers: 150,
       activeCustomers: 120,
@@ -216,23 +142,99 @@ export const customerHandlers = [
     }),
   ),
 
-  http.get(`${API}/api/customers/:customerId/order-stats`, () =>
+  http.get(`${API}/customers`, () =>
+    HttpResponse.json([mockCustomer]),
+  ),
+
+  http.get(`${API}/customers/:customerId/loyalty/max-redeemable`, () =>
+    HttpResponse.json({ maxRedeemablePoints: 300, maxDiscountAmount: 150, redemptionRate: '2:1' }),
+  ),
+
+  http.get(`${API}/customers/:customerId/order-stats`, () =>
     HttpResponse.json(mockCustomer.orderStats),
   ),
 
-  http.get(`${API}/api/customers/:customerId/preferences`, () =>
+  http.get(`${API}/customers/:customerId/preferences`, () =>
     HttpResponse.json(mockCustomer.preferences),
   ),
 
-  http.get(`${API}/api/customers/:customerId/loyalty/points`, () =>
+  http.get(`${API}/customers/:customerId/loyalty/points`, () =>
     HttpResponse.json(mockCustomer.loyaltyInfo),
   ),
 
-  http.get(`${API}/api/customers/:customerId/addresses`, () =>
+  http.get(`${API}/customers/:customerId/addresses`, () =>
     HttpResponse.json(mockCustomer.addresses),
   ),
 
-  http.delete(`${API}/api/customers/:id`, () =>
+  http.get(`${API}/customers/:id`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.put(`${API}/customers/:id`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.patch(`${API}/customers/:id/deactivate`, () =>
+    HttpResponse.json({ ...mockCustomer, active: false }),
+  ),
+
+  http.patch(`${API}/customers/:id/activate`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.post(`${API}/customers/:customerId/addresses`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.patch(`${API}/customers/:customerId/addresses/:addressId`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.delete(`${API}/customers/:customerId/addresses/:addressId`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.patch(`${API}/customers/:customerId/addresses/:addressId/set-default`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.post(`${API}/customers/:customerId/loyalty/points`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.post(`${API}/customers/:customerId/loyalty/redeem`, () =>
+    HttpResponse.json({ customer: mockCustomer, pointsRedeemed: 100, discountAmount: 50 }),
+  ),
+
+  http.put(`${API}/customers/:customerId/preferences`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.post(`${API}/customers/:customerId/order-stats`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.post(`${API}/customers/:customerId/notes`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.patch(`${API}/customers/:customerId/verify-email`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.patch(`${API}/customers/:customerId/verify-phone`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.post(`${API}/customers/:customerId/tags`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.delete(`${API}/customers/:customerId/tags`, () =>
+    HttpResponse.json(mockCustomer),
+  ),
+
+  http.delete(`${API}/customers/:id`, () =>
     new HttpResponse(null, { status: 204 }),
   ),
 ];
