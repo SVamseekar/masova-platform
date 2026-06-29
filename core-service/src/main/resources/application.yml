@@ -2,6 +2,8 @@ server:
   port: 8085
 
 spring:
+  main:
+    allow-bean-definition-overriding: true
   application:
     name: core-service
 
