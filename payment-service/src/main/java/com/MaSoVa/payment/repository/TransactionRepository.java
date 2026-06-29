@@ -18,6 +18,8 @@ public interface TransactionRepository extends MongoRepository<Transaction, Stri
 
     Optional<Transaction> findByRazorpayPaymentId(String razorpayPaymentId);
 
+    Optional<Transaction> findByStripePaymentIntentId(String stripePaymentIntentId);
+
     List<Transaction> findByCustomerId(String customerId);
 
     List<Transaction> findByStoreId(String storeId);

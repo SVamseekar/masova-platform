@@ -11,6 +11,10 @@ import com.MaSoVa.payment.dto.PaymentCallbackRequest;
 import com.MaSoVa.payment.dto.PaymentResponse;
 import com.MaSoVa.payment.dto.ReconciliationReportResponse;
 import com.MaSoVa.payment.entity.Transaction;
+import com.MaSoVa.payment.gateway.GatewayPaymentResult;
+import com.MaSoVa.payment.gateway.GatewayWebhookResult;
+import com.MaSoVa.payment.gateway.PaymentGateway;
+import com.MaSoVa.payment.gateway.PaymentGatewayResolver;
 import com.MaSoVa.payment.repository.TransactionRepository;
 import com.razorpay.Order;
 import com.razorpay.Payment;
@@ -68,6 +72,15 @@ class PaymentServiceTest {
     @Mock
     private com.MaSoVa.payment.messaging.PaymentEventPublisher paymentEventPublisher;
 
+    @Mock
+    private PaymentGatewayResolver paymentGatewayResolver;
+
+    @Mock
+    private PaymentGateway razorpayGateway;
+
+    @Mock
+    private PaymentGateway stripeGateway;
+
     @InjectMocks
     private PaymentService paymentService;
 
@@ -119,6 +132,14 @@ class PaymentServiceTest {
         successTransaction.setRazorpayPaymentId("pay_razorpay_001");
         successTransaction.setPaymentMethod(Transaction.PaymentMethod.CARD);
         successTransaction.setCreatedAt(LocalDateTime.now());
+
+        when(paymentGatewayResolver.isIndiaStore(any())).thenAnswer(inv -> {
+            String countryCode = inv.getArgument(0);
+            if (countryCode == null || countryCode.isBlank()) {
+                return true;
+            }
+            return "IN".equalsIgnoreCase(countryCode.trim());
+        });
     }
 
     @Nested
@@ -126,14 +147,13 @@ class PaymentServiceTest {
     class InitiatePaymentTests {
 
         @Test
-        @DisplayName("Should initiate payment successfully for a valid request")
-        void shouldInitiatePaymentSuccessfully() throws RazorpayException {
+        @DisplayName("Should initiate payment successfully for a valid request (India/Razorpay unchanged)")
+        void shouldInitiatePaymentSuccessfully() throws Exception {
             // Given
-            Order razorpayOrder = mock(Order.class);
-            when(razorpayOrder.get("id")).thenReturn("order_razorpay_001");
             when(transactionRepository.findByOrderId("order-123")).thenReturn(Optional.empty());
-            when(razorpayService.createOrder(any(BigDecimal.class), eq("order-123"), anyString()))
-                    .thenReturn(razorpayOrder);
+            when(paymentGatewayResolver.resolve(null)).thenReturn(razorpayGateway);
+            when(razorpayGateway.initiatePayment(any()))
+                    .thenReturn(new GatewayPaymentResult("RAZORPAY", "order_razorpay_001", null, "rzp_test_key"));
             when(encryptionService.encrypt("customer@real.com")).thenReturn("encrypted-email");
             when(encryptionService.encrypt("+31612345678")).thenReturn("encrypted-phone");
             when(transactionRepository.save(any(Transaction.class))).thenReturn(initiatedTransaction);
@@ -151,7 +171,92 @@ class PaymentServiceTest {
             assertThat(response.getStatus()).isEqualTo(Transaction.PaymentStatus.INITIATED);
             assertThat(response.getCustomerEmail()).isEqualTo("customer@real.com");
             assertThat(response.getRazorpayKeyId()).isEqualTo("rzp_test_key");
+            assertThat(response.getStripePublishableKey()).isNull();
             verify(transactionRepository).save(any(Transaction.class));
+            verify(razorpayGateway).initiatePayment(any());
+        }
+
+        @Test
+        @DisplayName("Should route explicit IN countryCode to Razorpay, not Stripe")
+        void shouldRouteIndiaCountryCodeToRazorpay() throws Exception {
+            InitiatePaymentRequest inRequest = InitiatePaymentRequest.builder()
+                    .orderId("order-in-001")
+                    .amount(BigDecimal.valueOf(500.00))
+                    .customerId("cust-in")
+                    .customerEmail("customer@real.com")
+                    .customerPhone("+919876543210")
+                    .storeId("store-in")
+                    .orderType("TAKEAWAY")
+                    .paymentMethod("UPI")
+                    .build();
+            inRequest.setCountryCode("IN");
+
+            when(transactionRepository.findByOrderId("order-in-001")).thenReturn(Optional.empty());
+            when(paymentGatewayResolver.resolve("IN")).thenReturn(razorpayGateway);
+            when(razorpayGateway.initiatePayment(any()))
+                    .thenReturn(new GatewayPaymentResult("RAZORPAY", "order_in_001", null, "rzp_test_key"));
+            when(encryptionService.encrypt(anyString())).thenReturn("encrypted");
+            when(transactionRepository.save(any(Transaction.class))).thenReturn(initiatedTransaction);
+            when(razorpayConfig.getKeyId()).thenReturn("rzp_test_key");
+
+            PaymentResponse response = paymentService.initiatePayment(inRequest);
+
+            assertThat(response.getPaymentGateway()).isNull();
+            assertThat(response.getRazorpayKeyId()).isEqualTo("rzp_test_key");
+            verify(stripeGateway, never()).initiatePayment(any());
+            verify(razorpayGateway).initiatePayment(any());
+        }
+
+        @Test
+        @DisplayName("Should route EU store (countryCode=DE) to Stripe gateway, not Razorpay")
+        void shouldRouteGermanyToStripe() throws Exception {
+            // Given
+            InitiatePaymentRequest deRequest = InitiatePaymentRequest.builder()
+                    .orderId("order-de-001")
+                    .amount(BigDecimal.valueOf(45.00))
+                    .customerId("cust-de")
+                    .customerEmail("customer@real.com")
+                    .customerPhone("+31612345678")
+                    .storeId("store-de")
+                    .orderType("DELIVERY")
+                    .paymentMethod("CARD")
+                    .build();
+            deRequest.setCountryCode("DE");
+            deRequest.setCurrency("EUR");
+
+            Transaction stripeTransaction = Transaction.builder()
+                    .orderId("order-de-001")
+                    .stripePaymentIntentId("pi_123")
+                    .paymentGateway("STRIPE")
+                    .amount(BigDecimal.valueOf(45.00))
+                    .status(Transaction.PaymentStatus.INITIATED)
+                    .customerId("cust-de")
+                    .customerEmail("encrypted-email")
+                    .customerPhone("encrypted-phone")
+                    .storeId("store-de")
+                    .currency("EUR")
+                    .reconciled(false)
+                    .build();
+            stripeTransaction.setId("txn-de-001");
+
+            when(transactionRepository.findByOrderId("order-de-001")).thenReturn(Optional.empty());
+            when(paymentGatewayResolver.resolve("DE")).thenReturn(stripeGateway);
+            when(stripeGateway.initiatePayment(any()))
+                    .thenReturn(new GatewayPaymentResult("STRIPE", "pi_123", "pi_123_secret", "pk_test_123"));
+            when(encryptionService.encrypt(anyString())).thenReturn("encrypted");
+            when(transactionRepository.save(any(Transaction.class))).thenReturn(stripeTransaction);
+            when(encryptionService.decrypt(anyString())).thenReturn("decrypted");
+
+            // When
+            PaymentResponse response = paymentService.initiatePayment(deRequest);
+
+            // Then
+            assertThat(response.getPaymentGateway()).isEqualTo("STRIPE");
+            assertThat(response.getStripeClientSecret()).isEqualTo("pi_123_secret");
+            assertThat(response.getStripePublishableKey()).isEqualTo("pk_test_123");
+            assertThat(response.getRazorpayKeyId()).isNull();
+            verify(stripeGateway).initiatePayment(any());
+            verify(razorpayGateway, never()).initiatePayment(any());
         }
 
         @Test
@@ -186,10 +291,11 @@ class PaymentServiceTest {
 
         @Test
         @DisplayName("Should wrap RazorpayException in RuntimeException")
-        void shouldWrapRazorpayException() throws RazorpayException {
+        void shouldWrapRazorpayException() throws Exception {
             // Given
             when(transactionRepository.findByOrderId("order-123")).thenReturn(Optional.empty());
-            when(razorpayService.createOrder(any(), anyString(), anyString()))
+            when(paymentGatewayResolver.resolve(null)).thenReturn(razorpayGateway);
+            when(razorpayGateway.initiatePayment(any()))
                     .thenThrow(new RazorpayException("Gateway unavailable"));
 
             // When / Then
@@ -848,14 +954,14 @@ class PaymentServiceTest {
 
         @Test
         @DisplayName("Should allow re-initiation when existing transaction is not SUCCESS")
-        void shouldAllowReInitiationWhenExistingIsNotSuccess() throws com.razorpay.RazorpayException {
+        void shouldAllowReInitiationWhenExistingIsNotSuccess() throws Exception {
             // Given — existing INITIATED transaction (not SUCCESS) should NOT block
             when(transactionRepository.findByOrderId("order-123"))
                     .thenReturn(Optional.of(initiatedTransaction)); // INITIATED status
 
-            com.razorpay.Order razorpayOrder = mock(com.razorpay.Order.class);
-            when(razorpayOrder.get("id")).thenReturn("order_razorpay_002");
-            when(razorpayService.createOrder(any(), anyString(), anyString())).thenReturn(razorpayOrder);
+            when(paymentGatewayResolver.resolve(null)).thenReturn(razorpayGateway);
+            when(razorpayGateway.initiatePayment(any()))
+                    .thenReturn(new GatewayPaymentResult("RAZORPAY", "order_razorpay_002", null, "rzp_test_key"));
             when(encryptionService.encrypt(anyString())).thenReturn("encrypted");
             when(transactionRepository.save(any(Transaction.class))).thenReturn(initiatedTransaction);
             when(razorpayConfig.getKeyId()).thenReturn("rzp_test_key");
@@ -867,6 +973,144 @@ class PaymentServiceTest {
 
             // Then
             assertThat(response).isNotNull();
+        }
+    }
+
+    @Nested
+    @DisplayName("verifyPayment - Stripe guard")
+    class VerifyPaymentStripeGuardTests {
+
+        @Test
+        @DisplayName("Should reject /verify for Stripe transactions — must confirm via webhook")
+        void shouldRejectVerifyForStripeTransaction() {
+            // Given
+            Transaction stripeTxn = Transaction.builder()
+                    .orderId("order-de-001")
+                    .stripePaymentIntentId("pi_123")
+                    .paymentGateway("STRIPE")
+                    .amount(BigDecimal.valueOf(45.00))
+                    .status(Transaction.PaymentStatus.INITIATED)
+                    .build();
+            stripeTxn.setId("txn-de-001");
+            stripeTxn.setRazorpayOrderId(null);
+
+            PaymentCallbackRequest callbackRequest = PaymentCallbackRequest.builder()
+                    .razorpayOrderId("pi_123")
+                    .razorpayPaymentId("ch_123")
+                    .razorpaySignature("n/a")
+                    .build();
+
+            when(transactionRepository.findByRazorpayOrderId("pi_123"))
+                    .thenReturn(Optional.of(stripeTxn));
+
+            // When / Then
+            assertThatThrownBy(() -> paymentService.verifyPayment(callbackRequest))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Stripe");
+        }
+    }
+
+    @Nested
+    @DisplayName("handleStripeWebhookEvent")
+    class HandleStripeWebhookEventTests {
+
+        private Transaction stripeTxn;
+
+        @BeforeEach
+        void setUp() {
+            stripeTxn = Transaction.builder()
+                    .orderId("order-de-001")
+                    .stripePaymentIntentId("pi_123")
+                    .paymentGateway("STRIPE")
+                    .amount(BigDecimal.valueOf(45.00))
+                    .status(Transaction.PaymentStatus.INITIATED)
+                    .customerEmail("encrypted-email")
+                    .customerPhone("encrypted-phone")
+                    .currency("EUR")
+                    .build();
+            stripeTxn.setId("txn-de-001");
+        }
+
+        @Test
+        @DisplayName("Should mark transaction SUCCESS and publish event on payment_intent.succeeded")
+        void shouldHandlePaymentCaptured() {
+            // Given
+            GatewayWebhookResult result = new GatewayWebhookResult(
+                    GatewayWebhookResult.EventType.PAYMENT_CAPTURED, "pi_123", "ch_123", null, 150L, "ideal");
+
+            when(transactionRepository.findByStripePaymentIntentId("pi_123"))
+                    .thenReturn(Optional.of(stripeTxn));
+            when(transactionRepository.save(any(Transaction.class))).thenReturn(stripeTxn);
+            when(encryptionService.decrypt(anyString())).thenReturn("decrypted");
+
+            // When
+            paymentService.handleStripeWebhookEvent(result);
+
+            // Then
+            assertThat(stripeTxn.getStatus()).isEqualTo(Transaction.PaymentStatus.SUCCESS);
+            assertThat(stripeTxn.getStripeFeeMinorUnits()).isEqualTo(150L);
+            assertThat(stripeTxn.getPaymentMethodType()).isEqualTo("ideal");
+            assertThat(stripeTxn.getPaymentMethod()).isEqualTo(Transaction.PaymentMethod.OTHER);
+            verify(orderServiceClient).updateOrderPaymentStatus("order-de-001", "PAID", "txn-de-001");
+            verify(paymentEventPublisher).publishPaymentCompleted(any());
+        }
+
+        @Test
+        @DisplayName("Should be idempotent — duplicate payment_intent.succeeded webhook is a no-op")
+        void shouldIgnoreDuplicateCapturedWebhook() {
+            // Given — transaction already SUCCESS (Stripe retried the webhook)
+            stripeTxn.setStatus(Transaction.PaymentStatus.SUCCESS);
+            GatewayWebhookResult result = new GatewayWebhookResult(
+                    GatewayWebhookResult.EventType.PAYMENT_CAPTURED, "pi_123", "ch_123", null, 150L);
+
+            when(transactionRepository.findByStripePaymentIntentId("pi_123"))
+                    .thenReturn(Optional.of(stripeTxn));
+
+            // When
+            paymentService.handleStripeWebhookEvent(result);
+
+            // Then — no save, no order update, no duplicate notification/event
+            verify(transactionRepository, never()).save(any(Transaction.class));
+            verify(orderServiceClient, never()).updateOrderPaymentStatus(anyString(), anyString(), anyString());
+            verify(paymentEventPublisher, never()).publishPaymentCompleted(any());
+        }
+
+        @Test
+        @DisplayName("Should mark transaction FAILED and publish failure event on payment_intent.payment_failed")
+        void shouldHandlePaymentFailed() {
+            // Given
+            GatewayWebhookResult result = new GatewayWebhookResult(
+                    GatewayWebhookResult.EventType.PAYMENT_FAILED, "pi_123", null, "card_declined", null);
+
+            when(transactionRepository.findByStripePaymentIntentId("pi_123"))
+                    .thenReturn(Optional.of(stripeTxn));
+            when(transactionRepository.save(any(Transaction.class))).thenReturn(stripeTxn);
+            when(encryptionService.decrypt(anyString())).thenReturn("decrypted");
+
+            // When
+            paymentService.handleStripeWebhookEvent(result);
+
+            // Then
+            assertThat(stripeTxn.getStatus()).isEqualTo(Transaction.PaymentStatus.FAILED);
+            assertThat(stripeTxn.getErrorDescription()).isEqualTo("card_declined");
+            verify(paymentEventPublisher).publishPaymentFailed(any());
+        }
+
+        @Test
+        @DisplayName("Should ignore webhook when no matching transaction exists")
+        void shouldIgnoreWebhookWhenTransactionNotFound() {
+            // Given
+            GatewayWebhookResult result = new GatewayWebhookResult(
+                    GatewayWebhookResult.EventType.PAYMENT_CAPTURED, "pi_unknown", "ch_999", null, null);
+
+            when(transactionRepository.findByStripePaymentIntentId("pi_unknown"))
+                    .thenReturn(Optional.empty());
+
+            // When
+            paymentService.handleStripeWebhookEvent(result);
+
+            // Then
+            verify(transactionRepository, never()).save(any(Transaction.class));
         }
     }
 }

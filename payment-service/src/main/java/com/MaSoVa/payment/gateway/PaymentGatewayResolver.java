@@ -22,11 +22,19 @@ public class PaymentGatewayResolver {
         this.stripeGateway   = stripeGateway;
     }
 
+    /** India legacy: null, blank, or explicit {@code IN} → Razorpay. */
+    public boolean isIndiaStore(String countryCode) {
+        if (countryCode == null || countryCode.isBlank()) {
+            return true;
+        }
+        return "IN".equalsIgnoreCase(countryCode.trim());
+    }
+
     /**
      * @param countryCode ISO 3166-1 alpha-2 country code from Store entity, or null for India stores.
      */
     public PaymentGateway resolve(String countryCode) {
-        if (countryCode == null || countryCode.isBlank()) {
+        if (isIndiaStore(countryCode)) {
             return razorpayGateway;
         }
         return stripeGateway;

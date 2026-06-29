@@ -1,6 +1,7 @@
 package com.MaSoVa.payment.gateway;
 
 import com.MaSoVa.payment.config.StripeConfig;
+import com.MaSoVa.payment.util.CurrencyUnits;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
@@ -35,10 +36,8 @@ public class StripeGateway implements PaymentGateway {
 
     @Override
     public GatewayPaymentResult initiatePayment(GatewayPaymentRequest request) throws Exception {
-        // Stripe requires amount in minor units (cents, pence, fillér, etc.)
-        long amountMinorUnits = request.getAmount()
-                .multiply(BigDecimal.valueOf(100))
-                .longValue();
+        long amountMinorUnits = CurrencyUnits.majorToStripeAmount(
+                request.getAmount(), request.getCurrency());
 
         PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                 .setAmount(amountMinorUnits)
@@ -85,7 +84,9 @@ public class StripeGateway implements PaymentGateway {
     @Override
     public String refund(String gatewayPaymentId, BigDecimal amount, String speed) throws Exception {
         // Stripe refunds a charge (payment method), not a PaymentIntent
-        long amountMinorUnits = amount.multiply(BigDecimal.valueOf(100)).longValue();
+        PaymentIntent intent = PaymentIntent.retrieve(gatewayPaymentId);
+        String currency = intent.getCurrency() != null ? intent.getCurrency().toUpperCase() : "EUR";
+        long amountMinorUnits = CurrencyUnits.majorToStripeAmount(amount, currency);
 
         RefundCreateParams params = RefundCreateParams.builder()
                 .setPaymentIntent(gatewayPaymentId)   // Stripe accepts PI ID here
@@ -120,6 +121,7 @@ public class StripeGateway implements PaymentGateway {
         String gatewayPaymentId = null;
         String failureReason = null;
         Long stripeFee = null;
+        String paymentMethodType = null;
 
         try {
             var dataObject = event.getDataObjectDeserializer().getObject();
@@ -131,21 +133,35 @@ public class StripeGateway implements PaymentGateway {
                     if (pi.getLastPaymentError() != null) {
                         failureReason = pi.getLastPaymentError().getMessage();
                     }
+                    paymentMethodType = extractStripePaymentMethodType(pi, null);
                 } else if (obj instanceof com.stripe.model.Charge charge) {
                     gatewayOrderId   = charge.getPaymentIntent();
                     gatewayPaymentId = charge.getId();
                     if (charge.getBalanceTransactionObject() != null) {
                         stripeFee = charge.getBalanceTransactionObject().getFee();
                     }
+                    paymentMethodType = extractStripePaymentMethodType(null, charge);
                 }
             }
         } catch (Exception e) {
             log.warn("Could not extract Stripe event data for event type: {}", event.getType(), e);
         }
 
-        return new GatewayWebhookResult(eventType, gatewayOrderId, gatewayPaymentId, failureReason, stripeFee);
+        return new GatewayWebhookResult(eventType, gatewayOrderId, gatewayPaymentId, failureReason,
+                stripeFee, paymentMethodType);
     }
 
     @Override
     public String getGatewayName() { return "STRIPE"; }
+
+    private static String extractStripePaymentMethodType(PaymentIntent pi, com.stripe.model.Charge charge) {
+        if (charge != null && charge.getPaymentMethodDetails() != null
+                && charge.getPaymentMethodDetails().getType() != null) {
+            return charge.getPaymentMethodDetails().getType();
+        }
+        if (pi != null && pi.getPaymentMethodTypes() != null && !pi.getPaymentMethodTypes().isEmpty()) {
+            return pi.getPaymentMethodTypes().get(0);
+        }
+        return null;
+    }
 }

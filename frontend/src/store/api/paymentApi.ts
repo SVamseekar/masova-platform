@@ -12,7 +12,8 @@ export interface InitiatePaymentRequest {
   orderType?: string; // For payment analytics categorization
   paymentMethod?: string; // For payment analytics categorization
   notes?: string;
-  countryCode?: string;  // ISO 3166-1 alpha-2; null = India = Razorpay
+  countryCode?: string;  // ISO 3166-1 alpha-2; null/IN = India = Razorpay
+  currency?: string;     // ISO 4217 from cart/store; required for correct Stripe currency
 }
 
 export interface PaymentCallbackRequest {

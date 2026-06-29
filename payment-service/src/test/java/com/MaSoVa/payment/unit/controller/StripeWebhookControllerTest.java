@@ -3,6 +3,7 @@ package com.MaSoVa.payment.unit.controller;
 import com.MaSoVa.payment.controller.StripeWebhookController;
 import com.MaSoVa.payment.gateway.GatewayWebhookResult;
 import com.MaSoVa.payment.gateway.PaymentGateway;
+import com.MaSoVa.payment.service.PaymentService;
 import com.MaSoVa.shared.test.BaseServiceTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,6 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class StripeWebhookControllerTest extends BaseServiceTest {
 
     @Mock private PaymentGateway stripeGateway;
+    @Mock private PaymentService paymentService;
     @InjectMocks private StripeWebhookController stripeWebhookController;
     private MockMvc mockMvc;
 

@@ -34,6 +34,9 @@ public class InitiatePaymentRequest {
     /** ISO 3166-1 alpha-2 country code from the store. Null for India stores → Razorpay. */
     private String countryCode;
 
+    /** ISO 4217 currency code from the store (e.g. "EUR"). Ignored for Razorpay (always INR). */
+    private String currency;
+
     // No-arg constructor
     public InitiatePaymentRequest() {
     }
@@ -92,6 +95,8 @@ public class InitiatePaymentRequest {
 
     public String getCountryCode() { return countryCode; }
 
+    public String getCurrency() { return currency; }
+
     // Setters
     public void setOrderId(String orderId) {
         this.orderId = orderId;
@@ -130,6 +135,8 @@ public class InitiatePaymentRequest {
     }
 
     public void setCountryCode(String countryCode) { this.countryCode = countryCode; }
+
+    public void setCurrency(String currency) { this.currency = currency; }
 
     // Builder
     public static Builder builder() {

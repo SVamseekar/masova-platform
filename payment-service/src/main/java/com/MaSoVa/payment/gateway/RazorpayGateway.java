@@ -63,6 +63,7 @@ public class RazorpayGateway implements PaymentGateway {
         String gatewayOrderId = null;
         String gatewayPaymentId = null;
         String failureReason = null;
+        String paymentMethodType = null;
         try {
             var entity = payload.getJSONObject("payload")
                                  .getJSONObject(event.startsWith("refund") ? "refund" : "payment")
@@ -70,10 +71,15 @@ public class RazorpayGateway implements PaymentGateway {
             gatewayPaymentId = entity.optString("id");
             gatewayOrderId   = entity.optString("order_id");
             failureReason    = entity.optString("error_description", null);
+            paymentMethodType = entity.optString("method", null);
+            if (paymentMethodType != null && paymentMethodType.isBlank()) {
+                paymentMethodType = null;
+            }
         } catch (Exception ignored) {
             log.warn("Could not extract entity from Razorpay webhook for event: {}", event);
         }
-        return new GatewayWebhookResult(eventType, gatewayOrderId, gatewayPaymentId, failureReason, null);
+        return new GatewayWebhookResult(eventType, gatewayOrderId, gatewayPaymentId, failureReason,
+                null, paymentMethodType);
     }
 
     @Override

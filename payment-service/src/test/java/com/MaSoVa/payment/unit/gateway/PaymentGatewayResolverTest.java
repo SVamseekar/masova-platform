@@ -33,6 +33,12 @@ class PaymentGatewayResolverTest {
     }
 
     @Test
+    void in_countryCode_returns_razorpay() {
+        assertThat(resolver.resolve("IN")).isSameAs(razorpayGateway);
+        assertThat(resolver.resolve("in")).isSameAs(razorpayGateway);
+    }
+
+    @Test
     void de_returns_stripe() {
         assertThat(resolver.resolve("DE")).isSameAs(stripeGateway);
     }

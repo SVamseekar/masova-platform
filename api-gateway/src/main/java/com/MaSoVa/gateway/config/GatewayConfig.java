@@ -279,10 +279,16 @@ public class GatewayConfig {
                         .and().method("POST")
                         .uri("http://localhost:8089"))
 
+                // Webhook — public (Stripe callbacks, no auth, no rate limit — signature verified in StripeGateway)
+                .route("payment_webhook_stripe", r -> r.path("/api/payments/webhook/stripe")
+                        .and().method("POST")
+                        .uri("http://localhost:8089"))
+
                 // Payments — protected (GDPR anonymize paths blocked above via dedicated routes)
                 // X-Internal-Service is stripped here so external callers cannot spoof it
                 .route("payments_protected", r -> r.path("/api/payments/**")
                         .and().not(p -> p.path("/api/payments/webhook"))
+                        .and().not(p -> p.path("/api/payments/webhook/stripe"))
                         .and().not(p -> p.path("/api/payments/gdpr/**"))
                         .filters(f -> f
                             .removeRequestHeader("X-Internal-Service")

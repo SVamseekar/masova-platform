@@ -2,6 +2,7 @@ package com.MaSoVa.payment.controller;
 
 import com.MaSoVa.payment.gateway.GatewayWebhookResult;
 import com.MaSoVa.payment.gateway.PaymentGateway;
+import com.MaSoVa.payment.service.PaymentService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -22,9 +23,12 @@ public class StripeWebhookController {
     private static final Logger log = LoggerFactory.getLogger(StripeWebhookController.class);
 
     private final PaymentGateway stripeGateway;
+    private final PaymentService paymentService;
 
-    public StripeWebhookController(@Qualifier("stripeGateway") PaymentGateway stripeGateway) {
+    public StripeWebhookController(@Qualifier("stripeGateway") PaymentGateway stripeGateway,
+                                    PaymentService paymentService) {
         this.stripeGateway = stripeGateway;
+        this.paymentService = paymentService;
     }
 
     /**
@@ -44,8 +48,7 @@ public class StripeWebhookController {
             log.info("Stripe webhook processed: eventType={}, gatewayOrderId={}",
                      result.getEventType(), result.getGatewayOrderId());
 
-            // TODO(Global-4): route to PaymentService.handleStripeWebhookEvent()
-            // For now: log and acknowledge — payment status is confirmed via confirmPayment() on the verify endpoint.
+            paymentService.handleStripeWebhookEvent(result);
 
             return ResponseEntity.ok("Webhook processed");
 
