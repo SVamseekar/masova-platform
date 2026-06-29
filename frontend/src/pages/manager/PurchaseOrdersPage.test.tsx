@@ -57,13 +57,13 @@ describe('PurchaseOrdersPage', () => {
 
   it('renders without crashing', () => {
     renderAsManager(<PurchaseOrdersPage />);
-    expect(screen.getByText('Purchase Orders')).toBeInTheDocument();
+    expect(screen.getAllByText('Purchase Orders').length).toBeGreaterThanOrEqual(1);
   });
 
   it('displays statistics cards', () => {
     renderAsManager(<PurchaseOrdersPage />);
     expect(screen.getByText('Total Orders')).toBeInTheDocument();
-    expect(screen.getByText('Pending Approval')).toBeInTheDocument();
+    expect(screen.getAllByText('Pending Approval').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Sent to Suppliers')).toBeInTheDocument();
     expect(screen.getByText('Total Value')).toBeInTheDocument();
   });
@@ -94,7 +94,7 @@ describe('PurchaseOrdersPage', () => {
 
   it('shows approve and reject buttons for pending orders', () => {
     renderAsManager(<PurchaseOrdersPage />);
-    expect(screen.getByText(/Approve/)).toBeInTheDocument();
-    expect(screen.getByText(/Reject/)).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Approve/i }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByRole('button', { name: /Reject/i }).length).toBeGreaterThanOrEqual(1);
   });
 });

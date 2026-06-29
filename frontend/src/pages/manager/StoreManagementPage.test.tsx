@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderAsManager, screen } from '@/test/utils/testUtils';
 import StoreManagementPage from './StoreManagementPage';
+import { useGetActiveStoresQuery } from '@/store/api/storeApi';
 
 const { mockStores } = vi.hoisted(() => ({
   mockStores: [
@@ -24,9 +25,15 @@ vi.mock('@/hooks/useSmartBackNavigation', () => ({
   useSmartBackNavigation: vi.fn().mockReturnValue({ handleBack: vi.fn() }),
 }));
 
+const defaultStoresQuery = {
+  data: mockStores,
+  isLoading: false,
+} as ReturnType<typeof useGetActiveStoresQuery>;
+
 describe('StoreManagementPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useGetActiveStoresQuery).mockReturnValue(defaultStoresQuery);
   });
 
   it('renders without crashing', () => {
@@ -57,11 +64,8 @@ describe('StoreManagementPage', () => {
     expect(activeStatuses.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('shows loading state', async () => {
-    const { useGetActiveStoresQuery } = vi.mocked(
-      await import('@/store/api/storeApi')
-    );
-    vi.mocked(useGetActiveStoresQuery).mockReturnValueOnce({ data: [], isLoading: true } as ReturnType<typeof useGetActiveStoresQuery>);
+  it('shows loading state', () => {
+    vi.mocked(useGetActiveStoresQuery).mockReturnValue({ data: [], isLoading: true } as ReturnType<typeof useGetActiveStoresQuery>);
     renderAsManager(<StoreManagementPage />);
     expect(screen.getByText('Loading stores...')).toBeInTheDocument();
   });

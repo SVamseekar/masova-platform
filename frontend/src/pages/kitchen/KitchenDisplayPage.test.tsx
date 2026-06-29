@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { renderAsKitchenStaff } from '@/test/utils/testUtils';
 import KitchenDisplayPage from './KitchenDisplayPage';
 
@@ -14,17 +13,27 @@ const mockUpdateOrderStatus = vi.fn(() => ({
 }));
 const mockRefetch = vi.fn();
 
-vi.mock('../../store/api/orderApi', () => ({
-  useGetKitchenQueueQuery: () => ({
-    data: mockKitchenOrders,
-    isLoading: mockIsLoading,
-    error: mockError,
-    refetch: mockRefetch,
-  }),
-  useUpdateOrderStatusMutation: () => [mockUpdateOrderStatus, { isLoading: false }],
-  useGetAllMenuItemsQuery: () => ({ data: [], isLoading: false }),
-  orderApi: { reducerPath: 'orderApi', reducer: () => ({}), middleware: () => (next: unknown) => (action: unknown) => next(action) },
-}));
+vi.mock('../../store/api/orderApi', async () => {
+  const actual = await vi.importActual<typeof import('../../store/api/orderApi')>('../../store/api/orderApi');
+  return {
+    ...actual,
+    useGetKitchenQueueQuery: () => ({
+      data: mockKitchenOrders,
+      isLoading: mockIsLoading,
+      error: mockError,
+      refetch: mockRefetch,
+    }),
+    useUpdateOrderStatusMutation: () => [mockUpdateOrderStatus, { isLoading: false }],
+  };
+});
+
+vi.mock('../../store/api/menuApi', async () => {
+  const actual = await vi.importActual<typeof import('../../store/api/menuApi')>('../../store/api/menuApi');
+  return {
+    ...actual,
+    useGetAllMenuItemsQuery: () => ({ data: [], isLoading: false }),
+  };
+});
 
 vi.mock('../../hooks/useKitchenWebSocket', () => ({
   useKitchenWebSocket: () => ({
@@ -60,6 +69,9 @@ describe('KitchenDisplayPage', () => {
     mockIsLoading = false;
     mockError = null;
     vi.clearAllMocks();
+    mockUpdateOrderStatus.mockImplementation(() => ({
+      unwrap: () => Promise.resolve(),
+    }));
   });
 
   it('renders without crashing', () => {
@@ -325,8 +337,6 @@ describe('KitchenDisplayPage', () => {
   });
 
   it('calls updateOrderStatus when Next Stage is clicked', async () => {
-    const user = userEvent.setup();
-
     mockKitchenOrders = [
       {
         id: 'order-click',
@@ -351,7 +361,13 @@ describe('KitchenDisplayPage', () => {
 
     renderAsKitchenStaff(<KitchenDisplayPage />);
 
-    await user.click(screen.getByRole('button', { name: /Next Stage/i }));
+    const nextStageButton = await waitFor(() => {
+      const button = screen.getByText('Next Stage').closest('button');
+      expect(button).toBeTruthy();
+      return button!;
+    });
+
+    fireEvent.click(nextStageButton);
 
     await waitFor(() => {
       expect(mockUpdateOrderStatus).toHaveBeenCalledWith({

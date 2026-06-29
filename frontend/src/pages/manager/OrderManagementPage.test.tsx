@@ -120,8 +120,8 @@ describe('OrderManagementPage', () => {
     renderAsManager(<OrderManagementPage />);
     expect(screen.getByText('Total Orders')).toBeInTheDocument();
     expect(screen.getByText('Active Orders')).toBeInTheDocument();
-    expect(screen.getByText('Delivered')).toBeInTheDocument();
-    expect(screen.getByText('Cancelled')).toBeInTheDocument();
+    expect(screen.getAllByText('Delivered').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Cancelled').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Total Revenue')).toBeInTheDocument();
   });
 

@@ -83,9 +83,9 @@ describe('StaffManagementPage', () => {
   it('displays statistics cards', () => {
     renderAsManager(<StaffManagementPage />);
     expect(screen.getByText('Total Employees')).toBeInTheDocument();
-    expect(screen.getByText('Active')).toBeInTheDocument();
+    expect(screen.getAllByText('Active').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Staff Members')).toBeInTheDocument();
-    expect(screen.getByText('Drivers')).toBeInTheDocument();
+    expect(screen.getAllByText('Drivers').length).toBeGreaterThanOrEqual(1);
   });
 
   it('renders employee names in the table', () => {

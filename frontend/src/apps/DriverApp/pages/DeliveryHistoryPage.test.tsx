@@ -65,7 +65,7 @@ describe('DeliveryHistoryPage', () => {
       {
         id: 'order-10',
         orderNumber: 'ORD-010',
-        assignedDriver: { id: '4' }, // matches mockDriverUser.id
+        assignedDriverId: '4', // matches mockDriverUser.id
         customerName: 'Delivered Customer',
         totalAmount: 45.99,
         deliveredAt: now.toISOString(),
@@ -89,7 +89,7 @@ describe('DeliveryHistoryPage', () => {
       {
         id: 'order-10',
         orderNumber: 'ORD-010',
-        assignedDriver: { id: '4' },
+        assignedDriverId: '4',
         customer: { name: 'Alice Smith' },
         totalAmount: 45.99,
         deliveredAt: now.toISOString(),
@@ -114,7 +114,7 @@ describe('DeliveryHistoryPage', () => {
       {
         id: 'order-10',
         orderNumber: 'ORD-010',
-        assignedDriver: { id: '4' },
+        assignedDriverId: '4',
         totalAmount: 20,
         deliveredAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

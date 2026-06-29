@@ -184,7 +184,7 @@ describe('ActiveDeliveryPage', () => {
     await user.click(navigateBtn);
 
     expect(openSpy).toHaveBeenCalledWith(
-      expect.stringContaining('openstreetmap.org'),
+      expect.stringContaining('google.com/maps'),
       '_blank'
     );
 

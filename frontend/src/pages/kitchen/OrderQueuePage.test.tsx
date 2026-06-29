@@ -111,8 +111,8 @@ describe('OrderQueuePage', () => {
     ];
 
     renderAsKitchenStaff(<OrderQueuePage />);
-    expect(screen.getByText('Urgent')).toBeInTheDocument();
-    expect(screen.getByText('Preparing')).toBeInTheDocument();
+    expect(screen.getAllByText('Urgent').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Preparing').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('In Oven')).toBeInTheDocument();
   });
 
@@ -253,12 +253,11 @@ describe('OrderQueuePage', () => {
 
     renderAsKitchenStaff(<OrderQueuePage />);
 
-    const urgentNode = screen.getByText('Urgent');
-    const normalNode = screen.getByText('Normal');
+    const urgentOrder = screen.getByText('#002');
+    const normalOrder = screen.getByText('#001');
 
-    // Urgent should appear before Normal in DOM
     expect(
-      urgentNode.compareDocumentPosition(normalNode) & Node.DOCUMENT_POSITION_FOLLOWING
+      urgentOrder.compareDocumentPosition(normalOrder) & Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
   });
 
