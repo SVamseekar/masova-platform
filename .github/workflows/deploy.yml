@@ -1,8 +1,9 @@
 name: Deploy to GCP Cloud Run
 
+# Deployment is manual until GCP/Firebase production cutover is ready.
+# Run from Actions → "Deploy to GCP Cloud Run" → Run workflow.
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 env:
   PROJECT_ID: masova-app
