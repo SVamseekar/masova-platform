@@ -16,11 +16,13 @@ export const colors = {
   goldBorder: 'rgba(212,175,55,0.3)',
   goldBorderStrong: 'rgba(212,175,55,0.5)',
 
-  red: '#E53E3E',
-  redDark: '#C0392B',
-  redMuted: 'rgba(229,62,62,0.12)',
-  redBorder: 'rgba(229,62,62,0.35)',
-  redBorderStrong: 'rgba(229,62,62,0.55)',
+  // Muted terracotta — still reads as red, easier on dark backgrounds than bright coral
+  red: '#B86558',
+  redDark: '#8F4F45',
+  redLight: '#D08078',
+  redMuted: 'rgba(184, 101, 88, 0.12)',
+  redBorder: 'rgba(184, 101, 88, 0.28)',
+  redBorderStrong: 'rgba(184, 101, 88, 0.42)',
 
   // Text
   textPrimary: '#FFFFFF',

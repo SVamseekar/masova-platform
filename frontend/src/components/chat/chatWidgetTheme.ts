@@ -28,6 +28,13 @@ export interface ChatTheme {
   panelShadow: string
 }
 
+/** Shared muted terracotta — matches ProductSite tokens */
+const ACCENT = '#B86558'
+const ACCENT_DARK = '#8F4F45'
+const ACCENT_MUTED = 'rgba(184, 101, 88, 0.14)'
+const ACCENT_BORDER = 'rgba(184, 101, 88, 0.3)'
+const ACCENT_SHADOW = 'rgba(184, 101, 88, 0.28)'
+
 const PRODUCT_QUICK_ACTIONS: ChatQuickAction[] = [
   { label: 'How does it work?', message: 'How does MaSoVa work for multi-location restaurants?' },
   { label: 'Pricing', message: 'What are your pricing plans?' },
@@ -41,13 +48,21 @@ const APP_QUICK_ACTIONS: ChatQuickAction[] = [
 ]
 
 export function getChatTheme(isProductSite: boolean): ChatTheme {
+  const base = {
+    accent: ACCENT,
+    accentDark: ACCENT_DARK,
+    accentMuted: ACCENT_MUTED,
+    accentBorder: ACCENT_BORDER,
+    userBubbleBg: ACCENT,
+    userBubbleText: '#ffffff',
+    fabShadow: `0 10px 32px ${ACCENT_SHADOW}`,
+    panelShadow: `0 28px 80px rgba(0,0,0,0.75), 0 0 0 1px ${ACCENT_MUTED}`,
+  }
+
   if (isProductSite) {
     return {
+      ...base,
       id: 'product',
-      accent: '#E53E3E',
-      accentDark: '#C0392B',
-      accentMuted: 'rgba(229,62,62,0.14)',
-      accentBorder: 'rgba(229,62,62,0.4)',
       brand: '#D4AF37',
       brandMuted: 'rgba(212,175,55,0.18)',
       panelBg: '#121212',
@@ -55,8 +70,6 @@ export function getChatTheme(isProductSite: boolean): ChatTheme {
       messagesBg: '#0a0a0a',
       agentBubbleBg: '#1a1a1a',
       agentBubbleBorder: 'rgba(255,255,255,0.08)',
-      userBubbleBg: '#E53E3E',
-      userBubbleText: '#ffffff',
       inputBg: '#1a1a1a',
       fontFamily: 'Inter, system-ui, sans-serif',
       title: 'MaSoVa Assistant',
@@ -64,17 +77,12 @@ export function getChatTheme(isProductSite: boolean): ChatTheme {
       welcome:
         "Hello! I can answer questions about MaSoVa, pricing, and how we help restaurant teams. What would you like to know?",
       quickActions: PRODUCT_QUICK_ACTIONS,
-      fabShadow: '0 12px 40px rgba(229,62,62,0.45)',
-      panelShadow: '0 28px 80px rgba(0,0,0,0.75), 0 0 0 1px rgba(229,62,62,0.12)',
     }
   }
 
   return {
+    ...base,
     id: 'app',
-    accent: '#C62A09',
-    accentDark: '#8B1D06',
-    accentMuted: 'rgba(198,42,9,0.15)',
-    accentBorder: 'rgba(198,42,9,0.35)',
     brand: '#D4A843',
     brandMuted: 'rgba(212,168,67,0.15)',
     panelBg: '#141210',
@@ -82,8 +90,6 @@ export function getChatTheme(isProductSite: boolean): ChatTheme {
     messagesBg: '#0f0e0c',
     agentBubbleBg: '#1C1916',
     agentBubbleBorder: 'rgba(255,255,255,0.08)',
-    userBubbleBg: '#C62A09',
-    userBubbleText: '#ffffff',
     inputBg: '#1C1916',
     fontFamily: 'var(--font-body)',
     title: 'MaSoVa Support',
@@ -91,7 +97,5 @@ export function getChatTheme(isProductSite: boolean): ChatTheme {
     welcome:
       "Hi! I'm here for order status, menu questions, complaints, and refunds. How can I help you today?",
     quickActions: APP_QUICK_ACTIONS,
-    fabShadow: '0 12px 40px rgba(198,42,9,0.5)',
-    panelShadow: '0 28px 80px rgba(0,0,0,0.8)',
   }
 }

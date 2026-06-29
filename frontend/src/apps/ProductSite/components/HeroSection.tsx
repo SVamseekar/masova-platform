@@ -128,7 +128,7 @@ export default function HeroSection() {
               padding: '14px 28px',
               borderRadius: 10,
               textDecoration: 'none',
-              boxShadow: '0 8px 28px rgba(229,62,62,0.35)',
+              boxShadow: '0 8px 28px rgba(184,101,88,0.28)',
             }}
           >
             See how it works
