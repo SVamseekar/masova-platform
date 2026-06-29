@@ -241,7 +241,7 @@ describe('CustomerPanel', () => {
 
       expect(screen.getByText(/Order Summary/i)).toBeInTheDocument();
       expect(screen.getByText('Subtotal:')).toBeInTheDocument();
-      expect(screen.getByText('Tax (5%):')).toBeInTheDocument();
+      expect(screen.getByText('Tax (5% GST):')).toBeInTheDocument();
       expect(screen.getByText('Total Amount:')).toBeInTheDocument();
     });
 
