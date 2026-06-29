@@ -1,8 +1,10 @@
 # sync-dell-dev.ps1 — Bring Dell dev machine to current origin/main
 # Run on Dell (PowerShell) from repo root after PR merges or when Mac/Dell diverge.
 #
+# Dell repo path: D:\projects\masova-platform
+#
 # Usage:
-#   cd C:\path\to\MaSoVa-restaurant-management-system
+#   cd D:\projects\masova-platform
 #   .\scripts\sync-dell-dev.ps1
 #   .\scripts\sync-dell-dev.ps1 -Branch feature/global-2-eu-vat-engine
 

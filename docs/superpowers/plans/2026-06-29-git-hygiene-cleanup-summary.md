@@ -77,7 +77,8 @@ See `scripts/rebase-global-features.ps1` (Dell) / `scripts/rebase-global-feature
 After every `main` merge (or when switching machines):
 
 ```powershell
-# On Dell (PowerShell) — see scripts/sync-dell-dev.ps1
+# On Dell (PowerShell) — repo: D:\projects\masova-platform — see scripts/sync-dell-dev.ps1
+cd D:\projects\masova-platform
 git fetch origin --prune
 git checkout main
 git pull origin main
