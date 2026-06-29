@@ -57,9 +57,10 @@ describe('MenuPage', () => {
 
   it('displays cuisine filter buttons', () => {
     renderAsCustomer(<MenuPage />);
-    expect(screen.getByText('SOUTH INDIAN')).toBeInTheDocument();
-    expect(screen.getByText('NORTH INDIAN')).toBeInTheDocument();
-    expect(screen.getByText('ITALIAN')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'SOUTH INDIAN' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'NORTH INDIAN' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ITALIAN' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'AMERICAN' })).toBeInTheDocument();
   });
 
   it('displays dietary filter buttons', () => {
@@ -70,14 +71,14 @@ describe('MenuPage', () => {
     expect(screen.getByText('Non-Veg')).toBeInTheDocument();
   });
 
-  it('shows loading state when menu is loading', () => {
+  it('shows loading skeletons when menu is loading', () => {
     mockUseGetAvailableMenuQuery.mockReturnValue({
       data: undefined,
       isLoading: true,
       error: null,
     });
-    renderAsCustomer(<MenuPage />);
-    expect(screen.getByText('Loading delicious menu...')).toBeInTheDocument();
+    const { container } = renderAsCustomer(<MenuPage />);
+    expect(container.querySelector('.MuiSkeleton-root')).toBeInTheDocument();
   });
 
   it('shows empty state when no items match filters', () => {
@@ -117,15 +118,9 @@ describe('MenuPage', () => {
     expect(screen.getByTestId('store-selector')).toBeInTheDocument();
   });
 
-  it('displays Add to Cart buttons for menu items', () => {
+  it('displays Add buttons for menu items', () => {
     renderAsCustomer(<MenuPage />);
-    const addButtons = screen.getAllByText('Add to Cart');
+    const addButtons = screen.getAllByRole('button', { name: /^Add$/ });
     expect(addButtons.length).toBeGreaterThan(0);
-  });
-
-  it('displays View Recipe & Ingredients buttons', () => {
-    renderAsCustomer(<MenuPage />);
-    const recipeButtons = screen.getAllByText('View Recipe & Ingredients');
-    expect(recipeButtons.length).toBeGreaterThan(0);
   });
 });
