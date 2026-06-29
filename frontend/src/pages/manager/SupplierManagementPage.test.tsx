@@ -4,8 +4,8 @@ import SupplierManagementPage from './SupplierManagementPage';
 
 const { mockSuppliers } = vi.hoisted(() => ({
   mockSuppliers: [
-    { id: 'sup-1', name: 'Fresh Farms', contactPerson: 'John', email: 'john@freshfarms.com', phone: '555-1001', status: 'ACTIVE', isPreferred: true, rating: 4.5, categories: ['RAW_MATERIAL'] },
-    { id: 'sup-2', name: 'Pack Solutions', contactPerson: 'Mary', email: 'mary@pack.com', phone: '555-1002', status: 'ACTIVE', isPreferred: false, rating: 3.8, categories: ['PACKAGING'] },
+    { id: 'sup-1', supplierName: 'Fresh Farms', supplierCode: 'FF-001', contactPerson: 'John', email: 'john@freshfarms.com', phone: '555-1001', status: 'ACTIVE', isPreferred: true, rating: 4.5, categories: ['RAW_MATERIAL'] },
+    { id: 'sup-2', supplierName: 'Pack Solutions', supplierCode: 'PS-002', contactPerson: 'Mary', email: 'mary@pack.com', phone: '555-1002', status: 'ACTIVE', isPreferred: false, rating: 3.8, categories: ['PACKAGING'] },
   ],
 }));
 
