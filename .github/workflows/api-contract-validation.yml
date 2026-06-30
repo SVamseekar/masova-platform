@@ -6,6 +6,10 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: api-contract-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # ============================================================
   # Job 1: Validate OpenAPI specs are in sync with code
@@ -17,15 +21,30 @@ jobs:
       mongodb:
         image: mongo:7
         ports: ["27017:27017"]
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
       redis:
         image: redis:7-alpine
         ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
       rabbitmq:
         image: rabbitmq:3.12-alpine
         ports: ["5672:5672"]
         env:
           RABBITMQ_DEFAULT_USER: masova
           RABBITMQ_DEFAULT_PASS: masova_secret
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
       postgres:
         image: postgres:16-alpine
         ports: ["5432:5432"]
@@ -33,6 +52,11 @@ jobs:
           POSTGRES_USER: masova
           POSTGRES_PASSWORD: masova_secret
           POSTGRES_DB: masova_db
+        options: >-
+          --health-cmd "pg_isready -U masova -d masova_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
@@ -50,13 +74,16 @@ jobs:
       - name: Start backend services
         run: |
           for svc in api-gateway core-service commerce-service payment-service logistics-service intelligence-service; do
-            nohup mvn spring-boot:run -pl $svc --no-transfer-progress > /tmp/$svc.log 2>&1 &
+            nohup mvn spring-boot:run -pl $svc "-Dmaven.test.skip=true" --no-transfer-progress > /tmp/$svc.log 2>&1 &
           done
         env:
           JWT_SECRET: ci-test-secret-key-at-least-64-chars-long-for-hs512-algorithm-security
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/masova_db
           SPRING_DATASOURCE_USERNAME: masova
           SPRING_DATASOURCE_PASSWORD: masova_secret
+          SPRING_DATA_MONGODB_URI: mongodb://localhost:27017/masova_ci
+          SPRING_REDIS_HOST: localhost
+          SPRING_REDIS_PORT: 6379
           RABBITMQ_USERNAME: masova
           RABBITMQ_PASSWORD: masova_secret
           RAZORPAY_KEY_ID: rzp_test_ci_smoke_key_id
@@ -88,14 +115,14 @@ jobs:
           for svc in "${!PORTS[@]}"; do
             port=${PORTS[$svc]}
             path=${HEALTH_PATHS[$svc]}
-            for i in $(seq 1 30); do
+            for i in $(seq 1 45); do
               if curl -sf --max-time 5 http://localhost:$port$path > /dev/null 2>&1; then
                 echo "OK $svc ready on :$port"
                 break
               fi
-              if [ $i -eq 30 ]; then
-                echo "FAIL $svc timed out"
-                tail -30 /tmp/$svc.log
+              if [ $i -eq 45 ]; then
+                echo "FAIL $svc timed out after 225s"
+                tail -50 /tmp/$svc.log
                 exit 1
               fi
               sleep 5
@@ -111,27 +138,8 @@ jobs:
           curl -sf http://localhost:8089/v3/api-docs > specs/payment-spec.json
           curl -sf http://localhost:8087/v3/api-docs > specs/intelligence-spec.json
 
-      - name: Count endpoints and verify ~175 total
-        run: |
-          node -e "
-            const fs = require('fs');
-            const specs = ['core','commerce','logistics','payment','intelligence'];
-            let total = 0;
-            specs.forEach(s => {
-              const spec = JSON.parse(fs.readFileSync('specs/' + s + '-spec.json'));
-              const count = Object.values(spec.paths || {})
-                .flatMap(p => Object.keys(p))
-                .filter(m => ['get','post','put','patch','delete'].includes(m)).length;
-              console.log(s + ': ' + count + ' endpoints');
-              total += count;
-            });
-            console.log('Total: ' + total);
-            if (total < 160 || total > 200) {
-              console.error('FAIL: Expected ~175 endpoints, got ' + total);
-              process.exit(1);
-            }
-            console.log('PASS: Endpoint count within expected range');
-          "
+      - name: Verify endpoint counts against baselines
+        run: node scripts/ci/verify-openapi-counts.js specs
 
       - name: Upload refreshed specs
         uses: actions/upload-artifact@v4
@@ -177,15 +185,30 @@ jobs:
       mongodb:
         image: mongo:7
         ports: ["27017:27017"]
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
       redis:
         image: redis:7-alpine
         ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
       rabbitmq:
         image: rabbitmq:3.12-alpine
         ports: ["5672:5672"]
         env:
           RABBITMQ_DEFAULT_USER: masova
           RABBITMQ_DEFAULT_PASS: masova_secret
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
       postgres:
         image: postgres:16-alpine
         ports: ["5432:5432"]
@@ -193,6 +216,11 @@ jobs:
           POSTGRES_USER: masova
           POSTGRES_PASSWORD: masova_secret
           POSTGRES_DB: masova_db
+        options: >-
+          --health-cmd "pg_isready -U masova -d masova_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
@@ -235,37 +263,17 @@ jobs:
     name: Detect Breaking API Changes
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    needs: validate-openapi-specs
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
-          path: main-branch
+          fetch-depth: 0
 
-      - name: Download current branch specs
-        uses: actions/download-artifact@v4
+      - uses: actions/setup-node@v4
         with:
-          name: openapi-specs
-          path: current-specs/
+          node-version: '20'
 
-      - name: Install openapi-diff
-        run: npm install -g openapi-diff
+      - name: Regenerate integration matrix for PR branch
+        run: node scripts/integration-matrix-audit.js
 
-      - name: Check for breaking changes
-        run: |
-          BREAKING=0
-          for svc in core commerce logistics payment intelligence; do
-            if [ -f "main-branch/specs/${svc}-spec.json" ] && [ -f "current-specs/${svc}-spec.json" ]; then
-              echo "Checking $svc for breaking changes..."
-              openapi-diff "main-branch/specs/${svc}-spec.json" "current-specs/${svc}-spec.json" \
-                --format markdown > "/tmp/${svc}-diff.md" 2>&1 || true
-              if grep -q "BREAKING" "/tmp/${svc}-diff.md" 2>/dev/null; then
-                echo "FAIL BREAKING changes in $svc"
-                cat "/tmp/${svc}-diff.md"
-                BREAKING=1
-              else
-                echo "OK No breaking changes in $svc"
-              fi
-            fi
-          done
-          exit $BREAKING
+      - name: Fail on removed endpoints vs main
+        run: node scripts/ci/detect-api-breaking-changes.js origin/main

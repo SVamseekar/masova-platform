@@ -11,6 +11,7 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
+    "typecheck": "tsc --noEmit",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest --watch",
     "test:pact": "vitest run --config vitest.pact.config.ts",

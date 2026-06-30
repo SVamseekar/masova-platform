@@ -10,7 +10,35 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  # ============================================================
+  # Job 0: Static integration matrix (no services required)
+  # ============================================================
+  integration-matrix:
+    name: Integration Matrix
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Verify API wiring (stale paths, dead RTK, gateway gaps)
+        run: node scripts/integration-matrix-audit.js --ci
+
+      - name: Verify committed OpenAPI specs match integration matrix
+        run: |
+          node scripts/ci/sync-specs-from-matrix.js
+          git diff --exit-code specs/ || (
+            echo "FAIL: specs/ drifted from INTEGRATION_MATRIX — run node scripts/ci/sync-specs-from-matrix.js"
+            exit 1
+          )
+
   # ============================================================
   # Job 1: Backend tests (all 6 services)
   # ============================================================
@@ -81,6 +109,7 @@ jobs:
   frontend:
     name: Frontend Tests
     runs-on: ubuntu-latest
+    needs: integration-matrix
 
     steps:
       - uses: actions/checkout@v4
@@ -95,7 +124,7 @@ jobs:
         run: cd frontend && npm ci
 
       - name: TypeScript check
-        run: cd frontend && npx tsc --noEmit
+        run: cd frontend && npm run typecheck
 
       - name: Run unit tests
         env:
@@ -103,5 +132,3 @@ jobs:
           VITE_API_BASE_URL: http://localhost:8080/api
           VITE_WS_URL: http://localhost:8080/ws
         run: cd frontend && npm run test:run
-
-

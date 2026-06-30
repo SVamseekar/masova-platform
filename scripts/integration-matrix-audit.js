@@ -28,6 +28,7 @@ const liveIdx = args.indexOf('--live');
 const LIVE_BASE = liveIdx >= 0 ? args[liveIdx + 1]?.replace(/\/$/, '') : null;
 const tokenIdx = args.indexOf('--token');
 const LIVE_TOKEN = tokenIdx >= 0 ? args[tokenIdx + 1] : null;
+const CI_MODE = args.includes('--ci');
 
 // ─── File discovery ──────────────────────────────────────────────────────────
 
@@ -797,6 +798,37 @@ async function main() {
   console.log(`\nStale wiring: ${report.staleWiring.length}`);
   report.staleWiring.slice(0, 10).forEach((sw) => console.log(`  ⚠️  ${sw.method} ${sw.path}`));
   console.log(`\nUnwired slices (no UI): ${report.unwiredSlices.map((u) => u.slice).join(', ')}`);
+
+  if (CI_MODE) {
+    const failures = [];
+    if (s.staleFrontendWiring > 0) {
+      failures.push(`staleFrontendWiring=${s.staleFrontendWiring}`);
+    }
+    if (s.frontendOnlyPaths > 0) {
+      failures.push(`frontendOnlyPaths=${s.frontendOnlyPaths}`);
+    }
+    const gatewayGapsExTest = report.gatewayGaps.filter(
+      (g) => !g.path.startsWith('/api/test-data/')
+    );
+    if (gatewayGapsExTest.length > 0) {
+      failures.push(`gatewayGaps(non-test-data)=${gatewayGapsExTest.length}`);
+    }
+
+    const baselinesPath = path.join(__dirname, 'ci/openapi-endpoint-baselines.json');
+    if (fs.existsSync(baselinesPath)) {
+      const baselines = JSON.parse(fs.readFileSync(baselinesPath, 'utf8'));
+      const { min: tMin, max: tMax } = baselines.total;
+      if (s.backendEndpoints < tMin || s.backendEndpoints > tMax) {
+        failures.push(`backendEndpoints=${s.backendEndpoints} (expected ${tMin}-${tMax})`);
+      }
+    }
+
+    if (failures.length > 0) {
+      console.error('\nCI GATE FAILED:', failures.join(', '));
+      process.exit(1);
+    }
+    console.log('\nCI GATE PASSED');
+  }
 }
 
 main().catch((e) => {
