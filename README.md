@@ -144,7 +144,7 @@ Full details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - **Dual-write persistence** — PostgreSQL first (synchronous), MongoDB second (async) for financial data
 - **11-state order lifecycle** — every transition publishes to `masova.orders.exchange`
 - **Multi-gateway payment routing** — Stripe for EU/international stores, Razorpay for India legacy
-- **175 canonical API endpoints** — documented in `docs/api-contracts/`
+- **207 canonical API endpoints** — documented in `docs/api-contracts/`
 - **EU VAT engine** — 12-country, context-aware VAT (DINE_IN / TAKEAWAY / DELIVERY, FOOD / ALCOHOL / BEVERAGE)
 - **Fiscal compliance** — DE, FR, IT, BE, HU, GB signing at order completion
 - **Allergen compliance** — 14 EU allergens enforced; items cannot go live without manager declaration
@@ -235,7 +235,7 @@ masova/
 | Capability | Status |
 |---|---|
 | 6-service microservice architecture | ✅ Live |
-| 175 canonical API endpoints | ✅ Live |
+| 207 canonical API endpoints | ✅ Live |
 | Dual-write MongoDB + PostgreSQL | ✅ Live |
 | Dark-premium customer web + neumorphic staff UI | ✅ Live |
 | Stripe + Razorpay multi-gateway payments | ✅ Live |
