@@ -5,6 +5,7 @@ import {formatMoney, formatMajorAmount} from '../../utils/currency';
 import { t, cardStyle, sectionTitleStyle, statusBadge } from './manager-tokens';
 import {
   useGetActiveStoreSessionsQuery,
+  useGetPendingApprovalSessionsQuery,
   useApproveSessionMutation,
   useRejectSessionMutation,
 } from '../../store/api/sessionApi';
@@ -34,6 +35,12 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
   const { data: sessions = [], isLoading: loadingSessions, error: sessionsError, refetch: refetchSessions } = useGetActiveStoreSessionsQuery(storeId, {
     skip: !storeId, pollingInterval: 30000,
   });
+  const {
+    data: pendingSessions = [],
+    isLoading: loadingPendingSessions,
+    error: pendingSessionsError,
+    refetch: refetchPendingSessions,
+  } = useGetPendingApprovalSessionsQuery(undefined, { skip: !storeId, pollingInterval: 30000 });
   const { data: storeMetrics, isLoading: loadingMetrics, refetch: refetchMetrics } = useGetStoreMetricsQuery(storeId, {
     skip: !storeId, pollingInterval: 60000,
   });
@@ -55,8 +62,13 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
   const [rejectSession, { isLoading: rejectingSession }] = useRejectSessionMutation();
 
   useEffect(() => {
-    if (storeId) { refetchSessions(); refetchMetrics(); refetchOrders(); }
-  }, [storeId, refetchSessions, refetchMetrics, refetchOrders]);
+    if (storeId) {
+      refetchSessions();
+      refetchPendingSessions();
+      refetchMetrics();
+      refetchOrders();
+    }
+  }, [storeId, refetchSessions, refetchPendingSessions, refetchMetrics, refetchOrders]);
 
   const salesData = {
     today: todaySalesMetrics?.todaySales || 0,
@@ -82,11 +94,21 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
     return `${hours}h ${minutes}m`;
   };
 
+  const storePendingSessions = pendingSessions.filter((s) => s.storeId === storeId);
+
   const handleApproveSession = async (sessionId: string) => {
-    try { await approveSession(sessionId).unwrap(); } catch { alert('Failed to approve session'); }
+    try {
+      await approveSession(sessionId).unwrap();
+      refetchPendingSessions();
+      refetchSessions();
+    } catch { alert('Failed to approve session'); }
   };
   const handleRejectSession = async (sessionId: string) => {
-    try { await rejectSession({ sessionId, reason: 'Manager rejected' }).unwrap(); } catch { alert('Failed to reject session'); }
+    try {
+      await rejectSession({ sessionId, reason: 'Manager rejected' }).unwrap();
+      refetchPendingSessions();
+      refetchSessions();
+    } catch { alert('Failed to reject session'); }
   };
 
   const formatCurrency = (val: number) => formatMajorAmount(val , currency, locale);
@@ -233,24 +255,33 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
           </div>
 
           {/* Pending Approval Sessions */}
-          {sessions.filter(s => s.status === 'PENDING_APPROVAL').length > 0 && (
-            <div style={{ marginTop: 16 }}>
-              <h4 style={{ fontSize: 13, fontWeight: 600, color: t.orange, marginBottom: 8 }}>Pending Approval</h4>
-              {sessions.filter(s => s.status === 'PENDING_APPROVAL').map(session => (
-                <div key={session.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderBottom: `1px solid ${t.grayLight}` }}>
-                  <div style={{ flex: 1, fontSize: 13 }}>{session.employeeName} - {session.role}</div>
-                  <button onClick={() => handleApproveSession(session.id)} disabled={approvingSession}
-                    style={{ padding: '4px 12px', background: t.green, color: t.white, border: 'none', borderRadius: t.radius.sm, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
-                    Approve
-                  </button>
-                  <button onClick={() => handleRejectSession(session.id)} disabled={rejectingSession}
-                    style={{ padding: '4px 12px', background: t.red, color: t.white, border: 'none', borderRadius: t.radius.sm, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
-                    Reject
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+          <div style={{ marginTop: 16 }}>
+            <h4 style={{ fontSize: 13, fontWeight: 600, color: t.orange, marginBottom: 8 }}>
+              Pending Session Approvals ({storePendingSessions.length})
+            </h4>
+            {loadingPendingSessions && (
+              <p style={{ textAlign: 'center', color: t.gray, padding: 12, fontSize: 12 }}>Loading pending sessions...</p>
+            )}
+            {!loadingPendingSessions && pendingSessionsError && (
+              <p style={{ textAlign: 'center', color: t.red, padding: 12, fontSize: 12 }}>Failed to load pending sessions</p>
+            )}
+            {!loadingPendingSessions && !pendingSessionsError && storePendingSessions.length === 0 && (
+              <p style={{ textAlign: 'center', color: t.gray, padding: 12, fontSize: 12 }}>No sessions awaiting approval</p>
+            )}
+            {storePendingSessions.map(session => (
+              <div key={session.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderBottom: `1px solid ${t.grayLight}` }}>
+                <div style={{ flex: 1, fontSize: 13 }}>{session.employeeName} - {session.role}</div>
+                <button onClick={() => handleApproveSession(session.id)} disabled={approvingSession}
+                  style={{ padding: '4px 12px', background: t.green, color: t.white, border: 'none', borderRadius: t.radius.sm, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                  Approve
+                </button>
+                <button onClick={() => handleRejectSession(session.id)} disabled={rejectingSession}
+                  style={{ padding: '4px 12px', background: t.red, color: t.white, border: 'none', borderRadius: t.radius.sm, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                  Reject
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

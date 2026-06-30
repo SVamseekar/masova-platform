@@ -284,8 +284,8 @@ export const notificationApi = createApi({
 
     updateCampaign: builder.mutation<Campaign, { id: string; campaign: Partial<Campaign> }>({
       query: ({ id, campaign }) => ({
-        url: `/api/campaigns/${id}`,
-        method: 'PUT',
+        url: `/campaigns/${id}`,
+        method: 'PATCH',
         body: campaign,
       }),
       invalidatesTags: ['Campaign'],
@@ -293,7 +293,7 @@ export const notificationApi = createApi({
 
     scheduleCampaign: builder.mutation<void, { id: string; scheduledFor: string }>({
       query: ({ id, scheduledFor }) => ({
-        url: `/api/campaigns/${id}/schedule`,
+        url: `/campaigns/${id}/schedule`,
         method: 'POST',
         body: { scheduledFor },
       }),
@@ -302,7 +302,7 @@ export const notificationApi = createApi({
 
     executeCampaign: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/api/campaigns/${id}/execute`,
+        url: `/campaigns/${id}/execute`,
         method: 'POST',
       }),
       invalidatesTags: ['Campaign'],
@@ -310,7 +310,7 @@ export const notificationApi = createApi({
 
     cancelCampaign: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/api/campaigns/${id}/cancel`,
+        url: `/campaigns/${id}/cancel`,
         method: 'POST',
       }),
       invalidatesTags: ['Campaign'],
@@ -322,19 +322,19 @@ export const notificationApi = createApi({
         params.append('page', page.toString());
         params.append('size', size.toString());
         if (storeId) params.append('storeId', storeId);
-        return `/api/campaigns?${params.toString()}`;
+        return `/campaigns?${params.toString()}`;
       },
       providesTags: (result, error, { storeId }) => [{ type: 'Campaign', id: storeId || 'DEFAULT' }],
     }),
 
     getCampaign: builder.query<Campaign, string>({
-      query: (id) => `/api/campaigns/${id}`,
+      query: (id) => `/campaigns/${id}`,
       providesTags: ['Campaign'],
     }),
 
     deleteCampaign: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/api/campaigns/${id}`,
+        url: `/campaigns/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Campaign'],

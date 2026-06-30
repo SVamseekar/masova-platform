@@ -64,7 +64,7 @@ export interface Refund {
   razorpayRefundId: string;
   razorpayPaymentId: string;
   amount: number;
-  status: 'INITIATED' | 'PROCESSING' | 'PROCESSED' | 'FAILED';
+  status: 'INITIATED' | 'PROCESSING' | 'PROCESSED' | 'FAILED' | 'PENDING_APPROVAL' | 'REJECTED';
   type: 'FULL' | 'PARTIAL';
   reason: string;
   initiatedBy: string;
@@ -248,6 +248,56 @@ export const paymentApi = createApi({
       providesTags: (result) =>
         result ? [...result.map(({ id }) => ({ type: 'Refund' as const, id })), 'Refund'] : ['Refund'],
     }),
+
+    // List refunds (canonical GET /refund?transactionId|orderId|customerId|storeId|status)
+    getRefunds: builder.query<
+      Refund[],
+      { transactionId?: string; orderId?: string; customerId?: string; storeId?: string; status?: string }
+    >({
+      query: ({ transactionId, orderId, customerId, storeId, status }) => {
+        const params = new URLSearchParams();
+        if (transactionId) params.append('transactionId', transactionId);
+        if (orderId) params.append('orderId', orderId);
+        if (customerId) params.append('customerId', customerId);
+        if (storeId) params.append('storeId', storeId);
+        if (status) params.append('status', status);
+        const qs = params.toString();
+        return qs ? `/refund?${qs}` : '/refund';
+      },
+      providesTags: ['Refund'],
+    }),
+
+    getPendingRefunds: builder.query<Refund[], string | undefined>({
+      query: (storeId) => `/refund?${storeId ? `storeId=${encodeURIComponent(storeId)}&` : ''}status=PENDING_APPROVAL`,
+      providesTags: ['Refund'],
+    }),
+
+    // Request refund pending manager approval (no money moved)
+    requestRefundApproval: builder.mutation<Refund, RefundRequest>({
+      query: (request) => ({
+        url: '/refund/request',
+        method: 'POST',
+        body: request,
+      }),
+      invalidatesTags: ['Payment', 'Refund'],
+    }),
+
+    approveRefund: builder.mutation<Refund, string>({
+      query: (refundId) => ({
+        url: `/refund/${refundId}/approve`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Payment', 'Refund'],
+    }),
+
+    rejectRefund: builder.mutation<Refund, { refundId: string; reason?: string }>({
+      query: ({ refundId, reason }) => ({
+        url: `/refund/${refundId}/reject`,
+        method: 'POST',
+        body: reason ? { reason } : undefined,
+      }),
+      invalidatesTags: ['Payment', 'Refund'],
+    }),
   }),
 });
 
@@ -266,4 +316,9 @@ export const {
   useGetRefundsByTransactionIdQuery,
   useGetRefundsByOrderIdQuery,
   useGetRefundsByCustomerIdQuery,
+  useGetRefundsQuery,
+  useGetPendingRefundsQuery,
+  useRequestRefundApprovalMutation,
+  useApproveRefundMutation,
+  useRejectRefundMutation,
 } = paymentApi;

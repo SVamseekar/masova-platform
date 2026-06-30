@@ -27,6 +27,8 @@ vi.mock('@/store/api/earningsApi', async (importOriginal) => {
   return {
     ...actual,
     useGetWeeklyEarningsQuery: vi.fn().mockReturnValue({ data: undefined }),
+    useGetPayRateQuery: vi.fn().mockReturnValue({ data: undefined, isLoading: false }),
+    useSetPayRateMutation: vi.fn().mockReturnValue([vi.fn(), { isLoading: false }]),
   };
 });
 

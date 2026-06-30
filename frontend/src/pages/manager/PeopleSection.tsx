@@ -98,6 +98,8 @@ const input: React.CSSProperties = { width: '100%', padding: '10px 12px', border
 // ── tabs ──
 const DriverManagementPage = React.lazy(() => import('./DriverManagementPage'));
 
+const GdprManagerPage = React.lazy(() => import('./GdprManagerPage'));
+
 const tabs = [
   { id: 'staff', label: 'Staff' },
   { id: 'scheduling', label: 'Scheduling' },
@@ -106,6 +108,7 @@ const tabs = [
   { id: 'customers', label: 'Customers' },
   { id: 'campaigns', label: 'Campaigns' },
   { id: 'reviews', label: 'Reviews' },
+  { id: 'gdpr', label: 'GDPR' },
 ];
 
 // =============================================
@@ -992,6 +995,11 @@ const PeopleSection: React.FC<Props> = ({ storeId, activeTab, onTabChange }) => 
       {current === 'customers' && <CustomersTab storeId={storeId} />}
       {current === 'campaigns' && <CampaignsTab storeId={storeId} />}
       {current === 'reviews' && <ReviewsTab storeId={storeId} />}
+      {current === 'gdpr' && (
+        <React.Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: t.gray }}>Loading...</div>}>
+          <GdprManagerPage storeId={storeId} />
+        </React.Suspense>
+      )}
     </div>
   );
 };

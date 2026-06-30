@@ -26,6 +26,7 @@ import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import {
   useGetGdprRequestsQuery,
   useCreateGdprRequestMutation,
+  useLazyExportUserDataQuery,
   type GdprRequestType,
 } from '../store/api/gdprApi';
 
@@ -50,6 +51,7 @@ export const GdprRequests: React.FC = () => {
   const userId = localStorage.getItem('userId') ?? '';
   const { data: gdprRequests = [], refetch } = useGetGdprRequestsQuery(userId, { skip: !userId });
   const [createGdprRequest, { isLoading: creating }] = useCreateGdprRequestMutation();
+  const [triggerExport, { isLoading: exporting }] = useLazyExportUserDataQuery();
 
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedType, setSelectedType] = useState('');
@@ -68,6 +70,23 @@ export const GdprRequests: React.FC = () => {
   const handleCreateRequest = (requestType: string) => {
     setSelectedType(requestType);
     setOpenDialog(true);
+  };
+
+  const handleExportData = async () => {
+    if (!userId) return;
+    try {
+      const data = await triggerExport(userId).unwrap();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `my-data-export-${Date.now()}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      setMessage({ type: 'success', text: 'Your data export has been downloaded.' });
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to export your data. Please try again.' });
+    }
   };
 
   const handleSubmitRequest = async () => {
@@ -166,9 +185,20 @@ export const GdprRequests: React.FC = () => {
         </Alert>
       )}
 
-      <Typography variant="h5" fontWeight={600} gutterBottom mt={4}>
-        Submit a New Request
-      </Typography>
+      <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2} mt={4} mb={2}>
+        <Typography variant="h5" fontWeight={600}>
+          Submit a New Request
+        </Typography>
+        <Button
+          variant="outlined"
+          startIcon={<DownloadIcon />}
+          onClick={handleExportData}
+          disabled={!userId || exporting}
+          sx={{ borderRadius: 2, textTransform: 'none' }}
+        >
+          {exporting ? 'Exporting...' : 'Download My Data'}
+        </Button>
+      </Box>
 
       <Grid container spacing={3} mb={6}>
         {requestTypes.map((item) => (
@@ -287,6 +317,18 @@ export const GdprRequests: React.FC = () => {
                       </Typography>
                     </>
                   )}
+                  {request.status === 'COMPLETED' &&
+                    ['ACCESS', 'DATA_PORTABILITY'].includes(request.requestType) && (
+                      <Button
+                        size="small"
+                        startIcon={<DownloadIcon />}
+                        onClick={handleExportData}
+                        disabled={exporting}
+                        sx={{ mt: 1, textTransform: 'none' }}
+                      >
+                        Export
+                      </Button>
+                    )}
                 </Grid>
               </Grid>
             </Paper>
