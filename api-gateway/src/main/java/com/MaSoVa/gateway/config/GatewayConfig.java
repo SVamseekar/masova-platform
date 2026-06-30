@@ -257,10 +257,17 @@ public class GatewayConfig {
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "commerce_track"))))
                         .uri("http://localhost:8084"))
 
+                // Orders — public rating token validation (SMS/email links, no auth)
+                .route("commerce_orders_rating_token", r -> r.path("/api/orders/rating-token/**")
+                        .and().method("GET")
+                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "commerce_rating_token"))))
+                        .uri("http://localhost:8084"))
+
                 // Orders — protected (GDPR anonymize paths blocked above via dedicated routes)
                 // X-Internal-Service is stripped here so external callers cannot spoof it
                 .route("commerce_orders", r -> r.path("/api/orders/**")
                         .and().not(p -> p.path("/api/orders/track/**"))
+                        .and().not(p -> p.path("/api/orders/rating-token/**"))
                         .and().not(p -> p.path("/api/orders/gdpr/**"))
                         .filters(f -> f
                             .removeRequestHeader("X-Internal-Service")
@@ -279,6 +286,13 @@ public class GatewayConfig {
                 .route("commerce_staff_tips", r -> r.path("/api/staff/tips/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "commerce_staff_tips")))
+                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8084"))
+
+                // Fiscal compliance — manager dashboard (JWT required)
+                .route("commerce_fiscal", r -> r.path("/api/fiscal/**")
+                        .filters(f -> f
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "commerce_fiscal")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8084"))
 
