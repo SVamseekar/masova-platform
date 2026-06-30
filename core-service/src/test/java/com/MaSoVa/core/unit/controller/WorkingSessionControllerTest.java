@@ -43,9 +43,14 @@ class WorkingSessionControllerTest extends BaseServiceTest {
     @Test
     @DisplayName("GET /api/sessions/pending returns 200 with list")
     void getPendingSessions_returns200() throws Exception {
-        mockMvc.perform(get("/api/sessions/pending"))
+        when(sessionService.getPendingSessions("store-1")).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/sessions/pending")
+                .header("X-User-Store-Id", "store-1"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$").isArray());
+
+        verify(sessionService).getPendingSessions("store-1");
     }
 
     @Test

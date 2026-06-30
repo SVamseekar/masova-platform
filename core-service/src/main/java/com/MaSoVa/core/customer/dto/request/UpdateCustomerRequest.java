@@ -23,6 +23,16 @@ public class UpdateCustomerRequest {
 
     private Boolean smsOptIn;
 
+    private UpdatePreferencesRequest preferences;
+
+    private Boolean emailVerified;
+
+    private Boolean phoneVerified;
+
+    private AddCustomerNoteRequest note;
+
+    private UpdateOrderStatsRequest orderStats;
+
     public UpdateCustomerRequest() {}
 
     // Getters and Setters
@@ -46,4 +56,19 @@ public class UpdateCustomerRequest {
 
     public Boolean getSmsOptIn() { return smsOptIn; }
     public void setSmsOptIn(Boolean smsOptIn) { this.smsOptIn = smsOptIn; }
+
+    public UpdatePreferencesRequest getPreferences() { return preferences; }
+    public void setPreferences(UpdatePreferencesRequest preferences) { this.preferences = preferences; }
+
+    public Boolean getEmailVerified() { return emailVerified; }
+    public void setEmailVerified(Boolean emailVerified) { this.emailVerified = emailVerified; }
+
+    public Boolean getPhoneVerified() { return phoneVerified; }
+    public void setPhoneVerified(Boolean phoneVerified) { this.phoneVerified = phoneVerified; }
+
+    public AddCustomerNoteRequest getNote() { return note; }
+    public void setNote(AddCustomerNoteRequest note) { this.note = note; }
+
+    public UpdateOrderStatsRequest getOrderStats() { return orderStats; }
+    public void setOrderStats(UpdateOrderStatsRequest orderStats) { this.orderStats = orderStats; }
 }

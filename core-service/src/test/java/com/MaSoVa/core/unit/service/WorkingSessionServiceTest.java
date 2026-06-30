@@ -359,6 +359,41 @@ class WorkingSessionServiceTest {
     }
 
     // ===========================
+    // getPendingSessions
+    // ===========================
+
+    @Nested
+    @DisplayName("getPendingSessions")
+    class GetPendingSessions {
+
+        @Test
+        @DisplayName("filters by store when storeId provided")
+        void filtersByStore() {
+            WorkingSession session = buildSession("s1", "emp-1", false);
+            session.setStatus(WorkingSessionStatus.PENDING_APPROVAL);
+            when(sessionRepository.findStorSessionsPendingApproval("store-1")).thenReturn(List.of(session));
+
+            var result = workingSessionService.getPendingSessions("store-1");
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getId()).isEqualTo("s1");
+        }
+
+        @Test
+        @DisplayName("returns all pending sessions when storeId is null")
+        void returnsAllWhenNoStore() {
+            WorkingSession session = buildSession("s2", "emp-2", false);
+            session.setStatus(WorkingSessionStatus.PENDING_APPROVAL);
+            when(sessionRepository.findSessionsPendingApproval()).thenReturn(List.of(session));
+
+            var result = workingSessionService.getPendingSessions(null);
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getId()).isEqualTo("s2");
+        }
+    }
+
+    // ===========================
     // approveSession / rejectSession
     // ===========================
 

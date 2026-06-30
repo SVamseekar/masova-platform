@@ -4,6 +4,7 @@ import com.MaSoVa.core.review.dto.request.CreateComplaintRequest;
 import com.MaSoVa.core.review.dto.request.CreateReviewRequest;
 import com.MaSoVa.core.review.entity.Review;
 import com.MaSoVa.core.review.repository.ReviewRepository;
+import com.MaSoVa.core.user.client.OrderServiceClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -23,10 +24,14 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final SentimentAnalysisService sentimentAnalysisService;
+    private final OrderServiceClient orderServiceClient;
 
-    public ReviewService(ReviewRepository reviewRepository, SentimentAnalysisService sentimentAnalysisService) {
+    public ReviewService(ReviewRepository reviewRepository,
+                         SentimentAnalysisService sentimentAnalysisService,
+                         OrderServiceClient orderServiceClient) {
         this.reviewRepository = reviewRepository;
         this.sentimentAnalysisService = sentimentAnalysisService;
+        this.orderServiceClient = orderServiceClient;
     }
 
     @Transactional
@@ -236,19 +241,39 @@ public class ReviewService {
     public Review createPublicReview(CreateReviewRequest request, String token) {
         log.info("Creating public review via token for order: {}", request.getOrderId());
 
-        // Call Order Service to validate token and get customer details
-        // For now, we'll create a simple HTTP client call
         try {
-            // TODO: Make HTTP call to Order Service: GET /api/orders/rating-token/{token}
-            // This should return: orderId, customerId, customerName, driverId, isValid
+            java.util.Map<String, Object> tokenDetails = orderServiceClient.getRatingTokenDetails(token);
+            boolean valid = Boolean.TRUE.equals(tokenDetails.get("valid"));
+            if (!valid) {
+                String error = tokenDetails.get("error") != null
+                        ? tokenDetails.get("error").toString()
+                        : "Invalid or expired rating link";
+                throw new IllegalArgumentException(error);
+            }
 
-            // For now, we'll just check if order already has a review
+            String orderIdFromToken = tokenDetails.get("orderId") != null
+                    ? tokenDetails.get("orderId").toString()
+                    : null;
+            if (orderIdFromToken == null || !orderIdFromToken.equals(request.getOrderId())) {
+                throw new IllegalArgumentException("Token does not match the requested order");
+            }
+
             List<Review> existingReviews = reviewRepository.findByOrderIdAndIsDeletedFalse(request.getOrderId());
             if (!existingReviews.isEmpty()) {
                 throw new IllegalStateException("This order has already been rated. Thank you!");
             }
 
-            // Build item reviews
+            String customerId = tokenDetails.get("customerId") != null
+                    ? tokenDetails.get("customerId").toString()
+                    : "anonymous";
+            String customerName = tokenDetails.get("customerName") != null
+                    ? tokenDetails.get("customerName").toString()
+                    : "Customer";
+            String driverId = request.getDriverId();
+            if (driverId == null && tokenDetails.get("driverId") != null) {
+                driverId = tokenDetails.get("driverId").toString();
+            }
+
             List<Review.ItemReview> itemReviews = new ArrayList<>();
             if (request.getItemReviews() != null) {
                 itemReviews = request.getItemReviews().stream()
@@ -260,25 +285,23 @@ public class ReviewService {
                         .collect(Collectors.toList());
             }
 
-            // Analyze sentiment
             Review.SentimentType sentiment = sentimentAnalysisService.analyzeSentiment(request.getComment());
             Double sentimentScore = sentimentAnalysisService.calculateSentimentScore(request.getComment());
 
-            // Create review (anonymous)
             Review review = Review.builder()
                     .orderId(request.getOrderId())
-                    .customerId("anonymous") // Will be updated by Order Service validation
-                    .customerName("Customer") // Will be updated by Order Service validation
+                    .customerId(customerId)
+                    .customerName(customerName)
                     .overallRating(request.getOverallRating())
                     .comment(request.getComment())
                     .foodQualityRating(request.getFoodQualityRating())
                     .serviceRating(request.getServiceRating())
                     .deliveryRating(request.getDeliveryRating())
-                    .driverId(request.getDriverId())
+                    .driverId(driverId)
                     .driverRating(request.getDriverRating())
                     .driverComment(request.getDriverComment())
                     .itemReviews(itemReviews)
-                    .isAnonymous(true) // Always anonymous for public submissions
+                    .isAnonymous(true)
                     .isVerifiedPurchase(true)
                     .photoUrls(request.getPhotoUrls() != null ? request.getPhotoUrls() : new ArrayList<>())
                     .status(Review.ReviewStatus.APPROVED)
@@ -290,11 +313,17 @@ public class ReviewService {
             review = reviewRepository.save(review);
             log.info("Public review created successfully with ID: {}", review.getId());
 
-            // TODO: Call Order Service to mark token as used
+            try {
+                orderServiceClient.markRatingTokenUsed(token);
+            } catch (Exception e) {
+                log.warn("Failed to mark rating token as used for order {}: {}", request.getOrderId(), e.getMessage());
+            }
 
             return review;
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            throw e;
         } catch (Exception e) {
-            log.error("Error creating public review", e);
+            log.warn("Error creating public review for order {}: {}", request.getOrderId(), e.getMessage());
             throw e;
         }
     }
@@ -303,11 +332,11 @@ public class ReviewService {
      * Get token details for displaying on rating page
      */
     public java.util.Map<String, Object> getTokenDetails(String token) {
-        // TODO: Call Order Service to validate and get token details
-        // For now, return minimal info
-        java.util.Map<String, Object> details = new java.util.HashMap<>();
-        details.put("valid", true);
-        details.put("message", "Please rate your recent order");
-        return details;
+        try {
+            return orderServiceClient.getRatingTokenDetails(token);
+        } catch (Exception e) {
+            log.warn("Error fetching rating token details: {}", e.getMessage());
+            throw new IllegalArgumentException("Invalid or expired rating link");
+        }
     }
 }

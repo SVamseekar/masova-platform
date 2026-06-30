@@ -303,6 +303,24 @@ public class ReviewController {
         return ResponseEntity.ok(responseService.getAllTemplates());
     }
 
+    /**
+     * DELETE /api/reviews/{reviewId}/response — soft-delete manager response for a review.
+     * Replaces: DELETE /api/responses/{id}
+     */
+    @DeleteMapping("/{reviewId}/response")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Delete manager response for a review")
+    public ResponseEntity<?> deleteResponse(
+            @PathVariable String reviewId,
+            @RequestHeader("X-User-ID") String managerId) {
+        return responseService.getResponseByReviewId(reviewId)
+                .map(existing -> {
+                    responseService.deleteResponse(existing.getId(), managerId);
+                    return ResponseEntity.ok(Map.of("message", "Response deleted successfully"));
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     /** Prefer gateway-injected identity headers; fall back to body only when no header present. */
     private static String resolveCustomerId(String userIdHeader, String userIdAlt,
                                             String customerIdHeader, String bodyCustomerId) {
