@@ -139,7 +139,7 @@ jobs:
           curl -sf http://localhost:8087/v3/api-docs > specs/intelligence-spec.json
 
       - name: Verify endpoint counts against baselines
-        run: node scripts/ci/verify-openapi-counts.js specs
+        run: node .github/ci/verify-openapi-counts.js specs
 
       - name: Upload refreshed specs
         uses: actions/upload-artifact@v4
@@ -237,7 +237,7 @@ jobs:
           path: frontend/pacts/
 
       - name: Copy pact files to backend services
-        run: bash scripts/copy-pacts.sh
+        run: bash .github/ci/copy-pacts.sh
 
       - name: Run Pact provider verification (all services)
         run: |
@@ -272,8 +272,5 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Regenerate integration matrix for PR branch
-        run: node scripts/integration-matrix-audit.js
-
       - name: Fail on removed endpoints vs main
-        run: node scripts/ci/detect-api-breaking-changes.js origin/main
+        run: node .github/ci/detect-api-breaking-changes.js origin/main

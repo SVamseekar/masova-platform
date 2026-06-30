@@ -6,7 +6,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const specsDir = process.argv[2] || path.join(__dirname, '../../specs');
+const specsDir = process.argv[2];
+if (!specsDir) {
+  console.error('Usage: node verify-openapi-counts.js <specsDir>');
+  process.exit(1);
+}
 const baselinesPath = path.join(__dirname, 'openapi-endpoint-baselines.json');
 
 function countOperations(spec) {

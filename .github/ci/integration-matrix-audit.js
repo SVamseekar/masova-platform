@@ -17,7 +17,7 @@ const path = require('path');
 const http = require('http');
 const https = require('https');
 
-const ROOT = path.resolve(__dirname, '..');
+const ROOT = path.resolve(__dirname, '../..');
 const OUT_JSON = path.join(ROOT, 'docs/api-contracts/INTEGRATION_MATRIX.json');
 const OUT_MD = path.join(ROOT, 'docs/api-contracts/INTEGRATION_MATRIX.md');
 
@@ -29,6 +29,7 @@ const LIVE_BASE = liveIdx >= 0 ? args[liveIdx + 1]?.replace(/\/$/, '') : null;
 const tokenIdx = args.indexOf('--token');
 const LIVE_TOKEN = tokenIdx >= 0 ? args[tokenIdx + 1] : null;
 const CI_MODE = args.includes('--ci');
+const JSON_STDOUT = args.includes('--json-stdout');
 
 // ─── File discovery ──────────────────────────────────────────────────────────
 
@@ -781,18 +782,29 @@ function writeMarkdown(report) {
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
-  console.log('MaSoVa Integration Matrix Audit\n');
   const report = await buildMatrix();
-  fs.mkdirSync(path.dirname(OUT_JSON), { recursive: true });
-  fs.writeFileSync(OUT_JSON, JSON.stringify(report, null, 2));
-  writeMarkdown(report);
+
+  if (JSON_STDOUT) {
+    process.stdout.write(JSON.stringify(report));
+    return;
+  }
+
+  console.log('MaSoVa Integration Matrix Audit\n');
+
+  if (!CI_MODE) {
+    fs.mkdirSync(path.dirname(OUT_JSON), { recursive: true });
+    fs.writeFileSync(OUT_JSON, JSON.stringify(report, null, 2));
+    writeMarkdown(report);
+  }
 
   const s = report.summary;
   console.log('SUMMARY');
   console.log('─'.repeat(50));
   for (const [k, v] of Object.entries(s)) console.log(`  ${k.padEnd(28)} ${v}`);
-  console.log(`\nWritten: ${rel(OUT_JSON)}`);
-  console.log(`Written: ${rel(OUT_MD)}`);
+  if (!CI_MODE) {
+    console.log(`\nWritten: ${rel(OUT_JSON)}`);
+    console.log(`\nWritten: ${rel(OUT_MD)}`);
+  }
   console.log(`\nGateway gaps: ${report.gatewayGaps.length}`);
   report.gatewayGaps.slice(0, 10).forEach((g) => console.log(`  ❌ ${g.method} ${g.path}`));
   console.log(`\nStale wiring: ${report.staleWiring.length}`);
@@ -814,7 +826,7 @@ async function main() {
       failures.push(`gatewayGaps(non-test-data)=${gatewayGapsExTest.length}`);
     }
 
-    const baselinesPath = path.join(__dirname, 'ci/openapi-endpoint-baselines.json');
+    const baselinesPath = path.join(__dirname, 'openapi-endpoint-baselines.json');
     if (fs.existsSync(baselinesPath)) {
       const baselines = JSON.parse(fs.readFileSync(baselinesPath, 'utf8'));
       const { min: tMin, max: tMax } = baselines.total;
