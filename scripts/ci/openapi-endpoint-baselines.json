@@ -1,0 +1,12 @@
+{
+  "description": "Per-service OpenAPI operation counts from live Springdoc. CI fails if a service drifts outside min/max.",
+  "updated": "2026-06-30",
+  "services": {
+    "core": { "min": 100, "max": 115 },
+    "commerce": { "min": 35, "max": 48 },
+    "logistics": { "min": 38, "max": 50 },
+    "payment": { "min": 12, "max": 22 },
+    "intelligence": { "min": 3, "max": 10 }
+  },
+  "total": { "min": 195, "max": 230 }
+}
