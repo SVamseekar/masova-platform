@@ -221,7 +221,7 @@ Shared screens: My Profile, My Shifts, My Schedule, My Earnings. Background loca
 
 - **Consumer-driven contract tests** — Pact contracts between the React frontend and all backend services prevent API regressions from reaching production.
 
-- **175 canonical API endpoints** — reduced from 471 in a dedicated API reduction phase. Every endpoint is documented in `docs/api-contracts/`.
+- **207 canonical API endpoints** — reduced from 471 in Phase 1, expanded with fiscal/rating/GDPR wiring in integration gaps E2E. Every endpoint is documented in `docs/api-contracts/`.
 
 ---
 
@@ -326,7 +326,7 @@ The system was built in 8 structured phases, each with a detailed plan in `docs/
 | Phase | Name | Status |
 |---|---|---|
 | 0 | Foundation fixes | ✅ Complete |
-| 1 | API reduction (471 → 175 endpoints) | ✅ Complete |
+| 1 | API reduction (471 → 207 canonical endpoints) | ✅ Complete |
 | 2 | Database migration (MongoDB → PostgreSQL for financials) | ✅ Complete |
 | 3 | Order flow hardening | ✅ Complete |
 | 4 | Frontend revamp (dark-premium design system) | ✅ Complete |
