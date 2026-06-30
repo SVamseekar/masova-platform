@@ -27,7 +27,7 @@ jobs:
           - { name: logistics-service,     port: 8086 }
           - { name: intelligence-service,  port: 8087 }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-java@v4
         with:
@@ -133,7 +133,7 @@ jobs:
     name: Deploy masova-support
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: ${{ github.repository_owner }}/masova-support
           token: ${{ secrets.AGENT_REPO_TOKEN }}
@@ -181,7 +181,7 @@ jobs:
     name: Deploy Frontend to Firebase
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
