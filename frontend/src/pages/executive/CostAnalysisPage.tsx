@@ -67,7 +67,8 @@ const CostAnalysisPage: React.FC = () => {
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
   const [period, setPeriod] = useState<string>('MONTH');
-  const { data: analysis = null, isLoading: loading } = useGetCostAnalysisQuery({ period });
+  const { data: analysisData, isLoading: loading } = useGetCostAnalysisQuery({ period });
+  const analysis = (analysisData ?? null) as CostAnalysis | null;
 
   const formatCurrency = (value: number): string => formatMajorAmount(value , currency, locale);
 

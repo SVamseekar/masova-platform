@@ -72,7 +72,8 @@ const ExecutiveDashboardPage: React.FC = () => {
   const locale = useAppSelector(selectCartLocale);
   const [period, setPeriod] = useState<string>('MONTH');
   const [activeTab, setActiveTab] = useState<string>('overview');
-  const { data: summary = null, isLoading: loading } = useGetExecutiveSummaryQuery(period);
+  const { data: summaryData, isLoading: loading } = useGetExecutiveSummaryQuery(period);
+  const summary = (summaryData ?? null) as ExecutiveSummary | null;
 
   const formatCurrency = (value: number): string => {
     return formatMajorAmount(value , currency, locale);

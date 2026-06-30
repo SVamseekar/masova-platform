@@ -33,7 +33,7 @@ const GdprManagerPage: React.FC<Props> = ({ storeId: _storeId }) => {
 
   const activeUserId = selectedUserId || searchUserId;
 
-  const { data: customers = [], isLoading: loadingCustomers } = useGetAllCustomersQuery();
+  const { data: customers = [], isLoading: loadingCustomers } = useGetAllCustomersQuery(undefined);
   const {
     data: requests = [],
     isLoading: loadingRequests,

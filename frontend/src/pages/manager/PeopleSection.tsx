@@ -135,7 +135,7 @@ const StaffTab = ({ storeId }: { storeId: string }) => {
 
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const { data: employeeReport } = useGetEmployeeSessionReportQuery(
-    { employeeId: selectedEmployeeId || '', startDate: '', endDate: '' }, { skip: !selectedEmployeeId }
+    { employeeId: selectedEmployeeId || '' }, { skip: !selectedEmployeeId }
   );
   const { data: employeeStatus } = useGetEmployeeSessionStatusQuery(selectedEmployeeId || '', {
     skip: !selectedEmployeeId, pollingInterval: 30000,
