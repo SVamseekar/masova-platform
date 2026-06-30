@@ -1,6 +1,5 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import type { RootState } from '../store';
-import { API_CONFIG } from '../../config/api.config';
+import { createApi } from '@reduxjs/toolkit/query/react';
+import baseQueryWithAuth from './baseQueryWithAuth';
 
 // ==================== TYPE DEFINITIONS ====================
 
@@ -235,36 +234,7 @@ export interface ReceivePurchaseOrderRequest {
 
 export const inventoryApi = createApi({
   reducerPath: 'inventoryApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_CONFIG.API_GATEWAY_URL}/inventory`,
-    prepareHeaders: (headers, { getState }) => {
-      const state = getState() as RootState;
-      const token = state.auth.accessToken;
-      const user = state.auth.user;
-      const selectedStoreId = state.cart?.selectedStoreId;
-
-      // Add authorization token
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
-      }
-
-      // Add user context headers
-      if (user) {
-        headers.set('X-User-Id', user.id);
-        headers.set('X-User-Type', user.type);
-        if (user.storeId) {
-          headers.set('X-User-Store-Id', user.storeId);
-        }
-      }
-
-      // Add selected store for managers/customers
-      if (selectedStoreId) {
-        headers.set('X-Selected-Store-Id', selectedStoreId);
-      }
-
-      return headers;
-    },
-  }),
+  baseQuery: baseQueryWithAuth,
   tagTypes: ['InventoryItem', 'Supplier', 'PurchaseOrder', 'WasteRecord', 'InventoryValue'],
   endpoints: (builder) => ({
 
@@ -273,127 +243,120 @@ export const inventoryApi = createApi({
     // Create inventory item
     createInventoryItem: builder.mutation<InventoryItem, Partial<InventoryItem>>({
       query: (item) => ({
-        url: '/items',
+        url: '/inventory',
         method: 'POST',
         body: item,
       }),
       invalidatesTags: ['InventoryItem', 'InventoryValue'],
     }),
 
-    // Get all inventory items for a store
     getAllInventoryItems: builder.query<InventoryItem[], string | undefined>({
-      query: (storeId) => `/items${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '/inventory',
       providesTags: (result, error, storeId) => [{ type: 'InventoryItem', id: storeId || 'DEFAULT' }],
     }),
 
-    // Get inventory item by ID
     getInventoryItemById: builder.query<InventoryItem, string>({
-      query: (id) => `/items/${id}`,
+      query: (id) => `/inventory/${id}`,
       providesTags: (result, error, id) => [{ type: 'InventoryItem', id }],
     }),
 
-    // Get items by category
     getItemsByCategory: builder.query<InventoryItem[], { category: string }>({
-      query: ({ category }) => `/items/category/${category}`,
+      query: ({ category }) => `/inventory?category=${encodeURIComponent(category)}`,
       providesTags: ['InventoryItem'],
     }),
 
-    // Search inventory items
     searchInventoryItems: builder.query<InventoryItem[], { query: string }>({
-      query: ({ query }) => `/items/search?q=${query}`,
+      query: ({ query }) => `/inventory?search=${encodeURIComponent(query)}`,
       providesTags: ['InventoryItem'],
     }),
 
-    // Update inventory item
     updateInventoryItem: builder.mutation<InventoryItem, { id: string; item: Partial<InventoryItem> }>({
       query: ({ id, item }) => ({
-        url: `/items/${id}`,
-        method: 'PUT',
+        url: `/inventory/${id}`,
+        method: 'PATCH',
         body: item,
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'InventoryItem', id }, 'InventoryValue'],
     }),
 
-    // Adjust stock
     adjustStock: builder.mutation<InventoryItem, { id: string; adjustment: StockAdjustmentRequest }>({
       query: ({ id, adjustment }) => ({
-        url: `/items/${id}/adjust`,
-        method: 'PATCH',
-        body: adjustment,
+        url: `/inventory/${id}/stock`,
+        method: 'POST',
+        body: {
+          operation: 'ADJUST',
+          quantityChange: adjustment.quantity,
+          updatedBy: adjustment.adjustedBy,
+          reason: adjustment.reason,
+        },
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'InventoryItem', id }, 'InventoryValue'],
     }),
 
-    // Reserve stock
     reserveStock: builder.mutation<InventoryItem, { id: string; reservation: StockReserveRequest }>({
       query: ({ id, reservation }) => ({
-        url: `/items/${id}/reserve`,
-        method: 'PATCH',
-        body: reservation,
+        url: `/inventory/${id}/stock`,
+        method: 'POST',
+        body: {
+          operation: 'RESERVE',
+          quantity: reservation.quantity,
+          orderId: reservation.orderId,
+        },
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'InventoryItem', id }],
     }),
 
-    // Release reserved stock
     releaseReservedStock: builder.mutation<InventoryItem, { id: string; quantity: number; orderId: string }>({
       query: ({ id, quantity, orderId }) => ({
-        url: `/items/${id}/release`,
-        method: 'PATCH',
-        body: { quantity, orderId },
+        url: `/inventory/${id}/stock`,
+        method: 'POST',
+        body: { operation: 'RELEASE', quantity, orderId },
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'InventoryItem', id }],
     }),
 
-    // Consume reserved stock
     consumeReservedStock: builder.mutation<InventoryItem, { id: string; quantity: number; orderId: string }>({
       query: ({ id, quantity, orderId }) => ({
-        url: `/items/${id}/consume`,
-        method: 'PATCH',
-        body: { quantity, orderId },
+        url: `/inventory/${id}/stock`,
+        method: 'POST',
+        body: { operation: 'CONSUME', quantity, orderId },
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'InventoryItem', id }, 'InventoryValue'],
     }),
 
-    // Get low stock items
     getLowStockItems: builder.query<InventoryItem[], string | undefined>({
-      query: (storeId) => `/low-stock${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '/inventory?lowStock=true',
       providesTags: (result, error, storeId) => [{ type: 'InventoryItem', id: storeId || 'DEFAULT' }],
     }),
 
-    // Get out of stock items
     getOutOfStockItems: builder.query<InventoryItem[], string | undefined>({
-      query: (storeId) => `/out-of-stock${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '/inventory?outOfStock=true',
       providesTags: (result, error, storeId) => [{ type: 'InventoryItem', id: storeId || 'DEFAULT' }],
     }),
 
-    // Get items expiring soon
     getExpiringItems: builder.query<InventoryItem[], { days: number }>({
-      query: ({ days }) => `/expiring-soon?days=${days}`,
+      query: ({ days }) => `/inventory?expiringSoon=${days}`,
       providesTags: ['InventoryItem'],
     }),
 
-    // Get low stock alerts
     getLowStockAlerts: builder.query<InventoryItem[], string | undefined>({
-      query: (storeId) => `/alerts/low-stock${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '/inventory?lowStock=true',
       providesTags: (result, error, storeId) => [{ type: 'InventoryItem', id: storeId || 'DEFAULT' }],
     }),
 
-    // Get total inventory value
     getTotalInventoryValue: builder.query<InventoryValueResponse, string | undefined>({
-      query: (storeId) => `/value${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '/inventory/value',
       providesTags: (result, error, storeId) => [{ type: 'InventoryValue', id: storeId || 'DEFAULT' }],
     }),
 
-    // Get inventory value by category
     getInventoryValueByCategory: builder.query<InventoryValueResponse, string | undefined>({
-      query: (storeId) => `/value/by-category${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '/inventory/value?byCategory=true',
       providesTags: (result, error, storeId) => [{ type: 'InventoryValue', id: storeId || 'DEFAULT' }],
     }),
 
-    // Delete inventory item
     deleteInventoryItem: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/items/${id}`,
+        url: `/inventory/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['InventoryItem', 'InventoryValue'],
@@ -411,100 +374,86 @@ export const inventoryApi = createApi({
       invalidatesTags: ['Supplier'],
     }),
 
-    // Get all suppliers
     getAllSuppliers: builder.query<Supplier[], string | undefined>({
-      query: (storeId) => `/suppliers${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '/suppliers',
       providesTags: (result, error, storeId) => [{ type: 'Supplier', id: storeId || 'DEFAULT' }],
     }),
 
-    // Get supplier by ID
     getSupplierById: builder.query<Supplier, string>({
       query: (id) => `/suppliers/${id}`,
       providesTags: (result, error, id) => [{ type: 'Supplier', id }],
     }),
 
-    // Get supplier by code
     getSupplierByCode: builder.query<Supplier, string>({
-      query: (code) => `/suppliers/code/${code}`,
+      query: (code) => `/suppliers?code=${encodeURIComponent(code)}`,
       providesTags: ['Supplier'],
     }),
 
-    // Get active suppliers
     getActiveSuppliers: builder.query<Supplier[], string | undefined>({
-      query: (storeId) => `/suppliers/active${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '/suppliers?status=ACTIVE',
       providesTags: (result, error, storeId) => [{ type: 'Supplier', id: storeId || 'DEFAULT' }],
     }),
 
-    // Get preferred suppliers
     getPreferredSuppliers: builder.query<Supplier[], string | undefined>({
-      query: (storeId) => `/suppliers/preferred${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '/suppliers?preferred=true',
       providesTags: (result, error, storeId) => [{ type: 'Supplier', id: storeId || 'DEFAULT' }],
     }),
 
-    // Get reliable suppliers
     getReliableSuppliers: builder.query<Supplier[], string | undefined>({
-      query: (storeId) => `/suppliers/reliable${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '/suppliers?reliable=true',
       providesTags: (result, error, storeId) => [{ type: 'Supplier', id: storeId || 'DEFAULT' }],
     }),
 
-    // Get suppliers by category
     getSuppliersByCategory: builder.query<Supplier[], string>({
-      query: (category) => `/suppliers/category/${category}`,
+      query: (category) => `/suppliers?category=${encodeURIComponent(category)}`,
       providesTags: ['Supplier'],
     }),
 
-    // Search suppliers
     searchSuppliers: builder.query<Supplier[], string>({
-      query: (query) => `/suppliers/search?q=${query}`,
+      query: (query) => `/suppliers?search=${encodeURIComponent(query)}`,
       providesTags: ['Supplier'],
     }),
 
-    // Get suppliers by city
     getSuppliersByCity: builder.query<Supplier[], string>({
-      query: (city) => `/suppliers/city/${city}`,
+      query: (city) => `/suppliers?city=${encodeURIComponent(city)}`,
       providesTags: ['Supplier'],
     }),
 
-    // Compare suppliers by category
     compareSuppliers: builder.query<SupplierComparison[], string>({
-      query: (category) => `/suppliers/compare/category/${category}`,
+      query: (category) => `/suppliers/compare?category=${encodeURIComponent(category)}`,
       providesTags: ['Supplier'],
     }),
 
-    // Update supplier
     updateSupplier: builder.mutation<Supplier, { id: string; supplier: Partial<Supplier> }>({
       query: ({ id, supplier }) => ({
         url: `/suppliers/${id}`,
-        method: 'PUT',
+        method: 'PATCH',
         body: supplier,
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'Supplier', id }],
     }),
 
-    // Update supplier status
     updateSupplierStatus: builder.mutation<Supplier, { id: string; status: string }>({
       query: ({ id, status }) => ({
-        url: `/suppliers/${id}/status`,
+        url: `/suppliers/${id}`,
         method: 'PATCH',
         body: { status },
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'Supplier', id }],
     }),
 
-    // Mark supplier as preferred
     markSupplierPreferred: builder.mutation<Supplier, { id: string; preferred: boolean }>({
       query: ({ id, preferred }) => ({
-        url: `/suppliers/${id}/preferred`,
+        url: `/suppliers/${id}`,
         method: 'PATCH',
-        body: { preferred },
+        body: { isPreferred: preferred },
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'Supplier', id }],
     }),
 
-    // Update supplier performance metrics
     updateSupplierPerformance: builder.mutation<Supplier, { id: string; metrics: Partial<Supplier> }>({
       query: ({ id, metrics }) => ({
-        url: `/suppliers/${id}/performance`,
+        url: `/suppliers/${id}`,
         method: 'PATCH',
         body: metrics,
       }),
@@ -523,95 +472,87 @@ export const inventoryApi = createApi({
       invalidatesTags: ['PurchaseOrder'],
     }),
 
-    // Get all purchase orders
     getAllPurchaseOrders: builder.query<PurchaseOrder[], string | undefined>({
-      query: (storeId) => `/purchase-orders${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '/purchase-orders',
       providesTags: (result, error, storeId) => [{ type: 'PurchaseOrder', id: storeId || 'DEFAULT' }],
     }),
 
-    // Get purchase order by ID
     getPurchaseOrderById: builder.query<PurchaseOrder, string>({
       query: (id) => `/purchase-orders/${id}`,
       providesTags: (result, error, id) => [{ type: 'PurchaseOrder', id }],
     }),
 
-    // Get purchase order by number
     getPurchaseOrderByNumber: builder.query<PurchaseOrder, string>({
-      query: (number) => `/purchase-orders/number/${number}`,
+      query: (number) => `/purchase-orders?number=${encodeURIComponent(number)}`,
       providesTags: ['PurchaseOrder'],
     }),
 
-    // Get purchase orders by status
     getPurchaseOrdersByStatus: builder.query<PurchaseOrder[], { status: string }>({
-      query: ({ status }) => `/purchase-orders/status/${status}`,
+      query: ({ status }) => `/purchase-orders?status=${encodeURIComponent(status)}`,
       providesTags: ['PurchaseOrder'],
     }),
 
-    // Get pending approval purchase orders
     getPendingApprovalPurchaseOrders: builder.query<PurchaseOrder[], string | undefined>({
-      query: (storeId) => `/purchase-orders/pending-approval${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '/purchase-orders?pending=true',
       providesTags: (result, error, storeId) => [{ type: 'PurchaseOrder', id: storeId || 'DEFAULT' }],
     }),
 
-    // Get overdue purchase orders
     getOverduePurchaseOrders: builder.query<PurchaseOrder[], string | undefined>({
-      query: (storeId) => `/purchase-orders/overdue${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '/purchase-orders?overdue=true',
       providesTags: (result, error, storeId) => [{ type: 'PurchaseOrder', id: storeId || 'DEFAULT' }],
     }),
 
-    // Get purchase orders by date range
     getPurchaseOrdersByDateRange: builder.query<PurchaseOrder[], { startDate: string; endDate: string }>({
       query: ({ startDate, endDate }) =>
-        `/purchase-orders/date-range?startDate=${startDate}&endDate=${endDate}`,
+        `/purchase-orders?startDate=${startDate}&endDate=${endDate}`,
       providesTags: ['PurchaseOrder'],
     }),
 
-    // Update purchase order
     updatePurchaseOrder: builder.mutation<PurchaseOrder, { id: string; order: Partial<PurchaseOrder> }>({
       query: ({ id, order }) => ({
         url: `/purchase-orders/${id}`,
-        method: 'PUT',
+        method: 'PATCH',
         body: order,
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'PurchaseOrder', id }],
     }),
 
-    // Approve purchase order
     approvePurchaseOrder: builder.mutation<PurchaseOrder, { id: string; approvedBy: string }>({
       query: ({ id, approvedBy }) => ({
-        url: `/purchase-orders/${id}/approve`,
+        url: `/purchase-orders/${id}`,
         method: 'PATCH',
-        body: { approvedBy },
+        body: { action: 'APPROVE', approverId: approvedBy },
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'PurchaseOrder', id }],
     }),
 
-    // Reject purchase order
     rejectPurchaseOrder: builder.mutation<PurchaseOrder, { id: string; rejectedBy: string; reason: string }>({
-      query: ({ id, rejectedBy, reason }) => ({
-        url: `/purchase-orders/${id}/reject`,
+      query: ({ id, reason }) => ({
+        url: `/purchase-orders/${id}`,
         method: 'PATCH',
-        body: { rejectedBy, reason },
+        body: { action: 'REJECT', reason },
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'PurchaseOrder', id }],
     }),
 
-    // Send purchase order
     sendPurchaseOrder: builder.mutation<PurchaseOrder, { id: string; sentBy: string }>({
-      query: ({ id, sentBy }) => ({
-        url: `/purchase-orders/${id}/send`,
+      query: ({ id }) => ({
+        url: `/purchase-orders/${id}`,
         method: 'PATCH',
-        body: { sentBy },
+        body: { action: 'SEND' },
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'PurchaseOrder', id }],
     }),
 
-    // Receive purchase order
     receivePurchaseOrder: builder.mutation<PurchaseOrder, { id: string; request: ReceivePurchaseOrderRequest }>({
       query: ({ id, request }) => ({
-        url: `/purchase-orders/${id}/receive`,
+        url: `/purchase-orders/${id}`,
         method: 'PATCH',
-        body: request,
+        body: {
+          action: 'RECEIVE',
+          receivedBy: request.receivedBy,
+          notes: request.notes,
+        },
       }),
       invalidatesTags: (result, error, { id }) => [
         { type: 'PurchaseOrder', id },
@@ -620,27 +561,23 @@ export const inventoryApi = createApi({
       ],
     }),
 
-    // Cancel purchase order
     cancelPurchaseOrder: builder.mutation<PurchaseOrder, { id: string; cancelledBy: string; reason: string }>({
-      query: ({ id, cancelledBy, reason }) => ({
-        url: `/purchase-orders/${id}/cancel`,
+      query: ({ id, reason }) => ({
+        url: `/purchase-orders/${id}`,
         method: 'PATCH',
-        body: { cancelledBy, reason },
+        body: { action: 'CANCEL', reason },
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'PurchaseOrder', id }],
     }),
 
-    // Auto-generate purchase orders for low stock items
     autoGeneratePurchaseOrders: builder.mutation<PurchaseOrder[], { createdBy: string }>({
-      query: ({ createdBy }) => ({
+      query: () => ({
         url: '/purchase-orders/auto-generate',
         method: 'POST',
-        body: { createdBy },
       }),
       invalidatesTags: ['PurchaseOrder'],
     }),
 
-    // Delete purchase order
     deletePurchaseOrder: builder.mutation<void, string>({
       query: (id) => ({
         url: `/purchase-orders/${id}`,
@@ -661,52 +598,45 @@ export const inventoryApi = createApi({
       invalidatesTags: ['WasteRecord', 'InventoryItem', 'InventoryValue'],
     }),
 
-    // Get all waste records
     getAllWasteRecords: builder.query<WasteRecord[], string | undefined>({
-      query: (storeId) => `/waste${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '/waste',
       providesTags: (result, error, storeId) => [{ type: 'WasteRecord', id: storeId || 'DEFAULT' }],
     }),
 
-    // Get waste record by ID
     getWasteRecordById: builder.query<WasteRecord, string>({
       query: (id) => `/waste/${id}`,
       providesTags: (result, error, id) => [{ type: 'WasteRecord', id }],
     }),
 
-    // Get waste records by date range
     getWasteRecordsByDateRange: builder.query<WasteRecord[], { startDate: string; endDate: string }>({
       query: ({ startDate, endDate }) =>
-        `/waste/date-range?startDate=${startDate}&endDate=${endDate}`,
+        `/waste?startDate=${startDate}&endDate=${endDate}`,
       providesTags: ['WasteRecord'],
     }),
 
-    // Get waste records by category
     getWasteRecordsByCategory: builder.query<WasteRecord[], { category: string }>({
-      query: ({ category }) => `/waste/category/${category}`,
+      query: ({ category }) => `/waste?category=${encodeURIComponent(category)}`,
       providesTags: ['WasteRecord'],
     }),
 
-    // Update waste record
     updateWasteRecord: builder.mutation<WasteRecord, { id: string; waste: Partial<WasteRecord> }>({
       query: ({ id, waste }) => ({
         url: `/waste/${id}`,
-        method: 'PUT',
+        method: 'PATCH',
         body: waste,
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'WasteRecord', id }],
     }),
 
-    // Approve waste record
     approveWasteRecord: builder.mutation<WasteRecord, { id: string; approvedBy: string }>({
       query: ({ id, approvedBy }) => ({
-        url: `/waste/${id}/approve`,
+        url: `/waste/${id}`,
         method: 'PATCH',
-        body: { approvedBy },
+        body: { approverId: approvedBy },
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'WasteRecord', id }],
     }),
 
-    // Delete waste record
     deleteWasteRecord: builder.mutation<void, string>({
       query: (id) => ({
         url: `/waste/${id}`,
@@ -715,37 +645,32 @@ export const inventoryApi = createApi({
       invalidatesTags: ['WasteRecord'],
     }),
 
-    // Get total waste cost
     getTotalWasteCost: builder.query<WasteSummary, { startDate: string; endDate: string }>({
       query: ({ startDate, endDate }) =>
-        `/waste/total-cost?startDate=${startDate}&endDate=${endDate}`,
+        `/waste/analytics?type=total-cost&startDate=${startDate}&endDate=${endDate}`,
       providesTags: ['WasteRecord'],
     }),
 
-    // Get waste cost by category
     getWasteCostByCategory: builder.query<WasteSummary, { startDate: string; endDate: string }>({
       query: ({ startDate, endDate }) =>
-        `/waste/cost-by-category?startDate=${startDate}&endDate=${endDate}`,
+        `/waste/analytics?type=cost-by-category&startDate=${startDate}&endDate=${endDate}`,
       providesTags: ['WasteRecord'],
     }),
 
-    // Get top wasted items
     getTopWastedItems: builder.query<TopWastedItem[], { startDate: string; endDate: string; limit: number }>({
       query: ({ startDate, endDate, limit }) =>
-        `/waste/top-items?startDate=${startDate}&endDate=${endDate}&limit=${limit}`,
+        `/waste/analytics?type=top-items&startDate=${startDate}&endDate=${endDate}&limit=${limit}`,
       providesTags: ['WasteRecord'],
     }),
 
-    // Get preventable waste analysis
     getPreventableWasteAnalysis: builder.query<WasteSummary, { startDate: string; endDate: string }>({
       query: ({ startDate, endDate }) =>
-        `/waste/preventable-analysis?startDate=${startDate}&endDate=${endDate}`,
+        `/waste/analytics?type=preventable&startDate=${startDate}&endDate=${endDate}`,
       providesTags: ['WasteRecord'],
     }),
 
-    // Get waste trend (monthly)
     getWasteTrend: builder.query<WasteTrend[], { months: number }>({
-      query: ({ months }) => `/waste/trend?months=${months}`,
+      query: ({ months }) => `/waste/analytics?type=trend&months=${months}`,
       providesTags: ['WasteRecord'],
     }),
   }),

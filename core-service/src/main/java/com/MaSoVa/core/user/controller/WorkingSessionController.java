@@ -167,9 +167,9 @@ public class WorkingSessionController {
     @GetMapping("/pending")
     @Operation(summary = "Sessions pending manager approval")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
-    public ResponseEntity<List<WorkingSessionResponse>> getPendingSessions() {
-        // Service implementation returns empty; populated in Phase 3
-        return ResponseEntity.ok(List.of());
+    public ResponseEntity<List<WorkingSessionResponse>> getPendingSessions(HttpServletRequest request) {
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        return ResponseEntity.ok(sessionService.getPendingSessions(storeId));
     }
 
     @PostMapping("/{sessionId}/approve")

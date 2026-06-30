@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -116,5 +118,38 @@ public class RatingTokenService {
     public String getOrderIdFromToken(String token) {
         RatingToken ratingToken = validateToken(token);
         return ratingToken.getOrderId();
+    }
+
+    /**
+     * Return token details for the public rating page.
+     */
+    public Map<String, Object> getTokenDetails(String token) {
+        RatingToken ratingToken = ratingTokenRepository.findByToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid rating token"));
+
+        Map<String, Object> response = new HashMap<>();
+        boolean valid = ratingToken.isValid();
+        response.put("valid", valid);
+        response.put("orderId", ratingToken.getOrderId());
+        response.put("customerId", ratingToken.getCustomerId());
+        response.put("driverId", ratingToken.getDriverId());
+        response.put("driverName", ratingToken.getDriverName());
+
+        orderRepository.findById(ratingToken.getOrderId()).ifPresent(order -> {
+            response.put("customerName", order.getCustomerName());
+            if (ratingToken.getDriverId() == null && order.getAssignedDriverId() != null) {
+                response.put("driverId", order.getAssignedDriverId());
+            }
+        });
+
+        if (valid) {
+            response.put("message", "Please rate your recent order");
+        } else if (ratingToken.isUsed()) {
+            throw new IllegalStateException("Rating token is expired or already used");
+        } else {
+            throw new IllegalStateException("Rating token has expired");
+        }
+
+        return response;
     }
 }

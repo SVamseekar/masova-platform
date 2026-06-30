@@ -15,6 +15,8 @@ import {
   type WorkSchedule,
 } from '../../store/api/userApi';
 import { useGetStoreSessionsQuery, type WorkingSession } from '../../store/api/sessionApi';
+import { useGetWeeklyEarningsQuery, useGetPayRateQuery, useSetPayRateMutation } from '../../store/api/earningsApi';
+import { useGetPendingTipsQuery } from '../../store/api/tipApi';
 import { getApiErrorMessage } from '../utils/apiError';
 import { Button } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
@@ -86,6 +88,8 @@ const StaffManagementPage: React.FC = () => {
     field: 'name',
     direction: 'asc',
   });
+  const [payRateEmployeeId, setPayRateEmployeeId] = useState<string | null>(null);
+  const [hourlyRateInr, setHourlyRateInr] = useState('');
 
   // Get storeId from page-specific context
   const storeId = selectedStoreId || currentUser?.storeId || '';
@@ -114,6 +118,18 @@ const StaffManagementPage: React.FC = () => {
   const [_updateUser] = useUpdateUserMutation();
   const [activateUser] = useActivateUserMutation();
   const [deactivateUser] = useDeactivateUserMutation();
+
+  const { data: weeklyEarnings } = useGetWeeklyEarningsQuery(
+    { employeeId: currentUser?.id ?? '' },
+    { skip: !currentUser?.id }
+  );
+  const { data: pendingTips = [] } = useGetPendingTipsQuery(currentUser?.id ?? '', {
+    skip: !currentUser?.id,
+  });
+  const { data: selectedPayRate, isLoading: payRateLoading } = useGetPayRateQuery(payRateEmployeeId ?? '', {
+    skip: !payRateEmployeeId,
+  });
+  const [setPayRate, { isLoading: savingPayRate }] = useSetPayRateMutation();
 
   // Live timer state for HH:MM:SS display
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -349,6 +365,39 @@ const StaffManagementPage: React.FC = () => {
       case 'STAFF':
       default:
         return ['VIEW_ORDERS', 'CREATE_ORDERS', 'UPDATE_ORDER_STATUS'];
+    }
+  };
+
+  React.useEffect(() => {
+    if (selectedPayRate?.hourlyRateInr != null) {
+      setHourlyRateInr(String(selectedPayRate.hourlyRateInr / 100));
+    } else if (payRateEmployeeId) {
+      setHourlyRateInr('');
+    }
+  }, [selectedPayRate, payRateEmployeeId]);
+
+  const handleSavePayRate = async () => {
+    if (!payRateEmployeeId || !hourlyRateInr) {
+      alert('Please enter an hourly rate');
+      return;
+    }
+    const rate = parseFloat(hourlyRateInr);
+    if (Number.isNaN(rate) || rate <= 0) {
+      alert('Please enter a valid hourly rate');
+      return;
+    }
+    try {
+      await setPayRate({
+        employeeId: payRateEmployeeId,
+        storeId,
+        hourlyRateInr: Math.round(rate * 100),
+        effectiveFrom: new Date().toISOString().split('T')[0],
+      }).unwrap();
+      alert('Pay rate updated successfully');
+      setPayRateEmployeeId(null);
+      setHourlyRateInr('');
+    } catch (error: unknown) {
+      alert(getApiErrorMessage(error, 'Failed to update pay rate'));
     }
   };
 
@@ -662,7 +711,15 @@ const StaffManagementPage: React.FC = () => {
           <div style={headerContainerStyles}>
             <div>
               <h1 style={titleStyles}>Staff Management</h1>
-              <p style={subtitleStyles}>Manage store employees, drivers, and staff members</p>
+              <p style={subtitleStyles}>
+                Manage store employees, drivers, and staff members
+                {weeklyEarnings && (
+                  <> · This week: ₹{(weeklyEarnings.totalInr / 100).toFixed(0)} earned</>
+                )}
+                {pendingTips.length > 0 && (
+                  <> · {pendingTips.length} pending tip{pendingTips.length === 1 ? '' : 's'}</>
+                )}
+              </p>
             </div>
             <Button variant="primary" size="base" onClick={() => setCreateDialogOpen(true)}>
               + Add Staff Member
@@ -772,6 +829,22 @@ const StaffManagementPage: React.FC = () => {
                       </span>
                     </td>
                     <td style={tableCellStyles}>
+                      <div style={{ display: 'flex', gap: spacing[2], flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => setPayRateEmployeeId(employee.id)}
+                        style={{
+                          padding: `${spacing[2]} ${spacing[3]}`,
+                          borderRadius: borderRadius.md,
+                          border: `2px solid ${colors.primary.main}`,
+                          fontSize: typography.fontSize.sm,
+                          fontWeight: typography.fontWeight.bold,
+                          cursor: 'pointer',
+                          backgroundColor: colors.surface.background,
+                          color: colors.primary.main,
+                        }}
+                      >
+                        Pay Rate
+                      </button>
                       <button
                         onClick={() => handleToggleActive(employee.id, employee.isActive)}
                         style={{
@@ -800,6 +873,7 @@ const StaffManagementPage: React.FC = () => {
                       >
                         {employee.isActive ? 'Deactivate' : 'Activate'}
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -1029,6 +1103,49 @@ const StaffManagementPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Pay Rate Modal */}
+      {payRateEmployeeId && (
+        <div style={modalOverlayStyles} onClick={() => { setPayRateEmployeeId(null); setHourlyRateInr(''); }}>
+          <div style={modalStyles} onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold, marginBottom: spacing[4] }}>
+              Set Hourly Pay Rate
+            </h2>
+            {payRateLoading ? (
+              <p style={{ color: colors.text.secondary }}>Loading current rate...</p>
+            ) : (
+              <>
+                <p style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary, marginBottom: spacing[4] }}>
+                  Employee ID: {payRateEmployeeId.slice(-8)}
+                  {selectedPayRate?.hourlyRateInr != null && (
+                    <> · Current: ₹{(selectedPayRate.hourlyRateInr / 100).toFixed(2)}/hr</>
+                  )}
+                </p>
+                <div style={formGroupStyles}>
+                  <label style={labelStyles}>Hourly Rate (INR)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={hourlyRateInr}
+                    onChange={(e) => setHourlyRateInr(e.target.value)}
+                    placeholder="e.g. 150.00"
+                    style={inputStyles}
+                  />
+                </div>
+              </>
+            )}
+            <div style={{ display: 'flex', gap: spacing[2], justifyContent: 'flex-end', marginTop: spacing[6] }}>
+              <Button variant="secondary" onClick={() => { setPayRateEmployeeId(null); setHourlyRateInr(''); }} disabled={savingPayRate}>
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={handleSavePayRate} disabled={savingPayRate || payRateLoading}>
+                {savingPayRate ? 'Saving...' : 'Save Rate'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Create Staff Modal */}
       {createDialogOpen && (

@@ -9,6 +9,8 @@ import {
   useUpdateOrderStatusMutation,
   useUpdateOrderPriorityMutation,
   useCancelOrderMutation,
+  useApproveCancelRequestMutation,
+  useRejectCancelRequestMutation,
   useGetActiveDeliveriesCountQuery,
   Order,
 } from '../../store/api/orderApi';
@@ -89,6 +91,8 @@ const OrdersTab = ({ storeId }: { storeId: string }) => {
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
   const [updateOrderPriority] = useUpdateOrderPriorityMutation();
   const [cancelOrder] = useCancelOrderMutation();
+  const [approveCancelRequest, { isLoading: approvingCancel }] = useApproveCancelRequestMutation();
+  const [rejectCancelRequest, { isLoading: rejectingCancel }] = useRejectCancelRequestMutation();
 
   const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
@@ -97,6 +101,13 @@ const OrdersTab = ({ storeId }: { storeId: string }) => {
   const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [assignDriverModal, setAssignDriverModal] = useState<{ open: boolean; orderId: string }>({ open: false, orderId: '' });
+  const [rejectCancelOrderId, setRejectCancelOrderId] = useState<string | null>(null);
+  const [rejectCancelReason, setRejectCancelReason] = useState('');
+
+  const pendingCancelRequests = useMemo(
+    () => orders.filter((o) => o.cancellationRequested && o.status !== 'CANCELLED'),
+    [orders],
+  );
 
   const filtered = useMemo(() => {
     let list = [...orders];
@@ -142,6 +153,28 @@ const OrdersTab = ({ storeId }: { storeId: string }) => {
     catch { alert('Failed to cancel order'); }
   };
 
+  const handleApproveCancelRequest = async (orderId: string) => {
+    try {
+      await approveCancelRequest(orderId).unwrap();
+      refetch();
+      refetchAnalytics();
+    } catch {
+      alert('Failed to approve cancellation');
+    }
+  };
+
+  const handleRejectCancelRequest = async () => {
+    if (!rejectCancelOrderId) return;
+    try {
+      await rejectCancelRequest({ orderId: rejectCancelOrderId, reason: rejectCancelReason || undefined }).unwrap();
+      setRejectCancelOrderId(null);
+      setRejectCancelReason('');
+      refetch();
+    } catch {
+      alert('Failed to reject cancellation request');
+    }
+  };
+
   const handleAssignDriver = (orderId: string) => {
     setAssignDriverModal({ open: true, orderId });
   };
@@ -151,6 +184,69 @@ const OrdersTab = ({ storeId }: { storeId: string }) => {
 
   return (
     <>
+      {/* Pending Cancel Requests */}
+      <div style={{ ...cardStyle, marginBottom: 16, border: pendingCancelRequests.length ? `1px solid ${t.orange}` : undefined }}>
+        <h4 style={{ ...sectionTitleStyle, fontSize: 14, color: t.orange, marginBottom: 8 }}>
+          Pending Cancel Requests ({pendingCancelRequests.length})
+        </h4>
+        {isLoading && <p style={{ color: t.gray, fontSize: 13, padding: 8 }}>Loading orders...</p>}
+        {!isLoading && pendingCancelRequests.length === 0 && (
+          <p style={{ color: t.grayMuted, fontSize: 13, padding: 8 }}>No cancellation requests awaiting approval</p>
+        )}
+        {pendingCancelRequests.map((order) => (
+          <div
+            key={order.id}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0',
+              borderBottom: `1px solid ${t.grayLight}`, flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>#{order.orderNumber} — {order.customerName}</div>
+              <div style={{ fontSize: 11, color: t.gray }}>
+                {order.cancellationRequestReason || 'No reason provided'}
+                {order.cancellationRequestedAt && ` · ${fmtDate(order.cancellationRequestedAt)}`}
+              </div>
+            </div>
+            <button
+              style={btn('success')}
+              onClick={() => handleApproveCancelRequest(order.id)}
+              disabled={approvingCancel || rejectingCancel}
+            >
+              {approvingCancel ? '...' : 'Approve'}
+            </button>
+            <button
+              style={btn('danger')}
+              onClick={() => { setRejectCancelOrderId(order.id); setRejectCancelReason(''); }}
+              disabled={approvingCancel || rejectingCancel}
+            >
+              Reject
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {rejectCancelOrderId && (
+        <div style={modalOverlay} onClick={() => { setRejectCancelOrderId(null); setRejectCancelReason(''); }}>
+          <div style={{ ...modalBox, maxWidth: 440 }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ ...sectionTitleStyle, fontSize: 16, color: t.red, marginBottom: 12 }}>Reject Cancel Request</h3>
+            <textarea
+              value={rejectCancelReason}
+              onChange={e => setRejectCancelReason(e.target.value)}
+              placeholder="Optional rejection reason..."
+              rows={3}
+              style={{ ...selectStyle, width: '100%', padding: 10, fontSize: 13, resize: 'vertical' }}
+            />
+            <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
+              <button style={btn('secondary')} onClick={() => { setRejectCancelOrderId(null); setRejectCancelReason(''); }}>Back</button>
+              <button style={btn('danger')} onClick={handleRejectCancelRequest} disabled={rejectingCancel}>
+                {rejectingCancel ? 'Rejecting...' : 'Confirm Reject'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
         <div style={miniStat}><p style={statLabel}>Total Orders</p><p style={statValue()}>{stats.total}</p></div>

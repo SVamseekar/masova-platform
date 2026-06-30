@@ -199,4 +199,27 @@ class RatingTokenServiceTest {
 
         assertThat(orderId).isEqualTo("o1");
     }
+
+    @Test
+    void getTokenDetails_returns_valid_token_with_customer_name_from_order() {
+        RatingToken token = buildToken("o1");
+        Order order = buildOrder("o1");
+        order.setCustomerName("Alice");
+        when(ratingTokenRepository.findByToken("uuid-abc-123")).thenReturn(Optional.of(token));
+        when(orderRepository.findById("o1")).thenReturn(Optional.of(order));
+
+        var details = ratingTokenService.getTokenDetails("uuid-abc-123");
+
+        assertThat(details.get("valid")).isEqualTo(true);
+        assertThat(details.get("orderId")).isEqualTo("o1");
+        assertThat(details.get("customerName")).isEqualTo("Alice");
+    }
+
+    @Test
+    void getTokenDetails_invalid_token_throws() {
+        when(ratingTokenRepository.findByToken("bad")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> ratingTokenService.getTokenDetails("bad"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }

@@ -1,7 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { apiUrl } from '../../testApiBase';
 
-
 export const deliveryHandlers = [
   http.get(apiUrl('/delivery/drivers/available'), () =>
     HttpResponse.json([
@@ -26,7 +25,7 @@ export const deliveryHandlers = [
     ]),
   ),
 
-  http.post(apiUrl('/delivery/auto-dispatch'), () =>
+  http.post(apiUrl('/delivery/dispatch'), () =>
     HttpResponse.json({
       orderId: 'order-1',
       driverId: 'driver-1',
@@ -41,7 +40,7 @@ export const deliveryHandlers = [
     }),
   ),
 
-  http.post(apiUrl('/delivery/route-optimize'), () =>
+  http.post(apiUrl('/delivery/route'), () =>
     HttpResponse.json({
       distanceKm: 5.2,
       durationMinutes: 18,
@@ -57,8 +56,8 @@ export const deliveryHandlers = [
     }),
   ),
 
-  http.post(apiUrl('/delivery/location-update'), () =>
-    new HttpResponse(null, { status: 204 }),
+  http.post(apiUrl('/delivery/location'), () =>
+    HttpResponse.json({ success: true, driverId: 'driver-1' }),
   ),
 
   http.get(apiUrl('/delivery/track/:orderId'), ({ params }) =>
@@ -122,40 +121,35 @@ export const deliveryHandlers = [
     }),
   ),
 
-  http.get(apiUrl('/delivery/driver/:driverId/performance/today'), () =>
-    HttpResponse.json({
-      deliveriesToday: 5,
-      averageTime: 22,
-      onTimeRate: 100,
-    }),
+  http.get(apiUrl('/delivery/driver/:driverId/status'), () =>
+    HttpResponse.json({ driverId: 'driver-1', status: 'AVAILABLE', activeDeliveries: 1 }),
   ),
 
-  http.get(apiUrl('/delivery/driver/:driverId/status'), () =>
-    HttpResponse.json({ status: 'AVAILABLE', activeDeliveries: 1 }),
+  http.patch(apiUrl('/delivery/driver/:driverId/status'), ({ params }) =>
+    HttpResponse.json({ driverId: params.driverId, status: 'AVAILABLE' }),
+  ),
+
+  http.post(apiUrl('/delivery/verify'), () =>
+    HttpResponse.json({ success: true, message: 'Delivery verified' }),
   ),
 
   http.get(apiUrl('/delivery/driver/:driverId/pending'), () =>
     HttpResponse.json([]),
   ),
 
-  http.get(apiUrl('/delivery/zone/check'), () =>
-    HttpResponse.json({ inZone: true, zoneName: 'Zone A' }),
-  ),
-
-  http.get(apiUrl('/delivery/zone/fee'), () =>
-    HttpResponse.json({ fee: 50, distance: 3.2 }),
-  ),
-
-  http.get(apiUrl('/delivery/zone/list'), () =>
-    HttpResponse.json([
+  http.get(apiUrl('/delivery/zones'), ({ request }) => {
+    const url = new URL(request.url);
+    if (url.searchParams.get('fee') === 'true') {
+      return HttpResponse.json({ fee: 50, distance: 3.2 });
+    }
+    if (url.searchParams.get('check') === 'true') {
+      return HttpResponse.json({ inZone: true, zoneName: 'Zone A' });
+    }
+    return HttpResponse.json([
       { id: '1', name: 'Zone A', radius: 5, baseFee: 30 },
       { id: '2', name: 'Zone B', radius: 10, baseFee: 50 },
-    ]),
-  ),
-
-  http.get(apiUrl('/delivery/zone/validate'), () =>
-    HttpResponse.json({ valid: true, zoneName: 'Zone A' }),
-  ),
+    ]);
+  }),
 
   http.post(apiUrl('/delivery/accept'), () =>
     HttpResponse.json({ status: 'ACCEPTED' }),
@@ -165,11 +159,7 @@ export const deliveryHandlers = [
     HttpResponse.json({ status: 'REJECTED' }),
   ),
 
-  http.post(apiUrl('/delivery/:orderId/generate-otp'), () =>
+  http.post(apiUrl('/delivery/:orderId/otp'), () =>
     HttpResponse.json({ otp: '1234', expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString() }),
-  ),
-
-  http.post(apiUrl('/delivery/:orderId/regenerate-otp'), () =>
-    HttpResponse.json({ otp: '5678', expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString() }),
   ),
 ];

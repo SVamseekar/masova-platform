@@ -41,7 +41,7 @@ export const userHandlers = [
     HttpResponse.json(mockUsers[0]),
   ),
 
-  http.post(apiUrl('/users/change-password'), () =>
+  http.post(apiUrl('/auth/change-password'), () =>
     new HttpResponse(null, { status: 204 }),
   ),
 
@@ -73,7 +73,7 @@ export const userHandlers = [
     HttpResponse.json({ ...mockUsers[1], id: '99' }),
   ),
 
-  http.post(apiUrl('/users/validate-pin'), () =>
+  http.post(apiUrl('/auth/validate-pin'), () =>
     HttpResponse.json({ userId: '2', name: 'Staff Member', type: 'STAFF', role: 'CASHIER', storeId: '1' }),
   ),
 
@@ -96,5 +96,9 @@ export const userHandlers = [
 
   http.post(apiUrl('/users/:userId/deactivate'), () =>
     new HttpResponse(null, { status: 204 }),
+  ),
+
+  http.post(apiUrl('/users/kiosk/:kioskUserId/deactivate'), () =>
+    HttpResponse.json({ success: 'true', message: 'Kiosk deactivated successfully' }),
   ),
 ];

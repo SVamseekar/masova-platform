@@ -106,7 +106,7 @@ export const userApi = createApi({
     // Change password
     changePassword: builder.mutation<void, ChangePasswordRequest>({
       query: (data) => ({
-        url: '/users/change-password',
+        url: '/auth/change-password',
         method: 'POST',
         body: data,
       }),
@@ -231,7 +231,7 @@ export const userApi = createApi({
       { pin: string }
     >({
       query: (data) => ({
-        url: '/users/validate-pin',
+        url: '/auth/validate-pin',
         method: 'POST',
         body: data,
       }),

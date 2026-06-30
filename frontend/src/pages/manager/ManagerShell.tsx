@@ -9,6 +9,7 @@ import { t, Icons } from './manager-tokens';
 import { useGetActiveStoresQuery, type Store } from '../../store/api/storeApi';
 import { setSelectedStore, setStoreCurrency, selectSelectedStoreId, selectSelectedStoreName } from '../../store/slices/cartSlice';
 import { storeCurrencyPayload } from '../../utils/storeCurrency';
+import { useGetVersionQuery } from '../../store/api/systemApi';
 
 const DashboardSection = React.lazy(() => import('./DashboardSection'));
 const OrdersSection = React.lazy(() => import('./OrdersSection'));
@@ -65,6 +66,7 @@ function ManagerShell() {
   const reduxStoreId = useAppSelector(selectSelectedStoreId);
   const reduxStoreName = useAppSelector(selectSelectedStoreName);
   const { data: stores = [], isLoading: storesLoading } = useGetActiveStoresQuery();
+  const { data: versionInfo } = useGetVersionQuery();
 
   // Auto-select the manager's assigned store on first load
   useEffect(() => {
@@ -207,8 +209,13 @@ function ManagerShell() {
           })}
         </div>
 
-        {/* Logout at bottom */}
+        {/* Version + logout at bottom */}
         <div style={{ marginTop: 'auto', paddingTop: 20 }}>
+          {sidebarOpen && versionInfo && (
+            <div style={{ padding: '0 14px 12px', fontSize: 11, color: t.grayMuted }}>
+              v{versionInfo.version}
+            </div>
+          )}
           <div
             onClick={handleLogout}
             title={!sidebarOpen ? 'Logout' : undefined}

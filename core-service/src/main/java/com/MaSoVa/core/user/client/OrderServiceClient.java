@@ -101,6 +101,55 @@ public class OrderServiceClient {
         }
     }
 
+    /**
+     * Validate a public rating token and return order/customer details.
+     */
+    @Retry(name = "orderService")
+    @CircuitBreaker(name = "orderService", fallbackMethod = "getRatingTokenDetailsFallback")
+    public Map<String, Object> getRatingTokenDetails(String token) {
+        try {
+            String url = orderServiceUrl + "/api/orders/rating-token/" + token;
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("X-Internal-Service", "core-service");
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    url,
+                    HttpMethods.GET,
+                    entity,
+                    new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+
+            return response.getBody() != null ? response.getBody() : Collections.emptyMap();
+        } catch (Exception e) {
+            logger.warn("Error fetching rating token details for token {}: {}", token, e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * Mark a rating token as used after a public review is submitted.
+     */
+    @Retry(name = "orderService")
+    @CircuitBreaker(name = "orderService", fallbackMethod = "markRatingTokenUsedFallback")
+    public void markRatingTokenUsed(String token) {
+        try {
+            String url = orderServiceUrl + "/api/orders/rating-token/" + token + "/mark-used";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("X-Internal-Service", "core-service");
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            restTemplate.exchange(url, HttpMethods.POST, entity, Void.class);
+        } catch (Exception e) {
+            logger.warn("Error marking rating token as used for token {}: {}", token, e.getMessage());
+            throw e;
+        }
+    }
+
     private HttpHeaders createHttpHeaders(String authToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -126,5 +175,14 @@ public class OrderServiceClient {
     private boolean anonymizeCustomerDataFallback(String customerId, String authToken, Exception ex) {
         logger.warn("Circuit breaker fallback for anonymizeCustomerData. CustomerId: {}, Error: {}", customerId, ex.getMessage());
         return false;
+    }
+
+    private Map<String, Object> getRatingTokenDetailsFallback(String token, Exception ex) {
+        logger.warn("Circuit breaker fallback for getRatingTokenDetails. Token: {}, Error: {}", token, ex.getMessage());
+        return Map.of("valid", false, "error", "Rating service temporarily unavailable");
+    }
+
+    private void markRatingTokenUsedFallback(String token, Exception ex) {
+        logger.warn("Circuit breaker fallback for markRatingTokenUsed. Token: {}, Error: {}", token, ex.getMessage());
     }
 }

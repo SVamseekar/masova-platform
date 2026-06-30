@@ -465,6 +465,18 @@ public class WorkingSessionService {
                 .map(this::mapToResponse)
                 .toList();
     }
+
+    public List<WorkingSessionResponse> getPendingSessions(String storeId) {
+        List<WorkingSession> sessions;
+        if (storeId != null && !storeId.isEmpty()) {
+            sessions = sessionRepository.findStorSessionsPendingApproval(storeId);
+        } else {
+            sessions = sessionRepository.findSessionsPendingApproval();
+        }
+        return sessions.stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
     
     public boolean isEmployeeCurrentlyWorking(String employeeId) {
         return getSafeActiveSession(employeeId).isPresent();

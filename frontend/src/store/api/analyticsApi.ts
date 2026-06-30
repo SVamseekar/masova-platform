@@ -124,7 +124,6 @@ interface TopProductsResponse {
   sortBy: string;
 }
 
-// BI (Business Intelligence) types
 interface SalesForecast {
   date: string;
   forecastedSales: number;
@@ -231,19 +230,17 @@ interface ExecutiveSummary {
 export const analyticsApi = createApi({
   reducerPath: 'analyticsApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: `${API_CONFIG.BASE_URL}/analytics`,
+    baseUrl: API_CONFIG.BASE_URL,
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState;
       const token = state.auth.accessToken;
       const user = state.auth.user;
       const selectedStoreId = state.cart?.selectedStoreId;
 
-      // Add authorization token
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
       }
 
-      // Add user context headers
       if (user) {
         headers.set('X-User-Id', user.id);
         headers.set('X-User-Type', user.type);
@@ -252,7 +249,6 @@ export const analyticsApi = createApi({
         }
       }
 
-      // Add selected store for managers/customers
       if (selectedStoreId) {
         headers.set('X-Selected-Store-Id', selectedStoreId);
       }
@@ -260,130 +256,90 @@ export const analyticsApi = createApi({
       return headers;
     },
   }),
-  // Cache analytics data for 60 seconds to avoid rate limiting
   keepUnusedDataFor: 60,
   tagTypes: ['Analytics', 'SalesMetrics', 'DriverStatus', 'StaffPerformance'],
   endpoints: (builder) => ({
-    // Get today's sales metrics with comparisons
     getTodaySalesMetrics: builder.query<SalesMetricsResponse, string | undefined>({
-      query: (storeId) => `sales/today${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '/analytics?type=sales',
       providesTags: (result, error, storeId) => [{ type: 'SalesMetrics', id: storeId || 'DEFAULT' }],
     }),
 
-    // Get average order value
     getAverageOrderValue: builder.query<AverageOrderValueResponse, string | undefined>({
-      query: (storeId) => `avgOrderValue/today${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '/analytics?type=aov',
       providesTags: (result, error, storeId) => [{ type: 'SalesMetrics', id: storeId || 'DEFAULT' }],
     }),
 
-    // Get driver status
     getDriverStatus: builder.query<DriverStatusResponse, string | undefined>({
-      query: (storeId) => `drivers/status${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '/analytics?type=drivers',
       providesTags: (result, error, storeId) => [{ type: 'DriverStatus', id: storeId || 'DEFAULT' }],
     }),
 
-    // Get staff performance
     getStaffPerformance: builder.query<StaffPerformanceResponse, string>({
-      query: (staffId) => `staff/${staffId}/performance/today`,
+      query: (staffId) => `/analytics?type=staff-performance&staffId=${encodeURIComponent(staffId)}`,
       providesTags: ['StaffPerformance'],
     }),
 
-    // Get sales trends (weekly or monthly)
     getSalesTrends: builder.query<SalesTrendResponse, { period: 'WEEKLY' | 'MONTHLY'; storeId?: string }>({
-      query: ({ period, storeId }) => `sales/trends/${period}${storeId ? `?storeId=${storeId}` : ''}`,
+      query: ({ period }) => `/analytics?type=sales-trends&period=${period}`,
       providesTags: (result, error, { storeId }) => [{ type: 'SalesMetrics', id: storeId || 'DEFAULT' }],
     }),
 
-    // Get order type breakdown
     getOrderTypeBreakdown: builder.query<OrderTypeBreakdownResponse, string | undefined>({
-      query: (storeId) => `sales/breakdown/order-type${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '/analytics?type=order-breakdown',
       providesTags: (result, error, storeId) => [{ type: 'SalesMetrics', id: storeId || 'DEFAULT' }],
     }),
 
-    // Get peak hours analysis
     getPeakHours: builder.query<PeakHoursResponse, string | undefined>({
-      query: (storeId) => `sales/peak-hours${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '/analytics?type=peak-hours',
       providesTags: (result, error, storeId) => [{ type: 'Analytics', id: storeId || 'DEFAULT' }],
     }),
 
-    // Get staff leaderboard
     getStaffLeaderboard: builder.query<StaffLeaderboardResponse, { storeId?: string; period: string }>({
-      query: ({ storeId, period }) => {
-        const params = new URLSearchParams();
-        params.append('period', period);
-        if (storeId) params.append('storeId', storeId);
-        return `staff/leaderboard?${params.toString()}`;
-      },
+      query: ({ period }) => `/analytics?type=staff-leaderboard&period=${encodeURIComponent(period)}`,
       providesTags: (result, error, { storeId }) => [{ type: 'StaffPerformance', id: storeId || 'DEFAULT' }],
     }),
 
-    // Get top selling products
     getTopProducts: builder.query<TopProductsResponse, { storeId?: string; period: string; sortBy: string }>({
-      query: ({ storeId, period, sortBy }) => {
-        const params = new URLSearchParams();
-        params.append('period', period);
-        params.append('sortBy', sortBy);
-        if (storeId) params.append('storeId', storeId);
-        return `products/top-selling?${params.toString()}`;
-      },
+      query: ({ period, sortBy }) =>
+        `/analytics?type=top-products&period=${encodeURIComponent(period)}&sortBy=${encodeURIComponent(sortBy)}`,
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: storeId || 'DEFAULT' }],
     }),
 
-    // BI (Business Intelligence) endpoints
-    getSalesForecast: builder.query<SalesForecastResponse, { storeId?: string; days?: number }>({
-      query: ({ storeId, days = 7 }) => {
-        const params = new URLSearchParams();
-        params.append('days', days.toString());
-        if (storeId) params.append('storeId', storeId);
-        return `/api/bi/forecast/sales?${params.toString()}`;
-      },
+    getSalesForecast: builder.query<SalesForecastResponse, { storeId?: string; days?: number; period?: string }>({
+      query: ({ days = 7, period = 'WEEKLY' }) =>
+        `/bi?type=sales-forecast&days=${days}&period=${encodeURIComponent(period)}`,
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: `FORECAST_${storeId || 'DEFAULT'}` }],
     }),
 
     getCustomerBehaviorAnalysis: builder.query<CustomerBehaviorResponse, string | undefined>({
-      query: (storeId) => `/api/bi/analysis/customer-behavior${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '/bi?type=customer-behavior',
       providesTags: (result, error, storeId) => [{ type: 'Analytics', id: `BEHAVIOR_${storeId || 'DEFAULT'}` }],
     }),
 
     getChurnPrediction: builder.query<ChurnPredictionResponse, { storeId?: string; threshold?: number }>({
-      query: ({ storeId, threshold = 0.5 }) => {
-        const params = new URLSearchParams();
-        params.append('threshold', threshold.toString());
-        if (storeId) params.append('storeId', storeId);
-        return `/api/bi/prediction/churn?${params.toString()}`;
-      },
+      query: () => '/bi?type=churn',
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: `CHURN_${storeId || 'DEFAULT'}` }],
     }),
 
-    getDemandForecast: builder.query<DemandForecastResponse, { storeId?: string; days?: number }>({
-      query: ({ storeId, days = 7 }) => {
-        const params = new URLSearchParams();
-        params.append('days', days.toString());
-        if (storeId) params.append('storeId', storeId);
-        return `/api/bi/forecast/demand?${params.toString()}`;
-      },
+    getDemandForecast: builder.query<DemandForecastResponse, { storeId?: string; days?: number; period?: string }>({
+      query: ({ period = 'WEEKLY' }) => `/bi?type=demand-forecast&period=${encodeURIComponent(period)}`,
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: `DEMAND_${storeId || 'DEFAULT'}` }],
     }),
 
     getCostAnalysis: builder.query<CostAnalysisResponse, { storeId?: string; period?: string }>({
-      query: ({ storeId, period = 'MONTHLY' }) => {
-        const params = new URLSearchParams();
-        params.append('period', period);
-        if (storeId) params.append('storeId', storeId);
-        return `/api/bi/cost-analysis?${params.toString()}`;
-      },
+      query: ({ period = 'MONTHLY' }) => `/bi?type=cost-analysis&period=${encodeURIComponent(period)}`,
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: `COST_${storeId || 'DEFAULT'}` }],
     }),
 
     getExecutiveSummary: builder.query<ExecutiveSummary, string | undefined>({
-      query: (storeId) => `/api/bi/executive-summary${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (period) =>
+        `/bi/reports?type=executive-summary&period=${encodeURIComponent(period ?? 'MONTH')}`,
       providesTags: (result, error, storeId) => [{ type: 'Analytics', id: `EXECUTIVE_${storeId || 'DEFAULT'}` }],
     }),
 
-    // Mutations
     clearAnalyticsCache: builder.mutation<{ status: string; message: string; storeId: string }, void>({
       query: () => ({
-        url: 'cache/clear',
+        url: '/analytics/cache/clear',
         method: 'POST',
       }),
       invalidatesTags: ['Analytics', 'SalesMetrics', 'DriverStatus', 'StaffPerformance'],

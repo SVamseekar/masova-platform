@@ -44,6 +44,9 @@ public class SecurityConfig extends SecurityConfigurationBase {
             "/api/orders/track/**",
             "/orders/track/**",
 
+            // Public rating token validation (SMS/email links)
+            "/api/orders/rating-token/**",
+
             // Payment status callback from payment-service
             "/api/orders/*/payment",
 

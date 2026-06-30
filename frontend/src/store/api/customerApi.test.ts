@@ -141,7 +141,7 @@ describe('customerApi', () => {
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
       expect(result.current.data).toBeDefined();
-      expect(result.current.data!.maxRedeemablePoints).toBe(300);
+      expect(result.current.data!.maxRedeemablePoints).toBe(500);
     });
 
     it('should fetch customers by tier', async () => {

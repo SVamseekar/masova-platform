@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Container,
   Typography,
@@ -18,14 +18,27 @@ import {
   List,
   Chip,
 } from '@mui/material';
-import axios from '../utils/axios';
 import DownloadIcon from '@mui/icons-material/Download';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import {
+  useGetGdprRequestsQuery,
+  useCreateGdprRequestMutation,
+  useLazyExportUserDataQuery,
+  type GdprRequestType,
+} from '../store/api/gdprApi';
 
-interface GdprRequest {
+const REQUEST_TYPE_MAP: Record<string, GdprRequestType> = {
+  ACCESS: 'access',
+  RECTIFICATION: 'rectification',
+  ERASURE: 'erasure',
+  DATA_PORTABILITY: 'portability',
+  RESTRICT_PROCESSING: 'access',
+};
+
+interface DisplayRequest {
   id: string;
   requestType: string;
   status: string;
@@ -35,54 +48,69 @@ interface GdprRequest {
 }
 
 export const GdprRequests: React.FC = () => {
-  const [requests, setRequests] = useState<GdprRequest[]>([]);
+  const userId = localStorage.getItem('userId') ?? '';
+  const { data: gdprRequests = [], refetch } = useGetGdprRequestsQuery(userId, { skip: !userId });
+  const [createGdprRequest, { isLoading: creating }] = useCreateGdprRequestMutation();
+  const [triggerExport, { isLoading: exporting }] = useLazyExportUserDataQuery();
+
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedType, setSelectedType] = useState('');
   const [reason, setReason] = useState('');
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const userId = localStorage.getItem('userId');
 
-  const fetchRequests = useCallback(async () => {
-    if (!userId) return;
-    try {
-      const response = await axios.get<GdprRequest[]>(`/api/gdpr/request/user/${userId}`);
-      setRequests(response.data);
-    } catch (error) {
-      console.error('Error fetching requests:', error);
-    }
-  }, [userId]);
+  const requests: DisplayRequest[] = gdprRequests.map((r) => ({
+    id: r.id,
+    requestType: r.requestType,
+    status: r.status,
+    requestedAt: r.createdAt,
+    completedAt: r.processedAt,
+    dueDate: new Date(new Date(r.createdAt).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  }));
 
-  useEffect(() => {
-    if (userId) {
-      fetchRequests();
-    }
-  }, [userId, fetchRequests]);
-
-  const handleCreateRequest = async (requestType: string) => {
+  const handleCreateRequest = (requestType: string) => {
     setSelectedType(requestType);
     setOpenDialog(true);
+  };
+
+  const handleExportData = async () => {
+    if (!userId) return;
+    try {
+      const data = await triggerExport(userId).unwrap();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `my-data-export-${Date.now()}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      setMessage({ type: 'success', text: 'Your data export has been downloaded.' });
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to export your data. Please try again.' });
+    }
   };
 
   const handleSubmitRequest = async () => {
     if (!userId) return;
 
-    setLoading(true);
+    const mappedType = REQUEST_TYPE_MAP[selectedType];
+    if (!mappedType) {
+      setMessage({ type: 'error', text: 'Unsupported request type' });
+      return;
+    }
+
     try {
-      await axios.post('/api/gdpr/request', {
+      await createGdprRequest({
         userId,
-        requestType: selectedType,
+        requestType: mappedType,
         reason,
-      });
+      }).unwrap();
 
       setMessage({ type: 'success', text: 'Request submitted successfully!' });
       setOpenDialog(false);
       setReason('');
-      fetchRequests();
+      refetch();
     } catch {
       setMessage({ type: 'error', text: 'Failed to submit request' });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -157,9 +185,20 @@ export const GdprRequests: React.FC = () => {
         </Alert>
       )}
 
-      <Typography variant="h5" fontWeight={600} gutterBottom mt={4}>
-        Submit a New Request
-      </Typography>
+      <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2} mt={4} mb={2}>
+        <Typography variant="h5" fontWeight={600}>
+          Submit a New Request
+        </Typography>
+        <Button
+          variant="outlined"
+          startIcon={<DownloadIcon />}
+          onClick={handleExportData}
+          disabled={!userId || exporting}
+          sx={{ borderRadius: 2, textTransform: 'none' }}
+        >
+          {exporting ? 'Exporting...' : 'Download My Data'}
+        </Button>
+      </Box>
 
       <Grid container spacing={3} mb={6}>
         {requestTypes.map((item) => (
@@ -278,6 +317,18 @@ export const GdprRequests: React.FC = () => {
                       </Typography>
                     </>
                   )}
+                  {request.status === 'COMPLETED' &&
+                    ['ACCESS', 'DATA_PORTABILITY'].includes(request.requestType) && (
+                      <Button
+                        size="small"
+                        startIcon={<DownloadIcon />}
+                        onClick={handleExportData}
+                        disabled={exporting}
+                        sx={{ mt: 1, textTransform: 'none' }}
+                      >
+                        Export
+                      </Button>
+                    )}
                 </Grid>
               </Grid>
             </Paper>
@@ -312,9 +363,9 @@ export const GdprRequests: React.FC = () => {
           <Button
             variant="contained"
             onClick={handleSubmitRequest}
-            disabled={loading}
+            disabled={creating}
           >
-            {loading ? 'Submitting...' : 'Submit Request'}
+            {creating ? 'Submitting...' : 'Submit Request'}
           </Button>
         </DialogActions>
       </Dialog>

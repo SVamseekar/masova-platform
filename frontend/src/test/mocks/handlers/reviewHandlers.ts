@@ -1,7 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { apiUrl } from '../../testApiBase';
 
-
 const mockReview = {
   id: 'review-1',
   orderId: 'order-1',
@@ -34,120 +33,85 @@ const pagedReviews = {
   number: 0,
 };
 
+const overallStats = {
+  totalReviews: 200,
+  averageRating: 4.3,
+  ratingDistribution: { 1: 5, 2: 10, 3: 25, 4: 80, 5: 80 },
+  averageFoodQualityRating: 4.5,
+  averageServiceRating: 4.2,
+  averageDeliveryRating: 4.1,
+  positiveReviews: 160,
+  neutralReviews: 25,
+  negativeReviews: 15,
+  recentTrendPercentage: 5,
+  trendDirection: 'UP',
+};
+
+const driverStats = {
+  driverId: 'driver-1',
+  driverName: 'Rajesh Kumar',
+  totalReviews: 50,
+  averageRating: 4.6,
+  ratingDistribution: { 3: 3, 4: 15, 5: 32 },
+  positiveReviews: 47,
+  negativeReviews: 3,
+  last30DaysRating: 4.7,
+  performanceTrend: 'IMPROVING',
+};
+
+const itemStats = {
+  menuItemId: '1',
+  menuItemName: 'Margherita Pizza',
+  totalReviews: 80,
+  averageRating: 4.7,
+  ratingDistribution: { 3: 5, 4: 20, 5: 55 },
+  positiveReviews: 75,
+  neutralReviews: 5,
+  negativeReviews: 0,
+  commonPraises: ['Delicious', 'Perfect crust'],
+  commonComplaints: [],
+  trendStatus: 'STABLE',
+  recentRatingChange: 0.1,
+};
+
 export const reviewHandlers = [
-  http.post(apiUrl('/reviews'), () =>
-    HttpResponse.json(mockReview),
-  ),
+  http.post(apiUrl('/reviews'), () => HttpResponse.json(mockReview)),
 
-  http.get(apiUrl('/reviews/:reviewId'), () =>
-    HttpResponse.json(mockReview),
-  ),
+  http.get(apiUrl('/reviews/:reviewId'), () => HttpResponse.json(mockReview)),
 
-  http.get(apiUrl('/reviews/order/:orderId'), () =>
-    HttpResponse.json([mockReview]),
-  ),
+  http.get(apiUrl('/reviews'), ({ request }) => {
+    const url = new URL(request.url);
+    const entityType = url.searchParams.get('entityType');
+    const status = url.searchParams.get('status');
+    const flagged = url.searchParams.get('flagged');
 
-  http.get(apiUrl('/reviews/customer/:customerId'), () =>
-    HttpResponse.json(pagedReviews),
-  ),
+    if (entityType === 'ORDER') {
+      return HttpResponse.json([mockReview]);
+    }
+    if (status === 'PENDING' || flagged === 'true') {
+      return HttpResponse.json({ ...pagedReviews, content: [] });
+    }
+    if (status === 'APPROVED') {
+      return HttpResponse.json(pagedReviews);
+    }
+    return HttpResponse.json(pagedReviews);
+  }),
 
-  http.get(apiUrl('/reviews/driver/:driverId'), () =>
-    HttpResponse.json(pagedReviews),
-  ),
-
-  http.get(apiUrl('/reviews/item/:menuItemId'), () =>
-    HttpResponse.json(pagedReviews),
-  ),
-
-  http.get(apiUrl('/reviews/recent'), () =>
-    HttpResponse.json(pagedReviews),
-  ),
-
-  http.get(apiUrl('/reviews/needs-response'), () =>
-    HttpResponse.json({ ...pagedReviews, content: [] }),
-  ),
-
-  http.patch(apiUrl('/reviews/:reviewId/flag'), () =>
-    HttpResponse.json({ ...mockReview, status: 'FLAGGED' }),
-  ),
-
-  http.patch(apiUrl('/reviews/:reviewId/status'), () =>
-    HttpResponse.json(mockReview),
-  ),
+  http.patch(apiUrl('/reviews/:reviewId'), () => HttpResponse.json(mockReview)),
 
   http.delete(apiUrl('/reviews/:reviewId'), () =>
     HttpResponse.json({ message: 'Review deleted' }),
   ),
 
-  http.get(apiUrl('/reviews/stats/overall'), () =>
-    HttpResponse.json({
-      totalReviews: 200,
-      averageRating: 4.3,
-      ratingDistribution: { 1: 5, 2: 10, 3: 25, 4: 80, 5: 80 },
-      averageFoodQualityRating: 4.5,
-      averageServiceRating: 4.2,
-      averageDeliveryRating: 4.1,
-      positiveReviews: 160,
-      neutralReviews: 25,
-      negativeReviews: 15,
-      recentTrendPercentage: 5,
-      trendDirection: 'UP',
-    }),
-  ),
+  http.get(apiUrl('/reviews/stats'), ({ request }) => {
+    const url = new URL(request.url);
+    const entityType = url.searchParams.get('entityType');
+    if (entityType === 'DRIVER') return HttpResponse.json(driverStats);
+    if (entityType === 'MENU_ITEM') return HttpResponse.json(itemStats);
+    return HttpResponse.json(overallStats);
+  }),
 
-  http.get(apiUrl('/reviews/stats/driver/:driverId'), () =>
-    HttpResponse.json({
-      driverId: 'driver-1',
-      driverName: 'Rajesh Kumar',
-      totalReviews: 50,
-      averageRating: 4.6,
-      ratingDistribution: { 3: 3, 4: 15, 5: 32 },
-      positiveReviews: 47,
-      negativeReviews: 3,
-      last30DaysRating: 4.7,
-      performanceTrend: 'IMPROVING',
-    }),
-  ),
-
-  http.get(apiUrl('/reviews/stats/item/:menuItemId'), () =>
-    HttpResponse.json({
-      menuItemId: '1',
-      menuItemName: 'Margherita Pizza',
-      totalReviews: 80,
-      averageRating: 4.7,
-      ratingDistribution: { 3: 5, 4: 20, 5: 55 },
-      positiveReviews: 75,
-      neutralReviews: 5,
-      negativeReviews: 0,
-      commonPraises: ['Delicious', 'Perfect crust'],
-      commonComplaints: [],
-      trendStatus: 'STABLE',
-      recentRatingChange: 0.1,
-    }),
-  ),
-
-  http.get(apiUrl('/reviews/public/item/:menuItemId/average'), () =>
-    HttpResponse.json({ menuItemId: '1', averageRating: 4.7, totalReviews: 80 }),
-  ),
-
-  http.get(apiUrl('/reviews/pending'), () =>
-    HttpResponse.json({ ...pagedReviews, content: [] }),
-  ),
-
-  http.get(apiUrl('/reviews/flagged'), () =>
-    HttpResponse.json({ ...pagedReviews, content: [] }),
-  ),
-
-  http.post(apiUrl('/reviews/:reviewId/approve'), () =>
-    HttpResponse.json({ ...mockReview, status: 'APPROVED' }),
-  ),
-
-  http.post(apiUrl('/reviews/:reviewId/reject'), () =>
-    HttpResponse.json({ ...mockReview, status: 'REJECTED' }),
-  ),
-
-  // Responses
-  http.post(apiUrl('/responses/review/:reviewId'), () =>
+  http.post(apiUrl('/reviews/:reviewId/response'), () =>
     HttpResponse.json({
       id: 'resp-1',
       reviewId: 'review-1',
@@ -163,15 +127,7 @@ export const reviewHandlers = [
     }),
   ),
 
-  http.get(apiUrl('/responses/review/:reviewId'), () =>
-    HttpResponse.json({
-      id: 'resp-1',
-      reviewId: 'review-1',
-      responseText: 'Thank you for your feedback!',
-    }),
-  ),
-
-  http.get(apiUrl('/responses/templates'), () =>
+  http.get(apiUrl('/reviews/response-templates'), () =>
     HttpResponse.json({
       THANK_YOU: 'Thank you for your kind feedback!',
       APOLOGY: 'We apologize for the inconvenience.',
@@ -179,13 +135,5 @@ export const reviewHandlers = [
       RESOLUTION_OFFERED: 'We would like to offer...',
       CUSTOM: '',
     }),
-  ),
-
-  http.get(apiUrl('/reviews/staff/:staffId/rating'), () =>
-    HttpResponse.json({ staffId: '2', staffName: 'Staff Member', averageRating: 4.5, totalReviews: 30 }),
-  ),
-
-  http.get(apiUrl('/reviews/staff/:staffId'), () =>
-    HttpResponse.json(pagedReviews),
   ),
 ];

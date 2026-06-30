@@ -6,6 +6,7 @@ import { useRecordBreakMutation } from '../../../store/api/sessionApi';
 import { getRtkErrorMessage } from '../../shared/rtkError';
 
 interface RecordBreakModalProps {
+  sessionId: string;
   employeeId: string;
   employeeName: string;
   onClose: () => void;
@@ -13,6 +14,7 @@ interface RecordBreakModalProps {
 }
 
 const RecordBreakModal: React.FC<RecordBreakModalProps> = ({
+  sessionId,
   employeeId,
   employeeName,
   onClose,
@@ -37,7 +39,7 @@ const RecordBreakModal: React.FC<RecordBreakModalProps> = ({
     }
 
     try {
-      await recordBreak({ employeeId, breakMinutes: finalMinutes }).unwrap();
+      await recordBreak({ sessionId, breakMinutes: finalMinutes }).unwrap();
       onSuccess();
       onClose();
     } catch (err: unknown) {

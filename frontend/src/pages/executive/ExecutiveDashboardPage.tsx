@@ -1,7 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import AppHeader from '../../components/common/AppHeader';
-import axios from 'axios';
-import API_CONFIG from '../../config/api.config';
+import { useGetExecutiveSummaryQuery } from '../../store/api/analyticsApi';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
 import {formatMoney, formatMajorAmount} from '../../utils/currency';
@@ -71,26 +70,10 @@ interface ExecutiveSummary {
 const ExecutiveDashboardPage: React.FC = () => {
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const [summary, setSummary] = useState<ExecutiveSummary | null>(null);
-  const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<string>('MONTH');
   const [activeTab, setActiveTab] = useState<string>('overview');
-
-  const fetchExecutiveSummary = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get<ExecutiveSummary>(`${API_CONFIG.BASE_URL}/bi/executive-summary?period=${period}`);
-      setSummary(response.data);
-    } catch (error) {
-      console.error('Failed to fetch executive summary:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [period]);
-
-  useEffect(() => {
-    fetchExecutiveSummary();
-  }, [fetchExecutiveSummary]);
+  const { data: summaryData, isLoading: loading } = useGetExecutiveSummaryQuery(period);
+  const summary = (summaryData ?? null) as ExecutiveSummary | null;
 
   const formatCurrency = (value: number): string => {
     return formatMajorAmount(value , currency, locale);

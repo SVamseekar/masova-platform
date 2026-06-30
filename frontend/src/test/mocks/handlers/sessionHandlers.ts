@@ -1,7 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { apiUrl } from '../../testApiBase';
 
-
 const mockSession = {
   id: 'session-1',
   employeeId: '2',
@@ -17,16 +16,40 @@ const mockSession = {
   status: 'ACTIVE',
 };
 
-export const sessionHandlers = [
-  http.get(apiUrl('/users/sessions/current'), () =>
-    HttpResponse.json(mockSession),
-  ),
+const completedSession = {
+  ...mockSession,
+  id: 'session-2',
+  employeeId: '4',
+  employeeName: 'Kitchen Staff',
+  logoutTime: '2025-01-15T16:00:00Z',
+  isActive: false,
+  status: 'COMPLETED',
+  totalHours: 8,
+};
 
-  http.post(apiUrl('/users/sessions/start'), () =>
+export const sessionHandlers = [
+  http.get(apiUrl('/sessions'), ({ request }) => {
+    const url = new URL(request.url);
+    const employeeId = url.searchParams.get('employeeId');
+    const active = url.searchParams.get('active');
+
+    if (employeeId && active === 'true') {
+      return HttpResponse.json([mockSession]);
+    }
+    if (employeeId) {
+      return HttpResponse.json([mockSession]);
+    }
+    if (active === 'true') {
+      return HttpResponse.json([mockSession]);
+    }
+    return HttpResponse.json([mockSession, completedSession]);
+  }),
+
+  http.post(apiUrl('/sessions'), () =>
     HttpResponse.json({ ...mockSession, loginTime: new Date().toISOString() }),
   ),
 
-  http.post(apiUrl('/users/sessions/end'), () =>
+  http.post(apiUrl('/sessions/end'), () =>
     HttpResponse.json({
       ...mockSession,
       logoutTime: new Date().toISOString(),
@@ -35,62 +58,38 @@ export const sessionHandlers = [
     }),
   ),
 
-  http.post(apiUrl('/users/sessions/:employeeId/break'), () =>
+  http.post(apiUrl('/sessions/:sessionId/break'), () =>
     HttpResponse.json({ ...mockSession, breakDurationMinutes: 45 }),
   ),
 
-  http.get(apiUrl('/users/sessions/store/active'), () =>
-    HttpResponse.json([mockSession]),
-  ),
-
-  http.get(apiUrl('/users/sessions/store'), () =>
+  http.get(apiUrl('/sessions/pending'), () =>
     HttpResponse.json([
-      mockSession,
       {
         ...mockSession,
-        id: 'session-2',
-        employeeId: '4',
-        employeeName: 'Kitchen Staff',
-        logoutTime: '2025-01-15T16:00:00Z',
+        id: 'session-pending-1',
+        employeeName: 'Late Clock-in Staff',
+        status: 'PENDING_APPROVAL',
         isActive: false,
-        status: 'COMPLETED',
-        totalHours: 8,
       },
     ]),
   ),
 
-  http.get(apiUrl('/users/sessions/:employeeId'), () =>
-    HttpResponse.json([mockSession]),
-  ),
-
-  http.get(apiUrl('/users/sessions/pending-approval'), () =>
-    HttpResponse.json([]),
-  ),
-
-  http.post(apiUrl('/users/sessions/:sessionId/approve'), () =>
+  http.post(apiUrl('/sessions/:sessionId/approve'), () =>
     HttpResponse.json({ ...mockSession, status: 'COMPLETED' }),
   ),
 
-  http.post(apiUrl('/users/sessions/:sessionId/reject'), () =>
+  http.post(apiUrl('/sessions/:sessionId/reject'), () =>
     HttpResponse.json({ ...mockSession, status: 'COMPLETED' }),
   ),
 
-  http.post(apiUrl('/users/sessions/clock-in-with-pin'), () =>
+  http.post(apiUrl('/sessions/clock-in'), () =>
     HttpResponse.json({ message: 'Clocked in successfully', session: mockSession }),
   ),
 
-  http.post(apiUrl('/users/sessions/clock-out-employee'), () =>
+  http.post(apiUrl('/sessions/clock-out'), () =>
     HttpResponse.json({
       message: 'Clocked out successfully',
       session: { ...mockSession, isActive: false, status: 'COMPLETED' },
     }),
-  ),
-
-  http.get(apiUrl('/users/sessions/:employeeId/report'), () =>
-    HttpResponse.json({ totalHours: 40, totalSessions: 5, averageHoursPerDay: 8 }),
-  ),
-
-  http.get(apiUrl('/users/sessions/:employeeId/status'), () =>
-    HttpResponse.json({ hasActiveSession: true, session: mockSession }),
   ),
 ];

@@ -55,7 +55,7 @@ export const useTokenRefresh = () => {
 
     try {
       console.log('[TokenRefresh] Proactively refreshing token...');
-      const response = await fetch(`${API_CONFIG.BASE_URL}/users/refresh`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

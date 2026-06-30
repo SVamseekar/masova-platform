@@ -22,6 +22,24 @@ vi.mock('@/store/api/userApi', async (importOriginal) => {
   };
 });
 
+vi.mock('@/store/api/earningsApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/store/api/earningsApi')>();
+  return {
+    ...actual,
+    useGetWeeklyEarningsQuery: vi.fn().mockReturnValue({ data: undefined }),
+    useGetPayRateQuery: vi.fn().mockReturnValue({ data: undefined, isLoading: false }),
+    useSetPayRateMutation: vi.fn().mockReturnValue([vi.fn(), { isLoading: false }]),
+  };
+});
+
+vi.mock('@/store/api/tipApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/store/api/tipApi')>();
+  return {
+    ...actual,
+    useGetPendingTipsQuery: vi.fn().mockReturnValue({ data: [] }),
+  };
+});
+
 vi.mock('@/store/api/sessionApi', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/store/api/sessionApi')>();
   return {

@@ -2,7 +2,6 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import API_CONFIG from '../../config/api.config';
 import type { RootState } from '../store';
 
-// Types
 export interface KitchenEquipment {
   id: string;
   storeId: string;
@@ -32,12 +31,10 @@ export const equipmentApi = createApi({
       const user = state.auth.user;
       const selectedStoreId = state.cart?.selectedStoreId;
 
-      // Add authorization token
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
       }
 
-      // Add user context headers
       if (user) {
         headers.set('X-User-Id', user.id);
         headers.set('X-User-Type', user.type);
@@ -46,7 +43,6 @@ export const equipmentApi = createApi({
         }
       }
 
-      // Add selected store for managers/customers
       if (selectedStoreId) {
         headers.set('X-Selected-Store-Id', selectedStoreId);
       }
@@ -56,35 +52,31 @@ export const equipmentApi = createApi({
   }),
   tagTypes: ['Equipment'],
   endpoints: (builder) => ({
-    // Create equipment
     createEquipment: builder.mutation<KitchenEquipment, Partial<KitchenEquipment>>({
       query: (equipment) => ({
-        url: '/kitchen-equipment',
+        url: '/equipment',
         method: 'POST',
         body: equipment,
       }),
       invalidatesTags: ['Equipment'],
     }),
 
-    // Get equipment by store
     getEquipmentByStore: builder.query<KitchenEquipment[], string | undefined>({
-      query: () => '/kitchen-equipment/store',
+      query: () => '/equipment',
       providesTags: (result, _error, storeId) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Equipment' as const, id })), { type: 'Equipment', id: storeId || 'DEFAULT' }]
           : [{ type: 'Equipment', id: storeId || 'DEFAULT' }],
     }),
 
-    // Get equipment by ID
     getEquipmentById: builder.query<KitchenEquipment, string>({
-      query: (equipmentId) => `/kitchen-equipment/${equipmentId}`,
+      query: (equipmentId) => `/equipment/${equipmentId}`,
       providesTags: (_result, _error, id) => [{ type: 'Equipment', id }],
     }),
 
-    // Update equipment status
     updateEquipmentStatus: builder.mutation<KitchenEquipment, { equipmentId: string; status: KitchenEquipment['status']; staffId: string; notes?: string }>({
       query: ({ equipmentId, status, staffId, notes }) => ({
-        url: `/kitchen-equipment/${equipmentId}/status`,
+        url: `/equipment/${equipmentId}`,
         method: 'PATCH',
         body: { status, staffId, notes },
       }),
@@ -94,10 +86,9 @@ export const equipmentApi = createApi({
       ],
     }),
 
-    // Toggle equipment power
     toggleEquipmentPower: builder.mutation<KitchenEquipment, { equipmentId: string; isOn: boolean; staffId: string }>({
       query: ({ equipmentId, isOn, staffId }) => ({
-        url: `/kitchen-equipment/${equipmentId}/power`,
+        url: `/equipment/${equipmentId}`,
         method: 'PATCH',
         body: { isOn, staffId },
       }),
@@ -107,10 +98,9 @@ export const equipmentApi = createApi({
       ],
     }),
 
-    // Update temperature
     updateTemperature: builder.mutation<KitchenEquipment, { equipmentId: string; temperature: number }>({
       query: ({ equipmentId, temperature }) => ({
-        url: `/kitchen-equipment/${equipmentId}/temperature`,
+        url: `/equipment/${equipmentId}`,
         method: 'PATCH',
         body: { temperature },
       }),
@@ -120,10 +110,9 @@ export const equipmentApi = createApi({
       ],
     }),
 
-    // Record maintenance
     recordMaintenance: builder.mutation<KitchenEquipment, { equipmentId: string; nextMaintenanceDate: string; notes: string }>({
       query: ({ equipmentId, nextMaintenanceDate, notes }) => ({
-        url: `/kitchen-equipment/${equipmentId}/maintenance`,
+        url: `/equipment/${equipmentId}/maintenance`,
         method: 'POST',
         body: { nextMaintenanceDate, notes },
       }),
@@ -133,32 +122,20 @@ export const equipmentApi = createApi({
       ],
     }),
 
-    // Get equipment by status
     getEquipmentByStatus: builder.query<KitchenEquipment[], { status: KitchenEquipment['status'] }>({
-      query: ({ status }) => `/kitchen-equipment/store/status/${status}`,
+      query: ({ status }) => `/equipment?status=${status}`,
       providesTags: ['Equipment'],
     }),
 
-    // Get equipment needing maintenance
     getEquipmentNeedingMaintenance: builder.query<KitchenEquipment[], string | undefined>({
-      query: () => '/kitchen-equipment/store/maintenance-needed',
+      query: () => '/equipment?maintenanceNeeded=true',
       providesTags: (_result, _error, storeId) => [{ type: 'Equipment', id: storeId || 'DEFAULT' }],
     }),
 
-    // Delete equipment
     deleteEquipment: builder.mutation<void, string>({
       query: (equipmentId) => ({
-        url: `/kitchen-equipment/${equipmentId}`,
+        url: `/equipment/${equipmentId}`,
         method: 'DELETE',
-      }),
-      invalidatesTags: ['Equipment'],
-    }),
-
-    // Reset usage counts
-    resetUsageCounts: builder.mutation<void, void>({
-      query: () => ({
-        url: `/kitchen-equipment/store/reset-usage`,
-        method: 'POST',
       }),
       invalidatesTags: ['Equipment'],
     }),
@@ -176,5 +153,4 @@ export const {
   useGetEquipmentByStatusQuery,
   useGetEquipmentNeedingMaintenanceQuery,
   useDeleteEquipmentMutation,
-  useResetUsageCountsMutation,
 } = equipmentApi;

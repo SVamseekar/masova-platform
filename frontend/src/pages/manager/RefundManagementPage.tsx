@@ -9,7 +9,11 @@ import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import {
   useGetTransactionsByStoreIdQuery,
   useInitiateRefundMutation,
+  useGetPendingRefundsQuery,
+  useApproveRefundMutation,
+  useRejectRefundMutation,
   type PaymentResponse,
+  type Refund,
 } from '../../store/api/paymentApi';
 import { Card, Button, Input } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
@@ -35,12 +39,45 @@ const RefundManagementPage: React.FC = () => {
   const [showRefundForm, setShowRefundForm] = useState(false);
 
   const { data: transactions, isLoading } = useGetTransactionsByStoreIdQuery(storeId, { skip: !storeId });
+  const {
+    data: pendingRefunds = [],
+    isLoading: pendingLoading,
+    error: pendingError,
+    refetch: refetchPending,
+  } = useGetPendingRefundsQuery(storeId, { skip: !storeId, pollingInterval: 30000 });
   const [initiateRefund, { isLoading: refundLoading }] = useInitiateRefundMutation();
+  const [approveRefund, { isLoading: approving }] = useApproveRefundMutation();
+  const [rejectRefund, { isLoading: rejecting }] = useRejectRefundMutation();
+  const [rejectingRefundId, setRejectingRefundId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   // Filter only successful transactions that can be refunded
   const refundableTransactions = transactions?.filter(
     (txn) => txn.status === 'SUCCESS' || txn.status === 'PARTIAL_REFUND'
   );
+
+  const handleApproveRefund = async (refundId: string) => {
+    try {
+      await approveRefund(refundId).unwrap();
+      refetchPending();
+      alert('Refund approved and processed.');
+    } catch {
+      alert('Failed to approve refund.');
+    }
+  };
+
+  const handleRejectRefund = async () => {
+    if (!rejectingRefundId) return;
+    try {
+      await rejectRefund({ refundId: rejectingRefundId, reason: rejectReason || undefined }).unwrap();
+      setRejectingRefundId(null);
+      setRejectReason('');
+      refetchPending();
+      alert('Refund request rejected.');
+    } catch {
+      alert('Failed to reject refund.');
+    }
+  };
 
   const handleInitiateRefund = async () => {
     if (!selectedTransaction || !refundAmount || !refundReason) {
@@ -206,6 +243,116 @@ const RefundManagementPage: React.FC = () => {
         <AppHeader title="Refund Management" showBackButton onBack={handleBack} showManagerNav={true} />
 
         <h1 style={titleStyles}>Refund Management</h1>
+
+        {/* Pending Approval Refunds */}
+        <Card elevation="md" padding="lg" style={{ marginBottom: spacing[6] }}>
+          <h2 style={sectionTitleStyles}>Pending Approval Refunds</h2>
+          {pendingLoading && (
+            <div style={{ textAlign: 'center', padding: spacing[6], color: colors.text.tertiary }}>
+              Loading pending refunds...
+            </div>
+          )}
+          {!pendingLoading && pendingError && (
+            <div style={{ textAlign: 'center', padding: spacing[6], color: colors.semantic.error }}>
+              Failed to load pending refunds. Please try again.
+            </div>
+          )}
+          {!pendingLoading && !pendingError && pendingRefunds.length === 0 && (
+            <div style={{ textAlign: 'center', padding: spacing[6], color: colors.text.tertiary }}>
+              No refunds awaiting approval
+            </div>
+          )}
+          {!pendingLoading && !pendingError && pendingRefunds.length > 0 && (
+            <table style={tableStyles}>
+              <thead>
+                <tr>
+                  <th style={tableHeaderStyles}>Order</th>
+                  <th style={tableHeaderStyles}>Amount</th>
+                  <th style={tableHeaderStyles}>Reason</th>
+                  <th style={tableHeaderStyles}>Requested</th>
+                  <th style={tableHeaderStyles}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingRefunds.map((refund: Refund) => (
+                  <tr key={refund.id} style={tableRowStyles(false)}>
+                    <td style={tableCellStyles}>{refund.orderId}</td>
+                    <td style={{ ...tableCellStyles, fontWeight: typography.fontWeight.semibold }}>
+                      {fmt(refund.amount)}
+                    </td>
+                    <td style={tableCellStyles}>{refund.reason || '—'}</td>
+                    <td style={tableCellStyles}>
+                      {format(new Date(refund.createdAt), 'MMM dd, yyyy HH:mm')}
+                    </td>
+                    <td style={tableCellStyles}>
+                      <div style={{ display: 'flex', gap: spacing[2] }}>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleApproveRefund(refund.id)}
+                          disabled={approving || rejecting}
+                        >
+                          {approving ? '...' : 'Approve'}
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => {
+                            setRejectingRefundId(refund.id);
+                            setRejectReason('');
+                          }}
+                          disabled={approving || rejecting}
+                        >
+                          Reject
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Card>
+
+        {rejectingRefundId && (
+          <Card elevation="lg" padding="lg" style={{ marginBottom: spacing[6] }}>
+            <h3 style={{ ...sectionTitleStyles, fontSize: typography.fontSize.lg }}>Reject Refund</h3>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="Optional rejection reason..."
+              rows={3}
+              style={{
+                ...createNeumorphicSurface('inset', 'sm', 'lg'),
+                width: '100%',
+                padding: spacing[3],
+                fontSize: typography.fontSize.base,
+                border: 'none',
+                outline: 'none',
+                fontFamily: typography.fontFamily.primary,
+                color: colors.text.primary,
+                backgroundColor: colors.surface.secondary,
+                resize: 'vertical',
+                marginBottom: spacing[4],
+              }}
+            />
+            <div style={{ display: 'flex', gap: spacing[3] }}>
+              <Button variant="primary" onClick={handleRejectRefund} disabled={rejecting}>
+                {rejecting ? 'Rejecting...' : 'Confirm Reject'}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setRejectingRefundId(null);
+                  setRejectReason('');
+                }}
+                disabled={rejecting}
+              >
+                Cancel
+              </Button>
+            </div>
+          </Card>
+        )}
 
         <div style={gridStyles}>
           {/* Left: Transactions List */}

@@ -316,6 +316,21 @@ public class CustomerService {
         if (request.getSmsOptIn() != null) {
             customer.setSmsOptIn(request.getSmsOptIn());
         }
+        if (request.getPreferences() != null) {
+            return updatePreferences(id, request.getPreferences());
+        }
+        if (Boolean.TRUE.equals(request.getEmailVerified())) {
+            return verifyEmail(id);
+        }
+        if (Boolean.TRUE.equals(request.getPhoneVerified())) {
+            return verifyPhone(id);
+        }
+        if (request.getNote() != null) {
+            return addNote(id, request.getNote());
+        }
+        if (request.getOrderStats() != null) {
+            return updateOrderStats(id, request.getOrderStats());
+        }
 
         return customerRepository.save(customer);
     }

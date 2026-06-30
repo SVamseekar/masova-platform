@@ -47,6 +47,7 @@ export interface Store {
   id: string;
   name: string;
   storeCode: string;
+  withinDeliveryRadius?: boolean;
   address: Address;
   phoneNumber?: string;
   regionId?: string;
@@ -139,7 +140,8 @@ export const storeApi = createApi({
 
     // Get store by code
     getStoreByCode: builder.query<Store, string>({
-      query: (storeCode) => `/stores/code/${storeCode}`,
+      query: (storeCode) => `/stores?code=${encodeURIComponent(storeCode)}`,
+      transformResponse: (response: Store[]) => response[0],
       providesTags: (result) => result ? [{ type: 'Store', id: result.id }] : [],
     }),
 
@@ -163,7 +165,7 @@ export const storeApi = createApi({
 
     // Get stores by region
     getStoresByRegion: builder.query<Store[], string>({
-      query: (regionId) => `/stores/region/${regionId}`,
+      query: (regionId) => `/stores?region=${encodeURIComponent(regionId)}`,
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Store' as const, id })), { type: 'Stores', id: 'LIST' }]
@@ -179,8 +181,17 @@ export const storeApi = createApi({
 
     // Check if a location is within a store's delivery radius
     checkDeliveryRadius: builder.query<DeliveryRadiusCheckResult, { storeId: string; latitude: number; longitude: number }>({
-      query: ({ storeId, latitude, longitude }) =>
-        `/stores/${storeId}/delivery-radius-check?latitude=${latitude}&longitude=${longitude}`,
+      query: ({ latitude, longitude }) => `/stores?lat=${latitude}&lng=${longitude}`,
+      transformResponse: (stores: Store[], _meta, { storeId, latitude, longitude }) => {
+        const store = stores.find((s) => s.id === storeId);
+        return {
+          withinRadius: store?.withinDeliveryRadius ?? false,
+          storeId,
+          deliveryRadiusKm: store?.operatingConfig?.deliveryRadiusKm ?? 0,
+          latitude,
+          longitude,
+        };
+      },
     }),
 
     // Create new store
@@ -197,7 +208,7 @@ export const storeApi = createApi({
     updateStore: builder.mutation<Store, { storeId: string; data: UpdateStoreRequest }>({
       query: ({ storeId, data }) => ({
         url: `/stores/${storeId}`,
-        method: 'PUT',
+        method: 'PATCH',
         body: data,
       }),
       invalidatesTags: (result, error, { storeId }) => [

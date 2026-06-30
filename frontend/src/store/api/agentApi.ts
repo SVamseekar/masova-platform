@@ -1,3 +1,7 @@
+/**
+ * External AI agent service (masova-support on :8000).
+ * Uses VITE_AGENT_URL — not routed through api-gateway.
+ */
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 const AGENT_URL = import.meta.env.VITE_AGENT_URL ?? 'http://localhost:8000';

@@ -100,10 +100,7 @@ const StaffProfilePage: React.FC = () => {
 
   const { data: sessions = [], isLoading: sessionsLoading } = useGetEmployeeSessionsQuery({
     employeeId: profileUserId || '',
-    startDate: startDate.toISOString().split('T')[0],
-    endDate: endDate.toISOString().split('T')[0],
-    page,
-    size: rowsPerPage,
+    date: startDate.toISOString().split('T')[0],
   }, { skip: !profileUserId });
 
   // Fetch upcoming shifts (next 30 days)

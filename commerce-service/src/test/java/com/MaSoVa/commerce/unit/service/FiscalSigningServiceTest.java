@@ -1,12 +1,15 @@
 package com.MaSoVa.commerce.unit.service;
 
 import com.MaSoVa.commerce.fiscal.*;
+import com.MaSoVa.commerce.fiscal.entity.FiscalSignatureJpaEntity;
+import com.MaSoVa.commerce.fiscal.repository.FiscalSignatureRepository;
 import com.MaSoVa.commerce.order.entity.Order;
 import com.MaSoVa.commerce.order.repository.OrderJpaRepository;
 import com.MaSoVa.commerce.order.repository.OrderRepository;
 import com.MaSoVa.commerce.order.service.OrderEventPublisher;
 import com.MaSoVa.shared.model.FiscalSignature;
 import com.MaSoVa.shared.messaging.events.ReceiptSignedEvent;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -21,6 +24,7 @@ class FiscalSigningServiceTest {
     private FiscalSignerRegistry registry;
     private OrderRepository orderRepository;
     private OrderJpaRepository orderJpaRepository;
+    private FiscalSignatureRepository fiscalSignatureRepository;
     private OrderEventPublisher eventPublisher;
     private FiscalSigningService fiscalSigningService;
 
@@ -29,8 +33,11 @@ class FiscalSigningServiceTest {
         registry = mock(FiscalSignerRegistry.class);
         orderRepository = mock(OrderRepository.class);
         orderJpaRepository = mock(OrderJpaRepository.class);
+        fiscalSignatureRepository = mock(FiscalSignatureRepository.class);
         eventPublisher = mock(OrderEventPublisher.class);
-        fiscalSigningService = new FiscalSigningService(registry, orderRepository, orderJpaRepository, eventPublisher);
+        fiscalSigningService = new FiscalSigningService(
+                registry, orderRepository, orderJpaRepository, fiscalSignatureRepository,
+                eventPublisher, new ObjectMapper());
     }
 
     @Test
@@ -48,6 +55,7 @@ class FiscalSigningServiceTest {
         fiscalSigningService.signOrder(order);
 
         verify(orderRepository).save(argThat(o -> o.getFiscalSignature() != null));
+        verify(fiscalSignatureRepository).save(any(FiscalSignatureJpaEntity.class));
         verify(eventPublisher).publishReceiptSigned(any(ReceiptSignedEvent.class));
     }
 

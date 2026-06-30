@@ -22,6 +22,10 @@ import { kioskApi } from './api/kioskApi';
 import { agentApi } from './api/agentApi';
 import { aggregatorApi } from './api/aggregatorApi';
 import { fiscalApi } from './api/fiscalApi';
+import { gdprApi } from './api/gdprApi';
+import { earningsApi } from './api/earningsApi';
+import { tipApi } from './api/tipApi';
+import { systemApi } from './api/systemApi';
 
 // Slice reducers
 import authReducer from './slices/authSlice';
@@ -58,6 +62,10 @@ export const store = configureStore({
     [agentApi.reducerPath]: agentApi.reducer,
     [aggregatorApi.reducerPath]: aggregatorApi.reducer,
     [fiscalApi.reducerPath]: fiscalApi.reducer,
+    [gdprApi.reducerPath]: gdprApi.reducer,
+    [earningsApi.reducerPath]: earningsApi.reducer,
+    [tipApi.reducerPath]: tipApi.reducer,
+    [systemApi.reducerPath]: systemApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -86,7 +94,11 @@ export const store = configureStore({
       kioskApi.middleware,
       agentApi.middleware,
       aggregatorApi.middleware,
-      fiscalApi.middleware
+      fiscalApi.middleware,
+      gdprApi.middleware,
+      earningsApi.middleware,
+      tipApi.middleware,
+      systemApi.middleware
     ),
   devTools: process.env.NODE_ENV !== 'production',
 });

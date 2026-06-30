@@ -1,10 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Badge } from '../../components/ui/badge';
 import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Package } from 'lucide-react';
-import axios from 'axios';
-import API_CONFIG from '../../config/api.config';
+import { useGetCostAnalysisQuery } from '../../store/api/analyticsApi';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
 import {formatMoney, formatMajorAmount} from '../../utils/currency';
@@ -67,25 +66,9 @@ interface CostAnalysis {
 const CostAnalysisPage: React.FC = () => {
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const [analysis, setAnalysis] = useState<CostAnalysis | null>(null);
-  const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<string>('MONTH');
-
-  const fetchCostAnalysis = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get<CostAnalysis>(`${API_CONFIG.BASE_URL}/bi/cost-analysis?period=${period}`);
-      setAnalysis(response.data);
-    } catch (error) {
-      console.error('Failed to fetch cost analysis:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [period]);
-
-  useEffect(() => {
-    fetchCostAnalysis();
-  }, [fetchCostAnalysis]);
+  const { data: analysisData, isLoading: loading } = useGetCostAnalysisQuery({ period });
+  const analysis = (analysisData ?? null) as CostAnalysis | null;
 
   const formatCurrency = (value: number): string => formatMajorAmount(value , currency, locale);
 

@@ -68,6 +68,10 @@ export interface Order {
   createdByStaffName?: string;
   assignedKitchenStaffName?: string;
   assignedToKitchenAt?: string;
+  cancellationRequested?: boolean;
+  cancellationRequestReason?: string;
+  cancellationRequestedBy?: string;
+  cancellationRequestedAt?: string;
   currency?: string;
   vatCountryCode?: string;
   totalNetAmount?: number;
@@ -190,7 +194,7 @@ export const orderApi = createApi({
     // Get kitchen queue (active orders for kitchen display)
     // Takes storeId as parameter to ensure refetch when store changes
     getKitchenQueue: builder.query<Order[], string | undefined>({
-      query: (storeId) => `/orders/kitchen${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/orders?kitchen=true${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [
         { type: 'KitchenQueue', id: storeId || 'DEFAULT' }
       ],
@@ -385,20 +389,20 @@ export const orderApi = createApi({
     }),
 
     getOrdersWithFailedQualityChecks: builder.query<Order[], string | undefined>({
-      query: (storeId) => `/orders/store/failed-quality-checks${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (_storeId) => `/orders/analytics?type=failed-quality`,
       providesTags: (result, error, storeId) => [{ type: 'Orders', id: storeId || 'DEFAULT' }],
     }),
 
     getAveragePreparationTime: builder.query<number, { date: string }>({
-      query: ({ date }) => `/orders/store/avg-prep-time?date=${date}`,
+      query: ({ date }) => `/orders/analytics?type=prep-time&date=${encodeURIComponent(date)}`,
     }),
 
     // Make-table workflow endpoints
     assignToMakeTable: builder.mutation<Order, { orderId: string; station: string; staffId: string; staffName: string }>({
       query: ({ orderId, station, staffId, staffName }) => ({
-        url: `/orders/${orderId}/assign-make-table`,
+        url: `/orders/${orderId}`,
         method: 'PATCH',
-        body: { station, staffId, staffName },
+        body: { makeTableStation: station, staffId, staffName },
       }),
       invalidatesTags: (result, error, { orderId }) => [
         { type: 'Order', id: orderId },
@@ -407,13 +411,15 @@ export const orderApi = createApi({
     }),
 
     getOrdersByMakeTableStation: builder.query<Order[], { station: string }>({
-      query: ({ station }) => `/orders/store/make-table/${station}`,
+      query: ({ station }) =>
+        `/orders/analytics?type=make-table-station&station=${encodeURIComponent(station)}`,
       providesTags: ['KitchenQueue'],
     }),
 
     // Kitchen analytics endpoints
     getAveragePreparationTimeByItem: builder.query<{ [itemName: string]: number }, { date: string }>({
-      query: ({ date }) => `/orders/store/analytics/prep-time-by-item?date=${date}`,
+      query: ({ date }) =>
+        `/orders/analytics?type=prep-time-by-item&date=${encodeURIComponent(date)}`,
     }),
 
     getKitchenStaffPerformance: builder.query<{
@@ -424,7 +430,8 @@ export const orderApi = createApi({
       failedQualityChecks: number;
       completionRate: number;
     }, { staffId: string; date: string }>({
-      query: ({ staffId, date }) => `/orders/analytics/kitchen-staff/${staffId}/performance?date=${date}`,
+      query: ({ staffId, date }) =>
+        `/orders/analytics?type=kitchen&staffId=${encodeURIComponent(staffId)}&date=${encodeURIComponent(date)}`,
     }),
 
     getPosStaffPerformance: builder.query<{
@@ -437,7 +444,7 @@ export const orderApi = createApi({
       averageOrderValue: number;
     }, { staffId: string; startDate: string; endDate: string }>({
       query: ({ staffId, startDate, endDate }) =>
-        `/orders/analytics/pos-staff/${staffId}/performance?startDate=${startDate}&endDate=${endDate}`,
+        `/orders/analytics?type=pos&staffId=${encodeURIComponent(staffId)}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`,
     }),
 
     getPreparationTimeDistribution: builder.query<{
@@ -449,7 +456,8 @@ export const orderApi = createApi({
       p95: number;
       totalOrders: number;
     }, { date: string }>({
-      query: ({ date }) => `/orders/store/analytics/prep-time-distribution?date=${date}`,
+      query: ({ date }) =>
+        `/orders/analytics?type=prep-time-distribution&date=${encodeURIComponent(date)}`,
     }),
 
     // Date-based order queries
@@ -470,13 +478,50 @@ export const orderApi = createApi({
     }),
 
     getStaffOrdersByDate: builder.query<Order[], { staffId: string; date: string }>({
-      query: ({ staffId, date }) => `/orders/staff/${staffId}/date/${date}`,
+      query: ({ staffId, date }) =>
+        `/orders/analytics?type=staff-date&staffId=${encodeURIComponent(staffId)}&date=${encodeURIComponent(date)}`,
       providesTags: (result, error, { staffId, date }) => [{ type: 'Orders', id: `STAFF_${staffId}_${date}` }],
     }),
 
     getActiveDeliveriesCount: builder.query<{ count: number }, string | undefined>({
-      query: (storeId) => `/orders/active-deliveries/count${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (_storeId) => `/orders/analytics?type=active-deliveries`,
       providesTags: ['Orders'],
+    }),
+
+    requestCancel: builder.mutation<Order, { orderId: string; reason?: string }>({
+      query: ({ orderId, reason }) => ({
+        url: `/orders/${orderId}/cancel-request`,
+        method: 'POST',
+        body: reason ? { reason } : {},
+      }),
+      invalidatesTags: (result, error, { orderId }) => [
+        { type: 'Order', id: orderId },
+        { type: 'Orders', id: 'LIST' },
+      ],
+    }),
+
+    approveCancelRequest: builder.mutation<Order, string>({
+      query: (orderId) => ({
+        url: `/orders/${orderId}/cancel-request/approve`,
+        method: 'POST',
+      }),
+      invalidatesTags: (result, error, orderId) => [
+        { type: 'Order', id: orderId },
+        { type: 'Orders', id: 'LIST' },
+        'KitchenQueue',
+      ],
+    }),
+
+    rejectCancelRequest: builder.mutation<Order, { orderId: string; reason?: string }>({
+      query: ({ orderId, reason }) => ({
+        url: `/orders/${orderId}/cancel-request/reject`,
+        method: 'POST',
+        body: reason ? { reason } : undefined,
+      }),
+      invalidatesTags: (result, error, { orderId }) => [
+        { type: 'Order', id: orderId },
+        { type: 'Orders', id: 'LIST' },
+      ],
     }),
   }),
 });
@@ -515,4 +560,7 @@ export const {
   useGetOrdersByDateRangeQuery,
   useGetStaffOrdersByDateQuery,
   useGetActiveDeliveriesCountQuery,
+  useRequestCancelMutation,
+  useApproveCancelRequestMutation,
+  useRejectCancelRequestMutation,
 } = orderApi;

@@ -157,12 +157,17 @@ export const driverApi = createApi({
       invalidatesTags: (result, error, { id }) => [{ type: 'Driver', id }, 'Driver'],
     }),
 
-    // Update driver location
+    // Update driver location — canonical POST /api/delivery/location
     updateDriverLocation: builder.mutation<void, LocationUpdateRequest>({
       query: (data) => ({
-        url: '/delivery/location-update',
+        url: '/delivery/location',
         method: 'POST',
-        body: data,
+        body: {
+          driverId: data.driverId,
+          latitude: data.location.coordinates[1],
+          longitude: data.location.coordinates[0],
+          timestamp: data.timestamp,
+        },
       }),
       invalidatesTags: (result, error, { driverId }) => [{ type: 'Driver', id: driverId }],
     }),
@@ -181,9 +186,12 @@ export const driverApi = createApi({
       providesTags: (result, error, { driverId }) => [{ type: 'DriverPerformance', id: driverId }],
     }),
 
-    // Get today's driver performance
+    // Get today's driver performance — canonical GET /api/delivery/driver/{id}/performance?startDate=&endDate=
     getTodayDriverPerformance: builder.query<DriverPerformance, string>({
-      query: (driverId) => `/delivery/driver/${driverId}/performance/today`,
+      query: (driverId) => {
+        const today = new Date().toISOString().slice(0, 10);
+        return `/delivery/driver/${driverId}/performance?startDate=${today}&endDate=${today}`;
+      },
       providesTags: (result, error, driverId) => [{ type: 'DriverPerformance', id: driverId }],
     }),
 

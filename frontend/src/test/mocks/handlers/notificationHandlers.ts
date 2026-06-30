@@ -1,7 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { apiUrl } from '../../testApiBase';
 
-
 const mockNotification = {
   id: 'notif-1',
   userId: '1',
@@ -35,33 +34,26 @@ const mockCampaign = {
 };
 
 export const notificationHandlers = [
-  http.post(apiUrl('/notifications/send'), () =>
+  http.post(apiUrl('/notifications'), () =>
     HttpResponse.json(mockNotification),
   ),
 
-  http.get(apiUrl('/notifications/user/:userId'), () =>
-    HttpResponse.json({
-      content: [mockNotification],
-      totalElements: 1,
-      totalPages: 1,
-      size: 20,
-      number: 0,
-    }),
-  ),
+  http.get(apiUrl('/notifications'), ({ request }) => {
+    const url = new URL(request.url);
+    const unread = url.searchParams.get('unread');
 
-  http.get(apiUrl('/notifications/user/:userId/unread'), () =>
-    HttpResponse.json([mockNotification]),
-  ),
+    if (unread === 'true') {
+      return HttpResponse.json([mockNotification]);
+    }
 
-  http.get(apiUrl('/notifications/user/:userId/unread-count'), () =>
-    HttpResponse.json(3),
-  ),
+    return HttpResponse.json([mockNotification]);
+  }),
 
   http.patch(apiUrl('/notifications/:id/read'), () =>
     HttpResponse.json({ ...mockNotification, status: 'READ', readAt: new Date().toISOString() }),
   ),
 
-  http.patch(apiUrl('/notifications/user/:userId/read-all'), () =>
+  http.patch(apiUrl('/notifications/read-all'), () =>
     new HttpResponse(null, { status: 204 }),
   ),
 
@@ -70,7 +62,7 @@ export const notificationHandlers = [
   ),
 
   // Preferences
-  http.get(apiUrl('/preferences/user/:userId'), () =>
+  http.get(apiUrl('/preferences/:userId'), () =>
     HttpResponse.json({
       id: 'pref-1',
       userId: '1',
@@ -86,15 +78,7 @@ export const notificationHandlers = [
     }),
   ),
 
-  http.put(apiUrl('/preferences/user/:userId'), () =>
-    HttpResponse.json({ id: 'pref-1', userId: '1' }),
-  ),
-
-  http.patch(apiUrl('/preferences/user/:userId/channel/:channel'), () =>
-    HttpResponse.json({ id: 'pref-1', userId: '1' }),
-  ),
-
-  http.patch(apiUrl('/preferences/user/:userId/device-token'), () =>
+  http.patch(apiUrl('/preferences/:userId'), () =>
     HttpResponse.json({ id: 'pref-1', userId: '1' }),
   ),
 
@@ -105,6 +89,14 @@ export const notificationHandlers = [
 
   http.put(apiUrl('/campaigns/:id'), () =>
     HttpResponse.json(mockCampaign),
+  ),
+
+  http.patch(apiUrl('/campaigns/:id'), () =>
+    HttpResponse.json(mockCampaign),
+  ),
+
+  http.post(apiUrl('/notifications/rating/send'), () =>
+    new HttpResponse(null, { status: 204 }),
   ),
 
   http.post(apiUrl('/campaigns/:id/schedule'), () =>

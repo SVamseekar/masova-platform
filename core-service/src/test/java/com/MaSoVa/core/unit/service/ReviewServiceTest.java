@@ -6,6 +6,7 @@ import com.MaSoVa.core.review.entity.Review;
 import com.MaSoVa.core.review.repository.ReviewRepository;
 import com.MaSoVa.core.review.service.ReviewService;
 import com.MaSoVa.core.review.service.SentimentAnalysisService;
+import com.MaSoVa.core.user.client.OrderServiceClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,7 @@ class ReviewServiceTest {
 
     @Mock private ReviewRepository reviewRepository;
     @Mock private SentimentAnalysisService sentimentAnalysisService;
+    @Mock private OrderServiceClient orderServiceClient;
 
     @InjectMocks private ReviewService reviewService;
 
@@ -429,6 +431,84 @@ class ReviewServiceTest {
             when(reviewRepository.findByStaffIdAndIsDeletedFalseAndStaffRatingIsNotNull(eq("staff-1"), any(Pageable.class))).thenReturn(page);
 
             assertThat(reviewService.getReviewsByStaffId("staff-1", Pageable.unpaged())).isEmpty();
+        }
+    }
+
+    // ===========================
+    // Public rating token flow
+    // ===========================
+
+    @Nested
+    @DisplayName("getTokenDetails")
+    class GetTokenDetails {
+
+        @Test
+        @DisplayName("delegates to order service client")
+        void delegatesToOrderService() {
+            when(orderServiceClient.getRatingTokenDetails("token-1"))
+                    .thenReturn(java.util.Map.of("valid", true, "orderId", "order-1"));
+
+            var result = reviewService.getTokenDetails("token-1");
+
+            assertThat(result.get("valid")).isEqualTo(true);
+            assertThat(result.get("orderId")).isEqualTo("order-1");
+        }
+
+        @Test
+        @DisplayName("throws when order service call fails")
+        void throwsWhenClientFails() {
+            when(orderServiceClient.getRatingTokenDetails("bad-token"))
+                    .thenThrow(new RuntimeException("service down"));
+
+            assertThatThrownBy(() -> reviewService.getTokenDetails("bad-token"))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("createPublicReview")
+    class CreatePublicReview {
+
+        @Test
+        @DisplayName("creates review and marks token used when token is valid")
+        void createsReviewAndMarksTokenUsed() {
+            CreateReviewRequest request = new CreateReviewRequest();
+            request.setOrderId("order-1");
+            request.setOverallRating(5);
+            request.setComment("Great!");
+
+            when(orderServiceClient.getRatingTokenDetails("token-1")).thenReturn(java.util.Map.of(
+                    "valid", true,
+                    "orderId", "order-1",
+                    "customerId", "cust-1",
+                    "customerName", "Alice"));
+            when(reviewRepository.findByOrderIdAndIsDeletedFalse("order-1")).thenReturn(List.of());
+            when(sentimentAnalysisService.analyzeSentiment(anyString())).thenReturn(Review.SentimentType.POSITIVE);
+            when(sentimentAnalysisService.calculateSentimentScore(anyString())).thenReturn(0.9);
+            when(reviewRepository.save(any())).thenAnswer(inv -> {
+                Review saved = inv.getArgument(0);
+                saved.setId("review-1");
+                return saved;
+            });
+
+            Review result = reviewService.createPublicReview(request, "token-1");
+
+            assertThat(result.getCustomerId()).isEqualTo("cust-1");
+            assertThat(result.getCustomerName()).isEqualTo("Alice");
+            verify(orderServiceClient).markRatingTokenUsed("token-1");
+        }
+
+        @Test
+        @DisplayName("throws when token is invalid")
+        void throwsWhenTokenInvalid() {
+            CreateReviewRequest request = new CreateReviewRequest();
+            request.setOrderId("order-1");
+
+            when(orderServiceClient.getRatingTokenDetails("bad-token"))
+                    .thenReturn(java.util.Map.of("valid", false, "error", "Invalid rating token"));
+
+            assertThatThrownBy(() -> reviewService.createPublicReview(request, "bad-token"))
+                    .isInstanceOf(IllegalArgumentException.class);
         }
     }
 }

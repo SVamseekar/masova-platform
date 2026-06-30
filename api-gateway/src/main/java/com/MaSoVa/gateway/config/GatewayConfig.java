@@ -206,6 +206,21 @@ public class GatewayConfig {
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
 
+                // Staff earnings & pay rates (tips routed separately to commerce-service)
+                .route("core_staff", r -> r.path("/api/staff/**")
+                        .and().not(p -> p.path("/api/staff/tips/**"))
+                        .filters(f -> f
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "core_staff")))
+                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8085"))
+
+                // System updates — version/health/info served locally via SystemRouterConfig
+                .route("core_system_updates", r -> r.path("/api/system/updates/**")
+                        .filters(f -> f
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "core_system_updates")))
+                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8085"))
+
                 // Core: Swagger docs proxy
                 .route("core_api_docs", r -> r.path("/core-service/v3/api-docs")
                         .filters(f -> f.rewritePath("/core-service(?<segment>.*)", "${segment}"))
@@ -242,10 +257,17 @@ public class GatewayConfig {
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "commerce_track"))))
                         .uri("http://localhost:8084"))
 
+                // Orders — public rating token validation (SMS/email links, no auth)
+                .route("commerce_orders_rating_token", r -> r.path("/api/orders/rating-token/**")
+                        .and().method("GET")
+                        .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "commerce_rating_token"))))
+                        .uri("http://localhost:8084"))
+
                 // Orders — protected (GDPR anonymize paths blocked above via dedicated routes)
                 // X-Internal-Service is stripped here so external callers cannot spoof it
                 .route("commerce_orders", r -> r.path("/api/orders/**")
                         .and().not(p -> p.path("/api/orders/track/**"))
+                        .and().not(p -> p.path("/api/orders/rating-token/**"))
                         .and().not(p -> p.path("/api/orders/gdpr/**"))
                         .filters(f -> f
                             .removeRequestHeader("X-Internal-Service")
@@ -257,6 +279,27 @@ public class GatewayConfig {
                 .route("commerce_kitchen", r -> r.path("/api/kitchen/**", "/api/equipment/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "commerce_kitchen")))
+                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8084"))
+
+                // Staff tips — undistributed direct tips (earnings/pay-rates on core-service)
+                .route("commerce_staff_tips", r -> r.path("/api/staff/tips/**")
+                        .filters(f -> f
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "commerce_staff_tips")))
+                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8084"))
+
+                // Fiscal compliance — manager dashboard (JWT required)
+                .route("commerce_fiscal", r -> r.path("/api/fiscal/**")
+                        .filters(f -> f
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "commerce_fiscal")))
+                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8084"))
+
+                // Third-party aggregator connections (Swiggy, Zomato, etc.)
+                .route("commerce_aggregators", r -> r.path("/api/aggregators/**")
+                        .filters(f -> f
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "commerce_aggregators")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8084"))
 

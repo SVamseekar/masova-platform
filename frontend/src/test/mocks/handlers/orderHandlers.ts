@@ -38,29 +38,54 @@ const mockOrders = [
     createdAt: '2025-01-15T11:00:00Z',
     updatedAt: '2025-01-15T11:05:00Z',
   },
+  {
+    ...mockOrder,
+    id: 'order-3',
+    orderNumber: 'ORD-20250101-003',
+    status: 'PREPARING',
+    orderType: 'DELIVERY',
+    total: 650,
+    cancellationRequested: true,
+    cancellationRequestReason: 'Customer changed plans',
+    cancellationRequestedBy: 'customer-1',
+    cancellationRequestedAt: '2025-01-15T11:30:00Z',
+    createdAt: '2025-01-15T11:15:00Z',
+    updatedAt: '2025-01-15T11:30:00Z',
+  },
 ];
 
 export const orderHandlers = [
-  http.get(apiUrl('/orders'), () =>
-    HttpResponse.json(mockOrders),
-  ),
+  http.get(apiUrl('/orders'), ({ request }) => {
+    const url = new URL(request.url);
+
+    if (url.searchParams.get('kitchen') === 'true') {
+      return HttpResponse.json(
+        mockOrders.filter((o) => ['RECEIVED', 'PREPARING'].includes(o.status)),
+      );
+    }
+
+    return HttpResponse.json(mockOrders);
+  }),
 
   // Static / multi-segment routes before :orderId
-  http.get(apiUrl('/orders/kitchen'), () =>
-    HttpResponse.json(mockOrders.filter((o) => ['RECEIVED', 'PREPARING'].includes(o.status))),
-  ),
 
-  http.get(apiUrl('/orders/store/failed-quality-checks'), () =>
-    HttpResponse.json([]),
-  ),
-
-  http.get(apiUrl('/orders/store/avg-prep-time'), () =>
-    HttpResponse.json(18),
-  ),
-
-  http.get(apiUrl('/orders/store/make-table/:station'), () =>
-    HttpResponse.json(mockOrders),
-  ),
+  http.get(apiUrl('/orders/analytics'), ({ request }) => {
+    const url = new URL(request.url);
+    const type = url.searchParams.get('type');
+    if (type === 'active-deliveries') {
+      return HttpResponse.json({ count: 3 });
+    }
+    if (type === 'prep-time') {
+      return HttpResponse.json(18);
+    }
+    if (type === 'make-table-station' || type === 'staff-date') {
+      return HttpResponse.json(mockOrders);
+    }
+    if (type === 'failed-quality') {
+      return HttpResponse.json([]);
+    }
+    return HttpResponse.json({});
+  }),
 
   http.get(apiUrl('/orders/store'), () =>
     HttpResponse.json(mockOrders),
@@ -94,9 +119,7 @@ export const orderHandlers = [
     HttpResponse.json(mockOrders),
   ),
 
-  http.get(apiUrl('/orders/active-deliveries/count'), () =>
-    HttpResponse.json({ count: 3 }),
-  ),
+
 
   http.post(apiUrl('/orders'), () =>
     HttpResponse.json(mockOrder),
@@ -147,7 +170,34 @@ export const orderHandlers = [
     HttpResponse.json({ ...mockOrder, id: params.orderId }),
   ),
 
-  http.patch(apiUrl('/orders/:orderId/assign-make-table'), ({ params }) =>
+  http.patch(apiUrl('/orders/:orderId'), ({ params }) =>
     HttpResponse.json({ ...mockOrder, id: params.orderId, assignedMakeTableStation: 'Station A' }),
+  ),
+
+  http.post(apiUrl('/orders/:orderId/cancel-request'), ({ params }) =>
+    HttpResponse.json({
+      ...mockOrder,
+      id: params.orderId,
+      cancellationRequested: true,
+      cancellationRequestReason: 'Customer requested cancellation',
+      cancellationRequestedAt: new Date().toISOString(),
+    }),
+  ),
+
+  http.post(apiUrl('/orders/:orderId/cancel-request/approve'), ({ params }) =>
+    HttpResponse.json({
+      ...mockOrder,
+      id: params.orderId,
+      status: 'CANCELLED',
+      cancellationRequested: false,
+    }),
+  ),
+
+  http.post(apiUrl('/orders/:orderId/cancel-request/reject'), ({ params }) =>
+    HttpResponse.json({
+      ...mockOrder,
+      id: params.orderId,
+      cancellationRequested: false,
+    }),
   ),
 ];
