@@ -57,9 +57,8 @@
    This fixes the "bounce" on ALL browsers (Safari, Chrome, Firefox).
    ────────────────────────────────────────────────────────────────────────── */
 html {
-  overflow-y: scroll;
+  overflow-y: auto;
   scrollbar-width: none;        /* Firefox: hide scrollbar visually */
-  overscroll-behavior-y: none;  /* Prevent elastic bounce at page boundaries */
 }
 
 html::-webkit-scrollbar {
@@ -82,8 +81,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
   overflow-x: hidden;
-  overscroll-behavior: none;
-  overscroll-behavior-y: none;
 }
 
 /* Remove default margins and paddings from common elements */
