@@ -190,7 +190,7 @@ export const orderApi = createApi({
     // Get kitchen queue (active orders for kitchen display)
     // Takes storeId as parameter to ensure refetch when store changes
     getKitchenQueue: builder.query<Order[], string | undefined>({
-      query: (storeId) => `/orders/kitchen${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => `/orders?kitchen=true${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [
         { type: 'KitchenQueue', id: storeId || 'DEFAULT' }
       ],
@@ -424,7 +424,8 @@ export const orderApi = createApi({
       failedQualityChecks: number;
       completionRate: number;
     }, { staffId: string; date: string }>({
-      query: ({ staffId, date }) => `/orders/analytics/kitchen-staff/${staffId}/performance?date=${date}`,
+      query: ({ staffId, date }) =>
+        `/orders/analytics?type=kitchen&staffId=${encodeURIComponent(staffId)}&date=${encodeURIComponent(date)}`,
     }),
 
     getPosStaffPerformance: builder.query<{

@@ -103,7 +103,7 @@ export const shiftApi = createApi({
     updateShift: builder.mutation<Shift, { shiftId: string; data: UpdateShiftRequest }>({
       query: ({ shiftId, data }) => ({
         url: `/shifts/${shiftId}`,
-        method: 'PUT',
+        method: 'PATCH',
         body: data,
       }),
       invalidatesTags: (result, error, { shiftId }) => [
@@ -128,13 +128,10 @@ export const shiftApi = createApi({
 
     // Get employee shifts
     getEmployeeShifts: builder.query<Shift[], { employeeId: string; startDate?: string; endDate?: string }>({
-      query: ({ employeeId, startDate, endDate }) => {
-        const url = `/shifts/employee/${employeeId}`;
-        const params = new URLSearchParams();
-        if (startDate) params.append('startDate', startDate);
-        if (endDate) params.append('endDate', endDate);
-        const queryString = params.toString();
-        return queryString ? `${url}?${queryString}` : url;
+      query: ({ employeeId, startDate }) => {
+        const params = new URLSearchParams({ employeeId });
+        if (startDate) params.append('week', startDate);
+        return `/shifts?${params.toString()}`;
       },
       providesTags: (result) =>
         result
@@ -144,13 +141,10 @@ export const shiftApi = createApi({
 
     // Get store shifts
     getStoreShifts: builder.query<Shift[], { storeId: string; startDate?: string; endDate?: string }>({
-      query: ({ storeId, startDate, endDate }) => {
-        const url = `/shifts/store/${storeId}`;
-        const params = new URLSearchParams();
-        if (startDate) params.append('startDate', startDate);
-        if (endDate) params.append('endDate', endDate);
-        const queryString = params.toString();
-        return queryString ? `${url}?${queryString}` : url;
+      query: ({ storeId, startDate }) => {
+        const params = new URLSearchParams({ storeId });
+        if (startDate) params.append('date', startDate);
+        return `/shifts?${params.toString()}`;
       },
       providesTags: (result) =>
         result
@@ -160,7 +154,12 @@ export const shiftApi = createApi({
 
     // Get current shift for employee
     getCurrentShift: builder.query<Shift | null, string>({
-      query: (employeeId) => `/shifts/employee/${employeeId}/current`,
+      query: (employeeId) => {
+        const today = new Date().toISOString().split('T')[0];
+        return `/shifts?employeeId=${encodeURIComponent(employeeId)}&date=${today}`;
+      },
+      transformResponse: (shifts: Shift[]) =>
+        shifts.find((s) => s.status === 'IN_PROGRESS') ?? null,
       providesTags: (result) => (result ? [{ type: 'Shift', id: result.id }] : []),
     }),
 
@@ -204,11 +203,9 @@ export const shiftApi = createApi({
     // Get shift coverage
     getShiftCoverage: builder.query<ShiftCoverage, { storeId: string; date?: string }>({
       query: ({ storeId, date }) => {
-        let url = `/shifts/store/${storeId}/coverage`;
-        if (date) {
-          url += `?date=${date}`;
-        }
-        return url;
+        const params = new URLSearchParams({ storeId, view: 'coverage' });
+        if (date) params.append('date', date);
+        return `/shifts?${params.toString()}`;
       },
       providesTags: ['ShiftCoverage'],
     }),
@@ -216,7 +213,7 @@ export const shiftApi = createApi({
     // Bulk create shifts (for weekly schedule)
     bulkCreateShifts: builder.mutation<Shift[], CreateShiftRequest[]>({
       query: (shifts) => ({
-        url: '/shifts/bulk-create',
+        url: '/shifts/bulk',
         method: 'POST',
         body: shifts,
       }),
@@ -225,27 +222,38 @@ export const shiftApi = createApi({
 
     // Get weekly schedule
     getWeeklySchedule: builder.query<Shift[], { storeId: string; startDate: string }>({
-      query: ({ storeId, startDate }) => `/shifts/store/${storeId}/week?startDate=${startDate}`,
+      query: ({ storeId, startDate }) =>
+        `/shifts?storeId=${encodeURIComponent(storeId)}&week=${encodeURIComponent(startDate)}`,
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Shift' as const, id })), { type: 'Shifts', id: 'LIST' }]
           : [{ type: 'Shifts', id: 'LIST' }],
     }),
 
-    // Check if weekly schedule exists
+    // Check if weekly schedule exists (derived from weekly schedule query)
     checkWeeklyScheduleExists: builder.query<
       { exists: boolean; shiftCount: number; startDate: string; endDate: string },
       { storeId: string; startDate: string }
     >({
       query: ({ storeId, startDate }) =>
-        `/shifts/store/${storeId}/week/exists?startDate=${startDate}`,
+        `/shifts?storeId=${encodeURIComponent(storeId)}&week=${encodeURIComponent(startDate)}`,
+      transformResponse: (shifts: Shift[], _meta, { startDate }) => {
+        const end = new Date(startDate);
+        end.setDate(end.getDate() + 6);
+        return {
+          exists: shifts.length > 0,
+          shiftCount: shifts.length,
+          startDate,
+          endDate: end.toISOString().split('T')[0],
+        };
+      },
       providesTags: [{ type: 'Shifts', id: 'LIST' }],
     }),
 
     // Copy previous week's schedule
     copyPreviousWeekSchedule: builder.mutation<Shift[], { targetWeekStart: string }>({
       query: ({ targetWeekStart }) => ({
-        url: `/shifts/copy-previous-week?targetWeekStart=${targetWeekStart}`,
+        url: `/shifts/copy-week?targetWeekStart=${encodeURIComponent(targetWeekStart)}`,
         method: 'POST',
       }),
       invalidatesTags: [{ type: 'Shifts', id: 'LIST' }, 'ShiftCoverage'],

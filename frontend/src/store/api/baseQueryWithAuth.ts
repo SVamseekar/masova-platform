@@ -93,7 +93,7 @@ const baseQueryWithAuth: BaseQueryFn<
         console.log('[Auth] Refreshing access token...');
         const refreshResult = await baseQuery(
           {
-            url: '/users/refresh',
+            url: '/auth/refresh',
             method: 'POST',
             body: { refreshToken },
           },

@@ -352,6 +352,24 @@ export const deliveryApi = createApi({
       providesTags: (result, error, driverId) => [{ type: 'Drivers', id: driverId }],
     }),
 
+    updateDriverStatus: builder.mutation<DriverStatus, { driverId: string; status: DriverStatus['status'] }>({
+      query: ({ driverId, status }) => ({
+        url: `/delivery/driver/${driverId}/status`,
+        method: 'PATCH',
+        body: { status },
+      }),
+      invalidatesTags: (result, error, { driverId }) => [{ type: 'Drivers', id: driverId }],
+    }),
+
+    verifyDelivery: builder.mutation<DeliveryActionResponse, { orderId: string; otp: string }>({
+      query: (body) => ({
+        url: '/delivery/verify',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Delivery'],
+    }),
+
     getDriverPendingDeliveries: builder.query<DriverDelivery[], string>({
       query: (driverId) => `/delivery/driver/${driverId}/pending`,
       providesTags: (result, error, driverId) => [{ type: 'Drivers', id: driverId }],
@@ -431,6 +449,8 @@ export const {
   useGetDriverPerformanceQuery,
   useGetDriverPerformanceTodayQuery,
   useGetDriverStatusQuery,
+  useUpdateDriverStatusMutation,
+  useVerifyDeliveryMutation,
   useGetDriverPendingDeliveriesQuery,
   useCheckDeliveryZoneQuery,
   useGetDeliveryZoneFeeQuery,

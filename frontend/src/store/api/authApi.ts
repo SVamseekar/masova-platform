@@ -86,7 +86,7 @@ export const authApi = createApi({
     }),
     googleLogin: builder.mutation<AuthResponse, { idToken: string }>({
       query: (body) => ({
-        url: '/users/auth/google',
+        url: '/auth/google',
         method: 'POST',
         body,
       }),
@@ -94,7 +94,7 @@ export const authApi = createApi({
     }),
     googleRegister: builder.mutation<AuthResponse, { idToken: string }>({
       query: (body) => ({
-        url: '/users/auth/google/register',
+        url: '/auth/google',
         method: 'POST',
         body,
       }),

@@ -28,6 +28,7 @@ const ActiveSessionsWidget: React.FC<ActiveSessionsWidgetProps> = ({ storeId, on
   const [breakModalOpen, setBreakModalOpen] = useState(false);
   const [breakEmployeeId, setBreakEmployeeId] = useState<string>('');
   const [breakEmployeeName, setBreakEmployeeName] = useState<string>('');
+  const [breakSessionId, setBreakSessionId] = useState<string>('');
 
   const handleClockOut = async (employeeId: string, employeeName: string) => {
     if (!confirm(`Are you sure you want to clock out ${employeeName}?`)) {
@@ -46,9 +47,10 @@ const ActiveSessionsWidget: React.FC<ActiveSessionsWidgetProps> = ({ storeId, on
     }
   };
 
-  const handleRecordBreak = (employeeId: string, employeeName: string) => {
-    setBreakEmployeeId(employeeId);
-    setBreakEmployeeName(employeeName);
+  const handleRecordBreak = (session: WorkingSession) => {
+    setBreakEmployeeId(session.employeeId);
+    setBreakEmployeeName(session.employeeName);
+    setBreakSessionId(session.id);
     setBreakModalOpen(true);
   };
 
@@ -143,7 +145,7 @@ const ActiveSessionsWidget: React.FC<ActiveSessionsWidgetProps> = ({ storeId, on
                   <Button
                     variant="primary"
                     size="sm"
-                    onClick={() => handleRecordBreak(session.employeeId, session.employeeName)}
+                    onClick={() => handleRecordBreak(session)}
                   >
                     ⏱ Record Break
                   </Button>
@@ -167,6 +169,7 @@ const ActiveSessionsWidget: React.FC<ActiveSessionsWidgetProps> = ({ storeId, on
       {/* Break Recording Modal */}
       {breakModalOpen && (
         <RecordBreakModal
+          sessionId={breakSessionId}
           employeeId={breakEmployeeId}
           employeeName={breakEmployeeName}
           onClose={() => setBreakModalOpen(false)}

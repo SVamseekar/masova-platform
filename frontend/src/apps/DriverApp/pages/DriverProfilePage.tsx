@@ -56,8 +56,9 @@ const DriverProfilePage: React.FC = () => {
   );
 
   // Fetch current working session
-  const { data: currentSession, refetch: refetchSession } = useGetCurrentSessionQuery(undefined, {
+  const { data: currentSession, refetch: refetchSession } = useGetCurrentSessionQuery(user?.id ?? '', {
     pollingInterval: 30000,
+    skip: !user?.id,
   });
 
   // Session mutations
@@ -71,7 +72,7 @@ const DriverProfilePage: React.FC = () => {
       return;
     }
     try {
-      await startSession({ employeeId: user.id, storeId: user.storeId }).unwrap();
+      await startSession().unwrap();
       refetchSession();
     } catch (err) {
       console.error('Failed to start session:', err);

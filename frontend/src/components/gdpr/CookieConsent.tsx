@@ -14,7 +14,7 @@ import {
   Link,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import axios from '../../utils/axios';
+import { useGrantConsentMutation } from '../../store/api/gdprApi';
 
 interface CookiePreferences {
   necessary: boolean;
@@ -24,6 +24,7 @@ interface CookiePreferences {
 }
 
 export const CookieConsent: React.FC = () => {
+  const [grantConsent] = useGrantConsentMutation();
   const [open, setOpen] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [preferences, setPreferences] = useState<CookiePreferences>({
@@ -88,30 +89,30 @@ export const CookieConsent: React.FC = () => {
 
     try {
       if (prefs.analytics) {
-        await axios.post('/api/gdpr/consent/grant', {
+        await grantConsent({
           userId,
-          consentType: 'ANALYTICS_TRACKING',
+          consentType: 'COOKIES',
           version: '1.0',
           consentText: 'User consented to analytics tracking',
-        });
+        }).unwrap();
       }
 
       if (prefs.marketing) {
-        await axios.post('/api/gdpr/consent/grant', {
+        await grantConsent({
           userId,
-          consentType: 'MARKETING_COMMUNICATIONS',
+          consentType: 'MARKETING',
           version: '1.0',
           consentText: 'User consented to marketing communications',
-        });
+        }).unwrap();
       }
 
       if (prefs.functional) {
-        await axios.post('/api/gdpr/consent/grant', {
+        await grantConsent({
           userId,
-          consentType: 'PERSONALIZATION',
+          consentType: 'DATA_PROCESSING',
           version: '1.0',
           consentText: 'User consented to personalization features',
-        });
+        }).unwrap();
       }
     } catch (error) {
       console.error('Error saving consent:', error);

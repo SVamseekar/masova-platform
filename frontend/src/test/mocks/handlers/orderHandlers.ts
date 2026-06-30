@@ -41,14 +41,19 @@ const mockOrders = [
 ];
 
 export const orderHandlers = [
-  http.get(apiUrl('/orders'), () =>
-    HttpResponse.json(mockOrders),
-  ),
+  http.get(apiUrl('/orders'), ({ request }) => {
+    const url = new URL(request.url);
+
+    if (url.searchParams.get('kitchen') === 'true') {
+      return HttpResponse.json(
+        mockOrders.filter((o) => ['RECEIVED', 'PREPARING'].includes(o.status)),
+      );
+    }
+
+    return HttpResponse.json(mockOrders);
+  }),
 
   // Static / multi-segment routes before :orderId
-  http.get(apiUrl('/orders/kitchen'), () =>
-    HttpResponse.json(mockOrders.filter((o) => ['RECEIVED', 'PREPARING'].includes(o.status))),
-  ),
 
   http.get(apiUrl('/orders/store/failed-quality-checks'), () =>
     HttpResponse.json([]),

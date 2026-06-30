@@ -11,7 +11,7 @@ import { apiUrl } from '../testApiBase';
 
 describe('Order Creation Flow', () => {
   it('should complete the entire flow successfully', async () => {
-    const response1 = await fetch(apiUrl('/menu/items'));
+    const response1 = await fetch(apiUrl('/menu'));
     expect(response1.status).toBe(200);
     const menuItems = await response1.json();
     expect(Array.isArray(menuItems)).toBe(true);
@@ -45,12 +45,12 @@ describe('Order Creation Flow', () => {
 
   it('should handle errors gracefully', async () => {
     server.use(
-      http.get(apiUrl('/menu/items'), () =>
+      http.get(apiUrl('/menu'), () =>
         HttpResponse.json({ message: 'Service unavailable' }, { status: 503 })
       )
     );
 
-    const response = await fetch(apiUrl('/menu/items'));
+    const response = await fetch(apiUrl('/menu'));
     expect(response.status).toBe(503);
   });
 });

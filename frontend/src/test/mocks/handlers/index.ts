@@ -10,6 +10,12 @@ import { analyticsHandlers } from './analyticsHandlers';
 import { notificationHandlers } from './notificationHandlers';
 import { reviewHandlers } from './reviewHandlers';
 import { sessionHandlers } from './sessionHandlers';
+import { equipmentHandlers } from './equipmentHandlers';
+import { shiftHandlers } from './shiftHandlers';
+import { gdprHandlers } from './gdprHandlers';
+import { earningsHandlers } from './earningsHandlers';
+import { tipHandlers } from './tipHandlers';
+import { systemHandlers } from './systemHandlers';
 
 export const allHandlers = [
   ...authHandlers,
@@ -24,4 +30,10 @@ export const allHandlers = [
   ...notificationHandlers,
   ...reviewHandlers,
   ...sessionHandlers,
+  ...equipmentHandlers,
+  ...shiftHandlers,
+  ...gdprHandlers,
+  ...earningsHandlers,
+  ...tipHandlers,
+  ...systemHandlers,
 ];

@@ -20,7 +20,7 @@ import {
   useToggleAvailabilityMutation,
   useSetAvailabilityMutation,
   useDeleteMenuItemMutation,
-  useDeleteAllMenuItemsMutation,
+  useCopyMenuMutation,
   useGetMenuStatsQuery,
   Cuisine,
   MenuCategory,
@@ -55,7 +55,7 @@ describe('menuApi', () => {
       expect(endpoints.toggleAvailability).toBeDefined();
       expect(endpoints.setAvailability).toBeDefined();
       expect(endpoints.deleteMenuItem).toBeDefined();
-      expect(endpoints.deleteAllMenuItems).toBeDefined();
+      expect(endpoints.copyMenu).toBeDefined();
       expect(endpoints.getMenuStats).toBeDefined();
     });
   });
@@ -76,7 +76,7 @@ describe('menuApi', () => {
 
     it('should transform response to map _id to id', async () => {
       server.use(
-        http.get(`${API}/menu/public`, () =>
+        http.get(`${API}/menu`, () =>
           HttpResponse.json([
             { _id: 'mongo-id-1', name: 'Test Item', isAvailable: true, displayOrder: 1, isRecommended: false, createdAt: '', updatedAt: '' },
           ]),
@@ -257,7 +257,7 @@ describe('menuApi', () => {
       });
 
       const [toggle] = result.current;
-      toggle('1');
+      toggle({ id: '1', isAvailable: false });
 
       await waitFor(() => expect(result.current[1].isSuccess).toBe(true));
 
@@ -288,22 +288,34 @@ describe('menuApi', () => {
       await waitFor(() => expect(result.current[1].isSuccess).toBe(true));
     });
 
-    it('should delete all menu items', async () => {
-      const { result } = renderHook(() => useDeleteAllMenuItemsMutation(), {
+    it('should copy menu between stores', async () => {
+      server.use(
+        http.post(`${API}/menu/copy`, () =>
+          HttpResponse.json({
+            success: true,
+            copiedItemsCount: 5,
+            fromStoreId: 'store-1',
+            toStoreId: 'store-2',
+          }),
+        ),
+      );
+
+      const { result } = renderHook(() => useCopyMenuMutation(), {
         wrapper: DefaultTestWrapper,
       });
 
-      const [deleteAll] = result.current;
-      deleteAll();
+      const [copyMenu] = result.current;
+      copyMenu({ fromStoreId: 'store-1', toStoreId: 'store-2' });
 
       await waitFor(() => expect(result.current[1].isSuccess).toBe(true));
+      expect(result.current[1].data?.copiedItemsCount).toBe(5);
     });
   });
 
   describe('error handling', () => {
     it('should handle server error on getAvailableMenu', async () => {
       server.use(
-        http.get(`${API}/menu/public`, () =>
+        http.get(`${API}/menu`, () =>
           HttpResponse.json({ message: 'Internal Server Error' }, { status: 500 }),
         ),
       );
@@ -319,7 +331,7 @@ describe('menuApi', () => {
 
     it('should handle not found on getMenuItem', async () => {
       server.use(
-        http.get(`${API}/menu/public/:id`, () =>
+        http.get(`${API}/menu/:id`, () =>
           HttpResponse.json({ message: 'Not found' }, { status: 404 }),
         ),
       );

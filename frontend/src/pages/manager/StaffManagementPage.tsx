@@ -15,6 +15,8 @@ import {
   type WorkSchedule,
 } from '../../store/api/userApi';
 import { useGetStoreSessionsQuery, type WorkingSession } from '../../store/api/sessionApi';
+import { useGetWeeklyEarningsQuery } from '../../store/api/earningsApi';
+import { useGetPendingTipsQuery } from '../../store/api/tipApi';
 import { getApiErrorMessage } from '../utils/apiError';
 import { Button } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
@@ -114,6 +116,14 @@ const StaffManagementPage: React.FC = () => {
   const [_updateUser] = useUpdateUserMutation();
   const [activateUser] = useActivateUserMutation();
   const [deactivateUser] = useDeactivateUserMutation();
+
+  const { data: weeklyEarnings } = useGetWeeklyEarningsQuery(
+    { employeeId: currentUser?.id ?? '' },
+    { skip: !currentUser?.id }
+  );
+  const { data: pendingTips = [] } = useGetPendingTipsQuery(currentUser?.id ?? '', {
+    skip: !currentUser?.id,
+  });
 
   // Live timer state for HH:MM:SS display
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -662,7 +672,15 @@ const StaffManagementPage: React.FC = () => {
           <div style={headerContainerStyles}>
             <div>
               <h1 style={titleStyles}>Staff Management</h1>
-              <p style={subtitleStyles}>Manage store employees, drivers, and staff members</p>
+              <p style={subtitleStyles}>
+                Manage store employees, drivers, and staff members
+                {weeklyEarnings && (
+                  <> · This week: ₹{(weeklyEarnings.totalInr / 100).toFixed(0)} earned</>
+                )}
+                {pendingTips.length > 0 && (
+                  <> · {pendingTips.length} pending tip{pendingTips.length === 1 ? '' : 's'}</>
+                )}
+              </p>
             </div>
             <Button variant="primary" size="base" onClick={() => setCreateDialogOpen(true)}>
               + Add Staff Member

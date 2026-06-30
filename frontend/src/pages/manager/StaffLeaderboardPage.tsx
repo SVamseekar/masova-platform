@@ -4,6 +4,7 @@ import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
 import {formatMoney, formatMajorAmount} from '../../utils/currency';
 import { useGetStaffLeaderboardQuery } from '../../store/api/analyticsApi';
+import { useGetEarningsHistoryQuery } from '../../store/api/earningsApi';
 import { createCard } from '../../styles/neumorphic-utils';
 import { colors, spacing, typography, shadows, borderRadius } from '../../styles/design-tokens';
 import AppHeader from '../../components/common/AppHeader';
@@ -22,6 +23,11 @@ const StaffLeaderboardPage: React.FC = () => {
   const storeId = selectedStoreId || currentUser?.storeId || '';
 
   const { data, isLoading, error } = useGetStaffLeaderboardQuery({ storeId, period }, { skip: !storeId });
+  const topStaffId = data?.rankings?.[0]?.staffId;
+  const { data: topEarningsHistory } = useGetEarningsHistoryQuery(
+    { employeeId: topStaffId ?? '', weeks: 4 },
+    { skip: !topStaffId }
+  );
 
   const getPerformanceColor = (level: string) => {
     switch (level) {
@@ -168,6 +174,12 @@ const StaffLeaderboardPage: React.FC = () => {
   return (
     <div style={containerStyles}>
       <AppHeader title="Staff Leaderboard" showBackButton={true} onBack={handleBack} showManagerNav={true} />
+
+      {topEarningsHistory && topEarningsHistory.length > 0 && (
+        <div style={{ marginBottom: spacing[4], fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
+          Top performer 4-week earnings: ₹{(topEarningsHistory.reduce((sum, w) => sum + w.totalInr, 0) / 100).toFixed(0)}
+        </div>
+      )}
 
       <div style={headerStyles}>
         <div>

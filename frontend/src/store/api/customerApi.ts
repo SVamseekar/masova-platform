@@ -251,25 +251,27 @@ export const customerApi = createApi({
     }),
 
     getCustomerByUserId: builder.query<Customer, string>({
-      query: (userId) => `/user/${userId}`,
-      // Provide tags for both the customer ID and a special "USER_QUERY" tag for invalidation
+      query: (userId) => `?userId=${encodeURIComponent(userId)}`,
+      transformResponse: (response: Customer[]) => response[0],
       providesTags: (result, error, userId) => (result
         ? [{ type: 'Customer', id: result.id }, { type: 'Customers', id: `USER_${userId}` }]
         : [{ type: 'Customers', id: `USER_${userId}` }]),
     }),
 
     getCustomerByEmail: builder.query<Customer, string>({
-      query: (email) => `/email/${email}`,
+      query: (email) => `?email=${encodeURIComponent(email)}`,
+      transformResponse: (response: Customer[]) => response[0],
       providesTags: (result) => (result ? [{ type: 'Customer', id: result.id }] : []),
     }),
 
     getCustomerByPhone: builder.query<Customer, string>({
-      query: (phone) => `/phone/${phone}`,
+      query: (phone) => `?phone=${encodeURIComponent(phone)}`,
+      transformResponse: (response: Customer[]) => response[0],
       providesTags: (result) => (result ? [{ type: 'Customer', id: result.id }] : []),
     }),
 
     getAllCustomers: builder.query<Customer[], string | undefined>({
-      query: (storeId) => `${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '',
       providesTags: (result, error, storeId) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), { type: 'Customers', id: storeId || 'DEFAULT' }]
@@ -277,7 +279,8 @@ export const customerApi = createApi({
     }),
 
     getActiveCustomers: builder.query<Customer[], string | undefined>({
-      query: (storeId) => `/active${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '',
+      transformResponse: (response: Customer[]) => response.filter((c) => c.active),
       providesTags: (result, error, storeId) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), { type: 'Customers', id: storeId || 'DEFAULT' }]
@@ -285,7 +288,14 @@ export const customerApi = createApi({
     }),
 
     searchCustomers: builder.query<PageResponse<Customer>, { query: string; page?: number; size?: number }>({
-      query: ({ query, page = 0, size = 20 }) => `/search?query=${query}&page=${page}&size=${size}`,
+      query: ({ query }) => `?search=${encodeURIComponent(query)}`,
+      transformResponse: (response: Customer[], _meta, { page = 0, size = 20 }) => ({
+        content: response,
+        totalElements: response.length,
+        totalPages: Math.max(1, Math.ceil(response.length / size)),
+        size,
+        number: page,
+      }),
       providesTags: (result) =>
         result
           ? [
@@ -299,7 +309,7 @@ export const customerApi = createApi({
     updateCustomer: builder.mutation<Customer, { id: string; data: UpdateCustomerRequest }>({
       query: ({ id, data }) => ({
         url: `/${id}`,
-        method: 'PUT',
+        method: 'PATCH',
         body: data,
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'Customer', id }, 'Customers'],
@@ -308,7 +318,7 @@ export const customerApi = createApi({
     deactivateCustomer: builder.mutation<Customer, string>({
       query: (id) => ({
         url: `/${id}/deactivate`,
-        method: 'PATCH',
+        method: 'POST',
       }),
       invalidatesTags: (result, error, id) => [{ type: 'Customer', id }, 'Customers', 'CustomerStats'],
     }),
@@ -316,7 +326,7 @@ export const customerApi = createApi({
     activateCustomer: builder.mutation<Customer, string>({
       query: (id) => ({
         url: `/${id}/activate`,
-        method: 'PATCH',
+        method: 'POST',
       }),
       invalidatesTags: (result, error, id) => [{ type: 'Customer', id }, 'Customers', 'CustomerStats'],
     }),
@@ -359,10 +369,10 @@ export const customerApi = createApi({
 
     setDefaultAddress: builder.mutation<Customer, { customerId: string; addressId: string }>({
       query: ({ customerId, addressId }) => ({
-        url: `/${customerId}/addresses/${addressId}/set-default`,
+        url: `/${customerId}/addresses/${addressId}`,
         method: 'PATCH',
+        body: { isDefault: true },
       }),
-      // Invalidate all customer-related tags to ensure fresh data everywhere
       invalidatesTags: (result) => [
         { type: 'Customer', id: result?.id },
         'Customer',
@@ -373,7 +383,7 @@ export const customerApi = createApi({
     // LOYALTY MANAGEMENT
     addLoyaltyPoints: builder.mutation<Customer, { customerId: string; data: AddLoyaltyPointsRequest }>({
       query: ({ customerId, data }) => ({
-        url: `/${customerId}/loyalty/points`,
+        url: `/${customerId}/loyalty`,
         method: 'POST',
         body: data,
       }),
@@ -385,8 +395,19 @@ export const customerApi = createApi({
       { customerId: string; points: number; orderId: string }
     >({
       query: ({ customerId, points, orderId }) => ({
-        url: `/${customerId}/loyalty/redeem?points=${points}&orderId=${orderId}`,
+        url: `/${customerId}/loyalty`,
         method: 'POST',
+        body: {
+          type: 'REDEEMED',
+          points,
+          orderId,
+          description: `Redeemed ${points} points for order ${orderId}`,
+        },
+      }),
+      transformResponse: (customer: Customer, _meta, { points }) => ({
+        customer,
+        pointsRedeemed: points,
+        discountAmount: Math.floor(points / 2),
       }),
       invalidatesTags: (result, error, { customerId }) => [{ type: 'Customer', id: customerId }],
     }),
@@ -395,12 +416,23 @@ export const customerApi = createApi({
       { maxRedeemablePoints: number; maxDiscountAmount: number; redemptionRate: string },
       { customerId: string; orderTotal: number }
     >({
-      query: ({ customerId, orderTotal }) => `/${customerId}/loyalty/max-redeemable?orderTotal=${orderTotal}`,
+      query: ({ customerId }) => `/${customerId}`,
+      transformResponse: (customer: Customer, _meta, { orderTotal }) => {
+        const maxRedeemablePoints = Math.min(
+          customer.loyaltyInfo.totalPoints,
+          Math.floor(orderTotal * 0.5 * 2),
+        );
+        return {
+          maxRedeemablePoints,
+          maxDiscountAmount: Math.floor(maxRedeemablePoints / 2),
+          redemptionRate: '2:1',
+        };
+      },
       providesTags: (result, error, { customerId }) => [{ type: 'Customer', id: customerId }],
     }),
 
     getCustomersByTier: builder.query<Customer[], string>({
-      query: (tier) => `/loyalty/tier/${tier}`,
+      query: (tier) => `?tier=${encodeURIComponent(tier)}`,
       providesTags: (result) =>
         result ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), 'Customers'] : ['Customers'],
     }),
@@ -460,7 +492,7 @@ export const customerApi = createApi({
       query: ({ customerId, tags }) => ({
         url: `/${customerId}/tags`,
         method: 'POST',
-        body: tags,
+        body: { add: tags },
       }),
       invalidatesTags: (result, error, { customerId }) => [{ type: 'Customer', id: customerId }],
     }),
@@ -468,64 +500,96 @@ export const customerApi = createApi({
     removeTags: builder.mutation<Customer, { customerId: string; tags: string[] }>({
       query: ({ customerId, tags }) => ({
         url: `/${customerId}/tags`,
-        method: 'DELETE',
-        body: tags,
+        method: 'POST',
+        body: { remove: tags },
       }),
       invalidatesTags: (result, error, { customerId }) => [{ type: 'Customer', id: customerId }],
     }),
 
     getCustomersByTags: builder.query<Customer[], string[]>({
-      query: (tags) => `/tags?tags=${tags.join(',')}`,
+      query: (tags) => `?tag=${encodeURIComponent(tags[0] ?? '')}`,
       providesTags: (result) =>
         result ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), 'Customers'] : ['Customers'],
     }),
 
-    // QUERIES
+    // QUERIES — derived client-side from GET /api/customers (no dedicated backend routes)
     getHighValueCustomers: builder.query<Customer[], number>({
-      query: (minSpending = 10000) => `/high-value?minSpending=${minSpending}`,
+      query: () => '',
+      transformResponse: (response: Customer[], _meta, minSpending = 10000) =>
+        response
+          .filter((c) => c.orderStats.totalSpent >= minSpending)
+          .sort((a, b) => b.orderStats.totalSpent - a.orderStats.totalSpent),
       providesTags: (result) =>
         result ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), 'Customers'] : ['Customers'],
     }),
 
     getTopSpenders: builder.query<Customer[], number>({
-      query: (limit = 10) => `/top-spenders?limit=${limit}`,
+      query: () => '',
+      transformResponse: (response: Customer[], _meta, limit = 10) =>
+        [...response].sort((a, b) => b.orderStats.totalSpent - a.orderStats.totalSpent).slice(0, limit),
       providesTags: (result) =>
         result ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), 'Customers'] : ['Customers'],
     }),
 
     getRecentlyActiveCustomers: builder.query<Customer[], number>({
-      query: (days = 30) => `/recently-active?days=${days}`,
+      query: () => '',
+      transformResponse: (response: Customer[], _meta, days = 30) => {
+        const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+        return response.filter((c) => {
+          const lastOrder = c.lastOrderDate ?? c.orderStats.lastOrderDate;
+          return lastOrder ? new Date(lastOrder).getTime() >= cutoff : false;
+        });
+      },
       providesTags: (result) =>
         result ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), 'Customers'] : ['Customers'],
     }),
 
     getInactiveCustomers: builder.query<Customer[], number>({
-      query: (days = 90) => `/inactive?days=${days}`,
+      query: () => '',
+      transformResponse: (response: Customer[], _meta, days = 90) => {
+        const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+        return response.filter((c) => {
+          const lastOrder = c.lastOrderDate ?? c.orderStats.lastOrderDate;
+          return !lastOrder || new Date(lastOrder).getTime() < cutoff;
+        });
+      },
       providesTags: (result) =>
         result ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), 'Customers'] : ['Customers'],
     }),
 
     getBirthdayCustomersToday: builder.query<Customer[], void>({
-      query: () => '/birthdays/today',
+      query: () => '',
+      transformResponse: (response: Customer[]) => {
+        const today = new Date();
+        const month = today.getMonth() + 1;
+        const day = today.getDate();
+        return response.filter((c) => {
+          if (!c.dateOfBirth) return false;
+          const dob = new Date(c.dateOfBirth);
+          return dob.getMonth() + 1 === month && dob.getDate() === day;
+        });
+      },
       providesTags: (result) =>
         result ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), 'Customers'] : ['Customers'],
     }),
 
     getMarketingOptInCustomers: builder.query<Customer[], void>({
-      query: () => '/marketing-opt-in',
+      query: () => '',
+      transformResponse: (response: Customer[]) => response.filter((c) => c.marketingOptIn),
       providesTags: (result) =>
         result ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), 'Customers'] : ['Customers'],
     }),
 
     getSmsOptInCustomers: builder.query<Customer[], void>({
-      query: () => '/sms-opt-in',
+      query: () => '',
+      transformResponse: (response: Customer[]) => response.filter((c) => c.smsOptIn),
       providesTags: (result) =>
         result ? [...result.map(({ id }) => ({ type: 'Customer' as const, id })), 'Customers'] : ['Customers'],
     }),
 
     // STATISTICS
     getCustomerStats: builder.query<CustomerStatsResponse, string | undefined>({
-      query: (storeId) => `/stats${storeId ? `?storeId=${storeId}` : ''}`,
+      query: () => '/stats',
       providesTags: (result, error, storeId) => [{ type: 'CustomerStats', id: storeId || 'DEFAULT' }],
     }),
 
