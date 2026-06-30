@@ -2,7 +2,7 @@
 
 **Generated:** 2026-06-30  
 **Handoff workstream (`INTEGRATION_FIX_HANDOFF.md`):** **COMPLETE** — stale wiring 0, unwired slices 0, gateway gaps 3, frontend tests 1415/1415 passed.  
-**This doc:** everything still open *beyond* that scope.  
+**Gaps E2E workstream:** **COMPLETE** (2026-06-30) — see §1 before/after. Dell deploy + hardware Phase 2 remain.  
 **Ground truth:** Java `@RestController` classes, `GatewayConfig.java`, `frontend/src/store/api/*.ts`, page/hook imports, Flyway migrations, service-layer code.  
 **Not authoritative:** `docs/MASOVA_MASTER_REFERENCE.md`, `API_MISMATCH_REPORT.json` (Jan 2026).
 
@@ -677,12 +677,12 @@ The matrix **under-detects UI** when:
 
 ---
 
-## 14. How to resume fixes
+## 14. Status
 
-See `INTEGRATION_FIX_HANDOFF.md`. Paste in a new session:
+**Software E2E on Mac: complete.** Commits on `main` (integration handoff + gaps session).
 
-> Continue MaSoVa integration fix from `docs/api-contracts/INTEGRATION_FIX_HANDOFF.md`. Full gap list: `INTEGRATION_GAPS_COMPLETE.md`. Run `node scripts/integration-matrix-audit.js` first.
+**Next (optional):** Dell live smoke — `docker compose` on Dell, `--live http://192.168.50.88:8080`, manager browser check.
 
 ---
 
-*This document is the complete inventory. For per-endpoint JSON detail, see `INTEGRATION_MATRIX.json`.*
+*Historical inventory + session log. Live counts: `INTEGRATION_MATRIX.json`.*

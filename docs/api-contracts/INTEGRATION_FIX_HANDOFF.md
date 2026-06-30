@@ -3,7 +3,8 @@
 ## Status: **COMPLETE**
 
 All checklist items below are `[x]`. Success criteria verified (see §Success criteria).  
-**Next workstream:** `INTEGRATION_GAPS_COMPLETE.md` — dead paths, unwired backend, stubs, MSW/test gaps.
+**Gaps workstream (`INTEGRATION_GAPS_COMPLETE.md`):** **COMPLETE** (2026-06-30) — `frontendOnlyPaths=0`, `unwiredBackendPublic=18` (internal/low-priority).  
+**Remaining:** Dell live probe / deploy only.
 
 **Purpose (historical):** Canonical path / gateway / RTK wiring for P0 mismatches. Ground truth = Java controllers + `GatewayConfig.java` + `frontend/src/store/api/*.ts`. Do NOT trust `docs/MASOVA_MASTER_REFERENCE.md` or `API_MISMATCH_REPORT.json` (Jan 2026).
 
@@ -111,21 +112,26 @@ Outputs: `docs/api-contracts/INTEGRATION_MATRIX.json`, `INTEGRATION_MATRIX.md`
 **Not run:** live probe `node scripts/integration-matrix-audit.js --live http://192.168.50.88:8080`  
 **Not verified on Dell:** `cd api-gateway && mvn compile -q` (Mac compile only)
 
-## Intentionally out of scope (open)
+## Post-gaps snapshot (2026-06-30)
 
-Full inventory: **`INTEGRATION_GAPS_COMPLETE.md`**
+| Metric | Value |
+|--------|------:|
+| frontendOnlyPaths | **0** |
+| staleFrontendWiring | **0** |
+| unwiredBackendPublic | **18** (webhooks, internal GDPR, test-data) |
+| gatewayGaps | **3** (test-data dev-only) |
+| frontend tests | **1425** passed |
 
-- 33 backend endpoints with no frontend wiring
-- 56 frontend-only RTK paths (e.g. `agentApi`, `fiscalApi` — no Spring controllers)
-- 56 endpoints without MSW / 60 without unit test coverage in matrix
-- Backend stubs (fiscal hardware, session pending, review tokens, GDPR cascade, etc.)
-- Feature E2E gaps (refund approve, cancel-request, fiscal compliance API, aggregator ingestion, …)
+Full history: **`INTEGRATION_GAPS_COMPLETE.md`** §1.
 
-## How to start the *next* workstream
+## Still open (Dell / hardware / external)
 
-Paste:
-> Continue from `docs/api-contracts/INTEGRATION_GAPS_COMPLETE.md`. Handoff workstream is complete. Run `node scripts/integration-matrix-audit.js` first. Pick a section (e.g. §5 broken paths, §4 unwired backend) and implement.
+- Live probe: `node scripts/integration-matrix-audit.js --live http://192.168.50.88:8080`
+- Dell gateway compile + service deploy
+- Fiscal hardware signers (Phase 2), `uk_vat_ledger` / `stripe_tax` persistence
+- `agentApi` → `masova-support` (separate repo)
+- Aggregator third-party order ingestion
 
 ## Git state
 
-Branch `main` — **uncommitted** diff (gateway, frontend API, MSW, audit scripts, docs). Commit before Dell deploy or PR.
+`main` pushed to `origin/main` — integration + gaps workstream commits on GitHub.
