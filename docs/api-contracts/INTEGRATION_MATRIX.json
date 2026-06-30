@@ -1,22 +1,22 @@
 {
-  "generatedAt": "2026-06-30T05:29:21.782Z",
+  "generatedAt": "2026-06-30T05:49:22.356Z",
   "liveBase": null,
   "summary": {
-    "backendEndpoints": 202,
-    "gatewayRoutes": 75,
+    "backendEndpoints": 207,
+    "gatewayRoutes": 77,
     "gatewayBlocked": 4,
-    "rtkSlices": 24,
-    "rtkUrls": 768,
+    "rtkSlices": 23,
+    "rtkUrls": 763,
     "rawHttpCalls": 6,
-    "mswHandlers": 178,
+    "mswHandlers": 207,
     "apiTestFiles": 10,
     "gatewayGaps": 3,
     "staleFrontendWiring": 0,
-    "unwiredBackendPublic": 33,
-    "frontendOnlyPaths": 56,
+    "unwiredBackendPublic": 18,
+    "frontendOnlyPaths": 0,
     "unwiredSlices": 0,
-    "noMswCoverage": 56,
-    "noTestCoverage": 60
+    "noMswCoverage": 18,
+    "noTestCoverage": 63
   },
   "gatewayGaps": [
     {
@@ -36,360 +36,9 @@
     }
   ],
   "staleWiring": [],
-  "frontendOnly": [
-    {
-      "method": "GET",
-      "path": "/api/agent/chat",
-      "norm": "/api/agent/chat",
-      "source": "agentApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/agents/demand-forecast/trigger",
-      "norm": "/api/agents/demand-forecast/trigger",
-      "source": "agentApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/agents/inventory-reorder/trigger",
-      "norm": "/api/agents/inventory-reorder/trigger",
-      "source": "agentApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/agents/churn-prevention/trigger",
-      "norm": "/api/agents/churn-prevention/trigger",
-      "source": "agentApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/agents/review-response/trigger",
-      "norm": "/api/agents/review-response/trigger",
-      "source": "agentApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/agents/shift-optimisation/trigger",
-      "norm": "/api/agents/shift-optimisation/trigger",
-      "source": "agentApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/agents/kitchen-coach/trigger",
-      "norm": "/api/agents/kitchen-coach/trigger",
-      "source": "agentApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/agents/dynamic-pricing/trigger",
-      "norm": "/api/agents/dynamic-pricing/trigger",
-      "source": "agentApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/health",
-      "norm": "/api/health",
-      "source": "agentApi.ts"
-    },
-    {
-      "method": "POST",
-      "path": "/api/agent/chat",
-      "norm": "/api/agent/chat",
-      "source": "agentApi.ts"
-    },
-    {
-      "method": "POST",
-      "path": "/api/agents/demand-forecast/trigger",
-      "norm": "/api/agents/demand-forecast/trigger",
-      "source": "agentApi.ts"
-    },
-    {
-      "method": "POST",
-      "path": "/api/agents/inventory-reorder/trigger",
-      "norm": "/api/agents/inventory-reorder/trigger",
-      "source": "agentApi.ts"
-    },
-    {
-      "method": "POST",
-      "path": "/api/agents/churn-prevention/trigger",
-      "norm": "/api/agents/churn-prevention/trigger",
-      "source": "agentApi.ts"
-    },
-    {
-      "method": "POST",
-      "path": "/api/agents/review-response/trigger",
-      "norm": "/api/agents/review-response/trigger",
-      "source": "agentApi.ts"
-    },
-    {
-      "method": "POST",
-      "path": "/api/agents/shift-optimisation/trigger",
-      "norm": "/api/agents/shift-optimisation/trigger",
-      "source": "agentApi.ts"
-    },
-    {
-      "method": "POST",
-      "path": "/api/agents/kitchen-coach/trigger",
-      "norm": "/api/agents/kitchen-coach/trigger",
-      "source": "agentApi.ts"
-    },
-    {
-      "method": "POST",
-      "path": "/api/agents/dynamic-pricing/trigger",
-      "norm": "/api/agents/dynamic-pricing/trigger",
-      "source": "agentApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/customers/:param/preferences",
-      "norm": "/api/customers/:param/preferences",
-      "source": "customerApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/customers/:param/order-stats",
-      "norm": "/api/customers/:param/order-stats",
-      "source": "customerApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/customers/:param/notes",
-      "norm": "/api/customers/:param/notes",
-      "source": "customerApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/customers/:param/verify-email",
-      "norm": "/api/customers/:param/verify-email",
-      "source": "customerApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/customers/:param/verify-phone",
-      "norm": "/api/customers/:param/verify-phone",
-      "source": "customerApi.ts"
-    },
-    {
-      "method": "PUT",
-      "path": "/api/customers/:param/preferences",
-      "norm": "/api/customers/:param/preferences",
-      "source": "customerApi.ts"
-    },
-    {
-      "method": "POST",
-      "path": "/api/customers/:param/order-stats",
-      "norm": "/api/customers/:param/order-stats",
-      "source": "customerApi.ts"
-    },
-    {
-      "method": "POST",
-      "path": "/api/customers/:param/notes",
-      "norm": "/api/customers/:param/notes",
-      "source": "customerApi.ts"
-    },
-    {
-      "method": "PATCH",
-      "path": "/api/customers/:param/verify-email",
-      "norm": "/api/customers/:param/verify-email",
-      "source": "customerApi.ts"
-    },
-    {
-      "method": "PATCH",
-      "path": "/api/customers/:param/verify-phone",
-      "norm": "/api/customers/:param/verify-phone",
-      "source": "customerApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/delivery/auto-dispatch",
-      "norm": "/api/delivery/auto-dispatch",
-      "source": "deliveryApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/delivery/route-optimize",
-      "norm": "/api/delivery/route-optimize",
-      "source": "deliveryApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/delivery/location-update",
-      "norm": "/api/delivery/location-update",
-      "source": "deliveryApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/delivery/driver/:param/performance/today",
-      "norm": "/api/delivery/driver/:param/performance/today",
-      "source": "deliveryApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/delivery/zone/check",
-      "norm": "/api/delivery/zone/check",
-      "source": "deliveryApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/delivery/zone/fee",
-      "norm": "/api/delivery/zone/fee",
-      "source": "deliveryApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/delivery/zone/list",
-      "norm": "/api/delivery/zone/list",
-      "source": "deliveryApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/delivery/zone/validate",
-      "norm": "/api/delivery/zone/validate",
-      "source": "deliveryApi.ts"
-    },
-    {
-      "method": "POST",
-      "path": "/api/delivery/auto-dispatch",
-      "norm": "/api/delivery/auto-dispatch",
-      "source": "deliveryApi.ts"
-    },
-    {
-      "method": "POST",
-      "path": "/api/delivery/route-optimize",
-      "norm": "/api/delivery/route-optimize",
-      "source": "deliveryApi.ts"
-    },
-    {
-      "method": "POST",
-      "path": "/api/delivery/location-update",
-      "norm": "/api/delivery/location-update",
-      "source": "deliveryApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/fiscal/summary",
-      "norm": "/api/fiscal/summary",
-      "source": "fiscalApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/fiscal/failures",
-      "norm": "/api/fiscal/failures",
-      "source": "fiscalApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/users/kiosk/create",
-      "norm": "/api/users/kiosk/create",
-      "source": "kioskApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/users/kiosk/:param/regenerate-tokens",
-      "norm": "/api/users/kiosk/:param/regenerate-tokens",
-      "source": "kioskApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/users/kiosk/list",
-      "norm": "/api/users/kiosk/list",
-      "source": "kioskApi.ts"
-    },
-    {
-      "method": "POST",
-      "path": "/api/users/kiosk/create",
-      "norm": "/api/users/kiosk/create",
-      "source": "kioskApi.ts"
-    },
-    {
-      "method": "POST",
-      "path": "/api/users/kiosk/:param/regenerate-tokens",
-      "norm": "/api/users/kiosk/:param/regenerate-tokens",
-      "source": "kioskApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/orders/store/avg-prep-time",
-      "norm": "/api/orders/store/avg-prep-time",
-      "source": "orderApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/orders/store/make-table/:param",
-      "norm": "/api/orders/store/make-table/:param",
-      "source": "orderApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/orders/store/analytics/prep-time-by-item",
-      "norm": "/api/orders/store/analytics/prep-time-by-item",
-      "source": "orderApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/orders/analytics/pos-staff/:param/performance",
-      "norm": "/api/orders/analytics/pos-staff/:param/performance",
-      "source": "orderApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/orders/store/analytics/prep-time-distribution",
-      "norm": "/api/orders/store/analytics/prep-time-distribution",
-      "source": "orderApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/orders/staff/:param/date/:param",
-      "norm": "/api/orders/staff/:param/date/:param",
-      "source": "orderApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/responses/:param",
-      "norm": "/api/responses/:param",
-      "source": "reviewApi.ts"
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/responses/:param",
-      "norm": "/api/responses/:param",
-      "source": "reviewApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/stores/code/:param",
-      "norm": "/api/stores/code/:param",
-      "source": "storeApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/stores/region/:param",
-      "norm": "/api/stores/region/:param",
-      "source": "storeApi.ts"
-    },
-    {
-      "method": "GET",
-      "path": "/api/stores/:param/delivery-radius-check",
-      "norm": "/api/stores/:param/delivery-radius-check",
-      "source": "storeApi.ts"
-    }
-  ],
+  "frontendOnly": [],
   "unwiredSlices": [],
   "sliceCoverage": [
-    {
-      "slice": "agentApi",
-      "endpointCount": 24,
-      "hasUnitTest": false,
-      "testFile": null,
-      "hooks": [],
-      "uiFileCount": 3,
-      "uiFiles": [
-        "frontend/src/pages/manager/AIAgentsSection.tsx",
-        "frontend/src/pages/manager/ReviewManagementPage.tsx",
-        "frontend/src/components/chat/ChatWidget.tsx"
-      ],
-      "registeredInStore": true
-    },
     {
       "slice": "aggregatorApi",
       "endpointCount": 5,
@@ -444,7 +93,7 @@
       "hasUnitTest": true,
       "testFile": "frontend/src/store/api/customerApi.test.ts",
       "hooks": [],
-      "uiFileCount": 15,
+      "uiFileCount": 16,
       "uiFiles": [
         "frontend/src/pages/auth/RegisterPage.tsx",
         "frontend/src/pages/checkout/GuestCheckoutPage.tsx",
@@ -461,10 +110,12 @@
     },
     {
       "slice": "deliveryApi",
-      "endpointCount": 43,
+      "endpointCount": 41,
       "hasUnitTest": true,
       "testFile": "frontend/src/store/api/deliveryApi.test.ts",
-      "hooks": [],
+      "hooks": [
+        "useDispatchOrderMutation"
+      ],
       "uiFileCount": 12,
       "uiFiles": [
         "frontend/src/pages/customer/LiveTrackingPage.test.tsx",
@@ -482,7 +133,7 @@
     },
     {
       "slice": "driverApi",
-      "endpointCount": 22,
+      "endpointCount": 20,
       "hasUnitTest": false,
       "testFile": null,
       "hooks": [],
@@ -545,9 +196,10 @@
       "hasUnitTest": false,
       "testFile": null,
       "hooks": [],
-      "uiFileCount": 2,
+      "uiFileCount": 3,
       "uiFiles": [
         "frontend/src/pages/GdprRequests.tsx",
+        "frontend/src/pages/manager/GdprManagerPage.tsx",
         "frontend/src/components/gdpr/CookieConsent.tsx"
       ],
       "registeredInStore": true
@@ -627,7 +279,7 @@
     },
     {
       "slice": "orderApi",
-      "endpointCount": 60,
+      "endpointCount": 73,
       "hasUnitTest": true,
       "testFile": "frontend/src/store/api/orderApi.test.ts",
       "hooks": [],
@@ -648,7 +300,7 @@
     },
     {
       "slice": "paymentApi",
-      "endpointCount": 26,
+      "endpointCount": 36,
       "hasUnitTest": true,
       "testFile": "frontend/src/store/api/paymentApi.test.ts",
       "hooks": [],
@@ -826,7 +478,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "aggregatorHandlers.ts",
       "unitTest": [],
       "liveProbe": null,
       "frontendWiring": "canonical"
@@ -855,7 +507,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "aggregatorHandlers.ts",
       "unitTest": [],
       "liveProbe": null,
       "frontendWiring": "canonical"
@@ -1475,14 +1127,25 @@
       "gateway": "routed",
       "gatewayRoute": "core_campaigns",
       "gatewayPattern": "/api/campaigns/**",
-      "rtkSlice": [],
+      "rtkSlice": [
+        {
+          "slice": "notificationApi",
+          "path": "/api/campaigns/:param",
+          "norm": "/api/campaigns/:param"
+        },
+        {
+          "slice": "notificationApi",
+          "path": "/api/campaigns/:param",
+          "norm": "/api/campaigns/:param"
+        }
+      ],
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "notificationHandlers.ts",
       "unitTest": [],
       "liveProbe": null,
-      "frontendWiring": "none"
+      "frontendWiring": "canonical"
     },
     {
       "method": "POST",
@@ -1675,6 +1338,31 @@
         },
         {
           "slice": "customerApi",
+          "path": "/api/customers/:param",
+          "norm": "/api/customers/:param"
+        },
+        {
+          "slice": "customerApi",
+          "path": "/api/customers/:param",
+          "norm": "/api/customers/:param"
+        },
+        {
+          "slice": "customerApi",
+          "path": "/api/customers/:param",
+          "norm": "/api/customers/:param"
+        },
+        {
+          "slice": "customerApi",
+          "path": "/api/customers/:param",
+          "norm": "/api/customers/:param"
+        },
+        {
+          "slice": "customerApi",
+          "path": "/api/customers/:param",
+          "norm": "/api/customers/:param"
+        },
+        {
+          "slice": "customerApi",
           "path": "/api/customers/stats",
           "norm": "/api/customers/stats"
         },
@@ -1714,6 +1402,56 @@
       "gatewayRoute": "core_customers",
       "gatewayPattern": "/api/customers/**",
       "rtkSlice": [
+        {
+          "slice": "customerApi",
+          "path": "/api/customers/:param",
+          "norm": "/api/customers/:param"
+        },
+        {
+          "slice": "customerApi",
+          "path": "/api/customers/:param",
+          "norm": "/api/customers/:param"
+        },
+        {
+          "slice": "customerApi",
+          "path": "/api/customers/:param",
+          "norm": "/api/customers/:param"
+        },
+        {
+          "slice": "customerApi",
+          "path": "/api/customers/:param",
+          "norm": "/api/customers/:param"
+        },
+        {
+          "slice": "customerApi",
+          "path": "/api/customers/:param",
+          "norm": "/api/customers/:param"
+        },
+        {
+          "slice": "customerApi",
+          "path": "/api/customers/:param",
+          "norm": "/api/customers/:param"
+        },
+        {
+          "slice": "customerApi",
+          "path": "/api/customers/:param",
+          "norm": "/api/customers/:param"
+        },
+        {
+          "slice": "customerApi",
+          "path": "/api/customers/:param",
+          "norm": "/api/customers/:param"
+        },
+        {
+          "slice": "customerApi",
+          "path": "/api/customers/:param",
+          "norm": "/api/customers/:param"
+        },
+        {
+          "slice": "customerApi",
+          "path": "/api/customers/:param",
+          "norm": "/api/customers/:param"
+        },
         {
           "slice": "customerApi",
           "path": "/api/customers/:param",
@@ -2040,6 +1778,31 @@
         },
         {
           "slice": "customerApi",
+          "path": "/api/customers/:param",
+          "norm": "/api/customers/:param"
+        },
+        {
+          "slice": "customerApi",
+          "path": "/api/customers/:param",
+          "norm": "/api/customers/:param"
+        },
+        {
+          "slice": "customerApi",
+          "path": "/api/customers/:param",
+          "norm": "/api/customers/:param"
+        },
+        {
+          "slice": "customerApi",
+          "path": "/api/customers/:param",
+          "norm": "/api/customers/:param"
+        },
+        {
+          "slice": "customerApi",
+          "path": "/api/customers/:param",
+          "norm": "/api/customers/:param"
+        },
+        {
+          "slice": "customerApi",
           "path": "/api/customers/stats",
           "norm": "/api/customers/stats"
         },
@@ -2078,14 +1841,37 @@
       "gateway": "routed",
       "gatewayRoute": "logistics_delivery",
       "gatewayPattern": "/api/delivery/**",
-      "rtkSlice": [],
+      "rtkSlice": [
+        {
+          "slice": "deliveryApi",
+          "path": "/api/delivery/:param/otp",
+          "norm": "/api/delivery/:param/otp"
+        },
+        {
+          "slice": "deliveryApi",
+          "path": "/api/delivery/:param/otp",
+          "norm": "/api/delivery/:param/otp"
+        },
+        {
+          "slice": "deliveryApi",
+          "path": "/api/delivery/:param/otp",
+          "norm": "/api/delivery/:param/otp"
+        },
+        {
+          "slice": "deliveryApi",
+          "path": "/api/delivery/:param/otp",
+          "norm": "/api/delivery/:param/otp"
+        }
+      ],
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
-      "unitTest": [],
+      "mswHandler": "deliveryHandlers.ts",
+      "unitTest": [
+        "frontend/src/store/api/deliveryApi.test.ts"
+      ],
       "liveProbe": null,
-      "frontendWiring": "none"
+      "frontendWiring": "canonical"
     },
     {
       "method": "POST",
@@ -2140,14 +1926,22 @@
       "gateway": "routed",
       "gatewayRoute": "logistics_delivery",
       "gatewayPattern": "/api/delivery/**",
-      "rtkSlice": [],
+      "rtkSlice": [
+        {
+          "slice": "deliveryApi",
+          "path": "/api/delivery/dispatch",
+          "norm": "/api/delivery/dispatch"
+        }
+      ],
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
-      "unitTest": [],
+      "mswHandler": "deliveryHandlers.ts",
+      "unitTest": [
+        "frontend/src/store/api/deliveryApi.test.ts"
+      ],
       "liveProbe": null,
-      "frontendWiring": "none"
+      "frontendWiring": "canonical"
     },
     {
       "method": "GET",
@@ -2271,7 +2065,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "deliveryHandlers.ts",
       "unitTest": [
         "frontend/src/store/api/deliveryApi.test.ts"
       ],
@@ -2336,14 +2130,27 @@
       "gateway": "routed",
       "gatewayRoute": "logistics_delivery",
       "gatewayPattern": "/api/delivery/**",
-      "rtkSlice": [],
+      "rtkSlice": [
+        {
+          "slice": "deliveryApi",
+          "path": "/api/delivery/location",
+          "norm": "/api/delivery/location"
+        },
+        {
+          "slice": "driverApi",
+          "path": "/api/delivery/location",
+          "norm": "/api/delivery/location"
+        }
+      ],
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
-      "unitTest": [],
+      "mswHandler": "deliveryHandlers.ts",
+      "unitTest": [
+        "frontend/src/store/api/deliveryApi.test.ts"
+      ],
       "liveProbe": null,
-      "frontendWiring": "none"
+      "frontendWiring": "canonical"
     },
     {
       "method": "GET",
@@ -2398,14 +2205,22 @@
       "gateway": "routed",
       "gatewayRoute": "logistics_delivery",
       "gatewayPattern": "/api/delivery/**",
-      "rtkSlice": [],
+      "rtkSlice": [
+        {
+          "slice": "deliveryApi",
+          "path": "/api/delivery/route",
+          "norm": "/api/delivery/route"
+        }
+      ],
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
-      "unitTest": [],
+      "mswHandler": "deliveryHandlers.ts",
+      "unitTest": [
+        "frontend/src/store/api/deliveryApi.test.ts"
+      ],
       "liveProbe": null,
-      "frontendWiring": "none"
+      "frontendWiring": "canonical"
     },
     {
       "method": "GET",
@@ -2419,13 +2234,13 @@
       "rtkSlice": [
         {
           "slice": "deliveryApi",
-          "path": "/api/delivery/:param/generate-otp",
-          "norm": "/api/delivery/:param/generate-otp"
+          "path": "/api/delivery/:param/otp",
+          "norm": "/api/delivery/:param/otp"
         },
         {
           "slice": "deliveryApi",
-          "path": "/api/delivery/:param/regenerate-otp",
-          "norm": "/api/delivery/:param/regenerate-otp"
+          "path": "/api/delivery/:param/otp",
+          "norm": "/api/delivery/:param/otp"
         },
         {
           "slice": "deliveryApi",
@@ -2467,7 +2282,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "deliveryHandlers.ts",
       "unitTest": [
         "frontend/src/store/api/deliveryApi.test.ts"
       ],
@@ -2483,16 +2298,58 @@
       "gateway": "routed",
       "gatewayRoute": "logistics_delivery",
       "gatewayPattern": "/api/delivery/**",
-      "rtkSlice": [],
+      "rtkSlice": [
+        {
+          "slice": "deliveryApi",
+          "path": "/api/delivery/zones",
+          "norm": "/api/delivery/zones"
+        },
+        {
+          "slice": "deliveryApi",
+          "path": "/api/delivery/zones",
+          "norm": "/api/delivery/zones"
+        },
+        {
+          "slice": "deliveryApi",
+          "path": "/api/delivery/zones",
+          "norm": "/api/delivery/zones"
+        },
+        {
+          "slice": "deliveryApi",
+          "path": "/api/delivery/zones",
+          "norm": "/api/delivery/zones"
+        },
+        {
+          "slice": "deliveryApi",
+          "path": "/api/delivery/zones",
+          "norm": "/api/delivery/zones"
+        },
+        {
+          "slice": "deliveryApi",
+          "path": "/api/delivery/zones",
+          "norm": "/api/delivery/zones"
+        },
+        {
+          "slice": "deliveryApi",
+          "path": "/api/delivery/zones",
+          "norm": "/api/delivery/zones"
+        },
+        {
+          "slice": "deliveryApi",
+          "path": "/api/delivery/zones",
+          "norm": "/api/delivery/zones"
+        }
+      ],
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "deliveryHandlers.ts",
       "unitTest": [
-        "pact"
+        "pact",
+        "frontend/src/store/api/deliveryApi.test.ts"
       ],
       "liveProbe": null,
-      "frontendWiring": "none"
+      "frontendWiring": "canonical"
     },
     {
       "method": "GET",
@@ -2596,7 +2453,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "equipmentHandlers.ts",
       "unitTest": [],
       "liveProbe": null,
       "frontendWiring": "canonical"
@@ -2723,8 +2580,70 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "equipmentHandlers.ts",
       "unitTest": [],
+      "liveProbe": null,
+      "frontendWiring": "canonical"
+    },
+    {
+      "method": "GET",
+      "path": "/api/fiscal/failures",
+      "norm": "/api/fiscal/failures",
+      "controller": "FiscalController",
+      "service": "commerce",
+      "gateway": "routed",
+      "gatewayRoute": "commerce_fiscal",
+      "gatewayPattern": "/api/fiscal/**",
+      "rtkSlice": [
+        {
+          "slice": "fiscalApi",
+          "path": "/api/fiscal/failures",
+          "norm": "/api/fiscal/failures"
+        },
+        {
+          "slice": "fiscalApi",
+          "path": "/api/fiscal/failures",
+          "norm": "/api/fiscal/failures"
+        }
+      ],
+      "staleFrontend": [],
+      "rawHttp": [],
+      "uiPages": [],
+      "mswHandler": "fiscalHandlers.ts",
+      "unitTest": [
+        "frontend/src/store/api/fiscalApi.test.ts"
+      ],
+      "liveProbe": null,
+      "frontendWiring": "canonical"
+    },
+    {
+      "method": "GET",
+      "path": "/api/fiscal/summary",
+      "norm": "/api/fiscal/summary",
+      "controller": "FiscalController",
+      "service": "commerce",
+      "gateway": "routed",
+      "gatewayRoute": "commerce_fiscal",
+      "gatewayPattern": "/api/fiscal/**",
+      "rtkSlice": [
+        {
+          "slice": "fiscalApi",
+          "path": "/api/fiscal/summary",
+          "norm": "/api/fiscal/summary"
+        },
+        {
+          "slice": "fiscalApi",
+          "path": "/api/fiscal/summary",
+          "norm": "/api/fiscal/summary"
+        }
+      ],
+      "staleFrontend": [],
+      "rawHttp": [],
+      "uiPages": [],
+      "mswHandler": "fiscalHandlers.ts",
+      "unitTest": [
+        "frontend/src/store/api/fiscalApi.test.ts"
+      ],
       "liveProbe": null,
       "frontendWiring": "canonical"
     },
@@ -2752,7 +2671,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "gdprHandlers.ts",
       "unitTest": [],
       "liveProbe": null,
       "frontendWiring": "canonical"
@@ -2776,7 +2695,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "gdprHandlers.ts",
       "unitTest": [],
       "liveProbe": null,
       "frontendWiring": "canonical"
@@ -2868,7 +2787,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "gdprHandlers.ts",
       "unitTest": [],
       "liveProbe": null,
       "frontendWiring": "canonical"
@@ -2955,7 +2874,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "gdprHandlers.ts",
       "unitTest": [],
       "liveProbe": null,
       "frontendWiring": "canonical"
@@ -3869,7 +3788,7 @@
       ],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "menuHandlers.ts",
       "unitTest": [
         "pact",
         "frontend/src/store/api/menuApi.test.ts"
@@ -4292,7 +4211,7 @@
       ],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "notificationHandlers.ts",
       "unitTest": [],
       "liveProbe": null,
       "frontendWiring": "canonical"
@@ -4438,6 +4357,11 @@
         },
         {
           "slice": "orderApi",
+          "path": "/api/orders/:param",
+          "norm": "/api/orders/:param"
+        },
+        {
+          "slice": "orderApi",
           "path": "/api/orders/store",
           "norm": "/api/orders/store"
         },
@@ -4448,8 +4372,88 @@
         },
         {
           "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
           "path": "/api/orders/:param",
           "norm": "/api/orders/:param"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
         },
         {
           "slice": "orderApi",
@@ -4477,16 +4481,28 @@
       "gateway": "routed",
       "gatewayRoute": "commerce_orders",
       "gatewayPattern": "/api/orders/**",
-      "rtkSlice": [],
+      "rtkSlice": [
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/:param",
+          "norm": "/api/orders/:param"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/:param",
+          "norm": "/api/orders/:param"
+        }
+      ],
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "orderHandlers.ts",
       "unitTest": [
-        "pact"
+        "pact",
+        "frontend/src/store/api/orderApi.test.ts"
       ],
       "liveProbe": null,
-      "frontendWiring": "none"
+      "frontendWiring": "canonical"
     },
     {
       "method": "POST",
@@ -4497,14 +4513,27 @@
       "gateway": "routed",
       "gatewayRoute": "commerce_orders",
       "gatewayPattern": "/api/orders/**",
-      "rtkSlice": [],
+      "rtkSlice": [
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/:param/cancel-request",
+          "norm": "/api/orders/:param/cancel-request"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/:param/cancel-request",
+          "norm": "/api/orders/:param/cancel-request"
+        }
+      ],
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
-      "unitTest": [],
+      "mswHandler": "orderHandlers.ts",
+      "unitTest": [
+        "frontend/src/store/api/orderApi.test.ts"
+      ],
       "liveProbe": null,
-      "frontendWiring": "none"
+      "frontendWiring": "canonical"
     },
     {
       "method": "POST",
@@ -4515,14 +4544,27 @@
       "gateway": "routed",
       "gatewayRoute": "commerce_orders",
       "gatewayPattern": "/api/orders/**",
-      "rtkSlice": [],
+      "rtkSlice": [
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/:param/cancel-request/approve",
+          "norm": "/api/orders/:param/cancel-request/approve"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/:param/cancel-request/approve",
+          "norm": "/api/orders/:param/cancel-request/approve"
+        }
+      ],
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
-      "unitTest": [],
+      "mswHandler": "orderHandlers.ts",
+      "unitTest": [
+        "frontend/src/store/api/orderApi.test.ts"
+      ],
       "liveProbe": null,
-      "frontendWiring": "none"
+      "frontendWiring": "canonical"
     },
     {
       "method": "POST",
@@ -4533,14 +4575,27 @@
       "gateway": "routed",
       "gatewayRoute": "commerce_orders",
       "gatewayPattern": "/api/orders/**",
-      "rtkSlice": [],
+      "rtkSlice": [
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/:param/cancel-request/reject",
+          "norm": "/api/orders/:param/cancel-request/reject"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/:param/cancel-request/reject",
+          "norm": "/api/orders/:param/cancel-request/reject"
+        }
+      ],
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
-      "unitTest": [],
+      "mswHandler": "orderHandlers.ts",
+      "unitTest": [
+        "frontend/src/store/api/orderApi.test.ts"
+      ],
       "liveProbe": null,
-      "frontendWiring": "none"
+      "frontendWiring": "canonical"
     },
     {
       "method": "POST",
@@ -4719,6 +4774,51 @@
         },
         {
           "slice": "orderApi",
+          "path": "/api/orders/:param",
+          "norm": "/api/orders/:param"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
           "path": "/api/orders/analytics",
           "norm": "/api/orders/analytics"
         },
@@ -4726,6 +4826,46 @@
           "slice": "orderApi",
           "path": "/api/orders/:param",
           "norm": "/api/orders/:param"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/analytics",
+          "norm": "/api/orders/analytics"
         },
         {
           "slice": "orderApi",
@@ -4753,6 +4893,100 @@
       "gateway": "blocked",
       "gatewayRoute": "gdpr_anonymize_orders_blocked",
       "gatewayPattern": "/api/orders/gdpr/**",
+      "rtkSlice": [],
+      "staleFrontend": [],
+      "rawHttp": [],
+      "uiPages": [],
+      "mswHandler": null,
+      "unitTest": [],
+      "liveProbe": null,
+      "frontendWiring": "none"
+    },
+    {
+      "method": "GET",
+      "path": "/api/orders/rating-token/{token}",
+      "norm": "/api/orders/rating-token/:param",
+      "controller": "RatingTokenController",
+      "service": "commerce",
+      "gateway": "routed",
+      "gatewayRoute": "commerce_orders_rating_token",
+      "gatewayPattern": "/api/orders/rating-token/**",
+      "rtkSlice": [
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/:param/status",
+          "norm": "/api/orders/:param/status"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/:param/next-stage",
+          "norm": "/api/orders/:param/next-stage"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/:param/assign-driver",
+          "norm": "/api/orders/:param/assign-driver"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/:param/payment",
+          "norm": "/api/orders/:param/payment"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/:param/items",
+          "norm": "/api/orders/:param/items"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/:param/priority",
+          "norm": "/api/orders/:param/priority"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/:param/quality-checkpoint",
+          "norm": "/api/orders/:param/quality-checkpoint"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/:param/cancel-request",
+          "norm": "/api/orders/:param/cancel-request"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/:param/quality-checkpoints",
+          "norm": "/api/orders/:param/quality-checkpoints"
+        },
+        {
+          "slice": "orderApi",
+          "path": "/api/orders/:param/quality-checkpoints",
+          "norm": "/api/orders/:param/quality-checkpoints"
+        },
+        {
+          "slice": "tipApi",
+          "path": "/api/orders/:param/tip",
+          "norm": "/api/orders/:param/tip"
+        }
+      ],
+      "staleFrontend": [],
+      "rawHttp": [],
+      "uiPages": [],
+      "mswHandler": "orderHandlers.ts",
+      "unitTest": [
+        "frontend/src/store/api/orderApi.test.ts"
+      ],
+      "liveProbe": null,
+      "frontendWiring": "canonical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/orders/rating-token/{token}/mark-used",
+      "norm": "/api/orders/rating-token/:param/mark-used",
+      "controller": "RatingTokenController",
+      "service": "commerce",
+      "gateway": "routed",
+      "gatewayRoute": "commerce_orders",
+      "gatewayPattern": "/api/orders/**",
       "rtkSlice": [],
       "staleFrontend": [],
       "rawHttp": [],
@@ -4809,8 +5043,8 @@
         },
         {
           "slice": "orderApi",
-          "path": "/api/orders/:param/assign-make-table",
-          "norm": "/api/orders/:param/assign-make-table"
+          "path": "/api/orders/:param/cancel-request",
+          "norm": "/api/orders/:param/cancel-request"
         },
         {
           "slice": "orderApi",
@@ -4908,8 +5142,18 @@
         },
         {
           "slice": "paymentApi",
+          "path": "/api/payments/refund",
+          "norm": "/api/payments/refund"
+        },
+        {
+          "slice": "paymentApi",
           "path": "/api/payments/:param",
           "norm": "/api/payments/:param"
+        },
+        {
+          "slice": "paymentApi",
+          "path": "/api/payments/refund",
+          "norm": "/api/payments/refund"
         }
       ],
       "staleFrontend": [],
@@ -5046,8 +5290,18 @@
         },
         {
           "slice": "paymentApi",
+          "path": "/api/payments/refund",
+          "norm": "/api/payments/refund"
+        },
+        {
+          "slice": "paymentApi",
           "path": "/api/payments/:param",
           "norm": "/api/payments/:param"
+        },
+        {
+          "slice": "paymentApi",
+          "path": "/api/payments/refund",
+          "norm": "/api/payments/refund"
         }
       ],
       "staleFrontend": [],
@@ -5103,6 +5357,11 @@
         },
         {
           "slice": "paymentApi",
+          "path": "/api/payments/refund/request",
+          "norm": "/api/payments/refund/request"
+        },
+        {
+          "slice": "paymentApi",
           "path": "/api/payments/refund/:param",
           "norm": "/api/payments/refund/:param"
         },
@@ -5131,14 +5390,27 @@
       "gateway": "routed",
       "gatewayRoute": "payments_protected",
       "gatewayPattern": "/api/payments/**",
-      "rtkSlice": [],
+      "rtkSlice": [
+        {
+          "slice": "paymentApi",
+          "path": "/api/payments/refund/:param/approve",
+          "norm": "/api/payments/refund/:param/approve"
+        },
+        {
+          "slice": "paymentApi",
+          "path": "/api/payments/refund/:param/approve",
+          "norm": "/api/payments/refund/:param/approve"
+        }
+      ],
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
-      "unitTest": [],
+      "mswHandler": "paymentHandlers.ts",
+      "unitTest": [
+        "frontend/src/store/api/paymentApi.test.ts"
+      ],
       "liveProbe": null,
-      "frontendWiring": "none"
+      "frontendWiring": "canonical"
     },
     {
       "method": "POST",
@@ -5149,14 +5421,27 @@
       "gateway": "routed",
       "gatewayRoute": "payments_protected",
       "gatewayPattern": "/api/payments/**",
-      "rtkSlice": [],
+      "rtkSlice": [
+        {
+          "slice": "paymentApi",
+          "path": "/api/payments/refund/:param/reject",
+          "norm": "/api/payments/refund/:param/reject"
+        },
+        {
+          "slice": "paymentApi",
+          "path": "/api/payments/refund/:param/reject",
+          "norm": "/api/payments/refund/:param/reject"
+        }
+      ],
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
-      "unitTest": [],
+      "mswHandler": "paymentHandlers.ts",
+      "unitTest": [
+        "frontend/src/store/api/paymentApi.test.ts"
+      ],
       "liveProbe": null,
-      "frontendWiring": "none"
+      "frontendWiring": "canonical"
     },
     {
       "method": "POST",
@@ -5167,14 +5452,22 @@
       "gateway": "routed",
       "gatewayRoute": "payments_protected",
       "gatewayPattern": "/api/payments/**",
-      "rtkSlice": [],
+      "rtkSlice": [
+        {
+          "slice": "paymentApi",
+          "path": "/api/payments/refund/request",
+          "norm": "/api/payments/refund/request"
+        }
+      ],
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
-      "unitTest": [],
+      "mswHandler": "paymentHandlers.ts",
+      "unitTest": [
+        "frontend/src/store/api/paymentApi.test.ts"
+      ],
       "liveProbe": null,
-      "frontendWiring": "none"
+      "frontendWiring": "canonical"
     },
     {
       "method": "POST",
@@ -5475,7 +5768,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "inventoryHandlers.ts",
       "unitTest": [
         "frontend/src/store/api/inventoryApi.test.ts"
       ],
@@ -5546,7 +5839,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "inventoryHandlers.ts",
       "unitTest": [
         "frontend/src/store/api/inventoryApi.test.ts"
       ],
@@ -5627,7 +5920,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "inventoryHandlers.ts",
       "unitTest": [
         "frontend/src/store/api/inventoryApi.test.ts"
       ],
@@ -6011,6 +6304,35 @@
       "rawHttp": [],
       "uiPages": [],
       "mswHandler": "reviewHandlers.ts",
+      "unitTest": [],
+      "liveProbe": null,
+      "frontendWiring": "canonical"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/reviews/{reviewId}/response",
+      "norm": "/api/reviews/:param/response",
+      "controller": "ReviewController",
+      "service": "core",
+      "gateway": "routed",
+      "gatewayRoute": "core_reviews",
+      "gatewayPattern": "/api/reviews/**",
+      "rtkSlice": [
+        {
+          "slice": "reviewApi",
+          "path": "/api/reviews/:param/response",
+          "norm": "/api/reviews/:param/response"
+        },
+        {
+          "slice": "reviewApi",
+          "path": "/api/reviews/:param/response",
+          "norm": "/api/reviews/:param/response"
+        }
+      ],
+      "staleFrontend": [],
+      "rawHttp": [],
+      "uiPages": [],
+      "mswHandler": null,
       "unitTest": [],
       "liveProbe": null,
       "frontendWiring": "canonical"
@@ -6657,7 +6979,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "shiftHandlers.ts",
       "unitTest": [],
       "liveProbe": null,
       "frontendWiring": "canonical"
@@ -6706,7 +7028,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "shiftHandlers.ts",
       "unitTest": [],
       "liveProbe": null,
       "frontendWiring": "canonical"
@@ -6764,7 +7086,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "shiftHandlers.ts",
       "unitTest": [],
       "liveProbe": null,
       "frontendWiring": "canonical"
@@ -6793,7 +7115,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "shiftHandlers.ts",
       "unitTest": [],
       "liveProbe": null,
       "frontendWiring": "canonical"
@@ -6822,7 +7144,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "shiftHandlers.ts",
       "unitTest": [],
       "liveProbe": null,
       "frontendWiring": "canonical"
@@ -6846,7 +7168,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "shiftHandlers.ts",
       "unitTest": [],
       "liveProbe": null,
       "frontendWiring": "canonical"
@@ -6875,7 +7197,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "shiftHandlers.ts",
       "unitTest": [],
       "liveProbe": null,
       "frontendWiring": "canonical"
@@ -7068,12 +7390,42 @@
           "slice": "storeApi",
           "path": "/api/stores",
           "norm": "/api/stores"
+        },
+        {
+          "slice": "storeApi",
+          "path": "/api/stores",
+          "norm": "/api/stores"
+        },
+        {
+          "slice": "storeApi",
+          "path": "/api/stores",
+          "norm": "/api/stores"
+        },
+        {
+          "slice": "storeApi",
+          "path": "/api/stores",
+          "norm": "/api/stores"
+        },
+        {
+          "slice": "storeApi",
+          "path": "/api/stores",
+          "norm": "/api/stores"
+        },
+        {
+          "slice": "storeApi",
+          "path": "/api/stores",
+          "norm": "/api/stores"
+        },
+        {
+          "slice": "storeApi",
+          "path": "/api/stores",
+          "norm": "/api/stores"
         }
       ],
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "storeHandlers.ts",
       "unitTest": [
         "frontend/src/store/api/storeApi.test.ts"
       ],
@@ -7099,7 +7451,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "storeHandlers.ts",
       "unitTest": [
         "frontend/src/store/api/storeApi.test.ts"
       ],
@@ -7165,7 +7517,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "storeHandlers.ts",
       "unitTest": [
         "frontend/src/store/api/storeApi.test.ts"
       ],
@@ -7181,14 +7533,27 @@
       "gateway": "routed",
       "gatewayRoute": "core_stores",
       "gatewayPattern": "/api/stores/**",
-      "rtkSlice": [],
+      "rtkSlice": [
+        {
+          "slice": "storeApi",
+          "path": "/api/stores/:param",
+          "norm": "/api/stores/:param"
+        },
+        {
+          "slice": "storeApi",
+          "path": "/api/stores/:param",
+          "norm": "/api/stores/:param"
+        }
+      ],
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
       "mswHandler": null,
-      "unitTest": [],
+      "unitTest": [
+        "frontend/src/store/api/storeApi.test.ts"
+      ],
       "liveProbe": null,
-      "frontendWiring": "none"
+      "frontendWiring": "canonical"
     },
     {
       "method": "GET",
@@ -7799,6 +8164,21 @@
           "norm": "/api/users/:param"
         },
         {
+          "slice": "kioskApi",
+          "path": "/api/users/kiosk",
+          "norm": "/api/users/kiosk"
+        },
+        {
+          "slice": "kioskApi",
+          "path": "/api/users/kiosk",
+          "norm": "/api/users/kiosk"
+        },
+        {
+          "slice": "kioskApi",
+          "path": "/api/users/kiosk",
+          "norm": "/api/users/kiosk"
+        },
+        {
           "slice": "userApi",
           "path": "/api/users/profile",
           "norm": "/api/users/profile"
@@ -8140,6 +8520,21 @@
           "norm": "/api/users/:param"
         },
         {
+          "slice": "kioskApi",
+          "path": "/api/users/kiosk",
+          "norm": "/api/users/kiosk"
+        },
+        {
+          "slice": "kioskApi",
+          "path": "/api/users/kiosk",
+          "norm": "/api/users/kiosk"
+        },
+        {
+          "slice": "kioskApi",
+          "path": "/api/users/kiosk",
+          "norm": "/api/users/kiosk"
+        },
+        {
           "slice": "userApi",
           "path": "/api/users/:param",
           "norm": "/api/users/:param"
@@ -8189,14 +8584,20 @@
       "gateway": "routed",
       "gatewayRoute": "core_kiosk_public",
       "gatewayPattern": "/api/users/kiosk/**",
-      "rtkSlice": [],
+      "rtkSlice": [
+        {
+          "slice": "kioskApi",
+          "path": "/api/users/kiosk",
+          "norm": "/api/users/kiosk"
+        }
+      ],
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
       "mswHandler": null,
       "unitTest": [],
       "liveProbe": null,
-      "frontendWiring": "none"
+      "frontendWiring": "canonical"
     },
     {
       "method": "POST",
@@ -8243,7 +8644,7 @@
       ],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "userHandlers.ts",
       "unitTest": [],
       "liveProbe": null,
       "frontendWiring": "canonical"
@@ -8257,14 +8658,25 @@
       "gateway": "routed",
       "gatewayRoute": "core_kiosk_public",
       "gatewayPattern": "/api/users/kiosk/**",
-      "rtkSlice": [],
+      "rtkSlice": [
+        {
+          "slice": "kioskApi",
+          "path": "/api/users/kiosk/:param/regenerate",
+          "norm": "/api/users/kiosk/:param/regenerate"
+        },
+        {
+          "slice": "kioskApi",
+          "path": "/api/users/kiosk/:param/regenerate",
+          "norm": "/api/users/kiosk/:param/regenerate"
+        }
+      ],
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
       "mswHandler": null,
       "unitTest": [],
       "liveProbe": null,
-      "frontendWiring": "none"
+      "frontendWiring": "canonical"
     },
     {
       "method": "POST",
@@ -8390,7 +8802,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "inventoryHandlers.ts",
       "unitTest": [
         "frontend/src/store/api/inventoryApi.test.ts"
       ],
@@ -8527,7 +8939,7 @@
       "staleFrontend": [],
       "rawHttp": [],
       "uiPages": [],
-      "mswHandler": null,
+      "mswHandler": "inventoryHandlers.ts",
       "unitTest": [
         "frontend/src/store/api/inventoryApi.test.ts"
       ],

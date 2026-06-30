@@ -22,16 +22,31 @@ node scripts/integration-matrix-audit.js
 
 ## 1. Summary counts
 
+**Session completed 2026-06-30** (integration-gaps E2E on Mac). Baseline → after:
+
+| Metric | Before | After | Meaning |
+|--------|-------:|------:|---------|
+| Backend public endpoints | 202 | **207** | +fiscal, rating-token, review response DELETE |
+| `frontendWiring: none` | 41 | **18** | Remaining unwired (webhooks, internal, low-priority) |
+| `frontendOnly` paths | 56 | **0** | All dead RTK paths fixed; agentApi excluded (G7 external) |
+| `staleFrontendWiring` | 0 | **0** | Still clean |
+| Gateway gaps | 3 | **3** | TestDataController dev-only (expected) |
+| RTK wired, no MSW | 29 | **18** | §6 handlers added |
+| `noTestCoverage` (matrix) | 60 | **63** | New backend rows |
+| Frontend tests | 1415 | **1425** | All passing |
+
+**Completed:** §5 broken paths (delivery/kiosk/earnings/driver) · §4 refund/cancel/GDPR/kiosk/pay-rate/sessions · §3 dead RTK (order/store/customer/review) · §8 fiscal API + sessions/pending + rating tokens · §6–7 MSW + UI hooks.
+
 | Metric | Count | Meaning |
 |--------|------:|---------|
-| Backend public endpoints | 202 | `@RestController` methods in 6 services |
-| `frontendWiring: none` | 41 | Backend exists; no RTK slice and no detected UI |
-| `frontendOnly` paths | 56 | RTK/raw HTTP calls with **no** Spring controller |
+| Backend public endpoints | 207 | `@RestController` methods in 6 services |
+| `frontendWiring: none` | 18 | Backend exists; no RTK slice and no detected UI |
+| `frontendOnly` paths | 0 | RTK/raw HTTP calls with **no** Spring controller |
 | `staleFrontendWiring` | 0 | Wrong path vs controller (file-level; currently clean) |
 | Gateway gaps | 3 | Backend exists; no gateway route (all `TestDataController`) |
-| RTK wired, no MSW | 29 | Slice exists; no mock handler for tests |
-| `noTestCoverage` (matrix) | 60 | Backend endpoint with no unit/integration test reference |
-| Unwired RTK hooks | 15+ | Exported hooks with **zero** page imports (see §8) |
+| RTK wired, no MSW | 18 | Slice exists; no mock handler for tests |
+| `noTestCoverage` (matrix) | 63 | Backend endpoint with no unit/integration test reference |
+| Unwired RTK hooks | 5+ | Remaining: systemApi health/updates (see §8) |
 
 ### Gap taxonomy
 
