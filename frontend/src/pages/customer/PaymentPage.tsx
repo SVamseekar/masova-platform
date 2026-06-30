@@ -265,7 +265,7 @@ const PaymentPage: React.FC = () => {
         return;
       }
 
-      openRazorpayCheckout(paymentResult, orderId);
+      await openRazorpayCheckout(paymentResult, orderId);
 
     } catch (err: unknown) {
       const errorMessage = getApiErrorMessage(err, 'Failed to create order. Please try again.');
@@ -273,7 +273,16 @@ const PaymentPage: React.FC = () => {
     }
   };
 
-  const openRazorpayCheckout = (paymentData: PaymentResponse, orderId: string) => {
+  const openRazorpayCheckout = async (paymentData: PaymentResponse, orderId: string) => {
+    if (!window.Razorpay) {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      document.body.appendChild(script);
+      await new Promise((resolve) => {
+        script.onload = resolve;
+      });
+    }
     if (!window.Razorpay) {
       alert('Razorpay SDK not loaded. Please refresh the page.');
       return;
