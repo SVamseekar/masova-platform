@@ -91,6 +91,14 @@ export const notificationHandlers = [
     HttpResponse.json(mockCampaign),
   ),
 
+  http.patch(apiUrl('/campaigns/:id'), () =>
+    HttpResponse.json(mockCampaign),
+  ),
+
+  http.post(apiUrl('/notifications/rating/send'), () =>
+    new HttpResponse(null, { status: 204 }),
+  ),
+
   http.post(apiUrl('/campaigns/:id/schedule'), () =>
     new HttpResponse(null, { status: 204 }),
   ),

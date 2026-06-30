@@ -114,7 +114,7 @@ export const customerHandlers = [
 
   http.post(apiUrl('/customers/:customerId/tags'), () => HttpResponse.json(mockCustomer)),
 
-  http.post(apiUrl('/customers/:customerId/notes'), () => HttpResponse.json(mockCustomer)),
+
 
   http.delete(apiUrl('/customers/:id'), () => new HttpResponse(null, { status: 204 })),
 ];

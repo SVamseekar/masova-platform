@@ -63,7 +63,15 @@ export const sessionHandlers = [
   ),
 
   http.get(apiUrl('/sessions/pending'), () =>
-    HttpResponse.json([]),
+    HttpResponse.json([
+      {
+        ...mockSession,
+        id: 'session-pending-1',
+        employeeName: 'Late Clock-in Staff',
+        status: 'PENDING_APPROVAL',
+        isActive: false,
+      },
+    ]),
   ),
 
   http.post(apiUrl('/sessions/:sessionId/approve'), () =>

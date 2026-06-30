@@ -18,4 +18,8 @@ export const equipmentHandlers = [
   http.get(apiUrl('/equipment/:id'), () => HttpResponse.json(mockEquipment)),
   http.post(apiUrl('/equipment'), () => HttpResponse.json(mockEquipment)),
   http.patch(apiUrl('/equipment/:id'), () => HttpResponse.json(mockEquipment)),
+  http.delete(apiUrl('/equipment/:equipmentId'), () => new HttpResponse(null, { status: 204 })),
+  http.post(apiUrl('/equipment/:equipmentId/maintenance'), () =>
+    HttpResponse.json({ ...mockEquipment, status: 'MAINTENANCE' }),
+  ),
 ];

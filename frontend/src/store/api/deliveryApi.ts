@@ -251,7 +251,7 @@ export const deliveryApi = createApi({
     // Auto-dispatch driver to order
     autoDispatch: builder.mutation<AutoDispatchResponse, AutoDispatchRequest>({
       query: (data) => ({
-        url: '/delivery/auto-dispatch',
+        url: '/delivery/dispatch',
         method: 'POST',
         body: data,
       }),
@@ -267,7 +267,7 @@ export const deliveryApi = createApi({
     // Get optimized route (DELIV-004: Real navigation)
     getOptimizedRoute: builder.mutation<RouteOptimizationResponse, RouteOptimizationRequest>({
       query: (data) => ({
-        url: '/delivery/route-optimize',
+        url: '/delivery/route',
         method: 'POST',
         body: data,
       }),
@@ -300,7 +300,7 @@ export const deliveryApi = createApi({
     // Update driver location
     updateLocation: builder.mutation<void, LocationUpdateRequest>({
       query: (data) => ({
-        url: '/delivery/location-update',
+        url: '/delivery/location',
         method: 'POST',
         body: data,
       }),
@@ -343,7 +343,10 @@ export const deliveryApi = createApi({
     }),
 
     getDriverPerformanceToday: builder.query<DriverPerformance, string>({
-      query: (driverId) => `/delivery/driver/${driverId}/performance/today`,
+      query: (driverId) => {
+        const today = new Date().toISOString().split('T')[0];
+        return `/delivery/driver/${driverId}/performance?startDate=${today}&endDate=${today}`;
+      },
       providesTags: (result, error, driverId) => [{ type: 'Drivers', id: driverId }],
     }),
 
@@ -375,27 +378,36 @@ export const deliveryApi = createApi({
       providesTags: (result, error, driverId) => [{ type: 'Drivers', id: driverId }],
     }),
 
-    // Delivery zone operations
-    checkDeliveryZone: builder.query<DeliveryZoneCheck, { latitude: number; longitude: number }>({
-      query: ({ latitude, longitude }) =>
-        `/delivery/zone/check?latitude=${latitude}&longitude=${longitude}`,
+    // Delivery zone operations — canonical GET /delivery/zones?storeId=&lat=&lng=&check=true|fee=true
+    checkDeliveryZone: builder.query<
+      DeliveryZoneCheck,
+      { storeId: string; latitude: number; longitude: number }
+    >({
+      query: ({ storeId, latitude, longitude }) =>
+        `/delivery/zones?storeId=${encodeURIComponent(storeId)}&lat=${latitude}&lng=${longitude}&check=true`,
       providesTags: ['Zone'],
     }),
 
-    getDeliveryZoneFee: builder.query<DeliveryZoneFee, { latitude: number; longitude: number }>({
-      query: ({ latitude, longitude }) =>
-        `/delivery/zone/fee?latitude=${latitude}&longitude=${longitude}`,
+    getDeliveryZoneFee: builder.query<
+      DeliveryZoneFee,
+      { storeId: string; latitude: number; longitude: number }
+    >({
+      query: ({ storeId, latitude, longitude }) =>
+        `/delivery/zones?storeId=${encodeURIComponent(storeId)}&lat=${latitude}&lng=${longitude}&fee=true`,
       providesTags: ['Zone'],
     }),
 
-    listDeliveryZones: builder.query<DeliveryZone[], void>({
-      query: () => '/delivery/zone/list',
+    listDeliveryZones: builder.query<DeliveryZone[], string>({
+      query: (storeId) => `/delivery/zones?storeId=${encodeURIComponent(storeId)}`,
       providesTags: ['Zone'],
     }),
 
-    validateDeliveryZone: builder.query<DeliveryZoneCheck, { latitude: number; longitude: number }>({
-      query: ({ latitude, longitude }) =>
-        `/delivery/zone/validate?latitude=${latitude}&longitude=${longitude}`,
+    validateDeliveryZone: builder.query<
+      DeliveryZoneCheck,
+      { storeId: string; latitude: number; longitude: number }
+    >({
+      query: ({ storeId, latitude, longitude }) =>
+        `/delivery/zones?storeId=${encodeURIComponent(storeId)}&lat=${latitude}&lng=${longitude}&check=true`,
       providesTags: ['Zone'],
     }),
 
@@ -421,7 +433,7 @@ export const deliveryApi = createApi({
     // OTP operations
     generateDeliveryOTP: builder.mutation<DeliveryOtpResponse, string>({
       query: (orderId) => ({
-        url: `/delivery/${orderId}/generate-otp`,
+        url: `/delivery/${orderId}/otp`,
         method: 'POST',
       }),
       invalidatesTags: (result, error, orderId) => [{ type: 'Tracking', id: orderId }],
@@ -429,7 +441,7 @@ export const deliveryApi = createApi({
 
     regenerateDeliveryOTP: builder.mutation<DeliveryOtpResponse, string>({
       query: (orderId) => ({
-        url: `/delivery/${orderId}/regenerate-otp`,
+        url: `/delivery/${orderId}/otp`,
         method: 'POST',
       }),
       invalidatesTags: (result, error, orderId) => [{ type: 'Tracking', id: orderId }],
@@ -461,3 +473,6 @@ export const {
   useGenerateDeliveryOTPMutation,
   useRegenerateDeliveryOTPMutation,
 } = deliveryApi;
+
+/** Alias for canonical POST /delivery/dispatch (same as useAutoDispatchMutation). */
+export const useDispatchOrderMutation = useAutoDispatchMutation;

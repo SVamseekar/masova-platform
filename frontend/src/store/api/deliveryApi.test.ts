@@ -158,7 +158,7 @@ describe('deliveryApi', () => {
 
     it('should check delivery zone', async () => {
       const { result } = renderHook(
-        () => useCheckDeliveryZoneQuery({ latitude: 17.385, longitude: 78.4867 }),
+        () => useCheckDeliveryZoneQuery({ storeId: '1', latitude: 17.385, longitude: 78.4867 }),
         { wrapper: DefaultTestWrapper },
       );
 
@@ -169,7 +169,7 @@ describe('deliveryApi', () => {
 
     it('should fetch delivery zone fee', async () => {
       const { result } = renderHook(
-        () => useGetDeliveryZoneFeeQuery({ latitude: 17.385, longitude: 78.4867 }),
+        () => useGetDeliveryZoneFeeQuery({ storeId: '1', latitude: 17.385, longitude: 78.4867 }),
         { wrapper: DefaultTestWrapper },
       );
 
@@ -179,7 +179,7 @@ describe('deliveryApi', () => {
     });
 
     it('should list delivery zones', async () => {
-      const { result } = renderHook(() => useListDeliveryZonesQuery(), {
+      const { result } = renderHook(() => useListDeliveryZonesQuery('1'), {
         wrapper: DefaultTestWrapper,
       });
 
@@ -191,7 +191,7 @@ describe('deliveryApi', () => {
 
     it('should validate delivery zone', async () => {
       const { result } = renderHook(
-        () => useValidateDeliveryZoneQuery({ latitude: 17.385, longitude: 78.4867 }),
+        () => useValidateDeliveryZoneQuery({ storeId: '1', latitude: 17.385, longitude: 78.4867 }),
         { wrapper: DefaultTestWrapper },
       );
 

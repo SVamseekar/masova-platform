@@ -36,6 +36,16 @@ const mockRefund = {
   processedAt: '2025-01-15T12:05:00Z',
 };
 
+const pendingRefund = {
+  ...mockRefund,
+  id: 'refund-pending-1',
+  razorpayRefundId: '',
+  status: 'PENDING_APPROVAL',
+  reason: 'Agent requested refund — awaiting manager approval',
+  initiatedBy: 'customer-1',
+  processedAt: undefined,
+};
+
 export const paymentHandlers = [
   http.post(apiUrl('/payments/initiate'), () =>
     HttpResponse.json({ ...mockTransaction, status: 'INITIATED', paidAt: undefined }),
@@ -76,6 +86,34 @@ export const paymentHandlers = [
 
   http.post(apiUrl('/payments/refund'), () =>
     HttpResponse.json(mockRefund),
+  ),
+
+  http.post(apiUrl('/payments/refund/request'), () =>
+    HttpResponse.json(pendingRefund),
+  ),
+
+  http.get(apiUrl('/payments/refund'), ({ request }) => {
+    const url = new URL(request.url);
+    const status = url.searchParams.get('status');
+    const transactionId = url.searchParams.get('transactionId');
+    const orderId = url.searchParams.get('orderId');
+    const customerId = url.searchParams.get('customerId');
+
+    if (status === 'PENDING_APPROVAL') {
+      return HttpResponse.json([pendingRefund]);
+    }
+    if (transactionId || orderId || customerId) {
+      return HttpResponse.json([mockRefund]);
+    }
+    return HttpResponse.json([mockRefund, pendingRefund]);
+  }),
+
+  http.post(apiUrl('/payments/refund/:refundId/approve'), ({ params }) =>
+    HttpResponse.json({ ...pendingRefund, id: params.refundId, status: 'PROCESSED', processedAt: new Date().toISOString() }),
+  ),
+
+  http.post(apiUrl('/payments/refund/:refundId/reject'), ({ params }) =>
+    HttpResponse.json({ ...pendingRefund, id: params.refundId, status: 'REJECTED' }),
   ),
 
   http.get(apiUrl('/payments/refund/:refundId'), () =>

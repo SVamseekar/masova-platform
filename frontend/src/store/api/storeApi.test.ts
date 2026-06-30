@@ -70,7 +70,7 @@ describe('storeApi', () => {
 
     it('should fetch store by code', async () => {
       server.use(
-        http.get(`${API}/stores/code/:storeCode`, () => HttpResponse.json(mockStore)),
+        http.get(`${API}/stores`, () => HttpResponse.json([mockStore])),
       );
 
       const { result } = renderHook(() => useGetStoreByCodeQuery('MVD-001'), {
@@ -113,7 +113,7 @@ describe('storeApi', () => {
 
     it('should fetch stores by region', async () => {
       server.use(
-        http.get(`${API}/stores/region/:regionId`, () => HttpResponse.json([mockStore])),
+        http.get(`${API}/stores`, () => HttpResponse.json([mockStore])),
       );
 
       const { result } = renderHook(() => useGetStoresByRegionQuery('region-1'), {
@@ -203,7 +203,7 @@ describe('storeApi', () => {
 
     it('should update a store', async () => {
       server.use(
-        http.put(`${API}/stores/:storeId`, () => HttpResponse.json(mockStore)),
+        http.patch(`${API}/stores/:storeId`, () => HttpResponse.json(mockStore)),
       );
 
       const { result } = renderHook(() => useUpdateStoreMutation(), {

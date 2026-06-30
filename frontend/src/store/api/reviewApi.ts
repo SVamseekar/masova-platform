@@ -453,11 +453,14 @@ export const reviewApi = createApi({
     }),
 
     deleteResponse: builder.mutation<{ message: string }, string>({
-      query: (responseId) => ({
-        url: `/responses/${responseId}`,
+      query: (reviewId) => ({
+        url: `/reviews/${reviewId}/response`,
         method: 'DELETE',
       }),
-      invalidatesTags: (result, error, id) => [{ type: 'ReviewResponse', id }],
+      invalidatesTags: (result, error, reviewId) => [
+        { type: 'Review', id: reviewId },
+        'ReviewResponse',
+      ],
     }),
 
     // Moderation endpoints

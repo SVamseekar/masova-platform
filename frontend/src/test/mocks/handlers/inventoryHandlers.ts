@@ -77,16 +77,29 @@ export const inventoryHandlers = [
     HttpResponse.json({ id: 'sup-1', supplierName: 'Fresh Farms', status: 'ACTIVE' }),
   ),
 
-  http.get(apiUrl('/purchase-orders'), () => HttpResponse.json([])),
+  http.get(apiUrl('/purchase-orders'), () =>
+    HttpResponse.json([{ id: 'po-1', orderNumber: 'PO-001', status: 'PENDING_APPROVAL', totalAmount: 15000 }]),
+  ),
   http.post(apiUrl('/purchase-orders'), () =>
     HttpResponse.json({ id: 'po-1', orderNumber: 'PO-001', status: 'DRAFT' }),
   ),
+  http.get(apiUrl('/purchase-orders/:id'), () =>
+    HttpResponse.json({ id: 'po-1', orderNumber: 'PO-001', status: 'PENDING_APPROVAL', totalAmount: 15000 }),
+  ),
+  http.patch(apiUrl('/purchase-orders/:id'), () =>
+    HttpResponse.json({ id: 'po-1', orderNumber: 'PO-001', status: 'APPROVED' }),
+  ),
+  http.delete(apiUrl('/purchase-orders/:id'), () => new HttpResponse(null, { status: 204 })),
   http.post(apiUrl('/purchase-orders/auto-generate'), () => HttpResponse.json([])),
 
   http.get(apiUrl('/waste'), () => HttpResponse.json([])),
   http.post(apiUrl('/waste'), () =>
     HttpResponse.json({ id: 'waste-1', itemName: 'Tomatoes', quantity: 2, wasteCost: 80 }),
   ),
+  http.patch(apiUrl('/waste/:id'), () =>
+    HttpResponse.json({ id: 'waste-1', itemName: 'Tomatoes', quantity: 2, wasteCost: 80 }),
+  ),
+  http.delete(apiUrl('/waste/:id'), () => new HttpResponse(null, { status: 204 })),
   http.get(apiUrl('/waste/analytics'), () =>
     HttpResponse.json([
       { month: '2025-01', totalWasteCost: 5000, recordCount: 12 },

@@ -117,4 +117,8 @@ export const menuHandlers = [
   http.patch(apiUrl('/menu/items/:id/allergens'), ({ params }) =>
     HttpResponse.json({ ...mockMenuItems[0], id: params.id }),
   ),
+
+  http.post(apiUrl('/menu/copy'), () =>
+    HttpResponse.json({ copiedCount: mockMenuItems.length, message: 'Menu copied successfully' }),
+  ),
 ];

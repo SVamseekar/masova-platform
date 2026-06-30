@@ -116,6 +116,11 @@ export interface UpdateCustomerRequest {
   gender?: string;
   marketingOptIn?: boolean;
   smsOptIn?: boolean;
+  preferences?: UpdatePreferencesRequest;
+  emailVerified?: boolean;
+  phoneVerified?: boolean;
+  note?: AddCustomerNoteRequest;
+  orderStats?: UpdateOrderStatsRequest;
 }
 
 export interface AddAddressRequest {
@@ -440,19 +445,19 @@ export const customerApi = createApi({
     // PREFERENCES
     updatePreferences: builder.mutation<Customer, { customerId: string; data: UpdatePreferencesRequest }>({
       query: ({ customerId, data }) => ({
-        url: `/${customerId}/preferences`,
-        method: 'PUT',
-        body: data,
+        url: `/${customerId}`,
+        method: 'PATCH',
+        body: { preferences: data },
       }),
       invalidatesTags: (result, error, { customerId }) => [{ type: 'Customer', id: customerId }],
     }),
 
-    // ORDER STATS
+    // ORDER STATS — canonical PATCH /{id}
     updateOrderStats: builder.mutation<Customer, { customerId: string; data: UpdateOrderStatsRequest }>({
       query: ({ customerId, data }) => ({
-        url: `/${customerId}/order-stats`,
-        method: 'POST',
-        body: data,
+        url: `/${customerId}`,
+        method: 'PATCH',
+        body: { orderStats: data },
       }),
       invalidatesTags: (result, error, { customerId }) => [
         { type: 'Customer', id: customerId },
@@ -460,29 +465,31 @@ export const customerApi = createApi({
       ],
     }),
 
-    // NOTES
+    // NOTES — canonical PATCH /{id}
     addNote: builder.mutation<Customer, { customerId: string; data: AddCustomerNoteRequest }>({
       query: ({ customerId, data }) => ({
-        url: `/${customerId}/notes`,
-        method: 'POST',
-        body: data,
+        url: `/${customerId}`,
+        method: 'PATCH',
+        body: { note: data },
       }),
       invalidatesTags: (result, error, { customerId }) => [{ type: 'Customer', id: customerId }],
     }),
 
-    // VERIFICATION
+    // VERIFICATION — canonical PATCH /{id}
     verifyEmail: builder.mutation<Customer, string>({
       query: (customerId) => ({
-        url: `/${customerId}/verify-email`,
+        url: `/${customerId}`,
         method: 'PATCH',
+        body: { emailVerified: true },
       }),
       invalidatesTags: (result, error, customerId) => [{ type: 'Customer', id: customerId }, 'CustomerStats'],
     }),
 
     verifyPhone: builder.mutation<Customer, string>({
       query: (customerId) => ({
-        url: `/${customerId}/verify-phone`,
+        url: `/${customerId}`,
         method: 'PATCH',
+        body: { phoneVerified: true },
       }),
       invalidatesTags: (result, error, customerId) => [{ type: 'Customer', id: customerId }, 'CustomerStats'],
     }),

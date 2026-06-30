@@ -42,7 +42,7 @@ export const earningsApi = createApi({
       query: ({ employeeId, weekStart }) => {
         const params = new URLSearchParams({ employeeId });
         if (weekStart) params.append('weekStart', weekStart);
-        return `staff/earnings/weekly?${params.toString()}`;
+        return `/staff/earnings/weekly?${params.toString()}`;
       },
       providesTags: (result, error, { employeeId }) => [{ type: 'Earnings', id: employeeId }],
     }),
@@ -52,18 +52,18 @@ export const earningsApi = createApi({
       { employeeId: string; weeks?: number }
     >({
       query: ({ employeeId, weeks = 12 }) =>
-        `staff/earnings/history?employeeId=${encodeURIComponent(employeeId)}&weeks=${weeks}`,
+        `/staff/earnings/history?employeeId=${encodeURIComponent(employeeId)}&weeks=${weeks}`,
       providesTags: (result, error, { employeeId }) => [{ type: 'Earnings', id: `history-${employeeId}` }],
     }),
 
     getPayRate: builder.query<StaffPayRate, string>({
-      query: (employeeId) => `staff/pay-rates?employeeId=${encodeURIComponent(employeeId)}`,
+      query: (employeeId) => `/staff/pay-rates?employeeId=${encodeURIComponent(employeeId)}`,
       providesTags: (result, error, employeeId) => [{ type: 'PayRate', id: employeeId }],
     }),
 
     setPayRate: builder.mutation<StaffPayRate, SetPayRateRequest>({
       query: (body) => ({
-        url: 'staff/pay-rates',
+        url: '/staff/pay-rates',
         method: 'POST',
         body,
       }),

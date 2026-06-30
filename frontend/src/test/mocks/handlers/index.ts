@@ -16,6 +16,9 @@ import { gdprHandlers } from './gdprHandlers';
 import { earningsHandlers } from './earningsHandlers';
 import { tipHandlers } from './tipHandlers';
 import { systemHandlers } from './systemHandlers';
+import { storeHandlers } from './storeHandlers';
+import { aggregatorHandlers } from './aggregatorHandlers';
+import { fiscalHandlers } from './fiscalHandlers';
 
 export const allHandlers = [
   ...authHandlers,
@@ -36,4 +39,7 @@ export const allHandlers = [
   ...earningsHandlers,
   ...tipHandlers,
   ...systemHandlers,
+  ...storeHandlers,
+  ...aggregatorHandlers,
+  ...fiscalHandlers,
 ];

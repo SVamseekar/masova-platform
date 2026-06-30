@@ -363,7 +363,7 @@ describe('customerApi', () => {
       await waitFor(() => expect(result.current[1].isSuccess).toBe(true));
     });
 
-    it.skip('should update preferences — endpoint removed from canonical /api/customers', async () => {
+    it('should update preferences', async () => {
       const { result } = renderHook(() => useUpdatePreferencesMutation(), {
         wrapper: DefaultTestWrapper,
       });
@@ -385,7 +385,7 @@ describe('customerApi', () => {
       await waitFor(() => expect(result.current[1].isSuccess).toBe(true));
     });
 
-    it.skip('should verify email — endpoint removed from canonical /api/customers', async () => {
+    it('should verify email', async () => {
       const { result } = renderHook(() => useVerifyEmailMutation(), {
         wrapper: DefaultTestWrapper,
       });
@@ -396,7 +396,7 @@ describe('customerApi', () => {
       await waitFor(() => expect(result.current[1].isSuccess).toBe(true));
     });
 
-    it.skip('should verify phone — endpoint removed from canonical /api/customers', async () => {
+    it('should verify phone', async () => {
       const { result } = renderHook(() => useVerifyPhoneMutation(), {
         wrapper: DefaultTestWrapper,
       });

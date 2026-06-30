@@ -19,6 +19,10 @@ import {
   useGetRefundsByTransactionIdQuery,
   useGetRefundsByOrderIdQuery,
   useGetRefundsByCustomerIdQuery,
+  useGetPendingRefundsQuery,
+  useApproveRefundMutation,
+  useRejectRefundMutation,
+  useRequestRefundApprovalMutation,
 } from './paymentApi';
 import { TEST_API_BASE } from '../../test/testApiBase';
 
@@ -48,6 +52,10 @@ describe('paymentApi', () => {
       expect(endpoints.getRefundsByTransactionId).toBeDefined();
       expect(endpoints.getRefundsByOrderId).toBeDefined();
       expect(endpoints.getRefundsByCustomerId).toBeDefined();
+      expect(endpoints.getPendingRefunds).toBeDefined();
+      expect(endpoints.approveRefund).toBeDefined();
+      expect(endpoints.rejectRefund).toBeDefined();
+      expect(endpoints.requestRefundApproval).toBeDefined();
     });
   });
 
@@ -211,6 +219,57 @@ describe('paymentApi', () => {
       markReconciled({ transactionId: 'txn-1', reconciledBy: 'manager-1' });
 
       await waitFor(() => expect(result.current[1].isSuccess).toBe(true));
+    });
+
+    it('should fetch pending refunds by store', async () => {
+      const { result } = renderHook(() => useGetPendingRefundsQuery('1'), {
+        wrapper: DefaultTestWrapper,
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+      expect(result.current.data).toBeDefined();
+      expect(result.current.data!.some((r) => r.status === 'PENDING_APPROVAL')).toBe(true);
+    });
+
+    it('should approve a pending refund', async () => {
+      const { result } = renderHook(() => useApproveRefundMutation(), {
+        wrapper: DefaultTestWrapper,
+      });
+
+      const [approve] = result.current;
+      approve('refund-pending-1');
+
+      await waitFor(() => expect(result.current[1].isSuccess).toBe(true));
+    });
+
+    it('should reject a pending refund', async () => {
+      const { result } = renderHook(() => useRejectRefundMutation(), {
+        wrapper: DefaultTestWrapper,
+      });
+
+      const [reject] = result.current;
+      reject({ refundId: 'refund-pending-1', reason: 'Invalid request' });
+
+      await waitFor(() => expect(result.current[1].isSuccess).toBe(true));
+    });
+
+    it('should request refund approval', async () => {
+      const { result } = renderHook(() => useRequestRefundApprovalMutation(), {
+        wrapper: DefaultTestWrapper,
+      });
+
+      const [requestApproval] = result.current;
+      requestApproval({
+        transactionId: 'txn-1',
+        amount: 500,
+        type: 'PARTIAL',
+        reason: 'Quality issue',
+        initiatedBy: 'customer-1',
+      });
+
+      await waitFor(() => expect(result.current[1].isSuccess).toBe(true));
+      expect(result.current[1].data?.status).toBe('PENDING_APPROVAL');
     });
 
     it('should initiate a refund', async () => {

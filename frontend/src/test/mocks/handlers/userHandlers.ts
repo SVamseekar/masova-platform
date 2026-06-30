@@ -97,4 +97,8 @@ export const userHandlers = [
   http.post(apiUrl('/users/:userId/deactivate'), () =>
     new HttpResponse(null, { status: 204 }),
   ),
+
+  http.post(apiUrl('/users/kiosk/:kioskUserId/deactivate'), () =>
+    HttpResponse.json({ success: 'true', message: 'Kiosk deactivated successfully' }),
+  ),
 ];

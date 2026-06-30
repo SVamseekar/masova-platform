@@ -167,8 +167,8 @@ function combineApiPath(prefix, url) {
 function extractSliceResourcePrefix(src) {
   const m = src.match(/baseUrl:\s*`?\$\{[^}]+\}([^`"']*)`?|baseUrl:\s*[`'"]([^`'"]+)[`'"]|baseUrl:\s*(AGENT_URL|API_CONFIG\.[A-Z_]+)/);
   if (!m) return '';
-  const raw = (m[1] || m[2] || '').trim();
-  if (raw.includes('8000') || raw === 'AGENT_URL') return '__agent__';
+  const raw = (m[1] || m[2] || m[3] || '').trim();
+  if (raw.includes('8000') || raw === 'AGENT_URL' || m[3] === 'AGENT_URL') return '__agent__';
   // e.g. /customers, /payments, /inventory
   const suffix = raw.match(/(\/[a-z-]+)\s*$/i);
   return suffix ? suffix[1] : '';
@@ -544,6 +544,7 @@ function findFrontendOnly(backend, rtkEntries, rawEntries) {
   const orphans = [];
 
   const check = (method, fullPath, source) => {
+    if (source.includes('agentApi.ts')) return;
     const n = norm(fullPath);
     if (!n.startsWith('/api/')) return;
     const found = backendNorms.some((b) => strictPathMatch(b, n));

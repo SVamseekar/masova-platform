@@ -28,6 +28,9 @@ import {
   useGetOrdersByDateQuery,
   useGetOrdersByDateRangeQuery,
   useGetActiveDeliveriesCountQuery,
+  useRequestCancelMutation,
+  useApproveCancelRequestMutation,
+  useRejectCancelRequestMutation,
 } from './orderApi';
 import { TEST_API_BASE } from '../../test/testApiBase';
 
@@ -57,6 +60,9 @@ describe('orderApi', () => {
       expect(endpoints.addQualityCheckpoint).toBeDefined();
       expect(endpoints.getOrdersByDate).toBeDefined();
       expect(endpoints.getActiveDeliveriesCount).toBeDefined();
+      expect(endpoints.requestCancel).toBeDefined();
+      expect(endpoints.approveCancelRequest).toBeDefined();
+      expect(endpoints.rejectCancelRequest).toBeDefined();
     });
   });
 
@@ -310,6 +316,41 @@ describe('orderApi', () => {
 
       const [updatePriority] = result.current;
       updatePriority({ orderId: 'order-1', priority: 'URGENT' });
+
+      await waitFor(() => expect(result.current[1].isSuccess).toBe(true));
+    });
+
+    it('should request order cancellation', async () => {
+      const { result } = renderHook(() => useRequestCancelMutation(), {
+        wrapper: DefaultTestWrapper,
+      });
+
+      const [requestCancel] = result.current;
+      requestCancel({ orderId: 'order-1', reason: 'Changed mind' });
+
+      await waitFor(() => expect(result.current[1].isSuccess).toBe(true));
+      expect(result.current[1].data?.cancellationRequested).toBe(true);
+    });
+
+    it('should approve cancel request', async () => {
+      const { result } = renderHook(() => useApproveCancelRequestMutation(), {
+        wrapper: DefaultTestWrapper,
+      });
+
+      const [approve] = result.current;
+      approve('order-3');
+
+      await waitFor(() => expect(result.current[1].isSuccess).toBe(true));
+      expect(result.current[1].data?.status).toBe('CANCELLED');
+    });
+
+    it('should reject cancel request', async () => {
+      const { result } = renderHook(() => useRejectCancelRequestMutation(), {
+        wrapper: DefaultTestWrapper,
+      });
+
+      const [reject] = result.current;
+      reject({ orderId: 'order-3', reason: 'Too late' });
 
       await waitFor(() => expect(result.current[1].isSuccess).toBe(true));
     });
