@@ -15,8 +15,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest --watch",
     "test:pact": "vitest run --config vitest.pact.config.ts",
-    "sync-api-types": "../scripts/sync-api-contracts.sh",
-    "validate-api-types": "../scripts/validate-api-contracts.sh",
+
     "docs": "typedoc --out docs --entryPointStrategy expand ./src --skipErrorChecking",
     "docs:json": "typedoc --json docs/documentation.json --entryPointStrategy expand ./src"
   },

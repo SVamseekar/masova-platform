@@ -65,12 +65,18 @@ yarn-error.log*
 *.temp
 error*.txt
 
-# Backup files
+# Local-only directories (never publish to GitHub)
+backups/
+docs/
+scripts/
+specs/
+scratch/
+logs/
+
+# Backup / config snapshots
 *.bak
-backups/node_modules/
-backups/pre-consolidation-testing/
-backups/pre-phase1-monolith/
-backups/pre-phase1-services/
+.masova-config
+.masova-config.bak
 
 # Frontend build/test artifacts
 frontend/playwright-report/
@@ -110,6 +116,7 @@ scripts/node_modules/
 mvn21
 smart-doc.json
 generate-docs.sh
+.claude-context.md
 stop-all.sh
 
 # Archive (historical old services, not needed in repo)
@@ -118,6 +125,3 @@ archive/
 # Root node_modules
 /node_modules/
 
-# Config snapshots
-.masova-config
-.masova-config.bak

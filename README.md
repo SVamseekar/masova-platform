@@ -84,8 +84,6 @@ MaSoVa is a **production-grade, full-stack restaurant operating system** built f
 
 Event-driven communication via RabbitMQ (`masova.orders.exchange`, `masova.notifications.exchange`). Business events never use direct service-to-service HTTP — only Feign clients for synchronous internal queries.
 
-Full details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-
 ---
 
 ## Screenshots
@@ -144,7 +142,7 @@ Full details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - **Dual-write persistence** — PostgreSQL first (synchronous), MongoDB second (async) for financial data
 - **11-state order lifecycle** — every transition publishes to `masova.orders.exchange`
 - **Multi-gateway payment routing** — Stripe for EU/international stores, Razorpay for India legacy
-- **207 canonical API endpoints** — documented in `docs/api-contracts/`
+- **207 canonical API endpoints** — validated in CI via integration matrix audit
 - **EU VAT engine** — 12-country, context-aware VAT (DINE_IN / TAKEAWAY / DELIVERY, FOOD / ALCOHOL / BEVERAGE)
 - **Fiscal compliance** — DE, FR, IT, BE, HU, GB signing at order completion
 - **Allergen compliance** — 14 EU allergens enforced; items cannot go live without manager declaration
@@ -173,8 +171,6 @@ cd intelligence-service && mvn spring-boot:run "-Dmaven.test.skip=true" # :8087
 # 3. Frontend
 cd frontend && npm install && npm run dev   # :3000
 
-# 4. Seed data (first time)
-node scripts/seed-database.js
 ```
 
 ```bash
@@ -182,8 +178,6 @@ node scripts/seed-database.js
 curl http://localhost:8080/actuator/health
 curl http://localhost:8085/actuator/health
 ```
-
-Full setup: [docs/STARTUP-GUIDE.md](docs/STARTUP-GUIDE.md)
 
 **Optional — sibling repos:**
 
@@ -210,9 +204,7 @@ masova/
 ├── shared-models/         # Shared enums, events, and domain DTOs
 ├── shared-security/       # JWT utilities, security config
 ├── frontend/              # React 19 — all 6 web applications
-├── infrastructure/        # Docker Compose, GCP configs
-├── scripts/               # DB seeding, dev utilities, deployment helpers
-└── docs/                  # Architecture, API contracts, deployment guides
+└── infrastructure/        # Docker Compose, GCP configs
 ```
 
 ---
@@ -223,9 +215,7 @@ masova/
 |---|---|
 | [DEMO.md](DEMO.md) | Demo guide for restaurant clients |
 | [DOCUMENTATION.md](DOCUMENTATION.md) | Full documentation index |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Service map, flows, data model |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Development setup, branching, commits |
-| [docs/api-contracts/](docs/api-contracts/) | OpenAPI specs and contract validation |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |
 
 ---

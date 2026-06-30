@@ -29,15 +29,7 @@ jobs:
           node-version: '20'
 
       - name: Verify API wiring (stale paths, dead RTK, gateway gaps)
-        run: node scripts/integration-matrix-audit.js --ci
-
-      - name: Verify committed OpenAPI specs match integration matrix
-        run: |
-          node scripts/ci/sync-specs-from-matrix.js
-          git diff --exit-code specs/ || (
-            echo "FAIL: specs/ drifted from INTEGRATION_MATRIX — run node scripts/ci/sync-specs-from-matrix.js"
-            exit 1
-          )
+        run: node .github/ci/integration-matrix-audit.js --ci
 
   # ============================================================
   # Job 1: Backend tests (all 6 services)

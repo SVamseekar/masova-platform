@@ -39,7 +39,7 @@ curl http://localhost:8084/actuator/health
 ### 3. Seed demo data (first time)
 
 ```bash
-node scripts/seed-database.js
+# Seed demo data using your local dev tooling (not published in this repo)
 ```
 
 ### 4. Pre-open browser tabs
@@ -114,4 +114,4 @@ node scripts/seed-database.js
 **"What about offline?"**
 > POS and Crew app queue operations locally and sync when connectivity returns.
 
-Full startup details: [docs/STARTUP-GUIDE.md](docs/STARTUP-GUIDE.md)
+Full startup details: see README Quick Start section.

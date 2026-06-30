@@ -19,7 +19,7 @@ main
 | `feat/` | New functionality |
 | `fix/` | Bug fixes |
 | `chore/` | Dependencies, config, cleanup |
-| `docs/` | Documentation only |
+| `chore/*` | Tooling and maintenance |
 | `release/` | Version bump + changelog prep |
 
 ### Day-to-day flow
@@ -81,7 +81,7 @@ refactor: extract store validation into StoreService
 
 ## Local Setup
 
-See [docs/STARTUP-GUIDE.md](docs/STARTUP-GUIDE.md) for full setup instructions.
+See [README.md](README.md) Quick Start for setup instructions.
 
 **Quick check — services running:**
 ```bash
