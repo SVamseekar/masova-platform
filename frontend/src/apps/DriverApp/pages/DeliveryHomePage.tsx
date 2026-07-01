@@ -477,7 +477,7 @@ const DeliveryHomePage: React.FC<DeliveryHomePageProps> = ({ isOnline, setIsOnli
             fullWidth
             startIcon={<PhoneIcon />}
             onClick={() => {
-              alert('Support Contact:\n\nPhone: 1-800-MASOVA\nEmail: support@masova.com\n\nFor urgent issues during delivery, call the number above.');
+              alert('Support Contact:\n\nPhone: 1-800-MASOVA\nEmail: masova@souravamseekar.com\n\nFor urgent issues during delivery, call the number above.');
             }}
           >
             Support
