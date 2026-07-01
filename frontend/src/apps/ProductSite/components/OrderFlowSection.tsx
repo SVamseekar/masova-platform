@@ -20,14 +20,14 @@ const FLOW_NODES: FlowNode[] = [
   },
   {
     icon: CreditCard,
-    title: 'Payment Confirmed',
-    description: 'Card payment clears in seconds. Receipt sent automatically.',
+    title: 'Payment & VAT',
+    description: 'Stripe clears payment with EU VAT applied. Fiscal receipt signed automatically where required.',
     color: '#8B5CF6',
   },
   {
     icon: ChefHat,
     title: 'Kitchen Notified',
-    description: 'Kitchen screen lights up. Prep timer starts. No phone calls.',
+    description: 'KDS lights up with allergen badges. Prep timer starts — often before payment clears.',
     color: '#F59E0B',
   },
   {
@@ -39,13 +39,13 @@ const FLOW_NODES: FlowNode[] = [
   {
     icon: MapPin,
     title: 'Live Tracking',
-    description: 'Customer watches on map. Driver sees turn-by-turn nav.',
+    description: 'Customer watches ETA on map. Driver confirms delivery with OTP at the door.',
     color: '#EC4899',
   },
   {
     icon: Star,
     title: 'Delivered & Rated',
-    description: 'Order closed. Review prompted. Analytics updated.',
+    description: 'OTP confirmed at door. Review link sent. Analytics and aggregator P&L updated.',
     color: '#D4AF37',
   },
 ]

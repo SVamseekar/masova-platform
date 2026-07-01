@@ -237,7 +237,7 @@ export const ChatWidget: React.FC = () => {
       ])
       if (voiceModeRef.current) speakResponse(reply)
     } catch {
-      const errorText = "Sorry — I'm having trouble connecting. Try again in a moment, or email hello@masova.com."
+      const errorText = "Sorry — I'm having trouble connecting. Try again in a moment, or email support@masova.com."
       setMessages((prev) => [
         ...prev,
         { id: crypto.randomUUID(), role: 'agent', text: errorText, ts: Date.now() },

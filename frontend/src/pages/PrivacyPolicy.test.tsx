@@ -12,102 +12,39 @@ vi.mock('react-router-dom', async () => {
 describe('PrivacyPolicy', () => {
   it('renders without crashing', () => {
     renderUnauthenticated(<PrivacyPolicy />);
-    expect(screen.getByText('Privacy Policy')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Privacy Policy' })).toBeInTheDocument();
   });
 
   it('displays the last updated date', () => {
     renderUnauthenticated(<PrivacyPolicy />);
-    expect(screen.getByText(/Last Updated:/)).toBeInTheDocument();
-    expect(screen.getAllByText(/January 1, 2025/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/Last updated July 1, 2026/)).toBeInTheDocument();
   });
 
-  it('displays the effective date', () => {
+  it('renders who we are section with support email links', () => {
     renderUnauthenticated(<PrivacyPolicy />);
-    expect(screen.getByText(/Effective Date:/)).toBeInTheDocument();
+    expect(screen.getByText('1. Who we are')).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: 'support@masova.com' }).length).toBeGreaterThanOrEqual(2);
   });
 
-  it('renders Section 1: Introduction', () => {
+  it('renders GDPR rights section with email-based requests', () => {
     renderUnauthenticated(<PrivacyPolicy />);
-    expect(screen.getByText('1. Introduction')).toBeInTheDocument();
-    expect(screen.getByText(/committed to protecting your privacy/)).toBeInTheDocument();
+    expect(screen.getByText('6. Your rights')).toBeInTheDocument();
+    expect(screen.getByText(/we respond within 30 days as required by GDPR/)).toBeInTheDocument();
+    expect(screen.queryByText('GDPR self-service portal')).not.toBeInTheDocument();
   });
 
-  it('renders Section 2: Data Controller Information', () => {
+  it('renders contact us button in rights section', () => {
     renderUnauthenticated(<PrivacyPolicy />);
-    expect(screen.getByRole('heading', { name: /2\. Data Controller Information/i })).toBeInTheDocument();
-    expect(screen.getAllByText(/privacy@masova.com/).length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('renders Section 3: Personal Data We Collect', () => {
-    renderUnauthenticated(<PrivacyPolicy />);
-    expect(screen.getByText('3. Personal Data We Collect')).toBeInTheDocument();
-    expect(screen.getByText('Account Information')).toBeInTheDocument();
-    expect(screen.getByText('Order Information')).toBeInTheDocument();
-    expect(screen.getByText('Usage Data')).toBeInTheDocument();
-    expect(screen.getByText('Communication Data')).toBeInTheDocument();
-  });
-
-  it('renders Section 7: GDPR Rights', () => {
-    renderUnauthenticated(<PrivacyPolicy />);
-    expect(screen.getByText('7. Your GDPR Rights')).toBeInTheDocument();
-    expect(screen.getByText('Right to Access')).toBeInTheDocument();
-    expect(screen.getByText('Right to Erasure (Right to be Forgotten)')).toBeInTheDocument();
-    expect(screen.getByText('Right to Data Portability')).toBeInTheDocument();
-  });
-
-  it('renders the "Manage My Data" button', () => {
-    renderUnauthenticated(<PrivacyPolicy />);
-    expect(screen.getByText('Manage My Data')).toBeInTheDocument();
-  });
-
-  it('navigates to /gdpr-requests when "Manage My Data" is clicked', async () => {
-    const user = userEvent.setup();
-    renderUnauthenticated(<PrivacyPolicy />);
-    await user.click(screen.getByText('Manage My Data'));
-    expect(mockNavigate).toHaveBeenCalledWith('/gdpr-requests');
-  });
-
-  it('renders the "Contact DPO" button', () => {
-    renderUnauthenticated(<PrivacyPolicy />);
-    expect(screen.getByText('Contact DPO')).toBeInTheDocument();
-  });
-
-  it('navigates to /contact when "Contact DPO" is clicked', async () => {
-    const user = userEvent.setup();
-    renderUnauthenticated(<PrivacyPolicy />);
-    await user.click(screen.getByText('Contact DPO'));
-    expect(mockNavigate).toHaveBeenCalledWith('/contact');
-  });
-
-  it('renders the "Return to Home" button', () => {
-    renderUnauthenticated(<PrivacyPolicy />);
-    expect(screen.getByText('Return to Home')).toBeInTheDocument();
-  });
-
-  it('navigates to / when "Return to Home" is clicked', async () => {
-    const user = userEvent.setup();
-    renderUnauthenticated(<PrivacyPolicy />);
-    await user.click(screen.getByText('Return to Home'));
-    expect(mockNavigate).toHaveBeenCalledWith('/');
-  });
-
-  it('renders data retention section', () => {
-    renderUnauthenticated(<PrivacyPolicy />);
-    expect(screen.getByText('8. Data Retention')).toBeInTheDocument();
-  });
-
-  it('renders data security section', () => {
-    renderUnauthenticated(<PrivacyPolicy />);
-    expect(screen.getByText('9. Data Security')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Contact us' })).toBeInTheDocument();
   });
 
   it('renders cookies section', () => {
     renderUnauthenticated(<PrivacyPolicy />);
-    expect(screen.getByText('11. Cookies and Tracking')).toBeInTheDocument();
+    expect(screen.getByText('9. Cookies')).toBeInTheDocument();
   });
 
-  it('renders contact section with email addresses', () => {
+  it('renders restaurant operator responsibilities', () => {
     renderUnauthenticated(<PrivacyPolicy />);
-    expect(screen.getByText('14. Contact Us')).toBeInTheDocument();
+    expect(screen.getByText('10. Restaurant operator responsibilities')).toBeInTheDocument();
   });
 });

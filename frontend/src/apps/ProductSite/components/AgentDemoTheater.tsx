@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Play, Sparkles, MessageCircle } from 'lucide-react'
 import SectionLabel from './SectionLabel'
@@ -14,17 +14,43 @@ const DEMO_CHATS = [
 export default function AgentDemoTheater() {
   const [playing, setPlaying] = useState(false)
   const [visibleLines, setVisibleLines] = useState(0)
+  const sectionRef = useRef<HTMLElement>(null)
+  const timersRef = useRef<number[]>([])
+  const hasAutoStarted = useRef(false)
 
-  const startDemo = () => {
+  const startDemo = useCallback(() => {
+    timersRef.current.forEach((id) => window.clearTimeout(id))
+    timersRef.current = []
     setPlaying(true)
     setVisibleLines(0)
     DEMO_CHATS.forEach((_, i) => {
-      setTimeout(() => setVisibleLines(i + 1), (i + 1) * 900)
+      const id = window.setTimeout(() => setVisibleLines(i + 1), (i + 1) * 900)
+      timersRef.current.push(id)
     })
-  }
+  }, [])
+
+  useEffect(() => {
+    const section = sectionRef.current
+    if (!section) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAutoStarted.current) {
+          hasAutoStarted.current = true
+          startDemo()
+        }
+      },
+      { threshold: 0.35 },
+    )
+    observer.observe(section)
+    return () => {
+      observer.disconnect()
+      timersRef.current.forEach((id) => window.clearTimeout(id))
+    }
+  }, [startDemo])
 
   return (
-    <section id="demo" className="py-32 px-6" style={{ background: '#050505' }}>
+    <section ref={sectionRef} id="demo" className="py-32 px-6 scroll-mt-20" style={{ background: '#050505' }}>
       <div className="max-w-7xl mx-auto">
         <motion.div
           className="text-center mb-14"
@@ -40,8 +66,8 @@ export default function AgentDemoTheater() {
             See how customers get help — instantly
           </h2>
           <p className="text-gray-400 max-w-xl mx-auto">
-            Full video walkthroughs coming soon. For now, click the preview to watch a sample chat —
-            the same experience your guests get in the app.
+            Watch a sample chat — the same experience your guests get in the app. Click the preview
+            to replay it anytime.
           </p>
         </motion.div>
 
@@ -67,8 +93,8 @@ export default function AgentDemoTheater() {
               >
                 <Play size={28} style={{ color: colors.red, marginLeft: 4 }} fill={colors.red} />
               </motion.div>
-              <p className="text-white font-medium">Customer chat · 2 min preview</p>
-              <p className="text-gray-500 text-sm">Video demo uploading — click to try the chat</p>
+              <p className="text-white font-medium">Customer chat · live preview</p>
+              <p className="text-gray-500 text-sm">Click to replay the interactive demo</p>
             </div>
             <div className="absolute inset-0 agent-demo-grid opacity-40" />
           </motion.div>

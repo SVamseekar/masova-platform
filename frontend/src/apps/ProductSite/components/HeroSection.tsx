@@ -28,7 +28,7 @@ export default function HeroSection() {
         position: 'relative',
         overflow: 'hidden',
         background: colors.bg,
-        paddingTop: 160,
+        paddingTop: 96,
         paddingBottom: 80,
         paddingLeft: 24,
         paddingRight: 24,
