@@ -949,7 +949,7 @@ public class CustomerNotificationService {
                 "          <!-- Footer -->" +
                 "          <tr>" +
                 "            <td style='padding: 32px 40px; border-top: 1px solid #E5E5E5; background-color: #FAFAFA;'>" +
-                "              <p style='margin: 0 0 8px 0; font-size: 12px; color: #999;'>Need help? Contact us at support@masova.com</p>" +
+                "              <p style='margin: 0 0 8px 0; font-size: 12px; color: #999;'>Need help? Contact us at masova@souravamseekar.com</p>" +
                 "              <p style='margin: 0; font-size: 12px; color: #999;'>© " + java.time.Year.now().getValue() + " MaSoVa. All rights reserved.</p>" +
                 "            </td>" +
                 "          </tr>" +

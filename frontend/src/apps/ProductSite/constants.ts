@@ -22,7 +22,7 @@ interface Feature {
 
 export const SITE_URL = 'https://masova.souravamseekar.com'
 export const GITHUB_URL = 'https://github.com/SVamseekar/masova-platform'
-export const SUPPORT_EMAIL = 'support@masova.com'
+export const SUPPORT_EMAIL = 'masova@souravamseekar.com'
 
 export const OPEN_CONTACT_EVENT = 'masova:open-contact'
 
