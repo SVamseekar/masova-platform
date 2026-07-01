@@ -1,12 +1,9 @@
 name: Vercel Production Deploy
 
-# Backup deploy path when Vercel Git webhooks miss a push to main.
+# Manual backup only — Vercel Git auto-deploys production on push to main.
+# Run from Actions → "Vercel Production Deploy" → Run workflow if a webhook is missed.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'frontend/**'
-      - '.github/workflows/vercel-production.yml'
+  workflow_dispatch:
 
 concurrency:
   group: vercel-production-${{ github.ref }}
@@ -35,4 +32,4 @@ jobs:
         run: npx vercel@50.1.3 build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy prebuilt output to production
-        run: npx vercel@50.1.3 deploy --prebuilt --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        run: npx vercel@50.1.3 deploy --prebuilt --prod --yes --archive=tgz --token=${{ secrets.VERCEL_TOKEN }}
