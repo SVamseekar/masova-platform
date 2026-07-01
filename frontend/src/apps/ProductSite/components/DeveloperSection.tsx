@@ -1,160 +1,104 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Rocket, Building2, Headphones } from 'lucide-react'
+import { Rocket, Building2, Headphones, ArrowRight } from 'lucide-react'
+import SectionLabel from './SectionLabel'
+import Reveal, { REVEAL_VIEWPORT } from './Reveal'
+import { colors, typography } from '../tokens'
+import { openContactForm } from '../constants'
 
-interface SupportCardProps {
+interface OnboardingCardProps {
   icon: React.ReactNode
   title: string
   description: string
-  accentColor: string
-  children?: React.ReactNode
+  footer?: React.ReactNode
+  delay?: number
 }
 
-function SupportCard({ icon, title, description, accentColor, children }: SupportCardProps) {
+function OnboardingCard({ icon, title, description, footer, delay = 0 }: OnboardingCardProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
+      initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5 }}
-      style={{
-        background: '#111111',
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderTop: `3px solid ${accentColor}`,
-        borderRadius: 16,
-        padding: 28,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 16,
-      }}
+      viewport={REVEAL_VIEWPORT}
+      transition={{ duration: 0.5, delay }}
+      className="rounded-2xl p-6 flex flex-col h-full"
+      style={{ background: colors.bgElevated, border: `1px solid ${colors.border}` }}
     >
       <div
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: 10,
-          background: `${accentColor}18`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: accentColor,
-        }}
+        className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
+        style={{ background: colors.redMuted }}
       >
         {icon}
       </div>
-      <div style={{ flex: 1 }}>
-        <h3
-          style={{
-            fontSize: 18,
-            fontWeight: 600,
-            color: '#FFFFFF',
-            marginBottom: 8,
-          }}
-        >
-          {title}
-        </h3>
-        <p style={{ fontSize: 14, color: '#9CA3AF', lineHeight: 1.65 }}>
-          {description}
-        </p>
-      </div>
-      {children}
+      <h3 className="text-white font-semibold mb-2">{title}</h3>
+      <p className="text-gray-500 text-sm leading-relaxed flex-1">{description}</p>
+      {footer && <div className="mt-4 pt-4 border-t border-white/5">{footer}</div>}
     </motion.div>
   )
 }
 
 export default function DeveloperSection() {
   return (
-    <section
-      id="getting-started"
-      style={{
-        background: '#0A0A0A',
-        padding: '96px 24px',
-      }}
-    >
-      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          style={{ textAlign: 'center', marginBottom: 56 }}
-        >
+    <section id="getting-started" className="bg-[#080808] py-32 px-6">
+      <div className="max-w-7xl mx-auto">
+        <Reveal className="text-center mb-16 space-y-4">
+          <SectionLabel>Onboarding & support</SectionLabel>
           <h2
-            style={{
-              fontSize: 'clamp(28px, 4vw, 42px)',
-              fontWeight: 700,
-              color: '#FFFFFF',
-              marginBottom: 12,
-              letterSpacing: '-0.02em',
-            }}
+            className="text-4xl md:text-5xl font-bold text-white leading-tight"
+            style={{ fontFamily: typography.fontDisplay }}
           >
             We set you up. We stay with you.
           </h2>
-          <p style={{ fontSize: 16, color: '#6B7280', maxWidth: 520, margin: '0 auto' }}>
-            Most restaurants are live within 48 hours. Whether you run one site or a growing chain,
-            you get hands-on onboarding and a team that answers the phone.
+          <p className="text-gray-400 text-sm md:text-base max-w-xl mx-auto leading-relaxed">
+            Most restaurants are live within 48 hours. One site or many — hands-on onboarding and
+            a team that answers when you call.
           </p>
-        </motion.div>
+        </Reveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <SupportCard
-            icon={<Rocket size={22} />}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <OnboardingCard
+            icon={<Rocket size={20} style={{ color: colors.red }} />}
             title="Fast onboarding"
-            description="We import your menu, configure your locations, and train your managers. No IT project required."
-            accentColor="#3B82F6"
-          >
-            <p style={{ fontSize: 13, color: '#6B7280', marginTop: 'auto' }}>
-              Typical go-live: 48 hours
-            </p>
-          </SupportCard>
-
-          <SupportCard
-            icon={<Building2 size={22} />}
-            title="Built for multiple locations"
-            description="One dashboard for every site — compare sales, spot slow kitchens, and roll out menu changes everywhere at once."
-            accentColor="#10B981"
-          >
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {['Franchise groups', 'Regional managers', 'Single owner scaling up'].map((label) => (
-                <span
-                  key={label}
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 500,
-                    color: '#D1D5DB',
-                    background: '#1A1A1A',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 999,
-                    padding: '4px 12px',
-                  }}
-                >
-                  {label}
-                </span>
-              ))}
-            </div>
-          </SupportCard>
-
-          <SupportCard
-            icon={<Headphones size={22} />}
-            title="Real people when you need them"
-            description="Chat support on Growth plans. Phone and a dedicated account manager on Enterprise. We speak restaurant, not jargon."
-            accentColor="#8B5CF6"
-          >
-            <a
-              href="mailto:hello@masova.com"
-              style={{
-                display: 'inline-block',
-                marginTop: 'auto',
-                fontSize: 13,
-                fontWeight: 500,
-                color: '#8B5CF6',
-                textDecoration: 'none',
-                paddingTop: 4,
-              }}
-            >
-              Talk to our team →
-            </a>
-          </SupportCard>
+            description="We import your menu, configure locations, and train your managers. No IT project required."
+            footer={
+              <span className="text-xs text-gray-500">Typical go-live: 48 hours</span>
+            }
+          />
+          <OnboardingCard
+            icon={<Building2 size={20} style={{ color: colors.red }} />}
+            title="Built for multi-location"
+            description="One dashboard for every site — compare sales, spot slow kitchens, and roll out menu changes everywhere."
+            delay={0.08}
+            footer={
+              <div className="flex flex-wrap gap-2">
+                {['Franchise', 'Regional ops', 'Scaling brands'].map((label) => (
+                  <span
+                    key={label}
+                    className="text-[10px] font-medium text-gray-400 bg-[#1a1a1a] border border-white/5 rounded-full px-2.5 py-1"
+                  >
+                    {label}
+                  </span>
+                ))}
+              </div>
+            }
+          />
+          <OnboardingCard
+            icon={<Headphones size={20} style={{ color: colors.red }} />}
+            title="Real support"
+            description="Chat on Growth plans. Phone and a dedicated account manager on Enterprise. We speak restaurant."
+            delay={0.16}
+            footer={
+              <button
+                type="button"
+                onClick={() => openContactForm()}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold transition-all hover:opacity-85 cursor-pointer"
+                style={{ color: colors.red }}
+              >
+                Book a walkthrough
+                <ArrowRight size={13} />
+              </button>
+            }
+          />
         </div>
       </div>
     </section>

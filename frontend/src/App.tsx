@@ -12,6 +12,7 @@ import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { TokenRefreshManager } from './components/auth/TokenRefreshManager';
 import { ConnectionMonitorProvider } from './components/common/ConnectionMonitorProvider';
 import { ChatWidget } from './components/chat/ChatWidget';
+import { CookieConsent } from './components/gdpr/CookieConsent';
 import { GoogleAnalytics } from './components/GoogleAnalytics';
 import { AppSeo } from './components/seo/AppSeo';
 import { CustomerLayout } from './components/customer/CustomerLayout';
@@ -19,6 +20,7 @@ import { StoreLocaleSync } from './components/i18n/StoreLocaleSync';
 
 // Lazy load components
 const ProductSitePage = React.lazy(() => import('./apps/ProductSite/ProductSitePage'))
+
 const HomePage = React.lazy(() => import('./apps/PublicWebsite/HomePage'));
 const PromotionsPage = React.lazy(() => import('./apps/PublicWebsite/PromotionsPage'));
 const PublicMenuPage = React.lazy(() => import('./apps/PublicWebsite/PublicMenuPage'));
@@ -43,6 +45,7 @@ const DriverDashboard = React.lazy(() => import('./pages/driver/DriverDashboard'
 const POSSystem = React.lazy(() => import('./apps/POSSystem/POSSystem'));
 const KioskSetupPage = React.lazy(() => import('./pages/kiosk/KioskSetupPage'));
 const GdprRequests = React.lazy(() => import('./pages/GdprRequests').then(m => ({ default: m.GdprRequests })));
+const PrivacyPolicy = React.lazy(() => import('./pages/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })));
 const AnalyticsDashboard = React.lazy(() => import('./pages/manager/AnalyticsDashboard'));
 
 // Kiosk mode hook
@@ -100,6 +103,8 @@ const App: React.FC = () => {
                   <Route path="/order" element={<CustomerLayout><HomePage /></CustomerLayout>} />
                   <Route path="/menu" element={<CustomerLayout><PublicMenuPage /></CustomerLayout>} />
                   <Route path="/promotions" element={<CustomerLayout><PromotionsPage /></CustomerLayout>} />
+                  <Route path="/privacy" element={<PrivacyPolicy />} />
+                  <Route path="/privacy-policy" element={<Navigate to="/privacy" replace />} />
 
                   {/* Authentication & Checkout Routes - Public */}
                   <Route path="/login" element={<Navigate to="/customer-login" replace />} />
@@ -245,6 +250,8 @@ const App: React.FC = () => {
                 </Suspense>
                 <NotificationSystem />
                 <ChatWidget />
+
+                <CookieConsent />
               </div>
             </Router>
           </ErrorBoundary>

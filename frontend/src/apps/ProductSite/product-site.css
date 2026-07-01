@@ -4,9 +4,17 @@
 @tailwind components;
 @tailwind utilities;
 
+html:has(#product-site) {
+  scroll-padding-top: 5rem;
+}
+
 #product-site {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+#product-site section[id] {
+  scroll-margin-top: 5rem;
 }
 
 @keyframes marquee {

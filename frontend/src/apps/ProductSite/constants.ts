@@ -7,7 +7,7 @@ import {
   TrendingUp, AlertCircle, Cpu, Receipt,
   Building2, Layers, Lock, HeartHandshake, Phone,
   LayoutDashboard, Utensils, Navigation, PieChart, Sparkles,
-  Smartphone,
+  Smartphone, FileCheck, Scale, Megaphone,
 } from 'lucide-react'
 
 export { goldGradientText as GOLD_GRADIENT_TEXT }
@@ -22,14 +22,42 @@ interface Feature {
 
 export const SITE_URL = 'https://masova.souravamseekar.com'
 export const GITHUB_URL = 'https://github.com/SVamseekar/masova-platform'
+export const SUPPORT_EMAIL = 'support@masova.com'
 
+export const OPEN_CONTACT_EVENT = 'masova:open-contact'
+
+export function openContactForm() {
+  if (window.location.pathname !== '/') {
+    window.location.assign('/#contact')
+    return
+  }
+  window.dispatchEvent(new CustomEvent(OPEN_CONTACT_EVENT))
+}
+
+/** Top nav — order matches on-page section sequence (subset of full page). */
 export const NAV_LINKS = [
+  { label: 'Capabilities', href: '#product-tour' },
   { label: 'How it works', href: '#agent-brain' },
   { label: 'See it live', href: '#demo' },
-  { label: 'Capabilities', href: '#product-tour' },
   { label: 'Apps', href: '#mobile' },
   { label: 'Pricing', href: '#pricing' },
 ]
+
+/** Full page section order — used for footer and deep links. */
+export const PAGE_SECTIONS = [
+  { label: 'Capabilities', href: '#product-tour' },
+  { label: 'How it works', href: '#agent-brain' },
+  { label: 'See it live', href: '#demo' },
+  { label: 'A day in your business', href: '#agent-story' },
+  { label: 'Mobile apps', href: '#mobile' },
+  { label: 'Delivery channels', href: '#channels' },
+  { label: 'Order journey', href: '#order-flow' },
+  { label: 'Also included', href: '#features' },
+  { label: 'Onboarding & support', href: '#getting-started' },
+  { label: 'Pricing', href: '#pricing' },
+  { label: 'Get in touch', href: '#contact' },
+  { label: 'FAQ', href: '#faq' },
+] as const
 
 export const STATS = [
   { value: '8', label: 'Smart assistants', icon: Bot },
@@ -47,6 +75,9 @@ export const MARQUEE_ITEMS = [
   { label: 'Next week\'s shifts suggested every Sunday', icon: Users },
   { label: 'Nothing goes live without manager approval', icon: Shield },
   { label: 'Wolt · Deliveroo · Uber Eats in one place', icon: Store },
+  { label: 'EU VAT calculated per country and order type', icon: Scale },
+  { label: 'Fiscal signing for DE · FR · IT · BE · HU · GB', icon: FileCheck },
+  { label: '14 EU allergens enforced before items go live', icon: AlertCircle },
   { label: 'Orders from app to kitchen in seconds', icon: Zap },
   { label: 'One view across every location', icon: Cpu },
 ]
@@ -64,7 +95,7 @@ export const MOBILE_APPS = [
     name: 'Customer app',
     tagline: 'Your customers order, track delivery, and get help — without calling the restaurant.',
     accentColor: '#D4AF37',
-    highlights: ['Live map tracking', 'Card & wallet payments', 'In-app chat support', 'Guest checkout'],
+    highlights: ['Live map tracking', 'Stripe + iDEAL & Bancontact', 'Allergen info on every item', 'Guest checkout'],
   },
   {
     name: 'Staff app',
@@ -76,7 +107,7 @@ export const MOBILE_APPS = [
       { label: 'Cashier', color: '#2196F3' },
       { label: 'Manager', color: '#7B1FA2' },
     ],
-    highlights: ['Kitchen display on tablet', 'Delivery proof codes', 'Works offline'],
+    highlights: ['Role-based views (kitchen, driver, cashier)', 'OTP delivery proof', 'Clock-in sessions with manager approval'],
   },
 ]
 
@@ -117,60 +148,84 @@ export const PRODUCT_TOUR_TABS: ProductTourTab[] = [
     label: 'Online Ordering',
     icon: ShoppingCart,
     headline: 'Orders flow in. Zero friction.',
-    desc: 'Customers order from your branded web app or mobile app. Orders land instantly on the kitchen display — no calls, no paper, no chaos.',
+    desc: 'Customers order from your branded web app or mobile app — with EU allergen labels, VAT shown at checkout, and delivery fees computed from their address.',
     image: '/screenshots/customer-ordering.png',
     screenshot: '/screenshots/customer-ordering.png',
     accentColor: '#3B82F6',
     featureDesc: 'From browsing to checkout in under a minute. Orders land on the KDS the moment payment clears.',
-    bullets: ['Branded customer app', 'Real-time order confirmation', 'SMS + push notifications', 'Guest checkout'],
+    bullets: ['Branded web + mobile apps', 'Guest checkout + saved addresses', '14 EU allergens on every item', 'Zone-based delivery fees + VAT preview'],
   },
   {
     id: 'kitchen',
     label: 'Kitchen Display',
     icon: ChefHat,
     headline: 'Your kitchen, fully in control.',
-    desc: 'Every order appears on the Kitchen Display System the moment it is placed. Colour-coded urgency, prep time tracking, quality checkpoints.',
+    desc: 'Every order appears on the Kitchen Display System via live WebSocket updates. Allergen badges on tickets, prep timers, and predictive prep alerts before payment clears.',
     image: '/screenshots/kitchen-display.png',
     screenshot: null,
     accentColor: '#F59E0B',
     featureDesc: 'Live order queue on any screen. No printers, no paper, no missed tickets.',
-    bullets: ['9-stage order pipeline', 'Prep time analytics', 'Quality checkpoints', 'Make-table workflow'],
+    bullets: ['11-state order lifecycle', 'Allergen badges on kitchen tickets', 'Predictive prep alerts', 'Quality checkpoints + recipe viewer'],
   },
   {
     id: 'delivery',
     label: 'Delivery',
     icon: Truck,
     headline: 'Dispatched in under 8 seconds.',
-    desc: 'MaSoVa auto-assigns the nearest available driver the moment an order is ready. Customers track their delivery live on a map.',
+    desc: 'MaSoVa auto-assigns the nearest available driver when an order is ready. Delivery zones, server-side fees, live GPS, and OTP proof at the door.',
     image: '/screenshots/live-tracking.png',
     screenshot: null,
     accentColor: '#10B981',
     featureDesc: 'From dispatch to doorstep. Real-time tracking for operators and customers.',
-    bullets: ['Auto-dispatch engine', 'Live GPS tracking', 'Driver app (iOS + Android)', 'Proof of delivery'],
+    bullets: ['Auto-dispatch engine', 'Delivery zones + dynamic fees', 'Live GPS + ETA for customers', 'OTP proof of delivery'],
+  },
+  {
+    id: 'payments',
+    label: 'Payments & EU Compliance',
+    icon: Scale,
+    headline: 'VAT and fiscal signing, built in.',
+    desc: 'Stripe with SCA/3D Secure, iDEAL, Bancontact, and SEPA. EU VAT calculated per country, order type, and item category — with automated fiscal signing at order completion.',
+    image: '/screenshots/manager-dashboard.png',
+    screenshot: null,
+    accentColor: '#6366F1',
+    featureDesc: 'Financial compliance without spreadsheets or a separate fiscal provider.',
+    bullets: ['12-country EU VAT engine', 'Fiscal signing: DE, FR, IT, BE, HU, GB', 'Refund approval workflow', 'Daily reconciliation reports'],
+  },
+  {
+    id: 'aggregators',
+    label: 'Aggregator Hub',
+    icon: Store,
+    headline: 'Every channel. One kitchen queue.',
+    desc: 'Wolt, Deliveroo, Just Eat, and Uber Eats orders normalise into the same pipeline as direct orders — with per-channel commission and margin tracking.',
+    image: '/screenshots/customer-ordering.png',
+    screenshot: null,
+    accentColor: '#00C2E8',
+    featureDesc: 'Stop juggling tablets. Every aggregator ticket lands next to your direct orders.',
+    bullets: ['Wolt · Deliveroo · Just Eat · Uber Eats', 'Unified kitchen queue', 'Commission tracked per channel', 'Platform P&L dashboard'],
   },
   {
     id: 'analytics',
-    label: 'Analytics',
+    label: 'Analytics & BI',
     icon: BarChart3,
     headline: 'Every number that matters.',
-    desc: 'Sales trends, peak hour analysis, staff leaderboards, waste tracking, demand forecasting — all in one dashboard updated in real time.',
+    desc: 'Sales trends, peak-hour heatmaps, staff leaderboards, waste analysis, demand forecasting, and multi-store benchmarking — updated in real time from live order events.',
     image: '/screenshots/manager-dashboard.png',
     screenshot: null,
     accentColor: '#8B5CF6',
-    featureDesc: 'Revenue, waste, staff performance — surfaced automatically, no dashboards to build.',
-    bullets: ['Sales forecasting', 'Staff performance', 'Waste analysis', 'Multi-store benchmarking'],
+    featureDesc: 'Revenue, waste, staff performance, and aggregator margins — surfaced automatically.',
+    bullets: ['7-day sales forecasting', 'Peak hours + order-type breakdown', 'Staff leaderboard + churn signals', 'Cost analysis + executive summary'],
   },
   {
     id: 'ai',
     label: 'Smart assistants',
     icon: Bot,
     headline: 'Help that never clocks off.',
-    desc: 'Eight assistants handle customer questions, flag slow prep times, suggest reorders, and surface what matters — while you stay in control of every decision.',
+    desc: 'Eight assistants handle customer questions, flag slow prep times, draft reorders and review replies — while you stay in control of every decision.',
     image: '/screenshots/ai-agent.png',
     screenshot: null,
     accentColor: '#D4AF37',
     featureDesc: 'Less firefighting. More time leading your team.',
-    bullets: ['24/7 customer chat', 'Demand & prep insights', 'Stock alerts before shortages', 'Shift suggestions you approve'],
+    bullets: ['24/7 customer chat + refund routing', 'Demand forecasting overnight', 'Stock alerts + draft purchase orders', 'Shift plans you approve before publish'],
   },
 ]
 
@@ -178,58 +233,79 @@ export const FEATURES: Feature[] = [
   {
     icon: LayoutDashboard,
     title: 'Unified Manager Dashboard',
-    desc: '6 sections covering every aspect of your operation — orders, inventory, staff, analytics, marketing, and delivery — in one place.',
+    desc: 'Eight sections — orders & payments, inventory, operations, people, analytics, fiscal compliance, and AI agents — in one shell for every location.',
     size: 'large',
     screenshot: '/screenshots/customer-home.png',
   },
   {
+    icon: Scale,
+    title: 'EU VAT & Fiscal Signing',
+    desc: '12-country VAT by order type and item category. Automated fiscal signing for Germany, France, Italy, Belgium, Hungary, and the UK at order completion.',
+    size: 'large',
+    screenshot: null,
+  },
+  {
     icon: Utensils,
     title: 'POS + Kiosk',
-    desc: 'Counter POS with staff PIN login. Self-service kiosk for walk-in guests.',
+    desc: 'Touch-first counter POS with PIN auth, dine-in/takeaway/delivery modes, cash recording, and self-service kiosk terminals.',
+    size: 'small',
+    screenshot: null,
+  },
+  {
+    icon: AlertCircle,
+    title: 'Allergen Compliance',
+    desc: '14 EU allergens enforced — menu items cannot go live without manager declaration. Badges appear on customer menus and kitchen tickets.',
     size: 'small',
     screenshot: null,
   },
   {
     icon: Package,
     title: 'Inventory & Suppliers',
-    desc: 'Track stock levels, raise purchase orders, manage suppliers, and analyse waste — all automated.',
+    desc: 'Stock levels, low-stock alerts, auto-generated purchase orders, supplier management, and waste tracking with cost analysis.',
     size: 'small',
     screenshot: null,
   },
   {
     icon: Users,
-    title: 'Staff & Shift Management',
-    desc: 'Schedule shifts, track working sessions, monitor performance, and build leaderboards.',
-    size: 'large',
-    screenshot: '/screenshots/customer-ordering.png',
+    title: 'Staff & Shifts',
+    desc: 'Weekly scheduling, clock-in sessions with manager approval, shift lifecycle, and performance leaderboards.',
+    size: 'small',
+    screenshot: null,
   },
   {
-    icon: Star,
-    title: 'Loyalty & Reviews',
-    desc: 'Built-in loyalty tiers (Bronze → Platinum), review management, and sentiment analysis.',
+    icon: Megaphone,
+    title: 'Loyalty, Reviews & Campaigns',
+    desc: 'Bronze → Platinum loyalty tiers, review moderation with sentiment analysis, and email/SMS/push campaign builder.',
+    size: 'small',
+    screenshot: null,
+  },
+  {
+    icon: Receipt,
+    title: 'Refunds & Reconciliation',
+    desc: 'Full and partial refunds via Stripe, manager approval queue for agent-initiated refunds, and daily payment reconciliation.',
     size: 'small',
     screenshot: null,
   },
   {
     icon: Shield,
-    title: 'GDPR Compliant',
-    desc: 'Full GDPR toolkit — consent management, data export, right to erasure, breach logging.',
+    title: 'GDPR Toolkit',
+    desc: 'Consent management, data export, right to erasure, portability, rectification, breach logging, and audit trail.',
     size: 'small',
     screenshot: null,
   },
   {
     icon: MapPin,
-    title: 'Store Selection Engine',
-    desc: 'Distance-aware store routing assigns every order to the nearest location with capacity — no manual zones.',
+    title: 'Delivery Zones & Store Routing',
+    desc: 'Zone-based delivery areas with server-side fees. Geolocation picks the nearest open store with capacity.',
     size: 'small',
     screenshot: null,
   },
   {
-    icon: Smartphone,
-    title: 'Driver app',
-    desc: 'Drivers get live orders, turn-by-turn navigation, and a clear earnings view on their phone.',
+    icon: Cpu,
+    title: 'Kitchen Equipment Monitoring',
+    desc: 'Track equipment status, temperature, and maintenance schedules — surfaced in analytics and kitchen insights.',
     size: 'small',
-    screenshot: '/screenshots/customer-menu.png',
+    screenshot: null,
   },
 ]
 
@@ -379,6 +455,8 @@ export const PRICING_TIERS = [
       { icon: Star, text: 'Customer loyalty points', included: true },
       { icon: Bell, text: 'Email + SMS notifications', included: true },
       { icon: Truck, text: 'Delivery management (1 zone)', included: true },
+      { icon: Scale, text: 'EU VAT calculation', included: true },
+      { icon: FileCheck, text: 'Fiscal signing (supported countries)', included: true },
       { icon: Shield, text: 'GDPR compliance tools', included: true },
       { icon: Building2, text: '1 location', included: true },
       { icon: Users, text: 'Up to 10 staff accounts', included: true },
@@ -455,7 +533,11 @@ export const FAQS = [
   },
   {
     q: 'Which payment methods does MaSoVa support?',
-    a: 'MaSoVa supports card payments, iDEAL (Netherlands), Bancontact (Belgium), SEPA Direct Debit, Apple Pay, and Google Pay — all via Stripe.',
+    a: 'MaSoVa supports card payments, iDEAL (Netherlands), Bancontact (Belgium), SEPA Direct Debit, Apple Pay, and Google Pay — all via Stripe with PSD2/SCA compliance.',
+  },
+  {
+    q: 'Does MaSoVa handle EU VAT and fiscal signing?',
+    a: 'Yes. MaSoVa calculates VAT across 12 EU countries by order type (dine-in, takeaway, delivery) and item category. Fiscal signing for Germany, France, Italy, Belgium, Hungary, and the UK runs automatically at order completion, with a compliance dashboard for managers.',
   },
   {
     q: 'Can I use MaSoVa if I already have a POS system?',
@@ -468,30 +550,5 @@ export const FAQS = [
   {
     q: 'Do the smart assistants change things without asking?',
     a: 'No. MaSoVa only suggests actions — reorder lists, review replies, shift plans, and the like. A manager approves before anything goes live.',
-  },
-]
-
-
-export const TESTIMONIALS = [
-  {
-    quote: 'Before MaSoVa, we were managing orders on WhatsApp. Now every order flows from app to kitchen to driver without us touching it. Our delivery time dropped by 40%.',
-    name: 'Marco de Vries',
-    role: 'Owner',
-    restaurant: 'Spice Garden Amsterdam',
-    avatar: 'M',
-  },
-  {
-    quote: 'The manager dashboard alone is worth the subscription. I check sales, waste, and staff performance from my phone every morning. I used to need a full hour with spreadsheets.',
-    name: 'Sophie Müller',
-    role: 'Operations Manager',
-    restaurant: 'Bella Cucina Berlin (3 locations)',
-    avatar: 'S',
-  },
-  {
-    quote: "The chat assistant handles most customer questions on its own. Refunds, order status, menu questions — my team barely touches the phone anymore. It's remarkable.",
-    name: "Liam O'Brien",
-    role: 'Founder',
-    restaurant: 'The Dublin Kitchen',
-    avatar: 'L',
   },
 ]

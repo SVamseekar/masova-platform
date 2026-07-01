@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { CheckCircle2, XCircle, ArrowRight } from 'lucide-react'
-import { PRICING_TIERS } from '../constants'
+import { PRICING_TIERS, openContactForm } from '../constants'
 import SectionLabel from './SectionLabel'
 import { colors } from '../tokens'
 
@@ -51,8 +51,6 @@ export default function PricingSection() {
         <div className="grid md:grid-cols-3 gap-6">
           {PRICING_TIERS.map(({ name, price, tagline, highlight, badge, features, cta }, i) => {
             const displayPrice = price ? (annual ? Math.round(price * 0.83) : price) : null
-            const ctaHref = cta === 'Contact sales' ? 'mailto:hello@masova.com' : 'mailto:hello@masova.com?subject=MaSoVa%20free%20trial'
-
             return (
               <motion.div
                 key={name}
@@ -108,24 +106,25 @@ export default function PricingSection() {
                   ))}
                 </ul>
 
-                <a
-                  href={ctaHref}
-                  className="group flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all duration-200 text-white"
+                <button
+                  type="button"
+                  onClick={() => openContactForm()}
+                  className="group flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all duration-200 text-white w-full cursor-pointer"
                   style={
                     highlight
                       ? { background: colors.red }
                       : { background: 'rgba(255,255,255,0.08)' }
                   }
                   onMouseEnter={e => {
-                    if (highlight) (e.currentTarget as HTMLAnchorElement).style.background = colors.redDark
+                    if (highlight) (e.currentTarget as HTMLButtonElement).style.background = colors.redDark
                   }}
                   onMouseLeave={e => {
-                    if (highlight) (e.currentTarget as HTMLAnchorElement).style.background = colors.red
+                    if (highlight) (e.currentTarget as HTMLButtonElement).style.background = colors.red
                   }}
                 >
                   {cta}
                   <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
-                </a>
+                </button>
               </motion.div>
             )
           })}

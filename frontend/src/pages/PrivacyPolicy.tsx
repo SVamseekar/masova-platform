@@ -1,369 +1,136 @@
-import React from 'react';
-import {
-  Container,
-  Typography,
-  Box,
-  Paper,
-  Divider,
-  List,
-  ListItem,
-  ListItemText,
-  Button,
-} from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import SecurityIcon from '@mui/icons-material/Security';
-import GavelIcon from '@mui/icons-material/Gavel';
-import StorageIcon from '@mui/icons-material/Storage';
-import ShareIcon from '@mui/icons-material/Share';
-import LockIcon from '@mui/icons-material/Lock';
+import React from 'react'
+import LegalPageLayout from '../apps/ProductSite/components/LegalPageLayout'
+import SupportEmailLink from '../apps/ProductSite/components/SupportEmailLink'
+import { openContactForm } from '../apps/ProductSite/constants'
+import { colors } from '../apps/ProductSite/tokens'
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="space-y-3">
+      <h2 className="text-white font-semibold text-base">{title}</h2>
+      <div className="text-sm text-gray-400 leading-relaxed space-y-3">{children}</div>
+    </section>
+  )
+}
 
 export const PrivacyPolicy: React.FC = () => {
-  const navigate = useNavigate();
-
   return (
-    <Container maxWidth="lg" sx={{ py: 6 }}>
-      <Paper elevation={3} sx={{ p: 4, borderRadius: 4 }}>
-        <Box display="flex" alignItems="center" gap={2} mb={4}>
-          <SecurityIcon sx={{ fontSize: 40, color: 'primary.main' }} />
-          <Typography variant="h3" fontWeight={700}>
-            Privacy Policy
-          </Typography>
-        </Box>
-
-        <Typography variant="body2" color="text.secondary" paragraph>
-          <strong>Last Updated:</strong> January 1, 2025
-        </Typography>
-        <Typography variant="body2" color="text.secondary" paragraph>
-          <strong>Effective Date:</strong> January 1, 2025
-        </Typography>
-
-        <Divider sx={{ my: 3 }} />
-
-        <Typography variant="h5" fontWeight={600} gutterBottom mt={4}>
-          <GavelIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-          1. Introduction
-        </Typography>
-        <Typography variant="body1" paragraph>
-          MaSoVa Restaurant Management System ("we", "our", or "us") is committed to
-          protecting your privacy and complying with the General Data Protection Regulation
-          (GDPR) and other applicable data protection laws. This Privacy Policy explains how
-          we collect, use, store, and protect your personal data.
-        </Typography>
-
-        <Typography variant="h5" fontWeight={600} gutterBottom mt={4}>
-          <StorageIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-          2. Data Controller Information
-        </Typography>
-        <Typography variant="body1" paragraph>
-          <strong>Data Controller:</strong> MaSoVa Restaurant Management System
-          <br />
-          <strong>Contact Email:</strong> privacy@masova.com
-          <br />
-          <strong>Data Protection Officer:</strong> dpo@masova.com
-          <br />
-          <strong>Address:</strong> [Your Business Address]
-        </Typography>
-
-        <Typography variant="h5" fontWeight={600} gutterBottom mt={4}>
-          3. Personal Data We Collect
-        </Typography>
-        <Typography variant="body1" paragraph>
-          We collect and process the following categories of personal data:
-        </Typography>
-        <List>
-          <ListItem>
-            <ListItemText
-              primary="Account Information"
-              secondary="Name, email address, phone number, password (encrypted)"
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemText
-              primary="Order Information"
-              secondary="Order history, delivery addresses, payment information"
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemText
-              primary="Usage Data"
-              secondary="IP address, browser type, device information, pages visited"
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemText
-              primary="Communication Data"
-              secondary="Customer support messages, feedback, reviews"
-            />
-          </ListItem>
-        </List>
-
-        <Typography variant="h5" fontWeight={600} gutterBottom mt={4}>
-          4. Legal Basis for Processing
-        </Typography>
-        <Typography variant="body1" paragraph>
-          We process your personal data on the following legal bases:
-        </Typography>
-        <List>
-          <ListItem>
-            <ListItemText primary="• Contract Performance: To provide our services and fulfill orders" />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary="• Legitimate Interest: To improve our services and prevent fraud" />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary="• Legal Obligation: To comply with tax and regulatory requirements" />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary="• Consent: For marketing communications and analytics (where applicable)" />
-          </ListItem>
-        </List>
-
-        <Typography variant="h5" fontWeight={600} gutterBottom mt={4}>
-          5. How We Use Your Data
-        </Typography>
-        <List>
-          <ListItem>
-            <ListItemText primary="• Process and fulfill your orders" />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary="• Communicate with you about your orders and account" />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary="• Improve our services and user experience" />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary="• Send marketing communications (with your consent)" />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary="• Comply with legal obligations" />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary="• Prevent fraud and ensure security" />
-          </ListItem>
-        </List>
-
-        <Typography variant="h5" fontWeight={600} gutterBottom mt={4}>
-          <ShareIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-          6. Data Sharing and Third Parties
-        </Typography>
-        <Typography variant="body1" paragraph>
-          We may share your data with:
-        </Typography>
-        <List>
-          <ListItem>
-            <ListItemText
-              primary="Payment Processors"
-              secondary="To process payments securely (e.g., Razorpay, Stripe)"
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemText
-              primary="Delivery Partners"
-              secondary="To fulfill delivery orders"
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemText
-              primary="Cloud Service Providers"
-              secondary="For secure data storage and hosting"
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemText
-              primary="Analytics Providers"
-              secondary="To understand usage patterns (with your consent)"
-            />
-          </ListItem>
-        </List>
-        <Typography variant="body1" paragraph>
-          We ensure all third parties comply with GDPR through Data Processing Agreements (DPAs).
-        </Typography>
-
-        <Typography variant="h5" fontWeight={600} gutterBottom mt={4}>
-          <LockIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-          7. Your GDPR Rights
-        </Typography>
-        <Typography variant="body1" paragraph>
-          Under GDPR, you have the following rights:
-        </Typography>
-        <List>
-          <ListItem>
-            <ListItemText
-              primary="Right to Access"
-              secondary="Request a copy of your personal data"
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemText
-              primary="Right to Rectification"
-              secondary="Correct inaccurate or incomplete data"
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemText
-              primary="Right to Erasure (Right to be Forgotten)"
-              secondary="Request deletion of your personal data"
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemText
-              primary="Right to Data Portability"
-              secondary="Receive your data in a machine-readable format"
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemText
-              primary="Right to Restrict Processing"
-              secondary="Limit how we use your data"
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemText
-              primary="Right to Object"
-              secondary="Object to processing based on legitimate interests"
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemText
-              primary="Right to Withdraw Consent"
-              secondary="Withdraw consent for data processing at any time"
-            />
-          </ListItem>
-        </List>
-
-        <Box mt={3}>
-          <Button
-            variant="contained"
-            onClick={() => navigate('/gdpr-requests')}
-            sx={{ mr: 2, borderRadius: 3, textTransform: 'none' }}
+    <LegalPageLayout title="Privacy Policy" updated="July 1, 2026">
+      <div className="space-y-10">
+        <Section title="1. Who we are">
+          <p>
+            MaSoVa provides restaurant management software to business customers (restaurant owners,
+            operators, and their staff). For subscription and account data, MaSoVa is the data controller.
+          </p>
+          <p>
+            For end-customer data (diners who order through a restaurant&apos;s MaSoVa-powered app or site),
+            the restaurant is the data controller and MaSoVa acts as a data processor.
+          </p>
+          <div
+            className="rounded-xl p-4 text-xs space-y-1"
+            style={{ background: colors.bgElevated, border: `1px solid ${colors.border}` }}
           >
-            Manage My Data
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={() => navigate('/contact')}
-            sx={{ borderRadius: 3, textTransform: 'none' }}
-          >
-            Contact DPO
-          </Button>
-        </Box>
+            <p><span className="text-white font-medium">Contact:</span> <SupportEmailLink /></p>
+            <p><span className="text-white font-medium">Data protection enquiries:</span> <SupportEmailLink /></p>
+          </div>
+        </Section>
 
-        <Typography variant="h5" fontWeight={600} gutterBottom mt={4}>
-          8. Data Retention
-        </Typography>
-        <Typography variant="body1" paragraph>
-          We retain your personal data only for as long as necessary:
-        </Typography>
-        <List>
-          <ListItem>
-            <ListItemText primary="• Account data: Until account deletion + 30 days" />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary="• Order history: 7 years (tax and legal requirements)" />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary="• Marketing consents: 2 years from last interaction" />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary="• Audit logs: 6 years (compliance requirements)" />
-          </ListItem>
-        </List>
+        <Section title="2. What we collect">
+          <ul className="list-disc pl-5 space-y-1">
+            <li>Account details — name, work email, phone, role</li>
+            <li>Business details — restaurant name, locations, billing address</li>
+            <li>Usage data — IP address, device type, access logs (security and support)</li>
+            <li>Support communications — demo requests, tickets, feedback</li>
+            <li>Payment metadata — handled by our payment provider; we do not store full card numbers</li>
+          </ul>
+        </Section>
 
-        <Typography variant="h5" fontWeight={600} gutterBottom mt={4}>
-          9. Data Security
-        </Typography>
-        <Typography variant="body1" paragraph>
-          We implement industry-standard security measures including:
-        </Typography>
-        <List>
-          <ListItem>
-            <ListItemText primary="• End-to-end encryption for data transmission" />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary="• Encrypted storage for sensitive data" />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary="• Regular security audits and penetration testing" />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary="• Access controls and authentication" />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary="• Data breach notification procedures" />
-          </ListItem>
-        </List>
+        <Section title="3. Legal basis (GDPR Article 6)">
+          <ul className="list-disc pl-5 space-y-1">
+            <li><span className="text-gray-300">Contract</span> — providing the platform you subscribed to</li>
+            <li><span className="text-gray-300">Legitimate interest</span> — security monitoring, product improvement</li>
+            <li><span className="text-gray-300">Legal obligation</span> — tax records, financial compliance</li>
+            <li><span className="text-gray-300">Consent</span> — optional analytics and marketing cookies</li>
+          </ul>
+        </Section>
 
-        <Typography variant="h5" fontWeight={600} gutterBottom mt={4}>
-          10. International Data Transfers
-        </Typography>
-        <Typography variant="body1" paragraph>
-          Your data may be transferred outside the European Economic Area (EEA). We ensure
-          adequate protection through:
-        </Typography>
-        <List>
-          <ListItem>
-            <ListItemText primary="• Standard Contractual Clauses (SCCs)" />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary="• Adequacy decisions by the European Commission" />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary="• Data Processing Agreements with third parties" />
-          </ListItem>
-        </List>
+        <Section title="4. Where data is stored">
+          <p>
+            Production data is hosted in the EU (Frankfurt and Ireland regions). We do not transfer
+            personal data outside the EEA without appropriate safeguards (Standard Contractual Clauses).
+          </p>
+        </Section>
 
-        <Typography variant="h5" fontWeight={600} gutterBottom mt={4}>
-          11. Cookies and Tracking
-        </Typography>
-        <Typography variant="body1" paragraph>
-          We use cookies and similar technologies. You can manage your cookie preferences
-          through our cookie consent banner or in your browser settings.
-        </Typography>
+        <Section title="5. Sub-processors">
+          <p>We share data only with processors under Data Processing Agreements, including:</p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>Payment processing (Stripe — PSD2 / SCA compliant)</li>
+            <li>Cloud infrastructure (EU-hosted)</li>
+            <li>Email delivery for transactional notifications</li>
+            <li>Analytics (only if you accept analytics cookies)</li>
+          </ul>
+        </Section>
 
-        <Typography variant="h5" fontWeight={600} gutterBottom mt={4}>
-          12. Children's Privacy
-        </Typography>
-        <Typography variant="body1" paragraph>
-          Our services are not intended for children under 16. We do not knowingly collect
-          data from children.
-        </Typography>
+        <Section title="6. Your rights">
+          <p>
+            EEA residents can request access, correction, deletion, portability, or restriction of processing.
+            Email <SupportEmailLink /> with your request — we respond within 30 days as required by GDPR.
+          </p>
+          <p>
+            Restaurant customers who order through a MaSoVa-powered app should contact the restaurant directly
+            for diner data requests. MaSoVa&apos;s in-app data rights tools are available to signed-in customers
+            within their restaurant&apos;s live ordering experience.
+          </p>
+          <div className="flex flex-wrap gap-3 pt-1">
+            <button
+              type="button"
+              onClick={() => openContactForm()}
+              className="px-4 py-2 rounded-lg text-white text-xs font-semibold cursor-pointer"
+              style={{ background: colors.red }}
+            >
+              Contact us
+            </button>
+          </div>
+        </Section>
 
-        <Typography variant="h5" fontWeight={600} gutterBottom mt={4}>
-          13. Changes to This Policy
-        </Typography>
-        <Typography variant="body1" paragraph>
-          We may update this Privacy Policy from time to time. We will notify you of
-          significant changes via email or through our platform.
-        </Typography>
+        <Section title="7. Retention">
+          <p>
+            Account data is kept for the subscription period plus 30 days after cancellation. Financial
+            records are retained for 7 years as required by EU tax law. Marketing preferences are
+            deleted after 2 years of inactivity.
+          </p>
+        </Section>
 
-        <Typography variant="h5" fontWeight={600} gutterBottom mt={4}>
-          14. Contact Us
-        </Typography>
-        <Typography variant="body1" paragraph>
-          For privacy-related questions or to exercise your rights:
-        </Typography>
-        <Typography variant="body1" paragraph>
-          <strong>Email:</strong> privacy@masova.com
-          <br />
-          <strong>Data Protection Officer:</strong> dpo@masova.com
-          <br />
-          <strong>Supervisory Authority:</strong> You have the right to lodge a complaint
-          with your local data protection authority.
-        </Typography>
+        <Section title="8. Security">
+          <p>
+            We use TLS encryption in transit, encrypted storage at rest, role-based access controls,
+            and audit logging for access to personal data.
+          </p>
+        </Section>
 
-        <Divider sx={{ my: 4 }} />
+        <Section title="9. Cookies">
+          <p>
+            Essential cookies run the site. Analytics and marketing cookies are off by default and
+            only enabled through the cookie settings dialog. You can change your choice at any time
+            by clearing site data or contacting us.
+          </p>
+        </Section>
 
-        <Box textAlign="center" mt={4}>
-          <Button
-            variant="contained"
-            size="large"
-            onClick={() => navigate('/')}
-            sx={{ borderRadius: 3, textTransform: 'none', px: 4 }}
-          >
-            Return to Home
-          </Button>
-        </Box>
-      </Paper>
-    </Container>
-  );
-};
+        <Section title="10. Restaurant operator responsibilities">
+          <p>
+            As a software provider, MaSoVa gives restaurants tools for allergen display, GDPR consent,
+            and customer data export — but each restaurant remains responsible for food-labelling law
+            (EU Regulation 1169/2011), HACCP processes, VAT invoicing, and their own customer privacy notices.
+          </p>
+        </Section>
+
+        <Section title="11. Complaints">
+          <p>
+            Email <SupportEmailLink /> for any privacy question. You may also lodge a complaint with your
+            local EU supervisory authority.
+          </p>
+        </Section>
+      </div>
+    </LegalPageLayout>
+  )
+}

@@ -1,8 +1,16 @@
 import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Menu, X, Store } from 'lucide-react'
-import { NAV_LINKS, GOLD_GRADIENT_TEXT } from '../constants'
+import { NAV_LINKS, GOLD_GRADIENT_TEXT, openContactForm } from '../constants'
+import { scrollToSection } from '../utils/scrollToSection'
 import { colors } from '../tokens'
+
+function handleSectionNav(event: React.MouseEvent<HTMLAnchorElement>, href: string) {
+  if (!href.startsWith('#')) return
+  event.preventDefault()
+  window.history.pushState(null, '', href)
+  scrollToSection(href, 'smooth')
+}
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
@@ -40,6 +48,7 @@ export default function Navbar() {
               key={link.label}
               href={link.href}
               className="text-sm text-gray-400 hover:text-white transition-colors duration-200"
+              onClick={(e) => handleSectionNav(e, link.href)}
             >
               {link.label}
             </a>
@@ -47,16 +56,14 @@ export default function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
-          <a href="#demo" className="text-sm text-gray-400 hover:text-white px-3 py-2">
-            See it live
-          </a>
-          <a
-            href="#pricing"
-            className="text-sm px-4 py-2 rounded-lg font-medium transition-all duration-200"
+          <button
+            type="button"
+            onClick={() => openContactForm()}
+            className="text-sm px-4 py-2 rounded-lg font-medium transition-all duration-200 cursor-pointer"
             style={{ background: colors.red, color: '#fff' }}
           >
             Book a demo
-          </a>
+          </button>
         </div>
 
         <button
@@ -78,19 +85,22 @@ export default function Navbar() {
               key={link.label}
               href={link.href}
               className="text-sm text-gray-400 hover:text-white transition-colors"
-              onClick={() => setMobileOpen(false)}
+              onClick={(e) => {
+                handleSectionNav(e, link.href)
+                setMobileOpen(false)
+              }}
             >
               {link.label}
             </a>
           ))}
-          <a
-            href="#pricing"
-            className="text-sm px-4 py-2 rounded-lg text-center font-medium"
+          <button
+            type="button"
+            className="text-sm px-4 py-2 rounded-lg text-center font-medium cursor-pointer w-full"
             style={{ background: colors.red, color: '#fff' }}
-            onClick={() => setMobileOpen(false)}
+            onClick={() => { setMobileOpen(false); openContactForm() }}
           >
             Book a demo
-          </a>
+          </button>
         </motion.div>
       )}
     </motion.nav>
