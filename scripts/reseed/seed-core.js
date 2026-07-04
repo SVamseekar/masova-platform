@@ -14,6 +14,10 @@ const BASE = 'http://192.168.50.88:8085';
 
 async function seedCore() {
   const storeRes = await fetch(`${BASE}/api/test-data/create-default-store`, { method: 'POST' });
+  if (!storeRes.ok) {
+    const body = await storeRes.text();
+    throw new Error(`create-default-store failed: HTTP ${storeRes.status} — ${body.slice(0, 200)}`);
+  }
   const store = await storeRes.json();
   console.log('Store seeded:', store);
   return store;
