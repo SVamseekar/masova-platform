@@ -3,6 +3,7 @@ import { Bot, Sparkles } from 'lucide-react'
 import { colors, motion as motionTokens } from '../tokens'
 import { STATS } from '../constants'
 import AgentConstellation from './AgentConstellation'
+import RealAppMockup from './RealAppMockup'
 
 const headlineVariant = (delay: number) => ({
   initial: { opacity: 0, y: 32 },
@@ -173,39 +174,7 @@ export default function HeroSection() {
         transition={{ duration: 0.8, delay: 0.55 }}
         style={{ position: 'relative', zIndex: 1, maxWidth: 920, margin: '0 auto' }}
       >
-        <div
-          style={{
-            borderRadius: 14,
-            overflow: 'hidden',
-            border: `1px solid ${colors.goldBorder}`,
-            boxShadow: '0 32px 80px rgba(0,0,0,0.6), 0 0 60px rgba(212,175,55,0.08)',
-          }}
-        >
-          <div
-            style={{
-              background: '#111',
-              borderBottom: `1px solid ${colors.border}`,
-              padding: '10px 16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-            }}
-          >
-            <div style={{ display: 'flex', gap: 6 }}>
-              <span className="w-3 h-3 rounded-full bg-red-500/40 inline-block" />
-              <span className="w-3 h-3 rounded-full bg-amber-500/40 inline-block" />
-              <span className="w-3 h-3 rounded-full bg-green-500/40 inline-block" />
-            </div>
-            <span className="text-xs text-gray-600 flex-1 text-center">
-              masova.souravamseekar.com · live ordering
-            </span>
-          </div>
-          <img
-            src="/screenshots/customer-home.png"
-            alt="MaSoVa customer ordering experience"
-            style={{ width: '100%', display: 'block' }}
-          />
-        </div>
+        <RealAppMockup size="large" />
       </motion.div>
     </section>
   )
