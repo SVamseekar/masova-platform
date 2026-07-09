@@ -132,8 +132,13 @@ function isStaleFrontendPath(frontendNorm, backendNorm) {
   if (f[1] === 'menu' && f.join('/') !== b.join('/')) return true;
   // notification subpath migrations
   if (f[1] === 'notifications' && f.join('/') !== b.join('/')) return true;
-  // bi executive paths
-  if (f[1] === 'bi' && tailSegments(frontendNorm, 1) !== tailSegments(backendNorm, 1)) return true;
+  // bi legacy aliases only (e.g. /api/bi/executive-summary → /api/bi/reports)
+  // Do NOT flag /api/bi vs /api/bi/reports — both are canonical query-param endpoints.
+  if (f[1] === 'bi' && f.length >= 3 && b.length >= 2 && f.join('/') !== b.join('/') &&
+      !strictPathMatch(frontendNorm, backendNorm)) {
+    const legacyBi = new Set(['executive-summary', 'forecast', 'analysis', 'prediction', 'benchmarking']);
+    if (legacyBi.has(f[2]) || legacyBi.has(f[f.length - 1])) return true;
+  }
   return false;
 }
 

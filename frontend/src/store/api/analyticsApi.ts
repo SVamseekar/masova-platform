@@ -481,12 +481,8 @@ export const analyticsApi = createApi({
      * Keep the query body as a single expression so integration-matrix-audit can extract `/bi/reports`.
      */
     getExecutiveSummary: builder.query<ExecutiveSummary, string | undefined>({
-      query: (storeIdOrPeriod) =>
-        `/bi/reports?type=executive-summary&period=${encodeURIComponent(
-          storeIdOrPeriod && ['WEEK', 'MONTH', 'QUARTER', 'YEAR'].includes(storeIdOrPeriod.toUpperCase())
-            ? storeIdOrPeriod.toUpperCase()
-            : 'MONTH'
-        )}`,
+      // Single-line template required: integration-matrix-audit extracts RTK paths via regex.
+      query: (storeIdOrPeriod) => `/bi/reports?type=executive-summary&period=${encodeURIComponent((storeIdOrPeriod && ['WEEK', 'MONTH', 'QUARTER', 'YEAR'].includes(storeIdOrPeriod.toUpperCase()) ? storeIdOrPeriod.toUpperCase() : 'MONTH'))}`,
       transformResponse: (response: BackendExecutiveSummary) => mapExecutiveSummary(response),
       providesTags: (result, error, storeId) => [{ type: 'Analytics', id: `EXECUTIVE_${storeId || 'DEFAULT'}` }],
     }),
