@@ -337,7 +337,7 @@ public class LogisticsSeedService {
             t.setStoreId(storeId);
             t.setDriverId(driverId);
             t.setDriverName("Driver Berlin");
-            t.setDriverPhone("9876543205");
+            t.setDriverPhone("+491511000005");
             t.setStatus(spec.status());
             t.setDispatchMethod("MANUAL");
             t.setPriorityLevel("MEDIUM");

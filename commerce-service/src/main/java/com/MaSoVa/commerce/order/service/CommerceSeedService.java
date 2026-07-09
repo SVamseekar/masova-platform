@@ -196,7 +196,7 @@ public class CommerceSeedService {
             order.setCustomerId(customerUserId);
             order.setCustomerName("Anna Mueller");
             order.setCustomerEmail("anna.mueller@gmail.com");
-            order.setCustomerPhone("9876543211");
+            order.setCustomerPhone("+491511000011");
             order.setStatus(spec.status());
             order.setOrderType(spec.type());
             order.setOrderSource(OrderSource.MASOVA);

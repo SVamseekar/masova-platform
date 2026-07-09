@@ -34,12 +34,13 @@ After 2026-07-09 repair:
 
 | Script | Purpose |
 |---|---|
-| **`reseed-all.js`** | **Phase E full platform reseed** — core → commerce → payment → logistics |
-| **`verify-seed.js`** | **Phase E exit criteria** — counts + ownership invariant; exit 0 = green |
-| `seed-core.js` | `POST /api/test-data/seed-demo` (Berlin stores, users, customers, campaigns) |
+| **`reseed-all.js`** | **Phase E full EU reseed** — core → commerce → payment → logistics → intelligence |
+| **`verify-seed.js`** | **Phase E exit criteria** — counts + ownership + analytics; exit 0 = green |
+| `seed-core.js` | `POST /api/test-data/seed-demo` (Berlin DE/EUR, EU E.164 phones, users, campaigns) |
 | `seed-commerce.js` | `POST /api/orders/seed-demo` (menu + multi-status orders + equipment) |
-| `seed-payment.js` | `POST /api/payments/seed-demo` (synthetic txs + refunds) |
+| `seed-payment.js` | `POST /api/payments/seed-demo` (synthetic EUR/Stripe-shaped txs + refunds) |
 | `seed-logistics.js` | `POST /api/inventory/seed-demo` (suppliers, inventory, POs, waste, delivery) |
+| `seed-intelligence.js` | `POST /api/analytics/seed-demo` (clear Redis + warm dashboard; no owned entities) |
 | `mongo-fix-demo.js` | Diversify order statuses; ensure DOM001 EU fields (legacy repair) |
 | `mongo-link-orders-userid.js` | Set `orders.customerId` = `customers.userId` for gateway ownership |
 | `verify-phase-b-e2e.js` | **True E2E Phase B residual** — create → kitchen → dispatch → accept → OTP → DELIVERED + cancel path + SockJS check |
@@ -56,6 +57,10 @@ GW=http://192.168.50.88:8080 node scripts/reseed/verify-seed.js
 **Idempotency:** seeders upsert by fixed keys (email, orderNumber `SEED-ORD-*`, supplierCode `SEED-SUP-*`, itemCode, notes `seed:*`). No wipe-and-replace required. Re-running resets demo passwords to `Demo@1234` and refreshes seed rows.
 
 **Ownership invariant:** commerce seed sets `order.customerId` = Anna's **userId** (JWT `sub`), not the Customer document `_id`.
+
+**EU primary (not India):** stores `countryCode=DE` / `currency=EUR` / `locale=de-DE`; user phones E.164 `+49…`; analytics business calendar `Europe/Berlin` (not IST). Payment seed uses EUR + Stripe-shaped synthetic data.
+
+**Intelligence:** has **no Mongo entities** — seed clears Redis analytics caches and warms staff-leaderboard / sales / BI from commerce order data so manager Analytics tab is ready.
 
 **Profile gate:** seed controllers/services only work when `SPRING_PROFILES_ACTIVE` includes `dev` or `demo`. Outside those profiles endpoints return 404 (or controller beans are not loaded for core `TestDataController`).
 

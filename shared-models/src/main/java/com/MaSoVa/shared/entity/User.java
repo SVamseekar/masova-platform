@@ -122,7 +122,9 @@ public class User {
         private String email;
         
         @NotNull
-        @Pattern(regexp = "^[6-9]\\d{9}$", message = "Invalid Indian phone number")
+        // E.164 international (EU primary) or synthetic KIOSK terminal id
+        @Pattern(regexp = "^(\\+?[1-9]\\d{6,14}|KIOSK[A-Za-z0-9_-]+)$",
+                message = "Invalid phone number (E.164 or kiosk id)")
         @Indexed(unique = true)
         private String phone;
         

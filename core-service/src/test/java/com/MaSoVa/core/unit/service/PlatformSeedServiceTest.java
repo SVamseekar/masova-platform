@@ -137,7 +137,7 @@ class PlatformSeedServiceTest {
         User.PersonalInfo pi = new User.PersonalInfo();
         pi.setEmail("manager.berlin@gmail.com");
         pi.setName("Old");
-        pi.setPhone("9876543201");
+        pi.setPhone("+491511000001");
         pi.setPasswordHash("old-hash");
         existing.setPersonalInfo(pi);
         User.EmployeeDetails emp = new User.EmployeeDetails();

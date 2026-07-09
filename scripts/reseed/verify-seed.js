@@ -24,7 +24,11 @@ function fail(name, detail) {
 }
 
 async function json(method, path, { token, body } = {}) {
-  const headers = { Accept: 'application/json' };
+  const headers = {
+    Accept: 'application/json',
+    'X-Selected-Store-Id': STORE,
+    'X-User-Store-Id': STORE,
+  };
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body) headers['Content-Type'] = 'application/json';
   const res = await fetch(`${GW}${path}`, {
@@ -220,6 +224,37 @@ async function main() {
     const r = await json('GET', `/api/delivery?storeId=${STORE}`, { token: manager.token });
     if (r.status === 200) ok('delivery list', '200');
     else fail('delivery list', `HTTP ${r.status}`);
+  }
+
+  // ── Intelligence (EU analytics warm) ──────────────────────────────────
+  console.log('\nIntelligence (analytics / BI)');
+  {
+    const r = await json(
+      'GET',
+      `/api/analytics?type=staff-leaderboard&period=TODAY&storeId=${STORE}`,
+      { token: manager.token }
+    );
+    if (r.status === 200) ok('analytics staff-leaderboard', '200');
+    else fail('analytics staff-leaderboard', `HTTP ${r.status}`);
+  }
+  {
+    const r = await json('GET', `/api/bi/reports?type=executive-summary&period=MONTH`, {
+      token: manager.token,
+    });
+    if (r.status === 200) ok('bi executive-summary', '200');
+    else fail('bi executive-summary', `HTTP ${r.status}`);
+  }
+  {
+    const r = await json('POST', `/api/analytics/seed-demo?storeId=${STORE}`, {
+      token: manager.token,
+    });
+    if (r.status === 200) {
+      ok('analytics seed-demo warm', `tz=${r.data?.timezone || '?'}`);
+    } else if (r.status === 404) {
+      ok('analytics seed-demo skipped', 'profile not dev/demo or old binary');
+    } else {
+      fail('analytics seed-demo', `HTTP ${r.status}`);
+    }
   }
 
   // ── Equipment / notifications (Phase D seeds) ─────────────────────────

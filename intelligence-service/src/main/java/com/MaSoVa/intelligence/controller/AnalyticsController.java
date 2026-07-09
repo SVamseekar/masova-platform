@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.CacheManager;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -41,6 +42,7 @@ public class AnalyticsController {
     private final CostAnalysisService costAnalysisService;
     private final BenchmarkingService benchmarkingService;
     private final ExecutiveReportingService executiveReportingService;
+    private final AnalyticsSeedService analyticsSeedService;
     private final CacheManager cacheManager;
 
     /** All @Cacheable value names used by analytics / BI services (must stay in sync). */
@@ -55,12 +57,14 @@ public class AnalyticsController {
                                CostAnalysisService costAnalysisService,
                                BenchmarkingService benchmarkingService,
                                ExecutiveReportingService executiveReportingService,
+                               AnalyticsSeedService analyticsSeedService,
                                CacheManager cacheManager) {
         this.analyticsService = analyticsService;
         this.biEngineService = biEngineService;
         this.costAnalysisService = costAnalysisService;
         this.benchmarkingService = benchmarkingService;
         this.executiveReportingService = executiveReportingService;
+        this.analyticsSeedService = analyticsSeedService;
         this.cacheManager = cacheManager;
     }
 
@@ -117,6 +121,34 @@ public class AnalyticsController {
         });
         log.info("Analytics caches cleared for store: {}", storeId);
         return ResponseEntity.ok(Map.of("status", "success", "storeId", storeId));
+    }
+
+    /**
+     * POST /api/analytics/seed-demo — clear caches + warm dashboard queries (dev/demo only).
+     * Intelligence has no own entities; this read-through warms Redis from commerce data.
+     */
+    @PostMapping({"/api/analytics/seed-demo", "/api/analytics/test-data/seed-demo"})
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Seed/warm analytics caches for demo (dev/demo profile only)")
+    public ResponseEntity<?> seedDemo(
+            @RequestParam(defaultValue = "DOM001") String storeId,
+            HttpServletRequest request) {
+        if (!analyticsSeedService.isSeedAllowed()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Seed only available with spring profile dev or demo"));
+        }
+        String headerStore = StoreContextUtil.getStoreIdFromHeaders(request);
+        String effective = (storeId != null && !storeId.isBlank()) ? storeId
+                : (headerStore != null ? headerStore : "DOM001");
+        try {
+            return ResponseEntity.ok(analyticsSeedService.seedDemo(effective));
+        } catch (Exception e) {
+            log.error("Analytics seed-demo failed for store {}", effective, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "error", "Seed failed",
+                            "detail", e.getMessage() != null ? e.getMessage() : "unknown"));
+        }
     }
 
     // ── /api/bi ───────────────────────────────────────────────────────────────

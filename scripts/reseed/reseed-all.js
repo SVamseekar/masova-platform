@@ -1,7 +1,7 @@
 // scripts/reseed/reseed-all.js
 //
-// Full platform reseed orchestrator (True E2E Phase E).
-// One command seeds demo data across core / commerce / payment / logistics.
+// Full platform reseed orchestrator (True E2E Phase E) — EU / Berlin primary.
+// One command seeds demo data across core / commerce / payment / logistics / intelligence.
 //
 // Usage (Mac → Dell):
 //   GW=http://192.168.50.88:8080 node scripts/reseed/reseed-all.js
@@ -18,6 +18,7 @@ const { seedCore } = require('./seed-core');
 const { seedCommerce } = require('./seed-commerce');
 const { seedPayment } = require('./seed-payment');
 const { seedLogistics } = require('./seed-logistics');
+const { seedIntelligence } = require('./seed-intelligence');
 
 const GW = process.env.GW || process.env.GATEWAY || 'http://192.168.50.88:8080';
 const STORE = process.env.STORE_ID || 'DOM001';
@@ -91,7 +92,11 @@ async function reseedAll() {
     driverId,
   });
 
-  // 6) Optional Phase D seeds (notifications + equipment already in commerce)
+  // 6) Intelligence (cache clear + warm — no own entities)
+  console.log('\n--- intelligence ---');
+  const intelligence = await seedIntelligence(managerToken, { storeId: STORE });
+
+  // 7) Optional Phase D notifications
   console.log('\n--- optional (notifications) ---');
   const notif = await seedOptional('notifications', async () => {
     const res = await fetch(`${GW}/api/notifications/seed-demo`, {
@@ -107,6 +112,9 @@ async function reseedAll() {
 
   const summary = {
     storeId: STORE,
+    region: 'EU-DE',
+    currency: 'EUR',
+    timezone: 'Europe/Berlin',
     core: {
       users: Object.keys(userIds).length,
       primaryCustomerUserId: customerUserId,
@@ -125,6 +133,11 @@ async function reseedAll() {
       suppliers: logistics?.suppliers?.total,
       inventory: logistics?.inventory?.totalForStore,
       delivery: logistics?.delivery?.totalSeedTrackings,
+    },
+    intelligence: {
+      timezone: intelligence?.timezone,
+      warmed: intelligence?.warmed ? Object.keys(intelligence.warmed).length : 0,
+      errors: intelligence?.errors ? Object.keys(intelligence.errors).length : 0,
     },
     notifications: notif.ok ? notif.result : notif.error,
   };

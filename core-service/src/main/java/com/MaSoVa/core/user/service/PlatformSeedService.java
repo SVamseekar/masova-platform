@@ -41,7 +41,8 @@ public class PlatformSeedService {
     private static final Logger log = LoggerFactory.getLogger(PlatformSeedService.class);
     private static final String DEMO_PASSWORD = "Demo@1234";
     private static final String STORE_CODE = "DOM001";
-    private static final ZoneId IST = ZoneId.of("Asia/Kolkata");
+    /** EU primary business zone (Berlin). */
+    private static final ZoneId EU_ZONE = ZoneId.of("Europe/Berlin");
 
     private final StoreRepository storeRepository;
     private final StoreService storeService;
@@ -107,11 +108,11 @@ public class PlatformSeedService {
         List<String> updated = new ArrayList<>();
 
         upsertBerlinStore("DOM001", "MaSoVa Berlin Mitte", "Berlin", "10115",
-                52.5200, 13.4050, "03012345670", created, updated);
+                52.5200, 13.4050, "+493012345670", created, updated);
         upsertBerlinStore("DOM002", "MaSoVa Berlin Prenzlauer Berg", "Berlin", "10405",
-                52.5388, 13.4244, "03012345671", created, updated);
+                52.5388, 13.4244, "+493012345671", created, updated);
         upsertBerlinStore("DOM003", "MaSoVa Berlin Kreuzberg", "Berlin", "10999",
-                52.4980, 13.4030, "03012345672", created, updated);
+                52.4980, 13.4030, "+493012345672", created, updated);
 
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("created", created);
@@ -180,38 +181,38 @@ public class PlatformSeedService {
 
     private Map<String, String> seedUsers(String storeCode) {
         Map<String, String> ids = new LinkedHashMap<>();
-        // Staff (phones satisfy Indian-format entity validation used historically)
+        // Staff — German E.164 mobiles (+49…)
         ids.put("manager.berlin@gmail.com",
-                upsertUser("Manager Berlin", "manager.berlin@gmail.com", "9876543201",
+                upsertUser("Manager Berlin", "manager.berlin@gmail.com", "+491511000001",
                         UserType.MANAGER, storeCode, "MANAGER", null, null));
         ids.put("assistant.berlin@gmail.com",
-                upsertUser("Assistant Berlin", "assistant.berlin@gmail.com", "9876543202",
+                upsertUser("Assistant Berlin", "assistant.berlin@gmail.com", "+491511000002",
                         UserType.ASSISTANT_MANAGER, storeCode, "ASSISTANT_MANAGER", null, null));
         ids.put("kitchen.berlin@gmail.com",
-                upsertUser("Kitchen Berlin", "kitchen.berlin@gmail.com", "9876543203",
+                upsertUser("Kitchen Berlin", "kitchen.berlin@gmail.com", "+491511000003",
                         UserType.STAFF, storeCode, "KITCHEN", null, null));
         ids.put("cashier.berlin@gmail.com",
-                upsertUser("Cashier Berlin", "cashier.berlin@gmail.com", "9876543204",
+                upsertUser("Cashier Berlin", "cashier.berlin@gmail.com", "+491511000004",
                         UserType.STAFF, storeCode, "CASHIER", null, null));
         ids.put("driver.berlin@gmail.com",
-                upsertUser("Driver Berlin", "driver.berlin@gmail.com", "9876543205",
+                upsertUser("Driver Berlin", "driver.berlin@gmail.com", "+491511000005",
                         UserType.DRIVER, storeCode, "DRIVER", "Scooter", "DE-B-SEED-001"));
 
-        // Customers
+        // Customers — Berlin residents
         ids.put("anna.mueller@gmail.com",
-                upsertUser("Anna Mueller", "anna.mueller@gmail.com", "9876543211",
+                upsertUser("Anna Mueller", "anna.mueller@gmail.com", "+491511000011",
                         UserType.CUSTOMER, null, null, null, null));
         ids.put("max.schmidt@gmail.com",
-                upsertUser("Max Schmidt", "max.schmidt@gmail.com", "9876543212",
+                upsertUser("Max Schmidt", "max.schmidt@gmail.com", "+491511000012",
                         UserType.CUSTOMER, null, null, null, null));
         ids.put("lisa.weber@gmail.com",
-                upsertUser("Lisa Weber", "lisa.weber@gmail.com", "9876543213",
+                upsertUser("Lisa Weber", "lisa.weber@gmail.com", "+491511000013",
                         UserType.CUSTOMER, null, null, null, null));
         ids.put("thomas.becker@gmail.com",
-                upsertUser("Thomas Becker", "thomas.becker@gmail.com", "9876543214",
+                upsertUser("Thomas Becker", "thomas.becker@gmail.com", "+491511000014",
                         UserType.CUSTOMER, null, null, null, null));
         ids.put("sophie.klein@gmail.com",
-                upsertUser("Sophie Klein", "sophie.klein@gmail.com", "9876543215",
+                upsertUser("Sophie Klein", "sophie.klein@gmail.com", "+491511000015",
                         UserType.CUSTOMER, null, null, null, null));
         return ids;
     }
@@ -296,7 +297,7 @@ public class PlatformSeedService {
                 }
                 userJpaRepository.save(entity);
             } else {
-                OffsetDateTime now = OffsetDateTime.now(IST);
+                OffsetDateTime now = OffsetDateTime.now(EU_ZONE);
                 UserEntity.UserEntityBuilder builder = UserEntity.builder()
                         .mongoId(user.getId())
                         .userType(user.getType() != null ? user.getType().name() : null)
@@ -364,8 +365,8 @@ public class PlatformSeedService {
             c.setName(email.split("@")[0].replace('.', ' '));
             c.setEmail(email);
             c.setPhone(userRepository.findById(userId)
-                    .map(u -> u.getPersonalInfo() != null ? u.getPersonalInfo().getPhone() : "9876543210")
-                    .orElse("9876543210"));
+                    .map(u -> u.getPersonalInfo() != null ? u.getPersonalInfo().getPhone() : "+491511000000")
+                    .orElse("+491511000000"));
             c.addStoreId(storeCode);
             c.setActive(true);
             c.setEmailVerified(true);
