@@ -49,12 +49,40 @@ public class OrderItemSyncService {
     }
 
     /**
+     * Look up the PG dual-write row by mongoId and sync fields + items.
+     * Must re-fetch inside REQUIRES_NEW so the entity is not shared with an outer
+     * JPA persistence context (loading in the outer TX then saving here caused
+     * OptimisticLockException on outer commit after version advanced).
+     *
+     * @return true if a PG row was found and synced; false if missing
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public boolean syncOrderByMongoId(String mongoId, Order order) {
+        return orderJpaRepository.findByMongoId(mongoId)
+                .map(pgOrder -> {
+                    syncOrderItemsInternal(pgOrder, order);
+                    return true;
+                })
+                .orElse(false);
+    }
+
+    /**
      * Atomically sync order fields + replace line items for a PG order row.
      * Runs in its own transaction (REQUIRES_NEW) so a failure during save
      * rolls back the deleteByOrderId as well — preventing orphaned empty item sets.
+     *
+     * Prefer {@link #syncOrderByMongoId} when the caller may already have a JPA
+     * persistence context — pass mongoId so the row is loaded only in this TX.
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void syncOrderItems(OrderJpaEntity pgOrder, Order order) {
+        // Re-load by id inside this TX so we never mutate a detached/outer-managed entity
+        OrderJpaEntity managed = orderJpaRepository.findById(pgOrder.getId())
+                .orElse(pgOrder);
+        syncOrderItemsInternal(managed, order);
+    }
+
+    private void syncOrderItemsInternal(OrderJpaEntity pgOrder, Order order) {
         updateFields(pgOrder, order);
         orderItemJpaRepository.deleteByOrderId(pgOrder.getId());
         List<OrderItemJpaEntity> newItems = buildItemEntities(order.getItems(), pgOrder);

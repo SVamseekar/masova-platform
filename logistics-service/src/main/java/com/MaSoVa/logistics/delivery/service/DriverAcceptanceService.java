@@ -196,6 +196,34 @@ public class DriverAcceptanceService {
     }
 
     /**
+     * Active deliveries for a driver (assigned through in-progress, not terminal).
+     * Used by GET /api/delivery/driver/active.
+     */
+    public List<DeliveryTracking> getActiveDeliveriesForDriver(String driverId) {
+        return deliveryTrackingRepository.findByDriverIdAndStatusIn(
+                driverId,
+                List.of(
+                        "ASSIGNED",
+                        "ACCEPTED",
+                        "PICKED_UP",
+                        "IN_TRANSIT",
+                        "ARRIVED",
+                        "OUT_FOR_DELIVERY"
+                ));
+    }
+
+    /**
+     * List delivery trackings for a store (optional status filter).
+     * Used by GET /api/delivery?storeId=.
+     */
+    public List<DeliveryTracking> listDeliveriesForStore(String storeId, String status) {
+        if (status != null && !status.isBlank()) {
+            return deliveryTrackingRepository.findByStatusAndStoreId(status, storeId);
+        }
+        return deliveryTrackingRepository.findByStoreId(storeId);
+    }
+
+    /**
      * Check for expired acceptance windows and trigger reassignment
      * Called by scheduled job
      */

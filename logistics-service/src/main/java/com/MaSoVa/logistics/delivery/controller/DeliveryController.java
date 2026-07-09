@@ -76,6 +76,49 @@ public class DeliveryController {
         this.performanceService = performanceService;
     }
 
+    // ── LIST / DRIVER ACTIVE (board + crew) ───────────────────────────────────────
+
+    /**
+     * GET /api/delivery?storeId=&status= — list delivery trackings for store board.
+     * Without this route Spring falls through to static resources → 500 "No static resource".
+     */
+    @GetMapping
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF', 'DRIVER')")
+    @Operation(summary = "List deliveries for a store (optional status filter)")
+    public ResponseEntity<List<DeliveryTracking>> listDeliveries(
+            @RequestParam(required = false) String storeId,
+            @RequestParam(required = false) String status,
+            HttpServletRequest request) {
+        String resolvedStoreId = storeId;
+        if (resolvedStoreId == null || resolvedStoreId.isBlank()) {
+            resolvedStoreId = StoreContextUtil.getStoreIdFromHeaders(request);
+        }
+        if (resolvedStoreId == null || resolvedStoreId.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(driverAcceptanceService.listDeliveriesForStore(resolvedStoreId, status));
+    }
+
+    /**
+     * GET /api/delivery/driver/active — active deliveries for the authenticated driver.
+     * Driver id from X-User-Id (gateway JWT) or optional ?driverId= for managers.
+     */
+    @GetMapping("/driver/active")
+    @PreAuthorize("hasAnyRole('DRIVER', 'MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Active deliveries for the current (or specified) driver")
+    public ResponseEntity<List<DeliveryTracking>> getDriverActiveDeliveries(
+            @RequestParam(required = false) String driverId,
+            HttpServletRequest request) {
+        String resolvedDriverId = driverId;
+        if (resolvedDriverId == null || resolvedDriverId.isBlank()) {
+            resolvedDriverId = StoreContextUtil.getUserIdFromHeaders(request);
+        }
+        if (resolvedDriverId == null || resolvedDriverId.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(driverAcceptanceService.getActiveDeliveriesForDriver(resolvedDriverId));
+    }
+
     // ── DISPATCH ──────────────────────────────────────────────────────────────────
 
     /**

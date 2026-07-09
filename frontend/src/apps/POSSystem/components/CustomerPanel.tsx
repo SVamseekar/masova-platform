@@ -235,10 +235,11 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
     }
 
     try {
-      // Step 1: Create/get customer profile if we have customer details
-      let customerProfileId = customer?.id;
+      // Step 1: Resolve order.customerId as JWT userId (ownership), not customer document id.
+      // Walk-in may leave customerId null — status machine must still work.
+      let orderCustomerUserId: string | undefined = customer?.userId || undefined;
 
-      if (!customerProfileId && (customerPhone || customerEmail)) {
+      if (!orderCustomerUserId && (customerPhone || customerEmail)) {
         try {
           // Generate a temporary userId for walk-in customers using phone or email
           const tempUserId = customerPhone
@@ -255,8 +256,9 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
             smsOptIn: false,
           }).unwrap();
 
-          customerProfileId = customerProfile.id;
-          console.log('Customer profile created/retrieved:', customerProfileId);
+          // Prefer linked userId; fall back to tempUserId used at profile create
+          orderCustomerUserId = customerProfile.userId || tempUserId;
+          console.log('Customer profile created/retrieved; order.customerId (userId):', orderCustomerUserId);
         } catch (error) {
           console.warn('Failed to create customer profile, continuing without it:', error);
           // Continue without customer profile - order will still work
@@ -302,7 +304,7 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
       const backendOrderType = orderType === 'PICKUP' ? 'TAKEAWAY' : orderType;
 
       const orderData = {
-        customerId: customerProfileId || undefined,
+        customerId: orderCustomerUserId || undefined,
         customerName: customerName.trim() || 'Walk-in Customer',
         customerPhone: customerPhone || undefined,
         customerEmail: customerEmail.trim() || undefined, // For email notifications
@@ -315,7 +317,7 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
         // Staff tracking - who created this order (from PIN authentication)
         createdByStaffId: staffData.userId,
         createdByStaffName: staffData.name,
-        // Global-6: aggregator source
+        // Global-6: aggregator source (MASOVA | WOLT | … — never POS)
         orderSource,
         aggregatorOrderId: orderSource !== 'MASOVA' ? aggregatorOrderId || undefined : undefined,
       };

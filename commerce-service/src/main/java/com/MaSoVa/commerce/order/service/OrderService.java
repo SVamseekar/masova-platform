@@ -363,13 +363,17 @@ public class OrderService {
      * Re-syncs status/payment/totals/timestamps + line items to the PostgreSQL dual-write
      * row for an order, keyed by mongoId. No-op (with a warn log) if the PG row is missing,
      * since createOrder's dual-write may have failed independently.
+     *
+     * Lookup + save happen only inside OrderItemSyncService's REQUIRES_NEW transaction so
+     * the outer @Transactional method never holds a stale managed OrderJpaEntity (which
+     * previously caused OptimisticLockException on commit after status transitions).
      */
     private void syncToPostgres(Order order) {
         try {
-            orderJpaRepository.findByMongoId(order.getId()).ifPresentOrElse(
-                pgOrder -> orderItemSyncService.syncOrderItems(pgOrder, order),
-                () -> log.warn("PG dual-write: no PG row for order {} — skipping item sync", order.getId())
-            );
+            boolean synced = orderItemSyncService.syncOrderByMongoId(order.getId(), order);
+            if (!synced) {
+                log.warn("PG dual-write: no PG row for order {} — skipping item sync", order.getId());
+            }
         } catch (Exception e) {
             log.warn("PG dual-write sync failed for order {}: {}", order.getId(), e.getMessage());
         }
@@ -542,6 +546,7 @@ public class OrderService {
         }
 
         Order updatedOrder = orderRepository.save(order);
+        syncToPostgres(updatedOrder);
 
         // Publish status changed event to RabbitMQ
         try {
@@ -888,12 +893,14 @@ public class OrderService {
             case READY -> {
                 // Different terminal states based on order type
                 yield switch (orderType) {
-                    case DELIVERY -> OrderStatus.DISPATCHED;  // DELIVERY: READY → DISPATCHED → DELIVERED
+                    case DELIVERY -> OrderStatus.DISPATCHED;  // DELIVERY: READY → DISPATCHED → OFD → DELIVERED
                     case TAKEAWAY -> OrderStatus.COMPLETED;   // TAKEAWAY: READY → COMPLETED
                     case DINE_IN -> OrderStatus.SERVED;       // DINE_IN: READY → SERVED
                 };
             }
-            case DISPATCHED -> OrderStatus.DELIVERED;  // Only for DELIVERY orders
+            // Delivery driver path: never skip OUT_FOR_DELIVERY on KDS/next-stage
+            case DISPATCHED -> OrderStatus.OUT_FOR_DELIVERY;
+            case OUT_FOR_DELIVERY -> OrderStatus.DELIVERED;
             default -> null;  // Already in terminal state (DELIVERED, COMPLETED, SERVED, CANCELLED)
         };
     }
