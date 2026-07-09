@@ -347,7 +347,7 @@ const ActiveDeliveryPage: React.FC = () => {
                   mb: spacing.lg,
                 }}
               >
-                Interactive map with delivery routes coming soon
+                Map view uses the list route below. Full turn-by-turn map opens from Navigate when coordinates are available.
               </Typography>
               <IconButton
                 onClick={() => setViewMode('list')}

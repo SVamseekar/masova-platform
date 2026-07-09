@@ -269,8 +269,9 @@ const OrderTrackingPage: React.FC = () => {
             View Details →
           </button>
           {isActive && (
-            <button
-              onClick={(e) => { e.stopPropagation(); alert('Support feature coming soon!'); }}
+            <a
+              href="mailto:support@masova.app?subject=Help%20with%20order"
+              onClick={(e) => e.stopPropagation()}
               style={{
                 padding: '10px 18px',
                 background: 'var(--surface-2)',
@@ -282,10 +283,12 @@ const OrderTrackingPage: React.FC = () => {
                 cursor: 'pointer',
                 transition: 'var(--transition)',
                 fontFamily: 'var(--font-body)',
+                textDecoration: 'none',
+                display: 'inline-block',
               }}
             >
               Help
-            </button>
+            </a>
           )}
         </div>
       </div>

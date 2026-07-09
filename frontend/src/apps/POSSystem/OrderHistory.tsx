@@ -105,7 +105,22 @@ const OrderHistory: React.FC = () => {
   };
 
   const handlePrintOrder = (orderId: string) => {
-    alert(`Print functionality for order ${orderId} coming soon!`);
+    const order = filteredOrders.find((o: Order) => o.id === orderId || o.orderNumber === orderId);
+    const w = window.open('', '_blank', 'noopener,noreferrer,width=480,height=640');
+    if (!w) return;
+    const lines = (order?.items || [])
+      .map((i: { quantity?: number; name?: string }) => `<li>${i.quantity ?? 1}× ${i.name ?? 'Item'}</li>`)
+      .join('');
+    w.document.write(`<!doctype html><html><head><title>Order ${order?.orderNumber || orderId}</title>
+      <style>body{font-family:system-ui,sans-serif;padding:24px} h1{font-size:18px}</style></head><body>
+      <h1>Order ${order?.orderNumber || orderId}</h1>
+      <p>Status: ${order?.status || '—'}</p>
+      <p>Customer: ${order?.customerName || '—'}</p>
+      <ul>${lines || '<li>No line items</li>'}</ul>
+      <p><strong>Total:</strong> ${order?.total != null ? order.total : '—'}</p>
+      <script>window.onload=function(){window.print();}</script>
+      </body></html>`);
+    w.document.close();
   };
 
   const totalSales = filteredOrders.reduce((sum: number, order: Order) => sum + (order.total || 0), 0);
