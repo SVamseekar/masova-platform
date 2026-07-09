@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { t, cardStyle, tabStyle, tableHeaderStyle, tableCellStyle, sectionTitleStyle, statusBadge, selectStyle } from './manager-tokens';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
@@ -443,75 +443,189 @@ const StoresTab = ({ storeId }: { storeId: string }) => {
 };
 
 // ======================== KIOSKS TAB ========================
+/**
+ * Store identity for kiosks MUST be storeCode (e.g. DOM001).
+ * Manager shell passes storeCode; create/list APIs key on the same value.
+ * Using Mongo store.id in the select made Create look broken (mismatched select value).
+ */
 const KiosksTab = ({ storeId }: { storeId: string }) => {
   const { user } = useAppSelector(state => state.auth);
-  const [selectedStoreId, setSelectedStoreId] = useState(storeId || user?.storeId || '');
+  const shellStoreCode = storeId || user?.storeId || '';
+  const [selectedStoreCode, setSelectedStoreCode] = useState(shellStoreCode);
   const [terminalId, setTerminalId] = useState('');
+  const [formError, setFormError] = useState('');
   const [showTokens, setShowTokens] = useState(false);
   const [tokens, setTokens] = useState<CreateKioskResponse | null>(null);
 
-  const { data: stores = [] } = useGetActiveStoresProtectedQuery();
-  const { data: kiosks = [], refetch } = useListKioskAccountsQuery(selectedStoreId, { skip: !selectedStoreId });
+  const { data: stores = [], isLoading: storesLoading, isError: storesError } = useGetActiveStoresProtectedQuery();
+  const {
+    data: kiosks = [],
+    isLoading: kiosksLoading,
+    isError: kiosksError,
+    refetch,
+  } = useListKioskAccountsQuery(selectedStoreCode, { skip: !selectedStoreCode });
   const [createKiosk, { isLoading: creating }] = useCreateKioskMutation();
   const [deactivateKiosk] = useDeactivateKioskMutation();
 
+  // Keep select in sync when shell store changes
+  useEffect(() => {
+    if (shellStoreCode) setSelectedStoreCode(shellStoreCode);
+  }, [shellStoreCode]);
+
+  const storeOptions = useMemo(() => {
+    return stores.map((s: Store) => ({
+      code: s.storeCode || s.id,
+      label: `${s.name} (${s.storeCode || s.id})`,
+    }));
+  }, [stores]);
+
   const handleCreate = async () => {
-    if (!selectedStoreId || !terminalId) { alert('Select a store and enter terminal ID'); return; }
+    setFormError('');
+    const tid = terminalId.trim();
+    if (!selectedStoreCode) {
+      setFormError('Select a store (use store code, e.g. DOM001).');
+      return;
+    }
+    if (!tid) {
+      setFormError('Enter a Terminal ID (e.g. POS-01).');
+      return;
+    }
     try {
-      const result = await createKiosk({ storeId: selectedStoreId, terminalId }).unwrap();
-      setTokens(result); setShowTokens(true); setTerminalId(''); refetch();
-    } catch (e: unknown) { alert('Failed: ' + getApiErrorMessage(e, 'Unknown error')); }
+      const result = await createKiosk({ storeId: selectedStoreCode, terminalId: tid }).unwrap();
+      setTokens(result);
+      setShowTokens(true);
+      setTerminalId('');
+      refetch();
+    } catch (e: unknown) {
+      setFormError(getApiErrorMessage(e, 'Failed to create kiosk'));
+    }
   };
 
   const handleDeactivate = async (id: string) => {
     if (!window.confirm('Deactivate this kiosk?')) return;
-    try { await deactivateKiosk(id).unwrap(); refetch(); } catch (e: unknown) { alert('Failed: ' + getApiErrorMessage(e, 'Unknown error')); }
+    try {
+      await deactivateKiosk(id).unwrap();
+      refetch();
+    } catch (e: unknown) {
+      setFormError(getApiErrorMessage(e, 'Failed to deactivate kiosk'));
+    }
   };
 
-  const copy = (text: string) => { navigator.clipboard.writeText(text); alert('Copied!'); };
+  const copy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      setFormError('Could not copy to clipboard');
+    }
+  };
 
   return (
     <>
-      {/* Create form */}
       <div style={{ ...cardStyle, padding: 16, marginBottom: 16 }}>
         <h4 style={{ ...sectionTitleStyle, marginBottom: 12 }}>Create Kiosk Account</h4>
+        <p style={{ fontSize: 12, color: t.gray, margin: '0 0 12px 0' }}>
+          Creates a long-lived POS terminal login for this store. Use the same store code as the manager shell (Berlin = DOM001).
+        </p>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div style={{ flex: 1, minWidth: 200 }}>
             <label style={{ fontSize: 11, color: t.gray, display: 'block', marginBottom: 4 }}>Store</label>
-            <select value={selectedStoreId} onChange={e => setSelectedStoreId(e.target.value)} style={{ ...selectStyle, width: '100%', padding: '8px 10px' }}>
-              <option value="">Select store...</option>
-              {stores.map((s: Store) => <option key={s.id} value={s.id}>{s.name} ({s.id.slice(-6)})</option>)}
+            <select
+              value={selectedStoreCode}
+              onChange={e => { setSelectedStoreCode(e.target.value); setFormError(''); }}
+              style={{ ...selectStyle, width: '100%', padding: '8px 10px' }}
+              disabled={storesLoading}
+            >
+              <option value="">{storesLoading ? 'Loading stores…' : 'Select store…'}</option>
+              {storeOptions.map(s => (
+                <option key={s.code} value={s.code}>{s.label}</option>
+              ))}
+              {/* Ensure shell code is selectable even if stores list is empty/stale */}
+              {shellStoreCode && !storeOptions.some(s => s.code === shellStoreCode) && (
+                <option value={shellStoreCode}>{shellStoreCode} (current)</option>
+              )}
             </select>
+            {storesError && (
+              <p style={{ fontSize: 11, color: t.red, margin: '4px 0 0' }}>Could not load stores list — using shell store code if set.</p>
+            )}
           </div>
           <div style={{ flex: 1, minWidth: 200 }}>
             <label style={{ fontSize: 11, color: t.gray, display: 'block', marginBottom: 4 }}>Terminal ID</label>
-            <input value={terminalId} onChange={e => setTerminalId(e.target.value)} placeholder="POS-01" style={inputStyle} />
+            <input
+              value={terminalId}
+              onChange={e => { setTerminalId(e.target.value); setFormError(''); }}
+              placeholder="POS-01"
+              style={inputStyle}
+              onKeyDown={e => { if (e.key === 'Enter') void handleCreate(); }}
+            />
           </div>
-          <button style={btn(true)} onClick={handleCreate} disabled={creating || !selectedStoreId || !terminalId}>{creating ? 'Creating...' : 'Create'}</button>
+          <button
+            type="button"
+            style={{
+              ...btn(true),
+              opacity: creating ? 0.7 : 1,
+              cursor: creating ? 'wait' : 'pointer',
+            }}
+            onClick={() => void handleCreate()}
+            disabled={creating}
+          >
+            {creating ? 'Creating…' : 'Create'}
+          </button>
         </div>
+        {formError && (
+          <div style={{ marginTop: 12, padding: '10px 12px', background: t.redLight, color: t.red, borderRadius: t.radius.sm, fontSize: 13 }}>
+            {formError}
+          </div>
+        )}
       </div>
 
-      {/* Kiosk list */}
-      {selectedStoreId && (
+      {selectedStoreCode ? (
         <div style={cardStyle}>
-          <h4 style={{ ...sectionTitleStyle, padding: '16px 16px 0', marginBottom: 0 }}>Existing Kiosks</h4>
-          {kiosks.length === 0 ? (
-            <p style={{ padding: 20, textAlign: 'center', color: t.grayMuted, fontSize: 13 }}>No kiosks for this store</p>
-          ) : (
+          <h4 style={{ ...sectionTitleStyle, padding: '16px 16px 0', marginBottom: 0 }}>
+            Existing Kiosks — {selectedStoreCode}
+          </h4>
+          {kiosksLoading && (
+            <p style={{ padding: 20, textAlign: 'center', color: t.grayMuted, fontSize: 13 }}>Loading kiosks…</p>
+          )}
+          {kiosksError && (
+            <p style={{ padding: 20, textAlign: 'center', color: t.red, fontSize: 13 }}>
+              Failed to load kiosks.{' '}
+              <button type="button" style={{ ...btn(), fontSize: 12 }} onClick={() => void refetch()}>Retry</button>
+            </p>
+          )}
+          {!kiosksLoading && !kiosksError && kiosks.length === 0 && (
+            <p style={{ padding: 20, textAlign: 'center', color: t.grayMuted, fontSize: 13 }}>No kiosks for this store yet.</p>
+          )}
+          {!kiosksLoading && !kiosksError && kiosks.length > 0 && (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead><tr>{['Terminal ID', 'Status', 'Last Access', 'Actions'].map(h => <th key={h} style={tableHeaderStyle}>{h}</th>)}</tr></thead>
+              <thead>
+                <tr>
+                  {['Terminal ID', 'Name', 'Status', 'Last access', 'Actions'].map(h => (
+                    <th key={h} style={tableHeaderStyle}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
               <tbody>
                 {kiosks.map((k: KioskAccount) => (
                   <tr key={k.id}>
                     <td style={{ ...tableCellStyle, fontWeight: 600 }}>{k.terminalId || 'N/A'}</td>
+                    <td style={tableCellStyle}>{k.name}</td>
                     <td style={tableCellStyle}>
                       <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: k.isActive ? t.green : t.red, color: t.white }}>
                         {k.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td style={tableCellStyle}>{k.lastKioskAccess ? new Date(k.lastKioskAccess).toLocaleString() : 'Never'}</td>
                     <td style={tableCellStyle}>
-                      <button style={{ ...btn(), color: t.red, fontSize: 12, padding: '4px 10px' }} onClick={() => handleDeactivate(k.id)} disabled={!k.isActive}>Deactivate</button>
+                      {k.lastKioskAccess ? new Date(k.lastKioskAccess).toLocaleString() : 'Never'}
+                    </td>
+                    <td style={tableCellStyle}>
+                      <button
+                        type="button"
+                        style={{ ...btn(), color: t.red, fontSize: 12, padding: '4px 10px' }}
+                        onClick={() => void handleDeactivate(k.id)}
+                        disabled={!k.isActive}
+                      >
+                        Deactivate
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -519,35 +633,46 @@ const KiosksTab = ({ storeId }: { storeId: string }) => {
             </table>
           )}
         </div>
+      ) : (
+        <p style={{ color: t.grayMuted, fontSize: 13 }}>Select a store to list kiosks.</p>
       )}
 
-      {/* Token modal */}
       {showTokens && tokens && (
         <div style={modalOverlay} onClick={() => setShowTokens(false)}>
           <div style={modalBox} onClick={e => e.stopPropagation()}>
-            <h3 style={{ ...sectionTitleStyle, fontSize: 18, marginBottom: 12 }}>Kiosk Created</h3>
-            <p style={{ fontSize: 12, color: t.gray, marginBottom: 16 }}>Copy these tokens now. They won't be shown again.</p>
+            <h3 style={{ ...sectionTitleStyle, fontSize: 18, marginBottom: 12 }}>Kiosk created</h3>
+            <p style={{ fontSize: 12, color: t.gray, marginBottom: 16 }}>
+              Copy these tokens now. They will not be shown again.
+            </p>
 
             <div style={{ marginBottom: 12 }}>
-              <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Setup URL (recommended):</p>
+              <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Setup URL (recommended)</p>
               <div style={{ background: t.bgMain, padding: 10, borderRadius: t.radius.sm, fontSize: 12, wordBreak: 'break-all', marginBottom: 4 }}>
                 {`${window.location.origin}/kiosk-setup?kiosk=true&setup=true&token=${tokens.accessToken}&refreshToken=${tokens.refreshToken}&terminalId=${tokens.terminalId}`}
               </div>
-              <button style={{ ...btn(), fontSize: 12 }} onClick={() => copy(`${window.location.origin}/kiosk-setup?kiosk=true&setup=true&token=${tokens.accessToken}&refreshToken=${tokens.refreshToken}&terminalId=${tokens.terminalId}`)}>Copy URL</button>
+              <button
+                type="button"
+                style={{ ...btn(), fontSize: 12 }}
+                onClick={() => void copy(`${window.location.origin}/kiosk-setup?kiosk=true&setup=true&token=${tokens.accessToken}&refreshToken=${tokens.refreshToken}&terminalId=${tokens.terminalId}`)}
+              >
+                Copy URL
+              </button>
             </div>
 
-            {[['Terminal ID', tokens.terminalId], ['Access Token', tokens.accessToken], ['Refresh Token', tokens.refreshToken]].map(([label, val]) => (
+            {([['Terminal ID', tokens.terminalId], ['Access Token', tokens.accessToken], ['Refresh Token', tokens.refreshToken]] as const).map(([label, val]) => (
               <div key={label} style={{ marginBottom: 8 }}>
-                <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{label}:</p>
+                <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{label}</p>
                 <div style={{ background: t.bgMain, padding: 8, borderRadius: t.radius.sm, fontSize: 11, wordBreak: 'break-all', maxHeight: 60, overflow: 'auto' }}>{val}</div>
-                <button style={{ ...btn(), fontSize: 11, marginTop: 4 }} onClick={() => copy(val)}>Copy</button>
+                <button type="button" style={{ ...btn(), fontSize: 11, marginTop: 4 }} onClick={() => void copy(val)}>Copy</button>
               </div>
             ))}
 
             <div style={{ background: t.orangeLight, border: `1px solid ${t.orange}`, borderRadius: t.radius.sm, padding: 10, fontSize: 12, color: t.orangeDark, marginTop: 12 }}>
               Expires in: {tokens.expiresIn}
             </div>
-            <div style={{ textAlign: 'right', marginTop: 12 }}><button style={btn(true)} onClick={() => setShowTokens(false)}>Close</button></div>
+            <div style={{ textAlign: 'right', marginTop: 12 }}>
+              <button type="button" style={btn(true)} onClick={() => setShowTokens(false)}>Close</button>
+            </div>
           </div>
         </div>
       )}
