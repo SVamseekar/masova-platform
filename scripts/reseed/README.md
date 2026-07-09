@@ -37,6 +37,18 @@ After 2026-07-09 repair:
 | `mongo-fix-demo.js` | Diversify order statuses; ensure DOM001 EU fields |
 | `mongo-link-orders-userid.js` | Set `orders.customerId` = `customers.userId` for gateway ownership |
 | `seed-core.js` / `reseed-all.js` | Hit core `/api/test-data/*` (stores only) |
+| `verify-phase-b-e2e.js` | **True E2E Phase B residual** — create → kitchen → dispatch → accept → OTP → DELIVERED + cancel path + SockJS check |
+
+### Phase B residual verify (Mac → Dell gateway)
+
+```bash
+GW=http://192.168.50.88:8080 node scripts/reseed/verify-phase-b-e2e.js
+# Exit 0 = all green. Requires commerce + logistics on latest main.
+```
+
+**KDS WebSocket:** set `VITE_WS_URL=http://192.168.50.88:8084/ws`  
+Health: `curl http://192.168.50.88:8084/ws/orders/info` → `{"websocket":true}`  
+**Driver auto-pool:** `PATCH /api/delivery/driver/{id}/status` body `{"status":"AVAILABLE"}` before auto-dispatch (manual preferredDriverId still works offline).
 
 ### Run repair on Dell
 
