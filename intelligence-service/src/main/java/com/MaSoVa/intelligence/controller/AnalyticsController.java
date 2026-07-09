@@ -43,9 +43,12 @@ public class AnalyticsController {
     private final ExecutiveReportingService executiveReportingService;
     private final CacheManager cacheManager;
 
+    /** All @Cacheable value names used by analytics / BI services (must stay in sync). */
     private static final List<String> CACHE_NAMES = Arrays.asList(
             "salesMetrics", "staffLeaderboard", "staffPerformance", "driverStatus",
-            "salesTrends", "orderTypeBreakdown", "peakHours", "topProducts");
+            "salesTrends", "orderTypeBreakdown", "peakHours", "topProducts",
+            "salesForecast", "customerBehavior", "churnPrediction", "demandForecast",
+            "costAnalysis", "executiveSummary", "benchmarking");
 
     public AnalyticsController(AnalyticsService analyticsService,
                                BIEngineService biEngineService,
