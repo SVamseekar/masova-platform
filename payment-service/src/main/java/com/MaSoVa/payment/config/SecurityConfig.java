@@ -25,6 +25,10 @@ public class SecurityConfig extends SecurityConfigurationBase {
             // Stripe webhook endpoint (must be public — Stripe cannot send JWT)
             "/api/payments/webhook/stripe",
 
+            // Dev seed only available when Profile is dev/demo (controller gated);
+            // still require JWT in gateway — listed here only if called direct on :8089 for scripts.
+            // Prefer manager JWT via gateway for /api/test-data/payments/**
+
             // Health and actuator endpoints
             "/actuator/health",
             "/api/health/**",

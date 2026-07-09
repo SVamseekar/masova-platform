@@ -3,13 +3,12 @@ package com.MaSoVa.payment.unit.service;
 import com.MaSoVa.payment.dto.RefundRequest;
 import com.MaSoVa.payment.entity.Refund;
 import com.MaSoVa.payment.entity.Transaction;
+import com.MaSoVa.payment.gateway.PaymentGateway;
+import com.MaSoVa.payment.gateway.PaymentGatewayResolver;
 import com.MaSoVa.payment.repository.RefundRepository;
 import com.MaSoVa.payment.repository.TransactionRepository;
 import com.MaSoVa.payment.service.OrderServiceClient;
-import com.MaSoVa.payment.service.RazorpayService;
 import com.MaSoVa.payment.service.RefundService;
-import com.razorpay.RazorpayException;
-import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,10 +32,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * Security remediation Task 4 — Part B: refund approval gate.
- * Agent/customer-requested refunds land in PENDING_APPROVAL (no money moved); a manager
- * must approve before the Razorpay refund executes. Manager-initiated direct refunds are
- * unaffected.
+ * Agent/customer-requested refunds land in PENDING_APPROVAL (no money moved);
+ * manager approval executes via Stripe/Razorpay/synthetic.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("RefundService approval-gate Tests")
@@ -44,7 +41,8 @@ class RefundServiceApprovalTest {
 
     @Mock private RefundRepository refundRepository;
     @Mock private TransactionRepository transactionRepository;
-    @Mock private RazorpayService razorpayService;
+    @Mock private PaymentGatewayResolver paymentGatewayResolver;
+    @Mock private PaymentGateway paymentGateway;
     @Mock private OrderServiceClient orderServiceClient;
 
     @InjectMocks private RefundService refundService;
@@ -59,7 +57,9 @@ class RefundServiceApprovalTest {
                 .amount(BigDecimal.valueOf(500.00))
                 .status(Transaction.PaymentStatus.SUCCESS)
                 .customerId("cust-456")
+                .storeId("DOM001")
                 .currency("INR")
+                .paymentGateway("RAZORPAY")
                 .build();
         successTransaction.setId("txn-001");
         successTransaction.setRazorpayPaymentId("pay_001");
@@ -75,7 +75,7 @@ class RefundServiceApprovalTest {
     }
 
     @Test
-    @DisplayName("requestRefundApproval lands in PENDING_APPROVAL, no Razorpay call")
+    @DisplayName("requestRefundApproval lands in PENDING_APPROVAL, no gateway call")
     void requestLandsPendingApproval() {
         when(transactionRepository.findById("txn-001")).thenReturn(Optional.of(successTransaction));
         when(refundRepository.findByTransactionId("txn-001")).thenReturn(Collections.emptyList());
@@ -86,7 +86,8 @@ class RefundServiceApprovalTest {
         assertThat(result.getStatus()).isEqualTo(Refund.RefundStatus.PENDING_APPROVAL);
         assertThat(result.getRazorpayRefundId()).isNull();
         assertThat(result.getInitiatedBy()).isEqualTo("AGENT");
-        verifyNoInteractions(razorpayService);
+        assertThat(result.getStoreId()).isEqualTo("DOM001");
+        verifyNoInteractions(paymentGatewayResolver);
         verify(orderServiceClient, never()).updateOrderPaymentStatus(anyString(), anyString(), anyString());
     }
 
@@ -105,14 +106,13 @@ class RefundServiceApprovalTest {
     }
 
     @Test
-    @DisplayName("manager-initiated initiateRefund still executes immediately (unaffected)")
-    void managerInitiatedStillImmediate() throws RazorpayException {
-        JSONObject rzp = new JSONObject();
-        rzp.put("id", "rfnd_001");
-        rzp.put("status", "processing");
+    @DisplayName("manager-initiated initiateRefund still executes immediately")
+    void managerInitiatedStillImmediate() throws Exception {
         when(transactionRepository.findById("txn-001")).thenReturn(Optional.of(successTransaction));
         when(refundRepository.findByTransactionId("txn-001")).thenReturn(Collections.emptyList());
-        when(razorpayService.createRefund("pay_001", BigDecimal.valueOf(200.00), "normal")).thenReturn(rzp);
+        when(paymentGatewayResolver.resolveByGatewayName("RAZORPAY")).thenReturn(paymentGateway);
+        when(paymentGateway.getGatewayName()).thenReturn("RAZORPAY");
+        when(paymentGateway.refund("pay_001", BigDecimal.valueOf(200.00), "normal")).thenReturn("rfnd_001");
         when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
         when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -124,8 +124,8 @@ class RefundServiceApprovalTest {
     }
 
     @Test
-    @DisplayName("approveRefund executes the pending refund via Razorpay")
-    void approveExecutesRefund() throws RazorpayException {
+    @DisplayName("approveRefund executes the pending refund via gateway")
+    void approveExecutesRefund() throws Exception {
         Refund pending = Refund.builder()
                 .transactionId("txn-001").orderId("order-123").razorpayPaymentId("pay_001")
                 .amount(BigDecimal.valueOf(200.00)).status(Refund.RefundStatus.PENDING_APPROVAL)
@@ -133,14 +133,12 @@ class RefundServiceApprovalTest {
                 .build();
         pending.setId("refund-001");
 
-        JSONObject rzp = new JSONObject();
-        rzp.put("id", "rfnd_approved");
-        rzp.put("status", "processing");
-
         when(refundRepository.findById("refund-001")).thenReturn(Optional.of(pending));
         when(transactionRepository.findById("txn-001")).thenReturn(Optional.of(successTransaction));
-        when(refundRepository.findByTransactionId("txn-001")).thenReturn(Collections.emptyList());
-        when(razorpayService.createRefund("pay_001", BigDecimal.valueOf(200.00), "normal")).thenReturn(rzp);
+        when(refundRepository.findByTransactionId("txn-001")).thenReturn(List.of(pending));
+        when(paymentGatewayResolver.resolveByGatewayName("RAZORPAY")).thenReturn(paymentGateway);
+        when(paymentGateway.getGatewayName()).thenReturn("RAZORPAY");
+        when(paymentGateway.refund("pay_001", BigDecimal.valueOf(200.00), "normal")).thenReturn("rfnd_approved");
         when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
         when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -164,7 +162,7 @@ class RefundServiceApprovalTest {
         assertThatThrownBy(() -> refundService.approveRefund("refund-001", "manager-001"))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("not pending approval");
-        verifyNoInteractions(razorpayService);
+        verifyNoInteractions(paymentGatewayResolver);
     }
 
     @Test
@@ -180,7 +178,7 @@ class RefundServiceApprovalTest {
         Refund result = refundService.rejectRefund("refund-001", "manager-001", "not justified");
 
         assertThat(result.getStatus()).isEqualTo(Refund.RefundStatus.REJECTED);
-        verifyNoInteractions(razorpayService);
+        verifyNoInteractions(paymentGatewayResolver);
         verify(orderServiceClient, never()).updateOrderPaymentStatus(anyString(), anyString(), anyString());
     }
 
@@ -205,14 +203,15 @@ class RefundServiceApprovalTest {
         pending.setId("refund-001");
         Refund priorProcessed = Refund.builder()
                 .amount(BigDecimal.valueOf(300.00)).status(Refund.RefundStatus.PROCESSED).build();
+        priorProcessed.setId("refund-prior");
 
         when(refundRepository.findById("refund-001")).thenReturn(Optional.of(pending));
         when(transactionRepository.findById("txn-001")).thenReturn(Optional.of(successTransaction));
-        when(refundRepository.findByTransactionId("txn-001")).thenReturn(List.of(priorProcessed));
+        when(refundRepository.findByTransactionId("txn-001")).thenReturn(List.of(priorProcessed, pending));
 
         assertThatThrownBy(() -> refundService.approveRefund("refund-001", "manager-001"))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("exceeds available");
-        verifyNoInteractions(razorpayService);
+        verifyNoInteractions(paymentGatewayResolver);
     }
 }

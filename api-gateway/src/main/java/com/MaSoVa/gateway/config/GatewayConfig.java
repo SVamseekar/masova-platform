@@ -341,6 +341,15 @@ public class GatewayConfig {
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8089"))
 
+                // Alias: /api/refunds → /api/payments/refund (manager probes / feature-matrix)
+                .route("refunds_alias", r -> r.path("/api/refunds", "/api/refunds/**")
+                        .filters(f -> f
+                            .rewritePath("/api/refunds(?<segment>/?.*)", "/api/payments/refund${segment}")
+                            .removeRequestHeader("X-Internal-Service")
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "payments")))
+                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8089"))
+
                 // Payment: Swagger docs proxy
                 .route("payment_api_docs", r -> r.path("/payment-service/v3/api-docs")
                         .filters(f -> f.rewritePath("/payment-service(?<segment>.*)", "${segment}"))
