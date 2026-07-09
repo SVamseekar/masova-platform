@@ -68,7 +68,8 @@ error*.txt
 # Local-only directories (never publish to GitHub)
 backups/
 docs/
-scripts/
+scripts/*
+!scripts/reseed/
 specs/
 scratch/
 logs/

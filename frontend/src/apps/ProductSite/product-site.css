@@ -46,6 +46,19 @@ html:has(#product-site) {
   animation: marquee 35s linear infinite;
 }
 
+@keyframes feature-marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-feature-marquee {
+  animation: feature-marquee 50s linear infinite;
+}
+
+.feature-filmstrip:hover .animate-feature-marquee {
+  animation-play-state: paused;
+}
+
 .agent-mesh-line {
   animation: agent-mesh-pulse 4s ease-in-out infinite;
 }

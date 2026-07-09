@@ -56,18 +56,22 @@ jwt:
   access-token-expiration: 3600000
   refresh-token-expiration: 604800000
 
-# Razorpay Configuration — set RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET
+# Razorpay (India only) — off by default (EU-primary). Enable only with real rotated keys.
+# Do NOT put leaked defaults (rzp_test_RjYYkXMmoArj4C) in .env — they are denylisted.
 razorpay:
-  key-id: ${RAZORPAY_KEY_ID}
-  key-secret: ${RAZORPAY_KEY_SECRET}
-  webhook-secret: ${RAZORPAY_WEBHOOK_SECRET}
+  enabled: ${RAZORPAY_ENABLED:false}
+  key-id: ${RAZORPAY_KEY_ID:}
+  key-secret: ${RAZORPAY_KEY_SECRET:}
+  webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:whsec_disabled_dev}
 
-# Stripe Configuration — Global-4 EU/Global payments
-# Set STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PUBLISHABLE_KEY in environment
+# Stripe — primary for EU / non-IN stores (DE, FR, NL, …)
+# Set STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PUBLISHABLE_KEY for live card flows.
+# Placeholders allow service boot; real keys needed for checkout capture.
 stripe:
   secret-key: ${STRIPE_SECRET_KEY:sk_test_placeholder_replace_in_env}
   webhook-secret: ${STRIPE_WEBHOOK_SECRET:whsec_placeholder_replace_in_env}
   publishable-key: ${STRIPE_PUBLISHABLE_KEY:pk_test_placeholder_replace_in_env}
+
 
 # Service URLs
 services:

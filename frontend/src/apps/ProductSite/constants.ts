@@ -17,7 +17,7 @@ interface Feature {
   title: string
   desc: string
   size: 'large' | 'small'
-  screenshot: string | null
+  mockupId: string
 }
 
 export const SITE_URL = 'https://masova.souravamseekar.com'
@@ -135,8 +135,6 @@ export interface ProductTourTab {
   icon: ComponentType<{ size?: number; style?: CSSProperties }>
   headline: string
   desc: string
-  image: string
-  screenshot: string | null
   accentColor: string
   featureDesc: string
   bullets: string[]
@@ -149,8 +147,6 @@ export const PRODUCT_TOUR_TABS: ProductTourTab[] = [
     icon: ShoppingCart,
     headline: 'Orders flow in. Zero friction.',
     desc: 'Customers order from your branded web app or mobile app — with EU allergen labels, VAT shown at checkout, and delivery fees computed from their address.',
-    image: '/screenshots/customer-ordering.png',
-    screenshot: '/screenshots/customer-ordering.png',
     accentColor: '#3B82F6',
     featureDesc: 'From browsing to checkout in under a minute. Orders land on the KDS the moment payment clears.',
     bullets: ['Branded web + mobile apps', 'Guest checkout + saved addresses', '14 EU allergens on every item', 'Zone-based delivery fees + VAT preview'],
@@ -161,8 +157,6 @@ export const PRODUCT_TOUR_TABS: ProductTourTab[] = [
     icon: ChefHat,
     headline: 'Your kitchen, fully in control.',
     desc: 'Every order appears on the Kitchen Display System via live WebSocket updates. Allergen badges on tickets, prep timers, and predictive prep alerts before payment clears.',
-    image: '/screenshots/kitchen-display.png',
-    screenshot: null,
     accentColor: '#F59E0B',
     featureDesc: 'Live order queue on any screen. No printers, no paper, no missed tickets.',
     bullets: ['11-state order lifecycle', 'Allergen badges on kitchen tickets', 'Predictive prep alerts', 'Quality checkpoints + recipe viewer'],
@@ -173,8 +167,6 @@ export const PRODUCT_TOUR_TABS: ProductTourTab[] = [
     icon: Truck,
     headline: 'Dispatched in under 8 seconds.',
     desc: 'MaSoVa auto-assigns the nearest available driver when an order is ready. Delivery zones, server-side fees, live GPS, and OTP proof at the door.',
-    image: '/screenshots/live-tracking.png',
-    screenshot: null,
     accentColor: '#10B981',
     featureDesc: 'From dispatch to doorstep. Real-time tracking for operators and customers.',
     bullets: ['Auto-dispatch engine', 'Delivery zones + dynamic fees', 'Live GPS + ETA for customers', 'OTP proof of delivery'],
@@ -185,8 +177,6 @@ export const PRODUCT_TOUR_TABS: ProductTourTab[] = [
     icon: Scale,
     headline: 'VAT and fiscal signing, built in.',
     desc: 'Stripe with SCA/3D Secure, iDEAL, Bancontact, and SEPA. EU VAT calculated per country, order type, and item category — with automated fiscal signing at order completion.',
-    image: '/screenshots/manager-dashboard.png',
-    screenshot: null,
     accentColor: '#6366F1',
     featureDesc: 'Financial compliance without spreadsheets or a separate fiscal provider.',
     bullets: ['12-country EU VAT engine', 'Fiscal signing: DE, FR, IT, BE, HU, GB', 'Refund approval workflow', 'Daily reconciliation reports'],
@@ -197,8 +187,6 @@ export const PRODUCT_TOUR_TABS: ProductTourTab[] = [
     icon: Store,
     headline: 'Every channel. One kitchen queue.',
     desc: 'Wolt, Deliveroo, Just Eat, and Uber Eats orders normalise into the same pipeline as direct orders — with per-channel commission and margin tracking.',
-    image: '/screenshots/customer-ordering.png',
-    screenshot: null,
     accentColor: '#00C2E8',
     featureDesc: 'Stop juggling tablets. Every aggregator ticket lands next to your direct orders.',
     bullets: ['Wolt · Deliveroo · Just Eat · Uber Eats', 'Unified kitchen queue', 'Commission tracked per channel', 'Platform P&L dashboard'],
@@ -209,8 +197,6 @@ export const PRODUCT_TOUR_TABS: ProductTourTab[] = [
     icon: BarChart3,
     headline: 'Every number that matters.',
     desc: 'Sales trends, peak-hour heatmaps, staff leaderboards, waste analysis, demand forecasting, and multi-store benchmarking — updated in real time from live order events.',
-    image: '/screenshots/manager-dashboard.png',
-    screenshot: null,
     accentColor: '#8B5CF6',
     featureDesc: 'Revenue, waste, staff performance, and aggregator margins — surfaced automatically.',
     bullets: ['7-day sales forecasting', 'Peak hours + order-type breakdown', 'Staff leaderboard + churn signals', 'Cost analysis + executive summary'],
@@ -221,8 +207,6 @@ export const PRODUCT_TOUR_TABS: ProductTourTab[] = [
     icon: Bot,
     headline: 'Help that never clocks off.',
     desc: 'Eight assistants handle customer questions, flag slow prep times, draft reorders and review replies — while you stay in control of every decision.',
-    image: '/screenshots/ai-agent.png',
-    screenshot: null,
     accentColor: '#D4AF37',
     featureDesc: 'Less firefighting. More time leading your team.',
     bullets: ['24/7 customer chat + refund routing', 'Demand forecasting overnight', 'Stock alerts + draft purchase orders', 'Shift plans you approve before publish'],
@@ -235,77 +219,77 @@ export const FEATURES: Feature[] = [
     title: 'Unified Manager Dashboard',
     desc: 'Eight sections — orders & payments, inventory, operations, people, analytics, fiscal compliance, and AI agents — in one shell for every location.',
     size: 'large',
-    screenshot: '/screenshots/customer-home.png',
+    mockupId: 'dashboard',
   },
   {
     icon: Scale,
     title: 'EU VAT & Fiscal Signing',
     desc: '12-country VAT by order type and item category. Automated fiscal signing for Germany, France, Italy, Belgium, Hungary, and the UK at order completion.',
     size: 'large',
-    screenshot: null,
+    mockupId: 'vat',
   },
   {
     icon: Utensils,
     title: 'POS + Kiosk',
     desc: 'Touch-first counter POS with PIN auth, dine-in/takeaway/delivery modes, cash recording, and self-service kiosk terminals.',
     size: 'small',
-    screenshot: null,
+    mockupId: 'pos',
   },
   {
     icon: AlertCircle,
     title: 'Allergen Compliance',
     desc: '14 EU allergens enforced — menu items cannot go live without manager declaration. Badges appear on customer menus and kitchen tickets.',
     size: 'small',
-    screenshot: null,
+    mockupId: 'allergen',
   },
   {
     icon: Package,
     title: 'Inventory & Suppliers',
     desc: 'Stock levels, low-stock alerts, auto-generated purchase orders, supplier management, and waste tracking with cost analysis.',
     size: 'small',
-    screenshot: null,
+    mockupId: 'inventory',
   },
   {
     icon: Users,
     title: 'Staff & Shifts',
     desc: 'Weekly scheduling, clock-in sessions with manager approval, shift lifecycle, and performance leaderboards.',
     size: 'small',
-    screenshot: null,
+    mockupId: 'staff',
   },
   {
     icon: Megaphone,
     title: 'Loyalty, Reviews & Campaigns',
     desc: 'Bronze → Platinum loyalty tiers, review moderation with sentiment analysis, and email/SMS/push campaign builder.',
     size: 'small',
-    screenshot: null,
+    mockupId: 'loyalty',
   },
   {
     icon: Receipt,
     title: 'Refunds & Reconciliation',
     desc: 'Full and partial refunds via Stripe, manager approval queue for agent-initiated refunds, and daily payment reconciliation.',
     size: 'small',
-    screenshot: null,
+    mockupId: 'refunds',
   },
   {
     icon: Shield,
     title: 'GDPR Toolkit',
     desc: 'Consent management, data export, right to erasure, portability, rectification, breach logging, and audit trail.',
     size: 'small',
-    screenshot: null,
+    mockupId: 'gdpr',
   },
   {
     icon: MapPin,
     title: 'Delivery Zones & Store Routing',
     desc: 'Zone-based delivery areas with server-side fees. Geolocation picks the nearest open store with capacity.',
     size: 'small',
-    screenshot: null,
+    mockupId: 'zones',
   },
   {
     icon: Cpu,
     title: 'Kitchen Equipment Monitoring',
     desc: 'Track equipment status, temperature, and maintenance schedules — surfaced in analytics and kitchen insights.',
     size: 'small',
-    screenshot: null,
+    mockupId: 'equipment',
   },
 ]
 

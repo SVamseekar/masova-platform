@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle2 } from 'lucide-react'
 import { PRODUCT_TOUR_TABS } from '../constants'
 import SectionLabel from './SectionLabel'
-import ScreenshotPanel from './ScreenshotPanel'
+import TourMockup from './TourMockup'
+import RealAppMockup from './RealAppMockup'
 import { colors } from '../tokens'
 
 export default function ProductTour() {
@@ -72,13 +73,11 @@ export default function ProductTour() {
 
             <AnimatePresence mode="wait">
               <motion.div key={tab.id + '-img'}>
-                <ScreenshotPanel
-                  src={tab.screenshot ?? tab.image}
-                  alt={tab.headline}
-                  label={tab.label}
-                  accentColor={tab.accentColor}
-                  icon={tab.icon}
-                />
+                {tab.id === 'orders' ? (
+                  <RealAppMockup size="compact" />
+                ) : (
+                  <TourMockup tabId={tab.id} label={tab.label} accentColor={tab.accentColor} />
+                )}
               </motion.div>
             </AnimatePresence>
           </div>

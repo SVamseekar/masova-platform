@@ -1,33 +1,24 @@
-import React, { type ComponentType, type CSSProperties } from 'react'
-import { motion } from 'framer-motion'
+import { type ComponentType, type CSSProperties } from 'react'
 import { FEATURES } from '../constants'
 import SectionLabel from './SectionLabel'
-import Reveal, { REVEAL_VIEWPORT } from './Reveal'
+import Reveal from './Reveal'
+import FeatureMockup from './FeatureMockup'
 import { colors } from '../tokens'
-
-const FEATURED = FEATURES.filter((f) => f.size === 'large')
-const STANDARD = FEATURES.filter((f) => f.size === 'small')
 
 interface FeatureCardProps {
   icon: ComponentType<{ size?: number; style?: CSSProperties }>
   title: string
   desc: string
-  screenshot: string | null
-  index: number
+  mockupId: string
 }
 
-function FeatureCard({ icon: Icon, title, desc, screenshot, index }: FeatureCardProps) {
+function FeatureCard({ icon: Icon, title, desc, mockupId }: FeatureCardProps) {
   return (
-    <motion.div
-      className="rounded-2xl bg-[#111111] transition-all duration-300 overflow-hidden flex flex-col h-full"
-      style={{ border: `1px solid ${colors.border}` }}
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={REVEAL_VIEWPORT}
-      transition={{ duration: 0.5, delay: index * 0.05 }}
-      whileHover={{ y: -2 }}
+    <div
+      className="rounded-2xl bg-[#111111] flex-shrink-0 flex flex-col"
+      style={{ border: `1px solid ${colors.border}`, width: 300 }}
     >
-      <div className="p-6 flex-1">
+      <div className="p-6 flex-1 flex flex-col">
         <div
           className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
           style={{ background: colors.redMuted }}
@@ -36,26 +27,18 @@ function FeatureCard({ icon: Icon, title, desc, screenshot, index }: FeatureCard
         </div>
         <h3 className="text-white font-semibold mb-2">{title}</h3>
         <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
+        <FeatureMockup mockupId={mockupId} />
       </div>
-      {screenshot && (
-        <div className="mt-auto overflow-hidden" style={{ borderRadius: '0 0 12px 12px' }}>
-          <img
-            src={screenshot}
-            alt={title}
-            loading="lazy"
-            className="w-full block object-cover"
-            style={{ maxHeight: 200 }}
-          />
-        </div>
-      )}
-    </motion.div>
+    </div>
   )
 }
 
 export default function FeaturesGrid() {
+  const doubled = [...FEATURES, ...FEATURES]
+
   return (
-    <section id="features" className="bg-[#080808] py-32 px-6 scroll-mt-20">
-      <div className="max-w-7xl mx-auto">
+    <section id="features" className="bg-[#080808] py-32 scroll-mt-20 overflow-hidden">
+      <div className="max-w-7xl mx-auto px-6">
         <Reveal className="text-center mb-16">
           <SectionLabel>Also included</SectionLabel>
           <h2
@@ -64,17 +47,22 @@ export default function FeaturesGrid() {
           >
             Built for the full operation
           </h2>
+          <p className="text-gray-500 mt-3">Hover to pause · scroll to browse at your own pace</p>
         </Reveal>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          {FEATURED.map(({ icon, title, desc, screenshot }, i) => (
-            <FeatureCard key={title} icon={icon} title={title} desc={desc} screenshot={screenshot} index={i} />
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {STANDARD.map(({ icon, title, desc, screenshot }, i) => (
-            <FeatureCard key={title} icon={icon} title={title} desc={desc} screenshot={screenshot} index={i + FEATURED.length} />
+      <div className="feature-filmstrip relative">
+        <div
+          className="absolute inset-y-0 left-0 w-24 z-10 pointer-events-none"
+          style={{ background: 'linear-gradient(90deg, #080808 0%, transparent 100%)' }}
+        />
+        <div
+          className="absolute inset-y-0 right-0 w-24 z-10 pointer-events-none"
+          style={{ background: 'linear-gradient(270deg, #080808 0%, transparent 100%)' }}
+        />
+        <div className="flex gap-4 animate-feature-marquee w-max px-6">
+          {doubled.map(({ icon, title, desc, mockupId }, i) => (
+            <FeatureCard key={`${title}-${i}`} icon={icon} title={title} desc={desc} mockupId={mockupId} />
           ))}
         </div>
       </div>
