@@ -530,9 +530,10 @@ public class DriverAcceptanceService {
             throw new RuntimeException("Driver " + driverId + " is not assigned to this delivery");
         }
 
-        // Allow delivery from various states (PICKED_UP, IN_TRANSIT, ARRIVED, or even ASSIGNED for quick flow)
+        // Idempotent: OTP/photo verify may already have marked DELIVERED
         if ("DELIVERED".equals(tracking.getStatus())) {
-            throw new RuntimeException("Delivery is already marked as delivered");
+            log.info("Delivery {} already DELIVERED — returning existing tracking (idempotent)", trackingId);
+            return tracking;
         }
         if ("CANCELLED".equals(tracking.getStatus())) {
             throw new RuntimeException("Cannot mark a cancelled delivery as delivered");

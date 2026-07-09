@@ -433,14 +433,18 @@ class DriverAcceptanceServiceTest {
         }
 
         @Test
-        @DisplayName("throws when delivery is already delivered")
-        void throwsWhenAlreadyDelivered() {
+        @DisplayName("returns existing tracking when already delivered (idempotent after OTP verify)")
+        void idempotentWhenAlreadyDelivered() {
             DeliveryTracking tracking = buildTracking("track-1", "driver-1", "DELIVERED");
+            LocalDateTime deliveredAt = LocalDateTime.now().minusMinutes(1);
+            tracking.setDeliveredAt(deliveredAt);
             when(deliveryTrackingRepository.findById("track-1")).thenReturn(Optional.of(tracking));
 
-            assertThatThrownBy(() -> driverAcceptanceService.markAsDelivered("track-1", "driver-1", null))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("already marked");
+            DeliveryTracking result = driverAcceptanceService.markAsDelivered("track-1", "driver-1", null);
+
+            assertThat(result.getStatus()).isEqualTo("DELIVERED");
+            assertThat(result.getDeliveredAt()).isEqualTo(deliveredAt);
+            verify(deliveryTrackingRepository, org.mockito.Mockito.never()).save(any());
         }
 
         @Test
