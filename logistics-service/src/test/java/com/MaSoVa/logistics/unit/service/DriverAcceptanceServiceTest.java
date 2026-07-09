@@ -234,6 +234,51 @@ class DriverAcceptanceServiceTest {
     }
 
     @Nested
+    @DisplayName("getActiveDeliveriesForDriver")
+    class GetActiveDeliveries {
+
+        @Test
+        @DisplayName("returns in-progress deliveries for driver")
+        void returnsActive() {
+            DeliveryTracking tracking = buildTracking("track-1", "driver-1", "ACCEPTED");
+            when(deliveryTrackingRepository.findByDriverIdAndStatusIn(anyString(), any()))
+                .thenReturn(List.of(tracking));
+
+            List<DeliveryTracking> result = driverAcceptanceService.getActiveDeliveriesForDriver("driver-1");
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getStatus()).isEqualTo("ACCEPTED");
+        }
+    }
+
+    @Nested
+    @DisplayName("listDeliveriesForStore")
+    class ListDeliveriesForStore {
+
+        @Test
+        @DisplayName("lists all trackings for store when status omitted")
+        void listsAll() {
+            when(deliveryTrackingRepository.findByStoreId("store-1"))
+                .thenReturn(List.of(buildTracking("t1", "d1", "ASSIGNED")));
+
+            List<DeliveryTracking> result = driverAcceptanceService.listDeliveriesForStore("store-1", null);
+
+            assertThat(result).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("filters by status when provided")
+        void filtersByStatus() {
+            when(deliveryTrackingRepository.findByStatusAndStoreId("ASSIGNED", "store-1"))
+                .thenReturn(List.of());
+
+            List<DeliveryTracking> result = driverAcceptanceService.listDeliveriesForStore("store-1", "ASSIGNED");
+
+            assertThat(result).isEmpty();
+        }
+    }
+
+    @Nested
     @DisplayName("getPendingDeliveriesForDriver")
     class GetPendingDeliveries {
 

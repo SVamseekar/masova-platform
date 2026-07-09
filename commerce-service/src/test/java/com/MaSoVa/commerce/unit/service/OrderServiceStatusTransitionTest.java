@@ -28,6 +28,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -86,16 +87,42 @@ class OrderServiceStatusTransitionTest {
     void updateOrderStatus_syncs_to_postgres_when_pg_row_exists() {
         Order order = buildOrder("o1", OrderStatus.RECEIVED, OrderType.TAKEAWAY);
         when(orderRepository.findById("o1")).thenReturn(Optional.of(order));
-
-        com.MaSoVa.commerce.order.entity.OrderJpaEntity pgOrder =
-                com.MaSoVa.commerce.order.entity.OrderJpaEntity.builder().id("pg-1").mongoId("o1").build();
-        when(orderJpaRepository.findByMongoId("o1")).thenReturn(Optional.of(pgOrder));
+        when(orderItemSyncService.syncOrderByMongoId(eq("o1"), any(Order.class))).thenReturn(true);
 
         UpdateOrderStatusRequest req = new UpdateOrderStatusRequest();
         req.setStatus(OrderStatus.PREPARING);
         Order result = orderService.updateOrderStatus("o1", req);
 
-        verify(orderItemSyncService).syncOrderItems(pgOrder, result);
+        verify(orderItemSyncService).syncOrderByMongoId(eq("o1"), eq(result));
+        assertThat(result.getStatus()).isEqualTo(OrderStatus.PREPARING);
+    }
+
+    @Test
+    void updateOrderStatus_full_delivery_path_to_delivered() {
+        Order order = buildOrder("o1", OrderStatus.RECEIVED, OrderType.DELIVERY);
+        when(orderRepository.findById("o1")).thenReturn(Optional.of(order));
+        when(orderItemSyncService.syncOrderByMongoId(any(), any())).thenReturn(true);
+
+        OrderStatus[] path = {
+                OrderStatus.PREPARING, OrderStatus.OVEN, OrderStatus.BAKED, OrderStatus.READY,
+                OrderStatus.DISPATCHED, OrderStatus.OUT_FOR_DELIVERY, OrderStatus.DELIVERED
+        };
+        for (OrderStatus next : path) {
+            UpdateOrderStatusRequest req = new UpdateOrderStatusRequest();
+            req.setStatus(next);
+            order = orderService.updateOrderStatus("o1", req);
+            assertThat(order.getStatus()).isEqualTo(next);
+        }
+    }
+
+    @Test
+    void moveOrderToNextStage_dispatched_goes_to_out_for_delivery() {
+        Order order = buildOrder("o1", OrderStatus.DISPATCHED, OrderType.DELIVERY);
+        when(orderRepository.findById("o1")).thenReturn(Optional.of(order));
+        when(orderItemSyncService.syncOrderByMongoId(any(), any())).thenReturn(true);
+
+        Order result = orderService.moveOrderToNextStage("o1");
+        assertThat(result.getStatus()).isEqualTo(OrderStatus.OUT_FOR_DELIVERY);
     }
 
     // updateOrderStatus — valid transitions
@@ -390,9 +417,22 @@ class OrderServiceStatusTransitionTest {
     }
 
     @Test
-    void moveOrderToNextStage_DISPATCHED_advances_to_DELIVERED() {
+    void moveOrderToNextStage_DISPATCHED_advances_to_OUT_FOR_DELIVERY() {
         Order order = buildOrder("o1", OrderStatus.DISPATCHED, OrderType.DELIVERY);
         when(orderRepository.findById("o1")).thenReturn(Optional.of(order));
+        when(orderItemSyncService.syncOrderByMongoId(any(), any())).thenReturn(true);
+
+        Order result = orderService.moveOrderToNextStage("o1");
+
+        assertThat(result.getStatus()).isEqualTo(OrderStatus.OUT_FOR_DELIVERY);
+        assertThat(result.getOutForDeliveryAt()).isNotNull();
+    }
+
+    @Test
+    void moveOrderToNextStage_OUT_FOR_DELIVERY_advances_to_DELIVERED() {
+        Order order = buildOrder("o1", OrderStatus.OUT_FOR_DELIVERY, OrderType.DELIVERY);
+        when(orderRepository.findById("o1")).thenReturn(Optional.of(order));
+        when(orderItemSyncService.syncOrderByMongoId(any(), any())).thenReturn(true);
 
         Order result = orderService.moveOrderToNextStage("o1");
 

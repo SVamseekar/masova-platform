@@ -219,11 +219,11 @@ export const orderApi = createApi({
       invalidatesTags: [{ type: 'Orders', id: 'LIST' }, 'KitchenQueue', 'Customer'],
     }),
 
-    // Update order status
+    // Update order status — canonical POST /api/orders/{id}/status (not PATCH)
     updateOrderStatus: builder.mutation<Order, UpdateOrderStatusRequest>({
       query: ({ orderId, status }) => ({
         url: `/orders/${orderId}/status`,
-        method: 'PATCH',
+        method: 'POST',
         body: { status },
       }),
       invalidatesTags: (result, error, { orderId }) => [
@@ -277,11 +277,11 @@ export const orderApi = createApi({
           : [{ type: 'Orders', id: storeId || 'DEFAULT' }],
     }),
 
-    // Move order to next stage
+    // Move order to next stage — canonical POST /api/orders/{id}/next-stage
     moveToNextStage: builder.mutation<Order, string>({
       query: (orderId) => ({
         url: `/orders/${orderId}/next-stage`,
-        method: 'PATCH',
+        method: 'POST',
       }),
       invalidatesTags: (result, error, orderId) => [
         { type: 'Order', id: orderId },
