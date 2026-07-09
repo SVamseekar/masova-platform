@@ -23,12 +23,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Refunds — canonical endpoints at {@code /api/payments/refund}.
- * Plural alias {@code /api/payments/refunds} kept for manager UIs / probes that used the wrong path.
- * Gateway also rewrites {@code /api/refunds/**} → this controller.
+ * Refunds — canonical endpoints at {@code /api/payments/refund} (singular).
+ * Gateway rewrites:
+ *   {@code /api/payments/refunds/**} → {@code /api/payments/refund/**}
+ *   {@code /api/refunds/**} → {@code /api/payments/refund/**}
+ * Single class-level mapping keeps OpenAPI counts and integration-matrix audit accurate
+ * (array {@code @RequestMapping} breaks the CI path extractor).
  */
 @RestController
-@RequestMapping({"/api/payments/refund", "/api/payments/refunds"})
+@RequestMapping("/api/payments/refund")
 @Tag(name = "Refund Management", description = "Refund processing and tracking (Stripe EU + Razorpay IN)")
 @SecurityRequirement(name = "bearerAuth")
 public class RefundController {

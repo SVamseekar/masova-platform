@@ -329,13 +329,11 @@ public class GatewayConfig {
                         .and().method("POST")
                         .uri("http://localhost:8089"))
 
-                // Payments — protected (GDPR anonymize paths blocked above via dedicated routes)
-                // X-Internal-Service is stripped here so external callers cannot spoof it
-                .route("payments_protected", r -> r.path("/api/payments/**")
-                        .and().not(p -> p.path("/api/payments/webhook"))
-                        .and().not(p -> p.path("/api/payments/webhook/stripe"))
-                        .and().not(p -> p.path("/api/payments/gdpr/**"))
+                // Alias MUST be before payments_protected catch-all so rewrite runs
+                // /api/payments/refunds → /api/payments/refund (plural → singular)
+                .route("payments_refunds_plural_alias", r -> r.path("/api/payments/refunds", "/api/payments/refunds/**")
                         .filters(f -> f
+                            .rewritePath("/api/payments/refunds(?<segment>/?.*)", "/api/payments/refund${segment}")
                             .removeRequestHeader("X-Internal-Service")
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "payments")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
@@ -345,6 +343,20 @@ public class GatewayConfig {
                 .route("refunds_alias", r -> r.path("/api/refunds", "/api/refunds/**")
                         .filters(f -> f
                             .rewritePath("/api/refunds(?<segment>/?.*)", "/api/payments/refund${segment}")
+                            .removeRequestHeader("X-Internal-Service")
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "payments")))
+                            .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+                        .uri("http://localhost:8089"))
+
+                // Payments — protected (GDPR anonymize paths blocked above via dedicated routes)
+                // X-Internal-Service is stripped here so external callers cannot spoof it
+                .route("payments_protected", r -> r.path("/api/payments/**")
+                        .and().not(p -> p.path("/api/payments/webhook"))
+                        .and().not(p -> p.path("/api/payments/webhook/stripe"))
+                        .and().not(p -> p.path("/api/payments/gdpr/**"))
+                        .and().not(p -> p.path("/api/payments/refunds"))
+                        .and().not(p -> p.path("/api/payments/refunds/**"))
+                        .filters(f -> f
                             .removeRequestHeader("X-Internal-Service")
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "payments")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))

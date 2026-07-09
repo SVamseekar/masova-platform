@@ -129,14 +129,7 @@ class RefundControllerTest extends BaseServiceTest {
             .andExpect(status().isOk());
     }
 
-    @Test
-    @DisplayName("GET /api/payments/refunds plural alias works")
-    void getRefunds_pluralAlias() throws Exception {
-        when(refundService.getRefundsByStoreId("DOM001")).thenReturn(List.of(buildRefund("refund-1")));
-
-        mockMvc.perform(get("/api/payments/refunds").param("storeId", "DOM001"))
-            .andExpect(status().isOk());
-    }
+    // Plural /api/payments/refunds is a gateway rewrite only (not a second controller mapping).
 
     @Test
     @DisplayName("POST /api/payments/refund returns 500 on exception")
