@@ -125,8 +125,9 @@ async function main() {
     }
   }
 
-  // Second call — cache hit path must not 500
+  // Cache hit path: clear → miss (populate) → hit (must still 200, not LinkedHashMap CCE)
   {
+    await json('POST', '/api/analytics/cache/clear', { token: manager });
     const first = await json(
       'GET',
       '/api/analytics?type=staff-leaderboard&period=TODAY',
@@ -138,9 +139,13 @@ async function main() {
       { token: manager }
     );
     if (first.status === 200 && second.status === 200) {
-      ok('analytics cache-hit (2x leaderboard)', 'both 200');
+      ok('analytics cache-hit (2x leaderboard)', 'both 200 after clear');
     } else {
-      fail('analytics cache-hit (2x leaderboard)', `${first.status}/${second.status}`);
+      const dbg = second.data?.debugMessage || first.data?.debugMessage || '';
+      fail(
+        'analytics cache-hit (2x leaderboard)',
+        `${first.status}/${second.status}${dbg ? ' — ' + String(dbg).slice(0, 120) : ''}`
+      );
     }
   }
 

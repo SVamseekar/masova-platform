@@ -9,21 +9,18 @@ import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 /**
- * Unit-level proof that the Redis value serializer preserves typed DTOs
- * (not LinkedHashMap) after a serialize → deserialize round-trip.
- * Does not require a live Redis instance (CI-friendly).
+ * Proves the shared Redis value serializer contract (typed Jackson) used by
+ * {@code AdvancedCacheConfig} — cache hits must not return LinkedHashMap.
  */
-@DisplayName("RedisCacheConfig typed serialization")
+@DisplayName("Redis typed serialization contract")
 class RedisCacheConfigTest {
 
     private static GenericJackson2JsonRedisSerializer typedSerializer() {
@@ -67,10 +64,19 @@ class RedisCacheConfigTest {
     }
 
     @Test
-    @DisplayName("RedisCacheManager bean is constructible with connection factory")
-    void cacheManagerBean_isConstructible() {
-        RedisCacheConfig config = new RedisCacheConfig();
-        RedisConnectionFactory factory = mock(RedisConnectionFactory.class);
-        assertThat(config.cacheManager(factory)).isNotNull();
+    @DisplayName("Untyped JSON deserializes to LinkedHashMap (documents the Phase D failure mode)")
+    void untypedJson_deserializesToLinkedHashMap() {
+        ObjectMapper plain = new ObjectMapper();
+        plain.registerModule(new JavaTimeModule());
+        GenericJackson2JsonRedisSerializer untyped = new GenericJackson2JsonRedisSerializer(plain);
+
+        StaffLeaderboardResponse original = StaffLeaderboardResponse.builder()
+                .period("WEEK")
+                .rankings(new ArrayList<>())
+                .totalStaff(0)
+                .build();
+
+        Object restored = untyped.deserialize(untyped.serialize(original));
+        assertThat(restored).isInstanceOf(LinkedHashMap.class);
     }
 }
