@@ -12,6 +12,7 @@ import com.MaSoVa.logistics.inventory.repository.SupplierRepository;
 import com.MaSoVa.logistics.inventory.repository.WasteRecordRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.CacheManager;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,7 @@ public class LogisticsSeedService {
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final WasteRecordRepository wasteRecordRepository;
     private final DeliveryTrackingRepository deliveryTrackingRepository;
+    private final CacheManager cacheManager;
     private final Environment environment;
 
     public LogisticsSeedService(SupplierRepository supplierRepository,
@@ -46,12 +48,14 @@ public class LogisticsSeedService {
                                 PurchaseOrderRepository purchaseOrderRepository,
                                 WasteRecordRepository wasteRecordRepository,
                                 DeliveryTrackingRepository deliveryTrackingRepository,
+                                CacheManager cacheManager,
                                 Environment environment) {
         this.supplierRepository = supplierRepository;
         this.inventoryItemRepository = inventoryItemRepository;
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.wasteRecordRepository = wasteRecordRepository;
         this.deliveryTrackingRepository = deliveryTrackingRepository;
+        this.cacheManager = cacheManager;
         this.environment = environment;
     }
 
@@ -91,6 +95,9 @@ public class LogisticsSeedService {
         Map<String, Object> pos = seedPurchaseOrders(storeId, primarySupplierId, firstItemId, suppliers);
         Map<String, Object> waste = seedWaste(storeId, firstItemId);
         Map<String, Object> delivery = seedDeliveryTracking(storeId, driver, deliveryOrderMongoIds);
+
+        // Drop stale Redis entries that may contain derived fields (expired, etc.) from older serializers
+        clearInventoryCaches(storeId);
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("storeId", storeId);
@@ -409,6 +416,23 @@ public class LogisticsSeedService {
         out.put("totalSeedTrackings", ids.size());
         out.put("driverId", driverId);
         return out;
+    }
+
+    private void clearInventoryCaches(String storeId) {
+        try {
+            for (String name : List.of("inventoryItems", "purchaseOrders", "suppliers")) {
+                var cache = cacheManager.getCache(name);
+                if (cache != null) {
+                    if ("inventoryItems".equals(name) || "purchaseOrders".equals(name)) {
+                        cache.evict(storeId);
+                    } else {
+                        cache.clear();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Could not clear logistics caches after seed: {}", e.getMessage());
+        }
     }
 
     private record SupplierSpec(

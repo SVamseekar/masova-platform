@@ -18,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cache.CacheManager;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 
@@ -44,6 +45,7 @@ class LogisticsSeedServiceTest {
     @Mock PurchaseOrderRepository purchaseOrderRepository;
     @Mock WasteRecordRepository wasteRecordRepository;
     @Mock DeliveryTrackingRepository deliveryTrackingRepository;
+    @Mock CacheManager cacheManager;
     @Mock Environment environment;
 
     LogisticsSeedService service;
@@ -52,7 +54,7 @@ class LogisticsSeedServiceTest {
     void setUp() {
         service = new LogisticsSeedService(
                 supplierRepository, inventoryItemRepository, purchaseOrderRepository,
-                wasteRecordRepository, deliveryTrackingRepository, environment);
+                wasteRecordRepository, deliveryTrackingRepository, cacheManager, environment);
         when(environment.acceptsProfiles(Profiles.of("dev", "demo"))).thenReturn(true);
         when(supplierRepository.findBySupplierCode(anyString())).thenReturn(Optional.empty());
         AtomicInteger seq = new AtomicInteger();
