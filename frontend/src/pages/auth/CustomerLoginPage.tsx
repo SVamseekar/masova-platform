@@ -126,7 +126,7 @@ const CustomerLoginPage: React.FC = () => {
 
           {/* Messages */}
           {successMessage && (
-            <div style={{ background: 'rgba(46,125,50,0.12)', border: '1px solid #2e7d32', borderRadius: '8px', padding: '10px 14px', color: '#4caf50', fontSize: '0.875rem', marginBottom: '20px', textAlign: 'center' }}>
+            <div style={{ background: 'rgba(var(--success-rgb), 0.12)', border: '1px solid var(--success)', borderRadius: '8px', padding: '10px 14px', color: 'var(--success-light)', fontSize: '0.875rem', marginBottom: '20px', textAlign: 'center' }}>
               {successMessage}
             </div>
           )}
@@ -188,7 +188,7 @@ const CustomerLoginPage: React.FC = () => {
               disabled={isLoading}
               style={{
                 background: isLoading ? 'var(--surface-2)' : 'var(--red)',
-                color: '#fff',
+                color: 'var(--text-1)',
                 border: 'none',
                 borderRadius: 'var(--radius-pill)',
                 padding: '13px',

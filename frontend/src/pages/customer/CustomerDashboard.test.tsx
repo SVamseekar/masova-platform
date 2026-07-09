@@ -21,18 +21,8 @@ vi.mock('@/store/api/orderApi', async () => {
   };
 });
 
-vi.mock('@/components/backgrounds/AnimatedBackground', () => ({
-  default: () => <div data-testid="animated-background" />,
-}));
-
 vi.mock('@/components/common/AppHeader', () => ({
   default: () => <div data-testid="app-header" />,
-}));
-
-vi.mock('@/components/ui/neumorphic', () => ({
-  Button: ({ children, onClick, ...props }: React.ComponentProps<"button">) => (
-    <button onClick={onClick} {...props}>{children}</button>
-  ),
 }));
 
 const mockNavigate = vi.fn();
@@ -53,24 +43,28 @@ describe('CustomerDashboard', () => {
     mockUseGetCustomerByUserIdQuery.mockReturnValue({
       data: { id: 'cust-1', name: 'Ravi', loyaltyInfo: null },
       isLoading: false,
+      isError: false,
     });
     mockUseGetCustomerOrdersQuery.mockReturnValue({
       data: [],
       isLoading: false,
+      isError: false,
     });
 
     renderAsCustomer(<CustomerDashboard />);
-    expect(screen.getByText(/Welcome Back/i)).toBeInTheDocument();
+    expect(screen.getByText(/Welcome back/i)).toBeInTheDocument();
   });
 
   it('shows customer name in welcome message', () => {
     mockUseGetCustomerByUserIdQuery.mockReturnValue({
       data: { id: 'cust-1', name: 'Ravi', loyaltyInfo: null },
       isLoading: false,
+      isError: false,
     });
     mockUseGetCustomerOrdersQuery.mockReturnValue({
       data: [],
       isLoading: false,
+      isError: false,
     });
 
     renderAsCustomer(<CustomerDashboard />);
@@ -81,104 +75,50 @@ describe('CustomerDashboard', () => {
     mockUseGetCustomerByUserIdQuery.mockReturnValue({
       data: { id: 'cust-1', name: 'Ravi', loyaltyInfo: null },
       isLoading: false,
+      isError: false,
     });
     mockUseGetCustomerOrdersQuery.mockReturnValue({
       data: [],
       isLoading: false,
+      isError: false,
     });
 
     renderAsCustomer(<CustomerDashboard />);
-    expect(screen.getByText('Order Now')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Order Now/i })).toBeInTheDocument();
   });
 
-  it('displays quick action cards', () => {
+  it('shows empty orders state when no history', () => {
     mockUseGetCustomerByUserIdQuery.mockReturnValue({
-      data: { id: 'cust-1', name: 'Ravi', loyaltyInfo: null },
+      data: { id: 'cust-1', name: 'Anna', loyaltyInfo: null },
       isLoading: false,
+      isError: false,
     });
     mockUseGetCustomerOrdersQuery.mockReturnValue({
       data: [],
       isLoading: false,
+      isError: false,
     });
 
     renderAsCustomer(<CustomerDashboard />);
-    expect(screen.getByText('Order History')).toBeInTheDocument();
-    expect(screen.getByText('Profile')).toBeInTheDocument();
-    expect(screen.getByText('Promotions')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /No orders yet/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Browse Menu/i })).toBeInTheDocument();
   });
 
-  it('shows loyalty points when available', () => {
-    mockUseGetCustomerByUserIdQuery.mockReturnValue({
-      data: { id: 'cust-1', name: 'Ravi', loyaltyInfo: { totalPoints: 500 } },
-      isLoading: false,
-    });
-    mockUseGetCustomerOrdersQuery.mockReturnValue({
-      data: [],
-      isLoading: false,
-    });
-
-    renderAsCustomer(<CustomerDashboard />);
-    expect(screen.getByText(/500 loyalty points/)).toBeInTheDocument();
-  });
-
-  it('shows active order section when there is an active order', () => {
-    mockUseGetCustomerByUserIdQuery.mockReturnValue({
-      data: { id: 'cust-1', name: 'Ravi', loyaltyInfo: null },
-      isLoading: false,
-    });
-    mockUseGetCustomerOrdersQuery.mockReturnValue({
-      data: [
-        {
-          id: 'order-1',
-          orderNumber: 'ORD-001',
-          status: 'PREPARING',
-          total: 250,
-          items: [{ menuItemId: '1', name: 'Pizza', quantity: 1, price: 250 }],
-          createdAt: new Date().toISOString(),
-        },
-      ],
-      isLoading: false,
-    });
-
-    renderAsCustomer(<CustomerDashboard />);
-    expect(screen.getByText('Active Order')).toBeInTheDocument();
-    expect(screen.getByText('Track Order →')).toBeInTheDocument();
-  });
-
-  it('shows recent orders section', () => {
-    mockUseGetCustomerByUserIdQuery.mockReturnValue({
-      data: { id: 'cust-1', name: 'Ravi', loyaltyInfo: null },
-      isLoading: false,
-    });
-    mockUseGetCustomerOrdersQuery.mockReturnValue({
-      data: [
-        {
-          id: 'order-2',
-          orderNumber: 'ORD-002',
-          status: 'DELIVERED',
-          total: 150,
-          items: [{ menuItemId: '1', name: 'Burger', quantity: 1, price: 150 }],
-          createdAt: new Date().toISOString(),
-        },
-      ],
-      isLoading: false,
-    });
-
-    renderAsCustomer(<CustomerDashboard />);
-    expect(screen.getByText('Recent Orders')).toBeInTheDocument();
-  });
-
-  it('renders without customer data', () => {
+  it('shows error UI with retry when profile fails', () => {
     mockUseGetCustomerByUserIdQuery.mockReturnValue({
       data: undefined,
       isLoading: false,
+      isError: true,
+      refetch: vi.fn(),
     });
     mockUseGetCustomerOrdersQuery.mockReturnValue({
       data: [],
       isLoading: false,
+      isError: false,
     });
 
     renderAsCustomer(<CustomerDashboard />);
-    expect(screen.getByText(/Welcome Back/)).toBeInTheDocument();
+    expect(screen.getByText(/Couldn.t load profile/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Retry/i })).toBeInTheDocument();
   });
 });

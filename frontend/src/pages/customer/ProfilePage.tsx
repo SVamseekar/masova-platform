@@ -2,8 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { selectCartCurrency, selectCartLocale, selectStoreCountryCode } from '../../store/slices/cartSlice';
 import {formatMoney, formatMajorAmount} from '../../utils/currency';
+import {
+  isValidCustomerPhone,
+  normalizePhoneForApi,
+  defaultAddressCountry,
+  postalPlaceholder,
+} from '../../utils/customerFormValidation';
 import {
   useGetCustomerByUserIdQuery,
   useCreateCustomerMutation,
@@ -89,6 +95,8 @@ const ProfilePage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
+  const storeCountryCode = useAppSelector(selectStoreCountryCode);
+  const formCountry = storeCountryCode ?? 'DE';
   const [activeSection, setActiveSection] = useState(() => searchParams.get('section') || 'overview');
   const [editing, setEditing] = useState(false);
   const [addressDialogOpen, setAddressDialogOpen] = useState(false);
@@ -97,7 +105,7 @@ const ProfilePage: React.FC = () => {
 
   const [profileForm, setProfileForm] = useState<UpdateCustomerRequest>({});
   const [addressForm, setAddressForm] = useState<AddAddressRequest>({
-    label: 'HOME', addressLine1: '', city: '', state: '', postalCode: '', country: 'India',
+    label: 'HOME', addressLine1: '', city: '', state: '', postalCode: '', country: defaultAddressCountry(null),
   });
   const [preferencesForm, setPreferencesForm] = useState<UpdatePreferencesRequest>({});
   const [notifForm, setNotifForm] = useState({
@@ -134,10 +142,23 @@ const ProfilePage: React.FC = () => {
       if (error && currentUser && !hasAttemptedCreate.current && !customer) {
         hasAttemptedCreate.current = true;
         setCreatingProfile(true);
-        const cleanPhone = currentUser.phone?.replace(/\D/g, '') || '';
-        if (!cleanPhone.match(/^[6-9]\d{9}$/)) { setCreatingProfile(false); return; }
+        const rawPhone = currentUser.phone || '';
+        const cleanPhone = normalizePhoneForApi(rawPhone);
+        // EU demo: accept E.164 / local; skip auto-create only when phone is unusable
+        if (!isValidCustomerPhone(rawPhone) && !isValidCustomerPhone(cleanPhone)) {
+          setCreationError('Add a valid phone number to finish setting up your profile.');
+          setCreatingProfile(false);
+          return;
+        }
         try {
-          await createCustomer({ userId: currentUser.id, name: currentUser.name, email: currentUser.email, phone: cleanPhone, marketingOptIn: false, smsOptIn: false }).unwrap();
+          await createCustomer({
+            userId: currentUser.id,
+            name: currentUser.name,
+            email: currentUser.email,
+            phone: cleanPhone || rawPhone,
+            marketingOptIn: false,
+            smsOptIn: false,
+          }).unwrap();
           setTimeout(async () => { await refetch(); setCreatingProfile(false); }, 500);
         } catch (err: unknown) {
           const msg = getApiErrorMessage(err, '');
@@ -198,7 +219,7 @@ const ProfilePage: React.FC = () => {
     try {
       if (editingAddressId) await updateAddress({ customerId: customer.id, addressId: editingAddressId, data: addressForm }).unwrap();
       else await addAddress({ customerId: customer.id, data: addressForm }).unwrap();
-      setAddressForm({ label: 'HOME', addressLine1: '', city: '', state: '', postalCode: '', country: 'India' });
+      setAddressForm({ label: 'HOME', addressLine1: '', city: '', state: '', postalCode: '', country: defaultAddressCountry(formCountry) });
       setAddressDialogOpen(false); setEditingAddressId(null);
     } catch { alert('Failed to save address.'); }
   };
@@ -357,7 +378,7 @@ const ProfilePage: React.FC = () => {
       >
         <span style={{
           position: 'absolute', top: 3, left: checked ? 24 : 3, width: 20, height: 20,
-          borderRadius: '50%', background: '#fff', transition: 'left 0.2s ease',
+          borderRadius: '50%', background: 'var(--text-1)', transition: 'left 0.2s ease',
           boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
         }} />
       </button>
@@ -547,7 +568,7 @@ const ProfilePage: React.FC = () => {
           <p style={{ color: 'var(--text-3)', fontSize: '0.8rem', margin: '4px 0 0' }}>Manage your delivery locations</p>
         </div>
         <button
-          onClick={() => { setEditingAddressId(null); setAddressForm({ label: 'HOME', addressLine1: '', city: '', state: '', postalCode: '', country: 'India' }); setAddressDialogOpen(true); }}
+          onClick={() => { setEditingAddressId(null); setAddressForm({ label: 'HOME', addressLine1: '', city: '', state: '', postalCode: '', country: defaultAddressCountry(formCountry) }); setAddressDialogOpen(true); }}
           style={{ background: 'var(--red)', border: 'none', color: 'var(--text-1)', borderRadius: 'var(--radius-pill)', padding: '8px 20px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
         >
           + Add Address
@@ -709,7 +730,7 @@ const ProfilePage: React.FC = () => {
               {icon}
             </div>
             <div style={{ width: 38, height: 22, borderRadius: 99, background: on ? 'var(--gold)' : 'var(--surface-3)', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
-              <span style={{ position: 'absolute', top: 3, left: on ? 18 : 3, width: 16, height: 16, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.4)' }} />
+              <span style={{ position: 'absolute', top: 3, left: on ? 18 : 3, width: 16, height: 16, borderRadius: '50%', background: 'var(--text-1)', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.4)' }} />
             </div>
           </div>
           <div>
@@ -907,7 +928,7 @@ const ProfilePage: React.FC = () => {
           <Input label="State *" value={addressForm.state} onChange={v => setAddressForm(p => ({ ...p, state: v }))} />
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <Input label="Postal Code *" value={addressForm.postalCode} onChange={v => setAddressForm(p => ({ ...p, postalCode: v }))} placeholder="6-digit PIN" />
+          <Input label="Postal Code *" value={addressForm.postalCode} onChange={v => setAddressForm(p => ({ ...p, postalCode: v }))} placeholder={postalPlaceholder(formCountry)} />
           <Input label="Country *" value={addressForm.country} onChange={v => setAddressForm(p => ({ ...p, country: v }))} />
         </div>
         <Input label="Landmark" value={addressForm.landmark || ''} onChange={v => setAddressForm(p => ({ ...p, landmark: v }))} placeholder="Nearby landmark" />
