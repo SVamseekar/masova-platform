@@ -1,19 +1,14 @@
-package com.MaSoVa.payment.controller;
+package com.MaSoVa.payment.service;
 
 import com.MaSoVa.payment.entity.Refund;
 import com.MaSoVa.payment.entity.Transaction;
 import com.MaSoVa.payment.repository.RefundRepository;
 import com.MaSoVa.payment.repository.TransactionRepository;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Profile;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
+import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -24,50 +19,47 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Dev-only seed for manager Payments / Refunds UI when live Stripe keys are not set.
- * Never enable outside {@code dev} / {@code demo}.
+ * Dev/demo seed for manager Payments / Refunds UI when live Stripe keys are not set.
+ * Callable only when active profiles include {@code dev} or {@code demo}.
  */
-@Profile({"dev", "demo"})
-@RestController
-@RequestMapping("/api/payments/test-data")
-@Tag(name = "Payment Test Data", description = "Dev seed for synthetic transactions/refunds")
-public class PaymentTestDataController {
+@Service
+public class PaymentSeedService {
 
-    private static final Logger log = LoggerFactory.getLogger(PaymentTestDataController.class);
+    private static final Logger log = LoggerFactory.getLogger(PaymentSeedService.class);
 
     private final TransactionRepository transactionRepository;
     private final RefundRepository refundRepository;
+    private final Environment environment;
 
-    public PaymentTestDataController(TransactionRepository transactionRepository,
-                                     RefundRepository refundRepository) {
+    public PaymentSeedService(TransactionRepository transactionRepository,
+                              RefundRepository refundRepository,
+                              Environment environment) {
         this.transactionRepository = transactionRepository;
         this.refundRepository = refundRepository;
+        this.environment = environment;
+    }
+
+    public boolean isSeedAllowed() {
+        return environment.acceptsProfiles(Profiles.of("dev", "demo"));
     }
 
     /**
-     * Seed ≥3 SUCCESS transactions + 1 PROCESSED refund + 1 PENDING_APPROVAL refund for a store.
+     * Seed ≥3 SUCCESS transactions + 1 PROCESSED refund + 1 PENDING_APPROVAL refund.
      * Idempotent on fixed orderIds.
      */
-    /**
-     * POST /api/payments/test-data/seed-demo — manager JWT via gateway.
-     * Seed ≥3 SUCCESS transactions + 1 PROCESSED refund + 1 PENDING_APPROVAL refund.
-     */
-    @PostMapping("/seed-demo")
-    @Operation(summary = "Seed synthetic Stripe-like transactions and refunds for demo store")
-    public ResponseEntity<Map<String, Object>> seedDemo(
-            @RequestParam(defaultValue = "DOM001") String storeId,
-            @RequestParam(defaultValue = "cust-demo-1") String customerId) {
+    public Map<String, Object> seedDemo(String storeId, String customerId) {
+        if (!isSeedAllowed()) {
+            throw new IllegalStateException("Payment seed is only available under dev/demo profiles");
+        }
 
         List<String> transactionIds = new ArrayList<>();
         List<String> refundIds = new ArrayList<>();
 
-        // Tx 1 — SUCCESS, fully refundable (Stripe-shaped)
         Transaction tx1 = upsertSyntheticTxn(
                 "SEED-ORD-PAY-1", storeId, customerId,
                 new BigDecimal("24.90"), Transaction.PaymentStatus.SUCCESS, "STRIPE", true);
         transactionIds.add(tx1.getId());
 
-        // Tx 2 — SUCCESS, partial refund already applied
         Transaction tx2 = upsertSyntheticTxn(
                 "SEED-ORD-PAY-2", storeId, customerId,
                 new BigDecimal("42.50"), Transaction.PaymentStatus.PARTIAL_REFUND, "STRIPE", true);
@@ -83,13 +75,11 @@ public class PaymentTestDataController {
                 "manager-seed");
         refundIds.add(partial.getId());
 
-        // Tx 3 — SUCCESS cash (synthetic refund path)
         Transaction tx3 = upsertSyntheticTxn(
                 "SEED-ORD-PAY-3", storeId, customerId,
                 new BigDecimal("15.00"), Transaction.PaymentStatus.SUCCESS, "CASH", false);
         transactionIds.add(tx3.getId());
 
-        // Pending agent refund on tx1 (approval-gated — no money moved)
         Refund pending = upsertRefund(
                 "SEED-RFND-PENDING-1",
                 tx1,
@@ -108,7 +98,7 @@ public class PaymentTestDataController {
         body.put("transactionIds", transactionIds);
         body.put("refundIds", refundIds);
         body.put("message", "Seeded ≥3 transactions and ≥1 refund (plus pending approval)");
-        return ResponseEntity.ok(body);
+        return body;
     }
 
     private Transaction upsertSyntheticTxn(
@@ -158,9 +148,7 @@ public class PaymentTestDataController {
         t.setPaymentMethod(stripeShaped ? Transaction.PaymentMethod.CARD : Transaction.PaymentMethod.CASH);
         t.setPaymentMethodType(stripeShaped ? "card" : "cash");
         t.setPaidAt(LocalDateTime.now().minusHours(2));
-        if (!stripeShaped) {
-            // leave razorpayPaymentId null — synthetic refund path
-        } else {
+        if (stripeShaped) {
             t.setRazorpayPaymentId("ch_seed_" + shortId(orderId));
         }
         return transactionRepository.save(t);
@@ -175,7 +163,6 @@ public class PaymentTestDataController {
             String reason,
             String initiatedBy) {
 
-        // Find existing by notes seed key to stay idempotent
         List<Refund> existing = refundRepository.findByTransactionId(tx.getId());
         for (Refund r : existing) {
             if (r.getNotes() != null && r.getNotes().contains(seedKey)) {
@@ -204,15 +191,14 @@ public class PaymentTestDataController {
 
         if (status == Refund.RefundStatus.PROCESSED || status == Refund.RefundStatus.PROCESSING) {
             b.razorpayRefundId("syn_rfnd_seed_" + shortId(seedKey));
+        } else if (status == Refund.RefundStatus.PENDING_APPROVAL) {
+            // Unique index on razorpayRefundId — never leave null for pending rows
+            b.razorpayRefundId("pending_seed_" + shortId(seedKey));
         }
 
         Refund refund = b.build();
         if (status == Refund.RefundStatus.PROCESSED) {
             refund.setProcessedAt(LocalDateTime.now().minusHours(1));
-        }
-        // Avoid unique index collision on null razorpayRefundId for multiple PENDING rows
-        if (refund.getRazorpayRefundId() == null && status == Refund.RefundStatus.PENDING_APPROVAL) {
-            // leave null — Mongo unique sparse index typically allows multiple nulls
         }
         return refundRepository.save(refund);
     }

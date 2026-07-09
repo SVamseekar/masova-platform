@@ -42,9 +42,12 @@ public class PaymentController {
     private static final Logger log = LoggerFactory.getLogger(PaymentController.class);
 
     private final PaymentService paymentService;
+    private final com.MaSoVa.payment.service.PaymentSeedService paymentSeedService;
 
-    public PaymentController(PaymentService paymentService) {
+    public PaymentController(PaymentService paymentService,
+                             com.MaSoVa.payment.service.PaymentSeedService paymentSeedService) {
         this.paymentService = paymentService;
+        this.paymentSeedService = paymentSeedService;
     }
 
     private void validateStoreAccess(String userStoreId, String transactionStoreId) {
@@ -231,6 +234,32 @@ public class PaymentController {
         } catch (Exception e) {
             log.error("Error reconciling transaction", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // ── DEV SEED (same security model as cash — manager PreAuthorize) ─────────────
+
+    /**
+     * POST /api/payments/seed-demo — synthetic Stripe/cash txs + refunds for manager UI.
+     * Active when spring profile is {@code dev} or {@code demo}; otherwise 404.
+     * Prefer this path over legacy {@code /api/payments/test-data/seed-demo}.
+     */
+    @PostMapping({"/seed-demo", "/test-data/seed-demo"})
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Seed synthetic transactions/refunds for demo (dev/demo profile only)")
+    public ResponseEntity<?> seedDemo(
+            @RequestParam(defaultValue = "DOM001") String storeId,
+            @RequestParam(defaultValue = "cust-demo-1") String customerId) {
+        if (!paymentSeedService.isSeedAllowed()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Seed only available with spring profile dev or demo"));
+        }
+        try {
+            return ResponseEntity.ok(paymentSeedService.seedDemo(storeId, customerId));
+        } catch (Exception e) {
+            log.error("Payment seed-demo failed for store {}", storeId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Seed failed", "detail", e.getMessage() != null ? e.getMessage() : "unknown"));
         }
     }
 

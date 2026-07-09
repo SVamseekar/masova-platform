@@ -3,6 +3,7 @@ package com.MaSoVa.payment.unit.controller;
 import com.MaSoVa.payment.controller.PaymentController;
 import com.MaSoVa.payment.dto.PaymentResponse;
 import com.MaSoVa.payment.entity.Transaction;
+import com.MaSoVa.payment.service.PaymentSeedService;
 import com.MaSoVa.payment.service.PaymentService;
 import com.MaSoVa.shared.test.BaseServiceTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,6 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class PaymentControllerTest extends BaseServiceTest {
 
     @Mock private PaymentService paymentService;
+    @Mock private PaymentSeedService paymentSeedService;
     @InjectMocks private PaymentController paymentController;
     private MockMvc mockMvc;
 
