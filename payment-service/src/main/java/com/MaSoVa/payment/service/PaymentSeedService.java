@@ -21,7 +21,13 @@ import java.util.Optional;
 /**
  * Dev/demo seed for manager Payments / Refunds UI when live Stripe keys are not set.
  * Callable only when active profiles include {@code dev} or {@code demo}.
- * Prefer linking {@code orderIds} to real commerce Mongo order ids from reseed-all.
+ * <p>
+ * Idempotency notes:
+ * <ul>
+ *   <li>{@code razorpayOrderId} is uniquely indexed and must never be null (Mongo allows only one null).</li>
+ *   <li>Stable slot keys {@code SEED_RZP_1..3} identify seed rows across re-runs even when
+ *       commerce links different order Mongo ids.</li>
+ * </ul>
  */
 @Service
 public class PaymentSeedService {
@@ -49,7 +55,7 @@ public class PaymentSeedService {
 
     /**
      * Seed ≥3 SUCCESS/PARTIAL_REFUND transactions + 1 PROCESSED refund + 1 PENDING_APPROVAL refund.
-     * Idempotent on orderId keys.
+     * Idempotent via stable slot keys (not only orderId).
      *
      * @param linkedOrderIds optional commerce Mongo order ids (prefer ≥3 paid seed orders)
      */
@@ -63,17 +69,18 @@ public class PaymentSeedService {
         List<String> refundIds = new ArrayList<>();
         List<String> syncedOrders = new ArrayList<>();
 
+        // Slot 1 — Stripe SUCCESS (linked commerce order or SEED-ORD-PAY-1)
         Transaction tx1 = upsertSyntheticTxn(
-                orderKeys.get(0), storeId, customerId,
+                1, orderKeys.get(0), storeId, customerId,
                 new BigDecimal("24.90"), Transaction.PaymentStatus.SUCCESS, "STRIPE", true);
         transactionIds.add(tx1.getId());
         syncOrderPayment(tx1, "PAID", syncedOrders);
 
+        // Slot 2 — Stripe PARTIAL_REFUND
         Transaction tx2 = upsertSyntheticTxn(
-                orderKeys.get(1), storeId, customerId,
+                2, orderKeys.get(1), storeId, customerId,
                 new BigDecimal("42.50"), Transaction.PaymentStatus.PARTIAL_REFUND, "STRIPE", true);
         transactionIds.add(tx2.getId());
-        // Partial refund still leaves order PAID with refund rows
         syncOrderPayment(tx2, "PAID", syncedOrders);
 
         Refund partial = upsertRefund(
@@ -86,8 +93,9 @@ public class PaymentSeedService {
                 "manager-seed");
         refundIds.add(partial.getId());
 
+        // Slot 3 — Cash SUCCESS
         Transaction tx3 = upsertSyntheticTxn(
-                orderKeys.get(2), storeId, customerId,
+                3, orderKeys.get(2), storeId, customerId,
                 new BigDecimal("15.00"), Transaction.PaymentStatus.SUCCESS, "CASH", false);
         transactionIds.add(tx3.getId());
         syncOrderPayment(tx3, "PAID", syncedOrders);
@@ -130,7 +138,6 @@ public class PaymentSeedService {
                 }
             }
         }
-        // Fallbacks keep seed working without commerce link
         while (keys.size() < 3) {
             keys.add("SEED-ORD-PAY-" + (keys.size() + 1));
         }
@@ -142,13 +149,17 @@ public class PaymentSeedService {
             orderServiceClient.updateOrderPaymentStatus(tx.getOrderId(), status, tx.getId());
             synced.add(tx.getOrderId());
         } catch (Exception e) {
-            // Synthetic SEED-ORD-PAY-* keys may not exist in commerce — non-fatal
             log.warn("Could not sync payment status to commerce for order {}: {}",
                     tx.getOrderId(), e.getMessage());
         }
     }
 
+    /**
+     * Upsert by stable slot identity so re-seed with new commerce order Mongo ids
+     * does not insert duplicates under unique razorpayOrderId / orderId indexes.
+     */
     private Transaction upsertSyntheticTxn(
+            int slot,
             String orderId,
             String storeId,
             String customerId,
@@ -157,9 +168,24 @@ public class PaymentSeedService {
             String gateway,
             boolean stripeShaped) {
 
-        Optional<Transaction> existing = transactionRepository.findByOrderId(orderId);
+        // Stable unique keys — never null (unique index on razorpayOrderId forbids multi-null)
+        String seedRzpOrderId = "SEED_RZP_" + slot;
+        String seedReceipt = "SEED_RCPT_" + slot;
+        String seedStripePi = "pi_seed_slot_" + slot;
+        String seedRzpPaymentId = "ch_seed_slot_" + slot;
+
+        Optional<Transaction> existing = findExistingSeedTxn(orderId, seedRzpOrderId, seedStripePi);
+
         if (existing.isPresent()) {
             Transaction t = existing.get();
+            // Re-link to current commerce order id when provided
+            if (orderId != null && !orderId.equals(t.getOrderId())) {
+                // Only reassign if no other tx already owns this orderId
+                Optional<Transaction> conflict = transactionRepository.findByOrderId(orderId);
+                if (conflict.isEmpty() || conflict.get().getId().equals(t.getId())) {
+                    t.setOrderId(orderId);
+                }
+            }
             t.setStatus(status);
             t.setAmount(amount);
             t.setStoreId(storeId);
@@ -168,8 +194,22 @@ public class PaymentSeedService {
             t.setCurrency("EUR");
             t.setCustomerEmail("anna.mueller@gmail.com");
             t.setCustomerPhone("+491511000011");
-            if (stripeShaped && t.getStripePaymentIntentId() == null) {
-                t.setStripePaymentIntentId("pi_seed_" + shortId(orderId));
+            t.setReceipt(seedReceipt);
+            // Always keep non-null unique gateway id
+            t.setRazorpayOrderId(seedRzpOrderId);
+            if (stripeShaped) {
+                t.setStripePaymentIntentId(seedStripePi);
+                t.setRazorpayPaymentId(seedRzpPaymentId);
+                t.setPaymentMethod(Transaction.PaymentMethod.CARD);
+                t.setPaymentMethodType("card");
+            } else {
+                t.setStripePaymentIntentId(null);
+                t.setRazorpayPaymentId(seedRzpPaymentId);
+                t.setPaymentMethod(Transaction.PaymentMethod.CASH);
+                t.setPaymentMethodType("cash");
+            }
+            if (t.getPaidAt() == null) {
+                t.setPaidAt(LocalDateTime.now().minusHours(2));
             }
             return transactionRepository.save(t);
         }
@@ -182,25 +222,43 @@ public class PaymentSeedService {
                 .customerEmail("anna.mueller@gmail.com")
                 .customerPhone("+491511000011")
                 .storeId(storeId)
-                .receipt("SEED_" + shortId(orderId))
+                .receipt(seedReceipt)
                 .currency("EUR")
                 .paymentGateway(gateway)
-                .reconciled(false);
+                .reconciled(false)
+                // CRITICAL: unique non-null — never leave razorpayOrderId null
+                .razorpayOrderId(seedRzpOrderId);
 
         if (stripeShaped) {
-            b.stripePaymentIntentId("pi_seed_" + shortId(orderId));
-        } else {
-            b.razorpayOrderId("CASH_" + orderId);
+            b.stripePaymentIntentId(seedStripePi);
         }
 
         Transaction t = b.build();
         t.setPaymentMethod(stripeShaped ? Transaction.PaymentMethod.CARD : Transaction.PaymentMethod.CASH);
         t.setPaymentMethodType(stripeShaped ? "card" : "cash");
         t.setPaidAt(LocalDateTime.now().minusHours(2));
-        if (stripeShaped) {
-            t.setRazorpayPaymentId("ch_seed_" + shortId(orderId));
-        }
+        t.setRazorpayPaymentId(seedRzpPaymentId);
         return transactionRepository.save(t);
+    }
+
+    private Optional<Transaction> findExistingSeedTxn(String orderId, String seedRzpOrderId, String seedStripePi) {
+        Optional<Transaction> byOrder = transactionRepository.findByOrderId(orderId);
+        if (byOrder.isPresent()) {
+            return byOrder;
+        }
+        Optional<Transaction> byRzp = transactionRepository.findByRazorpayOrderId(seedRzpOrderId);
+        if (byRzp.isPresent()) {
+            return byRzp;
+        }
+        Optional<Transaction> byStripe = transactionRepository.findByStripePaymentIntentId(seedStripePi);
+        if (byStripe.isPresent()) {
+            return byStripe;
+        }
+        // Legacy Phase C keys SEED-ORD-PAY-N
+        if (orderId != null && !orderId.startsWith("SEED-ORD-PAY-")) {
+            // try slot-shaped legacy only via razorpay id already handled
+        }
+        return Optional.empty();
     }
 
     private Refund upsertRefund(
@@ -218,9 +276,15 @@ public class PaymentSeedService {
                 r.setStatus(status);
                 r.setAmount(amount);
                 r.setStoreId(tx.getStoreId());
+                r.setOrderId(tx.getOrderId());
                 return refundRepository.save(r);
             }
         }
+
+        // Also match by stable razorpayRefundId if notes missing
+        String stableRefundId = status == Refund.RefundStatus.PENDING_APPROVAL
+                ? "pending_seed_" + shortId(seedKey)
+                : "syn_rfnd_seed_" + shortId(seedKey);
 
         Refund.Builder b = Refund.builder()
                 .transactionId(tx.getId())
@@ -236,20 +300,28 @@ public class PaymentSeedService {
                 .notes("seed:" + seedKey)
                 .razorpayPaymentId(tx.getStripePaymentIntentId() != null
                         ? tx.getStripePaymentIntentId()
-                        : tx.getRazorpayPaymentId());
-
-        if (status == Refund.RefundStatus.PROCESSED || status == Refund.RefundStatus.PROCESSING) {
-            b.razorpayRefundId("syn_rfnd_seed_" + shortId(seedKey));
-        } else if (status == Refund.RefundStatus.PENDING_APPROVAL) {
-            // Unique index on razorpayRefundId — never leave null for pending rows
-            b.razorpayRefundId("pending_seed_" + shortId(seedKey));
-        }
+                        : tx.getRazorpayPaymentId())
+                .razorpayRefundId(stableRefundId);
 
         Refund refund = b.build();
         if (status == Refund.RefundStatus.PROCESSED) {
             refund.setProcessedAt(LocalDateTime.now().minusHours(1));
         }
-        return refundRepository.save(refund);
+        try {
+            return refundRepository.save(refund);
+        } catch (Exception e) {
+            // Race / unique razorpayRefundId from prior seed — re-fetch and update
+            log.warn("Refund seed save collision for {}: {}", seedKey, e.getMessage());
+            List<Refund> again = refundRepository.findByTransactionId(tx.getId());
+            for (Refund r : again) {
+                if (r.getNotes() != null && r.getNotes().contains(seedKey)) {
+                    r.setStatus(status);
+                    r.setAmount(amount);
+                    return refundRepository.save(r);
+                }
+            }
+            throw e;
+        }
     }
 
     private static String shortId(String seed) {
