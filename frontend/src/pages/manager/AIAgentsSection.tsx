@@ -9,6 +9,8 @@ import {
   useTriggerKitchenCoachMutation,
   useTriggerDynamicPricingMutation,
 } from '../../store/api/agentApi';
+import { AGENT_CATALOG } from './agentCatalog';
+import type { AgentStatus } from './quickInfoMetrics';
 
 interface Props {
   storeId: string;
@@ -115,100 +117,68 @@ interface AgentDef {
   schedule: string;
   icon: React.FC;
   color: string;
-  status: 'active' | 'stub' | 'event-driven';
+  status: AgentStatus;
   category: 'intelligence' | 'operations' | 'engagement';
 }
 
-const agents: AgentDef[] = [
-  {
-    id: 'support-chat',
-    name: 'Customer Support',
-    shortName: 'Agent 1',
+/** Presentation (icons/copy) merged with AGENT_CATALOG status — single source for Quick Info counts. */
+const agentPresentation: Record<string, Omit<AgentDef, 'id' | 'name' | 'shortName' | 'schedule' | 'status' | 'category'>> = {
+  'support-chat': {
     description: 'AI chat assistant that handles order status, menu enquiries, complaints, refunds, and loyalty points. Available around the clock via the chat widget.',
-    schedule: 'Always on',
     icon: IconChat,
     color: t.blue,
-    status: 'active',
-    category: 'engagement',
   },
-  {
-    id: 'demand-forecast',
-    name: 'Demand Forecasting',
-    shortName: 'Agent 2',
+  'demand-forecast': {
     description: 'Analyses 90 days of order history to predict tomorrow\'s demand per menu item, per hour-slot. Helps you prep the right quantities and reduce waste.',
-    schedule: 'Nightly at 2:00 AM',
     icon: IconTrending,
     color: t.green,
-    status: 'active',
-    category: 'intelligence',
   },
-  {
-    id: 'inventory-reorder',
-    name: 'Inventory Reorder',
-    shortName: 'Agent 3',
+  'inventory-reorder': {
     description: 'Checks stock levels every 6 hours. When items run low, it drafts a purchase order for your preferred supplier and notifies you to review.',
-    schedule: 'Every 6 hours',
     icon: IconPackage,
     color: '#8B5CF6',
-    status: 'active',
-    category: 'operations',
   },
-  {
-    id: 'churn-prevention',
-    name: 'Churn Prevention',
-    shortName: 'Agent 4',
+  'churn-prevention': {
     description: 'Identifies high-value customers who haven\'t ordered in 14+ days and drafts a personalised win-back campaign with a 15% discount offer.',
-    schedule: 'Daily at 10:00 AM',
     icon: IconTarget,
     color: t.orange,
-    status: 'active',
-    category: 'engagement',
   },
-  {
-    id: 'review-response',
-    name: 'Smart Review Response',
-    shortName: 'Agent 5',
+  'review-response': {
     description: 'When a customer leaves a rating of 3 stars or below, this agent uses AI to draft a personalised, empathetic response for you to review and send.',
-    schedule: 'On new low review',
     icon: IconStar,
     color: t.yellow,
-    status: 'event-driven',
-    category: 'engagement',
   },
-  {
-    id: 'shift-optimisation',
-    name: 'Shift Optimisation',
-    shortName: 'Agent 6',
+  'shift-optimisation': {
     description: 'Uses demand forecasts to draft next week\'s optimal shift schedule. Balances coverage with staff preferences and historical efficiency.',
-    schedule: 'Sundays at 8:00 PM',
     icon: IconCalendar,
     color: '#EC4899',
-    status: 'stub',
-    category: 'operations',
   },
-  {
-    id: 'kitchen-coach',
-    name: 'Kitchen Coach',
-    shortName: 'Agent 7',
+  'kitchen-coach': {
     description: 'Analyses daily kitchen metrics — prep times, throughput, peak performance — and generates coaching insights for your kitchen team.',
-    schedule: 'Nightly at 11:00 PM',
     icon: IconChef,
     color: '#F97316',
-    status: 'stub',
-    category: 'operations',
   },
-  {
-    id: 'dynamic-pricing',
-    name: 'Dynamic Pricing',
-    shortName: 'Agent 8',
+  'dynamic-pricing': {
     description: 'Suggests price adjustments for slow-moving items based on real-time demand vs forecast. All suggestions are drafts — you approve before they go live.',
-    schedule: 'Every 30 min (9 AM – 10 PM)',
     icon: IconDollar,
     color: '#14B8A6',
-    status: 'stub',
-    category: 'intelligence',
   },
-];
+};
+
+const agents: AgentDef[] = AGENT_CATALOG.map((entry) => {
+  const pres = agentPresentation[entry.id];
+  return {
+    id: entry.id,
+    name: entry.name,
+    shortName: entry.shortName,
+    schedule: entry.schedule,
+    status: entry.status,
+    category: entry.category,
+    description: pres?.description ?? '',
+    icon: pres?.icon ?? IconChat,
+    color: pres?.color ?? t.blue,
+  };
+});
 
 const categoryLabels: Record<string, { label: string; description: string }> = {
   intelligence: { label: 'Intelligence', description: 'Forecast, analyse, and optimise' },
