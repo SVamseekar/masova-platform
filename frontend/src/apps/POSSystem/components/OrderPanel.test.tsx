@@ -51,7 +51,8 @@ describe('OrderPanel', () => {
         useMemoryRouter: true,
       });
 
-      expect(screen.getByText('Current Order')).toBeInTheDocument();
+      expect(screen.getByTestId('order-panel')).toBeInTheDocument();
+      expect(screen.getByText('Cart')).toBeInTheDocument();
     });
 
     it('displays order items', () => {
@@ -89,9 +90,8 @@ describe('OrderPanel', () => {
         useMemoryRouter: true,
       });
 
-      expect(
-        screen.getByText(/No items in order/i)
-      ).toBeInTheDocument();
+      expect(screen.getByTestId('cart-empty')).toBeInTheDocument();
+      expect(screen.getByText(/Cart is empty/i)).toBeInTheDocument();
     });
 
     it('does not show clear button when order is empty', () => {
@@ -168,15 +168,14 @@ describe('OrderPanel', () => {
       expect(defaultProps.onUpdateQuantity).toHaveBeenCalledWith('item-1', 1);
     });
 
-    it('disables minus button when quantity is 1', () => {
+    it('allows decreasing quantity even when quantity is 1 (removes line)', () => {
       renderWithProviders(<OrderPanel {...defaultProps} />, {
         useMemoryRouter: true,
       });
 
-      // Garlic Bread has quantity 1 - its minus button should be disabled
-      const minusButtons = screen.getAllByText(/\u2212/);
-      // The second minus button corresponds to Garlic Bread (quantity 1)
-      expect(minusButtons[1]).toBeDisabled();
+      // Steppers stay enabled; quantity 0 path removes the line via parent
+      const minusButtons = screen.getAllByLabelText('Decrease quantity');
+      expect(minusButtons[1]).not.toBeDisabled();
     });
   });
 
@@ -198,15 +197,13 @@ describe('OrderPanel', () => {
   });
 
   describe('special instructions', () => {
-    it('renders special instructions textareas', () => {
+    it('renders special instructions inputs', () => {
       renderWithProviders(<OrderPanel {...defaultProps} />, {
         useMemoryRouter: true,
       });
 
-      const textareas = screen.getAllByPlaceholderText(
-        'Special instructions (optional)'
-      );
-      expect(textareas).toHaveLength(2);
+      const notes = screen.getAllByPlaceholderText('Note (optional)');
+      expect(notes).toHaveLength(2);
     });
 
     it('displays existing special instructions', () => {
@@ -214,10 +211,8 @@ describe('OrderPanel', () => {
         useMemoryRouter: true,
       });
 
-      const textareas = screen.getAllByPlaceholderText(
-        'Special instructions (optional)'
-      );
-      expect(textareas[1]).toHaveValue('Extra crispy');
+      const notes = screen.getAllByPlaceholderText('Note (optional)');
+      expect(notes[1]).toHaveValue('Extra crispy');
     });
 
     it('calls onUpdateInstructions when text is entered', async () => {
@@ -227,10 +222,8 @@ describe('OrderPanel', () => {
         useMemoryRouter: true,
       });
 
-      const textareas = screen.getAllByPlaceholderText(
-        'Special instructions (optional)'
-      );
-      await user.type(textareas[0], 'No onions');
+      const notes = screen.getAllByPlaceholderText('Note (optional)');
+      await user.type(notes[0], 'No onions');
 
       expect(defaultProps.onUpdateInstructions).toHaveBeenCalled();
     });
@@ -242,7 +235,9 @@ describe('OrderPanel', () => {
         useMemoryRouter: true,
       });
 
-      expect(screen.getByText('Subtotal:')).toBeInTheDocument();
+      expect(screen.getByTestId('cart-totals')).toBeInTheDocument();
+      // i18n label may be Subtotal without colon
+      expect(screen.getByText(/Subtotal/i)).toBeInTheDocument();
     });
 
     it('displays tax amount', () => {
@@ -250,7 +245,8 @@ describe('OrderPanel', () => {
         useMemoryRouter: true,
       });
 
-      expect(screen.getByText('Tax (5% GST):')).toBeInTheDocument();
+      // DE uses VAT label; match either GST or VAT
+      expect(screen.getByText(/VAT|Tax|GST/i)).toBeInTheDocument();
     });
 
     it('displays total', () => {
@@ -258,16 +254,29 @@ describe('OrderPanel', () => {
         useMemoryRouter: true,
       });
 
-      expect(screen.getByText('Total:')).toBeInTheDocument();
+      // Exact label (avoid matching Subtotal)
+      expect(screen.getByText('Total')).toBeInTheDocument();
     });
 
-    it('shows delivery fee when order type is DELIVERY', () => {
+    it('shows delivery fee when order type is DELIVERY and cart fee is set', () => {
       renderWithProviders(
         <OrderPanel {...defaultProps} orderType="DELIVERY" />,
-        { useMemoryRouter: true }
+        {
+          useMemoryRouter: true,
+          preloadedState: {
+            cart: {
+              items: [],
+              selectedStoreId: 'store-1',
+              selectedStoreName: 'Store',
+              totalItems: 0,
+              deliveryFee: 2.9,
+              storeCountryCode: 'DE',
+            },
+          },
+        }
       );
 
-      expect(screen.getByText('Delivery fee:')).toBeInTheDocument();
+      expect(screen.getByText(/Delivery fee/i)).toBeInTheDocument();
     });
 
     it('does not show delivery fee for PICKUP orders', () => {
@@ -275,16 +284,16 @@ describe('OrderPanel', () => {
         useMemoryRouter: true,
       });
 
-      expect(screen.queryByText('Delivery fee:')).not.toBeInTheDocument();
+      expect(screen.queryByText(/Delivery fee/i)).not.toBeInTheDocument();
     });
 
-    it('displays item count', () => {
+    it('displays item count badge', () => {
       renderWithProviders(<OrderPanel {...defaultProps} />, {
         useMemoryRouter: true,
       });
 
-      expect(screen.getByText(/2 items/)).toBeInTheDocument();
-      expect(screen.getByText(/3 qty/)).toBeInTheDocument();
+      // Header badge shows total qty (2+1=3)
+      expect(screen.getByText('3')).toBeInTheDocument();
     });
   });
 

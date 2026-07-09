@@ -1,23 +1,29 @@
 // src/apps/POSSystem/components/OrderPanel.tsx
+/**
+ * POS cart column — dense line items, large steppers, sticky totals.
+ * Pattern: Toast / Square order ticket.
+ */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppSelector } from '../../../store/hooks';
-import { selectCartCurrency, selectCartLocale, selectStoreCountryCode } from '../../../store/slices/cartSlice';
-import {formatMoney, formatMajorAmount} from '../../../utils/currency';
+import {
+  selectCartCurrency,
+  selectCartLocale,
+  selectStoreCountryCode,
+  selectDeliveryFeeINR,
+} from '../../../store/slices/cartSlice';
+import { formatMajorAmount } from '../../../utils/currency';
 import { computePreCheckoutTotals, formatTaxDisplay } from '../../../utils/orderTax';
-import Card from '../../../components/ui/neumorphic/Card';
-import Badge from '../../../components/ui/neumorphic/Badge';
-import Button from '../../../components/ui/neumorphic/Button';
-import { colors, shadows, spacing, typography } from '../../../styles/design-tokens';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import TableRestaurantIcon from '@mui/icons-material/TableRestaurant';
-import InventoryIcon from '@mui/icons-material/Inventory';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { AllergenType, ALLERGEN_LABELS } from '../../../constants/allergens';
 import type { POSOrderItem } from '../types';
+import { pos, posTouchBtnBase } from '../posTokens';
+import { resolvePosDeliveryFee } from '../posHelpers';
 
 interface OrderPanelProps {
   items: POSOrderItem[];
@@ -46,418 +52,433 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
   const storeCountryCode = useAppSelector(selectStoreCountryCode);
-  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
-  const subtotal = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-  const deliveryFee = orderType === 'DELIVERY' && subtotal > 0 ? 50 : 0;
-  const { tax, taxLabel, total } = computePreCheckoutTotals(subtotal, deliveryFee, storeCountryCode);
+  const cartDeliveryFee = useAppSelector(selectDeliveryFeeINR);
+  const fmt = (v: number) => formatMajorAmount(v, currency, locale);
 
-  // Collect unique allergens across all order items
+  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const deliveryFee = resolvePosDeliveryFee(orderType, subtotal, cartDeliveryFee);
+  const { tax, taxLabel, total } = computePreCheckoutTotals(
+    subtotal,
+    deliveryFee,
+    storeCountryCode
+  );
+
   const orderAllergens: AllergenType[] = Array.from(
     new Set(items.flatMap((item) => (item.allergens ?? []) as AllergenType[]))
   );
 
+  const itemCount = items.reduce((n, i) => n + i.quantity, 0);
+
+  const orderTypes = [
+    { value: 'PICKUP' as const, label: t('staff.pickup'), Icon: ShoppingBagIcon },
+    { value: 'DELIVERY' as const, label: t('staff.delivery'), Icon: LocalShippingIcon },
+    { value: 'DINE_IN' as const, label: t('staff.dine_in'), Icon: TableRestaurantIcon },
+  ];
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Header */}
-      <div style={{
-        padding: spacing[3],
-        borderBottom: `2px solid ${colors.surface.border}`,
-        background: `linear-gradient(135deg, ${colors.surface.background} 0%, ${colors.surface.secondary} 100%)`
-      }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: spacing[3]
-        }}>
-          <h3 style={{
-            margin: 0,
-            fontSize: typography.fontSize.base,
-            fontWeight: typography.fontWeight.bold,
-            color: colors.text.primary,
+    <div
+      data-testid="order-panel"
+      style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}
+    >
+      {/* Header + order type */}
+      <div
+        style={{
+          padding: pos.space[3],
+          borderBottom: `2px solid ${pos.border}`,
+          background: `linear-gradient(180deg, ${pos.surface} 0%, ${pos.surfaceAlt} 100%)`,
+          flexShrink: 0,
+        }}
+      >
+        <div
+          style={{
             display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
-            gap: spacing[2]
-          }}>
-            <ShoppingCartIcon style={{ fontSize: '20px', color: colors.brand.primary }} />
-            Current Order
+            marginBottom: pos.space[3],
+          }}
+        >
+          <h3
+            style={{
+              margin: 0,
+              fontSize: pos.type.fontSize.base,
+              fontWeight: pos.type.fontWeight.bold,
+              color: pos.ink,
+              display: 'flex',
+              alignItems: 'center',
+              gap: pos.space[2],
+            }}
+          >
+            <ShoppingCartIcon style={{ fontSize: 22, color: pos.role }} />
+            Cart
+            {itemCount > 0 && (
+              <span
+                style={{
+                  minWidth: 24,
+                  height: 24,
+                  borderRadius: pos.radius.full,
+                  background: pos.role,
+                  color: pos.inverse,
+                  fontSize: 12,
+                  fontWeight: 800,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0 6px',
+                }}
+              >
+                {itemCount}
+              </span>
+            )}
           </h3>
           {items.length > 0 && (
-            <Button
-              size="sm"
-              variant="danger"
+            <button
+              type="button"
               onClick={onNewOrder}
+              style={{
+                ...posTouchBtnBase,
+                minHeight: 40,
+                padding: '8px 14px',
+                background: pos.errorSoft,
+                color: pos.errorDark,
+                border: `1px solid ${pos.error}`,
+                fontSize: 12,
+              }}
             >
               Clear
-            </Button>
+            </button>
           )}
         </div>
 
-        {/* Order Type Selection */}
-        <div style={{
-          display: 'flex',
-          gap: spacing[2],
-          marginBottom: spacing[3]
-        }}>
-          {[
-            { value: 'PICKUP', label: t('staff.pickup'), Icon: ShoppingBagIcon },
-            { value: 'DELIVERY', label: t('staff.delivery'), Icon: LocalShippingIcon },
-            { value: 'DINE_IN', label: t('staff.dine_in'), Icon: TableRestaurantIcon }
-          ].map(type => (
-            <button
-              key={type.value}
-              onClick={() => onOrderTypeChange(type.value as 'PICKUP' | 'DELIVERY' | 'DINE_IN')}
-              style={{
-                flex: 1,
-                padding: `${spacing[3]} ${spacing[2]}`,
-                borderRadius: '10px',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: typography.fontSize.xs,
-                fontWeight: typography.fontWeight.semibold,
-                fontFamily: typography.fontFamily.primary,
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: spacing[1],
-                ...(orderType === type.value ? {
-                  background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.secondary} 100%)`,
-                  color: colors.text.inverse,
-                  boxShadow: shadows.floating.md
-                } : {
-                  background: colors.surface.primary,
-                  color: colors.text.secondary,
-                  boxShadow: shadows.raised.sm
-                })
-              }}
-              onMouseEnter={(e) => {
-                if (orderType !== type.value) {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = shadows.floating.sm;
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (orderType !== type.value) {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = shadows.raised.sm;
-                }
-              }}
-            >
-              <type.Icon style={{ fontSize: '18px' }} />
-              <span>{type.label}</span>
-            </button>
-          ))}
+        {/* Segmented order type — full-width touch targets */}
+        <div
+          role="group"
+          aria-label="Order type"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr 1fr',
+            gap: 6,
+            background: pos.surfaceAlt,
+            padding: 4,
+            borderRadius: pos.radius.md,
+          }}
+        >
+          {orderTypes.map((type) => {
+            const active = orderType === type.value;
+            return (
+              <button
+                key={type.value}
+                type="button"
+                onClick={() => onOrderTypeChange(type.value)}
+                style={{
+                  ...posTouchBtnBase,
+                  minHeight: 52,
+                  flexDirection: 'column',
+                  gap: 2,
+                  padding: '8px 4px',
+                  fontSize: 11,
+                  borderRadius: pos.radius.sm,
+                  ...(active
+                    ? {
+                        background: pos.role,
+                        color: pos.inverse,
+                        boxShadow: `0 4px 10px ${pos.roleShadow}`,
+                      }
+                    : {
+                        background: 'transparent',
+                        color: pos.muted,
+                      }),
+                }}
+              >
+                <type.Icon style={{ fontSize: 20 }} />
+                <span>{type.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Order Items List */}
-      <div style={{ flex: 1, overflow: 'auto', padding: spacing[4] }}>
+      {/* Line items */}
+      <div
+        style={{
+          flex: 1,
+          overflow: 'auto',
+          padding: pos.space[3],
+          minHeight: 0,
+          background: pos.surfaceBg,
+        }}
+      >
         {items.length === 0 ? (
-          <Card
-            elevation="sm"
-            padding="lg"
+          <div
+            data-testid="cart-empty"
             style={{
-              background: `linear-gradient(135deg, ${colors.semantic.infoLight}22 0%, ${colors.semantic.info}11 100%)`,
-              border: `2px solid ${colors.semantic.info}`,
-              color: colors.text.primary,
+              marginTop: pos.space[6],
+              padding: pos.space[6],
+              borderRadius: pos.radius.lg,
+              border: `2px dashed ${pos.border}`,
+              background: pos.surface,
               textAlign: 'center',
-              marginTop: spacing[6]
             }}
           >
-            No items in order. Select items from the menu to get started.
-          </Card>
+            <ShoppingCartIcon style={{ fontSize: 40, color: pos.faint, marginBottom: 12 }} />
+            <div style={{ fontWeight: 700, color: pos.ink, marginBottom: 6 }}>Cart is empty</div>
+            <div style={{ fontSize: 13, color: pos.muted, lineHeight: 1.4 }}>
+              Tap menu items on the left to build the order. Pay on the right when ready.
+            </div>
+          </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {items.map((item) => (
-              <Card
+              <div
                 key={item.menuItemId}
-                elevation="md"
-                padding="base"
+                data-testid={`cart-line-${item.menuItemId}`}
                 style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: spacing[3]
+                  padding: 12,
+                  borderRadius: pos.radius.md,
+                  background: pos.surface,
+                  border: `1px solid ${pos.border}`,
+                  boxShadow: pos.shadow.raised.sm,
                 }}
               >
-                {/* Item Name and Price */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{
-                      fontSize: typography.fontSize.sm,
-                      fontWeight: typography.fontWeight.bold,
-                      color: colors.text.primary,
-                      marginBottom: spacing[1]
-                    }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    gap: 8,
+                    marginBottom: 10,
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: pos.ink,
+                        lineHeight: 1.25,
+                      }}
+                    >
                       {item.name}
                     </div>
-                    <div style={{
-                      fontSize: typography.fontSize.xs,
-                      color: colors.text.secondary
-                    }}>
+                    <div style={{ fontSize: 12, color: pos.muted, marginTop: 2 }}>
                       {fmt(item.price)} each
                     </div>
                   </div>
-                  <div style={{
-                    fontSize: typography.fontSize.sm,
-                    fontWeight: typography.fontWeight.bold,
-                    color: colors.brand.primary
-                  }}>
+                  <div
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 800,
+                      color: pos.roleDark,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
                     {fmt(item.price * item.quantity)}
                   </div>
                 </div>
 
-                {/* Quantity Controls */}
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+                {/* Large steppers */}
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: 8,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <button
+                      type="button"
+                      aria-label="Decrease quantity"
                       onClick={() => onUpdateQuantity(item.menuItemId, item.quantity - 1)}
-                      disabled={item.quantity <= 1}
                       style={{
-                        width: '28px',
-                        height: '28px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        background: item.quantity <= 1 ? colors.surface.secondary : colors.surface.primary,
-                        color: item.quantity <= 1 ? colors.text.tertiary : colors.text.primary,
-                        fontSize: typography.fontSize.base,
-                        fontWeight: typography.fontWeight.bold,
-                        cursor: item.quantity <= 1 ? 'not-allowed' : 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: item.quantity <= 1 ? 'none' : shadows.raised.sm,
-                        transition: 'all 0.2s ease',
-                        opacity: item.quantity <= 1 ? 0.5 : 1
-                      }}
-                      onMouseEnter={(e) => {
-                        if (item.quantity > 1) {
-                          e.currentTarget.style.boxShadow = shadows.inset.sm;
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (item.quantity > 1) {
-                          e.currentTarget.style.boxShadow = shadows.raised.sm;
-                        }
-                      }}
-                    >
-                      −
-                    </button>
-                    <Badge variant="secondary" size="sm" style={{ minWidth: '40px', textAlign: 'center' }}>
-                      {item.quantity}
-                    </Badge>
-                    <button
-                      onClick={() => onUpdateQuantity(item.menuItemId, item.quantity + 1)}
-                      style={{
-                        width: '28px',
-                        height: '28px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        background: colors.surface.primary,
-                        color: colors.text.primary,
-                        fontSize: typography.fontSize.base,
-                        fontWeight: typography.fontWeight.bold,
+                        width: pos.touchMin,
+                        height: pos.touchMin,
+                        borderRadius: pos.radius.md,
+                        border: `1px solid ${pos.border}`,
+                        background: pos.surfaceAlt,
+                        color: pos.ink,
+                        fontSize: 22,
+                        fontWeight: 700,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        boxShadow: shadows.raised.sm,
-                        transition: 'all 0.2s ease'
+                        fontFamily: pos.font,
                       }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.boxShadow = shadows.inset.sm;
+                    >
+                      −
+                    </button>
+                    <span
+                      style={{
+                        minWidth: 36,
+                        textAlign: 'center',
+                        fontSize: 18,
+                        fontWeight: 800,
+                        color: pos.ink,
                       }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.boxShadow = shadows.raised.sm;
+                    >
+                      {item.quantity}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label="Increase quantity"
+                      onClick={() => onUpdateQuantity(item.menuItemId, item.quantity + 1)}
+                      style={{
+                        width: pos.touchMin,
+                        height: pos.touchMin,
+                        borderRadius: pos.radius.md,
+                        border: 'none',
+                        background: pos.role,
+                        color: pos.inverse,
+                        fontSize: 22,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontFamily: pos.font,
+                        boxShadow: `0 2px 8px ${pos.roleShadow}`,
                       }}
                     >
                       +
                     </button>
                   </div>
                   <button
+                    type="button"
+                    aria-label={`Remove ${item.name}`}
                     onClick={() => onRemoveItem(item.menuItemId)}
                     style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '8px',
+                      width: pos.touchMin,
+                      height: pos.touchMin,
+                      borderRadius: pos.radius.md,
                       border: 'none',
-                      background: colors.semantic.error,
-                      color: colors.text.inverse,
-                      fontSize: typography.fontSize.base,
+                      background: pos.errorSoft,
+                      color: pos.errorDark,
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: shadows.raised.sm,
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'scale(1.1)';
-                      e.currentTarget.style.boxShadow = shadows.floating.md;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'scale(1)';
-                      e.currentTarget.style.boxShadow = shadows.raised.sm;
                     }}
                   >
-                    <DeleteOutlineIcon style={{ fontSize: '16px' }} />
+                    <DeleteOutlineIcon style={{ fontSize: 22 }} />
                   </button>
                 </div>
 
-                {/* Special Instructions */}
-                <textarea
-                  placeholder="Special instructions (optional)"
+                <input
+                  type="text"
+                  placeholder="Note (optional)"
                   value={item.specialInstructions || ''}
                   onChange={(e) => onUpdateInstructions(item.menuItemId, e.target.value)}
-                  rows={1}
                   style={{
                     width: '100%',
-                    padding: spacing[2],
-                    border: `2px solid ${colors.surface.border}`,
-                    borderRadius: '8px',
+                    minHeight: 40,
+                    padding: '8px 10px',
+                    border: `1px solid ${pos.border}`,
+                    borderRadius: pos.radius.sm,
                     outline: 'none',
-                    backgroundColor: colors.surface.primary,
-                    fontSize: typography.fontSize.xs,
-                    color: colors.text.primary,
-                    fontFamily: typography.fontFamily.primary,
-                    boxShadow: shadows.inset.sm,
-                    resize: 'vertical',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = colors.brand.primary;
-                    e.currentTarget.style.boxShadow = `0 0 0 3px ${colors.brand.primary}22`;
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = colors.surface.border;
-                    e.currentTarget.style.boxShadow = shadows.inset.sm;
+                    backgroundColor: pos.surfaceAlt,
+                    fontSize: 12,
+                    color: pos.ink,
+                    fontFamily: pos.font,
+                    boxSizing: 'border-box',
                   }}
                 />
-              </Card>
+              </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Order Summary */}
+      {/* Sticky ticket footer */}
       {items.length > 0 && (
-        <div style={{
-          padding: spacing[3],
-          borderTop: `2px solid ${colors.surface.border}`,
-          backgroundColor: colors.surface.secondary
-        }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: spacing[1],
-            fontSize: typography.fontSize.xs,
-            color: colors.text.secondary
-          }}>
-            <span>{t('cart.subtotal')}:</span>
-            <span style={{ fontWeight: typography.fontWeight.semibold }}>{fmt(subtotal)}</span>
-          </div>
-
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: spacing[1],
-            fontSize: typography.fontSize.xs,
-            color: colors.text.secondary
-          }}>
-            <span>{taxLabel}:</span>
-            <span style={{ fontWeight: typography.fontWeight.semibold }}>{formatTaxDisplay(tax, fmt)}</span>
-          </div>
-
-          {orderType === 'DELIVERY' && (
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginBottom: spacing[1],
-              fontSize: typography.fontSize.xs,
-              color: colors.text.secondary
-            }}>
-              <span>{t('cart.delivery_fee')}:</span>
-              <span style={{ fontWeight: typography.fontWeight.semibold }}>
-                {deliveryFee === 0 ? 'FREE' : fmt(deliveryFee)}
-              </span>
-            </div>
-          )}
-
-          <div style={{
-            height: '1px',
-            background: colors.surface.border,
-            margin: `${spacing[2]} 0`
-          }} />
-
-          {/* Allergen summary */}
+        <div
+          data-testid="cart-totals"
+          style={{
+            padding: pos.space[3],
+            borderTop: `2px solid ${pos.border}`,
+            background: pos.surface,
+            flexShrink: 0,
+            boxShadow: '0 -4px 16px rgba(0,0,0,0.06)',
+          }}
+        >
           {orderAllergens.length > 0 && (
-            <div style={{
-              backgroundColor: '#fff8e1',
-              border: '1px solid #f9a825',
-              borderRadius: '8px',
-              padding: spacing[2],
-              marginBottom: spacing[2],
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: spacing[2]
-            }}>
-              <WarningAmberIcon style={{ fontSize: '16px', color: '#f9a825', flexShrink: 0, marginTop: '2px' }} />
-              <div>
-                <div style={{
-                  fontSize: typography.fontSize.xs,
-                  fontWeight: typography.fontWeight.bold,
-                  color: '#795548',
-                  marginBottom: spacing[1]
-                }}>
-                  Allergens in this order:
-                </div>
-                <div style={{
-                  fontSize: typography.fontSize.xs,
-                  color: '#5d4037'
-                }}>
-                  {orderAllergens.map((a) => ALLERGEN_LABELS[a]).join(', ')}
-                </div>
+            <div
+              style={{
+                backgroundColor: pos.warningSoft,
+                border: `1px solid ${pos.warning}`,
+                borderRadius: pos.radius.sm,
+                padding: 10,
+                marginBottom: 10,
+                display: 'flex',
+                gap: 8,
+              }}
+            >
+              <WarningAmberIcon style={{ fontSize: 18, color: pos.warningDark, flexShrink: 0 }} />
+              <div style={{ fontSize: 11, color: pos.warningDark, lineHeight: 1.35 }}>
+                <strong>Allergens:</strong> {orderAllergens.map((a) => ALLERGEN_LABELS[a]).join(', ')}
               </div>
             </div>
           )}
 
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: spacing[2]
-          }}>
-            <span style={{
-              fontSize: typography.fontSize.base,
-              fontWeight: typography.fontWeight.extrabold,
-              color: colors.text.primary
-            }}>
-              {t('cart.total')}:
-            </span>
-            <span style={{
-              fontSize: typography.fontSize.base,
-              fontWeight: typography.fontWeight.extrabold,
-              color: colors.brand.primary
-            }}>
-              {fmt(total)}
-            </span>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: 12,
+              color: pos.muted,
+              marginBottom: 4,
+            }}
+          >
+            <span>{t('cart.subtotal')}</span>
+            <span style={{ fontWeight: 600, color: pos.ink }}>{fmt(subtotal)}</span>
           </div>
-
-          {/* Item Count */}
-          <div style={{
-            fontSize: typography.fontSize.xs,
-            color: colors.text.secondary,
-            textAlign: 'center',
-            fontWeight: typography.fontWeight.medium
-          }}>
-            <InventoryIcon style={{ fontSize: '14px', marginRight: '4px' }} />
-            {items.length} item{items.length !== 1 ? 's' : ''} • {items.reduce((sum, item) => sum + item.quantity, 0)} qty
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: 12,
+              color: pos.muted,
+              marginBottom: 4,
+            }}
+          >
+            <span>{taxLabel}</span>
+            <span style={{ fontWeight: 600, color: pos.ink }}>{formatTaxDisplay(tax, fmt)}</span>
+          </div>
+          {orderType === 'DELIVERY' && (
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                fontSize: 12,
+                color: pos.muted,
+                marginBottom: 4,
+              }}
+            >
+              <span>{t('cart.delivery_fee')}</span>
+              <span style={{ fontWeight: 600, color: pos.ink }}>
+                {deliveryFee === 0 ? '—' : fmt(deliveryFee)}
+              </span>
+            </div>
+          )}
+          <div
+            style={{
+              height: 1,
+              background: pos.border,
+              margin: '10px 0',
+            }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <span style={{ fontSize: 14, fontWeight: 800, color: pos.ink }}>{t('cart.total')}</span>
+            <span style={{ fontSize: 22, fontWeight: 800, color: pos.roleDark }}>{fmt(total)}</span>
+          </div>
+          <div
+            style={{
+              marginTop: 6,
+              fontSize: 11,
+              color: pos.faint,
+              textAlign: 'center',
+            }}
+          >
+            Complete payment →
           </div>
         </div>
       )}

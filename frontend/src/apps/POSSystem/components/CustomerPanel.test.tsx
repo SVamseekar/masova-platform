@@ -112,7 +112,8 @@ describe('CustomerPanel', () => {
         useMemoryRouter: true,
       });
 
-      expect(screen.getByText('Customer & Payment')).toBeInTheDocument();
+      expect(screen.getByTestId('customer-panel')).toBeInTheDocument();
+      expect(screen.getByText('Pay')).toBeInTheDocument();
     });
 
     it('displays customer information section', () => {
@@ -188,9 +189,7 @@ describe('CustomerPanel', () => {
         useMemoryRouter: true,
       });
 
-      expect(
-        screen.getByText(/Cash payment - collect at delivery\/pickup/i)
-      ).toBeInTheDocument();
+      expect(screen.getByText(/Cash — collect at counter/i)).toBeInTheDocument();
     });
 
     it('allows switching payment method', async () => {
@@ -203,9 +202,7 @@ describe('CustomerPanel', () => {
       await user.click(screen.getByText('CARD'));
 
       // Cash info should disappear
-      expect(
-        screen.queryByText(/Cash payment - collect at delivery\/pickup/i)
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText(/Cash — collect at counter/i)).not.toBeInTheDocument();
     });
   });
 
@@ -240,10 +237,8 @@ describe('CustomerPanel', () => {
         useMemoryRouter: true,
       });
 
-      expect(screen.getByText(/Order Summary/i)).toBeInTheDocument();
-      expect(screen.getByText('Subtotal:')).toBeInTheDocument();
-      expect(screen.getByText('Tax (5% GST):')).toBeInTheDocument();
-      expect(screen.getByText('Total Amount:')).toBeInTheDocument();
+      expect(screen.getByText('Total')).toBeInTheDocument();
+      expect(screen.getByTestId('pos-charge-button')).toBeInTheDocument();
     });
 
     it('shows warning when no items', () => {
@@ -251,18 +246,29 @@ describe('CustomerPanel', () => {
         useMemoryRouter: true,
       });
 
-      expect(
-        screen.getByText(/Please add items to create an order/i)
-      ).toBeInTheDocument();
+      expect(screen.getByTestId('pay-empty-hint')).toBeInTheDocument();
+      expect(screen.getByText(/Add items from the menu/i)).toBeInTheDocument();
     });
 
-    it('shows delivery fee for DELIVERY orders', () => {
+    it('shows delivery fee for DELIVERY orders when cart fee is set', () => {
       renderWithProviders(
         <CustomerPanel {...defaultProps} orderType="DELIVERY" />,
-        { useMemoryRouter: true }
+        {
+          useMemoryRouter: true,
+          preloadedState: {
+            cart: {
+              items: [],
+              selectedStoreId: 'store-1',
+              selectedStoreName: 'Store',
+              totalItems: 0,
+              deliveryFee: 2.9,
+              storeCountryCode: 'DE',
+            },
+          },
+        }
       );
 
-      expect(screen.getByText('Delivery Fee:')).toBeInTheDocument();
+      expect(screen.getByText('Delivery')).toBeInTheDocument();
     });
   });
 
@@ -272,7 +278,7 @@ describe('CustomerPanel', () => {
         useMemoryRouter: true,
       });
 
-      const button = screen.getByRole('button', { name: /Place Order/i });
+      const button = screen.getByRole('button', { name: /Charge/i });
       expect(button).toBeInTheDocument();
     });
 
@@ -281,7 +287,7 @@ describe('CustomerPanel', () => {
         useMemoryRouter: true,
       });
 
-      const button = screen.getByRole('button', { name: /Place Order/i });
+      const button = screen.getByRole('button', { name: /Charge/i });
       expect(button).toBeDisabled();
     });
 
@@ -290,7 +296,7 @@ describe('CustomerPanel', () => {
         useMemoryRouter: true,
       });
 
-      const button = screen.getByRole('button', { name: /Place Order/i });
+      const button = screen.getByRole('button', { name: /Charge/i });
       expect(button).not.toBeDisabled();
     });
 
@@ -301,7 +307,7 @@ describe('CustomerPanel', () => {
         useMemoryRouter: true,
       });
 
-      await user.click(screen.getByRole('button', { name: /Place Order/i }));
+      await user.click(screen.getByRole('button', { name: /Charge/i }));
       expect(screen.getByTestId('pin-auth-modal')).toBeInTheDocument();
     });
   });

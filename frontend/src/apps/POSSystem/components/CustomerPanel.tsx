@@ -5,8 +5,13 @@ import { useInitiatePaymentMutation, useVerifyPaymentMutation } from '../../../s
 import { useGetOrCreateCustomerMutation } from '../../../store/api/customerApi';
 import { isValidPhoneNumber } from '../../../config/business-config';
 import { useAppSelector } from '../../../store/hooks';
-import { selectCartCurrency, selectCartLocale, selectStoreCountryCode } from '../../../store/slices/cartSlice';
-import {formatMoney, formatMajorAmount} from '../../../utils/currency';
+import {
+  selectCartCurrency,
+  selectCartLocale,
+  selectStoreCountryCode,
+  selectDeliveryFeeINR,
+} from '../../../store/slices/cartSlice';
+import { formatMajorAmount } from '../../../utils/currency';
 import { computePreCheckoutTotals, formatTaxDisplay } from '../../../utils/orderTax';
 import Card from '../../../components/ui/neumorphic/Card';
 import { colors, shadows, spacing, typography } from '../../../styles/design-tokens';
@@ -26,6 +31,8 @@ import {
   paymentMethodsForCountry,
   type PaymentMethodCode,
 } from '../../../utils/paymentMethods';
+import { pos, posTouchBtnBase } from '../posTokens';
+import { resolvePosDeliveryFee } from '../posHelpers';
 
 interface CustomerPanelProps {
   items: POSOrderItem[];
@@ -61,10 +68,11 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
   const storeCountryCode = useAppSelector(selectStoreCountryCode);
+  const cartDeliveryFee = useAppSelector(selectDeliveryFeeINR);
   // Explicit DE for Berlin demo when cart has not loaded store yet (null legacy = IN)
   const paymentCountry = storeCountryCode ?? 'DE';
   const paymentMethods = paymentMethodsForCountry(paymentCountry);
-  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v, currency, locale);
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -106,7 +114,7 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
   const [getOrCreateCustomer] = useGetOrCreateCustomerMutation();
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const deliveryFee = orderType === 'DELIVERY' && subtotal > 0 ? 40 : 0;
+  const deliveryFee = resolvePosDeliveryFee(orderType, subtotal, cartDeliveryFee);
   const { tax, taxLabel, total } = computePreCheckoutTotals(subtotal, deliveryFee, storeCountryCode);
 
   // Update payment method when order type changes (PICKUP = CASH default, DELIVERY = CARD)
@@ -455,34 +463,58 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
     !addressError;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div
+      data-testid="customer-panel"
+      style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}
+    >
       {/* Header */}
-      <div style={{
-        padding: spacing[3],
-        borderBottom: `2px solid ${colors.surface.border}`,
-        background: `linear-gradient(135deg, ${colors.surface.background} 0%, ${colors.surface.secondary} 100%)`
-      }}>
-        <h3 style={{
-          margin: 0,
-          fontSize: typography.fontSize.base,
-          fontWeight: typography.fontWeight.bold,
-          color: colors.text.primary,
-          display: 'flex',
-          alignItems: 'center',
-          gap: spacing[2]
-        }}>
-          <PersonIcon style={{ fontSize: '20px', color: colors.brand.primary }} />
-          Customer & Payment
+      <div
+        style={{
+          padding: pos.space[3],
+          borderBottom: `2px solid ${pos.border}`,
+          background: `linear-gradient(180deg, ${pos.surface} 0%, ${pos.surfaceAlt} 100%)`,
+          flexShrink: 0,
+        }}
+      >
+        <h3
+          style={{
+            margin: 0,
+            fontSize: pos.type.fontSize.base,
+            fontWeight: pos.type.fontWeight.bold,
+            color: pos.ink,
+            display: 'flex',
+            alignItems: 'center',
+            gap: pos.space[2],
+          }}
+        >
+          <PaymentIcon style={{ fontSize: 22, color: pos.role }} />
+          Pay
+          <span
+            style={{
+              marginLeft: 'auto',
+              fontSize: 12,
+              fontWeight: 700,
+              color: pos.roleDark,
+              background: pos.roleSoft,
+              padding: '4px 10px',
+              borderRadius: pos.radius.full,
+            }}
+          >
+            {items.length > 0 ? fmt(total) : '—'}
+          </span>
         </h3>
       </div>
 
-      {/* Form */}
-      <div style={{
-        flex: 1,
-        overflow: 'auto',
-        padding: spacing[4],
-        paddingBottom: spacing[6] // Extra padding at bottom to ensure last elements are visible
-      }}>
+      {/* Scrollable form (customer + delivery) */}
+      <div
+        style={{
+          flex: 1,
+          overflow: 'auto',
+          padding: pos.space[3],
+          minHeight: 0,
+          background: pos.surfaceBg,
+        }}
+      >
         {/* Customer Information */}
         <Card
           elevation="sm"
@@ -867,284 +899,217 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
           )}
         </Card>
 
-        {/* Payment Method */}
-        <Card
-          elevation="sm"
-          padding="lg"
-          style={{
-            marginBottom: spacing[4],
-            backgroundColor: colors.surface.secondary,
-            border: `1px solid ${colors.surface.border}`
-          }}
-        >
-          <p style={{
-            margin: `0 0 ${spacing[3]} 0`,
-            fontSize: typography.fontSize.sm,
-            fontWeight: typography.fontWeight.bold,
-            color: colors.text.primary
-          }}>
-            <PaymentIcon style={{ fontSize: '16px', marginRight: '6px', verticalAlign: 'middle' }} />
-            Payment Method
-          </p>
-
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: spacing[2],
-            marginBottom: paymentMethod === 'CASH' ? spacing[3] : 0
-          }}>
-            {paymentMethods
-              .filter(method => {
-                // Hide CASH option for DELIVERY orders
-                if (orderType === 'DELIVERY' && method === 'CASH') {
-                  return false;
-                }
-                return true;
-              })
-              .map((method) => (
-              <button
-                key={method}
-                onClick={() => setPaymentMethod(method)}
-                style={{
-                  padding: spacing[3],
-                  borderRadius: '10px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: typography.fontSize.sm,
-                  fontWeight: typography.fontWeight.semibold,
-                  fontFamily: typography.fontFamily.primary,
-                  transition: 'all 0.2s ease',
-                  ...(paymentMethod === method ? {
-                    background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.secondary} 100%)`,
-                    color: colors.text.inverse,
-                    boxShadow: shadows.floating.md
-                  } : {
-                    background: colors.surface.primary,
-                    color: colors.text.secondary,
-                    boxShadow: shadows.raised.sm
-                  })
-                }}
-                onMouseEnter={(e) => {
-                  if (paymentMethod !== method) {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = shadows.floating.sm;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (paymentMethod !== method) {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = shadows.raised.sm;
-                  }
-                }}
-              >
-                {method}
-              </button>
-            ))}
-          </div>
-
-          {paymentMethod === 'CASH' && (
-            <div style={{
-              padding: spacing[3],
-              borderRadius: '10px',
-              background: `linear-gradient(135deg, ${colors.semantic.infoLight}22 0%, ${colors.semantic.info}11 100%)`,
-              border: `2px solid ${colors.semantic.info}`,
-              fontSize: typography.fontSize.xs,
-              color: colors.text.primary
-            }}>
-              Cash payment - collect at delivery/pickup
-            </div>
-          )}
-        </Card>
-
-        {/* Order Summary */}
+        {/* Compact summary (detail totals also on cart column) */}
         {items.length > 0 && (
-          <Card
-            elevation="sm"
-            padding="lg"
+          <div
             style={{
-              background: `linear-gradient(135deg, ${colors.semantic.successLight}22 0%, ${colors.semantic.success}11 100%)`,
-              border: `2px solid ${colors.semantic.success}`
+              marginBottom: spacing[3],
+              padding: spacing[3],
+              borderRadius: pos.radius.md,
+              background: pos.successSoft,
+              border: `1px solid ${pos.success}`,
             }}
           >
-            <p style={{
-              margin: `0 0 ${spacing[3]} 0`,
-              fontSize: typography.fontSize.sm,
-              fontWeight: typography.fontWeight.bold,
-              color: colors.text.primary
-            }}>
-              <CheckCircleOutlineIcon style={{ fontSize: '16px', marginRight: '6px', verticalAlign: 'middle', color: colors.semantic.success }} />
-              Order Summary
-            </p>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginBottom: spacing[2],
-              fontSize: typography.fontSize.sm,
-              color: colors.text.secondary
-            }}>
-              <span>Items:</span>
-              <span style={{ fontWeight: typography.fontWeight.semibold }}>{items.length}</span>
-            </div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginBottom: spacing[2],
-              fontSize: typography.fontSize.sm,
-              color: colors.text.secondary
-            }}>
-              <span>Order Type:</span>
-              <span style={{ fontWeight: typography.fontWeight.semibold }}>{orderType.replace('_', ' ')}</span>
-            </div>
-            <div style={{
-              height: '1px',
-              background: colors.surface.border,
-              margin: `${spacing[3]} 0`
-            }} />
-
-            {/* Pricing Breakdown */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginBottom: spacing[2],
-              fontSize: typography.fontSize.sm,
-              color: colors.text.secondary
-            }}>
-              <span>Subtotal:</span>
-              <span style={{ fontWeight: typography.fontWeight.semibold, color: colors.text.primary }}>
-                {fmt(subtotal)}
-              </span>
-            </div>
-
-            {orderType === 'DELIVERY' && (
-              <div style={{
+            <div
+              style={{
                 display: 'flex',
                 justifyContent: 'space-between',
-                marginBottom: spacing[2],
-                fontSize: typography.fontSize.sm,
-                color: colors.text.secondary
-              }}>
-                <span>Delivery Fee:</span>
-                <span style={{ fontWeight: typography.fontWeight.semibold, color: colors.text.primary }}>
-                  {fmt(deliveryFee)}
-                </span>
+                marginBottom: 4,
+                fontSize: 12,
+                color: pos.muted,
+              }}
+            >
+              <span>{items.reduce((n, i) => n + i.quantity, 0)} items · {orderType.replace('_', ' ')}</span>
+              <span style={{ fontWeight: 600, color: pos.ink }}>{fmt(subtotal)}</span>
+            </div>
+            {orderType === 'DELIVERY' && deliveryFee > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  marginBottom: 4,
+                  fontSize: 12,
+                  color: pos.muted,
+                }}
+              >
+                <span>Delivery</span>
+                <span style={{ fontWeight: 600, color: pos.ink }}>{fmt(deliveryFee)}</span>
               </div>
             )}
-
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginBottom: spacing[3],
-              fontSize: typography.fontSize.sm,
-              color: colors.text.secondary
-            }}>
-              <span>{taxLabel}:</span>
-              <span style={{ fontWeight: typography.fontWeight.semibold, color: colors.text.primary }}>
-                {formatTaxDisplay(tax, fmt)}
-              </span>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginBottom: 4,
+                fontSize: 12,
+                color: pos.muted,
+              }}
+            >
+              <span>{taxLabel}</span>
+              <span style={{ fontWeight: 600, color: pos.ink }}>{formatTaxDisplay(tax, fmt)}</span>
             </div>
-
-            <div style={{
-              height: '2px',
-              background: colors.surface.border,
-              margin: `${spacing[2]} 0`
-            }} />
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between'
-            }}>
-              <span style={{
-                fontSize: typography.fontSize.lg,
-                fontWeight: typography.fontWeight.extrabold,
-                color: colors.text.primary
-              }}>
-                Total Amount:
-              </span>
-              <span style={{
-                fontSize: typography.fontSize.lg,
-                fontWeight: typography.fontWeight.extrabold,
-                color: colors.semantic.success
-              }}>
-                {fmt(total)}
-              </span>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginTop: 8,
+                paddingTop: 8,
+                borderTop: `1px solid ${pos.border}`,
+              }}
+            >
+              <span style={{ fontWeight: 800, color: pos.ink }}>Total</span>
+              <span style={{ fontWeight: 800, fontSize: 18, color: pos.successDark }}>{fmt(total)}</span>
             </div>
-          </Card>
+          </div>
         )}
 
-        {/* Validation Warnings */}
         {items.length === 0 && (
-          <Card
-            elevation="sm"
-            padding="lg"
+          <div
+            data-testid="pay-empty-hint"
             style={{
-              marginTop: spacing[4],
-              background: `linear-gradient(135deg, ${colors.semantic.warningLight}22 0%, ${colors.semantic.warning}11 100%)`,
-              border: `2px solid ${colors.semantic.warning}`,
-              textAlign: 'center'
+              marginTop: pos.space[4],
+              padding: pos.space[5],
+              borderRadius: pos.radius.lg,
+              border: `2px dashed ${pos.border}`,
+              background: pos.surface,
+              textAlign: 'center',
+              color: pos.muted,
+              fontSize: 13,
             }}
           >
-            <WarningAmberIcon style={{ fontSize: '16px', marginRight: '6px', verticalAlign: 'middle' }} />
-            Please add items to create an order
-          </Card>
+            <WarningAmberIcon style={{ fontSize: 28, color: pos.warning, display: 'block', margin: '0 auto 8px' }} />
+            Add items from the menu, then choose payment and charge.
+          </div>
         )}
+      </div>
 
-        {/* Place Order Button - At the end of scrollable content */}
-        <div style={{ marginTop: spacing[4] }}>
-          <button
-            onClick={handlePlaceOrderClick}
-            disabled={!canSubmit}
+      {/* Sticky pay dock — always visible like Toast / Square */}
+      <div
+        data-testid="pos-pay-dock"
+        style={{
+          flexShrink: 0,
+          padding: pos.space[3],
+          borderTop: `2px solid ${pos.border}`,
+          background: pos.surface,
+          boxShadow: '0 -8px 24px rgba(0,0,0,0.08)',
+        }}
+      >
+        <p
+          style={{
+            margin: `0 0 ${pos.space[2]} 0`,
+            fontSize: 11,
+            fontWeight: 700,
+            color: pos.muted,
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <PaymentIcon style={{ fontSize: 16, color: pos.role }} />
+          Payment method
+        </p>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${Math.min(paymentMethods.filter((m) => !(orderType === 'DELIVERY' && m === 'CASH')).length || 1, 3)}, 1fr)`,
+            gap: 8,
+            marginBottom: pos.space[2],
+          }}
+        >
+          {paymentMethods
+            .filter((method) => !(orderType === 'DELIVERY' && method === 'CASH'))
+            .map((method) => {
+              const active = paymentMethod === method;
+              return (
+                <button
+                  key={method}
+                  type="button"
+                  onClick={() => setPaymentMethod(method)}
+                  data-testid={`pay-method-${method}`}
+                  style={{
+                    ...posTouchBtnBase,
+                    minHeight: 52,
+                    fontSize: 13,
+                    letterSpacing: '0.02em',
+                    ...(active
+                      ? {
+                          background: pos.role,
+                          color: pos.inverse,
+                          boxShadow: `0 4px 14px ${pos.roleShadow}`,
+                        }
+                      : {
+                          background: pos.surfaceAlt,
+                          color: pos.muted,
+                          border: `2px solid ${pos.border}`,
+                        }),
+                  }}
+                >
+                  {method}
+                </button>
+              );
+            })}
+        </div>
+        {paymentMethod === 'CASH' && (
+          <div
             style={{
-              width: '100%',
-              padding: `${spacing[4]} ${spacing[5]}`,
-              borderRadius: '12px',
-              border: `2px solid ${canSubmit ? colors.semantic.success : colors.surface.border}`,
-              cursor: canSubmit ? 'pointer' : 'not-allowed',
-              fontSize: typography.fontSize.lg,
-              fontWeight: typography.fontWeight.extrabold,
-              fontFamily: typography.fontFamily.primary,
-              color: canSubmit ? '#FFFFFF' : colors.text.tertiary,
-              background: canSubmit
-                ? `linear-gradient(135deg, ${colors.semantic.success} 0%, ${colors.semantic.successDark} 100%)`
-                : colors.surface.secondary,
-              boxShadow: canSubmit ? shadows.floating.lg : shadows.inset.sm,
-              transition: 'all 0.3s ease',
-              opacity: canSubmit ? 1 : 0.6
-            }}
-            onMouseEnter={(e) => {
-              if (canSubmit && !isSubmitting) {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = shadows.floating.xl;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (canSubmit && !isSubmitting) {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = shadows.floating.lg;
-              }
-            }}
-            onMouseDown={(e) => {
-              if (canSubmit && !isSubmitting) {
-                e.currentTarget.style.transform = 'scale(0.98)';
-                e.currentTarget.style.boxShadow = shadows.inset.md;
-              }
-            }}
-            onMouseUp={(e) => {
-              if (canSubmit && !isSubmitting) {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = shadows.floating.xl;
-              }
+              padding: '8px 12px',
+              borderRadius: pos.radius.sm,
+              background: pos.infoSoft,
+              border: `1px solid ${pos.info}`,
+              fontSize: 12,
+              color: pos.ink,
+              marginBottom: pos.space[2],
             }}
           >
-            {isSubmitting ? 'Processing...' : `Place Order - ${fmt(total)}`}
-          </button>
-        </div>
-
-        {/* PIN Authentication Modal */}
-        <PINAuthModal
-          isOpen={showPINModal}
-          onClose={() => setShowPINModal(false)}
-          onAuthenticated={handlePINAuthenticated}
-        />
+            Cash — collect at counter, then mark paid in History if needed
+          </div>
+        )}
+        <button
+          type="button"
+          data-testid="pos-charge-button"
+          onClick={handlePlaceOrderClick}
+          disabled={!canSubmit}
+          style={{
+            ...posTouchBtnBase,
+            width: '100%',
+            minHeight: 56,
+            fontSize: 17,
+            letterSpacing: '0.02em',
+            border: 'none',
+            cursor: canSubmit ? 'pointer' : 'not-allowed',
+            color: canSubmit ? pos.inverse : pos.faint,
+            background: canSubmit
+              ? `linear-gradient(135deg, ${pos.success} 0%, ${pos.successDark} 100%)`
+              : pos.surfaceAlt,
+            boxShadow: canSubmit ? `0 8px 20px rgba(16, 185, 129, 0.35)` : 'none',
+            opacity: canSubmit ? 1 : 0.7,
+          }}
+        >
+          {isSubmitting
+            ? 'Processing…'
+            : items.length === 0
+              ? 'Add items to charge'
+              : `Charge ${fmt(total)} · ${paymentMethod}`}
+        </button>
+        <p
+          style={{
+            margin: '8px 0 0',
+            fontSize: 11,
+            color: pos.faint,
+            textAlign: 'center',
+          }}
+        >
+          PIN required · Ctrl+Enter to charge
+        </p>
       </div>
+
+      <PINAuthModal
+        isOpen={showPINModal}
+        onClose={() => setShowPINModal(false)}
+        onAuthenticated={handlePINAuthenticated}
+      />
     </div>
   );
 };
