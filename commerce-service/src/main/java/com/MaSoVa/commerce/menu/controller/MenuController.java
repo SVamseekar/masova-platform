@@ -54,13 +54,16 @@ public class MenuController {
     // ── PUBLIC LIST ───────────────────────────────────────────────────────────────
 
     /**
-     * GET /api/menu?category=&cuisine=&dietary=&search=&recommended=&tag=
+     * GET /api/menu?storeId=&category=&cuisine=&dietary=&search=&recommended=&tag=
+     * Public (no auth). Prefer {@code storeId} query for anonymous customer browsing;
+     * falls back to X-Selected-Store-Id / X-User-Store-Id headers for staff/customer apps.
      * Replaces: /public, /public/cuisine/{c}, /public/category/{cat},
      *           /public/dietary/{d}, /public/recommended, /public/search, /public/tag/{t}
      */
     @GetMapping
-    @Operation(summary = "Browse menu (query: category, cuisine, dietary, search, recommended, tag)")
+    @Operation(summary = "Browse menu (query: storeId, category, cuisine, dietary, search, recommended, tag)")
     public ResponseEntity<List<MenuItem>> getMenu(
+            @RequestParam(required = false) String storeId,
             @RequestParam(required = false) MenuCategory category,
             @RequestParam(required = false) Cuisine cuisine,
             @RequestParam(required = false) DietaryType dietary,
@@ -68,26 +71,28 @@ public class MenuController {
             @RequestParam(required = false) Boolean recommended,
             @RequestParam(required = false) String tag,
             HttpServletRequest request) {
-        String storeId = getStoreIdFromHeaders(request);
+        String resolvedStoreId = (storeId != null && !storeId.isBlank())
+                ? storeId.trim()
+                : getStoreIdFromHeaders(request);
         if (Boolean.TRUE.equals(recommended)) {
-            return ResponseEntity.ok(menuService.getRecommendedItemsByStore(storeId));
+            return ResponseEntity.ok(menuService.getRecommendedItemsByStore(resolvedStoreId));
         }
         if (search != null) {
-            return ResponseEntity.ok(menuService.searchMenuItemsByStore(storeId, search));
+            return ResponseEntity.ok(menuService.searchMenuItemsByStore(resolvedStoreId, search));
         }
         if (tag != null) {
-            return ResponseEntity.ok(menuService.getMenuItemsByStoreAndTag(storeId, tag));
+            return ResponseEntity.ok(menuService.getMenuItemsByStoreAndTag(resolvedStoreId, tag));
         }
         if (cuisine != null) {
-            return ResponseEntity.ok(menuService.getMenuItemsByStoreAndCuisine(storeId, cuisine));
+            return ResponseEntity.ok(menuService.getMenuItemsByStoreAndCuisine(resolvedStoreId, cuisine));
         }
         if (category != null) {
-            return ResponseEntity.ok(menuService.getMenuItemsByStoreAndCategory(storeId, category));
+            return ResponseEntity.ok(menuService.getMenuItemsByStoreAndCategory(resolvedStoreId, category));
         }
         if (dietary != null) {
-            return ResponseEntity.ok(menuService.getMenuItemsByStoreAndDietaryType(storeId, dietary));
+            return ResponseEntity.ok(menuService.getMenuItemsByStoreAndDietaryType(resolvedStoreId, dietary));
         }
-        return ResponseEntity.ok(menuService.getMenuItemsByStore(storeId));
+        return ResponseEntity.ok(menuService.getMenuItemsByStore(resolvedStoreId));
     }
 
     // ── SINGLE ITEM ───────────────────────────────────────────────────────────────

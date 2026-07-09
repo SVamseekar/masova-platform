@@ -126,8 +126,13 @@ const MenuPage: React.FC<MenuPageProps> = ({
 
   const dispatch = useAppDispatch();
 
-  // Always fetch all menu items
-  const { data: allMenu, isLoading } = useGetAvailableMenuQuery();
+  // Public menu browse — storeId query so multi-store seeds filter server-side
+  const {
+    data: allMenu,
+    isLoading,
+    isError: isMenuError,
+    refetch: refetchMenu,
+  } = useGetAvailableMenuQuery(selectedStoreId || undefined);
 
   // Filter by search term client-side
   let rawMenuItems = allMenu || [];
@@ -578,6 +583,25 @@ const MenuPage: React.FC<MenuPageProps> = ({
               </div>
             </div>
           ))}
+        </div>
+      ) : isMenuError ? (
+        <div style={emptyStateStyles}>
+          <div style={{ marginBottom: 12 }}>Could not load the menu. Check your connection and try again.</div>
+          <button
+            type="button"
+            onClick={() => { void refetchMenu(); }}
+            style={{
+              padding: '8px 16px',
+              borderRadius: 'var(--radius-pill)',
+              border: '1px solid var(--border)',
+              background: 'var(--surface-2)',
+              color: 'var(--gold)',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-body)',
+            }}
+          >
+            Retry
+          </button>
         </div>
       ) : filteredMenu.length === 0 ? (
         <div style={emptyStateStyles}>No items found. Try adjusting your filters.</div>

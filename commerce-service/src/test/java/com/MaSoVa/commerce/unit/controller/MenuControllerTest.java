@@ -49,6 +49,19 @@ class MenuControllerTest {
     }
 
     @Test
+    @DisplayName("GET /api/menu?storeId= filters by storeId query param (public path)")
+    void getMenu_usesStoreIdQueryParam() throws Exception {
+        MenuItem item = new MenuItem("Margherita", Cuisine.ITALIAN, MenuCategory.PIZZA, 1200L);
+        item.setId("item-1");
+        item.setStoreId("DOM001");
+        when(menuService.getMenuItemsByStore("DOM001")).thenReturn(java.util.List.of(item));
+
+        mockMvc.perform(get("/api/menu").param("storeId", "DOM001"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].name").value("Margherita"));
+    }
+
+    @Test
     @DisplayName("GET /api/menu/{id} returns 200 for existing item")
     void getMenuItem_returns200() throws Exception {
         MenuItem item = new MenuItem("Pizza", Cuisine.ITALIAN, MenuCategory.PIZZA, 29900L);

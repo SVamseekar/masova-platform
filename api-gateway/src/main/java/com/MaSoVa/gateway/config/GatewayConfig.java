@@ -81,8 +81,9 @@ public class GatewayConfig {
                         .filters(f -> f.filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "kiosk"))))
                         .uri("http://localhost:8085"))
 
-                // Stores — all stores routes served by core-service (no /public sub-path any more)
-                .route("core_stores_public", r -> r.path("/api/stores")
+                // Stores — public GET (list, by id/code, query filters) for customer store picker
+                // Mutations stay JWT-protected below. Core also permits these paths; write ops use @PreAuthorize.
+                .route("core_stores_public", r -> r.path("/api/stores", "/api/stores/**")
                         .and().method("GET")
                         .uri("http://localhost:8085"))
 
@@ -148,8 +149,9 @@ public class GatewayConfig {
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
 
-                .route("core_stores", r -> r.path("/api/stores/**")
-                        .and().not(p -> p.path("/api/stores/public/**"))
+                // Stores — mutations only (GET handled by core_stores_public above)
+                .route("core_stores", r -> r.path("/api/stores", "/api/stores/**")
+                        .and().method("POST", "PUT", "PATCH", "DELETE")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "core_stores")))
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
