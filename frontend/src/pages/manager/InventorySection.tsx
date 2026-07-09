@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { t, cardStyle, tabStyle, tableHeaderStyle, tableCellStyle, sectionTitleStyle, statusBadge, selectStyle } from './manager-tokens';
+import { t, cardStyle, tableHeaderStyle, tableCellStyle, sectionTitleStyle, statusBadge, selectStyle } from './manager-tokens';
+import { ManagerPageFrame, ManagerTabBar } from './components';
 import {
   useGetAllInventoryItemsQuery,
   useGetLowStockAlertsQuery,
@@ -515,26 +516,29 @@ const WasteTab = ({ storeId }: { storeId: string }) => {
 // ======================== MAIN SECTION ========================
 const InventorySection: React.FC<Props> = ({ storeId, activeTab, onTabChange }) => {
   const currentTab = activeTab || 'stock';
-  const currency = useAppSelector(selectCartCurrency);
-  const locale = useAppSelector(selectCartLocale);
-  const _fmt = (v: number) => formatMajorAmount(v , currency, locale);
 
   return (
-    <div>
-      {/* Tab bar */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
-        {tabs.map(tab => (
-          <button key={tab.id} style={tabStyle(currentTab === tab.id)} onClick={() => onTabChange(tab.id)}>
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
+    <ManagerPageFrame
+      title="Inventory & Supply"
+      subtitle="Stock, suppliers, purchase orders, and waste"
+      storeId={storeId || undefined}
+      empty={!storeId}
+      emptyTitle="Select a store"
+      emptyDescription="Choose a store from the header to load inventory."
+      tabs={
+        <ManagerTabBar
+          tabs={tabs}
+          activeTab={currentTab}
+          onChange={onTabChange}
+          ariaLabel="Inventory section tabs"
+        />
+      }
+    >
       {currentTab === 'stock' && <StockTab storeId={storeId} />}
       {currentTab === 'suppliers' && <SuppliersTab storeId={storeId} />}
       {currentTab === 'purchase-orders' && <PurchaseOrdersTab storeId={storeId} />}
       {currentTab === 'waste' && <WasteTab storeId={storeId} />}
-    </div>
+    </ManagerPageFrame>
   );
 };
 

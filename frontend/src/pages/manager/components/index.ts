@@ -8,3 +8,5 @@ export { ManagerErrorState } from './ManagerErrorState';
 export type { ManagerErrorStateProps } from './ManagerErrorState';
 export { ManagerLoadingBlock } from './ManagerLoadingBlock';
 export type { ManagerLoadingBlockProps } from './ManagerLoadingBlock';
+export { ManagerTabBar } from './ManagerTabBar';
+export type { ManagerTabBarProps, ManagerTabItem } from './ManagerTabBar';

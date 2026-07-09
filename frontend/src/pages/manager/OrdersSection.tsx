@@ -4,7 +4,8 @@ import AssignDriverModal from '../../components/modals/AssignDriverModal';
 
 const DeliveryManagementPage = React.lazy(() => import('./DeliveryManagementPage'));
 const AggregatorHubPage = React.lazy(() => import('./AggregatorHubPage'));
-import { t, cardStyle, tabStyle, tableHeaderStyle, tableCellStyle, sectionTitleStyle, statusBadge, selectStyle } from './manager-tokens';
+import { t, cardStyle, tableHeaderStyle, tableCellStyle, sectionTitleStyle, statusBadge, selectStyle } from './manager-tokens';
+import { ManagerPageFrame, ManagerTabBar, ManagerLoadingBlock } from './components';
 import {
   useGetStoreOrdersQuery,
   useUpdateOrderStatusMutation,
@@ -834,32 +835,37 @@ const OrdersSection: React.FC<Props> = ({ storeId, activeTab, onTabChange }) => 
   const currentTab = activeTab || 'orders';
 
   return (
-    <div>
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 20, background: t.bgMain, padding: 6, borderRadius: t.radius.md, width: 'fit-content' }}>
-        {tabs.map(tab => (
-          <button key={tab.id} style={tabStyle(currentTab === tab.id)} onClick={() => onTabChange(tab.id)}>
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Content */}
+    <ManagerPageFrame
+      title="Orders & Payments"
+      subtitle="Live orders, payments, refunds, and deliveries"
+      storeId={storeId || undefined}
+      empty={!storeId}
+      emptyTitle="Select a store"
+      emptyDescription="Choose a store from the header to load orders and payments."
+      tabs={
+        <ManagerTabBar
+          tabs={tabs}
+          activeTab={currentTab}
+          onChange={onTabChange}
+          ariaLabel="Orders section tabs"
+        />
+      }
+    >
       {currentTab === 'orders' && <OrdersTab storeId={storeId} />}
       {currentTab === 'payments' && <PaymentsTab storeId={storeId} />}
       {currentTab === 'refunds' && <RefundsTab storeId={storeId} />}
       {currentTab === 'deliveries' && <DeliveriesTab storeId={storeId} />}
       {currentTab === 'delivery-mgmt' && (
-        <React.Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: t.gray }}>Loading...</div>}>
+        <React.Suspense fallback={<ManagerLoadingBlock rows={3} label="Loading delivery management…" />}>
           <DeliveryManagementPage />
         </React.Suspense>
       )}
       {currentTab === 'aggregators' && (
-        <React.Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: t.gray }}>Loading...</div>}>
+        <React.Suspense fallback={<ManagerLoadingBlock rows={3} label="Loading aggregators…" />}>
           <AggregatorHubPage />
         </React.Suspense>
       )}
-    </div>
+    </ManagerPageFrame>
   );
 };
 
