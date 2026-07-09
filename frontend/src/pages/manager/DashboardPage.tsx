@@ -1044,7 +1044,7 @@ const DashboardPage: React.FC = () => {
       )}
 
       {/* Executive Summary - BI */}
-      {executiveSummary && (
+      {executiveSummary?.revenue && (
         <div style={{ marginTop: spacing[5] }}>
           <Card elevation="lg" padding="lg">
             <h3 style={{
@@ -1059,34 +1059,34 @@ const DashboardPage: React.FC = () => {
               <div>
                 <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>Revenue</div>
                 <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>
-                  {fmt(executiveSummary.revenue.total)}
+                  {fmt(executiveSummary.revenue?.total ?? 0)}
                 </div>
-                <div style={{ fontSize: typography.fontSize.xs, color: executiveSummary.revenue.change >= 0 ? colors.semantic.success : colors.semantic.error }}>
-                  {executiveSummary.revenue.change >= 0 ? '↑' : '↓'} {Math.abs(executiveSummary.revenue.change)}%
+                <div style={{ fontSize: typography.fontSize.xs, color: (executiveSummary.revenue?.change ?? 0) >= 0 ? colors.semantic.success : colors.semantic.error }}>
+                  {(executiveSummary.revenue?.change ?? 0) >= 0 ? '↑' : '↓'} {Math.abs(executiveSummary.revenue?.change ?? 0)}%
                 </div>
               </div>
               <div>
                 <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>Orders</div>
                 <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold }}>
-                  {executiveSummary.orders.total}
+                  {executiveSummary.orders?.total ?? 0}
                 </div>
-                <div style={{ fontSize: typography.fontSize.xs, color: executiveSummary.orders.change >= 0 ? colors.semantic.success : colors.semantic.error }}>
-                  {executiveSummary.orders.change >= 0 ? '↑' : '↓'} {Math.abs(executiveSummary.orders.change)}%
+                <div style={{ fontSize: typography.fontSize.xs, color: (executiveSummary.orders?.change ?? 0) >= 0 ? colors.semantic.success : colors.semantic.error }}>
+                  {(executiveSummary.orders?.change ?? 0) >= 0 ? '↑' : '↓'} {Math.abs(executiveSummary.orders?.change ?? 0)}%
                 </div>
               </div>
               <div>
                 <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>Customers At Risk</div>
                 <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold, color: colors.semantic.warning }}>
-                  {executiveSummary.customers.atRisk}
+                  {executiveSummary.customers?.atRisk ?? 0}
                 </div>
               </div>
             </div>
-            {executiveSummary.topInsights && executiveSummary.topInsights.length > 0 && (
+            {(executiveSummary.topInsights?.length ?? 0) > 0 && (
               <div>
                 <div style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold, marginBottom: spacing[2] }}>
                   Key Insights
                 </div>
-                {executiveSummary.topInsights.slice(0, 3).map((insight: string, idx: number) => (
+                {executiveSummary.topInsights!.slice(0, 3).map((insight: string, idx: number) => (
                   <div key={idx} style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary, marginBottom: spacing[1] }}>
                     • {insight}
                   </div>

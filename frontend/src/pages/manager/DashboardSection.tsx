@@ -378,33 +378,33 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
       )}
 
       {/* Executive Summary */}
-      {executiveSummary && (
+      {executiveSummary?.revenue && (
         <div style={{ ...cardStyle, marginBottom: 24 }}>
           <h3 style={sectionTitleStyle}>Executive Summary</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginTop: 16, marginBottom: 16 }}>
             <div>
               <div style={{ fontSize: 12, color: t.gray }}>Revenue</div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: t.black }}>{formatCurrency(executiveSummary.revenue.total)}</div>
-              <div style={{ fontSize: 11, color: executiveSummary.revenue.change >= 0 ? t.green : t.red }}>
-                {executiveSummary.revenue.change >= 0 ? '+' : ''}{executiveSummary.revenue.change}%
+              <div style={{ fontSize: 22, fontWeight: 700, color: t.black }}>{formatCurrency(executiveSummary.revenue?.total ?? 0)}</div>
+              <div style={{ fontSize: 11, color: (executiveSummary.revenue?.change ?? 0) >= 0 ? t.green : t.red }}>
+                {(executiveSummary.revenue?.change ?? 0) >= 0 ? '+' : ''}{executiveSummary.revenue?.change ?? 0}%
               </div>
             </div>
             <div>
               <div style={{ fontSize: 12, color: t.gray }}>Orders</div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: t.black }}>{executiveSummary.orders.total}</div>
-              <div style={{ fontSize: 11, color: executiveSummary.orders.change >= 0 ? t.green : t.red }}>
-                {executiveSummary.orders.change >= 0 ? '+' : ''}{executiveSummary.orders.change}%
+              <div style={{ fontSize: 22, fontWeight: 700, color: t.black }}>{executiveSummary.orders?.total ?? 0}</div>
+              <div style={{ fontSize: 11, color: (executiveSummary.orders?.change ?? 0) >= 0 ? t.green : t.red }}>
+                {(executiveSummary.orders?.change ?? 0) >= 0 ? '+' : ''}{executiveSummary.orders?.change ?? 0}%
               </div>
             </div>
             <div>
               <div style={{ fontSize: 12, color: t.gray }}>Customers At Risk</div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: t.yellow }}>{executiveSummary.customers.atRisk}</div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: t.yellow }}>{executiveSummary.customers?.atRisk ?? 0}</div>
             </div>
           </div>
-          {executiveSummary.topInsights?.length > 0 && (
+          {(executiveSummary.topInsights?.length ?? 0) > 0 && (
             <div>
               <div style={{ fontSize: 13, fontWeight: 600, color: t.black, marginBottom: 8 }}>Key Insights</div>
-              {executiveSummary.topInsights.slice(0, 3).map((insight: string, idx: number) => (
+              {executiveSummary.topInsights!.slice(0, 3).map((insight: string, idx: number) => (
                 <div key={idx} style={{ fontSize: 12, color: t.gray, marginBottom: 4 }}>- {insight}</div>
               ))}
             </div>

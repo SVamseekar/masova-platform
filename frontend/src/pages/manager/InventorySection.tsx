@@ -198,8 +198,8 @@ const SuppliersTab = ({ storeId: _storeId }: { storeId: string }) => {
 
   const suppliers = filter === 'ACTIVE' ? activeSuppliers : filter === 'PREFERRED' ? preferredSuppliers : allSuppliers;
   const filtered = suppliers.filter(s =>
-    s.supplierName.toLowerCase().includes(search.toLowerCase()) ||
-    s.supplierCode.toLowerCase().includes(search.toLowerCase()) ||
+    (s.supplierName || '').toLowerCase().includes(search.toLowerCase()) ||
+    (s.supplierCode || '').toLowerCase().includes(search.toLowerCase()) ||
     s.contactPerson.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -247,14 +247,14 @@ const SuppliersTab = ({ storeId: _storeId }: { storeId: string }) => {
             </div>
             {[
               ['Contact', supplier.contactPerson],
-              ['Phone', supplier.phone],
+              ['Phone', supplier.phoneNumber || supplier.phone || '—'],
               ['Email', supplier.email],
-              ['City', supplier.city],
-              ['Payment', supplier.paymentTerms],
-              ['Lead Time', `${supplier.leadTimeDays} days`],
-              ['Quality', `${supplier.qualityRating}/5`],
-              ['Delivery', `${supplier.deliveryRating}/5`],
-              ['Orders', supplier.totalOrders],
+              ['City', supplier.city || '—'],
+              ['Payment', supplier.paymentTerms || '—'],
+              ['Lead Time', `${supplier.leadTimeDays ?? '—'} days`],
+              ['Quality', `${supplier.qualityRating ?? '—'}/5`],
+              ['Delivery', `${supplier.deliveryRating ?? '—'}/5`],
+              ['Orders', supplier.totalOrders ?? 0],
             ].map(([label, val]) => (
               <div key={label as string} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '3px 0', color: t.gray }}>
                 <span>{label}</span><strong style={{ color: t.black }}>{val}</strong>
