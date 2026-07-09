@@ -1,4 +1,8 @@
 // src/apps/POSSystem/OrderHistory.tsx
+/**
+ * POS order history — embeddable in dashboard or standalone.
+ * Print labeled Unavailable (I5); store-scoped list with full states.
+ */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
@@ -9,48 +13,67 @@ import MoneyOffIcon from '@mui/icons-material/MoneyOff';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import PrintIcon from '@mui/icons-material/Print';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { useGetStoreOrdersQuery, type Order } from '../../store/api/orderApi';
 import { getRtkErrorMessage } from '../shared/rtkError';
 import { useRecordCashPaymentMutation } from '../../store/api/paymentApi';
 import { useAppSelector } from '../../store/hooks';
-import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import {formatMoney, formatMajorAmount} from '../../utils/currency';
+import {
+  selectCartCurrency,
+  selectCartLocale,
+  selectSelectedStoreId,
+} from '../../store/slices/cartSlice';
+import { formatMajorAmount } from '../../utils/currency';
 import AppHeader from '../../components/common/AppHeader';
-import Card from '../../components/ui/neumorphic/Card';
 import Badge from '../../components/ui/neumorphic/Badge';
-import Button from '../../components/ui/neumorphic/Button';
-import { colors, shadows, spacing, typography } from '../../styles/design-tokens';
+import { useSnackbar } from 'notistack';
+import { pos, posTouchBtnBase } from './posTokens';
+import {
+  orderStatusBadgeVariant,
+  paymentMethodBadgeStyle,
+  formatPosTime,
+  sumOrderTotals,
+} from './posHelpers';
 
-/**
- * Order History Page
- * Shows all orders for today with search and filter capabilities
- */
-const OrderHistory: React.FC = () => {
+interface OrderHistoryProps {
+  /** When true, omit full-page header/back chrome (used inside POSDashboard tab) */
+  embedded?: boolean;
+  storeIdOverride?: string;
+}
+
+const OrderHistory: React.FC<OrderHistoryProps> = ({
+  embedded = false,
+  storeIdOverride,
+}) => {
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
   const { user } = useAppSelector((state) => state.auth);
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
-  const storeId = user?.storeId;
+  const selectedStoreId = useAppSelector(selectSelectedStoreId);
+  const fmt = (v: number) => formatMajorAmount(v, currency, locale);
+  const storeId = storeIdOverride || selectedStoreId || user?.storeId;
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [recordCashPayment] = useRecordCashPaymentMutation();
+  const [recordCashPayment, { isLoading: markingPaid }] = useRecordCashPaymentMutation();
 
-  const { data: orders = [], isLoading, error } = useGetStoreOrdersQuery(
-    undefined,
-    { skip: !storeId }
-  );
+  const {
+    data: orders = [],
+    isLoading,
+    error,
+    refetch,
+  } = useGetStoreOrdersQuery(storeId, {
+    skip: !storeId,
+  });
 
-  // Handler for marking cash orders as paid
   const handleMarkAsPaid = async (order: Order) => {
     const confirmed = window.confirm(
       `Mark this order as PAID?\n\n` +
-      `Order: #${order.orderNumber}\n` +
-      `Amount: ${fmt(order.total)}\n` +
-      `Payment Method: ${order.paymentMethod}\n\n` +
-      `This confirms that CASH payment has been received.`
+        `Order: #${order.orderNumber}\n` +
+        `Amount: ${fmt(order.total)}\n` +
+        `Payment Method: ${order.paymentMethod}\n\n` +
+        `This confirms that CASH payment has been received.`
     );
-
     if (!confirmed) return;
 
     try {
@@ -65,22 +88,24 @@ const OrderHistory: React.FC = () => {
         paymentMethod: 'CASH',
         notes: `Cash payment recorded for Order #${order.orderNumber}`,
       }).unwrap();
-
-      alert(`Order #${order.orderNumber} marked as PAID!\n\nCash payment of ${fmt(order.total)} recorded.`);
-    } catch (error: unknown) {
-      console.error('Failed to record cash payment:', error);
-      alert(`Failed to mark order as paid.\n\n${getRtkErrorMessage(error, 'Please try again.')}`);
+      enqueueSnackbar(
+        `Order #${order.orderNumber} marked as PAID — ${fmt(order.total)}`,
+        { variant: 'success' }
+      );
+    } catch (err: unknown) {
+      console.error('Failed to record cash payment:', err);
+      enqueueSnackbar(
+        getRtkErrorMessage(err, 'Failed to mark order as paid.'),
+        { variant: 'error' }
+      );
     }
   };
 
-  // Filter today's orders
   const today = new Date().toDateString();
   const todayOrders = orders.filter((order: Order) => {
-    const orderDate = new Date(order.createdAt).toDateString();
-    return orderDate === today;
+    return new Date(order.createdAt).toDateString() === today;
   });
 
-  // Search filter
   const filteredOrders = todayOrders.filter((order: Order) => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -90,340 +115,452 @@ const OrderHistory: React.FC = () => {
     );
   });
 
-  const getStatusColor = (status: string): 'success' | 'warning' | 'error' | 'secondary' | 'primary' => {
-    const colors: Record<string, 'success' | 'warning' | 'error' | 'secondary' | 'primary'> = {
-      PENDING: 'warning',
-      CONFIRMED: 'primary',
-      PREPARING: 'primary',
-      READY: 'success',
-      OUT_FOR_DELIVERY: 'secondary',
-      DELIVERED: 'success',
-      COMPLETED: 'success',
-      CANCELLED: 'error',
-    };
-    return colors[status] || 'secondary';
-  };
+  const totalSales = sumOrderTotals(filteredOrders);
 
-  const handlePrintOrder = (orderId: string) => {
-    const order = filteredOrders.find((o: Order) => o.id === orderId || o.orderNumber === orderId);
-    const w = window.open('', '_blank', 'noopener,noreferrer,width=480,height=640');
-    if (!w) return;
-    const lines = (order?.items || [])
-      .map((i: { quantity?: number; name?: string }) => `<li>${i.quantity ?? 1}× ${i.name ?? 'Item'}</li>`)
-      .join('');
-    w.document.write(`<!doctype html><html><head><title>Order ${order?.orderNumber || orderId}</title>
-      <style>body{font-family:system-ui,sans-serif;padding:24px} h1{font-size:18px}</style></head><body>
-      <h1>Order ${order?.orderNumber || orderId}</h1>
-      <p>Status: ${order?.status || '—'}</p>
-      <p>Customer: ${order?.customerName || '—'}</p>
-      <ul>${lines || '<li>No line items</li>'}</ul>
-      <p><strong>Total:</strong> ${order?.total != null ? order.total : '—'}</p>
-      <script>window.onload=function(){window.print();}</script>
-      </body></html>`);
-    w.document.close();
-  };
-
-  const totalSales = filteredOrders.reduce((sum: number, order: Order) => sum + (order.total || 0), 0);
-
-  return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
-      backgroundColor: colors.surface.background,
-      fontFamily: typography.fontFamily.primary
-    }}>
-      {/* App Header */}
-      <AppHeader title={`Order History - ${user?.name || 'Staff'}`} />
-
-      {/* Action Bar */}
-      <div style={{
-        padding: `${spacing[2]} ${spacing[6]}`,
-        backgroundColor: colors.surface.primary,
-        borderBottom: `1px solid ${colors.surface.border}`,
-        display: 'flex',
-        gap: spacing[3],
-        alignItems: 'center',
-        flexShrink: 0
-      }}>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate('/pos')}
+  const body = (
+    <div
+      data-testid="pos-order-history"
+      style={{
+        flex: 1,
+        overflow: 'auto',
+        padding: embedded ? pos.space[4] : pos.space[6],
+        background: pos.surfaceBg,
+        minHeight: 0,
+      }}
+    >
+      {/* Summary strip */}
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: pos.space[3],
+          alignItems: 'center',
+          marginBottom: pos.space[4],
+        }}
+      >
+        <div
+          style={{
+            flex: '1 1 240px',
+            position: 'relative',
+          }}
         >
-          ← Back to POS
-        </Button>
-
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: spacing[3], alignItems: 'center' }}>
-          <div style={{
-            fontSize: typography.fontSize.sm,
-            color: colors.text.primary,
-            fontWeight: typography.fontWeight.semibold
-          }}>
+          <SearchIcon
+            style={{
+              position: 'absolute',
+              left: 14,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              fontSize: 18,
+              color: pos.faint,
+            }}
+          />
+          <input
+            type="search"
+            placeholder="Search order #, name, phone…"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            aria-label="Search orders"
+            style={{
+              width: '100%',
+              minHeight: pos.touchMin,
+              padding: '12px 14px 12px 44px',
+              border: `2px solid ${pos.border}`,
+              borderRadius: pos.radius.md,
+              outline: 'none',
+              backgroundColor: pos.surface,
+              fontSize: pos.type.fontSize.sm,
+              color: pos.ink,
+              fontFamily: pos.font,
+              boxSizing: 'border-box',
+            }}
+          />
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            gap: pos.space[2],
+            alignItems: 'center',
+          }}
+        >
+          <div
+            style={{
+              minHeight: pos.touchMin,
+              padding: '0 16px',
+              borderRadius: pos.radius.md,
+              background: pos.roleSoft,
+              color: pos.roleDark,
+              display: 'flex',
+              alignItems: 'center',
+              fontWeight: 700,
+              fontSize: 14,
+            }}
+          >
             {filteredOrders.length} orders
           </div>
-          <div style={{
-            padding: `${spacing[1]} ${spacing[3]}`,
-            borderRadius: '8px',
-            background: `linear-gradient(135deg, ${colors.semantic.success} 0%, ${colors.semantic.successDark} 100%)`,
-            color: colors.text.inverse,
-            fontSize: typography.fontSize.sm,
-            fontWeight: typography.fontWeight.bold
-          }}>
+          <div
+            style={{
+              minHeight: pos.touchMin,
+              padding: '0 16px',
+              borderRadius: pos.radius.md,
+              background: `linear-gradient(135deg, ${pos.success} 0%, ${pos.successDark} 100%)`,
+              color: pos.inverse,
+              display: 'flex',
+              alignItems: 'center',
+              fontWeight: 800,
+              fontSize: 14,
+            }}
+          >
             {fmt(totalSales)}
           </div>
+          <button
+            type="button"
+            onClick={() => void refetch()}
+            style={{
+              ...posTouchBtnBase,
+              background: pos.surface,
+              color: pos.role,
+              border: `2px solid ${pos.roleBorder}`,
+            }}
+            aria-label="Refresh orders"
+          >
+            <RefreshIcon style={{ fontSize: 20 }} />
+          </button>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div style={{
-        flex: 1,
-        overflow: 'auto',
-        padding: spacing[6]
-      }}>
-        {/* Search Bar */}
-        <Card
-          elevation="md"
-          padding="base"
+      {!storeId && (
+        <div
+          data-testid="history-no-store"
           style={{
-            marginBottom: spacing[4],
-            backgroundColor: colors.surface.primary
+            padding: pos.space[8],
+            textAlign: 'center',
+            border: `2px dashed ${pos.border}`,
+            borderRadius: pos.radius.lg,
+            background: pos.surface,
+            color: pos.muted,
           }}
         >
-          <div style={{ position: 'relative' }}>
-            <div style={{
-              position: 'absolute',
-              left: spacing[3],
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: colors.text.tertiary,
-              display: 'flex',
-              alignItems: 'center'
-            }}>
-              <SearchIcon style={{ fontSize: '18px' }} />
-            </div>
-            <input
-              type="text"
-              placeholder="Search by order number, customer name, or phone..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+          Select a store to load today’s orders.
+        </div>
+      )}
+
+      {storeId && isLoading && (
+        <div
+          data-testid="history-loading"
+          style={{
+            display: 'grid',
+            gap: 12,
+          }}
+        >
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
               style={{
-                width: '100%',
-                padding: `${spacing[3]} ${spacing[3]} ${spacing[3]} ${spacing[10]}`,
-                border: `2px solid ${colors.surface.border}`,
-                borderRadius: '12px',
-                outline: 'none',
-                backgroundColor: colors.surface.secondary,
-                fontSize: typography.fontSize.sm,
-                color: colors.text.primary,
-                fontFamily: typography.fontFamily.primary,
-                boxShadow: shadows.inset.sm,
-                transition: 'all 0.2s ease'
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = colors.brand.primary;
-                e.currentTarget.style.boxShadow = `0 0 0 3px ${colors.brand.primary}22`;
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = colors.surface.border;
-                e.currentTarget.style.boxShadow = shadows.inset.sm;
+                height: 96,
+                borderRadius: pos.radius.md,
+                background: pos.border,
+                animation: 'posHistPulse 1.4s ease-in-out infinite',
+                animationDelay: `${i * 0.08}s`,
               }}
             />
-          </div>
-        </Card>
+          ))}
+          <style>{`
+            @keyframes posHistPulse {
+              0%, 100% { opacity: 1; }
+              50% { opacity: 0.45; }
+            }
+          `}</style>
+        </div>
+      )}
 
-        {/* Orders List */}
-        {isLoading && (
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: spacing[10],
-            color: colors.text.secondary
-          }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              border: `4px solid ${colors.surface.border}`,
-              borderTopColor: colors.brand.primary,
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
-            }} />
-            <style>{`
-              @keyframes spin {
-                to { transform: rotate(360deg); }
-              }
-            `}</style>
+      {storeId && error && (
+        <div
+          data-testid="history-error"
+          style={{
+            padding: pos.space[6],
+            borderRadius: pos.radius.lg,
+            border: `2px solid ${pos.error}`,
+            background: pos.errorSoft,
+            textAlign: 'center',
+          }}
+        >
+          <ErrorOutlineIcon style={{ fontSize: 32, color: pos.error, marginBottom: 8 }} />
+          <div style={{ fontWeight: 700, color: pos.ink, marginBottom: 8 }}>
+            Failed to load orders
           </div>
-        )}
-
-        {error && (
-          <Card
-            elevation="sm"
-            padding="lg"
+          <button
+            type="button"
+            onClick={() => void refetch()}
             style={{
-              background: `linear-gradient(135deg, ${colors.semantic.errorLight}22 0%, ${colors.semantic.error}11 100%)`,
-              border: `2px solid ${colors.semantic.error}`,
-              color: colors.text.primary,
-              textAlign: 'center'
+              ...posTouchBtnBase,
+              background: pos.role,
+              color: pos.inverse,
             }}
           >
-            <ErrorOutlineIcon style={{ fontSize: '16px', marginRight: '6px', verticalAlign: 'middle' }} />
-            Failed to load orders. Please try again.
-          </Card>
-        )}
+            Retry
+          </button>
+        </div>
+      )}
 
-        {!isLoading && !error && filteredOrders.length === 0 && (
-          <Card
-            elevation="sm"
-            padding="lg"
-            style={{
-              background: `linear-gradient(135deg, ${colors.semantic.infoLight}22 0%, ${colors.semantic.info}11 100%)`,
-              border: `2px solid ${colors.semantic.info}`,
-              color: colors.text.primary,
-              textAlign: 'center'
-            }}
-          >
-            <InfoOutlinedIcon style={{ fontSize: '16px', marginRight: '6px', verticalAlign: 'middle' }} />
-            {searchTerm ? 'No orders found matching your search' : 'No orders today yet'}
-          </Card>
-        )}
+      {storeId && !isLoading && !error && filteredOrders.length === 0 && (
+        <div
+          data-testid="history-empty"
+          style={{
+            padding: pos.space[8],
+            borderRadius: pos.radius.lg,
+            border: `2px dashed ${pos.border}`,
+            background: pos.surface,
+            textAlign: 'center',
+            color: pos.muted,
+          }}
+        >
+          <InfoOutlinedIcon style={{ fontSize: 36, color: pos.faint, marginBottom: 8 }} />
+          <div style={{ fontWeight: 700, color: pos.ink, marginBottom: 6 }}>
+            {searchTerm ? 'No matching orders' : 'No orders today yet'}
+          </div>
+          <div style={{ fontSize: 13 }}>
+            {searchTerm
+              ? 'Try a different search.'
+              : 'Completed POS charges will appear here for this store.'}
+          </div>
+        </div>
+      )}
 
-        {!isLoading && !error && filteredOrders.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
-            {filteredOrders.map((order: Order) => (
-              <Card
+      {storeId && !isLoading && !error && filteredOrders.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {filteredOrders.map((order: Order) => {
+            const payStyle = paymentMethodBadgeStyle(order.paymentMethod);
+            return (
+              <article
                 key={order.id}
-                elevation="md"
-                padding="base"
-                interactive
+                data-testid={`history-order-${order.orderNumber}`}
                 style={{
+                  padding: pos.space[4],
+                  borderRadius: pos.radius.lg,
+                  background: pos.surface,
+                  border: `1px solid ${pos.border}`,
+                  boxShadow: pos.shadow.raised.sm,
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: spacing[3],
-                  transition: 'all 0.2s ease',
-                  border: `2px solid transparent`
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = colors.brand.primary;
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'transparent';
-                  e.currentTarget.style.transform = 'translateY(0)';
+                  gap: 12,
                 }}
               >
-                {/* Order Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    gap: 12,
+                    flexWrap: 'wrap',
+                  }}
+                >
                   <div>
-                    <div style={{
-                      fontSize: typography.fontSize.base,
-                      fontWeight: typography.fontWeight.bold,
-                      color: colors.text.primary,
-                      marginBottom: spacing[1]
-                    }}>
+                    <div
+                      style={{
+                        fontSize: 16,
+                        fontWeight: 800,
+                        color: pos.ink,
+                      }}
+                    >
                       Order #{order.orderNumber}
                     </div>
-                    <div style={{
-                      fontSize: typography.fontSize.xs,
-                      color: colors.text.secondary
-                    }}>
-                      {new Date(order.createdAt).toLocaleTimeString('en-IN', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
+                    <div style={{ fontSize: 12, color: pos.muted, marginTop: 2 }}>
+                      {formatPosTime(order.createdAt, locale)}
+                      {(order.customerName || order.customerPhone) && (
+                        <>
+                          {' · '}
+                          <strong style={{ color: pos.ink }}>
+                            {order.customerName || 'Walk-in'}
+                          </strong>
+                          {order.customerPhone ? ` · ${order.customerPhone}` : ''}
+                        </>
+                      )}
                     </div>
                   </div>
-                  <div style={{
-                    fontSize: typography.fontSize.lg,
-                    fontWeight: typography.fontWeight.bold,
-                    color: colors.brand.primary
-                  }}>
+                  <div
+                    style={{
+                      fontSize: 20,
+                      fontWeight: 800,
+                      color: pos.roleDark,
+                    }}
+                  >
                     {fmt(order.total || 0)}
                   </div>
                 </div>
 
-                {/* Order Details */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: spacing[2] }}>
-                  <Badge variant={getStatusColor(order.status)} size="sm">
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  <Badge variant={orderStatusBadgeVariant(order.status)} size="sm">
                     {order.status.replace('_', ' ')}
                   </Badge>
                   <Badge variant="secondary" size="sm">
-                    {order.orderType.replace('_', ' ')}
+                    {(order.orderType || '').replace('_', ' ')}
                   </Badge>
-                  <Badge variant="secondary" size="sm">
-                    {order.items?.length || 0} items
-                  </Badge>
-                  <Badge variant="secondary" size="sm">
-                    {order.paymentMethod}
-                  </Badge>
+                  <span
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: 8,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      ...payStyle,
+                    }}
+                  >
+                    {order.paymentMethod || '—'}
+                  </span>
                   {order.paymentStatus === 'PAID' ? (
                     <Badge variant="success" size="sm">
-                      <CheckCircleOutlineIcon style={{ fontSize: '12px', marginRight: '3px', verticalAlign: 'middle' }} />
+                      <CheckCircleOutlineIcon
+                        style={{ fontSize: 12, marginRight: 3, verticalAlign: 'middle' }}
+                      />
                       Paid
                     </Badge>
                   ) : order.paymentStatus === 'PENDING' ? (
                     <Badge variant="warning" size="sm">
-                      <MoneyOffIcon style={{ fontSize: '12px', marginRight: '3px', verticalAlign: 'middle' }} />
+                      <MoneyOffIcon
+                        style={{ fontSize: 12, marginRight: 3, verticalAlign: 'middle' }}
+                      />
                       Unpaid
                     </Badge>
                   ) : null}
                 </div>
 
-                {/* Customer Info */}
-                {(order.customerName || order.customerPhone) && (
-                  <div style={{
-                    padding: spacing[2],
-                    borderRadius: '8px',
-                    backgroundColor: colors.surface.secondary,
-                    fontSize: typography.fontSize.xs,
-                    color: colors.text.secondary
-                  }}>
-                    <strong style={{ color: colors.text.primary }}>{order.customerName || 'Walk-in'}</strong>
-                    {order.customerPhone && <> • {order.customerPhone}</>}
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div style={{ display: 'flex', gap: spacing[2], flexWrap: 'wrap' }}>
-                  {/* Mark as Paid button for PENDING cash orders */}
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 8,
+                    flexWrap: 'wrap',
+                  }}
+                >
                   {order.paymentStatus === 'PENDING' && order.paymentMethod === 'CASH' && (
-                    <Button
-                      size="sm"
-                      variant="primary"
-                      onClick={() => handleMarkAsPaid(order)}
+                    <button
+                      type="button"
+                      disabled={markingPaid}
+                      onClick={() => void handleMarkAsPaid(order)}
                       style={{
-                        backgroundColor: colors.semantic.success,
-                        color: 'white',
-                        fontWeight: 600,
+                        ...posTouchBtnBase,
+                        background: pos.success,
+                        color: pos.inverse,
+                        fontSize: 13,
                       }}
                     >
-                      <AttachMoneyIcon style={{ fontSize: '14px', marginRight: '4px', verticalAlign: 'middle' }} />
+                      <AttachMoneyIcon style={{ fontSize: 18 }} />
                       Mark as Paid
-                    </Button>
+                    </button>
                   )}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handlePrintOrder(order.id)}
+                  <button
+                    type="button"
+                    disabled
+                    title="Receipt print is not available yet"
+                    style={{
+                      ...posTouchBtnBase,
+                      background: pos.surfaceAlt,
+                      color: pos.faint,
+                      cursor: 'not-allowed',
+                      fontSize: 13,
+                      border: `1px solid ${pos.border}`,
+                    }}
+                    data-testid="history-print-unavailable"
                   >
-                    <PrintIcon style={{ fontSize: '14px', marginRight: '4px', verticalAlign: 'middle' }} />
-                    Print
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => navigate(`/manager/orders/${order.id}`)}
+                    <PrintIcon style={{ fontSize: 18 }} />
+                    Print · Unavailable
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/manager?section=orders&tab=orders`)}
+                    style={{
+                      ...posTouchBtnBase,
+                      background: pos.surface,
+                      color: pos.role,
+                      border: `2px solid ${pos.roleBorder}`,
+                      fontSize: 13,
+                    }}
                   >
-                    <VisibilityIcon style={{ fontSize: '14px', marginRight: '4px', verticalAlign: 'middle' }} />
-                    View Details
-                  </Button>
+                    <VisibilityIcon style={{ fontSize: 18 }} />
+                    View in Manager
+                  </button>
                 </div>
-              </Card>
-            ))}
-          </div>
-        )}
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
+  if (embedded) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          minHeight: 0,
+          backgroundColor: pos.surfaceBg,
+          fontFamily: pos.font,
+        }}
+      >
+        <div
+          style={{
+            padding: `${pos.space[3]} ${pos.space[4]}`,
+            borderBottom: `1px solid ${pos.border}`,
+            background: pos.surface,
+            flexShrink: 0,
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontSize: pos.type.fontSize.lg,
+              fontWeight: pos.type.fontWeight.bold,
+              color: pos.ink,
+            }}
+          >
+            Today’s orders
+          </h2>
+          <p style={{ margin: '4px 0 0', fontSize: 12, color: pos.muted }}>
+            Store-scoped history · mark cash paid here
+          </p>
+        </div>
+        {body}
       </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100vh',
+        backgroundColor: pos.surfaceBg,
+        fontFamily: pos.font,
+      }}
+    >
+      <AppHeader title={`Order History - ${user?.name || 'Staff'}`} />
+      <div
+        style={{
+          padding: `${pos.space[2]} ${pos.space[6]}`,
+          backgroundColor: pos.surface,
+          borderBottom: `1px solid ${pos.border}`,
+          display: 'flex',
+          gap: pos.space[3],
+          alignItems: 'center',
+          flexShrink: 0,
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => navigate('/pos')}
+          style={{
+            ...posTouchBtnBase,
+            background: pos.roleSoft,
+            color: pos.roleDark,
+            border: `1px solid ${pos.roleBorder}`,
+          }}
+        >
+          ← Back to POS
+        </button>
+      </div>
+      {body}
     </div>
   );
 };

@@ -37,7 +37,7 @@ describe('PINAuthModal', () => {
         useMemoryRouter: true,
       });
 
-      expect(screen.getByText('Enter Your PIN')).toBeInTheDocument();
+      expect(screen.getByText('Cashier PIN')).toBeInTheDocument();
     });
 
     it('does not render when isOpen is false', () => {
@@ -46,7 +46,7 @@ describe('PINAuthModal', () => {
         { useMemoryRouter: true }
       );
 
-      expect(screen.queryByText('Enter Your PIN')).not.toBeInTheDocument();
+      expect(screen.queryByText('Cashier PIN')).not.toBeInTheDocument();
     });
 
     it('displays the subtitle instruction', () => {
@@ -55,7 +55,7 @@ describe('PINAuthModal', () => {
       });
 
       expect(
-        screen.getByText(/Enter your 5-digit PIN to start taking orders/i)
+        screen.getByText(/Enter your 5-digit PIN to authorize this charge/i)
       ).toBeInTheDocument();
     });
 

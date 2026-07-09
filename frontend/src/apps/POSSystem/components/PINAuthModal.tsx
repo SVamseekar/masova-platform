@@ -138,11 +138,11 @@ export const PINAuthModal: React.FC<PINAuthModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div style={styles.overlay}>
-      <div style={styles.modal}>
+    <div style={styles.overlay} data-testid="pin-auth-modal-overlay">
+      <div style={styles.modal} role="dialog" aria-modal="true" aria-labelledby="pos-pin-title">
         <div style={styles.header}>
-          <h2 style={styles.title}>Enter Your PIN</h2>
-          <p style={styles.subtitle}>Enter your 5-digit PIN to start taking orders</p>
+          <h2 id="pos-pin-title" style={styles.title}>Cashier PIN</h2>
+          <p style={styles.subtitle}>Enter your 5-digit PIN to authorize this charge</p>
         </div>
 
         <div style={styles.pinInputContainer}>
@@ -205,6 +205,8 @@ export const PINAuthModal: React.FC<PINAuthModalProps> = ({
   );
 };
 
+const CASHIER_BLUE = '#2196F3';
+
 const styles: Record<string, React.CSSProperties> = {
   overlay: {
     position: 'fixed',
@@ -212,117 +214,122 @@ const styles: Record<string, React.CSSProperties> = {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(15, 23, 42, 0.72)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10000,
-    backdropFilter: 'blur(4px)'
+    backdropFilter: 'blur(6px)',
   },
   modal: {
     backgroundColor: '#ffffff',
-    borderRadius: '24px',
-    padding: '40px',
-    maxWidth: '500px',
-    width: '90%',
-    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-    animation: 'slideUp 0.3s ease-out'
+    borderRadius: '20px',
+    padding: '36px 32px',
+    maxWidth: '440px',
+    width: '92%',
+    boxShadow: '0 24px 64px rgba(33, 150, 243, 0.25)',
+    borderTop: `4px solid ${CASHIER_BLUE}`,
   },
   header: {
     textAlign: 'center',
-    marginBottom: '32px'
+    marginBottom: '28px',
   },
   title: {
-    fontSize: '28px',
-    fontWeight: 700,
-    color: '#1a1a1a',
-    margin: '0 0 8px 0'
+    fontSize: '24px',
+    fontWeight: 800,
+    color: '#0f172a',
+    margin: '0 0 8px 0',
   },
   subtitle: {
     fontSize: '14px',
-    color: '#666',
-    margin: 0
+    color: '#64748b',
+    margin: 0,
+    lineHeight: 1.4,
   },
   pinInputContainer: {
     display: 'flex',
     justifyContent: 'center',
-    gap: '12px',
-    marginBottom: '24px'
+    gap: '10px',
+    marginBottom: '20px',
   },
   pinInput: {
-    width: '60px',
-    height: '70px',
-    fontSize: '32px',
+    width: '56px',
+    height: '64px',
+    minWidth: 48,
+    minHeight: 48,
+    fontSize: '28px',
     fontWeight: 700,
     textAlign: 'center',
-    border: '2px solid #e0e0e0',
+    border: '2px solid #e2e8f0',
     borderRadius: '12px',
-    backgroundColor: '#f8f9fa',
-    transition: 'all 0.2s ease',
+    backgroundColor: '#f8fafc',
+    transition: 'all 0.15s ease',
     outline: 'none',
-    fontFamily: 'monospace'
+    fontFamily: 'ui-monospace, monospace',
   },
   pinInputError: {
-    borderColor: '#ef5350',
-    backgroundColor: '#ffebee'
+    borderColor: '#ef4444',
+    backgroundColor: '#fef2f2',
   },
   errorContainer: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: '8px',
-    backgroundColor: '#ffebee',
+    backgroundColor: '#fef2f2',
     padding: '12px 16px',
-    borderRadius: '8px',
-    marginBottom: '24px'
+    borderRadius: '10px',
+    marginBottom: '20px',
   },
   errorIcon: {
     fontSize: '18px',
-    color: '#d32f2f'
+    color: '#dc2626',
   },
   errorText: {
-    color: '#d32f2f',
+    color: '#dc2626',
     fontSize: '14px',
-    fontWeight: 500
+    fontWeight: 600,
   },
   actions: {
     display: 'flex',
     gap: '12px',
-    marginBottom: '16px'
+    marginBottom: '12px',
   },
   cancelButton: {
     flex: 1,
-    padding: '14px 24px',
+    minHeight: 52,
+    padding: '14px 20px',
     fontSize: '16px',
-    fontWeight: 600,
-    backgroundColor: '#f5f5f5',
-    color: '#666',
+    fontWeight: 700,
+    backgroundColor: '#f1f5f9',
+    color: '#475569',
     border: 'none',
     borderRadius: '12px',
     cursor: 'pointer',
-    transition: 'all 0.2s ease'
   },
   submitButton: {
     flex: 1,
-    padding: '14px 24px',
+    minHeight: 52,
+    padding: '14px 20px',
     fontSize: '16px',
-    fontWeight: 600,
-    backgroundColor: '#2196f3',
+    fontWeight: 700,
+    backgroundColor: CASHIER_BLUE,
     color: '#ffffff',
     border: 'none',
     borderRadius: '12px',
     cursor: 'pointer',
-    transition: 'all 0.2s ease'
+    boxShadow: '0 8px 20px rgba(33, 150, 243, 0.35)',
   },
   submitButtonDisabled: {
-    backgroundColor: '#b0bec5',
+    backgroundColor: '#94a3b8',
     cursor: 'not-allowed',
-    opacity: 0.6
+    opacity: 0.65,
+    boxShadow: 'none',
   },
   helpText: {
     textAlign: 'center',
     fontSize: '12px',
-    color: '#999',
-    marginTop: '8px'
-  }
+    color: '#94a3b8',
+    marginTop: '4px',
+  },
 };

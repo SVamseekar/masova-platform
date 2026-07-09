@@ -10,6 +10,7 @@ import {
 } from '../../../store/api/analyticsApi';
 import Card from '../../../components/ui/neumorphic/Card';
 import { colors, spacing, typography } from '../../../styles/design-tokens';
+import { pos } from '../posTokens';
 import EuroIcon from '@mui/icons-material/Euro';
 import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
@@ -235,11 +236,14 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
   );
 
   return (
-    <div style={{
+    <div
+      data-testid="metrics-tiles"
+      style={{
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-      gap: spacing[4]
-    }}>
+      gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+      gap: spacing[3],
+    }}
+    >
       {/* Today's Sales — analytics amounts are major units (EUR) */}
       <MetricCard
         title="Today's Sales"
@@ -259,7 +263,7 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
         icon={<ShoppingCartIcon style={{ fontSize: '28px' }} />}
         trendLabel={avgOrderValue && !avgError ? 'vs yesterday' : undefined}
         trendValue={avgError ? undefined : avgOrderValue?.percentChange}
-        bgColor={colors.semantic.info}
+        bgColor={pos.role}
       />
 
       {/* Year-over-Year Comparison */}
@@ -284,7 +288,7 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
               : 'Loading...'
         }
         icon={<LocalShippingIcon style={{ fontSize: '28px' }} />}
-        bgColor={colors.brand.secondary}
+        bgColor={pos.roleDark}
       />
     </div>
   );
