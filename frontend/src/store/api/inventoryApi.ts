@@ -255,7 +255,8 @@ export const inventoryApi = createApi({
     }),
 
     getAllInventoryItems: builder.query<InventoryItem[], string | undefined>({
-      query: () => '/inventory',
+      query: (storeId) =>
+        `/inventory${storeId ? `?storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'InventoryItem', id: storeId || 'DEFAULT' }],
     }),
 
@@ -269,8 +270,12 @@ export const inventoryApi = createApi({
       providesTags: ['InventoryItem'],
     }),
 
-    searchInventoryItems: builder.query<InventoryItem[], { query: string }>({
-      query: ({ query }) => `/inventory?search=${encodeURIComponent(query)}`,
+    searchInventoryItems: builder.query<InventoryItem[], { query: string; storeId?: string }>({
+      query: ({ query, storeId }) => {
+        const params = new URLSearchParams({ search: query });
+        if (storeId) params.set('storeId', storeId);
+        return `/inventory?${params.toString()}`;
+      },
       providesTags: ['InventoryItem'],
     }),
 
@@ -329,12 +334,14 @@ export const inventoryApi = createApi({
     }),
 
     getLowStockItems: builder.query<InventoryItem[], string | undefined>({
-      query: () => '/inventory?lowStock=true',
+      query: (storeId) =>
+        `/inventory?lowStock=true${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'InventoryItem', id: storeId || 'DEFAULT' }],
     }),
 
     getOutOfStockItems: builder.query<InventoryItem[], string | undefined>({
-      query: () => '/inventory?outOfStock=true',
+      query: (storeId) =>
+        `/inventory?outOfStock=true${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'InventoryItem', id: storeId || 'DEFAULT' }],
     }),
 
@@ -477,7 +484,8 @@ export const inventoryApi = createApi({
     }),
 
     getAllPurchaseOrders: builder.query<PurchaseOrder[], string | undefined>({
-      query: () => '/purchase-orders',
+      query: (storeId) =>
+        `/purchase-orders${storeId ? `?storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'PurchaseOrder', id: storeId || 'DEFAULT' }],
     }),
 
@@ -497,7 +505,8 @@ export const inventoryApi = createApi({
     }),
 
     getPendingApprovalPurchaseOrders: builder.query<PurchaseOrder[], string | undefined>({
-      query: () => '/purchase-orders?pending=true',
+      query: (storeId) =>
+        `/purchase-orders?pending=true${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'PurchaseOrder', id: storeId || 'DEFAULT' }],
     }),
 

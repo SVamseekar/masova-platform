@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import AssignDriverModal from '../../components/modals/AssignDriverModal';
 
 const DeliveryManagementPage = React.lazy(() => import('./DeliveryManagementPage'));
@@ -83,7 +84,8 @@ const modalBox: React.CSSProperties = {
 
 // ─── ORDERS TAB ───
 const OrdersTab = ({ storeId }: { storeId: string }) => {
-  const { data: orders = [], isLoading, refetch } = useGetStoreOrdersQuery(storeId, {
+  const [searchParams] = useSearchParams();
+  const { data: orders = [], isLoading, isError, error, refetch } = useGetStoreOrdersQuery(storeId, {
     skip: !storeId, pollingInterval: 10000,
   });
   const { data: todaySalesMetrics, refetch: refetchAnalytics } = useGetTodaySalesMetricsQuery(storeId, { skip: !storeId });
@@ -96,7 +98,13 @@ const OrdersTab = ({ storeId }: { storeId: string }) => {
 
   const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(searchParams.get('q') || '');
+
+  // Header shell search (?q=) → sync into local filter
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q != null) setSearch(q);
+  }, [searchParams]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState('');
@@ -113,11 +121,13 @@ const OrdersTab = ({ storeId }: { storeId: string }) => {
     let list = [...orders];
     if (statusFilter) list = list.filter(o => o.status === statusFilter);
     if (typeFilter) list = list.filter(o => o.orderType === typeFilter);
-    if (search) {
-      const q = search.toLowerCase();
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
       list = list.filter(o =>
         o.orderNumber?.toLowerCase().includes(q) ||
         o.customerName?.toLowerCase().includes(q) ||
+        o.customerPhone?.toLowerCase().includes(q) ||
+        o.customerEmail?.toLowerCase().includes(q) ||
         o.id?.toLowerCase().includes(q)
       );
     }
@@ -129,11 +139,13 @@ const OrdersTab = ({ storeId }: { storeId: string }) => {
     });
   }, [orders, statusFilter, typeFilter, search]);
 
+  // Prefer list-derived totals so KPI cards match the table (not analytics-only counts).
+  const listRevenue = orders.reduce((s, o) => s + (Number(o.total) || 0), 0);
   const stats = {
-    total: todaySalesMetrics?.todayOrderCount ?? orders.length,
+    total: orders.length,
     active: orders.filter(o => !['DELIVERED', 'SERVED', 'COMPLETED', 'CANCELLED'].includes(o.status)).length,
     delivered: orders.filter(o => ['DELIVERED', 'SERVED', 'COMPLETED'].includes(o.status)).length,
-    revenue: todaySalesMetrics?.todaySales ?? orders.filter(o => ['DELIVERED', 'SERVED', 'COMPLETED'].includes(o.status)).reduce((s, o) => s + o.total, 0),
+    revenue: listRevenue > 0 ? listRevenue : (todaySalesMetrics?.todaySales ?? 0),
     activeDeliveries: activeDeliveriesCount?.count ?? 0,
   };
 
@@ -278,8 +290,30 @@ const OrdersTab = ({ storeId }: { storeId: string }) => {
       </div>
 
       {/* Table */}
+      {isError && (
+        <div style={{ ...cardStyle, textAlign: 'center', padding: 24, marginBottom: 12, border: `1px solid ${t.red}` }}>
+          <p style={{ color: t.red, marginBottom: 8 }}>Failed to load orders for this store.</p>
+          <button type="button" style={btn('primary')} onClick={() => void refetch()}>Retry</button>
+          <p style={{ fontSize: 11, color: t.grayMuted, marginTop: 8 }}>{getApiErrorMessage(error, '')}</p>
+        </div>
+      )}
       {isLoading ? <p style={{ color: t.gray, textAlign: 'center', padding: 40 }}>Loading orders...</p> : filtered.length === 0 ? (
-        <div style={{ ...cardStyle, textAlign: 'center', padding: 40 }}><p style={{ color: t.grayMuted }}>No orders found</p></div>
+        <div style={{ ...cardStyle, textAlign: 'center', padding: 40 }}>
+          <p style={{ color: t.grayMuted }}>
+            {orders.length === 0
+              ? 'No orders for this store yet.'
+              : 'No orders match the current search/filters.'}
+          </p>
+          {(statusFilter || typeFilter || search) && (
+            <button
+              type="button"
+              style={{ ...btn('secondary'), marginTop: 12 }}
+              onClick={() => { setStatusFilter(''); setTypeFilter(''); setSearch(''); }}
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
       ) : (
         <div style={cardStyle}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>

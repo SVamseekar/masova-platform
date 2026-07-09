@@ -403,17 +403,20 @@ export const analyticsApi = createApi({
   tagTypes: ['Analytics', 'SalesMetrics', 'DriverStatus', 'StaffPerformance'],
   endpoints: (builder) => ({
     getTodaySalesMetrics: builder.query<SalesMetricsResponse, string | undefined>({
-      query: () => '/analytics?type=sales',
+      query: (storeId) =>
+        `/analytics?type=sales${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'SalesMetrics', id: storeId || 'DEFAULT' }],
     }),
 
     getAverageOrderValue: builder.query<AverageOrderValueResponse, string | undefined>({
-      query: () => '/analytics?type=aov',
+      query: (storeId) =>
+        `/analytics?type=aov${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'SalesMetrics', id: storeId || 'DEFAULT' }],
     }),
 
     getDriverStatus: builder.query<DriverStatusResponse, string | undefined>({
-      query: () => '/analytics?type=drivers',
+      query: (storeId) =>
+        `/analytics?type=drivers${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'DriverStatus', id: storeId || 'DEFAULT' }],
     }),
 
@@ -423,28 +426,32 @@ export const analyticsApi = createApi({
     }),
 
     getSalesTrends: builder.query<SalesTrendResponse, { period: 'WEEKLY' | 'MONTHLY'; storeId?: string }>({
-      query: ({ period }) => `/analytics?type=sales-trends&period=${period}`,
+      query: ({ period, storeId }) =>
+        `/analytics?type=sales-trends&period=${period}${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, { storeId }) => [{ type: 'SalesMetrics', id: storeId || 'DEFAULT' }],
     }),
 
     getOrderTypeBreakdown: builder.query<OrderTypeBreakdownResponse, string | undefined>({
-      query: () => '/analytics?type=order-breakdown',
+      query: (storeId) =>
+        `/analytics?type=order-breakdown${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'SalesMetrics', id: storeId || 'DEFAULT' }],
     }),
 
     getPeakHours: builder.query<PeakHoursResponse, string | undefined>({
-      query: () => '/analytics?type=peak-hours',
+      query: (storeId) =>
+        `/analytics?type=peak-hours${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'Analytics', id: storeId || 'DEFAULT' }],
     }),
 
     getStaffLeaderboard: builder.query<StaffLeaderboardResponse, { storeId?: string; period: string }>({
-      query: ({ period }) => `/analytics?type=staff-leaderboard&period=${encodeURIComponent(period)}`,
+      query: ({ period, storeId }) =>
+        `/analytics?type=staff-leaderboard&period=${encodeURIComponent(period)}${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, { storeId }) => [{ type: 'StaffPerformance', id: storeId || 'DEFAULT' }],
     }),
 
     getTopProducts: builder.query<TopProductsResponse, { storeId?: string; period: string; sortBy: string }>({
-      query: ({ period, sortBy }) =>
-        `/analytics?type=top-products&period=${encodeURIComponent(period)}&sortBy=${encodeURIComponent(sortBy)}`,
+      query: ({ period, sortBy, storeId }) =>
+        `/analytics?type=top-products&period=${encodeURIComponent(period)}&sortBy=${encodeURIComponent(sortBy)}${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: storeId || 'DEFAULT' }],
     }),
 

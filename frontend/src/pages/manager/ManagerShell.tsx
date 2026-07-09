@@ -58,6 +58,7 @@ function ManagerShell() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [storeDropOpen, setStoreDropOpen] = useState(false);
+  const [headerSearch, setHeaderSearch] = useState(searchParams.get('q') || '');
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const storeRef = useRef<HTMLDivElement>(null);
@@ -316,14 +317,30 @@ function ManagerShell() {
                 </div>
               )}
             </div>
-            {/* Search */}
+            {/* Search — jumps to Orders with ?q= (list filters client-side) */}
             <div style={{ position: 'relative' }}>
               <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: t.gray }}><Icons.Search /></div>
-              <input placeholder="Search anything" style={{
-                padding: '9px 16px 9px 36px', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 10, fontSize: 14, width: 220,
-                background: 'rgba(255,255,255,0.6)', outline: 'none', fontFamily: t.font,
-                backdropFilter: 'blur(8px)',
-              }} />
+              <input
+                placeholder="Search orders…"
+                value={headerSearch}
+                onChange={(e) => setHeaderSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter') return;
+                  const q = headerSearch.trim();
+                  const params = new URLSearchParams(searchParams);
+                  params.set('section', 'orders');
+                  params.set('tab', 'orders');
+                  if (q) params.set('q', q);
+                  else params.delete('q');
+                  setSearchParams(params);
+                }}
+                title="Press Enter to search orders by number, customer, phone, or email"
+                style={{
+                  padding: '9px 16px 9px 36px', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 10, fontSize: 14, width: 220,
+                  background: 'rgba(255,255,255,0.6)', outline: 'none', fontFamily: t.font,
+                  backdropFilter: 'blur(8px)',
+                }}
+              />
             </div>
             {/* Bell / Notifications */}
             <div ref={notifRef} style={{ position: 'relative' }}>
