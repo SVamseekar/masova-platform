@@ -57,11 +57,15 @@ export interface Supplier {
   supplierName: string;
   contactPerson: string;
   email: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  pincode: string;
+  /** Canonical backend field */
+  phoneNumber?: string;
+  /** Legacy alias — prefer phoneNumber */
+  phone?: string;
+  address?: string;
+  addressLine1?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
   gstin?: string;
 
   // Categories supplied

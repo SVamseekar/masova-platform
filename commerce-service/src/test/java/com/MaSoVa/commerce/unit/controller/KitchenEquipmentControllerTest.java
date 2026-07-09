@@ -2,6 +2,7 @@ package com.MaSoVa.commerce.unit.controller;
 
 import com.MaSoVa.commerce.order.controller.KitchenEquipmentController;
 import com.MaSoVa.commerce.order.entity.KitchenEquipment;
+import com.MaSoVa.commerce.order.service.KitchenEquipmentSeedService;
 import com.MaSoVa.commerce.order.service.KitchenEquipmentService;
 import com.MaSoVa.shared.test.BaseServiceTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class KitchenEquipmentControllerTest extends BaseServiceTest {
 
     @Mock private KitchenEquipmentService equipmentService;
+    @Mock private KitchenEquipmentSeedService equipmentSeedService;
     @InjectMocks private KitchenEquipmentController controller;
     private MockMvc mockMvc;
 

@@ -1,6 +1,7 @@
 package com.MaSoVa.commerce.order.controller;
 
 import com.MaSoVa.commerce.order.entity.KitchenEquipment;
+import com.MaSoVa.commerce.order.service.KitchenEquipmentSeedService;
 import com.MaSoVa.commerce.order.service.KitchenEquipmentService;
 import com.MaSoVa.shared.util.StoreContextUtil;
 
@@ -9,6 +10,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -30,9 +32,12 @@ import java.util.Map;
 public class KitchenEquipmentController {
 
     private final KitchenEquipmentService equipmentService;
+    private final KitchenEquipmentSeedService equipmentSeedService;
 
-    public KitchenEquipmentController(KitchenEquipmentService equipmentService) {
+    public KitchenEquipmentController(KitchenEquipmentService equipmentService,
+                                      KitchenEquipmentSeedService equipmentSeedService) {
         this.equipmentService = equipmentService;
+        this.equipmentSeedService = equipmentSeedService;
     }
 
     /**
@@ -119,5 +124,35 @@ public class KitchenEquipmentController {
             @RequestBody Map<String, String> body) {
         LocalDateTime nextMaintenance = LocalDateTime.parse(body.get("nextMaintenanceDate"));
         return ResponseEntity.ok(equipmentService.recordMaintenance(equipmentId, nextMaintenance, body.get("notes")));
+    }
+
+    /**
+     * POST /api/equipment/seed-demo — sample kitchen equipment for manager Equipment tab.
+     * Active when spring profile is {@code dev} or {@code demo}; otherwise 404.
+     */
+    @PostMapping({"/seed-demo", "/test-data/seed-demo"})
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Seed sample kitchen equipment (dev/demo profile only)")
+    public ResponseEntity<?> seedDemo(
+            @RequestParam(required = false) String storeId,
+            HttpServletRequest request) {
+        if (!equipmentSeedService.isSeedAllowed()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Seed only available with spring profile dev or demo"));
+        }
+        try {
+            String resolved = (storeId != null && !storeId.isBlank())
+                    ? storeId
+                    : StoreContextUtil.getStoreIdFromHeaders(request);
+            if (resolved == null || resolved.isBlank()) {
+                resolved = "DOM001";
+            }
+            return ResponseEntity.ok(equipmentSeedService.seedDemo(resolved));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Seed failed", "detail", e.getMessage() != null ? e.getMessage() : "unknown"));
+        }
     }
 }
