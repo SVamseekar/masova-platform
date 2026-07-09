@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 const PlatformPnLPage = React.lazy(() => import('./PlatformPnLPage'));
-import { t, cardStyle, tabStyle, sectionTitleStyle, statusBadge, tableHeaderStyle, tableCellStyle, selectStyle } from './manager-tokens';
+import { t, cardStyle, sectionTitleStyle, statusBadge, tableHeaderStyle, tableCellStyle, selectStyle } from './manager-tokens';
+import { ManagerPageFrame, ManagerTabBar, ManagerLoadingBlock, ManagerEmptyState, ManagerErrorState } from './components';
 import {
   useGetTopProductsQuery,
   useGetStaffLeaderboardQuery,
@@ -95,12 +96,12 @@ const KitchenTab = ({ storeId }: { storeId: string }) => {
         Historical prep-time percentiles require dedicated kitchen analytics APIs — not invented here.
       </div>
 
-      {queueLoading && <p style={{ color: t.gray }}>Loading kitchen queue…</p>}
+      {queueLoading && <ManagerLoadingBlock rows={3} label="Loading kitchen queue…" />}
       {queueError && (
-        <div style={alertBox(t.red)}>
-          Failed to load kitchen queue.{' '}
-          <button type="button" style={btn(t.orange)} onClick={() => void refetchQueue()}>Retry</button>
-        </div>
+        <ManagerErrorState
+          title="Failed to load kitchen queue"
+          onRetry={() => void refetchQueue()}
+        />
       )}
 
       {!queueLoading && !queueError && (
@@ -124,7 +125,11 @@ const KitchenTab = ({ storeId }: { storeId: string }) => {
             <div style={cardStyle}>
               <h4 style={sectionTitleStyle}>Items in active kitchen queue</h4>
               {itemCounts.length === 0 ? (
-                <p style={{ color: t.gray, fontSize: 13, marginTop: 12 }}>No active kitchen items right now.</p>
+                <ManagerEmptyState
+                  compact
+                  title="No active kitchen items"
+                  description="Queue is empty right now."
+                />
               ) : (
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
                   <thead>
@@ -535,27 +540,32 @@ const AnalyticsSection: React.FC<Props> = ({ storeId, activeTab, onTabChange }) 
   const currentTab = activeTab || tabs[0].id;
 
   return (
-    <div>
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, flexWrap: 'wrap' }}>
-        {tabs.map(tab => (
-          <div key={tab.id} onClick={() => onTabChange(tab.id)} style={tabStyle(currentTab === tab.id)}>
-            {tab.label}
-          </div>
-        ))}
-      </div>
-
-      {/* Tab Content */}
+    <ManagerPageFrame
+      title="Analytics & Reports"
+      subtitle="Kitchen queue, products, reports, equipment, and P&L"
+      storeId={storeId || undefined}
+      empty={!storeId}
+      emptyTitle="Select a store"
+      emptyDescription="Choose a store from the header to load analytics."
+      tabs={
+        <ManagerTabBar
+          tabs={tabs}
+          activeTab={currentTab}
+          onChange={onTabChange}
+          ariaLabel="Analytics section tabs"
+        />
+      }
+    >
       {currentTab === 'kitchen' && <KitchenTab storeId={storeId} />}
       {currentTab === 'products' && <ProductsTab storeId={storeId} />}
       {currentTab === 'reports' && <ReportsTab storeId={storeId} />}
       {currentTab === 'equipment' && <EquipmentTab storeId={storeId} userId="" />}
       {currentTab === 'platform-pnl' && (
-        <React.Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: t.gray }}>Loading...</div>}>
+        <React.Suspense fallback={<ManagerLoadingBlock rows={3} label="Loading platform P&L…" />}>
           <PlatformPnLPage />
         </React.Suspense>
       )}
-    </div>
+    </ManagerPageFrame>
   );
 };
 

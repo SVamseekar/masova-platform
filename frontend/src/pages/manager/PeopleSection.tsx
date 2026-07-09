@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { t, cardStyle, tabStyle, tableHeaderStyle, tableCellStyle, sectionTitleStyle, selectStyle, statusBadge } from './manager-tokens';
+import { t, cardStyle, tableHeaderStyle, tableCellStyle, sectionTitleStyle, selectStyle, statusBadge } from './manager-tokens';
+import { ManagerPageFrame, ManagerTabBar, ManagerLoadingBlock, ManagerEmptyState, ManagerErrorState } from './components';
+import { validateStaffCreateForm } from './staffFormValidation';
 import { format } from 'date-fns';
 
 // Staff APIs
@@ -115,7 +117,12 @@ const tabs = [
 // STAFF TAB
 // =============================================
 const StaffTab = ({ storeId }: { storeId: string }) => {
-  const { data: employees, isLoading } = useGetStoreEmployeesQuery(storeId, { skip: !storeId });
+  const {
+    data: employees,
+    isLoading,
+    isError: employeesError,
+    refetch: refetchEmployees,
+  } = useGetStoreEmployeesQuery(storeId, { skip: !storeId });
   const [createUser, { isLoading: creating }] = useCreateUserMutation();
   const [activateUser] = useActivateUserMutation();
   const [deactivateUser] = useDeactivateUserMutation();
@@ -123,6 +130,9 @@ const StaffTab = ({ storeId }: { storeId: string }) => {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<ReturnType<typeof validateStaffCreateForm>>({});
+  const [toggleError, setToggleError] = useState<string | null>(null);
   const [pinModalOpen, setPinModalOpen] = useState(false);
   const [pinData, setPinData] = useState<{ pin: string; employeeName: string; employeeType: string } | null>(null);
 
@@ -175,8 +185,19 @@ const StaffTab = ({ storeId }: { storeId: string }) => {
   };
 
   const handleCreate = async () => {
-    if (!formData.name || !formData.email || !formData.phone || !formData.password) { alert('Please fill required fields'); return; }
-    if (formData.password.length < 6) { alert('Password must be at least 6 characters'); return; }
+    const nextErrors = validateStaffCreateForm({
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      password: formData.password,
+      pincode: formData.pincode,
+    });
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      setFormError('Please fix the highlighted fields.');
+      return;
+    }
+    setFormError(null);
     try {
       const address: Address | undefined = formData.street && formData.city && formData.state && formData.pincode
         ? { street: formData.street, city: formData.city, state: formData.state, pincode: formData.pincode, landmark: formData.landmark || undefined } : undefined;
@@ -188,16 +209,25 @@ const StaffTab = ({ storeId }: { storeId: string }) => {
       };
       const result = await createUser(request).unwrap();
       setCreateOpen(false);
-      if (result.generatedPIN) { setPinData({ pin: result.generatedPIN, employeeName: result.name, employeeType: result.type }); setPinModalOpen(true); }
-      else { alert('Staff member created successfully!'); }
+      setFieldErrors({});
+      setFormError(null);
+      if (result.generatedPIN) {
+        setPinData({ pin: result.generatedPIN, employeeName: result.name, employeeType: result.type });
+        setPinModalOpen(true);
+      }
       setFormData({ name: '', email: '', phone: '', password: '', userType: 'STAFF', role: 'Server', street: '', city: '', state: '', pincode: '', landmark: '', maxHoursPerWeek: 40, vehicleType: '', licenseNumber: '' });
-    } catch (err: unknown) { alert(getApiErrorMessage(err, 'Failed to create staff')); }
+    } catch (err: unknown) {
+      setFormError(getApiErrorMessage(err, 'Failed to create staff'));
+    }
   };
 
   const handleToggle = async (id: string, isActive: boolean) => {
     try {
+      setToggleError(null);
       if (isActive) await deactivateUser(id).unwrap(); else await activateUser(id).unwrap();
-    } catch (err: unknown) { alert(getApiErrorMessage(err, 'Failed to update status')); }
+    } catch (err: unknown) {
+      setToggleError(getApiErrorMessage(err, 'Failed to update status'));
+    }
   };
 
   // Group sessions by date then employee
@@ -236,6 +266,12 @@ const StaffTab = ({ storeId }: { storeId: string }) => {
         <div style={miniStat}><p style={statLabel}>Drivers</p><p style={statValue(t.orange)}>{filtered.filter((e) => e.type === 'DRIVER').length}</p></div>
       </div>
 
+      {toggleError && (
+        <div style={{ marginBottom: 12 }}>
+          <ManagerErrorState compact title="Could not update staff" message={toggleError} onRetry={() => setToggleError(null)} />
+        </div>
+      )}
+
       {/* Filters + Add */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
         <input placeholder="Search by name or email..." value={search} onChange={e => setSearch(e.target.value)} style={{ ...input, flex: 1, minWidth: 200 }} />
@@ -243,18 +279,38 @@ const StaffTab = ({ storeId }: { storeId: string }) => {
           <option value="">All Types</option>
           <option value="STAFF">Staff</option><option value="DRIVER">Driver</option><option value="ASSISTANT_MANAGER">Asst Manager</option><option value="MANAGER">Manager</option>
         </select>
-        <button onClick={() => setCreateOpen(true)} style={btn(true)}>+ Add Staff</button>
+        <button
+          type="button"
+          onClick={() => { setCreateOpen(true); setFormError(null); setFieldErrors({}); }}
+          style={btn(true)}
+        >
+          + Add Staff
+        </button>
       </div>
 
       {/* Table */}
+      {isLoading && <ManagerLoadingBlock rows={4} label="Loading staff…" />}
+      {employeesError && !isLoading && (
+        <ManagerErrorState
+          title="Could not load staff"
+          message="Check your connection and try again."
+          onRetry={() => void refetchEmployees()}
+        />
+      )}
+      {!isLoading && !employeesError && filtered.length === 0 && (
+        <ManagerEmptyState
+          title="No staff found"
+          description={search || typeFilter ? 'Try clearing search or type filters.' : 'Add your first staff member for this store.'}
+          action={<button type="button" onClick={() => setCreateOpen(true)} style={btn(true)}>+ Add Staff</button>}
+        />
+      )}
+      {!isLoading && !employeesError && filtered.length > 0 && (
       <div style={cardStyle}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr>
             {['ID', 'Name', 'Email', 'Phone', 'Type', 'Status', 'Actions'].map(h => <th key={h} style={tableHeaderStyle}>{h}</th>)}
           </tr></thead>
           <tbody>
-            {isLoading && <tr><td colSpan={7} style={{ ...tableCellStyle, textAlign: 'center' }}>Loading...</td></tr>}
-            {!isLoading && filtered.length === 0 && <tr><td colSpan={7} style={{ ...tableCellStyle, textAlign: 'center' }}>No staff found</td></tr>}
             {filtered.map((emp) => (
               <tr key={emp.id}>
                 <td style={tableCellStyle}><span style={{ fontFamily: 'monospace', color: t.gray }}>{emp.id.slice(-4)}</span></td>
@@ -265,8 +321,8 @@ const StaffTab = ({ storeId }: { storeId: string }) => {
                 <td style={tableCellStyle}><span style={statusBadge(emp.isActive ? t.green : t.red)}>{emp.isActive ? 'Active' : 'Inactive'}</span></td>
                 <td style={tableCellStyle}>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={() => setSelectedEmployeeId(emp.id)} style={btn()}>Report</button>
-                    <button onClick={() => handleToggle(emp.id, emp.isActive)} style={{ ...btn(), background: emp.isActive ? t.red : t.green, color: t.white }}>{emp.isActive ? 'Deactivate' : 'Activate'}</button>
+                    <button type="button" onClick={() => setSelectedEmployeeId(emp.id)} style={btn()}>Report</button>
+                    <button type="button" onClick={() => handleToggle(emp.id, emp.isActive)} style={{ ...btn(), background: emp.isActive ? t.red : t.green, color: t.white }}>{emp.isActive ? 'Deactivate' : 'Activate'}</button>
                   </div>
                 </td>
               </tr>
@@ -274,6 +330,7 @@ const StaffTab = ({ storeId }: { storeId: string }) => {
           </tbody>
         </table>
       </div>
+      )}
 
       {/* Employee Report */}
       {selectedEmployeeId && (employeeReport || employeeStatus) && (
@@ -333,10 +390,40 @@ const StaffTab = ({ storeId }: { storeId: string }) => {
         <div style={modalOverlay} onClick={() => setCreateOpen(false)}>
           <div style={modalBox} onClick={e => e.stopPropagation()}>
             <h3 style={{ ...sectionTitleStyle, marginBottom: 20 }}>Add New Staff Member</h3>
-            <div style={formGroup}><label style={label}>Name *</label><input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} style={input} /></div>
-            <div style={formGroup}><label style={label}>Email *</label><input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} style={input} /></div>
-            <div style={formGroup}><label style={label}>Phone *</label><input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} style={input} maxLength={10} /></div>
-            <div style={formGroup}><label style={label}>Password *</label><input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} style={input} /></div>
+            {formError && (
+              <div role="alert" style={{ marginBottom: 14, padding: '10px 12px', background: t.redLight, borderRadius: t.radius.sm, fontSize: 13, color: t.red, fontWeight: 500 }}>
+                {formError}
+              </div>
+            )}
+            <div style={formGroup}>
+              <label style={label}>Name *</label>
+              <input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} style={input} />
+              {fieldErrors.name && <p style={{ margin: '4px 0 0', fontSize: 12, color: t.red }}>{fieldErrors.name}</p>}
+            </div>
+            <div style={formGroup}>
+              <label style={label}>Email *</label>
+              <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} style={input} />
+              {fieldErrors.email && <p style={{ margin: '4px 0 0', fontSize: 12, color: t.red }}>{fieldErrors.email}</p>}
+            </div>
+            <div style={formGroup}>
+              <label style={label}>Phone *</label>
+              <input
+                value={formData.phone}
+                onChange={e => setFormData({...formData, phone: e.target.value})}
+                style={input}
+                placeholder="+49 170 1234567"
+                inputMode="tel"
+                autoComplete="tel"
+                maxLength={20}
+                data-testid="staff-phone-input"
+              />
+              {fieldErrors.phone && <p style={{ margin: '4px 0 0', fontSize: 12, color: t.red }} data-testid="staff-phone-error">{fieldErrors.phone}</p>}
+            </div>
+            <div style={formGroup}>
+              <label style={label}>Password *</label>
+              <input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} style={input} />
+              {fieldErrors.password && <p style={{ margin: '4px 0 0', fontSize: 12, color: t.red }}>{fieldErrors.password}</p>}
+            </div>
             <div style={formGroup}><label style={label}>Type *</label>
               <select value={formData.userType} onChange={e => setFormData({...formData, userType: e.target.value as 'STAFF' | 'DRIVER' | 'ASSISTANT_MANAGER'})} style={selectStyle}>
                 <option value="STAFF">Staff</option><option value="DRIVER">Driver</option><option value="ASSISTANT_MANAGER">Asst Manager</option>
@@ -347,10 +434,21 @@ const StaffTab = ({ storeId }: { storeId: string }) => {
             <div style={formGroup}><label style={label}>Street</label><input value={formData.street} onChange={e => setFormData({...formData, street: e.target.value})} style={input} /></div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div style={formGroup}><label style={label}>City</label><input value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} style={input} /></div>
-              <div style={formGroup}><label style={label}>State</label><input value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})} style={input} /></div>
+              <div style={formGroup}><label style={label}>State / Region</label><input value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})} style={input} /></div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div style={formGroup}><label style={label}>PIN Code</label><input value={formData.pincode} onChange={e => setFormData({...formData, pincode: e.target.value})} style={input} maxLength={6} /></div>
+              <div style={formGroup}>
+                <label style={label}>Postal code</label>
+                <input
+                  value={formData.pincode}
+                  onChange={e => setFormData({...formData, pincode: e.target.value})}
+                  style={input}
+                  placeholder="10115"
+                  maxLength={12}
+                  data-testid="staff-postal-input"
+                />
+                {fieldErrors.pincode && <p style={{ margin: '4px 0 0', fontSize: 12, color: t.red }}>{fieldErrors.pincode}</p>}
+              </div>
               <div style={formGroup}><label style={label}>Landmark</label><input value={formData.landmark} onChange={e => setFormData({...formData, landmark: e.target.value})} style={input} /></div>
             </div>
             <div style={formGroup}><label style={label}>Max Hours/Week</label><input type="number" value={formData.maxHoursPerWeek} onChange={e => setFormData({...formData, maxHoursPerWeek: parseInt(e.target.value) || 0})} style={input} min={0} max={80} /></div>
@@ -364,8 +462,8 @@ const StaffTab = ({ storeId }: { storeId: string }) => {
               <div style={formGroup}><label style={label}>License Number</label><input value={formData.licenseNumber} onChange={e => setFormData({...formData, licenseNumber: e.target.value.toUpperCase()})} style={input} /></div>
             </>}
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 }}>
-              <button onClick={() => setCreateOpen(false)} style={btn()}>Cancel</button>
-              <button onClick={handleCreate} disabled={creating} style={btn(true)}>{creating ? 'Creating...' : 'Create'}</button>
+              <button type="button" onClick={() => setCreateOpen(false)} style={btn()}>Cancel</button>
+              <button type="button" onClick={() => void handleCreate()} disabled={creating} style={btn(true)}>{creating ? 'Creating...' : 'Create'}</button>
             </div>
           </div>
         </div>
@@ -986,21 +1084,27 @@ const PeopleSection: React.FC<Props> = ({ storeId, activeTab, onTabChange }) => 
   const current = activeTab || 'staff';
 
   return (
-    <div>
-      {/* Tab bar */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: `2px solid ${t.grayLight}`, paddingBottom: 0 }}>
-        {tabs.map(tab => (
-          <div key={tab.id} onClick={() => onTabChange(tab.id)} style={tabStyle(current === tab.id)}>
-            {tab.label}
-          </div>
-        ))}
-      </div>
-
+    <ManagerPageFrame
+      title="People & Marketing"
+      subtitle="Staff, scheduling, customers, campaigns, and reviews"
+      storeId={storeId || undefined}
+      empty={!storeId}
+      emptyTitle="Select a store"
+      emptyDescription="Choose a store from the header to manage people and marketing."
+      tabs={
+        <ManagerTabBar
+          tabs={tabs}
+          activeTab={current}
+          onChange={onTabChange}
+          ariaLabel="People section tabs"
+        />
+      }
+    >
       {current === 'staff' && <StaffTab storeId={storeId} />}
       {current === 'scheduling' && <SchedulingTab storeId={storeId} />}
       {current === 'leaderboard' && <LeaderboardTab storeId={storeId} />}
       {current === 'drivers' && (
-        <React.Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: t.gray }}>Loading...</div>}>
+        <React.Suspense fallback={<ManagerLoadingBlock rows={3} label="Loading drivers…" />}>
           <DriverManagementPage />
         </React.Suspense>
       )}
@@ -1008,11 +1112,11 @@ const PeopleSection: React.FC<Props> = ({ storeId, activeTab, onTabChange }) => 
       {current === 'campaigns' && <CampaignsTab storeId={storeId} />}
       {current === 'reviews' && <ReviewsTab storeId={storeId} />}
       {current === 'gdpr' && (
-        <React.Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: t.gray }}>Loading...</div>}>
+        <React.Suspense fallback={<ManagerLoadingBlock rows={3} label="Loading GDPR…" />}>
           <GdprManagerPage storeId={storeId} />
         </React.Suspense>
       )}
-    </div>
+    </ManagerPageFrame>
   );
 };
 

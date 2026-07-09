@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { t, cardStyle, tabStyle, tableHeaderStyle, tableCellStyle, sectionTitleStyle, statusBadge, selectStyle } from './manager-tokens';
+import { t, cardStyle, tableHeaderStyle, tableCellStyle, sectionTitleStyle, statusBadge, selectStyle } from './manager-tokens';
+import { ManagerPageFrame, ManagerTabBar } from './components';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
@@ -685,18 +686,27 @@ const OperationsSection: React.FC<Props> = ({ storeId, activeTab, onTabChange })
   const currentTab = activeTab || 'recipes';
 
   return (
-    <div>
-      <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
-        {tabs.map(tab => (
-          <button key={tab.id} style={tabStyle(currentTab === tab.id)} onClick={() => onTabChange(tab.id)}>{tab.label}</button>
-        ))}
-      </div>
-
+    <ManagerPageFrame
+      title="Operations"
+      subtitle="Recipes, drivers, stores, and kiosks"
+      storeId={storeId || undefined}
+      empty={!storeId}
+      emptyTitle="Select a store"
+      emptyDescription="Choose a store from the header to manage operations."
+      tabs={
+        <ManagerTabBar
+          tabs={tabs}
+          activeTab={currentTab}
+          onChange={onTabChange}
+          ariaLabel="Operations section tabs"
+        />
+      }
+    >
       {currentTab === 'recipes' && <RecipesTab storeId={storeId} />}
       {currentTab === 'drivers' && <DriversTab storeId={storeId} />}
       {currentTab === 'stores' && <StoresTab storeId={storeId} />}
       {currentTab === 'kiosks' && <KiosksTab storeId={storeId} />}
-    </div>
+    </ManagerPageFrame>
   );
 };
 
