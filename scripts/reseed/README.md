@@ -113,7 +113,7 @@ Test card: `4242 4242 4242 4242`, any future expiry, any CVC.
 | Manager refund | `POST /api/payments/refund` |
 | Agent request (no money) | `POST /api/payments/refund/request` → `PENDING_APPROVAL` |
 | Approve / reject | `POST /api/payments/refund/{id}/approve` \| `…/reject` |
-| Dev seed (≥3 txs + refunds) | `POST /api/payments/test-data/seed-demo?storeId=DOM001` (`dev`/`demo` profile) |
+| Dev seed (≥3 txs + refunds) | `POST /api/payments/seed-demo?storeId=DOM001` (`dev`/`demo` profile; manager JWT). Legacy: `/api/payments/test-data/seed-demo` |
 
 ### India (Razorpay) path — only when testing IN
 

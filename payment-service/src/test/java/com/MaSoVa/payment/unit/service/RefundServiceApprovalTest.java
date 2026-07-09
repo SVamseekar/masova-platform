@@ -84,7 +84,8 @@ class RefundServiceApprovalTest {
         Refund result = refundService.requestRefundApproval(request);
 
         assertThat(result.getStatus()).isEqualTo(Refund.RefundStatus.PENDING_APPROVAL);
-        assertThat(result.getRazorpayRefundId()).isNull();
+        // Unique placeholder until manager approves (Mongo unique index on razorpayRefundId)
+        assertThat(result.getRazorpayRefundId()).startsWith("pending_");
         assertThat(result.getInitiatedBy()).isEqualTo("AGENT");
         assertThat(result.getStoreId()).isEqualTo("DOM001");
         verifyNoInteractions(paymentGatewayResolver);
