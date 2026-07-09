@@ -21,7 +21,7 @@ import RevenueBreakdownChart from '../../components/charts/RevenueBreakdownChart
 import PeakHoursHeatmap from '../../components/charts/PeakHoursHeatmap';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import {formatMoney, formatMajorAmount} from '../../utils/currency';
+import { formatMajorAmount } from '../../utils/currency';
 
 interface Props { storeId: string; activeTab: string; onTabChange: (tab: string) => void; }
 
@@ -152,40 +152,80 @@ const KitchenTab = ({ storeId }: { storeId: string }) => {
               )}
             </div>
 
-            <div style={cardStyle}>
-              <h4 style={sectionTitleStyle}>Staff leaderboard (today)</h4>
-              {boardLoading && <p style={{ color: t.gray, fontSize: 13 }}>Loading…</p>}
-              {boardError && <p style={{ color: t.red, fontSize: 13 }}>Could not load leaderboard.</p>}
-              {!boardLoading && !boardError && rankings.length === 0 && (
-                <p style={{ color: t.gray, fontSize: 13, marginTop: 12 }}>No staff rankings for today yet.</p>
-              )}
-              {rankings.length > 0 && (
-                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
-                  <thead>
-                    <tr>
-                      <th style={tableHeaderStyle}>Staff</th>
-                      <th style={{ ...tableHeaderStyle, textAlign: 'center' }}>Orders</th>
-                      <th style={{ ...tableHeaderStyle, textAlign: 'center' }}>Level</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rankings.slice(0, 10).map((s) => (
-                      <tr key={s.staffId || s.staffName}>
-                        <td style={tableCellStyle}>{s.staffName}</td>
-                        <td style={{ ...tableCellStyle, textAlign: 'center' }}>{s.ordersProcessed}</td>
-                        <td style={{ ...tableCellStyle, textAlign: 'center' }}>
-                          <span style={chipStyle(t.green)}>{s.performanceLevel || '—'}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
+            <KitchenStaffLeaderboard
+              rankings={rankings}
+              boardLoading={boardLoading}
+              boardError={boardError}
+            />
           </div>
         </>
       )}
     </>
+  );
+};
+
+/** Live staff leaderboard (analytics API) — not mock prep times (K2). */
+const KitchenStaffLeaderboard = ({
+  rankings,
+  boardLoading,
+  boardError,
+}: {
+  rankings: Array<{
+    staffId?: string;
+    staffName: string;
+    ordersProcessed: number;
+    salesGenerated?: number;
+    performanceLevel?: string;
+  }>;
+  boardLoading: boolean;
+  boardError: boolean;
+}) => {
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const formatCurrency = (v: number) => formatMajorAmount(v, currency, locale);
+
+  return (
+    <div style={cardStyle}>
+      <h4 style={sectionTitleStyle}>Staff leaderboard (today)</h4>
+      <p style={{ fontSize: 11, color: t.gray, margin: '4px 0 0' }}>
+        Source: staff-leaderboard analytics API (completed orders)
+      </p>
+      {boardLoading && <p style={{ color: t.gray, fontSize: 13 }}>Loading…</p>}
+      {boardError && <p style={{ color: t.red, fontSize: 13 }}>Could not load leaderboard.</p>}
+      {!boardLoading && !boardError && rankings.length === 0 && (
+        <ManagerEmptyState
+          compact
+          title="No staff rankings for today yet"
+          description="Rankings appear after completed orders are attributed to staff."
+        />
+      )}
+      {rankings.length > 0 && (
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
+          <thead>
+            <tr>
+              <th style={tableHeaderStyle}>Staff</th>
+              <th style={{ ...tableHeaderStyle, textAlign: 'center' }}>Orders</th>
+              <th style={{ ...tableHeaderStyle, textAlign: 'right' }}>Sales</th>
+              <th style={{ ...tableHeaderStyle, textAlign: 'center' }}>Level</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rankings.slice(0, 10).map((s) => (
+              <tr key={s.staffId || s.staffName}>
+                <td style={tableCellStyle}>{s.staffName}</td>
+                <td style={{ ...tableCellStyle, textAlign: 'center' }}>{s.ordersProcessed}</td>
+                <td style={{ ...tableCellStyle, textAlign: 'right' }}>
+                  {formatCurrency(s.salesGenerated ?? 0)}
+                </td>
+                <td style={{ ...tableCellStyle, textAlign: 'center' }}>
+                  <span style={chipStyle(t.green)}>{s.performanceLevel || '—'}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
   );
 };
 
@@ -196,14 +236,32 @@ const ProductsTab = ({ storeId }: { storeId: string }) => {
   const [period, setPeriod] = useState('TODAY');
   const [sortBy, setSortBy] = useState('QUANTITY');
 
-  const { data, isLoading } = useGetTopProductsQuery({ storeId, period, sortBy }, { skip: !storeId });
+  const { data, isLoading, isError, refetch } = useGetTopProductsQuery(
+    { storeId, period, sortBy },
+    { skip: !storeId },
+  );
 
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const formatCurrency = (v: number) => formatMajorAmount(v , currency, locale);
+  const formatCurrency = (v: number) => formatMajorAmount(v, currency, locale);
 
-  if (isLoading) return <p style={{ color: t.gray, fontSize: 13 }}>Loading product analytics...</p>;
-  if (!data) return <p style={{ color: t.red, fontSize: 13 }}>Failed to load product analytics</p>;
+  if (isLoading) return <ManagerLoadingBlock rows={4} label="Loading product analytics…" />;
+  if (isError) {
+    return (
+      <ManagerErrorState
+        title="Failed to load product analytics"
+        onRetry={() => void refetch()}
+      />
+    );
+  }
+  if (!data) {
+    return (
+      <ManagerEmptyState
+        title="No product analytics"
+        description="Top products appear after sales for this period."
+      />
+    );
+  }
 
   const topProduct = data.topProducts[0];
   const totalRevenue = data.topProducts.reduce((sum, p) => sum + p.revenue, 0);
@@ -316,7 +374,12 @@ const ReportsTab = ({ storeId }: { storeId: string }) => {
 // EQUIPMENT TAB
 // ============================================================
 const EquipmentTab = ({ storeId, userId }: { storeId: string; userId: string }) => {
-  const { data: equipment = [], isLoading } = useGetEquipmentByStoreQuery(storeId, { pollingInterval: 30000 });
+  const {
+    data: equipment = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useGetEquipmentByStoreQuery(storeId, { pollingInterval: 30000, skip: !storeId });
   const [createEquipment] = useCreateEquipmentMutation();
   const [updateStatus] = useUpdateEquipmentStatusMutation();
   const [togglePower] = useToggleEquipmentPowerMutation();
@@ -361,7 +424,15 @@ const EquipmentTab = ({ storeId, userId }: { storeId: string; userId: string }) 
   const brokenCount = equipment.filter(e => e.status === 'BROKEN').length;
   const maintenanceNeeded = equipment.filter(e => e.nextMaintenanceDate && new Date(e.nextMaintenanceDate) < new Date()).length;
 
-  if (isLoading) return <p style={{ color: t.gray, fontSize: 13 }}>Loading equipment...</p>;
+  if (isLoading) return <ManagerLoadingBlock rows={3} label="Loading equipment…" />;
+  if (isError) {
+    return (
+      <ManagerErrorState
+        title="Failed to load equipment"
+        onRetry={() => void refetch()}
+      />
+    );
+  }
 
   return (
     <>

@@ -1,6 +1,10 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import API_CONFIG from '../../config/api.config';
 import type { RootState } from '../store';
+import {
+  mapSalesForecastResponse,
+  productDisplayName,
+} from '../../utils/analyticsMetrics';
 
 interface SalesMetricsResponse {
   todaySales: number;
@@ -452,6 +456,18 @@ export const analyticsApi = createApi({
     getTopProducts: builder.query<TopProductsResponse, { storeId?: string; period: string; sortBy: string }>({
       query: ({ period, sortBy, storeId }) =>
         `/analytics?type=top-products&period=${encodeURIComponent(period)}&sortBy=${encodeURIComponent(sortBy)}${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
+      transformResponse: (response: TopProductsResponse | null | undefined): TopProductsResponse => {
+        if (!response) {
+          return { topProducts: [], period: '', sortBy: '' };
+        }
+        return {
+          ...response,
+          topProducts: (response.topProducts ?? []).map((p) => ({
+            ...p,
+            itemName: productDisplayName(p.itemName, p.itemId),
+          })),
+        };
+      },
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: storeId || 'DEFAULT' }],
     }),
 
@@ -460,6 +476,25 @@ export const analyticsApi = createApi({
         const p = new URLSearchParams({ type: 'sales-forecast', days: String(days), period });
         if (storeId) p.set('storeId', storeId);
         return `/bi?${p.toString()}`;
+      },
+      transformResponse: (response: SalesForecastResponse & {
+        modelAccuracy?: number;
+        confidenceLevel?: number;
+        forecastPeriod?: string;
+      }) => {
+        const mapped = mapSalesForecastResponse(response);
+        return {
+          forecasts: (mapped.forecasts ?? []).map((f) => ({
+            date: String(f.date ?? ''),
+            forecastedSales: Number(f.forecastedSales) || 0,
+            confidence: Number((f as { confidence?: number }).confidence) || 0,
+            upperBound: Number((f as { upperBound?: number }).upperBound) || 0,
+            lowerBound: Number((f as { lowerBound?: number }).lowerBound) || 0,
+          })),
+          algorithm: String(response?.algorithm ?? 'historical'),
+          accuracy: mapped.accuracy,
+          period: mapped.period,
+        };
       },
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: `FORECAST_${storeId || 'DEFAULT'}` }],
     }),

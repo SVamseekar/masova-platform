@@ -21,6 +21,7 @@ vi.mock('../../store/api/analyticsApi', async (importOriginal) => {
       percentChangeFromLastYear: 25,
     },
     isLoading: false,
+    isError: false,
   }),
   useGetSalesTrendsQuery: ({ period }: { period: string }) => ({
     data: {
@@ -28,6 +29,7 @@ vi.mock('../../store/api/analyticsApi', async (importOriginal) => {
       totalOrders: period === 'WEEKLY' ? 450 : 1800,
     },
     isLoading: false,
+    isError: false,
   }),
   useGetStaffLeaderboardQuery: () => ({
     data: {
@@ -47,6 +49,7 @@ vi.mock('../../store/api/analyticsApi', async (importOriginal) => {
       ],
     },
     isLoading: false,
+    isError: false,
   }),
   useGetTopProductsQuery: () => ({
     data: {
@@ -66,6 +69,7 @@ vi.mock('../../store/api/analyticsApi', async (importOriginal) => {
       ],
     },
     isLoading: false,
+    isError: false,
   }),
   };
 });

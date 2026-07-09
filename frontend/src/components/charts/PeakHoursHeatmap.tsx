@@ -1,4 +1,3 @@
-import { Box, Paper, Typography } from '@mui/material';
 import {
   BarChart,
   Bar,
@@ -10,94 +9,100 @@ import {
   Cell,
 } from 'recharts';
 import { useGetPeakHoursQuery } from '../../store/api/analyticsApi';
-import { createCard } from '../../styles/neumorphic-utils';
-import { colors } from '../../styles/design-tokens';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import {formatMoney, formatMajorAmount} from '../../utils/currency';
+import { formatMajorAmount } from '../../utils/currency';
+import { activePeakHours } from '../../utils/analyticsMetrics';
+import { t, cardStyle, sectionTitleStyle } from '../../pages/manager/manager-tokens';
+import { ManagerEmptyState, ManagerErrorState, ManagerLoadingBlock } from '../../pages/manager/components';
 
 interface PeakHoursHeatmapProps {
   storeId: string;
 }
 
 export default function PeakHoursHeatmap({ storeId }: PeakHoursHeatmapProps) {
-  const { data, isLoading, error } = useGetPeakHoursQuery(storeId);
+  const { data, isLoading, isError, refetch } = useGetPeakHoursQuery(storeId);
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const formatCurrency = (value: number) => formatMajorAmount(value , currency, locale);
-
-  const getBarColor = (hour: number) => {
-    if (!data) return colors.brand.secondary;
-    if (hour === data.peakHour) return colors.semantic.success; // Green for peak hour
-    if (hour === data.slowestHour) return colors.semantic.error; // Red for slowest hour
-    return colors.brand.secondary; // Default blue
-  };
+  const formatCurrency = (value: number) => formatMajorAmount(value, currency, locale);
 
   if (isLoading) {
     return (
-      <Paper sx={{ ...createCard('md', 'lg'), height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Typography>Loading peak hours data...</Typography>
-      </Paper>
+      <div style={cardStyle} data-testid="peak-hours-chart">
+        <ManagerLoadingBlock rows={3} label="Loading peak hours…" />
+      </div>
     );
   }
 
-  if (error || !data) {
+  if (isError) {
     return (
-      <Paper sx={{ ...createCard('md', 'lg'), height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Typography color="error">Failed to load peak hours data</Typography>
-      </Paper>
+      <div style={cardStyle} data-testid="peak-hours-chart">
+        <ManagerErrorState title="Failed to load peak hours" onRetry={() => void refetch()} />
+      </div>
     );
   }
 
-  // Filter out hours with no orders for better visualization
-  const activeHours = data.hourlyData.filter((h) => h.orderCount > 0);
+  const activeHours = activePeakHours(data);
+  if (!data || activeHours.length === 0) {
+    return (
+      <div style={cardStyle} data-testid="peak-hours-chart">
+        <ManagerEmptyState
+          title="No peak-hour activity"
+          description="Hourly distribution appears after orders are recorded for today."
+        />
+      </div>
+    );
+  }
+
+  const getBarColor = (hour: number) => {
+    if (hour === data.peakHour) return t.green;
+    if (hour === data.slowestHour) return t.red;
+    return t.blue;
+  };
+
+  const peakLabel = data.hourlyData?.[data.peakHour]?.label ?? `${data.peakHour}:00`;
+  const slowLabel = data.hourlyData?.[data.slowestHour]?.label ?? `${data.slowestHour}:00`;
 
   return (
-    <Paper sx={{ ...createCard('md', 'lg') }}>
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          Peak Hours Analysis
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 3 }}>
-          <Box>
-            <Typography variant="body2" color="text.secondary">
-              Peak Hour
-            </Typography>
-            <Typography variant="h5" color="success.main">
-              {data.hourlyData[data.peakHour]?.label}
-            </Typography>
-            <Typography variant="body2">
-              {data.peakHourOrders} orders • {formatCurrency(data.peakHourSales)}
-            </Typography>
-          </Box>
-          <Box>
-            <Typography variant="body2" color="text.secondary">
-              Slowest Hour
-            </Typography>
-            <Typography variant="h5" color="error.main">
-              {data.hourlyData[data.slowestHour]?.label}
-            </Typography>
-            <Typography variant="body2">
-              {data.hourlyData[data.slowestHour]?.orderCount} orders
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
+    <div style={cardStyle} data-testid="peak-hours-chart">
+      <div style={{ marginBottom: 12 }}>
+        <h3 style={sectionTitleStyle}>Peak hours</h3>
+        <div style={{ display: 'flex', gap: 24, marginTop: 12, flexWrap: 'wrap' }}>
+          <div>
+            <p style={{ margin: 0, fontSize: 12, color: t.gray }}>Peak hour</p>
+            <p style={{ margin: '4px 0 0', fontSize: 20, fontWeight: 700, color: t.green }}>{peakLabel}</p>
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: t.gray }}>
+              {data.peakHourOrders} orders · {formatCurrency(data.peakHourSales)}
+            </p>
+          </div>
+          <div>
+            <p style={{ margin: 0, fontSize: 12, color: t.gray }}>Slowest hour</p>
+            <p style={{ margin: '4px 0 0', fontSize: 20, fontWeight: 700, color: t.red }}>{slowLabel}</p>
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: t.gray }}>
+              {data.hourlyData?.[data.slowestHour]?.orderCount ?? 0} orders
+            </p>
+          </div>
+        </div>
+      </div>
 
-      <ResponsiveContainer width="100%" height={300}>
+      <ResponsiveContainer width="100%" height={280}>
         <BarChart data={activeHours}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="label" angle={-45} textAnchor="end" height={80} />
-          <YAxis />
+          <CartesianGrid strokeDasharray="3 3" stroke={t.grayLight} />
+          <XAxis dataKey="label" angle={-35} textAnchor="end" height={70} tick={{ fill: t.gray, fontSize: 11 }} />
+          <YAxis tick={{ fill: t.gray, fontSize: 11 }} />
           <Tooltip
             formatter={(value, name) => {
               const n = typeof value === 'number' ? value : Number(value ?? 0);
               if (name === 'sales') return formatCurrency(n);
               return n;
             }}
-            labelStyle={{ color: '#000' }}
+            contentStyle={{
+              borderRadius: t.radius.md,
+              border: `1px solid ${t.grayLight}`,
+              fontFamily: t.font,
+            }}
           />
-          <Bar dataKey="orderCount" name="Orders" radius={[8, 8, 0, 0]}>
+          <Bar dataKey="orderCount" name="Orders" radius={[6, 6, 0, 0]}>
             {activeHours.map((entry) => (
               <Cell key={entry.hour} fill={getBarColor(entry.hour)} />
             ))}
@@ -105,20 +110,11 @@ export default function PeakHoursHeatmap({ storeId }: PeakHoursHeatmapProps) {
         </BarChart>
       </ResponsiveContainer>
 
-      <Box sx={{ mt: 2, display: 'flex', gap: 2, justifyContent: 'center' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box sx={{ width: 16, height: 16, bgcolor: '#4caf50', borderRadius: 1 }} />
-          <Typography variant="caption">Peak Hour</Typography>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box sx={{ width: 16, height: 16, bgcolor: '#8884d8', borderRadius: 1 }} />
-          <Typography variant="caption">Normal</Typography>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box sx={{ width: 16, height: 16, bgcolor: '#f44336', borderRadius: 1 }} />
-          <Typography variant="caption">Slowest Hour</Typography>
-        </Box>
-      </Box>
-    </Paper>
+      <div style={{ marginTop: 12, display: 'flex', gap: 16, justifyContent: 'center', fontSize: 11, color: t.gray }}>
+        <span><span style={{ color: t.green }}>■</span> Peak</span>
+        <span><span style={{ color: t.blue }}>■</span> Normal</span>
+        <span><span style={{ color: t.red }}>■</span> Slowest</span>
+      </div>
+    </div>
   );
 }
