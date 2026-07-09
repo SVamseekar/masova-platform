@@ -1029,6 +1029,10 @@ public class UserService {
             response.setStatus(user.getEmployeeDetails().getStatus());
             response.setRating(user.getEmployeeDetails().getRating());
             response.setActiveDeliveryCount(user.getEmployeeDetails().getActiveDeliveryCount());
+            // Kiosk manager UI needs terminal id on list rows
+            if (user.getEmployeeDetails().getTerminalId() != null) {
+                response.setTerminalId(user.getEmployeeDetails().getTerminalId());
+            }
 
             // Check if user has active working session to determine isOnline status
             try {
