@@ -5,11 +5,12 @@ import org.springframework.stereotype.Component;
 /**
  * Resolves the correct PaymentGateway based on store.countryCode.
  *
- * Routing rule:
- *   null or blank countryCode  →  RazorpayGateway  (India legacy)
- *   any non-blank countryCode  →  StripeGateway     (Global programme)
+ * EU-primary routing (2026-07):
+ *   explicit {@code IN}           → RazorpayGateway (India only)
+ *   null, blank, or any other ISO → StripeGateway   (EU / global default)
  *
  * Country is set once at store creation and immutable after first order — routing is stable.
+ * Demo/Berlin stores must use countryCode=DE (or similar) so Stripe is used.
  */
 @Component
 public class PaymentGatewayResolver {
@@ -22,16 +23,13 @@ public class PaymentGatewayResolver {
         this.stripeGateway   = stripeGateway;
     }
 
-    /** India legacy: null, blank, or explicit {@code IN} → Razorpay. */
+    /** India only when countryCode is explicitly {@code IN}. Everything else is Stripe (EU-primary). */
     public boolean isIndiaStore(String countryCode) {
-        if (countryCode == null || countryCode.isBlank()) {
-            return true;
-        }
-        return "IN".equalsIgnoreCase(countryCode.trim());
+        return countryCode != null && "IN".equalsIgnoreCase(countryCode.trim());
     }
 
     /**
-     * @param countryCode ISO 3166-1 alpha-2 country code from Store entity, or null for India stores.
+     * @param countryCode ISO 3166-1 alpha-2 from Store, or null/blank → Stripe (EU default).
      */
     public PaymentGateway resolve(String countryCode) {
         if (isIndiaStore(countryCode)) {
@@ -40,3 +38,4 @@ public class PaymentGatewayResolver {
         return stripeGateway;
     }
 }
+

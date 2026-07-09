@@ -23,13 +23,13 @@ class PaymentGatewayResolverTest {
     }
 
     @Test
-    void null_countryCode_returns_razorpay() {
-        assertThat(resolver.resolve(null)).isSameAs(razorpayGateway);
+    void null_countryCode_returns_stripe_eu_primary() {
+        assertThat(resolver.resolve(null)).isSameAs(stripeGateway);
     }
 
     @Test
-    void empty_countryCode_returns_razorpay() {
-        assertThat(resolver.resolve("")).isSameAs(razorpayGateway);
+    void empty_countryCode_returns_stripe_eu_primary() {
+        assertThat(resolver.resolve("")).isSameAs(stripeGateway);
     }
 
     @Test
