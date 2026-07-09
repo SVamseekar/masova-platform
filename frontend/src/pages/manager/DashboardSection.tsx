@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
 import {formatMoney, formatMajorAmount} from '../../utils/currency';
 import { t, cardStyle, sectionTitleStyle, statusBadge } from './manager-tokens';
+import { ManagerPageFrame } from './components';
 import {
   useGetActiveStoreSessionsQuery,
   useGetPendingApprovalSessionsQuery,
@@ -60,6 +61,7 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
 
   const [approveSession, { isLoading: approvingSession }] = useApproveSessionMutation();
   const [rejectSession, { isLoading: rejectingSession }] = useRejectSessionMutation();
+  const [sessionActionError, setSessionActionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (storeId) {
@@ -97,24 +99,69 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
   const storePendingSessions = pendingSessions.filter((s) => s.storeId === storeId);
 
   const handleApproveSession = async (sessionId: string) => {
+    setSessionActionError(null);
     try {
       await approveSession(sessionId).unwrap();
       refetchPendingSessions();
       refetchSessions();
-    } catch { alert('Failed to approve session'); }
+    } catch {
+      setSessionActionError('Failed to approve session. Please try again.');
+    }
   };
   const handleRejectSession = async (sessionId: string) => {
+    setSessionActionError(null);
     try {
       await rejectSession({ sessionId, reason: 'Manager rejected' }).unwrap();
       refetchPendingSessions();
       refetchSessions();
-    } catch { alert('Failed to reject session'); }
+    } catch {
+      setSessionActionError('Failed to reject session. Please try again.');
+    }
   };
 
   const formatCurrency = (val: number) => formatMajorAmount(val , currency, locale);
 
   return (
-    <div>
+    <ManagerPageFrame
+      title="Dashboard"
+      subtitle="Live store overview"
+      storeId={storeId || undefined}
+      empty={!storeId}
+      emptyTitle="Select a store"
+      emptyDescription="Choose a store from the header to load dashboard metrics."
+    >
+      {sessionActionError && (
+        <div
+          role="alert"
+          style={{
+            marginBottom: 16,
+            padding: '12px 14px',
+            background: t.redLight,
+            borderRadius: t.radius.md,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+          }}
+        >
+          <p style={{ margin: 0, fontSize: 13, color: t.red, fontWeight: 500 }}>{sessionActionError}</p>
+          <button
+            type="button"
+            onClick={() => setSessionActionError(null)}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              color: t.gray,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: t.font,
+            }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
       {/* Stats Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
         <div style={{ ...cardStyle, background: t.orange, color: t.white }}>
@@ -480,7 +527,7 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
           </div>
         </div>
       )}
-    </div>
+    </ManagerPageFrame>
   );
 };
 
