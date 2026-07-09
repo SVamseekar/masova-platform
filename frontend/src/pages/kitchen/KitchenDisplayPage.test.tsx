@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { renderAsKitchenStaff } from '@/test/utils/testUtils';
 import KitchenDisplayPage from './KitchenDisplayPage';
 
@@ -20,6 +20,7 @@ vi.mock('../../store/api/orderApi', async () => {
     useGetKitchenQueueQuery: () => ({
       data: mockKitchenOrders,
       isLoading: mockIsLoading,
+      isFetching: false,
       error: mockError,
       refetch: mockRefetch,
     }),
@@ -63,6 +64,26 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
+function baseOrder(partial: Partial<Order> & Pick<Order, 'id' | 'orderNumber' | 'status'>): Order {
+  return {
+    items: [{ menuItemId: 'i-1', name: 'Pizza', quantity: 1, price: 10 }],
+    customerName: 'Test Customer',
+    orderType: 'DELIVERY',
+    priority: 'NORMAL',
+    preparationTime: 15,
+    createdAt: '2026-02-15T10:00:00Z',
+    updatedAt: '2026-02-15T10:00:00Z',
+    storeId: 'store-1',
+    subtotal: 10,
+    deliveryFee: 5,
+    tax: 1,
+    total: 16,
+    totalAmount: 16,
+    paymentStatus: 'PAID',
+    ...partial,
+  };
+}
+
 describe('KitchenDisplayPage', () => {
   beforeEach(() => {
     mockKitchenOrders = [];
@@ -77,6 +98,7 @@ describe('KitchenDisplayPage', () => {
   it('renders without crashing', () => {
     renderAsKitchenStaff(<KitchenDisplayPage />);
     expect(screen.getByTestId('app-header')).toBeInTheDocument();
+    expect(screen.getByTestId('kds-root')).toBeInTheDocument();
   });
 
   it('displays kitchen header with store ID', () => {
@@ -88,17 +110,26 @@ describe('KitchenDisplayPage', () => {
     mockIsLoading = true;
     renderAsKitchenStaff(<KitchenDisplayPage />);
     expect(screen.getByText('Loading orders...')).toBeInTheDocument();
+    expect(screen.getByTestId('kds-loading')).toBeInTheDocument();
   });
 
-  it('shows error state when API returns error', () => {
+  it('shows error state with retry when API returns error', () => {
     mockError = { status: 500, data: 'Server Error' };
     renderAsKitchenStaff(<KitchenDisplayPage />);
     expect(
       screen.getByText('Error loading orders. Please check if Order Service is running.')
     ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
   });
 
-  it('renders all 9 status columns', () => {
+  it('retries kitchen queue when Retry is clicked', () => {
+    mockError = { status: 500, data: 'Server Error' };
+    renderAsKitchenStaff(<KitchenDisplayPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(mockRefetch).toHaveBeenCalled();
+  });
+
+  it('renders cook-path columns and handoff columns', () => {
     renderAsKitchenStaff(<KitchenDisplayPage />);
     expect(screen.getByText('New Orders')).toBeInTheDocument();
     expect(screen.getByText('Preparing')).toBeInTheDocument();
@@ -114,31 +145,31 @@ describe('KitchenDisplayPage', () => {
   it('shows "No orders" text in empty columns', () => {
     renderAsKitchenStaff(<KitchenDisplayPage />);
     const emptyTexts = screen.getAllByText('No orders');
+    // 5 cook + 4 handoff
     expect(emptyTexts.length).toBe(9);
+  });
+
+  it('shows empty board banner when cook path is clear', () => {
+    renderAsKitchenStaff(<KitchenDisplayPage />);
+    expect(screen.getByTestId('kds-empty-board')).toBeInTheDocument();
+    expect(screen.getByText(/Kitchen queue is clear/i)).toBeInTheDocument();
+  });
+
+  it('shows connection indicator (polling when WS offline)', () => {
+    renderAsKitchenStaff(<KitchenDisplayPage />);
+    expect(screen.getByTestId('kds-connection')).toHaveTextContent(/Polling/i);
   });
 
   it('renders order cards in correct status columns', () => {
     mockKitchenOrders = [
-      {
+      baseOrder({
         id: 'order-1',
         orderNumber: 'ORD-001',
         status: 'RECEIVED',
         items: [{ menuItemId: 'item-1', name: 'Margherita Pizza', quantity: 2, price: 12.99 }],
         customerName: 'Alice',
-        orderType: 'DELIVERY',
-        priority: 'NORMAL',
-        preparationTime: 15,
-        createdAt: '2026-02-15T10:00:00Z',
-        updatedAt: '2026-02-15T10:00:00Z',
-        storeId: 'store-1',
-        subtotal: 25.98,
-        deliveryFee: 5,
-        tax: 3.1,
-        total: 34.08,
-        totalAmount: 34.08,
-        paymentStatus: 'PAID',
-      },
-      {
+      }),
+      baseOrder({
         id: 'order-2',
         orderNumber: 'ORD-002',
         status: 'PREPARING',
@@ -146,17 +177,7 @@ describe('KitchenDisplayPage', () => {
         customerName: 'Bob',
         orderType: 'TAKEAWAY',
         priority: 'URGENT',
-        preparationTime: 10,
-        createdAt: '2026-02-15T10:05:00Z',
-        updatedAt: '2026-02-15T10:05:00Z',
-        storeId: 'store-1',
-        subtotal: 4.99,
-        deliveryFee: 0,
-        tax: 0.5,
-        total: 5.49,
-        totalAmount: 5.49,
-        paymentStatus: 'PAID',
-      },
+      }),
     ];
 
     renderAsKitchenStaff(<KitchenDisplayPage />);
@@ -164,29 +185,22 @@ describe('KitchenDisplayPage', () => {
     expect(screen.getByText('#ORD-002')).toBeInTheDocument();
     expect(screen.getByText('Alice')).toBeInTheDocument();
     expect(screen.getByText('Bob')).toBeInTheDocument();
+
+    const newCol = screen.getByTestId('kds-column-RECEIVED');
+    expect(within(newCol).getByText('#ORD-001')).toBeInTheDocument();
+    const prepCol = screen.getByTestId('kds-column-PREPARING');
+    expect(within(prepCol).getByText('#ORD-002')).toBeInTheDocument();
   });
 
   it('displays urgent badge for urgent orders', () => {
     mockKitchenOrders = [
-      {
+      baseOrder({
         id: 'order-u',
         orderNumber: 'ORD-URG',
         status: 'RECEIVED',
-        items: [{ menuItemId: 'i-1', name: 'Pizza', quantity: 1, price: 10 }],
         customerName: 'Urgent Customer',
-        orderType: 'DELIVERY',
         priority: 'URGENT',
-        preparationTime: 15,
-        createdAt: '2026-02-15T10:00:00Z',
-        updatedAt: '2026-02-15T10:00:00Z',
-        storeId: 'store-1',
-        subtotal: 10,
-        deliveryFee: 5,
-        tax: 1.5,
-        total: 16.5,
-        totalAmount: 16.5,
-        paymentStatus: 'PAID',
-      },
+      }),
     ];
 
     renderAsKitchenStaff(<KitchenDisplayPage />);
@@ -195,53 +209,25 @@ describe('KitchenDisplayPage', () => {
 
   it('sorts urgent orders before normal orders in the same column', () => {
     mockKitchenOrders = [
-      {
+      baseOrder({
         id: 'order-normal',
         orderNumber: 'ORD-N',
         status: 'RECEIVED',
-        items: [{ menuItemId: 'i-1', name: 'Item A', quantity: 1, price: 10 }],
         customerName: 'Normal Customer',
-        orderType: 'DELIVERY',
-        priority: 'NORMAL',
-        preparationTime: 15,
         createdAt: '2026-02-15T09:50:00Z',
-        updatedAt: '2026-02-15T09:50:00Z',
-        storeId: 'store-1',
-        subtotal: 10,
-        deliveryFee: 5,
-        tax: 1,
-        total: 16,
-        totalAmount: 16,
-        paymentStatus: 'PAID',
-      },
-      {
+      }),
+      baseOrder({
         id: 'order-urgent',
         orderNumber: 'ORD-U',
         status: 'RECEIVED',
-        items: [{ menuItemId: 'i-2', name: 'Item B', quantity: 1, price: 10 }],
         customerName: 'Urgent Customer',
-        orderType: 'DELIVERY',
         priority: 'URGENT',
-        preparationTime: 10,
         createdAt: '2026-02-15T10:00:00Z',
-        updatedAt: '2026-02-15T10:00:00Z',
-        storeId: 'store-1',
-        subtotal: 10,
-        deliveryFee: 5,
-        tax: 1,
-        total: 16,
-        totalAmount: 16,
-        paymentStatus: 'PAID',
-      },
+      }),
     ];
 
     renderAsKitchenStaff(<KitchenDisplayPage />);
 
-    // Both should be rendered
-    expect(screen.getByText('#ORD-U')).toBeInTheDocument();
-    expect(screen.getByText('#ORD-N')).toBeInTheDocument();
-
-    // Urgent should appear first in DOM order
     const urgentNode = screen.getByText('#ORD-U');
     const normalNode = screen.getByText('#ORD-N');
     expect(
@@ -251,7 +237,7 @@ describe('KitchenDisplayPage', () => {
 
   it('displays order items with quantities', () => {
     mockKitchenOrders = [
-      {
+      baseOrder({
         id: 'order-items',
         orderNumber: 'ORD-ITEMS',
         status: 'PREPARING',
@@ -260,19 +246,7 @@ describe('KitchenDisplayPage', () => {
           { menuItemId: 'i-2', name: 'Garlic Bread', quantity: 1, price: 4.99 },
         ],
         customerName: 'Item Test',
-        orderType: 'DELIVERY',
-        priority: 'NORMAL',
-        preparationTime: 20,
-        createdAt: '2026-02-15T10:00:00Z',
-        updatedAt: '2026-02-15T10:00:00Z',
-        storeId: 'store-1',
-        subtotal: 49.96,
-        deliveryFee: 5,
-        tax: 5.5,
-        total: 60.46,
-        totalAmount: 60.46,
-        paymentStatus: 'PAID',
-      },
+      }),
     ];
 
     renderAsKitchenStaff(<KitchenDisplayPage />);
@@ -284,25 +258,13 @@ describe('KitchenDisplayPage', () => {
 
   it('displays order type badge', () => {
     mockKitchenOrders = [
-      {
+      baseOrder({
         id: 'order-type',
         orderNumber: 'ORD-TYPE',
         status: 'RECEIVED',
-        items: [{ menuItemId: 'i-1', name: 'Pizza', quantity: 1, price: 10 }],
         customerName: 'Type Test',
         orderType: 'DELIVERY',
-        priority: 'NORMAL',
-        preparationTime: 15,
-        createdAt: '2026-02-15T10:00:00Z',
-        updatedAt: '2026-02-15T10:00:00Z',
-        storeId: 'store-1',
-        subtotal: 10,
-        deliveryFee: 5,
-        tax: 1,
-        total: 16,
-        totalAmount: 16,
-        paymentStatus: 'PAID',
-      },
+      }),
     ];
 
     renderAsKitchenStaff(<KitchenDisplayPage />);
@@ -311,25 +273,12 @@ describe('KitchenDisplayPage', () => {
 
   it('shows "Next Stage" button for non-terminal orders', () => {
     mockKitchenOrders = [
-      {
+      baseOrder({
         id: 'order-next',
         orderNumber: 'ORD-NEXT',
         status: 'RECEIVED',
-        items: [{ menuItemId: 'i-1', name: 'Pizza', quantity: 1, price: 10 }],
         customerName: 'Next Test',
-        orderType: 'DELIVERY',
-        priority: 'NORMAL',
-        preparationTime: 15,
-        createdAt: '2026-02-15T10:00:00Z',
-        updatedAt: '2026-02-15T10:00:00Z',
-        storeId: 'store-1',
-        subtotal: 10,
-        deliveryFee: 5,
-        tax: 1,
-        total: 16,
-        totalAmount: 16,
-        paymentStatus: 'PAID',
-      },
+      }),
     ];
 
     renderAsKitchenStaff(<KitchenDisplayPage />);
@@ -338,25 +287,12 @@ describe('KitchenDisplayPage', () => {
 
   it('calls updateOrderStatus when Next Stage is clicked', async () => {
     mockKitchenOrders = [
-      {
+      baseOrder({
         id: 'order-click',
         orderNumber: 'ORD-CLICK',
         status: 'RECEIVED',
-        items: [{ menuItemId: 'i-1', name: 'Pizza', quantity: 1, price: 10 }],
         customerName: 'Click Test',
-        orderType: 'DELIVERY',
-        priority: 'NORMAL',
-        preparationTime: 15,
-        createdAt: '2026-02-15T10:00:00Z',
-        updatedAt: '2026-02-15T10:00:00Z',
-        storeId: 'store-1',
-        subtotal: 10,
-        deliveryFee: 5,
-        tax: 1,
-        total: 16,
-        totalAmount: 16,
-        paymentStatus: 'PAID',
-      },
+      }),
     ];
 
     renderAsKitchenStaff(<KitchenDisplayPage />);
@@ -377,27 +313,33 @@ describe('KitchenDisplayPage', () => {
     });
   });
 
+  it('shows inline action error when status update fails', async () => {
+    mockUpdateOrderStatus.mockImplementation(() => ({
+      unwrap: () => Promise.reject(new Error('network')),
+    }));
+    mockKitchenOrders = [
+      baseOrder({
+        id: 'order-fail',
+        orderNumber: 'ORD-FAIL',
+        status: 'RECEIVED',
+      }),
+    ];
+
+    renderAsKitchenStaff(<KitchenDisplayPage />);
+    fireEvent.click(screen.getByText('Next Stage').closest('button')!);
+
+    expect(await screen.findByTestId('kds-action-error')).toBeInTheDocument();
+    expect(screen.getByText(/Could not advance #ORD-FAIL/i)).toBeInTheDocument();
+  });
+
   it('renders Recipe button on order items', () => {
     mockKitchenOrders = [
-      {
+      baseOrder({
         id: 'order-recipe',
         orderNumber: 'ORD-RCP',
         status: 'PREPARING',
-        items: [{ menuItemId: 'i-1', name: 'Pizza', quantity: 1, price: 10 }],
         customerName: 'Recipe Test',
-        orderType: 'DELIVERY',
-        priority: 'NORMAL',
-        preparationTime: 15,
-        createdAt: '2026-02-15T10:00:00Z',
-        updatedAt: '2026-02-15T10:00:00Z',
-        storeId: 'store-1',
-        subtotal: 10,
-        deliveryFee: 5,
-        tax: 1,
-        total: 16,
-        totalAmount: 16,
-        paymentStatus: 'PAID',
-      },
+      }),
     ];
 
     renderAsKitchenStaff(<KitchenDisplayPage />);
@@ -406,48 +348,65 @@ describe('KitchenDisplayPage', () => {
 
   it('displays column counts', () => {
     mockKitchenOrders = [
-      {
-        id: 'o1',
-        orderNumber: 'ORD-1',
-        status: 'RECEIVED',
-        items: [{ menuItemId: 'i', name: 'P', quantity: 1, price: 10 }],
-        customerName: 'C1',
-        orderType: 'DELIVERY',
-        priority: 'NORMAL',
-        preparationTime: 15,
-        createdAt: '2026-02-15T10:00:00Z',
-        updatedAt: '2026-02-15T10:00:00Z',
-        storeId: 'store-1',
-        subtotal: 10,
-        deliveryFee: 5,
-        tax: 1,
-        total: 16,
-        totalAmount: 16,
-        paymentStatus: 'PAID',
-      },
-      {
+      baseOrder({ id: 'o1', orderNumber: 'ORD-1', status: 'RECEIVED', customerName: 'C1' }),
+      baseOrder({
         id: 'o2',
         orderNumber: 'ORD-2',
         status: 'RECEIVED',
-        items: [{ menuItemId: 'i', name: 'P', quantity: 1, price: 10 }],
         customerName: 'C2',
-        orderType: 'DELIVERY',
-        priority: 'NORMAL',
-        preparationTime: 15,
         createdAt: '2026-02-15T10:01:00Z',
-        updatedAt: '2026-02-15T10:01:00Z',
-        storeId: 'store-1',
-        subtotal: 10,
-        deliveryFee: 5,
-        tax: 1,
-        total: 16,
-        totalAmount: 16,
-        paymentStatus: 'PAID',
-      },
+      }),
     ];
 
     renderAsKitchenStaff(<KitchenDisplayPage />);
     expect(screen.getByText('New Orders')).toBeInTheDocument();
-    expect(screen.getAllByText('2').length).toBeGreaterThanOrEqual(1);
+    const newCol = screen.getByTestId('kds-column-RECEIVED');
+    expect(within(newCol).getByText('2')).toBeInTheDocument();
+  });
+
+  it('labels oven timer as Demo estimate when no actual oven time', () => {
+    mockKitchenOrders = [
+      baseOrder({
+        id: 'oven-1',
+        orderNumber: 'ORD-OVEN',
+        status: 'OVEN',
+        customerName: 'Oven Guest',
+      }),
+    ];
+
+    renderAsKitchenStaff(<KitchenDisplayPage />);
+    expect(screen.getByTestId('oven-timer')).toBeInTheDocument();
+    expect(screen.getByText('Demo estimate')).toBeInTheDocument();
+  });
+
+  it('shows Mark Served for dine-in READY tickets', () => {
+    mockKitchenOrders = [
+      baseOrder({
+        id: 'dine-1',
+        orderNumber: 'ORD-DINE',
+        status: 'READY',
+        orderType: 'DINE_IN',
+        customerName: 'Table 4',
+      }),
+    ];
+
+    renderAsKitchenStaff(<KitchenDisplayPage />);
+    expect(screen.getByText('Mark Served')).toBeInTheDocument();
+  });
+
+  it('shows summary KPIs from live tickets', () => {
+    mockKitchenOrders = [
+      baseOrder({
+        id: 'kpi-1',
+        orderNumber: 'ORD-KPI',
+        status: 'RECEIVED',
+        priority: 'URGENT',
+      }),
+    ];
+
+    renderAsKitchenStaff(<KitchenDisplayPage />);
+    const summary = screen.getByTestId('kds-summary');
+    expect(within(summary).getByText('Active')).toBeInTheDocument();
+    expect(within(summary).getByText('Urgent')).toBeInTheDocument();
   });
 });
