@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAppSelector } from '../../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../../store/slices/cartSlice';
-import {formatMoney, formatMajorAmount} from '../../../utils/currency';
+import { formatMajorAmount } from '../../../utils/currency';
 import {
   useGetTodaySalesMetricsQuery,
   useGetAverageOrderValueQuery,
@@ -10,7 +10,9 @@ import {
 } from '../../../store/api/analyticsApi';
 import Card from '../../../components/ui/neumorphic/Card';
 import { colors, spacing, typography } from '../../../styles/design-tokens';
+import EuroIcon from '@mui/icons-material/Euro';
 import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
@@ -29,12 +31,15 @@ interface MetricsTilesProps {
 const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
+  const fmt = (v: number) => formatMajorAmount(v, currency, locale);
+  const SalesCurrencyIcon =
+    currency === 'INR' ? CurrencyRupeeIcon : currency === 'EUR' ? EuroIcon : AttachMoneyIcon;
   // Fetch real-time metrics from analytics service
   const {
     data: salesMetrics,
     isLoading: salesLoading,
     error: salesError,
+    refetch: refetchSales,
   } = useGetTodaySalesMetricsQuery(storeId, {
     pollingInterval: 60000, // Refresh every minute
     skip: !storeId, // Skip if no storeId
@@ -43,6 +48,7 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
   const {
     data: avgOrderValue,
     isLoading: avgLoading,
+    error: avgError,
   } = useGetAverageOrderValueQuery(storeId, {
     pollingInterval: 60000,
     skip: !storeId,
@@ -51,6 +57,7 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
   const {
     data: driverStatus,
     isLoading: driverLoading,
+    error: driverError,
   } = useGetDriverStatusQuery(storeId, {
     pollingInterval: 30000, // Refresh every 30 seconds
     skip: !storeId,
@@ -58,7 +65,7 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
 
   const isLoading = salesLoading || avgLoading || driverLoading;
 
-  // Show error state if sales data fails to load
+  // Show error state if sales data fails to load — do not invent offline numbers
   if (salesError) {
     return (
       <Card
@@ -67,11 +74,29 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
         style={{
           background: `linear-gradient(135deg, ${colors.semantic.warningLight}22 0%, ${colors.semantic.warning}11 100%)`,
           border: `2px solid ${colors.semantic.warning}`,
-          textAlign: 'center'
+          textAlign: 'center',
         }}
+        data-testid="metrics-tiles-error"
       >
         <WarningAmberIcon style={{ fontSize: '16px', marginRight: '6px', verticalAlign: 'middle' }} />
-        Unable to load metrics. Using offline mode.
+        Unable to load sales metrics.
+        <button
+          type="button"
+          onClick={() => void refetchSales()}
+          style={{
+            marginLeft: 12,
+            border: 'none',
+            background: colors.brand.primary,
+            color: colors.text.inverse,
+            borderRadius: 8,
+            padding: '4px 10px',
+            cursor: 'pointer',
+            fontWeight: 600,
+            fontSize: 12,
+          }}
+        >
+          Retry
+        </button>
       </Card>
     );
   }
@@ -215,12 +240,12 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
       gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
       gap: spacing[4]
     }}>
-      {/* Today's Sales */}
+      {/* Today's Sales — analytics amounts are major units (EUR) */}
       <MetricCard
         title="Today's Sales"
         value={salesMetrics ? fmt(salesMetrics.todaySales) : '-'}
         subtitle={salesMetrics ? `${salesMetrics.todayOrderCount} orders` : 'Loading...'}
-        icon={<CurrencyRupeeIcon style={{ fontSize: '28px' }} />}
+        icon={<SalesCurrencyIcon style={{ fontSize: '28px' }} />}
         trendLabel="vs yesterday"
         trendValue={salesMetrics?.percentChangeFromYesterday}
         bgColor={colors.semantic.success}
@@ -229,11 +254,11 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
       {/* Average Order Value */}
       <MetricCard
         title="Avg Order Value"
-        value={avgOrderValue ? fmt(avgOrderValue.averageOrderValue) : '-'}
-        subtitle={avgOrderValue ? `${avgOrderValue.totalOrders} orders` : 'Loading...'}
+        value={avgError ? '—' : avgOrderValue ? fmt(avgOrderValue.averageOrderValue) : '-'}
+        subtitle={avgError ? 'AOV unavailable' : avgOrderValue ? `${avgOrderValue.totalOrders} orders` : 'Loading...'}
         icon={<ShoppingCartIcon style={{ fontSize: '28px' }} />}
-        trendLabel={avgOrderValue ? 'vs yesterday' : undefined}
-        trendValue={avgOrderValue?.percentChange}
+        trendLabel={avgOrderValue && !avgError ? 'vs yesterday' : undefined}
+        trendValue={avgError ? undefined : avgOrderValue?.percentChange}
         bgColor={colors.semantic.info}
       />
 
@@ -250,8 +275,14 @@ const MetricsTiles: React.FC<MetricsTilesProps> = ({ storeId }) => {
       {/* Active Deliveries */}
       <MetricCard
         title="Active Deliveries"
-        value={driverStatus?.activeDeliveries != null ? String(driverStatus.activeDeliveries) : '-'}
-        subtitle={driverStatus ? `${driverStatus.availableDrivers}/${driverStatus.totalDrivers} drivers available` : 'Loading...'}
+        value={driverError ? '—' : driverStatus?.activeDeliveries != null ? String(driverStatus.activeDeliveries) : '-'}
+        subtitle={
+          driverError
+            ? 'Driver status unavailable'
+            : driverStatus
+              ? `${driverStatus.availableDrivers}/${driverStatus.totalDrivers} drivers available`
+              : 'Loading...'
+        }
         icon={<LocalShippingIcon style={{ fontSize: '28px' }} />}
         bgColor={colors.brand.secondary}
       />

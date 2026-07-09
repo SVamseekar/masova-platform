@@ -1,4 +1,3 @@
-import { Box, Paper, Typography } from '@mui/material';
 import {
   PieChart,
   Pie,
@@ -8,53 +7,55 @@ import {
   Legend,
 } from 'recharts';
 import { useGetOrderTypeBreakdownQuery } from '../../store/api/analyticsApi';
-import { createCard } from '../../styles/neumorphic-utils';
-import { colors } from '../../styles/design-tokens';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import {formatMoney, formatMajorAmount} from '../../utils/currency';
+import { formatMajorAmount } from '../../utils/currency';
+import { normalizeOrderTypeBreakdown } from '../../utils/analyticsMetrics';
+import { t, cardStyle, sectionTitleStyle } from '../../pages/manager/manager-tokens';
+import { ManagerEmptyState, ManagerErrorState, ManagerLoadingBlock } from '../../pages/manager/components';
 
-const COLORS = [
-  colors.brand.primary,      // MaSoVa red for primary
-  colors.brand.secondary,    // Blue for secondary
-  colors.semantic.success,   // Green
-  colors.semantic.warning,   // Orange
-];
-
-const ORDER_TYPE_LABELS: Record<string, string> = {
-  DINE_IN: 'Dine-In',
-  PICKUP: 'Pickup',
-  DELIVERY: 'Delivery',
-};
+const COLORS = [t.orange, t.blue, t.green, t.yellow];
 
 interface RevenueBreakdownChartProps {
   storeId?: string;
 }
 
 export default function RevenueBreakdownChart({ storeId }: RevenueBreakdownChartProps) {
-  const { data, isLoading, error } = useGetOrderTypeBreakdownQuery(storeId);
+  const { data, isLoading, isError, refetch } = useGetOrderTypeBreakdownQuery(storeId);
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const formatCurrency = (value: number) => formatMajorAmount(value , currency, locale);
+  const formatCurrency = (value: number) => formatMajorAmount(value, currency, locale);
 
   if (isLoading) {
     return (
-      <Paper sx={{ ...createCard('md', 'lg'), height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Typography>Loading revenue breakdown...</Typography>
-      </Paper>
+      <div style={cardStyle} data-testid="revenue-breakdown-chart">
+        <ManagerLoadingBlock rows={3} label="Loading revenue breakdown…" />
+      </div>
     );
   }
 
-  if (error || !data) {
+  if (isError) {
     return (
-      <Paper sx={{ ...createCard('md', 'lg'), height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Typography color="error">Failed to load revenue breakdown</Typography>
-      </Paper>
+      <div style={cardStyle} data-testid="revenue-breakdown-chart">
+        <ManagerErrorState title="Failed to load revenue breakdown" onRetry={() => void refetch()} />
+      </div>
     );
   }
 
-  const chartData = data.breakdown.map((item) => ({
-    name: ORDER_TYPE_LABELS[item.orderType] || item.orderType,
+  const rows = normalizeOrderTypeBreakdown(data);
+  if (!data || rows.length === 0) {
+    return (
+      <div style={cardStyle} data-testid="revenue-breakdown-chart">
+        <ManagerEmptyState
+          title="No order-type revenue yet"
+          description="Breakdown appears after orders complete for this store."
+        />
+      </div>
+    );
+  }
+
+  const chartData = rows.map((item) => ({
+    name: item.label,
     value: item.sales,
     count: item.count,
     percentage: item.percentage,
@@ -63,20 +64,18 @@ export default function RevenueBreakdownChart({ storeId }: RevenueBreakdownChart
   type ChartDatum = (typeof chartData)[number];
 
   return (
-    <Paper sx={{ ...createCard('md', 'lg') }}>
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          Revenue by Order Type
-        </Typography>
-        <Typography variant="h4">
+    <div style={cardStyle} data-testid="revenue-breakdown-chart">
+      <div style={{ marginBottom: 12 }}>
+        <h3 style={sectionTitleStyle}>Revenue by order type</h3>
+        <div style={{ fontSize: 28, fontWeight: 700, color: t.black, marginTop: 8 }}>
           {formatCurrency(data.totalSales)}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
+        </div>
+        <p style={{ margin: '4px 0 0', fontSize: 12, color: t.gray }}>
           {data.totalOrders} orders today
-        </Typography>
-      </Box>
+        </p>
+      </div>
 
-      <ResponsiveContainer width="100%" height={300}>
+      <ResponsiveContainer width="100%" height={280}>
         <PieChart>
           <Pie
             data={chartData}
@@ -87,8 +86,7 @@ export default function RevenueBreakdownChart({ storeId }: RevenueBreakdownChart
               const datum = entry as unknown as ChartDatum;
               return `${datum.name}: ${datum.percentage.toFixed(1)}%`;
             }}
-            outerRadius={100}
-            fill="#8884d8"
+            outerRadius={90}
             dataKey="value"
           >
             {chartData.map((_entry, index) => (
@@ -97,34 +95,37 @@ export default function RevenueBreakdownChart({ storeId }: RevenueBreakdownChart
           </Pie>
           <Tooltip
             formatter={(value) => formatCurrency(typeof value === 'number' ? value : Number(value ?? 0))}
-            labelStyle={{ color: '#000' }}
+            contentStyle={{
+              borderRadius: t.radius.md,
+              border: `1px solid ${t.grayLight}`,
+              fontFamily: t.font,
+            }}
           />
           <Legend />
         </PieChart>
       </ResponsiveContainer>
 
-      <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-        {data.breakdown.map((item, index) => (
-          <Box key={item.orderType} sx={{ flex: 1, minWidth: 150 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-              <Box
-                sx={{
-                  width: 12,
-                  height: 12,
+      <div style={{ marginTop: 12, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        {rows.map((item, index) => (
+          <div key={item.orderType} style={{ flex: 1, minWidth: 140 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <span
+                style={{
+                  width: 10,
+                  height: 10,
                   borderRadius: '50%',
-                  bgcolor: COLORS[index % COLORS.length],
+                  background: COLORS[index % COLORS.length],
+                  display: 'inline-block',
                 }}
               />
-              <Typography variant="body2" fontWeight="bold">
-                {ORDER_TYPE_LABELS[item.orderType] || item.orderType}
-              </Typography>
-            </Box>
-            <Typography variant="body2" color="text.secondary">
-              {item.count} orders • {formatCurrency(item.averageOrderValue)} avg
-            </Typography>
-          </Box>
+              <span style={{ fontSize: 13, fontWeight: 600, color: t.black }}>{item.label}</span>
+            </div>
+            <p style={{ margin: 0, fontSize: 12, color: t.gray }}>
+              {item.count} orders · {formatCurrency(item.averageOrderValue)} avg
+            </p>
+          </div>
         ))}
-      </Box>
-    </Paper>
+      </div>
+    </div>
   );
 }

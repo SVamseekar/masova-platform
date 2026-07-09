@@ -34,17 +34,20 @@ const Reports: React.FC = () => {
   const fmt = (v: number) => formatMajorAmount(v , currency, locale);
   const [activeTab, setActiveTab] = useState<'sales' | 'staff' | 'inventory'>('sales');
 
-  // Fetch real data from APIs
-  const { data: todayData, isLoading: loadingToday } = useGetTodaySalesMetricsQuery(undefined);
-  const { data: weekData, isLoading: loadingWeek } = useGetSalesTrendsQuery({ period: 'WEEKLY' });
-  const { data: monthData, isLoading: loadingMonth } = useGetSalesTrendsQuery({ period: 'MONTHLY' });
-  const { data: topProducts, isLoading: loadingProducts } = useGetTopProductsQuery({
+  const storeId = user?.storeId;
+  // Fetch real data from APIs (store-scoped for DOM001 correctness)
+  const { data: todayData, isLoading: loadingToday, isError: errorToday } = useGetTodaySalesMetricsQuery(storeId, { skip: !storeId });
+  const { data: weekData, isLoading: loadingWeek, isError: errorWeek } = useGetSalesTrendsQuery({ period: 'WEEKLY', storeId }, { skip: !storeId });
+  const { data: monthData, isLoading: loadingMonth, isError: errorMonth } = useGetSalesTrendsQuery({ period: 'MONTHLY', storeId }, { skip: !storeId });
+  const { data: topProducts, isLoading: loadingProducts, isError: errorProducts } = useGetTopProductsQuery({
     period: 'TODAY',
-    sortBy: 'REVENUE'
-  });
-  const { data: staffData, isLoading: loadingStaff } = useGetStaffLeaderboardQuery({
-    period: 'TODAY'
-  });
+    sortBy: 'REVENUE',
+    storeId,
+  }, { skip: !storeId });
+  const { data: staffData, isLoading: loadingStaff, isError: errorStaff } = useGetStaffLeaderboardQuery({
+    period: 'TODAY',
+    storeId,
+  }, { skip: !storeId });
 
   // Check if user is manager
   if (user?.type !== 'MANAGER') {
@@ -246,13 +249,21 @@ const Reports: React.FC = () => {
                       color: colors.text.primary,
                       marginBottom: spacing[2]
                     }}>
-                      {fmt(todayData?.todaySales || 0)}
+                      {errorToday ? '—' : fmt(todayData?.todaySales || 0)}
                     </div>
                     <div style={{
                       fontSize: typography.fontSize.xs,
-                      color: todayData?.percentChangeFromYesterday && todayData.percentChangeFromYesterday >= 0 ? colors.semantic.success : colors.semantic.error
+                      color: errorToday
+                        ? colors.semantic.error
+                        : todayData?.percentChangeFromYesterday && todayData.percentChangeFromYesterday >= 0
+                          ? colors.semantic.success
+                          : colors.semantic.error
                     }}>
-                      {todayData?.percentChangeFromYesterday ? `${todayData.percentChangeFromYesterday >= 0 ? '+' : ''}${todayData.percentChangeFromYesterday.toFixed(1)}% vs yesterday` : '—'}
+                      {errorToday
+                        ? 'Sales API failed'
+                        : todayData?.percentChangeFromYesterday
+                          ? `${todayData.percentChangeFromYesterday >= 0 ? '+' : ''}${todayData.percentChangeFromYesterday.toFixed(1)}% vs yesterday`
+                          : '—'}
                     </div>
                   </Card>
 
@@ -270,13 +281,13 @@ const Reports: React.FC = () => {
                       color: colors.text.primary,
                       marginBottom: spacing[2]
                     }}>
-                      {fmt(weekData?.totalSales || 0)}
+                      {errorWeek ? '—' : fmt(weekData?.totalSales || 0)}
                     </div>
                     <div style={{
                       fontSize: typography.fontSize.xs,
                       color: colors.text.secondary
                     }}>
-                      {weekData?.totalOrders || 0} orders
+                      {errorWeek ? 'Trends API failed' : `${weekData?.totalOrders || 0} orders`}
                     </div>
                   </Card>
 
@@ -294,13 +305,13 @@ const Reports: React.FC = () => {
                       color: colors.text.primary,
                       marginBottom: spacing[2]
                     }}>
-                      {fmt(monthData?.totalSales || 0)}
+                      {errorMonth ? '—' : fmt(monthData?.totalSales || 0)}
                     </div>
                     <div style={{
                       fontSize: typography.fontSize.xs,
                       color: colors.text.secondary
                     }}>
-                      {monthData?.totalOrders || 0} orders
+                      {errorMonth ? 'Trends API failed' : `${monthData?.totalOrders || 0} orders`}
                     </div>
                   </Card>
                 </div>
@@ -325,7 +336,7 @@ const Reports: React.FC = () => {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => navigate('/manager/product-analytics')}
+                      onClick={() => navigate('/manager?section=analytics&tab=products')}
                     >
                       View Full Analytics →
                     </Button>
@@ -335,7 +346,15 @@ const Reports: React.FC = () => {
                     background: colors.surface.border,
                     marginBottom: spacing[4]
                   }} />
-                  {topProducts && topProducts.topProducts.length > 0 ? (
+                  {errorProducts ? (
+                    <div style={{
+                      padding: spacing[6],
+                      textAlign: 'center',
+                      color: colors.semantic.error,
+                    }}>
+                      Failed to load top products.
+                    </div>
+                  ) : topProducts && topProducts.topProducts.length > 0 ? (
                     <div style={{
                       display: 'grid',
                       gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
@@ -395,7 +414,7 @@ const Reports: React.FC = () => {
                 <Button
                   variant="primary"
                   size="lg"
-                  onClick={() => navigate('/manager/advanced-reports')}
+                  onClick={() => navigate('/manager?section=analytics&tab=reports')}
                   style={{ width: '100%' }}
                 >
                   <TrendingUpIcon style={{ fontSize: '16px', marginRight: '6px', verticalAlign: 'middle' }} />
@@ -425,7 +444,7 @@ const Reports: React.FC = () => {
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => navigate('/manager/staff-leaderboard')}
+                    onClick={() => navigate('/manager?section=people&tab=leaderboard')}
                   >
                     View Full Leaderboard →
                   </Button>
@@ -435,7 +454,15 @@ const Reports: React.FC = () => {
                   background: colors.surface.border,
                   marginBottom: spacing[4]
                 }} />
-                {staffData && staffData.rankings.length > 0 ? (
+                {errorStaff ? (
+                  <div style={{
+                    padding: spacing[6],
+                    textAlign: 'center',
+                    color: colors.semantic.error,
+                  }}>
+                    Failed to load staff leaderboard.
+                  </div>
+                ) : staffData && staffData.rankings.length > 0 ? (
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
