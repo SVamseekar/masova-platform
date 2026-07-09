@@ -4,6 +4,14 @@ import { GoogleLogin } from '@react-oauth/google';
 import { useRegisterMutation, useGoogleRegisterMutation } from '../../store/api/authApi';
 import { getApiErrorMessage } from '../utils/apiError';
 import { useCreateCustomerMutation } from '../../store/api/customerApi';
+import { useAppSelector } from '../../store/hooks';
+import { selectStoreCountryCode } from '../../store/slices/cartSlice';
+import {
+  isValidCustomerPhone,
+  phonePlaceholder,
+  phoneErrorMessage,
+  normalizePhoneForApi,
+} from '../../utils/customerFormValidation';
 
 interface RegisterFormData {
   firstName: string;
@@ -42,6 +50,9 @@ const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from || '/checkout';
+  const storeCountryCode = useAppSelector(selectStoreCountryCode);
+  // Berlin demo: prefer DE copy when cart country not yet set
+  const formCountry = storeCountryCode ?? 'DE';
   const [register, { isLoading }] = useRegisterMutation();
   const [googleRegister, { isLoading: isGoogleLoading }] = useGoogleRegisterMutation();
   const [createCustomer] = useCreateCustomerMutation();
@@ -78,7 +89,9 @@ const RegisterPage: React.FC = () => {
     if (!formData.email.trim()) errors.email = 'Required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errors.email = 'Invalid email';
     if (!formData.phone.trim()) errors.phone = 'Required';
-    else if (!/^[6-9][0-9]{9}$/.test(formData.phone.replace(/\s/g, ''))) errors.phone = 'Valid 10-digit Indian number required';
+    else if (!isValidCustomerPhone(formData.phone)) {
+      errors.phone = phoneErrorMessage(formCountry);
+    }
     if (!formData.password) errors.password = 'Required';
     else if (formData.password.length < 6) errors.password = 'At least 6 characters';
     if (formData.password !== formData.confirmPassword) errors.confirmPassword = 'Passwords do not match';
@@ -91,7 +104,7 @@ const RegisterPage: React.FC = () => {
     setError('');
     if (!validateForm()) return;
     try {
-      const cleanPhone = formData.phone.replace(/\D/g, '');
+      const cleanPhone = normalizePhoneForApi(formData.phone);
       const result = await register({
         name: `${formData.firstName} ${formData.lastName}`.trim(),
         email: formData.email,
@@ -177,7 +190,7 @@ const RegisterPage: React.FC = () => {
             </div>
 
             <Field label="Email Address" name="email" type="email" placeholder="john@example.com" error={validationErrors.email} />
-            <Field label="Phone Number" name="phone" type="tel" placeholder="9876543210" error={validationErrors.phone} />
+            <Field label="Phone Number" name="phone" type="tel" placeholder={phonePlaceholder(formCountry)} error={validationErrors.phone} />
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <Field label="Password" name="password" type="password" placeholder="Min 6 characters" error={validationErrors.password} />
@@ -193,7 +206,7 @@ const RegisterPage: React.FC = () => {
               disabled={isLoading}
               style={{
                 background: isLoading ? 'var(--surface-2)' : 'var(--red)',
-                color: '#fff',
+                color: 'var(--text-1)',
                 border: 'none',
                 borderRadius: 'var(--radius-pill)',
                 padding: '13px',

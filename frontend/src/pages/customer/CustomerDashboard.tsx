@@ -1,10 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '../../components/ui/neumorphic';
 import AppHeader from '../../components/common/AppHeader';
-import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
-import { colors, spacing, typography } from '../../styles/design-tokens';
-import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
@@ -13,8 +9,8 @@ import { useGetCustomerByUserIdQuery } from '../../store/api/customerApi';
 import { useGetCustomerOrdersQuery } from '../../store/api/orderApi';
 
 /**
- * CustomerDashboard - Main dashboard for authenticated customers
- * Shows order history, profile, and quick access to menu
+ * CustomerDashboard — authenticated customer home (dark-premium tokens only).
+ * States: loading · error · empty (no orders) · data.
  */
 const CustomerDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -22,253 +18,415 @@ const CustomerDashboard: React.FC = () => {
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
 
-  // Fetch customer data
-  const { data: customer, isLoading: _customerLoading } = useGetCustomerByUserIdQuery(currentUser?.id || '', {
+  const {
+    data: customer,
+    isLoading: customerLoading,
+    isError: customerError,
+    refetch: refetchCustomer,
+  } = useGetCustomerByUserIdQuery(currentUser?.id || '', {
     skip: !currentUser?.id,
   });
 
-  // Fetch recent orders
-  const { data: orders = [], isLoading: _ordersLoading } = useGetCustomerOrdersQuery(customer?.id || '', {
+  const {
+    data: orders = [],
+    isLoading: ordersLoading,
+    isError: ordersError,
+    refetch: refetchOrders,
+  } = useGetCustomerOrdersQuery(customer?.id || '', {
     skip: !customer?.id,
   });
 
-  // Styles
-  const containerStyles: React.CSSProperties = {
-    position: 'relative',
-    minHeight: '100vh',
-    fontFamily: typography.fontFamily.primary,
-    padding: spacing[6],
-    zIndex: 1,
-  };
-
-  const contentStyles: React.CSSProperties = {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    marginTop: spacing[8],
-  };
-
-  const welcomeCardStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('raised', 'lg', '2xl'),
-    padding: spacing[8],
-    textAlign: 'center',
-    marginBottom: spacing[8],
-  };
-
-  const titleStyles: React.CSSProperties = {
-    fontSize: typography.fontSize['4xl'],
-    fontWeight: typography.fontWeight.extrabold,
-    color: colors.text.primary,
-    marginBottom: spacing[4],
-  };
-
-  const descriptionStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.xl,
-    color: colors.text.secondary,
-    marginBottom: spacing[6],
-  };
-
-  const quickActionsStyles: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: spacing[6],
-    marginTop: spacing[8],
-  };
-
-  const actionCardStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('raised', 'md', 'xl'),
-    padding: spacing[6],
-    textAlign: 'center',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-  };
-
-  const actionIconStyles: React.CSSProperties = {
-    fontSize: '64px',
-    marginBottom: spacing[4],
-  };
-
-  const actionTitleStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-    marginBottom: spacing[2],
-  };
-
-  const actionDescriptionStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.base,
-    color: colors.text.secondary,
-  };
-
-  // Get recent orders (last 3)
+  const isLoading = customerLoading || (!!customer?.id && ordersLoading);
   const recentOrders = orders.slice(0, 3);
-  const activeOrder = orders.find(order =>
-    !['DELIVERED', 'CANCELLED'].includes(order.status)
+  const activeOrder = orders.find(
+    (order) => !['DELIVERED', 'CANCELLED', 'COMPLETED'].includes(order.status)
   );
-
-  const quickActions = [
-    {
-      icon: '📦',
-      title: 'Order History',
-      description: `View your ${orders.length} orders`,
-      action: () => navigate('/customer/orders'),
-    },
-    {
-      icon: '👤',
-      title: 'Profile',
-      description: 'Manage your account details',
-      action: () => navigate('/customer/profile'),
-    },
-    {
-      icon: '🎁',
-      title: 'Promotions',
-      description: 'Check out current offers',
-      action: () => navigate('/promotions'),
-    },
-  ];
 
   const handleCartClick = () => {
     navigate('/menu');
   };
 
-  const orderCardStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('raised', 'md', 'xl'),
-    padding: spacing[4],
-    marginBottom: spacing[4],
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-  };
+  const shell = (children: React.ReactNode) => (
+    <div
+      style={{
+        minHeight: '100vh',
+        background: 'var(--bg)',
+        fontFamily: 'var(--font-body)',
+        color: 'var(--text-1)',
+      }}
+    >
+      <AppHeader showPublicNav onCartClick={handleCartClick} />
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px 64px' }}>{children}</div>
+    </div>
+  );
 
-  return (
-    <>
-      <AnimatedBackground variant="default" />
+  if (!currentUser?.id) {
+    return shell(
+      <StateCard
+        icon="🔐"
+        title="Sign in required"
+        subtitle="Log in to see your dashboard, orders, and loyalty."
+        actionLabel="Customer Login"
+        onAction={() => navigate('/customer-login')}
+      />
+    );
+  }
 
-      <div style={containerStyles}>
-        <AppHeader
-          showPublicNav={true}
-          onCartClick={handleCartClick}
+  if (isLoading) {
+    return shell(
+      <div style={{ textAlign: 'center', padding: '100px 0', color: 'var(--text-3)' }}>
+        <div
+          style={{
+            width: 44,
+            height: 44,
+            border: '3px solid var(--border)',
+            borderTopColor: 'var(--gold)',
+            borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite',
+            margin: '0 auto 16px',
+          }}
         />
+        Loading your dashboard…
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
-        <div style={contentStyles}>
-          {/* Welcome Section */}
-          <div style={welcomeCardStyles}>
-            <div style={{ fontSize: '80px', marginBottom: spacing[4] }}>👋</div>
-            <h1 style={titleStyles}>Welcome Back{customer?.name ? `, ${customer.name}` : ''}!</h1>
-            <p style={descriptionStyles}>
-              {customer?.loyaltyInfo ? `You have ${customer.loyaltyInfo.totalPoints} loyalty points` : 'What would you like to do today?'}
-            </p>
-            <Button
-              variant="primary"
-              size="xl"
-              onClick={() => navigate('/menu')}
+  if (customerError) {
+    return shell(
+      <StateCard
+        icon="⚠️"
+        title="Couldn’t load profile"
+        subtitle="We couldn’t reach your customer profile. Check your connection and try again."
+        actionLabel="Retry"
+        onAction={() => refetchCustomer()}
+      />
+    );
+  }
+
+  const quickActions = [
+    {
+      icon: '📦',
+      title: 'Order History',
+      description:
+        orders.length === 0
+          ? 'No orders yet — start with the menu'
+          : `View your ${orders.length} order${orders.length === 1 ? '' : 's'}`,
+      action: () => navigate('/customer/orders'),
+    },
+    {
+      icon: '👤',
+      title: 'Profile',
+      description: 'Addresses, preferences & notifications',
+      action: () => navigate('/customer/profile'),
+    },
+    {
+      icon: '🎁',
+      title: 'Promotions',
+      description: 'Current offers at your store',
+      action: () => navigate('/promotions'),
+    },
+  ];
+
+  return shell(
+    <>
+      {/* Welcome */}
+      <div
+        style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-card)',
+          boxShadow: 'var(--shadow-card)',
+          padding: '36px 32px',
+          textAlign: 'center',
+          marginBottom: 32,
+        }}
+      >
+        <div style={{ fontSize: 48, marginBottom: 12 }}>👋</div>
+        <h1
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '2rem',
+            fontWeight: 800,
+            color: 'var(--text-1)',
+            margin: '0 0 10px',
+          }}
+        >
+          Welcome back{customer?.name ? `, ${customer.name}` : ''}!
+        </h1>
+        <p style={{ color: 'var(--text-2)', fontSize: '1rem', margin: '0 0 24px' }}>
+          {customer?.loyaltyInfo
+            ? `You have ${customer.loyaltyInfo.totalPoints} loyalty points`
+            : 'What would you like to order today?'}
+        </p>
+        <button
+          type="button"
+          onClick={() => navigate('/menu')}
+          style={{
+            background: 'var(--red)',
+            color: 'var(--text-1)',
+            border: 'none',
+            borderRadius: 'var(--radius-pill)',
+            padding: '12px 28px',
+            fontFamily: 'var(--font-body)',
+            fontWeight: 700,
+            fontSize: '0.95rem',
+            cursor: 'pointer',
+          }}
+        >
+          Order Now
+        </button>
+      </div>
+
+      {/* Active order */}
+      {activeOrder && (
+        <section style={{ marginBottom: 32 }}>
+          <h2
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '1.35rem',
+              fontWeight: 700,
+              color: 'var(--text-1)',
+              margin: '0 0 14px',
+            }}
+          >
+            Active Order
+          </h2>
+          <OrderRow
+            orderNumber={activeOrder.orderNumber}
+            createdAt={activeOrder.createdAt}
+            status={activeOrder.status}
+            itemCount={activeOrder.items.length}
+            totalLabel={formatOrderAmount(activeOrder.total, activeOrder, currency, locale)}
+            onClick={() => navigate(`/tracking/${activeOrder.id}`)}
+            highlight
+          />
+        </section>
+      )}
+
+      {/* Recent orders */}
+      <section style={{ marginBottom: 32 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
+          <h2
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '1.35rem',
+              fontWeight: 700,
+              color: 'var(--text-1)',
+              margin: 0,
+            }}
+          >
+            Recent Orders
+          </h2>
+          {orders.length > 0 && (
+            <button
+              type="button"
+              onClick={() => navigate('/customer/orders')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--gold)',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                textDecoration: 'underline',
+              }}
             >
-              Order Now
-            </Button>
-          </div>
-
-          {/* Active Order Tracking */}
-          {activeOrder && (
-            <div style={{ marginBottom: spacing[8] }}>
-              <h2 style={{ ...titleStyles, fontSize: typography.fontSize['2xl'], marginBottom: spacing[4] }}>
-                Active Order
-              </h2>
-              <div
-                style={orderCardStyles}
-                onClick={() => navigate(`/tracking/${activeOrder.id}`)}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-4px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[3] }}>
-                  <div>
-                    <div style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, color: colors.text.primary }}>
-                      Order #{activeOrder.orderNumber}
-                    </div>
-                    <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
-                      {new Date(activeOrder.createdAt).toLocaleString()}
-                    </div>
-                  </div>
-                  <div style={{
-                    padding: `${spacing[2]} ${spacing[4]}`,
-                    borderRadius: '20px',
-                    backgroundColor: colors.brand.primaryLight,
-                    color: colors.text.inverse,
-                    fontSize: typography.fontSize.sm,
-                    fontWeight: typography.fontWeight.semibold
-                  }}>
-                    {activeOrder.status}
-                  </div>
-                </div>
-                <div style={{ fontSize: typography.fontSize.base, color: colors.text.secondary }}>
-                  {activeOrder.items.length} items • {formatOrderAmount(activeOrder.total, activeOrder, currency, locale)}
-                </div>
-                <div style={{ marginTop: spacing[2], color: colors.brand.primary, fontWeight: typography.fontWeight.semibold }}>
-                  Track Order →
-                </div>
-              </div>
-            </div>
+              View all
+            </button>
           )}
-
-          {/* Recent Orders */}
-          {recentOrders.length > 0 && (
-            <div style={{ marginBottom: spacing[8] }}>
-              <h2 style={{ ...titleStyles, fontSize: typography.fontSize['2xl'], marginBottom: spacing[4] }}>
-                Recent Orders
-              </h2>
-              {recentOrders.map((order) => (
-                <div
-                  key={order.id}
-                  style={orderCardStyles}
-                  onClick={() => navigate(`/tracking/${order.id}`)}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-4px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[2] }}>
-                    <div style={{ fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.semibold, color: colors.text.primary }}>
-                      Order #{order.orderNumber}
-                    </div>
-                    <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
-                      {formatOrderAmount(order.total, order, currency, locale)}
-                    </div>
-                  </div>
-                  <div style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
-                    {new Date(order.createdAt).toLocaleString()} • {order.status}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Quick Actions */}
-          <div style={quickActionsStyles}>
-            {quickActions.map((action, index) => (
-              <div
-                key={index}
-                style={actionCardStyles}
-                onClick={action.action}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-8px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                <div style={actionIconStyles}>{action.icon}</div>
-                <div style={actionTitleStyles}>{action.title}</div>
-                <div style={actionDescriptionStyles}>{action.description}</div>
-              </div>
-            ))}
-          </div>
         </div>
+
+        {ordersError ? (
+          <StateCard
+            icon="⚠️"
+            title="Couldn’t load orders"
+            subtitle="Your profile loaded, but order history failed. Try again."
+            actionLabel="Retry"
+            onAction={() => refetchOrders()}
+            compact
+          />
+        ) : recentOrders.length === 0 ? (
+          <StateCard
+            icon="📦"
+            title="No orders yet"
+            subtitle="Browse the menu and place your first order — it’ll show up here."
+            actionLabel="Browse Menu"
+            onAction={() => navigate('/menu')}
+            compact
+          />
+        ) : (
+          recentOrders.map((order) => (
+            <OrderRow
+              key={order.id}
+              orderNumber={order.orderNumber}
+              createdAt={order.createdAt}
+              status={order.status}
+              itemCount={order.items.length}
+              totalLabel={formatOrderAmount(order.total, order, currency, locale)}
+              onClick={() => navigate(`/tracking/${order.id}`)}
+            />
+          ))
+        )}
+      </section>
+
+      {/* Quick actions */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: 16,
+        }}
+      >
+        {quickActions.map((action) => (
+          <button
+            key={action.title}
+            type="button"
+            onClick={action.action}
+            style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-card)',
+              padding: '24px 20px',
+              textAlign: 'center',
+              cursor: 'pointer',
+              color: 'inherit',
+              fontFamily: 'var(--font-body)',
+              transition: 'var(--transition)',
+            }}
+          >
+            <div style={{ fontSize: 36, marginBottom: 10 }}>{action.icon}</div>
+            <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-1)', marginBottom: 6 }}>
+              {action.title}
+            </div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-3)' }}>{action.description}</div>
+          </button>
+        ))}
       </div>
     </>
   );
 };
+
+function OrderRow({
+  orderNumber,
+  createdAt,
+  status,
+  itemCount,
+  totalLabel,
+  onClick,
+  highlight,
+}: {
+  orderNumber: string;
+  createdAt: string;
+  status: string;
+  itemCount: number;
+  totalLabel: string;
+  onClick: () => void;
+  highlight?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        display: 'block',
+        width: '100%',
+        textAlign: 'left',
+        background: highlight ? 'rgba(212,168,67,0.06)' : 'var(--surface)',
+        border: `1px solid ${highlight ? 'var(--gold)' : 'var(--border)'}`,
+        borderRadius: 14,
+        padding: '16px 18px',
+        marginBottom: 10,
+        cursor: 'pointer',
+        color: 'inherit',
+        fontFamily: 'var(--font-body)',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+        <div style={{ fontWeight: 700, color: 'var(--text-1)' }}>Order #{orderNumber}</div>
+        <span
+          style={{
+            fontSize: '0.72rem',
+            fontWeight: 700,
+            padding: '4px 10px',
+            borderRadius: 'var(--radius-pill)',
+            background: 'rgba(212,168,67,0.12)',
+            color: 'var(--gold)',
+            border: '1px solid var(--border)',
+          }}
+        >
+          {status}
+        </span>
+      </div>
+      <div style={{ fontSize: '0.85rem', color: 'var(--text-3)' }}>
+        {new Date(createdAt).toLocaleString()} · {itemCount} item{itemCount === 1 ? '' : 's'} · {totalLabel}
+      </div>
+      {highlight && (
+        <div style={{ marginTop: 8, color: 'var(--gold)', fontWeight: 600, fontSize: '0.85rem' }}>
+          Track order →
+        </div>
+      )}
+    </button>
+  );
+}
+
+function StateCard({
+  icon,
+  title,
+  subtitle,
+  actionLabel,
+  onAction,
+  compact,
+}: {
+  icon: string;
+  title: string;
+  subtitle: string;
+  actionLabel: string;
+  onAction: () => void;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        textAlign: 'center',
+        padding: compact ? '40px 24px' : '64px 28px',
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-card)',
+      }}
+    >
+      <div style={{ fontSize: compact ? '2.5rem' : '3rem', marginBottom: 12, opacity: 0.7 }}>{icon}</div>
+      <h3
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: '1.25rem',
+          fontWeight: 700,
+          color: 'var(--text-1)',
+          margin: '0 0 8px',
+        }}
+      >
+        {title}
+      </h3>
+      <p style={{ color: 'var(--text-3)', fontSize: '0.9rem', margin: '0 0 20px' }}>{subtitle}</p>
+      <button
+        type="button"
+        onClick={onAction}
+        style={{
+          background: 'var(--red)',
+          color: 'var(--text-1)',
+          border: 'none',
+          borderRadius: 'var(--radius-pill)',
+          padding: '10px 22px',
+          fontFamily: 'var(--font-body)',
+          fontWeight: 700,
+          fontSize: '0.875rem',
+          cursor: 'pointer',
+        }}
+      >
+        {actionLabel}
+      </button>
+    </div>
+  );
+}
 
 export default CustomerDashboard;

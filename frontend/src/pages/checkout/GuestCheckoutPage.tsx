@@ -25,6 +25,17 @@ import {
   useSetDefaultAddressMutation,
   CustomerAddress,
 } from '../../store/api/customerApi';
+import {
+  isValidCustomerPhone,
+  isValidCustomerPostal,
+  phonePlaceholder,
+  postalPlaceholder,
+  postalFieldLabel,
+  phoneErrorMessage,
+  postalErrorMessage,
+  defaultAddressCountry,
+  extractPostalFromAddressParts,
+} from '../../utils/customerFormValidation';
 
 interface GuestFormData {
   firstName: string;
@@ -84,6 +95,8 @@ const GuestCheckoutPage: React.FC = () => {
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
   const storeCountryCode = useAppSelector(selectStoreCountryCode);
+  // Berlin demo / EU: prefer DE form copy when cart country not yet set (same as PaymentPage)
+  const formCountry = storeCountryCode ?? 'DE';
   const currentUser = useAppSelector(selectCurrentUser);
   const selectedStoreId = useAppSelector(selectSelectedStoreId);
   const selectedStoreName = useAppSelector(selectSelectedStoreName);
@@ -235,7 +248,9 @@ const GuestCheckoutPage: React.FC = () => {
     const errors: Partial<GuestFormData> = {};
     if (isCustomer) {
       if (!formData.phone.trim()) errors.phone = 'Phone number is required';
-      else if (!/^[6-9][0-9]{9}$/.test(formData.phone.replace(/\s/g, ''))) errors.phone = 'Enter valid 10-digit Indian mobile number';
+      else if (!isValidCustomerPhone(formData.phone)) {
+        errors.phone = phoneErrorMessage(formCountry);
+      }
     }
     if (isCustomer && selectedAddressId !== 'new') {
       setValidationErrors(errors);
@@ -246,12 +261,16 @@ const GuestCheckoutPage: React.FC = () => {
     if (!formData.email.trim()) errors.email = 'Email is required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errors.email = 'Invalid email format';
     if (!formData.phone.trim()) errors.phone = 'Phone number is required';
-    else if (!/^[6-9][0-9]{9}$/.test(formData.phone.replace(/\s/g, ''))) errors.phone = 'Enter valid 10-digit Indian mobile number';
+    else if (!isValidCustomerPhone(formData.phone)) {
+      errors.phone = phoneErrorMessage(formCountry);
+    }
     if (!formData.addressLine1.trim()) errors.addressLine1 = 'Address is required';
     if (!formData.city.trim()) errors.city = 'City is required';
-    if (!formData.state.trim()) errors.state = 'State is required';
-    if (!formData.zipCode.trim()) errors.zipCode = 'ZIP code is required';
-    else if (!/^[0-9]{6}$/.test(formData.zipCode)) errors.zipCode = 'ZIP code must be 6 digits';
+    if (!formData.state.trim()) errors.state = 'State / region is required';
+    if (!formData.zipCode.trim()) errors.zipCode = 'Postal code is required';
+    else if (!isValidCustomerPostal(formData.zipCode)) {
+      errors.zipCode = postalErrorMessage(formCountry);
+    }
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -299,7 +318,7 @@ const GuestCheckoutPage: React.FC = () => {
                 city: formData.city,
                 state: formData.state,
                 postalCode: formData.zipCode,
-                country: 'India',
+                country: defaultAddressCountry(formCountry),
                 isDefault: !customerData.addresses || customerData.addresses.length === 0,
               },
             }).unwrap();
@@ -392,9 +411,9 @@ const GuestCheckoutPage: React.FC = () => {
                     label="Phone Number"
                     name="phone"
                     type="tel"
-                    placeholder="10-digit mobile number"
+                    placeholder={phonePlaceholder(formCountry)}
                     error={validationErrors.phone}
-                    helperText={!validationErrors.phone ? 'For delivery updates' : undefined}
+                    helperText={!validationErrors.phone ? 'For delivery updates (include country code if abroad)' : undefined}
                   />
                 </div>
               )}
@@ -422,7 +441,7 @@ const GuestCheckoutPage: React.FC = () => {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                               <span style={{
                                 background: 'var(--gold)',
-                                color: '#000',
+                                color: 'var(--bg)',
                                 fontSize: '0.65rem',
                                 fontWeight: 700,
                                 padding: '2px 8px',
@@ -465,7 +484,7 @@ const GuestCheckoutPage: React.FC = () => {
                             background: selectedAddressId === addr.id ? 'var(--gold)' : 'transparent',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                           }}>
-                            {selectedAddressId === addr.id && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#000' }} />}
+                            {selectedAddressId === addr.id && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--bg)' }} />}
                           </div>
                         </div>
                       </div>
@@ -506,7 +525,14 @@ const GuestCheckoutPage: React.FC = () => {
                       <Field label="Last Name" name="lastName" error={validationErrors.lastName} />
                     </div>
                     <Field label="Email Address" name="email" type="email" placeholder="For order confirmation" error={validationErrors.email} />
-                    <Field label="Phone Number" name="phone" type="tel" placeholder="10-digit mobile number" error={validationErrors.phone} helperText={!validationErrors.phone ? 'For delivery updates' : undefined} />
+                    <Field
+                      label="Phone Number"
+                      name="phone"
+                      type="tel"
+                      placeholder={phonePlaceholder(formCountry)}
+                      error={validationErrors.phone}
+                      helperText={!validationErrors.phone ? 'For delivery updates (include country code if abroad)' : undefined}
+                    />
                   </div>
                 </div>
               )}
@@ -541,15 +567,16 @@ const GuestCheckoutPage: React.FC = () => {
                         initialValue={formData.addressLine1}
                         disabled={loading}
                         onSelect={(address, _lat, _lon) => {
-                          // Parse the Google Places result into form fields
+                          // Parse the Google Places result into form fields (DE PLZ is 5 digits; India PIN is 6)
                           const parts = address.split(',').map(s => s.trim());
+                          const postal = extractPostalFromAddressParts(parts);
                           setFormData(prev => ({
                             ...prev,
                             addressLine1: parts[0] || address,
                             addressLine2: parts[1] || prev.addressLine2,
                             city: parts[parts.length - 3] || prev.city,
                             state: parts[parts.length - 2]?.replace(/\d+/g, '').trim() || prev.state,
-                            zipCode: (parts[parts.length - 2]?.match(/\d{6}/) || parts[parts.length - 1]?.match(/\d{6}/) || [''])[0] || prev.zipCode,
+                            zipCode: postal || prev.zipCode,
                           }));
                           setValidationErrors(prev => ({ ...prev, addressLine1: '' }));
                         }}
@@ -561,9 +588,14 @@ const GuestCheckoutPage: React.FC = () => {
                     <Field label="Address Line 2 (Optional)" name="addressLine2" placeholder="Street, Area, Landmark" />
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                       <Field label="City" name="city" error={validationErrors.city} />
-                      <Field label="State" name="state" error={validationErrors.state} />
+                      <Field label="State / Region" name="state" error={validationErrors.state} />
                     </div>
-                    <Field label="ZIP / PIN Code" name="zipCode" placeholder="6-digit PIN code" error={validationErrors.zipCode} />
+                    <Field
+                      label={postalFieldLabel(formCountry)}
+                      name="zipCode"
+                      placeholder={postalPlaceholder(formCountry)}
+                      error={validationErrors.zipCode}
+                    />
 
                     {/* Save address checkbox — logged-in customers */}
                     {isCustomer && (
@@ -607,7 +639,7 @@ const GuestCheckoutPage: React.FC = () => {
                 style={{
                   width: '100%',
                   background: loading ? 'var(--surface-2)' : 'var(--red)',
-                  color: '#fff',
+                  color: 'var(--text-1)',
                   border: 'none',
                   borderRadius: 'var(--radius-pill)',
                   padding: '14px',
@@ -736,7 +768,7 @@ const GuestCheckoutPage: React.FC = () => {
               <button
                 onClick={() => handleDeleteAddress(addressToDelete)}
                 disabled={deletingAddress}
-                style={{ background: 'var(--red)', border: 'none', color: '#fff', borderRadius: 'var(--radius-pill)', padding: '9px 20px', fontSize: '0.875rem', fontWeight: 700, cursor: deletingAddress ? 'not-allowed' : 'pointer' }}
+                style={{ background: 'var(--red)', border: 'none', color: 'var(--text-1)', borderRadius: 'var(--radius-pill)', padding: '9px 20px', fontSize: '0.875rem', fontWeight: 700, cursor: deletingAddress ? 'not-allowed' : 'pointer' }}
               >
                 {deletingAddress ? 'Deleting...' : 'Delete'}
               </button>

@@ -606,7 +606,9 @@ const PaymentPage: React.FC = () => {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                   <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
-                You will be redirected to Razorpay's secure payment gateway to complete your payment.
+                {showUpi
+                  ? "You'll complete payment on Razorpay's secure gateway."
+                  : "You'll complete card payment on Stripe's secure checkout."}
               </div>
             )}
           </div>
