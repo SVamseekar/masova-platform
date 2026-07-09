@@ -201,7 +201,7 @@ const InventoryDashboardPage: React.FC = () => {
     fontFamily: typography.fontFamily.primary,
     padding: spacing[6],
     paddingTop: '80px',
-    backgroundColor: '#e8e8e8',
+    backgroundColor: colors.surface.secondary,
     zIndex: 1,
   };
 

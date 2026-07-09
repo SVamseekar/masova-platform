@@ -451,7 +451,7 @@ const POSDashboard: React.FC = () => {
                 width: '8px',
                 height: '8px',
                 borderRadius: '50%',
-                backgroundColor: '#10b981',
+                backgroundColor: colors.semantic.success,
                 animation: 'pulse 2s infinite'
               }} />
               <div style={{
@@ -461,7 +461,7 @@ const POSDashboard: React.FC = () => {
               }}>
                 <div style={{
                   fontSize: typography.fontSize.xs,
-                  color: '#666',
+                  color: colors.text.secondary,
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px'
                 }}>
@@ -469,7 +469,7 @@ const POSDashboard: React.FC = () => {
                 </div>
                 <div style={{
                   fontSize: typography.fontSize.sm,
-                  color: '#10b981',
+                  color: colors.semantic.success,
                   fontWeight: typography.fontWeight.bold
                 }}>
                   {orderUser.name}
@@ -489,7 +489,7 @@ const POSDashboard: React.FC = () => {
             }}>
               <div style={{
                 fontSize: typography.fontSize.xs,
-                color: '#666',
+                color: colors.text.secondary,
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px'
               }}>
@@ -710,7 +710,7 @@ const POSDashboard: React.FC = () => {
             }}>
               <div style={{
                 fontSize: typography.fontSize.xs,
-                color: '#666',
+                color: colors.text.secondary,
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
                 marginBottom: spacing[2]
@@ -749,7 +749,7 @@ const POSDashboard: React.FC = () => {
             }}>
               <div style={{
                 fontSize: typography.fontSize.xs,
-                color: '#666',
+                color: colors.text.secondary,
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
                 marginBottom: spacing[2]
@@ -766,7 +766,7 @@ const POSDashboard: React.FC = () => {
               </div>
               <div style={{
                 fontSize: typography.fontSize.xs,
-                color: '#666'
+                color: colors.text.secondary
               }}>
                 {weekData?.totalOrders || 0} orders
               </div>
@@ -783,7 +783,7 @@ const POSDashboard: React.FC = () => {
             }}>
               <div style={{
                 fontSize: typography.fontSize.xs,
-                color: '#666',
+                color: colors.text.secondary,
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
                 marginBottom: spacing[2]
@@ -800,7 +800,7 @@ const POSDashboard: React.FC = () => {
               </div>
               <div style={{
                 fontSize: typography.fontSize.xs,
-                color: '#666'
+                color: colors.text.secondary
               }}>
                 {monthData?.totalOrders || 0} orders
               </div>
@@ -817,7 +817,7 @@ const POSDashboard: React.FC = () => {
             }}>
               <div style={{
                 fontSize: typography.fontSize.xs,
-                color: '#666',
+                color: colors.text.secondary,
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
                 marginBottom: spacing[2]
@@ -834,7 +834,7 @@ const POSDashboard: React.FC = () => {
               </div>
               <div style={{
                 fontSize: typography.fontSize.xs,
-                color: '#666'
+                color: colors.text.secondary
               }}>
                 {fmt(totalSales)} total
               </div>
@@ -936,7 +936,7 @@ const POSDashboard: React.FC = () => {
                           </div>
                           <div style={{
                             fontSize: typography.fontSize.xs,
-                            color: '#666'
+                            color: colors.text.secondary
                           }}>
                             {item.quantitySold} sold
                           </div>
@@ -1006,7 +1006,7 @@ const POSDashboard: React.FC = () => {
                         </div>
                         <div style={{
                           fontSize: typography.fontSize.xs,
-                          color: '#666'
+                          color: colors.text.secondary
                         }}>
                           {new Date(order.createdAt).toLocaleTimeString('en-IN', {
                             hour: '2-digit',
@@ -1065,17 +1065,17 @@ const POSDashboard: React.FC = () => {
                               borderRadius: '6px',
                               fontSize: '10px',
                               fontWeight: 600,
-                              backgroundColor: '#10b981',
+                              backgroundColor: colors.semantic.success,
                               color: 'white',
                               border: 'none',
                               cursor: 'pointer',
                               transition: 'all 0.2s',
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#059669';
+                              e.currentTarget.style.backgroundColor = colors.semantic.successDark;
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = '#10b981';
+                              e.currentTarget.style.backgroundColor = colors.semantic.success;
                             }}
                           >
                             <AttachMoneyIcon style={{ fontSize: '14px', marginRight: '4px', verticalAlign: 'middle' }} />
@@ -1175,7 +1175,7 @@ const POSDashboard: React.FC = () => {
                         </div>
                         <div style={{
                           fontSize: typography.fontSize.xs,
-                          color: '#666'
+                          color: colors.text.secondary
                         }}>
                           {staff.ordersProcessed} orders
                         </div>

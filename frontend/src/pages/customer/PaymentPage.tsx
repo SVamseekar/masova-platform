@@ -20,7 +20,6 @@ import {
 import {formatMoney, formatMajorAmount} from '../../utils/currency';
 import { computePreCheckoutTotals, formatTaxDisplay } from '../../utils/orderTax';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { colors } from '../../styles/design-tokens';
 import { loadStripe, type StripeElementLocale } from '@stripe/stripe-js';
 import {
   Elements,
@@ -28,6 +27,11 @@ import {
   useStripe,
   useElements,
 } from '@stripe/react-stripe-js';
+import {
+  isUpiAvailable,
+  resolvePreferredPaymentMethod,
+  type PaymentMethodCode,
+} from '../../utils/paymentMethods';
 
 // Razorpay is declared in types/razorpay.d.ts - no need to redeclare
 
@@ -55,12 +59,15 @@ const PaymentPage: React.FC = () => {
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
   const storeCountryCode = useAppSelector(selectStoreCountryCode);
+  // Berlin demo / EU: prefer DE when cart country not yet set
+  const paymentCountry = storeCountryCode ?? 'DE';
+  const showUpi = isUpiAvailable(paymentCountry);
   const fmt = (v: number) => formatMajorAmount(v , currency, locale);
 
   // Get guest info from navigation state (passed from GuestCheckoutPage)
   const guestInfo = location.state?.guestInfo as GuestInfo | undefined;
 
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'UPI'>('CARD');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodCode>('CARD');
   const [stripeData, setStripeData] = React.useState<{
     clientSecret: string;
     publishableKey: string;
@@ -136,14 +143,14 @@ const PaymentPage: React.FC = () => {
 
   useEffect(() => {
     const preferred = customerProfile?.preferences?.preferredPaymentMethod;
-    if (preferred && (['CASH', 'CARD', 'UPI'] as string[]).includes(preferred)) {
-      if (preferred === 'CASH' && orderType === 'DELIVERY') {
-        setPaymentMethod('CARD');
-      } else {
-        setPaymentMethod(preferred as 'CASH' | 'CARD' | 'UPI');
-      }
+    if (!preferred) return;
+    const resolved = resolvePreferredPaymentMethod(preferred, paymentCountry, 'CARD');
+    if (resolved === 'CASH' && orderType === 'DELIVERY') {
+      setPaymentMethod('CARD');
+    } else {
+      setPaymentMethod(resolved);
     }
-  }, [customerProfile?.preferences?.preferredPaymentMethod, orderType]);
+  }, [customerProfile?.preferences?.preferredPaymentMethod, orderType, paymentCountry]);
 
   const deliveryFee = orderType === 'DELIVERY' ? baseDeliveryFee : 0;
   const { tax, taxLabel, total } = computePreCheckoutTotals(subtotal, deliveryFee, storeCountryCode);
@@ -315,7 +322,7 @@ const PaymentPage: React.FC = () => {
         contact: guestInfo?.phone || currentUser?.phone || '',
       },
       notes: { order_id: orderId },
-      theme: { color: colors.brand.primary },
+      theme: { color: '#C62A09' /* dark-premium --red; Razorpay needs a hex */ },
       modal: {
         ondismiss: function() {
           navigate(`/payment/failed?order_id=${orderId}&error=Payment cancelled by user`);
@@ -427,11 +434,11 @@ const PaymentPage: React.FC = () => {
                   )}
                   {isOutsideDeliveryRadius && (
                     <div style={{
-                      backgroundColor: '#fff3cd',
+                      backgroundColor: 'rgba(var(--warning-rgb), 0.15)',
                       border: '1px solid #ffc107',
                       borderRadius: '8px',
                       padding: '12px 16px',
-                      color: '#856404',
+                      color: 'var(--warning)',
                       fontSize: '14px',
                       marginTop: '8px',
                     }}>
@@ -565,20 +572,22 @@ const PaymentPage: React.FC = () => {
                   </svg>
                 }
                 title="Credit / Debit Card"
-                desc="Pay securely via Razorpay"
+                desc={showUpi ? 'Pay securely via Razorpay' : 'Pay securely via Stripe'}
               />
-              <PaymentOption
-                active={paymentMethod === 'UPI'}
-                onClick={() => setPaymentMethod('UPI')}
-                icon={
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="5" y="2" width="14" height="20" rx="2" />
-                    <line x1="12" y1="18" x2="12.01" y2="18" />
-                  </svg>
-                }
-                title="UPI Payment"
-                desc="Google Pay, PhonePe, Paytm & more"
-              />
+              {showUpi && (
+                <PaymentOption
+                  active={paymentMethod === 'UPI'}
+                  onClick={() => setPaymentMethod('UPI')}
+                  icon={
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="5" y="2" width="14" height="20" rx="2" />
+                      <line x1="12" y1="18" x2="12.01" y2="18" />
+                    </svg>
+                  }
+                  title="UPI Payment"
+                  desc="Google Pay, PhonePe, Paytm & more"
+                />
+              )}
             </div>
 
             {(paymentMethod === 'CARD' || paymentMethod === 'UPI') && (
@@ -653,7 +662,7 @@ const PaymentPage: React.FC = () => {
                 border: '1px solid rgba(234,179,8,0.35)',
                 borderRadius: '10px',
                 fontSize: '0.8rem',
-                color: '#fbbf24',
+                color: 'var(--gold-light)',
                 marginBottom: '16px',
                 display: 'flex',
                 gap: '8px',
@@ -676,7 +685,7 @@ const PaymentPage: React.FC = () => {
                 padding: '15px',
                 borderRadius: '10px',
                 border: 'none',
-                background: isPlaceOrderDisabled ? 'var(--border)' : 'linear-gradient(135deg, #c0392b, #e74c3c)',
+                background: isPlaceOrderDisabled ? 'var(--border)' : 'linear-gradient(135deg, var(--red), var(--red-light))',
                 color: isPlaceOrderDisabled ? 'var(--text-3)' : '#fff',
                 fontSize: '0.95rem',
                 fontWeight: 700,
@@ -863,8 +872,8 @@ function StripeCheckoutInner({ orderId, onSuccess, onError }: { orderId: string;
         disabled={isSubmitting || !stripe}
         style={{
           width: '100%', padding: '15px', borderRadius: '10px', border: 'none',
-          background: isSubmitting ? 'var(--border)' : 'linear-gradient(135deg, #635bff, #7c71ff)',
-          color: '#fff', fontSize: '0.95rem', fontWeight: 700, cursor: isSubmitting ? 'not-allowed' : 'pointer',
+          background: isSubmitting ? 'var(--border)' : 'linear-gradient(135deg, var(--info), var(--info-light))',
+          color: 'var(--text-1)', fontSize: '0.95rem', fontWeight: 700, cursor: isSubmitting ? 'not-allowed' : 'pointer',
         }}
       >
         {isSubmitting ? t('payment.processing') : t('payment.pay_stripe')}

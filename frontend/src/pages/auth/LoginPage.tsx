@@ -28,11 +28,12 @@ interface DemoAccount {
   accentColor: string;
 }
 
+/** Berlin DOM001 demo accounts (scripts/reseed). Password Demo@1234; cashier PIN 12345. */
 const demoAccounts: DemoAccount[] = [
   {
     type: 'Manager',
-    email: 'suresh.manager@masova.com',
-    password: 'manager123',
+    email: 'manager.berlin@gmail.com',
+    password: 'Demo@1234',
     Icon: ManageAccountsIcon,
     description: 'Store Management Dashboard',
     route: '/manager',
@@ -40,8 +41,8 @@ const demoAccounts: DemoAccount[] = [
   },
   {
     type: 'Kitchen Staff',
-    email: 'rahul.staff@masova.com',
-    password: 'staff123',
+    email: 'kitchen.berlin@gmail.com',
+    password: 'Demo@1234',
     Icon: RestaurantIcon,
     description: 'Kitchen Display System',
     route: '/kitchen',
@@ -49,26 +50,26 @@ const demoAccounts: DemoAccount[] = [
   },
   {
     type: 'Driver',
-    email: 'ravi.driver@masova.com',
-    password: 'driver123',
+    email: 'driver.berlin@gmail.com',
+    password: 'Demo@1234',
     Icon: LocalShippingIcon,
     description: 'Delivery Management',
     route: '/driver',
     accentColor: '#00B14F',
   },
   {
-    type: 'Kiosk (POS)',
-    email: 'kiosk.pos@masova.com',
-    password: 'kiosk123',
+    type: 'Cashier (POS)',
+    email: 'cashier.berlin@gmail.com',
+    password: 'Demo@1234',
     Icon: PointOfSaleIcon,
-    description: 'Point of Sale Terminal',
+    description: 'Point of Sale Terminal · PIN 12345',
     route: '/pos',
     accentColor: '#2196F3',
   },
   {
     type: 'Asst. Manager',
-    email: 'rohan.asst@masova.com',
-    password: 'asst123',
+    email: 'assistant.berlin@gmail.com',
+    password: 'Demo@1234',
     Icon: SupervisorAccountIcon,
     description: 'Operations Support',
     route: '/manager',

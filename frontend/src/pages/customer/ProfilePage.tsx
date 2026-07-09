@@ -260,7 +260,7 @@ const ProfilePage: React.FC = () => {
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: 12 }}>Unable to Load Profile</h2>
             <p style={{ color: 'var(--text-3)', fontSize: '0.9rem', marginBottom: 28 }}>{creationError || "We couldn't load your customer profile."}</p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-              <button onClick={() => window.location.reload()} style={{ background: 'var(--red)', color: '#fff', border: 'none', borderRadius: 'var(--radius-pill)', padding: '10px 24px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>Retry</button>
+              <button onClick={() => window.location.reload()} style={{ background: 'var(--red)', color: 'var(--text-1)', border: 'none', borderRadius: 'var(--radius-pill)', padding: '10px 24px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>Retry</button>
               <button onClick={() => navigate('/menu')} style={{ background: 'transparent', color: 'var(--text-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '10px 24px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}>Back to Menu</button>
             </div>
           </div>
@@ -290,7 +290,7 @@ const ProfilePage: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ fontSize: '0.95rem', color: 'var(--text-1)', fontWeight: 500 }}>{value || '—'}</span>
         {verified && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.7rem', color: '#4ade80', fontWeight: 600, background: 'rgba(74,222,128,0.1)', padding: '2px 8px', borderRadius: 99 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.7rem', color: 'var(--success-light)', fontWeight: 600, background: 'rgba(74,222,128,0.1)', padding: '2px 8px', borderRadius: 99 }}>
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             Verified
           </span>
@@ -459,7 +459,7 @@ const ProfilePage: React.FC = () => {
               </div>
               <span style={{
                 fontSize: '0.9rem', fontWeight: 700,
-                color: tx.type === 'EARNED' || tx.type === 'BONUS' ? '#4ade80' : tx.type === 'REDEEMED' ? 'var(--red-light)' : 'var(--text-3)',
+                color: tx.type === 'EARNED' || tx.type === 'BONUS' ? 'var(--success-light)' : tx.type === 'REDEEMED' ? 'var(--red-light)' : 'var(--text-3)',
               }}>
                 {tx.type === 'EARNED' || tx.type === 'BONUS' ? '+' : '−'}{Math.abs(tx.points)}
               </span>
@@ -482,7 +482,7 @@ const ProfilePage: React.FC = () => {
         ) : (
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => setEditing(false)} style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-2)', borderRadius: 'var(--radius-pill)', padding: '8px 18px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>Cancel</button>
-            <button onClick={handleUpdateProfile} style={{ background: 'var(--red)', border: 'none', color: '#fff', borderRadius: 'var(--radius-pill)', padding: '8px 20px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>Save Changes</button>
+            <button onClick={handleUpdateProfile} style={{ background: 'var(--red)', border: 'none', color: 'var(--text-1)', borderRadius: 'var(--radius-pill)', padding: '8px 20px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>Save Changes</button>
           </div>
         )}
       </div>
@@ -548,7 +548,7 @@ const ProfilePage: React.FC = () => {
         </div>
         <button
           onClick={() => { setEditingAddressId(null); setAddressForm({ label: 'HOME', addressLine1: '', city: '', state: '', postalCode: '', country: 'India' }); setAddressDialogOpen(true); }}
-          style={{ background: 'var(--red)', border: 'none', color: '#fff', borderRadius: 'var(--radius-pill)', padding: '8px 20px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
+          style={{ background: 'var(--red)', border: 'none', color: 'var(--text-1)', borderRadius: 'var(--radius-pill)', padding: '8px 20px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
         >
           + Add Address
         </button>
@@ -614,7 +614,7 @@ const ProfilePage: React.FC = () => {
         ) : (
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => setEditingPreferences(false)} style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-2)', borderRadius: 'var(--radius-pill)', padding: '8px 18px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>Cancel</button>
-            <button onClick={handleUpdatePreferences} style={{ background: 'var(--red)', border: 'none', color: '#fff', borderRadius: 'var(--radius-pill)', padding: '8px 20px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>Save</button>
+            <button onClick={handleUpdatePreferences} style={{ background: 'var(--red)', border: 'none', color: 'var(--text-1)', borderRadius: 'var(--radius-pill)', padding: '8px 20px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>Save</button>
           </div>
         )}
       </div>
@@ -633,7 +633,12 @@ const ProfilePage: React.FC = () => {
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 24px', marginBottom: 12 }}>
         <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 14 }}>Preferred Payment</div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {[{ v: 'CASH', l: 'Cash' }, { v: 'CARD', l: 'Card' }, { v: 'UPI', l: 'UPI' }, { v: 'WALLET', l: 'Wallet' }].map(opt => (
+          {[
+            { v: 'CASH', l: 'Cash' },
+            { v: 'CARD', l: 'Card' },
+            // UPI is India-only; Berlin/EU demo omits it (see utils/paymentMethods)
+            { v: 'WALLET', l: 'Wallet' },
+          ].map(opt => (
             <PillToggle key={opt.v} label={opt.l} selected={preferencesForm.preferredPaymentMethod === opt.v} onClick={() => editingPreferences && setPreferencesForm(p => ({ ...p, preferredPaymentMethod: opt.v }))} />
           ))}
         </div>
@@ -723,7 +728,7 @@ const ProfilePage: React.FC = () => {
             <p style={{ color: 'var(--text-3)', fontSize: '0.8rem', margin: '4px 0 0' }}>Control what we send you and how</p>
           </div>
           {notifSaved && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 99, background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.25)', color: '#4ade80', fontSize: '0.8rem', fontWeight: 700 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 99, background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.25)', color: 'var(--success-light)', fontSize: '0.8rem', fontWeight: 700 }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               Saved
             </div>
@@ -855,8 +860,8 @@ const ProfilePage: React.FC = () => {
         <button
           onClick={handleSaveNotifications}
           style={{
-            width: '100%', background: 'linear-gradient(135deg, #c0392b, #e74c3c)', border: 'none',
-            color: '#fff', borderRadius: 'var(--radius-pill)', padding: '14px',
+            width: '100%', background: 'linear-gradient(135deg, var(--red), var(--red-light))', border: 'none',
+            color: 'var(--text-1)', borderRadius: 'var(--radius-pill)', padding: '14px',
             fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.95rem',
             cursor: 'pointer', letterSpacing: '0.02em', transition: 'opacity 0.2s',
           }}
@@ -912,7 +917,7 @@ const ProfilePage: React.FC = () => {
           <button
             onClick={handleAddOrUpdateAddress}
             disabled={!addressForm.addressLine1 || !addressForm.city || !addressForm.state || !addressForm.postalCode}
-            style={{ flex: 2, background: 'var(--red)', border: 'none', color: '#fff', borderRadius: 'var(--radius-pill)', padding: '12px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', opacity: (!addressForm.addressLine1 || !addressForm.city || !addressForm.state || !addressForm.postalCode) ? 0.5 : 1 }}
+            style={{ flex: 2, background: 'var(--red)', border: 'none', color: 'var(--text-1)', borderRadius: 'var(--radius-pill)', padding: '12px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', opacity: (!addressForm.addressLine1 || !addressForm.city || !addressForm.state || !addressForm.postalCode) ? 0.5 : 1 }}
           >
             {editingAddressId ? 'Update Address' : 'Save Address'}
           </button>

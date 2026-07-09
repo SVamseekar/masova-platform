@@ -161,15 +161,16 @@ describe('CustomerPanel', () => {
       expect(screen.getByText(/Payment Method/i)).toBeInTheDocument();
     });
 
-    it('shows CASH, CARD, UPI, WALLET options for PICKUP', () => {
+    it('shows CASH, CARD, WALLET (no UPI) for EU/DE pickup by default', () => {
+      // cartSlice storeCountryCode defaults to null → POS treats as DE (Berlin demo)
       renderWithProviders(<CustomerPanel {...defaultProps} />, {
         useMemoryRouter: true,
       });
 
       expect(screen.getByText('CASH')).toBeInTheDocument();
       expect(screen.getByText('CARD')).toBeInTheDocument();
-      expect(screen.getByText('UPI')).toBeInTheDocument();
       expect(screen.getByText('WALLET')).toBeInTheDocument();
+      expect(screen.queryByText('UPI')).not.toBeInTheDocument();
     });
 
     it('hides CASH option for DELIVERY orders', () => {

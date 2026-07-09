@@ -4,21 +4,30 @@ import { Page } from '@playwright/test';
  * Demo account credentials for different user roles.
  * These match the staff login page demo accounts.
  */
+/**
+ * Berlin demo accounts (after scripts/reseed/reseed-all.js).
+ * Password: Demo@1234 for all. Cashier POS PIN: 12345.
+ */
 export const DEMO_ACCOUNTS = {
     manager: {
-        email: 'suresh.manager@masova.com',
-        password: 'manager123',
+        email: 'manager.berlin@gmail.com',
+        password: 'Demo@1234',
         route: '/manager',
     },
     kitchenStaff: {
-        email: 'rahul.staff@masova.com',
-        password: 'staff123',
+        email: 'kitchen.berlin@gmail.com',
+        password: 'Demo@1234',
         route: '/kitchen',
     },
     driver: {
-        email: 'rajesh.driver@masova.com',
-        password: 'driver123',
+        email: 'driver.berlin@gmail.com',
+        password: 'Demo@1234',
         route: '/driver',
+    },
+    cashier: {
+        email: 'cashier.berlin@gmail.com',
+        password: 'Demo@1234',
+        route: '/pos',
     },
 };
 

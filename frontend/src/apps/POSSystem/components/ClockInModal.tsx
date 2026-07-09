@@ -371,7 +371,7 @@ const styles: Record<string, React.CSSProperties> = {
     backdropFilter: 'blur(4px)',
   },
   modal: {
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.text.inverse,
     borderRadius: '24px',
     boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
     width: '90%',
@@ -409,7 +409,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   instruction: {
     textAlign: 'center',
-    color: '#666',
+    color: colors.text.secondary,
     fontSize: '14px',
     marginBottom: spacing[6],
   },
@@ -436,7 +436,7 @@ const styles: Record<string, React.CSSProperties> = {
   employeeRole: {
     margin: 0,
     fontSize: '14px',
-    color: '#666',
+    color: colors.text.secondary,
   },
   pinContainer: {
     display: 'flex',

@@ -46,6 +46,9 @@ const POSSystem = React.lazy(() => import('./apps/POSSystem/POSSystem'));
 const KioskSetupPage = React.lazy(() => import('./pages/kiosk/KioskSetupPage'));
 const GdprRequests = React.lazy(() => import('./pages/GdprRequests').then(m => ({ default: m.GdprRequests })));
 const PrivacyPolicy = React.lazy(() => import('./pages/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })));
+const TermsOfService = React.lazy(() => import('./pages/TermsOfService').then(m => ({ default: m.TermsOfService })));
+const CookiePolicy = React.lazy(() => import('./pages/CookiePolicy').then(m => ({ default: m.CookiePolicy })));
+const RefundPolicy = React.lazy(() => import('./pages/RefundPolicy').then(m => ({ default: m.RefundPolicy })));
 const AnalyticsDashboard = React.lazy(() => import('./pages/manager/AnalyticsDashboard'));
 
 // Kiosk mode hook
@@ -105,6 +108,9 @@ const App: React.FC = () => {
                   <Route path="/promotions" element={<CustomerLayout><PromotionsPage /></CustomerLayout>} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />
                   <Route path="/privacy-policy" element={<Navigate to="/privacy" replace />} />
+                  <Route path="/terms" element={<TermsOfService />} />
+                  <Route path="/cookies" element={<CookiePolicy />} />
+                  <Route path="/refunds" element={<RefundPolicy />} />
 
                   {/* Authentication & Checkout Routes - Public */}
                   <Route path="/login" element={<Navigate to="/customer-login" replace />} />

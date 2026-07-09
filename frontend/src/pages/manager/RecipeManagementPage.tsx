@@ -668,7 +668,7 @@ const RecipeManagementPage: React.FC = () => {
                   style={{
                     marginTop: 12, padding: '8px 20px',
                     background: 'linear-gradient(135deg, #FF6B35, #D32F2F)',
-                    color: '#fff', border: 'none', borderRadius: 8,
+                    color: colors.text.inverse, border: 'none', borderRadius: 8,
                     fontWeight: 700, cursor: 'pointer', fontSize: '0.875rem',
                   }}
                   onClick={async () => {

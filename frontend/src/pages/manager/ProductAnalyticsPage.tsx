@@ -139,7 +139,7 @@ function ProductAnalyticsPage() {
             value: topProduct?.itemName || 'N/A',
             sub: topProduct ? `${topProduct.quantitySold} sold · ${formatCurrency(topProduct.revenue)}` : '',
             trend: 'up',
-            accentColor: '#e53e3e',
+            accentColor: colors.brand.primary,
           },
           {
             label: 'Total Revenue (Top 20)',

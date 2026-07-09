@@ -152,7 +152,7 @@ const NotificationSettingsPage: React.FC = () => {
   const channelSections = [
     {
       title: 'SMS Notifications',
-      icon: <SmsIcon sx={{ color: '#e53e3e', fontSize: 28 }} />,
+      icon: <SmsIcon sx={{ color: 'var(--red-light)', fontSize: 28 }} />,
       description: 'Receive text messages for important updates',
       enabled: smsEnabled,
       onChange: (enabled: boolean) => handleChannelToggle('SMS', enabled),
@@ -173,7 +173,7 @@ const NotificationSettingsPage: React.FC = () => {
     },
     {
       title: 'In-App Notifications',
-      icon: <InAppIcon sx={{ color: '#f59e0b', fontSize: 28 }} />,
+      icon: <InAppIcon sx={{ color: 'var(--warning)', fontSize: 28 }} />,
       description: 'See notifications within the app',
       enabled: inAppEnabled,
       onChange: (enabled: boolean) => handleChannelToggle('IN_APP', enabled),
@@ -201,7 +201,7 @@ const NotificationSettingsPage: React.FC = () => {
               mr: 2,
             }}
           >
-            <NotificationsIcon sx={{ color: '#e53e3e', fontSize: 32 }} />
+            <NotificationsIcon sx={{ color: 'var(--red-light)', fontSize: 32 }} />
           </Box>
           <Box>
             <Typography variant="h4" sx={{ fontWeight: 700, color: '#333333' }}>
@@ -259,10 +259,10 @@ const NotificationSettingsPage: React.FC = () => {
                     onChange={(e) => section.onChange(e.target.checked)}
                     sx={{
                       '& .MuiSwitch-switchBase.Mui-checked': {
-                        color: '#e53e3e',
+                        color: 'var(--red-light)',
                       },
                       '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                        backgroundColor: '#e53e3e',
+                        backgroundColor: 'var(--red-light)',
                       },
                     }}
                   />
@@ -437,7 +437,7 @@ const NotificationSettingsPage: React.FC = () => {
           disabled={isSaving}
           sx={{
             ...createNeumorphicSurface('raised', 'md', 'xl'),
-            backgroundColor: '#e53e3e',
+            backgroundColor: 'var(--red-light)',
             color: 'white',
             px: 6,
             py: 1.5,

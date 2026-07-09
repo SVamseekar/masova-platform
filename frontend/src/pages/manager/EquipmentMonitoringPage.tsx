@@ -404,10 +404,10 @@ const EquipmentMonitoringPage: React.FC = () => {
               </div>
               <div style={{ display: 'flex', gap: spacing[2], borderTop: `1px solid ${colors.surface.border}`, paddingTop: spacing[2] }}>
                 <button
-                  style={{ ...buttonStyles('#666'), flex: 1, marginRight: 0 }}
+                  style={{ ...buttonStyles(colors.text.secondary), flex: 1, marginRight: 0 }}
                   onClick={() => setDeleteDialog({ open: true, equipment: item })}
                   onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.background = colors.semantic.error; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.background = '#666'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.background = colors.text.secondary; }}
                 >
                   🗑️ Delete
                 </button>

@@ -72,7 +72,7 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
           <button
             onClick={onContinueShopping}
             style={{
-              background: 'var(--red)', color: '#fff', border: 'none',
+              background: 'var(--red)', color: 'var(--text-1)', border: 'none',
               borderRadius: 'var(--radius-pill)', padding: '12px 28px',
               fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
             }}
@@ -172,7 +172,7 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
                     style={{
                       width: '28px', height: '28px', borderRadius: '50%',
                       background: 'var(--red)', border: 'none',
-                      color: '#fff', fontWeight: 700, cursor: 'pointer',
+                      color: 'var(--text-1)', fontWeight: 700, cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem',
                     }}
                   >
@@ -233,7 +233,7 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
             <button
               onClick={onProceedToPayment}
               style={{
-                width: '100%', background: 'var(--red)', color: '#fff', border: 'none',
+                width: '100%', background: 'var(--red)', color: 'var(--text-1)', border: 'none',
                 borderRadius: 'var(--radius-pill)', padding: '13px',
                 fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.95rem',
                 cursor: 'pointer', marginBottom: '10px', transition: 'var(--transition)',

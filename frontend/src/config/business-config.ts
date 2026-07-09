@@ -119,7 +119,8 @@ export const DRIVER_SETTINGS = {
 
 export const PAYMENT_SETTINGS = {
   /**
-   * Supported payment methods
+   * Full set of methods (India). Prefer paymentMethodsForCountry(countryCode)
+   * from utils/paymentMethods for UI — UPI is India-only.
    */
   SUPPORTED_METHODS: [
     'CASH',
@@ -128,13 +129,16 @@ export const PAYMENT_SETTINGS = {
     'WALLET',
   ] as const,
 
+  /** EU / non-India methods (Berlin demo DOM001). */
+  EU_METHODS: ['CASH', 'CARD', 'WALLET'] as const,
+
   /**
    * Default payment method
    */
   DEFAULT_METHOD: 'CASH' as const,
 
   /**
-   * Maximum cash payment amount (INR)
+   * Maximum cash payment amount (major currency units; was INR, now store currency)
    */
   MAX_CASH_AMOUNT: 5000,
 } as const;
@@ -239,9 +243,14 @@ export const UI_SETTINGS = {
 
 export const VALIDATION = {
   /**
-   * Phone number regex (Indian format)
+   * Phone number regex (Indian mobile: 10 digits starting 6–9)
    */
   PHONE_REGEX: /^[6-9]\d{9}$/,
+
+  /**
+   * E.164 international (+ and 8–15 digits), e.g. +491511000011 (Berlin demo)
+   */
+  PHONE_E164_REGEX: /^\+[1-9]\d{7,14}$/,
 
   /**
    * Minimum password length
@@ -341,18 +350,20 @@ export function meetsMinimumOrderValue(orderValue: number): boolean {
 }
 
 /**
- * Format phone number for display
+ * Format phone number for display (IN 10-digit or raw E.164)
  */
 export function formatPhoneNumber(phone: string): string {
-  if (phone.length === 10) {
+  if (phone.length === 10 && VALIDATION.PHONE_REGEX.test(phone)) {
     return `+91 ${phone.slice(0, 5)} ${phone.slice(5)}`;
   }
   return phone;
 }
 
 /**
- * Validate phone number
+ * Validate phone number: India 10-digit mobile OR E.164 (EU demo +49…).
  */
 export function isValidPhoneNumber(phone: string): boolean {
-  return VALIDATION.PHONE_REGEX.test(phone);
+  const trimmed = phone.trim();
+  if (!trimmed) return false;
+  return VALIDATION.PHONE_REGEX.test(trimmed) || VALIDATION.PHONE_E164_REGEX.test(trimmed);
 }
