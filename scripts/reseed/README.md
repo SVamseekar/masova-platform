@@ -205,3 +205,13 @@ $env:RAZORPAY_WEBHOOK_SECRET = "..."
 GW=http://192.168.50.88:8080 node scripts/reseed/verify-phase-c-e2e.js
 # Exit 0 = green. Works with synthetic seed+cash if Stripe test keys are not set.
 ```
+
+## Frontend contracts (manager lists / filters)
+
+After UI bugs like “TOTAL ORDERS 8 but No orders found”, run:
+
+```bash
+GW=http://192.168.50.88:8080 node scripts/reseed/verify-frontend-contracts.js
+```
+
+Asserts canonical `GET /orders?storeId=DOM001` (not `/orders/store`), kitchen queue, analytics, inventory, menu, kiosks, and dual-source consistency.

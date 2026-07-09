@@ -226,7 +226,8 @@ export const menuApi = createApi({
 
     // Manager endpoints (auth required)
     getAllMenuItems: builder.query<MenuItem[], string | undefined>({
-      query: () => '/menu',
+      query: (storeId) =>
+        `/menu${storeId ? `?storeId=${encodeURIComponent(storeId)}` : ''}`,
       transformResponse: mapMenuItemsResponse,
       providesTags: (result, error, storeId) => [{ type: 'Menu', id: storeId || 'DEFAULT' }],
     }),

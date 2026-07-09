@@ -456,29 +456,47 @@ export const analyticsApi = createApi({
     }),
 
     getSalesForecast: builder.query<SalesForecastResponse, { storeId?: string; days?: number; period?: string }>({
-      query: ({ days = 7, period = 'WEEKLY' }) =>
-        `/bi?type=sales-forecast&days=${days}&period=${encodeURIComponent(period)}`,
+      query: ({ days = 7, period = 'WEEKLY', storeId }) => {
+        const p = new URLSearchParams({ type: 'sales-forecast', days: String(days), period });
+        if (storeId) p.set('storeId', storeId);
+        return `/bi?${p.toString()}`;
+      },
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: `FORECAST_${storeId || 'DEFAULT'}` }],
     }),
 
     getCustomerBehaviorAnalysis: builder.query<CustomerBehaviorResponse, string | undefined>({
-      query: () => '/bi?type=customer-behavior',
+      query: (storeId) =>
+        `/bi?type=customer-behavior${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'Analytics', id: `BEHAVIOR_${storeId || 'DEFAULT'}` }],
     }),
 
     getChurnPrediction: builder.query<ChurnPredictionResponse, { storeId?: string; threshold?: number }>({
-      query: () => '/bi?type=churn',
+      query: ({ storeId, threshold }) => {
+        const p = new URLSearchParams({ type: 'churn' });
+        if (storeId) p.set('storeId', storeId);
+        if (threshold != null) p.set('threshold', String(threshold));
+        return `/bi?${p.toString()}`;
+      },
       transformResponse: (response: Record<string, unknown>) => mapChurnPrediction(response),
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: `CHURN_${storeId || 'DEFAULT'}` }],
     }),
 
     getDemandForecast: builder.query<DemandForecastResponse, { storeId?: string; days?: number; period?: string }>({
-      query: ({ period = 'WEEKLY' }) => `/bi?type=demand-forecast&period=${encodeURIComponent(period)}`,
+      query: ({ period = 'WEEKLY', storeId, days }) => {
+        const p = new URLSearchParams({ type: 'demand-forecast', period });
+        if (storeId) p.set('storeId', storeId);
+        if (days != null) p.set('days', String(days));
+        return `/bi?${p.toString()}`;
+      },
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: `DEMAND_${storeId || 'DEFAULT'}` }],
     }),
 
     getCostAnalysis: builder.query<CostAnalysisResponse, { storeId?: string; period?: string }>({
-      query: ({ period = 'MONTHLY' }) => `/bi?type=cost-analysis&period=${encodeURIComponent(period)}`,
+      query: ({ period = 'MONTHLY', storeId }) => {
+        const p = new URLSearchParams({ type: 'cost-analysis', period });
+        if (storeId) p.set('storeId', storeId);
+        return `/bi?${p.toString()}`;
+      },
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: `COST_${storeId || 'DEFAULT'}` }],
     }),
 
@@ -489,7 +507,12 @@ export const analyticsApi = createApi({
      */
     getExecutiveSummary: builder.query<ExecutiveSummary, string | undefined>({
       // Single-line template required: integration-matrix-audit extracts RTK paths via regex.
-      query: (storeIdOrPeriod) => `/bi/reports?type=executive-summary&period=${encodeURIComponent((storeIdOrPeriod && ['WEEK', 'MONTH', 'QUARTER', 'YEAR'].includes(storeIdOrPeriod.toUpperCase()) ? storeIdOrPeriod.toUpperCase() : 'MONTH'))}`,
+      query: (storeIdOrPeriod) => {
+        const isPeriod = !!(storeIdOrPeriod && ['WEEK', 'MONTH', 'QUARTER', 'YEAR'].includes(storeIdOrPeriod.toUpperCase()));
+        const period = isPeriod ? storeIdOrPeriod!.toUpperCase() : 'MONTH';
+        const storeId = isPeriod ? undefined : storeIdOrPeriod;
+        return `/bi/reports?type=executive-summary&period=${encodeURIComponent(period)}${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`;
+      },
       transformResponse: (response: BackendExecutiveSummary) => mapExecutiveSummary(response),
       providesTags: (result, error, storeId) => [{ type: 'Analytics', id: `EXECUTIVE_${storeId || 'DEFAULT'}` }],
     }),

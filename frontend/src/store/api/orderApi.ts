@@ -401,7 +401,8 @@ export const orderApi = createApi({
     }),
 
     getOrdersWithFailedQualityChecks: builder.query<Order[], string | undefined>({
-      query: (_storeId) => `/orders/analytics?type=failed-quality`,
+      query: (storeId) =>
+        `/orders/analytics?type=failed-quality${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'Orders', id: storeId || 'DEFAULT' }],
     }),
 
