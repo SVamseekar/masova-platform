@@ -477,17 +477,16 @@ export const analyticsApi = createApi({
 
     /**
      * Executive summary for dashboard.
-     * Arg is storeId (used for cache tags only); period is always MONTH unless arg looks like WEEK|MONTH|QUARTER|YEAR.
+     * Arg is storeId (cache tags only) or an explicit period WEEK|MONTH|QUARTER|YEAR.
+     * Keep the query body as a single expression so integration-matrix-audit can extract `/bi/reports`.
      */
     getExecutiveSummary: builder.query<ExecutiveSummary, string | undefined>({
-      query: (storeIdOrPeriod) => {
-        const periods = new Set(['WEEK', 'MONTH', 'QUARTER', 'YEAR']);
-        const period =
-          storeIdOrPeriod && periods.has(storeIdOrPeriod.toUpperCase())
+      query: (storeIdOrPeriod) =>
+        `/bi/reports?type=executive-summary&period=${encodeURIComponent(
+          storeIdOrPeriod && ['WEEK', 'MONTH', 'QUARTER', 'YEAR'].includes(storeIdOrPeriod.toUpperCase())
             ? storeIdOrPeriod.toUpperCase()
-            : 'MONTH';
-        return `/bi/reports?type=executive-summary&period=${encodeURIComponent(period)}`;
-      },
+            : 'MONTH'
+        )}`,
       transformResponse: (response: BackendExecutiveSummary) => mapExecutiveSummary(response),
       providesTags: (result, error, storeId) => [{ type: 'Analytics', id: `EXECUTIVE_${storeId || 'DEFAULT'}` }],
     }),
