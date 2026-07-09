@@ -235,13 +235,13 @@ const TrackingPage: React.FC = () => {
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
           <div style={{ textAlign: 'center', maxWidth: 400 }}>
             <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(239,68,68,0.1)', border: '2px solid rgba(239,68,68,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--red-light)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
             </div>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: 10 }}>Order Not Found</h2>
             <p style={{ color: 'var(--text-3)', fontSize: '0.9rem', marginBottom: 28, lineHeight: 1.6 }}>We couldn't find this order. Check your confirmation email or contact support.</p>
-            <button onClick={() => navigate('/menu')} style={{ padding: '12px 28px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#c0392b,#e74c3c)', color: '#fff', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer' }}>Back to Menu</button>
+            <button onClick={() => navigate('/menu')} style={{ padding: '12px 28px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, var(--red), var(--red-light))', color: 'var(--text-1)', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer' }}>Back to Menu</button>
           </div>
         </div>
       </div>
@@ -271,7 +271,7 @@ const TrackingPage: React.FC = () => {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             animation: isDispatched && !isDelivered ? 'pulse-truck 2s ease-in-out infinite' : 'none',
           }}>
-            <IconTruck size={24} color={isDelivered ? '#22c55e' : isDispatched ? '#60a5fa' : 'var(--gold)'} />
+            <IconTruck size={24} color={isDelivered ? 'var(--success-light)' : isDispatched ? 'var(--info-light)' : 'var(--gold)'} />
           </div>
 
           <div style={{ flex: 1, minWidth: 180 }}>
@@ -291,15 +291,15 @@ const TrackingPage: React.FC = () => {
               {etaMinutes !== null && (
                 <div style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 12, padding: '10px 18px', textAlign: 'center' }}>
                   <p style={{ fontSize: '0.64rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 2 }}>Arrives in</p>
-                  <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 800, color: '#60a5fa' }}>{etaMinutes} min</p>
+                  <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 800, color: 'var(--info-light)' }}>{etaMinutes} min</p>
                   {delivery?.distanceRemaining && (
                     <p style={{ fontSize: '0.7rem', color: 'var(--text-3)' }}>{delivery.distanceRemaining.toFixed(1)} km away</p>
                   )}
                 </div>
               )}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: wsConnected ? '#4ade80' : '#f59e0b', display: 'inline-block', boxShadow: wsConnected ? '0 0 0 3px rgba(74,222,128,0.2)' : 'none' }} />
-                <span style={{ fontSize: '0.68rem', color: wsConnected ? '#4ade80' : '#f59e0b', fontWeight: 600 }}>{wsConnected ? 'Live' : 'Polling'}</span>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: wsConnected ? 'var(--success-light)' : 'var(--warning)', display: 'inline-block', boxShadow: wsConnected ? '0 0 0 3px rgba(74,222,128,0.2)' : 'none' }} />
+                <span style={{ fontSize: '0.68rem', color: wsConnected ? 'var(--success-light)' : 'var(--warning)', fontWeight: 600 }}>{wsConnected ? 'Live' : 'Polling'}</span>
               </div>
             </div>
           ) : !isDelivered ? (
@@ -313,7 +313,7 @@ const TrackingPage: React.FC = () => {
             <div style={{ display: 'flex', gap: 8 }}>
               <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 10, padding: '10px 18px', textAlign: 'center' }}>
                 <p style={{ fontSize: '0.64rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 2 }}>Status</p>
-                <p style={{ fontSize: '0.9rem', fontWeight: 800, color: '#22c55e' }}>Delivered</p>
+                <p style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--success-light)' }}>Delivered</p>
               </div>
             </div>
           )}
@@ -332,7 +332,7 @@ const TrackingPage: React.FC = () => {
               }}>
                 {/* Driver avatar */}
                 <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(59,130,246,0.1)', border: '2px solid rgba(59,130,246,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--info-light)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" />
                   </svg>
                 </div>
@@ -357,10 +357,10 @@ const TrackingPage: React.FC = () => {
                         display: 'inline-flex', alignItems: 'center', gap: 7,
                         padding: '9px 18px', borderRadius: 'var(--radius-pill)',
                         background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)',
-                        color: '#4ade80', fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none',
+                        color: 'var(--success-light)', fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none',
                       }}
                     >
-                      <IconPhone size={13} color="#4ade80" />
+                      <IconPhone size={13} color="var(--success-light)" />
                       Call Driver
                     </a>
                   )}
@@ -386,7 +386,7 @@ const TrackingPage: React.FC = () => {
               ) : (
                 /* Map placeholder while driver location loads */
                 <div style={{ height: 260, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid var(--border)', borderTopColor: '#60a5fa', animation: 'spin 1s linear infinite' }} />
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid var(--border)', borderTopColor: 'var(--info-light)', animation: 'spin 1s linear infinite' }} />
                   <div style={{ textAlign: 'center' }}>
                     <p style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-2)', marginBottom: 4 }}>Connecting to driver…</p>
                     <p style={{ fontSize: '0.78rem', color: 'var(--text-3)' }}>Driver location will appear once GPS signal is received</p>
@@ -397,8 +397,8 @@ const TrackingPage: React.FC = () => {
               {/* Map label overlay */}
               {effectiveDriverLocation && (
                 <div style={{ position: 'absolute', top: 12, left: 12, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', borderRadius: 8, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 6, zIndex: 500 }}>
-                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80', display: 'inline-block', animation: 'blink 1.4s ease-in-out infinite' }} />
-                  <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#fff' }}>Live driver location</span>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--success-light)', display: 'inline-block', animation: 'blink 1.4s ease-in-out infinite' }} />
+                  <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-1)' }}>Live driver location</span>
                 </div>
               )}
             </div>
@@ -426,7 +426,7 @@ const TrackingPage: React.FC = () => {
         {isDelivered && (
           <div style={{ marginBottom: 28, background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 16, padding: '22px 24px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <IconCheck size={22} color="#22c55e" />
+              <IconCheck size={22} color="var(--success-light)" />
             </div>
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: 2 }}>Your order has arrived!</p>
@@ -464,13 +464,13 @@ const TrackingPage: React.FC = () => {
                         background: isCompleted ? 'rgba(34,197,94,0.12)' : isActive ? (isDispatched ? 'rgba(59,130,246,0.12)' : 'rgba(212,175,55,0.12)') : 'transparent',
                         border: `2px solid ${isCompleted ? 'rgba(34,197,94,0.5)' : isActive ? (isDispatched ? 'rgba(59,130,246,0.5)' : 'rgba(212,175,55,0.5)') : 'var(--border)'}`,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: isCompleted ? '#22c55e' : isActive ? (isDispatched ? '#60a5fa' : 'var(--gold)') : 'var(--text-3)',
+                        color: isCompleted ? 'var(--success-light)' : isActive ? (isDispatched ? 'var(--info-light)' : 'var(--gold)') : 'var(--text-3)',
                         position: 'relative', zIndex: 1, transition: 'all 0.3s',
                         boxShadow: isActive ? (isDispatched ? '0 0 0 4px rgba(59,130,246,0.1)' : '0 0 0 4px rgba(212,175,55,0.1)') : 'none',
                         animation: isActive && isDispatched ? 'pulse-ring-blue 2s ease-in-out infinite' : 'none',
                       }}>
                         {isCompleted
-                          ? <IconCheck size={13} color="#22c55e" />
+                          ? <IconCheck size={13} color="var(--success-light)" />
                           : <span style={{ fontSize: '0.7rem', fontWeight: 700, opacity: isFuture ? 0.4 : 1 }}>{index + 1}</span>
                         }
                       </div>
@@ -506,7 +506,7 @@ const TrackingPage: React.FC = () => {
                 <span style={{
                   background: isDelivered ? 'rgba(34,197,94,0.1)' : isDispatched ? 'rgba(59,130,246,0.1)' : 'rgba(212,175,55,0.08)',
                   border: `1px solid ${isDelivered ? 'rgba(34,197,94,0.3)' : isDispatched ? 'rgba(59,130,246,0.25)' : 'rgba(212,175,55,0.25)'}`,
-                  color: isDelivered ? '#22c55e' : isDispatched ? '#60a5fa' : 'var(--gold)',
+                  color: isDelivered ? 'var(--success-light)' : isDispatched ? 'var(--info-light)' : 'var(--gold)',
                   fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.04em', padding: '4px 10px', borderRadius: 20,
                 }}>
                   {isDelivered ? 'Delivered' : isDispatched ? 'En Route' : 'Active'}
@@ -539,7 +539,7 @@ const TrackingPage: React.FC = () => {
 
             {/* Actions */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <button onClick={() => navigate('/menu')} style={{ width: '100%', padding: 13, borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#c0392b,#e74c3c)', color: '#fff', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', transition: 'opacity 0.2s' }}
+              <button onClick={() => navigate('/menu')} style={{ width: '100%', padding: 13, borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, var(--red), var(--red-light))', color: 'var(--text-1)', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', transition: 'opacity 0.2s' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.88'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
               >

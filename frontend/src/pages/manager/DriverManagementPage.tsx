@@ -215,7 +215,7 @@ const DriverManagementPage: React.FC = () => {
     minHeight: '100vh',
     fontFamily: typography.fontFamily.primary,
     padding: spacing[6],
-    backgroundColor: '#e8e8e8',
+    backgroundColor: colors.surface.secondary,
     zIndex: 1,
     paddingTop: '80px',
   };
@@ -293,7 +293,7 @@ const DriverManagementPage: React.FC = () => {
     return {
       ...badgeBase,
       backgroundColor: color,
-      color: '#fff',
+      color: colors.text.inverse,
       padding: `${spacing[1]} ${spacing[2]}`,
       borderRadius: borderRadius.full,
       fontSize: typography.fontSize.xs,

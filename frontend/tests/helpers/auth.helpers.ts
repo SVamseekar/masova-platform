@@ -4,25 +4,26 @@ import { Page } from '@playwright/test';
  * Test credentials for different user roles.
  * These should match demo accounts available in the running backend.
  */
+/** Berlin demo accounts — align with reseed (Phase E/F). */
 export const TEST_ACCOUNTS = {
   customer: {
-    email: 'customer@test.com',
-    password: 'Test123!',
+    email: 'anna.mueller@gmail.com',
+    password: 'Demo@1234',
     expectedRoute: '/menu',
   },
   manager: {
-    email: 'manager@test.com',
-    password: 'Test123!',
+    email: 'manager.berlin@gmail.com',
+    password: 'Demo@1234',
     expectedRoute: '/manager',
   },
   driver: {
-    email: 'driver@test.com',
-    password: 'Test123!',
+    email: 'driver.berlin@gmail.com',
+    password: 'Demo@1234',
     expectedRoute: '/driver',
   },
   kitchenStaff: {
-    email: 'kitchen@test.com',
-    password: 'Test123!',
+    email: 'kitchen.berlin@gmail.com',
+    password: 'Demo@1234',
     expectedRoute: '/kitchen',
   },
 };

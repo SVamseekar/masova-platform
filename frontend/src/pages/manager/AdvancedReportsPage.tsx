@@ -25,7 +25,7 @@ function AdvancedReportsPage() {
   const euOrderCount = orders.filter((order) => order.vatCountryCode).length;
 
   const reportKPIs: KPICardData[] = [
-    { label: 'Sales Trend', value: '7-Day', sub: 'Weekly comparison', accentColor: '#e53e3e' },
+    { label: 'Sales Trend', value: '7-Day', sub: 'Weekly comparison', accentColor: colors.brand.primary },
     { label: 'Revenue Breakdown', value: 'By Type', sub: 'Dine-in / Delivery / Takeaway', accentColor: '#7B1FA2' },
     { label: 'Peak Hours', value: 'Heatmap', sub: 'Busiest time slots', accentColor: '#FF6B35' },
     {

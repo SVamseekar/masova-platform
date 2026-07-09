@@ -21,6 +21,7 @@ import {
 import { useAppSelector } from '../../store/hooks';
 import { selectSelectedStoreId, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
 import {formatMoney, formatMajorAmount} from '../../utils/currency';
+import { colors } from '../../styles/design-tokens';
 
 interface StatCardProps {
   title: string;
@@ -35,7 +36,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, highlight }
     sx={{
       p: 3,
       textAlign: 'center',
-      borderTop: highlight ? '4px solid #D32F2F' : '4px solid transparent',
+      borderTop: highlight ? `4px solid ${colors.brand.primaryDark}` : '4px solid transparent',
     }}
   >
     <Typography variant="h4" fontWeight="bold" color="primary">
@@ -183,7 +184,7 @@ const AnalyticsDashboard: React.FC = () => {
         ) : (
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={trendChartData} margin={{ top: 4, right: 20, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <CartesianGrid strokeDasharray="3 3" stroke={colors.surface.primary} />
               <XAxis dataKey="date" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => formatCurrency(v / 1000) + 'k'} />
               <Tooltip
@@ -196,7 +197,7 @@ const AnalyticsDashboard: React.FC = () => {
               <Line
                 type="monotone"
                 dataKey="revenue"
-                stroke="#D32F2F"
+                stroke={colors.brand.primaryDark}
                 strokeWidth={2.5}
                 dot={{ r: 4 }}
                 activeDot={{ r: 6 }}
@@ -205,7 +206,7 @@ const AnalyticsDashboard: React.FC = () => {
               <Line
                 type="monotone"
                 dataKey="orders"
-                stroke="#1565C0"
+                stroke={colors.semantic.infoDark}
                 strokeWidth={2}
                 dot={{ r: 3 }}
                 name="Orders"
@@ -235,7 +236,7 @@ const AnalyticsDashboard: React.FC = () => {
               data={productsChartData}
               margin={{ top: 4, right: 20, left: 0, bottom: 40 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <CartesianGrid strokeDasharray="3 3" stroke={colors.surface.primary} />
               <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-30} textAnchor="end" />
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip
@@ -245,8 +246,8 @@ const AnalyticsDashboard: React.FC = () => {
                 }}
               />
               <Legend verticalAlign="top" />
-              <Bar dataKey="quantity" fill="#D32F2F" name="Units Sold" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="revenue" fill="#FF8F00" name="Revenue" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="quantity" fill={colors.brand.primaryDark} name="Units Sold" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="revenue" fill={colors.semantic.warning} name="Revenue" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}

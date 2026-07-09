@@ -89,7 +89,7 @@ const SupplierManagementPage: React.FC = () => {
     minHeight: '100vh',
     fontFamily: typography.fontFamily.primary,
     padding: spacing[6],
-    backgroundColor: '#e8e8e8',
+    backgroundColor: colors.surface.secondary,
     zIndex: 1,
     paddingTop: '80px',
   };

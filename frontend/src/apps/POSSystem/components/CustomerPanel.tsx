@@ -22,6 +22,10 @@ import SyncIcon from '@mui/icons-material/Sync';
 
 import type { POSCustomer, POSOrderItem } from '../types';
 import { getRtkErrorMessage } from '../../shared/rtkError';
+import {
+  paymentMethodsForCountry,
+  type PaymentMethodCode,
+} from '../../../utils/paymentMethods';
 
 interface CustomerPanelProps {
   items: POSOrderItem[];
@@ -42,8 +46,6 @@ interface CustomerPanelProps {
   } | null;
 }
 
-const PAYMENT_METHODS = ['CASH', 'CARD', 'UPI', 'WALLET'] as const;
-
 const CustomerPanel: React.FC<CustomerPanelProps> = ({
   items,
   customer,
@@ -59,6 +61,9 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
   const storeCountryCode = useAppSelector(selectStoreCountryCode);
+  // Explicit DE for Berlin demo when cart has not loaded store yet (null legacy = IN)
+  const paymentCountry = storeCountryCode ?? 'DE';
+  const paymentMethods = paymentMethodsForCountry(paymentCountry);
   const fmt = (v: number) => formatMajorAmount(v , currency, locale);
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
@@ -70,8 +75,8 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
   const [deliveryLongitude, setDeliveryLongitude] = useState<number | undefined>();
   const [geocodingStatus, setGeocodingStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [specialInstructions, setSpecialInstructions] = useState('');
-  // Default payment method: CASH for PICKUP, CARD for DELIVERY
-  const [paymentMethod, setPaymentMethod] = useState<typeof PAYMENT_METHODS[number]>(
+  // Default payment method: CASH for PICKUP, CARD for DELIVERY (EU-safe methods only)
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodCode>(
     orderType === 'PICKUP' ? 'CASH' : 'CARD'
   );
   const [phoneError, setPhoneError] = useState('');
@@ -888,7 +893,7 @@ const CustomerPanel: React.FC<CustomerPanelProps> = ({
             gap: spacing[2],
             marginBottom: paymentMethod === 'CASH' ? spacing[3] : 0
           }}>
-            {PAYMENT_METHODS
+            {paymentMethods
               .filter(method => {
                 // Hide CASH option for DELIVERY orders
                 if (orderType === 'DELIVERY' && method === 'CASH') {

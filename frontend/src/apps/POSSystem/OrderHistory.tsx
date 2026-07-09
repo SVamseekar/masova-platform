@@ -378,7 +378,7 @@ const OrderHistory: React.FC = () => {
                       variant="primary"
                       onClick={() => handleMarkAsPaid(order)}
                       style={{
-                        backgroundColor: '#10b981',
+                        backgroundColor: colors.semantic.success,
                         color: 'white',
                         fontWeight: 600,
                       }}

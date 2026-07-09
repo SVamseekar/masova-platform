@@ -29,10 +29,10 @@ import { applyFilters, exportToCSV, commonFilters } from '../../utils/filterUtil
 import { colors, spacing, typography, shadows } from '../../styles/design-tokens';
 
 const AGGREGATOR_BADGE: Record<string, { label: string; bg: string; color: string }> = {
-  WOLT:      { label: 'Wolt',      bg: '#009DE0', color: '#fff' },
-  DELIVEROO: { label: 'Deliveroo', bg: '#00CCBC', color: '#fff' },
-  JUST_EAT:  { label: 'Just Eat',  bg: '#FF8000', color: '#fff' },
-  UBER_EATS: { label: 'Uber Eats', bg: '#000000', color: '#fff' },
+  WOLT:      { label: 'Wolt',      bg: '#009DE0', color: colors.text.inverse },
+  DELIVEROO: { label: 'Deliveroo', bg: '#00CCBC', color: colors.text.inverse },
+  JUST_EAT:  { label: 'Just Eat',  bg: '#FF8000', color: colors.text.inverse },
+  UBER_EATS: { label: 'Uber Eats', bg: '#000000', color: colors.text.inverse },
 };
 
 // eslint-disable-next-line react-refresh/only-export-components -- page component with HOC export
@@ -917,14 +917,14 @@ const OrderManagementPage: React.FC = () => {
                   {order.createdByStaffName && (
                     <div className="info-item">
                       <div className="info-label">Taken By</div>
-                      <div className="info-value" style={{ fontWeight: 600, color: '#2563eb' }}>
+                      <div className="info-value" style={{ fontWeight: 600, color: colors.management.button.primary }}>
                         {order.createdByStaffName}
                       </div>
                     </div>
                   )}
                   <div className="info-item">
                     <div className="info-label">{t('cart.total')}</div>
-                    <div className="info-value" style={{ color: '#e53e3e', fontSize: '16px' }}>
+                    <div className="info-value" style={{ color: colors.brand.primary, fontSize: '16px' }}>
                       {formatCurrency(order.total)}
                     </div>
                   </div>
@@ -938,12 +938,12 @@ const OrderManagementPage: React.FC = () => {
                         <div>
                           <span className="item-qty">{item.quantity}x</span>
                           <span className="item-name">{item.name}</span>
-                          {item.variant && <span style={{ fontSize: '11px', color: '#666', marginLeft: '8px' }}>({item.variant})</span>}
+                          {item.variant && <span style={{ fontSize: '11px', color: colors.text.secondary, marginLeft: '8px' }}>({item.variant})</span>}
                         </div>
                         <div className="item-price">{formatCurrency(item.price * item.quantity)}</div>
                       </div>
                       {item.customizations && item.customizations.length > 0 && (
-                        <div style={{ fontSize: '11px', color: '#666', marginTop: '4px', marginLeft: '32px' }}>
+                        <div style={{ fontSize: '11px', color: colors.text.secondary, marginTop: '4px', marginLeft: '32px' }}>
                           {item.customizations.join(', ')}
                         </div>
                       )}

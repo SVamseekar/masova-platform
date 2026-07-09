@@ -535,7 +535,7 @@ const StaffManagementPage: React.FC = () => {
     minHeight: '100vh',
     fontFamily: typography.fontFamily.primary,
     padding: spacing[6],
-    backgroundColor: '#e8e8e8',
+    backgroundColor: colors.surface.secondary,
     zIndex: 1,
     paddingTop: '80px',
   };
@@ -620,7 +620,7 @@ const StaffManagementPage: React.FC = () => {
     return {
       ...badgeBase,
       backgroundColor: color,
-      color: '#fff',
+      color: colors.text.inverse,
       padding: `${spacing[1]} ${spacing[2]}`,
       borderRadius: borderRadius.full,
       fontSize: typography.fontSize.xs,
@@ -855,20 +855,20 @@ const StaffManagementPage: React.FC = () => {
                           fontWeight: typography.fontWeight.bold,
                           cursor: 'pointer',
                           transition: 'all 0.2s ease',
-                          backgroundColor: employee.isActive ? '#ef4444' : '#10b981',
-                          color: '#ffffff',
+                          backgroundColor: employee.isActive ? '#ef4444' : colors.semantic.success,
+                          color: colors.text.inverse,
                           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
                           minWidth: '100px',
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.transform = 'scale(1.05)';
                           e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
-                          e.currentTarget.style.backgroundColor = employee.isActive ? '#dc2626' : '#059669';
+                          e.currentTarget.style.backgroundColor = employee.isActive ? '#dc2626' : colors.semantic.successDark;
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.transform = 'scale(1)';
                           e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
-                          e.currentTarget.style.backgroundColor = employee.isActive ? '#ef4444' : '#10b981';
+                          e.currentTarget.style.backgroundColor = employee.isActive ? '#ef4444' : colors.semantic.success;
                         }}
                       >
                         {employee.isActive ? 'Deactivate' : 'Activate'}
@@ -1038,7 +1038,7 @@ const StaffManagementPage: React.FC = () => {
                           <div style={{
                             padding: `${spacing[1]} ${spacing[3]}`,
                             background: colors.success.main,
-                            color: '#ffffff',
+                            color: colors.text.inverse,
                             borderRadius: borderRadius.full,
                             fontSize: typography.fontSize.sm,
                             fontWeight: typography.fontWeight.semibold,
@@ -1048,7 +1048,7 @@ const StaffManagementPage: React.FC = () => {
                           <div style={{
                             padding: `${spacing[1]} ${spacing[3]}`,
                             background: colors.text.secondary,
-                            color: '#ffffff',
+                            color: colors.text.inverse,
                             borderRadius: borderRadius.full,
                             fontSize: typography.fontSize.sm,
                             fontWeight: typography.fontWeight.semibold,

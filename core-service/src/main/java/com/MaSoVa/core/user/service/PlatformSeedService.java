@@ -40,6 +40,24 @@ public class PlatformSeedService {
 
     private static final Logger log = LoggerFactory.getLogger(PlatformSeedService.class);
     private static final String DEMO_PASSWORD = "Demo@1234";
+    /**
+     * Fixed 5-digit POS / clock-in PINs for Berlin staff (dev/demo only).
+     * Documented in scripts/reseed/README.md — reseed resets these every run.
+     * <ul>
+     *   <li>cashier.berlin@gmail.com → 12345</li>
+     *   <li>kitchen.berlin@gmail.com → 23456</li>
+     *   <li>manager.berlin@gmail.com → 34567</li>
+     *   <li>assistant.berlin@gmail.com → 45678</li>
+     *   <li>driver.berlin@gmail.com → 56789</li>
+     * </ul>
+     */
+    private static final Map<String, String> DEMO_STAFF_PINS = Map.of(
+            "cashier.berlin@gmail.com", "12345",
+            "kitchen.berlin@gmail.com", "23456",
+            "manager.berlin@gmail.com", "34567",
+            "assistant.berlin@gmail.com", "45678",
+            "driver.berlin@gmail.com", "56789"
+    );
     private static final String STORE_CODE = "DOM001";
     /** EU primary business zone (Berlin). */
     private static final ZoneId EU_ZONE = ZoneId.of("Europe/Berlin");
@@ -244,6 +262,7 @@ public class PlatformSeedService {
                 if (licenseNumber != null) {
                     emp.setLicenseNumber(licenseNumber);
                 }
+                applyDemoPin(emp, email);
                 u.setEmployeeDetails(emp);
             }
             User saved = userRepository.save(u);
@@ -270,11 +289,23 @@ public class PlatformSeedService {
             emp.setLicenseNumber(licenseNumber);
             emp.setActiveDeliveryCount(0);
             emp.setRating(5.0);
+            applyDemoPin(emp, email);
             user.setEmployeeDetails(emp);
         }
         User saved = userRepository.save(user);
         dualWriteUser(saved);
         return saved.getId();
+    }
+
+    /** Assign fixed demo PIN (BCrypt) so POS / clock-in works after reseed. */
+    private void applyDemoPin(User.EmployeeDetails emp, String email) {
+        String plainPin = DEMO_STAFF_PINS.get(email);
+        if (plainPin == null || plainPin.length() != 5) {
+            return;
+        }
+        emp.setEmployeePINHash(passwordEncoder.encode(plainPin));
+        emp.setPinSuffix(plainPin.substring(3));
+        log.info("Seeded demo PIN for {} (suffix …{})", email, emp.getPinSuffix());
     }
 
     private void dualWriteUser(User user) {
@@ -294,6 +325,12 @@ public class PlatformSeedService {
                     entity.setStoreId(user.getEmployeeDetails().getStoreId());
                     entity.setEmployeeRole(user.getEmployeeDetails().getRole());
                     entity.setEmployeeStatus(user.getEmployeeDetails().getStatus());
+                    if (user.getEmployeeDetails().getEmployeePINHash() != null) {
+                        entity.setEmployeePinHash(user.getEmployeeDetails().getEmployeePINHash());
+                    }
+                    if (user.getEmployeeDetails().getPinSuffix() != null) {
+                        entity.setPinSuffix(user.getEmployeeDetails().getPinSuffix());
+                    }
                 }
                 userJpaRepository.save(entity);
             } else {
@@ -311,6 +348,12 @@ public class PlatformSeedService {
                     builder.storeId(user.getEmployeeDetails().getStoreId())
                             .employeeRole(user.getEmployeeDetails().getRole())
                             .employeeStatus(user.getEmployeeDetails().getStatus());
+                    if (user.getEmployeeDetails().getEmployeePINHash() != null) {
+                        builder.employeePinHash(user.getEmployeeDetails().getEmployeePINHash());
+                    }
+                    if (user.getEmployeeDetails().getPinSuffix() != null) {
+                        builder.pinSuffix(user.getEmployeeDetails().getPinSuffix());
+                    }
                 }
                 userJpaRepository.save(builder.build());
             }

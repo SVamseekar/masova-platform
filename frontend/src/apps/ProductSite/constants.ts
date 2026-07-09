@@ -60,8 +60,8 @@ export const PAGE_SECTIONS = [
 ] as const
 
 export const STATS = [
+  { value: '12+', label: 'Locations, one dashboard', icon: Layers },
   { value: '8', label: 'Smart assistants', icon: Bot },
-  { value: '1', label: 'Dashboard for all locations', icon: Layers },
   { value: '24/7', label: 'Customer chat', icon: Clock },
   { value: 'You', label: 'Approve every change', icon: Shield },
 ]
@@ -110,6 +110,8 @@ export const MOBILE_APPS = [
     highlights: ['Role-based views (kitchen, driver, cashier)', 'OTP delivery proof', 'Clock-in sessions with manager approval'],
   },
 ]
+
+export const HERO_TRUST_ROW = 'EU VAT & fiscal signing built in · GDPR-ready · Multi-location from day one'
 
 export const PAIN_POINTS = [
   {

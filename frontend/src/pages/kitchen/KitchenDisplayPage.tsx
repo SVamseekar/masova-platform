@@ -23,16 +23,17 @@ import WhatshotIcon from '@mui/icons-material/Whatshot';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
+import { colors } from '../../styles/design-tokens';
 
-// Allergen badge components
+// Allergen badge components (neumorphic warning tokens)
 export const AllergenBadge: React.FC<{ allergen: AllergenType }> = ({ allergen }) => (
   <span
     title={allergen}
     style={{
       display: 'inline-block',
-      background: 'rgba(255, 165, 0, 0.2)',
-      border: '1px solid rgba(255, 165, 0, 0.6)',
-      color: 'orange',
+      background: `${colors.semantic.warning}33`,
+      border: `1px solid ${colors.semantic.warning}`,
+      color: colors.semantic.warningDark,
       fontSize: '0.65rem',
       fontWeight: 700,
       padding: '2px 5px',
@@ -63,11 +64,12 @@ interface OrderItem {
   allergens?: AllergenType[];
 }
 
+// Brand colors for third-party aggregators (external brands — not design tokens)
 const AGGREGATOR_BADGE: Record<string, { label: string; bg: string; color: string }> = {
-  WOLT:       { label: 'Wolt',       bg: '#009DE0', color: '#fff' },
-  DELIVEROO:  { label: 'Deliveroo',  bg: '#00CCBC', color: '#fff' },
-  JUST_EAT:   { label: 'Just Eat',   bg: '#FF8000', color: '#fff' },
-  UBER_EATS:  { label: 'Uber Eats',  bg: '#000000', color: '#fff' },
+  WOLT:       { label: 'Wolt',       bg: '#009DE0', color: colors.text.inverse },
+  DELIVEROO:  { label: 'Deliveroo',  bg: '#00CCBC', color: colors.text.inverse },
+  JUST_EAT:   { label: 'Just Eat',   bg: '#FF8000', color: colors.text.inverse },
+  UBER_EATS:  { label: 'Uber Eats',  bg: '#000000', color: colors.text.inverse },
 };
 
 interface Order {
@@ -264,9 +266,9 @@ const KitchenDisplayPage: React.FC = () => {
   // Color urgency based on order age
   const getUrgencyStyle = (receivedAt: Date): React.CSSProperties => {
     const mins = Math.floor((currentTime.getTime() - new Date(receivedAt).getTime()) / 60000);
-    if (mins >= 10) return { borderLeft: '4px solid #ef4444' };
-    if (mins >= 5) return { borderLeft: '4px solid #f59e0b' };
-    return { borderLeft: '4px solid #10b981' };
+    if (mins >= 10) return { borderLeft: `4px solid ${colors.semantic.error}` };
+    if (mins >= 5) return { borderLeft: `4px solid ${colors.semantic.warning}` };
+    return { borderLeft: `4px solid ${colors.semantic.success}` };
   };
 
   const findMenuItemByName = (itemName: string): MenuItem | null => {
@@ -502,15 +504,15 @@ const KitchenDisplayPage: React.FC = () => {
   );
 
   const statusColumns: StatusColumn[] = [
-    { status: 'RECEIVED', title: 'New Orders', Icon: FiberNewIcon, color: '#3b82f6' },
-    { status: 'PREPARING', title: 'Preparing', Icon: BuildIcon, color: '#f59e0b' },
-    { status: 'OVEN', title: 'In Oven', Icon: WhatshotIcon, color: '#e53e3e' },
-    { status: 'BAKED', title: 'Baked', Icon: CheckCircleIcon, color: '#10b981' },
-    { status: 'READY', title: 'Ready', Icon: CheckCircleIcon, color: '#22c55e' },
-    { status: 'DISPATCHED', title: 'Dispatched', Icon: LocalShippingIcon, color: '#8b5cf6' },
-    { status: 'OUT_FOR_DELIVERY', title: 'Out for Delivery', Icon: LocalShippingIcon, color: '#7c3aed' },
-    { status: 'SERVED', title: 'Served', Icon: RestaurantIcon, color: '#607D8B' },
-    { status: 'COMPLETED', title: 'Picked Up', Icon: CheckCircleIcon, color: '#4caf50' }
+    { status: 'RECEIVED', title: 'New Orders', Icon: FiberNewIcon, color: colors.semantic.info },
+    { status: 'PREPARING', title: 'Preparing', Icon: BuildIcon, color: colors.semantic.warning },
+    { status: 'OVEN', title: 'In Oven', Icon: WhatshotIcon, color: colors.brand.primary },
+    { status: 'BAKED', title: 'Baked', Icon: CheckCircleIcon, color: colors.semantic.success },
+    { status: 'READY', title: 'Ready', Icon: CheckCircleIcon, color: colors.semantic.successLight },
+    { status: 'DISPATCHED', title: 'Dispatched', Icon: LocalShippingIcon, color: colors.brand.secondary },
+    { status: 'OUT_FOR_DELIVERY', title: 'Out for Delivery', Icon: LocalShippingIcon, color: colors.brand.secondaryDark },
+    { status: 'SERVED', title: 'Served', Icon: RestaurantIcon, color: colors.text.secondary },
+    { status: 'COMPLETED', title: 'Picked Up', Icon: CheckCircleIcon, color: colors.semantic.successDark }
   ];
 
   const getOrdersByStatus = (status: string): Order[] => {

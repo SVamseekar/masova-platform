@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion'
 import { Bot, Sparkles } from 'lucide-react'
 import { colors, motion as motionTokens } from '../tokens'
-import { STATS } from '../constants'
+import { STATS, HERO_TRUST_ROW } from '../constants'
 import AgentConstellation from './AgentConstellation'
 import RealAppMockup from './RealAppMockup'
+import LiveOrderStrip from './LiveOrderStrip'
 
 const headlineVariant = (delay: number) => ({
   initial: { opacity: 0, y: 32 },
@@ -150,6 +151,18 @@ export default function HeroSection() {
           </a>
         </motion.div>
 
+        <motion.p
+          {...fadeUpVariant(0.42)}
+          style={{
+            color: colors.textMuted,
+            fontSize: 12,
+            letterSpacing: '0.02em',
+            marginBottom: 28,
+          }}
+        >
+          {HERO_TRUST_ROW}
+        </motion.p>
+
         <motion.div
           {...fadeUpVariant(0.48)}
           className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto mb-16"
@@ -175,6 +188,9 @@ export default function HeroSection() {
         style={{ position: 'relative', zIndex: 1, maxWidth: 920, margin: '0 auto' }}
       >
         <RealAppMockup size="large" />
+        <div style={{ marginTop: 24 }}>
+          <LiveOrderStrip />
+        </div>
       </motion.div>
     </section>
   )

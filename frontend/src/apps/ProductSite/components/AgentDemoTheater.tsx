@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Sparkles, MessageCircle } from 'lucide-react'
 import SectionLabel from './SectionLabel'
+import LiveOrderStrip from './LiveOrderStrip'
 import { colors } from '../tokens'
 
 // Mirrors the real ChatWidget's product theme (chatWidgetTheme.ts, isProductSite branch)
@@ -17,13 +18,25 @@ const QUICK_ACTIONS = [
   { label: 'Compare plans', icon: MessageCircle },
 ]
 
-const DEMO_CHATS = [
-  { role: 'agent' as const, text: "I'm the Support Agent — not a FAQ bot. I reason over your question and pull real product context before I answer. What should I look into?" },
-  { role: 'user' as const, text: 'How do MaSoVa smart assistants work for restaurant managers?' },
-  { role: 'agent' as const, text: '8 assistants run in the background — demand forecasting, stock alerts, review replies, shift suggestions. Every one drafts an action; a manager approves before anything goes live.' },
-  { role: 'user' as const, text: 'Where is my order #2041?' },
-  { role: 'agent' as const, text: 'Order #2041 is OUT_FOR_DELIVERY — driver Marco, ETA 8 minutes. Want live tracking?' },
+// Three short scenarios, looped — each a different kind of question the Support Agent
+// handles, to read as "a lot happening" rather than one fixed script.
+const DEMO_SCENARIOS: { role: 'agent' | 'user'; text: string }[][] = [
+  [
+    { role: 'agent', text: "I'm the Support Agent — not a FAQ bot. I reason over your question and pull real product context before I answer. What should I look into?" },
+    { role: 'user', text: 'How do MaSoVa smart assistants work for restaurant managers?' },
+    { role: 'agent', text: '8 assistants run in the background — demand forecasting, stock alerts, review replies, shift suggestions. Every one drafts an action; a manager approves before anything goes live.' },
+  ],
+  [
+    { role: 'user', text: 'Where is my order #2041?' },
+    { role: 'agent', text: 'Order #2041 is OUT_FOR_DELIVERY — driver Marco, ETA 8 minutes. Want live tracking?' },
+  ],
+  [
+    { role: 'user', text: 'Does the Margherita pizza contain gluten?' },
+    { role: 'agent', text: 'Yes — Margherita Pizza is flagged for Gluten and Dairy under our 14-EU-allergen system. That badge shows on the customer menu and the kitchen ticket automatically.' },
+  ],
 ]
+
+const DEMO_CHATS = DEMO_SCENARIOS.flat()
 
 export default function AgentDemoTheater() {
   const [visibleLines, setVisibleLines] = useState(0)
@@ -32,13 +45,18 @@ export default function AgentDemoTheater() {
   const hasAutoStarted = useRef(false)
 
   const startDemo = useCallback(() => {
-    timersRef.current.forEach((id) => window.clearTimeout(id))
-    timersRef.current = []
-    setVisibleLines(0)
-    DEMO_CHATS.forEach((_, i) => {
-      const id = window.setTimeout(() => setVisibleLines(i + 1), (i + 1) * 900)
-      timersRef.current.push(id)
-    })
+    const runOnce = () => {
+      timersRef.current.forEach((id) => window.clearTimeout(id))
+      timersRef.current = []
+      setVisibleLines(0)
+      DEMO_CHATS.forEach((_, i) => {
+        const id = window.setTimeout(() => setVisibleLines(i + 1), (i + 1) * 900)
+        timersRef.current.push(id)
+      })
+      const loopId = window.setTimeout(runOnce, DEMO_CHATS.length * 900 + 3500)
+      timersRef.current.push(loopId)
+    }
+    runOnce()
   }, [])
 
   useEffect(() => {
@@ -80,6 +98,15 @@ export default function AgentDemoTheater() {
           <p className="text-gray-400 max-w-xl mx-auto">
             This isn't a mockup of a chat — it's the real widget. Click the <span style={{ color: CHAT_BRAND }}>Agent</span> button in the corner to talk to it yourself.
           </p>
+        </motion.div>
+
+        <motion.div
+          className="mb-10"
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+        >
+          <LiveOrderStrip compact />
         </motion.div>
 
         {/* Real chat panel replica — same layout/theme as components/chat/ChatWidget.tsx */}

@@ -100,6 +100,45 @@ curl.exe -X POST http://127.0.0.1:8080/api/auth/login -H "Content-Type: applicat
 curl.exe -X POST http://127.0.0.1:8080/api/auth/login -H "Content-Type: application/json" -d "{\"email\":\"anna.mueller@gmail.com\",\"password\":\"Demo@1234\"}"
 ```
 
+## Demo staff PINs (POS / clock-in) — Phase F
+
+After `reseed-all` (core seed), every Berlin staff user has a **fixed 5-digit PIN** (dev/demo only):
+
+| Email | Role | PIN |
+|---|---|---|
+| `cashier.berlin@gmail.com` | CASHIER | **12345** |
+| `kitchen.berlin@gmail.com` | KITCHEN | **23456** |
+| `manager.berlin@gmail.com` | MANAGER | **34567** |
+| `assistant.berlin@gmail.com` | ASSISTANT_MANAGER | **45678** |
+| `driver.berlin@gmail.com` | DRIVER | **56789** |
+
+Password for all demo users remains `Demo@1234`.
+
+**POS place-order:** open `/pos`, add items, fill customer, click Place Order → enter cashier PIN `12345`.
+
+**PIN API check:**
+
+```bash
+curl -s -X POST http://192.168.50.88:8080/api/auth/validate-pin \
+  -H "Content-Type: application/json" \
+  -d '{"pin":"12345"}'
+```
+
+EU payment methods (store `countryCode=DE`): **CASH / CARD / WALLET** only — UPI is India-only in the POS and customer payment UI.
+
+## Phase F — Frontend smoke (Playwright)
+
+From `frontend/` with Dell gateway reachable and Vite on `:3000`:
+
+```bash
+# Point API at Dell (or use .env)
+export VITE_API_GATEWAY_URL=http://192.168.50.88:8080/api
+export VITE_API_BASE_URL=http://192.168.50.88:8080
+npx playwright test tests/phase-f-platform-smoke.spec.ts --project=chromium
+```
+
+Covers: landing, legal pages, manager dashboard + analytics + orders, customer menu/login, KDS, POS (no UPI).
+
 ## Env must-haves
 
 - `JWT_SECRET` = non-denylisted secret (≥64 chars), **same for all services**

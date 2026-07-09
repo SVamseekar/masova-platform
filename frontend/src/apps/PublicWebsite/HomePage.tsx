@@ -19,7 +19,7 @@ const MENU_ITEMS = [
     cuisine: 'North Indian',
     price: '€29.90',
     imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&q=80',
-    ring: '#f59e0b',
+    ring: 'var(--warning)',
     tag: 'Bestseller',
   },
   {
@@ -27,7 +27,7 @@ const MENU_ITEMS = [
     cuisine: 'Italian',
     price: '€34.90',
     imageUrl: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400&q=80',
-    ring: '#ef4444',
+    ring: 'var(--red-light)',
     tag: 'New',
   },
   {
@@ -744,7 +744,7 @@ const HomePage: React.FC = () => {
               transform: 'rotate(-15deg)',
               zIndex: 2,
             }}>
-              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '1.1rem', color: '#fff', lineHeight: 1 }}>20%</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '1.1rem', color: 'var(--text-1)', lineHeight: 1 }}>20%</span>
               <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>OFF</span>
             </div>
           </div>
@@ -828,7 +828,7 @@ const HomePage: React.FC = () => {
                   onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
                 />
                 <button
-                  style={{ padding: '10px 20px', background: 'var(--red)', color: '#fff', border: 'none', borderRadius: 'var(--radius-pill)', fontFamily: 'var(--font-body)', fontWeight: 600, cursor: 'pointer', fontSize: '0.875rem', transition: 'var(--transition)' }}
+                  style={{ padding: '10px 20px', background: 'var(--red)', color: 'var(--text-1)', border: 'none', borderRadius: 'var(--radius-pill)', fontFamily: 'var(--font-body)', fontWeight: 600, cursor: 'pointer', fontSize: '0.875rem', transition: 'var(--transition)' }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--red-light)'; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--red)'; }}
                 >

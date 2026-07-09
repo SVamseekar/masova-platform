@@ -304,7 +304,7 @@ const DashboardPage: React.FC = () => {
         value: loadingMetrics ? '...' : fmt(salesData.today),
         sub: `+${salesData.percentageChange}% vs Last Year`,
         trend: salesData.percentageChange >= 0 ? 'up' : 'down',
-        accentColor: '#e53e3e',
+        accentColor: colors.brand.primary,
       },
       {
         label: 'Weekly Total',
@@ -1134,7 +1134,7 @@ const DashboardPage: React.FC = () => {
                     fontSize: typography.fontSize.xs,
                     fontWeight: typography.fontWeight.bold,
                     backgroundColor: pred.riskLevel === 'HIGH' ? colors.semantic.error : pred.riskLevel === 'MEDIUM' ? colors.semantic.warning : colors.semantic.info,
-                    color: '#ffffff'
+                    color: colors.text.inverse
                   }}>
                     {pred.riskLevel}
                   </div>
