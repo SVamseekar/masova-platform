@@ -423,11 +423,8 @@ public class LogisticsSeedService {
             for (String name : List.of("inventoryItems", "purchaseOrders", "suppliers")) {
                 var cache = cacheManager.getCache(name);
                 if (cache != null) {
-                    if ("inventoryItems".equals(name) || "purchaseOrders".equals(name)) {
-                        cache.evict(storeId);
-                    } else {
-                        cache.clear();
-                    }
+                    // suppliers uses keys 'all'/'active' — clear whole region
+                    cache.clear();
                 }
             }
         } catch (Exception e) {

@@ -41,6 +41,7 @@ public class SupplierController {
      *           /compare/category/{cat}
      */
     @GetMapping
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "List suppliers (query: status, preferred, reliable, category, search, city, code)")
     public ResponseEntity<List<Supplier>> getSuppliers(
             @RequestParam(required = false) String status,

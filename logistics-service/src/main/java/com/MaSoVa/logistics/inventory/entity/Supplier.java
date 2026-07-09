@@ -1,5 +1,7 @@
 package com.MaSoVa.logistics.inventory.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -17,6 +19,7 @@ import java.util.List;
  * Manages supplier information, contact details, and performance metrics
  */
 @Document(collection = "suppliers")
+@JsonIgnoreProperties(ignoreUnknown = true) // Redis cache: ignore derived fields from older serializers
 public class Supplier {
 
     @Id
@@ -110,25 +113,33 @@ public class Supplier {
     // Business logic methods
 
     /**
-     * Calculate delivery performance percentage
+     * Calculate delivery performance percentage.
+     * JsonIgnore: computed — must not poison Redis @Cacheable JSON.
      */
+    @JsonIgnore
     public Double getDeliveryPerformance() {
-        if (totalOrders == 0) {
+        int total = totalOrders != null ? totalOrders : 0;
+        if (total == 0) {
             return 100.0;
         }
-        return (completedOrders * 100.0) / totalOrders;
+        int completed = completedOrders != null ? completedOrders : 0;
+        return (completed * 100.0) / total;
     }
 
     /**
      * Check if supplier is reliable (based on metrics)
      */
+    @JsonIgnore
     public Boolean isReliable() {
-        return onTimeDeliveryRate >= 80.0 && qualityRating >= 3.5;
+        double onTime = onTimeDeliveryRate != null ? onTimeDeliveryRate : 0.0;
+        double quality = qualityRating != null ? qualityRating : 0.0;
+        return onTime >= 80.0 && quality >= 3.5;
     }
 
     /**
      * Check if supplier has reached credit limit
      */
+    @JsonIgnore
     public Boolean hasCreditAvailable(BigDecimal pendingAmount) {
         if (creditLimit == null || pendingAmount == null) {
             return true;
