@@ -163,6 +163,18 @@ public class MaSoVaRabbitMQConfig {
                                           MessageConverter jsonMessageConverter) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
         template.setMessageConverter(jsonMessageConverter);
+        // Reliability under load: confirm publishes + return unroutable messages
+        template.setMandatory(true);
+        template.setConfirmCallback((correlation, ack, cause) -> {
+            if (!ack) {
+                org.slf4j.LoggerFactory.getLogger(MaSoVaRabbitMQConfig.class)
+                        .error("[AMQP] Publisher nack correlation={} cause={}", correlation, cause);
+            }
+        });
+        template.setReturnsCallback(returned ->
+                org.slf4j.LoggerFactory.getLogger(MaSoVaRabbitMQConfig.class)
+                        .error("[AMQP] Unroutable message exchange={} routingKey={} reply={}",
+                                returned.getExchange(), returned.getRoutingKey(), returned.getReplyText()));
         return template;
     }
 }

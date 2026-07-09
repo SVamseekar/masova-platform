@@ -34,10 +34,45 @@ After 2026-07-09 repair:
 
 | Script | Purpose |
 |---|---|
-| `mongo-fix-demo.js` | Diversify order statuses; ensure DOM001 EU fields |
+| **`reseed-all.js`** | **Phase E full EU reseed** — core → commerce → payment → logistics → intelligence |
+| **`verify-seed.js`** | **Phase E exit criteria** — counts + ownership + analytics; exit 0 = green |
+| `seed-core.js` | `POST /api/test-data/seed-demo` (Berlin DE/EUR, EU E.164 phones, users, campaigns) |
+| `seed-commerce.js` | `POST /api/orders/seed-demo` (menu + multi-status orders + equipment) |
+| `seed-payment.js` | `POST /api/payments/seed-demo` (synthetic EUR/Stripe-shaped txs + refunds) |
+| `seed-logistics.js` | `POST /api/inventory/seed-demo` (suppliers, inventory, POs, waste, delivery) |
+| `seed-intelligence.js` | `POST /api/analytics/seed-demo` (clear Redis + warm dashboard; no owned entities) |
+| `mongo-fix-demo.js` | Diversify order statuses; ensure DOM001 EU fields (legacy repair) |
 | `mongo-link-orders-userid.js` | Set `orders.customerId` = `customers.userId` for gateway ownership |
-| `seed-core.js` / `reseed-all.js` | Hit core `/api/test-data/*` (stores only) |
 | `verify-phase-b-e2e.js` | **True E2E Phase B residual** — create → kitchen → dispatch → accept → OTP → DELIVERED + cancel path + SockJS check |
+
+### Phase E — Full platform reseed + backend load (one path)
+
+```bash
+# Mac → Dell. Requires services on spring profile dev|demo + host Mongo + RabbitMQ + Redis.
+GW=http://192.168.50.88:8080 node scripts/reseed/reseed-all.js
+GW=http://192.168.50.88:8080 node scripts/reseed/verify-seed.js
+# Heavy traffic + AMQP:
+GW=http://192.168.50.88:8080 CONCURRENCY=40 REQUESTS=800 \
+  RABBIT_MGMT=http://192.168.50.88:15672 \
+  node scripts/reseed/verify-backend-load.js
+# Exit 0 = green. Safe to run reseed-all twice (idempotent upserts).
+```
+
+**Idempotency:** seeders upsert by fixed keys (email, orderNumber `SEED-ORD-*`, supplierCode `SEED-SUP-*`, itemCode, notes `seed:*`). No wipe-and-replace required. Re-running resets demo passwords to `Demo@1234` and refreshes seed rows.
+
+**Cross-service links:** reseed passes commerce paid order Mongo ids → payment txs; deliveryTracking order Mongo ids → logistics `delivery_trackings.orderId` (not order numbers).
+
+**Ownership invariant:** commerce seed sets `order.customerId` = Anna's **userId** (JWT `sub`), not the Customer document `_id`.
+
+**EU primary (not India):** stores `countryCode=DE` / `currency=EUR` / `locale=de-DE`; user phones E.164 `+49…`; analytics business calendar `Europe/Berlin` (not IST). Payment seed uses EUR + Stripe-shaped synthetic data.
+
+**Intelligence:** has **no Mongo entities** — seed clears Redis analytics caches and warms staff-leaderboard / sales / BI from commerce order data so manager Analytics tab is ready.
+
+**RabbitMQ (high traffic):** services use prefetch 50, concurrent consumers 4–16, publisher confirms + returns, DLX → `masova.dlq`. Load script verifies topology via management API `:15672` and bursts order creates that publish `order.created`.
+
+**Resilience:** Resilience4j circuit breakers on inter-service Feign/RestTemplate; gateway `RateLimitingFilter` (per-route RPM + login lockout). Load test treats HTTP 429 as controlled protection, not a hard failure.
+
+**Profile gate:** seed controllers/services only work when `SPRING_PROFILES_ACTIVE` includes `dev` or `demo`. Outside those profiles endpoints return 404 (or controller beans are not loaded for core `TestDataController`).
 
 ### Phase B residual verify (Mac → Dell gateway)
 

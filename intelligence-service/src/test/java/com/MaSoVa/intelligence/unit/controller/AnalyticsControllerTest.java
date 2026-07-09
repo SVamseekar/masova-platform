@@ -32,6 +32,7 @@ class AnalyticsControllerTest extends BaseServiceTest {
     @Mock private CostAnalysisService costAnalysisService;
     @Mock private BenchmarkingService benchmarkingService;
     @Mock private ExecutiveReportingService executiveReportingService;
+    @Mock private AnalyticsSeedService analyticsSeedService;
     @Mock private CacheManager cacheManager;
 
     @InjectMocks private AnalyticsController analyticsController;

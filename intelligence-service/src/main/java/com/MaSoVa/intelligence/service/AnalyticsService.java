@@ -22,8 +22,8 @@ import java.util.stream.Collectors;
 public class AnalyticsService {
 
     private static final Logger log = LoggerFactory.getLogger(AnalyticsService.class);
-    // Use IST timezone for all date operations (Indian restaurant business hours)
-    private static final ZoneId IST_ZONE = ZoneId.of("Asia/Kolkata");
+    // EU primary store hours (Berlin). Store-specific zones can be layered later via countryCode.
+    private static final ZoneId BUSINESS_ZONE = ZoneId.of("Europe/Berlin");
 
     private final OrderServiceClient orderServiceClient;
     private final UserServiceClient userServiceClient;
@@ -40,7 +40,7 @@ public class AnalyticsService {
     public SalesMetricsResponse getTodaySalesMetrics(String storeId) {
         log.info("Calculating sales metrics for store: {}", storeId);
 
-        LocalDate today = LocalDate.now(IST_ZONE);
+        LocalDate today = LocalDate.now(BUSINESS_ZONE);
         LocalDate yesterday = today.minusDays(1);
         LocalDate lastYear = today.minusYears(1);
         LocalTime currentTime = LocalTime.now();
@@ -88,7 +88,7 @@ public class AnalyticsService {
     public AverageOrderValueResponse getAverageOrderValue(String storeId) {
         log.info("Calculating average order value for store: {}", storeId);
 
-        LocalDate today = LocalDate.now(IST_ZONE);
+        LocalDate today = LocalDate.now(BUSINESS_ZONE);
         LocalDate yesterday = today.minusDays(1);
 
         // Get today's orders
@@ -140,7 +140,7 @@ public class AnalyticsService {
         Integer activeDeliveries = orderServiceClient.getActiveDeliveryCount();
 
         // Calculate completed deliveries today
-        LocalDate today = LocalDate.now(IST_ZONE);
+        LocalDate today = LocalDate.now(BUSINESS_ZONE);
         List<Map<String, Object>> todayOrders = orderServiceClient.getOrdersByDate(today);
         long completedDeliveries = todayOrders.stream()
                 .filter(o -> "DELIVERY".equals(o.get("orderType")) && "DELIVERED".equals(o.get("status")))
@@ -162,7 +162,7 @@ public class AnalyticsService {
     public StaffPerformanceResponse getStaffPerformance(String staffId) {
         log.info("Fetching staff performance for: {}", staffId);
 
-        LocalDate today = LocalDate.now(IST_ZONE);
+        LocalDate today = LocalDate.now(BUSINESS_ZONE);
         List<Map<String, Object>> staffOrders = orderServiceClient.getOrdersByStaff(staffId, today);
 
         int ordersProcessed = staffOrders.size();
@@ -284,7 +284,7 @@ public class AnalyticsService {
     public SalesTrendResponse getSalesTrends(String storeId, String period) {
         log.info("Calculating sales trends for store: {}, period: {}", storeId, period);
 
-        LocalDate endDate = LocalDate.now(IST_ZONE);
+        LocalDate endDate = LocalDate.now(BUSINESS_ZONE);
         LocalDate startDate;
         int days;
 
@@ -369,7 +369,7 @@ public class AnalyticsService {
     public OrderTypeBreakdownResponse getOrderTypeBreakdown(String storeId) {
         log.info("Calculating order type breakdown for store: {}", storeId);
 
-        LocalDate today = LocalDate.now(IST_ZONE);
+        LocalDate today = LocalDate.now(BUSINESS_ZONE);
         List<Map<String, Object>> orders = orderServiceClient.getOrdersByDate(today);
 
         // Group by order type
@@ -419,7 +419,7 @@ public class AnalyticsService {
     public PeakHoursResponse getPeakHours(String storeId) {
         log.info("Calculating peak hours for store: {}", storeId);
 
-        LocalDate today = LocalDate.now(IST_ZONE);
+        LocalDate today = LocalDate.now(BUSINESS_ZONE);
         List<Map<String, Object>> orders = orderServiceClient.getOrdersByDate(today);
 
         // Group by hour
@@ -479,8 +479,8 @@ public class AnalyticsService {
     public StaffLeaderboardResponse getStaffLeaderboard(String storeId, String period) {
         log.info("Fetching staff leaderboard for store: {}, period: {}", storeId, period);
 
-        // Use IST timezone for Indian restaurant operations
-        LocalDate endDate = LocalDate.now(IST_ZONE);
+        // Europe/Berlin business calendar for EU primary
+        LocalDate endDate = LocalDate.now(BUSINESS_ZONE);
         LocalDate startDate;
 
         switch (period.toUpperCase()) {
@@ -582,7 +582,7 @@ public class AnalyticsService {
     public TopProductsResponse getTopProducts(String storeId, String period, String sortBy) {
         log.info("Fetching top products for store: {}, period: {}, sortBy: {}", storeId, period, sortBy);
 
-        LocalDate endDate = LocalDate.now(IST_ZONE);
+        LocalDate endDate = LocalDate.now(BUSINESS_ZONE);
         LocalDate startDate;
 
         switch (period.toUpperCase()) {
@@ -693,7 +693,7 @@ public class AnalyticsService {
                     return ((LocalDateTime) createdAtObj).toLocalDate();
                 }
                 // Fallback to today if date is missing
-                return LocalDate.now(IST_ZONE);
+                return LocalDate.now(BUSINESS_ZONE);
             }));
     }
 

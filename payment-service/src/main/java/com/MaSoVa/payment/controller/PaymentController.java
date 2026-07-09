@@ -249,13 +249,21 @@ public class PaymentController {
     @Operation(summary = "Seed synthetic transactions/refunds for demo (dev/demo profile only)")
     public ResponseEntity<?> seedDemo(
             @RequestParam(defaultValue = "DOM001") String storeId,
-            @RequestParam(defaultValue = "cust-demo-1") String customerId) {
+            @RequestParam(defaultValue = "cust-demo-1") String customerId,
+            @RequestParam(required = false) String orderIds) {
         if (!paymentSeedService.isSeedAllowed()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "Seed only available with spring profile dev or demo"));
         }
         try {
-            return ResponseEntity.ok(paymentSeedService.seedDemo(storeId, customerId));
+            java.util.List<String> linked = null;
+            if (orderIds != null && !orderIds.isBlank()) {
+                linked = java.util.Arrays.stream(orderIds.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .toList();
+            }
+            return ResponseEntity.ok(paymentSeedService.seedDemo(storeId, customerId, linked));
         } catch (Exception e) {
             log.error("Payment seed-demo failed for store {}", storeId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

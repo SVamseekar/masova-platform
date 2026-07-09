@@ -460,12 +460,12 @@ public class UserService {
     }
 
     /**
-     * Unique temporary phone for Google registration — passes {@code ^[6-9]\d{9}$} until
-     * the customer updates their profile (Task 16).
+     * Unique temporary phone for Google registration — E.164 DE-style until
+     * the customer updates their profile.
      */
     static String generateGoogleRegistrationPhone(String googleSub, String email) {
-        long suffix = Math.abs((long) (googleSub + email).hashCode()) % 1_000_000_000L;
-        return "9" + String.format("%09d", suffix);
+        long suffix = Math.abs((long) (googleSub + email).hashCode()) % 100_000_000L;
+        return "+4915" + String.format("%08d", suffix);
     }
 
     public void logout(String userId, String accessToken) {
