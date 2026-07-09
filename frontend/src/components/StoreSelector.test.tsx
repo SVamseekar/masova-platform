@@ -154,6 +154,26 @@ describe('StoreSelector', () => {
     expect(screen.getByText('No stores available')).toBeInTheDocument();
   });
 
+  it('shows error state and retry when store load fails', async () => {
+    const refetch = vi.fn();
+    vi.mocked(useGetActiveStoresQuery).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: { status: 403, data: 'Forbidden' },
+      refetch,
+    } as unknown as ReturnType<typeof useGetActiveStoresQuery>);
+
+    const user = userEvent.setup();
+    renderWithProviders(<StoreSelector />, { useMemoryRouter: true });
+
+    expect(screen.getByText('Stores unavailable')).toBeInTheDocument();
+    await user.click(screen.getByText('Stores unavailable'));
+    expect(screen.getByText('Could not load stores.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(refetch).toHaveBeenCalled();
+  });
+
   it('renders manager variant', () => {
     renderWithProviders(<StoreSelector variant="manager" />, { useMemoryRouter: true });
     expect(screen.getByText('Select Store')).toBeInTheDocument();

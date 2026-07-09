@@ -18,6 +18,11 @@ public class SecurityConfig extends SecurityConfigurationBase {
         super(tokenProvider);
     }
 
+    /** Package-visible for unit tests (public store path contract). */
+    String[] getPublicEndpointsForTest() {
+        return getPublicEndpoints();
+    }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -41,7 +46,12 @@ public class SecurityConfig extends SecurityConfigurationBase {
             "/api/users/kiosk/**",
             "/api/users/auth/google",
             "/api/users/auth/google/register",
-            // Public store/menu/review browsing
+            // Public store browsing (customer store picker / menu entry — no auth)
+            // Mutations remain @PreAuthorize(MANAGER) on StoreController
+            "/api/stores",
+            "/api/stores/**",
+            // Legacy aliases (if any callers still use /public)
+            "/api/stores/public",
             "/api/stores/public/**",
             "/api/menu/public/**",
             "/api/reviews/public/**",

@@ -178,11 +178,15 @@ export const menuApi = createApi({
   refetchOnFocus: false, // Don't refetch on window focus to reduce unnecessary requests
   tagTypes: ['Menu', 'MenuStats'],
   endpoints: (builder) => ({
-    // Public endpoints (no auth required)
-    getAvailableMenu: builder.query<MenuItem[], void>({
-      query: () => '/menu',
+    // Public endpoints (no auth required) — pass storeId for multi-store filtering
+    getAvailableMenu: builder.query<MenuItem[], string | void>({
+      query: (storeId) =>
+        storeId
+          ? `/menu?storeId=${encodeURIComponent(storeId)}`
+          : '/menu',
       transformResponse: mapMenuItemsResponse,
-      providesTags: () => ['Menu'],
+      providesTags: (_result, _error, storeId) =>
+        storeId ? [{ type: 'Menu', id: storeId }] : ['Menu'],
     }),
     getMenuItem: builder.query<MenuItem, string>({
       query: (id) => `/menu/${id}`,
