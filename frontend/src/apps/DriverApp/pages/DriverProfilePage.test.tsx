@@ -7,6 +7,7 @@ import DriverProfilePage from './DriverProfilePage';
 
 const mockStartSession = vi.fn(() => ({ unwrap: () => Promise.resolve() }));
 const mockEndSession = vi.fn(() => ({ unwrap: () => Promise.resolve() }));
+const mockAddBreakTime = vi.fn(() => ({ unwrap: () => Promise.resolve() }));
 
 interface DriverPerformanceData {
   totalDeliveries: number;
@@ -36,6 +37,8 @@ vi.mock('../../../store/api/sessionApi', () => ({
   }),
   useStartSessionMutation: () => [mockStartSession, { isLoading: false }],
   useEndSessionMutation: () => [mockEndSession, { isLoading: false }],
+  useAddBreakTimeMutation: () => [mockAddBreakTime, { isLoading: false }],
+  useRecordBreakMutation: () => [mockAddBreakTime, { isLoading: false }],
   sessionApi: { reducerPath: 'sessionApi', reducer: () => ({}), middleware: () => (next: RtkMiddleware) => (action: unknown) => next(action) },
 }));
 
@@ -140,7 +143,7 @@ describe('DriverProfilePage', () => {
 
     renderAsDriver(<DriverProfilePage />);
     expect(screen.getByText('Clock Out')).toBeInTheDocument();
-    expect(screen.getByText('Take Break')).toBeInTheDocument();
+    expect(screen.getByText(/Take Break/i)).toBeInTheDocument();
   });
 
   it('displays personal information section', () => {
