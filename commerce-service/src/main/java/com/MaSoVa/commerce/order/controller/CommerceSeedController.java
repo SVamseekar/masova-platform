@@ -39,13 +39,14 @@ public class CommerceSeedController {
     @Operation(summary = "Seed commerce demo data (menu, orders, equipment) — dev/demo only")
     public ResponseEntity<?> seedDemo(
             @RequestParam(defaultValue = "DOM001") String storeId,
-            @RequestParam(required = false) String customerId) {
+            @RequestParam(required = false) String customerId,
+            @RequestParam(required = false) String driverId) {
         if (!commerceSeedService.isSeedAllowed()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "Seed only available with spring profile dev or demo"));
         }
         try {
-            return ResponseEntity.ok(commerceSeedService.seedDemo(storeId, customerId));
+            return ResponseEntity.ok(commerceSeedService.seedDemo(storeId, customerId, driverId));
         } catch (Exception e) {
             log.error("Commerce seed-demo failed for store {}", storeId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

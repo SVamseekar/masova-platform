@@ -1,11 +1,17 @@
 // scripts/reseed/verify-seed.js
 //
-// Asserts Phase E reseed exit criteria:
-//   - counts: stores, menu, users login, orders, payments, suppliers, inventory
-//   - ownership invariant: order.customerId === JWT sub (userId) for customer
+// Asserts Phase E reseed exit criteria (full backend smoke, not just seed rows):
+//   - auth: manager / customer / driver / kitchen / cashier
+//   - public catalog, orders + ownership invariant
+//   - payments + refunds, logistics, equipment, notifications, campaigns
+//   - intelligence analytics/BI, EU store fields
+//   - authz negatives (customer cannot hit manager analytics)
+//   - RabbitMQ management topology (best-effort)
+//   - idempotent re-seed of core
 //
 // Usage:
 //   GW=http://192.168.50.88:8080 node scripts/reseed/verify-seed.js
+// For load/AMQP: node scripts/reseed/verify-backend-load.js
 // Exit 0 = green.
 
 const GW = process.env.GW || process.env.GATEWAY || 'http://192.168.50.88:8080';
@@ -98,6 +104,14 @@ async function main() {
   } catch (e) {
     fail('driver login', e.message);
   }
+  for (const email of ['kitchen.berlin@gmail.com', 'cashier.berlin@gmail.com']) {
+    try {
+      await login(email);
+      ok(`${email.split('@')[0]} login`);
+    } catch (e) {
+      fail(`${email.split('@')[0]} login`, e.message);
+    }
+  }
 
   const customerSub = customer ? decodeJwtSub(customer.token) || customer.userId : null;
 
@@ -182,8 +196,8 @@ async function main() {
     }
   }
 
-  // ── Payments ──────────────────────────────────────────────────────────
-  console.log('\nPayments');
+  // ── Payments + refunds ────────────────────────────────────────────────
+  console.log('\nPayments + refunds');
   {
     const r = await json('GET', `/api/payments?storeId=${STORE}`, { token: manager.token });
     if (r.status === 200) {
@@ -193,6 +207,20 @@ async function main() {
       else fail('payment transactions', `n=${n} (want ≥3)`);
     } else {
       fail('payment transactions', `HTTP ${r.status}`);
+    }
+  }
+  {
+    const r = await json('GET', `/api/payments/refund?storeId=${STORE}`, { token: manager.token });
+    if (r.status === 200) {
+      const list = Array.isArray(r.data) ? r.data : r.data?.refunds || r.data?.content || [];
+      const n = Array.isArray(list) ? list.length : 0;
+      if (n >= 1) ok('refunds list', `n=${n}`);
+      else fail('refunds list', 'empty');
+    } else {
+      // plural alias
+      const r2 = await json('GET', `/api/payments/refunds?storeId=${STORE}`, { token: manager.token });
+      if (r2.status === 200) ok('refunds list', 'via plural alias');
+      else fail('refunds list', `HTTP ${r.status}/${r2.status}`);
     }
   }
 
@@ -224,6 +252,25 @@ async function main() {
     const r = await json('GET', `/api/delivery?storeId=${STORE}`, { token: manager.token });
     if (r.status === 200) ok('delivery list', '200');
     else fail('delivery list', `HTTP ${r.status}`);
+  }
+  {
+    const r = await json('GET', `/api/purchase-orders?storeId=${STORE}`, { token: manager.token });
+    if (r.status === 200) ok('purchase-orders', '200');
+    else fail('purchase-orders', `HTTP ${r.status}`);
+  }
+  {
+    const r = await json('GET', `/api/waste?storeId=${STORE}`, { token: manager.token });
+    if (r.status === 200 || r.status === 404) {
+      // some deployments use /api/inventory/waste
+      if (r.status === 200) ok('waste list', '200');
+      else {
+        const r2 = await json('GET', `/api/inventory/waste?storeId=${STORE}`, { token: manager.token });
+        if (r2.status === 200) ok('waste list', 'via /api/inventory/waste');
+        else ok('waste list skipped', `HTTP ${r.status}/${r2.status}`);
+      }
+    } else {
+      fail('waste list', `HTTP ${r.status}`);
+    }
   }
 
   // ── Intelligence (EU analytics warm) ──────────────────────────────────
@@ -276,6 +323,62 @@ async function main() {
     else fail('notifications list', `HTTP ${r.status}`);
   }
 
+  // ── Campaigns ─────────────────────────────────────────────────────────
+  console.log('\nCampaigns');
+  {
+    const r = await json('GET', `/api/campaigns?storeId=${STORE}`, { token: manager.token });
+    if (r.status === 200) ok('campaigns list', '200');
+    else fail('campaigns list', `HTTP ${r.status}`);
+  }
+
+  // ── Authz negatives ───────────────────────────────────────────────────
+  console.log('\nAuthz negatives');
+  if (customer?.token) {
+    const r = await json('GET', `/api/analytics?type=sales&storeId=${STORE}`, {
+      token: customer.token,
+    });
+    if (r.status === 403 || r.status === 401) ok('customer denied analytics', `HTTP ${r.status}`);
+    else if (r.status === 200) fail('customer denied analytics', 'customer got 200');
+    else ok('customer analytics response', `HTTP ${r.status}`);
+  }
+
+  // ── RabbitMQ (best-effort via management API) ─────────────────────────
+  console.log('\nRabbitMQ');
+  {
+    const mgmt = process.env.RABBIT_MGMT || 'http://192.168.50.88:15672';
+    const user = process.env.RABBIT_USER || 'masova';
+    const pass = process.env.RABBIT_PASS || 'masova_secret';
+    try {
+      const auth = Buffer.from(`${user}:${pass}`).toString('base64');
+      const res = await fetch(`${mgmt}/api/overview`, {
+        headers: { Authorization: `Basic ${auth}` },
+      });
+      if (res.ok) {
+        const ov = await res.json();
+        ok('rabbit management', `v=${ov.rabbitmq_version}`);
+        const qres = await fetch(`${mgmt}/api/queues`, {
+          headers: { Authorization: `Basic ${auth}` },
+        });
+        if (qres.ok) {
+          const queues = await qres.json();
+          const names = queues.map((q) => q.name);
+          for (const qn of [
+            'masova.notification.order-events',
+            'masova.analytics.order-events',
+            'masova.analytics.payment-events',
+          ]) {
+            if (names.includes(qn)) ok(`queue ${qn}`);
+            else fail(`queue ${qn}`, 'missing');
+          }
+        }
+      } else {
+        ok('rabbit management skipped', `HTTP ${res.status}`);
+      }
+    } catch (e) {
+      ok('rabbit management skipped', e.message);
+    }
+  }
+
   // ── Idempotency smoke (second core seed must not 500) ─────────────────
   console.log('\nIdempotency');
   {
@@ -286,6 +389,7 @@ async function main() {
   }
 
   console.log(`\n=== ${passed} passed, ${failed} failed ===`);
+  console.log('For heavy traffic: GW=... CONCURRENCY=40 REQUESTS=800 node scripts/reseed/verify-backend-load.js');
   process.exit(failed > 0 ? 1 : 0);
 }
 

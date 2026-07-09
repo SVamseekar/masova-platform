@@ -60,6 +60,14 @@ public class LogisticsSeedService {
     }
 
     public Map<String, Object> seedDemo(String storeId, String driverId) {
+        return seedDemo(storeId, driverId, null);
+    }
+
+    /**
+     * @param deliveryOrderMongoIds optional commerce Mongo order ids for delivery_trackings
+     *                              (must be real order _ids, not order numbers)
+     */
+    public Map<String, Object> seedDemo(String storeId, String driverId, List<String> deliveryOrderMongoIds) {
         if (!isSeedAllowed()) {
             throw new IllegalStateException("Logistics seed is only available under dev/demo profiles");
         }
@@ -82,7 +90,7 @@ public class LogisticsSeedService {
 
         Map<String, Object> pos = seedPurchaseOrders(storeId, primarySupplierId, firstItemId, suppliers);
         Map<String, Object> waste = seedWaste(storeId, firstItemId);
-        Map<String, Object> delivery = seedDeliveryTracking(storeId, driver);
+        Map<String, Object> delivery = seedDeliveryTracking(storeId, driver, deliveryOrderMongoIds);
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("storeId", storeId);
@@ -314,14 +322,21 @@ public class LogisticsSeedService {
         return out;
     }
 
-    private Map<String, Object> seedDeliveryTracking(String storeId, String driverId) {
-        // Align with commerce seed order numbers that are DELIVERY terminal / in-flight
-        List<DeliverySpec> specs = List.of(
-                new DeliverySpec("SEED-ORD-OFD-1", "IN_TRANSIT"),
-                new DeliverySpec("SEED-ORD-DLVR-1", "DELIVERED"),
-                new DeliverySpec("SEED-ORD-DLVR-2", "DELIVERED"),
-                new DeliverySpec("SEED-ORD-DISP-1", "ASSIGNED")
-        );
+    private Map<String, Object> seedDeliveryTracking(String storeId, String driverId,
+                                                     List<String> deliveryOrderMongoIds) {
+        // Prefer real commerce Mongo order ids (unique index on delivery_trackings.orderId).
+        // Fallback order-number keys only when reseed did not pass linked ids.
+        List<String> defaults = List.of(
+                "SEED-ORD-OFD-1", "SEED-ORD-DLVR-1", "SEED-ORD-DLVR-2", "SEED-ORD-DISP-1");
+        List<String> statuses = List.of("IN_TRANSIT", "DELIVERED", "DELIVERED", "ASSIGNED");
+        List<DeliverySpec> specs = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            String orderId = (deliveryOrderMongoIds != null && deliveryOrderMongoIds.size() > i
+                    && deliveryOrderMongoIds.get(i) != null && !deliveryOrderMongoIds.get(i).isBlank())
+                    ? deliveryOrderMongoIds.get(i)
+                    : defaults.get(i);
+            specs.add(new DeliverySpec(orderId, statuses.get(i)));
+        }
 
         List<String> ids = new ArrayList<>();
         int created = 0;

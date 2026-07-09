@@ -57,8 +57,9 @@ public class CommerceSeedService {
      *
      * @param storeId    store code (DOM001)
      * @param customerId JWT userId (sub) — ownership invariant for customer order APIs
+     * @param driverId   optional driver userId for OFD/DELIVERED seed orders
      */
-    public Map<String, Object> seedDemo(String storeId, String customerId) {
+    public Map<String, Object> seedDemo(String storeId, String customerId, String driverId) {
         if (!isSeedAllowed()) {
             throw new IllegalStateException("Commerce seed is only available under dev/demo profiles");
         }
@@ -68,7 +69,7 @@ public class CommerceSeedService {
         String cid = (customerId == null || customerId.isBlank()) ? "seed-customer-user" : customerId;
 
         Map<String, Object> menu = seedMenu(storeId);
-        Map<String, Object> orders = seedOrders(storeId, cid);
+        Map<String, Object> orders = seedOrders(storeId, cid, driverId);
         Map<String, Object> equipment = equipmentSeedService.seedDemo(storeId);
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -83,6 +84,11 @@ public class CommerceSeedService {
         return result;
     }
 
+    /** Back-compat overload. */
+    public Map<String, Object> seedDemo(String storeId, String customerId) {
+        return seedDemo(storeId, customerId, null);
+    }
+
     public Map<String, Object> seedMenuOnly(String storeId) {
         if (!isSeedAllowed()) {
             throw new IllegalStateException("Commerce seed is only available under dev/demo profiles");
@@ -95,7 +101,7 @@ public class CommerceSeedService {
             throw new IllegalStateException("Commerce seed is only available under dev/demo profiles");
         }
         String cid = (customerId == null || customerId.isBlank()) ? "seed-customer-user" : customerId;
-        return seedOrders(storeId, cid);
+        return seedOrders(storeId, cid, null);
     }
 
     private Map<String, Object> seedMenu(String storeId) {
@@ -159,7 +165,7 @@ public class CommerceSeedService {
         return out;
     }
 
-    private Map<String, Object> seedOrders(String storeId, String customerUserId) {
+    private Map<String, Object> seedOrders(String storeId, String customerUserId, String driverId) {
         // Fixed order numbers for idempotent upsert
         List<OrderSpec> specs = List.of(
                 new OrderSpec("SEED-ORD-RECV-1", Order.OrderStatus.RECEIVED, Order.OrderType.DELIVERY, false),
@@ -180,6 +186,9 @@ public class CommerceSeedService {
         double price = menu.isEmpty() ? 12.90 : menu.get(0).getBasePrice() / 100.0;
 
         List<String> orderIds = new ArrayList<>();
+        Map<String, String> orderNumberToId = new LinkedHashMap<>();
+        List<String> paidOrderIds = new ArrayList<>();
+        List<String> deliveryTrackingOrderIds = new ArrayList<>();
         int created = 0;
         int updated = 0;
 
@@ -206,6 +215,13 @@ public class CommerceSeedService {
             order.setPriority(Order.Priority.NORMAL);
             order.setCurrency("EUR");
             order.setVatCountryCode("DE");
+
+            if (driverId != null && !driverId.isBlank()
+                    && (spec.status() == Order.OrderStatus.OUT_FOR_DELIVERY
+                    || spec.status() == Order.OrderStatus.DELIVERED
+                    || spec.status() == Order.OrderStatus.DISPATCHED)) {
+                order.setAssignedDriverId(driverId);
+            }
 
             OrderItem item = OrderItem.builder()
                     .menuItemId(menuItemId)
@@ -256,6 +272,17 @@ public class CommerceSeedService {
 
             Order saved = orderRepository.save(order);
             orderIds.add(saved.getId());
+            orderNumberToId.put(spec.orderNumber(), saved.getId());
+            if (spec.paid()) {
+                paidOrderIds.add(saved.getId());
+            }
+            // Logistics delivery_trackings.orderId must be commerce Mongo _id
+            if (spec.orderNumber().equals("SEED-ORD-OFD-1")
+                    || spec.orderNumber().equals("SEED-ORD-DLVR-1")
+                    || spec.orderNumber().equals("SEED-ORD-DLVR-2")
+                    || spec.orderNumber().equals("SEED-ORD-DISP-1")) {
+                deliveryTrackingOrderIds.add(saved.getId());
+            }
             if (isNew) {
                 created++;
             } else {
@@ -266,6 +293,9 @@ public class CommerceSeedService {
 
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("orderIds", orderIds);
+        out.put("orderNumberToId", orderNumberToId);
+        out.put("paidOrderIds", paidOrderIds);
+        out.put("deliveryTrackingOrderIds", deliveryTrackingOrderIds);
         out.put("createdCount", created);
         out.put("updatedCount", updated);
         out.put("totalSeedOrders", orderIds.size());

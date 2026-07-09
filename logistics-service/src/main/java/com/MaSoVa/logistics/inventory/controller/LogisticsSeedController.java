@@ -39,13 +39,21 @@ public class LogisticsSeedController {
     @Operation(summary = "Seed logistics demo data — dev/demo only")
     public ResponseEntity<?> seedDemo(
             @RequestParam(defaultValue = "DOM001") String storeId,
-            @RequestParam(required = false) String driverId) {
+            @RequestParam(required = false) String driverId,
+            @RequestParam(required = false) String orderIds) {
         if (!logisticsSeedService.isSeedAllowed()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "Seed only available with spring profile dev or demo"));
         }
         try {
-            return ResponseEntity.ok(logisticsSeedService.seedDemo(storeId, driverId));
+            java.util.List<String> linked = null;
+            if (orderIds != null && !orderIds.isBlank()) {
+                linked = java.util.Arrays.stream(orderIds.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .toList();
+            }
+            return ResponseEntity.ok(logisticsSeedService.seedDemo(storeId, driverId, linked));
         } catch (Exception e) {
             log.error("Logistics seed-demo failed for store {}", storeId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

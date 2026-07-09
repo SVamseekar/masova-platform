@@ -21,6 +21,7 @@ import java.util.Optional;
 /**
  * Dev/demo seed for manager Payments / Refunds UI when live Stripe keys are not set.
  * Callable only when active profiles include {@code dev} or {@code demo}.
+ * Prefer linking {@code orderIds} to real commerce Mongo order ids from reseed-all.
  */
 @Service
 public class PaymentSeedService {
@@ -29,13 +30,16 @@ public class PaymentSeedService {
 
     private final TransactionRepository transactionRepository;
     private final RefundRepository refundRepository;
+    private final OrderServiceClient orderServiceClient;
     private final Environment environment;
 
     public PaymentSeedService(TransactionRepository transactionRepository,
                               RefundRepository refundRepository,
+                              OrderServiceClient orderServiceClient,
                               Environment environment) {
         this.transactionRepository = transactionRepository;
         this.refundRepository = refundRepository;
+        this.orderServiceClient = orderServiceClient;
         this.environment = environment;
     }
 
@@ -44,26 +48,33 @@ public class PaymentSeedService {
     }
 
     /**
-     * Seed ≥3 SUCCESS transactions + 1 PROCESSED refund + 1 PENDING_APPROVAL refund.
-     * Idempotent on fixed orderIds.
+     * Seed ≥3 SUCCESS/PARTIAL_REFUND transactions + 1 PROCESSED refund + 1 PENDING_APPROVAL refund.
+     * Idempotent on orderId keys.
+     *
+     * @param linkedOrderIds optional commerce Mongo order ids (prefer ≥3 paid seed orders)
      */
-    public Map<String, Object> seedDemo(String storeId, String customerId) {
+    public Map<String, Object> seedDemo(String storeId, String customerId, List<String> linkedOrderIds) {
         if (!isSeedAllowed()) {
             throw new IllegalStateException("Payment seed is only available under dev/demo profiles");
         }
 
+        List<String> orderKeys = resolveOrderKeys(linkedOrderIds);
         List<String> transactionIds = new ArrayList<>();
         List<String> refundIds = new ArrayList<>();
+        List<String> syncedOrders = new ArrayList<>();
 
         Transaction tx1 = upsertSyntheticTxn(
-                "SEED-ORD-PAY-1", storeId, customerId,
+                orderKeys.get(0), storeId, customerId,
                 new BigDecimal("24.90"), Transaction.PaymentStatus.SUCCESS, "STRIPE", true);
         transactionIds.add(tx1.getId());
+        syncOrderPayment(tx1, "PAID", syncedOrders);
 
         Transaction tx2 = upsertSyntheticTxn(
-                "SEED-ORD-PAY-2", storeId, customerId,
+                orderKeys.get(1), storeId, customerId,
                 new BigDecimal("42.50"), Transaction.PaymentStatus.PARTIAL_REFUND, "STRIPE", true);
         transactionIds.add(tx2.getId());
+        // Partial refund still leaves order PAID with refund rows
+        syncOrderPayment(tx2, "PAID", syncedOrders);
 
         Refund partial = upsertRefund(
                 "SEED-RFND-PARTIAL-1",
@@ -76,9 +87,10 @@ public class PaymentSeedService {
         refundIds.add(partial.getId());
 
         Transaction tx3 = upsertSyntheticTxn(
-                "SEED-ORD-PAY-3", storeId, customerId,
+                orderKeys.get(2), storeId, customerId,
                 new BigDecimal("15.00"), Transaction.PaymentStatus.SUCCESS, "CASH", false);
         transactionIds.add(tx3.getId());
+        syncOrderPayment(tx3, "PAID", syncedOrders);
 
         Refund pending = upsertRefund(
                 "SEED-RFND-PENDING-1",
@@ -90,15 +102,50 @@ public class PaymentSeedService {
                 "AGENT");
         refundIds.add(pending.getId());
 
-        log.info("Seeded payment demo data for store {}: txs={}, refunds={}",
-                storeId, transactionIds.size(), refundIds.size());
+        log.info("Seeded payment demo data for store {}: txs={}, refunds={}, linkedOrders={}",
+                storeId, transactionIds.size(), refundIds.size(), orderKeys);
 
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("storeId", storeId);
+        body.put("orderIds", orderKeys);
         body.put("transactionIds", transactionIds);
         body.put("refundIds", refundIds);
-        body.put("message", "Seeded ≥3 transactions and ≥1 refund (plus pending approval)");
+        body.put("syncedOrderPaymentStatus", syncedOrders);
+        body.put("currency", "EUR");
+        body.put("message", "Seeded ≥3 EUR transactions and ≥1 refund (plus pending approval)");
         return body;
+    }
+
+    /** Back-compat: no linked commerce ids. */
+    public Map<String, Object> seedDemo(String storeId, String customerId) {
+        return seedDemo(storeId, customerId, null);
+    }
+
+    private List<String> resolveOrderKeys(List<String> linkedOrderIds) {
+        List<String> keys = new ArrayList<>();
+        if (linkedOrderIds != null) {
+            for (String id : linkedOrderIds) {
+                if (id != null && !id.isBlank()) {
+                    keys.add(id.trim());
+                }
+            }
+        }
+        // Fallbacks keep seed working without commerce link
+        while (keys.size() < 3) {
+            keys.add("SEED-ORD-PAY-" + (keys.size() + 1));
+        }
+        return keys.subList(0, 3);
+    }
+
+    private void syncOrderPayment(Transaction tx, String status, List<String> synced) {
+        try {
+            orderServiceClient.updateOrderPaymentStatus(tx.getOrderId(), status, tx.getId());
+            synced.add(tx.getOrderId());
+        } catch (Exception e) {
+            // Synthetic SEED-ORD-PAY-* keys may not exist in commerce — non-fatal
+            log.warn("Could not sync payment status to commerce for order {}: {}",
+                    tx.getOrderId(), e.getMessage());
+        }
     }
 
     private Transaction upsertSyntheticTxn(
@@ -119,6 +166,8 @@ public class PaymentSeedService {
             t.setCustomerId(customerId);
             t.setPaymentGateway(gateway);
             t.setCurrency("EUR");
+            t.setCustomerEmail("anna.mueller@gmail.com");
+            t.setCustomerPhone("+491511000011");
             if (stripeShaped && t.getStripePaymentIntentId() == null) {
                 t.setStripePaymentIntentId("pi_seed_" + shortId(orderId));
             }
@@ -130,8 +179,8 @@ public class PaymentSeedService {
                 .amount(amount)
                 .status(status)
                 .customerId(customerId)
-                .customerEmail("seed.customer@example.com")
-                .customerPhone("+4915112345678")
+                .customerEmail("anna.mueller@gmail.com")
+                .customerPhone("+491511000011")
                 .storeId(storeId)
                 .receipt("SEED_" + shortId(orderId))
                 .currency("EUR")

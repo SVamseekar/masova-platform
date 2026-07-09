@@ -1,14 +1,19 @@
 // scripts/reseed/seed-payment.js
-// POST /api/payments/seed-demo — synthetic transactions + refunds (Phase C)
+// POST /api/payments/seed-demo — synthetic EUR/Stripe txs + refunds
+// Pass commerce paidOrderIds so transactions link to real order Mongo ids.
 
 const GW = process.env.GW || process.env.GATEWAY || 'http://192.168.50.88:8080';
 const STORE = process.env.STORE_ID || 'DOM001';
 
-async function seedPayment(token, { storeId = STORE, customerId = 'cust-demo-1' } = {}) {
+async function seedPayment(token, { storeId = STORE, customerId = 'cust-demo-1', orderIds = [] } = {}) {
   if (!token) throw new Error('seed-payment requires manager JWT');
+  const q = new URLSearchParams({ storeId, customerId });
+  if (orderIds && orderIds.length) {
+    q.set('orderIds', orderIds.join(','));
+  }
   const paths = [
-    `/api/payments/seed-demo?storeId=${encodeURIComponent(storeId)}&customerId=${encodeURIComponent(customerId)}`,
-    `/api/payments/test-data/seed-demo?storeId=${encodeURIComponent(storeId)}&customerId=${encodeURIComponent(customerId)}`,
+    `/api/payments/seed-demo?${q}`,
+    `/api/payments/test-data/seed-demo?${q}`,
   ];
   for (const path of paths) {
     const res = await fetch(`${GW}${path}`, {
@@ -24,7 +29,7 @@ async function seedPayment(token, { storeId = STORE, customerId = 'cust-demo-1' 
     }
     if (res.ok && data?.transactionIds) {
       console.log(
-        `[seed-payment] txs=${data.transactionIds.length} refunds=${data.refundIds?.length ?? 0}`
+        `[seed-payment] txs=${data.transactionIds.length} refunds=${data.refundIds?.length ?? 0} synced=${data.syncedOrderPaymentStatus?.length ?? 0}`
       );
       return data;
     }
