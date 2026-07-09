@@ -71,11 +71,15 @@ public class RefundService {
 
         Transaction transaction = loadAndValidateRefundable(request);
 
+        // Unique placeholder required: razorpayRefundId has a unique index; multiple nulls → E11000.
+        String pendingKey = "pending_" + UUID.randomUUID().toString().replace("-", "");
+
         Refund refund = Refund.builder()
                 .transactionId(request.getTransactionId())
                 .orderId(transaction.getOrderId())
                 .storeId(transaction.getStoreId())
                 .razorpayPaymentId(gatewayPaymentId(transaction))
+                .razorpayRefundId(pendingKey)
                 .amount(request.getAmount())
                 .status(Refund.RefundStatus.PENDING_APPROVAL)
                 .type(request.getType())
