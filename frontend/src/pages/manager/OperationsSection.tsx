@@ -76,7 +76,7 @@ const RecipesTab = ({ storeId }: { storeId: string }) => {
   const [search, setSearch] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  const filtered = menuItems.filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = menuItems.filter(i => (i.name||'').toLowerCase().includes(search.trim().toLowerCase()) || !search.trim());
 
   const handleSelect = (item: MenuItem) => {
     setSelectedItem(item);
@@ -210,7 +210,7 @@ const DriversTab = ({ storeId }: { storeId: string }) => {
 
   const filtered = useMemo(() => {
     let drivers = allDrivers;
-    if (search) drivers = drivers.filter(d => d.name.toLowerCase().includes(search.toLowerCase()) || d.email.toLowerCase().includes(search.toLowerCase()));
+    if (search.trim()) { const q = search.trim().toLowerCase(); drivers = drivers.filter(d => (d.name||'').toLowerCase().includes(q) || (d.email||'').toLowerCase().includes(q) || (d.phone||'').toLowerCase().includes(q)); }
     if (statusFilter === 'online') drivers = drivers.filter(d => d.isOnline && !d.activeDeliveryId);
     if (statusFilter === 'offline') drivers = drivers.filter(d => !d.isOnline);
     if (statusFilter === 'busy') drivers = drivers.filter(d => d.isOnline && !!d.activeDeliveryId);

@@ -266,11 +266,23 @@ export const orderApi = createApi({
       providesTags: (result) => result ? [{ type: 'Order', id: result.id }] : [],
     }),
 
-    // Get store orders
-    // Takes storeId as parameter to ensure refetch when store changes
-    // Note: storeId is passed via headers (X-Selected-Store-Id), not query params
+    // Get store orders — MUST pass storeId as query param.
+    // GET /orders/store is wrong (backend treats "store" as an order id → 400 empty list).
     getStoreOrders: builder.query<Order[], string | undefined>({
-      query: (_storeId) => '/orders/store',
+      query: (storeId) => {
+        if (!storeId) return '/orders';
+        return `/orders?storeId=${encodeURIComponent(storeId)}`;
+      },
+      transformResponse: (raw: unknown): Order[] => {
+        if (Array.isArray(raw)) return raw as Order[];
+        if (raw && typeof raw === 'object') {
+          const o = raw as Record<string, unknown>;
+          if (Array.isArray(o.content)) return o.content as Order[];
+          if (Array.isArray(o.orders)) return o.orders as Order[];
+          if (Array.isArray(o.data)) return o.data as Order[];
+        }
+        return [];
+      },
       providesTags: (result, error, storeId) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Order' as const, id })), { type: 'Orders', id: storeId || 'DEFAULT' }]
@@ -389,7 +401,8 @@ export const orderApi = createApi({
     }),
 
     getOrdersWithFailedQualityChecks: builder.query<Order[], string | undefined>({
-      query: (_storeId) => `/orders/analytics?type=failed-quality`,
+      query: (storeId) =>
+        `/orders/analytics?type=failed-quality${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'Orders', id: storeId || 'DEFAULT' }],
     }),
 
@@ -484,7 +497,8 @@ export const orderApi = createApi({
     }),
 
     getActiveDeliveriesCount: builder.query<{ count: number }, string | undefined>({
-      query: (_storeId) => `/orders/analytics?type=active-deliveries`,
+      query: (storeId) =>
+        `/orders/analytics?type=active-deliveries${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: ['Orders'],
     }),
 

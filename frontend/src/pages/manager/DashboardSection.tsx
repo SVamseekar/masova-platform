@@ -51,7 +51,7 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
   const { data: driverStatus } = useGetDriverStatusQuery(storeId, { skip: !storeId, pollingInterval: 30000 });
   const { data: salesTrends } = useGetSalesTrendsQuery({ period: 'WEEKLY', storeId }, { skip: !storeId, pollingInterval: 300000 });
   const { data: orderTypeBreakdown } = useGetOrderTypeBreakdownQuery(storeId, { skip: !storeId, pollingInterval: 300000 });
-  const { data: _peakHours } = useGetPeakHoursQuery(storeId, { skip: !storeId, pollingInterval: 300000 });
+  const { data: peakHours } = useGetPeakHoursQuery(storeId, { skip: !storeId, pollingInterval: 300000 });
   const { data: staffLeaderboard } = useGetStaffLeaderboardQuery({ storeId, period: 'TODAY' }, { skip: !storeId, pollingInterval: 120000 });
   const { data: topProducts } = useGetTopProductsQuery({ storeId, period: 'TODAY', sortBy: 'REVENUE' }, { skip: !storeId, pollingInterval: 300000 });
   const { data: salesForecast } = useGetSalesForecastQuery({ storeId, days: 7 }, { skip: !storeId, pollingInterval: 3600000 });
@@ -321,6 +321,30 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
                   <span style={{ fontSize: 13, fontWeight: 600, color: t.orange }}>{typeof data === 'number' ? data : data?.count || 0}</span>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Peak hours (was fetched but unused) */}
+        {peakHours && (
+          <div style={cardStyle}>
+            <h3 style={sectionTitleStyle}>Peak hours</h3>
+            <div style={{ marginTop: 12, fontSize: 13, color: t.black }}>
+              <div style={{ marginBottom: 8 }}>
+                Busiest hour: <strong style={{ color: t.orange }}>{peakHours.peakHour}:00</strong>
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                Quietest hour: <strong style={{ color: t.gray }}>{peakHours.slowestHour}:00</strong>
+              </div>
+              {(peakHours.hourlyData || [])
+                .filter((h) => h.orderCount > 0)
+                .slice(0, 6)
+                .map((h) => (
+                  <div key={h.hour} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: `1px solid ${t.grayLight}` }}>
+                    <span>{h.hour}:00</span>
+                    <span style={{ fontWeight: 600 }}>{h.orderCount} orders</span>
+                  </div>
+                ))}
             </div>
           </div>
         )}

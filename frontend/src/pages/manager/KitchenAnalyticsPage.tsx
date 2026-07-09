@@ -38,7 +38,8 @@ const KitchenAnalyticsPage: React.FC = () => {
   const _storeId = user?.storeId || 'default-store';
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
-  // Mock data - in real app, these would use RTK Query hooks
+  // LEGACY_ORPHAN_NOTICE: this page is not mounted in ManagerShell — use Analytics → Kitchen tab.
+  // Do not treat the following as live metrics if you open this file via deep link.
   const prepTimeByItem: PrepTimeByItem = {
     'Margherita Pizza': 18,
     'Chicken Biryani': 25,

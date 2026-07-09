@@ -62,7 +62,8 @@ export const equipmentApi = createApi({
     }),
 
     getEquipmentByStore: builder.query<KitchenEquipment[], string | undefined>({
-      query: () => '/equipment',
+      query: (storeId) =>
+        `/equipment${storeId ? `?storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, _error, storeId) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Equipment' as const, id })), { type: 'Equipment', id: storeId || 'DEFAULT' }]
@@ -128,7 +129,11 @@ export const equipmentApi = createApi({
     }),
 
     getEquipmentNeedingMaintenance: builder.query<KitchenEquipment[], string | undefined>({
-      query: () => '/equipment?maintenanceNeeded=true',
+      query: (storeId) => {
+        const p = new URLSearchParams({ maintenanceNeeded: 'true' });
+        if (storeId) p.set('storeId', storeId);
+        return `/equipment?${p.toString()}`;
+      },
       providesTags: (_result, _error, storeId) => [{ type: 'Equipment', id: storeId || 'DEFAULT' }],
     }),
 

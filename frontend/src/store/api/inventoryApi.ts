@@ -255,7 +255,8 @@ export const inventoryApi = createApi({
     }),
 
     getAllInventoryItems: builder.query<InventoryItem[], string | undefined>({
-      query: () => '/inventory',
+      query: (storeId) =>
+        `/inventory${storeId ? `?storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'InventoryItem', id: storeId || 'DEFAULT' }],
     }),
 
@@ -269,8 +270,12 @@ export const inventoryApi = createApi({
       providesTags: ['InventoryItem'],
     }),
 
-    searchInventoryItems: builder.query<InventoryItem[], { query: string }>({
-      query: ({ query }) => `/inventory?search=${encodeURIComponent(query)}`,
+    searchInventoryItems: builder.query<InventoryItem[], { query: string; storeId?: string }>({
+      query: ({ query, storeId }) => {
+        const params = new URLSearchParams({ search: query });
+        if (storeId) params.set('storeId', storeId);
+        return `/inventory?${params.toString()}`;
+      },
       providesTags: ['InventoryItem'],
     }),
 
@@ -329,12 +334,14 @@ export const inventoryApi = createApi({
     }),
 
     getLowStockItems: builder.query<InventoryItem[], string | undefined>({
-      query: () => '/inventory?lowStock=true',
+      query: (storeId) =>
+        `/inventory?lowStock=true${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'InventoryItem', id: storeId || 'DEFAULT' }],
     }),
 
     getOutOfStockItems: builder.query<InventoryItem[], string | undefined>({
-      query: () => '/inventory?outOfStock=true',
+      query: (storeId) =>
+        `/inventory?outOfStock=true${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'InventoryItem', id: storeId || 'DEFAULT' }],
     }),
 
@@ -344,17 +351,23 @@ export const inventoryApi = createApi({
     }),
 
     getLowStockAlerts: builder.query<InventoryItem[], string | undefined>({
-      query: () => '/inventory?lowStock=true',
+      query: (storeId) =>
+        `/inventory?lowStock=true${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'InventoryItem', id: storeId || 'DEFAULT' }],
     }),
 
     getTotalInventoryValue: builder.query<InventoryValueResponse, string | undefined>({
-      query: () => '/inventory/value',
+      query: (storeId) =>
+        `/inventory/value${storeId ? `?storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'InventoryValue', id: storeId || 'DEFAULT' }],
     }),
 
     getInventoryValueByCategory: builder.query<InventoryValueResponse, string | undefined>({
-      query: () => '/inventory/value?byCategory=true',
+      query: (storeId) => {
+        const params = new URLSearchParams({ byCategory: 'true' });
+        if (storeId) params.set('storeId', storeId);
+        return `/inventory/value?${params.toString()}`;
+      },
       providesTags: (result, error, storeId) => [{ type: 'InventoryValue', id: storeId || 'DEFAULT' }],
     }),
 
@@ -379,7 +392,8 @@ export const inventoryApi = createApi({
     }),
 
     getAllSuppliers: builder.query<Supplier[], string | undefined>({
-      query: () => '/suppliers',
+      query: (storeId) =>
+        `/suppliers${storeId ? `?storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'Supplier', id: storeId || 'DEFAULT' }],
     }),
 
@@ -394,17 +408,29 @@ export const inventoryApi = createApi({
     }),
 
     getActiveSuppliers: builder.query<Supplier[], string | undefined>({
-      query: () => '/suppliers?status=ACTIVE',
+      query: (storeId) => {
+        const p = new URLSearchParams({ status: 'ACTIVE' });
+        if (storeId) p.set('storeId', storeId);
+        return `/suppliers?${p.toString()}`;
+      },
       providesTags: (result, error, storeId) => [{ type: 'Supplier', id: storeId || 'DEFAULT' }],
     }),
 
     getPreferredSuppliers: builder.query<Supplier[], string | undefined>({
-      query: () => '/suppliers?preferred=true',
+      query: (storeId) => {
+        const p = new URLSearchParams({ preferred: 'true' });
+        if (storeId) p.set('storeId', storeId);
+        return `/suppliers?${p.toString()}`;
+      },
       providesTags: (result, error, storeId) => [{ type: 'Supplier', id: storeId || 'DEFAULT' }],
     }),
 
     getReliableSuppliers: builder.query<Supplier[], string | undefined>({
-      query: () => '/suppliers?reliable=true',
+      query: (storeId) => {
+        const p = new URLSearchParams({ reliable: 'true' });
+        if (storeId) p.set('storeId', storeId);
+        return `/suppliers?${p.toString()}`;
+      },
       providesTags: (result, error, storeId) => [{ type: 'Supplier', id: storeId || 'DEFAULT' }],
     }),
 
@@ -477,7 +503,8 @@ export const inventoryApi = createApi({
     }),
 
     getAllPurchaseOrders: builder.query<PurchaseOrder[], string | undefined>({
-      query: () => '/purchase-orders',
+      query: (storeId) =>
+        `/purchase-orders${storeId ? `?storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'PurchaseOrder', id: storeId || 'DEFAULT' }],
     }),
 
@@ -497,12 +524,14 @@ export const inventoryApi = createApi({
     }),
 
     getPendingApprovalPurchaseOrders: builder.query<PurchaseOrder[], string | undefined>({
-      query: () => '/purchase-orders?pending=true',
+      query: (storeId) =>
+        `/purchase-orders?pending=true${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'PurchaseOrder', id: storeId || 'DEFAULT' }],
     }),
 
     getOverduePurchaseOrders: builder.query<PurchaseOrder[], string | undefined>({
-      query: () => '/purchase-orders?overdue=true',
+      query: (storeId) =>
+        `/purchase-orders?overdue=true${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'PurchaseOrder', id: storeId || 'DEFAULT' }],
     }),
 
@@ -603,7 +632,7 @@ export const inventoryApi = createApi({
     }),
 
     getAllWasteRecords: builder.query<WasteRecord[], string | undefined>({
-      query: () => '/waste',
+      query: (storeId?: string) => `/waste${storeId ? `?storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'WasteRecord', id: storeId || 'DEFAULT' }],
     }),
 

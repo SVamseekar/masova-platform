@@ -153,7 +153,14 @@ const StaffTab = ({ storeId }: { storeId: string }) => {
   const filtered = useMemo(() => {
     if (!employees) return [];
     return employees.filter((e) => {
-      if (search && !e.name.toLowerCase().includes(search.toLowerCase()) && !e.email.toLowerCase().includes(search.toLowerCase())) return false;
+      if (search.trim()) {
+        const q = search.trim().toLowerCase();
+        const hit =
+          (e.name || '').toLowerCase().includes(q) ||
+          (e.email || '').toLowerCase().includes(q) ||
+          (e.phone || '').toLowerCase().includes(q);
+        if (!hit) return false;
+      }
       if (typeFilter && e.type !== typeFilter) return false;
       return true;
     });
@@ -575,9 +582,14 @@ const CustomersTab = ({ storeId }: { storeId: string }) => {
 
   const filtered = useMemo(() => {
     if (!allCustomers) return [];
-    if (!search) return allCustomers;
-    const s = search.toLowerCase();
-    return allCustomers.filter((c) => c.name.toLowerCase().includes(s) || c.email.toLowerCase().includes(s) || c.phone?.includes(s));
+    if (!search.trim()) return allCustomers;
+    const s = search.trim().toLowerCase();
+    return allCustomers.filter(
+      (c) =>
+        (c.name || '').toLowerCase().includes(s) ||
+        (c.email || '').toLowerCase().includes(s) ||
+        (c.phone || '').toLowerCase().includes(s),
+    );
   }, [allCustomers, search]);
 
   const handleToggle = async (c: Customer) => {

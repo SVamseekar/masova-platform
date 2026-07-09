@@ -80,7 +80,7 @@ const StockTab = ({ storeId }: { storeId: string }) => {
 
   const filtered = useMemo(() => {
     let items = allItems;
-    if (search) items = items.filter(i => i.itemName.toLowerCase().includes(search.toLowerCase()) || i.itemCode.toLowerCase().includes(search.toLowerCase()));
+    if (search.trim()) { const q = search.trim().toLowerCase(); items = items.filter(i => (i.itemName||'').toLowerCase().includes(q) || (i.itemCode||'').toLowerCase().includes(q)); }
     if (category) items = items.filter(i => i.category === category);
     if (stockFilter === 'inStock') items = items.filter(i => (i.quantity ?? i.currentStock ?? 0) > (i.reorderLevel ?? i.minimumStock ?? 0));
     if (stockFilter === 'lowStock') items = items.filter(i => { const q = i.quantity ?? i.currentStock ?? 0; const r = i.reorderLevel ?? i.minimumStock ?? 0; return q > 0 && q <= r; });
@@ -197,11 +197,16 @@ const SuppliersTab = ({ storeId: _storeId }: { storeId: string }) => {
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
 
   const suppliers = filter === 'ACTIVE' ? activeSuppliers : filter === 'PREFERRED' ? preferredSuppliers : allSuppliers;
-  const filtered = suppliers.filter(s =>
-    (s.supplierName || '').toLowerCase().includes(search.toLowerCase()) ||
-    (s.supplierCode || '').toLowerCase().includes(search.toLowerCase()) ||
-    s.contactPerson.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = suppliers.filter(s => {
+    if (!search.trim()) return true;
+    const q = search.trim().toLowerCase();
+    return (
+      (s.supplierName || '').toLowerCase().includes(q) ||
+      (s.supplierCode || '').toLowerCase().includes(q) ||
+      (s.contactPerson || '').toLowerCase().includes(q) ||
+      (s.phoneNumber || s.email || '').toLowerCase().includes(q)
+    );
+  });
 
   const activeCount = allSuppliers.filter(s => s.status === 'ACTIVE').length;
   const preferredCount = allSuppliers.filter(s => s.isPreferred).length;

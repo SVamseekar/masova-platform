@@ -523,10 +523,15 @@ const StoreManagementPage: React.FC = () => {
                     />
                     <button
                       type="button"
-                      style={{ marginTop: spacing[2], padding: '6px 14px', borderRadius: 6, border: '1px solid #ccc', cursor: 'pointer', fontSize: 13 }}
-                      onClick={() => alert('Device connection test — Phase 2 feature')}
+                      disabled
+                      title="Fiscal device ping is not available in this environment"
+                      style={{
+                        marginTop: spacing[2], padding: '6px 14px', borderRadius: 6,
+                        border: '1px solid #ccc', cursor: 'not-allowed', fontSize: 13,
+                        color: '#9ca3af', background: '#f3f4f6',
+                      }}
                     >
-                      Test Connection
+                      Test Connection (unavailable)
                     </button>
                   </div>
                 )}

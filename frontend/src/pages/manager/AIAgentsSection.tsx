@@ -395,8 +395,13 @@ const AIAgentsSection: React.FC<Props> = (_props) => {
                         <IconClock />
                         <span style={{ fontSize: 12, fontWeight: 500 }}>{agent.schedule}</span>
                       </div>
-                      {tm && (
+                      {agent.status === 'stub' ? (
+                        <span style={{ fontSize: 11, fontWeight: 600, color: t.grayMuted }}>
+                          Not available yet
+                        </span>
+                      ) : tm ? (
                         <button
+                          type="button"
                           onClick={tm.trigger}
                           disabled={tm.loading || !isOnline}
                           style={{
@@ -420,7 +425,7 @@ const AIAgentsSection: React.FC<Props> = (_props) => {
                             </>
                           )}
                         </button>
-                      )}
+                      ) : null}
                     </div>
 
                     {/* Result output */}
