@@ -84,8 +84,9 @@ export const API_ENDPOINTS = {
   USERS: {
     BASE: `${GATEWAY}/users`,
     BY_ID: (id: string) => `${GATEWAY}/users/${id}`,
-    BY_ROLE: (role: string) => `${GATEWAY}/users/role/${role}`,
-    BY_STORE: (storeId: string) => `${GATEWAY}/users/store/${storeId}`,
+    /** Canonical list: GET /users?type=&storeId= (legacy /users/type/* and /users/store removed). */
+    BY_ROLE: (role: string) => `${GATEWAY}/users?type=${encodeURIComponent(role)}`,
+    BY_STORE: (storeId: string) => `${GATEWAY}/users?storeId=${encodeURIComponent(storeId)}`,
   },
 
   // Sessions (Working Hours)

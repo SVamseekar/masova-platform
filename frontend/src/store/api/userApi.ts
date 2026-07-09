@@ -155,27 +155,28 @@ export const userApi = createApi({
       ],
     }),
 
-    // Get users by type
+    // Get users by type — canonical GET /api/users?type=
     getUsersByType: builder.query<User[], string>({
-      query: (type) => `/users/type/${type}`,
+      query: (type) => `/users?type=${encodeURIComponent(type)}`,
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'User' as const, id })), { type: 'Users', id: 'LIST' }]
           : [{ type: 'Users', id: 'LIST' }],
     }),
 
-    // Get store employees
+    // Get store employees — canonical GET /api/users?storeId= (legacy /users/store removed)
     getStoreEmployees: builder.query<User[], string | undefined>({
-      query: (storeId) => `/users/store${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) =>
+        storeId ? `/users?storeId=${encodeURIComponent(storeId)}` : '/users',
       providesTags: (result, error, storeId) =>
         result
           ? [...result.map(({ id }) => ({ type: 'User' as const, id })), { type: 'Users', id: storeId || 'DEFAULT' }]
           : [{ type: 'Users', id: storeId || 'DEFAULT' }],
     }),
 
-    // Get active managers
+    // Get managers — canonical GET /api/users?type=MANAGER
     getManagers: builder.query<User[], void>({
-      query: () => '/users/managers',
+      query: () => '/users?type=MANAGER',
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'User' as const, id })), { type: 'Users', id: 'LIST' }]
