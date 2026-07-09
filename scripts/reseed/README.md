@@ -71,3 +71,63 @@ curl.exe -X POST http://127.0.0.1:8080/api/auth/login -H "Content-Type: applicat
 - `RAZORPAY_ENABLED=false` (EU primary / Stripe)
 - `SPRING_PROFILES_ACTIVE=dev`
 - Rabbit: `masova` / `masova_secret`
+
+## Phase C — Payments & refunds (EU / Stripe)
+
+### Dell env (payment-service — **never commit secrets**)
+
+```powershell
+# EU primary — leave Razorpay off
+$env:RAZORPAY_ENABLED = "false"
+
+# Stripe test mode (Dashboard → Developers → API keys)
+$env:STRIPE_SECRET_KEY = "sk_test_..."
+$env:STRIPE_PUBLISHABLE_KEY = "pk_test_..."
+$env:STRIPE_WEBHOOK_SECRET = "whsec_..."   # from Stripe CLI or Dashboard webhook endpoint
+```
+
+### Stripe webhook (local Dell)
+
+```text
+# On a machine with Stripe CLI logged in:
+stripe listen --forward-to http://192.168.50.88:8089/api/payments/webhook/stripe
+# Use the printed whsec_… as STRIPE_WEBHOOK_SECRET, restart payment-service
+```
+
+Gateway public path: `POST /api/payments/webhook/stripe` (no JWT; signature verified in `StripeGateway`).
+
+Test card: `4242 4242 4242 4242`, any future expiry, any CVC.
+
+### Canonical payment/refund routes
+
+| Need | Path |
+|---|---|
+| List store transactions | `GET /api/payments?storeId=DOM001` (or `X-Selected-Store-Id`) |
+| Legacy list | `GET /api/payments/store?storeId=DOM001` |
+| Initiate DE Stripe | `POST /api/payments/initiate` with `countryCode=DE`, `currency=EUR` |
+| Cash POS | `POST /api/payments/cash` (TAKEAWAY/PICKUP only) |
+| List refunds | `GET /api/payments/refund?storeId=DOM001` |
+| Plural alias | `GET /api/payments/refunds?storeId=…` |
+| Gateway alias | `GET /api/refunds?storeId=…` → rewrites to `/api/payments/refund` |
+| Pending agent queue | `GET /api/payments/refund?storeId=DOM001&status=PENDING_APPROVAL` |
+| Manager refund | `POST /api/payments/refund` |
+| Agent request (no money) | `POST /api/payments/refund/request` → `PENDING_APPROVAL` |
+| Approve / reject | `POST /api/payments/refund/{id}/approve` \| `…/reject` |
+| Dev seed (≥3 txs + refunds) | `POST /api/payments/test-data/seed-demo?storeId=DOM001` (`dev`/`demo` profile) |
+
+### India (Razorpay) path — only when testing IN
+
+```powershell
+$env:RAZORPAY_ENABLED = "true"
+$env:RAZORPAY_KEY_ID = "rzp_test_..."      # never use denylisted leaked keys
+$env:RAZORPAY_KEY_SECRET = "..."
+$env:RAZORPAY_WEBHOOK_SECRET = "..."
+# Store countryCode must be IN (or null legacy). EU stores stay DE → Stripe.
+```
+
+### Phase C verify (Mac → Dell)
+
+```bash
+GW=http://192.168.50.88:8080 node scripts/reseed/verify-phase-c-e2e.js
+# Exit 0 = green. Works with synthetic seed+cash if Stripe test keys are not set.
+```

@@ -43,6 +43,17 @@ public class PaymentGatewayResolver {
         }
         return stripeGateway;
     }
+
+    /**
+     * Resolve by stored transaction gateway name ({@code STRIPE} / {@code RAZORPAY}).
+     * Unknown or blank names default to Razorpay for India-legacy rows.
+     */
+    public PaymentGateway resolveByGatewayName(String gatewayName) {
+        if (gatewayName != null && "STRIPE".equalsIgnoreCase(gatewayName.trim())) {
+            return stripeGateway;
+        }
+        return razorpayGateway;
+    }
 }
 
 

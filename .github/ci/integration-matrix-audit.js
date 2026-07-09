@@ -199,8 +199,17 @@ function extractBackendEndpoints() {
               ? 'intelligence'
               : 'unknown';
 
-    const classMapping = src.match(/@RequestMapping\(["']([^"']+)["']\)/);
-    const basePath = classMapping ? classMapping[1] : '';
+    // Support @RequestMapping("/x") and @RequestMapping({"/x", "/y"}) — use first path only
+    // for CI (aliases belong on the gateway rewrite layer, not duplicated controllers).
+    let basePath = '';
+    const single = src.match(/@RequestMapping\(["']([^"']+)["']\)/);
+    const multi = src.match(/@RequestMapping\(\s*\{([^}]+)\}\s*\)/);
+    if (single) {
+      basePath = single[1];
+    } else if (multi) {
+      const paths = [...multi[1].matchAll(/["']([^"']+)["']/g)].map((m) => m[1]);
+      basePath = paths[0] || '';
+    }
 
     for (const m of src.matchAll(/@(Get|Post|Put|Patch|Delete)Mapping\(["']([^"']*?)["']\)/g)) {
       const fullPath = (basePath + m[2]).replace(/\/+/g, '/');

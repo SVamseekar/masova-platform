@@ -546,10 +546,15 @@ public class PaymentService {
             // Generate receipt number
             String receipt = "CASH_" + UUID.randomUUID().toString().substring(0, 8);
 
+            boolean isIndia = paymentGatewayResolver.isIndiaStore(request.getCountryCode());
+            String currency = isIndia
+                    ? "INR"
+                    : StoreCurrencyResolver.resolveCurrency(request.getCountryCode(), request.getCurrency());
+
             // Create transaction record with SUCCESS status (cash collected immediately)
             Transaction transaction = Transaction.builder()
                     .orderId(request.getOrderId())
-                    .razorpayOrderId("CASH_" + request.getOrderId()) // No Razorpay order for cash
+                    .razorpayOrderId("CASH_" + request.getOrderId()) // No PSP order for cash
                     .amount(request.getAmount())
                     .status(Transaction.PaymentStatus.SUCCESS) // Cash is collected immediately
                     .customerId(request.getCustomerId())
@@ -557,7 +562,8 @@ public class PaymentService {
                     .customerPhone(encryptionService.encrypt(request.getCustomerPhone()))
                     .storeId(request.getStoreId())
                     .receipt(receipt)
-                    .currency("INR")
+                    .currency(currency)
+                    .paymentGateway("CASH")
                     .reconciled(false)
                     .build();
 
@@ -567,7 +573,8 @@ public class PaymentService {
 
             transaction = Objects.requireNonNull(transactionRepository.save(transaction));
 
-            log.info("Cash payment recorded successfully. Transaction ID: {}", transaction.getId());
+            log.info("Cash payment recorded successfully. Transaction ID: {}, currency: {}",
+                    transaction.getId(), currency);
 
             // Update order payment status
             try {
@@ -583,7 +590,7 @@ public class PaymentService {
             // Publish payment.completed event for analytics
             paymentEventPublisher.publishPaymentCompleted(new PaymentCompletedEvent(
                     transaction.getId(), transaction.getOrderId(), transaction.getCustomerId(),
-                    transaction.getAmount(), "INR", "CASH", transaction.getId(),
+                    transaction.getAmount(), currency, "CASH", transaction.getId(),
                     "CASH", null));
 
             return buildPaymentResponse(transaction);

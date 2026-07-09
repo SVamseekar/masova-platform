@@ -138,4 +138,75 @@ class StripePaymentFlowIT extends BaseFullIntegrationTest {
                         .header("Stripe-Signature", "t=1,v1=test"))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    @DisplayName("POST /api/payments/refund executes Stripe refund for SUCCESS DE transaction")
+    void refundGermany_usesStripeGateway() throws Exception {
+        when(stripeGateway.initiatePayment(any())).thenReturn(
+                new GatewayPaymentResult("STRIPE", "pi_refund_de", "pi_refund_de_secret", "pk_test_de"));
+        when(stripeGateway.getGatewayName()).thenReturn("STRIPE");
+        when(stripeGateway.refund(anyString(), any(), anyString())).thenReturn("re_test_de_1");
+
+        String initiateBody = """
+                {
+                  "orderId": "ord-stripe-refund-1",
+                  "amount": 30.00,
+                  "customerId": "cust-ref",
+                  "customerEmail": "ref@masova.com",
+                  "customerPhone": "+49111111111",
+                  "storeId": "DOM001",
+                  "orderType": "DELIVERY",
+                  "paymentMethod": "CARD",
+                  "countryCode": "DE",
+                  "currency": "EUR"
+                }
+                """;
+
+        String initiateJson = mockMvc.perform(post("/api/payments/initiate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(initiateBody)
+                        .header("X-User-Type", "CUSTOMER"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paymentGateway").value("STRIPE"))
+                .andReturn().getResponse().getContentAsString();
+
+        // Mark SUCCESS via webhook (confirm path)
+        when(stripeGateway.parseWebhook(anyString(), anyString())).thenReturn(
+                new GatewayWebhookResult(
+                        GatewayWebhookResult.EventType.PAYMENT_CAPTURED,
+                        "pi_refund_de",
+                        "ch_refund_de",
+                        null,
+                        80L,
+                        "card"));
+        mockMvc.perform(post("/api/payments/webhook/stripe")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\":\"payment_intent.succeeded\"}")
+                        .header("Stripe-Signature", "t=1,v1=ok"))
+                .andExpect(status().isOk());
+
+        // Extract transactionId from initiate response (simple parse)
+        String txnId = initiateJson.replaceAll("(?s).*\"transactionId\"\\s*:\\s*\"([^\"]+)\".*", "$1");
+
+        String refundBody = """
+                {
+                  "transactionId": "%s",
+                  "amount": 10.00,
+                  "type": "PARTIAL",
+                  "reason": "IT partial refund",
+                  "initiatedBy": "manager-it"
+                }
+                """.formatted(txnId);
+
+        mockMvc.perform(post("/api/payments/refund")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(refundBody)
+                        .header("X-User-Type", "MANAGER")
+                        .header("X-Selected-Store-Id", "DOM001"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("PROCESSED"))
+                .andExpect(jsonPath("$.razorpayRefundId").value("re_test_de_1"))
+                .andExpect(jsonPath("$.amount").value(10.00));
+    }
 }

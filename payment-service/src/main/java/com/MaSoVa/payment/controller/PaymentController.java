@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Payments — 6 canonical endpoints at /api/payments.
@@ -34,7 +35,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/payments")
-@Tag(name = "Payments", description = "Payment processing, verification, and transaction management (Razorpay)")
+@Tag(name = "Payments", description = "Payment processing, verification, and transaction management (Stripe EU + Razorpay IN)")
 @SecurityRequirement(name = "bearerAuth")
 public class PaymentController {
 
@@ -59,7 +60,7 @@ public class PaymentController {
 
     @PostMapping("/initiate")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
-    @Operation(summary = "Initiate payment (create Razorpay order)")
+    @Operation(summary = "Initiate payment (Stripe PaymentIntent for non-IN; Razorpay for IN)")
     public ResponseEntity<PaymentResponse> initiate(@Valid @RequestBody InitiatePaymentRequest request) {
         try {
             return ResponseEntity.ok(paymentService.initiatePayment(request));
@@ -119,34 +120,94 @@ public class PaymentController {
      */
     @GetMapping
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
-    @Operation(summary = "List transactions (query: orderId, customerId, reconciliation+date)")
+    @Operation(summary = "List transactions (query: orderId, customerId, storeId, reconciliation+date)")
     public ResponseEntity<?> getTransactions(
             @RequestParam(required = false) String orderId,
             @RequestParam(required = false) String customerId,
+            @RequestParam(required = false) String storeId,
             @RequestParam(required = false) Boolean reconciliation,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             HttpServletRequest request) {
-        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        String headerStoreId = StoreContextUtil.getStoreIdFromHeaders(request);
+        String effectiveStore = (storeId != null && !storeId.isBlank()) ? storeId : headerStoreId;
         try {
             if (Boolean.TRUE.equals(reconciliation) && date != null) {
-                ReconciliationReportResponse report = paymentService.getDailyReconciliation(storeId, date);
+                ReconciliationReportResponse report = paymentService.getDailyReconciliation(effectiveStore, date);
                 return ResponseEntity.ok(report);
             }
             if (orderId != null) {
                 PaymentResponse response = paymentService.getTransactionByOrderId(orderId);
-                validateStoreAccess(storeId, response.getStoreId());
+                validateStoreAccess(headerStoreId, response.getStoreId());
                 return ResponseEntity.ok(response);
             }
             if (customerId != null) {
                 List<PaymentResponse> transactions = paymentService.getTransactionsByCustomerId(customerId);
                 return ResponseEntity.ok(transactions);
             }
-            List<PaymentResponse> transactions = paymentService.getTransactionsByStoreId(storeId);
+            List<PaymentResponse> transactions = paymentService.getTransactionsByStoreId(effectiveStore);
             return ResponseEntity.ok(transactions);
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         } catch (Exception e) {
             log.error("Error fetching transactions", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // ── LEGACY PATH ALIASES (frontend RTK used these pre-canonical collapse) ──────
+
+    /**
+     * GET /api/payments/store?storeId= — same as GET /api/payments with store header.
+     * Prefer canonical GET /api/payments with X-Selected-Store-Id.
+     */
+    @GetMapping("/store")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
+    @Operation(summary = "List store transactions (legacy alias of GET /api/payments)")
+    public ResponseEntity<?> getByStore(
+            @RequestParam(required = false) String storeId,
+            HttpServletRequest request) {
+        String effective = (storeId != null && !storeId.isBlank())
+                ? storeId
+                : StoreContextUtil.getStoreIdFromHeaders(request);
+        try {
+            if (effective == null || effective.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "error", "storeId required (query or X-Selected-Store-Id header)"));
+            }
+            return ResponseEntity.ok(paymentService.getTransactionsByStoreId(effective));
+        } catch (Exception e) {
+            log.error("Error fetching store transactions", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /** GET /api/payments/order/{orderId} — alias of GET /api/payments?orderId= */
+    @GetMapping("/order/{orderId}")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
+    @Operation(summary = "Get transaction by order ID (legacy path alias)")
+    public ResponseEntity<?> getByOrderPath(
+            @PathVariable String orderId,
+            HttpServletRequest request) {
+        try {
+            PaymentResponse response = paymentService.getTransactionByOrderId(orderId);
+            validateStoreAccess(StoreContextUtil.getStoreIdFromHeaders(request), response.getStoreId());
+            return ResponseEntity.ok(response);
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /** GET /api/payments/customer/{customerId} — alias of GET /api/payments?customerId= */
+    @GetMapping("/customer/{customerId}")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
+    @Operation(summary = "List transactions by customer (legacy path alias)")
+    public ResponseEntity<List<PaymentResponse>> getByCustomerPath(@PathVariable String customerId) {
+        try {
+            return ResponseEntity.ok(paymentService.getTransactionsByCustomerId(customerId));
+        } catch (Exception e) {
+            log.error("Error fetching customer transactions", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
