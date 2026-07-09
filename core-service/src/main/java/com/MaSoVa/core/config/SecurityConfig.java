@@ -55,6 +55,8 @@ public class SecurityConfig extends SecurityConfigurationBase {
             "/api/stores/public/**",
             "/api/menu/public/**",
             "/api/reviews/public/**",
+            // Dev/demo seed bootstrap (controller only loaded under @Profile dev|demo)
+            "/api/test-data/**",
             // Health and docs
             "/actuator/health",
             "/api/health/**",

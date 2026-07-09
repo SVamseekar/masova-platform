@@ -24,6 +24,8 @@ class SecurityConfigPublicEndpointsTest {
         assertThat(endpoints).contains("/api/stores/**");
         assertThat(endpoints).contains("/api/stores/public");
         assertThat(endpoints).contains("/api/stores/public/**");
+        // Cold-start reseed (controller only loaded under dev|demo)
+        assertThat(endpoints).contains("/api/test-data/**");
         // Staff-only surfaces must not be opened
         assertThat(endpoints).doesNotContain("/api/users/**");
         assertThat(endpoints).doesNotContain("/api/sessions/**");

@@ -34,10 +34,30 @@ After 2026-07-09 repair:
 
 | Script | Purpose |
 |---|---|
-| `mongo-fix-demo.js` | Diversify order statuses; ensure DOM001 EU fields |
+| **`reseed-all.js`** | **Phase E full platform reseed** — core → commerce → payment → logistics |
+| **`verify-seed.js`** | **Phase E exit criteria** — counts + ownership invariant; exit 0 = green |
+| `seed-core.js` | `POST /api/test-data/seed-demo` (Berlin stores, users, customers, campaigns) |
+| `seed-commerce.js` | `POST /api/orders/seed-demo` (menu + multi-status orders + equipment) |
+| `seed-payment.js` | `POST /api/payments/seed-demo` (synthetic txs + refunds) |
+| `seed-logistics.js` | `POST /api/inventory/seed-demo` (suppliers, inventory, POs, waste, delivery) |
+| `mongo-fix-demo.js` | Diversify order statuses; ensure DOM001 EU fields (legacy repair) |
 | `mongo-link-orders-userid.js` | Set `orders.customerId` = `customers.userId` for gateway ownership |
-| `seed-core.js` / `reseed-all.js` | Hit core `/api/test-data/*` (stores only) |
 | `verify-phase-b-e2e.js` | **True E2E Phase B residual** — create → kitchen → dispatch → accept → OTP → DELIVERED + cancel path + SockJS check |
+
+### Phase E — Full platform reseed (one command)
+
+```bash
+# Mac → Dell. Requires services on spring profile dev|demo + host Mongo.
+GW=http://192.168.50.88:8080 node scripts/reseed/reseed-all.js
+GW=http://192.168.50.88:8080 node scripts/reseed/verify-seed.js
+# Exit 0 = green. Safe to run reseed-all twice (idempotent upserts).
+```
+
+**Idempotency:** seeders upsert by fixed keys (email, orderNumber `SEED-ORD-*`, supplierCode `SEED-SUP-*`, itemCode, notes `seed:*`). No wipe-and-replace required. Re-running resets demo passwords to `Demo@1234` and refreshes seed rows.
+
+**Ownership invariant:** commerce seed sets `order.customerId` = Anna's **userId** (JWT `sub`), not the Customer document `_id`.
+
+**Profile gate:** seed controllers/services only work when `SPRING_PROFILES_ACTIVE` includes `dev` or `demo`. Outside those profiles endpoints return 404 (or controller beans are not loaded for core `TestDataController`).
 
 ### Phase B residual verify (Mac → Dell gateway)
 

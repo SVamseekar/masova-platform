@@ -175,6 +175,12 @@ public class GatewayConfig {
                             .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
                         .uri("http://localhost:8085"))
 
+                // Dev/demo seed bootstrap (core TestDataController @Profile dev|demo; no JWT for cold start)
+                .route("core_test_data", r -> r.path("/api/test-data/**")
+                        .filters(f -> f
+                            .filter(rateLimitingFilter.apply(createRateLimitConfig(100, "core_test_data"))))
+                        .uri("http://localhost:8085"))
+
                 .route("core_notifications", r -> r.path("/api/notifications/**")
                         .filters(f -> f
                             .filter(rateLimitingFilter.apply(createRateLimitConfig(1000, "core_notifications")))

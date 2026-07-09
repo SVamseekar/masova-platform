@@ -3,6 +3,7 @@ package com.MaSoVa.core.user.controller;
 import com.MaSoVa.shared.entity.Store;
 import com.MaSoVa.shared.enums.StoreStatus;
 import com.MaSoVa.shared.model.Address;
+import com.MaSoVa.core.user.service.PlatformSeedService;
 import com.MaSoVa.core.user.service.StoreService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,20 +11,28 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.Map;
 
-@Profile("dev")
+/**
+ * Dev/demo-only seed endpoints. Bean is not loaded outside {@code dev} / {@code demo} profiles.
+ * Also gated at runtime by {@link PlatformSeedService#isSeedAllowed()}.
+ */
+@Profile({"dev", "demo"})
 @RestController
 @RequestMapping("/api/test-data")
-@Tag(name = "Test Data", description = "Endpoints for creating test data (dev profile only)")
+@Tag(name = "Test Data", description = "Endpoints for creating test data (dev/demo profile only)")
 public class TestDataController {
     
     @Autowired
     private StoreService storeService;
+
+    @Autowired
+    private PlatformSeedService platformSeedService;
     
     @PostMapping("/create-default-store")
     @Operation(summary = "Create default test store")
@@ -136,6 +145,28 @@ public class TestDataController {
 
     @Autowired
     private com.MaSoVa.core.user.repository.UserRepository userRepository;
+
+    /**
+     * POST /api/test-data/seed-demo — full core platform seed (stores, users, customers, campaigns).
+     * Idempotent. Unauthenticated by design for cold-start reseed (controller only in dev/demo).
+     */
+    @PostMapping({"/seed-demo", "/seed-all"})
+    @Operation(summary = "Seed Berlin demo platform data (stores, users, customers, campaigns)")
+    public ResponseEntity<?> seedDemo(
+            @RequestParam(defaultValue = "DOM001") String storeId) {
+        if (!platformSeedService.isSeedAllowed()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Seed only available with spring profile dev or demo"));
+        }
+        try {
+            return ResponseEntity.ok(platformSeedService.seedDemo(storeId));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "error", "Seed failed",
+                            "detail", e.getMessage() != null ? e.getMessage() : "unknown"));
+        }
+    }
 
     @PostMapping("/migrate-users-to-storecode")
     @Operation(summary = "Migrate all users from MongoDB store IDs to store codes")
