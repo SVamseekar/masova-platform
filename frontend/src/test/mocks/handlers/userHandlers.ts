@@ -45,14 +45,6 @@ export const userHandlers = [
     new HttpResponse(null, { status: 204 }),
   ),
 
-  http.get(apiUrl('/users/managers'), () =>
-    HttpResponse.json(mockUsers.filter((u) => u.type === 'MANAGER')),
-  ),
-
-  http.get(apiUrl('/users/store'), () =>
-    HttpResponse.json(mockUsers.filter((u) => u.storeId === '1')),
-  ),
-
   http.get(apiUrl('/users/search'), () =>
     HttpResponse.json(mockUsers),
   ),
@@ -61,13 +53,20 @@ export const userHandlers = [
     HttpResponse.json({ totalUsers: 50, activeUsers: 45, staffCount: 12, driverCount: 8 }),
   ),
 
-  http.get(apiUrl('/users/type/:type'), ({ params }) =>
-    HttpResponse.json(mockUsers.filter((u) => u.type === params.type)),
-  ),
-
-  http.get(apiUrl('/users'), () =>
-    HttpResponse.json(mockUsers),
-  ),
+  // Canonical list: GET /users?type=&storeId=&available=
+  http.get(apiUrl('/users'), ({ request }) => {
+    const url = new URL(request.url);
+    const type = url.searchParams.get('type');
+    const storeId = url.searchParams.get('storeId');
+    let rows = mockUsers;
+    if (type) {
+      rows = rows.filter((u) => u.type === type);
+    }
+    if (storeId) {
+      rows = rows.filter((u) => u.storeId === storeId || u.storeId === '1');
+    }
+    return HttpResponse.json(rows);
+  }),
 
   http.post(apiUrl('/users/create'), () =>
     HttpResponse.json({ ...mockUsers[1], id: '99' }),

@@ -125,13 +125,12 @@ export const driverApi = createApi({
       providesTags: (result, error, userId) => [{ type: 'Driver', id: userId }],
     }),
 
-    // Get online drivers
+    // Get online/available drivers — canonical GET /api/users?type=DRIVER&…
     getOnlineDrivers: builder.query<Driver[], string | undefined>({
       query: (storeId) => {
-        const params = new URLSearchParams();
-        params.append('status', 'online');
-        if (storeId) params.append('storeId', storeId);
-        return `/users/type/DRIVER?${params.toString()}`;
+        const params = new URLSearchParams({ type: 'DRIVER', available: 'true' });
+        if (storeId) params.set('storeId', storeId);
+        return `/users?${params.toString()}`;
       },
       providesTags: (result, error, storeId) => [{ type: 'Driver', id: storeId || 'DEFAULT' }],
     }),
@@ -139,10 +138,9 @@ export const driverApi = createApi({
     // Get available drivers
     getAvailableDrivers: builder.query<Driver[], string | undefined>({
       query: (storeId) => {
-        const params = new URLSearchParams();
-        params.append('available', 'true');
-        if (storeId) params.append('storeId', storeId);
-        return `/users/type/DRIVER?${params.toString()}`;
+        const params = new URLSearchParams({ type: 'DRIVER', available: 'true' });
+        if (storeId) params.set('storeId', storeId);
+        return `/users?${params.toString()}`;
       },
       providesTags: (result, error, storeId) => [{ type: 'Driver', id: storeId || 'DEFAULT' }],
     }),
