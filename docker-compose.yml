@@ -76,6 +76,7 @@ services:
     ports:
       - "8085:8085"
     environment:
+      - SPRING_PROFILES_ACTIVE=dev
       - SPRING_DATA_MONGODB_URI=mongodb://masova-mongodb:27017/masova_core
       - SPRING_REDIS_HOST=masova-redis
       - SPRING_RABBITMQ_HOST=masova-rabbitmq
@@ -108,6 +109,7 @@ services:
     ports:
       - "8084:8084"
     environment:
+      - SPRING_PROFILES_ACTIVE=dev
       - SPRING_DATA_MONGODB_URI=mongodb://masova-mongodb:27017/masova_commerce
       - SPRING_REDIS_HOST=masova-redis
       - SPRING_RABBITMQ_HOST=masova-rabbitmq
@@ -143,12 +145,17 @@ services:
     ports:
       - "8089:8089"
     environment:
+      - SPRING_PROFILES_ACTIVE=dev
       - SPRING_DATA_MONGODB_URI=mongodb://masova-mongodb:27017/masova_payment
       - SPRING_REDIS_HOST=masova-redis
       - SPRING_RABBITMQ_HOST=masova-rabbitmq
       - SPRING_RABBITMQ_USERNAME=masova
       - SPRING_RABBITMQ_PASSWORD=masova_secret
       - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - RAZORPAY_ENABLED=${RAZORPAY_ENABLED:-false}
       - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
       - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
       - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET}
@@ -178,6 +185,7 @@ services:
     ports:
       - "8086:8086"
     environment:
+      - SPRING_PROFILES_ACTIVE=dev
       - SPRING_DATA_MONGODB_URI=mongodb://masova-mongodb:27017/masova_logistics
       - SPRING_REDIS_HOST=masova-redis
       - SPRING_RABBITMQ_HOST=masova-rabbitmq
@@ -213,6 +221,7 @@ services:
     ports:
       - "8087:8087"
     environment:
+      - SPRING_PROFILES_ACTIVE=dev
       - SPRING_DATA_MONGODB_URI=mongodb://masova-mongodb:27017/masova_analytics
       - SPRING_REDIS_HOST=masova-redis
       - SPRING_RABBITMQ_HOST=masova-rabbitmq
@@ -238,6 +247,7 @@ services:
     ports:
       - "8080:8080"
     environment:
+      - SPRING_PROFILES_ACTIVE=dev
       - CORE_SERVICE_URL=http://masova-core:8085
       - COMMERCE_SERVICE_URL=http://masova-commerce:8084
       - PAYMENT_SERVICE_URL=http://masova-payment:8089
