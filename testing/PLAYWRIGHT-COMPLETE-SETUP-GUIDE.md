@@ -5,6 +5,8 @@
 **Last Updated:** October 27, 2025
 **Difficulty:** Beginner-friendly with step-by-step instructions
 
+> **STALE:** `docker-compose.test-light.yml` referenced throughout this guide was removed from the repo (2026-07-14, unused/unreferenced). The root `docker-compose.yml` now runs the full backend (all 6 services + infra) directly — see CLAUDE.md "Starting Services". The Docker Compose steps below are historical/reference only.
+
 ---
 
 ## 📋 Table of Contents
