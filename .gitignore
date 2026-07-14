@@ -95,6 +95,7 @@ frontend/tsconfig.tsbuildinfo
 .claude/
 .claude-context.md
 CLAUDE.md
+agents.md
 .mcp.json
 .superpowers/
 .cursor/
