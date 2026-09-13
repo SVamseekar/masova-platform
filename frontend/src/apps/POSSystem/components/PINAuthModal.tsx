@@ -196,7 +196,9 @@ export const PINAuthModal: React.FC<PINAuthModalProps> = ({
           </button>
           <button
             type="button"
-            onClick={handleSubmit}
+            onClick={() => {
+              void handleSubmit();
+            }}
             disabled={disabled}
             style={{
               ...posTouchBtnPrimary,
