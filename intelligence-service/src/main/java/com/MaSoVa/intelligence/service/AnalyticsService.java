@@ -36,9 +36,26 @@ public class AnalyticsService {
     /**
      * Get sales metrics for today compared to yesterday and last year
      */
-    @Cacheable(value = "salesMetrics", key = "#p0")
+    @Cacheable(value = "salesMetrics", key = "'v2-' + #p0")
     public SalesMetricsResponse getTodaySalesMetrics(String storeId) {
         log.info("Calculating sales metrics for store: {}", storeId);
+
+        Map<String, Object> summary = orderServiceClient.getStoreSummary(storeId, 30);
+        if (hasSummary(summary)) {
+            BigDecimal todaySales = decimal(summary.get("todaySales"));
+            int todayOrderCount = integer(summary.get("todayOrderCount"));
+            return SalesMetricsResponse.builder()
+                    .todaySales(todaySales)
+                    .yesterdaySalesAtSameTime(BigDecimal.ZERO)
+                    .lastYearSameDaySales(BigDecimal.ZERO)
+                    .todayOrderCount(todayOrderCount)
+                    .yesterdayOrderCountAtSameTime(0)
+                    .lastYearSameDayOrderCount(0)
+                    .percentChangeFromYesterday(BigDecimal.ZERO)
+                    .percentChangeFromLastYear(BigDecimal.ZERO)
+                    .trend("STABLE")
+                    .build();
+        }
 
         LocalDate today = LocalDate.now(BUSINESS_ZONE);
         LocalDate yesterday = today.minusDays(1);
@@ -84,9 +101,26 @@ public class AnalyticsService {
     /**
      * Get average order value for today
      */
-    @Cacheable(value = "salesMetrics", key = "'aov-' + #p0")
+    @Cacheable(value = "salesMetrics", key = "'v2-aov-' + #p0")
     public AverageOrderValueResponse getAverageOrderValue(String storeId) {
         log.info("Calculating average order value for store: {}", storeId);
+
+        Map<String, Object> summary = orderServiceClient.getStoreSummary(storeId, 7);
+        if (hasSummary(summary)) {
+            BigDecimal todaySales = decimal(summary.get("todaySales"));
+            int todayOrderCount = integer(summary.get("todayOrderCount"));
+            BigDecimal todayAOV = todayOrderCount > 0
+                    ? todaySales.divide(BigDecimal.valueOf(todayOrderCount), 2, RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
+            return AverageOrderValueResponse.builder()
+                    .averageOrderValue(todayAOV)
+                    .yesterdayAverageOrderValue(BigDecimal.ZERO)
+                    .percentChange(BigDecimal.ZERO)
+                    .trend("STABLE")
+                    .totalOrders(todayOrderCount)
+                    .totalSales(todaySales)
+                    .build();
+        }
 
         LocalDate today = LocalDate.now(BUSINESS_ZONE);
         LocalDate yesterday = today.minusDays(1);
@@ -131,10 +165,16 @@ public class AnalyticsService {
 
         int totalDrivers = drivers.size();
         long availableDrivers = drivers.stream()
-                .filter(d -> "AVAILABLE".equals(d.get("status")))
+                .filter(d -> {
+                    Object status = d.get("status");
+                    Object online = d.get("isOnline") != null ? d.get("isOnline") : d.get("online");
+                    boolean isOnline = Boolean.TRUE.equals(online);
+                    return "AVAILABLE".equals(status) || isOnline;
+                })
                 .count();
         long busyDrivers = drivers.stream()
-                .filter(d -> "BUSY".equals(d.get("status")))
+                .filter(d -> "BUSY".equals(d.get("status"))
+                        || (d.get("activeDeliveryCount") instanceof Number n && n.intValue() > 0))
                 .count();
 
         Integer activeDeliveries = orderServiceClient.getActiveDeliveryCount();
@@ -190,6 +230,43 @@ public class AnalyticsService {
     }
 
     // Helper methods
+
+    private static boolean hasSummary(Map<String, Object> summary) {
+        return summary != null && !summary.isEmpty() && summary.get("todaySales") != null;
+    }
+
+    private static BigDecimal decimal(Object value) {
+        if (value instanceof BigDecimal bd) {
+            return bd;
+        }
+        if (value instanceof Number n) {
+            return BigDecimal.valueOf(n.doubleValue());
+        }
+        if (value instanceof String s) {
+            try {
+                return new BigDecimal(s);
+            } catch (NumberFormatException e) {
+                return BigDecimal.ZERO;
+            }
+        }
+        return BigDecimal.ZERO;
+    }
+
+    private static int integer(Object value) {
+        if (value instanceof Number n) {
+            return n.intValue();
+        }
+        return 0;
+    }
+
+    private static String text(Map<?, ?> map, String key, String fallback) {
+        Object value = map.get(key);
+        if (value == null) {
+            return fallback;
+        }
+        String asText = String.valueOf(value);
+        return asText.isBlank() ? fallback : asText;
+    }
 
     /**
      * Check if order is completed based on its type
@@ -280,9 +357,54 @@ public class AnalyticsService {
     /**
      * Get sales trends for weekly or monthly period
      */
-    @Cacheable(value = "salesTrends", key = "#p0 + '-' + #p1")
+    @Cacheable(value = "salesTrends", key = "'v2-' + #p0 + '-' + #p1")
     public SalesTrendResponse getSalesTrends(String storeId, String period) {
         log.info("Calculating sales trends for store: {}, period: {}", storeId, period);
+
+        int wantedDays = "MONTHLY".equalsIgnoreCase(period) || "MONTH".equalsIgnoreCase(period) ? 30 : 7;
+        Map<String, Object> summary = orderServiceClient.getStoreSummary(storeId, wantedDays);
+        if (hasSummary(summary) && summary.get("daily") instanceof List<?> daily && !daily.isEmpty()) {
+            List<SalesTrendResponse.DailyDataPoint> dataPoints = new ArrayList<>();
+            DateTimeFormatter formatter = wantedDays >= 30
+                    ? DateTimeFormatter.ofPattern("MMM dd")
+                    : DateTimeFormatter.ofPattern("EEE");
+            for (Object row : daily) {
+                if (!(row instanceof Map<?, ?> map)) continue;
+                String dateStr = String.valueOf(map.get("date"));
+                LocalDate date;
+                try {
+                    date = LocalDate.parse(dateStr);
+                } catch (Exception e) {
+                    continue;
+                }
+                BigDecimal daySales = decimal(map.get("sales"));
+                int dayCount = integer(map.get("orderCount"));
+                BigDecimal dayAOV = dayCount > 0
+                        ? daySales.divide(BigDecimal.valueOf(dayCount), 2, RoundingMode.HALF_UP)
+                        : BigDecimal.ZERO;
+                dataPoints.add(SalesTrendResponse.DailyDataPoint.builder()
+                        .date(date)
+                        .label(date.format(formatter))
+                        .sales(daySales)
+                        .orderCount(dayCount)
+                        .averageOrderValue(dayAOV)
+                        .build());
+            }
+            BigDecimal totalSales = decimal(summary.get(wantedDays >= 30 ? "rangeSales" : "weekSales"));
+            int totalOrders = integer(summary.get(wantedDays >= 30 ? "rangeOrderCount" : "weekOrderCount"));
+            BigDecimal avgOrderValue = totalOrders > 0
+                    ? totalSales.divide(BigDecimal.valueOf(totalOrders), 2, RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
+            return SalesTrendResponse.builder()
+                    .period(period.toUpperCase())
+                    .dataPoints(dataPoints)
+                    .totalSales(totalSales)
+                    .totalOrders(totalOrders)
+                    .averageOrderValue(avgOrderValue)
+                    .percentChangeFromPreviousPeriod(BigDecimal.ZERO)
+                    .trend("STABLE")
+                    .build();
+        }
 
         LocalDate endDate = LocalDate.now(BUSINESS_ZONE);
         LocalDate startDate;
@@ -365,9 +487,29 @@ public class AnalyticsService {
     /**
      * Get order type breakdown (Dine-in, Pickup, Delivery)
      */
-    @Cacheable(value = "orderTypeBreakdown", key = "#p0")
+    @Cacheable(value = "orderTypeBreakdown", key = "'v2-' + #p0")
     public OrderTypeBreakdownResponse getOrderTypeBreakdown(String storeId) {
         log.info("Calculating order type breakdown for store: {}", storeId);
+
+        Map<String, Object> summary = orderServiceClient.getStoreSummary(storeId, 30);
+        if (hasSummary(summary) && summary.get("orderTypes") instanceof List<?> types && !types.isEmpty()) {
+            List<OrderTypeBreakdownResponse.OrderTypeData> breakdown = new ArrayList<>();
+            for (Object row : types) {
+                if (!(row instanceof Map<?, ?> map)) continue;
+                breakdown.add(OrderTypeBreakdownResponse.OrderTypeData.builder()
+                        .orderType(text(map, "orderType", "UNKNOWN"))
+                        .count(integer(map.get("count")))
+                        .sales(decimal(map.get("sales")))
+                        .percentage(decimal(map.get("percentage")))
+                        .averageOrderValue(decimal(map.get("averageOrderValue")))
+                        .build());
+            }
+            return OrderTypeBreakdownResponse.builder()
+                    .breakdown(breakdown)
+                    .totalSales(decimal(summary.get("rangeSales")))
+                    .totalOrders(integer(summary.get("rangeOrderCount")))
+                    .build();
+        }
 
         LocalDate today = LocalDate.now(BUSINESS_ZONE);
         List<Map<String, Object>> orders = orderServiceClient.getOrdersByDate(today);
@@ -415,9 +557,51 @@ public class AnalyticsService {
     /**
      * Get peak hours analysis
      */
-    @Cacheable(value = "peakHours", key = "#p0")
+    @Cacheable(value = "peakHours", key = "'v2-' + #p0")
     public PeakHoursResponse getPeakHours(String storeId) {
         log.info("Calculating peak hours for store: {}", storeId);
+
+        Map<String, Object> summary = orderServiceClient.getStoreSummary(storeId, 30);
+        if (hasSummary(summary) && summary.get("hours") instanceof List<?> hours && !hours.isEmpty()) {
+            List<PeakHoursResponse.HourData> hourlyData = new ArrayList<>();
+            int peakHour = 0;
+            int peakHourOrders = 0;
+            BigDecimal peakHourSales = BigDecimal.ZERO;
+            int slowestHour = 0;
+            int slowestHourOrders = Integer.MAX_VALUE;
+            for (Object row : hours) {
+                if (!(row instanceof Map<?, ?> map)) continue;
+                int hour = integer(map.get("hour"));
+                int orderCount = integer(map.get("orderCount"));
+                BigDecimal sales = decimal(map.get("sales"));
+                BigDecimal aov = orderCount > 0
+                        ? sales.divide(BigDecimal.valueOf(orderCount), 2, RoundingMode.HALF_UP)
+                        : BigDecimal.ZERO;
+                hourlyData.add(PeakHoursResponse.HourData.builder()
+                        .hour(hour)
+                        .label(String.format("%02d:00", hour))
+                        .orderCount(orderCount)
+                        .sales(sales)
+                        .averageOrderValue(aov)
+                        .build());
+                if (orderCount > peakHourOrders) {
+                    peakHour = hour;
+                    peakHourOrders = orderCount;
+                    peakHourSales = sales;
+                }
+                if (orderCount < slowestHourOrders) {
+                    slowestHour = hour;
+                    slowestHourOrders = orderCount;
+                }
+            }
+            return PeakHoursResponse.builder()
+                    .hourlyData(hourlyData)
+                    .peakHour(peakHour)
+                    .slowestHour(slowestHour)
+                    .peakHourSales(peakHourSales)
+                    .peakHourOrders(peakHourOrders)
+                    .build();
+        }
 
         LocalDate today = LocalDate.now(BUSINESS_ZONE);
         List<Map<String, Object>> orders = orderServiceClient.getOrdersByDate(today);
@@ -475,9 +659,37 @@ public class AnalyticsService {
     /**
      * Get staff leaderboard
      */
-    @Cacheable(value = "staffLeaderboard", key = "#p0 + '-' + #p1")
+    @Cacheable(value = "staffLeaderboard", key = "'v2-' + #p0 + '-' + #p1")
     public StaffLeaderboardResponse getStaffLeaderboard(String storeId, String period) {
         log.info("Fetching staff leaderboard for store: {}, period: {}", storeId, period);
+
+        int days = switch (period.toUpperCase()) {
+            case "WEEK", "WEEKLY" -> 7;
+            case "MONTH", "MONTHLY" -> 30;
+            default -> 1;
+        };
+        Map<String, Object> summary = orderServiceClient.getStoreSummary(storeId, Math.max(days, 7));
+        if (hasSummary(summary) && summary.get("staff") instanceof List<?> staffRows && !staffRows.isEmpty()) {
+            List<StaffLeaderboardResponse.StaffRanking> rankings = new ArrayList<>();
+            for (Object row : staffRows) {
+                if (!(row instanceof Map<?, ?> map)) continue;
+                rankings.add(StaffLeaderboardResponse.StaffRanking.builder()
+                        .rank(integer(map.get("rank")))
+                        .staffId(text(map, "staffId", ""))
+                        .staffName(text(map, "staffName", "Staff"))
+                        .ordersProcessed(integer(map.get("ordersProcessed")))
+                        .salesGenerated(decimal(map.get("salesGenerated")))
+                        .averageOrderValue(decimal(map.get("averageOrderValue")))
+                        .performanceLevel(text(map, "performanceLevel", "AVERAGE"))
+                        .percentOfTotalSales(decimal(map.get("percentOfTotalSales")))
+                        .build());
+            }
+            return StaffLeaderboardResponse.builder()
+                    .rankings(rankings)
+                    .period(period.toUpperCase())
+                    .totalStaff(rankings.size())
+                    .build();
+        }
 
         // Europe/Berlin business calendar for EU primary
         LocalDate endDate = LocalDate.now(BUSINESS_ZONE);
@@ -578,9 +790,41 @@ public class AnalyticsService {
     /**
      * Get top selling products
      */
-    @Cacheable(value = "topProducts", key = "#p0 + '-' + #p1 + '-' + #p2")
+    @Cacheable(value = "topProducts", key = "'v2-' + #p0 + '-' + #p1 + '-' + #p2")
     public TopProductsResponse getTopProducts(String storeId, String period, String sortBy) {
         log.info("Fetching top products for store: {}, period: {}, sortBy: {}", storeId, period, sortBy);
+
+        int days = switch (period.toUpperCase()) {
+            case "WEEK", "WEEKLY" -> 7;
+            case "MONTH", "MONTHLY" -> 30;
+            default -> 1;
+        };
+        Map<String, Object> summary = orderServiceClient.getStoreSummary(storeId, Math.max(days, 7));
+        if (hasSummary(summary) && summary.get("topProducts") instanceof List<?> products && !products.isEmpty()) {
+            List<TopProductsResponse.ProductData> topProducts = new ArrayList<>();
+            for (Object row : products) {
+                if (!(row instanceof Map<?, ?> map)) continue;
+                topProducts.add(TopProductsResponse.ProductData.builder()
+                        .rank(integer(map.get("rank")))
+                        .itemId(text(map, "itemId", ""))
+                        .itemName(text(map, "itemName", "Item"))
+                        .category(text(map, "category", "FOOD"))
+                        .quantitySold(integer(map.get("quantitySold")))
+                        .revenue(decimal(map.get("revenue")))
+                        .unitPrice(decimal(map.get("unitPrice")))
+                        .percentOfTotalRevenue(decimal(map.get("percentOfTotalRevenue")))
+                        .trend(text(map, "trend", "UP"))
+                        .build());
+            }
+            if ("QUANTITY".equalsIgnoreCase(sortBy)) {
+                topProducts.sort((a, b) -> Integer.compare(b.getQuantitySold(), a.getQuantitySold()));
+            }
+            return TopProductsResponse.builder()
+                    .topProducts(topProducts)
+                    .period(period)
+                    .sortBy(sortBy)
+                    .build();
+        }
 
         LocalDate endDate = LocalDate.now(BUSINESS_ZONE);
         LocalDate startDate;

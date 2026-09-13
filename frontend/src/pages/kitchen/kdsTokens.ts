@@ -10,17 +10,20 @@ export const KITCHEN_ROLE = '#FF6B35';
 
 export const kds = {
   role: KITCHEN_ROLE,
-  roleSoft: 'rgba(255, 107, 53, 0.12)',
-  roleBorder: 'rgba(255, 107, 53, 0.45)',
-  roleShadow: 'rgba(255, 107, 53, 0.35)',
+  roleSoft: 'rgba(255, 107, 53, 0.14)',
+  roleBorder: 'rgba(255, 107, 53, 0.35)',
+  roleShadow: 'rgba(255, 107, 53, 0.22)',
 
-  surface: colors.surface.primary,
-  surfaceAlt: colors.surface.secondary,
-  surfaceElevated: colors.surface.elevated,
-  ink: colors.text.primary,
-  muted: colors.text.secondary,
-  faint: colors.text.tertiary,
-  inverse: colors.text.inverse,
+  /** Cook-line board — industrial charcoal, not cream SaaS */
+  surface: '#0B0B0C',
+  surfaceAlt: '#121214',
+  surfaceElevated: '#18181B',
+  rail: '#1F1F23',
+  ink: '#F5F2EB',
+  muted: '#9A958C',
+  faint: '#5C5A56',
+  inverse: '#FFFFFF',
+  hairline: 'rgba(255,255,255,0.06)',
 
   success: colors.semantic.success,
   successDark: colors.semantic.successDark,

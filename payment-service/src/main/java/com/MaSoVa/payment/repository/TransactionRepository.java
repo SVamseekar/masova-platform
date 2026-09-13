@@ -1,6 +1,8 @@
 package com.MaSoVa.payment.repository;
 
 import com.MaSoVa.payment.entity.Transaction;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -23,6 +25,8 @@ public interface TransactionRepository extends MongoRepository<Transaction, Stri
     List<Transaction> findByCustomerId(String customerId);
 
     List<Transaction> findByStoreId(String storeId);
+
+    Page<Transaction> findByStoreId(String storeId, Pageable pageable);
 
     List<Transaction> findByStatus(Transaction.PaymentStatus status);
 

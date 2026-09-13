@@ -155,16 +155,20 @@ export const PINAuthModal: React.FC<PINAuthModalProps> = ({
               type="password"
               inputMode="numeric"
               maxLength={1}
+              aria-label={`PIN digit ${index + 1}`}
               value={pin[index]}
               onChange={(e) => handlePinChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
               onPaste={handlePaste}
               style={{
                 ...styles.pinInput,
+                ...(pin[index] ? styles.pinInputFilled : {}),
                 ...(error ? styles.pinInputError : {}),
               }}
               disabled={loading}
-              autoComplete="off"
+              autoComplete="one-time-code"
+              autoCorrect="off"
+              spellCheck={false}
             />
           ))}
         </div>
@@ -276,9 +280,15 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 12,
     backgroundColor: pos.surfaceAlt,
     color: pos.ink,
+    WebkitTextFillColor: pos.ink,
+    caretColor: pos.ink,
+    WebkitTextSecurity: 'disc',
     transition: 'all 0.15s ease',
     outline: 'none',
     fontFamily: 'ui-monospace, monospace',
+  } as React.CSSProperties,
+  pinInputFilled: {
+    borderColor: pos.ink,
   },
   pinInputError: {
     borderColor: pos.error,

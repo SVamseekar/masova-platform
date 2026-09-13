@@ -64,11 +64,8 @@ describe('PINAuthModal', () => {
         useMemoryRouter: true,
       });
 
-      // password inputs are not textboxes, let's query by type
-      const passwordInputs = document.querySelectorAll(
-        'input[type="password"]'
-      );
-      expect(passwordInputs).toHaveLength(5);
+      const pinInputs = document.querySelectorAll('input[inputmode="numeric"]');
+      expect(pinInputs).toHaveLength(5);
     });
 
     it('renders Cancel and Continue buttons', () => {
@@ -112,7 +109,7 @@ describe('PINAuthModal', () => {
         useMemoryRouter: true,
       });
 
-      const inputs = document.querySelectorAll('input[type="password"]');
+      const inputs = document.querySelectorAll('input[inputmode="numeric"]');
       await user.click(inputs[0] as HTMLElement);
       await user.keyboard('1');
 
@@ -126,7 +123,7 @@ describe('PINAuthModal', () => {
         useMemoryRouter: true,
       });
 
-      const inputs = document.querySelectorAll('input[type="password"]');
+      const inputs = document.querySelectorAll('input[inputmode="numeric"]');
       await user.click(inputs[0] as HTMLElement);
       await user.keyboard('1');
 
@@ -160,7 +157,7 @@ describe('PINAuthModal', () => {
       });
 
       // Enter a 5-digit PIN
-      const inputs = document.querySelectorAll('input[type="password"]');
+      const inputs = document.querySelectorAll('input[inputmode="numeric"]');
       await user.click(inputs[0] as HTMLElement);
       await user.keyboard('12345');
 
@@ -180,7 +177,7 @@ describe('PINAuthModal', () => {
       });
 
       // Enter only 3 digits
-      const inputs = document.querySelectorAll('input[type="password"]');
+      const inputs = document.querySelectorAll('input[inputmode="numeric"]');
       await user.click(inputs[0] as HTMLElement);
       await user.keyboard('123');
 
@@ -209,7 +206,7 @@ describe('PINAuthModal', () => {
         useMemoryRouter: true,
       });
 
-      const inputs = document.querySelectorAll('input[type="password"]');
+      const inputs = document.querySelectorAll('input[inputmode="numeric"]');
       await user.click(inputs[0] as HTMLElement);
       await user.keyboard('12345');
 

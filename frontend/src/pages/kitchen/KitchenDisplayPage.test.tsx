@@ -204,7 +204,7 @@ describe('KitchenDisplayPage', () => {
     ];
 
     renderAsKitchenStaff(<KitchenDisplayPage />);
-    expect(screen.getByText('URGENT')).toBeInTheDocument();
+    expect(screen.getByText('Rush')).toBeInTheDocument();
   });
 
   it('sorts urgent orders before normal orders in the same column', () => {
@@ -250,10 +250,10 @@ describe('KitchenDisplayPage', () => {
     ];
 
     renderAsKitchenStaff(<KitchenDisplayPage />);
-    expect(screen.getByText('Pepperoni Pizza')).toBeInTheDocument();
-    expect(screen.getByText('3x')).toBeInTheDocument();
-    expect(screen.getByText('Garlic Bread')).toBeInTheDocument();
-    expect(screen.getByText('1x')).toBeInTheDocument();
+    const ticket = screen.getByTestId('kds-ticket-ORD-ITEMS');
+    expect(within(ticket).getByText('Pepperoni Pizza')).toBeInTheDocument();
+    expect(within(ticket).getByText('3')).toBeInTheDocument();
+    expect(within(ticket).getByText('Garlic Bread')).toBeInTheDocument();
   });
 
   it('displays order type badge', () => {
@@ -268,7 +268,7 @@ describe('KitchenDisplayPage', () => {
     ];
 
     renderAsKitchenStaff(<KitchenDisplayPage />);
-    expect(screen.getByText('DELIVERY')).toBeInTheDocument();
+    expect(screen.getByText('Delivery')).toBeInTheDocument();
   });
 
   it('shows "Next Stage" button for non-terminal orders', () => {
@@ -282,7 +282,7 @@ describe('KitchenDisplayPage', () => {
     ];
 
     renderAsKitchenStaff(<KitchenDisplayPage />);
-    expect(screen.getByText('Next Stage')).toBeInTheDocument();
+    expect(screen.getByText('Bump')).toBeInTheDocument();
   });
 
   it('calls updateOrderStatus when Next Stage is clicked', async () => {
@@ -298,7 +298,7 @@ describe('KitchenDisplayPage', () => {
     renderAsKitchenStaff(<KitchenDisplayPage />);
 
     const nextStageButton = await waitFor(() => {
-      const button = screen.getByText('Next Stage').closest('button');
+      const button = screen.getByText('Bump').closest('button');
       expect(button).toBeTruthy();
       return button!;
     });
@@ -326,7 +326,7 @@ describe('KitchenDisplayPage', () => {
     ];
 
     renderAsKitchenStaff(<KitchenDisplayPage />);
-    fireEvent.click(screen.getByText('Next Stage').closest('button')!);
+    fireEvent.click(screen.getByText('Bump').closest('button')!);
 
     expect(await screen.findByTestId('kds-action-error')).toBeInTheDocument();
     expect(screen.getByText(/Could not advance #ORD-FAIL/i)).toBeInTheDocument();
@@ -343,7 +343,7 @@ describe('KitchenDisplayPage', () => {
     ];
 
     renderAsKitchenStaff(<KitchenDisplayPage />);
-    expect(screen.getByText('Recipe')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Recipe for/i)).toBeInTheDocument();
   });
 
   it('displays column counts', () => {
@@ -376,7 +376,6 @@ describe('KitchenDisplayPage', () => {
 
     renderAsKitchenStaff(<KitchenDisplayPage />);
     expect(screen.getByTestId('oven-timer')).toBeInTheDocument();
-    expect(screen.getByText('Demo estimate')).toBeInTheDocument();
   });
 
   it('shows Mark Served for dine-in READY tickets', () => {
@@ -391,7 +390,7 @@ describe('KitchenDisplayPage', () => {
     ];
 
     renderAsKitchenStaff(<KitchenDisplayPage />);
-    expect(screen.getByText('Mark Served')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Served' })).toBeInTheDocument();
   });
 
   it('shows summary KPIs from live tickets', () => {

@@ -127,3 +127,45 @@ export function sumOrderTotals(
 ): number {
   return orders.reduce((sum, o) => sum + (o.totalAmount ?? o.total ?? 0), 0);
 }
+
+export function ordersInLastMs<T extends { createdAt: string }>(
+  orders: T[],
+  windowMs: number,
+  now: Date = new Date()
+): T[] {
+  const cutoff = now.getTime() - windowMs;
+  return orders.filter((o) => {
+    const t = new Date(o.createdAt).getTime();
+    return Number.isFinite(t) && t >= cutoff;
+  });
+}
+
+export function deriveTopSellers(
+  orders: Array<{ items?: Array<{ name?: string; quantity?: number; price?: number }> }>
+): Array<{ name: string; qty: number; revenue: number }> {
+  const map = new Map<string, { name: string; qty: number; revenue: number }>();
+  for (const o of orders) {
+    for (const item of o.items || []) {
+      const name = item.name || 'Item';
+      const prev = map.get(name) || { name, qty: 0, revenue: 0 };
+      prev.qty += item.quantity || 0;
+      prev.revenue += (item.price || 0) * (item.quantity || 0);
+      map.set(name, prev);
+    }
+  }
+  return [...map.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 6);
+}
+
+export function derivePaymentMix(
+  orders: Array<{ paymentMethod?: string; totalAmount?: number; total?: number }>
+): Array<{ method: string; count: number; total: number }> {
+  const map = new Map<string, { method: string; count: number; total: number }>();
+  for (const o of orders) {
+    const method = (o.paymentMethod || 'OTHER').toUpperCase();
+    const prev = map.get(method) || { method, count: 0, total: 0 };
+    prev.count += 1;
+    prev.total += o.totalAmount ?? o.total ?? 0;
+    map.set(method, prev);
+  }
+  return [...map.values()].sort((a, b) => b.total - a.total);
+}

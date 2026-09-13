@@ -133,6 +133,8 @@ public class PaymentController {
             @RequestParam(name = "storeId", required = false) String storeId,
             @RequestParam(name = "reconciliation", required = false) Boolean reconciliation,
             @RequestParam(name = "date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(name = "page", required = false) Integer page,
+            @RequestParam(name = "size", required = false) Integer size,
             HttpServletRequest request) {
         String headerStoreId = StoreContextUtil.getStoreIdFromHeaders(request);
         String effectiveStore = (storeId != null && !storeId.isBlank()) ? storeId : headerStoreId;
@@ -169,8 +171,9 @@ public class PaymentController {
                 List<PaymentResponse> transactions = paymentService.getTransactionsByCustomerId(customerId);
                 return ResponseEntity.ok(transactions);
             }
-            List<PaymentResponse> transactions = paymentService.getTransactionsByStoreId(effectiveStore);
-            return ResponseEntity.ok(transactions);
+            int pageNum = page == null ? 0 : page;
+            int pageSize = size == null ? 50 : size;
+            return ResponseEntity.ok(paymentService.getTransactionsByStoreId(effectiveStore, pageNum, pageSize));
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         } catch (Exception e) {
@@ -220,7 +223,7 @@ public class PaymentController {
                 return ResponseEntity.badRequest().body(Map.of(
                         "error", "storeId required (query or X-Selected-Store-Id header)"));
             }
-            return ResponseEntity.ok(paymentService.getTransactionsByStoreId(effective));
+            return ResponseEntity.ok(paymentService.getTransactionsByStoreId(effective, 0, 50));
         } catch (Exception e) {
             log.error("Error fetching store transactions", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

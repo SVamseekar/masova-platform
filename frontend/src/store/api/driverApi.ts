@@ -59,6 +59,42 @@ export interface Driver {
   updatedAt: string;
 }
 
+function mapUserToDriver(raw: Record<string, unknown>): Driver {
+  const id = String(raw.id ?? raw.userId ?? '');
+  const isActive = Boolean(raw.isActive ?? raw.active ?? true);
+  const isOnline = Boolean(raw.isOnline ?? raw.online ?? false);
+  const status = String(raw.status ?? '');
+  return {
+    id,
+    userId: String(raw.userId ?? id),
+    name: String(raw.name ?? ''),
+    email: String(raw.email ?? ''),
+    phone: String(raw.phone ?? ''),
+    vehicleType: raw.vehicleType ? String(raw.vehicleType) : undefined,
+    vehicleNumber: raw.vehicleNumber ? String(raw.vehicleNumber) : undefined,
+    licenseNumber: raw.licenseNumber ? String(raw.licenseNumber) : undefined,
+    isActive,
+    isOnline: isOnline || status === 'AVAILABLE',
+    rating: Number(raw.rating ?? 0),
+    totalDeliveries: Number(raw.totalDeliveries ?? 0),
+    completedDeliveries: Number(raw.completedDeliveries ?? 0),
+    activeDeliveryId: raw.activeDeliveryId ? String(raw.activeDeliveryId) : undefined,
+    createdAt: String(raw.createdAt ?? ''),
+    updatedAt: String(raw.updatedAt ?? ''),
+  };
+}
+
+function mapDriverList(raw: unknown): Driver[] {
+  const list = Array.isArray(raw)
+    ? raw
+    : (raw && typeof raw === 'object' && Array.isArray((raw as { data?: unknown }).data)
+      ? (raw as { data: unknown[] }).data
+      : []);
+  return list
+    .filter((row): row is Record<string, unknown> => !!row && typeof row === 'object')
+    .map(mapUserToDriver);
+}
+
 export interface UpdateDriverRequest {
   vehicleType?: string;
   vehicleNumber?: string;
@@ -109,7 +145,12 @@ export const driverApi = createApi({
   endpoints: (builder) => ({
     // Get all drivers - uses store context from headers
     getAllDrivers: builder.query<Driver[], string | undefined>({
-      query: (storeId) => `/users/drivers/store${storeId ? `?storeId=${storeId}` : ''}`,
+      query: (storeId) => {
+        const params = new URLSearchParams({ type: 'DRIVER' });
+        if (storeId) params.set('storeId', storeId);
+        return `/users?${params.toString()}`;
+      },
+      transformResponse: (raw: unknown) => mapDriverList(raw),
       providesTags: (result, error, storeId) => [{ type: 'Driver', id: storeId || 'DEFAULT' }],
     }),
 
@@ -132,6 +173,7 @@ export const driverApi = createApi({
         if (storeId) params.set('storeId', storeId);
         return `/users?${params.toString()}`;
       },
+      transformResponse: (raw: unknown) => mapDriverList(raw),
       providesTags: (result, error, storeId) => [{ type: 'Driver', id: storeId || 'DEFAULT' }],
     }),
 
@@ -142,6 +184,7 @@ export const driverApi = createApi({
         if (storeId) params.set('storeId', storeId);
         return `/users?${params.toString()}`;
       },
+      transformResponse: (raw: unknown) => mapDriverList(raw),
       providesTags: (result, error, storeId) => [{ type: 'Driver', id: storeId || 'DEFAULT' }],
     }),
 

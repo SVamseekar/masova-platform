@@ -14,7 +14,7 @@ import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import PrintIcon from '@mui/icons-material/Print';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { useGetStoreOrdersQuery, type Order } from '../../store/api/orderApi';
+import { useGetRecentStoreOrdersQuery, type Order } from '../../store/api/orderApi';
 import { getRtkErrorMessage } from '../shared/rtkError';
 import { useRecordCashPaymentMutation } from '../../store/api/paymentApi';
 import { useAppSelector } from '../../store/hooks';
@@ -57,9 +57,10 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({
     isLoading,
     error,
     refetch,
-  } = useGetStoreOrdersQuery(storeId, {
-    skip: !storeId,
-  });
+  } = useGetRecentStoreOrdersQuery(
+    { storeId, days: 2, page: 0, size: 100 },
+    { skip: !storeId },
+  );
 
   const handleMarkAsPaid = async (order: Order) => {
     const confirmed = window.confirm(
@@ -99,8 +100,14 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({
   const todayOrders = orders.filter((order: Order) =>
     isSameBusinessDay(order.createdAt, storeCountryCode)
   );
+  const recentFallback = orders.filter((order: Order) => {
+    const t = new Date(order.createdAt).getTime();
+    return Number.isFinite(t) && Date.now() - t < 48 * 3600_000;
+  });
+  const listSource = todayOrders.length > 0 ? todayOrders : recentFallback;
+  const showingRecent = todayOrders.length === 0 && recentFallback.length > 0;
 
-  const filteredOrders = todayOrders.filter((order: Order) => {
+  const filteredOrders = listSource.filter((order: Order) => {
     const searchLower = searchTerm.toLowerCase();
     return (
       order.orderNumber.toLowerCase().includes(searchLower) ||
@@ -133,10 +140,12 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({
             letterSpacing: '-0.03em',
           }}
         >
-          Today&apos;s orders
+          {showingRecent ? 'Recent orders' : "Today's orders"}
         </h2>
         <p style={{ margin: 0, fontSize: 13, color: pos.muted }}>
-          Search, mark cash paid, open in manager
+          {showingRecent
+            ? 'No tickets dated today — showing the last 48 hours for this store'
+            : 'Search, mark cash paid, open in manager'}
         </p>
       </div>
       {!marketReady && storeId && (
@@ -230,7 +239,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({
               minHeight: pos.touchMin,
               padding: '0 16px',
               borderRadius: pos.radius.md,
-              background: `linear-gradient(135deg, ${pos.success} 0%, ${pos.successDark} 100%)`,
+              background: pos.success,
               color: pos.inverse,
               display: 'flex',
               alignItems: 'center',
@@ -344,7 +353,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({
         >
           <InfoOutlinedIcon style={{ fontSize: 36, color: pos.faint, marginBottom: 8 }} />
           <div style={{ fontWeight: 700, color: pos.ink, marginBottom: 6 }}>
-            {searchTerm ? 'No matching orders' : 'No orders today yet'}
+            {searchTerm ? 'No matching orders' : 'No orders for this store'}
           </div>
           <div style={{ fontSize: 13 }}>
             {searchTerm
@@ -364,10 +373,9 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({
                 data-testid={`history-order-${order.orderNumber}`}
                 style={{
                   padding: pos.space[4],
-                  borderRadius: 18,
-                  background: `linear-gradient(165deg, ${pos.surfaceElevated}, ${pos.surface})`,
+                  borderRadius: 10,
+                  background: pos.surface,
                   border: `1px solid ${pos.border}`,
-                  boxShadow: pos.shadow.raised.sm,
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 12,
