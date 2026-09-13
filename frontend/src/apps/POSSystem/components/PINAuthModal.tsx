@@ -42,8 +42,8 @@ export const PINAuthModal: React.FC<PINAuthModalProps> = ({
     }
   }, [isOpen, inputRefs]);
 
-  const handleSubmit = async () => {
-    const pinString = pin.join('');
+  const handleSubmit = async (pinOverride?: string) => {
+    const pinString = pinOverride ?? pin.join('');
 
     if (pinString.length !== 5) {
       setError('Please enter complete 5-digit PIN');
@@ -94,7 +94,9 @@ export const PINAuthModal: React.FC<PINAuthModalProps> = ({
     if (index === 4 && value) {
       const fullPin = [...newPin.slice(0, 4), value].join('');
       if (fullPin.length === 5) {
-        setTimeout(() => handleSubmit(), 100);
+        setTimeout(() => {
+          void handleSubmit(fullPin);
+        }, 100);
       }
     }
   };
@@ -155,16 +157,20 @@ export const PINAuthModal: React.FC<PINAuthModalProps> = ({
               type="password"
               inputMode="numeric"
               maxLength={1}
+              aria-label={`PIN digit ${index + 1}`}
               value={pin[index]}
               onChange={(e) => handlePinChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
               onPaste={handlePaste}
               style={{
                 ...styles.pinInput,
+                ...(pin[index] ? styles.pinInputFilled : {}),
                 ...(error ? styles.pinInputError : {}),
               }}
               disabled={loading}
-              autoComplete="off"
+              autoComplete="one-time-code"
+              autoCorrect="off"
+              spellCheck={false}
             />
           ))}
         </div>
@@ -190,7 +196,9 @@ export const PINAuthModal: React.FC<PINAuthModalProps> = ({
           </button>
           <button
             type="button"
-            onClick={handleSubmit}
+            onClick={() => {
+              void handleSubmit();
+            }}
             disabled={disabled}
             style={{
               ...posTouchBtnPrimary,
@@ -276,9 +284,15 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 12,
     backgroundColor: pos.surfaceAlt,
     color: pos.ink,
+    WebkitTextFillColor: pos.ink,
+    caretColor: pos.ink,
+    WebkitTextSecurity: 'disc',
     transition: 'all 0.15s ease',
     outline: 'none',
     fontFamily: 'ui-monospace, monospace',
+  } as React.CSSProperties,
+  pinInputFilled: {
+    borderColor: pos.ink,
   },
   pinInputError: {
     borderColor: pos.error,

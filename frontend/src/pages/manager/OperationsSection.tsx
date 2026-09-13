@@ -35,6 +35,7 @@ import {
 } from '../../store/api/kioskApi';
 import type { CreateKioskResponse } from '../../store/api/kioskApi';
 import { ManagerDriverTrackingMap } from '../../components/delivery/ManagerDriverTrackingMap';
+import { recipeDefaultsFor } from './recipeCatalog';
 
 interface Props { storeId: string; activeTab: string; onTabChange: (tab: string) => void; }
 
@@ -47,7 +48,7 @@ const tabs = [
 
 const miniStat: React.CSSProperties = { ...cardStyle, padding: 14, textAlign: 'center' as const };
 const statLabel: React.CSSProperties = { fontSize: 11, color: t.gray, margin: 0, textTransform: 'uppercase' as const };
-const statValue = (c?: string): React.CSSProperties => ({ fontSize: 22, fontWeight: 700, color: c || t.black, margin: '4px 0 0 0' });
+const statValue = (c?: string): React.CSSProperties => ({ fontSize: 15, fontWeight: 700, color: c || t.black, margin: '4px 0 0 0', overflowWrap: 'anywhere', fontVariantNumeric: 'tabular-nums', lineHeight: 1.2 });
 const btn = (primary = false): React.CSSProperties => ({
   padding: '8px 16px', borderRadius: t.radius.sm, border: primary ? 'none' : `1px solid ${t.grayLight}`,
   background: primary ? t.orange : t.white, color: primary ? t.white : t.black,
@@ -79,10 +80,27 @@ const RecipesTab = ({ storeId }: { storeId: string }) => {
 
   const filtered = menuItems.filter(i => (i.name||'').toLowerCase().includes(search.trim().toLowerCase()) || !search.trim());
 
+  useEffect(() => {
+    if (!selectedItem && filtered.length > 0) {
+      const first = filtered[0];
+      const fallback = recipeDefaultsFor(first.name);
+      setSelectedItem(first);
+      setEditingIngredients((first.ingredients && first.ingredients.length > 0) ? first.ingredients : (fallback?.ingredients || []));
+      setEditingInstructions((first.preparationInstructions && first.preparationInstructions.length > 0) ? first.preparationInstructions : (fallback?.steps || []));
+    }
+  }, [filtered, selectedItem]);
+
   const handleSelect = (item: MenuItem) => {
     setSelectedItem(item);
-    setEditingIngredients(item.ingredients || []);
-    setEditingInstructions(item.preparationInstructions || []);
+    const fallback = recipeDefaultsFor(item.name);
+    const ingredients = (item.ingredients && item.ingredients.length > 0)
+      ? item.ingredients
+      : (fallback?.ingredients || []);
+    const steps = (item.preparationInstructions && item.preparationInstructions.length > 0)
+      ? item.preparationInstructions
+      : (fallback?.steps || []);
+    setEditingIngredients(ingredients);
+    setEditingInstructions(steps);
     setSaveSuccess(false);
   };
 
@@ -156,7 +174,11 @@ const RecipesTab = ({ storeId }: { storeId: string }) => {
                 <button style={{ ...btn(), color: t.red, padding: '4px 10px', fontSize: 12 }} onClick={() => setEditingIngredients(editingIngredients.filter((_, idx) => idx !== i))}>Remove</button>
               </div>
             ))}
-            {editingIngredients.length === 0 && <p style={{ fontSize: 12, color: t.grayMuted, padding: '10px 0' }}>No ingredients added yet</p>}
+            {editingIngredients.length === 0 && (
+              <p style={{ fontSize: 12, color: t.grayMuted, padding: '10px 0' }}>
+                No ingredients yet — add quantities and prep notes, then save.
+              </p>
+            )}
 
             {/* Instructions */}
             <h4 style={{ ...sectionTitleStyle, marginTop: 20, marginBottom: 10 }}>Preparation Steps</h4>
@@ -189,12 +211,21 @@ const RecipesTab = ({ storeId }: { storeId: string }) => {
 };
 
 // ======================== DRIVERS TAB ========================
-const DriversTab = ({ storeId }: { storeId: string }) => {
+export const DriversTab = ({ storeId }: { storeId: string }) => {
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
   const fmt = (v: number) => formatMajorAmount(v , currency, locale);
   const { data: allDrivers = [], isLoading } = useGetAllDriversQuery(storeId, { skip: !storeId, pollingInterval: 10000 });
   const { data: stats } = useGetDriverStatsQuery(storeId, { skip: !storeId, pollingInterval: 15000 });
+  const derivedStats = {
+    totalDrivers: allDrivers.length,
+    onlineDrivers: allDrivers.filter((d) => d.isOnline).length,
+    availableDrivers: allDrivers.filter((d) => d.isOnline && !d.activeDeliveryId).length,
+    busyDrivers: allDrivers.filter((d) => d.isOnline && !!d.activeDeliveryId).length,
+    totalDeliveriesToday: stats?.totalDeliveriesToday ?? allDrivers.reduce((s, d) => s + (d.completedDeliveries || 0), 0),
+    averageDeliveryTime: stats?.averageDeliveryTime ?? 0,
+  };
+  const shownStats = stats && stats.totalDrivers > 0 ? stats : derivedStats;
   const [activateDriver] = useActivateDriverMutation();
   const [deactivateDriver] = useDeactivateDriverMutation();
 
@@ -230,16 +261,14 @@ const DriversTab = ({ storeId }: { storeId: string }) => {
   return (
     <>
       {/* Stats */}
-      {stats && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, marginBottom: 20 }}>
-          <div style={miniStat}><p style={statLabel}>Total</p><p style={statValue()}>{stats.totalDrivers}</p></div>
-          <div style={miniStat}><p style={statLabel}>Online</p><p style={statValue(t.green)}>{stats.onlineDrivers}</p></div>
-          <div style={miniStat}><p style={statLabel}>Available</p><p style={statValue(t.blue)}>{stats.availableDrivers}</p></div>
-          <div style={miniStat}><p style={statLabel}>Busy</p><p style={statValue(t.orange)}>{stats.busyDrivers}</p></div>
-          <div style={miniStat}><p style={statLabel}>Today</p><p style={statValue()}>{stats.totalDeliveriesToday}</p></div>
-          <div style={miniStat}><p style={statLabel}>Avg Time</p><p style={statValue()}>{stats.averageDeliveryTime}m</p></div>
-        </div>
-      )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: 12, marginBottom: 20 }}>
+        <div style={miniStat}><p style={statLabel}>Total</p><p style={statValue()}>{shownStats.totalDrivers}</p></div>
+        <div style={miniStat}><p style={statLabel}>Online</p><p style={statValue(t.green)}>{shownStats.onlineDrivers}</p></div>
+        <div style={miniStat}><p style={statLabel}>Available</p><p style={statValue(t.blue)}>{shownStats.availableDrivers}</p></div>
+        <div style={miniStat}><p style={statLabel}>Busy</p><p style={statValue(t.orange)}>{shownStats.busyDrivers}</p></div>
+        <div style={miniStat}><p style={statLabel}>Today</p><p style={statValue()}>{shownStats.totalDeliveriesToday}</p></div>
+        <div style={miniStat}><p style={statLabel}>Avg Time</p><p style={statValue()}>{shownStats.averageDeliveryTime}m</p></div>
+      </div>
 
       {/* Controls */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -480,6 +509,31 @@ const KiosksTab = ({ storeId }: { storeId: string }) => {
     }));
   }, [stores]);
 
+  const handleCreateDemo = async () => {
+    setFormError('');
+    const targets = storeOptions.length > 0
+      ? storeOptions.map(s => s.code)
+      : [selectedStoreCode, 'DOM001', 'DOM002', 'DOM003'].filter(Boolean);
+    const uniqueStores = Array.from(new Set(targets));
+    const terminals = ['POS-01', 'POS-02', 'KIOSK-01'];
+    const errors: string[] = [];
+    let created = 0;
+    for (const code of uniqueStores) {
+      for (const tid of terminals) {
+        try {
+          await createKiosk({ storeId: code, terminalId: tid }).unwrap();
+          created += 1;
+        } catch (e: unknown) {
+          const msg = getApiErrorMessage(e, '');
+          if (!/already exists/i.test(msg)) errors.push(`${code}/${tid}: ${msg}`);
+        }
+      }
+    }
+    await refetch();
+    if (created === 0 && errors.length > 0) setFormError(errors[0]);
+    else if (created === 0) setFormError('Demo kiosks already exist for these stores.');
+  };
+
   const handleCreate = async () => {
     setFormError('');
     const tid = terminalId.trim();
@@ -570,6 +624,14 @@ const KiosksTab = ({ storeId }: { storeId: string }) => {
             disabled={creating}
           >
             {creating ? 'Creating…' : 'Create'}
+          </button>
+          <button
+            type="button"
+            style={btn()}
+            onClick={() => void handleCreateDemo()}
+            disabled={creating}
+          >
+            Create demo kiosks (3 stores)
           </button>
         </div>
         {formError && (

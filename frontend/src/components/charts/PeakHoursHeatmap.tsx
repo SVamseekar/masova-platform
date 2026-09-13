@@ -9,6 +9,8 @@ import {
   Cell,
 } from 'recharts';
 import { useGetPeakHoursQuery } from '../../store/api/analyticsApi';
+import { useGetStoreOrderSummaryQuery } from '../../store/api/orderApi';
+import { derivedFromSummary } from '../../pages/manager/storeOrderMetrics';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
 import { formatMajorAmount } from '../../utils/currency';
@@ -22,11 +24,14 @@ interface PeakHoursHeatmapProps {
 
 export default function PeakHoursHeatmap({ storeId }: PeakHoursHeatmapProps) {
   const { data, isLoading, isError, refetch } = useGetPeakHoursQuery(storeId);
+  const { data: summary } = useGetStoreOrderSummaryQuery({ storeId, days: 30 }, { skip: !storeId });
+  const derived = derivedFromSummary(summary);
+  const peak = (data && activePeakHours(data).length > 0) ? data : derived.peakHours;
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
   const formatCurrency = (value: number) => formatMajorAmount(value, currency, locale);
 
-  if (isLoading) {
+  if (isLoading && activePeakHours(peak).length === 0) {
     return (
       <div style={cardStyle} data-testid="peak-hours-chart">
         <ManagerLoadingBlock rows={3} label="Loading peak hours…" />
@@ -34,7 +39,7 @@ export default function PeakHoursHeatmap({ storeId }: PeakHoursHeatmapProps) {
     );
   }
 
-  if (isError) {
+  if (isError && activePeakHours(peak).length === 0) {
     return (
       <div style={cardStyle} data-testid="peak-hours-chart">
         <ManagerErrorState title="Failed to load peak hours" onRetry={() => void refetch()} />
@@ -42,8 +47,8 @@ export default function PeakHoursHeatmap({ storeId }: PeakHoursHeatmapProps) {
     );
   }
 
-  const activeHours = activePeakHours(data);
-  if (!data || activeHours.length === 0) {
+  const activeHours = activePeakHours(peak);
+  if (activeHours.length === 0) {
     return (
       <div style={cardStyle} data-testid="peak-hours-chart">
         <ManagerEmptyState
@@ -55,13 +60,13 @@ export default function PeakHoursHeatmap({ storeId }: PeakHoursHeatmapProps) {
   }
 
   const getBarColor = (hour: number) => {
-    if (hour === data.peakHour) return t.green;
-    if (hour === data.slowestHour) return t.red;
+    if (hour === peak.peakHour) return t.green;
+    if (hour === peak.slowestHour) return t.red;
     return t.blue;
   };
 
-  const peakLabel = data.hourlyData?.[data.peakHour]?.label ?? `${data.peakHour}:00`;
-  const slowLabel = data.hourlyData?.[data.slowestHour]?.label ?? `${data.slowestHour}:00`;
+  const peakLabel = peak.hourlyData?.[peak.peakHour]?.label ?? `${peak.peakHour}:00`;
+  const slowLabel = peak.hourlyData?.[peak.slowestHour]?.label ?? `${peak.slowestHour}:00`;
 
   return (
     <div style={cardStyle} data-testid="peak-hours-chart">
@@ -72,14 +77,14 @@ export default function PeakHoursHeatmap({ storeId }: PeakHoursHeatmapProps) {
             <p style={{ margin: 0, fontSize: 12, color: t.gray }}>Peak hour</p>
             <p style={{ margin: '4px 0 0', fontSize: 20, fontWeight: 700, color: t.green }}>{peakLabel}</p>
             <p style={{ margin: '2px 0 0', fontSize: 12, color: t.gray }}>
-              {data.peakHourOrders} orders · {formatCurrency(data.peakHourSales)}
+              {peak.peakHourOrders} orders · {formatCurrency(peak.peakHourSales)}
             </p>
           </div>
           <div>
             <p style={{ margin: 0, fontSize: 12, color: t.gray }}>Slowest hour</p>
             <p style={{ margin: '4px 0 0', fontSize: 20, fontWeight: 700, color: t.red }}>{slowLabel}</p>
             <p style={{ margin: '2px 0 0', fontSize: 12, color: t.gray }}>
-              {data.hourlyData?.[data.slowestHour]?.orderCount ?? 0} orders
+              {peak.hourlyData?.[peak.slowestHour]?.orderCount ?? 0} orders
             </p>
           </div>
         </div>

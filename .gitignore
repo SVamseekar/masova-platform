@@ -125,3 +125,8 @@ archive/
 # Root node_modules
 /node_modules/
 
+# Product Launch Assets (untracked media)
+product_launch_assets/
+
+# Vercel CLI (project link lives at repo root)
+/.vercel/

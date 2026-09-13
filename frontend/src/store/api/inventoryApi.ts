@@ -138,6 +138,8 @@ export interface PurchaseOrderItem {
   itemCode: string;
   unit: string;
   orderedQuantity: number;
+  /** Backend field alias */
+  quantity?: number;
   receivedQuantity: number;
   unitPrice: number;
   totalPrice: number;
@@ -170,6 +172,12 @@ export interface WasteRecord {
   // Details
   reason?: string;
   notes?: string;
+  /** Backend aliases — POST body maps these onto WasteRecord.java */
+  wasteCategory?: string;
+  totalCost?: number;
+  preventable?: boolean;
+  reportedBy?: string;
+  wasteDate?: string;
 
   createdAt: string;
   updatedAt: string;
@@ -547,7 +555,7 @@ export const inventoryApi = createApi({
         method: 'PATCH',
         body: order,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'PurchaseOrder', id }],
+      invalidatesTags: (result, error, { id }) => [{ type: 'PurchaseOrder', id }, 'PurchaseOrder'],
     }),
 
     approvePurchaseOrder: builder.mutation<PurchaseOrder, { id: string; approvedBy: string }>({
@@ -633,6 +641,30 @@ export const inventoryApi = createApi({
 
     getAllWasteRecords: builder.query<WasteRecord[], string | undefined>({
       query: (storeId?: string) => `/waste${storeId ? `?storeId=${encodeURIComponent(storeId)}` : ''}`,
+      transformResponse: (raw: unknown): WasteRecord[] => {
+        const list = Array.isArray(raw) ? raw : [];
+        return list.map((row) => {
+          const r = (row && typeof row === 'object') ? row as Record<string, unknown> : {};
+          const cost = Number(r.wasteCost ?? r.totalCost ?? 0);
+          return {
+            ...(r as object),
+            id: String(r.id ?? ''),
+            storeId: String(r.storeId ?? ''),
+            inventoryItemId: String(r.inventoryItemId ?? ''),
+            itemName: String(r.itemName ?? 'Item'),
+            quantity: Number(r.quantity ?? 0),
+            unit: String(r.unit ?? ''),
+            wasteCost: Number.isFinite(cost) ? cost : 0,
+            wasteType: String(r.wasteType ?? r.wasteCategory ?? 'OTHER') as WasteRecord['wasteType'],
+            isPreventable: Boolean(r.isPreventable ?? r.preventable),
+            recordedBy: String(r.recordedBy ?? r.reportedBy ?? ''),
+            recordedAt: String(r.recordedAt ?? r.wasteDate ?? r.createdAt ?? ''),
+            status: (String(r.status ?? 'PENDING') as WasteRecord['status']),
+            createdAt: String(r.createdAt ?? ''),
+            updatedAt: String(r.updatedAt ?? ''),
+          };
+        });
+      },
       providesTags: (result, error, storeId) => [{ type: 'WasteRecord', id: storeId || 'DEFAULT' }],
     }),
 

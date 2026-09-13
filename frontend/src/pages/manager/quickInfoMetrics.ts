@@ -75,9 +75,55 @@ export type OrderLikeForSnapshot = {
   status?: string | null;
   paymentStatus?: string | null;
   updatedAt?: string | null;
+  orderType?: string | null;
 };
 
-const TERMINAL_ORDER = new Set(['COMPLETED', 'CANCELLED', 'DELIVERED']);
+const TERMINAL_ORDER = new Set(['COMPLETED', 'CANCELLED', 'DELIVERED', 'SERVED']);
+const ACTIVE_DELIVERY_STATUSES = new Set([
+  'RECEIVED', 'PREPARING', 'OVEN', 'BAKED', 'READY', 'DISPATCHED', 'OUT_FOR_DELIVERY',
+]);
+
+export function isDeliveryOrder(order: OrderLikeForSnapshot | undefined | null): boolean {
+  const type = String(order?.orderType ?? '').toUpperCase();
+  return type === 'DELIVERY';
+}
+
+/** In-progress delivery orders (matches the orders table, not a separate analytics count). */
+export type DriverLike = {
+  id?: string | null;
+  userId?: string | null;
+  isOnline?: boolean | null;
+  activeDeliveryId?: string | null;
+};
+export type EmployeeLike = { id?: string | null; type?: string | null };
+export type SessionLike = { employeeId?: string | null; role?: string | null; isActive?: boolean | null };
+
+export function summarizeDrivers(
+  employees: EmployeeLike[] | undefined | null,
+  drivers: DriverLike[] | undefined | null,
+  sessions: SessionLike[] | undefined | null,
+): { total: number; available: number; busy: number } {
+  const ids = new Set<string>();
+  (employees || []).forEach((e) => {
+    if (String(e.type || '').toUpperCase() === 'DRIVER' && e.id) ids.add(e.id);
+  });
+  (drivers || []).forEach((d) => {
+    const id = d.id || d.userId;
+    if (id) ids.add(id);
+  });
+  const clocked = (sessions || []).filter((s) =>
+    s.isActive && (ids.has(s.employeeId || '') || String(s.role || '').toUpperCase() === 'DRIVER'),
+  );
+  const online = (drivers || []).filter((d) => d.isOnline).length;
+  const busy = (drivers || []).filter((d) => !!d.activeDeliveryId).length;
+  const available = Math.max(clocked.length, online);
+  return { total: ids.size, available, busy };
+}
+
+export function countActiveDeliveries(orders: OrderLikeForSnapshot[] | undefined | null): number {
+  if (!orders?.length) return 0;
+  return orders.filter((o) => isDeliveryOrder(o) && ACTIVE_DELIVERY_STATUSES.has(String(o.status ?? '').toUpperCase())).length;
+}
 
 export function countLiveOrders(orders: OrderLikeForSnapshot[] | undefined | null): number {
   if (!orders?.length) return 0;

@@ -7,6 +7,7 @@ import com.MaSoVa.commerce.order.entity.Order;
 import com.MaSoVa.commerce.order.entity.OrderItem;
 import com.MaSoVa.commerce.order.entity.QualityCheckpoint;
 import com.MaSoVa.commerce.order.service.OrderService;
+import com.MaSoVa.commerce.order.service.OrderSummaryService;
 import com.MaSoVa.shared.util.StoreAccessValidator;
 import com.MaSoVa.shared.util.StoreContextUtil;
 
@@ -56,11 +57,16 @@ public class OrderController {
 
     private static final Logger log = LoggerFactory.getLogger(OrderController.class);
 
+    private static final int DEFAULT_PAGE = 0;
+    private static final int DEFAULT_PAGE_SIZE = 50;
+
     private final OrderService orderService;
+    private final OrderSummaryService orderSummaryService;
     private final ObjectMapper objectMapper;
 
-    public OrderController(OrderService orderService, ObjectMapper objectMapper) {
+    public OrderController(OrderService orderService, OrderSummaryService orderSummaryService, ObjectMapper objectMapper) {
         this.orderService = orderService;
+        this.orderSummaryService = orderSummaryService;
         this.objectMapper = objectMapper;
     }
 
@@ -118,7 +124,7 @@ public class OrderController {
     @GetMapping("/{orderId}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF', 'DRIVER')")
     @Operation(summary = "Get order by ID")
-    public ResponseEntity<Order> getOrder(@PathVariable String orderId, HttpServletRequest request) {
+    public ResponseEntity<Order> getOrder(@PathVariable("orderId") String orderId, HttpServletRequest request) {
         String userType = StoreContextUtil.getUserTypeFromHeaders(request);
         if (requiresCustomerOwnership(userType)) {
             return ResponseEntity.ok(
@@ -134,7 +140,7 @@ public class OrderController {
      */
     @GetMapping("/track/{orderId}")
     @Operation(summary = "Track order (public, no auth)")
-    public ResponseEntity<com.MaSoVa.commerce.order.dto.OrderTrackingDTO> trackOrder(@PathVariable String orderId) {
+    public ResponseEntity<com.MaSoVa.commerce.order.dto.OrderTrackingDTO> trackOrder(@PathVariable("orderId") String orderId) {
         return ResponseEntity.ok(
                 com.MaSoVa.commerce.order.dto.OrderTrackingDTO.fromOrder(orderService.getOrderById(orderId)));
     }
@@ -148,18 +154,23 @@ public class OrderController {
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF', 'DRIVER')")
     @Operation(summary = "List orders (query: storeId, customerId, status, date, startDate, endDate, search, kitchen, number)")
     public ResponseEntity<?> getOrders(
-            @RequestParam(required = false) String storeId,
-            @RequestParam(required = false) String customerId,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) String date,
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate,
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) Boolean kitchen,
-            @RequestParam(required = false) String number,
+            @RequestParam(name = "storeId", required = false) String storeId,
+            @RequestParam(name = "customerId", required = false) String customerId,
+            @RequestParam(name = "status", required = false) String status,
+            @RequestParam(name = "date", required = false) String date,
+            @RequestParam(name = "startDate", required = false) String startDate,
+            @RequestParam(name = "endDate", required = false) String endDate,
+            @RequestParam(name = "search", required = false) String search,
+            @RequestParam(name = "kitchen", required = false) Boolean kitchen,
+            @RequestParam(name = "number", required = false) String number,
+            @RequestParam(name = "page", required = false) Integer page,
+            @RequestParam(name = "size", required = false) Integer size,
             HttpServletRequest request) {
 
         String resolvedStoreId = validateAndGetStoreId(request, storeId);
+        int pageNum = page == null ? DEFAULT_PAGE : page;
+        int pageSize = size == null ? DEFAULT_PAGE_SIZE : size;
+        boolean paginate = page != null || size != null;
 
         if (number != null) {
             return ResponseEntity.ok(orderService.getOrderByNumber(number));
@@ -183,6 +194,10 @@ public class OrderController {
             return ResponseEntity.ok(orderService.searchOrders(resolvedStoreId, search));
         }
         if (startDate != null && endDate != null) {
+            if (paginate) {
+                return ResponseEntity.ok(orderService.getOrdersByDateRangePage(
+                        resolvedStoreId, LocalDateTime.parse(startDate), LocalDateTime.parse(endDate), pageNum, pageSize));
+            }
             return ResponseEntity.ok(orderService.getOrdersByDateRange(
                     resolvedStoreId, LocalDateTime.parse(startDate), LocalDateTime.parse(endDate)));
         }
@@ -191,9 +206,10 @@ public class OrderController {
         }
         if (status != null) {
             Order.OrderStatus orderStatus = Order.OrderStatus.valueOf(status);
-            return ResponseEntity.ok(orderService.getOrdersByStatus(resolvedStoreId, orderStatus));
+            return ResponseEntity.ok(orderService.getOrdersByStatusPage(resolvedStoreId, orderStatus, pageNum, pageSize));
         }
-        return ResponseEntity.ok(orderService.getStoreOrders(resolvedStoreId));
+        // Default store list is always paged. Unbounded findByStoreId is tens of MB after horizon seed.
+        return ResponseEntity.ok(orderService.getStoreOrdersPage(resolvedStoreId, pageNum, pageSize));
     }
 
     // ── STATE MACHINE: explicit status transition (for KDS, staff) ────────────────
@@ -206,7 +222,7 @@ public class OrderController {
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF', 'DRIVER')")
     @Operation(summary = "Transition order status (state machine)")
     public ResponseEntity<Order> updateOrderStatus(
-            @PathVariable String orderId,
+            @PathVariable("orderId") String orderId,
             @Valid @RequestBody UpdateOrderStatusRequest request) {
         return ResponseEntity.ok(orderService.updateOrderStatus(orderId, request));
     }
@@ -217,7 +233,7 @@ public class OrderController {
     @PostMapping("/{orderId}/next-stage")
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "Bump order to next kitchen stage (KDS)")
-    public ResponseEntity<Order> nextStage(@PathVariable String orderId) {
+    public ResponseEntity<Order> nextStage(@PathVariable("orderId") String orderId) {
         return ResponseEntity.ok(orderService.moveOrderToNextStage(orderId));
     }
 
@@ -237,7 +253,7 @@ public class OrderController {
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF', 'DRIVER')")
     @Operation(summary = "Update order fields (items, priority, driver, make-table, delivery proof/OTP)")
     public ResponseEntity<Order> updateOrder(
-            @PathVariable String orderId,
+            @PathVariable("orderId") String orderId,
             @RequestBody Map<String, Object> body) {
 
         // Make-table assignment
@@ -308,8 +324,8 @@ public class OrderController {
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "Cancel order directly (staff/manager only)")
     public ResponseEntity<Order> cancelOrder(
-            @PathVariable String orderId,
-            @RequestParam(required = false) String reason) {
+            @PathVariable("orderId") String orderId,
+            @RequestParam(name = "reason", required = false) String reason) {
         return ResponseEntity.ok(orderService.cancelOrder(orderId, reason));
     }
 
@@ -326,7 +342,7 @@ public class OrderController {
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "Request order cancellation (awaits manager approval)")
     public ResponseEntity<Order> requestCancellation(
-            @PathVariable String orderId,
+            @PathVariable("orderId") String orderId,
             @RequestBody(required = false) Map<String, String> body,
             HttpServletRequest request) {
         String userType = StoreContextUtil.getUserTypeFromHeaders(request);
@@ -349,7 +365,7 @@ public class OrderController {
     @PostMapping("/{orderId}/cancel-request/approve")
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Approve a pending cancellation request (manager only)")
-    public ResponseEntity<Order> approveCancellationRequest(@PathVariable String orderId) {
+    public ResponseEntity<Order> approveCancellationRequest(@PathVariable("orderId") String orderId) {
         return ResponseEntity.ok(orderService.approveCancellationRequest(orderId));
     }
 
@@ -361,7 +377,7 @@ public class OrderController {
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Reject a pending cancellation request (manager only)")
     public ResponseEntity<Order> rejectCancellationRequest(
-            @PathVariable String orderId,
+            @PathVariable("orderId") String orderId,
             @RequestBody(required = false) Map<String, String> body) {
         String rejectionReason = body != null ? body.get("reason") : null;
         return ResponseEntity.ok(orderService.rejectCancellationRequest(orderId, rejectionReason));
@@ -377,7 +393,7 @@ public class OrderController {
     @PatchMapping("/{orderId}/payment")
     @Operation(summary = "Update payment status (inter-service or MANAGER/STAFF)")
     public ResponseEntity<Order> updatePaymentStatus(
-            @PathVariable String orderId,
+            @PathVariable("orderId") String orderId,
             @Valid @RequestBody UpdatePaymentStatusRequest request,
             jakarta.servlet.http.HttpServletRequest httpRequest) {
         String internalCaller = httpRequest.getHeader("X-Internal-Service");
@@ -401,7 +417,7 @@ public class OrderController {
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "Add quality checkpoint")
     public ResponseEntity<Order> addQualityCheckpoint(
-            @PathVariable String orderId,
+            @PathVariable("orderId") String orderId,
             @RequestBody QualityCheckpoint checkpoint) {
         return ResponseEntity.ok(orderService.addQualityCheckpoint(orderId, checkpoint));
     }
@@ -410,8 +426,8 @@ public class OrderController {
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "Update quality checkpoint status")
     public ResponseEntity<Order> updateQualityCheckpoint(
-            @PathVariable String orderId,
-            @PathVariable String checkpointName,
+            @PathVariable("orderId") String orderId,
+            @PathVariable("checkpointName") String checkpointName,
             @RequestBody Map<String, String> payload) {
         QualityCheckpoint.CheckpointStatus status = QualityCheckpoint.CheckpointStatus.valueOf(payload.get("status"));
         return ResponseEntity.ok(orderService.updateQualityCheckpoint(orderId, checkpointName, status, payload.get("notes")));
@@ -430,18 +446,22 @@ public class OrderController {
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "Order analytics (query: type, staffId, date, startDate, endDate, station)")
     public ResponseEntity<?> getAnalytics(
-            @RequestParam(required = false) String type,
-            @RequestParam(required = false) String staffId,
-            @RequestParam(required = false) String date,
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate,
-            @RequestParam(required = false) String station,
+            @RequestParam(name = "type", required = false) String type,
+            @RequestParam(name = "staffId", required = false) String staffId,
+            @RequestParam(name = "date", required = false) String date,
+            @RequestParam(name = "startDate", required = false) String startDate,
+            @RequestParam(name = "endDate", required = false) String endDate,
+            @RequestParam(name = "station", required = false) String station,
+            @RequestParam(name = "days", required = false) Integer days,
+            @RequestParam(name = "storeId", required = false) String storeId,
             HttpServletRequest request) {
 
-        String storeId = getStoreIdFromHeaders(request);
+        String headerStore = getStoreIdFromHeaders(request);
+        String resolved = (headerStore != null && !headerStore.isBlank()) ? headerStore : storeId;
 
         try {
             return switch (type != null ? type : "") {
+                case "store-summary" -> ResponseEntity.ok(orderSummaryService.summarizeStore(resolved, days));
                 case "kitchen" -> {
                     if (staffId == null || date == null) yield ResponseEntity.badRequest().body(Map.of("error", "staffId and date required for kitchen analytics"));
                     yield ResponseEntity.ok(orderService.getKitchenStaffPerformance(staffId, LocalDate.parse(date)));
@@ -452,20 +472,20 @@ public class OrderController {
                 }
                 case "prep-time" -> {
                     if (date == null) yield ResponseEntity.badRequest().body(Map.of("error", "date required for prep-time analytics"));
-                    yield ResponseEntity.ok(orderService.getAveragePreparationTime(storeId, LocalDate.parse(date)));
+                    yield ResponseEntity.ok(orderService.getAveragePreparationTime(resolved, LocalDate.parse(date)));
                 }
                 case "prep-time-by-item" -> {
                     if (date == null) yield ResponseEntity.badRequest().body(Map.of("error", "date required for prep-time-by-item analytics"));
-                    yield ResponseEntity.ok(orderService.getAveragePreparationTimeByMenuItem(storeId, LocalDate.parse(date)));
+                    yield ResponseEntity.ok(orderService.getAveragePreparationTimeByMenuItem(resolved, LocalDate.parse(date)));
                 }
                 case "prep-time-distribution" -> {
                     if (date == null) yield ResponseEntity.badRequest().body(Map.of("error", "date required for prep-time-distribution analytics"));
-                    yield ResponseEntity.ok(orderService.getPreparationTimeDistribution(storeId, LocalDate.parse(date)));
+                    yield ResponseEntity.ok(orderService.getPreparationTimeDistribution(resolved, LocalDate.parse(date)));
                 }
-                case "failed-quality" -> ResponseEntity.ok(orderService.getOrdersWithFailedQualityChecks(storeId));
-                case "active-deliveries" -> ResponseEntity.ok(orderService.getActiveDeliveryCount(storeId));
-                case "make-table-station" -> ResponseEntity.ok(orderService.getOrdersByMakeTableStation(storeId, station));
-                default -> ResponseEntity.badRequest().body(Map.of("error", "type required: kitchen|pos|prep-time|prep-time-by-item|prep-time-distribution|failed-quality|active-deliveries|make-table-station"));
+                case "failed-quality" -> ResponseEntity.ok(orderService.getOrdersWithFailedQualityChecks(resolved));
+                case "active-deliveries" -> ResponseEntity.ok(orderService.getActiveDeliveryCount(resolved));
+                case "make-table-station" -> ResponseEntity.ok(orderService.getOrdersByMakeTableStation(resolved, station));
+                default -> ResponseEntity.badRequest().body(Map.of("error", "type required: store-summary|kitchen|pos|prep-time|prep-time-by-item|prep-time-distribution|failed-quality|active-deliveries|make-table-station"));
             };
         } catch (java.time.format.DateTimeParseException e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Invalid date format. Use ISO-8601 (yyyy-MM-dd)"));
@@ -481,7 +501,7 @@ public class OrderController {
     @PostMapping("/gdpr/anonymize")
     @Operation(summary = "Anonymise order data for customer (GDPR erasure — internal only)")
     public ResponseEntity<Void> anonymizeCustomerOrders(
-            @RequestParam String customerId,
+            @RequestParam(name = "customerId") String customerId,
             jakarta.servlet.http.HttpServletRequest request) {
         String internalCaller = request.getHeader("X-Internal-Service");
         if (internalCaller == null || internalCaller.isBlank()) {

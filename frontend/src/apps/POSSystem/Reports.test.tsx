@@ -74,6 +74,50 @@ vi.mock('../../store/api/analyticsApi', async (importOriginal) => {
   };
 });
 
+vi.mock('../../store/api/orderApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../store/api/orderApi')>();
+  return {
+    ...actual,
+    useGetStoreOrdersQuery: () => ({ data: [], isLoading: false, isError: false, refetch: vi.fn() }),
+    useGetRecentStoreOrdersQuery: () => ({ data: [], isLoading: false, isError: false, refetch: vi.fn() }),
+    useGetStoreOrderSummaryQuery: () => ({
+      data: { todaySales: 0, todayOrderCount: 0, weekSales: 0, weekOrderCount: 0, rangeSales: 0, topProducts: [] },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    }),
+  };
+});
+
+vi.mock('../../store/api/inventoryApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../store/api/inventoryApi')>();
+  return {
+    ...actual,
+    useGetAllInventoryItemsQuery: () => ({ data: [], isLoading: false, isError: false }),
+    useGetLowStockItemsQuery: () => ({ data: [], isLoading: false }),
+  };
+});
+
+vi.mock('../../store/api/sessionApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../store/api/sessionApi')>();
+  return {
+    ...actual,
+    useGetActiveStoreSessionsQuery: () => ({ data: [], isLoading: false }),
+  };
+});
+
+vi.mock('../../store/api/paymentApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../store/api/paymentApi')>();
+  return {
+    ...actual,
+    useRecordCashPaymentMutation: () => [vi.fn(), { isLoading: false }],
+  };
+});
+
+vi.mock('notistack', () => ({
+  useSnackbar: () => ({ enqueueSnackbar: vi.fn() }),
+}));
+
 vi.mock('../../components/common/AppHeader', () => ({
   default: ({ title }: { title?: string }) => <div data-testid="app-header">{title}</div>,
 }));
@@ -190,9 +234,9 @@ describe('Reports', () => {
         preloadedState: managerState,
       });
 
-      expect(screen.getByRole('button', { name: /Sales/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /Staff/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /Inventory/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Sales' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Staff' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Inventory' })).toBeInTheDocument();
     });
 
     it('switches to staff tab and shows staff leaderboard', async () => {
@@ -218,7 +262,7 @@ describe('Reports', () => {
         preloadedState: managerState,
       });
 
-      await user.click(screen.getByText(/Inventory/));
+      await user.click(screen.getByRole('button', { name: 'Inventory' }));
 
       expect(screen.getByText('Inventory Management')).toBeInTheDocument();
       expect(

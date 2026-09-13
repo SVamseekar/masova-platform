@@ -26,12 +26,20 @@ import com.MaSoVa.shared.messaging.events.OrderStatusChangedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.MaSoVa.shared.util.PageableResponse;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -41,6 +49,8 @@ import java.util.Comparator;
 public class OrderService {
 
     private static final Logger log = LoggerFactory.getLogger(OrderService.class);
+    private static final ZoneId BUSINESS_ZONE = ZoneId.of("Europe/Berlin");
+    private static final int MAX_PAGE_SIZE = 100;
 
     private final OrderRepository orderRepository;
     private final OrderJpaRepository orderJpaRepository;
@@ -429,6 +439,35 @@ public class OrderService {
 
     public List<Order> getStoreOrders(String storeId) {
         return orderRepository.findByStoreIdOrderByCreatedAtDesc(storeId);
+    }
+
+    public PageableResponse<Order> getStoreOrdersPage(String storeId, int page, int size) {
+        Pageable pageable = pageRequest(page, size);
+        Page<Order> result = orderRepository.findByStoreIdOrderByCreatedAtDesc(storeId, pageable);
+        return toPage(result);
+    }
+
+    public PageableResponse<Order> getOrdersByStatusPage(String storeId, OrderStatus status, int page, int size) {
+        Pageable pageable = pageRequest(page, size);
+        Page<Order> result = orderRepository.findByStoreIdAndStatus(storeId, status, pageable);
+        return toPage(result);
+    }
+
+    public PageableResponse<Order> getOrdersByDateRangePage(String storeId, LocalDateTime start, LocalDateTime end,
+                                                            int page, int size) {
+        Pageable pageable = pageRequest(page, size);
+        Page<Order> result = orderRepository.findByStoreIdAndCreatedAtBetween(storeId, start, end, pageable);
+        return toPage(result);
+    }
+
+    private static Pageable pageRequest(int page, int size) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
+        return PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+    }
+
+    private static PageableResponse<Order> toPage(Page<Order> result) {
+        return new PageableResponse<>(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements());
     }
 
     public List<Order> getOrdersByStatus(String storeId, OrderStatus status) {
@@ -989,20 +1028,11 @@ public class OrderService {
 
     // Analytics methods
     public List<Order> getOrdersByDate(String storeId, java.time.LocalDate date) {
-        // FIXED: Use IST timezone consistently with analytics service
-        // Analytics service uses Asia/Kolkata for date calculations, so we must use the same timezone here
-        java.time.ZoneId istZone = java.time.ZoneId.of("Asia/Kolkata");
-
-        // Convert date to IST timezone boundaries (start and end of day in IST)
-        java.time.ZonedDateTime zonedStart = date.atStartOfDay(istZone);
-        java.time.ZonedDateTime zonedEnd = date.atTime(23, 59, 59, 999_999_999).atZone(istZone);
-
-        // Convert IST to UTC for MongoDB query (MongoDB stores timestamps in UTC)
-        LocalDateTime startOfDay = zonedStart.withZoneSameInstant(java.time.ZoneOffset.UTC).toLocalDateTime();
-        LocalDateTime endOfDay = zonedEnd.withZoneSameInstant(java.time.ZoneOffset.UTC).toLocalDateTime();
-
-        log.debug("Querying orders for date {} (IST): {} to {} (UTC)", date, startOfDay, endOfDay);
-
+        ZonedDateTime zonedStart = date.atStartOfDay(BUSINESS_ZONE);
+        ZonedDateTime zonedEnd = date.plusDays(1).atStartOfDay(BUSINESS_ZONE).minusNanos(1);
+        LocalDateTime startOfDay = zonedStart.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+        LocalDateTime endOfDay = zonedEnd.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+        log.debug("Querying orders for date {} ({}): {} to {} (UTC)", date, BUSINESS_ZONE, startOfDay, endOfDay);
         return orderRepository.findByStoreIdAndCreatedAtBetween(storeId, startOfDay, endOfDay);
     }
 
@@ -1011,20 +1041,12 @@ public class OrderService {
     }
 
     public List<Order> getOrdersByStaffAndDate(String storeId, String staffId, java.time.LocalDate date) {
-        // FIXED: Use IST timezone consistently with analytics service
-        java.time.ZoneId istZone = java.time.ZoneId.of("Asia/Kolkata");
-
-        // Convert date to IST timezone boundaries
-        java.time.ZonedDateTime zonedStart = date.atStartOfDay(istZone);
-        java.time.ZonedDateTime zonedEnd = date.atTime(23, 59, 59, 999_999_999).atZone(istZone);
-
-        // Convert IST to UTC for MongoDB query
-        LocalDateTime startOfDay = zonedStart.withZoneSameInstant(java.time.ZoneOffset.UTC).toLocalDateTime();
-        LocalDateTime endOfDay = zonedEnd.withZoneSameInstant(java.time.ZoneOffset.UTC).toLocalDateTime();
-
-        log.debug("Querying orders for staff {} on date {} (IST): {} to {} (UTC)",
-                  staffId, date, startOfDay, endOfDay);
-
+        ZonedDateTime zonedStart = date.atStartOfDay(BUSINESS_ZONE);
+        ZonedDateTime zonedEnd = date.plusDays(1).atStartOfDay(BUSINESS_ZONE).minusNanos(1);
+        LocalDateTime startOfDay = zonedStart.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+        LocalDateTime endOfDay = zonedEnd.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+        log.debug("Querying orders for staff {} on date {} ({}): {} to {} (UTC)",
+                staffId, date, BUSINESS_ZONE, startOfDay, endOfDay);
         return orderRepository.findByStoreIdAndCreatedByAndCreatedAtBetween(storeId, staffId, startOfDay, endOfDay);
     }
 
