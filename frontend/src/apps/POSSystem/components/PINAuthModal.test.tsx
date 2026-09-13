@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@/test/utils/testUtils';
 import { PINAuthModal } from './PINAuthModal';
@@ -17,6 +17,13 @@ vi.mock('../../../store/api/userApi', async (importOriginal) => {
     useValidatePINMutation: () => [mockValidatePIN, { isLoading: false }],
   };
 });
+
+function fillPin(digits: string) {
+  const inputs = screen.getAllByLabelText(/PIN digit/);
+  digits.split('').forEach((digit, index) => {
+    fireEvent.change(inputs[index], { target: { value: digit } });
+  });
+}
 
 describe('PINAuthModal', () => {
   const defaultProps = {
@@ -147,26 +154,16 @@ describe('PINAuthModal', () => {
 
   describe('error handling', () => {
     it('displays error message on invalid PIN', async () => {
-      const user = userEvent.setup();
-      mockValidatePIN.mockReturnValue({
+      mockValidatePIN.mockImplementation(() => ({
         unwrap: () => Promise.reject({ data: { error: 'Invalid PIN' } }),
-      });
+      }));
 
       renderWithProviders(<PINAuthModal {...defaultProps} />, {
         useMemoryRouter: true,
       });
 
-      // Enter a 5-digit PIN
-      const inputs = document.querySelectorAll('input[inputmode="numeric"]');
-      await user.click(inputs[0] as HTMLElement);
-      await user.keyboard('12345');
-
-      // Click Continue
-      await user.click(screen.getByRole('button', { name: 'Continue' }));
-
-      await waitFor(() => {
-        expect(screen.getByText('Invalid PIN')).toBeInTheDocument();
-      });
+      fillPin('12345');
+      expect(await screen.findByText(/Invalid PIN/i)).toBeInTheDocument();
     });
 
     it('shows incomplete PIN error when submitting partial PIN', async () => {
@@ -189,7 +186,6 @@ describe('PINAuthModal', () => {
 
   describe('successful authentication', () => {
     it('calls onAuthenticated with user data on valid PIN', async () => {
-      const user = userEvent.setup();
       const mockUserData = {
         userId: 'user-1',
         name: 'Test User',
@@ -206,13 +202,7 @@ describe('PINAuthModal', () => {
         useMemoryRouter: true,
       });
 
-      const inputs = document.querySelectorAll('input[inputmode="numeric"]');
-      await user.click(inputs[0] as HTMLElement);
-      await user.keyboard('12345');
-
-      const continueBtn = await screen.findByRole('button', { name: 'Continue' });
-      await waitFor(() => expect(continueBtn).toBeEnabled());
-      await user.click(continueBtn);
+      fillPin('12345');
 
       await waitFor(() => {
         expect(defaultProps.onAuthenticated).toHaveBeenCalledWith({
