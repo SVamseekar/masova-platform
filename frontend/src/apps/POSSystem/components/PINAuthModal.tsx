@@ -33,6 +33,7 @@ export const PINAuthModal: React.FC<PINAuthModalProps> = ({
     () => [inputRef0, inputRef1, inputRef2, inputRef3, inputRef4],
     [inputRef0, inputRef1, inputRef2, inputRef3, inputRef4]
   );
+  const submittingRef = useRef(false);
 
   const [validatePIN] = useValidatePINMutation();
 
@@ -49,6 +50,13 @@ export const PINAuthModal: React.FC<PINAuthModalProps> = ({
       setError('Please enter complete 5-digit PIN');
       return;
     }
+
+    // Guards against the auto-submit timeout and an Enter keypress both firing
+    // handleSubmit for the same completed PIN.
+    if (submittingRef.current) {
+      return;
+    }
+    submittingRef.current = true;
 
     setLoading(true);
     setError('');
@@ -72,6 +80,7 @@ export const PINAuthModal: React.FC<PINAuthModalProps> = ({
       inputRefs[0].current?.focus();
     } finally {
       setLoading(false);
+      submittingRef.current = false;
     }
   };
 
