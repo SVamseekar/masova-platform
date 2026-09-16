@@ -77,11 +77,37 @@ export function elapsedMinutes(receivedAt: Date, now: Date): number {
   return Math.max(0, mins);
 }
 
+/** Commerce persists LocalDateTime (no offset). Treat naive strings as UTC. */
+export function parseKitchenInstant(iso: string | Date | undefined | null): Date {
+  if (iso instanceof Date) return iso;
+  const s = String(iso || '').trim();
+  if (!s) return new Date(NaN);
+  if (/Z$|[+-]\d{2}:\d{2}$/.test(s)) return new Date(s);
+  return new Date(`${s}Z`);
+}
+
+/** Tickets older than a kitchen shift shouldn't drive wait KPIs. */
+export const SHIFT_CAP_MINS = 180;
+
+export function isStaleWait(mins: number): boolean {
+  return mins >= SHIFT_CAP_MINS;
+}
+
 export function formatElapsed(mins: number): string {
+  if (mins < 0) return '0m';
+  if (isStaleWait(mins)) return '—';
   if (mins < 60) return `${mins}m`;
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
+/** Compact ticket code for the board (Toast/Square style: short bump number). */
+export function kdsTicketCode(orderNumber: string | undefined | null): string {
+  const raw = String(orderNumber || '').replace(/^#/, '');
+  const stripped = raw.replace(/^SEED-ORD-/i, '');
+  if (stripped.length <= 10) return stripped || '—';
+  return stripped.slice(-8);
 }
 
 /**
@@ -142,7 +168,9 @@ export function computeQueueMetrics(
   now: Date
 ): QueueMetrics {
   const active = tickets.filter((t) => isActiveKitchenStatus(t.status));
-  const waits = active.map((t) => elapsedMinutes(t.receivedAt, now));
+  const waits = active
+    .map((t) => elapsedMinutes(t.receivedAt, now))
+    .filter((m) => !isStaleWait(m));
   const avgWaitMins =
     waits.length > 0 ? Math.round(waits.reduce((a, b) => a + b, 0) / waits.length) : 0;
   const maxWaitMins = waits.length > 0 ? Math.max(...waits) : 0;

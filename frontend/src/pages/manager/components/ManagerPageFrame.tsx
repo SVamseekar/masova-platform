@@ -44,32 +44,26 @@ export const ManagerPageFrame: React.FC<ManagerPageFrameProps> = ({
   emptyDescription,
 }) => (
   <div style={{ fontFamily: t.font, minHeight: 200 }} data-testid="manager-page-frame">
-    <header
-      style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-        gap: 16,
-        marginBottom: tabs ? 12 : 20,
-        flexWrap: 'wrap',
-      }}
-    >
-      <div>
-        <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: t.black }}>{title}</h2>
-        {(subtitle || storeId) && (
-          <p style={{ margin: '6px 0 0', fontSize: 13, color: t.gray }}>
-            {subtitle}
-            {subtitle && storeId ? ' · ' : ''}
-            {storeId && (
-              <span style={{ fontWeight: 600, color: t.orangeDark }} data-testid="manager-frame-store">
-                {storeId}
-              </span>
-            )}
+    {/* Shell already prints the section title — only show actions + store here. */}
+    {(primaryAction || storeId) && (
+      <header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 16,
+          marginBottom: tabs ? 10 : 16,
+        }}
+      >
+        {storeId ? (
+          <p style={{ margin: 0, fontSize: 12, color: t.gray }} data-testid="manager-frame-store">
+            {storeId}
           </p>
-        )}
-      </div>
-      {primaryAction && <div style={{ flexShrink: 0 }}>{primaryAction}</div>}
-    </header>
+        ) : <span />}
+        {primaryAction && <div style={{ flexShrink: 0 }}>{primaryAction}</div>}
+      </header>
+    )}
+    <span style={{ display: 'none' }} aria-hidden>{title}{subtitle}</span>
 
     {tabs && <div style={{ marginBottom: 16 }}>{tabs}</div>}
 

@@ -62,6 +62,10 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
     [managerPinRef0, managerPinRef1, managerPinRef2, managerPinRef3, managerPinRef4]
   );
 
+  // Shared by both submit handlers: guards against repeated Enter presses firing
+  // concurrent submits. Only one PIN step is on screen at a time, so one ref suffices.
+  const submittingRef = useRef(false);
+
   const [validatePIN] = useValidatePINMutation();
   const [clockInWithPin] = useClockInWithPinMutation();
 
@@ -91,26 +95,33 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
     setIsLoading(false);
   };
 
+  const applyPinDigit = (current: string, index: number, raw: string): string => {
+    const digits = raw.replace(/\D/g, '');
+    if (!digits) {
+      const chars = current.padEnd(5, ' ').split('');
+      chars[index] = ' ';
+      return chars.join('').replace(/ /g, '').slice(0, 5);
+    }
+    if (digits.length > 1) {
+      return digits.slice(0, 5);
+    }
+    const chars = current.padEnd(5, ' ').split('');
+    chars[index] = digits;
+    return chars.join('').replace(/ /g, '').slice(0, 5);
+  };
+
   const handleEmployeePINChange = (index: number, value: string) => {
-    if (value && !/^\d$/.test(value)) return;
-
-    const newPIN = employeePIN.split('');
-    newPIN[index] = value;
-    setEmployeePIN(newPIN.join('').slice(0, 5));
-
-    if (value && index < 4) {
+    const next = applyPinDigit(employeePIN, index, value);
+    setEmployeePIN(next);
+    if (value.replace(/\D/g, '') && index < 4) {
       employeePinRefs[index + 1].current?.focus();
     }
   };
 
   const handleManagerPINChange = (index: number, value: string) => {
-    if (value && !/^\d$/.test(value)) return;
-
-    const newPIN = managerPIN.split('');
-    newPIN[index] = value;
-    setManagerPIN(newPIN.join('').slice(0, 5));
-
-    if (value && index < 4) {
+    const next = applyPinDigit(managerPIN, index, value);
+    setManagerPIN(next);
+    if (value.replace(/\D/g, '') && index < 4) {
       managerPinRefs[index + 1].current?.focus();
     }
   };
@@ -144,6 +155,11 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
       return;
     }
 
+    if (submittingRef.current) {
+      return;
+    }
+    submittingRef.current = true;
+
     setIsLoading(true);
     setError('');
 
@@ -165,6 +181,7 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
       employeePinRefs[0].current?.focus();
     } finally {
       setIsLoading(false);
+      submittingRef.current = false;
     }
   };
 
@@ -174,6 +191,11 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
       setError('Please enter complete 5-digit PIN');
       return;
     }
+
+    if (submittingRef.current) {
+      return;
+    }
+    submittingRef.current = true;
 
     setIsLoading(true);
     setError('');
@@ -214,6 +236,7 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
       managerPinRefs[0].current?.focus();
     } finally {
       setIsLoading(false);
+      submittingRef.current = false;
     }
   };
 
@@ -266,16 +289,20 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
                     type="password"
                     inputMode="numeric"
                     maxLength={1}
+                    aria-label={`Employee PIN digit ${index + 1}`}
                     value={employeePIN[index] || ''}
                     onChange={(e) => handleEmployeePINChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e, employeePinRefs, employeePIN)}
                     onPaste={(e) => handlePaste(e, setEmployeePIN, employeePinRefs)}
                     style={{
                       ...styles.pinInput,
-                      ...(error ? styles.pinInputError : {})
+                      ...(employeePIN[index] ? styles.pinInputFilled : {}),
+                      ...(error ? styles.pinInputError : {}),
                     }}
                     disabled={isLoading}
-                    autoComplete="off"
+                    autoComplete="one-time-code"
+                    autoCorrect="off"
+                    spellCheck={false}
                   />
                 ))}
               </div>
@@ -298,16 +325,20 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
                     type="password"
                     inputMode="numeric"
                     maxLength={1}
+                    aria-label={`Manager PIN digit ${index + 1}`}
                     value={managerPIN[index] || ''}
                     onChange={(e) => handleManagerPINChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e, managerPinRefs, managerPIN)}
                     onPaste={(e) => handlePaste(e, setManagerPIN, managerPinRefs)}
                     style={{
                       ...styles.pinInput,
-                      ...(error ? styles.pinInputError : {})
+                      ...(managerPIN[index] ? styles.pinInputFilled : {}),
+                      ...(error ? styles.pinInputError : {}),
                     }}
                     disabled={isLoading}
-                    autoComplete="off"
+                    autoComplete="one-time-code"
+                    autoCorrect="off"
+                    spellCheck={false}
                   />
                 ))}
               </div>
@@ -453,9 +484,17 @@ const styles: Record<string, React.CSSProperties> = {
     border: '2px solid #e0e0e0',
     borderRadius: '12px',
     backgroundColor: '#f8f9fa',
+    color: '#1a1a1a',
+    WebkitTextFillColor: '#1a1a1a',
+    caretColor: '#1a1a1a',
+    WebkitTextSecurity: 'disc',
     transition: 'all 0.2s ease',
     outline: 'none',
-    fontFamily: 'monospace',
+    fontFamily: 'ui-monospace, monospace',
+  } as React.CSSProperties,
+  pinInputFilled: {
+    borderColor: '#1a1a1a',
+    backgroundColor: '#ffffff',
   },
   pinInputError: {
     borderColor: '#ef5350',

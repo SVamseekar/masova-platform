@@ -14,6 +14,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -37,15 +41,18 @@ public class CommerceSeedService {
     private final OrderRepository orderRepository;
     private final KitchenEquipmentSeedService equipmentSeedService;
     private final Environment environment;
+    private final MongoTemplate mongoTemplate;
 
     public CommerceSeedService(MenuItemRepository menuItemRepository,
                                OrderRepository orderRepository,
                                KitchenEquipmentSeedService equipmentSeedService,
-                               Environment environment) {
+                               Environment environment,
+                               MongoTemplate mongoTemplate) {
         this.menuItemRepository = menuItemRepository;
         this.orderRepository = orderRepository;
         this.equipmentSeedService = equipmentSeedService;
         this.environment = environment;
+        this.mongoTemplate = mongoTemplate;
     }
 
     public boolean isSeedAllowed() {
@@ -491,6 +498,7 @@ public class CommerceSeedService {
                 new OrderSpec("SEED-ORD-PREP-1", Order.OrderStatus.PREPARING, Order.OrderType.DELIVERY, false),
                 new OrderSpec("SEED-ORD-OVEN-1", Order.OrderStatus.OVEN, Order.OrderType.TAKEAWAY, false),
                 new OrderSpec("SEED-ORD-READY-1", Order.OrderStatus.READY, Order.OrderType.TAKEAWAY, false),
+                new OrderSpec("SEED-ORD-DINE-1", Order.OrderStatus.READY, Order.OrderType.DINE_IN, false),
                 new OrderSpec("SEED-ORD-DISP-1", Order.OrderStatus.DISPATCHED, Order.OrderType.DELIVERY, false),
                 new OrderSpec("SEED-ORD-OFD-1", Order.OrderStatus.OUT_FOR_DELIVERY, Order.OrderType.DELIVERY, false),
                 new OrderSpec("SEED-ORD-DLVR-1", Order.OrderStatus.DELIVERED, Order.OrderType.DELIVERY, true),
@@ -515,8 +523,10 @@ public class CommerceSeedService {
         int hoursAgo = 10;
         for (OrderSpec spec : specs) {
             Optional<Order> existing = orderRepository.findByOrderNumber(spec.orderNumber());
-            Order order = existing.orElseGet(Order::new);
             boolean isNew = existing.isEmpty();
+            // Delete-then-insert so @CreatedDate cannot pin seed tickets to the first-ever insert.
+            existing.ifPresent(orderRepository::delete);
+            Order order = new Order();
 
             order.setOrderNumber(spec.orderNumber());
             order.setStoreId(storeId);
@@ -527,7 +537,7 @@ public class CommerceSeedService {
             order.setCustomerPhone("+491511000011");
             order.setStatus(spec.status());
             order.setOrderType(spec.type());
-            order.setOrderSource(OrderSource.MASOVA);
+            order.setOrderSource(aggregatorSourceFor(spec.orderNumber()));
             order.setPaymentStatus(spec.paid() ? Order.PaymentStatus.PAID : Order.PaymentStatus.PENDING);
             order.setPaymentMethod(spec.type() == Order.OrderType.TAKEAWAY
                     ? Order.PaymentMethod.CASH : Order.PaymentMethod.CARD);
@@ -559,6 +569,7 @@ public class CommerceSeedService {
             order.setDeliveryFee(fee);
             order.setTax(tax);
             order.setTotal(sub.add(fee).add(tax));
+            applyAggregatorEconomics(order);
             order.setTotalNetAmount(sub);
             order.setTotalVatAmount(tax);
             order.setTotalGrossAmount(order.getTotal());
@@ -573,16 +584,20 @@ public class CommerceSeedService {
                         .longitude(13.4132)
                         .build());
             }
-
-            order.setSpecialInstructions("Seed order " + spec.orderNumber());
-            order.setPreparationTime(25);
-            order.setReceivedAt(now.minusHours(hoursAgo));
-            if (order.getCreatedAt() == null) {
-                order.setCreatedAt(now.minusHours(hoursAgo));
+            if (spec.type() == Order.OrderType.DINE_IN) {
+                order.setTableNumber("12");
+                order.setGuestCount(2);
             }
+
+            order.setSpecialInstructions(kitchenNoteFor(spec.orderNumber()));
+            order.setPreparationTime(18);
+            int ageMins = kitchenAgeMinutes(spec.status());
+            LocalDateTime received = now.minusMinutes(ageMins);
+            order.setReceivedAt(received);
+            order.setCreatedAt(received);
             order.setUpdatedAt(now);
 
-            applyStatusTimestamps(order, spec.status(), now, hoursAgo);
+            applyStatusTimestamps(order, spec.status(), now, ageMins);
 
             if (spec.status() == Order.OrderStatus.CANCELLED) {
                 order.setCancellationReason("Seed cancelled order");
@@ -590,6 +605,14 @@ public class CommerceSeedService {
             }
 
             Order saved = orderRepository.save(order);
+            // Auditing (@CreatedDate) ignores setter on insert/update — force wall-clock age.
+            mongoTemplate.updateFirst(
+                    Query.query(Criteria.where("_id").is(saved.getId())),
+                    new Update()
+                            .set("createdAt", received)
+                            .set("receivedAt", received)
+                            .set("updatedAt", now),
+                    Order.class);
             orderIds.add(saved.getId());
             orderNumberToId.put(spec.orderNumber(), saved.getId());
             if (spec.paid()) {
@@ -607,7 +630,7 @@ public class CommerceSeedService {
             } else {
                 updated++;
             }
-            hoursAgo = Math.max(1, hoursAgo - 1);
+            hoursAgo = Math.max(1, hoursAgo - 1); // unused loop pacing kept for compatibility
         }
 
         Map<String, Object> out = new LinkedHashMap<>();
@@ -623,8 +646,63 @@ public class CommerceSeedService {
         return out;
     }
 
-    private void applyStatusTimestamps(Order order, Order.OrderStatus status, LocalDateTime now, int baseHours) {
-        LocalDateTime t = now.minusHours(baseHours);
+    private static OrderSource aggregatorSourceFor(String orderNumber) {
+        return switch (orderNumber) {
+            case "SEED-ORD-DLVR-1" -> OrderSource.WOLT;
+            case "SEED-ORD-DLVR-2" -> OrderSource.DELIVEROO;
+            case "SEED-ORD-OFD-1" -> OrderSource.UBER_EATS;
+            case "SEED-ORD-DISP-1" -> OrderSource.JUST_EAT;
+            default -> OrderSource.MASOVA;
+        };
+    }
+
+    private static void applyAggregatorEconomics(Order order) {
+        if (order.getOrderSource() == null || order.getOrderSource() == OrderSource.MASOVA) {
+            order.setAggregatorCommission(null);
+            order.setAggregatorNetPayout(null);
+            return;
+        }
+        BigDecimal pct = switch (order.getOrderSource()) {
+            case WOLT -> new BigDecimal("28");
+            case DELIVEROO -> new BigDecimal("25");
+            case UBER_EATS -> new BigDecimal("30");
+            case JUST_EAT -> new BigDecimal("22");
+            default -> BigDecimal.ZERO;
+        };
+        BigDecimal gross = order.getTotal() != null ? order.getTotal() : BigDecimal.ZERO;
+        BigDecimal commission = gross.multiply(pct).divide(new BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
+        order.setAggregatorCommission(commission);
+        order.setAggregatorNetPayout(gross.subtract(commission));
+        order.setAggregatorOrderId(order.getOrderNumber());
+        order.setPaymentMethod(Order.PaymentMethod.CARD);
+    }
+
+    private static int kitchenAgeMinutes(Order.OrderStatus status) {
+        return switch (status) {
+            case RECEIVED -> 4;
+            case PREPARING -> 9;
+            case OVEN -> 14;
+            case BAKED -> 18;
+            case READY -> 22;
+            case DISPATCHED -> 28;
+            case OUT_FOR_DELIVERY -> 36;
+            case DELIVERED -> 55;
+            case COMPLETED -> 70;
+            case CANCELLED -> 40;
+            default -> 12;
+        };
+    }
+
+    private static String kitchenNoteFor(String orderNumber) {
+        return switch (orderNumber) {
+            case "SEED-ORD-RECV-1" -> "No coriander";
+            case "SEED-ORD-PREP-1" -> "Extra crisp";
+            default -> null;
+        };
+    }
+
+    private void applyStatusTimestamps(Order order, Order.OrderStatus status, LocalDateTime now, int ageMins) {
+        LocalDateTime t = now.minusMinutes(ageMins);
         order.setReceivedAt(t);
         if (status.ordinal() >= Order.OrderStatus.PREPARING.ordinal()
                 && status != Order.OrderStatus.CANCELLED) {

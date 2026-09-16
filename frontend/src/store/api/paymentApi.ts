@@ -187,7 +187,21 @@ export const paymentApi = createApi({
     // Get transactions by store — canonical GET /payments (store from X-Selected-Store-Id / X-User-Store-Id)
     // Optional storeId query kept for BE /store alias compatibility
     getTransactionsByStoreId: builder.query<PaymentResponse[], string | undefined>({
-      query: (storeId) => (storeId ? `?storeId=${encodeURIComponent(storeId)}` : ''),
+      query: (storeId) => {
+        const params = new URLSearchParams();
+        params.set('page', '0');
+        params.set('size', '50');
+        if (storeId) params.set('storeId', storeId);
+        return `?${params.toString()}`;
+      },
+      transformResponse: (raw: unknown): PaymentResponse[] => {
+        if (Array.isArray(raw)) return raw as PaymentResponse[];
+        if (raw && typeof raw === 'object') {
+          const o = raw as Record<string, unknown>;
+          if (Array.isArray(o.content)) return o.content as PaymentResponse[];
+        }
+        return [];
+      },
       providesTags: (result, error, storeId) =>
         result
           ? [...result.map(({ transactionId }) => ({ type: 'Payment' as const, id: transactionId })), { type: 'Payment', id: storeId || 'DEFAULT' }]

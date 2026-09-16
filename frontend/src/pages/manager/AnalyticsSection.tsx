@@ -15,7 +15,8 @@ import {
   useDeleteEquipmentMutation,
   KitchenEquipment,
 } from '../../store/api/equipmentApi';
-import { useGetKitchenQueueQuery } from '../../store/api/orderApi';
+import { useGetKitchenQueueQuery, useGetStoreOrderSummaryQuery } from '../../store/api/orderApi';
+import { derivedFromSummary } from './storeOrderMetrics';
 import SalesTrendChart from '../../components/charts/SalesTrendChart';
 import RevenueBreakdownChart from '../../components/charts/RevenueBreakdownChart';
 import PeakHoursHeatmap from '../../components/charts/PeakHoursHeatmap';
@@ -36,7 +37,7 @@ const tabs = [
 // Shared styles
 const miniStat: React.CSSProperties = { ...cardStyle, padding: 16, textAlign: 'center' };
 const statLabel: React.CSSProperties = { fontSize: 12, color: t.gray, margin: 0 };
-const statValue = (color?: string): React.CSSProperties => ({ fontSize: 22, fontWeight: 700, color: color || t.black, margin: '4px 0 0 0' });
+const statValue = (color?: string): React.CSSProperties => ({ fontSize: 15, fontWeight: 700, color: color || t.black, margin: '4px 0 0 0', overflowWrap: 'anywhere', fontVariantNumeric: 'tabular-nums', lineHeight: 1.2 });
 const btn = (bg: string): React.CSSProperties => ({ padding: '8px 16px', background: bg, color: t.white, border: 'none', borderRadius: t.radius.sm, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: t.font });
 const modalOverlay: React.CSSProperties = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 };
 const modalBox: React.CSSProperties = { ...cardStyle, padding: 28, maxWidth: 520, width: '100%', maxHeight: '90vh', overflowY: 'auto' };
@@ -91,11 +92,6 @@ const KitchenTab = ({ storeId }: { storeId: string }) => {
 
   return (
     <>
-      <div style={{ ...alertBox(t.blue), marginBottom: 16 }}>
-        Live kitchen view from the order queue and staff leaderboard.
-        Historical prep-time percentiles require dedicated kitchen analytics APIs — not invented here.
-      </div>
-
       {queueLoading && <ManagerLoadingBlock rows={3} label="Loading kitchen queue…" />}
       {queueError && (
         <ManagerErrorState
@@ -235,6 +231,8 @@ const KitchenStaffLeaderboard = ({
 const ProductsTab = ({ storeId }: { storeId: string }) => {
   const [period, setPeriod] = useState('TODAY');
   const [sortBy, setSortBy] = useState('QUANTITY');
+  const { data: storeSummary } = useGetStoreOrderSummaryQuery({ storeId, days: 30 }, { skip: !storeId });
+  const derived = derivedFromSummary(storeSummary);
 
   const { data, isLoading, isError, refetch } = useGetTopProductsQuery(
     { storeId, period, sortBy },
@@ -245,8 +243,9 @@ const ProductsTab = ({ storeId }: { storeId: string }) => {
   const locale = useAppSelector(selectCartLocale);
   const formatCurrency = (v: number) => formatMajorAmount(v, currency, locale);
 
-  if (isLoading) return <ManagerLoadingBlock rows={4} label="Loading product analytics…" />;
-  if (isError) {
+  const products = (data?.topProducts?.length ? data.topProducts : derived.topProducts);
+  if (isLoading && products.length === 0) return <ManagerLoadingBlock rows={4} label="Loading product analytics…" />;
+  if (isError && products.length === 0) {
     return (
       <ManagerErrorState
         title="Failed to load product analytics"
@@ -254,7 +253,7 @@ const ProductsTab = ({ storeId }: { storeId: string }) => {
       />
     );
   }
-  if (!data) {
+  if (products.length === 0) {
     return (
       <ManagerEmptyState
         title="No product analytics"
@@ -263,9 +262,9 @@ const ProductsTab = ({ storeId }: { storeId: string }) => {
     );
   }
 
-  const topProduct = data.topProducts[0];
-  const totalRevenue = data.topProducts.reduce((sum, p) => sum + p.revenue, 0);
-  const totalQuantity = data.topProducts.reduce((sum, p) => sum + p.quantitySold, 0);
+  const topProduct = products[0];
+  const totalRevenue = products.reduce((sum, p) => sum + p.revenue, 0);
+  const totalQuantity = products.reduce((sum, p) => sum + p.quantitySold, 0);
 
   return (
     <>
@@ -293,7 +292,7 @@ const ProductsTab = ({ storeId }: { storeId: string }) => {
         <div style={miniStat}>
           <p style={statLabel}>Total Revenue (Top 20)</p>
           <p style={statValue(t.green)}>{formatCurrency(totalRevenue)}</p>
-          <p style={{ fontSize: 12, color: t.gray, margin: '2px 0 0 0' }}>From {data.topProducts.length} products</p>
+          <p style={{ fontSize: 12, color: t.gray, margin: '2px 0 0 0' }}>From {products.length} products</p>
         </div>
         <div style={miniStat}>
           <p style={statLabel}>Total Items Sold (Top 20)</p>
@@ -317,7 +316,7 @@ const ProductsTab = ({ storeId }: { storeId: string }) => {
               <th style={{ ...tableHeaderStyle, textAlign: 'center' }}>Trend</th>
             </tr></thead>
             <tbody>
-              {data.topProducts.map(product => (
+              {products.map(product => (
                 <tr key={product.itemId} style={{ background: product.rank <= 3 ? t.orangeLight : 'transparent' }}>
                   <td style={{ ...tableCellStyle, fontWeight: product.rank <= 3 ? 700 : 400, color: product.rank <= 3 ? t.orange : t.black }}>{product.rank}</td>
                   <td style={tableCellStyle}>
@@ -340,7 +339,7 @@ const ProductsTab = ({ storeId }: { storeId: string }) => {
             </tbody>
           </table>
         </div>
-        {data.topProducts.length === 0 && (
+        {products.length === 0 && (
           <p style={{ textAlign: 'center', color: t.grayMuted, fontSize: 14, padding: 24 }}>No product sales data available for this period</p>
         )}
       </div>
@@ -441,15 +440,11 @@ const EquipmentTab = ({ storeId, userId }: { storeId: string; userId: string }) 
         <button onClick={() => { setFormData({ equipmentName: '', type: 'OVEN', status: 'AVAILABLE', temperature: 0, isOn: false }); setCreateDialog(true); }} style={btn(t.orange)}>+ Add Equipment</button>
       </div>
 
-      {/* Alerts */}
-      {brokenCount > 0 && <div style={alertBox(t.red)}>{brokenCount} equipment(s) marked as BROKEN</div>}
-      {maintenanceNeeded > 0 && <div style={alertBox(t.yellow)}>{maintenanceNeeded} equipment(s) need maintenance</div>}
-
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 24 }}>
         <div style={miniStat}><p style={statLabel}>Available</p><p style={statValue(t.green)}>{equipment.filter(e => e.status === 'AVAILABLE').length}</p></div>
         <div style={miniStat}><p style={statLabel}>In Use</p><p style={statValue(t.blue)}>{equipment.filter(e => e.status === 'IN_USE').length}</p></div>
-        <div style={miniStat}><p style={statLabel}>Maintenance</p><p style={statValue(t.yellow)}>{equipment.filter(e => e.status === 'MAINTENANCE').length}</p></div>
+        <div style={miniStat}><p style={statLabel}>Maintenance</p><p style={statValue(t.yellow)}>{equipment.filter(e => e.status === 'MAINTENANCE').length + maintenanceNeeded}</p></div>
         <div style={miniStat}><p style={statLabel}>Broken</p><p style={statValue(t.red)}>{equipment.filter(e => e.status === 'BROKEN').length}</p></div>
       </div>
 
@@ -466,7 +461,7 @@ const EquipmentTab = ({ storeId, userId }: { storeId: string; userId: string }) 
             <div key={item.id} style={{ ...cardStyle, display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <div style={{ fontSize: 15, fontWeight: 600, color: t.black }}>{item.equipmentName}</div>
-                <span style={statusBadge(getStatusColor(item.status))}>{item.status.replace('_', ' ')}</span>
+                <span style={statusBadge(item.status === 'MAINTENANCE' ? 'PREPARING' : item.status === 'BROKEN' ? 'CANCELLED' : item.status === 'IN_USE' ? 'READY' : 'COMPLETED')}>{item.status.replace('_', ' ')}</span>
               </div>
               <div style={{ fontSize: 12, color: t.grayMuted, marginBottom: 12 }}>{getTypeLabel(item.type)}</div>
 

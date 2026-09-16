@@ -59,27 +59,28 @@ public class KitchenEquipmentSeedService {
 
         LocalDateTime now = LocalDateTime.now();
         for (SeedSpec spec : specs) {
-            boolean already = existing.stream()
-                    .anyMatch(e -> spec.name().equalsIgnoreCase(e.getEquipmentName()));
-            if (already) {
-                continue;
+            KitchenEquipment eq = existing.stream()
+                    .filter(e -> spec.name().equalsIgnoreCase(e.getEquipmentName()))
+                    .findFirst()
+                    .orElseGet(KitchenEquipment::new);
+            boolean isNew = eq.getId() == null;
+            eq.setStoreId(storeId);
+            eq.setEquipmentName(spec.name());
+            eq.setType(spec.type());
+            eq.setStatus(spec.status());
+            eq.setTemperature(spec.temp());
+            eq.setIsOn(spec.on());
+            eq.setUsageCount(eq.getUsageCount() == null ? 0 : eq.getUsageCount());
+            eq.setLastMaintenanceDate(now.minusDays(14));
+            eq.setNextMaintenanceDate(now.plusDays(30));
+            eq.setUpdatedAt(now);
+            if (isNew) {
+                eq.setCreatedAt(now);
             }
-            KitchenEquipment eq = KitchenEquipment.builder()
-                    .storeId(storeId)
-                    .equipmentName(spec.name())
-                    .type(spec.type())
-                    .status(spec.status())
-                    .temperature(spec.temp())
-                    .isOn(spec.on())
-                    .usageCount(0)
-                    .lastMaintenanceDate(now.minusDays(14))
-                    .nextMaintenanceDate(now.plusDays(30))
-                    .maintenanceNotes("Seeded demo equipment")
-                    .createdAt(now)
-                    .updatedAt(now)
-                    .build();
             KitchenEquipment saved = equipmentRepository.save(eq);
-            createdIds.add(saved.getId());
+            if (isNew) {
+                createdIds.add(saved.getId());
+            }
         }
 
         int total = equipmentRepository.findByStoreId(storeId).size();

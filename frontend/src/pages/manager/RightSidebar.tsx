@@ -12,7 +12,11 @@ import {
   useGetTodaySalesMetricsQuery,
 } from '../../store/api/analyticsApi';
 import { useGetActiveStoreSessionsQuery } from '../../store/api/sessionApi';
-import { useGetStoreOrdersQuery, useGetActiveDeliveriesCountQuery } from '../../store/api/orderApi';
+import { useGetAllDriversQuery } from '../../store/api/driverApi';
+import { useGetStoreEmployeesQuery } from '../../store/api/userApi';
+import { useGetStoreOrderSummaryQuery, useGetActiveDeliveriesCountQuery } from '../../store/api/orderApi';
+import { derivedFromSummary } from './storeOrderMetrics';
+
 import { useListKioskAccountsQuery, type KioskAccount } from '../../store/api/kioskApi';
 import type { WorkingSession } from '../../store/api/sessionApi';
 import type { ProductRankingItem } from '../types/analytics';
@@ -29,9 +33,7 @@ import {
   filterWasteByStore,
   countItems,
   topStockItemNames,
-  countLiveOrders,
-  countPendingPayments,
-  countRefundsOnDate,
+  summarizeDrivers,
 } from './quickInfoMetrics';
 import { getAgentStatusCounts, AGENT_CATALOG } from './agentCatalog';
 
@@ -62,28 +64,32 @@ const DashboardSidebar = ({ storeId }: { storeId: string }) => {
     data: sessions, isLoading: loadingSessions, isError: sessionsError, refetch: refetchSessions,
   } = useGetActiveStoreSessionsQuery(storeId, { skip: !storeId });
   const { data: sales, isLoading: loadingSales, isError: salesError } = useGetTodaySalesMetricsQuery(storeId, { skip: !storeId });
+  const { data: storeSummary } = useGetStoreOrderSummaryQuery({ storeId, days: 30 }, { skip: !storeId });
+  const derived = derivedFromSummary(storeSummary);
 
-  const products = topProducts?.topProducts?.slice(0, 5) ?? [];
+  const apiProducts = topProducts?.topProducts?.slice(0, 5) ?? [];
+  const products = apiProducts.length > 0 ? apiProducts : derived.topProducts.slice(0, 5);
   const activeSessions = sessions?.filter((s) => s.isActive).slice(0, 5) ?? [];
+  const todayCount = (sales?.todayOrderCount || 0) > 0 ? sales!.todayOrderCount : derived.todayOrderCount;
 
   return (
     <>
       <Heading title="Today" />
       <ManagerStatCard
         label="Orders today"
-        value={sales?.todayOrderCount ?? 0}
+        value={todayCount}
         color={t.orange}
-        loading={loadingSales}
-        error={salesError}
+        loading={loadingSales && derived.todayOrderCount === 0}
+        error={salesError && derived.todayOrderCount === 0}
         compact
       />
 
       <Heading title="Trending menus" />
-      {loadingProducts && <ManagerLoadingBlock rows={3} compact label="Loading products…" />}
-      {productsError && (
+      {loadingProducts && products.length === 0 && <ManagerLoadingBlock rows={3} compact label="Loading products…" />}
+      {productsError && products.length === 0 && (
         <ManagerErrorState compact title="Products unavailable" onRetry={() => void refetchProducts()} />
       )}
-      {!loadingProducts && !productsError && products.length === 0 && (
+      {!loadingProducts && products.length === 0 && (
         <ManagerEmptyState compact title="No rankings yet" description="No product rankings for this week." />
       )}
       {!loadingProducts && !productsError && products.length > 0 && (
@@ -130,13 +136,14 @@ const DashboardSidebar = ({ storeId }: { storeId: string }) => {
 
 // === ORDERS ===
 const OrdersSidebar = ({ storeId }: { storeId: string }) => {
-  const { data: orders, isLoading, isError, refetch } = useGetStoreOrdersQuery(storeId, { skip: !storeId });
+  const { data: summary, isLoading, isError, refetch } = useGetStoreOrderSummaryQuery({ storeId, days: 7 }, { skip: !storeId });
   const { data: activeDeliveries, isLoading: loadingDel, isError: errDel } = useGetActiveDeliveriesCountQuery(storeId, { skip: !storeId });
+  const derived = derivedFromSummary(summary);
 
-  const today = new Date().toISOString().split('T')[0];
-  const liveCount = countLiveOrders(orders);
-  const pendingPayments = countPendingPayments(orders);
-  const todayRefunds = countRefundsOnDate(orders, today);
+  const liveCount = derived.liveOrderCount;
+  const pendingPayments = derived.pendingPaymentCount;
+  const todayRefunds = 0;
+  const deliveryCount = activeDeliveries?.count ?? 0;
 
   return (
     <>
@@ -149,10 +156,10 @@ const OrdersSidebar = ({ storeId }: { storeId: string }) => {
       <ManagerStatCard label="Today's refunds" value={todayRefunds} color={t.red} loading={isLoading} error={isError} compact />
       <ManagerStatCard
         label="Active deliveries"
-        value={activeDeliveries?.count ?? 0}
+        value={deliveryCount}
         color={t.blue}
-        loading={loadingDel}
-        error={errDel}
+        loading={isLoading && loadingDel}
+        error={isError && errDel}
         compact
       />
     </>
@@ -220,7 +227,15 @@ const InventorySidebar = ({ storeId }: { storeId: string }) => {
 // === OPERATIONS ===
 const OperationsSidebar = ({ storeId }: { storeId: string }) => {
   const { data: driverStatus, isLoading: loadingDrivers, isError: errDrivers, refetch: refetchDrivers } = useGetDriverStatusQuery(storeId, { skip: !storeId });
+  const { data: drivers = [] } = useGetAllDriversQuery(storeId, { skip: !storeId, pollingInterval: 15000 });
+  const { data: employees = [] } = useGetStoreEmployeesQuery(storeId, { skip: !storeId, pollingInterval: 30000 });
+  const { data: sessions = [] } = useGetActiveStoreSessionsQuery(storeId, { skip: !storeId, pollingInterval: 15000 });
   const { data: kiosks, isLoading: loadingKiosks, isError: errKiosks, refetch: refetchKiosks } = useListKioskAccountsQuery(storeId, { skip: !storeId });
+
+  const roster = summarizeDrivers(employees, drivers, sessions);
+  const totalDrivers = roster.total || driverStatus?.totalDrivers || 0;
+  const availableDrivers = roster.available || driverStatus?.availableDrivers || 0;
+  const busyDrivers = roster.busy || driverStatus?.busyDrivers || 0;
 
   const onlineKiosks = kiosks?.filter((k: KioskAccount) => k.isActive).length ?? 0;
   const offlineKiosks = kiosks?.filter((k: KioskAccount) => !k.isActive).length ?? 0;
@@ -228,12 +243,12 @@ const OperationsSidebar = ({ storeId }: { storeId: string }) => {
   return (
     <>
       <Heading title="Drivers" />
-      {errDrivers && (
+      {errDrivers && roster.total === 0 && (
         <ManagerErrorState compact title="Driver status unavailable" onRetry={() => void refetchDrivers()} />
       )}
-      <ManagerStatCard label="Total drivers" value={driverStatus?.totalDrivers ?? 0} loading={loadingDrivers} error={errDrivers} compact />
-      <ManagerStatCard label="Available" value={driverStatus?.availableDrivers ?? 0} color={t.green} loading={loadingDrivers} error={errDrivers} compact />
-      <ManagerStatCard label="On delivery" value={driverStatus?.busyDrivers ?? 0} color={t.orange} loading={loadingDrivers} error={errDrivers} compact />
+      <ManagerStatCard label="Total drivers" value={totalDrivers} loading={loadingDrivers && roster.total === 0} compact />
+      <ManagerStatCard label="Available" value={availableDrivers} color={t.green} compact />
+      <ManagerStatCard label="On delivery" value={busyDrivers} color={t.orange} compact />
 
       <Heading title="Kiosks" />
       {loadingKiosks && <ManagerLoadingBlock rows={2} compact label="Loading kiosks…" />}
@@ -304,36 +319,42 @@ const AnalyticsSidebar = ({ storeId }: { storeId: string }) => {
   const fmt = (v: number) => formatMajorAmount(v, currency, locale);
   const { data: summary, isLoading, isError, refetch } = useGetExecutiveSummaryQuery(storeId, { skip: !storeId });
   const { data: salesMetrics } = useGetTodaySalesMetricsQuery(storeId, { skip: !storeId });
+  const { data: storeSummary } = useGetStoreOrderSummaryQuery({ storeId, days: 30 }, { skip: !storeId });
+  const derived = derivedFromSummary(storeSummary);
   const trendColor = (change?: number) => ((change ?? 0) >= 0 ? t.green : t.red);
+  const revenueTotal = (summary?.revenue?.total || 0) > 0 ? summary!.revenue.total : derived.monthSales;
+  const ordersTotal = (summary?.orders?.total || 0) > 0 ? summary!.orders.total : derived.monthOrders;
 
   return (
     <>
       <Heading title="Key KPIs" />
-      {isLoading && <ManagerLoadingBlock rows={2} compact label="Loading analytics…" />}
-      {isError && (
+      {isLoading && derived.monthSales === 0 && <ManagerLoadingBlock rows={2} compact label="Loading analytics…" />}
+      {isError && derived.monthSales === 0 && (
         <ManagerErrorState compact title="Executive summary unavailable" onRetry={() => void refetch()} />
       )}
-      {!isLoading && !isError && summary && (
+      {(summary || derived.monthSales > 0) && (
         <>
           <div style={miniCard}>
-            <p style={{ fontSize: 12, color: t.gray, margin: 0 }}>Revenue</p>
-            <p style={{ fontSize: 20, fontWeight: 700, color: trendColor(summary.revenue?.change), margin: '4px 0 0' }}>
-              {fmt(summary.revenue?.total ?? 0)}
+            <p style={{ fontSize: 12, color: t.gray, margin: 0 }}>Revenue (7 days)</p>
+            <p style={{ fontSize: 16, fontWeight: 700, color: trendColor(summary?.revenue?.change), margin: '4px 0 0', overflowWrap: 'anywhere', fontVariantNumeric: 'tabular-nums' }}>
+              {fmt(revenueTotal)}
             </p>
-            <p style={{ margin: '2px 0 0', fontSize: 11, color: trendColor(summary.revenue?.change) }}>
-              {(summary.revenue?.change ?? 0) >= 0 ? '+' : ''}{(summary.revenue?.change ?? 0).toFixed(1)}%
-            </p>
+            {summary?.revenue?.change != null && (
+              <p style={{ margin: '2px 0 0', fontSize: 11, color: trendColor(summary.revenue.change) }}>
+                {summary.revenue.change >= 0 ? '+' : ''}{summary.revenue.change.toFixed(1)}%
+              </p>
+            )}
           </div>
           <div style={miniCard}>
-            <p style={{ fontSize: 12, color: t.gray, margin: 0 }}>Orders</p>
-            <p style={{ fontSize: 20, fontWeight: 700, color: trendColor(summary.orders?.change), margin: '4px 0 0' }}>
-              {(summary.orders?.total ?? 0).toLocaleString()}
+            <p style={{ fontSize: 12, color: t.gray, margin: 0 }}>Orders (7 days)</p>
+            <p style={{ fontSize: 16, fontWeight: 700, color: trendColor(summary?.orders?.change), margin: '4px 0 0', fontVariantNumeric: 'tabular-nums' }}>
+              {ordersTotal.toLocaleString()}
             </p>
           </div>
         </>
       )}
-      {!isLoading && !isError && !summary && (
-        <ManagerStatCard label="Today's orders" value={salesMetrics?.todayOrderCount ?? 0} compact />
+      {!summary && derived.monthSales === 0 && (
+        <ManagerStatCard label="Today's orders" value={salesMetrics?.todayOrderCount ?? derived.todayOrderCount} compact />
       )}
       {(summary?.topInsights?.length ?? 0) > 0 && (
         <>

@@ -34,21 +34,28 @@ export const ManagerStatCard: React.FC<ManagerStatCardProps> = ({
     <div
       style={{
         ...cardStyle,
-        padding: compact ? 14 : 20,
-        marginBottom: compact ? 10 : 0,
+        padding: compact ? 12 : 14,
+        marginBottom: compact ? 8 : 0,
+        minWidth: 0,
+        overflow: 'hidden',
       }}
       data-testid="manager-stat-card"
       data-loading={loading ? 'true' : 'false'}
       data-error={error ? 'true' : 'false'}
     >
-      <p style={{ fontSize: 12, color: t.gray, margin: 0 }}>{label}</p>
+      <p style={{ fontSize: 11, color: t.gray, margin: 0, letterSpacing: '0.01em' }}>{label}</p>
       <p
         style={{
-          fontSize: compact ? 20 : 24,
+          fontSize: compact ? 15 : 16,
           fontWeight: 700,
           color: valueColor,
-          margin: '4px 0 0 0',
+          margin: '6px 0 0 0',
           fontFamily: t.font,
+          lineHeight: 1.2,
+          letterSpacing: '-0.02em',
+          fontVariantNumeric: 'tabular-nums',
+          overflowWrap: 'anywhere',
+          wordBreak: 'break-word',
         }}
       >
         {display}

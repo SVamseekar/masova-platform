@@ -107,6 +107,7 @@ public class PlatformSeedService {
         Map<String, String> userIds = seedUsers(code);
         Map<String, Object> customers = seedCustomers(code, userIds);
         Map<String, Object> campaigns = seedCampaigns(code, userIds.get("manager.berlin@gmail.com"));
+        Map<String, Object> kiosks = seedKiosks();
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("storeId", code);
@@ -114,6 +115,7 @@ public class PlatformSeedService {
         result.put("userIds", userIds);
         result.put("customers", customers);
         result.put("campaigns", campaigns);
+        result.put("kiosks", kiosks);
         result.put("password", DEMO_PASSWORD);
         result.put("message", "Core platform seed complete (idempotent)");
         log.info("Platform seed-demo storeId={} users={} customers={}",
@@ -360,6 +362,48 @@ public class PlatformSeedService {
         } catch (Exception e) {
             log.warn("PG dual-write failed for seed user {}: {}", user.getId(), e.getMessage());
         }
+    }
+
+    private Map<String, Object> seedKiosks() {
+        List<String> created = new ArrayList<>();
+        List<String> existing = new ArrayList<>();
+        List<String> stores = List.of("DOM001", "DOM002", "DOM003");
+        List<String> terminals = List.of("POS-01", "POS-02", "KIOSK-01");
+        for (String storeCode : stores) {
+            for (String terminalId : terminals) {
+                String email = String.format("kiosk.%s.%s@masova.internal", storeCode, terminalId);
+                Optional<User> found = userRepository.findByPersonalInfoEmail(email);
+                if (found.isPresent()) {
+                    existing.add(storeCode + "/" + terminalId);
+                    continue;
+                }
+                User kiosk = new User();
+                kiosk.setType(UserType.KIOSK);
+                kiosk.setActive(true);
+                kiosk.setCreatedAt(LocalDateTime.now());
+                User.PersonalInfo pi = new User.PersonalInfo();
+                pi.setName(String.format("Kiosk %s — %s", terminalId, storeCode));
+                pi.setEmail(email);
+                pi.setPhone(String.format("KIOSK%s%s", storeCode, terminalId));
+                pi.setPasswordHash(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));
+                kiosk.setPersonalInfo(pi);
+                User.EmployeeDetails emp = new User.EmployeeDetails();
+                emp.setStoreId(storeCode);
+                emp.setRole("KIOSK_TERMINAL");
+                emp.setTerminalId(terminalId);
+                emp.setIsKioskAccount(true);
+                emp.setStatus("ACTIVE");
+                emp.setPermissions(List.of("CREATE_ORDER", "VIEW_MENU", "PROCESS_PAYMENT"));
+                kiosk.setEmployeeDetails(emp);
+                User saved = userRepository.save(kiosk);
+                dualWriteUser(saved);
+                created.add(storeCode + "/" + terminalId);
+            }
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("created", created);
+        out.put("existing", existing);
+        return out;
     }
 
     private Map<String, Object> seedCustomers(String storeCode, Map<String, String> userIds) {
