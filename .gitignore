@@ -130,3 +130,7 @@ product_launch_assets/
 
 # Vercel CLI (project link lives at repo root)
 /.vercel/
+
+# Claude Code local context (not for git)
+CLAUDE.md
+AGENTS.md
