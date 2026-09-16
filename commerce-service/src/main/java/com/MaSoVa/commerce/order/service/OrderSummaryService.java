@@ -136,7 +136,7 @@ public class OrderSummaryService {
         int weekOrders = 0;
         double rangeSales = 0;
         int rangeOrders = 0;
-        LocalDate weekStart = today.minusDays(6);
+        LocalDate weekStart = clampWeekStart(today.minusDays(6), rangeStartDate);
         for (Map<String, Object> row : byDay) {
             String date = String.valueOf(row.get("date"));
             double sales = toDouble(row.get("sales"));
@@ -187,6 +187,15 @@ public class OrderSummaryService {
         log.info("Store summary {} days={} todaySales={} weekSales={} live={}",
                 storeId, days, todaySales, weekSales, out.get("liveOrderCount"));
         return out;
+    }
+
+    /**
+     * When the caller requests fewer than 7 days, a naive rolling 7-day window would
+     * start before rangeStartDate, which fillMissingDays never backfills — undercounting
+     * weekSales/weekOrders. Clamp so the week window never reaches past what was fetched.
+     */
+    private static LocalDate clampWeekStart(LocalDate rollingWeekStart, LocalDate rangeStartDate) {
+        return rollingWeekStart.isBefore(rangeStartDate) ? rangeStartDate : rollingWeekStart;
     }
 
     public static LocalDateTime toUtcStart(LocalDate date) {

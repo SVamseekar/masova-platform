@@ -130,3 +130,13 @@ product_launch_assets/
 
 # Vercel CLI (project link lives at repo root)
 /.vercel/
+
+# Claude Code local context (not for git)
+CLAUDE.md
+AGENTS.md
+
+# Personal dev convenience symlink into product_launch_assets/
+/masova-video
+
+# Ad-hoc local QA scripts (demo-account PINs, /tmp screenshot paths, no shared harness)
+frontend/scripts/qa-*.mjs
