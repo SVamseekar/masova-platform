@@ -3,6 +3,7 @@ import {
   sortKitchenTickets,
   elapsedMinutes,
   formatElapsed,
+  kdsTicketCode,
   urgencyBand,
   nextKitchenStatus,
   terminalStatusForType,
@@ -11,9 +12,15 @@ import {
   ovenRemainingLabel,
   COOK_STATUSES,
   HANDOFF_STATUSES,
+  parseKitchenInstant,
 } from './kdsHelpers';
 
 describe('kdsHelpers', () => {
+  it('parses naive LocalDateTime as UTC', () => {
+    expect(parseKitchenInstant('2026-09-13T18:45:00').toISOString()).toBe('2026-09-13T18:45:00.000Z');
+    expect(parseKitchenInstant('2026-09-13T18:45:00Z').toISOString()).toBe('2026-09-13T18:45:00.000Z');
+  });
+
   it('exposes 5 cook + 4 handoff columns', () => {
     expect(COOK_STATUSES).toHaveLength(5);
     expect(HANDOFF_STATUSES).toHaveLength(4);
@@ -51,6 +58,12 @@ describe('kdsHelpers', () => {
     expect(elapsedMinutes(past, now)).toBe(13);
     expect(formatElapsed(13)).toBe('13m');
     expect(formatElapsed(75)).toBe('1h 15m');
+    expect(formatElapsed(50000)).toBe('—');
+  });
+
+  it('shortens seed order numbers for the board', () => {
+    expect(kdsTicketCode('SEED-ORD-RECV-1')).toBe('RECV-1');
+    expect(kdsTicketCode('#42')).toBe('42');
   });
 
   it('maps urgency bands from real age', () => {

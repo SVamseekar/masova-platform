@@ -10,6 +10,8 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { useGetSalesTrendsQuery } from '../../store/api/analyticsApi';
+import { useGetStoreOrderSummaryQuery } from '../../store/api/orderApi';
+import { derivedFromSummary } from '../../pages/manager/storeOrderMetrics';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
 import { formatMajorAmount } from '../../utils/currency';
@@ -23,11 +25,17 @@ interface SalesTrendChartProps {
 export default function SalesTrendChart({ storeId }: SalesTrendChartProps) {
   const [period, setPeriod] = useState<'WEEKLY' | 'MONTHLY'>('WEEKLY');
   const { data, isLoading, isError, refetch } = useGetSalesTrendsQuery({ period, storeId });
+  const { data: summary } = useGetStoreOrderSummaryQuery(
+    { storeId, days: period === 'WEEKLY' ? 7 : 30 },
+    { skip: !storeId },
+  );
+  const derived = derivedFromSummary(summary);
+  const trend = (data?.totalSales ? data : null) || (period === 'WEEKLY' ? derived.trendWeekly : derived.trendMonthly);
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
   const formatCurrency = (value: number) => formatMajorAmount(value, currency, locale);
 
-  if (isLoading) {
+  if (isLoading && trend.totalSales === 0) {
     return (
       <div style={cardStyle} data-testid="sales-trend-chart">
         <ManagerLoadingBlock rows={4} label="Loading sales trends…" />
@@ -35,7 +43,7 @@ export default function SalesTrendChart({ storeId }: SalesTrendChartProps) {
     );
   }
 
-  if (isError) {
+  if (isError && !trend.dataPoints.some((p) => p.sales > 0)) {
     return (
       <div style={cardStyle} data-testid="sales-trend-chart">
         <ManagerErrorState title="Failed to load sales trends" onRetry={() => void refetch()} />
@@ -43,7 +51,7 @@ export default function SalesTrendChart({ storeId }: SalesTrendChartProps) {
     );
   }
 
-  if (!data || !data.dataPoints?.length) {
+  if (!trend.dataPoints?.length) {
     return (
       <div style={cardStyle} data-testid="sales-trend-chart">
         <ManagerEmptyState
@@ -55,7 +63,7 @@ export default function SalesTrendChart({ storeId }: SalesTrendChartProps) {
   }
 
   const trendColor =
-    data.trend === 'UP' ? t.green : data.trend === 'DOWN' ? t.red : t.yellow;
+    trend.trend === 'UP' ? t.green : trend.trend === 'DOWN' ? t.red : t.yellow;
 
   return (
     <div style={cardStyle} data-testid="sales-trend-chart">
@@ -63,14 +71,14 @@ export default function SalesTrendChart({ storeId }: SalesTrendChartProps) {
         <div>
           <h3 style={sectionTitleStyle}>Sales trend</h3>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 28, fontWeight: 700, color: t.black }}>{formatCurrency(data.totalSales)}</span>
+            <span style={{ fontSize: 18, fontWeight: 700, color: t.black, overflowWrap: 'anywhere', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(trend.totalSales)}</span>
             <span style={{ fontSize: 13, fontWeight: 600, color: trendColor }}>
-              {data.percentChangeFromPreviousPeriod >= 0 ? '+' : ''}
-              {data.percentChangeFromPreviousPeriod.toFixed(1)}% vs previous
+              {(trend.percentChangeFromPreviousPeriod ?? 0) >= 0 ? '+' : ''}
+              {(trend.percentChangeFromPreviousPeriod ?? 0).toFixed(1)}% vs previous
             </span>
           </div>
           <p style={{ margin: '4px 0 0', fontSize: 12, color: t.gray }}>
-            {data.totalOrders} orders · Avg {formatCurrency(data.averageOrderValue)}
+            {trend.totalOrders} orders · Avg {formatCurrency(trend.averageOrderValue)}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
@@ -98,7 +106,7 @@ export default function SalesTrendChart({ storeId }: SalesTrendChartProps) {
       </div>
 
       <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={data.dataPoints}>
+        <LineChart data={trend.dataPoints}>
           <CartesianGrid strokeDasharray="3 3" stroke={t.grayLight} />
           <XAxis dataKey="label" tick={{ fill: t.gray, fontSize: 11 }} />
           <YAxis yAxisId="sales" tick={{ fill: t.gray, fontSize: 11 }} />

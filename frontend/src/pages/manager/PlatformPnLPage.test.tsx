@@ -28,6 +28,7 @@ vi.mock('../../store/api/orderApi', async (importOriginal) => {
   return {
     ...actual,
     useGetStoreOrdersQuery: vi.fn(() => ({ data: mockOrders, isLoading: false, error: null })),
+    useGetRecentStoreOrdersQuery: vi.fn(() => ({ data: mockOrders, isLoading: false, error: null })),
   };
 });
 
@@ -50,13 +51,13 @@ describe('PlatformPnLPage', () => {
 
   it('shows direct revenue summary tile', () => {
     renderWithProviders(<PlatformPnLPage />, { preloadedState: managerState });
-    expect(screen.getByText('Direct Revenue')).toBeDefined();
+    expect(screen.getByText('Direct revenue')).toBeDefined();
   });
 
   it('shows aggregator gross and commission tiles', () => {
     renderWithProviders(<PlatformPnLPage />, { preloadedState: managerState });
-    expect(screen.getByText('Aggregator Gross')).toBeDefined();
-    expect(screen.getByText('Total Commission')).toBeDefined();
+    expect(screen.getByText('Aggregator gross')).toBeDefined();
+    expect(screen.getAllByText('Commission').length).toBeGreaterThan(0);
   });
 
   it('renders all 4 platform rows in the table', () => {

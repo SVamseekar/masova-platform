@@ -7,6 +7,8 @@ import {
   Legend,
 } from 'recharts';
 import { useGetOrderTypeBreakdownQuery } from '../../store/api/analyticsApi';
+import { useGetStoreOrderSummaryQuery } from '../../store/api/orderApi';
+import { derivedFromSummary } from '../../pages/manager/storeOrderMetrics';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
 import { formatMajorAmount } from '../../utils/currency';
@@ -22,11 +24,14 @@ interface RevenueBreakdownChartProps {
 
 export default function RevenueBreakdownChart({ storeId }: RevenueBreakdownChartProps) {
   const { data, isLoading, isError, refetch } = useGetOrderTypeBreakdownQuery(storeId);
+  const { data: summary } = useGetStoreOrderSummaryQuery({ storeId, days: 30 }, { skip: !storeId });
+  const derived = derivedFromSummary(summary);
+  const payload = (data?.breakdown?.length ? data : null) || derived.typeBreakdown;
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
   const formatCurrency = (value: number) => formatMajorAmount(value, currency, locale);
 
-  if (isLoading) {
+  if (isLoading && !payload.breakdown.length) {
     return (
       <div style={cardStyle} data-testid="revenue-breakdown-chart">
         <ManagerLoadingBlock rows={3} label="Loading revenue breakdown…" />
@@ -34,7 +39,7 @@ export default function RevenueBreakdownChart({ storeId }: RevenueBreakdownChart
     );
   }
 
-  if (isError) {
+  if (isError && !payload.breakdown.length) {
     return (
       <div style={cardStyle} data-testid="revenue-breakdown-chart">
         <ManagerErrorState title="Failed to load revenue breakdown" onRetry={() => void refetch()} />
@@ -42,8 +47,8 @@ export default function RevenueBreakdownChart({ storeId }: RevenueBreakdownChart
     );
   }
 
-  const rows = normalizeOrderTypeBreakdown(data);
-  if (!data || rows.length === 0) {
+  const rows = normalizeOrderTypeBreakdown(payload);
+  if (rows.length === 0) {
     return (
       <div style={cardStyle} data-testid="revenue-breakdown-chart">
         <ManagerEmptyState
@@ -67,11 +72,11 @@ export default function RevenueBreakdownChart({ storeId }: RevenueBreakdownChart
     <div style={cardStyle} data-testid="revenue-breakdown-chart">
       <div style={{ marginBottom: 12 }}>
         <h3 style={sectionTitleStyle}>Revenue by order type</h3>
-        <div style={{ fontSize: 28, fontWeight: 700, color: t.black, marginTop: 8 }}>
-          {formatCurrency(data.totalSales)}
+        <div style={{ fontSize: 18, fontWeight: 700, color: t.black, marginTop: 8, overflowWrap: 'anywhere', fontVariantNumeric: 'tabular-nums' }}>
+          {formatCurrency(payload.totalSales || 0)}
         </div>
         <p style={{ margin: '4px 0 0', fontSize: 12, color: t.gray }}>
-          {data.totalOrders} orders today
+          {payload.totalOrders || 0} orders
         </p>
       </div>
 

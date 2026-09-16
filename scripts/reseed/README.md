@@ -34,7 +34,8 @@ After 2026-07-09 repair:
 
 | Script | Purpose |
 |---|---|
-| **`reseed-all.js`** | **Phase E full EU reseed** — core → commerce → payment → logistics → intelligence |
+| **`reseed-all.js`** | **Phase E full EU reseed** — core → commerce → payment → logistics → **manager horizon (6 months)** → intelligence |
+| **`seed-manager-horizon.js`** | **6-month manager dashboard dataset** — spec `docs/COMPLETE_MANAGER_DASHBOARD_SEEDING_GUIDE.md` (~22k orders, 250 customers, inventory, POs, waste, reviews) |
 | **`verify-seed.js`** | **Phase E exit criteria** — counts + ownership + analytics; exit 0 = green |
 | `seed-core.js` | `POST /api/test-data/seed-demo` (Berlin DE/EUR, EU E.164 phones, users, campaigns) |
 | `seed-commerce.js` | `POST /api/orders/seed-demo` (menu + multi-status orders + equipment) |

@@ -1,5 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { t, cardStyle, tableHeaderStyle, tableCellStyle, sectionTitleStyle, statusBadge, selectStyle } from './manager-tokens';
+import {
+  t, cardStyle, tableHeaderStyle, tableCellStyle, sectionTitleStyle, statusBadge, selectStyle,
+  modalOverlayStyle, modalBoxStyle, fieldLabelStyle, textInputStyle,
+  primaryBtnStyle, secondaryBtnStyle,
+} from './manager-tokens';
 import { ManagerPageFrame, ManagerTabBar } from './components';
 import {
   useGetAllInventoryItemsQuery,
@@ -18,6 +22,7 @@ import {
   useRejectPurchaseOrderMutation,
   useSendPurchaseOrderMutation,
   useAutoGeneratePurchaseOrdersMutation,
+  useUpdatePurchaseOrderMutation,
   useGetAllWasteRecordsQuery,
   useGetTotalWasteCostQuery,
   useGetWasteCostByCategoryQuery,
@@ -36,7 +41,13 @@ import EditSupplierDialog from '../../components/inventory/EditSupplierDialog';
 import CreatePurchaseOrderDialog from '../../components/inventory/CreatePurchaseOrderDialog';
 import ReceivePurchaseOrderDialog from '../../components/inventory/ReceivePurchaseOrderDialog';
 import RecordWasteDialog from '../../components/inventory/RecordWasteDialog';
-import { format, subDays } from 'date-fns';
+import { format, subDays, isValid } from 'date-fns';
+
+const safeFormatDate = (value: string | undefined, pattern: string): string => {
+  if (!value) return '—';
+  const d = new Date(value);
+  return isValid(d) ? format(d, pattern) : '—';
+};
 
 interface Props { storeId: string; activeTab: string; onTabChange: (tab: string) => void; }
 
@@ -48,8 +59,8 @@ const tabs = [
 ];
 
 const miniStat: React.CSSProperties = { ...cardStyle, padding: 14, textAlign: 'center' as const };
-const statLabel: React.CSSProperties = { fontSize: 11, color: t.gray, margin: 0, textTransform: 'uppercase' as const };
-const statValue = (c?: string): React.CSSProperties => ({ fontSize: 22, fontWeight: 700, color: c || t.black, margin: '4px 0 0 0' });
+const statLabel: React.CSSProperties = { fontSize: 12, color: t.gray, margin: 0 };
+const statValue = (c?: string): React.CSSProperties => ({ fontSize: 15, fontWeight: 700, color: c || t.black, margin: '4px 0 0 0', overflowWrap: 'anywhere', fontVariantNumeric: 'tabular-nums', lineHeight: 1.2 });
 const btn = (primary = false): React.CSSProperties => ({
   padding: '8px 16px', borderRadius: t.radius.sm, border: primary ? 'none' : `1px solid ${t.grayLight}`,
   background: primary ? t.orange : t.white, color: primary ? t.white : t.black,
@@ -237,50 +248,60 @@ const SuppliersTab = ({ storeId: _storeId }: { storeId: string }) => {
         <button style={btn(true)} onClick={() => setAddOpen(true)}>+ Add Supplier</button>
       </div>
 
-      {/* Supplier Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 14 }}>
-        {filtered.map(supplier => (
-          <div key={supplier.id} style={{ ...cardStyle, padding: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-              <div>
-                <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: t.black }}>{supplier.supplierName}</p>
-                <p style={{ margin: '2px 0 0', fontSize: 12, color: t.grayMuted }}>{supplier.supplierCode}</p>
-              </div>
-              <div style={{ display: 'flex', gap: 4 }}>
-                {supplier.status === 'ACTIVE' && <span style={statusBadge('COMPLETED')}>Active</span>}
-                {supplier.isPreferred && <span style={statusBadge('READY')}>Preferred</span>}
-              </div>
-            </div>
-            {[
-              ['Contact', supplier.contactPerson],
-              ['Phone', supplier.phoneNumber || supplier.phone || '—'],
-              ['Email', supplier.email],
-              ['City', supplier.city || '—'],
-              ['Payment', supplier.paymentTerms || '—'],
-              ['Lead Time', `${supplier.leadTimeDays ?? '—'} days`],
-              ['Quality', `${supplier.qualityRating ?? '—'}/5`],
-              ['Delivery', `${supplier.deliveryRating ?? '—'}/5`],
-              ['Orders', supplier.totalOrders ?? 0],
-            ].map(([label, val]) => (
-              <div key={label as string} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '3px 0', color: t.gray }}>
-                <span>{label}</span><strong style={{ color: t.black }}>{val}</strong>
-              </div>
+      <div style={{ ...cardStyle, padding: 0, overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              {['Supplier', 'Contact', 'Location', 'Terms', 'Lead', 'Rating', 'Orders', 'Status', ''].map((h) => (
+                <th key={h} style={tableHeaderStyle}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((supplier) => (
+              <tr key={supplier.id}>
+                <td style={tableCellStyle}>
+                  <div style={{ fontWeight: 700, color: t.black }}>{supplier.supplierName}</div>
+                  <div style={{ fontSize: 11, color: t.grayMuted }}>{supplier.supplierCode}</div>
+                </td>
+                <td style={tableCellStyle}>
+                  <div>{supplier.contactPerson || '—'}</div>
+                  <div style={{ fontSize: 11, color: t.grayMuted }}>{supplier.phoneNumber || supplier.phone || supplier.email}</div>
+                </td>
+                <td style={tableCellStyle}>{supplier.city || '—'}</td>
+                <td style={tableCellStyle}>{(supplier.paymentTerms || '—').replace(/_/g, ' ')}</td>
+                <td style={tableCellStyle}>{supplier.leadTimeDays != null ? `${supplier.leadTimeDays}d` : '—'}</td>
+                <td style={tableCellStyle}>
+                  <span style={{ fontWeight: 600 }}>{(supplier.qualityRating ?? 0).toFixed(1)}</span>
+                  <span style={{ color: t.grayMuted, fontSize: 11 }}> / 5</span>
+                </td>
+                <td style={tableCellStyle}>{supplier.totalOrders ?? 0}</td>
+                <td style={tableCellStyle}>
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                    {supplier.status === 'ACTIVE' && <span style={statusBadge('COMPLETED')}>Active</span>}
+                    {supplier.status !== 'ACTIVE' && <span style={statusBadge('CANCELLED')}>Inactive</span>}
+                    {supplier.isPreferred && <span style={statusBadge('READY')}>Preferred</span>}
+                  </div>
+                </td>
+                <td style={{ ...tableCellStyle, whiteSpace: 'nowrap' }}>
+                  <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                    <button style={btn()} onClick={() => { setSelectedSupplier(supplier); setEditOpen(true); }}>Edit</button>
+                    <button style={{ ...btn(), color: supplier.status === 'ACTIVE' ? t.orange : t.green }}
+                      onClick={async () => { try { await updateStatus({ id: supplier.id, status: supplier.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE' }).unwrap(); } catch (e) { console.error(e); } }}>
+                      {supplier.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+                    </button>
+                    <button style={{ ...btn(), color: supplier.isPreferred ? t.grayMuted : t.orange }}
+                      onClick={async () => { try { await markPreferred({ id: supplier.id, preferred: !supplier.isPreferred }).unwrap(); } catch (e) { console.error(e); } }}>
+                      {supplier.isPreferred ? 'Unmark' : 'Prefer'}
+                    </button>
+                  </div>
+                </td>
+              </tr>
             ))}
-            <div style={{ marginTop: 10, paddingTop: 8, borderTop: `1px solid ${t.grayLight}`, display: 'flex', gap: 6 }}>
-              <button style={btn()} onClick={() => { setSelectedSupplier(supplier); setEditOpen(true); }}>Edit</button>
-              <button style={{ ...btn(), color: supplier.status === 'ACTIVE' ? t.orange : t.green }}
-                onClick={async () => { try { await updateStatus({ id: supplier.id, status: supplier.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE' }).unwrap(); } catch (e) { console.error(e); } }}>
-                {supplier.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
-              </button>
-              <button style={{ ...btn(), color: supplier.isPreferred ? t.grayMuted : t.orange }}
-                onClick={async () => { try { await markPreferred({ id: supplier.id, preferred: !supplier.isPreferred }).unwrap(); } catch (e) { console.error(e); } }}>
-                {supplier.isPreferred ? 'Unmark' : 'Prefer'}
-              </button>
-            </div>
-          </div>
-        ))}
+          </tbody>
+        </table>
+        {filtered.length === 0 && <p style={{ textAlign: 'center', padding: 30, color: t.grayMuted }}>No suppliers found</p>}
       </div>
-      {filtered.length === 0 && <p style={{ textAlign: 'center', padding: 30, color: t.grayMuted }}>No suppliers found</p>}
 
       <AddSupplierDialog open={addOpen} onClose={() => setAddOpen(false)} />
       {selectedSupplier && <EditSupplierDialog open={editOpen} onClose={() => { setEditOpen(false); setSelectedSupplier(null); }} supplier={selectedSupplier} />}
@@ -299,11 +320,17 @@ const PurchaseOrdersTab = ({ storeId }: { storeId: string }) => {
   const [rejectPO] = useRejectPurchaseOrderMutation();
   const [sendPO] = useSendPurchaseOrderMutation();
   const [autoGenerate, { isLoading: generating }] = useAutoGeneratePurchaseOrdersMutation();
+  const [updatePO, { isLoading: updatingPO }] = useUpdatePurchaseOrderMutation();
 
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [createOpen, setCreateOpen] = useState(false);
   const [receiveOpen, setReceiveOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null);
+  const [editNotes, setEditNotes] = useState('');
+  const [editExpected, setEditExpected] = useState('');
+  const [editError, setEditError] = useState('');
+  const [editItems, setEditItems] = useState<{ itemName: string; itemCode: string; unit: string; orderedQuantity: number; unitPrice: number }[]>([]);
 
   const filtered = statusFilter === 'ALL' ? allOrders : allOrders.filter(po => po.status === statusFilter);
 
@@ -372,9 +399,9 @@ const PurchaseOrdersTab = ({ storeId }: { storeId: string }) => {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 12 }}>
             {[
-              ['Order Date', format(new Date(po.orderDate), 'MMM dd, yyyy')],
-              ['Expected', format(new Date(po.expectedDeliveryDate), 'MMM dd, yyyy')],
-              ['Items', po.items.length],
+              ['Order Date', safeFormatDate(po.orderDate, 'MMM dd, yyyy')],
+              ['Expected', safeFormatDate(po.expectedDeliveryDate, 'MMM dd, yyyy')],
+              ['Items', (po.items || []).length],
               ['Total', fmt(po.totalAmount)],
             ].map(([l, v]) => (
               <div key={l as string}><p style={{ margin: 0, fontSize: 11, color: t.grayMuted }}>{l}</p><p style={{ margin: '2px 0 0', fontSize: 13, fontWeight: 600, color: t.black }}>{v}</p></div>
@@ -382,13 +409,29 @@ const PurchaseOrdersTab = ({ storeId }: { storeId: string }) => {
           </div>
           {/* Items preview */}
           <div style={{ background: t.bgMain, borderRadius: t.radius.sm, padding: 10, marginBottom: 10, fontSize: 12, color: t.gray }}>
-            {po.items.slice(0, 3).map((item, i) => (
-              <div key={i}>- {item.itemName} - {item.orderedQuantity} {item.unit} @ {fmt(item.unitPrice)}</div>
+            {(po.items || []).slice(0, 3).map((item, i) => (
+              <div key={i}>- {item.itemName} - {item.orderedQuantity ?? item.quantity ?? 0} {item.unit} @ {fmt(item.unitPrice)}</div>
             ))}
             {po.items.length > 3 && <div style={{ color: t.grayMuted, marginTop: 4 }}>...and {po.items.length - 3} more</div>}
           </div>
           {/* Actions */}
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {po.status !== 'RECEIVED' && po.status !== 'CANCELLED' && (
+              <button style={btn()} onClick={() => {
+                setSelectedPO(po);
+                setEditNotes(po.notes || '');
+                setEditExpected(po.expectedDeliveryDate ? String(po.expectedDeliveryDate).slice(0, 10) : '');
+                setEditItems((po.items || []).map((it) => ({
+                  itemName: it.itemName || '',
+                  itemCode: it.itemCode || '',
+                  unit: it.unit || '',
+                  orderedQuantity: Number(it.orderedQuantity ?? it.quantity ?? 0),
+                  unitPrice: Number(it.unitPrice ?? 0),
+                })));
+                setEditError('');
+                setEditOpen(true);
+              }}>Edit</button>
+            )}
             {po.status === 'PENDING_APPROVAL' && <>
               <button style={{ ...btn(), color: t.green }} onClick={() => handleApprove(po)}>Approve</button>
               <button style={{ ...btn(), color: t.red }} onClick={() => handleReject(po)}>Reject</button>
@@ -404,6 +447,98 @@ const PurchaseOrdersTab = ({ storeId }: { storeId: string }) => {
 
       <CreatePurchaseOrderDialog open={createOpen} onClose={() => setCreateOpen(false)} storeId={storeId} />
       {selectedPO && <ReceivePurchaseOrderDialog open={receiveOpen} onClose={() => { setReceiveOpen(false); setSelectedPO(null); }} purchaseOrder={selectedPO} />}
+      {editOpen && selectedPO && (
+        <div style={modalOverlayStyle} onClick={() => setEditOpen(false)}>
+          <div style={{ ...modalBoxStyle, maxWidth: 720 }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 700, color: t.black }}>Edit {selectedPO.orderNumber}</h3>
+            <label style={fieldLabelStyle}>Expected delivery</label>
+            <input type="date" value={editExpected} onChange={(e) => setEditExpected(e.target.value)}
+              style={{ ...textInputStyle, marginBottom: 12 }} />
+            <label style={fieldLabelStyle}>Line items</label>
+            <div style={{ marginBottom: 12, border: `1px solid ${t.grayLight}`, borderRadius: t.radius.md, overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    {['Item', 'Qty', 'Unit', 'Unit price', ''].map((h) => (
+                      <th key={h} style={{ ...tableHeaderStyle, padding: '8px 10px' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {editItems.map((row, idx) => (
+                    <tr key={idx}>
+                      <td style={{ ...tableCellStyle, padding: 8 }}>
+                        <input value={row.itemName} onChange={(e) => setEditItems((rows) => rows.map((r, i) => i === idx ? { ...r, itemName: e.target.value } : r))}
+                          style={{ ...textInputStyle, padding: '6px 8px' }} />
+                      </td>
+                      <td style={{ ...tableCellStyle, padding: 8, width: 88 }}>
+                        <input type="number" min="0" step="0.01" value={row.orderedQuantity}
+                          onChange={(e) => setEditItems((rows) => rows.map((r, i) => i === idx ? { ...r, orderedQuantity: Number(e.target.value) } : r))}
+                          style={{ ...textInputStyle, padding: '6px 8px' }} />
+                      </td>
+                      <td style={{ ...tableCellStyle, padding: 8, width: 80 }}>
+                        <input value={row.unit} onChange={(e) => setEditItems((rows) => rows.map((r, i) => i === idx ? { ...r, unit: e.target.value } : r))}
+                          style={{ ...textInputStyle, padding: '6px 8px' }} />
+                      </td>
+                      <td style={{ ...tableCellStyle, padding: 8, width: 110 }}>
+                        <input type="number" min="0" step="0.01" value={row.unitPrice}
+                          onChange={(e) => setEditItems((rows) => rows.map((r, i) => i === idx ? { ...r, unitPrice: Number(e.target.value) } : r))}
+                          style={{ ...textInputStyle, padding: '6px 8px' }} />
+                      </td>
+                      <td style={{ ...tableCellStyle, padding: 8, width: 40 }}>
+                        <button type="button" style={{ ...secondaryBtnStyle, padding: '4px 8px', color: t.red }}
+                          onClick={() => setEditItems((rows) => rows.filter((_, i) => i !== idx))}>×</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <button type="button" style={{ ...secondaryBtnStyle, marginBottom: 14 }}
+              onClick={() => setEditItems((rows) => [...rows, { itemName: '', itemCode: '', unit: 'kg', orderedQuantity: 1, unitPrice: 0 }])}>
+              + Add line
+            </button>
+            <p style={{ fontSize: 13, color: t.gray, margin: '0 0 12px' }}>
+              New total: <strong style={{ color: t.black }}>{fmt(editItems.reduce((s, r) => s + r.orderedQuantity * r.unitPrice, 0))}</strong>
+            </p>
+            <label style={fieldLabelStyle}>Notes</label>
+            <textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={3}
+              style={{ ...textInputStyle, resize: 'vertical', marginBottom: 12 }} />
+            {editError && <p style={{ color: t.red, fontSize: 13 }}>{editError}</p>}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button type="button" style={secondaryBtnStyle} onClick={() => setEditOpen(false)}>Cancel</button>
+              <button type="button" style={primaryBtnStyle} disabled={updatingPO} onClick={async () => {
+                try {
+                  const items = editItems
+                    .filter((r) => r.itemName.trim())
+                    .map((r) => ({
+                      itemId: r.itemCode,
+                      itemName: r.itemName.trim(),
+                      itemCode: r.itemCode,
+                      unit: r.unit,
+                      orderedQuantity: r.orderedQuantity,
+                      quantity: r.orderedQuantity,
+                      receivedQuantity: 0,
+                      unitPrice: r.unitPrice,
+                      totalPrice: r.orderedQuantity * r.unitPrice,
+                    }));
+                  await updatePO({
+                    id: selectedPO.id,
+                    order: {
+                      notes: editNotes,
+                      expectedDeliveryDate: editExpected || selectedPO.expectedDeliveryDate,
+                      items,
+                    },
+                  }).unwrap();
+                  setEditOpen(false);
+                } catch {
+                  setEditError('Could not update this purchase order.');
+                }
+              }}>{updatingPO ? 'Saving…' : 'Save changes'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
@@ -424,21 +559,32 @@ const WasteTab = ({ storeId }: { storeId: string }) => {
 
   if (isLoading) return <div style={{ padding: 40, textAlign: 'center', color: t.gray }}>Loading waste data...</div>;
 
-  const maxCat = wasteByCategory ? Math.max(...Object.values(wasteByCategory.categoryBreakdown || {}), 1) : 1;
+  const records = Array.isArray(wasteRecords) ? wasteRecords : [];
+  const topItems = Array.isArray(topWasted) ? topWasted : [];
+  const categorySrc = (wasteByCategory?.categoryBreakdown
+    || ((wasteByCategory && typeof wasteByCategory === 'object') ? wasteByCategory as unknown as Record<string, number> : {})) as Record<string, unknown>;
+  const categoryEntries = Object.entries(categorySrc)
+    .filter(([k, v]) => !['totalWasteCost', 'totalRecords', 'preventableWasteCost', 'preventablePercentage', 'categoryBreakdown'].includes(k))
+    .map(([k, v]) => [k, Number(v)] as const)
+    .filter(([, n]) => Number.isFinite(n));
+  const maxCat = Math.max(1, ...categoryEntries.map(([, n]) => n));
+  const preventablePct = Number(preventableWaste?.preventablePercentage);
+  const preventableCost = Number(preventableWaste?.preventableWasteCost);
+  const totalCost = Number(totalWaste?.totalWasteCost);
 
-  const wasteBadge = (type: string): React.CSSProperties => {
+  const wasteBadge = (type: string | undefined): React.CSSProperties => {
     const map: Record<string, string> = { EXPIRED: 'CANCELLED', SPOILED: 'CANCELLED', DAMAGED: 'PREPARING', OVERPRODUCTION: 'READY', PREPARATION_ERROR: 'PREPARING' };
-    return statusBadge(map[type] || 'PENDING');
+    return statusBadge(map[type || ''] || 'PENDING');
   };
 
   return (
     <>
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
-        <div style={miniStat}><p style={statLabel}>Total Cost</p><p style={statValue(t.red)}>{fmt(totalWaste?.totalWasteCost || 0)}</p></div>
-        <div style={miniStat}><p style={statLabel}>Records</p><p style={statValue()}>{totalWaste?.totalRecords || 0}</p></div>
-        <div style={miniStat}><p style={statLabel}>Preventable Cost</p><p style={statValue(t.orange)}>{fmt(preventableWaste?.preventableWasteCost || 0)}</p></div>
-        <div style={miniStat}><p style={statLabel}>Preventable %</p><p style={statValue(t.yellow)}>{preventableWaste?.preventablePercentage?.toFixed(1) || 0}%</p></div>
+        <div style={miniStat}><p style={statLabel}>Total Cost</p><p style={statValue(t.red)}>{fmt(Number.isFinite(totalCost) ? totalCost : 0)}</p></div>
+        <div style={miniStat}><p style={statLabel}>Records</p><p style={statValue()}>{totalWaste?.totalRecords || records.length}</p></div>
+        <div style={miniStat}><p style={statLabel}>Preventable Cost</p><p style={statValue(t.orange)}>{fmt(Number.isFinite(preventableCost) ? preventableCost : 0)}</p></div>
+        <div style={miniStat}><p style={statLabel}>Preventable %</p><p style={statValue(t.yellow)}>{Number.isFinite(preventablePct) ? preventablePct.toFixed(1) : '0.0'}%</p></div>
       </div>
 
       {/* Date controls */}
@@ -453,19 +599,19 @@ const WasteTab = ({ storeId }: { storeId: string }) => {
       {/* Waste by Category */}
       <div style={{ ...cardStyle, padding: 16, marginBottom: 16 }}>
         <h4 style={{ ...sectionTitleStyle, marginBottom: 12 }}>Waste Cost by Category</h4>
-        {wasteByCategory && Object.entries(wasteByCategory.categoryBreakdown || {}).map(([cat, cost]) => {
+        {categoryEntries.map(([cat, cost]) => {
           const pct = (cost / maxCat) * 100;
           return (
             <div key={cat} style={{ position: 'relative', background: t.bgMain, borderRadius: t.radius.sm, padding: '10px 12px', marginBottom: 6, overflow: 'hidden' }}>
               <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${pct}%`, background: `${t.orange}20` }} />
               <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                <span style={{ fontWeight: 600 }}>{cat}</span>
+                <span style={{ fontWeight: 600 }}>{String(cat).replace(/_/g, ' ')}</span>
                 <span style={{ fontWeight: 700, color: t.orange }}>{fmt(cost)}</span>
               </div>
             </div>
           );
         })}
-        {(!wasteByCategory || Object.keys(wasteByCategory.categoryBreakdown || {}).length === 0) &&
+        {categoryEntries.length === 0 &&
           <p style={{ fontSize: 12, color: t.grayMuted, textAlign: 'center', padding: 16 }}>No category data</p>}
       </div>
 
@@ -475,17 +621,17 @@ const WasteTab = ({ storeId }: { storeId: string }) => {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr>{['Rank', 'Item', 'Total Qty', 'Total Cost'].map(h => <th key={h} style={tableHeaderStyle}>{h}</th>)}</tr></thead>
           <tbody>
-            {topWasted.map((item, i) => (
+            {topItems.map((item, i) => (
               <tr key={i}>
                 <td style={tableCellStyle}>#{i + 1}</td>
-                <td style={{ ...tableCellStyle, fontWeight: 600 }}>{item.itemName}</td>
-                <td style={tableCellStyle}>{item.totalQuantity} {item.unit}</td>
-                <td style={tableCellStyle}>{fmt(item.totalCost)}</td>
+                <td style={{ ...tableCellStyle, fontWeight: 600 }}>{item.itemName || 'Item'}</td>
+                <td style={tableCellStyle}>{item.totalQuantity ?? 0} {item.unit || ''}</td>
+                <td style={tableCellStyle}>{fmt(Number(item.totalCost) || 0)}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        {topWasted.length === 0 && <p style={{ textAlign: 'center', padding: 20, color: t.grayMuted }}>No waste data for selected period</p>}
+        {topItems.length === 0 && <p style={{ textAlign: 'center', padding: 20, color: t.grayMuted }}>No waste data for selected period</p>}
       </div>
 
       {/* Recent Records */}
@@ -494,16 +640,19 @@ const WasteTab = ({ storeId }: { storeId: string }) => {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr>{['Date', 'Item', 'Type', 'Qty', 'Cost', 'Preventable'].map(h => <th key={h} style={tableHeaderStyle}>{h}</th>)}</tr></thead>
           <tbody>
-            {wasteRecords.slice(0, 10).map(rec => (
-              <tr key={rec.id}>
-                <td style={tableCellStyle}>{format(new Date(rec.recordedAt), 'MMM dd, yyyy')}</td>
-                <td style={{ ...tableCellStyle, fontWeight: 600 }}>{rec.itemName}</td>
-                <td style={tableCellStyle}><span style={wasteBadge(rec.wasteType)}>{rec.wasteType.replace('_', ' ')}</span></td>
-                <td style={tableCellStyle}>{rec.quantity} {rec.unit}</td>
-                <td style={tableCellStyle}>{fmt(rec.wasteCost)}</td>
+            {records.slice(0, 10).map((rec, i) => {
+              const type = rec.wasteType || 'OTHER';
+              return (
+              <tr key={rec.id || i}>
+                <td style={tableCellStyle}>{safeFormatDate(rec.recordedAt, 'MMM dd, yyyy')}</td>
+                <td style={{ ...tableCellStyle, fontWeight: 600 }}>{rec.itemName || 'Item'}</td>
+                <td style={tableCellStyle}><span style={wasteBadge(type)}>{String(type).replace(/_/g, ' ')}</span></td>
+                <td style={tableCellStyle}>{rec.quantity ?? 0} {rec.unit || ''}</td>
+                <td style={tableCellStyle}>{fmt(Number(rec.wasteCost) || 0)}</td>
                 <td style={tableCellStyle}>{rec.isPreventable ? 'Yes' : '-'}</td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@/test/utils/testUtils';
 import { PINAuthModal } from './PINAuthModal';
@@ -17,6 +17,13 @@ vi.mock('../../../store/api/userApi', async (importOriginal) => {
     useValidatePINMutation: () => [mockValidatePIN, { isLoading: false }],
   };
 });
+
+function fillPin(digits: string) {
+  const inputs = screen.getAllByLabelText(/PIN digit/);
+  digits.split('').forEach((digit, index) => {
+    fireEvent.change(inputs[index], { target: { value: digit } });
+  });
+}
 
 describe('PINAuthModal', () => {
   const defaultProps = {
@@ -64,11 +71,8 @@ describe('PINAuthModal', () => {
         useMemoryRouter: true,
       });
 
-      // password inputs are not textboxes, let's query by type
-      const passwordInputs = document.querySelectorAll(
-        'input[type="password"]'
-      );
-      expect(passwordInputs).toHaveLength(5);
+      const pinInputs = document.querySelectorAll('input[inputmode="numeric"]');
+      expect(pinInputs).toHaveLength(5);
     });
 
     it('renders Cancel and Continue buttons', () => {
@@ -112,7 +116,7 @@ describe('PINAuthModal', () => {
         useMemoryRouter: true,
       });
 
-      const inputs = document.querySelectorAll('input[type="password"]');
+      const inputs = document.querySelectorAll('input[inputmode="numeric"]');
       await user.click(inputs[0] as HTMLElement);
       await user.keyboard('1');
 
@@ -126,7 +130,7 @@ describe('PINAuthModal', () => {
         useMemoryRouter: true,
       });
 
-      const inputs = document.querySelectorAll('input[type="password"]');
+      const inputs = document.querySelectorAll('input[inputmode="numeric"]');
       await user.click(inputs[0] as HTMLElement);
       await user.keyboard('1');
 
@@ -150,26 +154,16 @@ describe('PINAuthModal', () => {
 
   describe('error handling', () => {
     it('displays error message on invalid PIN', async () => {
-      const user = userEvent.setup();
-      mockValidatePIN.mockReturnValue({
+      mockValidatePIN.mockImplementation(() => ({
         unwrap: () => Promise.reject({ data: { error: 'Invalid PIN' } }),
-      });
+      }));
 
       renderWithProviders(<PINAuthModal {...defaultProps} />, {
         useMemoryRouter: true,
       });
 
-      // Enter a 5-digit PIN
-      const inputs = document.querySelectorAll('input[type="password"]');
-      await user.click(inputs[0] as HTMLElement);
-      await user.keyboard('12345');
-
-      // Click Continue
-      await user.click(screen.getByRole('button', { name: 'Continue' }));
-
-      await waitFor(() => {
-        expect(screen.getByText('Invalid PIN')).toBeInTheDocument();
-      });
+      fillPin('12345');
+      expect(await screen.findByText(/Invalid PIN/i)).toBeInTheDocument();
     });
 
     it('shows incomplete PIN error when submitting partial PIN', async () => {
@@ -180,7 +174,7 @@ describe('PINAuthModal', () => {
       });
 
       // Enter only 3 digits
-      const inputs = document.querySelectorAll('input[type="password"]');
+      const inputs = document.querySelectorAll('input[inputmode="numeric"]');
       await user.click(inputs[0] as HTMLElement);
       await user.keyboard('123');
 
@@ -190,9 +184,48 @@ describe('PINAuthModal', () => {
     });
   });
 
+  describe('double-submit guard', () => {
+    it('does not call validatePIN twice when Enter is pressed right after the 5th digit triggers auto-submit', async () => {
+      let resolveValidate: (v: unknown) => void = () => {};
+      mockValidatePIN.mockImplementation(() => ({
+        unwrap: () =>
+          new Promise((resolve) => {
+            resolveValidate = resolve;
+          }),
+      }));
+
+      renderWithProviders(<PINAuthModal {...defaultProps} />, {
+        useMemoryRouter: true,
+      });
+
+      const inputs = screen.getAllByLabelText(/PIN digit/);
+      fireEvent.change(inputs[0], { target: { value: '1' } });
+      fireEvent.change(inputs[1], { target: { value: '2' } });
+      fireEvent.change(inputs[2], { target: { value: '3' } });
+      fireEvent.change(inputs[3], { target: { value: '4' } });
+      fireEvent.change(inputs[4], { target: { value: '5' } });
+      // Auto-submit is scheduled via setTimeout(100ms). Fire Enter on the same
+      // input immediately after, before that timeout elapses.
+      fireEvent.keyDown(inputs[4], { key: 'Enter' });
+
+      await waitFor(() => expect(mockValidatePIN).toHaveBeenCalled());
+      // Let the 100ms auto-submit timeout elapse too, in case both paths fired.
+      await new Promise((r) => setTimeout(r, 150));
+      resolveValidate({
+        userId: 'user-1',
+        name: 'Test User',
+        type: 'STAFF',
+        role: 'Staff',
+        storeId: 'store-1',
+      });
+
+      await waitFor(() => expect(defaultProps.onAuthenticated).toHaveBeenCalledTimes(1));
+      expect(mockValidatePIN).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('successful authentication', () => {
     it('calls onAuthenticated with user data on valid PIN', async () => {
-      const user = userEvent.setup();
       const mockUserData = {
         userId: 'user-1',
         name: 'Test User',
@@ -209,13 +242,7 @@ describe('PINAuthModal', () => {
         useMemoryRouter: true,
       });
 
-      const inputs = document.querySelectorAll('input[type="password"]');
-      await user.click(inputs[0] as HTMLElement);
-      await user.keyboard('12345');
-
-      const continueBtn = await screen.findByRole('button', { name: 'Continue' });
-      await waitFor(() => expect(continueBtn).toBeEnabled());
-      await user.click(continueBtn);
+      fillPin('12345');
 
       await waitFor(() => {
         expect(defaultProps.onAuthenticated).toHaveBeenCalledWith({
