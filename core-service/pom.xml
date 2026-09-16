@@ -138,15 +138,17 @@
             <artifactId>spring-rabbit-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Held back from the maven-minor-patch group bump (2.4.0): see
+             shared-models/pom.xml for why. -->
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-spring-boot3</artifactId>
-            <version>2.4.0</version>
+            <version>2.1.0</version>
         </dependency>
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-circuitbreaker</artifactId>
-            <version>2.4.0</version>
+            <version>2.1.0</version>
         </dependency>
         <!-- Testcontainers for integration tests -->
         <dependency>

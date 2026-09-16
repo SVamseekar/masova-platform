@@ -91,16 +91,22 @@
             <artifactId>spring-security-core</artifactId>
         </dependency>
 
-        <!-- Resilience4j for circuit breakers (PROD-001) -->
+        <!-- Resilience4j for circuit breakers (PROD-001).
+             Held back from the maven-minor-patch group bump (2.4.0): that version's
+             resilience4j-spring-boot3 autoconfiguration references
+             io.github.resilience4j.spring6.fallback.RxJava3FallbackDecorator in a
+             bean method signature that Spring inspects via reflection regardless of
+             whether RxJava3 support is used, and the class isn't resolvable on this
+             classpath, breaking service startup with NoClassDefFoundError. -->
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-spring-boot3</artifactId>
-            <version>2.4.0</version>
+            <version>2.1.0</version>
         </dependency>
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-circuitbreaker</artifactId>
-            <version>2.4.0</version>
+            <version>2.1.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
