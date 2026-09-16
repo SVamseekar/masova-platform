@@ -9,10 +9,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 class UserServiceGooglePhoneTest {
 
     @Test
-    @DisplayName("generateGoogleRegistrationPhone passes Indian mobile regex")
+    @DisplayName("generateGoogleRegistrationPhone passes E.164 (EU) phone regex")
     void phoneMatchesValidationPattern() {
         String phone = UserService.generateGoogleRegistrationPhone("sub-abc", "user@gmail.com");
-        assertThat(phone).matches("^[6-9]\\d{9}$");
+        assertThat(phone).matches("^\\+?[1-9]\\d{6,14}$");
+        assertThat(phone).startsWith("+4915");
     }
 
     @Test

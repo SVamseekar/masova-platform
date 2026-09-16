@@ -1,15 +1,8 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import baseQueryWithAuth from './baseQueryWithAuth';
+import { mapKioskListResponse, type MappedKioskAccount } from '../../utils/kioskMappers';
 
-export interface KioskAccount {
-  id: string;
-  terminalId: string;
-  storeId: string;
-  isActive: boolean;
-  lastKioskAccess: string | null;
-  name: string;
-  email: string;
-}
+export type KioskAccount = MappedKioskAccount;
 
 export interface CreateKioskRequest {
   storeId: string;
@@ -25,7 +18,7 @@ export interface CreateKioskResponse {
   accessToken: string;
   refreshToken: string;
   expiresIn: string;
-  instructions: string;
+  instructions?: string;
 }
 
 export const kioskApi = createApi({
@@ -42,7 +35,8 @@ export const kioskApi = createApi({
       invalidatesTags: ['Kiosk'],
     }),
     listKioskAccounts: builder.query<KioskAccount[], string>({
-      query: (storeId) => `/users/kiosk?storeId=${storeId}`,
+      query: (storeId) => `/users/kiosk?storeId=${encodeURIComponent(storeId)}`,
+      transformResponse: (raw: unknown) => mapKioskListResponse(raw),
       providesTags: ['Kiosk'],
     }),
     regenerateKioskTokens: builder.mutation<CreateKioskResponse, string>({

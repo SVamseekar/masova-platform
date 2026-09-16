@@ -147,7 +147,7 @@ const OrderTrackingPage: React.FC = () => {
               display: 'inline-block',
               padding: '4px 12px',
               borderRadius: 'var(--radius-pill)',
-              background: (statusCfg?.color || '#666') + '22',
+              background: (statusCfg?.color || 'var(--text-3)') + '22',
               color: statusCfg?.color || 'var(--text-2)',
               fontSize: '0.75rem',
               fontWeight: 700,
@@ -253,7 +253,7 @@ const OrderTrackingPage: React.FC = () => {
             style={{
               flex: 1,
               background: 'var(--gold)',
-              color: '#000',
+              color: 'var(--bg)',
               border: 'none',
               borderRadius: 'var(--radius-pill)',
               padding: '10px',
@@ -269,8 +269,9 @@ const OrderTrackingPage: React.FC = () => {
             View Details →
           </button>
           {isActive && (
-            <button
-              onClick={(e) => { e.stopPropagation(); alert('Support feature coming soon!'); }}
+            <a
+              href="mailto:support@masova.app?subject=Help%20with%20order"
+              onClick={(e) => e.stopPropagation()}
               style={{
                 padding: '10px 18px',
                 background: 'var(--surface-2)',
@@ -282,10 +283,12 @@ const OrderTrackingPage: React.FC = () => {
                 cursor: 'pointer',
                 transition: 'var(--transition)',
                 fontFamily: 'var(--font-body)',
+                textDecoration: 'none',
+                display: 'inline-block',
               }}
             >
               Help
-            </button>
+            </a>
           )}
         </div>
       </div>
@@ -300,7 +303,7 @@ const OrderTrackingPage: React.FC = () => {
       {showCta && (
         <button
           onClick={() => navigate('/menu')}
-          style={{ background: 'var(--red)', color: '#fff', border: 'none', borderRadius: 'var(--radius-pill)', padding: '11px 28px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
+          style={{ background: 'var(--red)', color: 'var(--text-1)', border: 'none', borderRadius: 'var(--radius-pill)', padding: '11px 28px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
         >
           Browse Menu →
         </button>
@@ -342,7 +345,7 @@ const OrderTrackingPage: React.FC = () => {
             <div style={{ fontSize: '3rem', marginBottom: '16px' }}>⚠️</div>
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: '8px' }}>Something went wrong</h3>
             <p style={{ color: 'var(--text-3)', fontSize: '0.85rem', marginBottom: '8px' }}>{errorMessage}</p>
-            <button onClick={() => refetch()} style={{ background: 'var(--red)', color: '#fff', border: 'none', borderRadius: 'var(--radius-pill)', padding: '10px 24px', fontFamily: 'var(--font-body)', fontWeight: 700, cursor: 'pointer', marginTop: '16px' }}>
+            <button onClick={() => refetch()} style={{ background: 'var(--red)', color: 'var(--text-1)', border: 'none', borderRadius: 'var(--radius-pill)', padding: '10px 24px', fontFamily: 'var(--font-body)', fontWeight: 700, cursor: 'pointer', marginTop: '16px' }}>
               Try Again
             </button>
           </div>
@@ -358,8 +361,8 @@ const OrderTrackingPage: React.FC = () => {
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '48px 24px' }}>
         {/* WS indicator */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-          <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: wsConnected ? '#4caf50' : 'var(--text-3)', display: 'inline-block' }} />
-          <span style={{ fontSize: '0.72rem', color: wsConnected ? '#4caf50' : 'var(--text-3)' }}>
+          <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: wsConnected ? 'var(--success-light)' : 'var(--text-3)', display: 'inline-block' }} />
+          <span style={{ fontSize: '0.72rem', color: wsConnected ? 'var(--success-light)' : 'var(--text-3)' }}>
             {wsConnected ? 'Live Updates' : 'Polling Mode'}
           </span>
         </div>

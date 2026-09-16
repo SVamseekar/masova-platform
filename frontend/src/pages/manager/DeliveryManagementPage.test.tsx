@@ -29,6 +29,12 @@ vi.mock('@/store/api/orderApi', async (importOriginal) => {
       ],
       isLoading: false,
     }),
+    useGetRecentStoreOrdersQuery: vi.fn().mockReturnValue({
+      data: [
+        { id: 'o1', orderNumber: 'ORD-001', status: 'DISPATCHED', orderType: 'DELIVERY', customerName: 'Test', items: [], total: 100, createdAt: '2026-02-15T10:00:00Z', updatedAt: '2026-02-15T10:00:00Z', priority: 'NORMAL', storeId: 'store-1' },
+      ],
+      isLoading: false,
+    }),
   };
 });
 

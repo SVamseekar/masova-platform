@@ -134,7 +134,8 @@ export const orderHandlers = [
     HttpResponse.json({ ...mockOrder, id: params.orderId }),
   ),
 
-  http.patch(apiUrl('/orders/:orderId/status'), ({ params }) =>
+  // Canonical state machine: POST /orders/{id}/status
+  http.post(apiUrl('/orders/:orderId/status'), ({ params }) =>
     HttpResponse.json({ ...mockOrder, id: params.orderId, status: 'PREPARING' }),
   ),
 
@@ -142,7 +143,8 @@ export const orderHandlers = [
     HttpResponse.json({ ...mockOrder, id: params.orderId, status: 'CANCELLED' }),
   ),
 
-  http.patch(apiUrl('/orders/:orderId/next-stage'), ({ params }) =>
+  // Canonical KDS bump: POST /orders/{id}/next-stage
+  http.post(apiUrl('/orders/:orderId/next-stage'), ({ params }) =>
     HttpResponse.json({ ...mockOrder, id: params.orderId, status: 'PREPARING' }),
   ),
 

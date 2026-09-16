@@ -59,6 +59,43 @@ export const paymentHandlers = [
     HttpResponse.json(mockTransaction),
   ),
 
+  // Canonical list: GET /payments?orderId|customerId|storeId|reconciliation+date
+  http.get(apiUrl('/payments'), ({ request }) => {
+    const url = new URL(request.url);
+    if (url.searchParams.get('reconciliation') === 'true') {
+      return HttpResponse.json({
+        reportDate: url.searchParams.get('date') || '2025-01-15',
+        storeId: '1',
+        totalTransactions: 50,
+        successfulTransactions: 48,
+        failedTransactions: 2,
+        refundedTransactions: 3,
+        totalAmount: 45000,
+        successfulAmount: 43000,
+        refundedAmount: 2000,
+        netAmount: 41000,
+        paymentMethodBreakdown: { UPI: 30, CARD: 15, CASH: 5 },
+        unreconciledCount: 1,
+      });
+    }
+    if (url.searchParams.get('orderId')) {
+      return HttpResponse.json(mockTransaction);
+    }
+    if (url.searchParams.get('customerId') || url.searchParams.get('storeId') || true) {
+      return HttpResponse.json([mockTransaction]);
+    }
+    return HttpResponse.json([mockTransaction]);
+  }),
+
+  // Legacy path aliases (still served by BE)
+  http.get(apiUrl('/payments/store'), () =>
+    HttpResponse.json([mockTransaction]),
+  ),
+
+  http.get(apiUrl('/payments/customer/:customerId'), () =>
+    HttpResponse.json([mockTransaction]),
+  ),
+
   http.get(apiUrl('/payments/reconciliation'), () =>
     HttpResponse.json({
       reportDate: '2025-01-15',
@@ -74,14 +111,6 @@ export const paymentHandlers = [
       paymentMethodBreakdown: { UPI: 30, CARD: 15, CASH: 5 },
       unreconciledCount: 1,
     }),
-  ),
-
-  http.get(apiUrl('/payments/store'), () =>
-    HttpResponse.json([mockTransaction]),
-  ),
-
-  http.get(apiUrl('/payments/customer/:customerId'), () =>
-    HttpResponse.json([mockTransaction]),
   ),
 
   http.post(apiUrl('/payments/refund'), () =>

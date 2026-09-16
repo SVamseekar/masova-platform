@@ -2,6 +2,7 @@ package com.MaSoVa.core.notification.controller;
 
 import com.MaSoVa.core.notification.dto.NotificationRequest;
 import com.MaSoVa.core.notification.entity.Notification;
+import com.MaSoVa.core.notification.service.NotificationSeedService;
 import com.MaSoVa.core.notification.service.NotificationService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,11 +10,14 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Notifications — 5 canonical endpoints at /api/notifications.
@@ -28,29 +32,45 @@ import java.util.List;
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final NotificationSeedService notificationSeedService;
 
-    public NotificationController(NotificationService notificationService) {
+    public NotificationController(NotificationService notificationService,
+                                  NotificationSeedService notificationSeedService) {
         this.notificationService = notificationService;
+        this.notificationSeedService = notificationSeedService;
     }
 
     /**
      * GET /api/notifications?userId=&unread=&recent=
+     * userId optional — defaults to authenticated principal (JWT sub).
      * Replaces: /user/{userId}, /user/{userId}/unread, /user/{userId}/recent
      */
     @GetMapping
-    @PreAuthorize("#userId == authentication.name or hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
-    @Operation(summary = "List notifications (query: userId, unread, recent)")
+    @PreAuthorize("(#userId == null or #userId == authentication.name) or hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
+    @Operation(summary = "List notifications (query: userId optional, unread, recent)")
     public ResponseEntity<List<Notification>> getNotifications(
-            @RequestParam String userId,
+            @RequestParam(required = false) String userId,
             @RequestParam(required = false) Boolean unread,
-            @RequestParam(required = false, defaultValue = "false") Boolean recent) {
+            @RequestParam(required = false, defaultValue = "false") Boolean recent,
+            Authentication authentication) {
+        String resolvedUserId = resolveUserId(userId, authentication);
         if (Boolean.TRUE.equals(unread)) {
-            return ResponseEntity.ok(notificationService.getUnreadNotifications(userId));
+            return ResponseEntity.ok(notificationService.getUnreadNotifications(resolvedUserId));
         }
         if (Boolean.TRUE.equals(recent)) {
-            return ResponseEntity.ok(notificationService.getRecentNotifications(userId, 7));
+            return ResponseEntity.ok(notificationService.getRecentNotifications(resolvedUserId, 7));
         }
-        return ResponseEntity.ok(notificationService.getUserNotifications(userId, PageRequest.of(0, 50)).getContent());
+        return ResponseEntity.ok(notificationService.getUserNotifications(resolvedUserId, PageRequest.of(0, 50)).getContent());
+    }
+
+    private static String resolveUserId(String userId, Authentication authentication) {
+        if (userId != null && !userId.isBlank()) {
+            return userId;
+        }
+        if (authentication == null || authentication.getName() == null || authentication.getName().isBlank()) {
+            throw new IllegalArgumentException("userId is required when not authenticated");
+        }
+        return authentication.getName();
     }
 
     @PostMapping
@@ -81,13 +101,16 @@ public class NotificationController {
 
     /**
      * PATCH /api/notifications/read-all?userId=
+     * userId optional — defaults to authenticated principal.
      * Replaces: PATCH /user/{userId}/read-all
      */
     @PatchMapping("/read-all")
-    @PreAuthorize("#userId == authentication.name or hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
-    @Operation(summary = "Mark all as read (query: userId)")
-    public ResponseEntity<Void> markAllAsRead(@RequestParam String userId) {
-        notificationService.markAllAsRead(userId);
+    @PreAuthorize("(#userId == null or #userId == authentication.name) or hasRole('MANAGER') or hasRole('ASSISTANT_MANAGER')")
+    @Operation(summary = "Mark all as read (query: userId optional)")
+    public ResponseEntity<Void> markAllAsRead(
+            @RequestParam(required = false) String userId,
+            Authentication authentication) {
+        notificationService.markAllAsRead(resolveUserId(userId, authentication));
         return ResponseEntity.ok().build();
     }
 
@@ -97,5 +120,30 @@ public class NotificationController {
     public ResponseEntity<Void> deleteNotification(@PathVariable String id) {
         notificationService.deleteNotification(id);
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * POST /api/notifications/seed-demo — sample IN_APP notifications for manager inbox.
+     * Active when spring profile is {@code dev} or {@code demo}; otherwise 404.
+     */
+    @PostMapping({"/seed-demo", "/test-data/seed-demo"})
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Seed sample notifications for demo (dev/demo profile only)")
+    public ResponseEntity<?> seedDemo(
+            @RequestParam(required = false) String userId,
+            Authentication authentication) {
+        if (!notificationSeedService.isSeedAllowed()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Seed only available with spring profile dev or demo"));
+        }
+        try {
+            String resolved = resolveUserId(userId, authentication);
+            return ResponseEntity.ok(notificationSeedService.seedDemo(resolved));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Seed failed", "detail", e.getMessage() != null ? e.getMessage() : "unknown"));
+        }
     }
 }

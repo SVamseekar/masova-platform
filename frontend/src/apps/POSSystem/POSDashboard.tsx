@@ -1,96 +1,119 @@
 // src/apps/POSSystem/POSDashboard.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import { selectSelectedStoreId, selectSelectedStoreName, setSelectedStore, setStoreCurrency, selectCartCurrency, selectCartLocale, selectStoreCountryCode } from '../../store/slices/cartSlice';
-import { formatApiPrice, formatMajorAmount, apiPriceToCartMajor } from '../../utils/currency';
-import { storeCurrencyPayload } from '../../utils/storeCurrency';
+import {
+  selectSelectedStoreId,
+  selectSelectedStoreName,
+  setSelectedStore,
+  setStoreCurrency,
+  selectCartCurrency,
+  selectCartLocale,
+  selectStoreCountryCode,
+  selectDeliveryFeeINR,
+  selectStoreMarketSynced,
+} from '../../store/slices/cartSlice';
+import { apiPriceToCartMajor } from '../../utils/currency';
+import { storeCurrencyPayload, resolveStoreMarket } from '../../utils/storeCurrency';
 import { computePreCheckoutTotals } from '../../utils/orderTax';
-import { useGetStoreQuery } from '../../store/api/storeApi';
+import { useGetStoreQuery, useGetActiveStoresQuery } from '../../store/api/storeApi';
+import { usePosMarket } from './usePosMarket';
 import MenuPanel from './components/MenuPanel';
 import OrderPanel from './components/OrderPanel';
 import CustomerPanel from './components/CustomerPanel';
-import MetricsTiles from './components/MetricsTiles';
+
 import ClockInModal from './components/ClockInModal';
 import ClockOutModal from './components/ClockOutModal';
 import { PINAuthModal } from './components/PINAuthModal';
-import Button from '../../components/ui/neumorphic/Button';
-import Badge from '../../components/ui/neumorphic/Badge';
-import { colors, shadows, spacing, typography } from '../../styles/design-tokens';
-import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import PeopleIcon from '@mui/icons-material/People';
-import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
-import {
-  useGetTodaySalesMetricsQuery,
-  useGetSalesTrendsQuery,
-  useGetStaffLeaderboardQuery,
-  useGetTopProductsQuery,
-} from '../../store/api/analyticsApi';
-import { useGetStoreOrdersQuery, type Order } from '../../store/api/orderApi';
+import OrderHistory from './OrderHistory';
 import type { MenuItem } from '../../store/api/menuApi';
 import type { POSCustomer, POSOrderItem } from './types';
-import { getRtkErrorMessage } from '../shared/rtkError';
-import { useRecordCashPaymentMutation } from '../../store/api/paymentApi';
-import {
-  useGetActiveStoreSessionsQuery
-} from '../../store/api/sessionApi';
+import { useGetActiveStoreSessionsQuery } from '../../store/api/sessionApi';
 import { useSnackbar } from 'notistack';
+import { pos, posPanelShell, posTouchBtnBase, posAmbientRoot, posTouchBtnPrimary } from './posTokens';
+import { POS_TABS, type PosTab, resolvePosDeliveryFee } from './posHelpers';
+import PosReportsPanel from './PosReportsPanel';
 
 /**
- * Professional POS Dashboard - Industry Standard Design
- * Inspired by leading POS systems: Square, Toast, Clover
- *
- * Orders Tab: Fast order-taking with visual menu
- * Analytics Tab: Comprehensive business insights
+ * POS Dashboard — dense cashier board for live shifts (F2e).
+ * Orders | History | Reports; dark-premium tokens + warm orange accent.
  */
 const POSDashboard: React.FC = () => {
-  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
+  const cartDeliveryFee = useAppSelector(selectDeliveryFeeINR);
+  const storeCountryCode = useAppSelector(selectStoreCountryCode);
+  const { marketReady, fmt, fmtOrder } = usePosMarket();
   const [searchParams] = useSearchParams();
   const { user } = useAppSelector((state) => state.auth);
   const { enqueueSnackbar } = useSnackbar();
 
-  // Get selected store from Redux (set by StoreSelector)
   const selectedStoreId = useAppSelector(selectSelectedStoreId);
   const selectedStoreName = useAppSelector(selectSelectedStoreName);
+  const storeMarketSynced = useAppSelector(selectStoreMarketSynced);
 
-  // User role and store info
   const isManager = user?.type === 'MANAGER';
 
-  // Priority: URL param > Selected store > User's default store
   const urlStoreId = searchParams.get('storeId');
-  // CRITICAL: Always prioritize URL storeId first to ensure correct store context
-  const storeId = urlStoreId || selectedStoreId || user?.storeId;
+  // Prefer explicit store; never invent one — resolve from URL → cart → staff JWT → store list
+  const storeId = urlStoreId || selectedStoreId || user?.storeId || undefined;
 
-  const { data: storeProfile } = useGetStoreQuery(storeId ?? '', { skip: !storeId });
+  const { data: storeProfile } = useGetStoreQuery(storeId ?? '', {
+    skip: !storeId,
+  });
 
-  // Sync URL store ID with Redux state on mount
+  const { data: activeStores = [], isLoading: storesListLoading } = useGetActiveStoresQuery(undefined, {
+    skip: Boolean(storeId),
+  });
+
+  // Bootstrap store selection from staff JWT or single active store (seed often has DOM001 only)
+  useEffect(() => {
+    if (storeId) return;
+    if (user?.storeId) {
+      dispatch(
+        setSelectedStore({
+          storeId: user.storeId,
+          storeName: selectedStoreName || user.storeId,
+        })
+      );
+      return;
+    }
+    if (storesListLoading || !activeStores.length) return;
+    // Only auto-bind when there is exactly one active store (typical single-site seed)
+    const open = activeStores.filter((s) => s.status === 'ACTIVE' || !s.status);
+    if (open.length !== 1) return;
+    dispatch(
+      setSelectedStore({
+        storeId: open[0].storeCode || open[0].id,
+        storeName: open[0].name,
+      })
+    );
+  }, [storeId, user, activeStores, storesListLoading, selectedStoreName, dispatch]);
+
   useEffect(() => {
     if (urlStoreId && urlStoreId !== selectedStoreId) {
-      dispatch(setSelectedStore({ storeId: urlStoreId, storeName: 'Store ' + urlStoreId }));
+      dispatch(setSelectedStore({ storeId: urlStoreId, storeName: selectedStoreName || urlStoreId }));
     }
-  }, [urlStoreId, selectedStoreId, dispatch]);
+  }, [urlStoreId, selectedStoreId, selectedStoreName, dispatch]);
 
+  // Hydrate currency / locale / country only from store API record (no hard-coded market)
   useEffect(() => {
     if (!storeProfile || !storeId) return;
-    dispatch(setSelectedStore({ storeId, storeName: storeProfile.name }));
-    dispatch(setStoreCurrency(storeCurrencyPayload(storeProfile)));
+    const market = resolveStoreMarket(storeProfile);
+    const canonical = storeProfile.storeCode || storeId;
+    dispatch(setSelectedStore({ storeId: canonical, storeName: storeProfile.name }));
+    if (market.resolved) {
+      dispatch(setStoreCurrency(storeCurrencyPayload(storeProfile)));
+    }
   }, [storeProfile, storeId, dispatch]);
 
-  // Tab state
-  const [activeTab, setActiveTab] = useState<'orders' | 'analytics'>('orders');
+  const storeMarketReady =
+    Boolean(storeId && storeProfile && storeMarketSynced && resolveStoreMarket(storeProfile).resolved);
 
-  // Clock in/out modal state
+  const [activeTab, setActiveTab] = useState<PosTab>('orders');
   const [clockInModalOpen, setClockInModalOpen] = useState(false);
   const [clockOutModalOpen, setClockOutModalOpen] = useState(false);
-
-  // PIN Authentication state - for public POS access
   const [showPINModal, setShowPINModal] = useState(false);
   const [orderUser, setOrderUser] = useState<{
     userId: string;
@@ -100,131 +123,58 @@ const POSDashboard: React.FC = () => {
     storeId: string;
   } | null>(null);
 
-  // Current order state
   const [orderItems, setOrderItems] = useState<POSOrderItem[]>([]);
   const [customer, setCustomer] = useState<POSCustomer | null>(null);
   const [orderType, setOrderType] = useState<'PICKUP' | 'DELIVERY' | 'DINE_IN'>('PICKUP');
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
-  const [searchTerm] = useState('');
 
-
-  // Ref for triggering submit from keyboard shortcut
   const submitOrderRef = React.useRef<(() => void) | null>(null);
 
-  // Payment mutation
-  const [recordCashPayment] = useRecordCashPaymentMutation();
-
-  // Fetch active sessions for clock out functionality
-  const { data: activeSessions = [] } = useGetActiveStoreSessionsQuery(
-    storeId || '',
-    { skip: !storeId || !isManager }
-  );
-
-  // Fetch analytics data - only when analytics tab is active to avoid rate limiting
-  const { data: todayData } = useGetTodaySalesMetricsQuery(undefined, {
-    skip: activeTab !== 'analytics'
+  const { data: activeSessions = [] } = useGetActiveStoreSessionsQuery(storeId || '', {
+    skip: !storeId || !isManager,
   });
-  const { data: weekData } = useGetSalesTrendsQuery({ period: 'WEEKLY' }, {
-    skip: activeTab !== 'analytics'
-  });
-  const { data: monthData } = useGetSalesTrendsQuery({ period: 'MONTHLY' }, {
-    skip: activeTab !== 'analytics'
-  });
-  const { data: topProducts } = useGetTopProductsQuery({
-    period: 'TODAY',
-    sortBy: 'REVENUE'
-  }, {
-    skip: activeTab !== 'analytics'
-  });
-  const { data: staffData } = useGetStaffLeaderboardQuery({
-    period: 'TODAY'
-  }, {
-    skip: activeTab !== 'analytics'
-  });
-  const { data: orders = [] } = useGetStoreOrdersQuery(
-    undefined,
-    { skip: !storeId || activeTab !== 'analytics' }
-  );
-
-
-  // Filter today's orders for history
-  const today = new Date().toDateString();
-  const todayOrders = orders.filter((order: Order) => {
-    const orderDate = new Date(order.createdAt).toDateString();
-    return orderDate === today;
-  });
-
-  const filteredOrders = todayOrders.filter((order: Order) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      order.orderNumber.toLowerCase().includes(searchLower) ||
-      order.customerName?.toLowerCase().includes(searchLower) ||
-      order.customerPhone?.includes(searchTerm)
-    );
-  });
-
-  const getStatusColor = (status: string): 'success' | 'warning' | 'error' | 'secondary' | 'primary' => {
-    const statusColors: Record<string, 'success' | 'warning' | 'error' | 'secondary' | 'primary'> = {
-      PENDING: 'warning',
-      CONFIRMED: 'primary',
-      PREPARING: 'primary',
-      READY: 'success',
-      OUT_FOR_DELIVERY: 'secondary',
-      DELIVERED: 'success',
-      COMPLETED: 'success',
-      CANCELLED: 'error',
-    };
-    return statusColors[status] || 'secondary';
-  };
 
   const handleNewOrder = useCallback(() => {
-    // Clear existing order
     setOrderItems([]);
     setCustomer(null);
     setSelectedTable(null);
     setOrderUser(null);
 
-    // For public POS (no logged-in user), require PIN authentication
-    // For logged-in users, use their credentials automatically
     if (!user) {
       setShowPINModal(true);
     } else {
-      // Logged-in user - set them as order user
       setOrderUser({
         userId: user.id,
         name: user.name,
         type: user.type,
         role: user.role || 'Staff',
-        storeId: user.storeId || storeId || ''
+        storeId: user.storeId || storeId || '',
       });
       enqueueSnackbar(`Order started by ${user.name}`, { variant: 'success' });
     }
   }, [user, storeId, enqueueSnackbar]);
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      // F1: Switch to Orders tab
       if (e.key === 'F1') {
         e.preventDefault();
         setActiveTab('orders');
       }
-      // F2: Switch to Analytics tab
       if (e.key === 'F2') {
         e.preventDefault();
-        setActiveTab('analytics');
+        setActiveTab('history');
       }
-      // Escape: Clear order
+      if (e.key === 'F3') {
+        e.preventDefault();
+        setActiveTab('reports');
+      }
       if (e.key === 'Escape' && activeTab === 'orders') {
         e.preventDefault();
         handleNewOrder();
       }
-      // Ctrl+Enter: Submit order
       if (e.key === 'Enter' && e.ctrlKey && activeTab === 'orders') {
         e.preventDefault();
-        if (submitOrderRef.current) {
-          submitOrderRef.current();
-        }
+        submitOrderRef.current?.();
       }
     };
 
@@ -232,12 +182,10 @@ const POSDashboard: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [activeTab, handleNewOrder]);
 
-  const handleAddItem = (item: MenuItem, quantity: number = 1) => {
-    const existingIndex = orderItems.findIndex(
-      (orderItem) => orderItem.menuItemId === item.id
-    );
+  const handleAddItem = (item: MenuItem, quantity: number = 1, instructions?: string) => {
+    const existingIndex = orderItems.findIndex((orderItem) => orderItem.menuItemId === item.id);
 
-    if (existingIndex >= 0) {
+    if (existingIndex >= 0 && !instructions) {
       const updatedItems = [...orderItems];
       updatedItems[existingIndex].quantity += quantity;
       setOrderItems(updatedItems);
@@ -249,7 +197,7 @@ const POSDashboard: React.FC = () => {
           name: item.name,
           price: apiPriceToCartMajor(item.basePrice, currency),
           quantity,
-          specialInstructions: '',
+          specialInstructions: instructions || '',
           image: item.imageUrl,
           allergens: item.allergens ?? [],
         },
@@ -276,9 +224,7 @@ const POSDashboard: React.FC = () => {
   const handleUpdateInstructions = (menuItemId: string, instructions: string) => {
     setOrderItems(
       orderItems.map((item) =>
-        item.menuItemId === menuItemId
-          ? { ...item, specialInstructions: instructions }
-          : item
+        item.menuItemId === menuItemId ? { ...item, specialInstructions: instructions } : item
       )
     );
   };
@@ -296,7 +242,6 @@ const POSDashboard: React.FC = () => {
   };
 
   const handleOrderComplete = () => {
-    // Clear order and user context
     setOrderItems([]);
     setCustomer(null);
     setSelectedTable(null);
@@ -304,899 +249,391 @@ const POSDashboard: React.FC = () => {
     enqueueSnackbar('Order completed successfully!', { variant: 'success' });
   };
 
-  const handleMarkAsPaid = async (order: Order) => {
-    const confirmed = window.confirm(
-      `Mark this order as PAID?\n\n` +
-      `Order: #${order.orderNumber}\n` +
-      `Amount: ${fmt(order.total)}\n` +
-      `Payment Method: ${order.paymentMethod}\n\n` +
-      `This confirms that CASH payment has been received.`
-    );
-
-    if (!confirmed) return;
-
-    try {
-      await recordCashPayment({
-        orderId: order.id,
-        amount: order.total,
-        customerId: order.customerId || 'walk-in',
-        customerEmail: order.customerEmail || undefined,
-        customerPhone: order.customerPhone || '0000000000',
-        storeId: order.storeId,
-        orderType: order.orderType,
-        paymentMethod: 'CASH',
-        notes: `Cash payment recorded for Order #${order.orderNumber}`,
-      }).unwrap();
-
-      enqueueSnackbar(`Order #${order.orderNumber} marked as PAID — Cash payment of ${fmt(order.total)} recorded.`, { variant: 'success' });
-    } catch (error: unknown) {
-      console.error('Failed to record cash payment:', error);
-      enqueueSnackbar(`Failed to mark order as paid. ${getRtkErrorMessage(error, 'Please try again.')}`, { variant: 'error' });
-    }
-  };
-
-
-  const totalSales = filteredOrders.reduce((sum: number, order: Order) => sum + (order.totalAmount ?? order.total), 0);
-
-  // Calculate order total - matching customer side logic
-  const storeCountryCode = useAppSelector(selectStoreCountryCode);
   const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const deliveryFee = orderType === 'DELIVERY' && subtotal > 0 ? 40 : 0;
+  const deliveryFee = resolvePosDeliveryFee(orderType, subtotal, cartDeliveryFee);
   const { total: orderTotal } = computePreCheckoutTotals(subtotal, deliveryFee, storeCountryCode);
 
+  const hour = new Date().getHours();
+  const dayPart =
+    hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const staffName = orderUser?.name || user?.name || 'Cashier';
+
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
-      backgroundColor: colors.surface.background,
-      fontFamily: typography.fontFamily.primary
-    }}>
-      {/* Professional Header Bar */}
-      <div style={{
-        height: '72px',
-        backgroundColor: '#1a1a1a',
-        borderBottom: `3px solid ${colors.brand.primary}`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: `0 ${spacing[6]}`,
-        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-        flexShrink: 0
-      }}>
-        {/* Logo & Store Info */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: spacing[4] }}>
-          <div style={{
-            fontSize: typography.fontSize['2xl'],
-            fontWeight: typography.fontWeight.extrabold,
-            background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.secondary} 100%)`,
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            letterSpacing: '-0.5px'
-          }}>
-            MaSoVa POS
+    <div data-testid="pos-root" style={posAmbientRoot}>
+      <style>{`
+        @keyframes posPulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.45; }
+        }
+        @media (max-width: 1100px) {
+          [data-testid="pos-orders-board"] > div {
+            flex-direction: column !important;
+          }
+          [data-testid="pos-menu-column"],
+          [data-testid="pos-cart-column"],
+          [data-testid="pos-pay-column"] {
+            flex: 1 1 auto !important;
+            min-height: 320px !important;
+          }
+        }
+      `}</style>
+
+      {/* Stable 3-column header — tabs never shift when Orders/History/Reports content changes */}
+      <header
+        data-testid="pos-header"
+        style={{
+          minHeight: 72,
+          background: pos.headerBg,
+          backdropFilter: 'blur(16px)',
+          borderBottom: `1px solid ${pos.border}`,
+          display: 'grid',
+          gridTemplateColumns: 'minmax(200px, 1fr) auto minmax(200px, 1fr)',
+          alignItems: 'center',
+          columnGap: 16,
+          padding: '10px 20px',
+          flexShrink: 0,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 12,
+              background: `linear-gradient(145deg, ${pos.role}, ${pos.roleDark})`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 900,
+              fontSize: 15,
+              color: '#fff',
+              flexShrink: 0,
+            }}
+          >
+            M
           </div>
-          <div style={{
-            height: '32px',
-            width: '2px',
-            backgroundColor: colors.surface.border
-          }} />
-          <div style={{
-            fontSize: typography.fontSize.sm,
-            color: '#999',
-            fontWeight: typography.fontWeight.semibold
-          }}>
-            {selectedStoreName || storeId || 'Point of Sale'}
+          <div style={{ minWidth: 0 }}>
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: pos.headerMuted,
+              }}
+            >
+              MaSoVa <span style={{ color: pos.role }}>POS</span>
+            </div>
+            <div
+              data-testid="pos-store-label"
+              style={{
+                fontSize: 16,
+                fontWeight: 800,
+                color: pos.ink,
+                letterSpacing: '-0.02em',
+                lineHeight: 1.2,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {selectedStoreName || storeId || 'Point of Sale'}
+            </div>
+            <div style={{ fontSize: 12, color: pos.muted, marginTop: 1 }}>
+              {dayPart}
+              {orderUser || user ? ` · ${staffName.split(' ')[0]}` : ''}
+              {storeMarketReady && storeCountryCode ? ` · ${storeCountryCode}` : ''}
+              {storeMarketReady && currency ? ` · ${currency}` : ''}
+              {!storeMarketReady && storeId ? ' · …' : ''}
+            </div>
           </div>
         </div>
 
-        {/* Tab Navigation - Only show if logged in user is manager */}
-        {isManager && (
-          <div style={{
+        <nav
+          data-testid="pos-tab-bar"
+          style={{
             display: 'flex',
-            gap: spacing[2],
-            backgroundColor: '#2a2a2a',
-            padding: spacing[1],
-            borderRadius: '12px'
-          }}>
-            {[
-              { key: 'orders', label: 'Orders' },
-              { key: 'analytics', label: 'Analytics' }
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key as 'orders' | 'analytics')}
+            gap: 4,
+            background: 'rgba(255,255,255,0.04)',
+            padding: 5,
+            borderRadius: 999,
+            border: `1px solid ${pos.border}`,
+            justifySelf: 'center',
+          }}
+          aria-label="POS sections"
+        >
+          {POS_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              data-testid={`pos-tab-${tab.key}`}
+              onClick={() => setActiveTab(tab.key)}
+              style={{
+                ...posTouchBtnBase,
+                minHeight: 42,
+                minWidth: 96,
+                padding: '8px 16px',
+                borderRadius: 999,
+                fontSize: 13,
+                gap: 6,
+                ...(activeTab === tab.key
+                  ? {
+                      background: `linear-gradient(135deg, ${pos.role} 0%, ${pos.roleDark} 100%)`,
+                      color: '#ffffff',
+                      boxShadow: `0 4px 16px ${pos.roleShadow}`,
+                    }
+                  : {
+                      background: 'transparent',
+                      color: pos.headerMuted,
+                    }),
+              }}
+            >
+              {tab.label}
+              <span
                 style={{
-                  padding: `${spacing[2]} ${spacing[5]}`,
-                  borderRadius: '10px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: typography.fontSize.sm,
-                  fontWeight: typography.fontWeight.bold,
-                  fontFamily: typography.fontFamily.primary,
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: spacing[2],
-                  ...(activeTab === tab.key ? {
-                    background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.secondary} 100%)`,
-                    color: '#FFFFFF',
-                    boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)'
-                  } : {
-                    background: 'transparent',
-                    color: '#999'
-                  })
+                  fontSize: 10,
+                  opacity: activeTab === tab.key ? 0.9 : 0.55,
+                  fontWeight: 600,
+                  fontFamily: pos.mono,
                 }}
               >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        )}
+                {tab.shortcut}
+              </span>
+            </button>
+          ))}
+        </nav>
 
-        {/* Quick Stats & Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: spacing[4] }}>
-          {/* Current Order User Indicator - Show when someone is authenticated */}
-          {orderUser && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: spacing[2],
-              padding: `${spacing[2]} ${spacing[4]}`,
-              backgroundColor: '#2a2a2a',
-              borderRadius: '10px',
-              border: '2px solid #10b981'
-            }}>
-              <div style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: '#10b981',
-                animation: 'pulse 2s infinite'
-              }} />
-              <div style={{
+        {/* Right cluster: fixed min width so tabs stay centered across tabs */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: 10,
+            flexWrap: 'wrap',
+            minHeight: 48,
+            minWidth: 0,
+          }}
+        >
+          {orderUser ? (
+            <div
+              data-testid="pos-order-user"
+              style={{
                 display: 'flex',
-                flexDirection: 'column',
-                gap: spacing[1]
-              }}>
-                <div style={{
-                  fontSize: typography.fontSize.xs,
-                  color: '#666',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
-                  Taking Order
+                alignItems: 'center',
+                gap: 10,
+                padding: '8px 14px',
+                background: 'rgba(16,185,129,0.12)',
+                borderRadius: 999,
+                border: `1px solid ${pos.success}66`,
+                minHeight: 44,
+              }}
+            >
+              <div
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  backgroundColor: pos.success,
+                }}
+              />
+              <div>
+                <div
+                  style={{
+                    fontSize: 9,
+                    color: pos.headerMuted,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    fontWeight: 700,
+                  }}
+                >
+                  Serving
                 </div>
-                <div style={{
-                  fontSize: typography.fontSize.sm,
-                  color: '#10b981',
-                  fontWeight: typography.fontWeight.bold
-                }}>
+                <div style={{ fontSize: 13, color: pos.successDark, fontWeight: 800 }}>
                   {orderUser.name}
                 </div>
               </div>
             </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleNewOrder}
+              style={{
+                ...posTouchBtnPrimary,
+                minHeight: 44,
+                visibility: activeTab === 'orders' ? 'visible' : 'hidden',
+                pointerEvents: activeTab === 'orders' ? 'auto' : 'none',
+              }}
+            >
+              New order
+            </button>
           )}
 
-          {activeTab === 'orders' && orderItems.length > 0 && (
-            <div style={{
+          <div
+            data-testid="pos-cart-total"
+            style={{
               display: 'flex',
-              alignItems: 'center',
-              gap: spacing[3],
-              padding: `${spacing[2]} ${spacing[4]}`,
-              backgroundColor: '#2a2a2a',
-              borderRadius: '10px'
-            }}>
-              <div style={{
-                fontSize: typography.fontSize.xs,
-                color: '#666',
+              flexDirection: 'column',
+              alignItems: 'flex-end',
+              justifyContent: 'center',
+              padding: '6px 14px',
+              background:
+                activeTab === 'orders' && orderItems.length > 0
+                  ? pos.roleSoft
+                  : 'transparent',
+              border:
+                activeTab === 'orders' && orderItems.length > 0
+                  ? `1px solid ${pos.roleBorder}`
+                  : '1px solid transparent',
+              borderRadius: 14,
+              minHeight: 44,
+              minWidth: 88,
+              opacity: activeTab === 'orders' && orderItems.length > 0 ? 1 : 0,
+              pointerEvents: 'none',
+            }}
+            aria-hidden={!(activeTab === 'orders' && orderItems.length > 0)}
+          >
+            <span
+              style={{
+                fontSize: 9,
+                color: pos.headerMuted,
                 textTransform: 'uppercase',
-                letterSpacing: '0.5px'
-              }}>
-                Cart Total
-              </div>
-              <div style={{
-                fontSize: typography.fontSize.lg,
-                fontWeight: typography.fontWeight.extrabold,
-                background: `linear-gradient(135deg, ${colors.semantic.success} 0%, ${colors.semantic.successDark} 100%)`,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
-              }}>
-                {fmt(orderTotal)}
-              </div>
-            </div>
-          )}
+                letterSpacing: '0.08em',
+                fontWeight: 700,
+              }}
+            >
+              Total
+            </span>
+            <span style={{ fontSize: 18, fontWeight: 900, color: pos.role, lineHeight: 1.1 }}>
+              {fmt(orderTotal)}
+            </span>
+          </div>
 
-          {/* Clock In/Out Buttons - Only for managers */}
           {isManager && (
-            <div style={{ display: 'flex', gap: spacing[2] }}>
-              {/* Clock In Button */}
+            <div style={{ display: 'flex', gap: 8 }}>
               <button
+                type="button"
                 onClick={() => setClockInModalOpen(true)}
                 style={{
-                  padding: `${spacing[3]} ${spacing[5]}`,
-                  borderRadius: '10px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: typography.fontSize.sm,
-                  fontWeight: typography.fontWeight.bold,
-                  fontFamily: typography.fontFamily.primary,
-                  background: `linear-gradient(135deg, #10b981 0%, #059669 100%)`,
-                  color: '#FFFFFF',
-                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: spacing[2],
-                  minWidth: '120px',
-                  justifyContent: 'center'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+                  ...posTouchBtnBase,
+                  borderRadius: 999,
+                  background: pos.successSoft,
+                  color: pos.successDark,
+                  border: `1px solid ${pos.success}`,
                 }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 11l3 3L22 4" />
-                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-                </svg>
                 Clock In
               </button>
-
-              {/* Clock Out Button */}
               <button
+                type="button"
                 onClick={() => setClockOutModalOpen(true)}
                 disabled={activeSessions.length === 0}
                 style={{
-                  padding: `${spacing[3]} ${spacing[5]}`,
-                  borderRadius: '10px',
-                  border: 'none',
-                  cursor: activeSessions.length === 0 ? 'not-allowed' : 'pointer',
-                  fontSize: typography.fontSize.sm,
-                  fontWeight: typography.fontWeight.bold,
-                  fontFamily: typography.fontFamily.primary,
-                  background: activeSessions.length === 0
-                    ? '#6b7280'
-                    : `linear-gradient(135deg, #ef4444 0%, #dc2626 100%)`,
-                  color: '#FFFFFF',
-                  boxShadow: activeSessions.length === 0
-                    ? 'none'
-                    : '0 4px 12px rgba(239, 68, 68, 0.3)',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: spacing[2],
+                  ...posTouchBtnBase,
+                  borderRadius: 999,
+                  background: activeSessions.length === 0 ? pos.surfaceElevated : pos.errorSoft,
+                  color: activeSessions.length === 0 ? pos.faint : pos.errorDark,
+                  border: `1px solid ${activeSessions.length === 0 ? pos.border : pos.error}`,
                   opacity: activeSessions.length === 0 ? 0.5 : 1,
-                  minWidth: '120px',
-                  justifyContent: 'center'
-                }}
-                onMouseEnter={(e) => {
-                  if (activeSessions.length > 0) {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(239, 68, 68, 0.4)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (activeSessions.length > 0) {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)';
-                  }
+                  cursor: activeSessions.length === 0 ? 'not-allowed' : 'pointer',
                 }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 11V6l11-4v16.28" />
-                  <path d="M12 19.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
-                  <circle cx="19" cy="19" r="2" />
-                </svg>
                 Clock Out
               </button>
             </div>
           )}
         </div>
-      </div>
+      </header>
 
-      {/* Content Area */}
-      {activeTab === 'orders' ? (
-        /* ORDERS TAB - Professional POS Layout */
-        <div style={{
-          flex: 1,
-          overflow: 'auto',
-          padding: spacing[3],
-          backgroundColor: colors.surface.background
-        }}>
-          {/* Main POS Interface */}
-          <div style={{
+      {/* ORDERS — landscape craft board: menu ~42% · cart ~28% · pay ~30% */}
+      {activeTab === 'orders' && (
+        <div
+          data-testid="pos-orders-board"
+          style={{
+            flex: 1,
+            overflow: 'hidden',
+            padding: 14,
             display: 'flex',
-            gap: spacing[3],
-            minHeight: '600px'
-          }}>
-            {/* LEFT: Menu Panel - 40% */}
-            <div style={{
-              flex: '4',
-              minWidth: 0,
+            flexDirection: 'column',
+            minHeight: 0,
+          }}
+        >
+          <div
+            style={{
               display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
-              borderRadius: '16px',
-              backgroundColor: colors.surface.primary,
-              boxShadow: shadows.raised.sm,
-              border: `2px solid ${colors.surface.border}`,
-              boxSizing: 'border-box'
-            }}>
+              gap: 14,
+              flex: 1,
+              minHeight: 0,
+            }}
+          >
+            <div style={{ ...posPanelShell, flex: '4.2 1 0' }} data-testid="pos-menu-column">
               <MenuPanel onAddItem={handleAddItem} />
             </div>
-
-          {/* CENTER: Order Panel - 30% */}
-          <div style={{
-            flex: '3',
-            minWidth: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            borderRadius: '16px',
-            backgroundColor: colors.surface.primary,
-            boxShadow: shadows.raised.sm,
-            border: `2px solid ${colors.surface.border}`,
-            boxSizing: 'border-box'
-          }}>
-            <OrderPanel
-              items={orderItems}
-              onUpdateQuantity={handleUpdateQuantity}
-              onRemoveItem={handleRemoveItem}
-              onUpdateInstructions={handleUpdateInstructions}
-              onNewOrder={handleNewOrder}
-              orderType={orderType}
-              onOrderTypeChange={setOrderType}
-              selectedTable={selectedTable}
-              onTableSelect={setSelectedTable}
-            />
-          </div>
-
-          {/* RIGHT: Checkout Panel - 30% */}
-          <div style={{
-            flex: '3',
-            minWidth: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            borderRadius: '16px',
-            backgroundColor: colors.surface.primary,
-            boxShadow: shadows.raised.sm,
-            border: `2px solid ${colors.surface.border}`,
-            boxSizing: 'border-box'
-          }}>
-            <CustomerPanel
-              items={orderItems}
-              customer={customer}
-              onCustomerChange={setCustomer}
-              orderType={orderType}
-              selectedTable={selectedTable}
-              onOrderComplete={handleOrderComplete}
-              userId={user?.id || orderUser?.userId}
-              storeId={storeId}
-              submitOrderRef={submitOrderRef}
-              orderCreatedBy={orderUser}
-            />
-          </div>
-          </div>
-        </div>
-      ) : (
-        /* ANALYTICS TAB - Professional Dashboard */
-        <div style={{
-          flex: 1,
-          overflow: 'auto',
-          padding: spacing[6],
-          backgroundColor: colors.surface.background
-        }}>
-          {/* Quick Stats Cards Row */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: spacing[4],
-            marginBottom: spacing[6]
-          }}>
-            {/* Today's Sales */}
-            <div style={{
-              padding: spacing[5],
-              borderRadius: '16px',
-              backgroundColor: colors.surface.primary,
-              boxShadow: shadows.raised.sm,
-              border: `1px solid ${colors.surface.border}`,
-              borderLeft: `4px solid ${colors.semantic.success}`
-            }}>
-              <div style={{
-                fontSize: typography.fontSize.xs,
-                color: '#666',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                marginBottom: spacing[2]
-              }}>
-                Today's Sales
-              </div>
-              <div style={{
-                fontSize: typography.fontSize['2xl'],
-                fontWeight: typography.fontWeight.extrabold,
-                color: '#1a1a1a',
-                marginBottom: spacing[2]
-              }}>
-                {fmt(todayData?.todaySales || 0)}
-              </div>
-              <div style={{
-                fontSize: typography.fontSize.xs,
-                color: todayData?.percentChangeFromYesterday && todayData.percentChangeFromYesterday >= 0
-                  ? colors.semantic.success
-                  : colors.semantic.error,
-                fontWeight: typography.fontWeight.semibold
-              }}>
-                {todayData?.percentChangeFromYesterday
-                  ? `${todayData.percentChangeFromYesterday >= 0 ? '↑' : '↓'} ${Math.abs(todayData.percentChangeFromYesterday).toFixed(1)}% from yesterday`
-                  : '—'}
-              </div>
+            <div style={{ ...posPanelShell, flex: '2.8 1 0' }} data-testid="pos-cart-column">
+              <OrderPanel
+                items={orderItems}
+                onUpdateQuantity={handleUpdateQuantity}
+                onRemoveItem={handleRemoveItem}
+                onUpdateInstructions={handleUpdateInstructions}
+                onNewOrder={handleNewOrder}
+                orderType={orderType}
+                onOrderTypeChange={setOrderType}
+                selectedTable={selectedTable}
+                onTableSelect={setSelectedTable}
+              />
             </div>
-
-            {/* This Week */}
-            <div style={{
-              padding: spacing[5],
-              borderRadius: '16px',
-              backgroundColor: colors.surface.primary,
-              boxShadow: shadows.raised.sm,
-              border: `1px solid ${colors.surface.border}`,
-              borderLeft: `4px solid ${colors.brand.primary}`
-            }}>
-              <div style={{
-                fontSize: typography.fontSize.xs,
-                color: '#666',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                marginBottom: spacing[2]
-              }}>
-                This Week
-              </div>
-              <div style={{
-                fontSize: typography.fontSize['2xl'],
-                fontWeight: typography.fontWeight.extrabold,
-                color: '#1a1a1a',
-                marginBottom: spacing[2]
-              }}>
-                {fmt(weekData?.totalSales || 0)}
-              </div>
-              <div style={{
-                fontSize: typography.fontSize.xs,
-                color: '#666'
-              }}>
-                {weekData?.totalOrders || 0} orders
-              </div>
-            </div>
-
-            {/* This Month */}
-            <div style={{
-              padding: spacing[5],
-              borderRadius: '16px',
-              backgroundColor: colors.surface.primary,
-              boxShadow: shadows.raised.sm,
-              border: `1px solid ${colors.surface.border}`,
-              borderLeft: `4px solid ${colors.semantic.warning}`
-            }}>
-              <div style={{
-                fontSize: typography.fontSize.xs,
-                color: '#666',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                marginBottom: spacing[2]
-              }}>
-                This Month
-              </div>
-              <div style={{
-                fontSize: typography.fontSize['2xl'],
-                fontWeight: typography.fontWeight.extrabold,
-                color: '#1a1a1a',
-                marginBottom: spacing[2]
-              }}>
-                {fmt(monthData?.totalSales || 0)}
-              </div>
-              <div style={{
-                fontSize: typography.fontSize.xs,
-                color: '#666'
-              }}>
-                {monthData?.totalOrders || 0} orders
-              </div>
-            </div>
-
-            {/* Today's Orders */}
-            <div style={{
-              padding: spacing[5],
-              borderRadius: '16px',
-              backgroundColor: colors.surface.primary,
-              boxShadow: shadows.raised.sm,
-              border: `1px solid ${colors.surface.border}`,
-              borderLeft: `4px solid ${colors.semantic.info}`
-            }}>
-              <div style={{
-                fontSize: typography.fontSize.xs,
-                color: '#666',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                marginBottom: spacing[2]
-              }}>
-                Today's Orders
-              </div>
-              <div style={{
-                fontSize: typography.fontSize['2xl'],
-                fontWeight: typography.fontWeight.extrabold,
-                color: '#1a1a1a',
-                marginBottom: spacing[2]
-              }}>
-                {todayOrders.length}
-              </div>
-              <div style={{
-                fontSize: typography.fontSize.xs,
-                color: '#666'
-              }}>
-                {fmt(totalSales)} total
-              </div>
+            <div style={{ ...posPanelShell, flex: '3 1 0' }} data-testid="pos-pay-column">
+              <CustomerPanel
+                items={orderItems}
+                customer={customer}
+                onCustomerChange={setCustomer}
+                orderType={orderType}
+                selectedTable={selectedTable}
+                onOrderComplete={handleOrderComplete}
+                userId={user?.id || orderUser?.userId}
+                storeId={storeId}
+                submitOrderRef={submitOrderRef}
+                orderCreatedBy={orderUser}
+              />
             </div>
           </div>
-
-          {/* Real-Time Metrics */}
-          <div style={{ marginBottom: spacing[6] }}>
-            <h2 style={{
-              margin: `0 0 ${spacing[4]} 0`,
-              fontSize: typography.fontSize.xl,
-              fontWeight: typography.fontWeight.bold,
-              color: '#1a1a1a',
-              letterSpacing: '-0.5px'
-            }}>
-              Real-Time Performance
-            </h2>
-            <MetricsTiles storeId={storeId} />
-          </div>
-
-          {/* Two Column Layout: Top Products & Recent Orders */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: spacing[4],
-            marginBottom: spacing[6]
-          }}>
-            {/* Top Selling Items */}
-            <div style={{
-              padding: spacing[5],
-              borderRadius: '16px',
-              backgroundColor: colors.surface.primary,
-              boxShadow: shadows.raised.sm,
-              border: `1px solid ${colors.surface.border}`
-            }}>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: spacing[4]
-              }}>
-                <h3 style={{
-                  margin: 0,
-                  fontSize: typography.fontSize.lg,
-                  fontWeight: typography.fontWeight.bold,
-                  color: '#1a1a1a'
-                }}>
-                  <LocalFireDepartmentIcon style={{ fontSize: '20px', color: colors.semantic.error, marginRight: '6px', verticalAlign: 'middle' }} />
-                  Top Sellers Today
-                </h3>
-                {isManager && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => navigate('/manager/product-analytics')}
-                  >
-                    View All →
-                  </Button>
-                )}
-              </div>
-              {topProducts && topProducts.topProducts.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
-                  {topProducts.topProducts.slice(0, 5).map((item, index) => (
-                    <div
-                      key={item.itemId}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: spacing[3],
-                        borderRadius: '12px',
-                        backgroundColor: index === 0 ? '#FFF5E1' : colors.surface.elevated,
-                        border: index === 0 ? `2px solid ${colors.semantic.warning}` : `1px solid ${colors.surface.border}`
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3] }}>
-                        <div style={{
-                          width: '32px',
-                          height: '32px',
-                          borderRadius: '8px',
-                          backgroundColor: index === 0 ? colors.semantic.warning : colors.brand.primary,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#FFFFFF',
-                          fontWeight: typography.fontWeight.bold,
-                          fontSize: typography.fontSize.sm
-                        }}>
-                          {index === 0 ? <EmojiEventsIcon style={{ fontSize: '18px' }} /> : `#${index + 1}`}
-                        </div>
-                        <div>
-                          <div style={{
-                            fontSize: typography.fontSize.sm,
-                            fontWeight: typography.fontWeight.bold,
-                            color: '#1a1a1a',
-                            marginBottom: spacing[1]
-                          }}>
-                            {item.itemName}
-                          </div>
-                          <div style={{
-                            fontSize: typography.fontSize.xs,
-                            color: '#666'
-                          }}>
-                            {item.quantitySold} sold
-                          </div>
-                        </div>
-                      </div>
-                      <div style={{
-                        fontSize: typography.fontSize.base,
-                        fontWeight: typography.fontWeight.bold,
-                        color: colors.semantic.success
-                      }}>
-                        {fmt(item.revenue)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{
-                  padding: spacing[10],
-                  textAlign: 'center',
-                  color: '#999'
-                }}>
-                  No sales data yet
-                </div>
-              )}
-            </div>
-
-            {/* Recent Orders Preview */}
-            <div style={{
-              padding: spacing[5],
-              borderRadius: '16px',
-              backgroundColor: colors.surface.primary,
-              boxShadow: shadows.raised.sm,
-              border: `1px solid ${colors.surface.border}`
-            }}>
-              <h3 style={{
-                margin: `0 0 ${spacing[4]} 0`,
-                fontSize: typography.fontSize.lg,
-                fontWeight: typography.fontWeight.bold,
-                color: '#1a1a1a'
-              }}>
-                <ReceiptLongIcon style={{ fontSize: '20px', marginRight: '6px', verticalAlign: 'middle' }} />
-                Recent Orders
-              </h3>
-              {filteredOrders.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
-                  {filteredOrders.slice(0, 5).map((order: Order) => (
-                    <div
-                      key={order.id}
-                      style={{
-                        padding: spacing[3],
-                        borderRadius: '10px',
-                        backgroundColor: colors.surface.elevated,
-                        border: `1px solid ${colors.surface.border}`,
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}
-                    >
-                      <div>
-                        <div style={{
-                          fontSize: typography.fontSize.sm,
-                          fontWeight: typography.fontWeight.semibold,
-                          color: '#1a1a1a',
-                          marginBottom: spacing[1]
-                        }}>
-                          #{order.orderNumber}
-                        </div>
-                        <div style={{
-                          fontSize: typography.fontSize.xs,
-                          color: '#666'
-                        }}>
-                          {new Date(order.createdAt).toLocaleTimeString('en-IN', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2], flexWrap: 'wrap' }}>
-                        <Badge variant={getStatusColor(order.status)} size="sm">
-                          {order.status.replace('_', ' ')}
-                        </Badge>
-                        {/* Payment Method Badge */}
-                        {order.paymentMethod && (
-                          <span style={{
-                            padding: '2px 8px',
-                            borderRadius: '6px',
-                            fontSize: '10px',
-                            fontWeight: 600,
-                            backgroundColor: order.paymentMethod === 'CASH' ? '#fef3c7' :
-                                           order.paymentMethod === 'CARD' ? '#dbeafe' :
-                                           order.paymentMethod === 'UPI' ? '#d1fae5' : '#e5e7eb',
-                            color: order.paymentMethod === 'CASH' ? '#92400e' :
-                                   order.paymentMethod === 'CARD' ? '#1e40af' :
-                                   order.paymentMethod === 'UPI' ? '#065f46' : '#1f2937',
-                          }}>
-                            {order.paymentMethod}
-                          </span>
-                        )}
-                        {/* Payment Status Badge */}
-                        {order.paymentStatus === 'PENDING' && (
-                          <span style={{
-                            padding: '2px 8px',
-                            borderRadius: '6px',
-                            fontSize: '10px',
-                            fontWeight: 600,
-                            backgroundColor: '#fef3c7',
-                            color: '#92400e',
-                          }}>
-                            UNPAID
-                          </span>
-                        )}
-                        <div style={{
-                          fontSize: typography.fontSize.sm,
-                          fontWeight: typography.fontWeight.bold,
-                          color: colors.brand.primary
-                        }}>
-                          {fmt(order.total || 0)}
-                        </div>
-
-                        {/* Mark as Paid Button for PENDING CASH orders */}
-                        {order.paymentStatus === 'PENDING' && order.paymentMethod === 'CASH' && (
-                          <button
-                            onClick={() => handleMarkAsPaid(order)}
-                            style={{
-                              padding: '4px 8px',
-                              borderRadius: '6px',
-                              fontSize: '10px',
-                              fontWeight: 600,
-                              backgroundColor: '#10b981',
-                              color: 'white',
-                              border: 'none',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s',
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#059669';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = '#10b981';
-                            }}
-                          >
-                            <AttachMoneyIcon style={{ fontSize: '14px', marginRight: '4px', verticalAlign: 'middle' }} />
-                            Mark Paid
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{
-                  padding: spacing[10],
-                  textAlign: 'center',
-                  color: '#999'
-                }}>
-                  No orders yet today
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Staff Performance (Manager Only) */}
-          {isManager && staffData && staffData.rankings.length > 0 && (
-            <div style={{
-              padding: spacing[5],
-              borderRadius: '16px',
-              backgroundColor: colors.surface.primary,
-              boxShadow: shadows.raised.sm,
-              border: `1px solid ${colors.surface.border}`
-            }}>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: spacing[4]
-              }}>
-                <h3 style={{
-                  margin: 0,
-                  fontSize: typography.fontSize.lg,
-                  fontWeight: typography.fontWeight.bold,
-                  color: '#1a1a1a'
-                }}>
-                  <PeopleIcon style={{ fontSize: '20px', marginRight: '6px', verticalAlign: 'middle' }} />
-                  Staff Leaderboard
-                </h3>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => navigate('/manager/staff-leaderboard')}
-                >
-                  Full Leaderboard →
-                </Button>
-              </div>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                gap: spacing[3]
-              }}>
-                {staffData.rankings.slice(0, 6).map((staff, index) => (
-                  <div
-                    key={staff.staffId}
-                    style={{
-                      padding: spacing[4],
-                      borderRadius: '12px',
-                      background: index === 0
-                        ? `linear-gradient(135deg, ${colors.semantic.warningLight}22 0%, ${colors.semantic.warning}11 100%)`
-                        : colors.surface.elevated,
-                      border: index === 0 ? `2px solid ${colors.semantic.warning}` : `1px solid ${colors.surface.border}`,
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3] }}>
-                      <div style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        backgroundColor: index === 0 ? colors.semantic.warning : colors.brand.primary,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#FFFFFF',
-                        fontWeight: typography.fontWeight.bold
-                      }}>
-                        {index === 0 ? <WorkspacePremiumIcon style={{ fontSize: '20px' }} /> : `#${index + 1}`}
-                      </div>
-                      <div>
-                        <div style={{
-                          fontSize: typography.fontSize.sm,
-                          fontWeight: typography.fontWeight.bold,
-                          color: '#1a1a1a',
-                          marginBottom: spacing[1]
-                        }}>
-                          {staff.staffName}
-                        </div>
-                        <div style={{
-                          fontSize: typography.fontSize.xs,
-                          color: '#666'
-                        }}>
-                          {staff.ordersProcessed} orders
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{
-                      fontSize: typography.fontSize.base,
-                      fontWeight: typography.fontWeight.bold,
-                      color: colors.semantic.success
-                    }}>
-                      {fmt(staff.salesGenerated)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
 
-      {/* Clock In Modal */}
+      {/* HISTORY */}
+      {activeTab === 'history' && (
+        <div
+          data-testid="pos-history-panel"
+          style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}
+        >
+          <OrderHistory embedded storeIdOverride={storeId || undefined} />
+        </div>
+      )}
+
+      {/* REPORTS */}
+      {activeTab === 'reports' && (
+        <div
+          data-testid="pos-reports-panel"
+          style={{
+            flex: 1,
+            overflow: 'auto',
+            padding: 16,
+            backgroundColor: pos.surfaceBg,
+          }}
+        >
+          <PosReportsPanel
+            storeId={storeId}
+            isManager={isManager}
+            marketReady={marketReady}
+            locale={locale}
+            storeCountryCode={storeCountryCode}
+            fmt={fmt}
+            fmtOrder={fmtOrder}
+            onClockIn={() => setClockInModalOpen(true)}
+          />
+        </div>
+      )}
+
       {storeId && (
         <ClockInModal
           isOpen={clockInModalOpen}
@@ -1204,8 +641,6 @@ const POSDashboard: React.FC = () => {
           storeId={storeId}
         />
       )}
-
-      {/* Clock Out Modal */}
       {storeId && (
         <ClockOutModal
           isOpen={clockOutModalOpen}
@@ -1213,8 +648,6 @@ const POSDashboard: React.FC = () => {
           storeId={storeId}
         />
       )}
-
-      {/* PIN Authentication Modal - for public POS access */}
       <PINAuthModal
         isOpen={showPINModal}
         onClose={() => setShowPINModal(false)}

@@ -2,6 +2,7 @@ package com.MaSoVa.core.unit.controller;
 
 import com.MaSoVa.core.notification.controller.NotificationController;
 import com.MaSoVa.core.notification.entity.Notification;
+import com.MaSoVa.core.notification.service.NotificationSeedService;
 import com.MaSoVa.core.notification.service.NotificationService;
 import com.MaSoVa.shared.test.BaseServiceTest;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -32,6 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class NotificationControllerTest extends BaseServiceTest {
 
     @Mock private NotificationService notificationService;
+    @Mock private NotificationSeedService notificationSeedService;
     @InjectMocks private NotificationController notificationController;
     private MockMvc mockMvc;
 
@@ -55,7 +58,19 @@ class NotificationControllerTest extends BaseServiceTest {
         when(notificationService.getUserNotifications(anyString(), any()))
             .thenReturn(new PageImpl<>(new ArrayList<>(List.of(buildNotification("notif-1")))));
 
-        mockMvc.perform(get("/api/notifications").param("userId", "user-1"))
+        mockMvc.perform(get("/api/notifications").param("userId", "user-1")
+                .principal(new UsernamePasswordAuthenticationToken("user-1", "n/a")))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/notifications without userId uses authentication principal")
+    void getNotifications_defaultsToPrincipal() throws Exception {
+        when(notificationService.getUserNotifications(anyString(), any()))
+            .thenReturn(new PageImpl<>(new ArrayList<>()));
+
+        mockMvc.perform(get("/api/notifications")
+                .principal(new UsernamePasswordAuthenticationToken("manager-1", "n/a")))
             .andExpect(status().isOk());
     }
 

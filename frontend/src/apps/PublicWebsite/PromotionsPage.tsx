@@ -58,9 +58,9 @@ const PROMOTIONS = [
     discount: '€0 Delivery',
     validUntil: 'All week long',
     category: 'Delivery',
-    accent: '#4ade80',
+    accent: 'var(--success-light)',
     gradient: 'radial-gradient(circle at 35% 30%, rgba(74,222,128,0.22) 0%, rgba(74,222,128,0.05) 60%, transparent 100%)',
-    ring: '#4ade80',
+    ring: 'var(--success-light)',
     isHot: false,
   },
   {
@@ -185,7 +185,7 @@ function useCountdown(targetHour = 23) {
 
 const TimeBlock: React.FC<{ value: number; label: string }> = ({ value, label }) => (
   <div style={{ textAlign: 'center' }}>
-    <div style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 900, color: '#fff', lineHeight: 1, minWidth: 52, background: 'rgba(0,0,0,0.35)', borderRadius: 8, padding: '6px 10px', border: '1px solid rgba(255,255,255,0.1)' }}>
+    <div style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 900, color: 'var(--text-1)', lineHeight: 1, minWidth: 52, background: 'rgba(0,0,0,0.35)', borderRadius: 8, padding: '6px 10px', border: '1px solid rgba(255,255,255,0.1)' }}>
       {String(value).padStart(2, '0')}
     </div>
     <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', color: 'rgba(255,255,255,0.55)', marginTop: 5, textTransform: 'uppercase' }}>{label}</div>
@@ -239,18 +239,18 @@ const PromotionsPage: React.FC = () => {
             <div style={{ display: 'inline-block', background: `${HERO_DEAL.accent}25`, border: `1px solid ${HERO_DEAL.accent}50`, borderRadius: 99, padding: '3px 12px', fontSize: '0.65rem', fontWeight: 700, color: HERO_DEAL.accent, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>
               {HERO_DEAL.badge}
             </div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 3vw, 2.2rem)', fontWeight: 900, color: '#fff', marginBottom: 4, lineHeight: 1.1 }}>{HERO_DEAL.headline}</h2>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 3vw, 2.2rem)', fontWeight: 900, color: 'var(--text-1)', marginBottom: 4, lineHeight: 1.1 }}>{HERO_DEAL.headline}</h2>
             <p style={{ color: `${HERO_DEAL.accent}CC`, fontSize: '0.95rem', marginBottom: 16 }}>{HERO_DEAL.subline}</p>
 
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 20 }}>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: '2.4rem', fontWeight: 900, color: '#fff', lineHeight: 1 }}>{HERO_DEAL.dealPrice}</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: '2.4rem', fontWeight: 900, color: 'var(--text-1)', lineHeight: 1 }}>{HERO_DEAL.dealPrice}</span>
               <span style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.45)', textDecoration: 'line-through' }}>{HERO_DEAL.originalPrice}</span>
               <span style={{ fontSize: '0.78rem', fontWeight: 700, color: HERO_DEAL.accent, background: `${HERO_DEAL.accent}20`, padding: '3px 10px', borderRadius: 99 }}>{HERO_DEAL.savings}</span>
             </div>
 
             <button
               onClick={() => navigate('/menu')}
-              style={{ background: HERO_DEAL.accent, color: '#fff', border: 'none', borderRadius: 99, padding: '12px 28px', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', letterSpacing: '0.02em' }}
+              style={{ background: HERO_DEAL.accent, color: 'var(--text-1)', border: 'none', borderRadius: 99, padding: '12px 28px', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', letterSpacing: '0.02em' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.9'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
             >
@@ -306,7 +306,7 @@ const PromotionsPage: React.FC = () => {
                 <FoodPlate gradient={promo.gradient} ring={promo.ring} size={100} />
 
                 {/* Discount badge */}
-                <div style={{ position: 'absolute', top: 12, right: 12, background: promo.accent, color: '#fff', padding: '4px 12px', borderRadius: 99, fontWeight: 800, fontSize: '0.75rem', letterSpacing: '0.02em', boxShadow: `0 4px 12px ${promo.accent}55` }}>
+                <div style={{ position: 'absolute', top: 12, right: 12, background: promo.accent, color: 'var(--text-1)', padding: '4px 12px', borderRadius: 99, fontWeight: 800, fontSize: '0.75rem', letterSpacing: '0.02em', boxShadow: `0 4px 12px ${promo.accent}55` }}>
                   {promo.discount}
                 </div>
 

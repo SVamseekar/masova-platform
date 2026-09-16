@@ -67,6 +67,15 @@ vi.mock('../../store/api/sessionApi', async (importOriginal) => {
   };
 });
 
+vi.mock('../../store/api/inventoryApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../store/api/inventoryApi')>();
+  return {
+    ...actual,
+    useGetAllInventoryItemsQuery: () => ({ data: [], isLoading: false, isError: false }),
+    useGetLowStockItemsQuery: () => ({ data: [], isLoading: false }),
+  };
+});
+
 // Mock child components to isolate POSDashboard behavior
 vi.mock('./components/MenuPanel', () => ({
   default: ({ onAddItem }: { onAddItem: (item: { id: string; name: string; basePrice: number }) => void }) => (
@@ -115,6 +124,10 @@ vi.mock('./components/ClockOutModal', () => ({
 vi.mock('./components/PINAuthModal', () => ({
   PINAuthModal: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="pin-auth-modal">PINAuthModal</div> : null,
+}));
+
+vi.mock('./OrderHistory', () => ({
+  default: () => <div data-testid="pos-order-history">OrderHistory</div>,
 }));
 
 // ---------------------------------------------------------------------------
@@ -197,7 +210,9 @@ describe('POSDashboard', () => {
         preloadedState: managerState,
       });
 
-      expect(screen.getByText('MaSoVa POS')).toBeInTheDocument();
+      expect(screen.getByTestId('pos-root')).toBeInTheDocument();
+      expect(screen.getByText('MaSoVa')).toBeInTheDocument();
+      expect(screen.getByText('POS')).toBeInTheDocument();
     });
 
     it('displays the store name in the header', () => {
@@ -220,28 +235,31 @@ describe('POSDashboard', () => {
       expect(screen.getByTestId('customer-panel')).toBeInTheDocument();
     });
 
-    it('shows tab navigation for managers', () => {
+    it('shows Orders / History / Reports tabs for managers', () => {
       renderWithProviders(<POSDashboard />, {
         useMemoryRouter: true,
         preloadedState: managerState,
       });
 
-      expect(screen.getByText('Orders')).toBeInTheDocument();
-      expect(screen.getByText('Analytics')).toBeInTheDocument();
+      expect(screen.getByTestId('pos-tab-orders')).toBeInTheDocument();
+      expect(screen.getByTestId('pos-tab-history')).toBeInTheDocument();
+      expect(screen.getByTestId('pos-tab-reports')).toBeInTheDocument();
     });
 
-    it('does not show tab navigation for staff users', () => {
+    it('shows same tab navigation for staff cashiers', () => {
       renderWithProviders(<POSDashboard />, {
         useMemoryRouter: true,
         preloadedState: staffState,
       });
 
-      expect(screen.queryByText('Analytics')).not.toBeInTheDocument();
+      expect(screen.getByTestId('pos-tab-bar')).toBeInTheDocument();
+      expect(screen.getByTestId('pos-tab-history')).toBeInTheDocument();
+      expect(screen.getByTestId('pos-tab-reports')).toBeInTheDocument();
     });
   });
 
   describe('tab switching', () => {
-    it('switches to analytics tab when clicked', async () => {
+    it('switches to reports tab when clicked', async () => {
       const user = userEvent.setup();
 
       renderWithProviders(<POSDashboard />, {
@@ -249,9 +267,9 @@ describe('POSDashboard', () => {
         preloadedState: managerState,
       });
 
-      await user.click(screen.getByText('Analytics'));
+      await user.click(screen.getByTestId('pos-tab-reports'));
 
-      // Analytics tab content should appear (MetricsTiles)
+      // Reports tab content should appear (MetricsTiles)
       expect(screen.getByTestId('metrics-tiles')).toBeInTheDocument();
       // Menu panel should no longer be visible
       expect(screen.queryByTestId('menu-panel')).not.toBeInTheDocument();
@@ -265,8 +283,8 @@ describe('POSDashboard', () => {
         preloadedState: managerState,
       });
 
-      await user.click(screen.getByText('Analytics'));
-      await user.click(screen.getByText('Orders'));
+      await user.click(screen.getByTestId('pos-tab-reports'));
+      await user.click(screen.getByTestId('pos-tab-orders'));
 
       expect(screen.getByTestId('menu-panel')).toBeInTheDocument();
     });
@@ -279,22 +297,30 @@ describe('POSDashboard', () => {
         preloadedState: managerState,
       });
 
-      // First switch to analytics
-      fireEvent.click(screen.getByText('Analytics'));
+      fireEvent.click(screen.getByTestId('pos-tab-reports'));
       expect(screen.queryByTestId('menu-panel')).not.toBeInTheDocument();
 
-      // Press F1 to switch back to orders
       fireEvent.keyDown(window, { key: 'F1' });
       expect(screen.getByTestId('menu-panel')).toBeInTheDocument();
     });
 
-    it('switches to analytics tab on F2', () => {
+    it('switches to history tab on F2', () => {
       renderWithProviders(<POSDashboard />, {
         useMemoryRouter: true,
         preloadedState: managerState,
       });
 
       fireEvent.keyDown(window, { key: 'F2' });
+      expect(screen.getByTestId('pos-order-history')).toBeInTheDocument();
+    });
+
+    it('switches to reports tab on F3', () => {
+      renderWithProviders(<POSDashboard />, {
+        useMemoryRouter: true,
+        preloadedState: managerState,
+      });
+
+      fireEvent.keyDown(window, { key: 'F3' });
       expect(screen.getByTestId('metrics-tiles')).toBeInTheDocument();
     });
 
@@ -388,7 +414,7 @@ describe('POSDashboard', () => {
         preloadedState: unauthenticatedState,
       });
 
-      expect(screen.getByText('MaSoVa POS')).toBeInTheDocument();
+      expect(screen.getByTestId('pos-root')).toBeInTheDocument();
     });
   });
 });

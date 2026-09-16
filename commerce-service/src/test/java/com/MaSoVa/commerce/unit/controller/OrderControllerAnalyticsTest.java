@@ -4,6 +4,7 @@ import com.MaSoVa.commerce.order.controller.OrderController;
 import com.MaSoVa.commerce.order.dto.PosStaffPerformanceDTO;
 import com.MaSoVa.commerce.order.entity.Order;
 import com.MaSoVa.commerce.order.service.OrderService;
+import com.MaSoVa.commerce.order.service.OrderSummaryService;
 import com.MaSoVa.shared.test.BaseServiceTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -33,6 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class OrderControllerAnalyticsTest extends BaseServiceTest {
 
     @Mock private OrderService orderService;
+    @Mock private OrderSummaryService orderSummaryService;
     @InjectMocks private OrderController orderController;
     private MockMvc mockMvc;
 
@@ -219,6 +221,18 @@ class OrderControllerAnalyticsTest extends BaseServiceTest {
 
         mockMvc.perform(get("/api/orders")
                         .param("kitchen", "true")
+                        .header("X-User-Store-Id", "store-1"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void analytics_store_summary_returns_200() throws Exception {
+        when(orderSummaryService.summarizeStore(eq("store-1"), any()))
+                .thenReturn(Map.of("todaySales", 10, "todayOrderCount", 2));
+
+        mockMvc.perform(get("/api/orders/analytics")
+                        .param("type", "store-summary")
+                        .param("days", "30")
                         .header("X-User-Store-Id", "store-1"))
                 .andExpect(status().isOk());
     }

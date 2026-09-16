@@ -21,7 +21,7 @@ const AggregatorHubPage: React.FC = () => {
   const selectedStoreId = useAppSelector(selectSelectedStoreId);
   const storeId = selectedStoreId || currentUser?.storeId || '';
 
-  const { data: connections = [], isLoading, error } = useGetConnectionsQuery(storeId, { skip: !storeId });
+  const { data: connections = [], isLoading, error, refetch } = useGetConnectionsQuery(storeId, { skip: !storeId });
   const [upsertConnection, { isLoading: isSaving }] = useUpsertConnectionMutation();
 
   const [editingPlatform, setEditingPlatform] = useState<AggregatorPlatform | null>(null);
@@ -53,96 +53,78 @@ const AggregatorHubPage: React.FC = () => {
     }
   };
 
-  if (isLoading) return <div style={{ padding: 24 }}>Loading aggregator settings…</div>;
-  if (error) return <div style={{ padding: 24, color: t.red }}>Failed to load aggregator settings.</div>;
-  if (!storeId) return <div style={{ padding: 24 }}>Select a store to manage aggregator settings.</div>;
+  if (!storeId) return <div style={{ padding: 8, color: t.gray }}>Select a store to manage aggregator settings.</div>;
 
   return (
-    <div style={{ padding: 24 }}>
+    <div>
       <h2 style={sectionTitleStyle}>Aggregator Hub</h2>
-      <p style={{ color: t.gray, marginBottom: 24, fontSize: 14 }}>
+      <p style={{ color: t.gray, marginBottom: 16, fontSize: 14 }}>
         Configure commission % per platform. Net payout is calculated automatically at order entry.
       </p>
+      {isLoading && <p style={{ fontSize: 13, color: t.gray, marginBottom: 12 }}>Loading aggregator settings…</p>}
+      {error && (
+        <div style={{ ...cardStyle, marginBottom: 16, border: `1px solid ${t.red}` }}>
+          <p style={{ margin: 0, color: t.red, fontSize: 13, fontWeight: 600 }}>Could not load saved aggregator settings.</p>
+          <p style={{ margin: '6px 0 10px', fontSize: 12, color: t.gray }}>You can still configure platforms below. Retry after the service is up.</p>
+          <button type="button" onClick={() => void refetch()} style={{
+            padding: '6px 12px', borderRadius: 8, border: `1px solid ${t.grayLight}`,
+            background: t.white, cursor: 'pointer', fontWeight: 600, fontSize: 12,
+          }}>Retry</button>
+        </div>
+      )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
-        {PLATFORMS.map(({ id, label, color }) => {
-          const conn = getConnection(id);
-          const isEditing = editingPlatform === id;
-
-          return (
-            <div key={id} style={{ ...cardStyle, borderTop: `4px solid ${color}` }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                <span style={{
-                  display: 'inline-block', padding: '3px 10px', borderRadius: 12,
-                  background: color, color: '#fff', fontSize: 12, fontWeight: 700,
-                }}>
-                  {label}
-                </span>
-                <span style={{ fontSize: 12, color: conn?.active ? t.green : t.gray }}>
-                  {conn ? (conn.active ? 'Configured' : 'Inactive') : 'Not configured'}
-                </span>
-              </div>
-
-              {isEditing ? (
-                <>
-                  <label style={{ fontSize: 12, color: t.gray, display: 'block', marginBottom: 4 }}>
-                    Commission %
-                  </label>
-                  <input
-                    type="number"
-                    value={commissionInput}
-                    onChange={(e) => setCommissionInput(e.target.value)}
-                    min="0" max="100" step="0.5"
-                    style={{
-                      width: '100%', padding: '8px 10px', borderRadius: 8,
-                      border: `1px solid ${t.grayLight}`, fontSize: 14,
-                      marginBottom: 8, boxSizing: 'border-box' as const,
-                    }}
-                  />
-                  {saveError && <p style={{ color: t.red, fontSize: 12, margin: '0 0 8px' }}>{saveError}</p>}
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button
-                      onClick={handleSave}
-                      disabled={isSaving}
-                      style={{
-                        flex: 1, padding: '8px 0', borderRadius: 8, border: 'none',
-                        background: t.orange, color: '#fff', fontWeight: 600, cursor: 'pointer',
-                      }}
-                    >
-                      {isSaving ? 'Saving…' : 'Save'}
-                    </button>
-                    <button
-                      onClick={() => setEditingPlatform(null)}
-                      style={{
-                        flex: 1, padding: '8px 0', borderRadius: 8,
-                        border: `1px solid ${t.grayLight}`, background: '#fff', cursor: 'pointer',
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p style={{ fontSize: 20, fontWeight: 700, margin: '0 0 4px', color: t.black }}>
-                    {conn ? `${conn.commissionPercent}%` : '—'}
-                  </p>
-                  <p style={{ fontSize: 12, color: t.gray, margin: '0 0 12px' }}>commission</p>
-                  <button
-                    onClick={() => handleEdit(id)}
-                    style={{
-                      width: '100%', padding: '8px 0', borderRadius: 8,
-                      border: `1px solid ${t.grayLight}`, background: '#fff', cursor: 'pointer',
-                      fontWeight: 600, fontSize: 13,
-                    }}
-                  >
-                    {conn ? 'Edit' : 'Configure'}
-                  </button>
-                </>
-              )}
-            </div>
-          );
-        })}
+      <div style={cardStyle}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              {['Platform', 'Status', 'Commission', ''].map((h) => (
+                <th key={h} style={{ textAlign: 'left', padding: '10px 8px', fontSize: 12, color: t.gray, borderBottom: `1px solid ${t.grayLight}` }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {PLATFORMS.map(({ id, label, color }) => {
+              const conn = getConnection(id);
+              const isEditing = editingPlatform === id;
+              return (
+                <tr key={id}>
+                  <td style={{ padding: '12px 8px', borderBottom: `1px solid ${t.grayLight}` }}>
+                    <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 6, background: color, color: '#fff', fontSize: 12, fontWeight: 700 }}>{label}</span>
+                  </td>
+                  <td style={{ padding: '12px 8px', borderBottom: `1px solid ${t.grayLight}`, fontSize: 13, color: conn ? t.green : t.gray }}>
+                    {conn ? (conn.active ? 'Configured' : 'Inactive') : 'Not configured'}
+                  </td>
+                  <td style={{ padding: '12px 8px', borderBottom: `1px solid ${t.grayLight}` }}>
+                    {isEditing ? (
+                      <div>
+                        <input type="number" value={commissionInput} onChange={(e) => setCommissionInput(e.target.value)}
+                          min="0" max="100" step="0.5"
+                          style={{ width: 88, padding: '6px 8px', borderRadius: 8, border: `1px solid ${t.grayLight}` }} />
+                        {saveError && <p style={{ color: t.red, fontSize: 12, margin: '4px 0 0' }}>{saveError}</p>}
+                      </div>
+                    ) : (
+                      <span style={{ fontWeight: 700 }}>{conn ? `${conn.commissionPercent}%` : '—'}</span>
+                    )}
+                  </td>
+                  <td style={{ padding: '12px 8px', borderBottom: `1px solid ${t.grayLight}`, textAlign: 'right' }}>
+                    {isEditing ? (
+                      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                        <button onClick={handleSave} disabled={isSaving} style={{ padding: '6px 12px', border: 'none', borderRadius: 8, background: t.orange, color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
+                          {isSaving ? 'Saving…' : 'Save'}
+                        </button>
+                        <button onClick={() => setEditingPlatform(null)} style={{ padding: '6px 12px', border: `1px solid ${t.grayLight}`, borderRadius: 8, background: '#fff', cursor: 'pointer' }}>Cancel</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => handleEdit(id)} style={{ padding: '6px 12px', border: `1px solid ${t.grayLight}`, borderRadius: 8, background: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
+                        {conn ? 'Edit' : 'Configure'}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );

@@ -2,8 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import {formatMoney, formatMajorAmount} from '../../utils/currency';
+import { selectCartCurrency, selectCartLocale, selectStoreCountryCode } from '../../store/slices/cartSlice';
+import { formatMajorAmount } from '../../utils/currency';
+import {
+  isValidCustomerPhone,
+  normalizePhoneForApi,
+  defaultAddressCountry,
+  postalPlaceholder,
+} from '../../utils/customerFormValidation';
 import {
   useGetCustomerByUserIdQuery,
   useCreateCustomerMutation,
@@ -89,6 +95,9 @@ const ProfilePage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
+  const storeCountryCode = useAppSelector(selectStoreCountryCode);
+  // Form copy from selected store country only (null = India legacy helpers)
+  const formCountry = storeCountryCode;
   const [activeSection, setActiveSection] = useState(() => searchParams.get('section') || 'overview');
   const [editing, setEditing] = useState(false);
   const [addressDialogOpen, setAddressDialogOpen] = useState(false);
@@ -97,7 +106,7 @@ const ProfilePage: React.FC = () => {
 
   const [profileForm, setProfileForm] = useState<UpdateCustomerRequest>({});
   const [addressForm, setAddressForm] = useState<AddAddressRequest>({
-    label: 'HOME', addressLine1: '', city: '', state: '', postalCode: '', country: 'India',
+    label: 'HOME', addressLine1: '', city: '', state: '', postalCode: '', country: defaultAddressCountry(null),
   });
   const [preferencesForm, setPreferencesForm] = useState<UpdatePreferencesRequest>({});
   const [notifForm, setNotifForm] = useState({
@@ -134,10 +143,23 @@ const ProfilePage: React.FC = () => {
       if (error && currentUser && !hasAttemptedCreate.current && !customer) {
         hasAttemptedCreate.current = true;
         setCreatingProfile(true);
-        const cleanPhone = currentUser.phone?.replace(/\D/g, '') || '';
-        if (!cleanPhone.match(/^[6-9]\d{9}$/)) { setCreatingProfile(false); return; }
+        const rawPhone = currentUser.phone || '';
+        const cleanPhone = normalizePhoneForApi(rawPhone);
+        // EU demo: accept E.164 / local; skip auto-create only when phone is unusable
+        if (!isValidCustomerPhone(rawPhone) && !isValidCustomerPhone(cleanPhone)) {
+          setCreationError('Add a valid phone number to finish setting up your profile.');
+          setCreatingProfile(false);
+          return;
+        }
         try {
-          await createCustomer({ userId: currentUser.id, name: currentUser.name, email: currentUser.email, phone: cleanPhone, marketingOptIn: false, smsOptIn: false }).unwrap();
+          await createCustomer({
+            userId: currentUser.id,
+            name: currentUser.name,
+            email: currentUser.email,
+            phone: cleanPhone || rawPhone,
+            marketingOptIn: false,
+            smsOptIn: false,
+          }).unwrap();
           setTimeout(async () => { await refetch(); setCreatingProfile(false); }, 500);
         } catch (err: unknown) {
           const msg = getApiErrorMessage(err, '');
@@ -198,7 +220,7 @@ const ProfilePage: React.FC = () => {
     try {
       if (editingAddressId) await updateAddress({ customerId: customer.id, addressId: editingAddressId, data: addressForm }).unwrap();
       else await addAddress({ customerId: customer.id, data: addressForm }).unwrap();
-      setAddressForm({ label: 'HOME', addressLine1: '', city: '', state: '', postalCode: '', country: 'India' });
+      setAddressForm({ label: 'HOME', addressLine1: '', city: '', state: '', postalCode: '', country: defaultAddressCountry(formCountry) });
       setAddressDialogOpen(false); setEditingAddressId(null);
     } catch { alert('Failed to save address.'); }
   };
@@ -260,7 +282,7 @@ const ProfilePage: React.FC = () => {
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: 12 }}>Unable to Load Profile</h2>
             <p style={{ color: 'var(--text-3)', fontSize: '0.9rem', marginBottom: 28 }}>{creationError || "We couldn't load your customer profile."}</p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-              <button onClick={() => window.location.reload()} style={{ background: 'var(--red)', color: '#fff', border: 'none', borderRadius: 'var(--radius-pill)', padding: '10px 24px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>Retry</button>
+              <button onClick={() => window.location.reload()} style={{ background: 'var(--red)', color: 'var(--text-1)', border: 'none', borderRadius: 'var(--radius-pill)', padding: '10px 24px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>Retry</button>
               <button onClick={() => navigate('/menu')} style={{ background: 'transparent', color: 'var(--text-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '10px 24px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}>Back to Menu</button>
             </div>
           </div>
@@ -290,7 +312,7 @@ const ProfilePage: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ fontSize: '0.95rem', color: 'var(--text-1)', fontWeight: 500 }}>{value || '—'}</span>
         {verified && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.7rem', color: '#4ade80', fontWeight: 600, background: 'rgba(74,222,128,0.1)', padding: '2px 8px', borderRadius: 99 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.7rem', color: 'var(--success-light)', fontWeight: 600, background: 'rgba(74,222,128,0.1)', padding: '2px 8px', borderRadius: 99 }}>
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             Verified
           </span>
@@ -357,7 +379,7 @@ const ProfilePage: React.FC = () => {
       >
         <span style={{
           position: 'absolute', top: 3, left: checked ? 24 : 3, width: 20, height: 20,
-          borderRadius: '50%', background: '#fff', transition: 'left 0.2s ease',
+          borderRadius: '50%', background: 'var(--text-1)', transition: 'left 0.2s ease',
           boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
         }} />
       </button>
@@ -459,7 +481,7 @@ const ProfilePage: React.FC = () => {
               </div>
               <span style={{
                 fontSize: '0.9rem', fontWeight: 700,
-                color: tx.type === 'EARNED' || tx.type === 'BONUS' ? '#4ade80' : tx.type === 'REDEEMED' ? 'var(--red-light)' : 'var(--text-3)',
+                color: tx.type === 'EARNED' || tx.type === 'BONUS' ? 'var(--success-light)' : tx.type === 'REDEEMED' ? 'var(--red-light)' : 'var(--text-3)',
               }}>
                 {tx.type === 'EARNED' || tx.type === 'BONUS' ? '+' : '−'}{Math.abs(tx.points)}
               </span>
@@ -482,7 +504,7 @@ const ProfilePage: React.FC = () => {
         ) : (
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => setEditing(false)} style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-2)', borderRadius: 'var(--radius-pill)', padding: '8px 18px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>Cancel</button>
-            <button onClick={handleUpdateProfile} style={{ background: 'var(--red)', border: 'none', color: '#fff', borderRadius: 'var(--radius-pill)', padding: '8px 20px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>Save Changes</button>
+            <button onClick={handleUpdateProfile} style={{ background: 'var(--red)', border: 'none', color: 'var(--text-1)', borderRadius: 'var(--radius-pill)', padding: '8px 20px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>Save Changes</button>
           </div>
         )}
       </div>
@@ -547,8 +569,8 @@ const ProfilePage: React.FC = () => {
           <p style={{ color: 'var(--text-3)', fontSize: '0.8rem', margin: '4px 0 0' }}>Manage your delivery locations</p>
         </div>
         <button
-          onClick={() => { setEditingAddressId(null); setAddressForm({ label: 'HOME', addressLine1: '', city: '', state: '', postalCode: '', country: 'India' }); setAddressDialogOpen(true); }}
-          style={{ background: 'var(--red)', border: 'none', color: '#fff', borderRadius: 'var(--radius-pill)', padding: '8px 20px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
+          onClick={() => { setEditingAddressId(null); setAddressForm({ label: 'HOME', addressLine1: '', city: '', state: '', postalCode: '', country: defaultAddressCountry(formCountry) }); setAddressDialogOpen(true); }}
+          style={{ background: 'var(--red)', border: 'none', color: 'var(--text-1)', borderRadius: 'var(--radius-pill)', padding: '8px 20px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
         >
           + Add Address
         </button>
@@ -614,7 +636,7 @@ const ProfilePage: React.FC = () => {
         ) : (
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => setEditingPreferences(false)} style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-2)', borderRadius: 'var(--radius-pill)', padding: '8px 18px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>Cancel</button>
-            <button onClick={handleUpdatePreferences} style={{ background: 'var(--red)', border: 'none', color: '#fff', borderRadius: 'var(--radius-pill)', padding: '8px 20px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>Save</button>
+            <button onClick={handleUpdatePreferences} style={{ background: 'var(--red)', border: 'none', color: 'var(--text-1)', borderRadius: 'var(--radius-pill)', padding: '8px 20px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>Save</button>
           </div>
         )}
       </div>
@@ -633,7 +655,12 @@ const ProfilePage: React.FC = () => {
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 24px', marginBottom: 12 }}>
         <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 14 }}>Preferred Payment</div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {[{ v: 'CASH', l: 'Cash' }, { v: 'CARD', l: 'Card' }, { v: 'UPI', l: 'UPI' }, { v: 'WALLET', l: 'Wallet' }].map(opt => (
+          {[
+            { v: 'CASH', l: 'Cash' },
+            { v: 'CARD', l: 'Card' },
+            // UPI is India-only; Berlin/EU demo omits it (see utils/paymentMethods)
+            { v: 'WALLET', l: 'Wallet' },
+          ].map(opt => (
             <PillToggle key={opt.v} label={opt.l} selected={preferencesForm.preferredPaymentMethod === opt.v} onClick={() => editingPreferences && setPreferencesForm(p => ({ ...p, preferredPaymentMethod: opt.v }))} />
           ))}
         </div>
@@ -704,7 +731,7 @@ const ProfilePage: React.FC = () => {
               {icon}
             </div>
             <div style={{ width: 38, height: 22, borderRadius: 99, background: on ? 'var(--gold)' : 'var(--surface-3)', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
-              <span style={{ position: 'absolute', top: 3, left: on ? 18 : 3, width: 16, height: 16, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.4)' }} />
+              <span style={{ position: 'absolute', top: 3, left: on ? 18 : 3, width: 16, height: 16, borderRadius: '50%', background: 'var(--text-1)', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.4)' }} />
             </div>
           </div>
           <div>
@@ -723,7 +750,7 @@ const ProfilePage: React.FC = () => {
             <p style={{ color: 'var(--text-3)', fontSize: '0.8rem', margin: '4px 0 0' }}>Control what we send you and how</p>
           </div>
           {notifSaved && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 99, background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.25)', color: '#4ade80', fontSize: '0.8rem', fontWeight: 700 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 99, background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.25)', color: 'var(--success-light)', fontSize: '0.8rem', fontWeight: 700 }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               Saved
             </div>
@@ -855,8 +882,8 @@ const ProfilePage: React.FC = () => {
         <button
           onClick={handleSaveNotifications}
           style={{
-            width: '100%', background: 'linear-gradient(135deg, #c0392b, #e74c3c)', border: 'none',
-            color: '#fff', borderRadius: 'var(--radius-pill)', padding: '14px',
+            width: '100%', background: 'linear-gradient(135deg, var(--red), var(--red-light))', border: 'none',
+            color: 'var(--text-1)', borderRadius: 'var(--radius-pill)', padding: '14px',
             fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.95rem',
             cursor: 'pointer', letterSpacing: '0.02em', transition: 'opacity 0.2s',
           }}
@@ -902,7 +929,7 @@ const ProfilePage: React.FC = () => {
           <Input label="State *" value={addressForm.state} onChange={v => setAddressForm(p => ({ ...p, state: v }))} />
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <Input label="Postal Code *" value={addressForm.postalCode} onChange={v => setAddressForm(p => ({ ...p, postalCode: v }))} placeholder="6-digit PIN" />
+          <Input label="Postal Code *" value={addressForm.postalCode} onChange={v => setAddressForm(p => ({ ...p, postalCode: v }))} placeholder={postalPlaceholder(formCountry)} />
           <Input label="Country *" value={addressForm.country} onChange={v => setAddressForm(p => ({ ...p, country: v }))} />
         </div>
         <Input label="Landmark" value={addressForm.landmark || ''} onChange={v => setAddressForm(p => ({ ...p, landmark: v }))} placeholder="Nearby landmark" />
@@ -912,7 +939,7 @@ const ProfilePage: React.FC = () => {
           <button
             onClick={handleAddOrUpdateAddress}
             disabled={!addressForm.addressLine1 || !addressForm.city || !addressForm.state || !addressForm.postalCode}
-            style={{ flex: 2, background: 'var(--red)', border: 'none', color: '#fff', borderRadius: 'var(--radius-pill)', padding: '12px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', opacity: (!addressForm.addressLine1 || !addressForm.city || !addressForm.state || !addressForm.postalCode) ? 0.5 : 1 }}
+            style={{ flex: 2, background: 'var(--red)', border: 'none', color: 'var(--text-1)', borderRadius: 'var(--radius-pill)', padding: '12px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', opacity: (!addressForm.addressLine1 || !addressForm.city || !addressForm.state || !addressForm.postalCode) ? 0.5 : 1 }}
           >
             {editingAddressId ? 'Update Address' : 'Save Address'}
           </button>

@@ -17,8 +17,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * Store management — 4 canonical endpoints at /api/stores.
- * Replaces: /api/stores/public/*, /api/stores/nearby, /api/stores/code/*,
+ * Store management — canonical endpoints at /api/stores.
+ * Public GET (no auth): list, by id/code, and /public aliases for customer entry.
+ * Mutations require MANAGER. Replaces: /api/stores/nearby, /api/stores/code/*,
  *           /api/stores/region/*, /api/stores/operational-status, /api/stores/metrics.
  */
 @RestController
@@ -33,11 +34,10 @@ public class StoreController {
      * GET /api/stores
      * Query params: code, region, near=lat,lng, radius, lat, lng
      * Returns withinDeliveryRadius field when lat/lng provided.
-     * Replaces: GET /api/stores (list), /api/stores/public, /api/stores/nearby,
-     *           /api/stores/code/{code}, /api/stores/region/{id}
+     * Public — customer store picker (no JWT).
      */
     @GetMapping
-    @Operation(summary = "List stores (query: code, region, near=lat,lng, radius, lat, lng)")
+    @Operation(summary = "List stores (query: code, region, near=lat,lng, radius, lat, lng) — public")
     public ResponseEntity<List<Store>> getStores(
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String region,
@@ -57,8 +57,26 @@ public class StoreController {
         return ResponseEntity.ok(storeService.getActiveStores());
     }
 
+    /**
+     * GET /api/stores/public — alias for list active stores (anonymous customer path).
+     */
+    @GetMapping("/public")
+    @Operation(summary = "List active stores (public alias)")
+    public ResponseEntity<List<Store>> getPublicStores() {
+        return ResponseEntity.ok(storeService.getActiveStores());
+    }
+
+    /**
+     * GET /api/stores/public/{code} — store by code for anonymous customers.
+     */
+    @GetMapping("/public/{code}")
+    @Operation(summary = "Get store by code (public alias)")
+    public ResponseEntity<Store> getPublicStoreByCode(@PathVariable String code) {
+        return ResponseEntity.ok(storeService.getStoreByCode(code));
+    }
+
     @GetMapping("/{storeId}")
-    @Operation(summary = "Get store by ID or code")
+    @Operation(summary = "Get store by ID or code — public GET")
     public ResponseEntity<Store> getStore(@PathVariable String storeId) {
         try {
             return ResponseEntity.ok(storeService.getStoreByCode(storeId));

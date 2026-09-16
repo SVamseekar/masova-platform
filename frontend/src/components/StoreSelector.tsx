@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useGetActiveStoresQuery, type Store } from '../store/api/storeApi';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { setSelectedStore, setStoreCurrency, selectSelectedStoreId, selectSelectedStoreName } from '../store/slices/cartSlice';
-import { storeCurrencyPayload } from '../utils/storeCurrency';
+import { storeCurrencyPayload, resolveStoreMarket } from '../utils/storeCurrency';
 import { getTabStore, setTabStore } from '../utils/tabStorage';
 
 // Haversine formula — returns distance in km between two lat/lng points
@@ -81,12 +81,15 @@ const StoreSelector: React.FC<StoreSelectorProps> = ({ variant: _variant = 'cust
   const [isOpen, setIsOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
 
-  const { data: stores = [], isLoading } = useGetActiveStoresQuery();
+  const { data: stores = [], isLoading, isError, error, refetch } = useGetActiveStoresQuery();
 
   const handleStoreSelect = useCallback((storeId: string, storeName: string, store?: StoreWithHours) => {
     // ALWAYS update Redux for API headers
     dispatch(setSelectedStore({ storeId, storeName }));
-    dispatch(setStoreCurrency(storeCurrencyPayload(store)));
+    // Market only when we have a full store record (never invent DE/EUR)
+    if (store && resolveStoreMarket(store).resolved) {
+      dispatch(setStoreCurrency(storeCurrencyPayload(store)));
+    }
 
     if (useLocalStorage && contextKey) {
       // ALSO use page-specific tabStorage for local state
@@ -181,12 +184,20 @@ const StoreSelector: React.FC<StoreSelectorProps> = ({ variant: _variant = 'cust
     marginBottom: '2px',
   });
 
+  const buttonLabel = isLoading
+    ? 'Loading...'
+    : isError
+      ? 'Stores unavailable'
+      : selectedStoreName || 'Select Store';
+
   return (
     <div style={{ position: 'relative' }}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         style={buttonStyles}
         disabled={isLoading}
+        aria-busy={isLoading}
+        aria-invalid={isError || undefined}
         onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.18)'; }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
       >
@@ -198,10 +209,10 @@ const StoreSelector: React.FC<StoreSelectorProps> = ({ variant: _variant = 'cust
           </svg>
           <span style={{
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            color: selectedStoreId ? 'var(--text-1)' : 'var(--text-3)',
+            color: isError ? 'var(--text-3)' : selectedStoreId ? 'var(--text-1)' : 'var(--text-3)',
             maxWidth: '130px',
           }}>
-            {isLoading ? 'Loading...' : selectedStoreName || 'Select Store'}
+            {buttonLabel}
           </span>
         </div>
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
@@ -211,7 +222,31 @@ const StoreSelector: React.FC<StoreSelectorProps> = ({ variant: _variant = 'cust
 
       {isOpen && !isLoading && (
         <div style={dropdownStyles}>
-          {stores.length === 0 ? (
+          {isError ? (
+            <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-3)', fontSize: '0.85rem' }}>
+              <div style={{ marginBottom: '8px' }}>Could not load stores.</div>
+              <button
+                type="button"
+                onClick={() => { void refetch(); }}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border)',
+                  background: 'var(--surface-1, transparent)',
+                  color: 'var(--gold, var(--text-1))',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                }}
+              >
+                Retry
+              </button>
+              {error && 'status' in error ? (
+                <div style={{ marginTop: '8px', fontSize: '0.72rem', opacity: 0.7 }}>
+                  Error {String(error.status)}
+                </div>
+              ) : null}
+            </div>
+          ) : stores.length === 0 ? (
             <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-3)', fontSize: '0.85rem' }}>
               No stores available
             </div>

@@ -1,13 +1,21 @@
 package com.MaSoVa.shared.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.lettuce.core.api.StatefulConnection;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -17,8 +25,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-import io.lettuce.core.api.StatefulConnection;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -28,10 +34,17 @@ import java.util.Map;
  * Advanced caching configuration with multi-level caching strategy
  * Implements cache warming, invalidation policies, and connection pooling
  * Phase 13: Performance Optimization & Caching
+ *
+ * <p><b>Type-safe Redis values:</b> the ObjectMapper used for cache values must
+ * activate default typing. Without it, {@code @Cacheable} round-trips deserialize
+ * to {@link java.util.LinkedHashMap} and throw ClassCastException on cache hits
+ * (intelligence analytics/BI Phase D regression).
  */
 @Configuration
 @EnableCaching
 public class AdvancedCacheConfig {
+
+    private static final Logger log = LoggerFactory.getLogger(AdvancedCacheConfig.class);
 
     @Value("${spring.data.redis.host:localhost}")
     private String redisHost;
@@ -56,7 +69,6 @@ public class AdvancedCacheConfig {
      */
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
-        // Configure connection pool
         GenericObjectPoolConfig<StatefulConnection<?, ?>> poolConfig = new GenericObjectPoolConfig<>();
         poolConfig.setMaxTotal(maxTotal);
         poolConfig.setMaxIdle(maxIdle);
@@ -65,7 +77,6 @@ public class AdvancedCacheConfig {
         poolConfig.setTestOnReturn(true);
         poolConfig.setTestWhileIdle(true);
 
-        // Configure Lettuce client with pooling
         LettucePoolingClientConfiguration clientConfig = LettucePoolingClientConfiguration.builder()
                 .poolConfig(poolConfig)
                 .commandTimeout(Duration.ofSeconds(5))
@@ -84,12 +95,22 @@ public class AdvancedCacheConfig {
         return factory;
     }
 
-    @Bean
-    public ObjectMapper redisObjectMapper() {
+    /**
+     * ObjectMapper for Redis values only (not an HTTP bean). Embeds Java type metadata
+     * so cache hits reconstruct DTOs instead of raw LinkedHashMap.
+     * <p>Must NOT be a Spring {@code ObjectMapper} bean — Boot would pick it up for
+     * REST serialization and leak {@code @class} into API responses.
+     */
+    private static ObjectMapper createRedisObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         mapper.findAndRegisterModules();
+        mapper.activateDefaultTyping(
+                LaissezFaireSubTypeValidator.instance,
+                DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY
+        );
         return mapper;
     }
 
@@ -100,7 +121,7 @@ public class AdvancedCacheConfig {
 
         StringRedisSerializer stringSerializer = new StringRedisSerializer();
         GenericJackson2JsonRedisSerializer jsonSerializer =
-            new GenericJackson2JsonRedisSerializer(redisObjectMapper());
+                new GenericJackson2JsonRedisSerializer(createRedisObjectMapper());
 
         template.setKeySerializer(stringSerializer);
         template.setHashKeySerializer(stringSerializer);
@@ -114,14 +135,15 @@ public class AdvancedCacheConfig {
     }
 
     /**
-     * Multi-level cache configuration with different TTLs for different cache types
+     * Multi-level cache configuration with different TTLs for different cache types.
+     * {@link Primary} so service-local CacheManager beans without typing cannot win.
      */
     @Bean
+    @Primary
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
         GenericJackson2JsonRedisSerializer serializer =
-            new GenericJackson2JsonRedisSerializer(redisObjectMapper());
+                new GenericJackson2JsonRedisSerializer(createRedisObjectMapper());
 
-        // Default cache configuration
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .serializeKeysWith(RedisSerializationContext.SerializationPair
                         .fromSerializer(new StringRedisSerializer()))
@@ -131,61 +153,34 @@ public class AdvancedCacheConfig {
                 .disableCachingNullValues()
                 .enableTimeToIdle();
 
-        // Custom cache configurations for different data types
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
 
-        // Menu items - cache for 2 hours (changes infrequently)
-        cacheConfigurations.put("menu",
-            defaultConfig.entryTtl(Duration.ofHours(2)));
+        cacheConfigurations.put("menu", defaultConfig.entryTtl(Duration.ofHours(2)));
+        cacheConfigurations.put("user", defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("orders", defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        cacheConfigurations.put("analytics", defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        cacheConfigurations.put("inventory", defaultConfig.entryTtl(Duration.ofMinutes(10)));
+        cacheConfigurations.put("customer", defaultConfig.entryTtl(Duration.ofHours(1)));
+        cacheConfigurations.put("reviews", defaultConfig.entryTtl(Duration.ofHours(1)));
+        cacheConfigurations.put("payment", defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        cacheConfigurations.put("notifications", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("static", defaultConfig.entryTtl(Duration.ofHours(24)));
+        cacheConfigurations.put("performance", defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("routes", defaultConfig.entryTtl(Duration.ofHours(1)));
+        cacheConfigurations.put("eta", defaultConfig.entryTtl(Duration.ofMinutes(5)));
 
-        // User data - cache for 30 minutes
-        cacheConfigurations.put("user",
-            defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        // Intelligence-service @Cacheable names (Phase D analytics / BI)
+        Duration analyticsTtl = Duration.ofMinutes(5);
+        for (String name : new String[]{
+                "salesMetrics", "staffLeaderboard", "staffPerformance", "driverStatus",
+                "salesTrends", "orderTypeBreakdown", "peakHours", "topProducts",
+                "salesForecast", "customerBehavior", "churnPrediction", "demandForecast",
+                "costAnalysis", "executiveSummary", "benchmarking"
+        }) {
+            cacheConfigurations.put(name, defaultConfig.entryTtl(analyticsTtl));
+        }
 
-        // Orders - cache for 15 minutes (frequently updated)
-        cacheConfigurations.put("orders",
-            defaultConfig.entryTtl(Duration.ofMinutes(15)));
-
-        // Analytics - cache for 5 minutes (real-time data)
-        cacheConfigurations.put("analytics",
-            defaultConfig.entryTtl(Duration.ofMinutes(5)));
-
-        // Inventory - cache for 10 minutes
-        cacheConfigurations.put("inventory",
-            defaultConfig.entryTtl(Duration.ofMinutes(10)));
-
-        // Customer data - cache for 1 hour
-        cacheConfigurations.put("customer",
-            defaultConfig.entryTtl(Duration.ofHours(1)));
-
-        // Reviews - cache for 1 hour
-        cacheConfigurations.put("reviews",
-            defaultConfig.entryTtl(Duration.ofHours(1)));
-
-        // Payment data - cache for 5 minutes (sensitive, short TTL)
-        cacheConfigurations.put("payment",
-            defaultConfig.entryTtl(Duration.ofMinutes(5)));
-
-        // Notifications - cache for 2 minutes
-        cacheConfigurations.put("notifications",
-            defaultConfig.entryTtl(Duration.ofMinutes(2)));
-
-        // Static data - cache for 24 hours
-        cacheConfigurations.put("static",
-            defaultConfig.entryTtl(Duration.ofHours(24)));
-
-        // Delivery service caches
-        // Performance metrics - cache for 30 minutes
-        cacheConfigurations.put("performance",
-            defaultConfig.entryTtl(Duration.ofMinutes(30)));
-
-        // Route optimization - cache for 1 hour (routes don't change frequently)
-        cacheConfigurations.put("routes",
-            defaultConfig.entryTtl(Duration.ofHours(1)));
-
-        // ETA calculations - cache for 5 minutes (traffic conditions change)
-        cacheConfigurations.put("eta",
-            defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        log.info("Redis CacheManager initialized with typed Jackson serialization (default typing ON)");
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)

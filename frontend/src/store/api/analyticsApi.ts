@@ -1,6 +1,10 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import API_CONFIG from '../../config/api.config';
 import type { RootState } from '../store';
+import {
+  mapSalesForecastResponse,
+  productDisplayName,
+} from '../../utils/analyticsMetrics';
 
 interface SalesMetricsResponse {
   todaySales: number;
@@ -202,7 +206,8 @@ interface CostAnalysisResponse {
   period: string;
 }
 
-interface ExecutiveSummary {
+/** Dashboard-facing executive summary (mapped from backend ExecutiveSummaryResponse). */
+export interface ExecutiveSummary {
   revenue: {
     total: number;
     change: number;
@@ -225,6 +230,148 @@ interface ExecutiveSummary {
   };
   topInsights: string[];
   alerts: string[];
+}
+
+/** Raw shape from GET /api/bi/reports?type=executive-summary */
+interface BackendExecutiveSummary {
+  reportPeriod?: string;
+  financialSummary?: {
+    totalRevenue?: number;
+    totalCosts?: number;
+    grossProfit?: number;
+    netProfit?: number;
+  };
+  operationalMetrics?: {
+    totalOrders?: number;
+    averageOrderValue?: number;
+    newCustomers?: number;
+    activeCustomers?: number;
+    totalCustomers?: number;
+    averageDeliveryTime?: number;
+    orderAccuracyRate?: number;
+  };
+  growthMetrics?: {
+    revenueGrowthRate?: number;
+    orderGrowthRate?: number;
+    customerGrowthRate?: number;
+  };
+  insights?: Array<{ title?: string; description?: string; recommendation?: string }>;
+  // Already-mapped shape (idempotent transform)
+  revenue?: ExecutiveSummary['revenue'];
+  orders?: ExecutiveSummary['orders'];
+  customers?: ExecutiveSummary['customers'];
+  topInsights?: string[];
+  alerts?: string[];
+  performance?: ExecutiveSummary['performance'];
+}
+
+function num(v: unknown, fallback = 0): number {
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  if (typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v))) return Number(v);
+  return fallback;
+}
+
+function trendFromChange(change: number): 'UP' | 'DOWN' | 'STABLE' {
+  if (change > 0.5) return 'UP';
+  if (change < -0.5) return 'DOWN';
+  return 'STABLE';
+}
+
+/**
+ * Map backend ExecutiveSummaryResponse → dashboard ExecutiveSummary.
+ * Prevents ErrorBoundary crashes on executiveSummary.revenue.total when API returns financialSummary.
+ */
+export function mapExecutiveSummary(raw: BackendExecutiveSummary | null | undefined): ExecutiveSummary {
+  if (raw && raw.revenue && typeof raw.revenue.total === 'number') {
+    return {
+      revenue: {
+        total: num(raw.revenue.total),
+        change: num(raw.revenue.change),
+        trend: raw.revenue.trend ?? trendFromChange(num(raw.revenue.change)),
+      },
+      orders: {
+        total: num(raw.orders?.total),
+        change: num(raw.orders?.change),
+        trend: raw.orders?.trend ?? trendFromChange(num(raw.orders?.change)),
+      },
+      customers: {
+        new: num(raw.customers?.new),
+        returning: num(raw.customers?.returning),
+        atRisk: num(raw.customers?.atRisk),
+      },
+      performance: {
+        avgOrderValue: num(raw.performance?.avgOrderValue),
+        customerSatisfaction: num(raw.performance?.customerSatisfaction),
+        deliveryOnTime: num(raw.performance?.deliveryOnTime),
+      },
+      topInsights: Array.isArray(raw.topInsights) ? raw.topInsights : [],
+      alerts: Array.isArray(raw.alerts) ? raw.alerts : [],
+    };
+  }
+
+  const fin = raw?.financialSummary ?? {};
+  const ops = raw?.operationalMetrics ?? {};
+  const growth = raw?.growthMetrics ?? {};
+  const revenueChange = num(growth.revenueGrowthRate);
+  const orderChange = num(growth.orderGrowthRate);
+
+  const topInsights = Array.isArray(raw?.insights)
+    ? raw!.insights!
+        .map((i) => i?.title || i?.description || i?.recommendation || '')
+        .filter((s): s is string => Boolean(s && s.trim()))
+    : [];
+
+  return {
+    revenue: {
+      total: num(fin.totalRevenue),
+      change: revenueChange,
+      trend: trendFromChange(revenueChange),
+    },
+    orders: {
+      total: num(ops.totalOrders),
+      change: orderChange,
+      trend: trendFromChange(orderChange),
+    },
+    customers: {
+      new: num(ops.newCustomers),
+      returning: Math.max(0, num(ops.activeCustomers) - num(ops.newCustomers)),
+      atRisk: 0,
+    },
+    performance: {
+      avgOrderValue: num(ops.averageOrderValue),
+      customerSatisfaction: 0,
+      deliveryOnTime: num(ops.orderAccuracyRate),
+    },
+    topInsights,
+    alerts: [],
+  };
+}
+
+/** Map churn BI response to the shape used by manager dashboards. */
+export function mapChurnPrediction(raw: Record<string, unknown> | null | undefined): ChurnPredictionResponse {
+  if (!raw) {
+    return { predictions: [], totalAtRisk: 0, highRiskCount: 0, mediumRiskCount: 0, lowRiskCount: 0 };
+  }
+  if (Array.isArray(raw.predictions)) {
+    return raw as unknown as ChurnPredictionResponse;
+  }
+  const atRisk = (raw.atRiskCustomers as Array<Record<string, unknown>>) || [];
+  return {
+    predictions: atRisk.map((c) => ({
+      customerId: String(c.customerId ?? c.id ?? ''),
+      customerName: String(c.customerName ?? c.name ?? 'Customer'),
+      churnProbability: num(c.churnProbability ?? c.riskScore),
+      riskLevel: (String(c.riskLevel ?? 'MEDIUM').toUpperCase() as 'HIGH' | 'MEDIUM' | 'LOW'),
+      lastOrderDate: String(c.lastOrderDate ?? ''),
+      daysSinceLastOrder: num(c.daysSinceLastOrder),
+      totalOrders: num(c.totalOrders),
+      totalSpent: num(c.totalSpent ?? c.lifetimeValue),
+    })),
+    totalAtRisk: num(raw.highRiskCustomers) + num(raw.mediumRiskCustomers),
+    highRiskCount: num(raw.highRiskCustomers),
+    mediumRiskCount: num(raw.mediumRiskCustomers),
+    lowRiskCount: num(raw.lowRiskCustomers),
+  };
 }
 
 export const analyticsApi = createApi({
@@ -260,17 +407,20 @@ export const analyticsApi = createApi({
   tagTypes: ['Analytics', 'SalesMetrics', 'DriverStatus', 'StaffPerformance'],
   endpoints: (builder) => ({
     getTodaySalesMetrics: builder.query<SalesMetricsResponse, string | undefined>({
-      query: () => '/analytics?type=sales',
+      query: (storeId) =>
+        `/analytics?type=sales${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'SalesMetrics', id: storeId || 'DEFAULT' }],
     }),
 
     getAverageOrderValue: builder.query<AverageOrderValueResponse, string | undefined>({
-      query: () => '/analytics?type=aov',
+      query: (storeId) =>
+        `/analytics?type=aov${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'SalesMetrics', id: storeId || 'DEFAULT' }],
     }),
 
     getDriverStatus: builder.query<DriverStatusResponse, string | undefined>({
-      query: () => '/analytics?type=drivers',
+      query: (storeId) =>
+        `/analytics?type=drivers${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'DriverStatus', id: storeId || 'DEFAULT' }],
     }),
 
@@ -280,60 +430,125 @@ export const analyticsApi = createApi({
     }),
 
     getSalesTrends: builder.query<SalesTrendResponse, { period: 'WEEKLY' | 'MONTHLY'; storeId?: string }>({
-      query: ({ period }) => `/analytics?type=sales-trends&period=${period}`,
+      query: ({ period, storeId }) =>
+        `/analytics?type=sales-trends&period=${period}${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, { storeId }) => [{ type: 'SalesMetrics', id: storeId || 'DEFAULT' }],
     }),
 
     getOrderTypeBreakdown: builder.query<OrderTypeBreakdownResponse, string | undefined>({
-      query: () => '/analytics?type=order-breakdown',
+      query: (storeId) =>
+        `/analytics?type=order-breakdown${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'SalesMetrics', id: storeId || 'DEFAULT' }],
     }),
 
     getPeakHours: builder.query<PeakHoursResponse, string | undefined>({
-      query: () => '/analytics?type=peak-hours',
+      query: (storeId) =>
+        `/analytics?type=peak-hours${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'Analytics', id: storeId || 'DEFAULT' }],
     }),
 
     getStaffLeaderboard: builder.query<StaffLeaderboardResponse, { storeId?: string; period: string }>({
-      query: ({ period }) => `/analytics?type=staff-leaderboard&period=${encodeURIComponent(period)}`,
+      query: ({ period, storeId }) =>
+        `/analytics?type=staff-leaderboard&period=${encodeURIComponent(period)}${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, { storeId }) => [{ type: 'StaffPerformance', id: storeId || 'DEFAULT' }],
     }),
 
     getTopProducts: builder.query<TopProductsResponse, { storeId?: string; period: string; sortBy: string }>({
-      query: ({ period, sortBy }) =>
-        `/analytics?type=top-products&period=${encodeURIComponent(period)}&sortBy=${encodeURIComponent(sortBy)}`,
+      query: ({ period, sortBy, storeId }) =>
+        `/analytics?type=top-products&period=${encodeURIComponent(period)}&sortBy=${encodeURIComponent(sortBy)}${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
+      transformResponse: (response: TopProductsResponse | null | undefined): TopProductsResponse => {
+        if (!response) {
+          return { topProducts: [], period: '', sortBy: '' };
+        }
+        return {
+          ...response,
+          topProducts: (response.topProducts ?? []).map((p) => ({
+            ...p,
+            itemName: productDisplayName(p.itemName, p.itemId),
+          })),
+        };
+      },
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: storeId || 'DEFAULT' }],
     }),
 
     getSalesForecast: builder.query<SalesForecastResponse, { storeId?: string; days?: number; period?: string }>({
-      query: ({ days = 7, period = 'WEEKLY' }) =>
-        `/bi?type=sales-forecast&days=${days}&period=${encodeURIComponent(period)}`,
+      query: ({ days = 7, period = 'WEEKLY', storeId }) => {
+        const p = new URLSearchParams({ type: 'sales-forecast', days: String(days), period });
+        if (storeId) p.set('storeId', storeId);
+        return `/bi?${p.toString()}`;
+      },
+      transformResponse: (response: SalesForecastResponse & {
+        modelAccuracy?: number;
+        confidenceLevel?: number;
+        forecastPeriod?: string;
+      }) => {
+        const mapped = mapSalesForecastResponse(response);
+        return {
+          forecasts: (mapped.forecasts ?? []).map((f) => ({
+            date: String(f.date ?? ''),
+            forecastedSales: Number(f.forecastedSales) || 0,
+            confidence: Number((f as { confidence?: number }).confidence) || 0,
+            upperBound: Number((f as { upperBound?: number }).upperBound) || 0,
+            lowerBound: Number((f as { lowerBound?: number }).lowerBound) || 0,
+          })),
+          algorithm: String(response?.algorithm ?? 'historical'),
+          accuracy: mapped.accuracy,
+          period: mapped.period,
+        };
+      },
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: `FORECAST_${storeId || 'DEFAULT'}` }],
     }),
 
     getCustomerBehaviorAnalysis: builder.query<CustomerBehaviorResponse, string | undefined>({
-      query: () => '/bi?type=customer-behavior',
+      query: (storeId) =>
+        `/bi?type=customer-behavior${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'Analytics', id: `BEHAVIOR_${storeId || 'DEFAULT'}` }],
     }),
 
     getChurnPrediction: builder.query<ChurnPredictionResponse, { storeId?: string; threshold?: number }>({
-      query: () => '/bi?type=churn',
+      query: ({ storeId, threshold }) => {
+        const p = new URLSearchParams({ type: 'churn' });
+        if (storeId) p.set('storeId', storeId);
+        if (threshold != null) p.set('threshold', String(threshold));
+        return `/bi?${p.toString()}`;
+      },
+      transformResponse: (response: Record<string, unknown>) => mapChurnPrediction(response),
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: `CHURN_${storeId || 'DEFAULT'}` }],
     }),
 
     getDemandForecast: builder.query<DemandForecastResponse, { storeId?: string; days?: number; period?: string }>({
-      query: ({ period = 'WEEKLY' }) => `/bi?type=demand-forecast&period=${encodeURIComponent(period)}`,
+      query: ({ period = 'WEEKLY', storeId, days }) => {
+        const p = new URLSearchParams({ type: 'demand-forecast', period });
+        if (storeId) p.set('storeId', storeId);
+        if (days != null) p.set('days', String(days));
+        return `/bi?${p.toString()}`;
+      },
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: `DEMAND_${storeId || 'DEFAULT'}` }],
     }),
 
     getCostAnalysis: builder.query<CostAnalysisResponse, { storeId?: string; period?: string }>({
-      query: ({ period = 'MONTHLY' }) => `/bi?type=cost-analysis&period=${encodeURIComponent(period)}`,
+      query: ({ period = 'MONTHLY', storeId }) => {
+        const p = new URLSearchParams({ type: 'cost-analysis', period });
+        if (storeId) p.set('storeId', storeId);
+        return `/bi?${p.toString()}`;
+      },
       providesTags: (result, error, { storeId }) => [{ type: 'Analytics', id: `COST_${storeId || 'DEFAULT'}` }],
     }),
 
+    /**
+     * Executive summary for dashboard.
+     * Arg is storeId (cache tags only) or an explicit period WEEK|MONTH|QUARTER|YEAR.
+     * Keep the query body as a single expression so integration-matrix-audit can extract `/bi/reports`.
+     */
     getExecutiveSummary: builder.query<ExecutiveSummary, string | undefined>({
-      query: (period) =>
-        `/bi/reports?type=executive-summary&period=${encodeURIComponent(period ?? 'MONTH')}`,
+      // Single-line template required: integration-matrix-audit extracts RTK paths via regex.
+      query: (storeIdOrPeriod) => {
+        const isPeriod = !!(storeIdOrPeriod && ['WEEK', 'MONTH', 'QUARTER', 'YEAR'].includes(storeIdOrPeriod.toUpperCase()));
+        const period = isPeriod ? storeIdOrPeriod!.toUpperCase() : 'MONTH';
+        const storeId = isPeriod ? undefined : storeIdOrPeriod;
+        return `/bi/reports?type=executive-summary&period=${encodeURIComponent(period)}${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`;
+      },
+      transformResponse: (response: BackendExecutiveSummary) => mapExecutiveSummary(response),
       providesTags: (result, error, storeId) => [{ type: 'Analytics', id: `EXECUTIVE_${storeId || 'DEFAULT'}` }],
     }),
 

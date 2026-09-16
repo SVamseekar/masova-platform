@@ -234,6 +234,51 @@ class DriverAcceptanceServiceTest {
     }
 
     @Nested
+    @DisplayName("getActiveDeliveriesForDriver")
+    class GetActiveDeliveries {
+
+        @Test
+        @DisplayName("returns in-progress deliveries for driver")
+        void returnsActive() {
+            DeliveryTracking tracking = buildTracking("track-1", "driver-1", "ACCEPTED");
+            when(deliveryTrackingRepository.findByDriverIdAndStatusIn(anyString(), any()))
+                .thenReturn(List.of(tracking));
+
+            List<DeliveryTracking> result = driverAcceptanceService.getActiveDeliveriesForDriver("driver-1");
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getStatus()).isEqualTo("ACCEPTED");
+        }
+    }
+
+    @Nested
+    @DisplayName("listDeliveriesForStore")
+    class ListDeliveriesForStore {
+
+        @Test
+        @DisplayName("lists all trackings for store when status omitted")
+        void listsAll() {
+            when(deliveryTrackingRepository.findByStoreId("store-1"))
+                .thenReturn(List.of(buildTracking("t1", "d1", "ASSIGNED")));
+
+            List<DeliveryTracking> result = driverAcceptanceService.listDeliveriesForStore("store-1", null);
+
+            assertThat(result).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("filters by status when provided")
+        void filtersByStatus() {
+            when(deliveryTrackingRepository.findByStatusAndStoreId("ASSIGNED", "store-1"))
+                .thenReturn(List.of());
+
+            List<DeliveryTracking> result = driverAcceptanceService.listDeliveriesForStore("store-1", "ASSIGNED");
+
+            assertThat(result).isEmpty();
+        }
+    }
+
+    @Nested
     @DisplayName("getPendingDeliveriesForDriver")
     class GetPendingDeliveries {
 
@@ -388,14 +433,18 @@ class DriverAcceptanceServiceTest {
         }
 
         @Test
-        @DisplayName("throws when delivery is already delivered")
-        void throwsWhenAlreadyDelivered() {
+        @DisplayName("returns existing tracking when already delivered (idempotent after OTP verify)")
+        void idempotentWhenAlreadyDelivered() {
             DeliveryTracking tracking = buildTracking("track-1", "driver-1", "DELIVERED");
+            LocalDateTime deliveredAt = LocalDateTime.now().minusMinutes(1);
+            tracking.setDeliveredAt(deliveredAt);
             when(deliveryTrackingRepository.findById("track-1")).thenReturn(Optional.of(tracking));
 
-            assertThatThrownBy(() -> driverAcceptanceService.markAsDelivered("track-1", "driver-1", null))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("already marked");
+            DeliveryTracking result = driverAcceptanceService.markAsDelivered("track-1", "driver-1", null);
+
+            assertThat(result.getStatus()).isEqualTo("DELIVERED");
+            assertThat(result.getDeliveredAt()).isEqualTo(deliveredAt);
+            verify(deliveryTrackingRepository, org.mockito.Mockito.never()).save(any());
         }
 
         @Test

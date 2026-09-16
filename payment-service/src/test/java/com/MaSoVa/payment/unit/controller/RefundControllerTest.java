@@ -102,11 +102,34 @@ class RefundControllerTest extends BaseServiceTest {
     }
 
     @Test
-    @DisplayName("GET /api/payments/refund returns 400 with no params")
+    @DisplayName("GET /api/payments/refund returns 400 with no params and no store header")
     void getRefunds_returns400WithNoParams() throws Exception {
         mockMvc.perform(get("/api/payments/refund"))
             .andExpect(status().isBadRequest());
     }
+
+    @Test
+    @DisplayName("GET /api/payments/refund?storeId= lists store refunds")
+    void getRefunds_returns200ByStoreId() throws Exception {
+        when(refundService.getRefundsByStoreId("DOM001")).thenReturn(List.of(buildRefund("refund-1")));
+
+        mockMvc.perform(get("/api/payments/refund").param("storeId", "DOM001"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/payments/refund?storeId=&status=PENDING_APPROVAL for manager queue")
+    void getRefunds_returnsPendingByStore() throws Exception {
+        when(refundService.getRefundsByStoreIdAndStatus("DOM001", Refund.RefundStatus.PENDING_APPROVAL))
+            .thenReturn(List.of(buildRefund("refund-pending")));
+
+        mockMvc.perform(get("/api/payments/refund")
+                .param("storeId", "DOM001")
+                .param("status", "PENDING_APPROVAL"))
+            .andExpect(status().isOk());
+    }
+
+    // Plural /api/payments/refunds is a gateway rewrite only (not a second controller mapping).
 
     @Test
     @DisplayName("POST /api/payments/refund returns 500 on exception")
