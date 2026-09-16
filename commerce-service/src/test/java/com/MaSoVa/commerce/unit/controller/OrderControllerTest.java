@@ -3,6 +3,7 @@ package com.MaSoVa.commerce.unit.controller;
 import com.MaSoVa.commerce.order.controller.OrderController;
 import com.MaSoVa.commerce.order.entity.Order;
 import com.MaSoVa.commerce.order.service.OrderService;
+import com.MaSoVa.commerce.order.service.OrderSummaryService;
 import com.MaSoVa.shared.test.BaseServiceTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -36,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class OrderControllerTest extends BaseServiceTest {
 
     @Mock private OrderService orderService;
+    @Mock private OrderSummaryService orderSummaryService;
     @InjectMocks private OrderController orderController;
     private MockMvc mockMvc;
 

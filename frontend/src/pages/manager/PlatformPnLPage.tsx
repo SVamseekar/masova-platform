@@ -3,7 +3,7 @@ import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectSelectedStoreId, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
 import {formatMoney, formatMajorAmount} from '../../utils/currency';
-import { useGetStoreOrdersQuery, type Order } from '../../store/api/orderApi';
+import { useGetRecentStoreOrdersQuery, type Order } from '../../store/api/orderApi';
 import { cardStyle, t, sectionTitleStyle, tableCellStyle, tableHeaderStyle } from './manager-tokens';
 
 type Platform = 'WOLT' | 'DELIVEROO' | 'JUST_EAT' | 'UBER_EATS';
@@ -27,10 +27,14 @@ interface PlatformSummary {
 
 function buildPlatformSummary(orders: Order[]): PlatformSummary[] {
   return PLATFORMS.map((platform) => {
-    const platformOrders = orders.filter((o) => o.orderSource === platform);
+    const platformOrders = orders.filter((o) => String(o.orderSource || '').toUpperCase() === platform);
     const grossRevenue = platformOrders.reduce((s, o) => s + (o.total || 0), 0);
-    const totalCommission = platformOrders.reduce((s, o) => s + (o.aggregatorCommission || 0), 0);
-    const netPayout = platformOrders.reduce((s, o) => s + (o.aggregatorNetPayout || grossRevenue - totalCommission), 0);
+    const totalCommission = platformOrders.reduce((s, o) => s + (Number(o.aggregatorCommission) || 0), 0);
+    const netPayout = platformOrders.reduce((s, o) => {
+      const comm = Number(o.aggregatorCommission) || 0;
+      const net = o.aggregatorNetPayout != null ? Number(o.aggregatorNetPayout) : (o.total || 0) - comm;
+      return s + net;
+    }, 0);
     const marginPercent = grossRevenue > 0 ? ((netPayout / grossRevenue) * 100) : 0;
 
     const itemCounts: Record<string, number> = {};
@@ -55,7 +59,10 @@ const PlatformPnLPage: React.FC = () => {
   const locale = useAppSelector(selectCartLocale);
   const [activePlatform, setActivePlatform] = useState<Platform | null>(null);
 
-  const { data: orders = [], isLoading, error } = useGetStoreOrdersQuery(storeId, { skip: !storeId });
+  const { data: orders = [], isLoading, error } = useGetRecentStoreOrdersQuery(
+    { storeId, days: 30, page: 0, size: 100 },
+    { skip: !storeId },
+  );
 
   const directOrders = useMemo(() =>
     orders.filter((o) => !o.orderSource || o.orderSource === 'MASOVA'), [orders]);
@@ -81,19 +88,19 @@ const PlatformPnLPage: React.FC = () => {
       {/* Summary tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
         <div style={{ ...cardStyle, textAlign: 'center' }}>
-          <p style={{ fontSize: 11, color: t.gray, margin: 0, textTransform: 'uppercase', letterSpacing: 0.5 }}>Direct Revenue</p>
+          <p style={{ fontSize: 12, color: t.gray, margin: 0 }}>Direct revenue</p>
           <p style={{ fontSize: 20, fontWeight: 700, margin: '4px 0 0' }}>{fmt(directRevenue)}</p>
         </div>
         <div style={{ ...cardStyle, textAlign: 'center' }}>
-          <p style={{ fontSize: 11, color: t.gray, margin: 0, textTransform: 'uppercase', letterSpacing: 0.5 }}>Aggregator Gross</p>
+          <p style={{ fontSize: 12, color: t.gray, margin: 0 }}>Aggregator gross</p>
           <p style={{ fontSize: 20, fontWeight: 700, margin: '4px 0 0' }}>{fmt(totalAggregatorRevenue)}</p>
         </div>
         <div style={{ ...cardStyle, textAlign: 'center' }}>
-          <p style={{ fontSize: 11, color: t.gray, margin: 0, textTransform: 'uppercase', letterSpacing: 0.5 }}>Total Commission</p>
+          <p style={{ fontSize: 12, color: t.gray, margin: 0 }}>Commission</p>
           <p style={{ fontSize: 20, fontWeight: 700, margin: '4px 0 0', color: t.red }}>{fmt(totalCommission)}</p>
         </div>
         <div style={{ ...cardStyle, textAlign: 'center' }}>
-          <p style={{ fontSize: 11, color: t.gray, margin: 0, textTransform: 'uppercase', letterSpacing: 0.5 }}>Net Payout</p>
+          <p style={{ fontSize: 12, color: t.gray, margin: 0 }}>Net payout</p>
           <p style={{ fontSize: 20, fontWeight: 700, margin: '4px 0 0', color: t.green }}>{fmt(totalNetPayout)}</p>
         </div>
       </div>

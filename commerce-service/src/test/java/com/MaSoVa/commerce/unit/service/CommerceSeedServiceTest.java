@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 import java.util.Collections;
 import java.util.List;
@@ -41,13 +42,14 @@ class CommerceSeedServiceTest {
     @Mock OrderRepository orderRepository;
     @Mock KitchenEquipmentSeedService equipmentSeedService;
     @Mock Environment environment;
+    @Mock MongoTemplate mongoTemplate;
 
     CommerceSeedService service;
 
     @BeforeEach
     void setUp() {
         service = new CommerceSeedService(
-                menuItemRepository, orderRepository, equipmentSeedService, environment);
+                menuItemRepository, orderRepository, equipmentSeedService, environment, mongoTemplate);
         when(environment.acceptsProfiles(Profiles.of("dev", "demo"))).thenReturn(true);
         when(menuItemRepository.findByStoreId(anyString())).thenReturn(Collections.emptyList());
         AtomicInteger menuSeq = new AtomicInteger();
@@ -90,7 +92,7 @@ class CommerceSeedServiceTest {
 
         assertThat(result.get("customerId")).isEqualTo("jwt-user-anna");
         ArgumentCaptor<Order> cap = ArgumentCaptor.forClass(Order.class);
-        verify(orderRepository, times(10)).save(cap.capture());
+        verify(orderRepository, times(11)).save(cap.capture());
         assertThat(cap.getAllValues()).allMatch(o -> "jwt-user-anna".equals(o.getCustomerId()));
         assertThat(cap.getAllValues()).extracting(Order::getOrderNumber)
                 .allMatch(n -> n.startsWith("SEED-ORD-"));
@@ -113,7 +115,7 @@ class CommerceSeedServiceTest {
         when(menuItemRepository.findByStoreId(anyString())).thenReturn(Collections.emptyList());
 
         Map<String, Object> result = service.seedOrdersOnly("DOM001", "user-x");
-        assertThat(result.get("totalSeedOrders")).isEqualTo(10);
+        assertThat(result.get("totalSeedOrders")).isEqualTo(11);
         @SuppressWarnings("unchecked")
         Map<String, Object> orders = result;
         assertThat((Integer) orders.get("updatedCount")).isGreaterThanOrEqualTo(1);

@@ -18,8 +18,12 @@ import com.razorpay.Payment;
 import com.razorpay.RazorpayException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.MaSoVa.shared.util.PageableResponse;
 
 import com.MaSoVa.shared.messaging.events.PaymentCompletedEvent;
 import com.MaSoVa.shared.messaging.events.PaymentFailedEvent;
@@ -430,6 +434,17 @@ public class PaymentService {
         return transactionRepository.findByStoreId(storeId).stream()
                 .map(this::buildPaymentResponse)
                 .collect(java.util.stream.Collectors.toList());
+    }
+
+    public PageableResponse<PaymentResponse> getTransactionsByStoreId(String storeId, int page, int size) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        Page<Transaction> result = transactionRepository.findByStoreId(
+                storeId, PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "createdAt")));
+        List<PaymentResponse> content = result.getContent().stream()
+                .map(this::buildPaymentResponse)
+                .collect(java.util.stream.Collectors.toList());
+        return new PageableResponse<>(content, result.getNumber(), result.getSize(), result.getTotalElements());
     }
 
     /**

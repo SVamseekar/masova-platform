@@ -67,6 +67,15 @@ vi.mock('../../store/api/sessionApi', async (importOriginal) => {
   };
 });
 
+vi.mock('../../store/api/inventoryApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../store/api/inventoryApi')>();
+  return {
+    ...actual,
+    useGetAllInventoryItemsQuery: () => ({ data: [], isLoading: false, isError: false }),
+    useGetLowStockItemsQuery: () => ({ data: [], isLoading: false }),
+  };
+});
+
 // Mock child components to isolate POSDashboard behavior
 vi.mock('./components/MenuPanel', () => ({
   default: ({ onAddItem }: { onAddItem: (item: { id: string; name: string; basePrice: number }) => void }) => (

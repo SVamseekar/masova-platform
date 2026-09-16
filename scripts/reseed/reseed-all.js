@@ -88,7 +88,18 @@ async function reseedAll() {
     orderIds: deliveryOrderIds,
   });
 
-  // 6) Intelligence (cache clear + warm)
+  // 6) 6-month manager dashboard horizon (docs/COMPLETE_MANAGER_DASHBOARD_SEEDING_GUIDE.md)
+  console.log('\n--- manager horizon ---');
+  const { spawnSync } = require('child_process');
+  const horizon = spawnSync(process.execPath, [require('path').join(__dirname, 'seed-manager-horizon.js')], {
+    stdio: 'inherit',
+    env: { ...process.env, MONGO: process.env.MONGO || 'mongodb://192.168.50.88:27017' },
+  });
+  if (horizon.status !== 0) {
+    throw new Error('seed-manager-horizon failed');
+  }
+
+  // 7) Intelligence (cache clear + warm)
   console.log('\n--- intelligence ---');
   const intelligence = await seedIntelligence(managerToken, { storeId: STORE });
 

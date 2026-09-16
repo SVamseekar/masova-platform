@@ -116,6 +116,33 @@ public class PurchaseOrderController {
         if (body.containsKey("expectedDeliveryDate")) {
             po.setExpectedDeliveryDate(java.time.LocalDate.parse((String) body.get("expectedDeliveryDate")));
         }
+        if (body.containsKey("items") && body.get("items") instanceof java.util.List<?> rawItems) {
+            java.util.List<PurchaseOrder.PurchaseOrderItem> items = new java.util.ArrayList<>();
+            for (Object raw : rawItems) {
+                if (!(raw instanceof java.util.Map<?, ?> m)) continue;
+                PurchaseOrder.PurchaseOrderItem item = new PurchaseOrder.PurchaseOrderItem();
+                Object itemId = m.get("inventoryItemId") != null ? m.get("inventoryItemId") : m.get("itemId");
+                if (itemId != null) item.setInventoryItemId(String.valueOf(itemId));
+                if (m.get("itemName") != null) item.setItemName(String.valueOf(m.get("itemName")));
+                if (m.get("itemCode") != null) item.setItemCode(String.valueOf(m.get("itemCode")));
+                if (m.get("unit") != null) item.setUnit(String.valueOf(m.get("unit")));
+                Object qty = m.get("orderedQuantity") != null ? m.get("orderedQuantity") : m.get("quantity");
+                if (qty instanceof Number n) item.setQuantity(n.doubleValue());
+                else if (qty != null) {
+                    try { item.setQuantity(Double.parseDouble(String.valueOf(qty))); } catch (NumberFormatException ignored) {}
+                }
+                Object price = m.get("unitPrice");
+                if (price instanceof Number n) item.setUnitPrice(java.math.BigDecimal.valueOf(n.doubleValue()));
+                else if (price != null) {
+                    try { item.setUnitPrice(new java.math.BigDecimal(String.valueOf(price))); } catch (NumberFormatException ignored) {}
+                }
+                Object recv = m.get("receivedQuantity");
+                if (recv instanceof Number n) item.setReceivedQuantity(n.doubleValue());
+                item.calculateTotalPrice();
+                items.add(item);
+            }
+            po.setItems(items);
+        }
         po.setId(id);
         return ResponseEntity.ok(purchaseOrderService.updatePurchaseOrder(po));
     }

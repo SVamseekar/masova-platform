@@ -28,8 +28,14 @@ export const aggregatorApi = createApi({
   tagTypes: ['AggregatorConnection'],
   endpoints: (builder) => ({
     getConnections: builder.query<AggregatorConnection[], string>({
-      query: (storeId) => `/api/aggregators/connections?storeId=${storeId}`,
-      transformResponse: (response: { data: AggregatorConnection[] }) => response.data,
+      query: (storeId) => `/aggregators/connections?storeId=${storeId}`,
+      transformResponse: (response: unknown): AggregatorConnection[] => {
+        if (Array.isArray(response)) return response as AggregatorConnection[];
+        if (response && typeof response === 'object' && Array.isArray((response as { data?: unknown }).data)) {
+          return (response as { data: AggregatorConnection[] }).data;
+        }
+        return [];
+      },
       providesTags: ['AggregatorConnection'],
     }),
     upsertConnection: builder.mutation<AggregatorConnection, {
@@ -38,10 +44,15 @@ export const aggregatorApi = createApi({
       commissionPercent: number;
     }>({
       query: ({ storeId, platform, commissionPercent }) => ({
-        url: `/api/aggregators/connections?storeId=${storeId}&platform=${platform}&commissionPercent=${commissionPercent}`,
+        url: `/aggregators/connections?storeId=${storeId}&platform=${platform}&commissionPercent=${commissionPercent}`,
         method: 'PUT',
       }),
-      transformResponse: (response: { data: AggregatorConnection }) => response.data,
+      transformResponse: (response: unknown): AggregatorConnection => {
+        if (response && typeof response === 'object' && 'data' in response) {
+          return (response as { data: AggregatorConnection }).data;
+        }
+        return response as AggregatorConnection;
+      },
       invalidatesTags: ['AggregatorConnection'],
     }),
   }),

@@ -17,13 +17,6 @@ import {
 import { useGetAllMenuItemsQuery, MenuItem } from '../../store/api/menuApi';
 import { useKitchenWebSocket } from '../../hooks/useKitchenWebSocket';
 import { KitchenOrder } from '../../services/websocketService';
-import FiberNewIcon from '@mui/icons-material/FiberNew';
-import BuildIcon from '@mui/icons-material/Build';
-import WhatshotIcon from '@mui/icons-material/Whatshot';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import RestaurantIcon from '@mui/icons-material/Restaurant';
-import type { SvgIconComponent } from '@mui/icons-material';
 import { kds } from './kdsTokens';
 import {
   COOK_STATUSES,
@@ -33,7 +26,10 @@ import {
   filterByStatus,
   elapsedMinutes,
   formatElapsed,
+  kdsTicketCode,
+  parseKitchenInstant,
   urgencyBand,
+  isStaleWait,
   nextKitchenStatus,
   terminalStatusForType,
   mapApiOrderType,
@@ -84,18 +80,6 @@ const AGGREGATOR_BADGE: Record<string, { label: string; bg: string; color: strin
   DELIVEROO: { label: 'Deliveroo', bg: '#00CCBC', color: kds.inverse },
   JUST_EAT: { label: 'Just Eat', bg: '#FF8000', color: kds.inverse },
   UBER_EATS: { label: 'Uber Eats', bg: '#000000', color: kds.inverse },
-};
-
-const COLUMN_ICONS: Record<string, SvgIconComponent> = {
-  RECEIVED: FiberNewIcon,
-  PREPARING: BuildIcon,
-  OVEN: WhatshotIcon,
-  BAKED: CheckCircleIcon,
-  READY: CheckCircleIcon,
-  DISPATCHED: LocalShippingIcon,
-  OUT_FOR_DELIVERY: LocalShippingIcon,
-  SERVED: RestaurantIcon,
-  COMPLETED: CheckCircleIcon,
 };
 
 const COLUMN_COLORS: Record<string, string> = {
@@ -350,7 +334,7 @@ const KitchenDisplayPage: React.FC = () => {
             allergens: menu?.allergens,
           };
         }),
-        receivedAt: new Date(order.createdAt),
+        receivedAt: parseKitchenInstant(order.createdAt),
         estimatedPrepTime: order.preparationTime || 15,
         customer: order.customerName,
         orderType: mapApiOrderType(order.orderType),
@@ -359,9 +343,7 @@ const KitchenDisplayPage: React.FC = () => {
         specialInstructions: order.specialInstructions,
         actualOvenTime: order.actualOvenTime,
         prepEstimateLabel:
-          order.preparationTime != null
-            ? `${order.preparationTime}m prep`
-            : '15m prep · Demo estimate',
+          order.preparationTime != null ? `${order.preparationTime}m` : '',
       })),
     [localOrders, findMenuItemByName]
   );
@@ -434,47 +416,43 @@ const KitchenDisplayPage: React.FC = () => {
         ? AGGREGATOR_BADGE[ticket.orderSource]
         : null;
 
+    const showNote = ticket.specialInstructions && !/^seed order/i.test(ticket.specialInstructions.trim());
+    const waitLabel = isStaleWait(mins) ? 'stale' : formatElapsed(mins);
+
     return (
       <article
         key={ticket.id}
-        className={`kds-ticket${ticket.priority === 'URGENT' ? ' kds-ticket--urgent' : ''}`}
+        className={`kds-ticket${ticket.priority === 'URGENT' ? ' kds-ticket--urgent' : ''}${isStaleWait(mins) ? ' kds-ticket--stale' : ''}`}
         data-testid={`kds-ticket-${ticket.orderNumber}`}
-        style={{ borderLeftColor: bandColor(band) }}
+        style={{ borderLeftColor: isStaleWait(mins) ? kds.muted : bandColor(band) }}
       >
         <header className="kds-ticket__head">
-          <div className="kds-ticket__number">
-            #{ticket.orderNumber}
-            {agg && (
-              <span
-                className="kds-ticket__agg"
-                style={{ background: agg.bg, color: agg.color }}
-              >
-                {agg.label}
-              </span>
-            )}
-          </div>
-          <div className="kds-ticket__meta">
-            <span className={`kds-type kds-type--${ticket.orderType.toLowerCase()}`}>
-              {ticket.orderType}
-            </span>
-            <span
-              className="kds-elapsed"
-              style={{ color: bandColor(band) }}
-              title="Wall-clock wait since order received"
-            >
-              {formatElapsed(mins)}
-            </span>
-          </div>
+          <div className="kds-ticket__number">#{kdsTicketCode(ticket.orderNumber)}</div>
+          <span
+            className="kds-elapsed"
+            style={{ color: isStaleWait(mins) ? kds.muted : bandColor(band) }}
+            title="Wait since received"
+          >
+            {waitLabel}
+          </span>
         </header>
 
         <div className="kds-ticket__customer">
           <span className="kds-ticket__name">{ticket.customer || 'Guest'}</span>
-          {ticket.priority === 'URGENT' && <span className="kds-urgent-badge">URGENT</span>}
+          <span className={`kds-type kds-type--${ticket.orderType.toLowerCase()}`}>
+            {ticket.orderType === 'COLLECTION' ? 'Pickup' : ticket.orderType === 'DINE_IN' ? 'Dine-in' : 'Delivery'}
+          </span>
         </div>
+        {ticket.priority === 'URGENT' && <span className="kds-urgent-badge">Rush</span>}
+        {agg && (
+          <span className="kds-ticket__agg" style={{ background: agg.bg, color: agg.color }}>
+            {agg.label}
+          </span>
+        )}
 
-        {ticket.specialInstructions && (
+        {showNote && (
           <p className="kds-ticket__notes" title={ticket.specialInstructions}>
-            Note: {ticket.specialInstructions}
+            {ticket.specialInstructions}
           </p>
         )}
 
@@ -482,7 +460,7 @@ const KitchenDisplayPage: React.FC = () => {
           {ticket.items.map((item, index) => (
             <li key={`${ticket.id}-${index}`} className="kds-item">
               <div className="kds-item__row">
-                <span className="kds-item__qty">{item.quantity}x</span>
+                <span className="kds-item__qty">{item.quantity}</span>
                 <span className="kds-item__name">{item.name}</span>
                 {item.size && <span className="kds-item__size">{item.size}</span>}
                 <button
@@ -492,9 +470,10 @@ const KitchenDisplayPage: React.FC = () => {
                     const menuItem = findMenuItemByName(item.name);
                     if (menuItem) setSelectedRecipeItem(menuItem);
                   }}
-                  title="View Recipe"
+                  title="Recipe"
+                  aria-label={`Recipe for ${item.name}`}
                 >
-                  Recipe
+                  i
                 </button>
               </div>
               {item.toppings.length > 0 && (
@@ -509,55 +488,36 @@ const KitchenDisplayPage: React.FC = () => {
           ))}
         </ul>
 
-        {oven && (
+        {oven && !oven.isEstimate && (
           <div className="kds-oven" data-testid="oven-timer">
             <span className="kds-oven__value">{oven.text}</span>
-            {oven.isEstimate && (
-              <span className="kds-oven__est" title="Not from live oven sensors">
-                Demo estimate
-              </span>
-            )}
+          </div>
+        )}
+        {oven && oven.isEstimate && (
+          <div className="kds-oven" data-testid="oven-timer">
+            <span className="kds-oven__value">{oven.text}</span>
           </div>
         )}
 
-        <div className="kds-ticket__prep" title="Prep target from order or demo default">
-          {ticket.prepEstimateLabel}
-        </div>
-
         <footer className="kds-ticket__foot">
-          <span className="kds-status-label">{String(ticket.status).replace(/_/g, ' ')}</span>
           {showNext && (
             <button
               type="button"
               className="kds-next-btn"
               onClick={() => void moveOrderToNext(ticket)}
               disabled={isUpdating}
-              style={{ minHeight: kds.touchMin, minWidth: kds.touchMin }}
             >
-              <span>{isUpdating ? 'Updating…' : 'Next Stage'}</span>
-              <span aria-hidden>→</span>
+              {isUpdating ? '…' : 'Bump'}
             </button>
           )}
           {ticket.status === 'READY' && ticket.orderType === 'DINE_IN' && (
-            <button
-              type="button"
-              className="kds-complete-btn"
-              onClick={() => void markAsCompleted(ticket)}
-              disabled={isUpdating}
-              title="Mark as served"
-            >
-              {isUpdating ? 'Updating…' : 'Mark Served'}
+            <button type="button" className="kds-complete-btn" onClick={() => void markAsCompleted(ticket)} disabled={isUpdating}>
+              {isUpdating ? '…' : 'Served'}
             </button>
           )}
           {ticket.status === 'READY' && ticket.orderType === 'COLLECTION' && (
-            <button
-              type="button"
-              className="kds-complete-btn"
-              onClick={() => void markAsCompleted(ticket)}
-              disabled={isUpdating}
-              title="Customer picked up the order"
-            >
-              {isUpdating ? 'Updating…' : 'Mark Picked Up'}
+            <button type="button" className="kds-complete-btn" onClick={() => void markAsCompleted(ticket)} disabled={isUpdating}>
+              {isUpdating ? '…' : 'Picked up'}
             </button>
           )}
         </footer>
@@ -567,7 +527,6 @@ const KitchenDisplayPage: React.FC = () => {
 
   const renderColumn = (status: string, compact = false) => {
     const meta = COLUMN_META[status] ?? { title: status, short: status };
-    const Icon = COLUMN_ICONS[status] ?? CheckCircleIcon;
     const color = COLUMN_COLORS[status] ?? kds.muted;
     const columnOrders = sortKitchenTickets(filterByStatus(tickets, status));
 
@@ -578,14 +537,12 @@ const KitchenDisplayPage: React.FC = () => {
         data-testid={`kds-column-${status}`}
         aria-label={meta.title}
       >
-        <div className="kds-col__head" style={{ borderBottomColor: `${color}55` }}>
+        <div className="kds-col__head" style={{ borderBottomColor: color }}>
           <div className="kds-col__title-row">
-            <Icon style={{ fontSize: compact ? 18 : 22, color }} />
+            <span className="kds-col__dot" style={{ background: color }} />
             <h3 className="kds-col__title">{meta.title}</h3>
           </div>
-          <span className="kds-col__count" style={{ background: color }}>
-            {columnOrders.length}
-          </span>
+          <span className="kds-col__count">{columnOrders.length}</span>
         </div>
         <div className="kds-col__list">
           {columnOrders.length === 0 ? (
@@ -644,12 +601,12 @@ const KitchenDisplayPage: React.FC = () => {
               },
               {
                 label: 'Avg Wait',
-                value: `${metrics.avgWaitMins}m`,
+                value: formatElapsed(metrics.avgWaitMins),
                 color: bandColor(urgencyBand(metrics.avgWaitMins)),
               },
               {
                 label: 'Longest',
-                value: `${metrics.maxWaitMins}m`,
+                value: formatElapsed(metrics.maxWaitMins),
                 color: bandColor(urgencyBand(metrics.maxWaitMins)),
               },
             ] as const
@@ -691,7 +648,7 @@ const KitchenDisplayPage: React.FC = () => {
             title={isMuted ? 'Unmute alerts' : 'Mute alerts'}
             style={{ minHeight: kds.touchMin }}
           >
-            {isMuted ? 'MUTED' : 'SOUND ON'}
+            {isMuted ? 'Muted' : 'Sound'}
           </button>
           <button
             type="button"
@@ -700,7 +657,7 @@ const KitchenDisplayPage: React.FC = () => {
             title="Toggle full screen (F)"
             style={{ minHeight: kds.touchMin }}
           >
-            {isFullScreen ? 'EXIT FS' : 'FULL SCREEN'}
+            {isFullScreen ? 'Exit' : 'Fullscreen'}
           </button>
           <button
             type="button"
@@ -709,7 +666,7 @@ const KitchenDisplayPage: React.FC = () => {
             style={{ minHeight: kds.touchMin }}
             aria-pressed={showHandoff}
           >
-            {showHandoff ? 'Hide Handoff' : 'Show Handoff'}
+            {showHandoff ? 'Handoff on' : 'Handoff off'}
           </button>
         </div>
       </div>
@@ -786,7 +743,7 @@ const KitchenDisplayPage: React.FC = () => {
   );
 };
 
-/** Scoped KDS CSS — colors from kds tokens (role #FF6B35) */
+/** Scoped KDS CSS — industrial cook-line */
 const KDS_CSS = `
   .kds-root {
     font-family: ${kds.font};
@@ -794,127 +751,103 @@ const KDS_CSS = `
     min-height: 100vh;
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
     color: ${kds.ink};
+    -webkit-tap-highlight-color: transparent;
   }
   .kds-root *, .kds-root *::before, .kds-root *::after { box-sizing: border-box; }
+  .kds-root header, .kds-root [class*="AppHeader"], .kds-root [data-testid="app-header"] {
+    background: ${kds.surface} !important;
+    color: ${kds.ink} !important;
+    border-bottom: 1px solid ${kds.hairline} !important;
+    box-shadow: none !important;
+    min-height: 44px !important;
+  }
 
   .kds-summary {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 16px;
-    padding: 12px 20px;
-    background: #1a1a1a;
-    border-bottom: 3px solid ${kds.role};
+    gap: 12px 20px;
+    padding: 10px 18px;
+    background: ${kds.surfaceAlt};
+    border-bottom: 1px solid ${kds.hairline};
     position: sticky;
     top: 0;
     z-index: 90;
   }
-  .kds-summary__kpis {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px 28px;
-    flex: 1;
-  }
-  .kds-kpi { text-align: center; min-width: 56px; }
+  .kds-summary__kpis { display: flex; flex-wrap: wrap; gap: 8px 22px; flex: 1; }
+  .kds-kpi { min-width: 52px; }
   .kds-kpi__value {
-    font-size: 1.5rem;
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: -0.02em;
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.03em;
   }
   .kds-kpi__label {
-    font-size: 0.65rem;
-    color: #9ca3af;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-weight: 700;
-    margin-top: 2px;
+    margin-top: 4px;
+    font-size: 0.68rem;
+    color: ${kds.muted};
+    font-weight: 500;
   }
-  .kds-summary__right {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-  }
+  .kds-summary__right { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   .kds-conn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 14px;
-    border-radius: 10px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    min-height: ${kds.touchMin}px;
-    border: 1px solid #374151;
-    color: #e5e7eb;
-    background: #111827;
-  }
-  .kds-conn__dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #6b7280;
-  }
-  .kds-conn--live .kds-conn__dot {
-    background: ${kds.success};
-    box-shadow: 0 0 0 3px ${kds.success}44;
-  }
-  .kds-conn--poll .kds-conn__dot {
-    background: ${kds.warning};
-  }
-  .kds-conn__sync {
-    color: #9ca3af;
-    font-weight: 600;
-    text-transform: none;
-  }
-  .kds-clock {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #f3f4f6;
-    font-variant-numeric: tabular-nums;
     padding: 8px 12px;
+    min-height: ${kds.touchMin}px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: ${kds.ink};
+    background: ${kds.surfaceElevated};
+    border: 1px solid ${kds.hairline};
+  }
+  .kds-conn__dot { width: 7px; height: 7px; border-radius: 50%; background: ${kds.faint}; }
+  .kds-conn--live .kds-conn__dot { background: ${kds.success}; }
+  .kds-conn--poll .kds-conn__dot { background: ${kds.warning}; }
+  .kds-conn__sync { color: ${kds.muted}; font-weight: 500; }
+  .kds-clock {
+    font-size: 1.15rem;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    color: ${kds.ink};
+    padding: 0 8px;
     min-height: ${kds.touchMin}px;
     display: inline-flex;
     align-items: center;
   }
   .kds-ctrl-btn {
-    background: #1f2937;
-    border: 1px solid #374151;
-    border-radius: 10px;
-    padding: 10px 14px;
-    color: #fff;
+    background: transparent;
+    border: 1px solid ${kds.hairline};
+    border-radius: 6px;
+    padding: 10px 12px;
+    color: ${kds.ink};
     cursor: pointer;
     font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.03em;
+    font-weight: 600;
     font-family: ${kds.font};
   }
-  .kds-ctrl-btn:hover { background: #374151; }
-  .kds-ctrl-btn:active { transform: scale(0.97); }
+  .kds-ctrl-btn:hover { background: ${kds.surfaceElevated}; }
+  .kds-ctrl-btn:active { transform: scale(0.98); }
 
   .kds-action-error {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 12px 20px;
+    padding: 10px 18px;
     background: ${kds.error}22;
-    border-bottom: 2px solid ${kds.error};
+    border-bottom: 1px solid ${kds.error};
     color: ${kds.errorDark};
     font-weight: 600;
-    font-size: 0.95rem;
   }
   .kds-action-error__dismiss {
     min-height: ${kds.touchMin}px;
-    min-width: ${kds.touchMin}px;
-    padding: 8px 16px;
+    padding: 8px 14px;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     background: ${kds.error};
     color: #fff;
     font-weight: 700;
@@ -923,179 +856,141 @@ const KDS_CSS = `
   }
 
   .kds-board {
-    max-width: 1800px;
-    margin: 0 auto;
-    padding: 16px 20px 32px;
+    background: ${kds.surface};
+    padding: 12px 14px 28px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    min-height: calc(100vh - 180px);
+    gap: 14px;
+    min-height: calc(100vh - 140px);
   }
   .kds-board-empty {
     text-align: center;
-    padding: 20px;
-    border-radius: 16px;
-    background: ${kds.roleSoft};
-    border: 1px dashed ${kds.roleBorder};
+    padding: 14px;
+    border: 1px dashed ${kds.hairline};
+    color: ${kds.muted};
+    border-radius: 6px;
   }
   .kds-cook-grid {
     display: grid;
-    grid-template-columns: repeat(5, minmax(200px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(5, minmax(180px, 1fr));
+    gap: 0;
     align-items: stretch;
-    min-height: 420px;
+    min-height: 440px;
+    background: ${kds.rail};
+    border: 1px solid ${kds.hairline};
+    border-radius: 8px;
+    overflow: hidden;
   }
-  .kds-handoff {
-    border-top: 2px solid rgba(163,163,163,0.2);
-    padding-top: 12px;
-  }
+  .kds-handoff { padding-top: 4px; }
   .kds-handoff__label {
-    font-size: 0.7rem;
-    font-weight: 800;
-    text-transform: uppercase;
+    font-size: 0.68rem;
+    font-weight: 700;
     letter-spacing: 0.08em;
-    color: ${kds.muted};
-    margin-bottom: 10px;
+    text-transform: uppercase;
+    color: ${kds.faint};
+    margin-bottom: 8px;
   }
   .kds-handoff-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(160px, 1fr));
-    gap: 12px;
-    min-height: 160px;
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+    gap: 0;
+    min-height: 140px;
+    border: 1px solid ${kds.hairline};
+    border-radius: 8px;
+    overflow: hidden;
+    background: ${kds.rail};
   }
 
   .kds-col {
-    background: ${kds.surface};
-    border-radius: 16px;
-    padding: 14px;
-    box-shadow: ${kds.shadow.raised.base};
+    background: ${kds.surfaceAlt};
+    padding: 10px 8px 12px;
+    border-right: 1px solid ${kds.hairline};
     display: flex;
     flex-direction: column;
-    min-height: 0;
     min-width: 0;
+    min-height: 0;
   }
-  .kds-col--compact {
-    padding: 10px;
-    box-shadow: ${kds.shadow.raised.sm};
-  }
+  .kds-col:last-child { border-right: none; }
+  .kds-col--compact { padding: 8px; }
   .kds-col__head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 12px;
-    padding-bottom: 10px;
-    border-bottom: 3px solid transparent;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid transparent;
     gap: 8px;
   }
-  .kds-col__title-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-  }
+  .kds-col__title-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .kds-col__dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
   .kds-col__title {
     margin: 0;
-    font-size: 1rem;
-    font-weight: 800;
+    font-size: 0.78rem;
+    font-weight: 700;
     color: ${kds.ink};
+    letter-spacing: 0.02em;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .kds-col--compact .kds-col__title { font-size: 0.85rem; }
+  .kds-col--compact .kds-col__title { font-size: 0.72rem; }
   .kds-col__count {
-    color: #fff;
-    border-radius: 999px;
-    min-width: 28px;
-    height: 28px;
-    padding: 0 8px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-    font-weight: 800;
-    flex-shrink: 0;
+    color: ${kds.muted};
+    min-width: 22px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
   }
   .kds-col__list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
     flex: 1;
     overflow-y: auto;
     min-height: 80px;
-    max-height: calc(100vh - 320px);
-    padding-right: 2px;
+    max-height: calc(100vh - 280px);
     scrollbar-width: thin;
   }
-  .kds-col--compact .kds-col__list { max-height: 220px; }
+  .kds-col--compact .kds-col__list { max-height: 200px; }
   .kds-col-empty {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 28px 12px;
-    color: ${kds.muted};
-    font-style: italic;
+    padding: 28px 8px;
+    color: ${kds.faint};
   }
-  .kds-col-empty__text { font-size: 0.9rem; font-weight: 600; }
+  .kds-col-empty__text { font-size: 0.8rem; font-weight: 500; }
 
   .kds-ticket {
     background: ${kds.surfaceElevated};
-    border-radius: 14px;
-    padding: 14px;
-    border-left: 5px solid ${kds.success};
-    box-shadow: ${kds.shadow.raised.sm};
+    border-radius: 6px;
+    padding: 12px;
+    border: 1px solid ${kds.hairline};
+    border-left: 3px solid ${kds.success};
   }
-  .kds-ticket--urgent {
-    animation: kdsUrgentPulse 2.4s ease-in-out infinite;
-  }
-  @keyframes kdsUrgentPulse {
-    0%, 100% { box-shadow: ${kds.shadow.raised.sm}; }
-    50% { box-shadow: ${kds.shadow.raised.sm}, 0 0 0 2px ${kds.error}55; }
-  }
+  .kds-ticket--urgent { outline: 1px solid ${kds.error}; }
+  .kds-ticket--stale { opacity: 0.55; }
   .kds-ticket__head {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: baseline;
     gap: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
   .kds-ticket__number {
-    font-size: 1.35rem;
-    font-weight: 800;
-    color: ${kds.role};
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    letter-spacing: -0.02em;
+    font-size: 1.2rem;
+    font-weight: 750;
+    color: ${kds.ink};
+    letter-spacing: -0.03em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70%;
   }
-  .kds-ticket__agg {
-    display: inline-block;
-    padding: 4px 8px;
-    border-radius: 999px;
-    font-size: 0.65rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-  }
-  .kds-ticket__meta {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-  }
-  .kds-type {
-    font-size: 0.65rem;
-    font-weight: 800;
-    padding: 4px 8px;
-    border-radius: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-  .kds-type--delivery { background: ${kds.info}22; color: ${kds.infoDark}; }
-  .kds-type--collection, .kds-type--dine_in { background: ${kds.success}22; color: ${kds.successDark}; }
   .kds-elapsed {
-    font-size: 1rem;
-    font-weight: 800;
+    font-size: 1.05rem;
+    font-weight: 750;
     font-variant-numeric: tabular-nums;
   }
   .kds-ticket__customer {
@@ -1103,182 +998,107 @@ const KDS_CSS = `
     justify-content: space-between;
     align-items: center;
     gap: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
   }
-  .kds-ticket__name {
+  .kds-ticket__name { font-weight: 600; font-size: 0.88rem; color: ${kds.ink}; }
+  .kds-type {
+    font-size: 0.62rem;
     font-weight: 700;
-    font-size: 1rem;
-    color: ${kds.ink};
+    padding: 3px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: ${kds.muted};
+    border: 1px solid ${kds.hairline};
   }
+  .kds-type--delivery { color: ${kds.infoDark}; }
+  .kds-type--collection, .kds-type--dine_in { color: ${kds.successDark}; }
   .kds-urgent-badge {
+    display: inline-block;
     background: ${kds.error};
     color: #fff;
-    padding: 6px 10px;
-    border-radius: 8px;
-    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.65rem;
     font-weight: 800;
-    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+  }
+  .kds-ticket__agg {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.62rem;
+    font-weight: 800;
+    margin-bottom: 8px;
   }
   .kds-ticket__notes {
-    margin: 0 0 10px;
-    padding: 8px 10px;
+    margin: 0 0 8px;
+    padding: 6px 8px;
     background: ${kds.warning}18;
-    border-left: 3px solid ${kds.warning};
-    border-radius: 6px;
-    font-size: 0.85rem;
+    border-left: 2px solid ${kds.warning};
+    font-size: 0.8rem;
     font-weight: 600;
     color: ${kds.ink};
-    line-height: 1.35;
   }
-  .kds-ticket__items {
-    list-style: none;
-    margin: 0 0 10px;
-    padding: 0;
-  }
+  .kds-ticket__items { list-style: none; margin: 0 0 8px; padding: 0; }
   .kds-item {
-    margin-bottom: 10px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid rgba(163,163,163,0.15);
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid ${kds.hairline};
   }
   .kds-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-  .kds-item__row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
+  .kds-item__row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .kds-item__qty {
-    background: ${kds.role};
-    color: #fff;
-    padding: 4px 8px;
-    border-radius: 8px;
-    font-size: 0.8rem;
-    font-weight: 800;
-    min-width: 32px;
-    text-align: center;
-  }
-  .kds-item__name {
-    font-weight: 700;
-    font-size: 1rem;
     color: ${kds.ink};
-    flex: 1;
-    min-width: 0;
+    font-size: 0.9rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    min-width: 18px;
   }
-  .kds-item__size {
-    background: ${kds.roleSoft};
-    color: ${kds.role};
-    padding: 4px 8px;
-    border-radius: 8px;
-    font-size: 0.7rem;
-    font-weight: 700;
-  }
-  .kds-item__mods {
-    color: ${kds.muted};
-    font-size: 0.8rem;
-    font-style: italic;
-    margin: 4px 0 0 40px;
-  }
-  .kds-item__allergens { margin-top: 6px; margin-left: 40px; }
+  .kds-item__name { font-weight: 650; font-size: 0.92rem; color: ${kds.ink}; flex: 1; min-width: 0; }
+  .kds-item__size { color: ${kds.muted}; font-size: 0.72rem; font-weight: 600; }
+  .kds-item__mods { color: ${kds.muted}; font-size: 0.75rem; margin: 3px 0 0 26px; }
+  .kds-item__allergens { margin-top: 4px; margin-left: 26px; }
   .kds-recipe-btn {
     margin-left: auto;
-    background: ${kds.surface};
-    border: none;
-    padding: 10px 12px;
-    min-height: ${kds.touchMin}px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 0.75rem;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 50%;
+    border: 1px solid ${kds.faint};
+    background: transparent;
+    color: ${kds.muted};
+    font-size: 0.72rem;
     font-weight: 700;
-    color: ${kds.ink};
-    box-shadow: ${kds.shadow.raised.sm};
+    font-style: italic;
+    cursor: pointer;
     font-family: ${kds.font};
   }
-  .kds-recipe-btn:active {
-    box-shadow: ${kds.shadow.inset.sm};
-  }
-
   .kds-oven {
-    background: linear-gradient(135deg, ${kds.role}, #ff8a5c);
-    color: #fff;
-    padding: 12px 14px;
-    border-radius: 12px;
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    font-weight: 800;
-  }
-  .kds-oven__value { font-size: 1rem; }
-  .kds-oven__est {
-    font-size: 0.65rem;
+    padding: 6px 0;
+    margin-bottom: 6px;
+    color: ${kds.warningDark};
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    opacity: 0.95;
-    background: rgba(0,0,0,0.2);
-    padding: 4px 8px;
-    border-radius: 6px;
+    font-size: 0.8rem;
   }
-  .kds-ticket__prep {
-    font-size: 0.75rem;
-    color: ${kds.muted};
-    font-weight: 600;
-    margin-bottom: 10px;
-  }
-  .kds-ticket__foot {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
-  }
-  .kds-status-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: ${kds.muted};
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    flex: 1;
-    min-width: 60px;
-  }
-  .kds-next-btn {
-    background: ${kds.surface};
-    border: none;
-    padding: 12px 16px;
-    border-radius: 12px;
-    cursor: pointer;
-    font-weight: 800;
-    color: ${kds.successDark};
-    font-size: 0.85rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    box-shadow: ${kds.shadow.raised.sm};
-    font-family: ${kds.font};
-  }
-  .kds-next-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .kds-next-btn:active:not(:disabled) {
-    transform: scale(0.97);
-    box-shadow: ${kds.shadow.inset.sm};
-  }
-  .kds-complete-btn {
+  .kds-ticket__foot { display: flex; gap: 8px; margin-top: 8px; }
+  .kds-next-btn, .kds-complete-btn {
     flex: 1;
     min-height: ${kds.touchMin}px;
-    background: linear-gradient(135deg, ${kds.success} 0%, ${kds.successDark} 100%);
     border: none;
-    padding: 12px 16px;
-    border-radius: 12px;
-    cursor: pointer;
+    border-radius: 6px;
+    background: ${kds.ink};
+    color: ${kds.surface};
     font-weight: 800;
-    color: #fff;
-    font-size: 0.85rem;
+    font-size: 0.88rem;
+    cursor: pointer;
     font-family: ${kds.font};
-    box-shadow: ${kds.shadow.brand.success};
   }
-  .kds-complete-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .kds-complete-btn { background: ${kds.success}; color: #fff; }
+  .kds-next-btn:disabled, .kds-complete-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .kds-next-btn:active:not(:disabled), .kds-complete-btn:active:not(:disabled) { transform: scale(0.98); }
 
   .kds-state {
-    grid-column: 1 / -1;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1289,28 +1109,13 @@ const KDS_CSS = `
     min-height: 280px;
   }
   .kds-state--error { color: ${kds.errorDark}; }
-  .kds-state__title {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 800;
-    color: inherit;
-  }
-  .kds-state__msg {
-    margin: 0;
-    font-size: 0.95rem;
-    color: ${kds.muted};
-    max-width: 420px;
-    line-height: 1.45;
-  }
-  .kds-state--error .kds-state__title { color: ${kds.errorDark}; }
+  .kds-state__title { margin: 0; font-size: 1.1rem; font-weight: 750; }
+  .kds-state__msg { margin: 0; font-size: 0.9rem; color: ${kds.muted}; max-width: 420px; }
   .kds-skeleton {
-    width: 64px;
-    height: 64px;
-    border-radius: 16px;
+    width: 48px; height: 48px; border-radius: 8px;
     background: linear-gradient(90deg, ${kds.surfaceAlt}, ${kds.surfaceElevated}, ${kds.surfaceAlt});
     background-size: 200% 100%;
     animation: kdsShimmer 1.2s ease-in-out infinite;
-    margin-bottom: 12px;
   }
   @keyframes kdsShimmer {
     0% { background-position: 100% 0; }
@@ -1319,14 +1124,14 @@ const KDS_CSS = `
   .kds-retry-btn { margin-top: 12px; }
 
   @media (max-width: 1200px) {
-    .kds-cook-grid { grid-template-columns: repeat(3, minmax(180px, 1fr)); }
-    .kds-handoff-grid { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
+    .kds-cook-grid { grid-template-columns: repeat(3, minmax(160px, 1fr)); }
+    .kds-handoff-grid { grid-template-columns: repeat(2, minmax(140px, 1fr)); }
+    .kds-col { border-bottom: 1px solid ${kds.hairline}; }
   }
   @media (max-width: 800px) {
     .kds-cook-grid { grid-template-columns: 1fr 1fr; }
     .kds-handoff-grid { grid-template-columns: 1fr 1fr; }
     .kds-summary { flex-direction: column; align-items: stretch; }
-    .kds-summary__right { justify-content: flex-start; }
   }
   @media (max-width: 520px) {
     .kds-cook-grid, .kds-handoff-grid { grid-template-columns: 1fr; }

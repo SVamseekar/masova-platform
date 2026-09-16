@@ -25,7 +25,8 @@ RUN mvn -pl api-gateway -am package -DskipTests -q \
 FROM eclipse-temurin:21-jre-jammy AS runtime
 WORKDIR /app
 
-RUN groupadd -r masova && useradd -r -g masova -u 1001 masova
+RUN groupadd -r masova && useradd -r -g masova -u 1001 masova \
+    && mkdir -p /app/logs && chown -R masova:masova /app
 USER masova
 
 COPY --from=builder --chown=masova:masova /build/app.jar app.jar

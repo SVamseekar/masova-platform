@@ -3,6 +3,8 @@ package com.MaSoVa.commerce.unit.controller;
 import com.MaSoVa.commerce.order.controller.OrderController;
 import com.MaSoVa.commerce.order.entity.Order;
 import com.MaSoVa.commerce.order.service.OrderService;
+import com.MaSoVa.commerce.order.service.OrderSummaryService;
+import com.MaSoVa.shared.util.PageableResponse;
 import com.MaSoVa.shared.test.BaseServiceTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -33,6 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class OrderControllerExtendedTest extends BaseServiceTest {
 
     @Mock private OrderService orderService;
+    @Mock private OrderSummaryService orderSummaryService;
     @InjectMocks private OrderController orderController;
     private MockMvc mockMvc;
 
@@ -74,8 +77,8 @@ class OrderControllerExtendedTest extends BaseServiceTest {
     // GET /api/orders (store orders) — must pass X-User-Store-Id header
     @Test
     void getOrders_by_storeId_returns_list() throws Exception {
-        when(orderService.getStoreOrders("store-1"))
-                .thenReturn(List.of(buildOrder("order-1", Order.OrderStatus.RECEIVED)));
+        when(orderService.getStoreOrdersPage(eq("store-1"), anyInt(), anyInt()))
+                .thenReturn(new PageableResponse<>(List.of(buildOrder("order-1", Order.OrderStatus.RECEIVED)), 0, 50, 1));
 
         mockMvc.perform(get("/api/orders")
                         .param("storeId", "store-1")
@@ -98,8 +101,8 @@ class OrderControllerExtendedTest extends BaseServiceTest {
 
     @Test
     void getOrders_by_status_returns_filtered_list() throws Exception {
-        when(orderService.getOrdersByStatus(eq("store-1"), eq(Order.OrderStatus.PREPARING)))
-                .thenReturn(List.of(buildOrder("order-1", Order.OrderStatus.PREPARING)));
+        when(orderService.getOrdersByStatusPage(eq("store-1"), eq(Order.OrderStatus.PREPARING), anyInt(), anyInt()))
+                .thenReturn(new PageableResponse<>(List.of(buildOrder("order-1", Order.OrderStatus.PREPARING)), 0, 50, 1));
 
         mockMvc.perform(get("/api/orders")
                         .param("storeId", "store-1")
