@@ -62,6 +62,10 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
     [managerPinRef0, managerPinRef1, managerPinRef2, managerPinRef3, managerPinRef4]
   );
 
+  // Shared by both submit handlers: guards against repeated Enter presses firing
+  // concurrent submits. Only one PIN step is on screen at a time, so one ref suffices.
+  const submittingRef = useRef(false);
+
   const [validatePIN] = useValidatePINMutation();
   const [clockInWithPin] = useClockInWithPinMutation();
 
@@ -151,6 +155,11 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
       return;
     }
 
+    if (submittingRef.current) {
+      return;
+    }
+    submittingRef.current = true;
+
     setIsLoading(true);
     setError('');
 
@@ -172,6 +181,7 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
       employeePinRefs[0].current?.focus();
     } finally {
       setIsLoading(false);
+      submittingRef.current = false;
     }
   };
 
@@ -181,6 +191,11 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
       setError('Please enter complete 5-digit PIN');
       return;
     }
+
+    if (submittingRef.current) {
+      return;
+    }
+    submittingRef.current = true;
 
     setIsLoading(true);
     setError('');
@@ -221,6 +236,7 @@ const ClockInModal: React.FC<ClockInModalProps> = ({ isOpen, onClose, storeId, r
       managerPinRefs[0].current?.focus();
     } finally {
       setIsLoading(false);
+      submittingRef.current = false;
     }
   };
 
