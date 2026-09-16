@@ -1,11 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import AssignDriverModal from '../../components/modals/AssignDriverModal';
 
 const DeliveryManagementPage = React.lazy(() => import('./DeliveryManagementPage'));
 const AggregatorHubPage = React.lazy(() => import('./AggregatorHubPage'));
-import { t, cardStyle, tabStyle, tableHeaderStyle, tableCellStyle, sectionTitleStyle, statusBadge, selectStyle } from './manager-tokens';
+import { t, cardStyle, tableHeaderStyle, tableCellStyle, sectionTitleStyle, statusBadge, selectStyle } from './manager-tokens';
+import { ManagerPageFrame, ManagerTabBar, ManagerLoadingBlock } from './components';
 import {
   useGetStoreOrdersQuery,
+  useGetRecentStoreOrdersQuery,
   useUpdateOrderStatusMutation,
   useUpdateOrderPriorityMutation,
   useCancelOrderMutation,
@@ -28,9 +31,14 @@ import {
 } from '../../store/api/deliveryApi';
 import { getApiErrorMessage } from '../utils/apiError';
 import { useGetTodaySalesMetricsQuery } from '../../store/api/analyticsApi';
+import { useGetAvailableDriversQuery as useGetStoreDriversQuery } from '../../store/api/driverApi';
 import { ORDER_STATUS_CONFIG, ORDER_TYPE_CONFIG, PAYMENT_STATUS_CONFIG } from '../../types/order';
 import type { OrderStatus, OrderPriority } from '../../types/order';
 import { format } from 'date-fns';
+import { countActiveDeliveries } from './quickInfoMetrics';
+import { formatMajorAmount } from '../../utils/currency';
+import { useAppSelector } from '../../store/hooks';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
 
 interface Props { storeId: string; activeTab: string; onTabChange: (tab: string) => void; }
 
@@ -62,15 +70,16 @@ const tabs = [
 
 // Shared styles
 const miniStat: React.CSSProperties = { ...cardStyle, padding: 16, textAlign: 'center' as const };
-const statLabel: React.CSSProperties = { fontSize: 11, color: t.gray, margin: 0, textTransform: 'uppercase' as const, letterSpacing: 0.5 };
-const statValue = (c?: string): React.CSSProperties => ({ fontSize: 22, fontWeight: 700, color: c || t.black, margin: '4px 0 0' });
+const statLabel: React.CSSProperties = { fontSize: 12, color: t.gray, margin: 0 };
+const statValue = (c?: string): React.CSSProperties => ({ fontSize: 15, fontWeight: 700, color: c || t.black, margin: '4px 0 0', overflowWrap: 'anywhere', fontVariantNumeric: 'tabular-nums', lineHeight: 1.2 });
 const btn = (variant: 'primary' | 'danger' | 'secondary' | 'success'): React.CSSProperties => {
   const map = { primary: t.orange, danger: t.red, secondary: t.gray, success: t.green };
   return {
-    padding: '6px 14px', borderRadius: t.radius.sm, border: `1px solid ${map[variant]}`,
+    padding: '5px 10px', borderRadius: t.radius.sm, border: `1px solid ${map[variant]}`,
     background: variant === 'primary' || variant === 'success' ? map[variant] : t.white,
     color: variant === 'primary' || variant === 'success' ? t.white : map[variant],
-    fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: t.font,
+    fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: t.font,
+    whiteSpace: 'nowrap', lineHeight: '16px',
   };
 };
 const modalOverlay: React.CSSProperties = {
@@ -83,11 +92,15 @@ const modalBox: React.CSSProperties = {
 
 // ─── ORDERS TAB ───
 const OrdersTab = ({ storeId }: { storeId: string }) => {
-  const { data: orders = [], isLoading, refetch } = useGetStoreOrdersQuery(storeId, {
-    skip: !storeId, pollingInterval: 10000,
+  const [searchParams] = useSearchParams();
+  const { data: orders = [], isLoading, isError, error, refetch } = useGetStoreOrdersQuery(storeId, {
+    skip: !storeId, pollingInterval: 30000,
   });
   const { data: todaySalesMetrics, refetch: refetchAnalytics } = useGetTodaySalesMetricsQuery(storeId, { skip: !storeId });
   const { data: activeDeliveriesCount } = useGetActiveDeliveriesCountQuery(storeId, { skip: !storeId });
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmtCurrency = (v: number) => formatMajorAmount(v, currency, locale);
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
   const [updateOrderPriority] = useUpdateOrderPriorityMutation();
   const [cancelOrder] = useCancelOrderMutation();
@@ -96,7 +109,13 @@ const OrdersTab = ({ storeId }: { storeId: string }) => {
 
   const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(searchParams.get('q') || '');
+
+  // Header shell search (?q=) → sync into local filter
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q != null) setSearch(q);
+  }, [searchParams]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState('');
@@ -113,11 +132,13 @@ const OrdersTab = ({ storeId }: { storeId: string }) => {
     let list = [...orders];
     if (statusFilter) list = list.filter(o => o.status === statusFilter);
     if (typeFilter) list = list.filter(o => o.orderType === typeFilter);
-    if (search) {
-      const q = search.toLowerCase();
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
       list = list.filter(o =>
         o.orderNumber?.toLowerCase().includes(q) ||
         o.customerName?.toLowerCase().includes(q) ||
+        o.customerPhone?.toLowerCase().includes(q) ||
+        o.customerEmail?.toLowerCase().includes(q) ||
         o.id?.toLowerCase().includes(q)
       );
     }
@@ -129,12 +150,17 @@ const OrdersTab = ({ storeId }: { storeId: string }) => {
     });
   }, [orders, statusFilter, typeFilter, search]);
 
+  // Prefer list-derived totals so KPI cards match the table (not analytics-only counts).
+  const listRevenue = orders.reduce((s, o) => s + (Number(o.total) || 0), 0);
   const stats = {
-    total: todaySalesMetrics?.todayOrderCount ?? orders.length,
+    total: orders.length,
     active: orders.filter(o => !['DELIVERED', 'SERVED', 'COMPLETED', 'CANCELLED'].includes(o.status)).length,
     delivered: orders.filter(o => ['DELIVERED', 'SERVED', 'COMPLETED'].includes(o.status)).length,
-    revenue: todaySalesMetrics?.todaySales ?? orders.filter(o => ['DELIVERED', 'SERVED', 'COMPLETED'].includes(o.status)).reduce((s, o) => s + o.total, 0),
-    activeDeliveries: activeDeliveriesCount?.count ?? 0,
+    revenue: listRevenue > 0 ? listRevenue : (todaySalesMetrics?.todaySales ?? 0),
+    activeDeliveries: (() => {
+      const fromList = countActiveDeliveries(orders);
+      return fromList > 0 ? fromList : (activeDeliveriesCount?.count ?? 0);
+    })(),
   };
 
   const handleStatusChange = async (orderId: string, status: OrderStatus) => {
@@ -180,7 +206,6 @@ const OrdersTab = ({ storeId }: { storeId: string }) => {
   };
 
   const fmtDate = (d: string) => new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-  const fmtCurrency = (n: number) => `${n.toFixed(2)}`;
 
   return (
     <>
@@ -278,11 +303,33 @@ const OrdersTab = ({ storeId }: { storeId: string }) => {
       </div>
 
       {/* Table */}
+      {isError && (
+        <div style={{ ...cardStyle, textAlign: 'center', padding: 24, marginBottom: 12, border: `1px solid ${t.red}` }}>
+          <p style={{ color: t.red, marginBottom: 8 }}>Failed to load orders for this store.</p>
+          <button type="button" style={btn('primary')} onClick={() => void refetch()}>Retry</button>
+          <p style={{ fontSize: 11, color: t.grayMuted, marginTop: 8 }}>{getApiErrorMessage(error, '')}</p>
+        </div>
+      )}
       {isLoading ? <p style={{ color: t.gray, textAlign: 'center', padding: 40 }}>Loading orders...</p> : filtered.length === 0 ? (
-        <div style={{ ...cardStyle, textAlign: 'center', padding: 40 }}><p style={{ color: t.grayMuted }}>No orders found</p></div>
+        <div style={{ ...cardStyle, textAlign: 'center', padding: 40 }}>
+          <p style={{ color: t.grayMuted }}>
+            {orders.length === 0
+              ? 'No orders for this store yet.'
+              : 'No orders match the current search/filters.'}
+          </p>
+          {(statusFilter || typeFilter || search) && (
+            <button
+              type="button"
+              style={{ ...btn('secondary'), marginTop: 12 }}
+              onClick={() => { setStatusFilter(''); setTypeFilter(''); setSearch(''); }}
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
       ) : (
-        <div style={cardStyle}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div style={{ ...cardStyle, overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 920 }}>
             <thead>
               <tr>
                 {['Order', 'Customer', 'Type', 'Status', 'Payment', 'Total', 'Date', 'Actions'].map(h => (
@@ -321,8 +368,8 @@ const OrdersTab = ({ storeId }: { storeId: string }) => {
                   </td>
                   <td style={{ ...tableCellStyle, fontWeight: 600 }}>{fmtCurrency(order.total)}</td>
                   <td style={{ ...tableCellStyle, fontSize: 11 }}>{fmtDate(order.createdAt)}</td>
-                  <td style={tableCellStyle}>
-                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  <td style={{ ...tableCellStyle, width: 280, minWidth: 260 }}>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'nowrap', alignItems: 'center', justifyContent: 'flex-end' }}>
                       <button style={btn('primary')} onClick={() => setSelectedOrder(order)}>View</button>
                       {!['CANCELLED', 'DELIVERED', 'SERVED', 'COMPLETED'].includes(order.status) && (
                         <>
@@ -330,7 +377,7 @@ const OrdersTab = ({ storeId }: { storeId: string }) => {
                             <button style={btn('success')} onClick={() => handleStatusChange(order.id, 'DELIVERED')}>Complete</button>
                           )}
                           {order.status === 'READY' && order.orderType === 'DINE_IN' && (
-                            <button style={btn('success')} onClick={() => handleStatusChange(order.id, 'SERVED')}>Mark Served</button>
+                            <button style={btn('success')} onClick={() => handleStatusChange(order.id, 'SERVED')}>Served</button>
                           )}
                           {order.status === 'READY' && order.orderType === 'TAKEAWAY' && (
                             <button style={btn('success')} onClick={() => handleStatusChange(order.id, 'COMPLETED')}>Picked Up</button>
@@ -442,15 +489,18 @@ const PaymentsTab = ({ storeId }: { storeId: string }) => {
   const [dateMode, setDateMode] = useState<'all' | 'date'>('all');
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
-  const { data: allOrders = [], isLoading } = useGetStoreOrdersQuery(storeId, { skip: !storeId, pollingInterval: 30000 });
+  const { data: allOrders = [], isLoading } = useGetRecentStoreOrdersQuery({ storeId, days: 2, page: 0, size: 100 }, { skip: !storeId, pollingInterval: 30000 });
   const { data: report } = useGetReconciliationReportQuery(
     { date: selectedDate },
     { skip: !storeId || dateMode === 'all' }
   );
 
   const dateOrders = dateMode === 'all'
-    ? allOrders.filter((o) => { const d = new Date(o.createdAt); const ago = new Date(); ago.setDate(ago.getDate() - 30); return d >= ago; })
-    : allOrders.filter((o) => new Date(o.createdAt).toISOString().split('T')[0] === selectedDate);
+    ? allOrders
+    : allOrders.filter((o) => {
+        try { return new Date(o.createdAt).toISOString().split('T')[0] === selectedDate; }
+        catch { return false; }
+      });
 
   const orderPayments: OrderPaymentSummary[] = dateOrders.map((o) => ({
     id: o.id, orderNumber: o.orderNumber, amount: o.total || 0,
@@ -491,7 +541,7 @@ const PaymentsTab = ({ storeId }: { storeId: string }) => {
       {/* Date filter */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, justifyContent: 'flex-end', alignItems: 'center' }}>
         <select value={dateMode} onChange={e => setDateMode(e.target.value as 'all' | 'date')} style={selectStyle}>
-          <option value="all">All (Last 30 Days)</option>
+          <option value="all">All store orders</option>
           <option value="date">Specific Date</option>
         </select>
         {dateMode === 'date' && (
@@ -499,15 +549,13 @@ const PaymentsTab = ({ storeId }: { storeId: string }) => {
         )}
       </div>
 
-      {/* Stats */}
-      {displayReport && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
-          <div style={miniStat}><p style={statLabel}>Total Revenue</p><p style={statValue(t.green)}>{displayReport.successfulAmount.toFixed(2)}</p></div>
-          <div style={miniStat}><p style={statLabel}>Net Amount</p><p style={statValue()}>{displayReport.netAmount.toFixed(2)}</p></div>
-          <div style={miniStat}><p style={statLabel}>Transactions</p><p style={statValue()}>{displayReport.totalTransactions}</p></div>
-          <div style={miniStat}><p style={statLabel}>Failed</p><p style={statValue(t.red)}>{displayReport.failedTransactions}</p></div>
-        </div>
-      )}
+      {/* Stats — always render so cards stay populated from the orders list */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12, marginBottom: 20 }}>
+        <div style={miniStat}><p style={statLabel}>Total Revenue</p><p style={statValue(t.green)}>{(displayReport?.successfulAmount ?? 0).toFixed(2)}</p></div>
+        <div style={miniStat}><p style={statLabel}>Net Amount</p><p style={statValue()}>{(displayReport?.netAmount ?? 0).toFixed(2)}</p></div>
+        <div style={miniStat}><p style={statLabel}>Transactions</p><p style={statValue()}>{displayReport?.totalTransactions ?? orderPayments.length}</p></div>
+        <div style={miniStat}><p style={statLabel}>Failed</p><p style={statValue(t.red)}>{displayReport?.failedTransactions ?? 0}</p></div>
+      </div>
 
       {/* Payment Method Breakdown */}
       {displayReport?.paymentMethodBreakdown && Object.keys(displayReport.paymentMethodBreakdown).length > 0 && (
@@ -658,17 +706,22 @@ const RefundsTab = ({ storeId }: { storeId: string }) => {
 
 // ─── DELIVERIES TAB ───
 const DeliveriesTab = ({ storeId }: { storeId: string }) => {
-  const { data: allOrders = [], isLoading } = useGetStoreOrdersQuery(storeId, { skip: !storeId, pollingInterval: 30000 });
+  const { data: allOrders = [], isLoading } = useGetRecentStoreOrdersQuery({ storeId, days: 2, page: 0, size: 100 }, { skip: !storeId, pollingInterval: 30000 });
   const { data: availableDrivers = [] } = useGetAvailableDriversQuery(storeId, { skip: !storeId, pollingInterval: 30000 });
+  const { data: storeDrivers = [] } = useGetStoreDriversQuery(storeId, { skip: !storeId, pollingInterval: 30000 });
   const [autoDispatch, { isLoading: dispatching }] = useAutoDispatchMutation();
   const [trackingOrderId, setTrackingOrderId] = useState('');
   const { data: trackingData, isError: trackingError } = useTrackOrderQuery(trackingOrderId, { skip: !trackingOrderId, pollingInterval: 10000 });
 
   const deliveryOrders = allOrders.filter((o) => o.orderType === 'DELIVERY');
   const readyOrders = deliveryOrders.filter((o) => o.status === 'READY');
-  const outOrders = deliveryOrders.filter((o) => o.status === 'DISPATCHED');
+  const outOrders = deliveryOrders.filter((o) => o.status === 'DISPATCHED' || o.status === 'OUT_FOR_DELIVERY');
   const today = new Date().toDateString();
   const completedToday = deliveryOrders.filter((o) => ['DELIVERED', 'SERVED', 'COMPLETED'].includes(o.status) && new Date(o.createdAt).toDateString() === today).length;
+  const completedAll = deliveryOrders.filter((o) => ['DELIVERED', 'SERVED', 'COMPLETED'].includes(o.status)).length;
+  const activeDeliveryCount = countActiveDeliveries(deliveryOrders);
+  const onlineDrivers = storeDrivers.filter((d) => d.isOnline || d.isActive).length;
+  const driverAvailable = availableDrivers.length > 0 ? availableDrivers.length : onlineDrivers;
 
   const handleDispatch = async (orderId: string) => {
     try {
@@ -684,11 +737,11 @@ const DeliveriesTab = ({ storeId }: { storeId: string }) => {
   return (
     <>
       {/* Metrics */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
-        <div style={miniStat}><p style={statLabel}>Active Deliveries</p><p style={statValue(t.orange)}>{outOrders.length}</p></div>
-        <div style={miniStat}><p style={statLabel}>Completed Today</p><p style={statValue(t.green)}>{completedToday}</p></div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12, marginBottom: 20 }}>
+        <div style={miniStat}><p style={statLabel}>Active Deliveries</p><p style={statValue(t.orange)}>{activeDeliveryCount}</p></div>
+        <div style={miniStat}><p style={statLabel}>Completed</p><p style={statValue(t.green)}>{completedToday || completedAll}</p></div>
         <div style={miniStat}><p style={statLabel}>Ready to Dispatch</p><p style={statValue(t.blue)}>{readyOrders.length}</p></div>
-        <div style={miniStat}><p style={statLabel}>Drivers Available</p><p style={statValue()}>{availableDrivers.length}</p></div>
+        <div style={miniStat}><p style={statLabel}>Drivers Available</p><p style={statValue()}>{driverAvailable}</p></div>
       </div>
 
       {/* Ready for Dispatch */}
@@ -800,32 +853,37 @@ const OrdersSection: React.FC<Props> = ({ storeId, activeTab, onTabChange }) => 
   const currentTab = activeTab || 'orders';
 
   return (
-    <div>
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 20, background: t.bgMain, padding: 6, borderRadius: t.radius.md, width: 'fit-content' }}>
-        {tabs.map(tab => (
-          <button key={tab.id} style={tabStyle(currentTab === tab.id)} onClick={() => onTabChange(tab.id)}>
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Content */}
+    <ManagerPageFrame
+      title="Orders & Payments"
+      subtitle="Live orders, payments, refunds, and deliveries"
+      storeId={storeId || undefined}
+      empty={!storeId}
+      emptyTitle="Select a store"
+      emptyDescription="Choose a store from the header to load orders and payments."
+      tabs={
+        <ManagerTabBar
+          tabs={tabs}
+          activeTab={currentTab}
+          onChange={onTabChange}
+          ariaLabel="Orders section tabs"
+        />
+      }
+    >
       {currentTab === 'orders' && <OrdersTab storeId={storeId} />}
       {currentTab === 'payments' && <PaymentsTab storeId={storeId} />}
       {currentTab === 'refunds' && <RefundsTab storeId={storeId} />}
       {currentTab === 'deliveries' && <DeliveriesTab storeId={storeId} />}
       {currentTab === 'delivery-mgmt' && (
-        <React.Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: t.gray }}>Loading...</div>}>
+        <React.Suspense fallback={<ManagerLoadingBlock rows={3} label="Loading delivery management…" />}>
           <DeliveryManagementPage />
         </React.Suspense>
       )}
       {currentTab === 'aggregators' && (
-        <React.Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: t.gray }}>Loading...</div>}>
+        <React.Suspense fallback={<ManagerLoadingBlock rows={3} label="Loading aggregators…" />}>
           <AggregatorHubPage />
         </React.Suspense>
       )}
-    </div>
+    </ManagerPageFrame>
   );
 };
 

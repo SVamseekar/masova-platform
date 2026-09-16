@@ -73,12 +73,11 @@ const ManagementHubSidebar: React.FC<ManagementHubSidebarProps> = ({ isOpen, onC
       icon: '📈',
       color: colors.brand.primary,
       items: [
-        { path: '/manager/analytics', label: 'Analytics Dashboard', icon: '📈', description: 'Revenue trend & top products' },
-        { path: '/manager/kitchen-analytics', label: 'Kitchen Analytics', icon: '🍳', description: 'Prep times & staff performance' },
-        { path: '/manager/product-analytics', label: 'Product Analytics', icon: '📊', description: 'Menu item performance & trends' },
-        { path: '/manager/advanced-reports', label: 'Advanced Reports', icon: '📑', description: 'Comprehensive business reports' },
-        { path: '/manager/staff-leaderboard', label: 'Staff Leaderboard', icon: '🏆', description: 'Employee performance rankings' },
-        { path: '/manager/equipment-monitoring', label: 'Equipment Status', icon: '⚙️', description: 'Kitchen equipment monitoring' },
+        { path: '/manager?section=analytics&tab=kitchen', label: 'Kitchen Analytics', icon: '🍳', description: 'Live kitchen queue & staff performance' },
+        { path: '/manager?section=analytics&tab=products', label: 'Product Analytics', icon: '📊', description: 'Menu item performance & trends' },
+        { path: '/manager?section=analytics&tab=reports', label: 'Advanced Reports', icon: '📑', description: 'Comprehensive business reports' },
+        { path: '/manager?section=people&tab=leaderboard', label: 'Staff Leaderboard', icon: '🏆', description: 'Employee performance rankings' },
+        { path: '/manager?section=analytics&tab=equipment', label: 'Equipment Status', icon: '⚙️', description: 'Kitchen equipment monitoring' },
       ]
     },
   ];

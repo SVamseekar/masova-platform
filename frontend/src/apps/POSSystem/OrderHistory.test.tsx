@@ -9,6 +9,11 @@ import OrderHistory from './OrderHistory';
 // ---------------------------------------------------------------------------
 
 const mockRecordCashPayment = vi.fn().mockReturnValue({ unwrap: vi.fn() });
+const mockEnqueueSnackbar = vi.fn();
+
+vi.mock('notistack', () => ({
+  useSnackbar: () => ({ enqueueSnackbar: mockEnqueueSnackbar }),
+}));
 
 vi.mock('../../store/api/paymentApi', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../store/api/paymentApi')>();
@@ -65,6 +70,12 @@ vi.mock('../../store/api/orderApi', async (importOriginal) => {
       data: mockOrdersData,
       isLoading: mockIsLoading,
       error: mockError,
+    }),
+    useGetRecentStoreOrdersQuery: () => ({
+      data: mockOrdersData,
+      isLoading: mockIsLoading,
+      error: mockError,
+      refetch: vi.fn(),
     }),
   };
 });
@@ -211,9 +222,7 @@ describe('OrderHistory', () => {
       });
 
       expect(
-        screen.getByPlaceholderText(
-          /Search by order number, customer name, or phone/i
-        )
+        screen.getByPlaceholderText(/Search order #, name, phone/i)
       ).toBeInTheDocument();
     });
 
@@ -225,9 +234,7 @@ describe('OrderHistory', () => {
         preloadedState: managerState,
       });
 
-      const searchInput = screen.getByPlaceholderText(
-        /Search by order number/i
-      );
+      const searchInput = screen.getByPlaceholderText(/Search order #/i);
       await user.type(searchInput, 'John');
 
       expect(screen.getByText('Order #ORD-001')).toBeInTheDocument();
@@ -242,9 +249,7 @@ describe('OrderHistory', () => {
         preloadedState: managerState,
       });
 
-      const searchInput = screen.getByPlaceholderText(
-        /Search by order number/i
-      );
+      const searchInput = screen.getByPlaceholderText(/Search order #/i);
       await user.type(searchInput, 'ORD-002');
 
       expect(screen.queryByText('Order #ORD-001')).not.toBeInTheDocument();
@@ -259,30 +264,24 @@ describe('OrderHistory', () => {
         preloadedState: managerState,
       });
 
-      const searchInput = screen.getByPlaceholderText(
-        /Search by order number/i
-      );
+      const searchInput = screen.getByPlaceholderText(/Search order #/i);
       await user.type(searchInput, 'nonexistent');
 
-      expect(
-        screen.getByText(/No orders found matching your search/i)
-      ).toBeInTheDocument();
+      expect(screen.getByText(/No matching orders/i)).toBeInTheDocument();
     });
   });
 
   describe('loading state', () => {
-    it('shows a loading spinner when orders are loading', () => {
+    it('shows loading skeleton when orders are loading', () => {
       mockIsLoading = true;
       mockOrdersData = [];
 
-      const { container } = renderWithProviders(<OrderHistory />, {
+      renderWithProviders(<OrderHistory />, {
         useMemoryRouter: true,
         preloadedState: managerState,
       });
 
-      // The spinner is rendered as a div with animation
-      const spinner = container.querySelector('[style*="animation"]');
-      expect(spinner).toBeInTheDocument();
+      expect(screen.getByTestId('history-loading')).toBeInTheDocument();
     });
   });
 
@@ -308,7 +307,7 @@ describe('OrderHistory', () => {
         preloadedState: managerState,
       });
 
-      expect(screen.getByText(/No orders today yet/i)).toBeInTheDocument();
+      expect(screen.getByText(/No orders for this store/i)).toBeInTheDocument();
     });
   });
 });

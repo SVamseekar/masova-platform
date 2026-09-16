@@ -33,7 +33,12 @@ import { useAppSelector } from '../../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../../store/slices/cartSlice';
 import {formatMoney, formatMajorAmount} from '../../../utils/currency';
 import { useGetDriverPerformanceQuery } from '../../../store/api/driverApi';
-import { useGetCurrentSessionQuery, useStartSessionMutation, useEndSessionMutation } from '../../../store/api/sessionApi';
+import {
+  useGetCurrentSessionQuery,
+  useStartSessionMutation,
+  useEndSessionMutation,
+  useAddBreakTimeMutation,
+} from '../../../store/api/sessionApi';
 import { logout } from '../../../store/slices/authSlice';
 import { useNavigate } from 'react-router-dom';
 import { MetricCard, ActionButton, StatsChart } from '../components/shared';
@@ -64,6 +69,8 @@ const DriverProfilePage: React.FC = () => {
   // Session mutations
   const [startSession, { isLoading: isStarting }] = useStartSessionMutation();
   const [endSession, { isLoading: isEnding }] = useEndSessionMutation();
+  const [addBreakTime, { isLoading: isBreaking }] = useAddBreakTimeMutation();
+  const [breakMessage, setBreakMessage] = useState<string | null>(null);
 
   // Handle clock in/out
   const handleClockIn = async () => {
@@ -88,6 +95,23 @@ const DriverProfilePage: React.FC = () => {
     } catch (err) {
       console.error('Failed to end session:', err);
       alert('Failed to end session. Please try again.');
+    }
+  };
+
+  /** Record a standard 15-minute break against the active session. */
+  const handleTakeBreak = async () => {
+    setBreakMessage(null);
+    if (!currentSession?.id) {
+      setBreakMessage('No active session — clock in first.');
+      return;
+    }
+    try {
+      await addBreakTime({ sessionId: currentSession.id, breakMinutes: 15 }).unwrap();
+      await refetchSession();
+      setBreakMessage('15-minute break recorded.');
+    } catch (err) {
+      console.error('Failed to record break:', err);
+      setBreakMessage('Could not record break. Try again or ask a manager.');
     }
   };
 
@@ -606,13 +630,19 @@ const DriverProfilePage: React.FC = () => {
                 </Box>
               )}
 
+              {breakMessage && (
+                <Alert severity={breakMessage.includes('recorded') ? 'success' : 'warning'} sx={{ mb: spacing.base }}>
+                  {breakMessage}
+                </Alert>
+              )}
               <Box sx={{ display: 'flex', gap: spacing.md }}>
                 <ActionButton
                   variant="secondary"
                   fullWidth
-                  onClick={() => console.log('Take Break')}
+                  onClick={() => void handleTakeBreak()}
+                  loading={isBreaking}
                 >
-                  Take Break
+                  Take Break (15 min)
                 </ActionButton>
 
                 <ActionButton

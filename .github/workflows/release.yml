@@ -137,7 +137,7 @@ jobs:
           zip -r masova-v${{ steps.version.outputs.VERSION }}.zip masova-release/
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             masova-v${{ steps.version.outputs.VERSION }}.tar.gz
@@ -150,7 +150,7 @@ jobs:
             - core-service (port 8085)
             - commerce-service (port 8084)
             - payment-service (port 8089)
-            - logistics-service (port 8095)
+            - logistics-service (port 8086)
             - intelligence-service (port 8087)
 
             ### Infrastructure

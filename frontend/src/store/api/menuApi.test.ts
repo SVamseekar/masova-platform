@@ -92,6 +92,26 @@ describe('menuApi', () => {
       expect(result.current.data![0].id).toBe('mongo-id-1');
     });
 
+    it('should request menu with storeId query when provided', async () => {
+      let seenUrl = '';
+      server.use(
+        http.get(`${API}/menu`, ({ request }) => {
+          seenUrl = request.url;
+          return HttpResponse.json([
+            { _id: '1', name: 'Margherita', storeId: 'DOM001', isAvailable: true, displayOrder: 1, isRecommended: false, createdAt: '', updatedAt: '' },
+          ]);
+        }),
+      );
+
+      const { result } = renderHook(() => useGetAvailableMenuQuery('DOM001'), {
+        wrapper: DefaultTestWrapper,
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(seenUrl).toContain('storeId=DOM001');
+      expect(result.current.data![0].name).toBe('Margherita');
+    });
+
     it('should fetch a single menu item by ID', async () => {
       const { result } = renderHook(() => useGetMenuItemQuery('1'), {
         wrapper: DefaultTestWrapper,

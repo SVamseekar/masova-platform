@@ -22,9 +22,11 @@ jwt:
   refresh-token-expiration: 86400000
 
 razorpay:
+  enabled: true
   key-id: rzp_test_fake_key_for_unit_tests_only
   key-secret: fake_secret_for_tests_only_not_real
   webhook-secret: whsec_fake_webhook_secret_for_tests
+
 
 logging:
   level:

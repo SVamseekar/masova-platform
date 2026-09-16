@@ -46,8 +46,9 @@ const POSSystem = React.lazy(() => import('./apps/POSSystem/POSSystem'));
 const KioskSetupPage = React.lazy(() => import('./pages/kiosk/KioskSetupPage'));
 const GdprRequests = React.lazy(() => import('./pages/GdprRequests').then(m => ({ default: m.GdprRequests })));
 const PrivacyPolicy = React.lazy(() => import('./pages/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })));
-const AnalyticsDashboard = React.lazy(() => import('./pages/manager/AnalyticsDashboard'));
-
+const TermsOfService = React.lazy(() => import('./pages/TermsOfService').then(m => ({ default: m.TermsOfService })));
+const CookiePolicy = React.lazy(() => import('./pages/CookiePolicy').then(m => ({ default: m.CookiePolicy })));
+const RefundPolicy = React.lazy(() => import('./pages/RefundPolicy').then(m => ({ default: m.RefundPolicy })));
 // Kiosk mode hook
 import { useKioskMode } from './hooks/useKioskMode';
 
@@ -105,6 +106,9 @@ const App: React.FC = () => {
                   <Route path="/promotions" element={<CustomerLayout><PromotionsPage /></CustomerLayout>} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />
                   <Route path="/privacy-policy" element={<Navigate to="/privacy" replace />} />
+                  <Route path="/terms" element={<TermsOfService />} />
+                  <Route path="/cookies" element={<CookiePolicy />} />
+                  <Route path="/refunds" element={<RefundPolicy />} />
 
                   {/* Authentication & Checkout Routes - Public */}
                   <Route path="/login" element={<Navigate to="/customer-login" replace />} />
@@ -196,16 +200,8 @@ const App: React.FC = () => {
                   <Route path="/manager/product-analytics" element={<Navigate to="/manager?section=analytics&tab=products" replace />} />
                   <Route path="/manager/advanced-reports" element={<Navigate to="/manager?section=analytics&tab=reports" replace />} />
                   <Route path="/manager/equipment-monitoring" element={<Navigate to="/manager?section=analytics&tab=equipment" replace />} />
-
-                  {/* Analytics Dashboard - standalone Recharts page */}
-                  <Route
-                    path="/manager/analytics"
-                    element={
-                      <ProtectedRoute allowedRoles={['MANAGER', 'ASSISTANT_MANAGER']}>
-                        <AnalyticsDashboard />
-                      </ProtectedRoute>
-                    }
-                  />
+                  {/* K9: no dual MUI analytics — always shell analytics */}
+                  <Route path="/manager/analytics" element={<Navigate to="/manager?section=analytics&tab=kitchen" replace />} />
 
                   {/* Staff Profile - stays as separate route */}
                   <Route
@@ -252,6 +248,7 @@ const App: React.FC = () => {
                 <ChatWidget />
 
                 <CookieConsent />
+                <GoogleAnalytics />
               </div>
             </Router>
           </ErrorBoundary>
@@ -259,7 +256,6 @@ const App: React.FC = () => {
       </ThemeProvider>
       </ConnectionMonitorProvider>
     </Provider>
-      <GoogleAnalytics />
     </GoogleOAuthProvider>
   );
 };

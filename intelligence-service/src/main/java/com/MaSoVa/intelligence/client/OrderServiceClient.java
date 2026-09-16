@@ -38,6 +38,25 @@ public class OrderServiceClient {
     }
 
     @Retry(name = "orderService")
+    @CircuitBreaker(name = "orderService", fallbackMethod = "getStoreSummaryFallback")
+    public Map<String, Object> getStoreSummary(String storeId, int days) {
+        try {
+            String url = orderServiceUrl + "/api/orders/analytics?type=store-summary&days=" + days
+                    + (storeId != null ? "&storeId=" + storeId : "");
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    url,
+                    HttpMethods.GET,
+                    null,
+                    new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+            return Objects.requireNonNullElse(response.getBody(), Map.of());
+        } catch (RestClientException e) {
+            log.error("Failed to fetch store summary for store: {}", storeId, e);
+            throw e;
+        }
+    }
+
+    @Retry(name = "orderService")
     @CircuitBreaker(name = "orderService", fallbackMethod = "getOrdersByDateFallback")
     public List<Map<String, Object>> getOrdersByDate(LocalDate date) {
         try {
@@ -117,6 +136,11 @@ public class OrderServiceClient {
     }
 
     // Fallback methods
+    private Map<String, Object> getStoreSummaryFallback(String storeId, int days, Exception ex) {
+        log.warn("Circuit breaker fallback for getStoreSummary. Store: {}, Error: {}", storeId, ex.getMessage());
+        return Map.of();
+    }
+
     private List<Map<String, Object>> getOrdersByDateFallback(LocalDate date, Exception ex) {
         log.warn("Circuit breaker fallback for getOrdersByDate. Date: {}, Error: {}", date, ex.getMessage());
         return List.of();

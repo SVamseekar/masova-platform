@@ -1,8 +1,9 @@
 import React from 'react';
 import { t, cardStyle, sectionTitleStyle } from './manager-tokens';
+import { ManagerStatCard, ManagerEmptyState, ManagerLoadingBlock, ManagerErrorState } from './components';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import {formatMoney, formatMajorAmount} from '../../utils/currency';
+import { formatMajorAmount } from '../../utils/currency';
 import {
   useGetTopProductsQuery,
   useGetExecutiveSummaryQuery,
@@ -11,11 +12,30 @@ import {
   useGetTodaySalesMetricsQuery,
 } from '../../store/api/analyticsApi';
 import { useGetActiveStoreSessionsQuery } from '../../store/api/sessionApi';
-import { useGetStoreOrdersQuery, useGetActiveDeliveriesCountQuery } from '../../store/api/orderApi';
+import { useGetAllDriversQuery } from '../../store/api/driverApi';
+import { useGetStoreEmployeesQuery } from '../../store/api/userApi';
+import { useGetStoreOrderSummaryQuery, useGetActiveDeliveriesCountQuery } from '../../store/api/orderApi';
+import { derivedFromSummary } from './storeOrderMetrics';
+
 import { useListKioskAccountsQuery, type KioskAccount } from '../../store/api/kioskApi';
 import type { WorkingSession } from '../../store/api/sessionApi';
 import type { ProductRankingItem } from '../types/analytics';
 import { useGetCustomerStatsQuery } from '../../store/api/customerApi';
+import {
+  useGetLowStockItemsQuery,
+  useGetOutOfStockItemsQuery,
+  useGetPendingApprovalPurchaseOrdersQuery,
+  useGetWasteRecordsByDateRangeQuery,
+} from '../../store/api/inventoryApi';
+import { useGetSigningFailuresQuery } from '../../store/api/fiscalApi';
+import {
+  sumWasteCost,
+  filterWasteByStore,
+  countItems,
+  topStockItemNames,
+  summarizeDrivers,
+} from './quickInfoMetrics';
+import { getAgentStatusCounts, AGENT_CATALOG } from './agentCatalog';
 
 interface Props {
   section: string;
@@ -23,123 +43,234 @@ interface Props {
 }
 
 const miniCard: React.CSSProperties = { ...cardStyle, padding: 14, marginBottom: 10 };
-const label: React.CSSProperties = { fontSize: 12, color: t.gray, margin: 0 };
-const value = (color?: string): React.CSSProperties => ({ fontSize: 20, fontWeight: 700, color: color || t.black, margin: '4px 0 0 0' });
-const listItem: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: `1px solid ${t.grayLight}`, fontSize: 13 };
-const dot = (color: string): React.CSSProperties => ({ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block', marginRight: 8 });
+const listItem: React.CSSProperties = {
+  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+  padding: '10px 0', borderBottom: `1px solid ${t.grayLight}`, fontSize: 13,
+};
+const dot = (color: string): React.CSSProperties => ({
+  width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block', marginRight: 8,
+});
 
 const Heading = ({ title }: { title: string }) => (
   <h4 style={{ ...sectionTitleStyle, marginBottom: 12, marginTop: 20 }}>{title}</h4>
 );
 
-const Stat = ({ l, v, c }: { l: string; v: string | number; c?: string }) => (
-  <div style={miniCard}><p style={label}>{l}</p><p style={value(c)}>{v}</p></div>
-);
-
 // === DASHBOARD ===
 const DashboardSidebar = ({ storeId }: { storeId: string }) => {
-  const { data: topProducts } = useGetTopProductsQuery({ storeId, period: 'WEEKLY', sortBy: 'quantity' }, { skip: !storeId });
-  const { data: sessions } = useGetActiveStoreSessionsQuery(storeId, { skip: !storeId });
+  const {
+    data: topProducts, isLoading: loadingProducts, isError: productsError, refetch: refetchProducts,
+  } = useGetTopProductsQuery({ storeId, period: 'WEEKLY', sortBy: 'quantity' }, { skip: !storeId });
+  const {
+    data: sessions, isLoading: loadingSessions, isError: sessionsError, refetch: refetchSessions,
+  } = useGetActiveStoreSessionsQuery(storeId, { skip: !storeId });
+  const { data: sales, isLoading: loadingSales, isError: salesError } = useGetTodaySalesMetricsQuery(storeId, { skip: !storeId });
+  const { data: storeSummary } = useGetStoreOrderSummaryQuery({ storeId, days: 30 }, { skip: !storeId });
+  const derived = derivedFromSummary(storeSummary);
+
+  const apiProducts = topProducts?.topProducts?.slice(0, 5) ?? [];
+  const products = apiProducts.length > 0 ? apiProducts : derived.topProducts.slice(0, 5);
+  const activeSessions = sessions?.filter((s) => s.isActive).slice(0, 5) ?? [];
+  const todayCount = (sales?.todayOrderCount || 0) > 0 ? sales!.todayOrderCount : derived.todayOrderCount;
 
   return (
     <>
-      <Heading title="Trending Menus" />
-      <div style={miniCard}>
-        {topProducts?.topProducts?.slice(0, 5).map((p: ProductRankingItem, i: number) => (
-          <div key={p.itemId} style={{ ...listItem, borderBottom: i < 4 ? `1px solid ${t.grayLight}` : 'none' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: t.gray, width: 18 }}>#{p.rank}</span>
-              <span style={{ color: t.black, fontWeight: 500 }}>{p.itemName}</span>
-            </div>
-            <span style={{ fontSize: 12, color: t.green, fontWeight: 600 }}>{p.quantitySold} sold</span>
-          </div>
-        )) || <p style={{ fontSize: 13, color: t.grayMuted }}>No data available</p>}
-      </div>
+      <Heading title="Today" />
+      <ManagerStatCard
+        label="Orders today"
+        value={todayCount}
+        color={t.orange}
+        loading={loadingSales && derived.todayOrderCount === 0}
+        error={salesError && derived.todayOrderCount === 0}
+        compact
+      />
 
-      <Heading title="Recent Activity" />
-      <div style={miniCard}>
-        {sessions?.slice(0, 5).map((s: WorkingSession, i: number) => (
-          <div key={s.id} style={{ ...listItem, borderBottom: i < 4 ? `1px solid ${t.grayLight}` : 'none' }}>
-            <div>
-              <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: t.black }}>{s.employeeName}</p>
-              <p style={{ margin: '2px 0 0', fontSize: 11, color: t.grayMuted }}>{s.role}</p>
+      <Heading title="Trending menus" />
+      {loadingProducts && products.length === 0 && <ManagerLoadingBlock rows={3} compact label="Loading products…" />}
+      {productsError && products.length === 0 && (
+        <ManagerErrorState compact title="Products unavailable" onRetry={() => void refetchProducts()} />
+      )}
+      {!loadingProducts && products.length === 0 && (
+        <ManagerEmptyState compact title="No rankings yet" description="No product rankings for this week." />
+      )}
+      {!loadingProducts && !productsError && products.length > 0 && (
+        <div style={miniCard}>
+          {products.map((p: ProductRankingItem, i: number) => (
+            <div key={p.itemId} style={{ ...listItem, borderBottom: i < products.length - 1 ? `1px solid ${t.grayLight}` : 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: t.gray, width: 18 }}>#{p.rank}</span>
+                <span style={{ color: t.black, fontWeight: 500 }}>{p.itemName}</span>
+              </div>
+              <span style={{ fontSize: 12, color: t.green, fontWeight: 600 }}>{p.quantitySold} sold</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <span style={dot(s.isActive ? t.green : t.grayMuted)} />
-              <span style={{ fontSize: 11, color: s.isActive ? t.green : t.grayMuted }}>{s.isActive ? 'Active' : 'Offline'}</span>
+          ))}
+        </div>
+      )}
+
+      <Heading title="On shift" />
+      {loadingSessions && <ManagerLoadingBlock rows={2} compact label="Loading sessions…" />}
+      {sessionsError && (
+        <ManagerErrorState compact title="Sessions unavailable" onRetry={() => void refetchSessions()} />
+      )}
+      {!loadingSessions && !sessionsError && activeSessions.length === 0 && (
+        <ManagerEmptyState compact title="No one on shift" description="No active staff sessions." />
+      )}
+      {!loadingSessions && !sessionsError && activeSessions.length > 0 && (
+        <div style={miniCard}>
+          {activeSessions.map((s: WorkingSession, i: number) => (
+            <div key={s.id} style={{ ...listItem, borderBottom: i < activeSessions.length - 1 ? `1px solid ${t.grayLight}` : 'none' }}>
+              <div>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: t.black }}>{s.employeeName}</p>
+                <p style={{ margin: '2px 0 0', fontSize: 11, color: t.grayMuted }}>{s.role}</p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <span style={dot(t.green)} />
+                <span style={{ fontSize: 11, color: t.green }}>Active</span>
+              </div>
             </div>
-          </div>
-        )) || <p style={{ fontSize: 13, color: t.grayMuted }}>No active sessions</p>}
-      </div>
+          ))}
+        </div>
+      )}
     </>
   );
 };
 
 // === ORDERS ===
 const OrdersSidebar = ({ storeId }: { storeId: string }) => {
-  const { data: orders } = useGetStoreOrdersQuery(storeId, { skip: !storeId });
-  const { data: activeDeliveries } = useGetActiveDeliveriesCountQuery(storeId, { skip: !storeId });
+  const { data: summary, isLoading, isError, refetch } = useGetStoreOrderSummaryQuery({ storeId, days: 7 }, { skip: !storeId });
+  const { data: activeDeliveries, isLoading: loadingDel, isError: errDel } = useGetActiveDeliveriesCountQuery(storeId, { skip: !storeId });
+  const derived = derivedFromSummary(summary);
 
-  const liveCount = orders?.filter(o => !['COMPLETED', 'CANCELLED', 'DELIVERED'].includes(o.status)).length ?? 0;
-  const pendingPayments = orders?.filter(o => o.paymentStatus === 'PENDING').length ?? 0;
-  const todayRefunds = orders?.filter(o => {
-    const today = new Date().toISOString().split('T')[0];
-    return o.paymentStatus === 'REFUNDED' && o.updatedAt?.startsWith(today);
-  }).length ?? 0;
+  const liveCount = derived.liveOrderCount;
+  const pendingPayments = derived.pendingPaymentCount;
+  const todayRefunds = 0;
+  const deliveryCount = activeDeliveries?.count ?? 0;
 
   return (
     <>
-      <Heading title="Order Snapshot" />
-      <Stat l="Live Orders" v={liveCount} c={t.orange} />
-      <Stat l="Pending Payments" v={pendingPayments} c={t.yellow} />
-      <Stat l="Today's Refunds" v={todayRefunds} c={t.red} />
-      <Stat l="Active Deliveries" v={activeDeliveries?.count ?? 0} c={t.blue} />
+      <Heading title="Order snapshot" />
+      {isError && (
+        <ManagerErrorState compact title="Orders unavailable" onRetry={() => void refetch()} />
+      )}
+      <ManagerStatCard label="Live orders" value={liveCount} color={t.orange} loading={isLoading} error={isError} compact />
+      <ManagerStatCard label="Pending payments" value={pendingPayments} color={t.yellow} loading={isLoading} error={isError} compact />
+      <ManagerStatCard label="Today's refunds" value={todayRefunds} color={t.red} loading={isLoading} error={isError} compact />
+      <ManagerStatCard
+        label="Active deliveries"
+        value={deliveryCount}
+        color={t.blue}
+        loading={isLoading && loadingDel}
+        error={isError && errDel}
+        compact
+      />
     </>
   );
 };
 
 // === INVENTORY ===
-const InventorySidebar = () => (
-  <>
-    <Heading title="Stock Alerts" />
-    <div style={{ padding: '10px 12px', background: t.orangeLight, borderRadius: t.radius.sm, fontSize: 12, color: t.orangeDark, marginBottom: 8, lineHeight: 1.4 }}>
-      Check the Stock tab for items below reorder threshold.
-    </div>
-    <Heading title="Quick Stats" />
-    <Stat l="Pending Purchase Orders" v="--" />
-    <Stat l="Waste This Week" v="--" />
-    <p style={{ fontSize: 12, color: t.grayMuted, lineHeight: 1.5, marginTop: 16 }}>
-      Detailed inventory metrics are displayed in the Stock, Purchase Orders, and Waste tabs.
-    </p>
-  </>
-);
+const InventorySidebar = ({ storeId }: { storeId: string }) => {
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const fmt = (v: number) => formatMajorAmount(v, currency, locale);
+
+  const {
+    data: lowStock = [], isLoading: loadingLow, isError: errLow, refetch: refetchLow,
+  } = useGetLowStockItemsQuery(storeId, { skip: !storeId });
+  const {
+    data: outOfStock = [], isLoading: loadingOut, isError: errOut,
+  } = useGetOutOfStockItemsQuery(storeId, { skip: !storeId });
+  const {
+    data: pendingPOs = [], isLoading: loadingPO, isError: errPO,
+  } = useGetPendingApprovalPurchaseOrdersQuery(storeId, { skip: !storeId });
+
+  const weekStart = new Date();
+  weekStart.setDate(weekStart.getDate() - 7);
+  const startDate = weekStart.toISOString().split('T')[0];
+  const endDate = new Date().toISOString().split('T')[0];
+  const {
+    data: wasteRows = [], isLoading: loadingWaste, isError: errWaste,
+  } = useGetWasteRecordsByDateRangeQuery({ startDate, endDate }, { skip: !storeId });
+
+  const storeWaste = filterWasteByStore(wasteRows, storeId);
+  const wasteCost = sumWasteCost(storeWaste);
+  const topNames = topStockItemNames(lowStock, 3);
+
+  return (
+    <>
+      <Heading title="Stock alerts" />
+      {(errLow || errOut) && (
+        <ManagerErrorState compact title="Stock alerts unavailable" onRetry={() => void refetchLow()} />
+      )}
+      <ManagerStatCard label="Low stock items" value={countItems(lowStock)} color={t.orange} loading={loadingLow} error={errLow} compact />
+      <ManagerStatCard label="Out of stock" value={countItems(outOfStock)} color={t.red} loading={loadingOut} error={errOut} compact />
+      {topNames.length > 0 && !loadingLow && !errLow && (
+        <div style={{ ...miniCard, fontSize: 12, color: t.orangeDark, background: t.orangeLight }}>
+          Top: {topNames.join(', ')}
+        </div>
+      )}
+      {!loadingLow && !errLow && countItems(lowStock) === 0 && countItems(outOfStock) === 0 && (
+        <ManagerEmptyState compact title="Stock healthy" description="No low or out-of-stock items for this store." />
+      )}
+      <Heading title="Supply" />
+      <ManagerStatCard label="POs pending approval" value={countItems(pendingPOs)} color={t.blue} loading={loadingPO} error={errPO} compact />
+      <ManagerStatCard
+        label="Waste this week"
+        value={fmt(wasteCost)}
+        color={t.red}
+        loading={loadingWaste}
+        error={errWaste}
+        compact
+      />
+    </>
+  );
+};
 
 // === OPERATIONS ===
 const OperationsSidebar = ({ storeId }: { storeId: string }) => {
-  const { data: driverStatus } = useGetDriverStatusQuery(storeId, { skip: !storeId });
-  const { data: kiosks } = useListKioskAccountsQuery(storeId, { skip: !storeId });
+  const { data: driverStatus, isLoading: loadingDrivers, isError: errDrivers, refetch: refetchDrivers } = useGetDriverStatusQuery(storeId, { skip: !storeId });
+  const { data: drivers = [] } = useGetAllDriversQuery(storeId, { skip: !storeId, pollingInterval: 15000 });
+  const { data: employees = [] } = useGetStoreEmployeesQuery(storeId, { skip: !storeId, pollingInterval: 30000 });
+  const { data: sessions = [] } = useGetActiveStoreSessionsQuery(storeId, { skip: !storeId, pollingInterval: 15000 });
+  const { data: kiosks, isLoading: loadingKiosks, isError: errKiosks, refetch: refetchKiosks } = useListKioskAccountsQuery(storeId, { skip: !storeId });
+
+  const roster = summarizeDrivers(employees, drivers, sessions);
+  const totalDrivers = roster.total || driverStatus?.totalDrivers || 0;
+  const availableDrivers = roster.available || driverStatus?.availableDrivers || 0;
+  const busyDrivers = roster.busy || driverStatus?.busyDrivers || 0;
 
   const onlineKiosks = kiosks?.filter((k: KioskAccount) => k.isActive).length ?? 0;
   const offlineKiosks = kiosks?.filter((k: KioskAccount) => !k.isActive).length ?? 0;
 
   return (
     <>
-      <Heading title="Driver Status" />
-      <Stat l="Total Drivers" v={driverStatus?.totalDrivers ?? 0} />
-      <Stat l="Available" v={driverStatus?.availableDrivers ?? 0} c={t.green} />
-      <Stat l="On Delivery" v={driverStatus?.busyDrivers ?? 0} c={t.orange} />
+      <Heading title="Drivers" />
+      {errDrivers && roster.total === 0 && (
+        <ManagerErrorState compact title="Driver status unavailable" onRetry={() => void refetchDrivers()} />
+      )}
+      <ManagerStatCard label="Total drivers" value={totalDrivers} loading={loadingDrivers && roster.total === 0} compact />
+      <ManagerStatCard label="Available" value={availableDrivers} color={t.green} compact />
+      <ManagerStatCard label="On delivery" value={busyDrivers} color={t.orange} compact />
 
-      <Heading title="Kiosk Status" />
-      <div style={miniCard}>
-        <div style={listItem}>
-          <div style={{ display: 'flex', alignItems: 'center' }}><span style={dot(t.green)} /><span style={{ fontSize: 13, color: t.black }}>Online</span></div>
-          <span style={{ fontSize: 15, fontWeight: 700, color: t.green }}>{onlineKiosks}</span>
+      <Heading title="Kiosks" />
+      {loadingKiosks && <ManagerLoadingBlock rows={2} compact label="Loading kiosks…" />}
+      {errKiosks && (
+        <ManagerErrorState compact title="Kiosks unavailable" onRetry={() => void refetchKiosks()} />
+      )}
+      {!loadingKiosks && !errKiosks && (
+        <div style={miniCard}>
+          <div style={listItem}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span style={dot(t.green)} /><span style={{ fontSize: 13, color: t.black }}>Active</span>
+            </div>
+            <span style={{ fontSize: 15, fontWeight: 700, color: t.green }}>{onlineKiosks}</span>
+          </div>
+          <div style={{ ...listItem, borderBottom: 'none' }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span style={dot(t.red)} /><span style={{ fontSize: 13, color: t.black }}>Inactive</span>
+            </div>
+            <span style={{ fontSize: 15, fontWeight: 700, color: t.red }}>{offlineKiosks}</span>
+          </div>
         </div>
-        <div style={{ ...listItem, borderBottom: 'none' }}>
-          <div style={{ display: 'flex', alignItems: 'center' }}><span style={dot(t.red)} /><span style={{ fontSize: 13, color: t.black }}>Offline</span></div>
-          <span style={{ fontSize: 15, fontWeight: 700, color: t.red }}>{offlineKiosks}</span>
-        </div>
-      </div>
+      )}
     </>
   );
 };
@@ -148,35 +279,35 @@ const OperationsSidebar = ({ storeId }: { storeId: string }) => {
 const PeopleSidebar = ({ storeId }: { storeId: string }) => {
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
-  const { data: sessions } = useGetActiveStoreSessionsQuery(storeId, { skip: !storeId });
-  const { data: leaderboard } = useGetStaffLeaderboardQuery({ storeId, period: 'TODAY' }, { skip: !storeId });
-  const { data: customerStats } = useGetCustomerStatsQuery(storeId, { skip: !storeId });
+  const fmt = (v: number) => formatMajorAmount(v, currency, locale);
+  const { data: sessions, isLoading: loadingSessions, isError: errSessions } = useGetActiveStoreSessionsQuery(storeId, { skip: !storeId });
+  const { data: leaderboard, isLoading: loadingLb } = useGetStaffLeaderboardQuery({ storeId, period: 'TODAY' }, { skip: !storeId });
+  const { data: customerStats, isLoading: loadingCustomers, isError: errCustomers } = useGetCustomerStatsQuery(storeId, { skip: !storeId });
 
   const onShiftCount = sessions?.filter((s: WorkingSession) => s.isActive).length ?? 0;
   const topPerformer = leaderboard?.rankings?.[0];
 
   return (
     <>
-      <Heading title="Staff Today" />
-      <Stat l="On Shift Now" v={onShiftCount} c={t.green} />
-      {topPerformer && (
+      <Heading title="Staff today" />
+      <ManagerStatCard label="On shift now" value={onShiftCount} color={t.green} loading={loadingSessions} error={errSessions} compact />
+      {loadingLb && <ManagerLoadingBlock rows={1} compact label="Loading leaderboard…" />}
+      {!loadingLb && topPerformer ? (
         <>
-          <Heading title="Top Performer" />
+          <Heading title="Top performer" />
           <div style={miniCard}>
             <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: t.black }}>{topPerformer.staffName}</p>
             <p style={{ margin: '4px 0 0', fontSize: 12, color: t.gray }}>
-              {topPerformer.ordersProcessed} orders | {fmt(topPerformer.salesGenerated)} sales
+              {topPerformer.ordersProcessed} orders · {fmt(topPerformer.salesGenerated)} sales
             </p>
-            <div style={{ marginTop: 8, padding: '4px 10px', background: t.orangeLight, borderRadius: t.radius.sm, display: 'inline-block', fontSize: 11, fontWeight: 600, color: t.orange }}>
-              {topPerformer.performanceLevel}
-            </div>
           </div>
         </>
+      ) : (
+        !loadingLb && <ManagerEmptyState compact title="No leaderboard yet" description="No leaderboard data for today." />
       )}
-      <Heading title="Customer Stats" />
-      <Stat l="Total Customers" v={customerStats?.totalCustomers ?? 0} />
-      <Stat l="Active Customers" v={customerStats?.activeCustomers ?? 0} c={t.green} />
+      <Heading title="Customers" />
+      <ManagerStatCard label="Total customers" value={customerStats?.totalCustomers ?? 0} loading={loadingCustomers} error={errCustomers} compact />
+      <ManagerStatCard label="Active customers" value={customerStats?.activeCustomers ?? 0} color={t.green} loading={loadingCustomers} error={errCustomers} compact />
     </>
   );
 };
@@ -185,40 +316,50 @@ const PeopleSidebar = ({ storeId }: { storeId: string }) => {
 const AnalyticsSidebar = ({ storeId }: { storeId: string }) => {
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const fmt = (v: number) => formatMajorAmount(v , currency, locale);
-  const { data: summary } = useGetExecutiveSummaryQuery(storeId, { skip: !storeId });
+  const fmt = (v: number) => formatMajorAmount(v, currency, locale);
+  const { data: summary, isLoading, isError, refetch } = useGetExecutiveSummaryQuery(storeId, { skip: !storeId });
   const { data: salesMetrics } = useGetTodaySalesMetricsQuery(storeId, { skip: !storeId });
-
-  const trendColor = (change?: number) => (change ?? 0) >= 0 ? t.green : t.red;
+  const { data: storeSummary } = useGetStoreOrderSummaryQuery({ storeId, days: 30 }, { skip: !storeId });
+  const derived = derivedFromSummary(storeSummary);
+  const trendColor = (change?: number) => ((change ?? 0) >= 0 ? t.green : t.red);
+  const revenueTotal = (summary?.revenue?.total || 0) > 0 ? summary!.revenue.total : derived.monthSales;
+  const ordersTotal = (summary?.orders?.total || 0) > 0 ? summary!.orders.total : derived.monthOrders;
 
   return (
     <>
       <Heading title="Key KPIs" />
-      {summary ? (
+      {isLoading && derived.monthSales === 0 && <ManagerLoadingBlock rows={2} compact label="Loading analytics…" />}
+      {isError && derived.monthSales === 0 && (
+        <ManagerErrorState compact title="Executive summary unavailable" onRetry={() => void refetch()} />
+      )}
+      {(summary || derived.monthSales > 0) && (
         <>
           <div style={miniCard}>
-            <p style={label}>Revenue</p>
-            <p style={value(trendColor(summary.revenue.change))}>{fmt(summary.revenue.total)}</p>
-            <p style={{ margin: '2px 0 0', fontSize: 11, color: trendColor(summary.revenue.change) }}>
-              {summary.revenue.change >= 0 ? '+' : ''}{summary.revenue.change.toFixed(1)}%
+            <p style={{ fontSize: 12, color: t.gray, margin: 0 }}>Revenue (7 days)</p>
+            <p style={{ fontSize: 16, fontWeight: 700, color: trendColor(summary?.revenue?.change), margin: '4px 0 0', overflowWrap: 'anywhere', fontVariantNumeric: 'tabular-nums' }}>
+              {fmt(revenueTotal)}
             </p>
+            {summary?.revenue?.change != null && (
+              <p style={{ margin: '2px 0 0', fontSize: 11, color: trendColor(summary.revenue.change) }}>
+                {summary.revenue.change >= 0 ? '+' : ''}{summary.revenue.change.toFixed(1)}%
+              </p>
+            )}
           </div>
           <div style={miniCard}>
-            <p style={label}>Orders</p>
-            <p style={value(trendColor(summary.orders.change))}>{summary.orders.total.toLocaleString()}</p>
-            <p style={{ margin: '2px 0 0', fontSize: 11, color: trendColor(summary.orders.change) }}>
-              {summary.orders.change >= 0 ? '+' : ''}{summary.orders.change.toFixed(1)}%
+            <p style={{ fontSize: 12, color: t.gray, margin: 0 }}>Orders (7 days)</p>
+            <p style={{ fontSize: 16, fontWeight: 700, color: trendColor(summary?.orders?.change), margin: '4px 0 0', fontVariantNumeric: 'tabular-nums' }}>
+              {ordersTotal.toLocaleString()}
             </p>
           </div>
         </>
-      ) : (
-        <Stat l="Today's Orders" v={salesMetrics?.todayOrderCount ?? '--'} />
       )}
-
-      {summary?.topInsights && summary.topInsights.length > 0 && (
+      {!summary && derived.monthSales === 0 && (
+        <ManagerStatCard label="Today's orders" value={salesMetrics?.todayOrderCount ?? derived.todayOrderCount} compact />
+      )}
+      {(summary?.topInsights?.length ?? 0) > 0 && (
         <>
           <Heading title="Insights" />
-          {summary.topInsights.slice(0, 4).map((insight: string, i: number) => (
+          {summary!.topInsights!.slice(0, 4).map((insight: string, i: number) => (
             <div key={i} style={{ padding: '10px 12px', background: t.orangeLight, borderRadius: t.radius.sm, fontSize: 12, color: t.orangeDark, marginBottom: 8, lineHeight: 1.4 }}>
               {insight}
             </div>
@@ -229,10 +370,68 @@ const AnalyticsSidebar = ({ storeId }: { storeId: string }) => {
   );
 };
 
-// === MAIN ===
+// === AI (counts from shared catalog — not hardcoded) ===
+const AiSidebar = () => {
+  const counts = getAgentStatusCounts();
+  const activeNames = AGENT_CATALOG.filter((a) => a.status === 'active').map((a) => a.name.split(' ')[0]).join(', ');
+
+  return (
+    <>
+      <Heading title="Agent status" />
+      <ManagerStatCard label="Live / wired" value={counts.active} color={t.green} compact />
+      <ManagerStatCard label="Event-driven" value={counts.eventDriven} color={t.blue} compact />
+      <ManagerStatCard label="Coming soon" value={counts.stub} color={t.yellow} compact />
+      <div style={{ ...miniCard, fontSize: 12, color: t.gray, lineHeight: 1.45 }}>
+        Active: {activeNames || 'none'}. Stubs are labeled on the AI Agents page — they do not auto-write data.
+      </div>
+    </>
+  );
+};
+
+// === COMPLIANCE ===
+const ComplianceSidebar = ({ storeId }: { storeId: string }) => {
+  const { data: failures = [], isLoading, isError, refetch } = useGetSigningFailuresQuery(storeId, { skip: !storeId });
+  const count = Array.isArray(failures) ? failures.length : 0;
+
+  return (
+    <>
+      <Heading title="Fiscal" />
+      {isError && (
+        <ManagerErrorState compact title="Fiscal failures unavailable" onRetry={() => void refetch()} />
+      )}
+      <ManagerStatCard
+        label="Open signing failures"
+        value={count}
+        color={count > 0 ? t.red : t.green}
+        loading={isLoading}
+        error={isError}
+        compact
+      />
+      {!isLoading && !isError && count === 0 && (
+        <ManagerEmptyState
+          compact
+          title="No open failures"
+          description="HMRC MTD submit/export is not enabled here — those buttons stay unavailable."
+        />
+      )}
+      {(count > 0 || isLoading) && (
+        <p style={{ fontSize: 12, color: t.grayMuted, margin: '8px 0 0', lineHeight: 1.4 }}>
+          HMRC MTD submit/export is not enabled in this environment — buttons show as unavailable.
+        </p>
+      )}
+    </>
+  );
+};
+
 const sectionLabels: Record<string, string> = {
-  dashboard: 'Overview', orders: 'Orders & Payments', inventory: 'Inventory & Supply',
-  operations: 'Operations', people: 'People & Marketing', analytics: 'Analytics & Reports',
+  dashboard: 'Overview',
+  orders: 'Orders & Payments',
+  inventory: 'Inventory & Supply',
+  operations: 'Operations',
+  people: 'People & Marketing',
+  analytics: 'Analytics & Reports',
+  ai: 'AI Agents',
+  compliance: 'Fiscal Compliance',
 };
 
 const RightSidebar: React.FC<Props> = ({ section, storeId }) => {
@@ -240,19 +439,30 @@ const RightSidebar: React.FC<Props> = ({ section, storeId }) => {
     switch (section) {
       case 'dashboard': return <DashboardSidebar storeId={storeId} />;
       case 'orders': return <OrdersSidebar storeId={storeId} />;
-      case 'inventory': return <InventorySidebar />;
+      case 'inventory': return <InventorySidebar storeId={storeId} />;
       case 'operations': return <OperationsSidebar storeId={storeId} />;
       case 'people': return <PeopleSidebar storeId={storeId} />;
       case 'analytics': return <AnalyticsSidebar storeId={storeId} />;
+      case 'ai': return <AiSidebar />;
+      case 'compliance': return <ComplianceSidebar storeId={storeId} />;
       default: return <DashboardSidebar storeId={storeId} />;
     }
   };
 
   return (
-    <div style={{ padding: '24px 16px', fontFamily: t.font, overflowY: 'auto', height: '100%' }}>
+    <div
+      style={{ padding: '24px 16px', fontFamily: t.font, overflowY: 'auto', height: '100%' }}
+      data-testid="manager-quick-info"
+    >
       <h3 style={{ ...sectionTitleStyle, fontSize: 16, marginBottom: 4 }}>Quick Info</h3>
-      <p style={{ fontSize: 12, color: t.grayMuted, margin: '0 0 16px 0' }}>{sectionLabels[section] || 'Overview'}</p>
-      {content()}
+      <p style={{ fontSize: 12, color: t.grayMuted, margin: '0 0 16px 0' }} data-testid="quick-info-section-label">
+        {sectionLabels[section] || 'Overview'}
+      </p>
+      {!storeId && section !== 'ai' ? (
+        <ManagerEmptyState compact title="Select a store" description="Choose a store to load metrics." />
+      ) : (
+        content()
+      )}
     </div>
   );
 };

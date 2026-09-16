@@ -68,7 +68,8 @@ error*.txt
 # Local-only directories (never publish to GitHub)
 backups/
 docs/
-scripts/
+scripts/*
+!scripts/reseed/
 specs/
 scratch/
 logs/
@@ -89,11 +90,11 @@ frontend/tsconfig.tsbuildinfo
 *.webp
 *.jpg
 *.jpeg
+!frontend/public/images/menu/*.jpg
 
 # Local AI / IDE tooling (never commit)
+AGENTS.md
 .claude/
-.claude-context.md
-CLAUDE.md
 .mcp.json
 .superpowers/
 .cursor/
@@ -116,7 +117,6 @@ scripts/node_modules/
 mvn21
 smart-doc.json
 generate-docs.sh
-.claude-context.md
 stop-all.sh
 
 # Archive (historical old services, not needed in repo)
@@ -125,3 +125,18 @@ archive/
 # Root node_modules
 /node_modules/
 
+# Product Launch Assets (untracked media)
+product_launch_assets/
+
+# Vercel CLI (project link lives at repo root)
+/.vercel/
+
+# Claude Code local context (not for git)
+CLAUDE.md
+AGENTS.md
+
+# Personal dev convenience symlink into product_launch_assets/
+/masova-video
+
+# Ad-hoc local QA scripts (demo-account PINs, /tmp screenshot paths, no shared harness)
+frontend/scripts/qa-*.mjs

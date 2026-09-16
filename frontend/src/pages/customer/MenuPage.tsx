@@ -19,7 +19,7 @@ export const AllergenWarningBanner: React.FC<AllergenWarningBannerProps> = ({
       borderRadius: 8,
       padding: '10px 16px',
       marginBottom: 12,
-      color: '#ef4444',
+      color: 'var(--red-light)',
       fontSize: '0.875rem',
       fontWeight: 600,
     }}>
@@ -126,8 +126,13 @@ const MenuPage: React.FC<MenuPageProps> = ({
 
   const dispatch = useAppDispatch();
 
-  // Always fetch all menu items
-  const { data: allMenu, isLoading } = useGetAvailableMenuQuery();
+  // Public menu browse — storeId query so multi-store seeds filter server-side
+  const {
+    data: allMenu,
+    isLoading,
+    isError: isMenuError,
+    refetch: refetchMenu,
+  } = useGetAvailableMenuQuery(selectedStoreId || undefined);
 
   // Filter by search term client-side
   let rawMenuItems = allMenu || [];
@@ -228,11 +233,11 @@ const MenuPage: React.FC<MenuPageProps> = ({
 
   const getDietaryColor = (dietary: DietaryType): string => {
     switch (dietary) {
-      case DietaryType.VEGETARIAN: return '#2e7d32';
-      case DietaryType.VEGAN: return '#1b5e20';
+      case DietaryType.VEGETARIAN: return 'var(--success)';
+      case DietaryType.VEGAN: return 'var(--success)';
       case DietaryType.NON_VEGETARIAN: return 'var(--red)';
-      case DietaryType.JAIN: return '#f57f17';
-      case DietaryType.HALAL: return '#1565c0';
+      case DietaryType.JAIN: return 'var(--warning)';
+      case DietaryType.HALAL: return 'var(--info)';
       default: return 'var(--text-3)';
     }
   };
@@ -366,7 +371,7 @@ const MenuPage: React.FC<MenuPageProps> = ({
     fontSize: '0.7rem',
     fontWeight: 600,
     backgroundColor: getDietaryColor(dietary),
-    color: '#fff',
+    color: 'var(--text-1)',
     borderRadius: 'var(--radius-pill)',
   });
 
@@ -415,11 +420,11 @@ const MenuPage: React.FC<MenuPageProps> = ({
   };
 
   const getAddButtonStyles = (inCart: boolean, _disabled: boolean): React.CSSProperties => ({
-    background: inCart ? '#2e7d32' : 'var(--red)',
+    background: inCart ? 'var(--success)' : 'var(--red)',
     padding: '6px 14px',
     fontSize: '0.8rem',
     fontWeight: 600,
-    color: '#fff',
+    color: 'var(--text-1)',
     border: 'none',
     borderRadius: 'var(--radius-pill)',
     cursor: 'pointer',
@@ -579,6 +584,25 @@ const MenuPage: React.FC<MenuPageProps> = ({
             </div>
           ))}
         </div>
+      ) : isMenuError ? (
+        <div style={emptyStateStyles}>
+          <div style={{ marginBottom: 12 }}>Could not load the menu. Check your connection and try again.</div>
+          <button
+            type="button"
+            onClick={() => { void refetchMenu(); }}
+            style={{
+              padding: '8px 16px',
+              borderRadius: 'var(--radius-pill)',
+              border: '1px solid var(--border)',
+              background: 'var(--surface-2)',
+              color: 'var(--gold)',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-body)',
+            }}
+          >
+            Retry
+          </button>
+        </div>
       ) : filteredMenu.length === 0 ? (
         <div style={emptyStateStyles}>No items found. Try adjusting your filters.</div>
       ) : (
@@ -637,7 +661,7 @@ const MenuPage: React.FC<MenuPageProps> = ({
                     return count > 0 ? (
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', fontSize: '0.7rem', color: 'var(--red-light)', fontWeight: '600' }}>
                         {Array.from({ length: count }).map((_, i) => (
-                          <span key={i} style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#e53e3e', display: 'inline-block' }} />
+                          <span key={i} style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--red-light)', display: 'inline-block' }} />
                         ))}
                         <span style={{ marginLeft: '4px' }}>{label}</span>
                       </span>
@@ -696,7 +720,7 @@ const MenuPage: React.FC<MenuPageProps> = ({
                       </button>
                       <div style={quantityDisplayStyles}>{getQuantity(item.id)}</div>
                       <button
-                        style={{ ...quantityButtonStyles, background: 'var(--red)', border: '1px solid var(--red)', color: '#fff' }}
+                        style={{ ...quantityButtonStyles, background: 'var(--red)', border: '1px solid var(--red)', color: 'var(--text-1)' }}
                         onClick={() => incrementQuantity(item.id)}
                         onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--red-light)'; }}
                         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--red)'; }}

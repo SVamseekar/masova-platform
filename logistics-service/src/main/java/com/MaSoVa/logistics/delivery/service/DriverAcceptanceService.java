@@ -196,6 +196,34 @@ public class DriverAcceptanceService {
     }
 
     /**
+     * Active deliveries for a driver (assigned through in-progress, not terminal).
+     * Used by GET /api/delivery/driver/active.
+     */
+    public List<DeliveryTracking> getActiveDeliveriesForDriver(String driverId) {
+        return deliveryTrackingRepository.findByDriverIdAndStatusIn(
+                driverId,
+                List.of(
+                        "ASSIGNED",
+                        "ACCEPTED",
+                        "PICKED_UP",
+                        "IN_TRANSIT",
+                        "ARRIVED",
+                        "OUT_FOR_DELIVERY"
+                ));
+    }
+
+    /**
+     * List delivery trackings for a store (optional status filter).
+     * Used by GET /api/delivery?storeId=.
+     */
+    public List<DeliveryTracking> listDeliveriesForStore(String storeId, String status) {
+        if (status != null && !status.isBlank()) {
+            return deliveryTrackingRepository.findByStatusAndStoreId(status, storeId);
+        }
+        return deliveryTrackingRepository.findByStoreId(storeId);
+    }
+
+    /**
      * Check for expired acceptance windows and trigger reassignment
      * Called by scheduled job
      */
@@ -502,9 +530,10 @@ public class DriverAcceptanceService {
             throw new RuntimeException("Driver " + driverId + " is not assigned to this delivery");
         }
 
-        // Allow delivery from various states (PICKED_UP, IN_TRANSIT, ARRIVED, or even ASSIGNED for quick flow)
+        // Idempotent: OTP/photo verify may already have marked DELIVERED
         if ("DELIVERED".equals(tracking.getStatus())) {
-            throw new RuntimeException("Delivery is already marked as delivered");
+            log.info("Delivery {} already DELIVERED — returning existing tracking (idempotent)", trackingId);
+            return tracking;
         }
         if ("CANCELLED".equals(tracking.getStatus())) {
             throw new RuntimeException("Cannot mark a cancelled delivery as delivered");

@@ -1,0 +1,27 @@
+// Exact values from frontend/src/index.css `.dark-premium-theme` — the real customer web app's
+// design tokens. Mockups built from these render as accurate reproductions of the live app,
+// not ProductSite's own (similar but distinct) gold/black palette.
+export const realApp = {
+  bg: '#0A0908',
+  surface: '#141210',
+  surface2: '#1C1916',
+  surface3: '#242018',
+  gold: '#D4A843',
+  goldLight: '#E8C060',
+  goldDim: 'rgba(212, 168, 67, 0.6)',
+  red: '#C62A09',
+  redLight: '#E53E3E',
+  success: '#2E7D32',
+  successLight: '#388E3C',
+  info: '#1565C0',
+  warning: '#E65100',
+  border: 'rgba(212, 168, 67, 0.15)',
+  borderStrong: 'rgba(212, 168, 67, 0.35)',
+  text1: '#FDFCF8',
+  text2: '#B0A898',
+  text3: '#6C6458',
+  fontDisplay: "'Playfair Display', Georgia, serif",
+  fontBody: "'DM Sans', system-ui, sans-serif",
+  radiusCard: 16,
+  radiusPill: 999,
+} as const

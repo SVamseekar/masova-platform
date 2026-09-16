@@ -21,10 +21,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Payments — 6 canonical endpoints at /api/payments.
@@ -34,16 +38,19 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/payments")
-@Tag(name = "Payments", description = "Payment processing, verification, and transaction management (Razorpay)")
+@Tag(name = "Payments", description = "Payment processing, verification, and transaction management (Stripe EU + Razorpay IN)")
 @SecurityRequirement(name = "bearerAuth")
 public class PaymentController {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentController.class);
 
     private final PaymentService paymentService;
+    private final com.MaSoVa.payment.service.PaymentSeedService paymentSeedService;
 
-    public PaymentController(PaymentService paymentService) {
+    public PaymentController(PaymentService paymentService,
+                             com.MaSoVa.payment.service.PaymentSeedService paymentSeedService) {
         this.paymentService = paymentService;
+        this.paymentSeedService = paymentSeedService;
     }
 
     private void validateStoreAccess(String userStoreId, String transactionStoreId) {
@@ -59,7 +66,7 @@ public class PaymentController {
 
     @PostMapping("/initiate")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
-    @Operation(summary = "Initiate payment (create Razorpay order)")
+    @Operation(summary = "Initiate payment (Stripe PaymentIntent for non-IN; Razorpay for IN)")
     public ResponseEntity<PaymentResponse> initiate(@Valid @RequestBody InitiatePaymentRequest request) {
         try {
             return ResponseEntity.ok(paymentService.initiatePayment(request));
@@ -99,7 +106,7 @@ public class PaymentController {
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "Get transaction by ID")
     public ResponseEntity<PaymentResponse> getById(
-            @PathVariable String transactionId,
+            @PathVariable("transactionId") String transactionId,
             HttpServletRequest request) {
         try {
             PaymentResponse response = paymentService.getTransaction(transactionId);
@@ -119,34 +126,137 @@ public class PaymentController {
      */
     @GetMapping
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
-    @Operation(summary = "List transactions (query: orderId, customerId, reconciliation+date)")
+    @Operation(summary = "List transactions (query: orderId, customerId, storeId, reconciliation+date)")
     public ResponseEntity<?> getTransactions(
-            @RequestParam(required = false) String orderId,
-            @RequestParam(required = false) String customerId,
-            @RequestParam(required = false) Boolean reconciliation,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(name = "orderId", required = false) String orderId,
+            @RequestParam(name = "customerId", required = false) String customerId,
+            @RequestParam(name = "storeId", required = false) String storeId,
+            @RequestParam(name = "reconciliation", required = false) Boolean reconciliation,
+            @RequestParam(name = "date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(name = "page", required = false) Integer page,
+            @RequestParam(name = "size", required = false) Integer size,
             HttpServletRequest request) {
-        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        String headerStoreId = StoreContextUtil.getStoreIdFromHeaders(request);
+        String effectiveStore = (storeId != null && !storeId.isBlank()) ? storeId : headerStoreId;
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        boolean isCustomerOnly = isCustomerOnlyPrincipal(authentication);
         try {
             if (Boolean.TRUE.equals(reconciliation) && date != null) {
-                ReconciliationReportResponse report = paymentService.getDailyReconciliation(storeId, date);
+                if (isCustomerOnly) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+                }
+                ReconciliationReportResponse report = paymentService.getDailyReconciliation(effectiveStore, date);
                 return ResponseEntity.ok(report);
             }
             if (orderId != null) {
                 PaymentResponse response = paymentService.getTransactionByOrderId(orderId);
-                validateStoreAccess(storeId, response.getStoreId());
+                validateStoreAccess(headerStoreId, response.getStoreId());
+                if (isCustomerOnly && response.getCustomerId() != null
+                        && authentication != null
+                        && !response.getCustomerId().equals(authentication.getName())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+                }
                 return ResponseEntity.ok(response);
+            }
+            // Customers may only list their own txs (JWT sub = userId used as customerId on payments)
+            if (isCustomerOnly && authentication != null) {
+                String selfId = authentication.getName();
+                if (customerId != null && !customerId.equals(selfId)) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+                }
+                List<PaymentResponse> transactions = paymentService.getTransactionsByCustomerId(selfId);
+                return ResponseEntity.ok(transactions);
             }
             if (customerId != null) {
                 List<PaymentResponse> transactions = paymentService.getTransactionsByCustomerId(customerId);
                 return ResponseEntity.ok(transactions);
             }
-            List<PaymentResponse> transactions = paymentService.getTransactionsByStoreId(storeId);
-            return ResponseEntity.ok(transactions);
+            int pageNum = page == null ? 0 : page;
+            int pageSize = size == null ? 50 : size;
+            return ResponseEntity.ok(paymentService.getTransactionsByStoreId(effectiveStore, pageNum, pageSize));
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         } catch (Exception e) {
             log.error("Error fetching transactions", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    private static boolean isCustomerOnlyPrincipal(Authentication authentication) {
+        if (authentication == null || authentication.getAuthorities() == null) {
+            return false;
+        }
+        boolean customer = false;
+        boolean staff = false;
+        for (GrantedAuthority a : authentication.getAuthorities()) {
+            String auth = a.getAuthority();
+            if ("ROLE_CUSTOMER".equals(auth)) {
+                customer = true;
+            }
+            if ("ROLE_MANAGER".equals(auth)
+                    || "ROLE_ASSISTANT_MANAGER".equals(auth)
+                    || "ROLE_STAFF".equals(auth)
+                    || "ROLE_DRIVER".equals(auth)) {
+                staff = true;
+            }
+        }
+        return customer && !staff;
+    }
+
+    // ── LEGACY PATH ALIASES (frontend RTK used these pre-canonical collapse) ──────
+
+    /**
+     * GET /api/payments/store?storeId= — same as GET /api/payments with store header.
+     * Prefer canonical GET /api/payments with X-Selected-Store-Id.
+     */
+    @GetMapping("/store")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
+    @Operation(summary = "List store transactions (legacy alias of GET /api/payments)")
+    public ResponseEntity<?> getByStore(
+            @RequestParam(name = "storeId", required = false) String storeId,
+            HttpServletRequest request) {
+        String effective = (storeId != null && !storeId.isBlank())
+                ? storeId
+                : StoreContextUtil.getStoreIdFromHeaders(request);
+        try {
+            if (effective == null || effective.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "error", "storeId required (query or X-Selected-Store-Id header)"));
+            }
+            return ResponseEntity.ok(paymentService.getTransactionsByStoreId(effective, 0, 50));
+        } catch (Exception e) {
+            log.error("Error fetching store transactions", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /** GET /api/payments/order/{orderId} — alias of GET /api/payments?orderId= */
+    @GetMapping("/order/{orderId}")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
+    @Operation(summary = "Get transaction by order ID (legacy path alias)")
+    public ResponseEntity<?> getByOrderPath(
+            @PathVariable("orderId") String orderId,
+            HttpServletRequest request) {
+        try {
+            PaymentResponse response = paymentService.getTransactionByOrderId(orderId);
+            validateStoreAccess(StoreContextUtil.getStoreIdFromHeaders(request), response.getStoreId());
+            return ResponseEntity.ok(response);
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /** GET /api/payments/customer/{customerId} — alias of GET /api/payments?customerId= */
+    @GetMapping("/customer/{customerId}")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
+    @Operation(summary = "List transactions by customer (legacy path alias)")
+    public ResponseEntity<List<PaymentResponse>> getByCustomerPath(@PathVariable("customerId") String customerId) {
+        try {
+            return ResponseEntity.ok(paymentService.getTransactionsByCustomerId(customerId));
+        } catch (Exception e) {
+            log.error("Error fetching customer transactions", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -157,8 +267,8 @@ public class PaymentController {
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Mark transaction as reconciled")
     public ResponseEntity<Void> reconcile(
-            @PathVariable String transactionId,
-            @RequestParam String reconciledBy,
+            @PathVariable("transactionId") String transactionId,
+            @RequestParam("reconciledBy") String reconciledBy,
             HttpServletRequest request) {
         try {
             PaymentResponse transaction = paymentService.getTransaction(transactionId);
@@ -173,6 +283,40 @@ public class PaymentController {
         }
     }
 
+    // ── DEV SEED (same security model as cash — manager PreAuthorize) ─────────────
+
+    /**
+     * POST /api/payments/seed-demo — synthetic Stripe/cash txs + refunds for manager UI.
+     * Active when spring profile is {@code dev} or {@code demo}; otherwise 404.
+     * Prefer this path over legacy {@code /api/payments/test-data/seed-demo}.
+     */
+    @PostMapping({"/seed-demo", "/test-data/seed-demo"})
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @Operation(summary = "Seed synthetic transactions/refunds for demo (dev/demo profile only)")
+    public ResponseEntity<?> seedDemo(
+            @RequestParam(name = "storeId", defaultValue = "DOM001") String storeId,
+            @RequestParam(name = "customerId", defaultValue = "cust-demo-1") String customerId,
+            @RequestParam(name = "orderIds", required = false) String orderIds) {
+        if (!paymentSeedService.isSeedAllowed()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Seed only available with spring profile dev or demo"));
+        }
+        try {
+            java.util.List<String> linked = null;
+            if (orderIds != null && !orderIds.isBlank()) {
+                linked = java.util.Arrays.stream(orderIds.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .toList();
+            }
+            return ResponseEntity.ok(paymentSeedService.seedDemo(storeId, customerId, linked));
+        } catch (Exception e) {
+            log.error("Payment seed-demo failed for store {}", storeId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Seed failed", "detail", e.getMessage() != null ? e.getMessage() : "unknown"));
+        }
+    }
+
     // ── GDPR (internal-only, called by core-service GDPR service) ─────────────────
 
     /**
@@ -182,7 +326,7 @@ public class PaymentController {
     @PostMapping("/gdpr/anonymize")
     @Operation(summary = "Anonymise payment data for customer (GDPR erasure — internal only)")
     public ResponseEntity<Void> gdprAnonymize(
-            @RequestParam String customerId,
+            @RequestParam("customerId") String customerId,
             HttpServletRequest request) {
         String internalCaller = request.getHeader("X-Internal-Service");
         if (internalCaller == null || internalCaller.isBlank()) {

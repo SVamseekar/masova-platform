@@ -8,7 +8,7 @@ import { clearReturnUrl } from '../../utils/security';
 import { t, Icons } from './manager-tokens';
 import { useGetActiveStoresQuery, type Store } from '../../store/api/storeApi';
 import { setSelectedStore, setStoreCurrency, selectSelectedStoreId, selectSelectedStoreName } from '../../store/slices/cartSlice';
-import { storeCurrencyPayload } from '../../utils/storeCurrency';
+import { storeCurrencyPayload, resolveStoreMarket } from '../../utils/storeCurrency';
 import { useGetVersionQuery } from '../../store/api/systemApi';
 
 const DashboardSection = React.lazy(() => import('./DashboardSection'));
@@ -58,6 +58,7 @@ function ManagerShell() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [storeDropOpen, setStoreDropOpen] = useState(false);
+  const [headerSearch, setHeaderSearch] = useState(searchParams.get('q') || '');
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const storeRef = useRef<HTMLDivElement>(null);
@@ -76,7 +77,9 @@ function ManagerShell() {
     const match = stores.find((s: Store) => s.storeCode === userStoreId || s.id === userStoreId);
     if (match) {
       dispatch(setSelectedStore({ storeId: match.storeCode, storeName: match.name }));
-      dispatch(setStoreCurrency(storeCurrencyPayload(match)));
+      if (resolveStoreMarket(match).resolved) {
+        dispatch(setStoreCurrency(storeCurrencyPayload(match)));
+      }
       setPageStore(match.storeCode, match.name);
     }
   }, [stores, storesLoading, selectedStoreId, currentUser?.storeId, dispatch, setPageStore]);
@@ -115,8 +118,10 @@ function ManagerShell() {
 
   const handleStoreSelect = (code: string, name: string) => {
     dispatch(setSelectedStore({ storeId: code, storeName: name }));
-    const store = stores.find((s: Store) => s.storeCode === code);
-    dispatch(setStoreCurrency(storeCurrencyPayload(store)));
+    const store = stores.find((s: Store) => s.storeCode === code || s.id === code);
+    if (store && resolveStoreMarket(store).resolved) {
+      dispatch(setStoreCurrency(storeCurrencyPayload(store)));
+    }
     setStoreDropOpen(false);
   };
 
@@ -316,14 +321,30 @@ function ManagerShell() {
                 </div>
               )}
             </div>
-            {/* Search */}
+            {/* Search — jumps to Orders with ?q= (list filters client-side) */}
             <div style={{ position: 'relative' }}>
               <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: t.gray }}><Icons.Search /></div>
-              <input placeholder="Search anything" style={{
-                padding: '9px 16px 9px 36px', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 10, fontSize: 14, width: 220,
-                background: 'rgba(255,255,255,0.6)', outline: 'none', fontFamily: t.font,
-                backdropFilter: 'blur(8px)',
-              }} />
+              <input
+                placeholder="Search orders…"
+                value={headerSearch}
+                onChange={(e) => setHeaderSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter') return;
+                  const q = headerSearch.trim();
+                  const params = new URLSearchParams(searchParams);
+                  params.set('section', 'orders');
+                  params.set('tab', 'orders');
+                  if (q) params.set('q', q);
+                  else params.delete('q');
+                  setSearchParams(params);
+                }}
+                title="Press Enter to search orders by number, customer, phone, or email"
+                style={{
+                  padding: '9px 16px 9px 36px', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 10, fontSize: 14, width: 220,
+                  background: 'rgba(255,255,255,0.6)', outline: 'none', fontFamily: t.font,
+                  backdropFilter: 'blur(8px)',
+                }}
+              />
             </div>
             {/* Bell / Notifications */}
             <div ref={notifRef} style={{ position: 'relative' }}>

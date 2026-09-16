@@ -1,265 +1,331 @@
 // src/apps/POSSystem/components/MenuPanel.tsx
-import React, { useState, useEffect } from 'react';
-import { useGetAvailableMenuQuery, Cuisine, MenuCategory, DietaryType, type MenuItem } from '../../../store/api/menuApi';
+/**
+ * POS menu column — store menu from commerce API only.
+ * Cuisine / category / dietary from MenuItem fields (MaSoVa enums).
+ * Landscape staff grid: search → filters → add to ticket.
+ */
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  useGetAvailableMenuQuery,
+  Cuisine,
+  MenuCategory,
+  DietaryType,
+  type MenuItem,
+} from '../../../store/api/menuApi';
 import { useAppSelector } from '../../../store/hooks';
-import { selectSelectedStoreId, selectCartCurrency, selectCartLocale } from '../../../store/slices/cartSlice';
+import { selectSelectedStoreId } from '../../../store/slices/cartSlice';
 import { formatMoney } from '../../../utils/currency';
-import Card from '../../../components/ui/neumorphic/Card';
-import { colors, shadows, spacing, typography } from '../../../styles/design-tokens';
+import { usePosMarket } from '../usePosMarket';
 import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
 import SearchIcon from '@mui/icons-material/Search';
-import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
-import BarChartIcon from '@mui/icons-material/BarChart';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import LunchDiningIcon from '@mui/icons-material/LunchDining';
+import LocalPizzaIcon from '@mui/icons-material/LocalPizza';
+import RiceBowlIcon from '@mui/icons-material/RiceBowl';
+import LocalCafeIcon from '@mui/icons-material/LocalCafe';
+import IcecreamIcon from '@mui/icons-material/Icecream';
+import RamenDiningIcon from '@mui/icons-material/RamenDining';
+import SetMealIcon from '@mui/icons-material/SetMeal';
+import FastfoodIcon from '@mui/icons-material/Fastfood';
+import {
+  pos,
+  posTouchBtnBase,
+  posPanelHeader,
+  posSectionTitle,
+  posField,
+} from '../posTokens';
+import ItemCustomizeSheet from './ItemCustomizeSheet';
 
 interface MenuPanelProps {
-  onAddItem: (item: MenuItem, quantity?: number) => void;
+  onAddItem: (item: MenuItem, quantity?: number, instructions?: string) => void;
 }
 
+/** Display labels for existing Cuisine enum values only */
+const CUISINE_LABEL: Record<string, string> = {
+  SOUTH_INDIAN: 'South Indian',
+  NORTH_INDIAN: 'North Indian',
+  INDO_CHINESE: 'Indo-Chinese',
+  ITALIAN: 'Italian',
+  AMERICAN: 'American',
+  CONTINENTAL: 'Continental',
+  BEVERAGES: 'Drinks',
+  DESSERTS: 'Desserts',
+};
+
+/** Prefer order when picking default cuisine — only if present in loaded menu */
+const CUISINE_DEFAULT_PRIORITY: Cuisine[] = [
+  Cuisine.ITALIAN,
+  Cuisine.CONTINENTAL,
+  Cuisine.AMERICAN,
+  Cuisine.SOUTH_INDIAN,
+  Cuisine.NORTH_INDIAN,
+  Cuisine.INDO_CHINESE,
+  Cuisine.BEVERAGES,
+  Cuisine.DESSERTS,
+];
+
+function cuisineIcon(cuisine: Cuisine): React.ReactNode {
+  const sx = { fontSize: 20 };
+  switch (cuisine) {
+    case Cuisine.AMERICAN:
+      return <LunchDiningIcon style={sx} />;
+    case Cuisine.ITALIAN:
+      return <LocalPizzaIcon style={sx} />;
+    case Cuisine.SOUTH_INDIAN:
+    case Cuisine.NORTH_INDIAN:
+      return <RiceBowlIcon style={sx} />;
+    case Cuisine.INDO_CHINESE:
+      return <RamenDiningIcon style={sx} />;
+    case Cuisine.CONTINENTAL:
+      return <SetMealIcon style={sx} />;
+    case Cuisine.BEVERAGES:
+      return <LocalCafeIcon style={sx} />;
+    case Cuisine.DESSERTS:
+      return <IcecreamIcon style={sx} />;
+    default:
+      return <FastfoodIcon style={sx} />;
+  }
+}
+
+function formatCategoryLabel(category: string): string {
+  return category.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+const chip: React.CSSProperties = {
+  ...posTouchBtnBase,
+  minHeight: 40,
+  padding: '8px 12px',
+  fontSize: 12,
+  borderRadius: 10,
+  whiteSpace: 'nowrap',
+  flexShrink: 0,
+};
+
 const MenuPanel: React.FC<MenuPanelProps> = ({ onAddItem }) => {
-  const currency = useAppSelector(selectCartCurrency);
-  const locale = useAppSelector(selectCartLocale);
+  const selectedStoreId = useAppSelector(selectSelectedStoreId);
+  const { currency, locale, marketReady } = usePosMarket();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCuisine, setSelectedCuisine] = useState<Cuisine>(Cuisine.SOUTH_INDIAN);
+  const [selectedCuisine, setSelectedCuisine] = useState<Cuisine | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<MenuCategory | null>(null);
   const [selectedDietary, setSelectedDietary] = useState<DietaryType | null>(null);
+  const [justAddedId, setJustAddedId] = useState<string | null>(null);
+  const [sheetItem, setSheetItem] = useState<MenuItem | null>(null);
 
-  // Get selected store to force refetch when it changes
-  const selectedStoreId = useAppSelector(selectSelectedStoreId);
+  const { data: menuItems = [], isLoading, error, refetch } = useGetAvailableMenuQuery(
+    undefined,
+    { refetchOnMountOrArgChange: true }
+  );
 
-  const { data: menuItems = [], isLoading, error, refetch } = useGetAvailableMenuQuery(undefined, {
-    refetchOnMountOrArgChange: true, // Always refetch on mount
-  });
-
-  // Debug logging
   useEffect(() => {
-    console.log('[MenuPanel] Menu data:', {
-      itemsCount: menuItems.length,
-      isLoading,
-      error,
-      selectedStoreId,
-      firstItem: menuItems[0]?.name
-    });
-  }, [menuItems, isLoading, error, selectedStoreId]);
-
-  // Refetch menu when store changes
-  useEffect(() => {
-    if (selectedStoreId) {
-      console.log('[MenuPanel] Store changed, refetching menu for store:', selectedStoreId);
-      refetch();
-    }
+    if (selectedStoreId) void refetch();
   }, [selectedStoreId, refetch]);
 
-  // Category mappings based on cuisine (same as customer page)
-  const getCategoriesForCuisine = (cuisine: Cuisine): MenuCategory[] => {
-    const categoryMap: Record<Cuisine, MenuCategory[]> = {
-      [Cuisine.SOUTH_INDIAN]: [
-        MenuCategory.DOSA,
-        MenuCategory.IDLY_VADA,
-        MenuCategory.SOUTH_INDIAN_MEALS,
-        MenuCategory.RICE_VARIETIES,
-      ],
-      [Cuisine.NORTH_INDIAN]: [
-        MenuCategory.CURRY_GRAVY,
-        MenuCategory.DAL_DISHES,
-        MenuCategory.NORTH_INDIAN_MEALS,
-        MenuCategory.RICE_VARIETIES,
-        MenuCategory.CHAPATI_ROTI,
-        MenuCategory.NAAN_KULCHA,
-      ],
-      [Cuisine.INDO_CHINESE]: [
-        MenuCategory.FRIED_RICE,
-        MenuCategory.NOODLES,
-        MenuCategory.MANCHURIAN,
-      ],
-      [Cuisine.ITALIAN]: [
-        MenuCategory.PIZZA,
-        MenuCategory.SIDES,
-      ],
-      [Cuisine.AMERICAN]: [
-        MenuCategory.BURGER,
-        MenuCategory.SIDES,
-      ],
-      [Cuisine.CONTINENTAL]: [
-        MenuCategory.SIDES,
-      ],
-      [Cuisine.BEVERAGES]: [
-        MenuCategory.HOT_DRINKS,
-        MenuCategory.COLD_DRINKS,
-        MenuCategory.TEA_CHAI,
-      ],
-      [Cuisine.DESSERTS]: [
-        MenuCategory.COOKIES_BROWNIES,
-        MenuCategory.ICE_CREAM,
-        MenuCategory.DESSERT_SPECIALS,
-      ],
-    };
+  /** Cuisines that actually appear on the loaded store menu */
+  const availableCuisines = useMemo(() => {
+    const set = new Set<Cuisine>();
+    menuItems.forEach((item) => {
+      if (item.isAvailable && item.cuisine) set.add(item.cuisine);
+    });
+    const list = Array.from(set);
+    list.sort((a, b) => {
+      const ia = CUISINE_DEFAULT_PRIORITY.indexOf(a);
+      const ib = CUISINE_DEFAULT_PRIORITY.indexOf(b);
+      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+    });
+    return list;
+  }, [menuItems]);
 
-    return categoryMap[cuisine] || [];
+  // Sync selection to menu data (never invent a cuisine not on the menu)
+  useEffect(() => {
+    if (availableCuisines.length === 0) {
+      setSelectedCuisine(null);
+      return;
+    }
+    if (!selectedCuisine || !availableCuisines.includes(selectedCuisine)) {
+      setSelectedCuisine(availableCuisines[0]);
+      setSelectedCategory(null);
+    }
+  }, [availableCuisines, selectedCuisine]);
+
+  /** Categories from items in the active cuisine — not a hard-coded map alone */
+  const availableCategories = useMemo(() => {
+    if (!selectedCuisine) return [] as MenuCategory[];
+    const set = new Set<MenuCategory>();
+    menuItems.forEach((item) => {
+      if (item.isAvailable && item.cuisine === selectedCuisine && item.category) {
+        set.add(item.category);
+      }
+    });
+    return Array.from(set).sort();
+  }, [menuItems, selectedCuisine]);
+
+  const filteredItems = useMemo(() => {
+    return menuItems.filter((item: MenuItem) => {
+      if (!item.isAvailable) return false;
+      const matchesSearch =
+        !searchTerm ||
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.description || '').toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCuisine = !selectedCuisine || item.cuisine === selectedCuisine;
+      const matchesCategory = selectedCategory === null || item.category === selectedCategory;
+      const matchesDietary = !selectedDietary || item.dietaryInfo?.includes(selectedDietary);
+      // When searching globally, show across cuisines
+      if (searchTerm.trim()) {
+        return matchesSearch && matchesDietary;
+      }
+      return matchesSearch && matchesCuisine && matchesCategory && matchesDietary;
+    });
+  }, [menuItems, searchTerm, selectedCuisine, selectedCategory, selectedDietary]);
+
+  const flashAdd = (item: MenuItem, qty = 1, instructions?: string) => {
+    onAddItem(item, qty, instructions);
+    setJustAddedId(item.id);
+    window.setTimeout(() => setJustAddedId((id) => (id === item.id ? null : id)), 320);
   };
 
-  const availableCategories = getCategoriesForCuisine(selectedCuisine);
-
-  // Filter menu items (same logic as customer page)
-  const filteredItems = menuItems.filter((item: MenuItem) => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCuisine = item.cuisine === selectedCuisine;
-    const matchesCategory = selectedCategory === null || item.category === selectedCategory;
-    const matchesDietary = !selectedDietary || item.dietaryInfo?.includes(selectedDietary);
-    const isAvailable = item.isAvailable;
-
-    return matchesSearch && matchesCuisine && matchesCategory && matchesDietary && isAvailable;
-  });
-
-  // Quick add popular items
-  const popularItems = menuItems
-    .filter((item: MenuItem) => item.isRecommended && item.isAvailable && item.cuisine === selectedCuisine)
-    .slice(0, 4);
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Header */}
-      <div style={{
-        padding: spacing[3],
-        borderBottom: `2px solid ${colors.surface.border}`,
-        background: `linear-gradient(135deg, ${colors.surface.background} 0%, ${colors.surface.secondary} 100%)`
-      }}>
-        <h3 style={{
-          margin: `0 0 ${spacing[3]} 0`,
-          fontSize: typography.fontSize.base,
-          fontWeight: typography.fontWeight.bold,
-          color: colors.text.primary,
-          display: 'flex',
-          alignItems: 'center',
-          gap: spacing[2]
-        }}>
-          <RestaurantMenuIcon style={{ fontSize: '20px', color: colors.brand.primary }} />
-          Menu Items
-        </h3>
+    <div
+      data-testid="menu-panel"
+      style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}
+    >
+      <div style={posPanelHeader}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 12,
+            gap: 12,
+          }}
+        >
+          <h3 style={posSectionTitle}>
+            <RestaurantMenuIcon style={{ fontSize: 22, color: pos.role }} />
+            Menu
+          </h3>
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: pos.muted,
+              background: 'rgba(255,255,255,0.04)',
+              padding: '6px 10px',
+              borderRadius: 8,
+              border: `1px solid ${pos.border}`,
+            }}
+          >
+            {filteredItems.length} items
+          </span>
+        </div>
 
-        {/* Search */}
-        <div style={{ position: 'relative', marginBottom: spacing[3] }}>
-          <div style={{
-            position: 'absolute',
-            left: spacing[3],
-            top: '50%',
-            transform: 'translateY(-50%)',
-            fontSize: typography.fontSize.sm,
-            color: colors.text.tertiary
-          }}>
-            <SearchIcon style={{ fontSize: '16px' }} />
-          </div>
+        <div style={{ position: 'relative', marginBottom: 12 }}>
+          <SearchIcon
+            style={{
+              position: 'absolute',
+              left: 12,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              fontSize: 18,
+              color: pos.faint,
+              pointerEvents: 'none',
+            }}
+          />
           <input
-            type="text"
-            placeholder="Search menu items..."
+            type="search"
+            placeholder="Search menu…"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            aria-label="Search menu items"
             style={{
-              width: '100%',
-              padding: `${spacing[2]} ${spacing[2]} ${spacing[2]} ${spacing[8]}`,
-              border: `2px solid ${colors.surface.border}`,
-              borderRadius: '10px',
-              outline: 'none',
-              backgroundColor: colors.surface.primary,
-              fontSize: typography.fontSize.xs,
-              color: colors.text.primary,
-              fontFamily: typography.fontFamily.primary,
-              boxShadow: shadows.inset.sm,
-              transition: 'all 0.2s ease'
+              ...posField,
+              paddingLeft: 40,
+              borderRadius: 10,
             }}
             onFocus={(e) => {
-              e.currentTarget.style.borderColor = colors.brand.primary;
-              e.currentTarget.style.boxShadow = `0 0 0 3px ${colors.brand.primary}22`;
+              e.currentTarget.style.borderColor = pos.role;
+              e.currentTarget.style.boxShadow = `0 0 0 3px ${pos.roleSoft}`;
             }}
             onBlur={(e) => {
-              e.currentTarget.style.borderColor = colors.surface.border;
-              e.currentTarget.style.boxShadow = shadows.inset.sm;
+              e.currentTarget.style.borderColor = pos.border;
+              e.currentTarget.style.boxShadow = 'none';
             }}
           />
         </div>
 
-        {/* Cuisine Tabs */}
-        <div style={{
-          display: 'flex',
-          gap: spacing[2],
-          overflowX: 'auto',
-          paddingBottom: spacing[2],
-          marginBottom: spacing[3]
-        }}>
-          {Object.values(Cuisine).map((cuisine) => (
-            <button
-              key={cuisine}
-              onClick={() => {
-                setSelectedCuisine(cuisine);
-                setSelectedCategory(null);
-              }}
-              style={{
-                padding: `${spacing[2]} ${spacing[4]}`,
-                borderRadius: '10px',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: typography.fontSize.xs,
-                fontWeight: typography.fontWeight.semibold,
-                fontFamily: typography.fontFamily.primary,
-                whiteSpace: 'nowrap',
-                transition: 'all 0.2s ease',
-                ...(selectedCuisine === cuisine ? {
-                  background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.secondary} 100%)`,
-                  color: colors.text.inverse,
-                  boxShadow: shadows.floating.md
-                } : {
-                  background: colors.surface.primary,
-                  color: colors.text.secondary,
-                  boxShadow: shadows.raised.sm
-                })
-              }}
-              onMouseEnter={(e) => {
-                if (selectedCuisine !== cuisine) {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = shadows.floating.sm;
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (selectedCuisine !== cuisine) {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = shadows.raised.sm;
-                }
-              }}
-            >
-              {cuisine.replace(/_/g, ' ')}
-            </button>
-          ))}
-        </div>
+        {/* Cuisine — only those returned on the store menu */}
+        {!searchTerm.trim() && availableCuisines.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              gap: 8,
+              overflowX: 'auto',
+              paddingBottom: 8,
+              marginBottom: 8,
+              scrollbarWidth: 'thin',
+            }}
+          >
+            {availableCuisines.map((cuisine) => {
+              const active = selectedCuisine === cuisine;
+              return (
+                <button
+                  key={cuisine}
+                  type="button"
+                  onClick={() => {
+                    setSelectedCuisine(cuisine);
+                    setSelectedCategory(null);
+                  }}
+                  style={{
+                    ...chip,
+                    flexDirection: 'column',
+                    gap: 4,
+                    minWidth: 72,
+                    minHeight: 64,
+                    ...(active
+                      ? {
+                          background: pos.role,
+                          color: '#fff',
+                          border: 'none',
+                          boxShadow: `0 4px 12px ${pos.roleShadow}`,
+                        }
+                      : {
+                          background: pos.surfaceElevated,
+                          color: pos.muted,
+                          border: `1px solid ${pos.border}`,
+                        }),
+                  }}
+                >
+                  {cuisineIcon(cuisine)}
+                  <span style={{ fontSize: 10, fontWeight: 700, textAlign: 'center', lineHeight: 1.15 }}>
+                    {CUISINE_LABEL[cuisine] || formatCategoryLabel(cuisine)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
-        {/* Category Tabs (based on selected cuisine) */}
-        {availableCategories.length > 0 && (
-          <div style={{
-            display: 'flex',
-            gap: spacing[2],
-            overflowX: 'auto',
-            paddingBottom: spacing[2],
-            marginBottom: spacing[3]
-          }}>
+        {!searchTerm.trim() && availableCategories.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              gap: 6,
+              overflowX: 'auto',
+              paddingBottom: 6,
+              marginBottom: 6,
+            }}
+          >
             <button
+              type="button"
               onClick={() => setSelectedCategory(null)}
               style={{
-                padding: `${spacing[2]} ${spacing[3]}`,
-                borderRadius: '8px',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: typography.fontSize.xs,
-                fontWeight: typography.fontWeight.medium,
-                fontFamily: typography.fontFamily.primary,
-                whiteSpace: 'nowrap',
-                transition: 'all 0.2s ease',
-                ...(selectedCategory === null ? {
-                  background: colors.semantic.info,
-                  color: colors.text.inverse,
-                  boxShadow: shadows.raised.sm
-                } : {
-                  background: colors.surface.secondary,
-                  color: colors.text.secondary,
-                  boxShadow: shadows.inset.sm
-                })
+                ...chip,
+                minHeight: 36,
+                ...(selectedCategory === null
+                  ? { background: pos.roleDark, color: '#fff', border: 'none' }
+                  : {
+                      background: 'transparent',
+                      color: pos.muted,
+                      border: `1px solid ${pos.border}`,
+                    }),
               }}
             >
               All
@@ -267,374 +333,353 @@ const MenuPanel: React.FC<MenuPanelProps> = ({ onAddItem }) => {
             {availableCategories.map((category) => (
               <button
                 key={category}
+                type="button"
                 onClick={() => setSelectedCategory(category)}
                 style={{
-                  padding: `${spacing[2]} ${spacing[3]}`,
-                  borderRadius: '8px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: typography.fontSize.xs,
-                  fontWeight: typography.fontWeight.medium,
-                  fontFamily: typography.fontFamily.primary,
-                  whiteSpace: 'nowrap',
-                  transition: 'all 0.2s ease',
-                  ...(selectedCategory === category ? {
-                    background: colors.semantic.info,
-                    color: colors.text.inverse,
-                    boxShadow: shadows.raised.sm
-                  } : {
-                    background: colors.surface.secondary,
-                    color: colors.text.secondary,
-                    boxShadow: shadows.inset.sm
-                  })
+                  ...chip,
+                  minHeight: 36,
+                  ...(selectedCategory === category
+                    ? { background: pos.roleDark, color: '#fff', border: 'none' }
+                    : {
+                        background: 'transparent',
+                        color: pos.muted,
+                        border: `1px solid ${pos.border}`,
+                      }),
                 }}
               >
-                {category.replace(/_/g, ' ')}
+                {formatCategoryLabel(category)}
               </button>
             ))}
           </div>
         )}
 
-        {/* Dietary Filter */}
-        <div style={{
-          display: 'flex',
-          gap: spacing[2],
-          flexWrap: 'wrap'
-        }}>
-          <button
-            onClick={() => setSelectedDietary(null)}
-            style={{
-              padding: `${spacing[1]} ${spacing[3]}`,
-              borderRadius: '6px',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: typography.fontSize.xs,
-              fontWeight: typography.fontWeight.medium,
-              fontFamily: typography.fontFamily.primary,
-              transition: 'all 0.2s ease',
-              ...(selectedDietary === null ? {
-                background: colors.semantic.success,
-                color: colors.text.inverse
-              } : {
-                background: colors.surface.tertiary,
-                color: colors.text.tertiary
-              })
-            }}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setSelectedDietary(DietaryType.VEGETARIAN)}
-            style={{
-              padding: `${spacing[1]} ${spacing[3]}`,
-              borderRadius: '6px',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: typography.fontSize.xs,
-              fontWeight: typography.fontWeight.medium,
-              fontFamily: typography.fontFamily.primary,
-              transition: 'all 0.2s ease',
-              ...(selectedDietary === DietaryType.VEGETARIAN ? {
-                background: colors.semantic.success,
-                color: colors.text.inverse
-              } : {
-                background: colors.surface.tertiary,
-                color: colors.text.tertiary
-              })
-            }}
-          >
-            Veg
-          </button>
-          <button
-            onClick={() => setSelectedDietary(DietaryType.VEGAN)}
-            style={{
-              padding: `${spacing[1]} ${spacing[3]}`,
-              borderRadius: '6px',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: typography.fontSize.xs,
-              fontWeight: typography.fontWeight.medium,
-              fontFamily: typography.fontFamily.primary,
-              transition: 'all 0.2s ease',
-              ...(selectedDietary === DietaryType.VEGAN ? {
-                background: colors.semantic.successLight,
-                color: colors.text.primary
-              } : {
-                background: colors.surface.tertiary,
-                color: colors.text.tertiary
-              })
-            }}
-          >
-            Vegan
-          </button>
-          <button
-            onClick={() => setSelectedDietary(DietaryType.NON_VEGETARIAN)}
-            style={{
-              padding: `${spacing[1]} ${spacing[3]}`,
-              borderRadius: '6px',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: typography.fontSize.xs,
-              fontWeight: typography.fontWeight.medium,
-              fontFamily: typography.fontFamily.primary,
-              transition: 'all 0.2s ease',
-              ...(selectedDietary === DietaryType.NON_VEGETARIAN ? {
-                background: colors.semantic.error,
-                color: colors.text.inverse
-              } : {
-                background: colors.surface.tertiary,
-                color: colors.text.tertiary
-              })
-            }}
-          >
-            Non-Veg
-          </button>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {(
+            [
+              { key: null, label: 'All diet' },
+              { key: DietaryType.VEGETARIAN, label: 'Vegetarian' },
+              { key: DietaryType.VEGAN, label: 'Vegan' },
+              { key: DietaryType.NON_VEGETARIAN, label: 'Non-veg' },
+            ] as const
+          ).map(({ key, label }) => {
+            const active = selectedDietary === key;
+            return (
+              <button
+                key={label}
+                type="button"
+                onClick={() => setSelectedDietary(key)}
+                style={{
+                  ...chip,
+                  minHeight: 32,
+                  padding: '4px 10px',
+                  fontSize: 11,
+                  ...(active
+                    ? {
+                        background:
+                          key === DietaryType.NON_VEGETARIAN
+                            ? pos.error
+                            : key === DietaryType.VEGAN
+                              ? pos.successDark
+                              : key === DietaryType.VEGETARIAN
+                                ? pos.success
+                                : pos.role,
+                        color: '#fff',
+                        border: 'none',
+                      }
+                    : {
+                        background: 'transparent',
+                        color: pos.faint,
+                        border: `1px solid ${pos.border}`,
+                      }),
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Popular Items Quick Add */}
-      {!searchTerm && selectedCategory === null && popularItems.length > 0 && (
-        <div style={{
-          padding: spacing[4],
-          backgroundColor: colors.surface.secondary,
-          borderBottom: `1px solid ${colors.surface.border}`
-        }}>
-          <p style={{
-            margin: `0 0 ${spacing[3]} 0`,
-            fontSize: typography.fontSize.sm,
-            fontWeight: typography.fontWeight.semibold,
-            color: colors.text.primary
-          }}>
-            <LocalFireDepartmentIcon style={{ fontSize: '16px', color: colors.semantic.error, marginRight: '4px' }} />
-            Popular Items
-          </p>
-          <div style={{ display: 'flex', gap: spacing[2], flexWrap: 'wrap' }}>
-            {popularItems.map((item: MenuItem) => (
-              <button
-                key={item.id}
-                onClick={() => onAddItem(item)}
-                style={{
-                  padding: `${spacing[2]} ${spacing[3]}`,
-                  borderRadius: '6px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: typography.fontSize.xs,
-                  fontWeight: typography.fontWeight.semibold,
-                  fontFamily: typography.fontFamily.primary,
-                  background: colors.semantic.info,
-                  color: colors.text.inverse,
-                  boxShadow: shadows.raised.sm,
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = shadows.floating.md;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = shadows.raised.sm;
-                }}
-              >
-                {item.name} ({formatMoney(item.basePrice, currency, locale)}) +
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Menu Items Grid */}
-      <div style={{ flex: 1, overflow: 'auto', padding: spacing[4] }}>
+      <div
+        style={{
+          flex: 1,
+          overflow: 'auto',
+          padding: 12,
+          minHeight: 0,
+          background: pos.surfaceAlt,
+        }}
+      >
         {isLoading && (
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: spacing[10],
-            color: colors.text.secondary
-          }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              border: `4px solid ${colors.surface.border}`,
-              borderTopColor: colors.brand.primary,
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
-            }} />
+          <div
+            data-testid="menu-loading"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))',
+              gap: 10,
+            }}
+          >
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                style={{
+                  height: 168,
+                  borderRadius: 12,
+                  background: pos.surfaceElevated,
+                  border: `1px solid ${pos.border}`,
+                  animation: 'posMenuPulse 1.4s ease-in-out infinite',
+                  animationDelay: `${i * 0.05}s`,
+                }}
+              />
+            ))}
             <style>{`
-              @keyframes spin {
-                to { transform: rotate(360deg); }
+              @keyframes posMenuPulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.4; }
               }
             `}</style>
           </div>
         )}
 
         {error && (
-          <Card
-            elevation="sm"
-            padding="lg"
+          <div
+            data-testid="menu-error"
             style={{
-              background: `linear-gradient(135deg, ${colors.semantic.errorLight}22 0%, ${colors.semantic.error}11 100%)`,
-              border: `2px solid ${colors.semantic.error}`,
-              color: colors.text.primary,
-              textAlign: 'center'
+              padding: 24,
+              borderRadius: 12,
+              border: `1px solid ${pos.error}`,
+              background: pos.errorSoft,
+              textAlign: 'center',
             }}
           >
-            Failed to load menu items. Please try again.
-          </Card>
+            <p style={{ margin: '0 0 8px', color: pos.ink, fontWeight: 700 }}>Couldn’t load menu</p>
+            <p style={{ margin: '0 0 16px', color: pos.muted, fontSize: 13 }}>
+              Check network or store selection, then retry.
+            </p>
+            <button
+              type="button"
+              onClick={() => void refetch()}
+              style={{
+                ...posTouchBtnBase,
+                background: pos.role,
+                color: '#fff',
+              }}
+            >
+              <RefreshIcon style={{ fontSize: 18 }} />
+              Retry
+            </button>
+          </div>
         )}
 
         {!isLoading && !error && filteredItems.length === 0 && (
-          <Card
-            elevation="sm"
-            padding="lg"
+          <div
+            data-testid="menu-empty"
             style={{
-              background: `linear-gradient(135deg, ${colors.semantic.infoLight}22 0%, ${colors.semantic.info}11 100%)`,
-              border: `2px solid ${colors.semantic.info}`,
-              color: colors.text.primary,
-              textAlign: 'center'
+              padding: 32,
+              borderRadius: 12,
+              border: `1px dashed ${pos.border}`,
+              background: pos.surface,
+              textAlign: 'center',
+              color: pos.muted,
             }}
           >
-            {searchTerm
-              ? 'No menu items found matching your search.'
-              : 'No available items in this category.'}
-          </Card>
+            <RestaurantMenuIcon style={{ fontSize: 40, color: pos.faint, marginBottom: 10 }} />
+            <div style={{ fontWeight: 700, color: pos.ink, marginBottom: 6 }}>
+              {searchTerm ? 'No matches' : 'No items match'}
+            </div>
+            <div style={{ fontSize: 13 }}>
+              {searchTerm
+                ? 'Try another search or clear filters.'
+                : 'Switch cuisine or category to browse available items.'}
+            </div>
+          </div>
         )}
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-          gap: spacing[2]
-        }}>
-          {filteredItems.map((item: MenuItem) => (
-            <Card
-              key={item.id}
-              elevation="sm"
-              padding="sm"
-              interactive
-              onClick={() => onAddItem(item)}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                border: `2px solid transparent`,
-                position: 'relative',
-                minHeight: '110px',
-                maxHeight: '150px'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = colors.brand.primary;
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'transparent';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              {/* Popular star badge */}
-              {item.isRecommended && (
-                <div style={{
-                  position: 'absolute',
-                  top: spacing[1],
-                  right: spacing[1],
-                  fontSize: '12px'
-                }}>
-                  ⭐
+        {!isLoading && !error && filteredItems.length > 0 && (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))',
+              gap: 10,
+            }}
+          >
+            {filteredItems.map((item: MenuItem) => {
+              const flash = justAddedId === item.id;
+              return (
+                <div
+                  key={item.id}
+                  data-testid={`menu-item-${item.id}`}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    borderRadius: 12,
+                    overflow: 'hidden',
+                    border: flash ? `2px solid ${pos.success}` : `1px solid ${pos.border}`,
+                    background: flash ? pos.successSoft : pos.surface,
+                    minHeight: 176,
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setSheetItem(item)}
+                    style={{
+                      border: 'none',
+                      padding: 0,
+                      cursor: 'pointer',
+                      background: pos.surfaceElevated,
+                      height: 96,
+                      position: 'relative',
+                      display: 'block',
+                      width: '100%',
+                    }}
+                    aria-label={`Details for ${item.name}`}
+                  >
+                    {item.imageUrl ? (
+                      <img
+                        src={item.imageUrl}
+                        alt=""
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          display: 'block',
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          height: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 28,
+                          fontWeight: 800,
+                          color: pos.faint,
+                        }}
+                      >
+                        {item.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    {item.isRecommended && (
+                      <span
+                        style={{
+                          position: 'absolute',
+                          top: 6,
+                          left: 6,
+                          fontSize: 9,
+                          fontWeight: 800,
+                          padding: '3px 6px',
+                          borderRadius: 4,
+                          background: pos.role,
+                          color: '#fff',
+                        }}
+                      >
+                        Rec
+                      </span>
+                    )}
+                  </button>
+
+                  <div
+                    style={{
+                      padding: 10,
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 6,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: pos.ink,
+                        lineHeight: 1.25,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        minHeight: '2.4em',
+                      }}
+                    >
+                      {item.name}
+                    </div>
+                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                      {item.dietaryInfo?.includes(DietaryType.VEGETARIAN) && (
+                        <span
+                          style={{
+                            fontSize: 9,
+                            fontWeight: 700,
+                            padding: '2px 5px',
+                            borderRadius: 4,
+                            background: pos.successSoft,
+                            color: pos.successDark,
+                          }}
+                        >
+                          VEG
+                        </span>
+                      )}
+                      {item.dietaryInfo?.includes(DietaryType.NON_VEGETARIAN) && (
+                        <span
+                          style={{
+                            fontSize: 9,
+                            fontWeight: 700,
+                            padding: '2px 5px',
+                            borderRadius: 4,
+                            background: pos.errorSoft,
+                            color: pos.errorDark,
+                          }}
+                        >
+                          NON-VEG
+                        </span>
+                      )}
+                    </div>
+                    <div
+                      style={{
+                        marginTop: 'auto',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: 8,
+                      }}
+                    >
+                      <span style={{ fontSize: 15, fontWeight: 800, color: pos.ink }}>
+                        {marketReady
+                          ? formatMoney(item.basePrice, currency, locale)
+                          : '—'}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={`Add ${item.name}`}
+                        onClick={() => flashAdd(item)}
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 10,
+                          border: 'none',
+                          background: pos.role,
+                          color: '#fff',
+                          fontSize: 22,
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          flexShrink: 0,
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              )}
-
-              {/* Item name */}
-              <div style={{
-                fontSize: typography.fontSize.xs,
-                fontWeight: typography.fontWeight.bold,
-                color: colors.text.primary,
-                marginBottom: spacing[1],
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                lineHeight: '1.3',
-                minHeight: '2.6em',
-                paddingRight: item.isRecommended ? '20px' : '0'
-              }}>
-                {item.name}
-              </div>
-
-              {/* Dietary icons - compact */}
-              <div style={{
-                display: 'flex',
-                gap: spacing[1],
-                marginBottom: spacing[1],
-                fontSize: '10px'
-              }}>
-                {item.dietaryInfo?.includes(DietaryType.VEGETARIAN) && <span style={{ background: '#e8f5e9', color: '#388e3c', borderRadius: '3px', padding: '1px 4px', fontSize: '9px', fontWeight: 600 }}>VEG</span>}
-                {item.dietaryInfo?.includes(DietaryType.VEGAN) && <span style={{ background: '#f1f8e9', color: '#558b2f', borderRadius: '3px', padding: '1px 4px', fontSize: '9px', fontWeight: 600 }}>VEGAN</span>}
-                {item.dietaryInfo?.includes(DietaryType.NON_VEGETARIAN) && <span style={{ background: '#fce4ec', color: '#c62828', borderRadius: '3px', padding: '1px 4px', fontSize: '9px', fontWeight: 600 }}>NON-VEG</span>}
-                {item.spiceLevel && item.spiceLevel !== 'NONE' && <span style={{ background: '#fff3e0', color: '#e65100', borderRadius: '3px', padding: '1px 4px', fontSize: '9px', fontWeight: 600 }}>SPICY</span>}
-              </div>
-
-              {/* Price */}
-              <div style={{
-                fontSize: typography.fontSize.sm,
-                fontWeight: typography.fontWeight.bold,
-                color: colors.brand.primary,
-                marginTop: 'auto',
-                marginBottom: spacing[2]
-              }}>
-                {formatMoney(item.basePrice, currency, locale)}
-              </div>
-
-              {/* Add button - full width at bottom */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAddItem(item);
-                }}
-                style={{
-                  width: '100%',
-                  height: '26px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.secondary} 100%)`,
-                  color: colors.text.inverse,
-                  fontSize: typography.fontSize.xs,
-                  fontWeight: typography.fontWeight.semibold,
-                  cursor: 'pointer',
-                  boxShadow: shadows.raised.sm,
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.02)';
-                  e.currentTarget.style.boxShadow = shadows.floating.sm;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.boxShadow = shadows.raised.sm;
-                }}
-              >
-                + Add
-              </button>
-            </Card>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Footer with item count */}
-      <div style={{
-        padding: spacing[3],
-        borderTop: `2px solid ${colors.surface.border}`,
-        backgroundColor: colors.surface.secondary,
-        fontSize: typography.fontSize.xs,
-        color: colors.text.secondary,
-        fontWeight: typography.fontWeight.medium,
-        textAlign: 'center'
-      }}>
-        <BarChartIcon style={{ fontSize: '14px', marginRight: '4px' }} />
-        {filteredItems.length} items available • {selectedCuisine.replace(/_/g, ' ')}
-        {selectedCategory && ` • ${selectedCategory.replace(/_/g, ' ')}`}
-        {selectedDietary && ` • ${selectedDietary}`}
-      </div>
+      <ItemCustomizeSheet
+        item={sheetItem}
+        open={!!sheetItem}
+        onClose={() => setSheetItem(null)}
+        onAdd={(item, quantity, instructions) => flashAdd(item, quantity, instructions)}
+      />
     </div>
   );
 };

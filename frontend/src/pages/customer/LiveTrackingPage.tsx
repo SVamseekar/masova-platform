@@ -59,7 +59,7 @@ const LiveTrackingPage: React.FC = () => {
     switch (status?.toUpperCase()) {
       case 'PICKED_UP': return '#2196f3';
       case 'IN_TRANSIT': return '#ff9800';
-      case 'DELIVERED': return '#4caf50';
+      case 'DELIVERED': return 'var(--success-light)';
       default: return 'var(--text-3)';
     }
   };
@@ -122,8 +122,8 @@ const LiveTrackingPage: React.FC = () => {
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '48px 24px' }}>
         {/* WS indicator */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '6px', marginBottom: '24px' }}>
-          <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: wsConnected ? '#4caf50' : 'var(--text-3)', display: 'inline-block' }} />
-          <span style={{ fontSize: '0.72rem', color: wsConnected ? '#4caf50' : 'var(--text-3)' }}>
+          <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: wsConnected ? 'var(--success-light)' : 'var(--text-3)', display: 'inline-block' }} />
+          <span style={{ fontSize: '0.72rem', color: wsConnected ? 'var(--success-light)' : 'var(--text-3)' }}>
             {wsConnected ? 'Live Updates' : 'Polling Mode'}
           </span>
         </div>
@@ -238,7 +238,7 @@ const LiveTrackingPage: React.FC = () => {
             <button
               onClick={callDriver}
               style={{
-                flex: 1, background: 'var(--dp-success, #2e7d32)', color: '#fff', border: 'none',
+                flex: 1, background: 'var(--dp-success, #2e7d32)', color: 'var(--text-1)', border: 'none',
                 borderRadius: 'var(--radius-pill)', padding: '11px',
                 fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
                 transition: 'var(--transition)',
@@ -252,7 +252,7 @@ const LiveTrackingPage: React.FC = () => {
               <button
                 onClick={() => setRatingDialogOpen(true)}
                 style={{
-                  flex: 1, background: 'var(--gold)', color: '#000', border: 'none',
+                  flex: 1, background: 'var(--gold)', color: 'var(--bg)', border: 'none',
                   borderRadius: 'var(--radius-pill)', padding: '11px',
                   fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
                   transition: 'var(--transition)',
