@@ -184,6 +184,46 @@ describe('PINAuthModal', () => {
     });
   });
 
+  describe('double-submit guard', () => {
+    it('does not call validatePIN twice when Enter is pressed right after the 5th digit triggers auto-submit', async () => {
+      let resolveValidate: (v: unknown) => void = () => {};
+      mockValidatePIN.mockImplementation(() => ({
+        unwrap: () =>
+          new Promise((resolve) => {
+            resolveValidate = resolve;
+          }),
+      }));
+
+      renderWithProviders(<PINAuthModal {...defaultProps} />, {
+        useMemoryRouter: true,
+      });
+
+      const inputs = screen.getAllByLabelText(/PIN digit/);
+      fireEvent.change(inputs[0], { target: { value: '1' } });
+      fireEvent.change(inputs[1], { target: { value: '2' } });
+      fireEvent.change(inputs[2], { target: { value: '3' } });
+      fireEvent.change(inputs[3], { target: { value: '4' } });
+      fireEvent.change(inputs[4], { target: { value: '5' } });
+      // Auto-submit is scheduled via setTimeout(100ms). Fire Enter on the same
+      // input immediately after, before that timeout elapses.
+      fireEvent.keyDown(inputs[4], { key: 'Enter' });
+
+      await waitFor(() => expect(mockValidatePIN).toHaveBeenCalled());
+      // Let the 100ms auto-submit timeout elapse too, in case both paths fired.
+      await new Promise((r) => setTimeout(r, 150));
+      resolveValidate({
+        userId: 'user-1',
+        name: 'Test User',
+        type: 'STAFF',
+        role: 'Staff',
+        storeId: 'store-1',
+      });
+
+      await waitFor(() => expect(defaultProps.onAuthenticated).toHaveBeenCalledTimes(1));
+      expect(mockValidatePIN).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('successful authentication', () => {
     it('calls onAuthenticated with user data on valid PIN', async () => {
       const mockUserData = {
