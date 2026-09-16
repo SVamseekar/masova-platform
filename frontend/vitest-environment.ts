@@ -1,8 +1,8 @@
-import { builtinEnvironments } from 'vitest/environments';
+import { builtinEnvironments } from 'vitest/runtime';
 
 export default {
   name: 'jsdom-with-native-abort',
-  transformMode: 'web',
+  viteEnvironment: 'client',
   async setup(global, options) {
     // Save Node's native AbortController/AbortSignal BEFORE jsdom overwrites them
     const nativeAbortController = global.AbortController;
