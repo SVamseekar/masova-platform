@@ -5,6 +5,7 @@ import com.MaSoVa.payment.dto.PaymentResponse;
 import com.MaSoVa.payment.entity.Transaction;
 import com.MaSoVa.payment.service.PaymentSeedService;
 import com.MaSoVa.payment.service.PaymentService;
+import com.MaSoVa.shared.util.PageableResponse;
 import com.MaSoVa.shared.test.BaseServiceTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -25,6 +26,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -227,8 +229,9 @@ class PaymentControllerTest extends BaseServiceTest {
         @Test
         @DisplayName("returns 200 by storeId default when no params given")
         void returns200ByStoreDefault() throws Exception {
-            when(paymentService.getTransactionsByStoreId(any()))
-                .thenReturn(java.util.List.of(buildPaymentResponse("txn-1", Transaction.PaymentStatus.SUCCESS)));
+            when(paymentService.getTransactionsByStoreId(any(), anyInt(), anyInt()))
+                .thenReturn(new PageableResponse<>(
+                        java.util.List.of(buildPaymentResponse("txn-1", Transaction.PaymentStatus.SUCCESS)), 0, 50, 1));
 
             mockMvc.perform(get("/api/payments"))
                 .andExpect(status().isOk());

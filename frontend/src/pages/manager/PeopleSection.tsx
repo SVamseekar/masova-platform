@@ -86,7 +86,7 @@ interface Props { storeId: string; activeTab: string; onTabChange: (tab: string)
 // ── shared styles ──
 const miniStat: React.CSSProperties = { ...cardStyle, padding: 16, textAlign: 'center' as const };
 const statLabel: React.CSSProperties = { fontSize: 12, color: t.gray, margin: 0 };
-const statValue = (c?: string): React.CSSProperties => ({ fontSize: 24, fontWeight: 700, color: c || t.black, margin: '4px 0 0' });
+const statValue = (c?: string): React.CSSProperties => ({ fontSize: 16, fontWeight: 700, color: c || t.black, margin: '4px 0 0', overflowWrap: 'anywhere', fontVariantNumeric: 'tabular-nums' });
 const btn = (primary?: boolean): React.CSSProperties => ({
   padding: '8px 16px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer',
   background: primary ? t.orange : t.grayLight, color: primary ? t.white : t.black,
@@ -98,7 +98,9 @@ const label: React.CSSProperties = { display: 'block', marginBottom: 6, fontSize
 const input: React.CSSProperties = { width: '100%', padding: '10px 12px', border: `1px solid ${t.grayLight}`, borderRadius: 8, fontSize: 14, fontFamily: t.font, outline: 'none' };
 
 // ── tabs ──
-const DriverManagementPage = React.lazy(() => import('./DriverManagementPage'));
+const DriversTabPanel = React.lazy(() =>
+  import('./OperationsSection').then((m) => ({ default: m.DriversTab })),
+);
 
 const GdprManagerPage = React.lazy(() => import('./GdprManagerPage'));
 
@@ -317,8 +319,8 @@ const StaffTab = ({ storeId }: { storeId: string }) => {
                 <td style={tableCellStyle}><a href={`/manager/staff/${emp.id}/profile`} style={{ color: t.orange, fontWeight: 600, textDecoration: 'none' }}>{emp.name}</a></td>
                 <td style={tableCellStyle}>{emp.email}</td>
                 <td style={tableCellStyle}>{emp.phone || 'N/A'}</td>
-                <td style={tableCellStyle}><span style={statusBadge(emp.type === 'MANAGER' ? t.orange : emp.type === 'DRIVER' ? t.yellow : t.green)}>{emp.type?.replace('_', ' ')}</span></td>
-                <td style={tableCellStyle}><span style={statusBadge(emp.isActive ? t.green : t.red)}>{emp.isActive ? 'Active' : 'Inactive'}</span></td>
+                <td style={tableCellStyle}><span style={statusBadge(emp.type === 'DRIVER' ? 'READY' : emp.type === 'MANAGER' ? 'PREPARING' : 'COMPLETED')}>{emp.type?.replace('_', ' ')}</span></td>
+                <td style={tableCellStyle}><span style={statusBadge(emp.isActive ? 'COMPLETED' : 'CANCELLED')}>{emp.isActive ? 'Active' : 'Inactive'}</span></td>
                 <td style={tableCellStyle}>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button type="button" onClick={() => setSelectedEmployeeId(emp.id)} style={btn()}>Report</button>
@@ -1105,7 +1107,7 @@ const PeopleSection: React.FC<Props> = ({ storeId, activeTab, onTabChange }) => 
       {current === 'leaderboard' && <LeaderboardTab storeId={storeId} />}
       {current === 'drivers' && (
         <React.Suspense fallback={<ManagerLoadingBlock rows={3} label="Loading drivers…" />}>
-          <DriverManagementPage />
+          <DriversTabPanel storeId={storeId} />
         </React.Suspense>
       )}
       {current === 'customers' && <CustomersTab storeId={storeId} />}

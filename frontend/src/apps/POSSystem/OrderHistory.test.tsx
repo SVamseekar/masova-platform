@@ -71,6 +71,12 @@ vi.mock('../../store/api/orderApi', async (importOriginal) => {
       isLoading: mockIsLoading,
       error: mockError,
     }),
+    useGetRecentStoreOrdersQuery: () => ({
+      data: mockOrdersData,
+      isLoading: mockIsLoading,
+      error: mockError,
+      refetch: vi.fn(),
+    }),
   };
 });
 
@@ -301,7 +307,7 @@ describe('OrderHistory', () => {
         preloadedState: managerState,
       });
 
-      expect(screen.getByText(/No orders today yet/i)).toBeInTheDocument();
+      expect(screen.getByText(/No orders for this store/i)).toBeInTheDocument();
     });
   });
 });

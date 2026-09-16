@@ -7,6 +7,8 @@ import {
   countLiveOrders,
   countPendingPayments,
   countRefundsOnDate,
+  countActiveDeliveries,
+  summarizeDrivers,
   countAgentStatuses,
 } from './quickInfoMetrics';
 import { AGENT_CATALOG, getAgentStatusCounts } from './agentCatalog';
@@ -94,6 +96,26 @@ describe('order snapshot counts', () => {
   it('counts refunds on a calendar day', () => {
     expect(countRefundsOnDate(orders, '2026-07-10')).toBe(1);
     expect(countRefundsOnDate(orders, '2026-07-09')).toBe(1);
+  });
+
+  it('counts clocked-in drivers as available even when analytics is empty', () => {
+    const roster = summarizeDrivers(
+      [{ id: 'd1', type: 'DRIVER' }, { id: 's1', type: 'STAFF' }],
+      [{ id: 'd1', isOnline: true }],
+      [{ employeeId: 'd1', role: 'DRIVER', isActive: true }],
+    );
+    expect(roster.total).toBe(1);
+    expect(roster.available).toBe(1);
+  });
+
+  it('counts in-progress delivery orders including RECEIVED and DISPATCHED', () => {
+    expect(countActiveDeliveries([
+      { status: 'RECEIVED', orderType: 'DELIVERY' },
+      { status: 'DISPATCHED', orderType: 'DELIVERY' },
+      { status: 'PREPARING', orderType: 'DELIVERY' },
+      { status: 'DELIVERED', orderType: 'DELIVERY' },
+      { status: 'READY', orderType: 'TAKEAWAY' },
+    ])).toBe(3);
   });
 });
 

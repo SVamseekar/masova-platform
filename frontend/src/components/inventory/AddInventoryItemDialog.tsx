@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, FormControlLabel, Checkbox } from '@mui/material';
-import { Button } from '../ui/neumorphic';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { useCreateInventoryItemMutation } from '../../store/api/inventoryApi';
-import { colors, spacing, typography } from '../../styles/design-tokens';
+import {
+  t, modalOverlayStyle, modalBoxStyle, fieldLabelStyle, textInputStyle,
+  primaryBtnStyle, secondaryBtnStyle, selectStyle, sectionTitleStyle,
+} from '../../pages/manager/manager-tokens';
 
 interface AddInventoryItemDialogProps {
   open: boolean;
@@ -12,27 +13,31 @@ interface AddInventoryItemDialogProps {
   storeId: string;
 }
 
+const emptyForm = {
+  itemName: '',
+  itemCode: '',
+  category: 'RAW_MATERIAL',
+  unit: 'kg',
+  currentStock: '0',
+  minimumStock: '0',
+  maximumStock: '0',
+  reorderQuantity: '0',
+  unitCost: '0',
+  isPerishable: false,
+  shelfLifeDays: '',
+  batchTracked: false,
+  autoReorder: true,
+  description: '',
+  storageLocation: '',
+};
+
 const AddInventoryItemDialog: React.FC<AddInventoryItemDialogProps> = ({ open, onClose, storeId }) => {
   const currentUser = useAppSelector(selectCurrentUser);
   const [createItem, { isLoading }] = useCreateInventoryItemMutation();
+  const [formData, setFormData] = useState(emptyForm);
+  const [error, setError] = useState('');
 
-  const [formData, setFormData] = useState({
-    itemName: '',
-    itemCode: '',
-    category: 'RAW_MATERIAL',
-    unit: 'kg',
-    currentStock: '0',
-    minimumStock: '0',
-    maximumStock: '0',
-    reorderQuantity: '0',
-    unitCost: '0',
-    isPerishable: false,
-    shelfLifeDays: '',
-    batchTracked: false,
-    autoReorder: true,
-    description: '',
-    storageLocation: '',
-  });
+  if (!open) return null;
 
   const handleChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -40,10 +45,10 @@ const AddInventoryItemDialog: React.FC<AddInventoryItemDialogProps> = ({ open, o
 
   const handleSubmit = async () => {
     if (!formData.itemName || !formData.itemCode) {
-      alert('Please fill in all required fields');
+      setError('Item name and SKU are required');
       return;
     }
-
+    setError('');
     try {
       await createItem({
         storeId,
@@ -62,7 +67,7 @@ const AddInventoryItemDialog: React.FC<AddInventoryItemDialogProps> = ({ open, o
         primarySupplierId: '',
         alternativeSupplierIds: [],
         isPerishable: formData.isPerishable,
-        shelfLifeDays: formData.shelfLifeDays ? parseInt(formData.shelfLifeDays) : undefined,
+        shelfLifeDays: formData.shelfLifeDays ? parseInt(formData.shelfLifeDays, 10) : undefined,
         batchTracked: formData.batchTracked,
         status: 'AVAILABLE',
         autoReorder: formData.autoReorder,
@@ -70,231 +75,83 @@ const AddInventoryItemDialog: React.FC<AddInventoryItemDialogProps> = ({ open, o
         storageLocation: formData.storageLocation,
         lastUpdatedBy: currentUser?.id || 'unknown',
       }).unwrap();
-
-      // Reset form
-      setFormData({
-        itemName: '',
-        itemCode: '',
-        category: 'RAW_MATERIAL',
-        unit: 'kg',
-        currentStock: '0',
-        minimumStock: '0',
-        maximumStock: '0',
-        reorderQuantity: '0',
-        unitCost: '0',
-        isPerishable: false,
-        shelfLifeDays: '',
-        batchTracked: false,
-        autoReorder: true,
-        description: '',
-        storageLocation: '',
-      });
+      setFormData(emptyForm);
       onClose();
-    } catch (error) {
-      console.error('Failed to create item:', error);
-      alert('Failed to create item. Please try again.');
+    } catch {
+      setError('Failed to create item. Please try again.');
     }
   };
 
-  const dialogContentStyles: React.CSSProperties = {
-    fontFamily: typography.fontFamily.primary,
-    padding: spacing[6],
-  };
-
-  const fieldStyles: React.CSSProperties = {
-    marginBottom: spacing[4],
-  };
-
-  const sectionTitleStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-    marginTop: spacing[4],
-    marginBottom: spacing[3],
-  };
+  const field = (label: string, children: React.ReactNode) => (
+    <div style={{ marginBottom: 12 }}>
+      <label style={fieldLabelStyle}>{label}</label>
+      {children}
+    </div>
+  );
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle style={{ fontFamily: typography.fontFamily.primary, fontWeight: typography.fontWeight.bold }}>
-        Add New Inventory Item
-      </DialogTitle>
-      <DialogContent style={dialogContentStyles}>
-        {/* Basic Information */}
-        <div style={sectionTitleStyles}>Basic Information</div>
-        <div style={fieldStyles}>
-          <TextField
-            label="Item Name *"
-            value={formData.itemName}
-            onChange={(e) => handleChange('itemName', e.target.value)}
-            fullWidth
-            variant="outlined"
-          />
-        </div>
-        <div style={fieldStyles}>
-          <TextField
-            label="Item Code / SKU *"
-            value={formData.itemCode}
-            onChange={(e) => handleChange('itemCode', e.target.value)}
-            fullWidth
-            variant="outlined"
-          />
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[4], marginBottom: spacing[4] }}>
-          <TextField
-            select
-            label="Category"
-            value={formData.category}
-            onChange={(e) => handleChange('category', e.target.value)}
-            fullWidth
-            variant="outlined"
-          >
-            <MenuItem value="RAW_MATERIAL">Raw Material</MenuItem>
-            <MenuItem value="INGREDIENT">Ingredient</MenuItem>
-            <MenuItem value="PACKAGING">Packaging</MenuItem>
-            <MenuItem value="BEVERAGE">Beverage</MenuItem>
-            <MenuItem value="OTHER">Other</MenuItem>
-          </TextField>
-          <TextField
-            select
-            label="Unit"
-            value={formData.unit}
-            onChange={(e) => handleChange('unit', e.target.value)}
-            fullWidth
-            variant="outlined"
-          >
-            <MenuItem value="kg">Kilograms (kg)</MenuItem>
-            <MenuItem value="g">Grams (g)</MenuItem>
-            <MenuItem value="liters">Liters</MenuItem>
-            <MenuItem value="ml">Milliliters (ml)</MenuItem>
-            <MenuItem value="pieces">Pieces</MenuItem>
-            <MenuItem value="boxes">Boxes</MenuItem>
-            <MenuItem value="packets">Packets</MenuItem>
-            <MenuItem value="bottles">Bottles</MenuItem>
-          </TextField>
+    <div style={modalOverlayStyle} onClick={onClose} role="presentation">
+      <div style={{ ...modalBoxStyle, maxWidth: 640 }} onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="add-item-title">
+        <h3 id="add-item-title" style={{ margin: '0 0 18px', fontSize: 18, fontWeight: 700, color: t.black, fontFamily: t.font }}>
+          Add inventory item
+        </h3>
+
+        <p style={{ ...sectionTitleStyle, fontSize: 13, marginBottom: 10 }}>Basic information</p>
+        {field('Item name *', (
+          <input value={formData.itemName} onChange={(e) => handleChange('itemName', e.target.value)} style={textInputStyle} />
+        ))}
+        {field('Item code / SKU *', (
+          <input value={formData.itemCode} onChange={(e) => handleChange('itemCode', e.target.value)} style={textInputStyle} />
+        ))}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {field('Category', (
+            <select value={formData.category} onChange={(e) => handleChange('category', e.target.value)} style={{ ...selectStyle, width: '100%', padding: '10px 12px', color: t.black }}>
+              <option value="RAW_MATERIAL">Raw material</option>
+              <option value="INGREDIENT">Ingredient</option>
+              <option value="PACKAGING">Packaging</option>
+              <option value="BEVERAGE">Beverage</option>
+              <option value="OTHER">Other</option>
+            </select>
+          ))}
+          {field('Unit', (
+            <select value={formData.unit} onChange={(e) => handleChange('unit', e.target.value)} style={{ ...selectStyle, width: '100%', padding: '10px 12px', color: t.black }}>
+              <option value="kg">Kilograms (kg)</option>
+              <option value="g">Grams (g)</option>
+              <option value="liters">Liters</option>
+              <option value="ml">Milliliters</option>
+              <option value="pieces">Pieces</option>
+              <option value="boxes">Boxes</option>
+              <option value="packets">Packets</option>
+              <option value="bottles">Bottles</option>
+            </select>
+          ))}
         </div>
 
-        {/* Stock Levels */}
-        <div style={sectionTitleStyles}>Stock Levels</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[4], marginBottom: spacing[4] }}>
-          <TextField
-            label="Current Stock"
-            type="number"
-            value={formData.currentStock}
-            onChange={(e) => handleChange('currentStock', e.target.value)}
-            fullWidth
-            variant="outlined"
-          />
-          <TextField
-            label="Minimum Stock"
-            type="number"
-            value={formData.minimumStock}
-            onChange={(e) => handleChange('minimumStock', e.target.value)}
-            fullWidth
-            variant="outlined"
-          />
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[4], marginBottom: spacing[4] }}>
-          <TextField
-            label="Maximum Stock"
-            type="number"
-            value={formData.maximumStock}
-            onChange={(e) => handleChange('maximumStock', e.target.value)}
-            fullWidth
-            variant="outlined"
-          />
-          <TextField
-            label="Reorder Quantity"
-            type="number"
-            value={formData.reorderQuantity}
-            onChange={(e) => handleChange('reorderQuantity', e.target.value)}
-            fullWidth
-            variant="outlined"
-          />
+        <p style={{ ...sectionTitleStyle, fontSize: 13, margin: '8px 0 10px' }}>Stock levels</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {field('Current stock', <input type="number" value={formData.currentStock} onChange={(e) => handleChange('currentStock', e.target.value)} style={textInputStyle} />)}
+          {field('Minimum stock', <input type="number" value={formData.minimumStock} onChange={(e) => handleChange('minimumStock', e.target.value)} style={textInputStyle} />)}
+          {field('Maximum stock', <input type="number" value={formData.maximumStock} onChange={(e) => handleChange('maximumStock', e.target.value)} style={textInputStyle} />)}
+          {field('Reorder quantity', <input type="number" value={formData.reorderQuantity} onChange={(e) => handleChange('reorderQuantity', e.target.value)} style={textInputStyle} />)}
         </div>
 
-        {/* Pricing */}
-        <div style={sectionTitleStyles}>Pricing</div>
-        <div style={fieldStyles}>
-          <TextField
-            label="Unit Cost (INR)"
-            type="number"
-            value={formData.unitCost}
-            onChange={(e) => handleChange('unitCost', e.target.value)}
-            fullWidth
-            variant="outlined"
-          />
-        </div>
+        <p style={{ ...sectionTitleStyle, fontSize: 13, margin: '8px 0 10px' }}>Pricing</p>
+        {field('Unit cost', <input type="number" step="0.01" value={formData.unitCost} onChange={(e) => handleChange('unitCost', e.target.value)} style={textInputStyle} />)}
 
-        {/* Additional Options */}
-        <div style={sectionTitleStyles}>Additional Options</div>
-        <div style={fieldStyles}>
-          <FormControlLabel
-            control={
-              <Checkbox checked={formData.isPerishable} onChange={(e) => handleChange('isPerishable', e.target.checked)} />
-            }
-            label="Perishable Item"
-          />
-          {formData.isPerishable && (
-            <TextField
-              label="Shelf Life (Days)"
-              type="number"
-              value={formData.shelfLifeDays}
-              onChange={(e) => handleChange('shelfLifeDays', e.target.value)}
-              fullWidth
-              variant="outlined"
-              style={{ marginTop: spacing[2] }}
-            />
-          )}
-        </div>
-        <div style={fieldStyles}>
-          <FormControlLabel
-            control={
-              <Checkbox checked={formData.batchTracked} onChange={(e) => handleChange('batchTracked', e.target.checked)} />
-            }
-            label="Enable Batch Tracking"
-          />
-        </div>
-        <div style={fieldStyles}>
-          <FormControlLabel
-            control={
-              <Checkbox checked={formData.autoReorder} onChange={(e) => handleChange('autoReorder', e.target.checked)} />
-            }
-            label="Enable Auto Reorder"
-          />
-        </div>
+        <label style={{ ...fieldLabelStyle, display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <input type="checkbox" checked={formData.isPerishable} onChange={(e) => handleChange('isPerishable', e.target.checked)} />
+          Perishable item
+        </label>
 
-        {/* Notes */}
-        <div style={fieldStyles}>
-          <TextField
-            label="Description"
-            multiline
-            rows={2}
-            value={formData.description}
-            onChange={(e) => handleChange('description', e.target.value)}
-            fullWidth
-            variant="outlined"
-          />
+        {error && <p style={{ color: t.red, fontSize: 13, margin: '0 0 12px' }}>{error}</p>}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <button type="button" style={secondaryBtnStyle} onClick={onClose} disabled={isLoading}>Cancel</button>
+          <button type="button" style={primaryBtnStyle} onClick={() => void handleSubmit()} disabled={isLoading}>
+            {isLoading ? 'Creating…' : 'Create item'}
+          </button>
         </div>
-        <div style={fieldStyles}>
-          <TextField
-            label="Storage Location"
-            value={formData.storageLocation}
-            onChange={(e) => handleChange('storageLocation', e.target.value)}
-            fullWidth
-            variant="outlined"
-            placeholder="e.g., Warehouse A, Shelf 3"
-          />
-        </div>
-      </DialogContent>
-      <DialogActions style={{ padding: spacing[4] }}>
-        <Button onClick={onClose} variant="ghost" disabled={isLoading}>
-          Cancel
-        </Button>
-        <Button onClick={handleSubmit} disabled={isLoading}>
-          {isLoading ? 'Creating...' : 'Create Item'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+      </div>
+    </div>
   );
 };
 
