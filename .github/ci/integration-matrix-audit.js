@@ -132,8 +132,13 @@ function isStaleFrontendPath(frontendNorm, backendNorm) {
   if (f[1] === 'menu' && f.join('/') !== b.join('/')) return true;
   // notification subpath migrations
   if (f[1] === 'notifications' && f.join('/') !== b.join('/')) return true;
-  // bi executive paths
-  if (f[1] === 'bi' && tailSegments(frontendNorm, 1) !== tailSegments(backendNorm, 1)) return true;
+  // bi legacy aliases only (e.g. /api/bi/executive-summary → /api/bi/reports)
+  // Do NOT flag /api/bi vs /api/bi/reports — both are canonical query-param endpoints.
+  if (f[1] === 'bi' && f.length >= 3 && b.length >= 2 && f.join('/') !== b.join('/') &&
+      !strictPathMatch(frontendNorm, backendNorm)) {
+    const legacyBi = new Set(['executive-summary', 'forecast', 'analysis', 'prediction', 'benchmarking']);
+    if (legacyBi.has(f[2]) || legacyBi.has(f[f.length - 1])) return true;
+  }
   return false;
 }
 
@@ -199,8 +204,17 @@ function extractBackendEndpoints() {
               ? 'intelligence'
               : 'unknown';
 
-    const classMapping = src.match(/@RequestMapping\(["']([^"']+)["']\)/);
-    const basePath = classMapping ? classMapping[1] : '';
+    // Support @RequestMapping("/x") and @RequestMapping({"/x", "/y"}) — use first path only
+    // for CI (aliases belong on the gateway rewrite layer, not duplicated controllers).
+    let basePath = '';
+    const single = src.match(/@RequestMapping\(["']([^"']+)["']\)/);
+    const multi = src.match(/@RequestMapping\(\s*\{([^}]+)\}\s*\)/);
+    if (single) {
+      basePath = single[1];
+    } else if (multi) {
+      const paths = [...multi[1].matchAll(/["']([^"']+)["']/g)].map((m) => m[1]);
+      basePath = paths[0] || '';
+    }
 
     for (const m of src.matchAll(/@(Get|Post|Put|Patch|Delete)Mapping\(["']([^"']*?)["']\)/g)) {
       const fullPath = (basePath + m[2]).replace(/\/+/g, '/');

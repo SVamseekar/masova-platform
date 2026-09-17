@@ -242,6 +242,22 @@ export const deliveryApi = createApi({
   }),
   tagTypes: ['Delivery', 'Tracking', 'Metrics', 'Drivers', 'Order', 'Orders', 'Zone'],
   endpoints: (builder) => ({
+    // List store deliveries (delivery board)
+    listDeliveries: builder.query<DriverDelivery[], { storeId: string; status?: string }>({
+      query: ({ storeId, status }) => {
+        const params = new URLSearchParams({ storeId });
+        if (status) params.append('status', status);
+        return `/delivery?${params.toString()}`;
+      },
+      providesTags: ['Delivery'],
+    }),
+
+    // Active deliveries for authenticated driver
+    getDriverActiveDeliveries: builder.query<DriverDelivery[], void>({
+      query: () => `/delivery/driver/active`,
+      providesTags: ['Delivery', 'Drivers'],
+    }),
+
     // Get available drivers for manual assignment
     getAvailableDrivers: builder.query<AvailableDriver[], string>({
       query: (storeId) => `/delivery/drivers/available?storeId=${storeId}`,
@@ -450,6 +466,8 @@ export const deliveryApi = createApi({
 });
 
 export const {
+  useListDeliveriesQuery,
+  useGetDriverActiveDeliveriesQuery,
   useGetAvailableDriversQuery,
   useAutoDispatchMutation,
   useGetOptimizedRouteMutation,

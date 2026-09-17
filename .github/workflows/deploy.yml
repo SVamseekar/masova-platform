@@ -42,7 +42,7 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - uses: google-github-actions/setup-gcloud@v2
+      - uses: google-github-actions/setup-gcloud@v3
 
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
@@ -78,7 +78,7 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - uses: google-github-actions/setup-gcloud@v2
+      - uses: google-github-actions/setup-gcloud@v3
 
       - name: Deploy ${{ matrix.service.name }} to Cloud Run
         run: |
@@ -143,7 +143,7 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - uses: google-github-actions/setup-gcloud@v2
+      - uses: google-github-actions/setup-gcloud@v3
 
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
@@ -199,7 +199,6 @@ jobs:
           VITE_API_GATEWAY_URL: https://api.masova.app/api
           VITE_WS_URL: wss://api.masova.app/ws
           VITE_AGENT_URL: https://agent.masova.app
-          VITE_RAZORPAY_KEY_ID: ${{ secrets.RAZORPAY_KEY_ID }}
           VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
           VITE_GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
 

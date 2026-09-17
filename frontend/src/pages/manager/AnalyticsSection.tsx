@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 const PlatformPnLPage = React.lazy(() => import('./PlatformPnLPage'));
-import { t, cardStyle, tabStyle, sectionTitleStyle, statusBadge, tableHeaderStyle, tableCellStyle, selectStyle } from './manager-tokens';
+import { t, cardStyle, sectionTitleStyle, statusBadge, tableHeaderStyle, tableCellStyle, selectStyle } from './manager-tokens';
+import { ManagerPageFrame, ManagerTabBar, ManagerLoadingBlock, ManagerEmptyState, ManagerErrorState } from './components';
 import {
   useGetTopProductsQuery,
+  useGetStaffLeaderboardQuery,
 } from '../../store/api/analyticsApi';
 import {
   useGetEquipmentByStoreQuery,
@@ -13,12 +15,14 @@ import {
   useDeleteEquipmentMutation,
   KitchenEquipment,
 } from '../../store/api/equipmentApi';
+import { useGetKitchenQueueQuery, useGetStoreOrderSummaryQuery } from '../../store/api/orderApi';
+import { derivedFromSummary } from './storeOrderMetrics';
 import SalesTrendChart from '../../components/charts/SalesTrendChart';
 import RevenueBreakdownChart from '../../components/charts/RevenueBreakdownChart';
 import PeakHoursHeatmap from '../../components/charts/PeakHoursHeatmap';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import {formatMoney, formatMajorAmount} from '../../utils/currency';
+import { formatMajorAmount } from '../../utils/currency';
 
 interface Props { storeId: string; activeTab: string; onTabChange: (tab: string) => void; }
 
@@ -33,7 +37,7 @@ const tabs = [
 // Shared styles
 const miniStat: React.CSSProperties = { ...cardStyle, padding: 16, textAlign: 'center' };
 const statLabel: React.CSSProperties = { fontSize: 12, color: t.gray, margin: 0 };
-const statValue = (color?: string): React.CSSProperties => ({ fontSize: 22, fontWeight: 700, color: color || t.black, margin: '4px 0 0 0' });
+const statValue = (color?: string): React.CSSProperties => ({ fontSize: 15, fontWeight: 700, color: color || t.black, margin: '4px 0 0 0', overflowWrap: 'anywhere', fontVariantNumeric: 'tabular-nums', lineHeight: 1.2 });
 const btn = (bg: string): React.CSSProperties => ({ padding: '8px 16px', background: bg, color: t.white, border: 'none', borderRadius: t.radius.sm, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: t.font });
 const modalOverlay: React.CSSProperties = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 };
 const modalBox: React.CSSProperties = { ...cardStyle, padding: 28, maxWidth: 520, width: '100%', maxHeight: '90vh', overflowY: 'auto' };
@@ -44,146 +48,180 @@ const chipStyle = (color: string): React.CSSProperties => ({ display: 'inline-bl
 const alertBox = (color: string): React.CSSProperties => ({ padding: '12px 16px', background: color + '15', borderLeft: `4px solid ${color}`, borderRadius: t.radius.sm, marginBottom: 10, fontSize: 13, color: color, fontWeight: 500 });
 
 // ============================================================
-// KITCHEN TAB
+// KITCHEN TAB — live queue + leaderboard (no mock prep KPIs)
 // ============================================================
-interface PrepTimeByItem { [itemName: string]: number; }
-interface PrepTimeDistribution { min: number; max: number; average: number; median: number; p90: number; p95: number; totalOrders: number; }
-interface StaffPerf { staffId: string; totalOrders: number; completedOrders: number; averagePreparationTime: number; failedQualityChecks: number; completionRate: number; }
+const KitchenTab = ({ storeId }: { storeId: string }) => {
+  const {
+    data: queue = [],
+    isLoading: queueLoading,
+    isError: queueError,
+    refetch: refetchQueue,
+  } = useGetKitchenQueueQuery(storeId, { skip: !storeId, pollingInterval: 15000 });
+  const {
+    data: leaderboard,
+    isLoading: boardLoading,
+    isError: boardError,
+  } = useGetStaffLeaderboardQuery({ storeId, period: 'TODAY' }, { skip: !storeId });
 
-const KitchenTab = ({ storeId: _storeId }: { storeId: string }) => {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {
+      RECEIVED: 0, PREPARING: 0, OVEN: 0, BAKED: 0, READY: 0, OTHER: 0,
+    };
+    for (const o of queue) {
+      const s = o.status || 'OTHER';
+      if (s in counts) counts[s] += 1;
+      else counts.OTHER += 1;
+    }
+    return counts;
+  }, [queue]);
 
-  // Mock data - backend kitchen analytics endpoints would replace these
-  const prepTimeByItem: PrepTimeByItem = {
-    'Margherita Pizza': 18, 'Chicken Biryani': 25, 'Masala Dosa': 12,
-    'Paneer Butter Masala': 15, 'Hakka Noodles': 10, 'Filter Coffee': 3, 'Gulab Jamun': 2,
-  };
-  const prepTimeDistribution: PrepTimeDistribution = { min: 5, max: 35, average: 16.5, median: 15, p90: 25, p95: 30, totalOrders: 45 };
-  const staffPerformance: StaffPerf[] = [
-    { staffId: 'staff1', totalOrders: 25, completedOrders: 24, averagePreparationTime: 15.2, failedQualityChecks: 1, completionRate: 96.0 },
-    { staffId: 'staff2', totalOrders: 20, completedOrders: 19, averagePreparationTime: 17.8, failedQualityChecks: 2, completionRate: 95.0 },
-  ];
+  const itemCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const o of queue) {
+      for (const item of o.items || []) {
+        const name = (item as { name?: string; menuItemName?: string }).name
+          || (item as { menuItemName?: string }).menuItemName
+          || 'Item';
+        map.set(name, (map.get(name) || 0) + (item.quantity || 1));
+      }
+    }
+    return [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12);
+  }, [queue]);
 
-  const sortedPrepTimes = Object.entries(prepTimeByItem).sort((a, b) => b[1] - a[1]);
-  const getChipColor = (time: number) => time > 20 ? t.red : time > 15 ? t.yellow : t.green;
+  const rankings = leaderboard?.rankings ?? [];
 
   return (
     <>
-      {/* Date selector */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
-        <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} style={{ ...input, width: 'auto' }} />
-      </div>
+      {queueLoading && <ManagerLoadingBlock rows={3} label="Loading kitchen queue…" />}
+      {queueError && (
+        <ManagerErrorState
+          title="Failed to load kitchen queue"
+          onRetry={() => void refetchQueue()}
+        />
+      )}
 
-      {/* Stats grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 24 }}>
-        <div style={miniStat}><p style={statLabel}>Avg Prep Time</p><p style={statValue(t.orange)}>{prepTimeDistribution.average.toFixed(1)} min</p></div>
-        <div style={miniStat}><p style={statLabel}>Median</p><p style={statValue(t.yellow)}>{prepTimeDistribution.median} min</p></div>
-        <div style={miniStat}><p style={statLabel}>90th Percentile</p><p style={statValue(t.blue)}>{prepTimeDistribution.p90} min</p></div>
-        <div style={miniStat}><p style={statLabel}>95th Percentile</p><p style={statValue(t.red)}>{prepTimeDistribution.p95} min</p></div>
-        <div style={miniStat}><p style={statLabel}>Fastest</p><p style={statValue(t.green)}>{prepTimeDistribution.min} min</p></div>
-        <div style={miniStat}><p style={statLabel}>Slowest</p><p style={statValue(t.red)}>{prepTimeDistribution.max} min</p></div>
-      </div>
+      {!queueLoading && !queueError && (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12, marginBottom: 24 }}>
+            {(['RECEIVED', 'PREPARING', 'OVEN', 'BAKED', 'READY'] as const).map((status) => (
+              <div key={status} style={miniStat}>
+                <p style={statLabel}>{status}</p>
+                <p style={statValue(status === 'RECEIVED' ? t.blue : status === 'READY' ? t.green : t.orange)}>
+                  {statusCounts[status]}
+                </p>
+              </div>
+            ))}
+            <div style={miniStat}>
+              <p style={statLabel}>In kitchen total</p>
+              <p style={statValue(t.black)}>{queue.length}</p>
+            </div>
+          </div>
 
-      {/* Two-column: prep time + staff performance */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 20, marginBottom: 24 }}>
-        {/* Prep Time by Menu Item */}
-        <div style={cardStyle}>
-          <h4 style={sectionTitleStyle}>Avg Prep Time by Menu Item</h4>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead><tr>
-                <th style={tableHeaderStyle}>Menu Item</th>
-                <th style={{ ...tableHeaderStyle, textAlign: 'right' }}>Avg Time</th>
-                <th style={{ ...tableHeaderStyle, textAlign: 'center' }}>Trend</th>
-              </tr></thead>
-              <tbody>
-                {sortedPrepTimes.map(([name, time]) => (
-                  <tr key={name}>
-                    <td style={tableCellStyle}>{name}</td>
-                    <td style={{ ...tableCellStyle, textAlign: 'right' }}>
-                      <span style={chipStyle(getChipColor(time))}>{time} min</span>
-                    </td>
-                    <td style={{ ...tableCellStyle, textAlign: 'center', fontSize: 16 }}>
-                      {time > prepTimeDistribution.average
-                        ? <span style={{ color: t.red }}>&#x2197;</span>
-                        : <span style={{ color: t.green }}>&#x2198;</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div style={{ ...alertBox(t.yellow), marginTop: 12 }}>
-            Bottleneck Alert: Items taking &gt;20 minutes should be optimized.
-          </div>
-        </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20, marginBottom: 24 }}>
+            <div style={cardStyle}>
+              <h4 style={sectionTitleStyle}>Items in active kitchen queue</h4>
+              {itemCounts.length === 0 ? (
+                <ManagerEmptyState
+                  compact
+                  title="No active kitchen items"
+                  description="Queue is empty right now."
+                />
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
+                  <thead>
+                    <tr>
+                      <th style={tableHeaderStyle}>Item</th>
+                      <th style={{ ...tableHeaderStyle, textAlign: 'right' }}>Qty</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {itemCounts.map(([name, qty]) => (
+                      <tr key={name}>
+                        <td style={tableCellStyle}>{name}</td>
+                        <td style={{ ...tableCellStyle, textAlign: 'right' }}>
+                          <span style={chipStyle(t.orange)}>{qty}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
 
-        {/* Staff Performance */}
-        <div style={cardStyle}>
-          <h4 style={sectionTitleStyle}>Kitchen Staff Performance</h4>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead><tr>
-                <th style={tableHeaderStyle}>Staff ID</th>
-                <th style={{ ...tableHeaderStyle, textAlign: 'center' }}>Orders</th>
-                <th style={{ ...tableHeaderStyle, textAlign: 'center' }}>Completion</th>
-                <th style={{ ...tableHeaderStyle, textAlign: 'center' }}>Avg Time</th>
-                <th style={{ ...tableHeaderStyle, textAlign: 'center' }}>Failed QC</th>
-              </tr></thead>
-              <tbody>
-                {staffPerformance.map(s => (
-                  <tr key={s.staffId}>
-                    <td style={tableCellStyle}>{s.staffId}</td>
-                    <td style={{ ...tableCellStyle, textAlign: 'center' }}>{s.completedOrders}/{s.totalOrders}</td>
-                    <td style={{ ...tableCellStyle, textAlign: 'center' }}>
-                      <span style={chipStyle(s.completionRate >= 95 ? t.green : t.yellow)}>{s.completionRate.toFixed(0)}%</span>
-                    </td>
-                    <td style={{ ...tableCellStyle, textAlign: 'center' }}>{s.averagePreparationTime.toFixed(1)} min</td>
-                    <td style={{ ...tableCellStyle, textAlign: 'center' }}>
-                      <span style={chipStyle(s.failedQualityChecks > 0 ? t.red : t.green)}>{s.failedQualityChecks}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <KitchenStaffLeaderboard
+              rankings={rankings}
+              boardLoading={boardLoading}
+              boardError={boardError}
+            />
           </div>
-          <div style={{ ...alertBox(t.green), marginTop: 12 }}>
-            Performance Summary: Overall completion rate is excellent.
-          </div>
-        </div>
-      </div>
-
-      {/* Bottleneck Analysis */}
-      <div style={cardStyle}>
-        <h4 style={sectionTitleStyle}>Bottleneck Analysis & Recommendations</h4>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12, marginBottom: 16 }}>
-          <div style={alertBox(t.red)}>
-            <strong>Critical Issues</strong><br />
-            Chicken Biryani takes 25 min (52% above average)<br />
-            95th percentile at 30 min indicates inconsistency
-          </div>
-          <div style={alertBox(t.yellow)}>
-            <strong>Optimization Opportunities</strong><br />
-            Margherita Pizza (18 min) can be reduced with prep optimization<br />
-            Consider parallel station workflow
-          </div>
-          <div style={alertBox(t.green)}>
-            <strong>Best Practices</strong><br />
-            Coffee & Desserts have excellent prep times<br />
-            Staff1 demonstrates optimal workflow efficiency
-          </div>
-        </div>
-        <div>
-          <p style={{ fontSize: 13, fontWeight: 600, color: t.black, marginBottom: 8 }}>Recommended Actions:</p>
-          <ul style={{ margin: 0, paddingLeft: 20, color: t.gray, fontSize: 13, lineHeight: 1.8 }}>
-            <li>Review Chicken Biryani recipe for process simplification</li>
-            <li>Implement make-table stations for high-volume items</li>
-            <li>Cross-train staff using Staff1's efficient techniques</li>
-            <li>Monitor quality checkpoints to maintain standards while reducing time</li>
-          </ul>
-        </div>
-      </div>
+        </>
+      )}
     </>
+  );
+};
+
+/** Live staff leaderboard (analytics API) — not mock prep times (K2). */
+const KitchenStaffLeaderboard = ({
+  rankings,
+  boardLoading,
+  boardError,
+}: {
+  rankings: Array<{
+    staffId?: string;
+    staffName: string;
+    ordersProcessed: number;
+    salesGenerated?: number;
+    performanceLevel?: string;
+  }>;
+  boardLoading: boolean;
+  boardError: boolean;
+}) => {
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  const formatCurrency = (v: number) => formatMajorAmount(v, currency, locale);
+
+  return (
+    <div style={cardStyle}>
+      <h4 style={sectionTitleStyle}>Staff leaderboard (today)</h4>
+      <p style={{ fontSize: 11, color: t.gray, margin: '4px 0 0' }}>
+        Source: staff-leaderboard analytics API (completed orders)
+      </p>
+      {boardLoading && <p style={{ color: t.gray, fontSize: 13 }}>Loading…</p>}
+      {boardError && <p style={{ color: t.red, fontSize: 13 }}>Could not load leaderboard.</p>}
+      {!boardLoading && !boardError && rankings.length === 0 && (
+        <ManagerEmptyState
+          compact
+          title="No staff rankings for today yet"
+          description="Rankings appear after completed orders are attributed to staff."
+        />
+      )}
+      {rankings.length > 0 && (
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
+          <thead>
+            <tr>
+              <th style={tableHeaderStyle}>Staff</th>
+              <th style={{ ...tableHeaderStyle, textAlign: 'center' }}>Orders</th>
+              <th style={{ ...tableHeaderStyle, textAlign: 'right' }}>Sales</th>
+              <th style={{ ...tableHeaderStyle, textAlign: 'center' }}>Level</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rankings.slice(0, 10).map((s) => (
+              <tr key={s.staffId || s.staffName}>
+                <td style={tableCellStyle}>{s.staffName}</td>
+                <td style={{ ...tableCellStyle, textAlign: 'center' }}>{s.ordersProcessed}</td>
+                <td style={{ ...tableCellStyle, textAlign: 'right' }}>
+                  {formatCurrency(s.salesGenerated ?? 0)}
+                </td>
+                <td style={{ ...tableCellStyle, textAlign: 'center' }}>
+                  <span style={chipStyle(t.green)}>{s.performanceLevel || '—'}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
   );
 };
 
@@ -193,19 +231,40 @@ const KitchenTab = ({ storeId: _storeId }: { storeId: string }) => {
 const ProductsTab = ({ storeId }: { storeId: string }) => {
   const [period, setPeriod] = useState('TODAY');
   const [sortBy, setSortBy] = useState('QUANTITY');
+  const { data: storeSummary } = useGetStoreOrderSummaryQuery({ storeId, days: 30 }, { skip: !storeId });
+  const derived = derivedFromSummary(storeSummary);
 
-  const { data, isLoading } = useGetTopProductsQuery({ storeId, period, sortBy }, { skip: !storeId });
+  const { data, isLoading, isError, refetch } = useGetTopProductsQuery(
+    { storeId, period, sortBy },
+    { skip: !storeId },
+  );
 
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const formatCurrency = (v: number) => formatMajorAmount(v , currency, locale);
+  const formatCurrency = (v: number) => formatMajorAmount(v, currency, locale);
 
-  if (isLoading) return <p style={{ color: t.gray, fontSize: 13 }}>Loading product analytics...</p>;
-  if (!data) return <p style={{ color: t.red, fontSize: 13 }}>Failed to load product analytics</p>;
+  const products = (data?.topProducts?.length ? data.topProducts : derived.topProducts);
+  if (isLoading && products.length === 0) return <ManagerLoadingBlock rows={4} label="Loading product analytics…" />;
+  if (isError && products.length === 0) {
+    return (
+      <ManagerErrorState
+        title="Failed to load product analytics"
+        onRetry={() => void refetch()}
+      />
+    );
+  }
+  if (products.length === 0) {
+    return (
+      <ManagerEmptyState
+        title="No product analytics"
+        description="Top products appear after sales for this period."
+      />
+    );
+  }
 
-  const topProduct = data.topProducts[0];
-  const totalRevenue = data.topProducts.reduce((sum, p) => sum + p.revenue, 0);
-  const totalQuantity = data.topProducts.reduce((sum, p) => sum + p.quantitySold, 0);
+  const topProduct = products[0];
+  const totalRevenue = products.reduce((sum, p) => sum + p.revenue, 0);
+  const totalQuantity = products.reduce((sum, p) => sum + p.quantitySold, 0);
 
   return (
     <>
@@ -233,7 +292,7 @@ const ProductsTab = ({ storeId }: { storeId: string }) => {
         <div style={miniStat}>
           <p style={statLabel}>Total Revenue (Top 20)</p>
           <p style={statValue(t.green)}>{formatCurrency(totalRevenue)}</p>
-          <p style={{ fontSize: 12, color: t.gray, margin: '2px 0 0 0' }}>From {data.topProducts.length} products</p>
+          <p style={{ fontSize: 12, color: t.gray, margin: '2px 0 0 0' }}>From {products.length} products</p>
         </div>
         <div style={miniStat}>
           <p style={statLabel}>Total Items Sold (Top 20)</p>
@@ -257,7 +316,7 @@ const ProductsTab = ({ storeId }: { storeId: string }) => {
               <th style={{ ...tableHeaderStyle, textAlign: 'center' }}>Trend</th>
             </tr></thead>
             <tbody>
-              {data.topProducts.map(product => (
+              {products.map(product => (
                 <tr key={product.itemId} style={{ background: product.rank <= 3 ? t.orangeLight : 'transparent' }}>
                   <td style={{ ...tableCellStyle, fontWeight: product.rank <= 3 ? 700 : 400, color: product.rank <= 3 ? t.orange : t.black }}>{product.rank}</td>
                   <td style={tableCellStyle}>
@@ -280,7 +339,7 @@ const ProductsTab = ({ storeId }: { storeId: string }) => {
             </tbody>
           </table>
         </div>
-        {data.topProducts.length === 0 && (
+        {products.length === 0 && (
           <p style={{ textAlign: 'center', color: t.grayMuted, fontSize: 14, padding: 24 }}>No product sales data available for this period</p>
         )}
       </div>
@@ -314,7 +373,12 @@ const ReportsTab = ({ storeId }: { storeId: string }) => {
 // EQUIPMENT TAB
 // ============================================================
 const EquipmentTab = ({ storeId, userId }: { storeId: string; userId: string }) => {
-  const { data: equipment = [], isLoading } = useGetEquipmentByStoreQuery(storeId, { pollingInterval: 30000 });
+  const {
+    data: equipment = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useGetEquipmentByStoreQuery(storeId, { pollingInterval: 30000, skip: !storeId });
   const [createEquipment] = useCreateEquipmentMutation();
   const [updateStatus] = useUpdateEquipmentStatusMutation();
   const [togglePower] = useToggleEquipmentPowerMutation();
@@ -359,7 +423,15 @@ const EquipmentTab = ({ storeId, userId }: { storeId: string; userId: string }) 
   const brokenCount = equipment.filter(e => e.status === 'BROKEN').length;
   const maintenanceNeeded = equipment.filter(e => e.nextMaintenanceDate && new Date(e.nextMaintenanceDate) < new Date()).length;
 
-  if (isLoading) return <p style={{ color: t.gray, fontSize: 13 }}>Loading equipment...</p>;
+  if (isLoading) return <ManagerLoadingBlock rows={3} label="Loading equipment…" />;
+  if (isError) {
+    return (
+      <ManagerErrorState
+        title="Failed to load equipment"
+        onRetry={() => void refetch()}
+      />
+    );
+  }
 
   return (
     <>
@@ -368,15 +440,11 @@ const EquipmentTab = ({ storeId, userId }: { storeId: string; userId: string }) 
         <button onClick={() => { setFormData({ equipmentName: '', type: 'OVEN', status: 'AVAILABLE', temperature: 0, isOn: false }); setCreateDialog(true); }} style={btn(t.orange)}>+ Add Equipment</button>
       </div>
 
-      {/* Alerts */}
-      {brokenCount > 0 && <div style={alertBox(t.red)}>{brokenCount} equipment(s) marked as BROKEN</div>}
-      {maintenanceNeeded > 0 && <div style={alertBox(t.yellow)}>{maintenanceNeeded} equipment(s) need maintenance</div>}
-
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 24 }}>
         <div style={miniStat}><p style={statLabel}>Available</p><p style={statValue(t.green)}>{equipment.filter(e => e.status === 'AVAILABLE').length}</p></div>
         <div style={miniStat}><p style={statLabel}>In Use</p><p style={statValue(t.blue)}>{equipment.filter(e => e.status === 'IN_USE').length}</p></div>
-        <div style={miniStat}><p style={statLabel}>Maintenance</p><p style={statValue(t.yellow)}>{equipment.filter(e => e.status === 'MAINTENANCE').length}</p></div>
+        <div style={miniStat}><p style={statLabel}>Maintenance</p><p style={statValue(t.yellow)}>{equipment.filter(e => e.status === 'MAINTENANCE').length + maintenanceNeeded}</p></div>
         <div style={miniStat}><p style={statLabel}>Broken</p><p style={statValue(t.red)}>{equipment.filter(e => e.status === 'BROKEN').length}</p></div>
       </div>
 
@@ -393,7 +461,7 @@ const EquipmentTab = ({ storeId, userId }: { storeId: string; userId: string }) 
             <div key={item.id} style={{ ...cardStyle, display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <div style={{ fontSize: 15, fontWeight: 600, color: t.black }}>{item.equipmentName}</div>
-                <span style={statusBadge(getStatusColor(item.status))}>{item.status.replace('_', ' ')}</span>
+                <span style={statusBadge(item.status === 'MAINTENANCE' ? 'PREPARING' : item.status === 'BROKEN' ? 'CANCELLED' : item.status === 'IN_USE' ? 'READY' : 'COMPLETED')}>{item.status.replace('_', ' ')}</span>
               </div>
               <div style={{ fontSize: 12, color: t.grayMuted, marginBottom: 12 }}>{getTypeLabel(item.type)}</div>
 
@@ -538,27 +606,32 @@ const AnalyticsSection: React.FC<Props> = ({ storeId, activeTab, onTabChange }) 
   const currentTab = activeTab || tabs[0].id;
 
   return (
-    <div>
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, flexWrap: 'wrap' }}>
-        {tabs.map(tab => (
-          <div key={tab.id} onClick={() => onTabChange(tab.id)} style={tabStyle(currentTab === tab.id)}>
-            {tab.label}
-          </div>
-        ))}
-      </div>
-
-      {/* Tab Content */}
+    <ManagerPageFrame
+      title="Analytics & Reports"
+      subtitle="Kitchen queue, products, reports, equipment, and P&L"
+      storeId={storeId || undefined}
+      empty={!storeId}
+      emptyTitle="Select a store"
+      emptyDescription="Choose a store from the header to load analytics."
+      tabs={
+        <ManagerTabBar
+          tabs={tabs}
+          activeTab={currentTab}
+          onChange={onTabChange}
+          ariaLabel="Analytics section tabs"
+        />
+      }
+    >
       {currentTab === 'kitchen' && <KitchenTab storeId={storeId} />}
       {currentTab === 'products' && <ProductsTab storeId={storeId} />}
       {currentTab === 'reports' && <ReportsTab storeId={storeId} />}
       {currentTab === 'equipment' && <EquipmentTab storeId={storeId} userId="" />}
       {currentTab === 'platform-pnl' && (
-        <React.Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: t.gray }}>Loading...</div>}>
+        <React.Suspense fallback={<ManagerLoadingBlock rows={3} label="Loading platform P&L…" />}>
           <PlatformPnLPage />
         </React.Suspense>
       )}
-    </div>
+    </ManagerPageFrame>
   );
 };
 

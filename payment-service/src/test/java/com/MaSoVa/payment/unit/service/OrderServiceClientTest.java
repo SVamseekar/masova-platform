@@ -72,10 +72,12 @@ class OrderServiceClientTest {
                     httpEntityCaptor.capture(),
                     eq(String.class));
 
-            UpdateOrderPaymentRequest capturedBody = httpEntityCaptor.getValue().getBody();
+            HttpEntity<UpdateOrderPaymentRequest> captured = httpEntityCaptor.getValue();
+            UpdateOrderPaymentRequest capturedBody = captured.getBody();
             assertThat(capturedBody).isNotNull();
             assertThat(capturedBody.getStatus()).isEqualTo("PAID");
             assertThat(capturedBody.getTransactionId()).isEqualTo("txn-001");
+            assertThat(captured.getHeaders().getFirst("X-Internal-Service")).isEqualTo("payment-service");
         }
 
         @Test

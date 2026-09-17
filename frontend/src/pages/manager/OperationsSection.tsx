@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react';
-import { t, cardStyle, tabStyle, tableHeaderStyle, tableCellStyle, sectionTitleStyle, statusBadge, selectStyle } from './manager-tokens';
+import React, { useState, useMemo, useEffect } from 'react';
+import { t, cardStyle, tableHeaderStyle, tableCellStyle, sectionTitleStyle, statusBadge, selectStyle } from './manager-tokens';
+import { ManagerPageFrame, ManagerTabBar } from './components';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
@@ -34,6 +35,7 @@ import {
 } from '../../store/api/kioskApi';
 import type { CreateKioskResponse } from '../../store/api/kioskApi';
 import { ManagerDriverTrackingMap } from '../../components/delivery/ManagerDriverTrackingMap';
+import { recipeDefaultsFor } from './recipeCatalog';
 
 interface Props { storeId: string; activeTab: string; onTabChange: (tab: string) => void; }
 
@@ -46,7 +48,7 @@ const tabs = [
 
 const miniStat: React.CSSProperties = { ...cardStyle, padding: 14, textAlign: 'center' as const };
 const statLabel: React.CSSProperties = { fontSize: 11, color: t.gray, margin: 0, textTransform: 'uppercase' as const };
-const statValue = (c?: string): React.CSSProperties => ({ fontSize: 22, fontWeight: 700, color: c || t.black, margin: '4px 0 0 0' });
+const statValue = (c?: string): React.CSSProperties => ({ fontSize: 15, fontWeight: 700, color: c || t.black, margin: '4px 0 0 0', overflowWrap: 'anywhere', fontVariantNumeric: 'tabular-nums', lineHeight: 1.2 });
 const btn = (primary = false): React.CSSProperties => ({
   padding: '8px 16px', borderRadius: t.radius.sm, border: primary ? 'none' : `1px solid ${t.grayLight}`,
   background: primary ? t.orange : t.white, color: primary ? t.white : t.black,
@@ -76,12 +78,29 @@ const RecipesTab = ({ storeId }: { storeId: string }) => {
   const [search, setSearch] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  const filtered = menuItems.filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = menuItems.filter(i => (i.name||'').toLowerCase().includes(search.trim().toLowerCase()) || !search.trim());
+
+  useEffect(() => {
+    if (!selectedItem && filtered.length > 0) {
+      const first = filtered[0];
+      const fallback = recipeDefaultsFor(first.name);
+      setSelectedItem(first);
+      setEditingIngredients((first.ingredients && first.ingredients.length > 0) ? first.ingredients : (fallback?.ingredients || []));
+      setEditingInstructions((first.preparationInstructions && first.preparationInstructions.length > 0) ? first.preparationInstructions : (fallback?.steps || []));
+    }
+  }, [filtered, selectedItem]);
 
   const handleSelect = (item: MenuItem) => {
     setSelectedItem(item);
-    setEditingIngredients(item.ingredients || []);
-    setEditingInstructions(item.preparationInstructions || []);
+    const fallback = recipeDefaultsFor(item.name);
+    const ingredients = (item.ingredients && item.ingredients.length > 0)
+      ? item.ingredients
+      : (fallback?.ingredients || []);
+    const steps = (item.preparationInstructions && item.preparationInstructions.length > 0)
+      ? item.preparationInstructions
+      : (fallback?.steps || []);
+    setEditingIngredients(ingredients);
+    setEditingInstructions(steps);
     setSaveSuccess(false);
   };
 
@@ -155,7 +174,11 @@ const RecipesTab = ({ storeId }: { storeId: string }) => {
                 <button style={{ ...btn(), color: t.red, padding: '4px 10px', fontSize: 12 }} onClick={() => setEditingIngredients(editingIngredients.filter((_, idx) => idx !== i))}>Remove</button>
               </div>
             ))}
-            {editingIngredients.length === 0 && <p style={{ fontSize: 12, color: t.grayMuted, padding: '10px 0' }}>No ingredients added yet</p>}
+            {editingIngredients.length === 0 && (
+              <p style={{ fontSize: 12, color: t.grayMuted, padding: '10px 0' }}>
+                No ingredients yet — add quantities and prep notes, then save.
+              </p>
+            )}
 
             {/* Instructions */}
             <h4 style={{ ...sectionTitleStyle, marginTop: 20, marginBottom: 10 }}>Preparation Steps</h4>
@@ -188,12 +211,21 @@ const RecipesTab = ({ storeId }: { storeId: string }) => {
 };
 
 // ======================== DRIVERS TAB ========================
-const DriversTab = ({ storeId }: { storeId: string }) => {
+export const DriversTab = ({ storeId }: { storeId: string }) => {
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
   const fmt = (v: number) => formatMajorAmount(v , currency, locale);
   const { data: allDrivers = [], isLoading } = useGetAllDriversQuery(storeId, { skip: !storeId, pollingInterval: 10000 });
   const { data: stats } = useGetDriverStatsQuery(storeId, { skip: !storeId, pollingInterval: 15000 });
+  const derivedStats = {
+    totalDrivers: allDrivers.length,
+    onlineDrivers: allDrivers.filter((d) => d.isOnline).length,
+    availableDrivers: allDrivers.filter((d) => d.isOnline && !d.activeDeliveryId).length,
+    busyDrivers: allDrivers.filter((d) => d.isOnline && !!d.activeDeliveryId).length,
+    totalDeliveriesToday: stats?.totalDeliveriesToday ?? allDrivers.reduce((s, d) => s + (d.completedDeliveries || 0), 0),
+    averageDeliveryTime: stats?.averageDeliveryTime ?? 0,
+  };
+  const shownStats = stats && stats.totalDrivers > 0 ? stats : derivedStats;
   const [activateDriver] = useActivateDriverMutation();
   const [deactivateDriver] = useDeactivateDriverMutation();
 
@@ -210,7 +242,7 @@ const DriversTab = ({ storeId }: { storeId: string }) => {
 
   const filtered = useMemo(() => {
     let drivers = allDrivers;
-    if (search) drivers = drivers.filter(d => d.name.toLowerCase().includes(search.toLowerCase()) || d.email.toLowerCase().includes(search.toLowerCase()));
+    if (search.trim()) { const q = search.trim().toLowerCase(); drivers = drivers.filter(d => (d.name||'').toLowerCase().includes(q) || (d.email||'').toLowerCase().includes(q) || (d.phone||'').toLowerCase().includes(q)); }
     if (statusFilter === 'online') drivers = drivers.filter(d => d.isOnline && !d.activeDeliveryId);
     if (statusFilter === 'offline') drivers = drivers.filter(d => !d.isOnline);
     if (statusFilter === 'busy') drivers = drivers.filter(d => d.isOnline && !!d.activeDeliveryId);
@@ -229,16 +261,14 @@ const DriversTab = ({ storeId }: { storeId: string }) => {
   return (
     <>
       {/* Stats */}
-      {stats && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, marginBottom: 20 }}>
-          <div style={miniStat}><p style={statLabel}>Total</p><p style={statValue()}>{stats.totalDrivers}</p></div>
-          <div style={miniStat}><p style={statLabel}>Online</p><p style={statValue(t.green)}>{stats.onlineDrivers}</p></div>
-          <div style={miniStat}><p style={statLabel}>Available</p><p style={statValue(t.blue)}>{stats.availableDrivers}</p></div>
-          <div style={miniStat}><p style={statLabel}>Busy</p><p style={statValue(t.orange)}>{stats.busyDrivers}</p></div>
-          <div style={miniStat}><p style={statLabel}>Today</p><p style={statValue()}>{stats.totalDeliveriesToday}</p></div>
-          <div style={miniStat}><p style={statLabel}>Avg Time</p><p style={statValue()}>{stats.averageDeliveryTime}m</p></div>
-        </div>
-      )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: 12, marginBottom: 20 }}>
+        <div style={miniStat}><p style={statLabel}>Total</p><p style={statValue()}>{shownStats.totalDrivers}</p></div>
+        <div style={miniStat}><p style={statLabel}>Online</p><p style={statValue(t.green)}>{shownStats.onlineDrivers}</p></div>
+        <div style={miniStat}><p style={statLabel}>Available</p><p style={statValue(t.blue)}>{shownStats.availableDrivers}</p></div>
+        <div style={miniStat}><p style={statLabel}>Busy</p><p style={statValue(t.orange)}>{shownStats.busyDrivers}</p></div>
+        <div style={miniStat}><p style={statLabel}>Today</p><p style={statValue()}>{shownStats.totalDeliveriesToday}</p></div>
+        <div style={miniStat}><p style={statLabel}>Avg Time</p><p style={statValue()}>{shownStats.averageDeliveryTime}m</p></div>
+      </div>
 
       {/* Controls */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -443,75 +473,222 @@ const StoresTab = ({ storeId }: { storeId: string }) => {
 };
 
 // ======================== KIOSKS TAB ========================
+/**
+ * Store identity for kiosks MUST be storeCode (e.g. DOM001).
+ * Manager shell passes storeCode; create/list APIs key on the same value.
+ * Using Mongo store.id in the select made Create look broken (mismatched select value).
+ */
 const KiosksTab = ({ storeId }: { storeId: string }) => {
   const { user } = useAppSelector(state => state.auth);
-  const [selectedStoreId, setSelectedStoreId] = useState(storeId || user?.storeId || '');
+  const shellStoreCode = storeId || user?.storeId || '';
+  const [selectedStoreCode, setSelectedStoreCode] = useState(shellStoreCode);
   const [terminalId, setTerminalId] = useState('');
+  const [formError, setFormError] = useState('');
   const [showTokens, setShowTokens] = useState(false);
   const [tokens, setTokens] = useState<CreateKioskResponse | null>(null);
 
-  const { data: stores = [] } = useGetActiveStoresProtectedQuery();
-  const { data: kiosks = [], refetch } = useListKioskAccountsQuery(selectedStoreId, { skip: !selectedStoreId });
+  const { data: stores = [], isLoading: storesLoading, isError: storesError } = useGetActiveStoresProtectedQuery();
+  const {
+    data: kiosks = [],
+    isLoading: kiosksLoading,
+    isError: kiosksError,
+    refetch,
+  } = useListKioskAccountsQuery(selectedStoreCode, { skip: !selectedStoreCode });
   const [createKiosk, { isLoading: creating }] = useCreateKioskMutation();
   const [deactivateKiosk] = useDeactivateKioskMutation();
 
+  // Keep select in sync when shell store changes
+  useEffect(() => {
+    if (shellStoreCode) setSelectedStoreCode(shellStoreCode);
+  }, [shellStoreCode]);
+
+  const storeOptions = useMemo(() => {
+    return stores.map((s: Store) => ({
+      code: s.storeCode || s.id,
+      label: `${s.name} (${s.storeCode || s.id})`,
+    }));
+  }, [stores]);
+
+  const handleCreateDemo = async () => {
+    setFormError('');
+    const targets = storeOptions.length > 0
+      ? storeOptions.map(s => s.code)
+      : [selectedStoreCode, 'DOM001', 'DOM002', 'DOM003'].filter(Boolean);
+    const uniqueStores = Array.from(new Set(targets));
+    const terminals = ['POS-01', 'POS-02', 'KIOSK-01'];
+    const errors: string[] = [];
+    let created = 0;
+    for (const code of uniqueStores) {
+      for (const tid of terminals) {
+        try {
+          await createKiosk({ storeId: code, terminalId: tid }).unwrap();
+          created += 1;
+        } catch (e: unknown) {
+          const msg = getApiErrorMessage(e, '');
+          if (!/already exists/i.test(msg)) errors.push(`${code}/${tid}: ${msg}`);
+        }
+      }
+    }
+    await refetch();
+    if (created === 0 && errors.length > 0) setFormError(errors[0]);
+    else if (created === 0) setFormError('Demo kiosks already exist for these stores.');
+  };
+
   const handleCreate = async () => {
-    if (!selectedStoreId || !terminalId) { alert('Select a store and enter terminal ID'); return; }
+    setFormError('');
+    const tid = terminalId.trim();
+    if (!selectedStoreCode) {
+      setFormError('Select a store (use store code, e.g. DOM001).');
+      return;
+    }
+    if (!tid) {
+      setFormError('Enter a Terminal ID (e.g. POS-01).');
+      return;
+    }
     try {
-      const result = await createKiosk({ storeId: selectedStoreId, terminalId }).unwrap();
-      setTokens(result); setShowTokens(true); setTerminalId(''); refetch();
-    } catch (e: unknown) { alert('Failed: ' + getApiErrorMessage(e, 'Unknown error')); }
+      const result = await createKiosk({ storeId: selectedStoreCode, terminalId: tid }).unwrap();
+      setTokens(result);
+      setShowTokens(true);
+      setTerminalId('');
+      refetch();
+    } catch (e: unknown) {
+      setFormError(getApiErrorMessage(e, 'Failed to create kiosk'));
+    }
   };
 
   const handleDeactivate = async (id: string) => {
     if (!window.confirm('Deactivate this kiosk?')) return;
-    try { await deactivateKiosk(id).unwrap(); refetch(); } catch (e: unknown) { alert('Failed: ' + getApiErrorMessage(e, 'Unknown error')); }
+    try {
+      await deactivateKiosk(id).unwrap();
+      refetch();
+    } catch (e: unknown) {
+      setFormError(getApiErrorMessage(e, 'Failed to deactivate kiosk'));
+    }
   };
 
-  const copy = (text: string) => { navigator.clipboard.writeText(text); alert('Copied!'); };
+  const copy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      setFormError('Could not copy to clipboard');
+    }
+  };
 
   return (
     <>
-      {/* Create form */}
       <div style={{ ...cardStyle, padding: 16, marginBottom: 16 }}>
         <h4 style={{ ...sectionTitleStyle, marginBottom: 12 }}>Create Kiosk Account</h4>
+        <p style={{ fontSize: 12, color: t.gray, margin: '0 0 12px 0' }}>
+          Creates a long-lived POS terminal login for this store. Use the same store code as the manager shell (Berlin = DOM001).
+        </p>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div style={{ flex: 1, minWidth: 200 }}>
             <label style={{ fontSize: 11, color: t.gray, display: 'block', marginBottom: 4 }}>Store</label>
-            <select value={selectedStoreId} onChange={e => setSelectedStoreId(e.target.value)} style={{ ...selectStyle, width: '100%', padding: '8px 10px' }}>
-              <option value="">Select store...</option>
-              {stores.map((s: Store) => <option key={s.id} value={s.id}>{s.name} ({s.id.slice(-6)})</option>)}
+            <select
+              value={selectedStoreCode}
+              onChange={e => { setSelectedStoreCode(e.target.value); setFormError(''); }}
+              style={{ ...selectStyle, width: '100%', padding: '8px 10px' }}
+              disabled={storesLoading}
+            >
+              <option value="">{storesLoading ? 'Loading stores…' : 'Select store…'}</option>
+              {storeOptions.map(s => (
+                <option key={s.code} value={s.code}>{s.label}</option>
+              ))}
+              {/* Ensure shell code is selectable even if stores list is empty/stale */}
+              {shellStoreCode && !storeOptions.some(s => s.code === shellStoreCode) && (
+                <option value={shellStoreCode}>{shellStoreCode} (current)</option>
+              )}
             </select>
+            {storesError && (
+              <p style={{ fontSize: 11, color: t.red, margin: '4px 0 0' }}>Could not load stores list — using shell store code if set.</p>
+            )}
           </div>
           <div style={{ flex: 1, minWidth: 200 }}>
             <label style={{ fontSize: 11, color: t.gray, display: 'block', marginBottom: 4 }}>Terminal ID</label>
-            <input value={terminalId} onChange={e => setTerminalId(e.target.value)} placeholder="POS-01" style={inputStyle} />
+            <input
+              value={terminalId}
+              onChange={e => { setTerminalId(e.target.value); setFormError(''); }}
+              placeholder="POS-01"
+              style={inputStyle}
+              onKeyDown={e => { if (e.key === 'Enter') void handleCreate(); }}
+            />
           </div>
-          <button style={btn(true)} onClick={handleCreate} disabled={creating || !selectedStoreId || !terminalId}>{creating ? 'Creating...' : 'Create'}</button>
+          <button
+            type="button"
+            style={{
+              ...btn(true),
+              opacity: creating ? 0.7 : 1,
+              cursor: creating ? 'wait' : 'pointer',
+            }}
+            onClick={() => void handleCreate()}
+            disabled={creating}
+          >
+            {creating ? 'Creating…' : 'Create'}
+          </button>
+          <button
+            type="button"
+            style={btn()}
+            onClick={() => void handleCreateDemo()}
+            disabled={creating}
+          >
+            Create demo kiosks (3 stores)
+          </button>
         </div>
+        {formError && (
+          <div style={{ marginTop: 12, padding: '10px 12px', background: t.redLight, color: t.red, borderRadius: t.radius.sm, fontSize: 13 }}>
+            {formError}
+          </div>
+        )}
       </div>
 
-      {/* Kiosk list */}
-      {selectedStoreId && (
+      {selectedStoreCode ? (
         <div style={cardStyle}>
-          <h4 style={{ ...sectionTitleStyle, padding: '16px 16px 0', marginBottom: 0 }}>Existing Kiosks</h4>
-          {kiosks.length === 0 ? (
-            <p style={{ padding: 20, textAlign: 'center', color: t.grayMuted, fontSize: 13 }}>No kiosks for this store</p>
-          ) : (
+          <h4 style={{ ...sectionTitleStyle, padding: '16px 16px 0', marginBottom: 0 }}>
+            Existing Kiosks — {selectedStoreCode}
+          </h4>
+          {kiosksLoading && (
+            <p style={{ padding: 20, textAlign: 'center', color: t.grayMuted, fontSize: 13 }}>Loading kiosks…</p>
+          )}
+          {kiosksError && (
+            <p style={{ padding: 20, textAlign: 'center', color: t.red, fontSize: 13 }}>
+              Failed to load kiosks.{' '}
+              <button type="button" style={{ ...btn(), fontSize: 12 }} onClick={() => void refetch()}>Retry</button>
+            </p>
+          )}
+          {!kiosksLoading && !kiosksError && kiosks.length === 0 && (
+            <p style={{ padding: 20, textAlign: 'center', color: t.grayMuted, fontSize: 13 }}>No kiosks for this store yet.</p>
+          )}
+          {!kiosksLoading && !kiosksError && kiosks.length > 0 && (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead><tr>{['Terminal ID', 'Status', 'Last Access', 'Actions'].map(h => <th key={h} style={tableHeaderStyle}>{h}</th>)}</tr></thead>
+              <thead>
+                <tr>
+                  {['Terminal ID', 'Name', 'Status', 'Last access', 'Actions'].map(h => (
+                    <th key={h} style={tableHeaderStyle}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
               <tbody>
                 {kiosks.map((k: KioskAccount) => (
                   <tr key={k.id}>
                     <td style={{ ...tableCellStyle, fontWeight: 600 }}>{k.terminalId || 'N/A'}</td>
+                    <td style={tableCellStyle}>{k.name}</td>
                     <td style={tableCellStyle}>
                       <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: k.isActive ? t.green : t.red, color: t.white }}>
                         {k.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td style={tableCellStyle}>{k.lastKioskAccess ? new Date(k.lastKioskAccess).toLocaleString() : 'Never'}</td>
                     <td style={tableCellStyle}>
-                      <button style={{ ...btn(), color: t.red, fontSize: 12, padding: '4px 10px' }} onClick={() => handleDeactivate(k.id)} disabled={!k.isActive}>Deactivate</button>
+                      {k.lastKioskAccess ? new Date(k.lastKioskAccess).toLocaleString() : 'Never'}
+                    </td>
+                    <td style={tableCellStyle}>
+                      <button
+                        type="button"
+                        style={{ ...btn(), color: t.red, fontSize: 12, padding: '4px 10px' }}
+                        onClick={() => void handleDeactivate(k.id)}
+                        disabled={!k.isActive}
+                      >
+                        Deactivate
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -519,35 +696,46 @@ const KiosksTab = ({ storeId }: { storeId: string }) => {
             </table>
           )}
         </div>
+      ) : (
+        <p style={{ color: t.grayMuted, fontSize: 13 }}>Select a store to list kiosks.</p>
       )}
 
-      {/* Token modal */}
       {showTokens && tokens && (
         <div style={modalOverlay} onClick={() => setShowTokens(false)}>
           <div style={modalBox} onClick={e => e.stopPropagation()}>
-            <h3 style={{ ...sectionTitleStyle, fontSize: 18, marginBottom: 12 }}>Kiosk Created</h3>
-            <p style={{ fontSize: 12, color: t.gray, marginBottom: 16 }}>Copy these tokens now. They won't be shown again.</p>
+            <h3 style={{ ...sectionTitleStyle, fontSize: 18, marginBottom: 12 }}>Kiosk created</h3>
+            <p style={{ fontSize: 12, color: t.gray, marginBottom: 16 }}>
+              Copy these tokens now. They will not be shown again.
+            </p>
 
             <div style={{ marginBottom: 12 }}>
-              <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Setup URL (recommended):</p>
+              <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Setup URL (recommended)</p>
               <div style={{ background: t.bgMain, padding: 10, borderRadius: t.radius.sm, fontSize: 12, wordBreak: 'break-all', marginBottom: 4 }}>
                 {`${window.location.origin}/kiosk-setup?kiosk=true&setup=true&token=${tokens.accessToken}&refreshToken=${tokens.refreshToken}&terminalId=${tokens.terminalId}`}
               </div>
-              <button style={{ ...btn(), fontSize: 12 }} onClick={() => copy(`${window.location.origin}/kiosk-setup?kiosk=true&setup=true&token=${tokens.accessToken}&refreshToken=${tokens.refreshToken}&terminalId=${tokens.terminalId}`)}>Copy URL</button>
+              <button
+                type="button"
+                style={{ ...btn(), fontSize: 12 }}
+                onClick={() => void copy(`${window.location.origin}/kiosk-setup?kiosk=true&setup=true&token=${tokens.accessToken}&refreshToken=${tokens.refreshToken}&terminalId=${tokens.terminalId}`)}
+              >
+                Copy URL
+              </button>
             </div>
 
-            {[['Terminal ID', tokens.terminalId], ['Access Token', tokens.accessToken], ['Refresh Token', tokens.refreshToken]].map(([label, val]) => (
+            {([['Terminal ID', tokens.terminalId], ['Access Token', tokens.accessToken], ['Refresh Token', tokens.refreshToken]] as const).map(([label, val]) => (
               <div key={label} style={{ marginBottom: 8 }}>
-                <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{label}:</p>
+                <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{label}</p>
                 <div style={{ background: t.bgMain, padding: 8, borderRadius: t.radius.sm, fontSize: 11, wordBreak: 'break-all', maxHeight: 60, overflow: 'auto' }}>{val}</div>
-                <button style={{ ...btn(), fontSize: 11, marginTop: 4 }} onClick={() => copy(val)}>Copy</button>
+                <button type="button" style={{ ...btn(), fontSize: 11, marginTop: 4 }} onClick={() => void copy(val)}>Copy</button>
               </div>
             ))}
 
             <div style={{ background: t.orangeLight, border: `1px solid ${t.orange}`, borderRadius: t.radius.sm, padding: 10, fontSize: 12, color: t.orangeDark, marginTop: 12 }}>
               Expires in: {tokens.expiresIn}
             </div>
-            <div style={{ textAlign: 'right', marginTop: 12 }}><button style={btn(true)} onClick={() => setShowTokens(false)}>Close</button></div>
+            <div style={{ textAlign: 'right', marginTop: 12 }}>
+              <button type="button" style={btn(true)} onClick={() => setShowTokens(false)}>Close</button>
+            </div>
           </div>
         </div>
       )}
@@ -560,18 +748,27 @@ const OperationsSection: React.FC<Props> = ({ storeId, activeTab, onTabChange })
   const currentTab = activeTab || 'recipes';
 
   return (
-    <div>
-      <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
-        {tabs.map(tab => (
-          <button key={tab.id} style={tabStyle(currentTab === tab.id)} onClick={() => onTabChange(tab.id)}>{tab.label}</button>
-        ))}
-      </div>
-
+    <ManagerPageFrame
+      title="Operations"
+      subtitle="Recipes, drivers, stores, and kiosks"
+      storeId={storeId || undefined}
+      empty={!storeId}
+      emptyTitle="Select a store"
+      emptyDescription="Choose a store from the header to manage operations."
+      tabs={
+        <ManagerTabBar
+          tabs={tabs}
+          activeTab={currentTab}
+          onChange={onTabChange}
+          ariaLabel="Operations section tabs"
+        />
+      }
+    >
       {currentTab === 'recipes' && <RecipesTab storeId={storeId} />}
       {currentTab === 'drivers' && <DriversTab storeId={storeId} />}
       {currentTab === 'stores' && <StoresTab storeId={storeId} />}
       {currentTab === 'kiosks' && <KiosksTab storeId={storeId} />}
-    </div>
+    </ManagerPageFrame>
   );
 };
 

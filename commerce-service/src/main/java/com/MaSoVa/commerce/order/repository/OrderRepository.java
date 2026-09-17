@@ -2,6 +2,8 @@ package com.MaSoVa.commerce.order.repository;
 
 import com.MaSoVa.commerce.order.entity.Order;
 import com.MaSoVa.commerce.order.entity.Order.OrderStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -20,6 +22,12 @@ public interface OrderRepository extends MongoRepository<Order, String> {
     List<Order> findByStoreIdAndStatus(String storeId, OrderStatus status);
 
     List<Order> findByStoreIdOrderByCreatedAtDesc(String storeId);
+
+    Page<Order> findByStoreIdOrderByCreatedAtDesc(String storeId, Pageable pageable);
+
+    Page<Order> findByStoreIdAndStatus(String storeId, OrderStatus status, Pageable pageable);
+
+    Page<Order> findByStoreIdAndCreatedAtBetween(String storeId, LocalDateTime start, LocalDateTime end, Pageable pageable);
 
     List<Order> findByCustomerId(String customerId);
 
@@ -45,7 +53,7 @@ public interface OrderRepository extends MongoRepository<Order, String> {
     @Query("{ 'storeId': ?0, 'createdByStaffId': ?1, 'createdAt': { $gte: ?2, $lte: ?3 } }")
     List<Order> findByStoreIdAndCreatedByAndCreatedAtBetween(String storeId, String createdBy, LocalDateTime start, LocalDateTime end);
 
-    @Query("{ 'storeId': ?0, 'orderType': 'DELIVERY', 'status': { $in: ['PREPARING', 'OVEN', 'BAKED', 'DISPATCHED'] } }")
+    @Query("{ 'storeId': ?0, 'orderType': 'DELIVERY', 'status': { $in: ['RECEIVED', 'PREPARING', 'OVEN', 'BAKED', 'READY', 'DISPATCHED', 'OUT_FOR_DELIVERY'] } }")
     List<Order> findActiveDeliveriesByStoreId(String storeId);
 
     // Kitchen staff performance queries

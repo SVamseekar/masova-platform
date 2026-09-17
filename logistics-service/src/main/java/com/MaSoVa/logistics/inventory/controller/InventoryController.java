@@ -48,6 +48,7 @@ public class InventoryController {
      *           /expiring-soon, /alerts/low-stock
      */
     @GetMapping
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "List inventory (query: category, search, lowStock, outOfStock, expiringSoon)")
     public ResponseEntity<List<InventoryItem>> getInventory(
             @RequestParam(required = false) String category,
@@ -83,6 +84,7 @@ public class InventoryController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "Get inventory item by ID")
     public ResponseEntity<InventoryItem> getItem(@PathVariable String id) {
         return ResponseEntity.ok(inventoryService.getInventoryItemById(id));

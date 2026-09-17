@@ -219,11 +219,11 @@ export const orderApi = createApi({
       invalidatesTags: [{ type: 'Orders', id: 'LIST' }, 'KitchenQueue', 'Customer'],
     }),
 
-    // Update order status
+    // Update order status — canonical POST /api/orders/{id}/status (not PATCH)
     updateOrderStatus: builder.mutation<Order, UpdateOrderStatusRequest>({
       query: ({ orderId, status }) => ({
         url: `/orders/${orderId}/status`,
-        method: 'PATCH',
+        method: 'POST',
         body: { status },
       }),
       invalidatesTags: (result, error, { orderId }) => [
@@ -266,22 +266,81 @@ export const orderApi = createApi({
       providesTags: (result) => result ? [{ type: 'Order', id: result.id }] : [],
     }),
 
-    // Get store orders
-    // Takes storeId as parameter to ensure refetch when store changes
-    // Note: storeId is passed via headers (X-Selected-Store-Id), not query params
+    // Get store orders — MUST pass storeId as query param.
+    // GET /orders/store is wrong (backend treats "store" as an order id → 400 empty list).
     getStoreOrders: builder.query<Order[], string | undefined>({
-      query: (_storeId) => '/orders/store',
+      query: (storeId) => {
+        const params = new URLSearchParams();
+        params.set('page', '0');
+        params.set('size', '50');
+        if (storeId) params.set('storeId', storeId);
+        return `/orders?${params.toString()}`;
+      },
+      transformResponse: (raw: unknown): Order[] => {
+        if (Array.isArray(raw)) return raw as Order[];
+        if (raw && typeof raw === 'object') {
+          const o = raw as Record<string, unknown>;
+          if (Array.isArray(o.content)) return o.content as Order[];
+          if (Array.isArray(o.orders)) return o.orders as Order[];
+          if (Array.isArray(o.data)) return o.data as Order[];
+        }
+        return [];
+      },
       providesTags: (result, error, storeId) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Order' as const, id })), { type: 'Orders', id: storeId || 'DEFAULT' }]
           : [{ type: 'Orders', id: storeId || 'DEFAULT' }],
     }),
 
-    // Move order to next stage
+    getStoreOrderSummary: builder.query<
+      import('../../pages/manager/storeOrderMetrics').StoreOrderSummary,
+      { storeId?: string; days?: number }
+    >({
+      query: ({ storeId, days = 30 }) => {
+        const params = new URLSearchParams();
+        params.set('type', 'store-summary');
+        params.set('days', String(days));
+        if (storeId) params.set('storeId', storeId);
+        return `/orders/analytics?${params.toString()}`;
+      },
+      providesTags: (result, error, arg) => [{ type: 'Orders', id: `SUMMARY-${arg.storeId || 'DEFAULT'}` }],
+    }),
+
+    /** Date-bounded store orders for short live lists (not KPIs). Pass page/size to avoid dumping the window. */
+    getRecentStoreOrders: builder.query<Order[], { storeId?: string; days?: number; page?: number; size?: number }>({
+      query: ({ storeId, days = 30, page, size }) => {
+        const end = new Date();
+        const start = new Date(end.getTime() - days * 86400000);
+        const iso = (d: Date) => d.toISOString().slice(0, 19);
+        const params = new URLSearchParams();
+        if (storeId) params.set('storeId', storeId);
+        params.set('startDate', iso(start));
+        params.set('endDate', iso(end));
+        if (page != null) params.set('page', String(page));
+        if (size != null) params.set('size', String(size));
+        return `/orders?${params.toString()}`;
+      },
+      transformResponse: (raw: unknown): Order[] => {
+        if (Array.isArray(raw)) return raw as Order[];
+        if (raw && typeof raw === 'object') {
+          const o = raw as Record<string, unknown>;
+          if (Array.isArray(o.content)) return o.content as Order[];
+          if (Array.isArray(o.orders)) return o.orders as Order[];
+          if (Array.isArray(o.data)) return o.data as Order[];
+        }
+        return [];
+      },
+      providesTags: (result, error, arg) =>
+        result
+          ? [...result.map(({ id }) => ({ type: 'Order' as const, id })), { type: 'Orders', id: arg.storeId || 'RECENT' }]
+          : [{ type: 'Orders', id: arg.storeId || 'RECENT' }],
+    }),
+
+    // Move order to next stage — canonical POST /api/orders/{id}/next-stage
     moveToNextStage: builder.mutation<Order, string>({
       query: (orderId) => ({
         url: `/orders/${orderId}/next-stage`,
-        method: 'PATCH',
+        method: 'POST',
       }),
       invalidatesTags: (result, error, orderId) => [
         { type: 'Order', id: orderId },
@@ -389,7 +448,8 @@ export const orderApi = createApi({
     }),
 
     getOrdersWithFailedQualityChecks: builder.query<Order[], string | undefined>({
-      query: (_storeId) => `/orders/analytics?type=failed-quality`,
+      query: (storeId) =>
+        `/orders/analytics?type=failed-quality${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'Orders', id: storeId || 'DEFAULT' }],
     }),
 
@@ -484,7 +544,18 @@ export const orderApi = createApi({
     }),
 
     getActiveDeliveriesCount: builder.query<{ count: number }, string | undefined>({
-      query: (_storeId) => `/orders/analytics?type=active-deliveries`,
+      query: (storeId) =>
+        `/orders/analytics?type=active-deliveries${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
+      transformResponse: (raw: unknown): { count: number } => {
+        if (typeof raw === 'number') return { count: raw };
+        if (raw && typeof raw === 'object') {
+          const rec = raw as Record<string, unknown>;
+          if (typeof rec.count === 'number') return { count: rec.count };
+          if (typeof rec.data === 'number') return { count: rec.data };
+        }
+        const n = Number(raw);
+        return { count: Number.isFinite(n) ? n : 0 };
+      },
       providesTags: ['Orders'],
     }),
 
@@ -537,6 +608,8 @@ export const {
   useGetCustomerOrdersQuery,
   useGetOrderByNumberQuery,
   useGetStoreOrdersQuery,
+  useGetRecentStoreOrdersQuery,
+  useGetStoreOrderSummaryQuery,
   useMoveToNextStageMutation,
   useAssignDriverMutation,
   useUpdatePaymentStatusMutation,

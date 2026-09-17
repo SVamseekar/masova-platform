@@ -56,6 +56,58 @@ class DeliveryControllerTest extends BaseServiceTest {
     }
 
     @Nested
+    @DisplayName("GET /api/delivery")
+    class ListDeliveries {
+
+        @Test
+        @DisplayName("returns 200 with store list")
+        void returns200() throws Exception {
+            when(driverAcceptanceService.listDeliveriesForStore(eq("store-1"), isNull()))
+                .thenReturn(List.of(new DeliveryTracking()));
+
+            mockMvc.perform(get("/api/delivery")
+                    .param("storeId", "store-1")
+                    .header("X-User-Store-Id", "store-1")
+                    .header("X-User-Type", "MANAGER"))
+                .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("returns 400 when storeId cannot be resolved")
+        void returns400WithoutStore() throws Exception {
+            mockMvc.perform(get("/api/delivery")
+                    .header("X-User-Type", "MANAGER"))
+                .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/delivery/driver/active")
+    class DriverActive {
+
+        @Test
+        @DisplayName("returns 200 using X-User-Id when driverId omitted")
+        void returns200FromHeader() throws Exception {
+            when(driverAcceptanceService.getActiveDeliveriesForDriver("driver-1"))
+                .thenReturn(List.of());
+
+            mockMvc.perform(get("/api/delivery/driver/active")
+                    .header("X-User-Id", "driver-1")
+                    .header("X-User-Type", "DRIVER")
+                    .header("X-User-Store-Id", "store-1"))
+                .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("returns 400 when driver id missing")
+        void returns400WithoutDriver() throws Exception {
+            mockMvc.perform(get("/api/delivery/driver/active")
+                    .header("X-User-Type", "DRIVER"))
+                .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Nested
     @DisplayName("POST /api/delivery/dispatch")
     class Dispatch {
 

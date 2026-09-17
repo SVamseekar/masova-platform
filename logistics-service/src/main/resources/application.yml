@@ -29,6 +29,25 @@ spring:
     username: ${RABBITMQ_USERNAME:masova}
     password: ${RABBITMQ_PASSWORD:masova_secret}
     virtual-host: ${RABBITMQ_VHOST:/}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    cache:
+      channel:
+        size: ${RABBITMQ_CHANNEL_CACHE:50}
+    listener:
+      simple:
+        acknowledge-mode: auto
+        prefetch: ${RABBITMQ_PREFETCH:50}
+        concurrency: ${RABBITMQ_CONCURRENCY:4}
+        max-concurrency: ${RABBITMQ_MAX_CONCURRENCY:16}
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          initial-interval: 1000ms
+          max-attempts: 3
+          multiplier: 2.0
 
   # PostgreSQL — dual-write for suppliers/inventory (Phase 2)
   datasource:

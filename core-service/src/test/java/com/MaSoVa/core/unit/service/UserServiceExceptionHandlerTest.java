@@ -7,8 +7,10 @@ import com.MaSoVa.core.user.exception.UserServiceExceptionHandler.ErrorResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -97,6 +99,24 @@ class UserServiceExceptionHandlerTest {
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
             assertThat(response.getBody()).isNotNull();
             assertThat(response.getBody().getMessage()).contains("Too late to start");
+        }
+    }
+
+    @Nested
+    @DisplayName("handleNoResourceFound")
+    class HandleNoResourceFound {
+
+        @Test
+        @DisplayName("returns 404 not 500 for a genuinely missing route")
+        void noResourceFoundException_returnsNotFound_notInternalServerError() {
+            NoResourceFoundException ex = new NoResourceFoundException(
+                    HttpMethod.GET, "api/test-data/create-default-store");
+
+            ResponseEntity<ErrorResponse> response = handler.handleNoResourceFound(ex);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().getStatus()).isEqualTo(404);
         }
     }
 

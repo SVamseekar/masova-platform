@@ -26,6 +26,8 @@ public class UserResponse {
     private String activeDeliveryId; // Current delivery ID
     private boolean isOnline; // Derived from working session status
     private String generatedPIN; // 5-digit PIN generated on employee creation (shown only once)
+    /** Kiosk POS terminal id (e.g. POS-01); null for non-kiosk users */
+    private String terminalId;
 
     public UserResponse() {}
     
@@ -82,4 +84,7 @@ public class UserResponse {
 
     public String getGeneratedPIN() { return generatedPIN; }
     public void setGeneratedPIN(String generatedPIN) { this.generatedPIN = generatedPIN; }
+
+    public String getTerminalId() { return terminalId; }
+    public void setTerminalId(String terminalId) { this.terminalId = terminalId; }
 }

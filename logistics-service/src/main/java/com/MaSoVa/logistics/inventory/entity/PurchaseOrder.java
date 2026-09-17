@@ -1,5 +1,7 @@
 package com.MaSoVa.logistics.inventory.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -20,6 +22,7 @@ import java.util.List;
  * Manages purchase orders to suppliers for inventory replenishment
  */
 @Document(collection = "purchase_orders")
+@JsonIgnoreProperties(ignoreUnknown = true)
 @CompoundIndexes({
     @CompoundIndex(def = "{'storeId': 1, 'status': 1}"),
     @CompoundIndex(def = "{'storeId': 1, 'createdAt': -1}"),
@@ -118,8 +121,10 @@ public class PurchaseOrder {
     }
 
     /**
-     * Check if order is overdue
+     * Check if order is overdue.
+     * JsonIgnore: Redis/Jackson was serializing this as "overdue" and failing on read-back.
      */
+    @JsonIgnore
     public Boolean isOverdue() {
         if (expectedDeliveryDate == null || actualDeliveryDate != null) {
             return false;
@@ -132,6 +137,7 @@ public class PurchaseOrder {
     /**
      * Check if order is fully received
      */
+    @JsonIgnore
     public Boolean isFullyReceived() {
         if (items.isEmpty()) {
             return false;

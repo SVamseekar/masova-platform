@@ -86,6 +86,21 @@ const mockItems = [
   },
 ];
 
+/** Store market already hydrated from store profile (e.g. DOM001 DE/EUR after setStoreCurrency). */
+const syncedDeCart = {
+  cart: {
+    items: [],
+    selectedStoreId: 'DOM001',
+    selectedStoreName: 'Berlin Mitte',
+    totalItems: 0,
+    currency: 'EUR',
+    locale: 'de-DE',
+    storeCountryCode: 'DE',
+    storeMarketSynced: true,
+    deliveryFee: 0,
+  },
+};
+
 describe('CustomerPanel', () => {
   const defaultProps = {
     items: mockItems,
@@ -110,42 +125,48 @@ describe('CustomerPanel', () => {
     it('renders without crashing', () => {
       renderWithProviders(<CustomerPanel {...defaultProps} />, {
         useMemoryRouter: true,
+        preloadedState: syncedDeCart,
       });
 
-      expect(screen.getByText('Customer & Payment')).toBeInTheDocument();
+      expect(screen.getByTestId('customer-panel')).toBeInTheDocument();
+      expect(screen.getByText('Pay')).toBeInTheDocument();
     });
 
     it('displays customer information section', () => {
       renderWithProviders(<CustomerPanel {...defaultProps} />, {
         useMemoryRouter: true,
+        preloadedState: syncedDeCart,
       });
 
-      expect(screen.getByText(/Customer Information/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/Guest/i).length).toBeGreaterThan(0);
     });
 
     it('shows customer name input', () => {
       renderWithProviders(<CustomerPanel {...defaultProps} />, {
         useMemoryRouter: true,
+        preloadedState: syncedDeCart,
       });
 
       expect(
-        screen.getByPlaceholderText(/Customer Name/i)
+        screen.getByPlaceholderText(/Walk-in or guest name/i)
       ).toBeInTheDocument();
     });
 
     it('shows phone number input', () => {
       renderWithProviders(<CustomerPanel {...defaultProps} />, {
         useMemoryRouter: true,
+        preloadedState: syncedDeCart,
       });
 
       expect(
-        screen.getByPlaceholderText(/Phone Number/i)
+        screen.getByPlaceholderText(/Mobile number/i)
       ).toBeInTheDocument();
     });
 
     it('shows email input', () => {
       renderWithProviders(<CustomerPanel {...defaultProps} />, {
         useMemoryRouter: true,
+        preloadedState: syncedDeCart,
       });
 
       expect(screen.getByPlaceholderText(/Email/i)).toBeInTheDocument();
@@ -156,26 +177,63 @@ describe('CustomerPanel', () => {
     it('renders payment method section', () => {
       renderWithProviders(<CustomerPanel {...defaultProps} />, {
         useMemoryRouter: true,
+        preloadedState: syncedDeCart,
       });
 
       expect(screen.getByText(/Payment Method/i)).toBeInTheDocument();
     });
 
-    it('shows CASH, CARD, UPI, WALLET options for PICKUP', () => {
+    it('shows CASH, CARD, WALLET (no UPI) when store market is DE and synced', () => {
       renderWithProviders(<CustomerPanel {...defaultProps} />, {
         useMemoryRouter: true,
+        preloadedState: {
+          cart: {
+            items: [],
+            selectedStoreId: 'DOM001',
+            selectedStoreName: 'Berlin',
+            totalItems: 0,
+            currency: 'EUR',
+            locale: 'de-DE',
+            storeCountryCode: 'DE',
+            storeMarketSynced: true,
+            deliveryFee: 0,
+          },
+        },
       });
 
       expect(screen.getByText('CASH')).toBeInTheDocument();
       expect(screen.getByText('CARD')).toBeInTheDocument();
-      expect(screen.getByText('UPI')).toBeInTheDocument();
       expect(screen.getByText('WALLET')).toBeInTheDocument();
+      expect(screen.queryByText('UPI')).not.toBeInTheDocument();
+    });
+
+    it('does not invent payment methods before store market is synced', () => {
+      renderWithProviders(<CustomerPanel {...defaultProps} />, {
+        useMemoryRouter: true,
+        preloadedState: {
+          cart: {
+            items: [],
+            selectedStoreId: 'DOM001',
+            selectedStoreName: 'Berlin',
+            totalItems: 0,
+            currency: 'INR',
+            locale: 'en-IN',
+            storeCountryCode: null,
+            storeMarketSynced: false,
+            deliveryFee: 0,
+          },
+        },
+      });
+
+      expect(screen.getByTestId('pay-market-loading')).toBeInTheDocument();
+      expect(screen.queryByTestId('pay-method-CASH')).not.toBeInTheDocument();
+      expect(screen.queryByText('UPI')).not.toBeInTheDocument();
     });
 
     it('hides CASH option for DELIVERY orders', () => {
       renderWithProviders(
         <CustomerPanel {...defaultProps} orderType="DELIVERY" />,
-        { useMemoryRouter: true }
+        { useMemoryRouter: true, preloadedState: syncedDeCart }
       );
 
       expect(screen.queryByText('CASH')).not.toBeInTheDocument();
@@ -185,11 +243,10 @@ describe('CustomerPanel', () => {
     it('shows cash info message when CASH is selected', () => {
       renderWithProviders(<CustomerPanel {...defaultProps} />, {
         useMemoryRouter: true,
+        preloadedState: syncedDeCart,
       });
 
-      expect(
-        screen.getByText(/Cash payment - collect at delivery\/pickup/i)
-      ).toBeInTheDocument();
+      expect(screen.getByText(/Cash — collect at counter/i)).toBeInTheDocument();
     });
 
     it('allows switching payment method', async () => {
@@ -197,14 +254,13 @@ describe('CustomerPanel', () => {
 
       renderWithProviders(<CustomerPanel {...defaultProps} />, {
         useMemoryRouter: true,
+        preloadedState: syncedDeCart,
       });
 
       await user.click(screen.getByText('CARD'));
 
       // Cash info should disappear
-      expect(
-        screen.queryByText(/Cash payment - collect at delivery\/pickup/i)
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText(/Cash — collect at counter/i)).not.toBeInTheDocument();
     });
   });
 
@@ -212,7 +268,7 @@ describe('CustomerPanel', () => {
     it('shows address fields for DELIVERY orders', () => {
       renderWithProviders(
         <CustomerPanel {...defaultProps} orderType="DELIVERY" />,
-        { useMemoryRouter: true }
+        { useMemoryRouter: true, preloadedState: syncedDeCart }
       );
 
       expect(
@@ -225,6 +281,7 @@ describe('CustomerPanel', () => {
     it('does not show address fields for PICKUP orders', () => {
       renderWithProviders(<CustomerPanel {...defaultProps} />, {
         useMemoryRouter: true,
+        preloadedState: syncedDeCart,
       });
 
       expect(
@@ -237,31 +294,42 @@ describe('CustomerPanel', () => {
     it('displays order summary when items exist', () => {
       renderWithProviders(<CustomerPanel {...defaultProps} />, {
         useMemoryRouter: true,
+        preloadedState: syncedDeCart,
       });
 
-      expect(screen.getByText(/Order Summary/i)).toBeInTheDocument();
-      expect(screen.getByText('Subtotal:')).toBeInTheDocument();
-      expect(screen.getByText('Tax (5% GST):')).toBeInTheDocument();
-      expect(screen.getByText('Total Amount:')).toBeInTheDocument();
+      expect(screen.getByText('Total')).toBeInTheDocument();
+      expect(screen.getByTestId('pos-charge-button')).toBeInTheDocument();
     });
 
     it('shows warning when no items', () => {
       renderWithProviders(<CustomerPanel {...defaultProps} items={[]} />, {
         useMemoryRouter: true,
+        preloadedState: syncedDeCart,
       });
 
-      expect(
-        screen.getByText(/Please add items to create an order/i)
-      ).toBeInTheDocument();
+      expect(screen.getByTestId('pay-empty-hint')).toBeInTheDocument();
+      expect(screen.getByText(/Build the ticket first/i)).toBeInTheDocument();
     });
 
-    it('shows delivery fee for DELIVERY orders', () => {
+    it('shows delivery fee for DELIVERY orders when cart fee is set', () => {
       renderWithProviders(
         <CustomerPanel {...defaultProps} orderType="DELIVERY" />,
-        { useMemoryRouter: true }
+        {
+          useMemoryRouter: true,
+          preloadedState: {
+            cart: {
+              items: [],
+              selectedStoreId: 'store-1',
+              selectedStoreName: 'Store',
+              totalItems: 0,
+              deliveryFee: 2.9,
+              storeCountryCode: 'DE',
+            },
+          },
+        }
       );
 
-      expect(screen.getByText('Delivery Fee:')).toBeInTheDocument();
+      expect(screen.getByText('Delivery')).toBeInTheDocument();
     });
   });
 
@@ -269,27 +337,30 @@ describe('CustomerPanel', () => {
     it('renders the place order button', () => {
       renderWithProviders(<CustomerPanel {...defaultProps} />, {
         useMemoryRouter: true,
+        preloadedState: syncedDeCart,
       });
 
-      const button = screen.getByRole('button', { name: /Place Order/i });
+      const button = screen.getByRole('button', { name: /Place order/i });
       expect(button).toBeInTheDocument();
     });
 
     it('disables button when no items are present', () => {
       renderWithProviders(<CustomerPanel {...defaultProps} items={[]} />, {
         useMemoryRouter: true,
+        preloadedState: syncedDeCart,
       });
 
-      const button = screen.getByRole('button', { name: /Place Order/i });
+      const button = screen.getByRole('button', { name: /Place order/i });
       expect(button).toBeDisabled();
     });
 
     it('enables button when items exist', () => {
       renderWithProviders(<CustomerPanel {...defaultProps} />, {
         useMemoryRouter: true,
+        preloadedState: syncedDeCart,
       });
 
-      const button = screen.getByRole('button', { name: /Place Order/i });
+      const button = screen.getByRole('button', { name: /Place order/i });
       expect(button).not.toBeDisabled();
     });
 
@@ -298,9 +369,10 @@ describe('CustomerPanel', () => {
 
       renderWithProviders(<CustomerPanel {...defaultProps} />, {
         useMemoryRouter: true,
+        preloadedState: syncedDeCart,
       });
 
-      await user.click(screen.getByRole('button', { name: /Place Order/i }));
+      await user.click(screen.getByRole('button', { name: /Place order/i }));
       expect(screen.getByTestId('pin-auth-modal')).toBeInTheDocument();
     });
   });
@@ -311,9 +383,10 @@ describe('CustomerPanel', () => {
 
       renderWithProviders(<CustomerPanel {...defaultProps} />, {
         useMemoryRouter: true,
+        preloadedState: syncedDeCart,
       });
 
-      const phoneInput = screen.getByPlaceholderText(/Phone Number/i);
+      const phoneInput = screen.getByPlaceholderText(/Mobile number/i);
       await user.type(phoneInput, '123');
 
       expect(
@@ -326,9 +399,10 @@ describe('CustomerPanel', () => {
 
       renderWithProviders(<CustomerPanel {...defaultProps} />, {
         useMemoryRouter: true,
+        preloadedState: syncedDeCart,
       });
 
-      const phoneInput = screen.getByPlaceholderText(/Phone Number/i);
+      const phoneInput = screen.getByPlaceholderText(/Mobile number/i);
       await user.type(phoneInput, '9876543210');
 
       expect(

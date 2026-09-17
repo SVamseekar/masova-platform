@@ -67,7 +67,7 @@ jobs:
           cache: maven
 
       - name: Build all services (skip tests)
-        run: mvn clean install -DskipTests -T 4 --no-transfer-progress
+        run: mvn clean install -DskipTests -DskipITs -T 4 --no-transfer-progress
         env:
           JWT_SECRET: ci-test-secret-key-at-least-64-chars-long-for-hs512-algorithm-security
 
@@ -247,6 +247,7 @@ jobs:
             -Dtest=NONE \
             -Dsurefire.failIfNoSpecifiedTests=false \
             -Dit.test="*PactVerificationIT" \
+            -Dspring-boot.repackage.skip=true \
             --no-transfer-progress
         env:
           JWT_SECRET: ci-test-secret-key-at-least-64-chars-long-for-hs512-algorithm-security

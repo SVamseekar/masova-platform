@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -65,6 +66,7 @@ class OrderItemSyncServiceTest {
     void syncOrderItems_calls_deleteByOrderId_and_save() {
         OrderJpaEntity jpa = buildJpaOrder();
         Order order = buildOrder(Collections.emptyList());
+        when(orderJpaRepository.findById("jpa-order-1")).thenReturn(Optional.of(jpa));
         when(orderJpaRepository.save(any())).thenReturn(jpa);
 
         syncService.syncOrderItems(jpa, order);
@@ -74,9 +76,36 @@ class OrderItemSyncServiceTest {
     }
 
     @Test
+    void syncOrderByMongoId_loads_fresh_entity_and_syncs() {
+        OrderJpaEntity jpa = buildJpaOrder();
+        Order order = buildOrder(Collections.emptyList());
+        when(orderJpaRepository.findByMongoId("o1")).thenReturn(Optional.of(jpa));
+        when(orderJpaRepository.save(any())).thenReturn(jpa);
+
+        boolean synced = syncService.syncOrderByMongoId("o1", order);
+
+        assertThat(synced).isTrue();
+        verify(orderItemJpaRepository).deleteByOrderId("jpa-order-1");
+        verify(orderJpaRepository).save(jpa);
+        assertThat(jpa.getStatus()).isEqualTo("PREPARING");
+    }
+
+    @Test
+    void syncOrderByMongoId_returns_false_when_missing() {
+        Order order = buildOrder(Collections.emptyList());
+        when(orderJpaRepository.findByMongoId("missing")).thenReturn(Optional.empty());
+
+        boolean synced = syncService.syncOrderByMongoId("missing", order);
+
+        assertThat(synced).isFalse();
+        verify(orderJpaRepository, never()).save(any());
+    }
+
+    @Test
     void syncOrderItems_updates_status_on_jpa_entity() {
         OrderJpaEntity jpa = buildJpaOrder();
         Order order = buildOrder(Collections.emptyList());
+        when(orderJpaRepository.findById("jpa-order-1")).thenReturn(Optional.of(jpa));
         when(orderJpaRepository.save(any())).thenReturn(jpa);
 
         syncService.syncOrderItems(jpa, order);
@@ -88,6 +117,7 @@ class OrderItemSyncServiceTest {
     void syncOrderItems_updates_payment_status() {
         OrderJpaEntity jpa = buildJpaOrder();
         Order order = buildOrder(Collections.emptyList());
+        when(orderJpaRepository.findById("jpa-order-1")).thenReturn(Optional.of(jpa));
         when(orderJpaRepository.save(any())).thenReturn(jpa);
 
         syncService.syncOrderItems(jpa, order);
@@ -103,6 +133,7 @@ class OrderItemSyncServiceTest {
                 .variant("Large").customizations(List.of("Extra Cheese"))
                 .build();
         Order order = buildOrder(List.of(item));
+        when(orderJpaRepository.findById("jpa-order-1")).thenReturn(Optional.of(jpa));
         when(orderJpaRepository.save(any())).thenReturn(jpa);
 
         syncService.syncOrderItems(jpa, order);
@@ -119,6 +150,7 @@ class OrderItemSyncServiceTest {
         OrderItem item = OrderItem.builder()
                 .menuItemId(null).name("Unknown").quantity(1).price(100.0).build();
         Order order = buildOrder(List.of(item));
+        when(orderJpaRepository.findById("jpa-order-1")).thenReturn(Optional.of(jpa));
         when(orderJpaRepository.save(any())).thenReturn(jpa);
 
         syncService.syncOrderItems(jpa, order);
@@ -135,6 +167,7 @@ class OrderItemSyncServiceTest {
                 .menuItemId("m1").name("Pizza").quantity(1).price(100.0)
                 .customizations(null).build();
         Order order = buildOrder(List.of(item));
+        when(orderJpaRepository.findById("jpa-order-1")).thenReturn(Optional.of(jpa));
         when(orderJpaRepository.save(any())).thenReturn(jpa);
 
         syncService.syncOrderItems(jpa, order);
@@ -148,6 +181,7 @@ class OrderItemSyncServiceTest {
     void syncOrderItems_converts_timestamps_to_offset_datetime() {
         OrderJpaEntity jpa = buildJpaOrder();
         Order order = buildOrder(Collections.emptyList());
+        when(orderJpaRepository.findById("jpa-order-1")).thenReturn(Optional.of(jpa));
         when(orderJpaRepository.save(any())).thenReturn(jpa);
 
         syncService.syncOrderItems(jpa, order);
@@ -162,6 +196,7 @@ class OrderItemSyncServiceTest {
         Order order = buildOrder(Collections.emptyList());
         order.setReceivedAt(null);
         order.setPreparingStartedAt(null);
+        when(orderJpaRepository.findById("jpa-order-1")).thenReturn(Optional.of(jpa));
         when(orderJpaRepository.save(any())).thenReturn(jpa);
 
         syncService.syncOrderItems(jpa, order);

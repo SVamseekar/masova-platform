@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem } from '@mui/material';
-import { Button } from '../ui/neumorphic';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { useAdjustStockMutation, InventoryItem } from '../../store/api/inventoryApi';
-import { colors, spacing, typography } from '../../styles/design-tokens';
-import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
+import {
+  t, modalOverlayStyle, modalBoxStyle, fieldLabelStyle, textInputStyle,
+  primaryBtnStyle, secondaryBtnStyle, selectStyle,
+} from '../../pages/manager/manager-tokens';
 
 interface StockAdjustmentDialogProps {
   open: boolean;
@@ -16,157 +16,95 @@ interface StockAdjustmentDialogProps {
 const StockAdjustmentDialog: React.FC<StockAdjustmentDialogProps> = ({ open, onClose, item }) => {
   const currentUser = useAppSelector(selectCurrentUser);
   const [adjustStock, { isLoading }] = useAdjustStockMutation();
+  const [quantity, setQuantity] = useState('');
+  const [reason, setReason] = useState('STOCK_IN');
+  const [notes, setNotes] = useState('');
+  const [error, setError] = useState('');
 
-  const [quantity, setQuantity] = useState<string>('');
-  const [reason, setReason] = useState<string>('STOCK_IN');
-  const [notes, setNotes] = useState<string>('');
+  if (!open) return null;
+
+  const qty = parseFloat(quantity) || 0;
+  const removing = reason === 'STOCK_OUT' || reason === 'DAMAGED' || reason === 'EXPIRED';
+  const nextStock = removing ? item.currentStock - qty : item.currentStock + qty;
+  const available = item.currentStock - (item.reservedStock || 0);
 
   const handleSubmit = async () => {
-    if (!quantity || parseFloat(quantity) === 0) {
-      alert('Please enter a valid quantity');
+    if (!quantity || qty === 0) {
+      setError('Enter a valid quantity');
       return;
     }
-
+    setError('');
     try {
       await adjustStock({
         id: item.id,
         adjustment: {
-          quantity: parseFloat(quantity),
+          quantity: qty,
           reason,
           adjustedBy: currentUser?.id || 'unknown',
           notes,
         },
       }).unwrap();
-
-      // Reset form
       setQuantity('');
       setReason('STOCK_IN');
       setNotes('');
       onClose();
-    } catch (error) {
-      console.error('Failed to adjust stock:', error);
-      alert('Failed to adjust stock. Please try again.');
+    } catch {
+      setError('Failed to adjust stock. Please try again.');
     }
   };
 
-  const dialogContentStyles: React.CSSProperties = {
-    fontFamily: typography.fontFamily.primary,
-    padding: spacing[6],
-  };
-
-  const fieldStyles: React.CSSProperties = {
-    marginBottom: spacing[4],
-  };
-
-  const infoBoxStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('inset', 'sm', 'lg'),
-    padding: spacing[4],
-    marginBottom: spacing[4],
-    backgroundColor: colors.surface.secondary,
-  };
-
-  const labelStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.tertiary,
-    marginBottom: spacing[1],
-  };
-
-  const valueStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-  };
-
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle style={{ fontFamily: typography.fontFamily.primary, fontWeight: typography.fontWeight.bold }}>
-        Adjust Stock - {item.itemName}
-      </DialogTitle>
-      <DialogContent style={dialogContentStyles}>
-        {/* Current Stock Info */}
-        <div style={infoBoxStyles}>
-          <div style={labelStyles}>Current Stock</div>
-          <div style={valueStyles}>
-            {item.currentStock} {item.unit}
+    <div style={modalOverlayStyle} onClick={onClose} role="presentation">
+      <div style={modalBoxStyle} onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="adjust-stock-title">
+        <h3 id="adjust-stock-title" style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 700, color: t.black, fontFamily: t.font }}>
+          Adjust stock
+        </h3>
+        <p style={{ margin: '0 0 16px', fontSize: 13, color: t.gray }}>{item.itemName}</p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16, background: t.bgMain, borderRadius: 10, padding: 14 }}>
+          <div>
+            <p style={{ margin: 0, fontSize: 11, color: t.gray }}>On hand</p>
+            <p style={{ margin: '4px 0 0', fontSize: 18, fontWeight: 700, color: t.black }}>{item.currentStock} {item.unit}</p>
           </div>
-          <div style={{ ...labelStyles, marginTop: spacing[2] }}>Available Stock</div>
-          <div style={valueStyles}>
-            {(item.currentStock - item.reservedStock).toFixed(2)} {item.unit}
+          <div>
+            <p style={{ margin: 0, fontSize: 11, color: t.gray }}>Available</p>
+            <p style={{ margin: '4px 0 0', fontSize: 18, fontWeight: 700, color: t.black }}>{available.toFixed(2)} {item.unit}</p>
           </div>
         </div>
 
-        {/* Adjustment Type */}
-        <div style={fieldStyles}>
-          <TextField
-            select
-            label="Adjustment Type"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            fullWidth
-            variant="outlined"
-          >
-            <MenuItem value="STOCK_IN">Stock In (Add)</MenuItem>
-            <MenuItem value="STOCK_OUT">Stock Out (Remove)</MenuItem>
-            <MenuItem value="CORRECTION">Correction</MenuItem>
-            <MenuItem value="DAMAGED">Damaged</MenuItem>
-            <MenuItem value="EXPIRED">Expired</MenuItem>
-            <MenuItem value="TRANSFER">Transfer</MenuItem>
-          </TextField>
-        </div>
+        <label style={fieldLabelStyle}>Adjustment type</label>
+        <select value={reason} onChange={(e) => setReason(e.target.value)} style={{ ...selectStyle, width: '100%', padding: '10px 12px', marginBottom: 14, color: t.black }}>
+          <option value="STOCK_IN">Stock in (add)</option>
+          <option value="STOCK_OUT">Stock out (remove)</option>
+          <option value="CORRECTION">Correction</option>
+          <option value="DAMAGED">Damaged</option>
+          <option value="EXPIRED">Expired</option>
+          <option value="TRANSFER">Transfer</option>
+        </select>
 
-        {/* Quantity */}
-        <div style={fieldStyles}>
-          <TextField
-            label={`Quantity (${item.unit})`}
-            type="number"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            fullWidth
-            variant="outlined"
-            helperText={
-              reason === 'STOCK_OUT' || reason === 'DAMAGED' || reason === 'EXPIRED'
-                ? 'Enter positive number to remove from stock'
-                : 'Enter positive number to add to stock'
-            }
-          />
-        </div>
+        <label style={fieldLabelStyle}>Quantity ({item.unit})</label>
+        <input type="number" min="0" step="0.01" value={quantity} onChange={(e) => setQuantity(e.target.value)}
+          style={{ ...textInputStyle, marginBottom: 14 }} placeholder="0" />
 
-        {/* Notes */}
-        <div style={fieldStyles}>
-          <TextField
-            label="Notes (Optional)"
-            multiline
-            rows={3}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            fullWidth
-            variant="outlined"
-            placeholder="Add any additional notes about this adjustment..."
-          />
-        </div>
+        <label style={fieldLabelStyle}>Notes (optional)</label>
+        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3}
+          style={{ ...textInputStyle, resize: 'vertical', marginBottom: 14 }} placeholder="Reason for this adjustment" />
 
-        {/* Preview */}
-        {quantity && parseFloat(quantity) > 0 && (
-          <div style={{ ...infoBoxStyles, backgroundColor: colors.semantic.infoLight + '20' }}>
-            <div style={labelStyles}>New Stock After Adjustment</div>
-            <div style={valueStyles}>
-              {reason === 'STOCK_OUT' || reason === 'DAMAGED' || reason === 'EXPIRED'
-                ? (item.currentStock - parseFloat(quantity)).toFixed(2)
-                : (item.currentStock + parseFloat(quantity)).toFixed(2)}{' '}
-              {item.unit}
-            </div>
-          </div>
+        {qty > 0 && (
+          <p style={{ fontSize: 13, color: t.gray, margin: '0 0 12px' }}>
+            New on-hand: <strong style={{ color: t.black }}>{nextStock.toFixed(2)} {item.unit}</strong>
+          </p>
         )}
-      </DialogContent>
-      <DialogActions style={{ padding: spacing[4] }}>
-        <Button onClick={onClose} variant="ghost" disabled={isLoading}>
-          Cancel
-        </Button>
-        <Button onClick={handleSubmit} disabled={isLoading || !quantity}>
-          {isLoading ? 'Adjusting...' : 'Adjust Stock'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+        {error && <p style={{ color: t.red, fontSize: 13, margin: '0 0 12px' }}>{error}</p>}
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <button type="button" style={secondaryBtnStyle} onClick={onClose} disabled={isLoading}>Cancel</button>
+          <button type="button" style={primaryBtnStyle} onClick={() => void handleSubmit()} disabled={isLoading}>
+            {isLoading ? 'Saving…' : 'Adjust stock'}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 

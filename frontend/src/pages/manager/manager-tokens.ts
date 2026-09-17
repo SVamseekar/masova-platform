@@ -5,13 +5,13 @@ export const t = {
   orange: '#FF6B35',
   orangeLight: '#FFF5F0',
   orangeDark: '#E55A2B',
-  bgMain: '#FAF7F2',
+  bgMain: '#F4F4F5',
   white: '#FFFFFF',
-  black: '#1A1A1A',
-  gray: '#6B7280',
-  grayLight: '#E5E7EB',
-  grayMuted: '#9CA3AF',
-  beige: '#F5E6D3',
+  black: '#18181B',
+  gray: '#52525B',
+  grayLight: '#E4E4E7',
+  grayMuted: '#A1A1AA',
+  beige: '#F4F4F5',
   green: '#10B981',
   greenLight: '#D1FAE5',
   greenDark: '#065F46',
@@ -23,10 +23,15 @@ export const t = {
   sidebarWidth: 240,
   rightSidebarWidth: 300,
   headerHeight: 68,
-  radius: { sm: 6, md: 10, lg: 16, xl: 20 },
+  radius: { sm: 4, md: 8, lg: 10, xl: 12 },
 } as const;
 
-export const cardStyle: React.CSSProperties = { background: t.white, borderRadius: t.radius.lg, padding: 20 };
+export const cardStyle: React.CSSProperties = {
+  background: t.white,
+  borderRadius: t.radius.md,
+  padding: 16,
+  border: `1px solid ${t.grayLight}`,
+};
 
 export const tabStyle = (active: boolean): React.CSSProperties => ({
   padding: '8px 20px', borderRadius: t.radius.md, border: 'none',
@@ -48,6 +53,46 @@ export const sectionTitleStyle: React.CSSProperties = { fontSize: 15, fontWeight
 export const selectStyle: React.CSSProperties = {
   padding: '4px 10px', border: `1px solid ${t.grayLight}`, borderRadius: t.radius.sm,
   fontSize: 12, color: t.gray, background: t.white, outline: 'none', fontFamily: t.font,
+};
+
+export const modalOverlayStyle: React.CSSProperties = {
+  position: 'fixed', inset: 0, background: 'rgba(26, 26, 26, 0.45)',
+  display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200,
+  backdropFilter: 'blur(6px)',
+};
+
+export const modalBoxStyle: React.CSSProperties = {
+  background: t.white, borderRadius: t.radius.lg, padding: 24, width: '92%',
+  maxWidth: 520, maxHeight: '88vh', overflowY: 'auto', fontFamily: t.font,
+  boxShadow: '0 24px 60px rgba(26,26,26,0.18)',
+};
+
+export const fieldLabelStyle: React.CSSProperties = {
+  display: 'block', fontSize: 12, fontWeight: 600, color: t.black, marginBottom: 6, fontFamily: t.font,
+};
+
+export const textInputStyle: React.CSSProperties = {
+  width: '100%', boxSizing: 'border-box', padding: '10px 12px',
+  border: `1px solid ${t.grayLight}`, borderRadius: t.radius.md, fontSize: 14,
+  color: t.black, background: t.white, outline: 'none', fontFamily: t.font,
+};
+
+export const primaryBtnStyle: React.CSSProperties = {
+  padding: '10px 18px', borderRadius: t.radius.md, border: 'none',
+  background: t.orange, color: t.white, fontSize: 13, fontWeight: 600,
+  cursor: 'pointer', fontFamily: t.font,
+};
+
+export const secondaryBtnStyle: React.CSSProperties = {
+  padding: '10px 18px', borderRadius: t.radius.md, border: `1px solid ${t.grayLight}`,
+  background: t.white, color: t.black, fontSize: 13, fontWeight: 600,
+  cursor: 'pointer', fontFamily: t.font,
+};
+
+export const ghostBtnStyle: React.CSSProperties = {
+  padding: '6px 12px', borderRadius: t.radius.sm, border: `1px solid ${t.grayLight}`,
+  background: t.white, color: t.gray, fontSize: 12, fontWeight: 600,
+  cursor: 'pointer', fontFamily: t.font, whiteSpace: 'nowrap',
 };
 
 export const statusBadge = (status: string): React.CSSProperties => {

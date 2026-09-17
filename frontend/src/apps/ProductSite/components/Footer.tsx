@@ -34,6 +34,9 @@ const FOOTER_SECTIONS: { title: string; links: FooterLink[] }[] = [
     title: 'Legal',
     links: [
       { label: 'Privacy Policy', href: '/privacy' },
+      { label: 'Terms of Service', href: '/terms' },
+      { label: 'Cookie Policy', href: '/cookies' },
+      { label: 'Refund Policy', href: '/refunds' },
     ],
   },
 ]

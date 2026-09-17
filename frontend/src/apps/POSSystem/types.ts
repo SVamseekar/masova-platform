@@ -17,6 +17,8 @@ export interface POSOrderItem {
 
 export interface POSCustomer {
   id?: string;
+  /** Auth user id (JWT sub) — must be used as order.customerId for ownership checks */
+  userId?: string;
   name?: string;
   email?: string;
   phone?: string;

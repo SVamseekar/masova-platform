@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getApiErrorMessage } from './utils/apiError';
-import { useParams, useNavigate } from 'react-router-dom';
-import { colors, spacing, typography, borderRadius } from '../styles/design-tokens';
-import { createCard, createNeumorphicSurface } from '../styles/neumorphic-utils';
+import { useParams } from 'react-router-dom';
 
 interface TokenDetails {
   valid: boolean;
@@ -14,7 +12,6 @@ interface TokenDetails {
 
 const PublicRatingPage: React.FC = () => {
   const { orderId, token } = useParams<{ orderId: string; token: string }>();
-  const _navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -108,63 +105,67 @@ const PublicRatingPage: React.FC = () => {
     }
   };
 
-  // Styles
+  // Dark-premium tokens only (CustomerLayout --bg / --surface / etc.)
   const containerStyles: React.CSSProperties = {
     minHeight: '100vh',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing[4],
-    backgroundColor: colors.surface.background,
-    fontFamily: typography.fontFamily.primary,
+    padding: 24,
+    backgroundColor: 'var(--bg)',
+    fontFamily: 'var(--font-body)',
+    color: 'var(--text-1)',
   };
 
   const cardStyles: React.CSSProperties = {
-    ...createCard('lg', 'xl'),
-    maxWidth: '600px',
+    maxWidth: 600,
     width: '100%',
-    padding: spacing[8],
-    backgroundColor: colors.surface.primary,
+    padding: 36,
+    backgroundColor: 'var(--surface)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-card)',
+    boxShadow: 'var(--shadow-card)',
   };
 
   const headerStyles: React.CSSProperties = {
     textAlign: 'center',
-    marginBottom: spacing[8],
+    marginBottom: 32,
   };
 
   const logoStyles: React.CSSProperties = {
     fontSize: '3rem',
-    marginBottom: spacing[3],
+    marginBottom: 12,
   };
 
   const titleStyles: React.CSSProperties = {
-    fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-    marginBottom: spacing[2],
+    fontFamily: 'var(--font-display)',
+    fontSize: '1.75rem',
+    fontWeight: 800,
+    color: 'var(--text-1)',
+    marginBottom: 8,
   };
 
   const subtitleStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.base,
-    color: colors.text.secondary,
+    fontSize: '0.95rem',
+    color: 'var(--text-2)',
   };
 
   const sectionStyles: React.CSSProperties = {
-    marginBottom: spacing[6],
+    marginBottom: 24,
   };
 
   const sectionTitleStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.primary,
-    marginBottom: spacing[3],
+    fontSize: '1rem',
+    fontWeight: 600,
+    color: 'var(--text-1)',
+    marginBottom: 12,
   };
 
   const starContainerStyles: React.CSSProperties = {
     display: 'flex',
     justifyContent: 'center',
-    gap: spacing[2],
-    marginBottom: spacing[2],
+    gap: 8,
+    marginBottom: 8,
   };
 
   const starButtonStyles = (index: number, currentRating: number, hovered: number): React.CSSProperties => {
@@ -173,77 +174,62 @@ const PublicRatingPage: React.FC = () => {
     const isActive = isHovered || isSelected;
 
     return {
-      padding: spacing[1],
+      padding: 4,
       fontSize: '2rem',
       backgroundColor: 'transparent',
       border: 'none',
       cursor: 'pointer',
-      transition: 'all 0.2s',
-      color: isActive ? '#FFD700' : colors.text.disabled,
-      textShadow: isActive ? '0 0 10px rgba(255, 215, 0, 0.5)' : 'none',
+      transition: 'var(--transition)',
+      color: isActive ? 'var(--gold)' : 'var(--text-3)',
+      textShadow: isActive ? '0 0 10px rgba(212, 168, 67, 0.45)' : 'none',
       transform: isHovered ? 'scale(1.15)' : 'scale(1)',
     };
   };
 
   const ratingTextStyles: React.CSSProperties = {
     textAlign: 'center',
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.brand.primary,
-    minHeight: '24px',
+    fontSize: '0.9rem',
+    fontWeight: 600,
+    color: 'var(--gold)',
+    minHeight: 24,
   };
 
   const textareaStyles: React.CSSProperties = {
     width: '100%',
-    minHeight: '80px',
-    padding: spacing[3],
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.primary,
-    color: colors.text.primary,
-    ...createNeumorphicSurface('inset', 'sm', 'lg'),
+    minHeight: 80,
+    padding: 12,
+    fontSize: '0.9rem',
+    fontFamily: 'var(--font-body)',
+    color: 'var(--text-1)',
+    background: 'var(--surface-2)',
+    border: '1px solid var(--border)',
+    borderRadius: 10,
     resize: 'vertical',
+    boxSizing: 'border-box',
   };
 
   const buttonStyles: React.CSSProperties = {
     width: '100%',
-    padding: spacing[4],
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: '#fff',
+    padding: 14,
+    fontSize: '1rem',
+    fontWeight: 700,
+    fontFamily: 'var(--font-body)',
+    color: 'var(--text-1)',
     cursor: overallRating > 0 && !submitting ? 'pointer' : 'not-allowed',
     opacity: overallRating > 0 && !submitting ? 1 : 0.5,
-    ...createNeumorphicSurface('raised', 'md', 'xl'),
-    background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${colors.brand.primaryLight} 100%)`,
-    transition: 'all 0.3s',
-  };
-
-  const successStyles: React.CSSProperties = {
-    textAlign: 'center',
-  };
-
-  const successIconStyles: React.CSSProperties = {
-    fontSize: '5rem',
-    marginBottom: spacing[4],
-  };
-
-  const successTitleStyles: React.CSSProperties = {
-    fontSize: typography.fontSize['2xl'],
-    fontWeight: typography.fontWeight.bold,
-    color: colors.semantic.success,
-    marginBottom: spacing[3],
-  };
-
-  const successMessageStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.base,
-    color: colors.text.secondary,
+    background: 'var(--red)',
+    border: 'none',
+    borderRadius: 'var(--radius-pill)',
+    transition: 'var(--transition)',
   };
 
   const errorStyles: React.CSSProperties = {
-    padding: spacing[4],
-    backgroundColor: colors.semantic.errorLight,
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing[4],
-    color: colors.semantic.error,
+    padding: 14,
+    backgroundColor: 'rgba(198,42,9,0.12)',
+    border: '1px solid var(--red)',
+    borderRadius: 10,
+    marginBottom: 16,
+    color: 'var(--red-light)',
     textAlign: 'center',
   };
 
@@ -252,10 +238,8 @@ const PublicRatingPage: React.FC = () => {
       <div style={containerStyles}>
         <div style={cardStyles}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '3rem', marginBottom: spacing[3] }}>⏳</div>
-            <div style={{ fontSize: typography.fontSize.lg, color: colors.text.secondary }}>
-              Loading...
-            </div>
+            <div style={{ fontSize: '3rem', marginBottom: 12 }}>⏳</div>
+            <div style={{ fontSize: '1rem', color: 'var(--text-3)' }}>Loading rating form…</div>
           </div>
         </div>
       </div>
@@ -267,13 +251,19 @@ const PublicRatingPage: React.FC = () => {
       <div style={containerStyles}>
         <div style={cardStyles}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '3rem', marginBottom: spacing[3] }}>❌</div>
-            <div style={{ fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.bold, color: colors.semantic.error, marginBottom: spacing[3] }}>
-              Invalid Link
+            <div style={{ fontSize: '3rem', marginBottom: 12 }}>❌</div>
+            <div
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '1.35rem',
+                fontWeight: 700,
+                color: 'var(--red-light)',
+                marginBottom: 12,
+              }}
+            >
+              Invalid or expired link
             </div>
-            <div style={{ fontSize: typography.fontSize.base, color: colors.text.secondary }}>
-              {error}
-            </div>
+            <div style={{ fontSize: '0.95rem', color: 'var(--text-2)' }}>{error}</div>
           </div>
         </div>
       </div>
@@ -284,10 +274,20 @@ const PublicRatingPage: React.FC = () => {
     return (
       <div style={containerStyles}>
         <div style={cardStyles}>
-          <div style={successStyles}>
-            <div style={successIconStyles}>✅</div>
-            <div style={successTitleStyles}>Thank You!</div>
-            <div style={successMessageStyles}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '4rem', marginBottom: 16 }}>✅</div>
+            <div
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '1.5rem',
+                fontWeight: 700,
+                color: 'var(--success-light)',
+                marginBottom: 12,
+              }}
+            >
+              Thank you!
+            </div>
+            <div style={{ fontSize: '0.95rem', color: 'var(--text-2)', lineHeight: 1.55 }}>
               Your feedback has been submitted successfully.
               <br />
               We appreciate you taking the time to rate your experience.

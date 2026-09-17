@@ -1,5 +1,7 @@
 package com.MaSoVa.logistics.inventory.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
@@ -21,6 +23,7 @@ import java.util.List;
  * Tracks stock levels, costs, and reorder information
  */
 @Document(collection = "inventory_items")
+@JsonIgnoreProperties(ignoreUnknown = true) // Redis cache round-trip: ignore derived fields written by older serializers
 @CompoundIndexes({
     @CompoundIndex(def = "{'storeId': 1, 'status': 1}"),
     @CompoundIndex(def = "{'storeId': 1, 'itemName': 1}"),
@@ -106,22 +109,29 @@ public class InventoryItem {
     // Business logic methods
 
     /**
-     * Get available stock (current - reserved)
+     * Get available stock (current - reserved).
+     * JsonIgnore: computed — must not be written into Redis cache JSON (breaks @Cacheable deserialize).
      */
+    @JsonIgnore
     public Double getAvailableStock() {
-        return currentStock - reservedStock;
+        double cur = currentStock != null ? currentStock : 0.0;
+        double res = reservedStock != null ? reservedStock : 0.0;
+        return cur - res;
     }
 
     /**
      * Check if stock is below reorder point
      */
+    @JsonIgnore
     public Boolean needsReorder() {
-        return getAvailableStock() <= minimumStock;
+        double min = minimumStock != null ? minimumStock : 0.0;
+        return getAvailableStock() <= min;
     }
 
     /**
      * Check if item is out of stock
      */
+    @JsonIgnore
     public Boolean isOutOfStock() {
         return getAvailableStock() <= 0;
     }
@@ -129,8 +139,9 @@ public class InventoryItem {
     /**
      * Check if item is expired
      */
+    @JsonIgnore
     public Boolean isExpired() {
-        if (!isPerishable || expiryDate == null) {
+        if (isPerishable == null || !isPerishable || expiryDate == null) {
             return false;
         }
         return LocalDate.now().isAfter(expiryDate);
@@ -139,11 +150,13 @@ public class InventoryItem {
     /**
      * Calculate total value of current stock
      */
+    @JsonIgnore
     public BigDecimal getTotalStockValue() {
         if (averageCost == null) {
             return BigDecimal.ZERO;
         }
-        return averageCost.multiply(BigDecimal.valueOf(currentStock));
+        double cur = currentStock != null ? currentStock : 0.0;
+        return averageCost.multiply(BigDecimal.valueOf(cur));
     }
 
     // Getters and Setters

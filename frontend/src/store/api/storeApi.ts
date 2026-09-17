@@ -145,7 +145,7 @@ export const storeApi = createApi({
       providesTags: (result) => result ? [{ type: 'Store', id: result.id }] : [],
     }),
 
-    // Get all active stores — /stores/public was removed, canonical is GET /stores
+    // Get all active stores — public GET /stores (no JWT required)
     getActiveStores: builder.query<Store[], void>({
       query: () => `/stores`,
       providesTags: (result) =>

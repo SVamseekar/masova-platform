@@ -72,12 +72,7 @@ export default defineConfig({
 
     // Pool config: forks prevents OOM by isolating each worker in its own process
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        maxForks: 2,
-        minForks: 1,
-      },
-    },
+    maxWorkers: 2,
   },
 
   resolve: {

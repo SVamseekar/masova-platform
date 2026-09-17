@@ -1,33 +1,29 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useVerifyPaymentMutation } from '../../store/api/paymentApi';
-import { Button, Card } from '../../components/ui/neumorphic';
-import AnimatedBackground from '../../components/backgrounds/AnimatedBackground';
-import { colors, spacing, typography } from '../../styles/design-tokens';
-import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { useAppDispatch } from '../../store/hooks';
 import { clearCart } from '../../store/slices/cartSlice';
+import CustomerPageHeader from '../../components/common/CustomerPageHeader';
 
+/**
+ * Payment success — dark-premium only. Supports Stripe (order_id query) and
+ * legacy Razorpay verify params when present.
+ */
 const PaymentSuccessPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const _currentUser = useAppSelector((state) => state.auth.user);
   const [searchParams] = useSearchParams();
   const [verifyPayment, { isLoading, isError }] = useVerifyPaymentMutation();
 
-  // Get payment details from URL params (sent by Razorpay)
   const razorpayPaymentId = searchParams.get('razorpay_payment_id');
   const razorpayOrderId = searchParams.get('razorpay_order_id');
   const razorpaySignature = searchParams.get('razorpay_signature');
-  const orderId = searchParams.get('order_id'); // Our internal order ID
+  const orderId = searchParams.get('order_id');
 
-  // Clear cart when payment success page loads
   useEffect(() => {
     dispatch(clearCart());
   }, [dispatch]);
 
-  // Store active order ID in sessionStorage for tracking
-  // Works for both guests (temporary) and logged-in customers (saved to profile in backend)
   useEffect(() => {
     if (orderId) {
       sessionStorage.setItem('activeOrderId', orderId);
@@ -35,7 +31,6 @@ const PaymentSuccessPage: React.FC = () => {
   }, [orderId]);
 
   useEffect(() => {
-    // Verify payment when component mounts
     if (razorpayPaymentId && razorpayOrderId && razorpaySignature) {
       verifyPayment({
         razorpayPaymentId,
@@ -45,158 +40,176 @@ const PaymentSuccessPage: React.FC = () => {
     }
   }, [razorpayPaymentId, razorpayOrderId, razorpaySignature, verifyPayment]);
 
-  const containerStyles: React.CSSProperties = {
-    position: 'relative',
-    minHeight: '100vh',
-    fontFamily: typography.fontFamily.primary,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing[6],
-  };
+  const shell = (children: React.ReactNode) => (
+    <div
+      style={{
+        minHeight: '100vh',
+        background: 'var(--bg)',
+        fontFamily: 'var(--font-body)',
+        color: 'var(--text-1)',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <CustomerPageHeader onBack={() => navigate('/menu')} breadcrumb="Payment" />
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '40px 20px 64px',
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
 
-  const cardStyles: React.CSSProperties = {
-    maxWidth: '600px',
+  const card: React.CSSProperties = {
+    maxWidth: 520,
     width: '100%',
     textAlign: 'center',
-  };
-
-  const iconStyles: React.CSSProperties = {
-    fontSize: '120px',
-    marginBottom: spacing[6],
-  };
-
-  const titleStyles: React.CSSProperties = {
-    fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.extrabold,
-    color: colors.text.primary,
-    marginBottom: spacing[4],
-  };
-
-  const messageStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.lg,
-    color: colors.text.secondary,
-    marginBottom: spacing[6],
-    lineHeight: 1.6,
-  };
-
-  const orderIdStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('inset', 'sm', 'lg'),
-    padding: spacing[4],
-    marginBottom: spacing[6],
-    backgroundColor: colors.surface.secondary,
-  };
-
-  const orderIdTextStyles: React.CSSProperties = {
-    fontSize: typography.fontSize.base,
-    color: colors.text.tertiary,
-    marginBottom: spacing[2],
-  };
-
-  const orderIdValueStyles: React.CSSProperties = {
-    fontSize: typography.fontSize['2xl'],
-    fontWeight: typography.fontWeight.bold,
-    background: `linear-gradient(135deg, ${colors.brand.primary}, ${colors.brand.secondary})`,
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
+    background: 'var(--surface)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-card)',
+    boxShadow: 'var(--shadow-card)',
+    padding: '40px 32px',
   };
 
   if (isLoading) {
-    return (
-      <>
-        <AnimatedBackground variant="minimal" />
-        <div style={containerStyles}>
-          <Card elevation="lg" padding="xl" style={cardStyles}>
-            <div style={iconStyles}>⏳</div>
-            <h1 style={titleStyles}>Verifying Payment...</h1>
-            <p style={messageStyles}>
-              Please wait while we confirm your payment with our payment gateway.
-            </p>
-          </Card>
-        </div>
-      </>
+    return shell(
+      <div style={card}>
+        <div style={{ fontSize: 64, marginBottom: 16 }}>⏳</div>
+        <h1 style={titleStyle}>Verifying payment…</h1>
+        <p style={bodyStyle}>Please wait while we confirm your payment with the payment provider.</p>
+      </div>
     );
   }
 
   if (isError) {
-    return (
-      <>
-        <AnimatedBackground variant="minimal" />
-        <div style={containerStyles}>
-          <Card elevation="lg" padding="xl" style={cardStyles}>
-            <div style={iconStyles}>⚠️</div>
-            <h1 style={titleStyles}>Payment Verification Failed</h1>
-            <p style={messageStyles}>
-              We couldn't verify your payment. If money was deducted from your account,
-              please contact our support team. We'll resolve this issue shortly.
-            </p>
-            <div style={{ display: 'flex', gap: spacing[4], justifyContent: 'center' }}>
-              <Button
-                variant="primary"
-                size="lg"
-                onClick={() => navigate('/customer-dashboard')}
-              >
-                View My Orders
-              </Button>
-              <Button
-                variant="secondary"
-                size="lg"
-                onClick={() => navigate('/menu')}
-              >
-                Back to Menu
-              </Button>
-            </div>
-          </Card>
+    return shell(
+      <div style={card}>
+        <div style={{ fontSize: 64, marginBottom: 16 }}>⚠️</div>
+        <h1 style={titleStyle}>Payment verification failed</h1>
+        <p style={bodyStyle}>
+          We couldn&apos;t verify your payment. If money was charged, contact support with your order
+          reference — we&apos;ll resolve it quickly.
+        </p>
+        <div style={actionsStyle}>
+          <PrimaryButton onClick={() => navigate('/customer/orders')}>View My Orders</PrimaryButton>
+          <SecondaryButton onClick={() => navigate('/menu')}>Back to Menu</SecondaryButton>
         </div>
-      </>
+      </div>
     );
   }
 
-  return (
-    <>
-      <AnimatedBackground variant="default" />
-      <div style={containerStyles}>
-        <Card elevation="lg" padding="xl" style={cardStyles}>
-          <div style={iconStyles}>✅</div>
-          <h1 style={titleStyles}>Payment Successful!</h1>
-          <p style={messageStyles}>
-            Thank you for your order! Your payment has been confirmed and your order
-            is being prepared.
-          </p>
+  return shell(
+    <div style={card}>
+      <div style={{ fontSize: 64, marginBottom: 16 }}>✅</div>
+      <h1 style={titleStyle}>Payment successful</h1>
+      <p style={bodyStyle}>
+        Thank you! Your payment is confirmed and the kitchen is preparing your order.
+      </p>
 
-          {orderId && (
-            <div style={orderIdStyles}>
-              <div style={orderIdTextStyles}>Your Order ID</div>
-              <div style={orderIdValueStyles}>{orderId}</div>
-            </div>
-          )}
-
-          <p style={{ ...messageStyles, fontSize: typography.fontSize.base }}>
-            You will receive an email confirmation shortly. You can track your order status
-            from the orders page.
-          </p>
-
-          <div style={{ display: 'flex', gap: spacing[4], justifyContent: 'center', marginTop: spacing[6] }}>
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={() => navigate(`/tracking/${orderId}`)}
-            >
-              Track Order
-            </Button>
-            <Button
-              variant="secondary"
-              size="lg"
-              onClick={() => navigate('/menu')}
-            >
-              Continue Shopping
-            </Button>
+      {orderId && (
+        <div
+          style={{
+            background: 'var(--surface-2)',
+            border: '1px solid var(--border)',
+            borderRadius: 12,
+            padding: '16px 18px',
+            marginBottom: 20,
+          }}
+        >
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-3)', marginBottom: 6 }}>Order ID</div>
+          <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--gold)', wordBreak: 'break-all' }}>
+            {orderId}
           </div>
-        </Card>
+        </div>
+      )}
+
+      <p style={{ ...bodyStyle, fontSize: '0.9rem' }}>
+        You&apos;ll get a confirmation email shortly. Track status anytime from Orders.
+      </p>
+
+      <div style={actionsStyle}>
+        <PrimaryButton
+          onClick={() => navigate(orderId ? `/tracking/${orderId}` : '/customer/orders')}
+        >
+          Track Order
+        </PrimaryButton>
+        <SecondaryButton onClick={() => navigate('/menu')}>Continue Shopping</SecondaryButton>
       </div>
-    </>
+    </div>
   );
 };
+
+const titleStyle: React.CSSProperties = {
+  fontFamily: 'var(--font-display)',
+  fontSize: '1.75rem',
+  fontWeight: 800,
+  color: 'var(--text-1)',
+  margin: '0 0 12px',
+};
+
+const bodyStyle: React.CSSProperties = {
+  color: 'var(--text-2)',
+  fontSize: '1rem',
+  lineHeight: 1.55,
+  margin: '0 0 20px',
+};
+
+const actionsStyle: React.CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: 12,
+  justifyContent: 'center',
+  marginTop: 8,
+};
+
+function PrimaryButton({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        background: 'var(--red)',
+        color: 'var(--text-1)',
+        border: 'none',
+        borderRadius: 'var(--radius-pill)',
+        padding: '12px 22px',
+        fontFamily: 'var(--font-body)',
+        fontWeight: 700,
+        fontSize: '0.9rem',
+        cursor: 'pointer',
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function SecondaryButton({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        background: 'transparent',
+        color: 'var(--text-2)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-pill)',
+        padding: '12px 22px',
+        fontFamily: 'var(--font-body)',
+        fontWeight: 600,
+        fontSize: '0.9rem',
+        cursor: 'pointer',
+      }}
+    >
+      {children}
+    </button>
+  );
+}
 
 export default PaymentSuccessPage;

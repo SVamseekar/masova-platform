@@ -128,25 +128,30 @@ const FiscalCompliancePage: React.FC<Props> = ({ storeId }) => {
             Quarterly VAT ledger submission to HMRC. Your accountant can download the MTD-compatible
             JSON or submit directly.
           </p>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <button
+              type="button"
+              disabled
+              title="HMRC MTD submission is not available in this environment"
               style={{
-                background: t.orange, color: t.white, border: 'none', borderRadius: 6,
-                padding: '8px 16px', fontWeight: 600, cursor: 'pointer', fontFamily: t.font,
+                background: t.grayLight, color: t.gray, border: 'none', borderRadius: 6,
+                padding: '8px 16px', fontWeight: 600, cursor: 'not-allowed', fontFamily: t.font,
               }}
-              onClick={() => alert('MTD submission — Phase 2 feature')}
             >
               Submit to HMRC
             </button>
             <button
+              type="button"
+              disabled
+              title="MTD JSON export is not available in this environment"
               style={{
-                background: 'transparent', color: t.orange, border: `1px solid ${t.orange}`,
-                borderRadius: 6, padding: '8px 16px', fontWeight: 600, cursor: 'pointer', fontFamily: t.font,
+                background: 'transparent', color: t.gray, border: `1px solid ${t.grayLight}`,
+                borderRadius: 6, padding: '8px 16px', fontWeight: 600, cursor: 'not-allowed', fontFamily: t.font,
               }}
-              onClick={() => alert('Download MTD export — Phase 2 feature')}
             >
               Download MTD JSON
             </button>
+            <span style={{ fontSize: 12, color: t.gray }}>Unavailable — not configured</span>
           </div>
         </div>
       )}

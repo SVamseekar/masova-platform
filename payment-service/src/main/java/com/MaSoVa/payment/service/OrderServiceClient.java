@@ -51,6 +51,9 @@ public class OrderServiceClient {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+            // Commerce requires this for inter-service PATCH /api/orders/{id}/payment
+            // (no user JWT on service-to-service RestTemplate calls).
+            headers.set("X-Internal-Service", "payment-service");
 
             HttpEntity<UpdateOrderPaymentRequest> entity = new HttpEntity<>(request, headers);
 

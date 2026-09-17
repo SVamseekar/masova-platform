@@ -1,16 +1,29 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import {formatMoney, formatMajorAmount} from '../../utils/currency';
+import { formatMajorAmount } from '../../utils/currency';
+import { derivedFromSummary } from './storeOrderMetrics';
+
+import {
+  normalizeOrderTypeBreakdown,
+  activePeakHours,
+} from '../../utils/analyticsMetrics';
 import { t, cardStyle, sectionTitleStyle, statusBadge } from './manager-tokens';
+import {
+  ManagerPageFrame,
+  ManagerStatCard,
+  ManagerEmptyState,
+  ManagerErrorState,
+  ManagerLoadingBlock,
+} from './components';
 import {
   useGetActiveStoreSessionsQuery,
   useGetPendingApprovalSessionsQuery,
   useApproveSessionMutation,
   useRejectSessionMutation,
 } from '../../store/api/sessionApi';
-import { useGetStoreMetricsQuery } from '../../store/api/storeApi';
-import { useGetStoreOrdersQuery } from '../../store/api/orderApi';
+import { useGetStoreEmployeesQuery } from '../../store/api/userApi';
+import { useGetKitchenQueueQuery, useGetStoreOrderSummaryQuery } from '../../store/api/orderApi';
 import {
   useGetTodaySalesMetricsQuery,
   useGetSalesTrendsQuery,
@@ -23,7 +36,7 @@ import {
   useGetExecutiveSummaryQuery,
   useGetDriverStatusQuery,
 } from '../../store/api/analyticsApi';
-import type { StaffRankingItem, ProductRankingItem, ChurnPredictionItem, SalesForecastItem, OrderTypeBreakdownEntry } from '../types/analytics';
+import type { StaffRankingItem, ProductRankingItem, ChurnPredictionItem, SalesForecastItem } from '../types/analytics';
 
 interface Props {
   storeId: string;
@@ -41,51 +54,95 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
     error: pendingSessionsError,
     refetch: refetchPendingSessions,
   } = useGetPendingApprovalSessionsQuery(undefined, { skip: !storeId, pollingInterval: 30000 });
-  const { data: storeMetrics, isLoading: loadingMetrics, refetch: refetchMetrics } = useGetStoreMetricsQuery(storeId, {
-    skip: !storeId, pollingInterval: 60000,
-  });
-  const { data: liveOrders = [], refetch: refetchOrders } = useGetStoreOrdersQuery(storeId, {
-    skip: !storeId, pollingInterval: 10000,
-  });
-  const { data: todaySalesMetrics } = useGetTodaySalesMetricsQuery(storeId, { skip: !storeId, pollingInterval: 60000 });
-  const { data: driverStatus } = useGetDriverStatusQuery(storeId, { skip: !storeId, pollingInterval: 30000 });
-  const { data: salesTrends } = useGetSalesTrendsQuery({ period: 'WEEKLY', storeId }, { skip: !storeId, pollingInterval: 300000 });
-  const { data: orderTypeBreakdown } = useGetOrderTypeBreakdownQuery(storeId, { skip: !storeId, pollingInterval: 300000 });
-  const { data: _peakHours } = useGetPeakHoursQuery(storeId, { skip: !storeId, pollingInterval: 300000 });
-  const { data: staffLeaderboard } = useGetStaffLeaderboardQuery({ storeId, period: 'TODAY' }, { skip: !storeId, pollingInterval: 120000 });
-  const { data: topProducts } = useGetTopProductsQuery({ storeId, period: 'TODAY', sortBy: 'REVENUE' }, { skip: !storeId, pollingInterval: 300000 });
-  const { data: salesForecast } = useGetSalesForecastQuery({ storeId, days: 7 }, { skip: !storeId, pollingInterval: 3600000 });
-  const { data: churnPrediction } = useGetChurnPredictionQuery({ storeId, threshold: 0.5 }, { skip: !storeId, pollingInterval: 3600000 });
-  const { data: executiveSummary } = useGetExecutiveSummaryQuery(storeId, { skip: !storeId, pollingInterval: 600000 });
+  // Store metrics endpoint removed from core API — derive staff/orders from live queries.
+  const {
+    data: storeSummary,
+    isLoading: loadingOrders,
+    isError: ordersError,
+    refetch: refetchOrders,
+  } = useGetStoreOrderSummaryQuery(
+    { storeId, days: 30 },
+    { skip: !storeId, pollingInterval: 30000 },
+  );
+  const { data: kitchenQueue = [] } = useGetKitchenQueueQuery(storeId, { skip: !storeId, pollingInterval: 15000 });
+  const {
+    data: todaySalesMetrics,
+    isLoading: loadingSales,
+    isError: salesError,
+    refetch: refetchSales,
+  } = useGetTodaySalesMetricsQuery(storeId, { skip: !storeId, pollingInterval: 60000 });
+  const { data: driverStatus, isError: driverError } = useGetDriverStatusQuery(storeId, { skip: !storeId, pollingInterval: 30000 });
+  const { data: storeEmployees = [] } = useGetStoreEmployeesQuery(storeId, { skip: !storeId, pollingInterval: 60000 });
+  const {
+    data: salesTrends,
+    isLoading: loadingTrends,
+    isError: trendsError,
+  } = useGetSalesTrendsQuery({ period: 'WEEKLY', storeId }, { skip: !storeId, pollingInterval: 300000 });
+  const {
+    data: orderTypeBreakdown,
+    isLoading: loadingBreakdown,
+    isError: breakdownError,
+  } = useGetOrderTypeBreakdownQuery(storeId, { skip: !storeId, pollingInterval: 300000 });
+  const {
+    data: peakHours,
+    isLoading: loadingPeak,
+    isError: peakError,
+  } = useGetPeakHoursQuery(storeId, { skip: !storeId, pollingInterval: 300000 });
+  const { data: staffLeaderboard, isError: leaderboardError } = useGetStaffLeaderboardQuery({ storeId, period: 'TODAY' }, { skip: !storeId, pollingInterval: 120000 });
+  const { data: topProducts, isError: productsError } = useGetTopProductsQuery({ storeId, period: 'TODAY', sortBy: 'REVENUE' }, { skip: !storeId, pollingInterval: 300000 });
+  const { data: salesForecast, isError: forecastError } = useGetSalesForecastQuery({ storeId, days: 7 }, { skip: !storeId, pollingInterval: 3600000 });
+  const { data: churnPrediction, isError: churnError } = useGetChurnPredictionQuery({ storeId, threshold: 0.5 }, { skip: !storeId, pollingInterval: 3600000 });
+  const { data: executiveSummary, isError: execError } = useGetExecutiveSummaryQuery(storeId, { skip: !storeId, pollingInterval: 600000 });
 
   const [approveSession, { isLoading: approvingSession }] = useApproveSessionMutation();
   const [rejectSession, { isLoading: rejectingSession }] = useRejectSessionMutation();
+  const [sessionActionError, setSessionActionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (storeId) {
       refetchSessions();
       refetchPendingSessions();
-      refetchMetrics();
       refetchOrders();
     }
-  }, [storeId, refetchSessions, refetchPendingSessions, refetchMetrics, refetchOrders]);
+  }, [storeId, refetchSessions, refetchPendingSessions, refetchOrders]);
+
+  const orderTypeRowsRaw = normalizeOrderTypeBreakdown(orderTypeBreakdown);
+  const derived = useMemo(() => derivedFromSummary(storeSummary), [storeSummary]);
+  const orderTypeRows =
+    orderTypeRowsRaw.length > 0 ? orderTypeRowsRaw : normalizeOrderTypeBreakdown(derived.typeBreakdown);
+  const peakActive = activePeakHours(
+    (peakHours && activePeakHours(peakHours).length > 0) ? peakHours : derived.peakHours,
+  );
 
   const salesData = {
-    today: todaySalesMetrics?.todaySales || 0,
+    today: (todaySalesMetrics?.todaySales || 0) > 0 ? todaySalesMetrics!.todaySales : derived.todaySales,
     percentageChange: todaySalesMetrics?.percentChangeFromLastYear || 0,
-    weeklyTotal: salesTrends?.totalSales || 0,
+    weeklyTotal: (salesTrends?.totalSales || 0) > 0 ? salesTrends!.totalSales : derived.weekSales,
+    todayOrders: (todaySalesMetrics?.todayOrderCount || 0) > 0 ? todaySalesMetrics!.todayOrderCount : derived.todayOrderCount,
   };
 
-  const orderQueue = liveOrders
-    .filter(order => !['DELIVERED', 'CANCELLED'].includes(order.status))
-    .map(order => ({
-      id: order.orderNumber,
-      status: order.status,
-      items: order.items.length,
-      time: new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-      customer: order.customerName,
-      priority: order.priority?.toLowerCase() || 'normal',
-    }));
+  const orderQueue = kitchenQueue.map(order => ({
+    id: order.orderNumber,
+    status: order.status,
+    items: order.items?.length || 0,
+    time: order.createdAt
+      ? new Date(order.createdAt).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })
+      : '—',
+    customer: order.customerName,
+    priority: order.priority?.toLowerCase() || 'normal',
+  }));
+
+  const activeStaffCount = sessions.filter(s => s.isActive).length;
+  const driverEmployeeIds = new Set(
+    storeEmployees.filter((e) => String(e.type || '').toUpperCase() === 'DRIVER').map((e) => e.id),
+  );
+  const clockedInDrivers = sessions.filter(
+    (s) => s.isActive && (driverEmployeeIds.has(s.employeeId) || String(s.role || '').toUpperCase() === 'DRIVER'),
+  ).length;
+  const rosterDrivers = driverEmployeeIds.size || driverStatus?.totalDrivers || 0;
+  const availableDrivers = clockedInDrivers > 0
+    ? clockedInDrivers
+    : (driverStatus?.availableDrivers ?? 0);
 
   const calculateDuration = (loginTime: string): string => {
     const diff = Date.now() - new Date(loginTime).getTime();
@@ -97,69 +154,146 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
   const storePendingSessions = pendingSessions.filter((s) => s.storeId === storeId);
 
   const handleApproveSession = async (sessionId: string) => {
+    setSessionActionError(null);
     try {
       await approveSession(sessionId).unwrap();
       refetchPendingSessions();
       refetchSessions();
-    } catch { alert('Failed to approve session'); }
+    } catch {
+      setSessionActionError('Failed to approve session. Please try again.');
+    }
   };
   const handleRejectSession = async (sessionId: string) => {
+    setSessionActionError(null);
     try {
       await rejectSession({ sessionId, reason: 'Manager rejected' }).unwrap();
       refetchPendingSessions();
       refetchSessions();
-    } catch { alert('Failed to reject session'); }
+    } catch {
+      setSessionActionError('Failed to reject session. Please try again.');
+    }
   };
 
-  const formatCurrency = (val: number) => formatMajorAmount(val , currency, locale);
+  const formatCurrency = (val: number) => formatMajorAmount(val, currency, locale);
 
   return (
-    <div>
-      {/* Stats Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
-        <div style={{ ...cardStyle, background: t.orange, color: t.white }}>
-          <div style={{ fontSize: 12, opacity: 0.9, marginBottom: 4 }}>Today's Sales</div>
-          <div style={{ fontSize: 28, fontWeight: 700 }}>{loadingMetrics ? '...' : formatCurrency(salesData.today)}</div>
-          <div style={{ fontSize: 12, opacity: 0.8 }}>+{salesData.percentageChange}% vs Last Year</div>
+    <ManagerPageFrame
+      title="Dashboard"
+      subtitle="Live store overview"
+      storeId={storeId || undefined}
+      empty={!storeId}
+      emptyTitle="Select a store"
+      emptyDescription="Choose a store from the header to load dashboard metrics."
+    >
+      {sessionActionError && (
+        <div
+          role="alert"
+          style={{
+            marginBottom: 16,
+            padding: '12px 14px',
+            background: t.redLight,
+            borderRadius: t.radius.md,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+          }}
+        >
+          <p style={{ margin: 0, fontSize: 13, color: t.red, fontWeight: 500 }}>{sessionActionError}</p>
+          <button
+            type="button"
+            onClick={() => setSessionActionError(null)}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              color: t.gray,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: t.font,
+            }}
+          >
+            Dismiss
+          </button>
         </div>
-        <div style={cardStyle}>
-          <div style={{ fontSize: 12, color: t.gray, marginBottom: 4 }}>Weekly Total</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: t.black }}>{loadingMetrics ? '...' : formatCurrency(salesData.weeklyTotal)}</div>
-          <div style={{ fontSize: 12, color: t.green }}>Last 7 days</div>
-        </div>
-        <div style={cardStyle}>
-          <div style={{ fontSize: 12, color: t.gray, marginBottom: 4 }}>Active Staff</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: t.black }}>{loadingSessions ? '...' : storeMetrics?.activeEmployees || sessions.filter(s => s.isActive).length}</div>
-          <div style={{ fontSize: 12, color: t.gray }}>Currently working</div>
-        </div>
-        <div style={cardStyle}>
-          <div style={{ fontSize: 12, color: t.gray, marginBottom: 4 }}>Pending Orders</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: t.black }}>{loadingMetrics ? '...' : storeMetrics?.activeOrders || orderQueue.length}</div>
-          <div style={{ fontSize: 12, color: t.red }}>{orderQueue.filter(o => o.priority === 'urgent').length} urgent</div>
-        </div>
-        {driverStatus && (
-          <div style={cardStyle}>
-            <div style={{ fontSize: 12, color: t.gray, marginBottom: 4 }}>Drivers</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: t.black }}>{driverStatus.availableDrivers}/{driverStatus.totalDrivers}</div>
-            <div style={{ fontSize: 12, color: t.green }}>Available</div>
-          </div>
-        )}
+      )}
+
+      {/* Stats Cards — always one row of five equal tiles */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+          gap: 12,
+          marginBottom: 24,
+        }}
+      >
+        <ManagerStatCard
+          compact
+          label="Today's Sales"
+          value={formatCurrency(salesData.today)}
+          color={t.orange}
+          loading={loadingSales && loadingOrders && derived.todaySales === 0}
+          error={salesError && ordersError && derived.todaySales === 0}
+          errorMessage="Sales API failed"
+          hint={`${salesData.todayOrders} completed · ${salesData.percentageChange >= 0 ? '+' : ''}${salesData.percentageChange}% vs last year`}
+        />
+        <ManagerStatCard
+          compact
+          label="Weekly Total"
+          value={formatCurrency(salesData.weeklyTotal)}
+          loading={loadingTrends && loadingOrders && derived.weekSales === 0}
+          error={trendsError && ordersError && derived.weekSales === 0}
+          errorMessage="Trends API failed"
+          hint={`${(salesTrends?.totalOrders || derived.weekOrders)} orders · last 7 days`}
+        />
+        <ManagerStatCard
+          compact
+          label="Active Staff"
+          value={activeStaffCount}
+          loading={loadingSessions}
+          error={!!sessionsError}
+          errorMessage="Sessions API failed"
+          hint="From active clock-in sessions"
+        />
+        <ManagerStatCard
+          compact
+          label="Pending Orders"
+          value={orderQueue.length}
+          loading={loadingOrders}
+          error={ordersError}
+          errorMessage="Orders API failed"
+          hint={`${orderQueue.filter(o => o.priority === 'urgent').length} urgent`}
+        />
+        <ManagerStatCard
+          compact
+          label="Drivers"
+          value={`${availableDrivers}/${rosterDrivers}`}
+          error={driverError && rosterDrivers === 0}
+          errorMessage="Driver status failed"
+          hint={clockedInDrivers > 0 ? `${clockedInDrivers} clocked in` : 'Available / roster'}
+        />
       </div>
+
+      {salesError && derived.todaySales === 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <ManagerErrorState title="Could not load today's sales" onRetry={() => void refetchSales()} />
+        </div>
+      )}
 
       {/* AI Insights Banner */}
       <div style={{
         ...cardStyle,
         marginBottom: 24,
-        background: `linear-gradient(135deg, ${t.orange}08 0%, #8B5CF608 50%, ${t.blue}06 100%)`,
+        background: `linear-gradient(135deg, ${t.orange}08 0%, ${t.blue}12 50%, ${t.blue}06 100%)`,
         border: `1px solid ${t.grayLight}`,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{
             width: 40, height: 40, borderRadius: 12,
-            background: `linear-gradient(135deg, ${t.orange}, #8B5CF6)`,
+            background: `linear-gradient(135deg, ${t.orange}, ${t.blue})`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', boxShadow: `0 4px 12px ${t.orange}25`,
+            color: t.white, boxShadow: `0 4px 12px ${t.orange}25`,
           }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z" />
@@ -168,39 +302,32 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: t.black }}>AI Agents Active</div>
             <div style={{ fontSize: 12, color: t.gray, marginTop: 2 }}>
-              {salesForecast?.forecasts?.length ? `${salesForecast.forecasts.length}-day forecast ready (${Math.round(salesForecast.accuracy)}% accuracy)` : 'Demand forecasting runs nightly at 2 AM'}
-              {churnPrediction?.totalAtRisk ? ` · ${churnPrediction.totalAtRisk} customers at churn risk` : ''}
+              {forecastError
+                ? 'Forecast unavailable'
+                : salesForecast?.forecasts?.length
+                  ? `${salesForecast.forecasts.length}-day forecast ready (${Math.round(salesForecast.accuracy)}% model accuracy)`
+                  : 'Demand forecasting runs nightly at 2 AM'}
+              {churnError
+                ? ' · Churn unavailable'
+                : churnPrediction?.totalAtRisk
+                  ? ` · ${churnPrediction.totalAtRisk} customers at churn risk`
+                  : ''}
             </div>
           </div>
-        </div>
-        <div style={{
-          display: 'flex', gap: 8, alignItems: 'center',
-        }}>
-          {[
-            { path: 'M22 12l-4 0-3 9-6-18-3 9-4 0', label: 'Forecast', color: t.green },
-            { path: 'M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z', label: 'Reorder', color: '#8B5CF6' },
-            { path: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2z', label: 'Churn', color: t.orange },
-            { path: 'M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z', label: 'Reviews', color: t.yellow },
-          ].map(a => (
-            <div key={a.label} style={{
-              width: 34, height: 34, borderRadius: 8,
-              background: `${a.color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: a.color, cursor: 'default',
-            }} title={a.label}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={a.path} /></svg>
-            </div>
-          ))}
         </div>
       </div>
 
       {/* Two Column Layout: Order Queue + Staff Sessions */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
-        {/* Live Order Queue */}
         <div style={cardStyle}>
           <h3 style={sectionTitleStyle}>Live Order Queue</h3>
           <div style={{ marginTop: 12 }}>
-            {orderQueue.length === 0 ? (
-              <p style={{ textAlign: 'center', color: t.gray, padding: 20 }}>No pending orders</p>
+            {loadingOrders ? (
+              <ManagerLoadingBlock rows={3} label="Loading orders…" />
+            ) : ordersError ? (
+              <ManagerErrorState title="Failed to load orders" onRetry={() => void refetchOrders()} />
+            ) : orderQueue.length === 0 ? (
+              <ManagerEmptyState compact title="No pending orders" description="Queue is clear right now." />
             ) : orderQueue.slice(0, 10).map(order => (
               <div key={order.id} style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -223,7 +350,6 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
           </div>
         </div>
 
-        {/* Active Staff Sessions */}
         <div style={cardStyle}>
           <h3 style={sectionTitleStyle}>Active Staff Sessions</h3>
           <div style={{ marginTop: 12 }}>
@@ -254,7 +380,6 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
             ))}
           </div>
 
-          {/* Pending Approval Sessions */}
           <div style={{ marginTop: 16 }}>
             <h4 style={{ fontSize: 13, fontWeight: 600, color: t.orange, marginBottom: 8 }}>
               Pending Session Approvals ({storePendingSessions.length})
@@ -285,14 +410,14 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
         </div>
       </div>
 
-      {/* Order Flow Summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginBottom: 24 }}>
+      {/* Order Flow + Types + Peak hours */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, marginBottom: 24 }}>
         <div style={cardStyle}>
           <h3 style={sectionTitleStyle}>Order Flow Summary</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
             {[
               { stage: 'Received', count: orderQueue.filter(o => o.status === 'RECEIVED').length, color: t.blue },
-              { stage: 'In Kitchen', count: orderQueue.filter(o => ['PREPARING', 'OVEN'].includes(o.status)).length, color: t.yellow },
+              { stage: 'In Kitchen', count: orderQueue.filter(o => ['PREPARING', 'OVEN', 'BAKED'].includes(o.status)).length, color: t.yellow },
               { stage: 'Ready', count: orderQueue.filter(o => o.status === 'READY').length, color: t.green },
               { stage: 'Dispatched', count: orderQueue.filter(o => ['DISPATCHED', 'OUT_FOR_DELIVERY'].includes(o.status)).length, color: t.orange },
             ].map(item => (
@@ -310,23 +435,64 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
           </div>
         </div>
 
-        {/* Order Type Breakdown */}
-        {orderTypeBreakdown && (
-          <div style={cardStyle}>
-            <h3 style={sectionTitleStyle}>Order Types</h3>
+        <div style={cardStyle}>
+          <h3 style={sectionTitleStyle}>Order Types</h3>
+          {loadingBreakdown && <ManagerLoadingBlock rows={2} label="Loading order types…" />}
+          {breakdownError && (
+            <p style={{ color: t.red, fontSize: 13, marginTop: 12 }}>Failed to load order-type breakdown.</p>
+          )}
+          {!loadingBreakdown && !breakdownError && orderTypeRows.length === 0 && (
+            <ManagerEmptyState compact title="No order types yet" description="Breakdown needs completed orders." />
+          )}
+          {!loadingBreakdown && !breakdownError && orderTypeRows.length > 0 && (
             <div style={{ marginTop: 16 }}>
-              {Object.entries(orderTypeBreakdown).filter(([k]) => k !== 'storeId' && k !== 'period').map(([type, data]: [string, OrderTypeBreakdownEntry]) => (
-                <div key={type} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${t.grayLight}` }}>
-                  <span style={{ fontSize: 13, color: t.black }}>{type}</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: t.orange }}>{typeof data === 'number' ? data : data?.count || 0}</span>
+              {orderTypeRows.map((row) => (
+                <div key={row.orderType} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${t.grayLight}` }}>
+                  <span style={{ fontSize: 13, color: t.black }}>{row.label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: t.orange }}>
+                    {row.count} · {formatCurrency(row.sales)}
+                  </span>
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
+
+        <div style={cardStyle}>
+          <h3 style={sectionTitleStyle}>Peak hours</h3>
+          {loadingPeak && <ManagerLoadingBlock rows={2} label="Loading peak hours…" />}
+          {peakError && (
+            <p style={{ color: t.red, fontSize: 13, marginTop: 12 }}>Failed to load peak hours.</p>
+          )}
+          {!loadingPeak && !peakError && peakActive.length === 0 && (
+            <ManagerEmptyState compact title="No peak-hour data" description="Hourly sales appear after orders today." />
+          )}
+          {!loadingPeak && !peakError && peakHours && peakActive.length > 0 && (
+            <div style={{ marginTop: 12, fontSize: 13, color: t.black }}>
+              <div style={{ marginBottom: 8 }}>
+                Busiest hour: <strong style={{ color: t.orange }}>{peakHours.peakHour}:00</strong>
+                {' '}({peakHours.peakHourOrders} orders · {formatCurrency(peakHours.peakHourSales)})
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                Quietest hour: <strong style={{ color: t.gray }}>{peakHours.slowestHour}:00</strong>
+              </div>
+              {peakActive.slice(0, 6).map((h) => (
+                <div key={h.hour} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: `1px solid ${t.grayLight}` }}>
+                  <span>{h.label}</span>
+                  <span style={{ fontWeight: 600 }}>{h.orderCount} orders · {formatCurrency(h.sales)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Staff Leaderboard */}
+      {leaderboardError && (
+        <div style={{ ...cardStyle, marginBottom: 24 }}>
+          <ManagerErrorState title="Staff leaderboard unavailable" />
+        </div>
+      )}
       {staffLeaderboard?.rankings && staffLeaderboard.rankings.length > 0 && (
         <div style={{ ...cardStyle, marginBottom: 24 }}>
           <h3 style={sectionTitleStyle}>Staff Leaderboard - {staffLeaderboard.period}</h3>
@@ -353,23 +519,28 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
       )}
 
       {/* Top Products */}
-      {topProducts?.topProducts && topProducts.topProducts.length > 0 && (
+      {productsError && derived.topProducts.length === 0 && (
         <div style={{ ...cardStyle, marginBottom: 24 }}>
-          <h3 style={sectionTitleStyle}>Top Selling Products - {topProducts.period}</h3>
+          <ManagerErrorState title="Top products unavailable" />
+        </div>
+      )}
+      {(topProducts?.topProducts?.length || derived.topProducts.length) > 0 && (
+        <div style={{ ...cardStyle, marginBottom: 24 }}>
+          <h3 style={sectionTitleStyle}>Top Selling Products</h3>
           <div style={{ marginTop: 16 }}>
-            {topProducts.topProducts.slice(0, 5).map((product: ProductRankingItem) => (
+            {(topProducts?.topProducts?.length ? topProducts.topProducts : derived.topProducts).slice(0, 5).map((product) => (
               <div key={product.itemId} style={{
                 display: 'flex', alignItems: 'center', gap: 12, padding: 10,
                 background: t.bgMain, borderRadius: t.radius.md, marginBottom: 8,
               }}>
                 <span style={{ fontSize: 16, fontWeight: 800, color: product.rank === 1 ? t.orange : t.gray }}>#{product.rank}</span>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: t.black }}>{product.itemName}</div>
-                  <div style={{ fontSize: 11, color: t.gray }}>{product.category} | {product.quantitySold} units</div>
+                  <div style={{ fontSize: 11, color: t.gray }}>{product.quantitySold} sold</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: t.black }}>{formatCurrency(product.revenue)}</div>
-                  <div style={{ fontSize: 11, color: t.gray }}>{product.percentOfTotalRevenue.toFixed(1)}%</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: t.black, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(product.revenue)}</div>
+                  <div style={{ fontSize: 11, color: t.gray }}>{(product.percentOfTotalRevenue ?? 0).toFixed(1)}%</div>
                 </div>
               </div>
             ))}
@@ -378,33 +549,38 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
       )}
 
       {/* Executive Summary */}
-      {executiveSummary && (
+      {execError && (
+        <div style={{ ...cardStyle, marginBottom: 24 }}>
+          <ManagerErrorState title="Executive summary unavailable" />
+        </div>
+      )}
+      {executiveSummary?.revenue && (
         <div style={{ ...cardStyle, marginBottom: 24 }}>
           <h3 style={sectionTitleStyle}>Executive Summary</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginTop: 16, marginBottom: 16 }}>
             <div>
               <div style={{ fontSize: 12, color: t.gray }}>Revenue</div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: t.black }}>{formatCurrency(executiveSummary.revenue.total)}</div>
-              <div style={{ fontSize: 11, color: executiveSummary.revenue.change >= 0 ? t.green : t.red }}>
-                {executiveSummary.revenue.change >= 0 ? '+' : ''}{executiveSummary.revenue.change}%
+              <div style={{ fontSize: 15, fontWeight: 700, color: t.black, overflowWrap: 'anywhere', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(executiveSummary.revenue?.total ?? 0)}</div>
+              <div style={{ fontSize: 11, color: (executiveSummary.revenue?.change ?? 0) >= 0 ? t.green : t.red }}>
+                {(executiveSummary.revenue?.change ?? 0) >= 0 ? '+' : ''}{executiveSummary.revenue?.change ?? 0}%
               </div>
             </div>
             <div>
               <div style={{ fontSize: 12, color: t.gray }}>Orders</div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: t.black }}>{executiveSummary.orders.total}</div>
-              <div style={{ fontSize: 11, color: executiveSummary.orders.change >= 0 ? t.green : t.red }}>
-                {executiveSummary.orders.change >= 0 ? '+' : ''}{executiveSummary.orders.change}%
+              <div style={{ fontSize: 15, fontWeight: 700, color: t.black, fontVariantNumeric: 'tabular-nums' }}>{executiveSummary.orders?.total ?? 0}</div>
+              <div style={{ fontSize: 11, color: (executiveSummary.orders?.change ?? 0) >= 0 ? t.green : t.red }}>
+                {(executiveSummary.orders?.change ?? 0) >= 0 ? '+' : ''}{executiveSummary.orders?.change ?? 0}%
               </div>
             </div>
             <div>
               <div style={{ fontSize: 12, color: t.gray }}>Customers At Risk</div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: t.yellow }}>{executiveSummary.customers.atRisk}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: t.yellow, fontVariantNumeric: 'tabular-nums' }}>{executiveSummary.customers?.atRisk ?? 0}</div>
             </div>
           </div>
-          {executiveSummary.topInsights?.length > 0 && (
+          {(executiveSummary.topInsights?.length ?? 0) > 0 && (
             <div>
               <div style={{ fontSize: 13, fontWeight: 600, color: t.black, marginBottom: 8 }}>Key Insights</div>
-              {executiveSummary.topInsights.slice(0, 3).map((insight: string, idx: number) => (
+              {executiveSummary.topInsights!.slice(0, 3).map((insight: string, idx: number) => (
                 <div key={idx} style={{ fontSize: 12, color: t.gray, marginBottom: 4 }}>- {insight}</div>
               ))}
             </div>
@@ -413,6 +589,11 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
       )}
 
       {/* Churn Prediction */}
+      {churnError && (
+        <div style={{ ...cardStyle, marginBottom: 24 }}>
+          <ManagerErrorState title="Churn prediction unavailable" />
+        </div>
+      )}
       {churnPrediction?.predictions && churnPrediction.predictions.length > 0 && (
         <div style={{ ...cardStyle, marginBottom: 24 }}>
           <h3 style={sectionTitleStyle}>At-Risk Customers ({churnPrediction.totalAtRisk})</h3>
@@ -438,9 +619,17 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
       )}
 
       {/* Sales Forecast */}
+      {forecastError && (
+        <div style={cardStyle}>
+          <ManagerErrorState title="Sales forecast unavailable" />
+        </div>
+      )}
       {salesForecast?.forecasts && salesForecast.forecasts.length > 0 && (
         <div style={cardStyle}>
           <h3 style={sectionTitleStyle}>7-Day Sales Forecast</h3>
+          <p style={{ fontSize: 12, color: t.gray, marginTop: 4 }}>
+            Model accuracy {Math.round(salesForecast.accuracy)}% · period {salesForecast.period}
+          </p>
           <div style={{ marginTop: 12 }}>
             {salesForecast.forecasts.map((forecast: SalesForecastItem) => (
               <div key={forecast.date} style={{
@@ -448,7 +637,7 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
                 background: t.bgMain, borderRadius: t.radius.md, marginBottom: 6,
               }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: t.black }}>
-                  {new Date(forecast.date).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })}
+                  {new Date(forecast.date).toLocaleDateString('en-IE', { weekday: 'short', month: 'short', day: 'numeric' })}
                 </span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: t.orange }}>{formatCurrency(forecast.forecastedSales)}</span>
               </div>
@@ -456,7 +645,7 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
           </div>
         </div>
       )}
-    </div>
+    </ManagerPageFrame>
   );
 };
 

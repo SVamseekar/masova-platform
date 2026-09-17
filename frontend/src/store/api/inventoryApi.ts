@@ -57,11 +57,15 @@ export interface Supplier {
   supplierName: string;
   contactPerson: string;
   email: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  pincode: string;
+  /** Canonical backend field */
+  phoneNumber?: string;
+  /** Legacy alias — prefer phoneNumber */
+  phone?: string;
+  address?: string;
+  addressLine1?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
   gstin?: string;
 
   // Categories supplied
@@ -134,6 +138,8 @@ export interface PurchaseOrderItem {
   itemCode: string;
   unit: string;
   orderedQuantity: number;
+  /** Backend field alias */
+  quantity?: number;
   receivedQuantity: number;
   unitPrice: number;
   totalPrice: number;
@@ -166,6 +172,12 @@ export interface WasteRecord {
   // Details
   reason?: string;
   notes?: string;
+  /** Backend aliases — POST body maps these onto WasteRecord.java */
+  wasteCategory?: string;
+  totalCost?: number;
+  preventable?: boolean;
+  reportedBy?: string;
+  wasteDate?: string;
 
   createdAt: string;
   updatedAt: string;
@@ -251,7 +263,8 @@ export const inventoryApi = createApi({
     }),
 
     getAllInventoryItems: builder.query<InventoryItem[], string | undefined>({
-      query: () => '/inventory',
+      query: (storeId) =>
+        `/inventory${storeId ? `?storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'InventoryItem', id: storeId || 'DEFAULT' }],
     }),
 
@@ -265,8 +278,12 @@ export const inventoryApi = createApi({
       providesTags: ['InventoryItem'],
     }),
 
-    searchInventoryItems: builder.query<InventoryItem[], { query: string }>({
-      query: ({ query }) => `/inventory?search=${encodeURIComponent(query)}`,
+    searchInventoryItems: builder.query<InventoryItem[], { query: string; storeId?: string }>({
+      query: ({ query, storeId }) => {
+        const params = new URLSearchParams({ search: query });
+        if (storeId) params.set('storeId', storeId);
+        return `/inventory?${params.toString()}`;
+      },
       providesTags: ['InventoryItem'],
     }),
 
@@ -325,12 +342,14 @@ export const inventoryApi = createApi({
     }),
 
     getLowStockItems: builder.query<InventoryItem[], string | undefined>({
-      query: () => '/inventory?lowStock=true',
+      query: (storeId) =>
+        `/inventory?lowStock=true${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'InventoryItem', id: storeId || 'DEFAULT' }],
     }),
 
     getOutOfStockItems: builder.query<InventoryItem[], string | undefined>({
-      query: () => '/inventory?outOfStock=true',
+      query: (storeId) =>
+        `/inventory?outOfStock=true${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'InventoryItem', id: storeId || 'DEFAULT' }],
     }),
 
@@ -340,17 +359,23 @@ export const inventoryApi = createApi({
     }),
 
     getLowStockAlerts: builder.query<InventoryItem[], string | undefined>({
-      query: () => '/inventory?lowStock=true',
+      query: (storeId) =>
+        `/inventory?lowStock=true${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'InventoryItem', id: storeId || 'DEFAULT' }],
     }),
 
     getTotalInventoryValue: builder.query<InventoryValueResponse, string | undefined>({
-      query: () => '/inventory/value',
+      query: (storeId) =>
+        `/inventory/value${storeId ? `?storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'InventoryValue', id: storeId || 'DEFAULT' }],
     }),
 
     getInventoryValueByCategory: builder.query<InventoryValueResponse, string | undefined>({
-      query: () => '/inventory/value?byCategory=true',
+      query: (storeId) => {
+        const params = new URLSearchParams({ byCategory: 'true' });
+        if (storeId) params.set('storeId', storeId);
+        return `/inventory/value?${params.toString()}`;
+      },
       providesTags: (result, error, storeId) => [{ type: 'InventoryValue', id: storeId || 'DEFAULT' }],
     }),
 
@@ -375,7 +400,8 @@ export const inventoryApi = createApi({
     }),
 
     getAllSuppliers: builder.query<Supplier[], string | undefined>({
-      query: () => '/suppliers',
+      query: (storeId) =>
+        `/suppliers${storeId ? `?storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'Supplier', id: storeId || 'DEFAULT' }],
     }),
 
@@ -390,17 +416,29 @@ export const inventoryApi = createApi({
     }),
 
     getActiveSuppliers: builder.query<Supplier[], string | undefined>({
-      query: () => '/suppliers?status=ACTIVE',
+      query: (storeId) => {
+        const p = new URLSearchParams({ status: 'ACTIVE' });
+        if (storeId) p.set('storeId', storeId);
+        return `/suppliers?${p.toString()}`;
+      },
       providesTags: (result, error, storeId) => [{ type: 'Supplier', id: storeId || 'DEFAULT' }],
     }),
 
     getPreferredSuppliers: builder.query<Supplier[], string | undefined>({
-      query: () => '/suppliers?preferred=true',
+      query: (storeId) => {
+        const p = new URLSearchParams({ preferred: 'true' });
+        if (storeId) p.set('storeId', storeId);
+        return `/suppliers?${p.toString()}`;
+      },
       providesTags: (result, error, storeId) => [{ type: 'Supplier', id: storeId || 'DEFAULT' }],
     }),
 
     getReliableSuppliers: builder.query<Supplier[], string | undefined>({
-      query: () => '/suppliers?reliable=true',
+      query: (storeId) => {
+        const p = new URLSearchParams({ reliable: 'true' });
+        if (storeId) p.set('storeId', storeId);
+        return `/suppliers?${p.toString()}`;
+      },
       providesTags: (result, error, storeId) => [{ type: 'Supplier', id: storeId || 'DEFAULT' }],
     }),
 
@@ -473,7 +511,8 @@ export const inventoryApi = createApi({
     }),
 
     getAllPurchaseOrders: builder.query<PurchaseOrder[], string | undefined>({
-      query: () => '/purchase-orders',
+      query: (storeId) =>
+        `/purchase-orders${storeId ? `?storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'PurchaseOrder', id: storeId || 'DEFAULT' }],
     }),
 
@@ -493,12 +532,14 @@ export const inventoryApi = createApi({
     }),
 
     getPendingApprovalPurchaseOrders: builder.query<PurchaseOrder[], string | undefined>({
-      query: () => '/purchase-orders?pending=true',
+      query: (storeId) =>
+        `/purchase-orders?pending=true${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'PurchaseOrder', id: storeId || 'DEFAULT' }],
     }),
 
     getOverduePurchaseOrders: builder.query<PurchaseOrder[], string | undefined>({
-      query: () => '/purchase-orders?overdue=true',
+      query: (storeId) =>
+        `/purchase-orders?overdue=true${storeId ? `&storeId=${encodeURIComponent(storeId)}` : ''}`,
       providesTags: (result, error, storeId) => [{ type: 'PurchaseOrder', id: storeId || 'DEFAULT' }],
     }),
 
@@ -514,7 +555,7 @@ export const inventoryApi = createApi({
         method: 'PATCH',
         body: order,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'PurchaseOrder', id }],
+      invalidatesTags: (result, error, { id }) => [{ type: 'PurchaseOrder', id }, 'PurchaseOrder'],
     }),
 
     approvePurchaseOrder: builder.mutation<PurchaseOrder, { id: string; approvedBy: string }>({
@@ -599,7 +640,31 @@ export const inventoryApi = createApi({
     }),
 
     getAllWasteRecords: builder.query<WasteRecord[], string | undefined>({
-      query: () => '/waste',
+      query: (storeId?: string) => `/waste${storeId ? `?storeId=${encodeURIComponent(storeId)}` : ''}`,
+      transformResponse: (raw: unknown): WasteRecord[] => {
+        const list = Array.isArray(raw) ? raw : [];
+        return list.map((row) => {
+          const r = (row && typeof row === 'object') ? row as Record<string, unknown> : {};
+          const cost = Number(r.wasteCost ?? r.totalCost ?? 0);
+          return {
+            ...(r as object),
+            id: String(r.id ?? ''),
+            storeId: String(r.storeId ?? ''),
+            inventoryItemId: String(r.inventoryItemId ?? ''),
+            itemName: String(r.itemName ?? 'Item'),
+            quantity: Number(r.quantity ?? 0),
+            unit: String(r.unit ?? ''),
+            wasteCost: Number.isFinite(cost) ? cost : 0,
+            wasteType: String(r.wasteType ?? r.wasteCategory ?? 'OTHER') as WasteRecord['wasteType'],
+            isPreventable: Boolean(r.isPreventable ?? r.preventable),
+            recordedBy: String(r.recordedBy ?? r.reportedBy ?? ''),
+            recordedAt: String(r.recordedAt ?? r.wasteDate ?? r.createdAt ?? ''),
+            status: (String(r.status ?? 'PENDING') as WasteRecord['status']),
+            createdAt: String(r.createdAt ?? ''),
+            updatedAt: String(r.updatedAt ?? ''),
+          };
+        });
+      },
       providesTags: (result, error, storeId) => [{ type: 'WasteRecord', id: storeId || 'DEFAULT' }],
     }),
 

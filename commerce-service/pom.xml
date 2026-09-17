@@ -75,7 +75,13 @@
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
 
-        <!-- Resilience4j for Circuit Breakers -->
+        <!-- Resilience4j for Circuit Breakers.
+             Held back from the maven-minor-patch group bump (2.4.0): that version's
+             resilience4j-spring-boot3 autoconfiguration references
+             io.github.resilience4j.spring6.fallback.RxJava3FallbackDecorator in a
+             bean method signature that Spring inspects via reflection regardless of
+             whether RxJava3 support is used, and the class isn't resolvable on this
+             classpath, breaking commerce-service startup with NoClassDefFoundError. -->
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-spring-boot3</artifactId>
@@ -139,25 +145,25 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>1.19.3</version>
+            <version>1.21.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>mongodb</artifactId>
-            <version>1.19.3</version>
+            <version>1.21.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
-            <version>1.19.3</version>
+            <version>1.21.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>rabbitmq</artifactId>
-            <version>1.19.3</version>
+            <version>1.21.4</version>
             <scope>test</scope>
         </dependency>
         <!-- Shared test utilities -->
@@ -183,7 +189,7 @@
         <dependency>
             <groupId>au.com.dius.pact.provider</groupId>
             <artifactId>spring6</artifactId>
-            <version>4.6.17</version>
+            <version>4.7.5</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -200,6 +206,13 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
                     <excludes>
                         <exclude>
