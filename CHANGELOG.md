@@ -14,7 +14,9 @@ Nothing yet.
 
 ### MaSoVa 3.0 — The European Restaurant Operating System
 
-Nine months of continuous delivery, consolidated into MaSoVa's landmark release: a production-grade operating system for multi-store European restaurant groups, spanning regulatory compliance, delivery marketplace integration, in-store operations, and the diner experience.
+Nine months, 680 commits, 4,574 files changed: MaSoVa's landmark release, transforming a 12-microservice prototype into a production-grade operating system for multi-store European restaurant groups.
+
+**Full release notes: [`RELEASE_NOTES_v3.0.0.md`](./RELEASE_NOTES_v3.0.0.md)**
 
 ### European Expansion & Regulatory Compliance
 - EU 14-Allergen Safety Management — menu item tagging and diner-facing safety filtering across every ordering surface
@@ -48,6 +50,18 @@ Nine months of continuous delivery, consolidated into MaSoVa's landmark release:
 ### Commercial B2B Showcase
 - Dedicated enterprise marketing site (`/`) featuring live interactive AI agent previews and tiered subscription plans
 - GDPR-compliant cookie consent and privacy controls
+
+### Architectural & Infrastructure Foundation
+- 12-to-6 microservice consolidation on Spring Boot 3.5 / Spring Cloud 2025
+- Dual-write architecture — MongoDB (catalog/orders) + PostgreSQL (financial/fiscal, Flyway V1–V8)
+- RabbitMQ event-driven bus (`masova.orders.exchange`, `masova.notifications.exchange`)
+- Redis JWT blacklist on logout
+- Testcontainers integration suite + multi-stage Docker builds across all 6 services
+
+### Breaking Changes
+- Gateway is now the canonical route for all services; direct per-service ports are internal/test-only
+- PostgreSQL schemas must be migrated to Flyway V8 before deploying this release
+- New required env vars: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, per-country fiscal signer credentials, aggregator API credentials (Wolt/Deliveroo/Just Eat/Uber Eats)
 
 ---
 
