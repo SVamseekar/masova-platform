@@ -13,10 +13,16 @@
     <name>MaSoVa Shared Security Library</name>
     <description>Reusable security components for all MaSoVa microservices</description>
 
+    <!-- This is the only module in the repo that inherits from
+         spring-boot-starter-parent directly (the root pom deliberately does not,
+         see its spring-boot-maven-plugin comment) - keep this version aligned with
+         the root pom's spring-boot.version property, not whatever Dependabot last
+         proposed, since a mismatch here means shared-security silently diverges
+         from every other module's actual Spring Boot version. -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.0</version>
+        <version>3.5.16</version>
         <relativePath/>
     </parent>
 
