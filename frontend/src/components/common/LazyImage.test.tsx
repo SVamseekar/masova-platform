@@ -13,17 +13,20 @@ const mockIntersectionObserver = vi.fn();
 
 beforeEach(() => {
   mockIntersectionObserver.mockReset();
-  mockIntersectionObserver.mockImplementation((callback: IntersectionObserverCallback) => ({
-    observe: (element: Element) => {
+  mockIntersectionObserver.mockImplementation(function (
+    this: IntersectionObserver,
+    callback: IntersectionObserverCallback
+  ) {
+    this.observe = (element: Element) => {
       // Simulate immediate intersection
       callback(
         [{ isIntersecting: true, target: element }] as IntersectionObserverEntry[],
         {} as IntersectionObserver
       );
-    },
-    disconnect: vi.fn(),
-    unobserve: vi.fn(),
-  }));
+    };
+    this.disconnect = vi.fn();
+    this.unobserve = vi.fn();
+  });
   vi.stubGlobal('IntersectionObserver', mockIntersectionObserver);
 });
 
@@ -82,11 +85,11 @@ describe('LazyImage', () => {
 
   it('does not render img element when not in viewport', () => {
     // Override to not trigger intersection
-    mockIntersectionObserver.mockImplementation(() => ({
-      observe: vi.fn(),
-      disconnect: vi.fn(),
-      unobserve: vi.fn(),
-    }));
+    mockIntersectionObserver.mockImplementation(function (this: IntersectionObserver) {
+      this.observe = vi.fn();
+      this.disconnect = vi.fn();
+      this.unobserve = vi.fn();
+    });
 
     render(<LazyImage src="/images/test.jpg" alt="Hidden image" />);
     expect(screen.queryByAltText('Hidden image')).not.toBeInTheDocument();
