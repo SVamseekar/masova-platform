@@ -22,7 +22,7 @@
              renamed spring-cloud-starter-gateway to spring-cloud-starter-gateway-server-webflux
              and requires Spring Boot 4 (Spring Cloud Gateway 5.x). This repo is on
              Spring Boot 3.5.x; revisit alongside a deliberate Boot 4 upgrade. -->
-        <spring-cloud.version>2025.0.3</spring-cloud.version>
+        <spring-cloud.version>2025.1.3</spring-cloud.version>
         <springdoc-openapi.version>2.8.17</springdoc-openapi.version>
         <smart-doc.version>3.1.2</smart-doc.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
