@@ -23,7 +23,7 @@
              and requires Spring Boot 4 (Spring Cloud Gateway 5.x). This repo is on
              Spring Boot 3.5.x; revisit alongside a deliberate Boot 4 upgrade. -->
         <spring-cloud.version>2025.0.3</spring-cloud.version>
-        <springdoc-openapi.version>2.8.17</springdoc-openapi.version>
+        <springdoc-openapi.version>3.1.1</springdoc-openapi.version>
         <smart-doc.version>3.1.2</smart-doc.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- Default empty JaCoCo agent args — overridden by JaCoCo prepare-agent execution -->
