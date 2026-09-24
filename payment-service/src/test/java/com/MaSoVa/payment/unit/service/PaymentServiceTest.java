@@ -41,6 +41,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -1112,5 +1113,23 @@ class PaymentServiceTest {
             // Then
             verify(transactionRepository, never()).save(any(Transaction.class));
         }
+    }
+
+    @Test
+    @DisplayName("Postgres ledger failure is not swallowed")
+    void postgresWriteFailureIsNotSwallowed() {
+        com.MaSoVa.payment.service.TransactionLedgerWriter writer =
+                mock(com.MaSoVa.payment.service.TransactionLedgerWriter.class);
+        org.springframework.test.util.ReflectionTestUtils.setField(
+                paymentService, "transactionLedgerWriter", writer);
+        Transaction tx = new Transaction();
+        tx.setId("txn-1");
+        when(transactionRepository.save(any(Transaction.class))).thenReturn(tx);
+        doThrow(new RuntimeException("PG down")).when(writer).write(any(Transaction.class));
+
+        assertThatThrownBy(() -> org.springframework.test.util.ReflectionTestUtils.invokeMethod(
+                paymentService, "saveTransaction", tx))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("PG down");
     }
 }
