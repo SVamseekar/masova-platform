@@ -7,6 +7,7 @@ import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.Refund;
 import com.stripe.net.Webhook;
+import com.stripe.net.RequestOptions;
 import com.stripe.param.PaymentIntentCreateParams;
 import com.stripe.param.RefundCreateParams;
 import org.slf4j.Logger;
@@ -83,6 +84,11 @@ public class StripeGateway implements PaymentGateway {
 
     @Override
     public String refund(String gatewayPaymentId, BigDecimal amount, String speed) throws Exception {
+        return refund(gatewayPaymentId, amount, speed, null);
+    }
+
+    @Override
+    public String refund(String gatewayPaymentId, BigDecimal amount, String speed, String idempotencyKey) throws Exception {
         // Stripe refunds a charge (payment method), not a PaymentIntent
         PaymentIntent intent = PaymentIntent.retrieve(gatewayPaymentId);
         String currency = intent.getCurrency() != null ? intent.getCurrency().toUpperCase() : "EUR";
@@ -93,7 +99,11 @@ public class StripeGateway implements PaymentGateway {
                 .setAmount(amountMinorUnits)
                 .build();
 
-        Refund refund = Refund.create(params);
+        RequestOptions.RequestOptionsBuilder options = RequestOptions.builder();
+        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+            options.setIdempotencyKey(idempotencyKey);
+        }
+        Refund refund = Refund.create(params, options.build());
         log.info("Stripe Refund created: {} for paymentIntent={}", refund.getId(), gatewayPaymentId);
         return refund.getId();
     }

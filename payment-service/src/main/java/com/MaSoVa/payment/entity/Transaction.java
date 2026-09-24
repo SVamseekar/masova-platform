@@ -41,6 +41,9 @@ public class Transaction {
 
     private BigDecimal amount; // in INR (paisa for Razorpay)
 
+    /** Sum reserved by atomic refund claims. Absent on old documents means zero. */
+    private BigDecimal refundClaimedAmount;
+
     @Indexed
     private PaymentStatus status;
 
@@ -114,6 +117,9 @@ public class Transaction {
 
     public BigDecimal getAmount() { return amount; }
     public void setAmount(BigDecimal amount) { this.amount = amount; }
+
+    public BigDecimal getRefundClaimedAmount() { return refundClaimedAmount; }
+    public void setRefundClaimedAmount(BigDecimal refundClaimedAmount) { this.refundClaimedAmount = refundClaimedAmount; }
 
     public PaymentStatus getStatus() { return status; }
     public void setStatus(PaymentStatus status) { this.status = status; }

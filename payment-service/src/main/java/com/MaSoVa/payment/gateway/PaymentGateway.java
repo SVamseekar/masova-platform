@@ -34,6 +34,14 @@ public interface PaymentGateway {
     String refund(String gatewayPaymentId, BigDecimal amount, String speed) throws Exception;
 
     /**
+     * Refund with a caller-supplied idempotency key.
+     * Gateways that cannot send a per-request idempotency header ignore the key.
+     */
+    default String refund(String gatewayPaymentId, BigDecimal amount, String speed, String idempotencyKey) throws Exception {
+        return refund(gatewayPaymentId, amount, speed);
+    }
+
+    /**
      * Parse an inbound webhook payload.
      * Implementations must verify the signature themselves.
      * @param rawPayload Raw request body as String
