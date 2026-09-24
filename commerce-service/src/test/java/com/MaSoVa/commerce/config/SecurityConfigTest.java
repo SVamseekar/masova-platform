@@ -23,4 +23,12 @@ class SecurityConfigTest {
         assertThat(Arrays.asList(endpoints)).doesNotContain("/api/orders/kitchen/**");
         assertThat(Arrays.asList(endpoints)).contains("/api/orders/track/**");
     }
+
+    @Test
+    @DisplayName("payment callback is not a public endpoint")
+    void publicEndpointsExcludePaymentCallback() {
+        String[] endpoints = securityConfig.getPublicEndpointsForTest();
+
+        assertThat(Arrays.asList(endpoints)).doesNotContain("/api/orders/*/payment");
+    }
 }

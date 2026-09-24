@@ -48,6 +48,7 @@ class OrderServiceClientTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(orderServiceClient, "orderServiceUrl", "http://localhost:8083");
+        ReflectionTestUtils.setField(orderServiceClient, "paymentCallbackSecret", "lab-payment-callback-secret");
     }
 
     @Nested
@@ -77,7 +78,9 @@ class OrderServiceClientTest {
             assertThat(capturedBody).isNotNull();
             assertThat(capturedBody.getStatus()).isEqualTo("PAID");
             assertThat(capturedBody.getTransactionId()).isEqualTo("txn-001");
-            assertThat(captured.getHeaders().getFirst("X-Internal-Service")).isEqualTo("payment-service");
+            assertThat(captured.getHeaders().getFirst("X-Internal-Payment-Credential"))
+                    .isEqualTo("lab-payment-callback-secret");
+            assertThat(captured.getHeaders().getFirst("X-Internal-Service")).isNull();
         }
 
         @Test

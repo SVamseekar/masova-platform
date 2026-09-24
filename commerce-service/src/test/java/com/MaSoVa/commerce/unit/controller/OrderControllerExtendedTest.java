@@ -25,7 +25,11 @@ import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 
+import org.springframework.test.util.ReflectionTestUtils;
+
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -124,17 +128,31 @@ class OrderControllerExtendedTest extends BaseServiceTest {
                 .andExpect(status().isOk());
     }
 
-    // PATCH /api/orders/{orderId}/payment — uses X-Internal-Service to bypass role check
+    // PATCH /api/orders/{orderId}/payment — X-Internal-Service alone must not mark PAID
     @Test
-    void updatePaymentStatus_returns_200_with_internal_header() throws Exception {
+    void updatePaymentStatus_rejects_forgeable_internal_header() throws Exception {
+        mockMvc.perform(patch("/api/orders/order-1/payment")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"PAID\",\"transactionId\":\"txn-123\"}")
+                        .header("X-Internal-Service", "payment-service"))
+                .andExpect(status().isForbidden());
+
+        verify(orderService, never()).updatePaymentStatus(any(), any(), any());
+    }
+
+    @Test
+    void updatePaymentStatus_accepts_shared_payment_credential() throws Exception {
+        ReflectionTestUtils.setField(orderController, "paymentCallbackSecret", "lab-payment-callback-secret");
         when(orderService.updatePaymentStatus(eq("order-1"), any(), any()))
                 .thenReturn(buildOrder("order-1", Order.OrderStatus.RECEIVED));
 
         mockMvc.perform(patch("/api/orders/order-1/payment")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"status\":\"PAID\",\"transactionId\":\"txn-123\"}")
-                        .header("X-Internal-Service", "payment-service"))
+                        .header("X-Internal-Payment-Credential", "lab-payment-callback-secret"))
                 .andExpect(status().isOk());
+
+        verify(orderService).updatePaymentStatus(eq("order-1"), eq(Order.PaymentStatus.PAID), eq("txn-123"));
     }
 
     // PATCH /api/orders/{orderId} (update order priority — simpler body)
