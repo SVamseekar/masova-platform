@@ -37,6 +37,9 @@ public class DeliveryTracking {
 
     private String storeId;
 
+    @Indexed
+    private String customerId;
+
     // Driver details (cached)
     private String driverName;
     private String driverPhone;
@@ -109,6 +112,14 @@ public class DeliveryTracking {
 
     public void setStoreId(String storeId) {
         this.storeId = storeId;
+    }
+
+    public String getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(String customerId) {
+        this.customerId = customerId;
     }
 
     public String getDriverName() {
@@ -304,6 +315,7 @@ public class DeliveryTracking {
         private String orderId;
         private String driverId;
         private String storeId;
+        private String customerId;
         private String driverName;
         private String driverPhone;
         private DeliveryAddress pickupAddress;
@@ -345,6 +357,11 @@ public class DeliveryTracking {
 
         public Builder storeId(String storeId) {
             this.storeId = storeId;
+            return this;
+        }
+
+        public Builder customerId(String customerId) {
+            this.customerId = customerId;
             return this;
         }
 
@@ -469,6 +486,7 @@ public class DeliveryTracking {
             tracking.orderId = this.orderId;
             tracking.driverId = this.driverId;
             tracking.storeId = this.storeId;
+            tracking.customerId = this.customerId;
             tracking.driverName = this.driverName;
             tracking.driverPhone = this.driverPhone;
             tracking.pickupAddress = this.pickupAddress;

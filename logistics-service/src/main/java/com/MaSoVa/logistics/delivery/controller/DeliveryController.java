@@ -4,6 +4,7 @@ import com.MaSoVa.logistics.delivery.client.UserServiceClient;
 import com.MaSoVa.logistics.delivery.dto.*;
 import com.MaSoVa.logistics.delivery.entity.DeliveryTracking;
 import com.MaSoVa.logistics.delivery.service.*;
+import com.MaSoVa.logistics.delivery.repository.DeliveryTrackingRepository;
 import com.MaSoVa.shared.util.StoreContextUtil;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,6 +16,7 @@ import jakarta.validation.Valid;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -56,6 +58,7 @@ public class DeliveryController {
     private final ProofOfDeliveryService proofOfDeliveryService;
     private final DriverAcceptanceService driverAcceptanceService;
     private final PerformanceService performanceService;
+    private DeliveryTrackingRepository deliveryTrackingRepository;
 
     public DeliveryController(
             AutoDispatchService autoDispatchService,
@@ -74,6 +77,11 @@ public class DeliveryController {
         this.proofOfDeliveryService = proofOfDeliveryService;
         this.driverAcceptanceService = driverAcceptanceService;
         this.performanceService = performanceService;
+    }
+
+    @Autowired(required = false)
+    void setDeliveryTrackingRepository(DeliveryTrackingRepository deliveryTrackingRepository) {
+        this.deliveryTrackingRepository = deliveryTrackingRepository;
     }
 
     // ── LIST / DRIVER ACTIVE (board + crew) ───────────────────────────────────────
@@ -394,8 +402,14 @@ public class DeliveryController {
         if (internalCaller == null || internalCaller.isBlank()) {
             return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
         }
-        // DeliveryTracking stores no customer PII — nothing to anonymise
-        log.info("GDPR anonymize delivery tracking for customerId={}: no PII stored, no-op", customerId);
+        if (deliveryTrackingRepository == null) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+        for (DeliveryTracking tracking : deliveryTrackingRepository.findByCustomerId(customerId)) {
+            tracking.setDeliveryAddress(null);
+            tracking.setCustomerFeedback(null);
+            deliveryTrackingRepository.save(tracking);
+        }
         return ResponseEntity.ok().build();
     }
 }

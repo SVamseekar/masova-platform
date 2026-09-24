@@ -261,6 +261,38 @@ class OrderServiceDeliveryOrderTest {
         assertThat(result.getQualityCheckpoints()).hasSize(4);
     }
 
+    @Test
+    void anonymizeCustomerOrders_syncs_anonymized_pii_or_fails() {
+        Order order = new Order();
+        order.setId("o1");
+        order.setCustomerName("Ada");
+        order.setCustomerPhone("+49123");
+        order.setCustomerEmail("ada@example.com");
+        order.setDeliveryAddress(new com.MaSoVa.commerce.order.entity.DeliveryAddress());
+        when(orderRepository.findByCustomerId("cust-1")).thenReturn(List.of(order));
+        when(orderItemSyncService.syncOrderByMongoId(eq("o1"), any(Order.class))).thenReturn(true);
+
+        orderService.anonymizeCustomerOrders("cust-1");
+
+        assertThat(order.getCustomerName()).isEqualTo("ANONYMIZED");
+        assertThat(order.getCustomerPhone()).isEqualTo("ANONYMIZED");
+        assertThat(order.getCustomerEmail()).isEqualTo("ANONYMIZED");
+        assertThat(order.getDeliveryAddress()).isNull();
+        verify(orderItemSyncService).syncOrderByMongoId(eq("o1"), eq(order));
+    }
+
+    @Test
+    void anonymizeCustomerOrders_fails_when_postgres_row_is_missing() {
+        Order order = new Order();
+        order.setId("o1");
+        order.setCustomerName("Ada");
+        when(orderRepository.findByCustomerId("cust-1")).thenReturn(List.of(order));
+        when(orderItemSyncService.syncOrderByMongoId(eq("o1"), any(Order.class))).thenReturn(false);
+
+        assertThatThrownBy(() -> orderService.anonymizeCustomerOrders("cust-1"))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
     // Dual-write failure
 
     @Test

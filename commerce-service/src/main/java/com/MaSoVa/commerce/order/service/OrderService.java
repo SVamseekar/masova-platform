@@ -1463,6 +1463,18 @@ public class OrderService {
                 order.setDeliveryAddress(null);
             }
             orderRepository.save(order);
+            try {
+                boolean synced = orderItemSyncService.syncOrderByMongoId(order.getId(), order);
+                if (!synced) {
+                    recordPostgresRetry(order, "GDPR", new IllegalStateException("no Postgres order row"));
+                    throw new IllegalStateException("Postgres order still has customer data for " + order.getId());
+                }
+            } catch (IllegalStateException e) {
+                throw e;
+            } catch (Exception e) {
+                recordPostgresRetry(order, "GDPR", e);
+                throw new IllegalStateException("Postgres anonymize failed for " + order.getId(), e);
+            }
         }
         log.info("Anonymised {} orders for customer {}", orders.size(), customerId);
     }

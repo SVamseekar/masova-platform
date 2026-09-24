@@ -91,6 +91,18 @@ public class OrderItemSyncService {
     }
 
     private void updateFields(OrderJpaEntity pgOrder, Order order) {
+        pgOrder.setCustomerName(order.getCustomerName());
+        pgOrder.setCustomerPhone(order.getCustomerPhone());
+        pgOrder.setCustomerEmail(order.getCustomerEmail());
+        if (order.getDeliveryAddress() == null) {
+            pgOrder.setDeliveryAddress(null);
+        } else {
+            try {
+                pgOrder.setDeliveryAddress(objectMapper.writeValueAsString(order.getDeliveryAddress()));
+            } catch (Exception e) {
+                throw new IllegalStateException("Failed to serialize delivery address for order " + order.getId(), e);
+            }
+        }
         pgOrder.setStatus(order.getStatus() != null ? order.getStatus().name() : pgOrder.getStatus());
         pgOrder.setPaymentStatus(order.getPaymentStatus() != null ? order.getPaymentStatus().name() : pgOrder.getPaymentStatus());
         pgOrder.setPaymentMethod(order.getPaymentMethod() != null ? order.getPaymentMethod().name() : pgOrder.getPaymentMethod());
