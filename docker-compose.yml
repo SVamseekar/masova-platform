@@ -4,7 +4,7 @@ services:
     container_name: masova-mongodb
     restart: unless-stopped
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     volumes:
       - mongodb_data:/data/db
       - ./infrastructure/mongodb/init.js:/docker-entrypoint-initdb.d/init.js:ro
@@ -16,7 +16,7 @@ services:
     container_name: masova-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
@@ -28,8 +28,8 @@ services:
     container_name: masova-rabbitmq
     restart: unless-stopped
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: masova
       RABBITMQ_DEFAULT_PASS: masova_secret
@@ -48,7 +48,7 @@ services:
     container_name: masova-postgres
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_USER: masova
       POSTGRES_PASSWORD: masova_secret
@@ -76,7 +76,7 @@ services:
       dockerfile: core-service/Dockerfile
     container_name: masova-core
     ports:
-      - "8085:8085"
+      - "127.0.0.1:8085:8085"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - CORE_MONGODB_URI=mongodb://masova-mongodb:27017/masova_core
@@ -161,7 +161,7 @@ services:
       dockerfile: payment-service/Dockerfile
     container_name: masova-payment
     ports:
-      - "8089:8089"
+      - "127.0.0.1:8089:8089"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - MONGODB_URI=mongodb://masova-mongodb:27017/masova_payment
@@ -209,7 +209,7 @@ services:
       dockerfile: logistics-service/Dockerfile
     container_name: masova-logistics
     ports:
-      - "8086:8086"
+      - "127.0.0.1:8086:8086"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - LOGISTICS_MONGODB_URI=mongodb://masova-mongodb:27017/masova_logistics
@@ -252,7 +252,7 @@ services:
       dockerfile: intelligence-service/Dockerfile
     container_name: masova-intelligence
     ports:
-      - "8087:8087"
+      - "127.0.0.1:8087:8087"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - ANALYTICS_MONGODB_URI=mongodb://masova-mongodb:27017/masova_analytics
