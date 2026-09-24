@@ -164,6 +164,16 @@ class OrderServiceDeliveryProofTest {
     }
 
     @Test
+    void markOrderDelivered_triggers_fiscal_signing_once() {
+        Order order = buildDeliveryOrder("o1");
+        when(orderRepository.findById("o1")).thenReturn(Optional.of(order));
+
+        orderService.markOrderDelivered("o1", LocalDateTime.now(), "OTP");
+
+        verify(fiscalSigningService, times(1)).signOrder(any(Order.class));
+    }
+
+    @Test
     void anonymizeCustomerOrders_replaces_pii_with_anonymized() {
         Order o1 = buildDeliveryOrder("o1");
         o1.setCustomerName("John Doe");

@@ -1442,6 +1442,9 @@ public class OrderService {
         // Send delivery confirmation notification
         customerNotificationService.sendOrderStatusNotification(savedOrder, OrderStatus.DELIVERED);
 
+        // Same terminal-status signing as updateOrderStatus. Notification already publishes the status event.
+        fiscalSigningService.signOrder(savedOrder);
+
         // Broadcast WebSocket update
         webSocketController.sendKitchenQueueUpdate(savedOrder.getStoreId(), savedOrder);
 
