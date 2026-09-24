@@ -7,13 +7,22 @@ import com.MaSoVa.payment.gateway.PaymentGateway;
 import com.MaSoVa.payment.gateway.PaymentGatewayResolver;
 import com.MaSoVa.payment.repository.RefundRepository;
 import com.MaSoVa.payment.repository.TransactionRepository;
+import org.bson.Document;
+import org.bson.types.Decimal128;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.BasicQuery;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -27,15 +36,18 @@ public class RefundService {
     private final TransactionRepository transactionRepository;
     private final PaymentGatewayResolver paymentGatewayResolver;
     private final OrderServiceClient orderServiceClient;
+    private final MongoTemplate mongoTemplate;
 
     public RefundService(RefundRepository refundRepository,
                          TransactionRepository transactionRepository,
                          PaymentGatewayResolver paymentGatewayResolver,
-                         OrderServiceClient orderServiceClient) {
+                         OrderServiceClient orderServiceClient,
+                         MongoTemplate mongoTemplate) {
         this.refundRepository = refundRepository;
         this.transactionRepository = transactionRepository;
         this.paymentGatewayResolver = paymentGatewayResolver;
         this.orderServiceClient = orderServiceClient;
+        this.mongoTemplate = mongoTemplate;
     }
 
     /**
@@ -49,6 +61,7 @@ public class RefundService {
                     request.getTransactionId(), request.getAmount());
 
             Transaction transaction = loadAndValidateRefundable(request);
+            claimRefundCapacity(transaction, request.getAmount());
             return executeRefund(request, transaction, null);
 
         } catch (RuntimeException e) {
@@ -70,6 +83,7 @@ public class RefundService {
                 request.getTransactionId(), request.getAmount(), request.getInitiatedBy());
 
         Transaction transaction = loadAndValidateRefundable(request);
+        claimRefundCapacity(transaction, request.getAmount());
 
         // Unique placeholder required: razorpayRefundId has a unique index; multiple nulls → E11000.
         String pendingKey = "pending_" + UUID.randomUUID().toString().replace("-", "");
@@ -89,6 +103,7 @@ public class RefundService {
                 .speed(request.getSpeed() != null ? request.getSpeed() : "normal")
                 .notes(request.getNotes())
                 .build();
+        ensureIdempotencyKey(refund);
 
         refund = Objects.requireNonNull(refundRepository.save(refund));
         log.info("Refund recorded as PENDING_APPROVAL. Refund ID: {} (no money moved)", refund.getId());
@@ -121,7 +136,35 @@ public class RefundService {
             // Exclude this pending row from availability — it already holds the amount.
             validateRefundable(request, transaction, pending.getId());
 
-            return executeRefund(request, transaction, pending);
+            Refund claimed = mongoTemplate.findAndModify(
+                    Query.query(Criteria.where("_id").is(refundId).and("status").is(Refund.RefundStatus.PENDING_APPROVAL.name())),
+                    new Update().set("status", Refund.RefundStatus.INITIATED.name())
+                            .set("initiatedBy", request.getInitiatedBy()),
+                    FindAndModifyOptions.options().returnNew(true),
+                    Refund.class);
+            if (claimed == null) {
+                throw new RuntimeException("Refund is not pending approval (status: " + pending.getStatus() + ")");
+            }
+            if (claimed.getAmount() == null) {
+                claimed.setAmount(pending.getAmount());
+            }
+            if (claimed.getIdempotencyKey() == null) {
+                claimed.setIdempotencyKey(pending.getIdempotencyKey());
+            }
+            claimed.setId(pending.getId());
+            claimed.setTransactionId(pending.getTransactionId());
+            claimed.setOrderId(pending.getOrderId());
+            claimed.setStoreId(pending.getStoreId());
+            claimed.setRazorpayPaymentId(pending.getRazorpayPaymentId());
+            claimed.setRazorpayRefundId(pending.getRazorpayRefundId());
+            claimed.setType(pending.getType());
+            claimed.setReason(pending.getReason());
+            claimed.setSpeed(pending.getSpeed());
+            claimed.setNotes(pending.getNotes());
+            claimed.setCustomerId(pending.getCustomerId());
+            ensureIdempotencyKey(claimed);
+
+            return executeRefund(request, transaction, claimed);
 
         } catch (RuntimeException e) {
             throw e;
@@ -141,6 +184,12 @@ public class RefundService {
             throw new RuntimeException("Refund is not pending approval (status: " + pending.getStatus() + ")");
         }
         pending.setStatus(Refund.RefundStatus.REJECTED);
+        if (pending.getTransactionId() != null && pending.getAmount() != null) {
+            mongoTemplate.updateFirst(
+                    Query.query(Criteria.where("_id").is(pending.getTransactionId())),
+                    new Update().inc("refundClaimedAmount", pending.getAmount().negate()),
+                    Transaction.class);
+        }
         if (rejectionReason != null && !rejectionReason.isBlank()) {
             pending.setNotes((pending.getNotes() != null ? pending.getNotes() + " | " : "")
                     + "Rejected by " + rejectedBy + ": " + rejectionReason);
@@ -191,7 +240,6 @@ public class RefundService {
             throws Exception {
         String speed = request.getSpeed() != null ? request.getSpeed() : "normal";
         String paymentId = gatewayPaymentId(transaction);
-        GatewayRefundOutcome outcome = performGatewayRefund(transaction, paymentId, request.getAmount(), speed);
 
         Refund refund;
         if (existingPending != null) {
@@ -203,6 +251,7 @@ public class RefundService {
                     .orderId(transaction.getOrderId())
                     .storeId(transaction.getStoreId())
                     .razorpayPaymentId(paymentId)
+                    .razorpayRefundId("claim_" + UUID.randomUUID().toString().replace("-", ""))
                     .amount(request.getAmount())
                     .type(request.getType())
                     .reason(request.getReason())
@@ -210,8 +259,14 @@ public class RefundService {
                     .customerId(transaction.getCustomerId())
                     .speed(speed)
                     .notes(request.getNotes())
+                    .status(Refund.RefundStatus.INITIATED)
                     .build();
         }
+        String idempotencyKey = ensureIdempotencyKey(refund);
+        refund = Objects.requireNonNull(refundRepository.save(refund));
+
+        GatewayRefundOutcome outcome = performGatewayRefund(
+                transaction, paymentId, request.getAmount(), speed, idempotencyKey);
 
         refund.setRazorpayRefundId(outcome.gatewayRefundId());
         refund.setStatus(outcome.status());
@@ -236,7 +291,8 @@ public class RefundService {
     }
 
     private GatewayRefundOutcome performGatewayRefund(
-            Transaction transaction, String paymentId, BigDecimal amount, String speed) throws Exception {
+            Transaction transaction, String paymentId, BigDecimal amount, String speed, String idempotencyKey)
+            throws Exception {
         String gatewayName = resolveGatewayName(transaction);
 
         // Cash / synthetic / missing gateway ids — local bookkeeping only (demo + POS cash).
@@ -248,7 +304,7 @@ public class RefundService {
         }
 
         PaymentGateway gateway = paymentGatewayResolver.resolveByGatewayName(gatewayName);
-        String gatewayRefundId = gateway.refund(paymentId, amount, speed);
+        String gatewayRefundId = gateway.refund(paymentId, amount, speed, idempotencyKey);
 
         // Stripe refunds settle immediately in test mode; Razorpay often returns processing.
         Refund.RefundStatus status = "STRIPE".equalsIgnoreCase(gateway.getGatewayName())
@@ -382,6 +438,42 @@ public class RefundService {
         transactionRepository.save(transaction);
         log.info("Transaction status updated after refund. Transaction ID: {}, Status: {}, totalRefunded: {}",
                 transaction.getId(), transaction.getStatus(), totalRefunded);
+    }
+
+    /**
+     * Reserve refund capacity on the transaction before any gateway call.
+     * A concurrent refund loses this findAndModify and must not call the PSP.
+     */
+    private void claimRefundCapacity(Transaction transaction, BigDecimal amount) {
+        Document queryDoc = new Document("_id", transaction.getId())
+                .append("status", new Document("$in", Arrays.asList(
+                        Transaction.PaymentStatus.SUCCESS.name(),
+                        Transaction.PaymentStatus.PARTIAL_REFUND.name())))
+                .append("$expr", new Document("$lte", Arrays.asList(
+                        new Document("$add", Arrays.asList(
+                                new Document("$ifNull", Arrays.asList(
+                                        "$refundClaimedAmount", new Decimal128(BigDecimal.ZERO))),
+                                new Decimal128(amount))),
+                        "$amount")));
+        Query query = new BasicQuery(queryDoc);
+        Update update = new Update().inc("refundClaimedAmount", amount);
+        Transaction claimed = mongoTemplate.findAndModify(
+                query, update, FindAndModifyOptions.options().returnNew(true), Transaction.class);
+        if (claimed == null) {
+            throw new RuntimeException("Refund amount exceeds available amount. Available claim rejected for "
+                    + transaction.getId());
+        }
+    }
+
+    /** Same key for every attempt of this refund row. A new row gets a new key. */
+    private static String ensureIdempotencyKey(Refund refund) {
+        if (refund.getIdempotencyKey() == null || refund.getIdempotencyKey().isBlank()) {
+            String suffix = refund.getId() != null
+                    ? refund.getId()
+                    : UUID.randomUUID().toString().replace("-", "");
+            refund.setIdempotencyKey("rfnd_" + suffix);
+        }
+        return refund.getIdempotencyKey();
     }
 
     private record GatewayRefundOutcome(

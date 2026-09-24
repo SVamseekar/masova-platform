@@ -9,6 +9,10 @@ import com.MaSoVa.payment.repository.RefundRepository;
 import com.MaSoVa.payment.repository.TransactionRepository;
 import com.MaSoVa.payment.service.OrderServiceClient;
 import com.MaSoVa.payment.service.RefundService;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,6 +30,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -44,6 +50,7 @@ class RefundServiceApprovalTest {
     @Mock private PaymentGatewayResolver paymentGatewayResolver;
     @Mock private PaymentGateway paymentGateway;
     @Mock private OrderServiceClient orderServiceClient;
+    @Mock private MongoTemplate mongoTemplate;
 
     @InjectMocks private RefundService refundService;
 
@@ -63,6 +70,9 @@ class RefundServiceApprovalTest {
                 .build();
         successTransaction.setId("txn-001");
         successTransaction.setRazorpayPaymentId("pay_001");
+        lenient().when(mongoTemplate.findAndModify(
+                any(Query.class), any(Update.class), any(FindAndModifyOptions.class), eq(Transaction.class)))
+                .thenReturn(successTransaction);
 
         request = RefundRequest.builder()
                 .transactionId("txn-001")
@@ -113,7 +123,8 @@ class RefundServiceApprovalTest {
         when(refundRepository.findByTransactionId("txn-001")).thenReturn(Collections.emptyList());
         when(paymentGatewayResolver.resolveByGatewayName("RAZORPAY")).thenReturn(paymentGateway);
         when(paymentGateway.getGatewayName()).thenReturn("RAZORPAY");
-        when(paymentGateway.refund("pay_001", BigDecimal.valueOf(200.00), "normal")).thenReturn("rfnd_001");
+        when(paymentGateway.refund(eq("pay_001"), eq(BigDecimal.valueOf(200.00)), eq("normal"), anyString()))
+                .thenReturn("rfnd_001");
         when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
         when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -139,7 +150,11 @@ class RefundServiceApprovalTest {
         when(refundRepository.findByTransactionId("txn-001")).thenReturn(List.of(pending));
         when(paymentGatewayResolver.resolveByGatewayName("RAZORPAY")).thenReturn(paymentGateway);
         when(paymentGateway.getGatewayName()).thenReturn("RAZORPAY");
-        when(paymentGateway.refund("pay_001", BigDecimal.valueOf(200.00), "normal")).thenReturn("rfnd_approved");
+        when(paymentGateway.refund(eq("pay_001"), eq(BigDecimal.valueOf(200.00)), eq("normal"), anyString()))
+                .thenReturn("rfnd_approved");
+        when(mongoTemplate.findAndModify(
+                any(Query.class), any(Update.class), any(FindAndModifyOptions.class), eq(Refund.class)))
+                .thenReturn(pending);
         when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
         when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -149,6 +164,36 @@ class RefundServiceApprovalTest {
         assertThat(result.getRazorpayRefundId()).isEqualTo("rfnd_approved");
         assertThat(result.getInitiatedBy()).isEqualTo("manager-001");
         verify(orderServiceClient).updateOrderPaymentStatus("order-123", "REFUNDED", "txn-001");
+    }
+
+    @Test
+    @DisplayName("approve reuses the refund row idempotency key")
+    void approveReusesStoredIdempotencyKey() throws Exception {
+        Refund pending = Refund.builder()
+                .transactionId("txn-001").orderId("order-123").razorpayPaymentId("pay_001")
+                .amount(BigDecimal.valueOf(200.00)).status(Refund.RefundStatus.PENDING_APPROVAL)
+                .type(Refund.RefundType.PARTIAL).reason("agent req").initiatedBy("AGENT").speed("normal")
+                .build();
+        pending.setId("refund-001");
+        pending.setIdempotencyKey("rfnd_refund-001");
+
+        when(refundRepository.findById("refund-001")).thenReturn(Optional.of(pending));
+        when(transactionRepository.findById("txn-001")).thenReturn(Optional.of(successTransaction));
+        when(refundRepository.findByTransactionId("txn-001")).thenReturn(List.of(pending));
+        when(paymentGatewayResolver.resolveByGatewayName("RAZORPAY")).thenReturn(paymentGateway);
+        when(paymentGateway.getGatewayName()).thenReturn("RAZORPAY");
+        when(paymentGateway.refund(eq("pay_001"), eq(BigDecimal.valueOf(200.00)), eq("normal"), eq("rfnd_refund-001")))
+                .thenReturn("rfnd_approved");
+        when(mongoTemplate.findAndModify(
+                any(Query.class), any(Update.class), any(FindAndModifyOptions.class), eq(Refund.class)))
+                .thenReturn(pending);
+        when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Refund result = refundService.approveRefund("refund-001", "manager-001");
+
+        assertThat(result.getIdempotencyKey()).isEqualTo("rfnd_refund-001");
+        verify(paymentGateway).refund("pay_001", BigDecimal.valueOf(200.00), "normal", "rfnd_refund-001");
     }
 
     @Test

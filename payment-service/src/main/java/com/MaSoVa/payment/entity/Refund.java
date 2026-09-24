@@ -64,6 +64,12 @@ public class Refund {
     // Metadata
     private String notes;
 
+    /**
+     * Stable PSP idempotency key for this refund row.
+     * Retries of this row reuse it. A later partial refund is a new row and a new key.
+     */
+    private String idempotencyKey;
+
     // Timestamps
     @CreatedDate
     @Indexed
@@ -125,6 +131,9 @@ public class Refund {
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+
+    public String getIdempotencyKey() { return idempotencyKey; }
+    public void setIdempotencyKey(String idempotencyKey) { this.idempotencyKey = idempotencyKey; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

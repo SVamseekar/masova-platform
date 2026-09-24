@@ -9,6 +9,10 @@ import com.MaSoVa.payment.gateway.PaymentGateway;
 import com.MaSoVa.payment.gateway.PaymentGatewayResolver;
 import com.MaSoVa.payment.repository.RefundRepository;
 import com.MaSoVa.payment.repository.TransactionRepository;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -28,7 +32,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -42,6 +48,7 @@ class RefundServiceTest {
     @Mock private PaymentGatewayResolver paymentGatewayResolver;
     @Mock private PaymentGateway paymentGateway;
     @Mock private OrderServiceClient orderServiceClient;
+    @Mock private MongoTemplate mongoTemplate;
 
     @InjectMocks
     private RefundService refundService;
@@ -64,6 +71,9 @@ class RefundServiceTest {
                 .build();
         successTransaction.setId("txn-001");
         successTransaction.setRazorpayPaymentId("pay_razorpay_001");
+        lenient().when(mongoTemplate.findAndModify(
+                any(Query.class), any(Update.class), any(FindAndModifyOptions.class), eq(Transaction.class)))
+                .thenReturn(successTransaction);
 
         refundRequest = RefundRequest.builder()
                 .transactionId("txn-001")
@@ -87,7 +97,7 @@ class RefundServiceTest {
             when(refundRepository.findByTransactionId("txn-001")).thenReturn(Collections.emptyList());
             when(paymentGatewayResolver.resolveByGatewayName("RAZORPAY")).thenReturn(paymentGateway);
             when(paymentGateway.getGatewayName()).thenReturn("RAZORPAY");
-            when(paymentGateway.refund("pay_razorpay_001", BigDecimal.valueOf(200.00), "normal"))
+            when(paymentGateway.refund(eq("pay_razorpay_001"), eq(BigDecimal.valueOf(200.00)), eq("normal"), anyString()))
                     .thenReturn("rfnd_razorpay_001");
             when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> {
                 Refund r = inv.getArgument(0);
@@ -135,7 +145,7 @@ class RefundServiceTest {
             when(refundRepository.findByTransactionId("txn-stripe")).thenReturn(Collections.emptyList());
             when(paymentGatewayResolver.resolveByGatewayName("STRIPE")).thenReturn(paymentGateway);
             when(paymentGateway.getGatewayName()).thenReturn("STRIPE");
-            when(paymentGateway.refund("pi_test_de", BigDecimal.valueOf(42.50), "normal"))
+            when(paymentGateway.refund(eq("pi_test_de"), eq(BigDecimal.valueOf(42.50)), eq("normal"), anyString()))
                     .thenReturn("re_stripe_001");
             when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
             when(transactionRepository.save(any(Transaction.class))).thenReturn(stripeTxn);
@@ -145,7 +155,7 @@ class RefundServiceTest {
             assertThat(result.getRazorpayRefundId()).isEqualTo("re_stripe_001");
             assertThat(result.getStatus()).isEqualTo(Refund.RefundStatus.PROCESSED);
             assertThat(result.getStoreId()).isEqualTo("DOM001");
-            verify(paymentGateway).refund("pi_test_de", BigDecimal.valueOf(42.50), "normal");
+            verify(paymentGateway).refund(eq("pi_test_de"), eq(BigDecimal.valueOf(42.50)), eq("normal"), anyString());
         }
 
         @Test
@@ -249,11 +259,69 @@ class RefundServiceTest {
             when(transactionRepository.findById("txn-001")).thenReturn(Optional.of(successTransaction));
             when(refundRepository.findByTransactionId("txn-001")).thenReturn(Collections.emptyList());
             when(paymentGatewayResolver.resolveByGatewayName("RAZORPAY")).thenReturn(paymentGateway);
-            when(paymentGateway.refund(anyString(), any(), anyString()))
+            when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(paymentGateway.refund(anyString(), any(), anyString(), anyString()))
                     .thenThrow(new RuntimeException("Gateway error"));
 
             assertThatThrownBy(() -> refundService.initiateRefund(refundRequest))
                     .isInstanceOf(RuntimeException.class);
+        }
+
+        @Test
+        @DisplayName("Second overlapping refund loses the atomic claim and does not call the gateway")
+        void overlappingRefundLosesClaim() throws Exception {
+            when(transactionRepository.findById("txn-001")).thenReturn(Optional.of(successTransaction));
+            when(refundRepository.findByTransactionId("txn-001")).thenReturn(Collections.emptyList());
+            when(paymentGatewayResolver.resolveByGatewayName("RAZORPAY")).thenReturn(paymentGateway);
+            when(paymentGateway.getGatewayName()).thenReturn("RAZORPAY");
+            when(paymentGateway.refund(anyString(), any(), anyString(), anyString())).thenReturn("rfnd_one");
+            when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(transactionRepository.save(any(Transaction.class))).thenReturn(successTransaction);
+            when(mongoTemplate.findAndModify(
+                    any(Query.class), any(Update.class), any(FindAndModifyOptions.class), eq(Transaction.class)))
+                    .thenReturn(successTransaction, (Transaction) null);
+
+            refundService.initiateRefund(refundRequest);
+
+            assertThatThrownBy(() -> refundService.initiateRefund(refundRequest))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("exceeds available");
+            verify(paymentGateway, times(1)).refund(anyString(), any(), anyString(), anyString());
+        }
+
+        @Test
+        @DisplayName("Each partial refund gets its own Stripe idempotency key; a retry reuses the stored key")
+        void partialRefundsUseDistinctKeysAndRetryReusesStoredKey() throws Exception {
+            when(transactionRepository.findById("txn-001")).thenReturn(Optional.of(successTransaction));
+            when(refundRepository.findByTransactionId("txn-001")).thenReturn(Collections.emptyList());
+            when(paymentGatewayResolver.resolveByGatewayName("RAZORPAY")).thenReturn(paymentGateway);
+            when(paymentGateway.getGatewayName()).thenReturn("RAZORPAY");
+            when(paymentGateway.refund(anyString(), any(), anyString(), anyString())).thenReturn("rfnd_a", "rfnd_b");
+            when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(transactionRepository.save(any(Transaction.class))).thenReturn(successTransaction);
+
+            Refund first = refundService.initiateRefund(refundRequest);
+            RefundRequest later = RefundRequest.builder()
+                    .transactionId("txn-001")
+                    .amount(BigDecimal.valueOf(50.00))
+                    .type(Refund.RefundType.PARTIAL)
+                    .reason("Later partial")
+                    .initiatedBy("manager-001")
+                    .speed("normal")
+                    .build();
+            Refund second = refundService.initiateRefund(later);
+
+            assertThat(first.getIdempotencyKey()).startsWith("rfnd_");
+            assertThat(second.getIdempotencyKey()).startsWith("rfnd_");
+            assertThat(second.getIdempotencyKey()).isNotEqualTo(first.getIdempotencyKey());
+
+            org.mockito.ArgumentCaptor<String> keys = org.mockito.ArgumentCaptor.forClass(String.class);
+            verify(paymentGateway, times(2)).refund(anyString(), any(), anyString(), keys.capture());
+            assertThat(keys.getAllValues()).containsExactly(first.getIdempotencyKey(), second.getIdempotencyKey());
+
+            String stored = first.getIdempotencyKey();
+            first.setStatus(Refund.RefundStatus.INITIATED);
+            assertThat(first.getIdempotencyKey()).isEqualTo(stored);
         }
     }
 
