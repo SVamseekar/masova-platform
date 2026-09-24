@@ -142,7 +142,7 @@ jobs:
         run: node .github/ci/verify-openapi-counts.js specs
 
       - name: Upload refreshed specs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: openapi-specs
           path: specs/
@@ -169,7 +169,7 @@ jobs:
         run: cd frontend && npm run test:pact
 
       - name: Upload Pact contracts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pact-contracts
           path: frontend/pacts/
