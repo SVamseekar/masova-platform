@@ -5,6 +5,7 @@ import com.MaSoVa.logistics.delivery.controller.DeliveryController;
 import com.MaSoVa.logistics.delivery.dto.*;
 import com.MaSoVa.logistics.delivery.entity.DeliveryTracking;
 import com.MaSoVa.logistics.delivery.service.*;
+import com.MaSoVa.logistics.delivery.repository.DeliveryTrackingRepository;
 import com.MaSoVa.shared.test.BaseServiceTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -22,12 +24,15 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.List;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -622,8 +627,33 @@ class DeliveryControllerTest extends BaseServiceTest {
     class GdprAnonymize {
 
         @Test
+        @DisplayName("clears delivery address for that customer")
+        void clearsDeliveryAddress() throws Exception {
+            DeliveryTrackingRepository repository = mock(DeliveryTrackingRepository.class);
+            ReflectionTestUtils.setField(deliveryController, "deliveryTrackingRepository", repository);
+            DeliveryTracking tracking = new DeliveryTracking();
+            tracking.setCustomerId("customer-1");
+            DeliveryTracking.DeliveryAddress address = new DeliveryTracking.DeliveryAddress();
+            address.setStreet("Unter den Linden 1");
+            tracking.setDeliveryAddress(address);
+            when(repository.findByCustomerId("customer-1")).thenReturn(List.of(tracking));
+
+            mockMvc.perform(post("/api/delivery/gdpr/anonymize")
+                    .param("customerId", "customer-1")
+                    .header("X-Internal-Service", "core-service"))
+                .andExpect(status().isOk());
+
+            assertThat(tracking.getDeliveryAddress()).isNull();
+            verify(repository).save(tracking);
+        }
+
+        @Test
         @DisplayName("returns 200 when called with X-Internal-Service header")
         void returns200WithInternalHeader() throws Exception {
+            DeliveryTrackingRepository repository = mock(DeliveryTrackingRepository.class);
+            ReflectionTestUtils.setField(deliveryController, "deliveryTrackingRepository", repository);
+            when(repository.findByCustomerId("customer-1")).thenReturn(List.of());
+
             mockMvc.perform(post("/api/delivery/gdpr/anonymize")
                     .param("customerId", "customer-1")
                     .header("X-Internal-Service", "core-service"))

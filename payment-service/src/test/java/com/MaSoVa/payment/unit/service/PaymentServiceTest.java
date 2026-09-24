@@ -796,12 +796,16 @@ class PaymentServiceTest {
                     .thenReturn(List.of(tx1, tx2));
             when(encryptionService.encrypt("ANONYMIZED")).thenReturn("anon-encrypted");
             when(transactionRepository.save(any(Transaction.class))).thenAnswer(i -> i.getArgument(0));
+            com.MaSoVa.payment.service.TransactionLedgerWriter writer =
+                    mock(com.MaSoVa.payment.service.TransactionLedgerWriter.class);
+            org.springframework.test.util.ReflectionTestUtils.setField(paymentService, "transactionLedgerWriter", writer);
 
             // When
             paymentService.anonymizeCustomerData("cust-999");
 
             // Then
             verify(transactionRepository, org.mockito.Mockito.times(2)).save(any(Transaction.class));
+            verify(writer, org.mockito.Mockito.times(2)).write(any(Transaction.class));
             assertThat(tx1.getCustomerEmail()).isEqualTo("anon-encrypted");
             assertThat(tx1.getCustomerPhone()).isEqualTo("anon-encrypted");
             assertThat(tx2.getCustomerEmail()).isEqualTo("anon-encrypted");

@@ -91,6 +91,29 @@ class OrderItemSyncServiceTest {
     }
 
     @Test
+    void syncOrderByMongoId_clears_customer_pii_on_postgres_row() {
+        OrderJpaEntity jpa = buildJpaOrder();
+        jpa.setCustomerName("Ada Lovelace");
+        jpa.setCustomerPhone("+49123");
+        jpa.setCustomerEmail("ada@example.com");
+        jpa.setDeliveryAddress("{\"street\":\"Unter den Linden\"}");
+        Order order = buildOrder(Collections.emptyList());
+        order.setCustomerName("ANONYMIZED");
+        order.setCustomerPhone("ANONYMIZED");
+        order.setCustomerEmail("ANONYMIZED");
+        order.setDeliveryAddress(null);
+        when(orderJpaRepository.findByMongoId("o1")).thenReturn(Optional.of(jpa));
+        when(orderJpaRepository.save(any())).thenReturn(jpa);
+
+        syncService.syncOrderByMongoId("o1", order);
+
+        assertThat(jpa.getCustomerName()).isEqualTo("ANONYMIZED");
+        assertThat(jpa.getCustomerPhone()).isEqualTo("ANONYMIZED");
+        assertThat(jpa.getCustomerEmail()).isEqualTo("ANONYMIZED");
+        assertThat(jpa.getDeliveryAddress()).isNull();
+    }
+
+    @Test
     void syncOrderByMongoId_returns_false_when_missing() {
         Order order = buildOrder(Collections.emptyList());
         when(orderJpaRepository.findByMongoId("missing")).thenReturn(Optional.empty());

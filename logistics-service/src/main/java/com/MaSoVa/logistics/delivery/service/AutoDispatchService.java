@@ -267,6 +267,7 @@ public class AutoDispatchService {
                 .orderId(request.getOrderId())
                 .driverId((String) driver.get("id"))
                 .storeId(request.getStoreId())
+                .customerId(request.getCustomerId())
                 .driverName((String) driver.get("name"))
                 .driverPhone((String) driver.get("phone"))
                 .deliveryAddress(DeliveryTracking.DeliveryAddress.builder()
