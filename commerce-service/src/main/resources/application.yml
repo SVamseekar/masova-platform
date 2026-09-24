@@ -111,6 +111,10 @@ mongo:
     maintenance-initial-delay-ms: 0
     maintenance-frequency-ms: 10000
 
+internal:
+  payment-callback:
+    secret: ${INTERNAL_PAYMENT_CALLBACK_SECRET:}
+
 jwt:
   secret: ${JWT_SECRET}
   access-token-expiration: 3600000

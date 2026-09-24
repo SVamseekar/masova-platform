@@ -20,6 +20,7 @@ import jakarta.validation.Valid;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -28,6 +29,8 @@ import org.springframework.web.bind.annotation.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -60,9 +63,14 @@ public class OrderController {
     private static final int DEFAULT_PAGE = 0;
     private static final int DEFAULT_PAGE_SIZE = 50;
 
+    static final String PAYMENT_CREDENTIAL_HEADER = "X-Internal-Payment-Credential";
+
     private final OrderService orderService;
     private final OrderSummaryService orderSummaryService;
     private final ObjectMapper objectMapper;
+
+    @Value("${internal.payment-callback.secret:}")
+    private String paymentCallbackSecret;
 
     public OrderController(OrderService orderService, OrderSummaryService orderSummaryService, ObjectMapper objectMapper) {
         this.orderService = orderService;
@@ -387,18 +395,17 @@ public class OrderController {
 
     /**
      * PATCH /{orderId}/payment — update payment status.
-     * Called by payment-service (inter-service via X-Internal-Service header)
-     * or by MANAGER/STAFF for manual correction.
+     * payment-service must present the shared callback secret.
+     * X-Internal-Service is not an authorization.
+     * MANAGER/ASSISTANT_MANAGER/STAFF may correct status with a JWT.
      */
     @PatchMapping("/{orderId}/payment")
-    @Operation(summary = "Update payment status (inter-service or MANAGER/STAFF)")
+    @Operation(summary = "Update payment status (payment callback secret or MANAGER/STAFF)")
     public ResponseEntity<Order> updatePaymentStatus(
             @PathVariable("orderId") String orderId,
             @Valid @RequestBody UpdatePaymentStatusRequest request,
             jakarta.servlet.http.HttpServletRequest httpRequest) {
-        String internalCaller = httpRequest.getHeader("X-Internal-Service");
-        if (internalCaller == null || internalCaller.isBlank()) {
-            // Not an internal call — require MANAGER/ASSISTANT_MANAGER/STAFF role
+        if (!paymentCredentialMatches(httpRequest.getHeader(PAYMENT_CREDENTIAL_HEADER))) {
             var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
             boolean hasRole = auth != null && auth.getAuthorities().stream().anyMatch(a ->
                     a.getAuthority().equals("ROLE_MANAGER") ||
@@ -409,6 +416,16 @@ public class OrderController {
             }
         }
         return ResponseEntity.ok(orderService.updatePaymentStatus(orderId, request.getStatus(), request.getTransactionId()));
+    }
+
+    private boolean paymentCredentialMatches(String presented) {
+        if (paymentCallbackSecret == null || paymentCallbackSecret.isBlank()
+                || presented == null || presented.isBlank()) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                paymentCallbackSecret.getBytes(StandardCharsets.UTF_8),
+                presented.getBytes(StandardCharsets.UTF_8));
     }
 
     // ── QUALITY CHECKPOINTS ───────────────────────────────────────────────────────

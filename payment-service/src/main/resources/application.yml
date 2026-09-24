@@ -92,6 +92,10 @@ stripe:
   publishable-key: ${STRIPE_PUBLISHABLE_KEY:pk_test_placeholder_replace_in_env}
 
 
+internal:
+  payment-callback:
+    secret: ${INTERNAL_PAYMENT_CALLBACK_SECRET:}
+
 # Service URLs
 services:
   order-service:

@@ -32,6 +32,9 @@ public class OrderServiceClient {
     @Value("${services.order-service.url:http://localhost:8084}")
     private String orderServiceUrl;
 
+    @Value("${internal.payment-callback.secret:}")
+    private String paymentCallbackSecret;
+
     public OrderServiceClient(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
@@ -51,9 +54,7 @@ public class OrderServiceClient {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            // Commerce requires this for inter-service PATCH /api/orders/{id}/payment
-            // (no user JWT on service-to-service RestTemplate calls).
-            headers.set("X-Internal-Service", "payment-service");
+            headers.set("X-Internal-Payment-Credential", paymentCallbackSecret);
 
             HttpEntity<UpdateOrderPaymentRequest> entity = new HttpEntity<>(request, headers);
 

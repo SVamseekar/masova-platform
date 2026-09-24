@@ -116,7 +116,7 @@ services:
       dockerfile: commerce-service/Dockerfile
     container_name: masova-commerce
     ports:
-      - "8084:8084"
+      - "127.0.0.1:8084:8084"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - MENU_MONGODB_URI=mongodb://masova-mongodb:27017/masova_commerce
@@ -133,6 +133,7 @@ services:
       - RABBITMQ_USERNAME=masova
       - RABBITMQ_PASSWORD=masova_secret
       - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
+      - INTERNAL_PAYMENT_CALLBACK_SECRET=dev-internal-payment-callback-secret-lab-only
       - CORE_SERVICE_URL=http://masova-core:8085
       - SPRING_DATASOURCE_URL=jdbc:postgresql://masova-postgres:5432/masova_db?currentSchema=commerce_schema
       - SPRING_DATASOURCE_USERNAME=masova
@@ -176,6 +177,7 @@ services:
       - RABBITMQ_USERNAME=masova
       - RABBITMQ_PASSWORD=masova_secret
       - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
+      - INTERNAL_PAYMENT_CALLBACK_SECRET=dev-internal-payment-callback-secret-lab-only
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-sk_test_placeholder}
       - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY:-pk_test_placeholder}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-whsec_placeholder}

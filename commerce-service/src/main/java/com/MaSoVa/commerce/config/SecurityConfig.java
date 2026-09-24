@@ -2,17 +2,48 @@ package com.MaSoVa.commerce.config;
 
 import com.MaSoVa.shared.security.config.SecurityConfigurationBase;
 import com.MaSoVa.shared.security.util.JwtTokenProvider;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig extends SecurityConfigurationBase {
 
+    @Value("${internal.payment-callback.secret:}")
+    private String paymentCallbackSecret;
+
     public SecurityConfig(JwtTokenProvider tokenProvider) {
         super(tokenProvider);
+    }
+
+    @Bean
+    @Override
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(AbstractHttpConfigurer::disable)
+            .cors(AbstractHttpConfigurer::disable)
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> {
+                String[] publicEndpoints = getPublicEndpoints();
+                if (publicEndpoints != null && publicEndpoints.length > 0) {
+                    auth.requestMatchers(publicEndpoints).permitAll();
+                }
+                auth.anyRequest().authenticated();
+            })
+            .addFilterBefore(new InternalPaymentCredentialFilter(paymentCallbackSecret),
+                    UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
     }
 
     /** Package-visible for unit tests (Task 12). */
@@ -47,8 +78,8 @@ public class SecurityConfig extends SecurityConfigurationBase {
             // Public rating token validation (SMS/email links)
             "/api/orders/rating-token/**",
 
-            // Payment status callback from payment-service
-            "/api/orders/*/payment",
+            // Payment callback is authenticated: shared secret or staff JWT.
+            // See InternalPaymentCredentialFilter.
 
             // ── Infrastructure ─────────────────────────────────────────────
             "/actuator/health",
