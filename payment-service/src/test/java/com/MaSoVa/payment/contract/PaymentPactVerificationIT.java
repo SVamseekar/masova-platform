@@ -132,6 +132,7 @@ class PaymentPactVerificationIT extends BaseFullIntegrationTest {
                     .razorpayOrderId("order_razorpay_status")
                     .amount(java.math.BigDecimal.valueOf(450))
                     .status(Transaction.PaymentStatus.PENDING)
+                    .storeId("store-pact")
                     .currency("INR")
                     .build();
             transaction.setId("TXN-PACT-1");
@@ -155,6 +156,7 @@ class PaymentPactVerificationIT extends BaseFullIntegrationTest {
                 .razorpayOrderId("order_razorpay_1")
                 .amount(java.math.BigDecimal.valueOf(450))
                 .status(Transaction.PaymentStatus.PENDING)
+                .storeId("store-pact")
                 .currency("INR")
                 .build();
         transactionRepository.save(transaction);
