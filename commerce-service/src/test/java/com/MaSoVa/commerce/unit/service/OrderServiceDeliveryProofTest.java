@@ -171,6 +171,7 @@ class OrderServiceDeliveryProofTest {
         o1.setCustomerEmail("john@example.com");
 
         when(orderRepository.findByCustomerId("cust-1")).thenReturn(List.of(o1));
+        when(orderItemSyncService.syncOrderByMongoId(eq("o1"), any(Order.class))).thenReturn(true);
 
         orderService.anonymizeCustomerOrders("cust-1");
 
