@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import static org.assertj.core.api.Assertions.*;
 
 class CountryProfileServiceTest {
@@ -29,7 +30,8 @@ class CountryProfileServiceTest {
         "CH, CHF, de-CH",
         "GB, GBP, en-GB",
         "US, USD, en-US",
-        "CA, CAD, en-CA"
+        "CA, CAD, en-CA",
+        "ES, EUR, es-ES"
     })
     void resolveCurrencyAndLocale_knownCountry(String countryCode, String expectedCurrency, String expectedLocale) {
         assertThat(service.resolveCurrency(countryCode)).isEqualTo(expectedCurrency);
@@ -37,13 +39,33 @@ class CountryProfileServiceTest {
     }
 
     @Test
-    void resolveCurrency_nullCountryCode_returnsINR() {
-        assertThat(service.resolveCurrency(null)).isEqualTo("INR");
+    void resolveCurrency_nullCountryCode_throwsIllegalArgument() {
+        assertThatThrownBy(() -> service.resolveCurrency(null))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("countryCode is required");
     }
 
     @Test
-    void resolveLocale_nullCountryCode_returnsEnIN() {
-        assertThat(service.resolveLocale(null)).isEqualTo("en-IN");
+    void resolveLocale_nullCountryCode_throwsIllegalArgument() {
+        assertThatThrownBy(() -> service.resolveLocale(null))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("countryCode is required");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "  "})
+    void resolveCurrency_blankCountryCode_throwsIllegalArgument(String blank) {
+        assertThatThrownBy(() -> service.resolveCurrency(blank))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("countryCode is required");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "  "})
+    void resolveLocale_blankCountryCode_throwsIllegalArgument(String blank) {
+        assertThatThrownBy(() -> service.resolveLocale(blank))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("countryCode is required");
     }
 
     @Test

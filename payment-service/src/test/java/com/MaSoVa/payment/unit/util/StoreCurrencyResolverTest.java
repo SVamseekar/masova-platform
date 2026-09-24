@@ -4,6 +4,7 @@ import com.MaSoVa.payment.util.StoreCurrencyResolver;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -28,9 +29,10 @@ class StoreCurrencyResolverTest {
             "CH, CHF",
             "GB, GBP",
             "US, USD",
-            "CA, CAD"
+            "CA, CAD",
+            "ES, EUR"
     })
-    void all_twelve_countries_resolve_when_currency_omitted(String countryCode, String expectedCurrency) {
+    void supported_countries_resolve_when_currency_omitted(String countryCode, String expectedCurrency) {
         assertThat(StoreCurrencyResolver.resolveCurrency(countryCode, null)).isEqualTo(expectedCurrency);
         assertThat(StoreCurrencyResolver.resolveCurrency(countryCode, "  ")).isEqualTo(expectedCurrency);
     }
@@ -45,6 +47,14 @@ class StoreCurrencyResolverTest {
     @Test
     void missing_country_when_currency_omitted_throws() {
         assertThatThrownBy(() -> StoreCurrencyResolver.resolveCurrency(null, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("countryCode is required");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "  "})
+    void blank_country_when_currency_omitted_throws(String blank) {
+        assertThatThrownBy(() -> StoreCurrencyResolver.resolveCurrency(blank, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("countryCode is required");
     }
