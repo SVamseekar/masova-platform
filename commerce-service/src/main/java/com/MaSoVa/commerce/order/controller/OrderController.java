@@ -453,7 +453,7 @@ public class OrderController {
     // ── ANALYTICS (manager access) ────────────────────────────────────────────────
 
     /**
-     * GET /api/orders/analytics?staffId=&date=&startDate=&endDate=&type=kitchen|pos|prep-time|prep-time-by-item|prep-time-distribution|failed-quality|active-deliveries|make-table-station
+     * GET /api/orders/analytics?staffId=&date=&period=&startDate=&endDate=&type=kitchen|kitchen-store|pos|prep-time|prep-time-by-item|prep-time-distribution|failed-quality|active-deliveries|make-table-station
      * Replaces: /store/avg-prep-time, /store/analytics/prep-time-by-item,
      *           /store/analytics/prep-time-distribution, /store/failed-quality-checks,
      *           /active-deliveries/count, /store/make-table/{station},
@@ -461,11 +461,12 @@ public class OrderController {
      */
     @GetMapping("/analytics")
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
-    @Operation(summary = "Order analytics (query: type, staffId, date, startDate, endDate, station)")
+    @Operation(summary = "Order analytics (query: type, staffId, date, period, startDate, endDate, station)")
     public ResponseEntity<?> getAnalytics(
             @RequestParam(name = "type", required = false) String type,
             @RequestParam(name = "staffId", required = false) String staffId,
             @RequestParam(name = "date", required = false) String date,
+            @RequestParam(name = "period", required = false) String period,
             @RequestParam(name = "startDate", required = false) String startDate,
             @RequestParam(name = "endDate", required = false) String endDate,
             @RequestParam(name = "station", required = false) String station,
@@ -482,6 +483,21 @@ public class OrderController {
                 case "kitchen" -> {
                     if (staffId == null || date == null) yield ResponseEntity.badRequest().body(Map.of("error", "staffId and date required for kitchen analytics"));
                     yield ResponseEntity.ok(orderService.getKitchenStaffPerformance(staffId, LocalDate.parse(date)));
+                }
+                case "kitchen-store" -> {
+                    if (resolved == null || resolved.isBlank()) {
+                        yield ResponseEntity.badRequest().body(Map.of("error", "storeId required for kitchen-store analytics"));
+                    }
+                    LocalDate analyticsDate = null;
+                    if (date != null && !date.isBlank()) {
+                        analyticsDate = LocalDate.parse(date);
+                    } else if ("today".equals(period)) {
+                        analyticsDate = LocalDate.now();
+                    }
+                    if (analyticsDate == null) {
+                        yield ResponseEntity.badRequest().body(Map.of("error", "date or period=today required for kitchen-store analytics"));
+                    }
+                    yield ResponseEntity.ok(orderService.getKitchenStoreAnalytics(resolved, analyticsDate));
                 }
                 case "pos" -> {
                     if (staffId == null || startDate == null || endDate == null) yield ResponseEntity.badRequest().body(Map.of("error", "staffId, startDate and endDate required for pos analytics"));
@@ -502,7 +518,7 @@ public class OrderController {
                 case "failed-quality" -> ResponseEntity.ok(orderService.getOrdersWithFailedQualityChecks(resolved));
                 case "active-deliveries" -> ResponseEntity.ok(orderService.getActiveDeliveryCount(resolved));
                 case "make-table-station" -> ResponseEntity.ok(orderService.getOrdersByMakeTableStation(resolved, station));
-                default -> ResponseEntity.badRequest().body(Map.of("error", "type required: store-summary|kitchen|pos|prep-time|prep-time-by-item|prep-time-distribution|failed-quality|active-deliveries|make-table-station"));
+                default -> ResponseEntity.badRequest().body(Map.of("error", "type required: store-summary|kitchen|kitchen-store|pos|prep-time|prep-time-by-item|prep-time-distribution|failed-quality|active-deliveries|make-table-station"));
             };
         } catch (java.time.format.DateTimeParseException e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Invalid date format. Use ISO-8601 (yyyy-MM-dd)"));
