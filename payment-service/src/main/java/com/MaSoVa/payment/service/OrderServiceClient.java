@@ -1,7 +1,10 @@
 package com.MaSoVa.payment.service;
 
-import com.MaSoVa.shared.http.HttpMethods;
 import com.MaSoVa.payment.dto.UpdateOrderPaymentRequest;
+import com.MaSoVa.payment.entity.PaymentStatusOutbox;
+import com.MaSoVa.payment.repository.PaymentStatusOutboxRepository;
+import com.MaSoVa.payment.repository.TransactionRepository;
+import com.MaSoVa.shared.http.HttpMethods;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
@@ -13,8 +16,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
@@ -28,6 +33,8 @@ public class OrderServiceClient {
     private static final Logger log = LoggerFactory.getLogger(OrderServiceClient.class);
 
     private final RestTemplate restTemplate;
+    private final TransactionRepository transactionRepository;
+    private final PaymentStatusOutboxRepository paymentStatusOutboxRepository;
 
     @Value("${services.order-service.url:http://localhost:8084}")
     private String orderServiceUrl;
@@ -35,8 +42,12 @@ public class OrderServiceClient {
     @Value("${internal.payment-callback.secret:}")
     private String paymentCallbackSecret;
 
-    public OrderServiceClient(RestTemplate restTemplate) {
+    public OrderServiceClient(RestTemplate restTemplate,
+                              TransactionRepository transactionRepository,
+                              PaymentStatusOutboxRepository paymentStatusOutboxRepository) {
         this.restTemplate = restTemplate;
+        this.transactionRepository = transactionRepository;
+        this.paymentStatusOutboxRepository = paymentStatusOutboxRepository;
     }
 
     /**
@@ -68,12 +79,10 @@ public class OrderServiceClient {
                     String.class
             );
 
-            if (response.getStatusCode().is2xxSuccessful()) {
-                log.info("Successfully updated payment status for order: {} to {}", orderId, status);
-            } else {
-                log.error("Failed to update payment status for order: {}. HTTP Status: {}",
-                         orderId, response.getStatusCode());
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                throw new RestClientException("Commerce rejected payment status update: " + response.getStatusCode());
             }
+            log.info("Successfully updated payment status for order: {} to {}", orderId, status);
         } catch (Exception e) {
             log.error("Error updating order payment status for order: {}. Status: {}, Transaction: {}",
                      orderId, status, transactionId, e);
@@ -113,11 +122,20 @@ public class OrderServiceClient {
 
     // Fallback methods
     private void updateOrderPaymentStatusFallback(String orderId, String status, String transactionId, Exception ex) {
-        log.warn("Circuit breaker fallback for updateOrderPaymentStatus. Order: {}, Status: {}, Transaction: {}, Error: {}",
-                orderId, status, transactionId, ex.getMessage());
-        // Don't throw exception - payment succeeded even if order update failed
-        // This should be handled asynchronously or with retry logic
-        // In production, this would trigger a compensating transaction or alert
+        String paymentIntentId = transactionRepository.findById(transactionId)
+                .map(transaction -> transaction.getStripePaymentIntentId())
+                .orElse(null);
+        log.error("Commerce payment status update failed. orderId={}, paymentIntentId={}, transactionId={}, status={}",
+                orderId, paymentIntentId, transactionId, status, ex);
+
+        PaymentStatusOutbox outbox = new PaymentStatusOutbox();
+        outbox.setOrderId(orderId);
+        outbox.setStatus(status);
+        outbox.setTransactionId(transactionId);
+        outbox.setPaymentIntentId(paymentIntentId);
+        outbox.setLastError(ex.getMessage());
+        outbox.setCreatedAt(LocalDateTime.now());
+        paymentStatusOutboxRepository.save(outbox);
     }
 
     private Map<String, Object> getOrderDetailsFallback(String orderId, Exception ex) {

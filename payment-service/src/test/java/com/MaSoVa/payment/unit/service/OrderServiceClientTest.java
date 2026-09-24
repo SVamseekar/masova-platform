@@ -1,5 +1,9 @@
 package com.MaSoVa.payment.unit.service;
 
+import com.MaSoVa.payment.entity.PaymentStatusOutbox;
+import com.MaSoVa.payment.entity.Transaction;
+import com.MaSoVa.payment.repository.PaymentStatusOutboxRepository;
+import com.MaSoVa.payment.repository.TransactionRepository;
 import com.MaSoVa.shared.http.HttpMethods;
 import com.MaSoVa.payment.service.OrderServiceClient;
 import com.MaSoVa.payment.dto.UpdateOrderPaymentRequest;
@@ -22,6 +26,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -38,6 +43,12 @@ class OrderServiceClientTest {
 
     @Mock
     private RestTemplate restTemplate;
+
+    @Mock
+    private TransactionRepository transactionRepository;
+
+    @Mock
+    private PaymentStatusOutboxRepository paymentStatusOutboxRepository;
 
     @InjectMocks
     private OrderServiceClient orderServiceClient;
@@ -95,6 +106,29 @@ class OrderServiceClientTest {
             assertThatThrownBy(() -> orderServiceClient.updateOrderPaymentStatus(
                     "order-123", "PAID", "txn-001"))
                     .isInstanceOf(RestClientException.class);
+        }
+
+        @Test
+        @DisplayName("Should persist a retry record when the commerce update fallback runs")
+        void fallbackPersistsRetryRecord() {
+            Transaction transaction = new Transaction();
+            transaction.setStripePaymentIntentId("pi_123");
+            when(transactionRepository.findById("txn-001")).thenReturn(Optional.of(transaction));
+
+            ReflectionTestUtils.invokeMethod(
+                    orderServiceClient,
+                    "updateOrderPaymentStatusFallback",
+                    "order-123",
+                    "PAID",
+                    "txn-001",
+                    new RestClientException("commerce down"));
+
+            ArgumentCaptor<PaymentStatusOutbox> captor = ArgumentCaptor.forClass(PaymentStatusOutbox.class);
+            verify(paymentStatusOutboxRepository).save(captor.capture());
+            assertThat(captor.getValue().getOrderId()).isEqualTo("order-123");
+            assertThat(captor.getValue().getTransactionId()).isEqualTo("txn-001");
+            assertThat(captor.getValue().getStatus()).isEqualTo("PAID");
+            assertThat(captor.getValue().getPaymentIntentId()).isEqualTo("pi_123");
         }
     }
 
