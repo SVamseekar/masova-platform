@@ -20,6 +20,7 @@ import com.MaSoVa.commerce.order.dto.CreateOrderRequest;
 import com.MaSoVa.commerce.order.entity.Order;
 import com.MaSoVa.commerce.order.entity.OrderJpaEntity;
 import com.MaSoVa.commerce.order.repository.OrderJpaRepository;
+import com.MaSoVa.commerce.order.repository.OrderPostgresOutboxRepository;
 import com.MaSoVa.commerce.order.repository.OrderRepository;
 import com.MaSoVa.commerce.order.websocket.OrderWebSocketController;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,6 +31,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 
@@ -38,6 +40,8 @@ import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -190,5 +194,18 @@ class OrderServiceCreateOrderTest {
         org.mockito.ArgumentCaptor<OrderJpaEntity> captor = org.mockito.ArgumentCaptor.forClass(OrderJpaEntity.class);
         verify(orderJpaRepository).save(captor.capture());
         assertThat(captor.getValue().getMongoId()).isEqualTo(result.getId());
+    }
+
+    @Test
+    void createOrder_persists_retry_when_postgres_write_fails() {
+        OrderPostgresOutboxRepository outboxRepository = mock(OrderPostgresOutboxRepository.class);
+        ReflectionTestUtils.setField(orderService, "orderPostgresOutboxRepository", outboxRepository);
+        when(orderJpaRepository.save(any())).thenThrow(new RuntimeException("PG down"));
+
+        Order result = orderService.createOrder(buildTakeawayRequest());
+
+        assertThat(result.getOrderNumber()).isNotBlank();
+        verify(outboxRepository).save(argThat(row ->
+                "CREATE".equals(row.getOperation()) && "PG down".equals(row.getLastError())));
     }
 }

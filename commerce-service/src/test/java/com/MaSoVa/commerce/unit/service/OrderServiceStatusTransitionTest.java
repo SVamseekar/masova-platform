@@ -7,6 +7,7 @@ import com.MaSoVa.commerce.order.entity.Order;
 import com.MaSoVa.commerce.order.entity.Order.OrderStatus;
 import com.MaSoVa.commerce.order.entity.Order.OrderType;
 import com.MaSoVa.commerce.order.repository.OrderJpaRepository;
+import com.MaSoVa.commerce.order.repository.OrderPostgresOutboxRepository;
 import com.MaSoVa.commerce.order.repository.OrderRepository;
 import com.MaSoVa.commerce.order.service.*;
 import com.MaSoVa.commerce.order.websocket.OrderWebSocketController;
@@ -18,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -95,6 +97,23 @@ class OrderServiceStatusTransitionTest {
 
         verify(orderItemSyncService).syncOrderByMongoId(eq("o1"), eq(result));
         assertThat(result.getStatus()).isEqualTo(OrderStatus.PREPARING);
+    }
+
+    @Test
+    void updateOrderStatus_records_same_retry_when_postgres_sync_fails() {
+        OrderPostgresOutboxRepository outboxRepository = mock(OrderPostgresOutboxRepository.class);
+        ReflectionTestUtils.setField(orderService, "orderPostgresOutboxRepository", outboxRepository);
+        Order order = buildOrder("o1", OrderStatus.RECEIVED, OrderType.TAKEAWAY);
+        when(orderRepository.findById("o1")).thenReturn(Optional.of(order));
+        when(orderItemSyncService.syncOrderByMongoId(eq("o1"), any(Order.class)))
+                .thenThrow(new RuntimeException("PG down"));
+
+        UpdateOrderStatusRequest req = new UpdateOrderStatusRequest();
+        req.setStatus(OrderStatus.PREPARING);
+        orderService.updateOrderStatus("o1", req);
+
+        verify(outboxRepository).save(argThat(row ->
+                "o1".equals(row.getOrderId()) && "SYNC".equals(row.getOperation())));
     }
 
     @Test

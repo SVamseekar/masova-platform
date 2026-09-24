@@ -7,8 +7,10 @@ import com.MaSoVa.commerce.order.entity.Order.OrderStatus;
 import com.MaSoVa.commerce.order.entity.Order.Priority;
 import com.MaSoVa.commerce.order.entity.OrderItem;
 import com.MaSoVa.commerce.order.entity.OrderJpaEntity;
+import com.MaSoVa.commerce.order.entity.OrderPostgresOutbox;
 import com.MaSoVa.commerce.order.repository.OrderRepository;
 import com.MaSoVa.commerce.order.repository.OrderJpaRepository;
+import com.MaSoVa.commerce.order.repository.OrderPostgresOutboxRepository;
 import com.MaSoVa.shared.entity.Store;
 import com.MaSoVa.shared.model.VatBreakdown;
 import com.MaSoVa.commerce.order.websocket.OrderWebSocketController;
@@ -25,6 +27,7 @@ import com.MaSoVa.shared.messaging.events.OrderCreatedEvent;
 import com.MaSoVa.shared.messaging.events.OrderStatusChangedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -70,6 +73,7 @@ public class OrderService {
     private final EuVatEngine euVatEngine;
     private final AggregatorService aggregatorService;
     private final com.MaSoVa.commerce.fiscal.FiscalSigningService fiscalSigningService;
+    private OrderPostgresOutboxRepository orderPostgresOutboxRepository;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     public OrderService(OrderRepository orderRepository,
@@ -108,6 +112,11 @@ public class OrderService {
         this.euVatEngine = euVatEngine;
         this.aggregatorService = aggregatorService;
         this.fiscalSigningService = fiscalSigningService;
+    }
+
+    @Autowired(required = false)
+    void setOrderPostgresOutboxRepository(OrderPostgresOutboxRepository orderPostgresOutboxRepository) {
+        this.orderPostgresOutboxRepository = orderPostgresOutboxRepository;
     }
 
     @Transactional
@@ -311,7 +320,7 @@ public class OrderService {
             jpaEntity.setItems(orderItemSyncService.buildItemEntities(savedOrder.getItems(), jpaEntity));
             orderJpaRepository.save(jpaEntity);
         } catch (Exception e) {
-            log.warn("PostgreSQL dual-write failed for order {}: {}", savedOrder.getOrderNumber(), e.getMessage());
+            recordPostgresRetry(savedOrder, "CREATE", e);
         }
 
         // Publish order created event to RabbitMQ
@@ -382,11 +391,30 @@ public class OrderService {
         try {
             boolean synced = orderItemSyncService.syncOrderByMongoId(order.getId(), order);
             if (!synced) {
-                log.warn("PG dual-write: no PG row for order {} — skipping item sync", order.getId());
+                recordPostgresRetry(order, "SYNC", new IllegalStateException("no Postgres order row"));
             }
         } catch (Exception e) {
-            log.warn("PG dual-write sync failed for order {}: {}", order.getId(), e.getMessage());
+            recordPostgresRetry(order, "SYNC", e);
         }
+    }
+
+    private void recordPostgresRetry(Order order, String operation, Exception error) {
+        log.error("PostgreSQL dual-write failed for order {} operation {}: {}",
+                order.getId(), operation, error.getMessage(), error);
+        if (orderPostgresOutboxRepository != null) {
+            OrderPostgresOutbox outbox = new OrderPostgresOutbox();
+            outbox.setOrderId(order.getId());
+            outbox.setOrderNumber(order.getOrderNumber());
+            outbox.setOperation(operation);
+            outbox.setLastError(error.getMessage());
+            outbox.setCreatedAt(LocalDateTime.now());
+            orderPostgresOutboxRepository.save(outbox);
+            return;
+        }
+        if ("no Postgres order row".equals(error.getMessage())) {
+            return;
+        }
+        throw new IllegalStateException("PostgreSQL dual-write failed for order " + order.getId(), error);
     }
 
     public Order getOrderById(String orderId) {

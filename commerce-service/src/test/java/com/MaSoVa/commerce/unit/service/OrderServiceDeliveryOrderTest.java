@@ -7,6 +7,7 @@ import com.MaSoVa.commerce.order.entity.DeliveryAddress;
 import com.MaSoVa.commerce.order.entity.Order;
 import com.MaSoVa.commerce.order.entity.OrderJpaEntity;
 import com.MaSoVa.commerce.order.repository.OrderJpaRepository;
+import com.MaSoVa.commerce.order.repository.OrderPostgresOutboxRepository;
 import com.MaSoVa.commerce.order.repository.OrderRepository;
 import com.MaSoVa.commerce.order.service.*;
 import com.MaSoVa.commerce.order.websocket.OrderWebSocketController;
@@ -18,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 
@@ -262,7 +264,9 @@ class OrderServiceDeliveryOrderTest {
     // Dual-write failure
 
     @Test
-    void createOrder_continues_when_postgres_dual_write_fails() {
+    void createOrder_records_retry_when_postgres_dual_write_fails() {
+        OrderPostgresOutboxRepository outboxRepository = mock(OrderPostgresOutboxRepository.class);
+        ReflectionTestUtils.setField(orderService, "orderPostgresOutboxRepository", outboxRepository);
         when(orderJpaRepository.save(any())).thenThrow(new RuntimeException("PG down"));
 
         CreateOrderRequest req = new CreateOrderRequest();
@@ -271,10 +275,11 @@ class OrderServiceDeliveryOrderTest {
         req.setOrderType(Order.OrderType.TAKEAWAY);
         req.setItems(List.of(buildItem()));
 
-        // Should not throw — PG dual-write failure is swallowed
         Order result = orderService.createOrder(req);
 
         assertThat(result.getStatus()).isEqualTo(Order.OrderStatus.RECEIVED);
+        verify(outboxRepository).save(argThat(row ->
+                "CREATE".equals(row.getOperation()) && "PG down".equals(row.getLastError())));
     }
 
     // Event publisher failure

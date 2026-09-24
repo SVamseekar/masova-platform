@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.MaSoVa.shared.util.PageableResponse;
@@ -57,6 +58,7 @@ public class PaymentService {
     private final PaymentNotificationService paymentNotificationService;
     private final com.MaSoVa.payment.messaging.PaymentEventPublisher paymentEventPublisher;
     private final PaymentGatewayResolver paymentGatewayResolver;
+    private TransactionLedgerWriter transactionLedgerWriter;
 
     public PaymentService(TransactionRepository transactionRepository, RazorpayService razorpayService,
                          OrderServiceClient orderServiceClient, RazorpayConfig razorpayConfig,
@@ -72,6 +74,19 @@ public class PaymentService {
         this.paymentNotificationService = paymentNotificationService;
         this.paymentEventPublisher = paymentEventPublisher;
         this.paymentGatewayResolver = paymentGatewayResolver;
+    }
+
+    @Autowired(required = false)
+    void setTransactionLedgerWriter(TransactionLedgerWriter transactionLedgerWriter) {
+        this.transactionLedgerWriter = transactionLedgerWriter;
+    }
+
+    private Transaction saveTransaction(Transaction transaction) {
+        Transaction saved = Objects.requireNonNull(transactionRepository.save(transaction));
+        if (transactionLedgerWriter != null) {
+            transactionLedgerWriter.write(saved);
+        }
+        return saved;
     }
 
     /**
@@ -138,7 +153,7 @@ public class PaymentService {
                 builder.razorpayOrderId(gatewayResult.getGatewayOrderId());
             }
 
-            Transaction transaction = Objects.requireNonNull(transactionRepository.save(builder.build()));
+            Transaction transaction = Objects.requireNonNull(saveTransaction(builder.build()));
 
             log.info("Payment initiated successfully. Transaction ID: {}, Gateway: {}, Gateway Order ID: {}",
                      transaction.getId(), gatewayResult.getGatewayName(), gatewayResult.getGatewayOrderId());
@@ -221,7 +236,7 @@ public class PaymentService {
                 transaction.setStatus(Transaction.PaymentStatus.FAILED);
                 transaction.setErrorCode("SIGNATURE_VERIFICATION_FAILED");
                 transaction.setErrorDescription("Payment signature verification failed");
-                transactionRepository.save(transaction);
+                saveTransaction(transaction);
 
                 // Send payment failure notification (NOTIF-003)
                 String customerEmail = encryptionService.decrypt(transaction.getCustomerEmail());
@@ -270,7 +285,7 @@ public class PaymentService {
                 }
             }
 
-            transaction = transactionRepository.save(transaction);
+            transaction = saveTransaction(transaction);
 
             log.info("Payment verified and completed successfully. Transaction ID: {}", transaction.getId());
 
@@ -334,7 +349,7 @@ public class PaymentService {
             case PAYMENT_FAILED -> handleStripePaymentFailed(transaction, result);
             case REFUND_PROCESSED -> {
                 transaction.setStatus(Transaction.PaymentStatus.REFUNDED);
-                transactionRepository.save(transaction);
+                saveTransaction(transaction);
                 log.info("Stripe refund processed for transaction: {}", transaction.getId());
             }
             case REFUND_FAILED -> log.warn("Stripe refund failed for transaction: {}, reason: {}",
@@ -360,7 +375,7 @@ public class PaymentService {
         String methodType = result.getPaymentMethodType() != null ? result.getPaymentMethodType() : "card";
         transaction.setPaymentMethodType(methodType);
         transaction.setPaymentMethod(mapStripeMethodType(methodType));
-        transaction = transactionRepository.save(transaction);
+        transaction = saveTransaction(transaction);
 
         log.info("Stripe payment captured and transaction completed. Transaction ID: {}", transaction.getId());
 
@@ -386,7 +401,7 @@ public class PaymentService {
         transaction.setStatus(Transaction.PaymentStatus.FAILED);
         transaction.setErrorCode("STRIPE_PAYMENT_FAILED");
         transaction.setErrorDescription(result.getFailureReason());
-        transactionRepository.save(transaction);
+        saveTransaction(transaction);
 
         log.error("Stripe payment failed for transaction: {}, reason: {}", transaction.getId(), result.getFailureReason());
 
@@ -527,7 +542,7 @@ public class PaymentService {
         transaction.setReconciledAt(LocalDateTime.now());
         transaction.setReconciledBy(reconciledBy);
 
-        transactionRepository.save(transaction);
+        saveTransaction(transaction);
         log.info("Transaction {} marked as reconciled by {}", transactionId, reconciledBy);
     }
 
@@ -586,7 +601,7 @@ public class PaymentService {
             transaction.setPaymentMethod(Transaction.PaymentMethod.CASH);
             transaction.setPaidAt(LocalDateTime.now());
 
-            transaction = Objects.requireNonNull(transactionRepository.save(transaction));
+            transaction = Objects.requireNonNull(saveTransaction(transaction));
 
             log.info("Cash payment recorded successfully. Transaction ID: {}, currency: {}",
                     transaction.getId(), currency);
@@ -664,7 +679,7 @@ public class PaymentService {
         for (Transaction tx : transactions) {
             tx.setCustomerEmail(encryptionService.encrypt("ANONYMIZED"));
             tx.setCustomerPhone(encryptionService.encrypt("ANONYMIZED"));
-            transactionRepository.save(tx);
+            saveTransaction(tx);
         }
         log.info("Anonymised {} transactions for customer {}", transactions.size(), customerId);
     }
