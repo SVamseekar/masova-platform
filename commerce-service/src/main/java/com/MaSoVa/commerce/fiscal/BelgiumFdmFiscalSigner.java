@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.util.UUID;
 
-/** Belgium FDM black box hardware signer — stub for Phase 1. */
+/** Belgium FDM signer. The stub is not a legal signature. Production fails closed. */
 @Component
 public class BelgiumFdmFiscalSigner implements FiscalSigner {
 
