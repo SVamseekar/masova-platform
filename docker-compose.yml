@@ -294,6 +294,8 @@ services:
       - LOGISTICS_SERVICE_URL=http://masova-logistics:8086
       - INTELLIGENCE_SERVICE_URL=http://masova-intelligence:8087
       - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
+      - SUPPORT_SERVICE_URL=${SUPPORT_SERVICE_URL:-http://host.docker.internal:8000}
+      - SUPPORT_AGENT_API_KEY=${SUPPORT_AGENT_API_KEY:-}
     depends_on:
       - core-service
       - commerce-service

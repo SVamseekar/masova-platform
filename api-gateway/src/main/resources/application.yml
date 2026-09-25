@@ -64,6 +64,11 @@ services:
   intelligence-service:
     url: ${INTELLIGENCE_SERVICE_URL:http://localhost:8087}
 
+# masova-support manager copilot. Key stays on the gateway; never ship it to the browser.
+support:
+  service-url: ${SUPPORT_SERVICE_URL:http://localhost:8000}
+  agent-api-key: ${SUPPORT_AGENT_API_KEY:}
+
 logging:
   level:
     org.springframework.cloud.gateway: INFO
