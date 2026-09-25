@@ -122,6 +122,23 @@ describe('orderApi', () => {
       expect(result.current.data).toBeDefined();
     });
 
+    it('requests orders by status as a query string', async () => {
+      let seenUrl = '';
+      server.use(
+        http.get(`${API}/orders`, ({ request }) => {
+          seenUrl = request.url;
+          return HttpResponse.json([]);
+        }),
+      );
+
+      const { result } = renderHook(() => useGetOrdersByStatusQuery('READY FOR PICKUP'), {
+        wrapper: DefaultTestWrapper,
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(new URL(seenUrl).searchParams.get('status')).toBe('READY FOR PICKUP');
+    });
+
     it('should fetch customer orders', async () => {
       const { result } = renderHook(() => useGetCustomerOrdersQuery('1'), {
         wrapper: DefaultTestWrapper,
