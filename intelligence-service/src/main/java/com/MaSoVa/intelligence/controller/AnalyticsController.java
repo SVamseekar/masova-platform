@@ -159,6 +159,8 @@ public class AnalyticsController {
      *           &days=7
      * Replaces: /forecast/sales, /forecast/demand, /analysis/customer-behavior,
      *           /prediction/churn, /cost-analysis
+     * Forecasts (sales-forecast, demand-forecast) are computed by this GET /api/bi route;
+     * POST /api/analytics/forecast is not a route.
      */
     @GetMapping("/api/bi")
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")

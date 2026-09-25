@@ -187,6 +187,21 @@ class AnalyticsControllerTest extends BaseServiceTest {
         }
     }
 
+    // ── POST /api/analytics/forecast (not a route) ───────────────────────────
+
+    @Nested
+    @DisplayName("POST /api/analytics/forecast")
+    class ForecastWriteNotMapped {
+
+        @Test
+        @DisplayName("returns 404 — forecast write path is not mapped")
+        void returns404ForUnmappedForecastPost() throws Exception {
+            mockMvc.perform(post("/api/analytics/forecast")
+                    .header("X-User-Store-Id", "store-1"))
+                .andExpect(status().isNotFound());
+        }
+    }
+
     // ── POST /api/analytics/cache/clear ──────────────────────────────────────
 
     @Nested
