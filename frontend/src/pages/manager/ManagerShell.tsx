@@ -10,6 +10,7 @@ import { useGetActiveStoresQuery, type Store } from '../../store/api/storeApi';
 import { setSelectedStore, setStoreCurrency, selectSelectedStoreId, selectSelectedStoreName } from '../../store/slices/cartSlice';
 import { storeCurrencyPayload, resolveStoreMarket } from '../../utils/storeCurrency';
 import { useGetVersionQuery } from '../../store/api/systemApi';
+import { ManagerCopilotDrawer } from './ManagerCopilotDrawer';
 
 const DashboardSection = React.lazy(() => import('./DashboardSection'));
 const OrdersSection = React.lazy(() => import('./OrdersSection'));
@@ -346,6 +347,7 @@ function ManagerShell() {
                 }}
               />
             </div>
+            <ManagerCopilotDrawer storeId={storeId} />
             {/* Bell / Notifications */}
             <div ref={notifRef} style={{ position: 'relative' }}>
               <div onClick={() => { setNotifOpen(!notifOpen); setProfileOpen(false); }} style={{ width: 38, height: 38, borderRadius: 10, border: `1px solid ${notifOpen ? t.orange : 'rgba(0,0,0,0.08)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: notifOpen ? t.orange : t.gray, background: 'rgba(255,255,255,0.5)' }}>
