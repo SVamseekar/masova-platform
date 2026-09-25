@@ -38,7 +38,7 @@ public class Store {
     @NotNull
     @Field("code")
     @Indexed(unique = true)
-    @Pattern(regexp = "^DOM\\d{3}$", message = "Store code must be format DOM001")
+    @Pattern(regexp = "^[A-Z]{3}\\d{3}$", message = "Store code must be three uppercase letters plus three digits (e.g. DOM001)")
     @JsonProperty("storeCode")
     @JsonAlias({"code", "storeCode"})
     private String code;

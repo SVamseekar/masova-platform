@@ -292,6 +292,21 @@ eu-vat:
           FOOD: 5.5
           ALCOHOL: 20.0
           BEVERAGE: 5.5
+    ES:
+      default-rate: 21.0
+      context-rates:
+        DINE_IN:
+          FOOD: 21.0
+          ALCOHOL: 21.0
+          BEVERAGE: 21.0
+        TAKEAWAY:
+          FOOD: 21.0
+          ALCOHOL: 21.0
+          BEVERAGE: 21.0
+        DELIVERY:
+          FOOD: 21.0
+          ALCOHOL: 21.0
+          BEVERAGE: 21.0
     IT:
       default-rate: 10.0
       context-rates:

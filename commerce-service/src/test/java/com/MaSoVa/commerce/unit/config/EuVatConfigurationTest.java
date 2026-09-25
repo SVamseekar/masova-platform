@@ -38,6 +38,11 @@ class EuVatConfigurationTest {
     }
 
     @Test
+    void lookupRate_ES_returns_21() {
+        assertThat(buildTestConfig().lookupRate("ES", "DINE_IN", "FOOD")).isEqualTo(21.0);
+    }
+
+    @Test
     void isEuStore_true_for_DE() {
         assertThat(buildTestConfig().isEuStore("DE")).isTrue();
     }
@@ -66,7 +71,15 @@ class EuVatConfigurationTest {
             "DELIVERY", Map.of("FOOD", 5.5, "ALCOHOL", 20.0)
         ));
 
-        config.setCountries(Map.of("DE", de, "FR", fr));
+        EuVatConfiguration.CountryVatProfile es = new EuVatConfiguration.CountryVatProfile();
+        es.setDefaultRate(21.0);
+        es.setContextRates(Map.of(
+            "DINE_IN", Map.of("FOOD", 21.0, "ALCOHOL", 21.0, "BEVERAGE", 21.0),
+            "TAKEAWAY", Map.of("FOOD", 21.0, "ALCOHOL", 21.0, "BEVERAGE", 21.0),
+            "DELIVERY", Map.of("FOOD", 21.0, "ALCOHOL", 21.0, "BEVERAGE", 21.0)
+        ));
+
+        config.setCountries(Map.of("DE", de, "FR", fr, "ES", es));
         return config;
     }
 }

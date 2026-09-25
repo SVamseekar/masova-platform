@@ -6,8 +6,8 @@ import java.util.Map;
 
 /**
  * Maps ISO 3166-1 alpha-2 country code → ISO 4217 currency code + BCP 47 locale tag.
- * India stores pass null countryCode — returns INR / en-IN as legacy fallback.
- * 12 countries supported in Global programme (Global-3).
+ * Null or blank countryCode is rejected — no default currency or locale.
+ * 13 countries supported in Global programme (Global-3 including Spain).
  */
 @Service
 public class CountryProfileService {
@@ -24,7 +24,8 @@ public class CountryProfileService {
         Map.entry("CH", "CHF"),
         Map.entry("GB", "GBP"),
         Map.entry("US", "USD"),
-        Map.entry("CA", "CAD")
+        Map.entry("CA", "CAD"),
+        Map.entry("ES", "EUR")
     );
 
     private static final Map<String, String> LOCALE_MAP = Map.ofEntries(
@@ -39,23 +40,28 @@ public class CountryProfileService {
         Map.entry("CH", "de-CH"),
         Map.entry("GB", "en-GB"),
         Map.entry("US", "en-US"),
-        Map.entry("CA", "en-CA")
+        Map.entry("CA", "en-CA"),
+        Map.entry("ES", "es-ES")
     );
 
-    /** Returns ISO 4217 currency code. Returns "INR" for null (India legacy). */
+    /** Returns ISO 4217 currency code. Rejects null/blank countryCode. */
     public String resolveCurrency(String countryCode) {
-        if (countryCode == null) return "INR";
-        String currency = CURRENCY_MAP.get(countryCode.toUpperCase());
+        if (countryCode == null || countryCode.isBlank()) {
+            throw new IllegalArgumentException("countryCode is required");
+        }
+        String currency = CURRENCY_MAP.get(countryCode.trim().toUpperCase());
         if (currency == null) {
             throw new IllegalArgumentException("Unsupported country code: " + countryCode);
         }
         return currency;
     }
 
-    /** Returns BCP 47 locale tag. Returns "en-IN" for null (India legacy). */
+    /** Returns BCP 47 locale tag. Rejects null/blank countryCode. */
     public String resolveLocale(String countryCode) {
-        if (countryCode == null) return "en-IN";
-        String locale = LOCALE_MAP.get(countryCode.toUpperCase());
+        if (countryCode == null || countryCode.isBlank()) {
+            throw new IllegalArgumentException("countryCode is required");
+        }
+        String locale = LOCALE_MAP.get(countryCode.trim().toUpperCase());
         if (locale == null) {
             throw new IllegalArgumentException("Unsupported country code: " + countryCode);
         }
