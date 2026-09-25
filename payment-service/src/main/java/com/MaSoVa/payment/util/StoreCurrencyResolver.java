@@ -5,11 +5,11 @@ import java.util.Map;
 /**
  * Resolves ISO 4217 currency for non-India Stripe stores when the client omits {@code currency}.
  * Client-supplied cart currency always wins when present.
- * Country map matches {@code CountryProfileService} (Global-3 twelve-country programme).
+ * Country map matches {@code CountryProfileService} (Global-3 thirteen-country programme including Spain).
  */
 public final class StoreCurrencyResolver {
 
-    /** ISO 3166-1 alpha-2 → ISO 4217 — same 12 countries as core CountryProfileService. */
+    /** ISO 3166-1 alpha-2 → ISO 4217 — same 13 countries as core CountryProfileService (incl. Spain). */
     private static final Map<String, String> COUNTRY_CURRENCY = Map.ofEntries(
             Map.entry("DE", "EUR"),
             Map.entry("FR", "EUR"),
@@ -22,7 +22,8 @@ public final class StoreCurrencyResolver {
             Map.entry("CH", "CHF"),
             Map.entry("GB", "GBP"),
             Map.entry("US", "USD"),
-            Map.entry("CA", "CAD")
+            Map.entry("CA", "CAD"),
+            Map.entry("ES", "EUR")
     );
 
     private StoreCurrencyResolver() {}
