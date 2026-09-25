@@ -202,7 +202,7 @@ export const orderApi = createApi({
 
     // Get orders by status
     getOrdersByStatus: builder.query<Order[], string>({
-      query: (status) => `/orders/status/${status}`,
+      query: (status) => `/orders?status=${encodeURIComponent(status)}`,
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Order' as const, id })), { type: 'Orders', id: 'LIST' }]
