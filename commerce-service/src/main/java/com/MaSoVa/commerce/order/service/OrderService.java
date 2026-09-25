@@ -1263,6 +1263,35 @@ public class OrderService {
         return averages;
     }
 
+    public java.util.Map<String, Object> getKitchenStoreAnalytics(String storeId, java.time.LocalDate date) {
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.atTime(23, 59, 59);
+
+        List<Order> orders = orderRepository.findByStoreIdAndCreatedAtBetween(storeId, startOfDay, endOfDay);
+
+        long ticketCount = orders.size();
+        double avgPrepMinutes = orders.stream()
+                .filter(order -> order.getActualPreparationTime() != null && order.getActualPreparationTime() > 0)
+                .mapToInt(Order::getActualPreparationTime)
+                .average()
+                .orElse(0.0);
+        long completed = orders.stream()
+                .filter(order -> order.getStatus() == OrderStatus.DELIVERED
+                        || order.getStatus() == OrderStatus.SERVED
+                        || order.getStatus() == OrderStatus.COMPLETED)
+                .count();
+        long cancelled = orders.stream()
+                .filter(order -> order.getStatus() == OrderStatus.CANCELLED)
+                .count();
+
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("ticket_count", ticketCount);
+        result.put("avg_prep_minutes", avgPrepMinutes);
+        result.put("completed", completed);
+        result.put("cancelled", cancelled);
+        return result;
+    }
+
     public java.util.Map<String, Object> getKitchenStaffPerformance(String staffId, java.time.LocalDate date) {
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(23, 59, 59);

@@ -27,6 +27,7 @@ import java.util.Map;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
@@ -66,6 +67,65 @@ class OrderControllerAnalyticsTest extends BaseServiceTest {
                         .param("type", "kitchen")
                         .param("date", "2025-05-17")
                         .header("X-User-Store-Id", "store-1"))
+                .andExpect(status().isBadRequest());
+    }
+
+    // type=kitchen-store
+    @Test
+    void analytics_kitchen_store_with_storeId_and_date_returns_200() throws Exception {
+        when(orderService.getKitchenStoreAnalytics(eq("store-1"), any()))
+                .thenReturn(Map.of(
+                        "ticket_count", 10,
+                        "avg_prep_minutes", 18.5,
+                        "completed", 7,
+                        "cancelled", 1));
+
+        mockMvc.perform(get("/api/orders/analytics")
+                        .param("type", "kitchen-store")
+                        .param("storeId", "store-1")
+                        .param("date", "2025-05-17"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ticket_count").value(10))
+                .andExpect(jsonPath("$.avg_prep_minutes").value(18.5))
+                .andExpect(jsonPath("$.completed").value(7))
+                .andExpect(jsonPath("$.cancelled").value(1));
+    }
+
+    @Test
+    void analytics_kitchen_store_with_period_today_returns_200() throws Exception {
+        when(orderService.getKitchenStoreAnalytics(eq("store-1"), any()))
+                .thenReturn(Map.of(
+                        "ticket_count", 3,
+                        "avg_prep_minutes", 12.0,
+                        "completed", 2,
+                        "cancelled", 0));
+
+        mockMvc.perform(get("/api/orders/analytics")
+                        .param("type", "kitchen-store")
+                        .param("storeId", "store-1")
+                        .param("period", "today"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ticket_count").value(3))
+                .andExpect(jsonPath("$.avg_prep_minutes").value(12.0))
+                .andExpect(jsonPath("$.completed").value(2))
+                .andExpect(jsonPath("$.cancelled").value(0));
+    }
+
+    @Test
+    void analytics_kitchen_metrics_returns_400_listing_kitchen_store() throws Exception {
+        mockMvc.perform(get("/api/orders/analytics")
+                        .param("type", "kitchen-metrics")
+                        .header("X-User-Store-Id", "store-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value(org.hamcrest.Matchers.containsString("kitchen-store")))
+                .andExpect(jsonPath("$.error").value(org.hamcrest.Matchers.containsString("kitchen")));
+    }
+
+    @Test
+    void analytics_kitchen_store_without_storeId_returns_400() throws Exception {
+        mockMvc.perform(get("/api/orders/analytics")
+                        .param("type", "kitchen-store")
+                        .param("date", "2025-05-17"))
                 .andExpect(status().isBadRequest());
     }
 

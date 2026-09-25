@@ -204,6 +204,47 @@ class OrderServiceAnalyticsTest {
         assertThat(dto.getStaffName()).isNull();
     }
 
+    // getKitchenStoreAnalytics
+
+    @Test
+    void getKitchenStoreAnalytics_returns_store_rollup_metrics() {
+        Order delivered = buildOrder("o1", OrderStatus.DELIVERED, OrderType.DELIVERY);
+        delivered.setActualPreparationTime(20);
+
+        Order served = buildOrder("o2", OrderStatus.SERVED, OrderType.DINE_IN);
+        served.setActualPreparationTime(10);
+
+        Order cancelled = buildOrder("o3", OrderStatus.CANCELLED, OrderType.TAKEAWAY);
+
+        Order preparing = buildOrder("o4", OrderStatus.PREPARING, OrderType.TAKEAWAY);
+        preparing.setActualPreparationTime(0);
+
+        when(orderRepository.findByStoreIdAndCreatedAtBetween(eq("store-1"), any(), any()))
+                .thenReturn(List.of(delivered, served, cancelled, preparing));
+
+        Map<String, Object> result = orderService.getKitchenStoreAnalytics("store-1", LocalDate.now());
+
+        assertThat(result.get("ticket_count")).isEqualTo(4L);
+        assertThat((Double) result.get("avg_prep_minutes")).isEqualTo(15.0);
+        assertThat(result.get("completed")).isEqualTo(2L);
+        assertThat(result.get("cancelled")).isEqualTo(1L);
+        assertThat(result).doesNotContainKey("staffId");
+    }
+
+    @Test
+    void getKitchenStoreAnalytics_zero_avg_when_no_prep_times() {
+        Order o = buildOrder("o1", OrderStatus.COMPLETED, OrderType.TAKEAWAY);
+        when(orderRepository.findByStoreIdAndCreatedAtBetween(eq("store-1"), any(), any()))
+                .thenReturn(List.of(o));
+
+        Map<String, Object> result = orderService.getKitchenStoreAnalytics("store-1", LocalDate.now());
+
+        assertThat(result.get("ticket_count")).isEqualTo(1L);
+        assertThat((Double) result.get("avg_prep_minutes")).isEqualTo(0.0);
+        assertThat(result.get("completed")).isEqualTo(1L);
+        assertThat(result.get("cancelled")).isEqualTo(0L);
+    }
+
     // getKitchenStaffPerformance
 
     @Test
