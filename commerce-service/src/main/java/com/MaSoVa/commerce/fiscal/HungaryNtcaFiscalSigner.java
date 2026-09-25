@@ -12,9 +12,8 @@ import java.util.UUID;
 
 /**
  * Hungary NTCA (OSCAR) government API signer.
- * Phase 1 stub — returns a plausible NTCA transaction ID.
- * Phase 2: real OSCAR API calls with Redis retry queue + exponential backoff.
- * Requirement: submit within 500ms for invoices > HUF 100k; 4 days for smaller.
+ * The stub is not a legal signature. Production fails closed.
+ * Lab profiles may still return a STUB-NTCA value so orders flow.
  */
 @Component
 public class HungaryNtcaFiscalSigner implements FiscalSigner {

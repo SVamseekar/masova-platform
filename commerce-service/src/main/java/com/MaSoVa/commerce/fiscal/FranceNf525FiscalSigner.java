@@ -12,6 +12,7 @@ import java.util.UUID;
 
 /**
  * France NF525 software certification signer.
+ * The stub is not a legal signature. Production fails closed.
  * Once signed, the order is immutable — no fields may be modified.
  * Corrections are new credit note orders, never edits.
  */

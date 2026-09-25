@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.util.UUID;
 
-/** Italy RT Device fiscal signer — hardware API stub for Phase 1. */
+/** Italy RT signer. The stub is not a legal signature. Production fails closed. */
 @Component
 public class ItalyRtFiscalSigner implements FiscalSigner {
 

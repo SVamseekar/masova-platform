@@ -131,4 +131,40 @@ class FiscalSignersTest {
         assertThat(registry.resolve(null).getSignerSystem()).isEqualTo("PASSTHROUGH");
         assertThat(registry.resolve("IN").getSignerSystem()).isEqualTo("PASSTHROUGH");
     }
+
+    @Test
+    void prod_de_returns_failed_signature_without_stub_value() {
+        FiscalSignerRegistry registry = registry(true);
+        FiscalSignature sig = registry.resolve("DE").sign(buildOrder("o1"), null);
+
+        assertThat(sig.isSigningFailed()).isTrue();
+        assertThat(sig.getSignerSystem()).isEqualTo("TSE");
+        assertThat(sig.getSignatureValue()).satisfies(value -> {
+            if (value != null) {
+                assertThat(value).doesNotStartWith("STUB-");
+            }
+        });
+    }
+
+    @Test
+    void non_prod_de_may_return_stub_signature() {
+        FiscalSignerRegistry registry = registry(false);
+        FiscalSignature sig = registry.resolve("DE").sign(buildOrder("o1"), null);
+
+        assertThat(sig.isSigningFailed()).isFalse();
+        assertThat(sig.getSignatureValue()).startsWith("STUB-");
+    }
+
+    private static FiscalSignerRegistry registry(boolean failClosedInProd) {
+        return new FiscalSignerRegistry(
+                new PassthroughFiscalSigner(),
+                new GermanyTseFiscalSigner(),
+                new FranceNf525FiscalSigner(),
+                new ItalyRtFiscalSigner(),
+                new BelgiumFdmFiscalSigner(),
+                new HungaryNtcaFiscalSigner(),
+                new UkMtdFiscalSigner(),
+                failClosedInProd
+        );
+    }
 }

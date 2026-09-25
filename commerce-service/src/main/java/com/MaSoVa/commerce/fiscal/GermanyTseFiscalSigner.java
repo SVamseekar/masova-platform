@@ -12,9 +12,8 @@ import java.util.UUID;
 
 /**
  * Germany TSE fiscal signer — §146a AO.
- * Phase 1 implementation: stubs a successful TSE call with a generated transaction ID.
- * Phase 2: calls TSE hardware device REST API on store local network.
- * If unreachable: returns FiscalSignature.failed(...) — order gets RECEIPT_SIGNING_FAILED flag.
+ * The stub is not a legal signature. Production fails closed.
+ * Lab profiles may still return a STUB-TSE value so orders flow.
  */
 @Component
 public class GermanyTseFiscalSigner implements FiscalSigner {
