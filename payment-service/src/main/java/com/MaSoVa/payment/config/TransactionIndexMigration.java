@@ -1,5 +1,6 @@
 package com.MaSoVa.payment.config;
 
+import com.mongodb.MongoCommandException;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.IndexOptions;
 import org.bson.Document;
@@ -21,6 +22,8 @@ public class TransactionIndexMigration implements SmartInitializingSingleton {
 
     static final String INDEX_NAME = "razorpayOrderId_unique_when_present";
 
+    private static final int INDEX_NOT_FOUND = 27;
+
     private final MongoTemplate mongoTemplate;
 
     public TransactionIndexMigration(MongoTemplate mongoTemplate) {
@@ -38,13 +41,26 @@ public class TransactionIndexMigration implements SmartInitializingSingleton {
             Document key = (Document) index.get("key");
             boolean onRazorpayOrderIdOnly = key.size() == 1 && key.containsKey("razorpayOrderId");
             if (onRazorpayOrderIdOnly && !INDEX_NAME.equals(index.getString("name"))) {
-                transactions.dropIndex(index.getString("name"));
-                log.info("Dropped index {} on transactions.razorpayOrderId", index.getString("name"));
+                dropIfPresent(transactions, index.getString("name"));
             }
         }
+        // Idempotent: a second instance creating the same index is a no-op.
         transactions.createIndex(new Document("razorpayOrderId", 1), new IndexOptions()
                 .name(INDEX_NAME)
                 .unique(true)
                 .partialFilterExpression(new Document("razorpayOrderId", new Document("$type", "string"))));
+    }
+
+    private void dropIfPresent(MongoCollection<Document> transactions, String name) {
+        try {
+            transactions.dropIndex(name);
+            log.info("Dropped index {} on transactions.razorpayOrderId", name);
+        } catch (MongoCommandException e) {
+            if (e.getErrorCode() != INDEX_NOT_FOUND) {
+                throw e;
+            }
+            // Another instance starting at the same time already dropped it.
+            log.info("Index {} was already dropped by another instance", name);
+        }
     }
 }
