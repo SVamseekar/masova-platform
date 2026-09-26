@@ -44,7 +44,7 @@ class OrderPaymentSyncRelayTest {
         registry = new SimpleMeterRegistry();
         ObjectProvider<MeterRegistry> provider = mock(ObjectProvider.class);
         when(provider.getIfAvailable()).thenReturn(registry);
-        relay = new OrderPaymentSyncRelay(mongoTemplate, rabbitTemplate, provider, 3, 50, 100);
+        relay = new OrderPaymentSyncRelay(mongoTemplate, rabbitTemplate, provider, 3, 50, 100, 60);
     }
 
     private Transaction leased(int attempts) {
@@ -56,17 +56,26 @@ class OrderPaymentSyncRelayTest {
         return tx;
     }
 
+    private void leaseReturns(Transaction tx) {
+        Document raw = new Document("_id", tx.getId());
+        when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
+                eq(Document.class), eq("transactions"))).thenReturn(raw, (Document) null);
+        org.springframework.data.mongodb.core.convert.MongoConverter converter =
+                mock(org.springframework.data.mongodb.core.convert.MongoConverter.class);
+        when(mongoTemplate.getConverter()).thenReturn(converter);
+        when(converter.read(Transaction.class, raw)).thenReturn(tx);
+    }
+
     private Update capturedRetryUpdate() {
         ArgumentCaptor<Update> update = ArgumentCaptor.forClass(Update.class);
-        verify(mongoTemplate).updateFirst(any(Query.class), update.capture(), eq(Transaction.class));
+        verify(mongoTemplate).updateFirst(any(Query.class), update.capture(), eq("transactions"));
         return update.getValue();
     }
 
     @Test
     @DisplayName("a broker failure schedules a retry and keeps the entry PENDING")
     void brokerFailureSchedulesRetry() {
-        when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
-                eq(Transaction.class))).thenReturn(leased(0), (Transaction) null);
+        leaseReturns(leased(0));
         doThrow(new AmqpException("broker down")).when(rabbitTemplate)
                 .convertAndSend(anyString(), anyString(), any(Object.class), any(org.springframework.amqp.rabbit.connection.CorrelationData.class));
 
@@ -81,8 +90,7 @@ class OrderPaymentSyncRelayTest {
     @Test
     @DisplayName("the last allowed failure marks the entry DEAD and counts it")
     void lastFailureMarksDead() {
-        when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
-                eq(Transaction.class))).thenReturn(leased(2), (Transaction) null);
+        leaseReturns(leased(2));
         doThrow(new AmqpException("broker down")).when(rabbitTemplate)
                 .convertAndSend(anyString(), anyString(), any(Object.class), any(org.springframework.amqp.rabbit.connection.CorrelationData.class));
 

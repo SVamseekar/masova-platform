@@ -4,7 +4,9 @@ import com.MaSoVa.payment.entity.OrderPaymentSync;
 import com.MaSoVa.payment.entity.Transaction;
 import com.MaSoVa.shared.messaging.config.MaSoVaRabbitMQConfig;
 import com.MaSoVa.shared.messaging.events.OrderPaymentStatusEvent;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
@@ -26,12 +28,18 @@ import java.util.concurrent.TimeUnit;
  * Polling publisher for the outbox embedded in Transaction.orderSync.
  * Leases one due entry at a time with findAndModify, so several instances can run it.
  * Delivery is at least once; commerce applies the status idempotently.
+ *
+ * Lease/ack/retry bookkeeping writes go to the raw collection so they do not bump
+ * Transaction's @Version: a concurrent full save elsewhere (webhook, reconcile, GDPR)
+ * must not fail because of relay housekeeping. If such a save overwrites the bookkeeping,
+ * the entry is at worst re-sent, which the consumer absorbs.
  */
 @Component
 public class OrderPaymentSyncRelay {
 
     private static final Logger log = LoggerFactory.getLogger(OrderPaymentSyncRelay.class);
 
+    private static final String COLLECTION = "transactions";
     private static final Duration LEASE = Duration.ofSeconds(30);
     private static final Duration MAX_BACKOFF = Duration.ofMinutes(5);
 
@@ -41,19 +49,34 @@ public class OrderPaymentSyncRelay {
     private final int maxAttempts;
     private final int batchSize;
     private final long confirmTimeoutMs;
+    private final Duration staleAfter;
 
     public OrderPaymentSyncRelay(MongoTemplate mongoTemplate,
                                  RabbitTemplate rabbitTemplate,
                                  ObjectProvider<MeterRegistry> meterRegistry,
                                  @Value("${payment.order-sync.max-attempts:10}") int maxAttempts,
                                  @Value("${payment.order-sync.batch-size:50}") int batchSize,
-                                 @Value("${payment.order-sync.confirm-timeout-ms:5000}") long confirmTimeoutMs) {
+                                 @Value("${payment.order-sync.confirm-timeout-ms:5000}") long confirmTimeoutMs,
+                                 @Value("${payment.order-sync.stale-after-seconds:60}") long staleAfterSeconds) {
         this.mongoTemplate = mongoTemplate;
         this.rabbitTemplate = rabbitTemplate;
         this.meterRegistry = meterRegistry;
         this.maxAttempts = maxAttempts;
         this.batchSize = batchSize;
         this.confirmTimeoutMs = confirmTimeoutMs;
+        this.staleAfter = Duration.ofSeconds(staleAfterSeconds);
+        // Measured on scrape, so a stopped or disabled relay still shows up as a growing backlog.
+        MeterRegistry registry = meterRegistry.getIfAvailable();
+        if (registry != null) {
+            Gauge.builder("payment.order_sync.pending.stale", this, OrderPaymentSyncRelay::countStalePending)
+                    .description("Order payment status events still PENDING after the stale threshold")
+                    .register(registry);
+        }
+    }
+
+    double countStalePending() {
+        return mongoTemplate.count(Query.query(Criteria.where("orderSync.status").is(OrderPaymentSync.Status.PENDING.name())
+                .and("orderSync.createdAt").lt(Instant.now().minus(staleAfter))), COLLECTION);
     }
 
     /**
@@ -94,10 +117,11 @@ public class OrderPaymentSyncRelay {
                 .orOperator(Criteria.where("orderSync.leaseUntil").exists(false),
                         Criteria.where("orderSync.leaseUntil").is(null),
                         Criteria.where("orderSync.leaseUntil").lte(now)));
-        return mongoTemplate.findAndModify(due,
+        Document leased = mongoTemplate.findAndModify(due,
                 new Update().set("orderSync.leaseUntil", now.plus(LEASE)),
                 FindAndModifyOptions.options().returnNew(true),
-                Transaction.class);
+                Document.class, COLLECTION);
+        return leased == null ? null : mongoTemplate.getConverter().read(Transaction.class, leased);
     }
 
     private void publish(Transaction transaction, OrderPaymentSync sync) throws Exception {
@@ -122,7 +146,7 @@ public class OrderPaymentSyncRelay {
                 new Update().set("orderSync.status", OrderPaymentSync.Status.SENT.name())
                         .unset("orderSync.leaseUntil")
                         .unset("orderSync.lastError"),
-                Transaction.class);
+                COLLECTION);
     }
 
     private void markRetry(String transactionId, OrderPaymentSync sync, Exception error) {
@@ -138,7 +162,7 @@ public class OrderPaymentSyncRelay {
         }
         mongoTemplate.updateFirst(
                 Query.query(Criteria.where("_id").is(transactionId).and("orderSync.eventId").is(sync.getEventId())),
-                update, Transaction.class);
+                update, COLLECTION);
         if (dead) {
             log.error("Order payment status {} for transaction {} is DEAD after {} attempts; order will not update",
                     sync.getPaymentStatus(), transactionId, attempts, error);

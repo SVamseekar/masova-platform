@@ -39,6 +39,8 @@ class OrderPaymentSyncIT extends BaseMessagingIntegrationTest {
     @Autowired private OrderPaymentSyncRelay relay;
     @Autowired private RabbitTemplate rabbitTemplate;
     @Autowired private AmqpAdmin amqpAdmin;
+    @Autowired private org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
+    @Autowired private io.micrometer.core.instrument.MeterRegistry meterRegistry;
 
     @BeforeEach
     void setUp() {
@@ -113,6 +115,35 @@ class OrderPaymentSyncIT extends BaseMessagingIntegrationTest {
         paymentService.handleStripeWebhookEvent(captured("ord-sync-3"));
 
         assertThat(relay.relayDue()).isZero();
+    }
+
+    @Test
+    @DisplayName("relay bookkeeping does not make a later full save of the transaction fail")
+    void relayBookkeepingDoesNotBreakFullSaves() {
+        Transaction tx = initiatedStripe("ord-sync-5");
+        paymentService.handleStripeWebhookEvent(captured("ord-sync-5"));
+        Transaction loadedBeforeRelay = transactionRepository.findById(tx.getId()).orElseThrow();
+
+        relay.relayDue();
+
+        loadedBeforeRelay.setReconciled(true);
+        transactionRepository.save(loadedBeforeRelay);
+        assertThat(transactionRepository.findById(tx.getId()).orElseThrow().isReconciled()).isTrue();
+    }
+
+    @Test
+    @DisplayName("stale PENDING entries are visible as a gauge even when the relay does not run")
+    void stalePendingIsMeasured() {
+        Transaction tx = initiatedStripe("ord-sync-6");
+        paymentService.handleStripeWebhookEvent(captured("ord-sync-6"));
+        mongoTemplate.updateFirst(
+                org.springframework.data.mongodb.core.query.Query.query(
+                        org.springframework.data.mongodb.core.query.Criteria.where("_id").is(tx.getId())),
+                new org.springframework.data.mongodb.core.query.Update()
+                        .set("orderSync.createdAt", java.time.Instant.now().minusSeconds(600)),
+                "transactions");
+
+        assertThat(meterRegistry.get("payment.order_sync.pending.stale").gauge().value()).isEqualTo(1.0);
     }
 
     @Test
