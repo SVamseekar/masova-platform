@@ -104,7 +104,6 @@ class RefundServiceTest {
                 r.setId("refund-001");
                 return r;
             });
-            when(transactionRepository.save(any(Transaction.class))).thenReturn(successTransaction);
 
             Refund result = refundService.initiateRefund(refundRequest);
 
@@ -148,7 +147,6 @@ class RefundServiceTest {
             when(paymentGateway.refund(eq("pi_test_de"), eq(BigDecimal.valueOf(42.50)), eq("normal"), anyString()))
                     .thenReturn("re_stripe_001");
             when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(transactionRepository.save(any(Transaction.class))).thenReturn(stripeTxn);
 
             Refund result = refundService.initiateRefund(req);
 
@@ -186,7 +184,6 @@ class RefundServiceTest {
             when(transactionRepository.findById("txn-cash")).thenReturn(Optional.of(cash));
             when(refundRepository.findByTransactionId("txn-cash")).thenReturn(Collections.emptyList());
             when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(transactionRepository.save(any(Transaction.class))).thenReturn(cash);
 
             Refund result = refundService.initiateRefund(req);
 
@@ -276,7 +273,6 @@ class RefundServiceTest {
             when(paymentGateway.getGatewayName()).thenReturn("RAZORPAY");
             when(paymentGateway.refund(anyString(), any(), anyString(), anyString())).thenReturn("rfnd_one");
             when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(transactionRepository.save(any(Transaction.class))).thenReturn(successTransaction);
             when(mongoTemplate.findAndModify(
                     any(Query.class), any(Update.class), any(FindAndModifyOptions.class), eq(Transaction.class)))
                     .thenReturn(successTransaction, (Transaction) null);
@@ -298,7 +294,6 @@ class RefundServiceTest {
             when(paymentGateway.getGatewayName()).thenReturn("RAZORPAY");
             when(paymentGateway.refund(anyString(), any(), anyString(), anyString())).thenReturn("rfnd_a", "rfnd_b");
             when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(transactionRepository.save(any(Transaction.class))).thenReturn(successTransaction);
 
             Refund first = refundService.initiateRefund(refundRequest);
             RefundRequest later = RefundRequest.builder()

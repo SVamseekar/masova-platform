@@ -185,10 +185,7 @@ public class RefundService {
         }
         pending.setStatus(Refund.RefundStatus.REJECTED);
         if (pending.getTransactionId() != null && pending.getAmount() != null) {
-            mongoTemplate.updateFirst(
-                    Query.query(Criteria.where("_id").is(pending.getTransactionId())),
-                    new Update().inc("refundClaimedAmount", pending.getAmount().negate()),
-                    Transaction.class);
+            releaseRefundCapacity(pending.getTransactionId(), pending.getAmount());
         }
         if (rejectionReason != null && !rejectionReason.isBlank()) {
             pending.setNotes((pending.getNotes() != null ? pending.getNotes() + " | " : "")
@@ -265,8 +262,18 @@ public class RefundService {
         String idempotencyKey = ensureIdempotencyKey(refund);
         refund = Objects.requireNonNull(refundRepository.save(refund));
 
-        GatewayRefundOutcome outcome = performGatewayRefund(
-                transaction, paymentId, request.getAmount(), speed, idempotencyKey);
+        GatewayRefundOutcome outcome;
+        try {
+            outcome = performGatewayRefund(transaction, paymentId, request.getAmount(), speed, idempotencyKey);
+        } catch (Exception e) {
+            // No money moved: free the capacity this refund claimed so a retry can use it.
+            refund.setStatus(Refund.RefundStatus.FAILED);
+            refund.setNotes((refund.getNotes() != null ? refund.getNotes() + " | " : "")
+                    + "Gateway refund failed: " + e.getMessage());
+            refundRepository.save(refund);
+            releaseRefundCapacity(transaction.getId(), request.getAmount());
+            throw e;
+        }
 
         refund.setRazorpayRefundId(outcome.gatewayRefundId());
         refund.setStatus(outcome.status());
@@ -435,7 +442,12 @@ public class RefundService {
             transaction.setStatus(Transaction.PaymentStatus.PARTIAL_REFUND);
         }
 
-        transactionRepository.save(transaction);
+        // Targeted update: a full save of this entity would overwrite refundClaimedAmount,
+        // which claimRefundCapacity changed after the entity was loaded.
+        mongoTemplate.updateFirst(
+                Query.query(Criteria.where("_id").is(transaction.getId())),
+                new Update().set("status", transaction.getStatus()),
+                Transaction.class);
         log.info("Transaction status updated after refund. Transaction ID: {}, Status: {}, totalRefunded: {}",
                 transaction.getId(), transaction.getStatus(), totalRefunded);
     }
@@ -463,6 +475,13 @@ public class RefundService {
             throw new RuntimeException("Refund amount exceeds available amount. Available claim rejected for "
                     + transaction.getId());
         }
+    }
+
+    private void releaseRefundCapacity(String transactionId, BigDecimal amount) {
+        mongoTemplate.updateFirst(
+                Query.query(Criteria.where("_id").is(transactionId)),
+                new Update().inc("refundClaimedAmount", amount.negate()),
+                Transaction.class);
     }
 
     /** Same key for every attempt of this refund row. A new row gets a new key. */

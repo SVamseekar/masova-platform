@@ -126,7 +126,6 @@ class RefundServiceApprovalTest {
         when(paymentGateway.refund(eq("pay_001"), eq(BigDecimal.valueOf(200.00)), eq("normal"), anyString()))
                 .thenReturn("rfnd_001");
         when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Refund result = refundService.initiateRefund(request);
 
@@ -156,7 +155,6 @@ class RefundServiceApprovalTest {
                 any(Query.class), any(Update.class), any(FindAndModifyOptions.class), eq(Refund.class)))
                 .thenReturn(pending);
         when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Refund result = refundService.approveRefund("refund-001", "manager-001");
 
@@ -188,7 +186,6 @@ class RefundServiceApprovalTest {
                 any(Query.class), any(Update.class), any(FindAndModifyOptions.class), eq(Refund.class)))
                 .thenReturn(pending);
         when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Refund result = refundService.approveRefund("refund-001", "manager-001");
 
