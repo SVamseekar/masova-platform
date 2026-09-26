@@ -94,34 +94,47 @@ public class OrderPaymentSyncRelay {
     public int relayDue() {
         int published = 0;
         for (int i = 0; i < batchSize; i++) {
-            Transaction leased = leaseNextDue();
-            if (leased == null) {
+            Document raw = leaseNextDue();
+            if (raw == null) {
                 break;
+            }
+            Transaction leased;
+            try {
+                leased = mongoTemplate.getConverter().read(Transaction.class, raw);
+            } catch (RuntimeException e) {
+                markUnreadableDead(raw.get("_id"), e);
+                continue;
             }
             OrderPaymentSync sync = leased.getOrderSync();
             try {
                 publish(leased, sync);
-                markSent(leased.getId(), sync.getEventId());
-                published++;
             } catch (Exception e) {
                 markRetry(leased.getId(), sync, e);
+                continue;
+            }
+            published++;
+            try {
+                markSent(leased.getId(), sync.getEventId());
+            } catch (RuntimeException e) {
+                // Delivered; the lease expires and the event is re-sent, which the consumer absorbs.
+                log.error("Published order payment status for transaction {} but could not mark it SENT",
+                        leased.getId(), e);
             }
         }
         return published;
     }
 
-    private Transaction leaseNextDue() {
+    private Document leaseNextDue() {
         Instant now = Instant.now();
         Query due = Query.query(Criteria.where("orderSync.status").is(OrderPaymentSync.Status.PENDING.name())
                 .and("orderSync.nextAttemptAt").lte(now)
                 .orOperator(Criteria.where("orderSync.leaseUntil").exists(false),
                         Criteria.where("orderSync.leaseUntil").is(null),
                         Criteria.where("orderSync.leaseUntil").lte(now)));
-        Document leased = mongoTemplate.findAndModify(due,
+        return mongoTemplate.findAndModify(due,
                 new Update().set("orderSync.leaseUntil", now.plus(LEASE)),
                 FindAndModifyOptions.options().returnNew(true),
                 Document.class, COLLECTION);
-        return leased == null ? null : mongoTemplate.getConverter().read(Transaction.class, leased);
     }
 
     private void publish(Transaction transaction, OrderPaymentSync sync) throws Exception {
@@ -149,7 +162,29 @@ public class OrderPaymentSyncRelay {
                 COLLECTION);
     }
 
+    private void markUnreadableDead(Object id, RuntimeException error) {
+        log.error("Order payment status outbox entry on transaction {} cannot be read; marking DEAD", id, error);
+        try {
+            mongoTemplate.updateFirst(Query.query(Criteria.where("_id").is(id)),
+                    new Update().set("orderSync.status", OrderPaymentSync.Status.DEAD.name())
+                            .set("orderSync.lastError", "unreadable: " + error.getMessage())
+                            .unset("orderSync.leaseUntil"),
+                    COLLECTION);
+        } catch (RuntimeException markError) {
+            log.error("Could not mark unreadable outbox entry {} DEAD", id, markError);
+        }
+        countDead();
+    }
+
+    private void countDead() {
+        MeterRegistry registry = meterRegistry.getIfAvailable();
+        if (registry != null) {
+            registry.counter("payment.order_sync.dead").increment();
+        }
+    }
+
     private void markRetry(String transactionId, OrderPaymentSync sync, Exception error) {
+        log.warn("Order payment status publish failed for transaction {}: {}", transactionId, error.getMessage());
         int attempts = sync.getAttempts() + 1;
         boolean dead = attempts >= maxAttempts;
         Update update = new Update()
@@ -160,19 +195,20 @@ public class OrderPaymentSyncRelay {
         if (dead) {
             update.set("orderSync.status", OrderPaymentSync.Status.DEAD.name());
         }
-        mongoTemplate.updateFirst(
-                Query.query(Criteria.where("_id").is(transactionId).and("orderSync.eventId").is(sync.getEventId())),
-                update, COLLECTION);
+        try {
+            mongoTemplate.updateFirst(
+                    Query.query(Criteria.where("_id").is(transactionId).and("orderSync.eventId").is(sync.getEventId())),
+                    update, COLLECTION);
+        } catch (RuntimeException recordError) {
+            // The lease expires and the entry is retried; keep both causes in the log.
+            log.error("Could not record retry for transaction {} after publish error", transactionId, recordError);
+            recordError.addSuppressed(error);
+            return;
+        }
         if (dead) {
             log.error("Order payment status {} for transaction {} is DEAD after {} attempts; order will not update",
                     sync.getPaymentStatus(), transactionId, attempts, error);
-            MeterRegistry registry = meterRegistry.getIfAvailable();
-            if (registry != null) {
-                registry.counter("payment.order_sync.dead").increment();
-            }
-        } else {
-            log.warn("Order payment status publish failed for transaction {} (attempt {}): {}",
-                    transactionId, attempts, error.getMessage());
+            countDead();
         }
     }
 

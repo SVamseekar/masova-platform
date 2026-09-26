@@ -1,6 +1,7 @@
 package com.MaSoVa.payment.service;
 
 import com.MaSoVa.payment.dto.RefundRequest;
+import com.MaSoVa.payment.entity.OrderPaymentSync;
 import com.MaSoVa.payment.entity.Refund;
 import com.MaSoVa.payment.entity.Transaction;
 import com.MaSoVa.payment.gateway.PaymentGateway;
@@ -323,8 +324,6 @@ public class RefundService {
         }
 
         updateTransactionStatusAfterRefund(transaction, request.getAmount());
-        orderPaymentSyncRelay.requestOrderPaymentStatus(transaction.getId(), "REFUNDED");
-
         log.info("Refund executed. Refund ID: {}, gatewayRefundId: {}, gateway: {}, status: {}",
                 refund.getId(), outcome.gatewayRefundId(), outcome.gatewayName(), refund.getStatus());
         return refund;
@@ -489,7 +488,9 @@ public class RefundService {
         // which claimRefundCapacity changed after the entity was loaded.
         mongoTemplate.updateFirst(
                 Query.query(Criteria.where("_id").is(transaction.getId())),
-                new Update().set("status", transaction.getStatus()),
+                new Update().set("status", transaction.getStatus())
+                        // Outbox: queued in the same write as the refund status.
+                        .set("orderSync", OrderPaymentSync.pending("REFUNDED")),
                 Transaction.class);
         log.info("Transaction status updated after refund. Transaction ID: {}, Status: {}, totalRefunded: {}",
                 transaction.getId(), transaction.getStatus(), totalRefunded);

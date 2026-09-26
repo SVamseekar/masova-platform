@@ -237,7 +237,12 @@ class RefundServiceTest {
             assertThat(result.getRazorpayRefundId()).isEqualTo("rfnd_razorpay_001");
             assertThat(result.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(200.00));
             assertThat(result.getStatus()).isEqualTo(Refund.RefundStatus.PROCESSING);
-            verify(orderPaymentSyncRelay).requestOrderPaymentStatus("txn-001", "REFUNDED");
+            verify(mongoTemplate).updateFirst(any(Query.class),
+                    org.mockito.ArgumentMatchers.<Update>argThat(u -> {
+                        org.bson.Document set = (org.bson.Document) u.getUpdateObject().get("$set");
+                        return set != null && set.containsKey("status") && set.containsKey("orderSync");
+                    }), eq(Transaction.class));
+            verify(orderPaymentSyncRelay, org.mockito.Mockito.never()).requestOrderPaymentStatus(anyString(), anyString());
         }
 
         @Test

@@ -28,6 +28,7 @@ class PaymentStatusListenerIT extends BaseMessagingIntegrationTest {
     @Autowired private OrderRepository orderRepository;
     @Autowired private RabbitTemplate rabbitTemplate;
     @Autowired private AmqpAdmin amqpAdmin;
+    @Autowired private io.micrometer.core.instrument.MeterRegistry meterRegistry;
 
     @BeforeEach
     void setUp() {
@@ -79,11 +80,25 @@ class PaymentStatusListenerIT extends BaseMessagingIntegrationTest {
     }
 
     @Test
-    @DisplayName("an event for an unknown order goes to the dead-letter queue")
-    void unknownOrderIsDeadLettered() {
+    @DisplayName("an event for an unknown order is dead-lettered without retries and counted")
+    void unknownOrderIsDeadLetteredAtOnce() {
+        double before = meterRegistry.counter("commerce.payment_status.dead_lettered").count();
+
         publish("no-such-order-" + UUID.randomUUID(), "PAID");
 
-        await().atMost(20, TimeUnit.SECONDS).untilAsserted(() ->
-                assertThat(rabbitTemplate.receive(MaSoVaRabbitMQConfig.DLQ, 500)).isNotNull());
+        await().atMost(3, TimeUnit.SECONDS).untilAsserted(() ->
+                assertThat(rabbitTemplate.receive(MaSoVaRabbitMQConfig.DLQ, 200)).isNotNull());
+        assertThat(meterRegistry.counter("commerce.payment_status.dead_lettered").count()).isEqualTo(before + 1);
+    }
+
+    @Test
+    @DisplayName("an unknown payment status is dead-lettered without retries")
+    void unknownStatusIsDeadLetteredAtOnce() {
+        Order order = savedOrder(Order.PaymentStatus.PENDING);
+
+        publish(order.getId(), "CHARGEBACK");
+
+        await().atMost(3, TimeUnit.SECONDS).untilAsserted(() ->
+                assertThat(rabbitTemplate.receive(MaSoVaRabbitMQConfig.DLQ, 200)).isNotNull());
     }
 }

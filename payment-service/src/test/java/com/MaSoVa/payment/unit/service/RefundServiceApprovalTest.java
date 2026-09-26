@@ -131,7 +131,7 @@ class RefundServiceApprovalTest {
 
         assertThat(result.getStatus()).isEqualTo(Refund.RefundStatus.PROCESSING);
         assertThat(result.getRazorpayRefundId()).isEqualTo("rfnd_001");
-        verify(orderPaymentSyncRelay).requestOrderPaymentStatus("txn-001", "REFUNDED");
+        verify(orderPaymentSyncRelay, never()).requestOrderPaymentStatus(anyString(), anyString());
     }
 
     @Test
@@ -161,7 +161,7 @@ class RefundServiceApprovalTest {
         assertThat(result.getStatus()).isEqualTo(Refund.RefundStatus.PROCESSING);
         assertThat(result.getRazorpayRefundId()).isEqualTo("rfnd_approved");
         assertThat(result.getInitiatedBy()).isEqualTo("manager-001");
-        verify(orderPaymentSyncRelay).requestOrderPaymentStatus("txn-001", "REFUNDED");
+        verify(orderPaymentSyncRelay, never()).requestOrderPaymentStatus(anyString(), anyString());
     }
 
     @Test

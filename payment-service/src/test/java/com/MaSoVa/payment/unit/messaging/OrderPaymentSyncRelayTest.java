@@ -100,4 +100,55 @@ class OrderPaymentSyncRelayTest {
         assertThat(set.get("orderSync.status")).isEqualTo("DEAD");
         assertThat(registry.counter("payment.order_sync.dead").count()).isEqualTo(1.0);
     }
+
+    @Test
+    @DisplayName("an unreadable outbox document is marked DEAD and does not stop the batch")
+    void unreadableDocumentIsMarkedDead() {
+        Document bad = new Document("_id", "txn-bad");
+        Document good = new Document("_id", "txn-1");
+        when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
+                eq(Document.class), eq("transactions"))).thenReturn(bad, good, (Document) null);
+        org.springframework.data.mongodb.core.convert.MongoConverter converter =
+                mock(org.springframework.data.mongodb.core.convert.MongoConverter.class);
+        when(mongoTemplate.getConverter()).thenReturn(converter);
+        when(converter.read(Transaction.class, bad)).thenThrow(new IllegalArgumentException("No enum constant"));
+        when(converter.read(Transaction.class, good)).thenReturn(leased(0));
+        org.springframework.amqp.rabbit.connection.CorrelationData.Confirm ack =
+                new org.springframework.amqp.rabbit.connection.CorrelationData.Confirm(true, null);
+        org.mockito.Mockito.doAnswer(inv -> {
+            org.springframework.amqp.rabbit.connection.CorrelationData cd = inv.getArgument(3);
+            cd.getFuture().complete(ack);
+            return null;
+        }).when(rabbitTemplate).convertAndSend(anyString(), anyString(), any(Object.class),
+                any(org.springframework.amqp.rabbit.connection.CorrelationData.class));
+
+        assertThat(relay.relayDue()).isEqualTo(1);
+
+        ArgumentCaptor<Update> updates = ArgumentCaptor.forClass(Update.class);
+        verify(mongoTemplate, org.mockito.Mockito.atLeastOnce())
+                .updateFirst(any(Query.class), updates.capture(), eq("transactions"));
+        assertThat(updates.getAllValues()).anySatisfy(u ->
+                assertThat(((Document) u.getUpdateObject().get("$set")).get("orderSync.status")).isEqualTo("DEAD"));
+    }
+
+    @Test
+    @DisplayName("a failure to record SENT after a confirmed publish is not counted as a publish failure")
+    void markSentFailureDoesNotCountAsPublishFailure() {
+        leaseReturns(leased(0));
+        org.springframework.amqp.rabbit.connection.CorrelationData.Confirm ack =
+                new org.springframework.amqp.rabbit.connection.CorrelationData.Confirm(true, null);
+        org.mockito.Mockito.doAnswer(inv -> {
+            org.springframework.amqp.rabbit.connection.CorrelationData cd = inv.getArgument(3);
+            cd.getFuture().complete(ack);
+            return null;
+        }).when(rabbitTemplate).convertAndSend(anyString(), anyString(), any(Object.class),
+                any(org.springframework.amqp.rabbit.connection.CorrelationData.class));
+        when(mongoTemplate.updateFirst(any(Query.class), any(Update.class), eq("transactions")))
+                .thenThrow(new org.springframework.dao.DataAccessResourceFailureException("mongo down"));
+
+        assertThat(relay.relayDue()).isEqualTo(1);
+
+        verify(mongoTemplate, org.mockito.Mockito.times(1))
+                .updateFirst(any(Query.class), any(Update.class), eq("transactions"));
+    }
 }
