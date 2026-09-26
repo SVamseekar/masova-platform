@@ -18,7 +18,8 @@ import java.time.LocalDateTime;
     @CompoundIndex(def = "{'storeId': 1, 'createdAt': -1}"),
     @CompoundIndex(def = "{'customerId': 1, 'createdAt': -1}"),
     @CompoundIndex(def = "{'customerId': 1, 'status': 1}"),
-    @CompoundIndex(def = "{'status': 1, 'createdAt': -1}")
+    @CompoundIndex(def = "{'status': 1, 'createdAt': -1}"),
+    @CompoundIndex(def = "{'orderSync.status': 1, 'orderSync.nextAttemptAt': 1}")
 })
 public class Transaction {
 
@@ -96,6 +97,9 @@ public class Transaction {
     private boolean reconciled;
     private LocalDateTime reconciledAt;
     private String reconciledBy;
+
+    /** Outbox: the order payment status still to publish to commerce-service. */
+    private OrderPaymentSync orderSync;
 
     // Constructors
     public Transaction() {}
@@ -189,6 +193,8 @@ public class Transaction {
     public void setReconciledAt(LocalDateTime reconciledAt) { this.reconciledAt = reconciledAt; }
 
     public String getReconciledBy() { return reconciledBy; }
+    public OrderPaymentSync getOrderSync() { return orderSync; }
+    public void setOrderSync(OrderPaymentSync orderSync) { this.orderSync = orderSync; }
     public void setReconciledBy(String reconciledBy) { this.reconciledBy = reconciledBy; }
 
     // Builder pattern

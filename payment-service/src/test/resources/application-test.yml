@@ -55,3 +55,9 @@ services:
     url: http://localhost:0
   review-service:
     url: http://localhost:0
+
+# The relay is called directly by tests; do not schedule it.
+payment:
+  order-sync:
+    relay:
+      enabled: false

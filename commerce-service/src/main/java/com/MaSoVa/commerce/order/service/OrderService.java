@@ -25,6 +25,7 @@ import com.MaSoVa.commerce.order.config.DeliveryFeeConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.MaSoVa.shared.messaging.events.OrderCreatedEvent;
 import com.MaSoVa.shared.messaging.events.OrderStatusChangedEvent;
+import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -838,6 +839,24 @@ public class OrderService {
         }
 
         return updatedOrder;
+    }
+
+    /**
+     * Applies a payment status from payment-service. Idempotent and safe for out-of-order delivery:
+     * REFUNDED is final, and a late FAILED never overrides PAID.
+     */
+    public void applyPaymentStatusEvent(String orderId, String paymentStatus, String transactionId) {
+        Order.PaymentStatus target = Order.PaymentStatus.valueOf(paymentStatus);
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AmqpRejectAndDontRequeueException("Order not found: " + orderId));
+        Order.PaymentStatus current = order.getPaymentStatus();
+        if (current == target
+                || current == Order.PaymentStatus.REFUNDED
+                || (current == Order.PaymentStatus.PAID && target == Order.PaymentStatus.FAILED)) {
+            log.info("Order {} payment status stays {} (event wanted {})", orderId, current, target);
+            return;
+        }
+        updatePaymentStatus(orderId, target, transactionId);
     }
 
     @Transactional
