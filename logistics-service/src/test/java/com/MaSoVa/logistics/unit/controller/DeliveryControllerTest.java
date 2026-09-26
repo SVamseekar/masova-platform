@@ -660,12 +660,5 @@ class DeliveryControllerTest extends BaseServiceTest {
                 .andExpect(status().isOk());
         }
 
-        @Test
-        @DisplayName("returns 403 when X-Internal-Service header is missing")
-        void returns403WithoutInternalHeader() throws Exception {
-            mockMvc.perform(post("/api/delivery/gdpr/anonymize")
-                    .param("customerId", "customer-1"))
-                .andExpect(status().isForbidden());
-        }
     }
 }

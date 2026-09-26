@@ -391,17 +391,12 @@ public class DeliveryController {
     /**
      * POST /api/delivery/gdpr/anonymize?customerId= — no-op for delivery tracking.
      * DeliveryTracking stores no customer PII (only orderId + driverId).
-     * Internal-only: requires X-Internal-Service header.
+     * Internal-only: requires a core-service token with scope delivery:gdpr-anonymize.
      */
     @PostMapping("/gdpr/anonymize")
+    @PreAuthorize("hasAuthority('SCOPE_delivery:gdpr-anonymize')")
     @Operation(summary = "GDPR anonymise delivery data for customer (internal only — delivery tracking has no customer PII)")
-    public ResponseEntity<Void> gdprAnonymize(
-            @RequestParam String customerId,
-            jakarta.servlet.http.HttpServletRequest request) {
-        String internalCaller = request.getHeader("X-Internal-Service");
-        if (internalCaller == null || internalCaller.isBlank()) {
-            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
-        }
+    public ResponseEntity<Void> gdprAnonymize(@RequestParam String customerId) {
         if (deliveryTrackingRepository == null) {
             return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

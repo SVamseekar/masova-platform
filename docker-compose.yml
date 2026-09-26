@@ -78,6 +78,8 @@ services:
     ports:
       - "127.0.0.1:8085:8085"
     environment:
+      # Signs service-to-service tokens. Generate with scripts/dev/service-keys.sh (writes .env).
+      - SERVICE_AUTH_PRIVATE_KEY=${SERVICE_AUTH_CORE_PRIVATE_KEY:-}
       - SPRING_PROFILES_ACTIVE=dev
       - CORE_MONGODB_URI=mongodb://masova-mongodb:27017/masova_core
       - SPRING_DATA_MONGODB_URI=mongodb://masova-mongodb:27017/masova_core
@@ -118,6 +120,7 @@ services:
     ports:
       - "127.0.0.1:8084:8084"
     environment:
+      - SERVICE_AUTH_TRUSTED_CORE=${SERVICE_AUTH_CORE_PUBLIC_KEY:-}
       - SPRING_PROFILES_ACTIVE=dev
       - MENU_MONGODB_URI=mongodb://masova-mongodb:27017/masova_commerce
       - ORDERS_MONGODB_URI=mongodb://masova-mongodb:27017/masova_commerce
@@ -133,7 +136,6 @@ services:
       - RABBITMQ_USERNAME=masova
       - RABBITMQ_PASSWORD=masova_secret
       - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
-      - INTERNAL_PAYMENT_CALLBACK_SECRET=dev-internal-payment-callback-secret-lab-only
       - CORE_SERVICE_URL=http://masova-core:8085
       - SPRING_DATASOURCE_URL=jdbc:postgresql://masova-postgres:5432/masova_db?currentSchema=commerce_schema
       - SPRING_DATASOURCE_USERNAME=masova
@@ -163,6 +165,7 @@ services:
     ports:
       - "127.0.0.1:8089:8089"
     environment:
+      - SERVICE_AUTH_TRUSTED_CORE=${SERVICE_AUTH_CORE_PUBLIC_KEY:-}
       - SPRING_PROFILES_ACTIVE=dev
       - MONGODB_URI=mongodb://masova-mongodb:27017/masova_payment
       - SPRING_DATA_MONGODB_URI=mongodb://masova-mongodb:27017/masova_payment
@@ -210,6 +213,7 @@ services:
     ports:
       - "127.0.0.1:8086:8086"
     environment:
+      - SERVICE_AUTH_TRUSTED_CORE=${SERVICE_AUTH_CORE_PUBLIC_KEY:-}
       - SPRING_PROFILES_ACTIVE=dev
       - LOGISTICS_MONGODB_URI=mongodb://masova-mongodb:27017/masova_logistics
       - SPRING_DATA_MONGODB_URI=mongodb://masova-mongodb:27017/masova_logistics

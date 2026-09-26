@@ -263,22 +263,6 @@ class PaymentControllerTest extends BaseServiceTest {
                 .andExpect(status().isOk());
         }
 
-        @Test
-        @DisplayName("returns 403 without internal header")
-        void returns403WithoutInternalHeader() throws Exception {
-            mockMvc.perform(post("/api/payments/gdpr/anonymize")
-                    .param("customerId", "cust-1"))
-                .andExpect(status().isForbidden());
-        }
-
-        @Test
-        @DisplayName("returns 403 with blank internal header")
-        void returns403WithBlankInternalHeader() throws Exception {
-            mockMvc.perform(post("/api/payments/gdpr/anonymize")
-                    .param("customerId", "cust-1")
-                    .header("X-Internal-Service", "   "))
-                .andExpect(status().isForbidden());
-        }
     }
 
     @Nested

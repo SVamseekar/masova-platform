@@ -112,9 +112,6 @@ mongo:
     maintenance-initial-delay-ms: 0
     maintenance-frequency-ms: 10000
 
-internal:
-  payment-callback:
-    secret: ${INTERNAL_PAYMENT_CALLBACK_SECRET:}
 
 jwt:
   secret: ${JWT_SECRET}
@@ -458,3 +455,8 @@ eu-vat:
           FOOD: 0.0
           ALCOHOL: 0.0
           BEVERAGE: 0.0
+
+# Service-to-service auth: trust core-service tokens (base64 X.509 EC public keys, comma-separated for rotation).
+service-auth:
+  trusted:
+    core-service: ${SERVICE_AUTH_TRUSTED_CORE:}

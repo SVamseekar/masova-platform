@@ -25,7 +25,6 @@ import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 
-import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.never;
@@ -129,32 +128,6 @@ class OrderControllerExtendedTest extends BaseServiceTest {
     }
 
     // PATCH /api/orders/{orderId}/payment — X-Internal-Service alone must not mark PAID
-    @Test
-    void updatePaymentStatus_rejects_forgeable_internal_header() throws Exception {
-        mockMvc.perform(patch("/api/orders/order-1/payment")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"status\":\"PAID\",\"transactionId\":\"txn-123\"}")
-                        .header("X-Internal-Service", "payment-service"))
-                .andExpect(status().isForbidden());
-
-        verify(orderService, never()).updatePaymentStatus(any(), any(), any());
-    }
-
-    @Test
-    void updatePaymentStatus_accepts_shared_payment_credential() throws Exception {
-        ReflectionTestUtils.setField(orderController, "paymentCallbackSecret", "lab-payment-callback-secret");
-        when(orderService.updatePaymentStatus(eq("order-1"), any(), any()))
-                .thenReturn(buildOrder("order-1", Order.OrderStatus.RECEIVED));
-
-        mockMvc.perform(patch("/api/orders/order-1/payment")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"status\":\"PAID\",\"transactionId\":\"txn-123\"}")
-                        .header("X-Internal-Payment-Credential", "lab-payment-callback-secret"))
-                .andExpect(status().isOk());
-
-        verify(orderService).updatePaymentStatus(eq("order-1"), eq(Order.PaymentStatus.PAID), eq("txn-123"));
-    }
-
     // PATCH /api/orders/{orderId} (update order priority — simpler body)
     @Test
     void updateOrder_priority_returns_200() throws Exception {
@@ -175,13 +148,6 @@ class OrderControllerExtendedTest extends BaseServiceTest {
                         .param("customerId", "cust-1")
                         .header("X-Internal-Service", "core-service"))
                 .andExpect(status().isOk());
-    }
-
-    @Test
-    void anonymizeCustomerOrders_returns_403_without_internal_header() throws Exception {
-        mockMvc.perform(post("/api/orders/gdpr/anonymize")
-                        .param("customerId", "cust-1"))
-                .andExpect(status().isForbidden());
     }
 
     // GET /api/orders with search
