@@ -87,6 +87,50 @@ class RefundServiceTest {
     }
 
     @Nested
+    @DisplayName("claim release")
+    class ClaimReleaseTests {
+
+        private boolean releases(Update update) {
+            Object inc = update.getUpdateObject().get("$inc");
+            return inc instanceof org.bson.Document doc
+                    && BigDecimal.valueOf(-200.00).compareTo((BigDecimal) doc.get("refundClaimedAmount")) == 0;
+        }
+
+        @Test
+        @DisplayName("releases the claim when the refund row cannot be saved")
+        void releasesClaimWhenRefundRowSaveFails() {
+            when(transactionRepository.findById("txn-001")).thenReturn(Optional.of(successTransaction));
+            when(refundRepository.findByTransactionId("txn-001")).thenReturn(Collections.emptyList());
+            when(refundRepository.save(any(Refund.class))).thenThrow(new RuntimeException("mongo write failed"));
+
+            assertThatThrownBy(() -> refundService.initiateRefund(refundRequest))
+                    .hasMessageContaining("mongo write failed");
+
+            verify(mongoTemplate).updateFirst(any(Query.class),
+                    org.mockito.ArgumentMatchers.argThat(this::releases), eq(Transaction.class));
+        }
+
+        @Test
+        @DisplayName("releases the claim and keeps the gateway error when marking FAILED also fails")
+        void releasesClaimWhenFailedMarkerCannotBeSaved() throws Exception {
+            when(transactionRepository.findById("txn-001")).thenReturn(Optional.of(successTransaction));
+            when(refundRepository.findByTransactionId("txn-001")).thenReturn(Collections.emptyList());
+            when(paymentGatewayResolver.resolveByGatewayName("RAZORPAY")).thenReturn(paymentGateway);
+            when(paymentGateway.refund(anyString(), any(BigDecimal.class), anyString(), anyString()))
+                    .thenThrow(new RuntimeException("gateway down"));
+            when(refundRepository.save(any(Refund.class)))
+                    .thenAnswer(inv -> inv.getArgument(0))
+                    .thenThrow(new RuntimeException("mongo write failed"));
+
+            assertThatThrownBy(() -> refundService.initiateRefund(refundRequest))
+                    .hasMessageContaining("gateway down");
+
+            verify(mongoTemplate).updateFirst(any(Query.class),
+                    org.mockito.ArgumentMatchers.argThat(this::releases), eq(Transaction.class));
+        }
+    }
+
+    @Nested
     @DisplayName("initiateRefund")
     class InitiateRefundTests {
 

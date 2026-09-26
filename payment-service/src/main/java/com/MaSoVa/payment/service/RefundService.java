@@ -105,7 +105,12 @@ public class RefundService {
                 .build();
         ensureIdempotencyKey(refund);
 
-        refund = Objects.requireNonNull(refundRepository.save(refund));
+        try {
+            refund = Objects.requireNonNull(refundRepository.save(refund));
+        } catch (RuntimeException e) {
+            releaseRefundCapacity(transaction.getId(), request.getAmount());
+            throw e;
+        }
         log.info("Refund recorded as PENDING_APPROVAL. Refund ID: {} (no money moved)", refund.getId());
         return refund;
     }
@@ -260,18 +265,28 @@ public class RefundService {
                     .build();
         }
         String idempotencyKey = ensureIdempotencyKey(refund);
-        refund = Objects.requireNonNull(refundRepository.save(refund));
+        try {
+            refund = Objects.requireNonNull(refundRepository.save(refund));
+        } catch (RuntimeException e) {
+            releaseRefundCapacity(transaction.getId(), request.getAmount());
+            throw e;
+        }
 
         GatewayRefundOutcome outcome;
         try {
             outcome = performGatewayRefund(transaction, paymentId, request.getAmount(), speed, idempotencyKey);
         } catch (Exception e) {
-            // No money moved: free the capacity this refund claimed so a retry can use it.
+            // No money moved: free the claimed capacity first, then record the failure.
+            releaseRefundCapacity(transaction.getId(), request.getAmount());
             refund.setStatus(Refund.RefundStatus.FAILED);
             refund.setNotes((refund.getNotes() != null ? refund.getNotes() + " | " : "")
                     + "Gateway refund failed: " + e.getMessage());
-            refundRepository.save(refund);
-            releaseRefundCapacity(transaction.getId(), request.getAmount());
+            try {
+                refundRepository.save(refund);
+            } catch (RuntimeException saveError) {
+                log.error("Could not mark refund {} FAILED after gateway error", refund.getId(), saveError);
+                e.addSuppressed(saveError);
+            }
             throw e;
         }
 

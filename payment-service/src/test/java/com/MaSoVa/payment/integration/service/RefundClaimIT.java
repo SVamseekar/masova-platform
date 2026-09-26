@@ -173,7 +173,7 @@ class RefundClaimIT extends BaseFullIntegrationTest {
                 .append("razorpayRefundId", "legacy_rfnd")
                 .append("status", "PROCESSED"));
 
-        moneyFieldMigration.run(null);
+        moneyFieldMigration.migrate();
 
         Document tx = mongoTemplate.getCollection("transactions").find(new Document("_id", id)).first();
         Document refund = mongoTemplate.getCollection("refunds").find(new Document("razorpayRefundId", "legacy_rfnd")).first();
@@ -183,6 +183,37 @@ class RefundClaimIT extends BaseFullIntegrationTest {
 
         Refund done = refundService.initiateRefund(refundOf(id.toHexString(), "12.50"));
         assertThat(done.getStatus()).isEqualTo(Refund.RefundStatus.PROCESSED);
+    }
+
+    @Test
+    @DisplayName("an unparseable legacy amount is left as is and does not stop the migration")
+    void unparseableLegacyAmountDoesNotFailMigration() {
+        org.bson.types.ObjectId bad = new org.bson.types.ObjectId();
+        org.bson.types.ObjectId good = new org.bson.types.ObjectId();
+        mongoTemplate.getCollection("transactions").insertOne(new Document("_id", bad).append("orderId", "ord-bad").append("razorpayOrderId", "rzp-bad").append("amount", "N/A"));
+        mongoTemplate.getCollection("transactions").insertOne(new Document("_id", good).append("orderId", "ord-good").append("razorpayOrderId", "rzp-good").append("amount", "3.10"));
+
+        moneyFieldMigration.migrate();
+
+        assertThat(mongoTemplate.getCollection("transactions").find(new Document("_id", bad)).first().get("amount"))
+                .isEqualTo("N/A");
+        assertThat(mongoTemplate.getCollection("transactions").find(new Document("_id", good)).first().get("amount"))
+                .isEqualTo(new Decimal128(new BigDecimal("3.10")));
+    }
+
+    @Test
+    @DisplayName("a stale full save after a refund is rejected instead of erasing the claim")
+    void staleFullSaveAfterRefundIsRejected() {
+        Transaction tx = paidStripeTransaction("10.00");
+        Transaction stale = transactionRepository.findById(tx.getId()).orElseThrow();
+
+        refundService.initiateRefund(refundOf(tx.getId(), "4.00"));
+
+        stale.setReconciled(true);
+        assertThatThrownBy(() -> transactionRepository.save(stale))
+                .isInstanceOf(org.springframework.dao.OptimisticLockingFailureException.class);
+        assertThat(transactionRepository.findById(tx.getId()).orElseThrow().getRefundClaimedAmount())
+                .isEqualByComparingTo("4.00");
     }
 
     @Test
