@@ -217,11 +217,32 @@ class RefundClaimIT extends BaseFullIntegrationTest {
     }
 
     @Test
-    @DisplayName("a gateway failure releases the claim and marks the refund FAILED")
+    @DisplayName("a timeout keeps the claim, so a retry cannot refund twice")
+    void ambiguousGatewayErrorBlocksDoubleRefund() throws Exception {
+        Transaction tx = paidStripeTransaction("10.00");
+        when(stripeGateway.refund(anyString(), any(BigDecimal.class), anyString(), anyString()))
+                .thenThrow(new com.stripe.exception.ApiConnectionException("read timed out"));
+
+        assertThatThrownBy(() -> refundService.initiateRefund(refundOf(tx.getId(), "10.00")))
+                .isInstanceOf(Exception.class);
+
+        assertThat(transactionRepository.findById(tx.getId()).orElseThrow().getRefundClaimedAmount())
+                .isEqualByComparingTo("10.00");
+        assertThat(refundRepository.findByTransactionId(tx.getId()))
+                .extracting(Refund::getStatus)
+                .containsExactly(Refund.RefundStatus.PROCESSING);
+        assertThatThrownBy(() -> refundService.initiateRefund(refundOf(tx.getId(), "10.00")))
+                .isInstanceOf(RuntimeException.class);
+        verify(stripeGateway, times(1)).refund(anyString(), any(BigDecimal.class), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("a definitive gateway rejection releases the claim and marks the refund FAILED")
     void gatewayFailureReleasesClaim() throws Exception {
         Transaction tx = paidStripeTransaction("10.00");
         when(stripeGateway.refund(anyString(), any(BigDecimal.class), anyString(), anyString()))
-                .thenThrow(new RuntimeException("stripe down"))
+                .thenThrow(new com.stripe.exception.InvalidRequestException(
+                        "charge disputed", "charge", "req_it", "charge_disputed", 400, null))
                 .thenReturn("re_retry");
 
         assertThatThrownBy(() -> refundService.initiateRefund(refundOf(tx.getId(), "10.00")))
