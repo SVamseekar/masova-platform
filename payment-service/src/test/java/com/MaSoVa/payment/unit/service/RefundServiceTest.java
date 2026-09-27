@@ -525,8 +525,9 @@ class RefundServiceTest {
                     .thenReturn(Optional.of(refund));
             when(refundRepository.save(any(Refund.class))).thenReturn(refund);
 
-            refundService.updateRefundStatus("rfnd_razorpay_001", "processed");
+            boolean applied = refundService.updateRefundStatus("rfnd_razorpay_001", "processed");
 
+            assertThat(applied).isTrue();
             assertThat(refund.getStatus()).isEqualTo(Refund.RefundStatus.PROCESSED);
             assertThat(refund.getProcessedAt()).isNotNull();
             verify(refundRepository).save(refund);
@@ -539,9 +540,26 @@ class RefundServiceTest {
             when(refundRepository.findByRazorpayRefundId("re_1")).thenReturn(Optional.of(refund));
             when(refundRepository.save(any(Refund.class))).thenReturn(refund);
 
-            refundService.updateRefundStatus("re_1", "succeeded");
+            boolean applied = refundService.updateRefundStatus("re_1", "succeeded");
 
+            assertThat(applied).isTrue();
             assertThat(refund.getStatus()).isEqualTo(Refund.RefundStatus.PROCESSED);
+        }
+
+        @Test
+        @DisplayName("an unrecognized gateway status returns false and leaves the refund's status unchanged (B2c review)")
+        void unrecognizedStatusReturnsFalseAndDoesNotChangeStatus() {
+            Refund refund = Refund.builder().status(Refund.RefundStatus.PROCESSING).build();
+            when(refundRepository.findByRazorpayRefundId("rfnd_weird")).thenReturn(Optional.of(refund));
+            when(refundRepository.save(any(Refund.class))).thenReturn(refund);
+
+            boolean applied = refundService.updateRefundStatus("rfnd_weird", "some_new_status_we_dont_know");
+
+            assertThat(applied).isFalse();
+            assertThat(refund.getStatus()).isEqualTo(Refund.RefundStatus.PROCESSING);
+            // Still saved (bumping updatedAt) so a reconciliation poll backs off instead of
+            // re-querying this refund on every cycle for a status it will never recognize.
+            verify(refundRepository).save(refund);
         }
     }
 }

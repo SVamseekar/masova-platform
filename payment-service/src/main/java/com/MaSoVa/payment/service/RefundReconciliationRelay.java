@@ -43,6 +43,9 @@ public class RefundReconciliationRelay {
 
     private static final Logger log = LoggerFactory.getLogger(RefundReconciliationRelay.class);
     private static final String UNRESOLVED_CLAIM_PREFIX = "claim_";
+    // An unconfirmed claim needs a human — escalate the log once it's been stuck this long,
+    // rather than the same WARN repeating forever at the scheduler's poll cadence.
+    private static final Duration ESCALATE_UNCONFIRMED_AFTER = Duration.ofHours(1);
 
     private final RefundRepository refundRepository;
     private final TransactionRepository transactionRepository;
@@ -69,11 +72,22 @@ public class RefundReconciliationRelay {
             Gauge.builder("payment.refund_reconcile.stuck", this, RefundReconciliationRelay::countStuck)
                     .description("Refunds stuck PROCESSING past the stale threshold")
                     .register(registry);
+            // Separate from the general stuck count: these specifically need a human, since no
+            // gateway-side id exists to safely auto-resolve them.
+            Gauge.builder("payment.refund_reconcile.unconfirmed_claim", this,
+                            RefundReconciliationRelay::countUnconfirmedClaims)
+                    .description("Stuck refunds with no confirmed gateway refund id — needs manual reconciliation")
+                    .register(registry);
         }
     }
 
     double countStuck() {
         return refundRepository.countByStatusAndUpdatedAtBefore(Refund.RefundStatus.PROCESSING, cutoff());
+    }
+
+    public double countUnconfirmedClaims() {
+        return refundRepository.findByStatusAndUpdatedAtBefore(Refund.RefundStatus.PROCESSING, cutoff())
+                .stream().filter(RefundReconciliationRelay::hasNoConfirmedGatewayId).count();
     }
 
     private LocalDateTime cutoff() {
@@ -103,10 +117,7 @@ public class RefundReconciliationRelay {
 
     private void reconcileOne(Refund refund) {
         if (hasNoConfirmedGatewayId(refund)) {
-            log.warn("Refund {} has been PROCESSING with no confirmed gateway refund id since {} "
-                            + "(outcome unknown after a prior gateway error) — needs manual reconciliation, "
-                            + "idempotencyKey={}",
-                    refund.getId(), refund.getUpdatedAt(), refund.getIdempotencyKey());
+            logUnconfirmedClaim(refund);
             return;
         }
         Transaction transaction = transactionRepository.findById(refund.getTransactionId()).orElse(null);
@@ -124,9 +135,28 @@ public class RefundReconciliationRelay {
             throw new RuntimeException("Gateway lookup failed for refund " + refund.getId()
                     + " (gateway=" + gatewayName + "): " + e.getMessage(), e);
         }
-        refundService.updateRefundStatus(refund.getRazorpayRefundId(), gatewayStatus);
-        log.info("Reconciled refund {} via gateway lookup: gateway={}, status={}",
-                refund.getId(), gatewayName, gatewayStatus);
+        boolean applied = refundService.updateRefundStatus(refund.getRazorpayRefundId(), gatewayStatus);
+        if (applied) {
+            log.info("Reconciled refund {} via gateway lookup: gateway={}, status={}",
+                    refund.getId(), gatewayName, gatewayStatus);
+        } else {
+            // The refund is left exactly as stuck as before this cycle — must not look like success.
+            log.error("Refund {} gateway lookup returned an unrecognized status '{}' from {} — "
+                            + "refund left unchanged, needs manual review",
+                    refund.getId(), gatewayStatus, gatewayName);
+        }
+    }
+
+    private void logUnconfirmedClaim(Refund refund) {
+        boolean escalate = refund.getUpdatedAt() != null
+                && Duration.between(refund.getUpdatedAt(), LocalDateTime.now()).compareTo(ESCALATE_UNCONFIRMED_AFTER) >= 0;
+        String message = "Refund {} has been PROCESSING with no confirmed gateway refund id since {} "
+                + "(outcome unknown after a prior gateway error) — needs manual reconciliation, idempotencyKey={}";
+        if (escalate) {
+            log.error(message, refund.getId(), refund.getUpdatedAt(), refund.getIdempotencyKey());
+        } else {
+            log.warn(message, refund.getId(), refund.getUpdatedAt(), refund.getIdempotencyKey());
+        }
     }
 
     private static boolean hasNoConfirmedGatewayId(Refund refund) {

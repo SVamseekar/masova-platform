@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -133,5 +134,33 @@ class RefundReconciliationRelayTest {
         relay.reconcileDue();
 
         verifyNoInteractions(paymentGatewayResolver, refundService);
+    }
+
+    @Test
+    @DisplayName("an unrecognized gateway status does not throw and is still applied through updateRefundStatus (B2c review)")
+    void unrecognizedGatewayStatusIsStillPassedThrough() throws Exception {
+        Refund refund = stuckRefund("r6", "rfnd_weird");
+        Transaction transaction = transactionFor(refund, "RAZORPAY");
+        when(refundRepository.findByStatusAndUpdatedAtBefore(eq(Refund.RefundStatus.PROCESSING), any()))
+                .thenReturn(List.of(refund));
+        when(transactionRepository.findById("txn-r6")).thenReturn(Optional.of(transaction));
+        when(paymentGatewayResolver.resolveByGatewayName("RAZORPAY")).thenReturn(gateway);
+        when(gateway.fetchRefundStatus("pay_r6", "rfnd_weird")).thenReturn("some_new_gateway_status");
+        when(refundService.updateRefundStatus("rfnd_weird", "some_new_gateway_status")).thenReturn(false);
+
+        relay.reconcileDue();
+
+        verify(refundService).updateRefundStatus("rfnd_weird", "some_new_gateway_status");
+    }
+
+    @Test
+    @DisplayName("countUnconfirmedClaims counts only the no-confirmed-gateway-id subset of stuck refunds")
+    void countUnconfirmedClaimsCountsOnlyUnconfirmedOnes() {
+        Refund confirmed = stuckRefund("r7", "rfnd_real");
+        Refund unconfirmed = stuckRefund("r8", "claim_xyz");
+        when(refundRepository.findByStatusAndUpdatedAtBefore(eq(Refund.RefundStatus.PROCESSING), any()))
+                .thenReturn(List.of(confirmed, unconfirmed));
+
+        assertThat(relay.countUnconfirmedClaims()).isEqualTo(1.0);
     }
 }

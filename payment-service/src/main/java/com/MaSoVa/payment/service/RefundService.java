@@ -426,9 +426,13 @@ public class RefundService {
     /**
      * Update refund status (called by webhook or scheduled job).
      * {@code gatewayRefundId} is stored in {@code razorpayRefundId} for both PSPs.
+     *
+     * @return true if {@code status} was a recognized value and applied; false if it was not
+     *         recognized, in which case the refund is left as-is and the caller must not treat
+     *         this as a successful reconciliation (see RefundReconciliationRelay).
      */
     @Transactional
-    public void updateRefundStatus(String gatewayRefundId, String status) {
+    public boolean updateRefundStatus(String gatewayRefundId, String status) {
         Refund refund = refundRepository.findByRazorpayRefundId(gatewayRefundId)
                 .orElseThrow(() -> new RuntimeException("Refund not found: " + gatewayRefundId));
 
@@ -450,15 +454,19 @@ public class RefundService {
                 releaseRefundCapacity(refund.getTransactionId(), refund.getAmount());
             }
             log.info("Refund status updated. Refund ID: {}, Status: FAILED", refund.getId());
-            return;
+            return true;
         } else {
             log.warn("Unknown refund status: {}", status);
-            return;
+            // Still touch updatedAt (via save) so a reconciliation poll backs off instead of
+            // re-querying this refund on every cycle for a status string it will never recognize.
+            refundRepository.save(refund);
+            return false;
         }
 
         refund.setStatus(newStatus);
         refundRepository.save(refund);
         log.info("Refund status updated. Refund ID: {}, Status: {}", refund.getId(), newStatus);
+        return true;
     }
 
     /**
