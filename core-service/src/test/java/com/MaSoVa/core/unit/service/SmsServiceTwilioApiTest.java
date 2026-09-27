@@ -93,6 +93,24 @@ class SmsServiceTwilioApiTest {
     }
 
     @Test
+    @DisplayName("sendSms lets a non-Twilio exception propagate rather than swallowing it as a generic send failure")
+    void propagatesNonTwilioExceptions() {
+        when(twilioConfig.isEnabled()).thenReturn(true);
+        when(twilioConfig.getPhoneNumber()).thenReturn("+15555555555");
+
+        try (MockedStatic<Message> messageStatic = mockStatic(Message.class)) {
+            MessageCreator creator = mock(MessageCreator.class);
+            when(creator.create()).thenThrow(new IllegalStateException("unexpected bug, not a Twilio failure"));
+            messageStatic.when(() -> Message.creator(any(PhoneNumber.class), any(PhoneNumber.class), anyString()))
+                    .thenReturn(creator);
+
+            org.assertj.core.api.Assertions.assertThatThrownBy(
+                    () -> smsService.sendSms(buildNotification("+491701234567", "Hi")))
+                    .isInstanceOf(IllegalStateException.class);
+        }
+    }
+
+    @Test
     @DisplayName("sendSms rejects a recipient phone with no country code instead of guessing one (C3)")
     void rejectsPhoneWithoutCountryCode() {
         when(twilioConfig.isEnabled()).thenReturn(true);

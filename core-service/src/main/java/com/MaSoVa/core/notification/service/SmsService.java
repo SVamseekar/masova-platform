@@ -2,6 +2,7 @@ package com.MaSoVa.core.notification.service;
 
 import com.MaSoVa.core.notification.config.TwilioConfig;
 import com.MaSoVa.core.notification.entity.Notification;
+import com.twilio.exception.TwilioException;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
 import org.slf4j.Logger;
@@ -31,12 +32,21 @@ public class SmsService {
                 return false;
             }
 
-            // Recipient numbers must already be E.164 (User.PersonalInfo.phone is validated on
-            // input). This is a multi-country platform (India + 12 EU countries) with no reliable
-            // way to guess the right calling code here — silently defaulting to any one country
-            // (the old code assumed US) would misdial for every other country. Reject instead.
+            // This is a multi-country platform (India + 12 EU countries) with no reliable way to
+            // guess the right calling code here — silently defaulting to any one country (the old
+            // code assumed US) would misdial for every other country, so reject instead.
+            //
+            // NOTE: registration-side validation (UserCreateRequest, CreateCustomerRequest,
+            // Customer, UpdateCustomerRequest — all "^\+?[1-9]\d{6,14}$") makes the leading "+"
+            // OPTIONAL, so this branch is reachable for legitimately-registered users, not just
+            // bad/legacy data. Tightening that regex to require "+" is the real fix; not done
+            // here since it touches registration/customer-update validation used by the frontend
+            // and mobile apps, whose current phone-input behavior (with vs. without "+") wasn't
+            // verified — a rejection here is logged and recoverable (resend once the number is
+            // corrected), whereas a wrong validation tightening could reject valid signups.
             if (!toPhone.startsWith("+")) {
-                logger.error("Recipient phone number is not in E.164 format (missing country code): {}", toPhone);
+                logger.error("Cannot send SMS to userId={}: recipient phone is not in E.164 format "
+                        + "(missing country code): {}", notification.getUserId(), toPhone);
                 return false;
             }
 
@@ -49,7 +59,11 @@ public class SmsService {
             logger.info("SMS sent successfully to {} with SID: {}", toPhone, message.getSid());
             return true;
 
-        } catch (Exception e) {
+        } catch (TwilioException e) {
+            // A genuine Twilio-side failure (rejected number, account/config issue, connection
+            // error) — expected to happen occasionally, handled by returning false. Anything else
+            // (e.g. a bug in this method) is left to propagate so NotificationService's own
+            // catch attributes it properly instead of this swallowing it as a generic SMS failure.
             logger.error("Failed to send SMS: {}", e.getMessage(), e);
             return false;
         }
@@ -66,6 +80,8 @@ public class SmsService {
             try {
                 String toPhone = phoneNumber;
                 if (!toPhone.startsWith("+")) {
+                    // See sendSms's note: this can be a legitimately-registered number, not just
+                    // bad data — registration validation doesn't require a leading "+" today.
                     logger.error("Skipping bulk SMS recipient not in E.164 format (missing country code): {}", toPhone);
                     continue;
                 }
@@ -79,7 +95,7 @@ public class SmsService {
                 logger.info("Bulk SMS sent to {} with SID: {}", toPhone, msg.getSid());
                 successCount++;
 
-            } catch (Exception e) {
+            } catch (TwilioException e) {
                 logger.error("Failed to send bulk SMS to {}: {}", phoneNumber, e.getMessage());
             }
         }
