@@ -31,9 +31,13 @@ public class SmsService {
                 return false;
             }
 
-            // Ensure phone number is in E.164 format
+            // Recipient numbers must already be E.164 (User.PersonalInfo.phone is validated on
+            // input). This is a multi-country platform (India + 12 EU countries) with no reliable
+            // way to guess the right calling code here — silently defaulting to any one country
+            // (the old code assumed US) would misdial for every other country. Reject instead.
             if (!toPhone.startsWith("+")) {
-                toPhone = "+1" + toPhone; // Default to US if no country code
+                logger.error("Recipient phone number is not in E.164 format (missing country code): {}", toPhone);
+                return false;
             }
 
             Message message = Message.creator(
@@ -62,7 +66,8 @@ public class SmsService {
             try {
                 String toPhone = phoneNumber;
                 if (!toPhone.startsWith("+")) {
-                    toPhone = "+1" + toPhone;
+                    logger.error("Skipping bulk SMS recipient not in E.164 format (missing country code): {}", toPhone);
+                    continue;
                 }
 
                 Message msg = Message.creator(
