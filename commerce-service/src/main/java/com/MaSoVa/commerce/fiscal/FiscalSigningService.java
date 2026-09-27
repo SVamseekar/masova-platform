@@ -1,6 +1,8 @@
 package com.MaSoVa.commerce.fiscal;
 
+import com.MaSoVa.commerce.fiscal.entity.FiscalOutageJpaEntity;
 import com.MaSoVa.commerce.fiscal.entity.FiscalSignatureJpaEntity;
+import com.MaSoVa.commerce.fiscal.repository.FiscalOutageRepository;
 import com.MaSoVa.commerce.fiscal.repository.FiscalSignatureRepository;
 import com.MaSoVa.commerce.order.entity.Order;
 import com.MaSoVa.commerce.order.repository.OrderJpaRepository;
@@ -9,13 +11,16 @@ import com.MaSoVa.commerce.order.service.OrderEventPublisher;
 import com.MaSoVa.shared.model.FiscalSignature;
 import com.MaSoVa.shared.messaging.events.ReceiptSignedEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Optional;
 
 /**
  * Orchestrates fiscal signing after an order reaches terminal status.
@@ -36,21 +41,39 @@ public class FiscalSigningService {
     private final OrderRepository orderRepository;
     private final OrderJpaRepository orderJpaRepository;
     private final FiscalSignatureRepository fiscalSignatureRepository;
+    private final FiscalOutageRepository fiscalOutageRepository;
     private final OrderEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
+    private final ObjectProvider<MeterRegistry> meterRegistry;
 
     public FiscalSigningService(FiscalSignerRegistry registry,
                                  OrderRepository orderRepository,
                                  OrderJpaRepository orderJpaRepository,
                                  FiscalSignatureRepository fiscalSignatureRepository,
+                                 FiscalOutageRepository fiscalOutageRepository,
                                  OrderEventPublisher eventPublisher,
-                                 ObjectMapper objectMapper) {
+                                 ObjectMapper objectMapper,
+                                 ObjectProvider<MeterRegistry> meterRegistry) {
         this.registry = registry;
         this.orderRepository = orderRepository;
         this.orderJpaRepository = orderJpaRepository;
         this.fiscalSignatureRepository = fiscalSignatureRepository;
+        this.fiscalOutageRepository = fiscalOutageRepository;
         this.eventPublisher = eventPublisher;
         this.objectMapper = objectMapper;
+        this.meterRegistry = meterRegistry;
+        MeterRegistry registryInstance = meterRegistry.getIfAvailable();
+        if (registryInstance != null) {
+            io.micrometer.core.instrument.Gauge.builder("fiscal.outage.open", fiscalOutageRepository,
+                            FiscalOutageRepository::countByClosedAtIsNull)
+                    .description("Open fiscal signing outages (store+signer pairs currently failing)")
+                    .register(registryInstance);
+        }
+    }
+
+    /** True when a store in this country cannot go live: it needs a certified signer and has none (#126). */
+    public boolean blocksLiveTrading(String countryCode) {
+        return registry.blocksLiveTrading(countryCode);
     }
 
     @Async
@@ -77,6 +100,13 @@ public class FiscalSigningService {
         if (signature.isSigningFailed()) {
             log.warn("[FISCAL] RECEIPT_SIGNING_FAILED for order={} country={}: {}",
                     order.getId(), countryCode, signature.getSigningError());
+        }
+
+        try {
+            recordOutageState(order.getStoreId(), signature);
+        } catch (Exception e) {
+            log.warn("[FISCAL] outage log update failed for store={} signer={}: {}",
+                    order.getStoreId(), signature.getSignerSystem(), e.getMessage());
         }
 
         // Dual-write: update PostgreSQL fiscal columns
@@ -107,6 +137,34 @@ public class FiscalSigningService {
             signature
         );
         eventPublisher.publishReceiptSigned(event);
+    }
+
+    /**
+     * Opens a per-(store, signer) outage row on the first failure and closes it on the next
+     * success, so KassenSichV/AEAO §146a Nr. 7's start/end/cause outage log stays accurate (#126).
+     */
+    private void recordOutageState(String storeId, FiscalSignature signature) {
+        String signerSystem = signature.getSignerSystem();
+        if (storeId == null || signerSystem == null) {
+            return;
+        }
+        Optional<FiscalOutageJpaEntity> open =
+                fiscalOutageRepository.findByStoreIdAndSignerSystemAndClosedAtIsNull(storeId, signerSystem);
+        if (signature.isSigningFailed()) {
+            if (open.isEmpty()) {
+                fiscalOutageRepository.save(FiscalOutageJpaEntity.builder()
+                        .storeId(storeId)
+                        .signerSystem(signerSystem)
+                        .openedAt(OffsetDateTime.now(ZoneOffset.UTC))
+                        .cause(signature.getSigningError())
+                        .build());
+            }
+        } else {
+            open.ifPresent(outage -> {
+                outage.setClosedAt(OffsetDateTime.now(ZoneOffset.UTC));
+                fiscalOutageRepository.save(outage);
+            });
+        }
     }
 
     private void persistFiscalSignature(Order order, FiscalSignature signature) {

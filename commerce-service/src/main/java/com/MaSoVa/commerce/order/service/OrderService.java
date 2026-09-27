@@ -203,6 +203,15 @@ public class OrderService {
         }
 
         String countryCode = store.getCountryCode();
+        if (countryCode != null && fiscalSigningService.blocksLiveTrading(countryCode)) {
+            // Legal gate: a regulated-country store cannot take live orders without a certified
+            // fiscal signer. No certified providers are wired in yet for any country (a separate
+            // epic) — until then this rejects every order for such a store (#126).
+            throw new com.MaSoVa.commerce.fiscal.FiscalNotConfiguredException(
+                    "Store " + request.getStoreId() + " (" + countryCode
+                            + ") requires a certified fiscal signer that is not configured; order rejected");
+        }
+
         double tax;
         double total;
         VatBreakdown vatBreakdown = null;
