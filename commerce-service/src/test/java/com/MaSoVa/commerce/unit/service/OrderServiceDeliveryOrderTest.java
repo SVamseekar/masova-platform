@@ -241,7 +241,7 @@ class OrderServiceDeliveryOrderTest {
         req.setItems(List.of(buildItem()));
 
         assertThatThrownBy(() -> orderService.createOrder(req))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(com.MaSoVa.shared.exception.BusinessException.class)
                 .hasMessageContaining("store-1");
 
         verify(orderRepository, never()).save(any(Order.class));
