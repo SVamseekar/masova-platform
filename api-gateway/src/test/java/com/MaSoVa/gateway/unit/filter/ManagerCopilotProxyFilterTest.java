@@ -39,6 +39,8 @@ class ManagerCopilotProxyFilterTest {
     private final AtomicReference<String> outboundKey = new AtomicReference<>();
     private final AtomicReference<String> outboundBody = new AtomicReference<>();
     private final AtomicReference<String> outboundPath = new AtomicReference<>();
+    private final AtomicReference<String> outboundUserId = new AtomicReference<>();
+    private final AtomicReference<String> outboundStoreId = new AtomicReference<>();
     private int hits;
 
     @BeforeEach
@@ -47,10 +49,14 @@ class ManagerCopilotProxyFilterTest {
         outboundKey.set(null);
         outboundBody.set(null);
         outboundPath.set(null);
+        outboundUserId.set(null);
+        outboundStoreId.set(null);
         support = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         support.createContext("/", exchange -> {
             hits++;
             outboundKey.set(exchange.getRequestHeaders().getFirst("X-Agent-Api-Key"));
+            outboundUserId.set(exchange.getRequestHeaders().getFirst("X-User-Id"));
+            outboundStoreId.set(exchange.getRequestHeaders().getFirst("X-Store-Id"));
             outboundPath.set(exchange.getRequestURI().getPath());
             outboundBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
             byte[] body = "{\"reply\":\"ok\",\"proposal_id\":\"prop-1\"}".getBytes(StandardCharsets.UTF_8);
@@ -101,6 +107,83 @@ class ManagerCopilotProxyFilterTest {
     }
 
     @Test
+    @DisplayName("a spoofed store_id in the body is overwritten with the JWT's storeId (#133)")
+    void spoofedStoreIdIsOverwritten() {
+        ManagerCopilotProxyFilter filter = filterWithKey(SERVER_KEY);
+        String json = "{\"message\":\"stock check\",\"store_id\":\"store-EVIL\"}";
+        MockServerWebExchange exchange = chatExchange(token("MANAGER"), json);
+
+        StepVerifier.create(filter.filter(exchange, noopChain())).verifyComplete();
+
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(outboundBody.get()).isEqualTo("{\"message\":\"stock check\",\"store_id\":\"store-1\"}");
+    }
+
+    @Test
+    @DisplayName("forwards X-User-Id and X-Store-Id from JWT claims for audit (#133)")
+    void forwardsUserIdAndStoreIdHeadersForAudit() {
+        ManagerCopilotProxyFilter filter = filterWithKey(SERVER_KEY);
+        MockServerWebExchange exchange = chatExchange(token("MANAGER"), "{\"message\":\"hi\"}");
+
+        StepVerifier.create(filter.filter(exchange, noopChain())).verifyComplete();
+
+        assertThat(outboundUserId.get()).isEqualTo("user-1");
+        assertThat(outboundStoreId.get()).isEqualTo("store-1");
+    }
+
+    @Test
+    @DisplayName("a manager JWT with no storeId claim is forbidden and support is not called")
+    void missingStoreIdIsForbidden() {
+        ManagerCopilotProxyFilter filter = filterWithKey(SERVER_KEY);
+        String tokenWithNoStore = Jwts.builder()
+                .subject("user-1")
+                .claim("userType", "MANAGER")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 3600_000))
+                .signWith(Keys.hmacShaKeyFor(VALID_SECRET.getBytes(StandardCharsets.UTF_8)))
+                .compact();
+        MockServerWebExchange exchange = chatExchange(tokenWithNoStore, "{\"message\":\"hi\"}");
+
+        StepVerifier.create(filter.filter(exchange, noopChain())).verifyComplete();
+
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(hits).isZero();
+    }
+
+    @Test
+    @DisplayName("a blacklisted (logged-out) manager token is rejected before reaching support (C5)")
+    void blacklistedTokenIsRejected() {
+        org.springframework.data.redis.core.ReactiveStringRedisTemplate redis =
+                mock(org.springframework.data.redis.core.ReactiveStringRedisTemplate.class);
+        org.mockito.Mockito.when(redis.hasKey(org.mockito.ArgumentMatchers.anyString())).thenReturn(Mono.just(true));
+        String base = "http://127.0.0.1:" + support.getAddress().getPort();
+        ManagerCopilotProxyFilter filter = new ManagerCopilotProxyFilter(VALID_SECRET, SERVER_KEY, base, redis);
+        MockServerWebExchange exchange = chatExchange(token("MANAGER"), "{\"message\":\"hi\"}");
+
+        StepVerifier.create(filter.filter(exchange, noopChain())).verifyComplete();
+
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(hits).isZero();
+    }
+
+    @Test
+    @DisplayName("a Redis error checking the blacklist fails open, matching shared-security's convention")
+    void redisErrorFailsOpen() {
+        org.springframework.data.redis.core.ReactiveStringRedisTemplate redis =
+                mock(org.springframework.data.redis.core.ReactiveStringRedisTemplate.class);
+        org.mockito.Mockito.when(redis.hasKey(org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(Mono.error(new RuntimeException("Redis down")));
+        String base = "http://127.0.0.1:" + support.getAddress().getPort();
+        ManagerCopilotProxyFilter filter = new ManagerCopilotProxyFilter(VALID_SECRET, SERVER_KEY, base, redis);
+        MockServerWebExchange exchange = chatExchange(token("MANAGER"), "{\"message\":\"hi\"}");
+
+        StepVerifier.create(filter.filter(exchange, noopChain())).verifyComplete();
+
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(hits).isEqualTo(1);
+    }
+
+    @Test
     @DisplayName("assistant manager may resolve a proposal; missing server key is 503")
     void assistantManagerResolveAndMissingKey() {
         ManagerCopilotProxyFilter allowed = filterWithKey(SERVER_KEY);
@@ -116,7 +199,8 @@ class ManagerCopilotProxyFilterTest {
         assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(outboundPath.get()).isEqualTo("/agent/proposals/prop-9/resolve");
         assertThat(outboundKey.get()).isEqualTo(SERVER_KEY);
-        assertThat(outboundBody.get()).isEqualTo(json);
+        // store_id is stamped from the JWT even though the client's body never sent one (#133)
+        assertThat(outboundBody.get()).isEqualTo("{\"status\":\"APPROVED\",\"store_id\":\"store-1\"}");
 
         ManagerCopilotProxyFilter unconfigured = filterWithKey("");
         MockServerWebExchange blocked = chatExchange(token("MANAGER"), "{\"message\":\"hi\"}");
