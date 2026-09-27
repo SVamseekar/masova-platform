@@ -26,7 +26,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Verify API wiring (stale paths, dead RTK, gateway gaps)
         run: node .github/ci/integration-matrix-audit.js --ci
@@ -108,7 +108,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
@@ -139,3 +139,21 @@ jobs:
 
       - name: Build production image
         run: docker build -f frontend/Dockerfile.production -t masova-frontend:ci frontend
+
+      - name: Run container and verify it becomes healthy
+        run: |
+          docker run -d --name frontend-ci -p 8080:80 masova-frontend:ci
+          for i in $(seq 1 10); do
+            status=$(docker inspect --format='{{.State.Health.Status}}' frontend-ci)
+            if [ "$status" = "healthy" ]; then
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "Container failed to become healthy" >&2
+          docker logs frontend-ci
+          exit 1
+
+      - name: Cleanup container
+        if: always()
+        run: docker rm -f frontend-ci || true
