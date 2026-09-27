@@ -197,8 +197,14 @@ public class OrderService {
         } catch (Exception e) {
             log.warn("Could not fetch store for tax routing storeId={}: {}", request.getStoreId(), e.getMessage());
         }
+        if (store == null) {
+            // Can't tell an EU store from an India one when the lookup fails — defaulting to
+            // INR/GST here would silently mis-tax and mis-bill a real EU store's order (#125).
+            throw new IllegalStateException(
+                    "Could not verify store " + request.getStoreId() + " for tax and currency routing; order rejected");
+        }
 
-        String countryCode = (store != null) ? store.getCountryCode() : null;
+        String countryCode = store.getCountryCode();
         double tax;
         double total;
         VatBreakdown vatBreakdown = null;
@@ -274,11 +280,8 @@ public class OrderService {
         // Initialize quality checkpoints for the order
         initializeQualityCheckpoints(order);
 
-        // Global-3: propagate store currency (null = India/INR legacy)
-        if (store == null) {
-            log.warn("Could not fetch store {} for currency propagation, defaulting to INR", request.getStoreId());
-            order.setCurrency("INR");
-        } else if (store.getCurrency() != null) {
+        // Global-3: propagate store currency (store is guaranteed non-null above; null currency = India/INR legacy)
+        if (store.getCurrency() != null) {
             order.setCurrency(store.getCurrency());
         }
 
