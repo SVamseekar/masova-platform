@@ -32,6 +32,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -676,6 +677,34 @@ class DeliveryControllerTest extends BaseServiceTest {
             assertThat(legacyByOrderId.getDeliveryAddress()).isNull();
             verify(repository).save(byCustomerId);
             verify(repository).save(legacyByOrderId);
+        }
+
+        @Test
+        @DisplayName("saves a row matched by both customerId and orderIds only once, not twice (#118)")
+        void savesRowOnlyOnceWhenMatchedByBothQueries() throws Exception {
+            DeliveryTrackingRepository repository = mock(DeliveryTrackingRepository.class);
+            ReflectionTestUtils.setField(deliveryController, "deliveryTrackingRepository", repository);
+            // The repository returns a fresh instance per query, as real Spring Data queries do —
+            // dedup must key on the document id, not object identity, or the 2nd save() would
+            // optimistic-lock-fail against the version the 1st save() just bumped.
+            DeliveryTracking fromCustomerIdQuery = new DeliveryTracking();
+            fromCustomerIdQuery.setId("tracking-1");
+            fromCustomerIdQuery.setOrderId("order-1");
+            fromCustomerIdQuery.setCustomerId("customer-1");
+            DeliveryTracking fromOrderIdQuery = new DeliveryTracking();
+            fromOrderIdQuery.setId("tracking-1");
+            fromOrderIdQuery.setOrderId("order-1");
+            fromOrderIdQuery.setCustomerId("customer-1");
+
+            when(repository.findByCustomerId("customer-1")).thenReturn(List.of(fromCustomerIdQuery));
+            when(repository.findByOrderIdIn(List.of("order-1"))).thenReturn(List.of(fromOrderIdQuery));
+
+            mockMvc.perform(post("/api/delivery/gdpr/anonymize")
+                    .param("customerId", "customer-1")
+                    .param("orderIds", "order-1"))
+                .andExpect(status().isOk());
+
+            verify(repository, times(1)).save(any(DeliveryTracking.class));
         }
 
     }

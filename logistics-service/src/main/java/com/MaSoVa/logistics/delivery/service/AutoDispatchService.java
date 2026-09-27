@@ -270,7 +270,12 @@ public class AutoDispatchService {
      */
     private String resolveCustomerId(String orderId) {
         Object customerId = orderServiceClient.getOrderDetails(orderId).get("customerId");
-        return customerId != null ? customerId.toString() : null;
+        if (customerId == null) {
+            log.warn("Could not resolve customerId for order {} (order-service lookup returned nothing); "
+                    + "dispatching without one — this row needs the orderId GDPR fallback until backfilled", orderId);
+            return null;
+        }
+        return customerId.toString();
     }
 
     private DeliveryTracking createDeliveryTracking(AutoDispatchRequest request, Map<String, Object> driver,

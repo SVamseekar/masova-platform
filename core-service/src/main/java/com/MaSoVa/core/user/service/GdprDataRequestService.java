@@ -454,6 +454,8 @@ public class GdprDataRequestService {
                         .toList();
             } catch (Exception e) {
                 logger.warn("Could not fetch order ids for delivery GDPR fallback, customer {}: {}", userId, e.getMessage());
+                errors.add("Delivery Service: could not fetch order ids for the pre-fix orderId fallback, "
+                        + "erasing by customerId only: " + e.getMessage());
             }
             boolean success = deliveryServiceClient.anonymizeCustomerData(userId, orderIds, authToken);
             if (!success) {

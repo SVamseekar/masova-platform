@@ -401,16 +401,18 @@ public class DeliveryController {
         if (deliveryTrackingRepository == null) {
             return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        java.util.Map<DeliveryTracking, Boolean> toAnonymize = new java.util.IdentityHashMap<>();
+        // Dedupe by id: the same document can come back from both queries as two distinct,
+        // separately-versioned instances, and saving both would optimistic-lock-fail the second (#118).
+        java.util.Map<Object, DeliveryTracking> toAnonymize = new java.util.LinkedHashMap<>();
         for (DeliveryTracking tracking : deliveryTrackingRepository.findByCustomerId(customerId)) {
-            toAnonymize.put(tracking, Boolean.TRUE);
+            toAnonymize.put(tracking.getId() != null ? tracking.getId() : tracking, tracking);
         }
         if (orderIds != null && !orderIds.isEmpty()) {
             for (DeliveryTracking tracking : deliveryTrackingRepository.findByOrderIdIn(orderIds)) {
-                toAnonymize.put(tracking, Boolean.TRUE);
+                toAnonymize.put(tracking.getId() != null ? tracking.getId() : tracking, tracking);
             }
         }
-        for (DeliveryTracking tracking : toAnonymize.keySet()) {
+        for (DeliveryTracking tracking : toAnonymize.values()) {
             tracking.setDeliveryAddress(null);
             tracking.setCustomerFeedback(null);
             deliveryTrackingRepository.save(tracking);
