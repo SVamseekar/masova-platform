@@ -303,33 +303,7 @@ public class OrderService {
 
         // PostgreSQL dual-write (Global-3: includes currency)
         try {
-            OrderJpaEntity jpaEntity = OrderJpaEntity.builder()
-                    .mongoId(savedOrder.getId())
-                    .orderNumber(savedOrder.getOrderNumber())
-                    .customerId(savedOrder.getCustomerId())
-                    .customerName(savedOrder.getCustomerName())
-                    .customerPhone(savedOrder.getCustomerPhone())
-                    .customerEmail(savedOrder.getCustomerEmail())
-                    .storeId(savedOrder.getStoreId())
-                    .status(savedOrder.getStatus() != null ? savedOrder.getStatus().name() : "RECEIVED")
-                    .orderType(savedOrder.getOrderType() != null ? savedOrder.getOrderType().name() : null)
-                    .paymentMethod(savedOrder.getPaymentMethod() != null ? savedOrder.getPaymentMethod().name() : null)
-                    .subtotal(savedOrder.getSubtotal())
-                    .deliveryFee(savedOrder.getDeliveryFee())
-                    .tax(savedOrder.getTax())
-                    .total(savedOrder.getTotal())
-                    .currency(savedOrder.getCurrency())
-                    .vatCountryCode(savedOrder.getVatCountryCode())
-                    .totalNetAmount(savedOrder.getTotalNetAmount())
-                    .totalVatAmount(savedOrder.getTotalVatAmount())
-                    .totalGrossAmount(savedOrder.getTotalGrossAmount())
-                    .vatBreakdown(serializeVatBreakdown(savedOrder))
-                    .specialInstructions(savedOrder.getSpecialInstructions())
-                    .receivedAt(savedOrder.getReceivedAt() != null
-                            ? savedOrder.getReceivedAt().atOffset(java.time.ZoneOffset.UTC) : null)
-                    .build();
-            jpaEntity.setItems(orderItemSyncService.buildItemEntities(savedOrder.getItems(), jpaEntity));
-            orderJpaRepository.save(jpaEntity);
+            orderJpaRepository.save(buildJpaEntity(savedOrder));
         } catch (Exception e) {
             recordPostgresRetry(savedOrder, "CREATE", e);
         }
@@ -426,6 +400,59 @@ public class OrderService {
             return;
         }
         throw new IllegalStateException("PostgreSQL dual-write failed for order " + order.getId(), error);
+    }
+
+    /** Builds a fresh PostgreSQL dual-write row from a Mongo order snapshot (create-time and backfill share this). */
+    private OrderJpaEntity buildJpaEntity(Order savedOrder) {
+        OrderJpaEntity jpaEntity = OrderJpaEntity.builder()
+                .mongoId(savedOrder.getId())
+                .orderNumber(savedOrder.getOrderNumber())
+                .customerId(savedOrder.getCustomerId())
+                .customerName(savedOrder.getCustomerName())
+                .customerPhone(savedOrder.getCustomerPhone())
+                .customerEmail(savedOrder.getCustomerEmail())
+                .storeId(savedOrder.getStoreId())
+                .status(savedOrder.getStatus() != null ? savedOrder.getStatus().name() : "RECEIVED")
+                .orderType(savedOrder.getOrderType() != null ? savedOrder.getOrderType().name() : null)
+                .paymentMethod(savedOrder.getPaymentMethod() != null ? savedOrder.getPaymentMethod().name() : null)
+                .subtotal(savedOrder.getSubtotal())
+                .deliveryFee(savedOrder.getDeliveryFee())
+                .tax(savedOrder.getTax())
+                .total(savedOrder.getTotal())
+                .currency(savedOrder.getCurrency())
+                .vatCountryCode(savedOrder.getVatCountryCode())
+                .totalNetAmount(savedOrder.getTotalNetAmount())
+                .totalVatAmount(savedOrder.getTotalVatAmount())
+                .totalGrossAmount(savedOrder.getTotalGrossAmount())
+                .vatBreakdown(serializeVatBreakdown(savedOrder))
+                .specialInstructions(savedOrder.getSpecialInstructions())
+                .receivedAt(savedOrder.getReceivedAt() != null
+                        ? savedOrder.getReceivedAt().atOffset(java.time.ZoneOffset.UTC) : null)
+                .build();
+        jpaEntity.setItems(orderItemSyncService.buildItemEntities(savedOrder.getItems(), jpaEntity));
+        return jpaEntity;
+    }
+
+    /**
+     * Repairs the PostgreSQL projection for one order from its current MongoDB state — MongoDB
+     * is the system of record (D08); Postgres is a projection fed by the outbox below. Called by
+     * {@code OrderPostgresOutboxProjector} to drain {@link OrderPostgresOutbox} entries recorded
+     * when the in-request best-effort write (createOrder/syncToPostgres) failed.
+     *
+     * Always re-derives the projection from the CURRENT Mongo order rather than replaying a
+     * stale outbox payload, so out-of-order or duplicate outbox entries are naturally idempotent.
+     *
+     * @throws IllegalStateException if the Mongo order no longer exists (nothing to project)
+     */
+    @Transactional
+    public void reprojectToPostgres(String orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Mongo order " + orderId + " no longer exists; cannot reproject to Postgres"));
+        boolean synced = orderItemSyncService.syncOrderByMongoId(order.getId(), order);
+        if (!synced) {
+            orderJpaRepository.save(buildJpaEntity(order));
+        }
     }
 
     public Order getOrderById(String orderId) {

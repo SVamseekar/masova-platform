@@ -23,6 +23,12 @@ public class OrderPostgresOutbox {
 
     private LocalDateTime createdAt;
 
+    private int attempts;
+
+    private LocalDateTime resolvedAt;
+
+    private boolean deadLettered;
+
     public String getOrderId() {
         return orderId;
     }
@@ -61,5 +67,29 @@ public class OrderPostgresOutbox {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public int getAttempts() {
+        return attempts;
+    }
+
+    public void setAttempts(int attempts) {
+        this.attempts = attempts;
+    }
+
+    public LocalDateTime getResolvedAt() {
+        return resolvedAt;
+    }
+
+    public void setResolvedAt(LocalDateTime resolvedAt) {
+        this.resolvedAt = resolvedAt;
+    }
+
+    public boolean isDeadLettered() {
+        return deadLettered;
+    }
+
+    public void setDeadLettered(boolean deadLettered) {
+        this.deadLettered = deadLettered;
     }
 }
