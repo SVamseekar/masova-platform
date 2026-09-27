@@ -362,19 +362,6 @@ export const orderApi = createApi({
       ],
     }),
 
-    // Update payment status
-    updatePaymentStatus: builder.mutation<Order, { orderId: string; status: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED'; transactionId?: string }>({
-      query: ({ orderId, status, transactionId }) => ({
-        url: `/orders/${orderId}/payment`,
-        method: 'PATCH',
-        body: { status, transactionId },
-      }),
-      invalidatesTags: (result, error, { orderId }) => [
-        { type: 'Order', id: orderId },
-        { type: 'Orders', id: 'LIST' },
-      ],
-    }),
-
     // Update order items
     updateOrderItems: builder.mutation<Order, { orderId: string; items: OrderItem[] }>({
       query: ({ orderId, items }) => ({
@@ -612,7 +599,6 @@ export const {
   useGetStoreOrderSummaryQuery,
   useMoveToNextStageMutation,
   useAssignDriverMutation,
-  useUpdatePaymentStatusMutation,
   useUpdateOrderItemsMutation,
   useUpdateOrderPriorityMutation,
   useSearchOrdersQuery,

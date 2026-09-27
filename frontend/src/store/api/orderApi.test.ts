@@ -18,7 +18,6 @@ import {
   useGetStoreOrdersQuery,
   useMoveToNextStageMutation,
   useAssignDriverMutation,
-  useUpdatePaymentStatusMutation,
   useUpdateOrderItemsMutation,
   useUpdateOrderPriorityMutation,
   useSearchOrdersQuery,
@@ -55,7 +54,6 @@ describe('orderApi', () => {
       expect(endpoints.cancelOrder).toBeDefined();
       expect(endpoints.moveToNextStage).toBeDefined();
       expect(endpoints.assignDriver).toBeDefined();
-      expect(endpoints.updatePaymentStatus).toBeDefined();
       expect(endpoints.searchOrders).toBeDefined();
       expect(endpoints.addQualityCheckpoint).toBeDefined();
       expect(endpoints.getOrdersByDate).toBeDefined();
@@ -297,17 +295,6 @@ describe('orderApi', () => {
 
       const [assignDriver] = result.current;
       assignDriver({ orderId: 'order-1', driverId: 'driver-1' });
-
-      await waitFor(() => expect(result.current[1].isSuccess).toBe(true));
-    });
-
-    it('should update payment status', async () => {
-      const { result } = renderHook(() => useUpdatePaymentStatusMutation(), {
-        wrapper: DefaultTestWrapper,
-      });
-
-      const [updatePayment] = result.current;
-      updatePayment({ orderId: 'order-1', status: 'PAID' });
 
       await waitFor(() => expect(result.current[1].isSuccess).toBe(true));
     });
