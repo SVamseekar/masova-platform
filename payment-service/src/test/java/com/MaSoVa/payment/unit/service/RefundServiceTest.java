@@ -210,6 +210,22 @@ class RefundServiceTest {
             verify(mongoTemplate).updateFirst(any(Query.class),
                     org.mockito.ArgumentMatchers.argThat(this::releases), eq(Transaction.class));
         }
+
+        @Test
+        @DisplayName("a canceled-refund status (Stripe) releases the claim like a failure would")
+        void canceledStatusReleasesClaimLikeFailure() {
+            Refund inFlight = Refund.builder().transactionId("txn-001").amount(BigDecimal.valueOf(200.00))
+                    .razorpayRefundId("re_canceled").status(Refund.RefundStatus.PROCESSING).build();
+            inFlight.setId("refund-canceled");
+            when(refundRepository.findByRazorpayRefundId("re_canceled")).thenReturn(Optional.of(inFlight));
+            when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
+                    eq(Refund.class))).thenReturn(inFlight);
+
+            refundService.updateRefundStatus("re_canceled", "canceled");
+
+            verify(mongoTemplate).updateFirst(any(Query.class),
+                    org.mockito.ArgumentMatchers.argThat(this::releases), eq(Transaction.class));
+        }
     }
 
     @Nested

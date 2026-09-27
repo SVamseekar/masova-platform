@@ -352,7 +352,8 @@ public class RefundService {
         return new GatewayRefundOutcome(gatewayRefundId, status, gateway.getGatewayName());
     }
 
-    private static String resolveGatewayName(Transaction transaction) {
+    /** Package-visible for RefundReconciliationRelay, which needs the same routing rule to look up a stuck refund's gateway. */
+    static String resolveGatewayName(Transaction transaction) {
         if (transaction.getPaymentGateway() != null && !transaction.getPaymentGateway().isBlank()) {
             return transaction.getPaymentGateway();
         }
@@ -437,7 +438,8 @@ public class RefundService {
             refund.setProcessedAt(LocalDateTime.now());
         } else if ("processing".equalsIgnoreCase(status) || "pending".equalsIgnoreCase(status)) {
             newStatus = Refund.RefundStatus.PROCESSING;
-        } else if ("failed".equalsIgnoreCase(status)) {
+        } else if ("failed".equalsIgnoreCase(status)
+                || "canceled".equalsIgnoreCase(status) || "cancelled".equalsIgnoreCase(status)) {
             // Only the first move from an in-flight state to FAILED releases the claim.
             Refund failed = mongoTemplate.findAndModify(
                     Query.query(Criteria.where("_id").is(refund.getId()).and("status").in(

@@ -46,6 +46,12 @@ public class RazorpayGateway implements PaymentGateway {
     }
 
     @Override
+    public String fetchRefundStatus(String gatewayPaymentId, String gatewayRefundId) throws Exception {
+        var refundJson = razorpayService.fetchRefund(gatewayPaymentId, gatewayRefundId);
+        return refundJson.getString("status");
+    }
+
+    @Override
     public GatewayWebhookResult parseWebhook(String rawPayload, String signatureHeader) throws Exception {
         boolean valid = razorpayService.verifyWebhookSignature(rawPayload, signatureHeader, razorpayConfig.getWebhookSecret());
         if (!valid) {
