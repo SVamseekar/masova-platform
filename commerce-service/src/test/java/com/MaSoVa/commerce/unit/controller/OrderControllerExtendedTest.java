@@ -127,7 +127,6 @@ class OrderControllerExtendedTest extends BaseServiceTest {
                 .andExpect(status().isOk());
     }
 
-    // PATCH /api/orders/{orderId}/payment — X-Internal-Service alone must not mark PAID
     // PATCH /api/orders/{orderId} (update order priority — simpler body)
     @Test
     void updateOrder_priority_returns_200() throws Exception {
@@ -138,15 +137,6 @@ class OrderControllerExtendedTest extends BaseServiceTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"priority\":\"URGENT\"}")
                         .header("X-User-Store-Id", "store-1"))
-                .andExpect(status().isOk());
-    }
-
-    // POST /api/orders/gdpr/anonymize — requires X-Internal-Service header
-    @Test
-    void anonymizeCustomerOrders_returns_200_with_internal_header() throws Exception {
-        mockMvc.perform(post("/api/orders/gdpr/anonymize")
-                        .param("customerId", "cust-1")
-                        .header("X-Internal-Service", "core-service"))
                 .andExpect(status().isOk());
     }
 

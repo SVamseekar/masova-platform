@@ -1,6 +1,8 @@
 package com.MaSoVa.shared.security.service;
 
 import io.jsonwebtoken.Jwts;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.security.KeyFactory;
 import java.security.PrivateKey;
@@ -20,6 +22,8 @@ import java.util.UUID;
  */
 public class ServiceTokenIssuer {
 
+    private static final Logger log = LoggerFactory.getLogger(ServiceTokenIssuer.class);
+
     static final Duration LIFETIME = Duration.ofSeconds(60);
 
     private final String name;
@@ -30,6 +34,10 @@ public class ServiceTokenIssuer {
         this.name = properties.getName();
         this.privateKey = parsePrivateKey(properties.getPrivateKey());
         this.clock = clock;
+        if (this.privateKey == null) {
+            log.warn("service-auth.private-key is not configured for {}; this service cannot issue service tokens "
+                    + "(fine if it never calls another service's internal endpoints)", name);
+        }
     }
 
     public String issue(String audience, String... scopes) {

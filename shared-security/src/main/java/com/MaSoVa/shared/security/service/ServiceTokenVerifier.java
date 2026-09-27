@@ -3,6 +3,8 @@ package com.MaSoVa.shared.security.service;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.security.KeyFactory;
 import java.security.PublicKey;
@@ -17,16 +19,26 @@ import java.util.Optional;
 /** Verifies service tokens against the trusted public keys of each calling service. */
 public class ServiceTokenVerifier {
 
+    private static final Logger log = LoggerFactory.getLogger(ServiceTokenVerifier.class);
+
     private final String name;
     private final Map<String, List<PublicKey>> trusted = new HashMap<>();
 
     public ServiceTokenVerifier(ServiceAuthProperties properties) {
         this.name = properties.getName();
-        properties.getTrusted().forEach((issuer, keys) ->
-                trusted.put(issuer, keys.stream()
-                        .filter(key -> key != null && !key.isBlank())
-                        .map(ServiceTokenVerifier::parsePublicKey)
-                        .toList()));
+        properties.getTrusted().forEach((issuer, keys) -> {
+            List<PublicKey> parsed = keys.stream()
+                    .filter(key -> key != null && !key.isBlank())
+                    .map(ServiceTokenVerifier::parsePublicKey)
+                    .toList();
+            trusted.put(issuer, parsed);
+            if (parsed.isEmpty()) {
+                log.warn("no trusted keys configured for issuer '{}' on {}; its service tokens will always be rejected",
+                        issuer, name);
+            } else {
+                log.info("loaded {} trusted key(s) for issuer '{}' on {}", parsed.size(), issuer, name);
+            }
+        });
     }
 
     /** Verified claims, or empty when the token is invalid, expired, untrusted or for another service. */
@@ -43,7 +55,9 @@ public class ServiceTokenVerifier {
                         .getPayload();
                 return Optional.of(claims);
             } catch (JwtException | IllegalArgumentException e) {
-                // try the next key (rotation); fall through to empty
+                // try the next key (rotation) — not attacker-facing, safe to log the reason for ops diagnosis
+                log.debug("service token rejected for issuer '{}' on {}: {}: {}",
+                        issuer, name, e.getClass().getSimpleName(), e.getMessage());
             }
         }
         return Optional.empty();
@@ -67,6 +81,7 @@ public class ServiceTokenVerifier {
             start += 7;
             return header.substring(start, header.indexOf('"', start));
         } catch (RuntimeException e) {
+            log.debug("malformed service token header: {}: {}", e.getClass().getSimpleName(), e.getMessage());
             return "";
         }
     }
