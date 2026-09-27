@@ -1,5 +1,6 @@
 package com.MaSoVa.gateway.filter;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -129,7 +130,10 @@ public class ManagerCopilotProxyFilter implements WebFilter {
                     byte[] bytes = new byte[buffer.readableByteCount()];
                     buffer.read(bytes);
                     DataBufferUtils.release(buffer);
-                    String json = withStoreId(new String(bytes, StandardCharsets.UTF_8), storeId);
+                    String json = withStoreId(new String(bytes, StandardCharsets.UTF_8), storeId, userId);
+                    if (json == null) {
+                        return complete(exchange, HttpStatus.BAD_REQUEST, "");
+                    }
                     return webClient.post()
                             .uri(upstream)
                             .header("X-Agent-Api-Key", agentApiKey)
@@ -148,23 +152,35 @@ public class ManagerCopilotProxyFilter implements WebFilter {
 
     /**
      * Forces the body's store_id to the JWT-attested value — the client's own store_id is never
-     * trusted (#133). On any parse failure, forwards the body unchanged so a malformed request
-     * still reaches support's own validation instead of being swallowed here.
+     * trusted (#133). A body that can't be safely rewritten (unparseable, or not a JSON object)
+     * is rejected rather than forwarded as-is, matching the fail-closed policy used elsewhere in
+     * this filter (missing storeId claim, blacklisted token). Returns null to signal rejection.
      */
-    private String withStoreId(String json, String storeId) {
+    private String withStoreId(String json, String storeId, String userId) {
         if (json.isEmpty()) {
             return json;
         }
+        JsonNode node;
         try {
-            JsonNode node = objectMapper.readTree(json);
-            if (node.isObject()) {
-                ((ObjectNode) node).put("store_id", storeId);
-                return objectMapper.writeValueAsString(node);
-            }
-        } catch (Exception e) {
-            log.warn("Could not parse manager copilot request body to enforce store_id: {}", e.getMessage());
+            node = objectMapper.readTree(json);
+        } catch (JsonProcessingException e) {
+            log.warn("Rejecting manager copilot request with unparseable body, userId={}, storeId={}: {}",
+                    userId, storeId, e.getMessage());
+            return null;
         }
-        return json;
+        if (!node.isObject()) {
+            log.warn("Rejecting manager copilot request with non-object body, userId={}, storeId={}",
+                    userId, storeId);
+            return null;
+        }
+        try {
+            ((ObjectNode) node).put("store_id", storeId);
+            return objectMapper.writeValueAsString(node);
+        } catch (JsonProcessingException e) {
+            log.warn("Rejecting manager copilot request; failed to serialize rewritten body, userId={}, storeId={}: {}",
+                    userId, storeId, e.getMessage());
+            return null;
+        }
     }
 
     private Mono<Boolean> isBlacklisted(String token) {

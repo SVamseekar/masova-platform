@@ -132,6 +132,30 @@ class ManagerCopilotProxyFilterTest {
     }
 
     @Test
+    @DisplayName("a malformed JSON body is rejected with 400, not forwarded as-is (B10 review)")
+    void malformedBodyIsRejected() {
+        ManagerCopilotProxyFilter filter = filterWithKey(SERVER_KEY);
+        MockServerWebExchange exchange = chatExchange(token("MANAGER"), "{not valid json");
+
+        StepVerifier.create(filter.filter(exchange, noopChain())).verifyComplete();
+
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(hits).isZero();
+    }
+
+    @Test
+    @DisplayName("a non-object JSON body (array/string/number) is rejected with 400, not forwarded as-is (B10 review)")
+    void nonObjectBodyIsRejected() {
+        ManagerCopilotProxyFilter filter = filterWithKey(SERVER_KEY);
+        MockServerWebExchange exchange = chatExchange(token("MANAGER"), "[\"not\",\"an\",\"object\"]");
+
+        StepVerifier.create(filter.filter(exchange, noopChain())).verifyComplete();
+
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(hits).isZero();
+    }
+
+    @Test
     @DisplayName("a manager JWT with no storeId claim is forbidden and support is not called")
     void missingStoreIdIsForbidden() {
         ManagerCopilotProxyFilter filter = filterWithKey(SERVER_KEY);
