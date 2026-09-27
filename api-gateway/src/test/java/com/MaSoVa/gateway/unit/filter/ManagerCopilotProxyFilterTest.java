@@ -132,6 +132,50 @@ class ManagerCopilotProxyFilterTest {
     }
 
     @Test
+    @DisplayName("a JWT with a wrong-typed claim is rejected as unauthorized, not an unhandled 500 (B10 review)")
+    void wrongTypedClaimIsUnauthorized() {
+        ManagerCopilotProxyFilter filter = filterWithKey(SERVER_KEY);
+        SecretKey key = Keys.hmacShaKeyFor(VALID_SECRET.getBytes(StandardCharsets.UTF_8));
+        String badToken = Jwts.builder()
+                .subject("user-1")
+                .claim("userType", "MANAGER")
+                .claim("storeId", 12345) // wrong type: storeId must be a String
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 3600_000))
+                .signWith(key)
+                .compact();
+        MockServerWebExchange exchange = chatExchange(badToken, "{\"message\":\"hi\"}");
+
+        StepVerifier.create(filter.filter(exchange, noopChain())).verifyComplete();
+
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(hits).isZero();
+    }
+
+    @Test
+    @DisplayName("an empty body is rejected with 400 rather than silently forwarded (B10 review)")
+    void emptyBodyIsRejected() {
+        ManagerCopilotProxyFilter filter = filterWithKey(SERVER_KEY);
+        MockServerWebExchange exchange = chatExchange(token("MANAGER"), "");
+
+        StepVerifier.create(filter.filter(exchange, noopChain())).verifyComplete();
+
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(hits).isZero();
+    }
+
+    @Test
+    @DisplayName("a failure reaching masova-support returns 502, not an unhandled error (B10 review)")
+    void upstreamConnectionFailureReturns502() {
+        ManagerCopilotProxyFilter filter = new ManagerCopilotProxyFilter(VALID_SECRET, SERVER_KEY, "http://127.0.0.1:1");
+        MockServerWebExchange exchange = chatExchange(token("MANAGER"), "{\"message\":\"hi\"}");
+
+        StepVerifier.create(filter.filter(exchange, noopChain())).verifyComplete();
+
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.BAD_GATEWAY);
+    }
+
+    @Test
     @DisplayName("a malformed JSON body is rejected with 400, not forwarded as-is (B10 review)")
     void malformedBodyIsRejected() {
         ManagerCopilotProxyFilter filter = filterWithKey(SERVER_KEY);

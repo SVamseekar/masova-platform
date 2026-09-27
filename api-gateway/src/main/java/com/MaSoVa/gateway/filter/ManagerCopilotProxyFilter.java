@@ -92,20 +92,23 @@ public class ManagerCopilotProxyFilter implements WebFilter {
         }
         String token = auth.substring(7);
 
-        final Claims claims;
+        final String userType;
+        final String userId;
+        final String storeId;
         try {
-            claims = parseToken(token);
+            Claims claims = parseToken(token);
+            userType = claims.get("userType", String.class);
+            userId = claims.getSubject();
+            storeId = claims.get("storeId", String.class);
         } catch (Exception ex) {
+            log.warn("Manager copilot call rejected: invalid or unparseable JWT: {}", ex.getMessage());
             return complete(exchange, HttpStatus.UNAUTHORIZED, "");
         }
 
-        String userType = claims.get("userType", String.class);
         if (!"MANAGER".equals(userType) && !"ASSISTANT_MANAGER".equals(userType)) {
             return complete(exchange, HttpStatus.FORBIDDEN, "");
         }
 
-        String userId = claims.getSubject();
-        String storeId = claims.get("storeId", String.class);
         if (storeId == null || storeId.isBlank()) {
             log.warn("Manager copilot call with no storeId claim, userId={}", userId);
             return complete(exchange, HttpStatus.FORBIDDEN, "");
@@ -115,7 +118,7 @@ public class ManagerCopilotProxyFilter implements WebFilter {
             return complete(exchange, HttpStatus.SERVICE_UNAVAILABLE, "");
         }
 
-        return isBlacklisted(token).flatMap(blacklisted -> {
+        return isBlacklisted(token, userId).flatMap(blacklisted -> {
             if (blacklisted) {
                 return complete(exchange, HttpStatus.UNAUTHORIZED, "");
             }
@@ -146,7 +149,12 @@ public class ManagerCopilotProxyFilter implements WebFilter {
                                     .flatMap(body -> complete(
                                             exchange,
                                             HttpStatus.resolve(response.statusCode().value()),
-                                            body)));
+                                            body)))
+                            .onErrorResume(e -> {
+                                log.warn("Manager copilot call to masova-support failed, userId={}, storeId={}: {}",
+                                        userId, storeId, e.getMessage());
+                                return complete(exchange, HttpStatus.BAD_GATEWAY, "");
+                            });
                 });
     }
 
@@ -157,9 +165,6 @@ public class ManagerCopilotProxyFilter implements WebFilter {
      * this filter (missing storeId claim, blacklisted token). Returns null to signal rejection.
      */
     private String withStoreId(String json, String storeId, String userId) {
-        if (json.isEmpty()) {
-            return json;
-        }
         JsonNode node;
         try {
             node = objectMapper.readTree(json);
@@ -183,12 +188,17 @@ public class ManagerCopilotProxyFilter implements WebFilter {
         }
     }
 
-    private Mono<Boolean> isBlacklisted(String token) {
+    private Mono<Boolean> isBlacklisted(String token, String userId) {
         if (redisTemplate == null) {
             return Mono.just(false);
         }
         return redisTemplate.hasKey(BLACKLIST_PREFIX + token)
-                .onErrorReturn(false); // fail-open: don't lock managers out if Redis is down
+                .onErrorResume(e -> {
+                    // fail-open: don't lock managers out if Redis is down, but log it —
+                    // a sustained outage otherwise disables blacklist enforcement with zero signal.
+                    log.warn("Redis blacklist check failed, failing open, userId={}: {}", userId, e.getMessage());
+                    return Mono.just(false);
+                });
     }
 
     private String upstreamPath(String path) {
@@ -216,7 +226,12 @@ public class ManagerCopilotProxyFilter implements WebFilter {
     }
 
     private Mono<Void> complete(ServerWebExchange exchange, HttpStatus status, String body) {
-        exchange.getResponse().setStatusCode(status == null ? HttpStatus.BAD_GATEWAY : status);
+        HttpStatus resolved = status;
+        if (resolved == null) {
+            log.warn("Unrecognized upstream status code from masova-support; defaulting to 502");
+            resolved = HttpStatus.BAD_GATEWAY;
+        }
+        exchange.getResponse().setStatusCode(resolved);
         if (body == null || body.isEmpty()) {
             return exchange.getResponse().setComplete();
         }
