@@ -104,9 +104,16 @@ public class FiscalSigningService {
 
         try {
             recordOutageState(order.getStoreId(), signature);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // Two concurrent failures for the same store+signer both tried to open an outage;
+            // the partial unique index let one through. The other's outage is already recorded.
+            log.debug("[FISCAL] outage already opened by a concurrent order for store={} signer={}",
+                    order.getStoreId(), signature.getSignerSystem());
         } catch (Exception e) {
-            log.warn("[FISCAL] outage log update failed for store={} signer={}: {}",
-                    order.getStoreId(), signature.getSignerSystem(), e.getMessage());
+            // Anything else here means the legally-mandated outage log did NOT get updated —
+            // distinct from the benign race above, so it gets the full exception and order id.
+            log.warn("[FISCAL] outage log update failed for order={} store={} signer={}: {}",
+                    order.getId(), order.getStoreId(), signature.getSignerSystem(), e.getMessage(), e);
         }
 
         // Dual-write: update PostgreSQL fiscal columns
@@ -146,6 +153,8 @@ public class FiscalSigningService {
     private void recordOutageState(String storeId, FiscalSignature signature) {
         String signerSystem = signature.getSignerSystem();
         if (storeId == null || signerSystem == null) {
+            log.warn("[FISCAL] outage state not recorded: storeId or signerSystem missing (storeId={}, signerSystem={})",
+                    storeId, signerSystem);
             return;
         }
         Optional<FiscalOutageJpaEntity> open =

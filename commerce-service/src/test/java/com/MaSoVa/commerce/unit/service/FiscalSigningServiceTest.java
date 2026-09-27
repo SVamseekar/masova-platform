@@ -204,5 +204,33 @@ class FiscalSigningServiceTest {
 
             verify(fiscalOutageRepository, never()).save(any());
         }
+
+        @Test
+        @DisplayName("a concurrent duplicate-open race is swallowed quietly, the signature is still saved")
+        void concurrentDuplicateOpenRaceIsSwallowed() {
+            FiscalSigner failing = failingTse();
+            when(registry.resolve("DE")).thenReturn(failing);
+            when(fiscalOutageRepository.findByStoreIdAndSignerSystemAndClosedAtIsNull("store-DE", "TSE"))
+                    .thenReturn(Optional.empty());
+            when(fiscalOutageRepository.save(any())).thenThrow(
+                    new org.springframework.dao.DataIntegrityViolationException("uq_fiscal_outages_open"));
+
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> fiscalSigningService.signOrder(deOrder()));
+
+            verify(orderRepository).save(argThat(o -> o.getFiscalSignature() != null && o.getFiscalSignature().isSigningFailed()));
+        }
+
+        @Test
+        @DisplayName("an unexpected outage-log failure is swallowed, the signature is still saved")
+        void unexpectedOutageLogFailureIsSwallowed() {
+            FiscalSigner failing = failingTse();
+            when(registry.resolve("DE")).thenReturn(failing);
+            when(fiscalOutageRepository.findByStoreIdAndSignerSystemAndClosedAtIsNull("store-DE", "TSE"))
+                    .thenThrow(new RuntimeException("Postgres down"));
+
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> fiscalSigningService.signOrder(deOrder()));
+
+            verify(orderRepository).save(argThat(o -> o.getFiscalSignature() != null && o.getFiscalSignature().isSigningFailed()));
+        }
     }
 }
