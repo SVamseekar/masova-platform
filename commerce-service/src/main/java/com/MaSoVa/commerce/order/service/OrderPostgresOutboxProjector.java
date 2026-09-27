@@ -51,7 +51,14 @@ public class OrderPostgresOutboxProjector {
 
     /** Drains up to one batch of pending outbox entries, oldest first. */
     public void drain() {
-        List<OrderPostgresOutbox> pending = outboxRepository.findTop50ByResolvedAtIsNullAndDeadLetteredFalseOrderByCreatedAtAsc();
+        List<OrderPostgresOutbox> pending;
+        try {
+            pending = outboxRepository.findTop50ByResolvedAtIsNullAndDeadLetteredFalseOrderByCreatedAtAsc();
+        } catch (Exception e) {
+            log.error("Postgres outbox drain cycle aborted before processing any entries: {}", e.getMessage(), e);
+            return;
+        }
+        int processed = 0;
         for (OrderPostgresOutbox entry : pending) {
             try {
                 orderService.reprojectToPostgres(entry.getOrderId());
@@ -60,17 +67,29 @@ public class OrderPostgresOutboxProjector {
             } catch (Exception e) {
                 int attempts = entry.getAttempts() + 1;
                 entry.setAttempts(attempts);
-                entry.setLastError(e.getMessage());
+                entry.setLastError(e.getMessage() != null ? e.getMessage() : e.getClass().getName());
                 if (attempts >= maxAttempts) {
                     entry.setDeadLettered(true);
-                    log.error("Giving up on Postgres projection for order {} after {} attempts: {}",
-                            entry.getOrderId(), attempts, e.getMessage(), e);
+                    log.error("Giving up on projecting order {} to Postgres after {} attempts ({}): {}",
+                            entry.getOrderId(), attempts, e.getClass().getSimpleName(), e.getMessage(), e);
                 } else {
-                    log.warn("Postgres projection retry {} failed for order {}: {}",
-                            attempts, entry.getOrderId(), e.getMessage());
+                    log.warn("Projection retry {} failed for order {} ({}): {}",
+                            attempts, entry.getOrderId(), e.getClass().getSimpleName(), e.getMessage());
                 }
             }
-            outboxRepository.save(entry);
+            try {
+                outboxRepository.save(entry);
+                processed++;
+            } catch (Exception saveEx) {
+                // Don't let a bookkeeping-write failure abort the rest of the batch — the oldest
+                // entry's save failing forever would otherwise block every entry behind it.
+                log.error("Failed to persist outbox bookkeeping for order {} (outbox row {}): {}",
+                        entry.getOrderId(), entry.getId(), saveEx.getMessage(), saveEx);
+            }
+        }
+        if (processed < pending.size()) {
+            log.warn("Postgres outbox drain cycle processed {}/{} entries; see prior errors for the rest",
+                    processed, pending.size());
         }
     }
 }

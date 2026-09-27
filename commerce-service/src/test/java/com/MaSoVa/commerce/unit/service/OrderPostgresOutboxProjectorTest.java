@@ -106,4 +106,53 @@ class OrderPostgresOutboxProjectorTest {
         verifyNoInteractions(orderService);
         verify(outboxRepository, never()).save(org.mockito.ArgumentMatchers.any());
     }
+
+    @Test
+    void drain_continuesBatchWhenOneEntryFails_soOneBadRowDoesNotBlockTheRest() {
+        OrderPostgresOutbox first = pendingEntry("o1");
+        OrderPostgresOutbox second = pendingEntry("o2");
+        OrderPostgresOutbox third = pendingEntry("o3");
+        when(outboxRepository.findTop50ByResolvedAtIsNullAndDeadLetteredFalseOrderByCreatedAtAsc())
+                .thenReturn(List.of(first, second, third));
+        doThrow(new RuntimeException("boom")).when(orderService).reprojectToPostgres("o2");
+
+        projector.drain();
+
+        verify(orderService).reprojectToPostgres("o1");
+        verify(orderService).reprojectToPostgres("o2");
+        verify(orderService).reprojectToPostgres("o3");
+        assertThat(first.getResolvedAt()).isNotNull();
+        assertThat(second.getResolvedAt()).isNull();
+        assertThat(second.getAttempts()).isEqualTo(1);
+        assertThat(third.getResolvedAt()).isNotNull();
+        verify(outboxRepository, times(3)).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void drain_continuesBatchWhenSaveItselfFails_soOneBadWriteDoesNotBlockTheRest() {
+        OrderPostgresOutbox first = pendingEntry("o1");
+        OrderPostgresOutbox second = pendingEntry("o2");
+        when(outboxRepository.findTop50ByResolvedAtIsNullAndDeadLetteredFalseOrderByCreatedAtAsc())
+                .thenReturn(List.of(first, second));
+        doThrow(new RuntimeException("mongo write failed")).when(outboxRepository).save(first);
+
+        projector.drain();
+
+        verify(orderService).reprojectToPostgres("o1");
+        verify(orderService).reprojectToPostgres("o2");
+        verify(outboxRepository).save(second);
+        assertThat(second.getResolvedAt()).isNotNull();
+    }
+
+    @Test
+    void drain_recordsExceptionClassNameWhenMessageIsNull() {
+        OrderPostgresOutbox entry = pendingEntry("o4");
+        when(outboxRepository.findTop50ByResolvedAtIsNullAndDeadLetteredFalseOrderByCreatedAtAsc())
+                .thenReturn(List.of(entry));
+        doThrow(new NullPointerException()).when(orderService).reprojectToPostgres("o4");
+
+        projector.drain();
+
+        assertThat(entry.getLastError()).isEqualTo(NullPointerException.class.getName());
+    }
 }

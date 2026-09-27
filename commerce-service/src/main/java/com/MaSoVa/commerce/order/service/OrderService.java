@@ -350,19 +350,6 @@ public class OrderService {
         }
     }
 
-    /** Serializes order.vatBreakdown to JSON for the PostgreSQL jsonb column. Returns null for India orders. */
-    private String serializeVatBreakdown(Order order) {
-        if (order.getVatBreakdown() == null) {
-            return null;
-        }
-        try {
-            return objectMapper.writeValueAsString(order.getVatBreakdown());
-        } catch (Exception e) {
-            log.warn("Failed to serialize vatBreakdown for order {}: {}", order.getOrderNumber(), e.getMessage());
-            return null;
-        }
-    }
-
     /**
      * Re-syncs status/payment/totals/timestamps + line items to the PostgreSQL dual-write
      * row for an order, keyed by mongoId. No-op (with a warn log) if the PG row is missing,
@@ -402,34 +389,32 @@ public class OrderService {
         throw new IllegalStateException("PostgreSQL dual-write failed for order " + order.getId(), error);
     }
 
-    /** Builds a fresh PostgreSQL dual-write row from a Mongo order snapshot (create-time and backfill share this). */
+    /**
+     * Builds a fresh PostgreSQL dual-write row from a Mongo order snapshot — shared by
+     * createOrder's initial write and OrderPostgresOutboxProjector's backfill of a row that
+     * never got created. The builder sets only fields updateFields doesn't cover; everything
+     * else (payment, delivery, driver, priority, progress timestamps, items) is applied by
+     * applyFullState so a delayed backfill isn't limited to create-time fields (feature-dev
+     * review on 12ea1ec0).
+     */
     private OrderJpaEntity buildJpaEntity(Order savedOrder) {
         OrderJpaEntity jpaEntity = OrderJpaEntity.builder()
                 .mongoId(savedOrder.getId())
                 .orderNumber(savedOrder.getOrderNumber())
                 .customerId(savedOrder.getCustomerId())
-                .customerName(savedOrder.getCustomerName())
-                .customerPhone(savedOrder.getCustomerPhone())
-                .customerEmail(savedOrder.getCustomerEmail())
                 .storeId(savedOrder.getStoreId())
                 .status(savedOrder.getStatus() != null ? savedOrder.getStatus().name() : "RECEIVED")
                 .orderType(savedOrder.getOrderType() != null ? savedOrder.getOrderType().name() : null)
-                .paymentMethod(savedOrder.getPaymentMethod() != null ? savedOrder.getPaymentMethod().name() : null)
-                .subtotal(savedOrder.getSubtotal())
-                .deliveryFee(savedOrder.getDeliveryFee())
-                .tax(savedOrder.getTax())
-                .total(savedOrder.getTotal())
                 .currency(savedOrder.getCurrency())
-                .vatCountryCode(savedOrder.getVatCountryCode())
-                .totalNetAmount(savedOrder.getTotalNetAmount())
-                .totalVatAmount(savedOrder.getTotalVatAmount())
-                .totalGrossAmount(savedOrder.getTotalGrossAmount())
-                .vatBreakdown(serializeVatBreakdown(savedOrder))
                 .specialInstructions(savedOrder.getSpecialInstructions())
-                .receivedAt(savedOrder.getReceivedAt() != null
-                        ? savedOrder.getReceivedAt().atOffset(java.time.ZoneOffset.UTC) : null)
                 .build();
-        jpaEntity.setItems(orderItemSyncService.buildItemEntities(savedOrder.getItems(), jpaEntity));
+        orderItemSyncService.applyFullState(jpaEntity, savedOrder);
+        // receivedAt has historically been stored in UTC at create time, while applyFullState
+        // (like every other sync) converts via Asia/Kolkata — a pre-existing inconsistency
+        // between the two paths, out of scope here; preserved as-is rather than silently
+        // changed by this refactor.
+        jpaEntity.setReceivedAt(savedOrder.getReceivedAt() != null
+                ? savedOrder.getReceivedAt().atOffset(java.time.ZoneOffset.UTC) : null);
         return jpaEntity;
     }
 

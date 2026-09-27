@@ -107,6 +107,21 @@ class OrderServicePostgresReprojectionTest {
     }
 
     @Test
+    void reprojectToPostgres_backfillsFullOrderState_notJustCreateTimeFields() {
+        // Regression for feature-dev review on 12ea1ec0: a backfilled row (no PG row was ever
+        // created) must not be limited to create-time fields — driver assignment, delivery
+        // progress timestamps etc. accumulated in Mongo before the outbox drained must land too.
+        Order order = buildOrder("o3");
+        order.setAssignedDriverId("driver-9");
+        when(orderRepository.findById("o3")).thenReturn(Optional.of(order));
+        when(orderItemSyncService.syncOrderByMongoId(eq("o3"), eq(order))).thenReturn(false);
+
+        orderService.reprojectToPostgres("o3");
+
+        verify(orderItemSyncService).applyFullState(any(OrderJpaEntity.class), eq(order));
+    }
+
+    @Test
     void reprojectToPostgres_throwsWhenMongoOrderNoLongerExists() {
         when(orderRepository.findById("gone")).thenReturn(Optional.empty());
 
