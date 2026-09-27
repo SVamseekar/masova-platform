@@ -389,18 +389,28 @@ public class DeliveryController {
     // ── GDPR (internal-only, called by core-service GDPR service) ─────────────────
 
     /**
-     * POST /api/delivery/gdpr/anonymize?customerId= — no-op for delivery tracking.
-     * DeliveryTracking stores no customer PII (only orderId + driverId).
+     * POST /api/delivery/gdpr/anonymize?customerId=&orderIds= — clears delivery address/feedback for the customer.
+     * orderIds is an optional fallback for rows created before customerId was resolved server-side (#118 backfill).
      * Internal-only: requires a core-service token with scope delivery:gdpr-anonymize.
      */
     @PostMapping("/gdpr/anonymize")
     @PreAuthorize("hasAuthority('SCOPE_delivery:gdpr-anonymize')")
-    @Operation(summary = "GDPR anonymise delivery data for customer (internal only — delivery tracking has no customer PII)")
-    public ResponseEntity<Void> gdprAnonymize(@RequestParam String customerId) {
+    @Operation(summary = "GDPR anonymise delivery data for customer, with an orderId fallback for pre-fix rows")
+    public ResponseEntity<Void> gdprAnonymize(@RequestParam String customerId,
+                                              @RequestParam(required = false) List<String> orderIds) {
         if (deliveryTrackingRepository == null) {
             return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+        java.util.Map<DeliveryTracking, Boolean> toAnonymize = new java.util.IdentityHashMap<>();
         for (DeliveryTracking tracking : deliveryTrackingRepository.findByCustomerId(customerId)) {
+            toAnonymize.put(tracking, Boolean.TRUE);
+        }
+        if (orderIds != null && !orderIds.isEmpty()) {
+            for (DeliveryTracking tracking : deliveryTrackingRepository.findByOrderIdIn(orderIds)) {
+                toAnonymize.put(tracking, Boolean.TRUE);
+            }
+        }
+        for (DeliveryTracking tracking : toAnonymize.keySet()) {
             tracking.setDeliveryAddress(null);
             tracking.setCustomerFeedback(null);
             deliveryTrackingRepository.save(tracking);

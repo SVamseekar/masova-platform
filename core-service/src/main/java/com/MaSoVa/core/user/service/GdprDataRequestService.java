@@ -443,8 +443,19 @@ public class GdprDataRequestService {
         }
 
         // 4. Anonymize in Delivery Service
+        // orderIds is a fallback so pre-fix DeliveryTracking rows with no customerId are still erased (#118).
         try {
-            boolean success = deliveryServiceClient.anonymizeCustomerData(userId, authToken);
+            List<String> orderIds = List.of();
+            try {
+                orderIds = orderServiceClient.getCustomerOrders(userId, authToken).stream()
+                        .map(order -> order.get("id"))
+                        .filter(java.util.Objects::nonNull)
+                        .map(String::valueOf)
+                        .toList();
+            } catch (Exception e) {
+                logger.warn("Could not fetch order ids for delivery GDPR fallback, customer {}: {}", userId, e.getMessage());
+            }
+            boolean success = deliveryServiceClient.anonymizeCustomerData(userId, orderIds, authToken);
             if (!success) {
                 errors.add("Delivery Service: Anonymization returned false");
             }

@@ -70,7 +70,8 @@ public class AutoDispatchService {
         Map<String, Object> bestDriver = findBestDriver(availableDrivers, effectiveDeliveryAddress);
 
         // Create delivery tracking
-        DeliveryTracking tracking = createDeliveryTracking(request, bestDriver, effectiveDeliveryAddress);
+        String customerId = resolveCustomerId(request.getOrderId());
+        DeliveryTracking tracking = createDeliveryTracking(request, bestDriver, effectiveDeliveryAddress, customerId);
         deliveryTrackingRepository.save(tracking);
 
         // Assign driver to order in Order Service
@@ -239,7 +240,8 @@ public class AutoDispatchService {
             throw new RuntimeException("Preferred driver not found: " + request.getPreferredDriverId());
         }
 
-        DeliveryTracking tracking = createDeliveryTracking(request, driver, effectiveDeliveryAddress);
+        String customerId = resolveCustomerId(request.getOrderId());
+        DeliveryTracking tracking = createDeliveryTracking(request, driver, effectiveDeliveryAddress, customerId);
         deliveryTrackingRepository.save(tracking);
 
         orderServiceClient.assignDriverToOrder(request.getOrderId(), request.getPreferredDriverId());
@@ -262,12 +264,22 @@ public class AutoDispatchService {
                 .build();
     }
 
-    private DeliveryTracking createDeliveryTracking(AutoDispatchRequest request, Map<String, Object> driver, AddressDTO effectiveDeliveryAddress) {
+    /**
+     * Resolves the order's customerId from commerce, never from the client request:
+     * a caller cannot spoof GDPR erasure scope by sending an arbitrary customerId (#118).
+     */
+    private String resolveCustomerId(String orderId) {
+        Object customerId = orderServiceClient.getOrderDetails(orderId).get("customerId");
+        return customerId != null ? customerId.toString() : null;
+    }
+
+    private DeliveryTracking createDeliveryTracking(AutoDispatchRequest request, Map<String, Object> driver,
+                                                     AddressDTO effectiveDeliveryAddress, String customerId) {
         return DeliveryTracking.builder()
                 .orderId(request.getOrderId())
                 .driverId((String) driver.get("id"))
                 .storeId(request.getStoreId())
-                .customerId(request.getCustomerId())
+                .customerId(customerId)
                 .driverName((String) driver.get("name"))
                 .driverPhone((String) driver.get("phone"))
                 .deliveryAddress(DeliveryTracking.DeliveryAddress.builder()

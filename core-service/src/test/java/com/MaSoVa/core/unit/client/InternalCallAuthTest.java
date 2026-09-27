@@ -112,7 +112,7 @@ class InternalCallAuthTest {
         DeliveryServiceClient client = new DeliveryServiceClient(restTemplate, issuer);
         ReflectionTestUtils.setField(client, "deliveryServiceUrl", "http://logistics");
 
-        client.anonymizeCustomerData("cust-1", "user-jwt");
+        client.anonymizeCustomerData("cust-1", java.util.List.of("order-1"), "user-jwt");
 
         assertServiceToken(sentEntity(), "logistics-service", "delivery:gdpr-anonymize");
     }

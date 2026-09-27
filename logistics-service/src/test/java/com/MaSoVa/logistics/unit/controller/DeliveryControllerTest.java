@@ -646,5 +646,37 @@ class DeliveryControllerTest extends BaseServiceTest {
             verify(repository).save(tracking);
         }
 
+        @Test
+        @DisplayName("also anonymizes rows matched only by orderId, for pre-fix rows with no customerId (#118 backfill)")
+        void clearsDeliveryAddressForOrderIdFallback() throws Exception {
+            DeliveryTrackingRepository repository = mock(DeliveryTrackingRepository.class);
+            ReflectionTestUtils.setField(deliveryController, "deliveryTrackingRepository", repository);
+            DeliveryTracking byCustomerId = new DeliveryTracking();
+            byCustomerId.setOrderId("order-1");
+            byCustomerId.setCustomerId("customer-1");
+            DeliveryTracking.DeliveryAddress address1 = new DeliveryTracking.DeliveryAddress();
+            address1.setStreet("Unter den Linden 1");
+            byCustomerId.setDeliveryAddress(address1);
+
+            DeliveryTracking legacyByOrderId = new DeliveryTracking();
+            legacyByOrderId.setOrderId("order-2");
+            DeliveryTracking.DeliveryAddress address2 = new DeliveryTracking.DeliveryAddress();
+            address2.setStreet("Alexanderplatz 2");
+            legacyByOrderId.setDeliveryAddress(address2);
+
+            when(repository.findByCustomerId("customer-1")).thenReturn(List.of(byCustomerId));
+            when(repository.findByOrderIdIn(List.of("order-1", "order-2"))).thenReturn(List.of(legacyByOrderId));
+
+            mockMvc.perform(post("/api/delivery/gdpr/anonymize")
+                    .param("customerId", "customer-1")
+                    .param("orderIds", "order-1", "order-2"))
+                .andExpect(status().isOk());
+
+            assertThat(byCustomerId.getDeliveryAddress()).isNull();
+            assertThat(legacyByOrderId.getDeliveryAddress()).isNull();
+            verify(repository).save(byCustomerId);
+            verify(repository).save(legacyByOrderId);
+        }
+
     }
 }

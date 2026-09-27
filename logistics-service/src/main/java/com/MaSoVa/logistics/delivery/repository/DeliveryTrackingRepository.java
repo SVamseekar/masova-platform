@@ -18,6 +18,8 @@ public interface DeliveryTrackingRepository extends MongoRepository<DeliveryTrac
 
     List<DeliveryTracking> findByCustomerId(String customerId);
 
+    List<DeliveryTracking> findByOrderIdIn(List<String> orderIds);
+
     List<DeliveryTracking> findByDriverIdAndStatus(String driverId, String status);
 
     List<DeliveryTracking> findByDriverIdAndStatusIn(String driverId, List<String> statuses);
