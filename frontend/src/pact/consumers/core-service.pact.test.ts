@@ -93,9 +93,11 @@ describe('Core Service Contract Tests', () => {
 
     it('rejects an invalid password', async () => {
       // core-service's authenticate() throws a plain RuntimeException("Invalid credentials"),
-      // which the shared GlobalExceptionHandler's generic Exception handler maps to 500 —
-      // not 401. Documenting the real, current behavior; a dedicated AuthenticationException
+      // which UserServiceExceptionHandler's @ExceptionHandler(RuntimeException.class) maps to
+      // 500 — not 401. Documenting the real, current behavior; a dedicated AuthenticationException
       // mapped to 401 would be more correct but is a separate fix from this contract test.
+      // TODO(auth-401-fix): if authenticate() ever starts throwing a dedicated
+      // AuthenticationException mapped to 401, update this interaction's expected status too.
       provider
         .given('a user exists with email pact-login@masova.com and password Pact-Password123')
         .uponReceiving('a login request with an invalid password')

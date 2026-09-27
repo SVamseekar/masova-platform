@@ -152,10 +152,6 @@ export const orderHandlers = [
     HttpResponse.json({ ...mockOrder, id: params.orderId, assignedDriverId: 'driver-1' }),
   ),
 
-  http.patch(apiUrl('/orders/:orderId/payment'), ({ params }) =>
-    HttpResponse.json({ ...mockOrder, id: params.orderId, paymentStatus: 'PAID' }),
-  ),
-
   http.patch(apiUrl('/orders/:orderId/items'), ({ params }) =>
     HttpResponse.json({ ...mockOrder, id: params.orderId }),
   ),
