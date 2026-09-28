@@ -1,6 +1,6 @@
 package com.MaSoVa.intelligence.integration.controller;
 
-import com.MaSoVa.shared.test.BaseIntegrationTest;
+import com.MaSoVa.shared.test.BaseMessagingIntegrationTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,8 +10,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+// BaseMessagingIntegrationTest, not BaseIntegrationTest: intelligence-service always wires
+// AnalyticsEventListener (a real @RabbitListener bean) regardless of which test runs, so the
+// context needs a RabbitMQ connection override even for a test that only hits an HTTP
+// endpoint - otherwise it falls back to Spring Boot's default localhost:5672, which fails with
+// "Connection refused" on a clean runner (a stray local docker-compose RabbitMQ can mask this).
 @DisplayName("AnalyticsController Integration Tests")
-class AnalyticsControllerIT extends BaseIntegrationTest {
+class AnalyticsControllerIT extends BaseMessagingIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
