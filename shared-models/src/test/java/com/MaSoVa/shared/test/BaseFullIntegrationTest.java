@@ -8,6 +8,11 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
+/**
+ * Adds Postgres and Redis to {@link BaseIntegrationTest}'s Mongo container, all as JVM-static
+ * singletons shared across every IT class in the module - see {@link BaseIntegrationTest}'s
+ * class Javadoc for the cleanup responsibility this places on each subclass.
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")

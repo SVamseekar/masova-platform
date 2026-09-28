@@ -66,6 +66,12 @@ class PaymentPactVerificationIT extends BaseFullIntegrationTest {
 
     @BeforeEach
     void before(PactVerificationContext context) {
+        // The Testcontainers Mongo instance is a module-wide singleton (shared across every
+        // IT class in payment-service, see BaseIntegrationTest) — clean before seeding so this
+        // class's @State handlers don't inherit rows left behind by another IT class, and so
+        // this class's own writes (unguarded in paymentTransactionExists) don't accumulate
+        // across repeated interactions.
+        transactionRepository.deleteAll();
         if (context != null) {
             context.setTarget(new AuthInjectingTestTarget("localhost", port));
         }

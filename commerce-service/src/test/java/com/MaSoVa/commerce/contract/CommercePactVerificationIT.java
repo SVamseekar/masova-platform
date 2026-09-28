@@ -80,6 +80,13 @@ class CommercePactVerificationIT extends BaseFullIntegrationTest {
         // tolerate that with a silent INR/GST fallback; it now rejects the order outright
         // (see OrderService.createOrder, B8/fix-no-silent-inr). Stub a valid store for every
         // interaction so pact verification exercises the real success path, not that rejection.
+        //
+        // Deliberate trade-off: this is a class-wide stub, not scoped per @State, so no
+        // interaction in this suite can exercise the reject-on-null-store path (a future
+        // "store not found" pact interaction would silently get a valid mocked store instead of
+        // a real rejection). That path is covered at the unit level by
+        // OrderServiceCreateOrderTest instead. If a "store not found" interaction is ever added
+        // here, override this stub for that specific @State rather than relying on this default.
         Store store = new Store();
         store.setId("STORE-PACT-1");
         store.setCountryCode("IN");
