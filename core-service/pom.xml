@@ -97,7 +97,7 @@
         <dependency>
             <groupId>com.google.firebase</groupId>
             <artifactId>firebase-admin</artifactId>
-            <version>9.10.0</version>
+            <version>9.11.0</version>
         </dependency>
         <!-- PostgreSQL dual-write (Phase 2) -->
         <dependency>
