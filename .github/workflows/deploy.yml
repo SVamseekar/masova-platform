@@ -127,10 +127,30 @@ jobs:
           GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }},\
           BREVO_API_KEY=${{ secrets.BREVO_API_KEY }},\
           GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID }},\
-          SERVICE_AUTH_PRIVATE_KEY=${{ secrets.SERVICE_AUTH_PRIVATE_KEY }},\
-          SERVICE_AUTH_TRUSTED_CORE=${{ secrets.SERVICE_AUTH_TRUSTED_CORE }},\
           FISCAL_SIGNING_MODE=CERTIFIED,\
           SUPPORT_AGENT_API_KEY=${{ secrets.SUPPORT_AGENT_API_KEY }}"
+
+      - name: Set service-auth key material (core signs, others only verify)
+        # SERVICE_AUTH_TRUSTED_CORE can hold multiple comma-separated rotation keys (see
+        # commerce/payment/logistics application.yml), which would corrupt the plain
+        # comma-joined --set-env-vars string above - gcloud's "^<delim>^" syntax below picks a
+        # different separator so a comma inside the value is safe. Also: only core-service signs
+        # (needs the private key), only commerce/payment/logistics verify (need the public
+        # key(s)) - api-gateway and intelligence-service need neither, and no service should hold
+        # a signing key it has no legitimate use for.
+        run: |
+          case "${{ matrix.service.name }}" in
+            core-service)
+              gcloud run services update core-service \
+                --region ${{ env.REGION }} --platform managed \
+                --update-env-vars "^@^SERVICE_AUTH_PRIVATE_KEY=${{ secrets.SERVICE_AUTH_PRIVATE_KEY }}"
+              ;;
+            commerce-service|payment-service|logistics-service)
+              gcloud run services update ${{ matrix.service.name }} \
+                --region ${{ env.REGION }} --platform managed \
+                --update-env-vars "^@^SERVICE_AUTH_TRUSTED_CORE=${{ secrets.SERVICE_AUTH_TRUSTED_CORE }}"
+              ;;
+          esac
 
   # ============================================================
   # Job 3: Deploy masova-support AI agent to Cloud Run
@@ -189,6 +209,11 @@ jobs:
   # deploy without it. This job runs once all 6 services are up, resolves
   # each real URL with `gcloud run services describe`, then patches them
   # into the services that call each other.
+  #
+  # Idempotent and safe to re-run on its own (Actions -> re-run failed jobs)
+  # if it fails partway through - it always re-resolves every URL fresh and
+  # re-patches every service, it does not depend on what a previous partial
+  # run left in place.
   # ============================================================
   wire-service-urls:
     name: Wire inter-service URLs
@@ -203,8 +228,23 @@ jobs:
 
       - name: Resolve real URLs and patch dependent services
         run: |
+          # `gcloud run services describe` can exit 0 with an EMPTY status.url if it hasn't
+          # propagated yet - this runs right after each service's first-ever deploy, the single
+          # likeliest moment for that lag. Retry a few times, then fail loud (not just non-zero
+          # exit) rather than silently patching every service with an empty/malformed URL.
           get_url() {
-            gcloud run services describe "$1" --region ${{ env.REGION }} --platform managed --format='value(status.url)'
+            local svc="$1" url=""
+            for attempt in 1 2 3 4 5; do
+              url=$(gcloud run services describe "$svc" --region ${{ env.REGION }} --platform managed --format='value(status.url)')
+              if [[ "$url" =~ ^https:// ]]; then
+                echo "$url"
+                return 0
+              fi
+              echo "::warning::Attempt $attempt: no valid URL yet for '$svc' (got: '$url'), retrying..." >&2
+              sleep 5
+            done
+            echo "::error::Could not resolve a valid URL for service '$svc' after 5 attempts (got: '$url')" >&2
+            exit 1
           }
 
           API_GATEWAY_URL=$(get_url api-gateway)
