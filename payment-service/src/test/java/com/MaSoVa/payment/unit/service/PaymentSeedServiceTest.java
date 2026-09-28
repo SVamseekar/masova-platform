@@ -4,7 +4,7 @@ import com.MaSoVa.payment.entity.Refund;
 import com.MaSoVa.payment.entity.Transaction;
 import com.MaSoVa.payment.repository.RefundRepository;
 import com.MaSoVa.payment.repository.TransactionRepository;
-import com.MaSoVa.payment.service.OrderServiceClient;
+import com.MaSoVa.payment.messaging.OrderPaymentSyncRelay;
 import com.MaSoVa.payment.service.PaymentSeedService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -37,7 +37,7 @@ class PaymentSeedServiceTest {
 
     @Mock TransactionRepository transactionRepository;
     @Mock RefundRepository refundRepository;
-    @Mock OrderServiceClient orderServiceClient;
+    @Mock OrderPaymentSyncRelay orderPaymentSyncRelay;
     @Mock Environment environment;
 
     PaymentSeedService service;
@@ -45,13 +45,12 @@ class PaymentSeedServiceTest {
     @BeforeEach
     void setUp() {
         service = new PaymentSeedService(
-                transactionRepository, refundRepository, orderServiceClient, environment);
+                transactionRepository, refundRepository, orderPaymentSyncRelay, environment);
         when(environment.acceptsProfiles(Profiles.of("dev", "demo"))).thenReturn(true);
         when(transactionRepository.findByOrderId(anyString())).thenReturn(Optional.empty());
         when(transactionRepository.findByRazorpayOrderId(anyString())).thenReturn(Optional.empty());
         when(transactionRepository.findByStripePaymentIntentId(anyString())).thenReturn(Optional.empty());
         when(refundRepository.findByTransactionId(anyString())).thenReturn(List.of());
-        doNothing().when(orderServiceClient).updateOrderPaymentStatus(anyString(), anyString(), anyString());
 
         AtomicInteger seq = new AtomicInteger();
         when(transactionRepository.save(any())).thenAnswer(inv -> {

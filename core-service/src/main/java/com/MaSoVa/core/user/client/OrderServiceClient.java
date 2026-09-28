@@ -10,6 +10,8 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import com.MaSoVa.shared.security.service.ServiceTokenIssuer;
+import com.MaSoVa.shared.security.service.ServiceTokenAuthenticationFilter;
 
 import java.util.Collections;
 import java.util.List;
@@ -30,9 +32,11 @@ public class OrderServiceClient {
     private String orderServiceUrl;
 
     private final RestTemplate restTemplate;
+    private final ServiceTokenIssuer serviceTokenIssuer;
 
-    public OrderServiceClient(RestTemplate restTemplate) {
+    public OrderServiceClient(RestTemplate restTemplate, ServiceTokenIssuer serviceTokenIssuer) {
         this.restTemplate = restTemplate;
+        this.serviceTokenIssuer = serviceTokenIssuer;
     }
 
     /**
@@ -76,7 +80,7 @@ public class OrderServiceClient {
     /**
      * Anonymize customer data in orders (for GDPR erasure).
      * Phase 1: PUT /api/orders/customer/{id}/anonymize → POST /api/orders/gdpr/anonymize?customerId=
-     * The POST /api/orders/gdpr/anonymize endpoint is internal-only (X-Internal-Service header required).
+     * The POST /api/orders/gdpr/anonymize endpoint is internal-only (core-service token required).
      */
     @Retry(name = "orderService")
     @CircuitBreaker(name = "orderService", fallbackMethod = "anonymizeCustomerDataFallback")
@@ -84,7 +88,7 @@ public class OrderServiceClient {
         try {
             String url = orderServiceUrl + "/api/orders/gdpr/anonymize?customerId=" + customerId;
 
-            HttpHeaders headers = createHttpHeaders(authToken);
+            HttpHeaders headers = internalHeaders("orders:gdpr-anonymize");
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
             ResponseEntity<Void> response = restTemplate.exchange(
@@ -112,7 +116,6 @@ public class OrderServiceClient {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("X-Internal-Service", "core-service");
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
             ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
@@ -138,16 +141,21 @@ public class OrderServiceClient {
         try {
             String url = orderServiceUrl + "/api/orders/rating-token/" + token + "/mark-used";
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("X-Internal-Service", "core-service");
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            HttpEntity<Void> entity = new HttpEntity<>(internalHeaders("ratings:mark-used"));
 
             restTemplate.exchange(url, HttpMethods.POST, entity, Void.class);
         } catch (Exception e) {
             logger.warn("Error marking rating token as used for token {}: {}", token, e.getMessage());
             throw e;
         }
+    }
+
+    /** Headers for an internal endpoint: a short-lived commerce-service service token, no end-user JWT. */
+    private HttpHeaders internalHeaders(String scope) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set(ServiceTokenAuthenticationFilter.HEADER, serviceTokenIssuer.bearer("commerce-service", scope));
+        return headers;
     }
 
     private HttpHeaders createHttpHeaders(String authToken) {
@@ -157,7 +165,6 @@ public class OrderServiceClient {
             headers.set("Authorization", "Bearer " + authToken);
         }
         // Internal service call marker
-        headers.set("X-Internal-Service", "user-service");
         return headers;
     }
 

@@ -321,17 +321,12 @@ public class PaymentController {
 
     /**
      * POST /api/payments/gdpr/anonymize?customerId= — anonymise PII in all transactions.
-     * Internal-only: requires X-Internal-Service header. Not accessible via gateway.
+     * Internal-only: requires a core-service token with scope payments:gdpr-anonymize.
      */
     @PostMapping("/gdpr/anonymize")
+    @PreAuthorize("hasAuthority('SCOPE_payments:gdpr-anonymize')")
     @Operation(summary = "Anonymise payment data for customer (GDPR erasure — internal only)")
-    public ResponseEntity<Void> gdprAnonymize(
-            @RequestParam("customerId") String customerId,
-            HttpServletRequest request) {
-        String internalCaller = request.getHeader("X-Internal-Service");
-        if (internalCaller == null || internalCaller.isBlank()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+    public ResponseEntity<Void> gdprAnonymize(@RequestParam("customerId") String customerId) {
         paymentService.anonymizeCustomerData(customerId);
         return ResponseEntity.ok().build();
     }

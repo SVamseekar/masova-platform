@@ -217,3 +217,7 @@ resilience4j:
         slidingWindowSize: 10
         failureRateThreshold: 50
         waitDurationInOpenState: 10s
+
+# Service-to-service auth: core-service signs tokens for internal calls (base64 PKCS#8 EC P-256).
+service-auth:
+  private-key: ${SERVICE_AUTH_PRIVATE_KEY:}

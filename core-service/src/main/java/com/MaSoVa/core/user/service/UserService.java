@@ -276,6 +276,11 @@ public class UserService {
         return mapToUserResponse(savedUser);
     }
 
+    // TODO(auth-401-fix): the RuntimeException throws below map to 500 via
+    // UserServiceExceptionHandler's generic RuntimeException handler, not 401 — a dedicated
+    // AuthenticationException would be more correct. If changed, also update the matching
+    // Pact interaction in frontend/src/pact/consumers/core-service.pact.test.ts, which
+    // deliberately documents today's 500 as current (not intended) behavior.
     public LoginResponse authenticate(LoginRequest request) {
         logger.info("Authentication attempt for email: {}", PiiMasker.maskEmail(request.getEmail()));
 

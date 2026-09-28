@@ -26,6 +26,15 @@ spring:
   cache:
     type: none
 
+fiscal:
+  signing:
+    mode: LAB_STUB
+
+commerce:
+  postgres-outbox:
+    projector:
+      enabled: false
+
 jwt:
   secret: test-secret-key-at-least-64-characters-long-for-hs512-algorithm-ok
   access-token-expiration: 900000

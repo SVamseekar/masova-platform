@@ -14,8 +14,6 @@ public class AutoDispatchRequest {
     @NotBlank(message = "Store ID is required")
     private String storeId;
 
-    private String customerId;
-
     // Backend format
     private AddressDTO deliveryAddress;
 
@@ -111,14 +109,6 @@ public class AutoDispatchRequest {
 
     public void setStoreId(String storeId) {
         this.storeId = storeId;
-    }
-
-    public String getCustomerId() {
-        return customerId;
-    }
-
-    public void setCustomerId(String customerId) {
-        this.customerId = customerId;
     }
 
     public AddressDTO getDeliveryAddress() {

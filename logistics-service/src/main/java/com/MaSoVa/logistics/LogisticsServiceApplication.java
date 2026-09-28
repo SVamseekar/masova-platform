@@ -3,17 +3,15 @@ package com.MaSoVa.logistics;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.MaSoVa.logistics", "com.MaSoVa.shared"})
 @EnableCaching
 @EnableAsync
 @EnableScheduling
 @EnableMongoAuditing
-@ComponentScan(basePackages = {"com.MaSoVa.logistics", "com.MaSoVa.shared"})
 public class LogisticsServiceApplication {
 
     @SuppressWarnings("resource") // ApplicationContext lives for the JVM's lifetime; Spring Boot registers its own shutdown hook

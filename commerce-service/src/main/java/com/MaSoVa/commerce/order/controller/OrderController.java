@@ -8,6 +8,7 @@ import com.MaSoVa.commerce.order.entity.OrderItem;
 import com.MaSoVa.commerce.order.entity.QualityCheckpoint;
 import com.MaSoVa.commerce.order.service.OrderService;
 import com.MaSoVa.commerce.order.service.OrderSummaryService;
+import com.MaSoVa.shared.exception.BusinessException;
 import com.MaSoVa.shared.util.StoreAccessValidator;
 import com.MaSoVa.shared.util.StoreContextUtil;
 
@@ -20,7 +21,6 @@ import jakarta.validation.Valid;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -29,8 +29,6 @@ import org.springframework.web.bind.annotation.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -63,14 +61,9 @@ public class OrderController {
     private static final int DEFAULT_PAGE = 0;
     private static final int DEFAULT_PAGE_SIZE = 50;
 
-    static final String PAYMENT_CREDENTIAL_HEADER = "X-Internal-Payment-Credential";
-
     private final OrderService orderService;
     private final OrderSummaryService orderSummaryService;
     private final ObjectMapper objectMapper;
-
-    @Value("${internal.payment-callback.secret:}")
-    private String paymentCallbackSecret;
 
     public OrderController(OrderService orderService, OrderSummaryService orderSummaryService, ObjectMapper objectMapper) {
         this.orderService = orderService;
@@ -394,38 +387,16 @@ public class OrderController {
     // ── PAYMENT STATUS (inter-service, called by payment-service) ─────────────────
 
     /**
-     * PATCH /{orderId}/payment — update payment status.
-     * payment-service must present the shared callback secret.
-     * X-Internal-Service is not an authorization.
-     * MANAGER/ASSISTANT_MANAGER/STAFF may correct status with a JWT.
+     * PATCH /{orderId}/payment — staff manual correction of payment status.
+     * payment-service delivers payment status as an event (masova.commerce.payment-status).
      */
     @PatchMapping("/{orderId}/payment")
-    @Operation(summary = "Update payment status (payment callback secret or MANAGER/STAFF)")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
+    @Operation(summary = "Correct payment status (MANAGER/STAFF)")
     public ResponseEntity<Order> updatePaymentStatus(
             @PathVariable("orderId") String orderId,
-            @Valid @RequestBody UpdatePaymentStatusRequest request,
-            jakarta.servlet.http.HttpServletRequest httpRequest) {
-        if (!paymentCredentialMatches(httpRequest.getHeader(PAYMENT_CREDENTIAL_HEADER))) {
-            var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-            boolean hasRole = auth != null && auth.getAuthorities().stream().anyMatch(a ->
-                    a.getAuthority().equals("ROLE_MANAGER") ||
-                    a.getAuthority().equals("ROLE_ASSISTANT_MANAGER") ||
-                    a.getAuthority().equals("ROLE_STAFF"));
-            if (!hasRole) {
-                return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
-            }
-        }
+            @Valid @RequestBody UpdatePaymentStatusRequest request) {
         return ResponseEntity.ok(orderService.updatePaymentStatus(orderId, request.getStatus(), request.getTransactionId()));
-    }
-
-    private boolean paymentCredentialMatches(String presented) {
-        if (paymentCallbackSecret == null || paymentCallbackSecret.isBlank()
-                || presented == null || presented.isBlank()) {
-            return false;
-        }
-        return MessageDigest.isEqual(
-                paymentCallbackSecret.getBytes(StandardCharsets.UTF_8),
-                presented.getBytes(StandardCharsets.UTF_8));
     }
 
     // ── QUALITY CHECKPOINTS ───────────────────────────────────────────────────────
@@ -529,17 +500,12 @@ public class OrderController {
 
     /**
      * POST /api/orders/gdpr/anonymize?customerId= — anonymise all orders for a customer.
-     * Internal-only: requires X-Internal-Service header. Not accessible via gateway.
+     * Internal-only: requires a core-service token with scope orders:gdpr-anonymize.
      */
     @PostMapping("/gdpr/anonymize")
+    @PreAuthorize("hasAuthority('SCOPE_orders:gdpr-anonymize')")
     @Operation(summary = "Anonymise order data for customer (GDPR erasure — internal only)")
-    public ResponseEntity<Void> anonymizeCustomerOrders(
-            @RequestParam(name = "customerId") String customerId,
-            jakarta.servlet.http.HttpServletRequest request) {
-        String internalCaller = request.getHeader("X-Internal-Service");
-        if (internalCaller == null || internalCaller.isBlank()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+    public ResponseEntity<Void> anonymizeCustomerOrders(@RequestParam(name = "customerId") String customerId) {
         orderService.anonymizeCustomerOrders(customerId);
         return ResponseEntity.ok().build();
     }
@@ -548,6 +514,22 @@ public class OrderController {
     public ResponseEntity<Map<String, String>> handleAccessDenied(AccessDeniedException ex) {
         log.warn("Access denied on order request: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(com.MaSoVa.commerce.fiscal.FiscalNotConfiguredException.class)
+    public ResponseEntity<Map<String, String>> handleFiscalNotConfigured(
+            com.MaSoVa.commerce.fiscal.FiscalNotConfiguredException ex) {
+        log.warn("[{}] {}", com.MaSoVa.commerce.fiscal.FiscalNotConfiguredException.ERROR_CODE, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("code", com.MaSoVa.commerce.fiscal.FiscalNotConfiguredException.ERROR_CODE,
+                        "error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<Map<String, String>> handleBusinessException(BusinessException ex) {
+        log.warn("[{}] {}", ex.getErrorCode(), ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("code", ex.getErrorCode(), "error", ex.getMessage()));
     }
 
     @ExceptionHandler(RuntimeException.class)

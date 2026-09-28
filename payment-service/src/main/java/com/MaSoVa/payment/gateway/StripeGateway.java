@@ -109,6 +109,12 @@ public class StripeGateway implements PaymentGateway {
     }
 
     @Override
+    public String fetchRefundStatus(String gatewayPaymentId, String gatewayRefundId) throws Exception {
+        Refund refund = Refund.retrieve(gatewayRefundId);
+        return refund.getStatus();
+    }
+
+    @Override
     public GatewayWebhookResult parseWebhook(String rawPayload, String signatureHeader) throws Exception {
         Event event;
         try {

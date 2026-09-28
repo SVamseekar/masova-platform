@@ -92,16 +92,9 @@ public class CustomerNotificationService {
             log.info("Customer notification sent: orderId={}, customerId={}, status={}, message={}",
                     order.getId(), order.getCustomerId(), order.getStatus(), notification.getMessage());
 
-            // [AMQP] Dual-publish status change event
-            try {
-                orderEventPublisher.publishOrderStatusChanged(OrderEventBuilder.buildStatusChangedEvent(
-                    order,
-                    previousStatus != null ? previousStatus.name() : null,
-                    order.getStatus() != null ? order.getStatus().name() : null
-                ));
-            } catch (Exception e) {
-                log.warn("[AMQP] dual-publish status change failed for order {}: {}", order.getId(), e.getMessage());
-            }
+            // The OrderStatusChanged AMQP event is published directly by each OrderService call site
+            // (not here), so it fires for every order regardless of customerId and doesn't depend on
+            // this notification succeeding (#131). Publishing it here too would double-fire it.
 
         } catch (Exception e) {
             log.error("Failed to send customer notification for order: {}", order.getOrderNumber(), e);

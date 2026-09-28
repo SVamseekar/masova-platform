@@ -36,7 +36,7 @@ jobs:
         id: version
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Build all modules (skip tests — tests run in CI job)
         run: mvn clean install -DskipTests
@@ -45,7 +45,17 @@ jobs:
         run: |
           mkdir -p masova-release
           for svc in api-gateway core-service commerce-service payment-service logistics-service intelligence-service; do
-            cp $svc/target/*.jar masova-release/ 2>/dev/null || echo "No JAR for $svc"
+            # Most services repackage under the "exec" classifier, leaving the plain
+            # (non-executable) jar as the module's main artifact — grab the runnable one.
+            JAR=$(find "$svc/target" -maxdepth 1 -name '*-exec.jar' 2>/dev/null | head -n1)
+            if [ -z "$JAR" ]; then
+              JAR=$(find "$svc/target" -maxdepth 1 -name '*.jar' 2>/dev/null | head -n1)
+            fi
+            if [ -n "$JAR" ]; then
+              cp "$JAR" masova-release/
+            else
+              echo "No JAR for $svc"
+            fi
           done
           ls -lh masova-release/
 
@@ -121,7 +131,7 @@ jobs:
         id: version
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Download JARs
         uses: actions/download-artifact@v4

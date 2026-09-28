@@ -52,6 +52,81 @@ describe('Core Service Contract Tests', () => {
     });
   });
 
+  describe('POST /api/auth/login', () => {
+    it('logs in successfully with valid credentials', async () => {
+      provider
+        .given('a user exists with email pact-login@masova.com and password Pact-Password123')
+        .uponReceiving('a login request with valid credentials')
+        .withRequest({
+          method: 'POST',
+          path: '/api/auth/login',
+          headers: { 'Content-Type': 'application/json' },
+          body: {
+            email: 'pact-login@masova.com',
+            password: 'Pact-Password123',
+          },
+        })
+        .willRespondWith({
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+          body: {
+            accessToken: like('eyJhbGciOiJIUzUxMiJ9.example.token'),
+            refreshToken: like('eyJhbGciOiJIUzUxMiJ9.example.refresh'),
+            user: {
+              id: like('USER-PACT-LOGIN-1'),
+              email: like('pact-login@masova.com'),
+              type: like('CUSTOMER'),
+            },
+          },
+        });
+
+      await provider.executeTest(async (mockServer) => {
+        const response = await axios.post(`${mockServer.url}/api/auth/login`, {
+          email: 'pact-login@masova.com',
+          password: 'Pact-Password123',
+        });
+        expect(response.status).toBe(200);
+        expect(response.data.accessToken).toBeTruthy();
+        expect(response.data.user.email).toBe('pact-login@masova.com');
+      });
+    });
+
+    it('rejects an invalid password', async () => {
+      // core-service's authenticate() throws a plain RuntimeException("Invalid credentials"),
+      // which UserServiceExceptionHandler's @ExceptionHandler(RuntimeException.class) maps to
+      // 500 — not 401. Documenting the real, current behavior; a dedicated AuthenticationException
+      // mapped to 401 would be more correct but is a separate fix from this contract test.
+      // TODO(auth-401-fix): if authenticate() ever starts throwing a dedicated
+      // AuthenticationException mapped to 401, update this interaction's expected status too.
+      provider
+        .given('a user exists with email pact-login@masova.com and password Pact-Password123')
+        .uponReceiving('a login request with an invalid password')
+        .withRequest({
+          method: 'POST',
+          path: '/api/auth/login',
+          headers: { 'Content-Type': 'application/json' },
+          body: {
+            email: 'pact-login@masova.com',
+            password: 'wrong-password',
+          },
+        })
+        .willRespondWith({
+          status: 500,
+        });
+
+      await provider.executeTest(async (mockServer) => {
+        await expect(
+          axios.post(`${mockServer.url}/api/auth/login`, {
+            email: 'pact-login@masova.com',
+            password: 'wrong-password',
+          })
+        ).rejects.toMatchObject({
+          response: { status: 500 },
+        });
+      });
+    });
+  });
+
   describe('GET /api/stores/{storeId}', () => {
     it('returns the store successfully', async () => {
       provider

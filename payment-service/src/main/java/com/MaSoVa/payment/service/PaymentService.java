@@ -5,6 +5,7 @@ import com.MaSoVa.payment.dto.InitiatePaymentRequest;
 import com.MaSoVa.payment.dto.PaymentCallbackRequest;
 import com.MaSoVa.payment.dto.PaymentResponse;
 import com.MaSoVa.payment.dto.ReconciliationReportResponse;
+import com.MaSoVa.payment.entity.OrderPaymentSync;
 import com.MaSoVa.payment.entity.Transaction;
 import com.MaSoVa.payment.gateway.GatewayPaymentRequest;
 import com.MaSoVa.payment.gateway.GatewayPaymentResult;
@@ -52,7 +53,6 @@ public class PaymentService {
 
     private final TransactionRepository transactionRepository;
     private final RazorpayService razorpayService;
-    private final OrderServiceClient orderServiceClient;
     private final RazorpayConfig razorpayConfig;
     private final PiiEncryptionService encryptionService;
     private final PaymentNotificationService paymentNotificationService;
@@ -61,14 +61,13 @@ public class PaymentService {
     private TransactionLedgerWriter transactionLedgerWriter;
 
     public PaymentService(TransactionRepository transactionRepository, RazorpayService razorpayService,
-                         OrderServiceClient orderServiceClient, RazorpayConfig razorpayConfig,
+                         RazorpayConfig razorpayConfig,
                          PiiEncryptionService encryptionService,
                          PaymentNotificationService paymentNotificationService,
                          com.MaSoVa.payment.messaging.PaymentEventPublisher paymentEventPublisher,
                          PaymentGatewayResolver paymentGatewayResolver) {
         this.transactionRepository = transactionRepository;
         this.razorpayService = razorpayService;
-        this.orderServiceClient = orderServiceClient;
         this.razorpayConfig = razorpayConfig;
         this.encryptionService = encryptionService;
         this.paymentNotificationService = paymentNotificationService;
@@ -236,6 +235,7 @@ public class PaymentService {
                 transaction.setStatus(Transaction.PaymentStatus.FAILED);
                 transaction.setErrorCode("SIGNATURE_VERIFICATION_FAILED");
                 transaction.setErrorDescription("Payment signature verification failed");
+                transaction.setOrderSync(OrderPaymentSync.pending("FAILED"));
                 saveTransaction(transaction);
 
                 // Send payment failure notification (NOTIF-003)
@@ -285,16 +285,11 @@ public class PaymentService {
                 }
             }
 
+            // Same document write as SUCCESS: the relay tells commerce the order is PAID.
+            transaction.setOrderSync(OrderPaymentSync.pending("PAID"));
             transaction = saveTransaction(transaction);
 
             log.info("Payment verified and completed successfully. Transaction ID: {}", transaction.getId());
-
-            // Update order payment status
-            orderServiceClient.updateOrderPaymentStatus(
-                    transaction.getOrderId(),
-                    "PAID",
-                    transaction.getId()
-            );
 
             // Send payment success notification (NOTIF-003)
             String customerEmail = encryptionService.decrypt(transaction.getCustomerEmail());
@@ -349,6 +344,7 @@ public class PaymentService {
             case PAYMENT_FAILED -> handleStripePaymentFailed(transaction, result);
             case REFUND_PROCESSED -> {
                 transaction.setStatus(Transaction.PaymentStatus.REFUNDED);
+                transaction.setOrderSync(OrderPaymentSync.pending("REFUNDED"));
                 saveTransaction(transaction);
                 log.info("Stripe refund processed for transaction: {}", transaction.getId());
             }
@@ -375,11 +371,11 @@ public class PaymentService {
         String methodType = result.getPaymentMethodType() != null ? result.getPaymentMethodType() : "card";
         transaction.setPaymentMethodType(methodType);
         transaction.setPaymentMethod(mapStripeMethodType(methodType));
+        // Same document write as SUCCESS: the relay tells commerce the order is PAID.
+        transaction.setOrderSync(OrderPaymentSync.pending("PAID"));
         transaction = saveTransaction(transaction);
 
         log.info("Stripe payment captured and transaction completed. Transaction ID: {}", transaction.getId());
-
-        orderServiceClient.updateOrderPaymentStatus(transaction.getOrderId(), "PAID", transaction.getId());
 
         String customerEmail = encryptionService.decrypt(transaction.getCustomerEmail());
         String customerPhone = encryptionService.decrypt(transaction.getCustomerPhone());
@@ -401,6 +397,7 @@ public class PaymentService {
         transaction.setStatus(Transaction.PaymentStatus.FAILED);
         transaction.setErrorCode("STRIPE_PAYMENT_FAILED");
         transaction.setErrorDescription(result.getFailureReason());
+        transaction.setOrderSync(OrderPaymentSync.pending("FAILED"));
         saveTransaction(transaction);
 
         log.error("Stripe payment failed for transaction: {}, reason: {}", transaction.getId(), result.getFailureReason());
@@ -600,22 +597,12 @@ public class PaymentService {
             // Set payment method to CASH
             transaction.setPaymentMethod(Transaction.PaymentMethod.CASH);
             transaction.setPaidAt(LocalDateTime.now());
+            transaction.setOrderSync(OrderPaymentSync.pending("PAID"));
 
             transaction = Objects.requireNonNull(saveTransaction(transaction));
 
             log.info("Cash payment recorded successfully. Transaction ID: {}, currency: {}",
                     transaction.getId(), currency);
-
-            // Update order payment status
-            try {
-                orderServiceClient.updateOrderPaymentStatus(
-                        transaction.getOrderId(),
-                        "PAID",
-                        transaction.getId()
-                );
-            } catch (Exception e) {
-                log.warn("Failed to update order payment status, but cash transaction recorded: {}", e.getMessage());
-            }
 
             // Publish payment.completed event for analytics
             paymentEventPublisher.publishPaymentCompleted(new PaymentCompletedEvent(

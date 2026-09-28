@@ -367,7 +367,7 @@ class GdprDataRequestServiceTest {
                     .thenThrow(new RuntimeException("Order service down"));
             when(paymentServiceClient.anonymizeCustomerData(any(), any())).thenReturn(true);
             when(customerServiceClient.anonymizeCustomerData(any(), any())).thenReturn(true);
-            when(deliveryServiceClient.anonymizeCustomerData(any(), any())).thenReturn(true);
+            when(deliveryServiceClient.anonymizeCustomerData(any(), any(), any())).thenReturn(true);
 
             assertThatCode(() ->
                     gdprDataRequestService.anonymizeAllCustomerData("user-1", "auth-token"))
@@ -375,6 +375,46 @@ class GdprDataRequestServiceTest {
 
             // Verify local user data was still anonymized despite order service failure
             verify(userRepository).save(argThat(u -> !u.isActive()));
+        }
+
+        @Test
+        @DisplayName("passes the customer's orderIds to delivery, so pre-fix rows with no customerId are still erased (#118)")
+        void passesOrderIdsToDeliveryForBackfill() {
+            User user = buildUser("user-1");
+            when(userRepository.findById("user-1")).thenReturn(Optional.of(user));
+            when(userRepository.save(any())).thenReturn(user);
+            when(auditLogRepository.save(any())).thenReturn(new GdprAuditLog());
+            when(orderServiceClient.anonymizeCustomerData(any(), any())).thenReturn(true);
+            when(orderServiceClient.getCustomerOrders("user-1", "auth-token"))
+                    .thenReturn(List.of(Map.of("id", "order-1"), Map.of("id", "order-2")));
+            when(paymentServiceClient.anonymizeCustomerData(any(), any())).thenReturn(true);
+            when(customerServiceClient.anonymizeCustomerData(any(), any())).thenReturn(true);
+            when(deliveryServiceClient.anonymizeCustomerData(any(), any(), any())).thenReturn(true);
+
+            gdprDataRequestService.anonymizeAllCustomerData("user-1", "auth-token");
+
+            verify(deliveryServiceClient).anonymizeCustomerData("user-1", List.of("order-1", "order-2"), "auth-token");
+        }
+
+        @Test
+        @DisplayName("still erases by customerId alone when the order lookup fails")
+        void erasesByCustomerIdWhenOrderLookupFails() {
+            User user = buildUser("user-1");
+            when(userRepository.findById("user-1")).thenReturn(Optional.of(user));
+            when(userRepository.save(any())).thenReturn(user);
+            when(auditLogRepository.save(any())).thenReturn(new GdprAuditLog());
+            when(orderServiceClient.anonymizeCustomerData(any(), any())).thenReturn(true);
+            when(orderServiceClient.getCustomerOrders("user-1", "auth-token"))
+                    .thenThrow(new RuntimeException("order service down"));
+            when(paymentServiceClient.anonymizeCustomerData(any(), any())).thenReturn(true);
+            when(customerServiceClient.anonymizeCustomerData(any(), any())).thenReturn(true);
+            when(deliveryServiceClient.anonymizeCustomerData(any(), any(), any())).thenReturn(true);
+
+            assertThatCode(() ->
+                    gdprDataRequestService.anonymizeAllCustomerData("user-1", "auth-token"))
+                    .doesNotThrowAnyException();
+
+            verify(deliveryServiceClient).anonymizeCustomerData("user-1", List.of(), "auth-token");
         }
     }
 

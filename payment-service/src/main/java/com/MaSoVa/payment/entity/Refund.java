@@ -16,7 +16,9 @@ import java.time.LocalDateTime;
 @CompoundIndexes({
     @CompoundIndex(def = "{'storeId': 1, 'status': 1}"),
     @CompoundIndex(def = "{'storeId': 1, 'createdAt': -1}"),
-    @CompoundIndex(def = "{'transactionId': 1, 'createdAt': -1}")
+    @CompoundIndex(def = "{'transactionId': 1, 'createdAt': -1}"),
+    // Supports RefundReconciliationRelay's stuck-refund poll (findByStatusAndUpdatedAtBefore)
+    @CompoundIndex(name = "stuck_refund_poll", def = "{'status': 1, 'updatedAt': 1}")
 })
 public class Refund {
 

@@ -1,0 +1,39 @@
+name: Actionlint
+
+# Catches breaking changes in GitHub Actions workflow files — most relevant when
+# Dependabot opens a major-version bump for an action (github-actions ecosystem in
+# dependabot.yml has no major-version ignore, unlike Maven/npm), since a major bump
+# can change an action's required inputs/outputs in ways only a linter (or a failed
+# run) would otherwise catch.
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+      - 'fix/**'
+      - 'chore/**'
+    paths:
+      - '.github/workflows/**'
+      - '.github/dependabot.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - '.github/dependabot.yml'
+
+concurrency:
+  group: actionlint-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  actionlint:
+    name: Actionlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run actionlint
+        uses: docker://rhysd/actionlint:latest
+        with:
+          args: -color

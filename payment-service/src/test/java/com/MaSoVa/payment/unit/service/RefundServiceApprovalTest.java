@@ -7,7 +7,7 @@ import com.MaSoVa.payment.gateway.PaymentGateway;
 import com.MaSoVa.payment.gateway.PaymentGatewayResolver;
 import com.MaSoVa.payment.repository.RefundRepository;
 import com.MaSoVa.payment.repository.TransactionRepository;
-import com.MaSoVa.payment.service.OrderServiceClient;
+import com.MaSoVa.payment.messaging.OrderPaymentSyncRelay;
 import com.MaSoVa.payment.service.RefundService;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -49,7 +49,7 @@ class RefundServiceApprovalTest {
     @Mock private TransactionRepository transactionRepository;
     @Mock private PaymentGatewayResolver paymentGatewayResolver;
     @Mock private PaymentGateway paymentGateway;
-    @Mock private OrderServiceClient orderServiceClient;
+    @Mock private OrderPaymentSyncRelay orderPaymentSyncRelay;
     @Mock private MongoTemplate mongoTemplate;
 
     @InjectMocks private RefundService refundService;
@@ -99,7 +99,7 @@ class RefundServiceApprovalTest {
         assertThat(result.getInitiatedBy()).isEqualTo("AGENT");
         assertThat(result.getStoreId()).isEqualTo("DOM001");
         verifyNoInteractions(paymentGatewayResolver);
-        verify(orderServiceClient, never()).updateOrderPaymentStatus(anyString(), anyString(), anyString());
+        verify(orderPaymentSyncRelay, never()).requestOrderPaymentStatus(anyString(), anyString());
     }
 
     @Test
@@ -126,13 +126,12 @@ class RefundServiceApprovalTest {
         when(paymentGateway.refund(eq("pay_001"), eq(BigDecimal.valueOf(200.00)), eq("normal"), anyString()))
                 .thenReturn("rfnd_001");
         when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Refund result = refundService.initiateRefund(request);
 
         assertThat(result.getStatus()).isEqualTo(Refund.RefundStatus.PROCESSING);
         assertThat(result.getRazorpayRefundId()).isEqualTo("rfnd_001");
-        verify(orderServiceClient).updateOrderPaymentStatus("order-123", "REFUNDED", "txn-001");
+        verify(orderPaymentSyncRelay, never()).requestOrderPaymentStatus(anyString(), anyString());
     }
 
     @Test
@@ -156,14 +155,13 @@ class RefundServiceApprovalTest {
                 any(Query.class), any(Update.class), any(FindAndModifyOptions.class), eq(Refund.class)))
                 .thenReturn(pending);
         when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Refund result = refundService.approveRefund("refund-001", "manager-001");
 
         assertThat(result.getStatus()).isEqualTo(Refund.RefundStatus.PROCESSING);
         assertThat(result.getRazorpayRefundId()).isEqualTo("rfnd_approved");
         assertThat(result.getInitiatedBy()).isEqualTo("manager-001");
-        verify(orderServiceClient).updateOrderPaymentStatus("order-123", "REFUNDED", "txn-001");
+        verify(orderPaymentSyncRelay, never()).requestOrderPaymentStatus(anyString(), anyString());
     }
 
     @Test
@@ -188,7 +186,6 @@ class RefundServiceApprovalTest {
                 any(Query.class), any(Update.class), any(FindAndModifyOptions.class), eq(Refund.class)))
                 .thenReturn(pending);
         when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Refund result = refundService.approveRefund("refund-001", "manager-001");
 
@@ -219,13 +216,16 @@ class RefundServiceApprovalTest {
                 .status(Refund.RefundStatus.PENDING_APPROVAL).build();
         pending.setId("refund-001");
         when(refundRepository.findById("refund-001")).thenReturn(Optional.of(pending));
-        when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
+        Refund rejected = Refund.builder().transactionId("txn-001").amount(BigDecimal.valueOf(200.00))
+                .status(Refund.RefundStatus.REJECTED).build();
+        when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
+                eq(Refund.class))).thenReturn(rejected);
 
         Refund result = refundService.rejectRefund("refund-001", "manager-001", "not justified");
 
         assertThat(result.getStatus()).isEqualTo(Refund.RefundStatus.REJECTED);
         verifyNoInteractions(paymentGatewayResolver);
-        verify(orderServiceClient, never()).updateOrderPaymentStatus(anyString(), anyString(), anyString());
+        verify(orderPaymentSyncRelay, never()).requestOrderPaymentStatus(anyString(), anyString());
     }
 
     @Test
