@@ -16,9 +16,10 @@ RUN mvn dependency:go-offline -pl intelligence-service -am -q 2>/dev/null || tru
 COPY shared-models/src shared-models/src
 COPY shared-security/src shared-security/src
 COPY intelligence-service/src intelligence-service/src
-# Build executable fat jar; exclude *-plain.jar (no Main-Class)
+# Build executable fat jar; repackage uses classifier "exec" so the plain (non-executable) jar
+# stays the module's main artifact and can't be picked up by mistake.
 RUN mvn -pl intelligence-service -am package -DskipTests -q \
-    && JAR=$(ls intelligence-service/target/intelligence-service-*.jar | grep -v plain | head -n1) \
+    && JAR=$(ls intelligence-service/target/intelligence-service-*-exec.jar | head -n1) \
     && echo "Using $JAR" \
     && cp "$JAR" /build/app.jar
 

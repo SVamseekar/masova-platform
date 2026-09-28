@@ -12,6 +12,7 @@ import com.MaSoVa.commerce.order.repository.OrderRepository;
 import com.MaSoVa.commerce.order.repository.OrderJpaRepository;
 import com.MaSoVa.commerce.order.repository.OrderPostgresOutboxRepository;
 import com.MaSoVa.shared.entity.Store;
+import com.MaSoVa.shared.exception.BusinessException;
 import com.MaSoVa.shared.model.VatBreakdown;
 import com.MaSoVa.commerce.order.websocket.OrderWebSocketController;
 import com.MaSoVa.commerce.order.client.MenuServiceClient;
@@ -25,6 +26,7 @@ import com.MaSoVa.commerce.order.config.DeliveryFeeConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.MaSoVa.shared.messaging.events.OrderCreatedEvent;
 import com.MaSoVa.shared.messaging.events.OrderStatusChangedEvent;
+import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -189,15 +191,27 @@ public class OrderService {
             }
         }
 
-        // Global-2: Route to EU VAT engine for non-India stores, GST for India stores
-        Store store = null;
-        try {
-            store = storeServiceClient.getStore(request.getStoreId());
-        } catch (Exception e) {
-            log.warn("Could not fetch store for tax routing storeId={}: {}", request.getStoreId(), e.getMessage());
+        // Global-2: Route to EU VAT engine for non-India stores, GST for India stores.
+        // getStore() never throws (it catches its own errors and returns null), so a null result
+        // is the only failure signal here.
+        Store store = storeServiceClient.getStore(request.getStoreId());
+        if (store == null) {
+            // Can't tell an EU store from an India one when the lookup fails — defaulting to
+            // INR/GST here would silently mis-tax and mis-bill a real EU store's order (#125).
+            throw new BusinessException("STORE_LOOKUP_FAILED",
+                    "Could not verify store " + request.getStoreId() + " for tax and currency routing; order rejected");
         }
 
-        String countryCode = (store != null) ? store.getCountryCode() : null;
+        String countryCode = store.getCountryCode();
+        if (countryCode != null && fiscalSigningService.blocksLiveTrading(countryCode)) {
+            // Legal gate: a regulated-country store cannot take live orders without a certified
+            // fiscal signer. No certified providers are wired in yet for any country (a separate
+            // epic) — until then this rejects every order for such a store (#126).
+            throw new com.MaSoVa.commerce.fiscal.FiscalNotConfiguredException(
+                    "Store " + request.getStoreId() + " (" + countryCode
+                            + ") requires a certified fiscal signer that is not configured; order rejected");
+        }
+
         double tax;
         double total;
         VatBreakdown vatBreakdown = null;
@@ -273,11 +287,8 @@ public class OrderService {
         // Initialize quality checkpoints for the order
         initializeQualityCheckpoints(order);
 
-        // Global-3: propagate store currency (null = India/INR legacy)
-        if (store == null) {
-            log.warn("Could not fetch store {} for currency propagation, defaulting to INR", request.getStoreId());
-            order.setCurrency("INR");
-        } else if (store.getCurrency() != null) {
+        // Global-3: propagate store currency (store is guaranteed non-null above; null currency = India/INR legacy)
+        if (store.getCurrency() != null) {
             order.setCurrency(store.getCurrency());
         }
 
@@ -292,33 +303,7 @@ public class OrderService {
 
         // PostgreSQL dual-write (Global-3: includes currency)
         try {
-            OrderJpaEntity jpaEntity = OrderJpaEntity.builder()
-                    .mongoId(savedOrder.getId())
-                    .orderNumber(savedOrder.getOrderNumber())
-                    .customerId(savedOrder.getCustomerId())
-                    .customerName(savedOrder.getCustomerName())
-                    .customerPhone(savedOrder.getCustomerPhone())
-                    .customerEmail(savedOrder.getCustomerEmail())
-                    .storeId(savedOrder.getStoreId())
-                    .status(savedOrder.getStatus() != null ? savedOrder.getStatus().name() : "RECEIVED")
-                    .orderType(savedOrder.getOrderType() != null ? savedOrder.getOrderType().name() : null)
-                    .paymentMethod(savedOrder.getPaymentMethod() != null ? savedOrder.getPaymentMethod().name() : null)
-                    .subtotal(savedOrder.getSubtotal())
-                    .deliveryFee(savedOrder.getDeliveryFee())
-                    .tax(savedOrder.getTax())
-                    .total(savedOrder.getTotal())
-                    .currency(savedOrder.getCurrency())
-                    .vatCountryCode(savedOrder.getVatCountryCode())
-                    .totalNetAmount(savedOrder.getTotalNetAmount())
-                    .totalVatAmount(savedOrder.getTotalVatAmount())
-                    .totalGrossAmount(savedOrder.getTotalGrossAmount())
-                    .vatBreakdown(serializeVatBreakdown(savedOrder))
-                    .specialInstructions(savedOrder.getSpecialInstructions())
-                    .receivedAt(savedOrder.getReceivedAt() != null
-                            ? savedOrder.getReceivedAt().atOffset(java.time.ZoneOffset.UTC) : null)
-                    .build();
-            jpaEntity.setItems(orderItemSyncService.buildItemEntities(savedOrder.getItems(), jpaEntity));
-            orderJpaRepository.save(jpaEntity);
+            orderJpaRepository.save(buildJpaEntity(savedOrder));
         } catch (Exception e) {
             recordPostgresRetry(savedOrder, "CREATE", e);
         }
@@ -365,19 +350,6 @@ public class OrderService {
         }
     }
 
-    /** Serializes order.vatBreakdown to JSON for the PostgreSQL jsonb column. Returns null for India orders. */
-    private String serializeVatBreakdown(Order order) {
-        if (order.getVatBreakdown() == null) {
-            return null;
-        }
-        try {
-            return objectMapper.writeValueAsString(order.getVatBreakdown());
-        } catch (Exception e) {
-            log.warn("Failed to serialize vatBreakdown for order {}: {}", order.getOrderNumber(), e.getMessage());
-            return null;
-        }
-    }
-
     /**
      * Re-syncs status/payment/totals/timestamps + line items to the PostgreSQL dual-write
      * row for an order, keyed by mongoId. No-op (with a warn log) if the PG row is missing,
@@ -415,6 +387,57 @@ public class OrderService {
             return;
         }
         throw new IllegalStateException("PostgreSQL dual-write failed for order " + order.getId(), error);
+    }
+
+    /**
+     * Builds a fresh PostgreSQL dual-write row from a Mongo order snapshot — shared by
+     * createOrder's initial write and OrderPostgresOutboxProjector's backfill of a row that
+     * never got created. The builder sets only fields updateFields doesn't cover; everything
+     * else (payment, delivery, driver, priority, progress timestamps, items) is applied by
+     * applyFullState so a delayed backfill isn't limited to create-time fields (feature-dev
+     * review on 12ea1ec0).
+     */
+    private OrderJpaEntity buildJpaEntity(Order savedOrder) {
+        OrderJpaEntity jpaEntity = OrderJpaEntity.builder()
+                .mongoId(savedOrder.getId())
+                .orderNumber(savedOrder.getOrderNumber())
+                .customerId(savedOrder.getCustomerId())
+                .storeId(savedOrder.getStoreId())
+                .status(savedOrder.getStatus() != null ? savedOrder.getStatus().name() : "RECEIVED")
+                .orderType(savedOrder.getOrderType() != null ? savedOrder.getOrderType().name() : null)
+                .currency(savedOrder.getCurrency())
+                .specialInstructions(savedOrder.getSpecialInstructions())
+                .build();
+        orderItemSyncService.applyFullState(jpaEntity, savedOrder);
+        // receivedAt has historically been stored in UTC at create time, while applyFullState
+        // (like every other sync) converts via Asia/Kolkata — a pre-existing inconsistency
+        // between the two paths, out of scope here; preserved as-is rather than silently
+        // changed by this refactor.
+        jpaEntity.setReceivedAt(savedOrder.getReceivedAt() != null
+                ? savedOrder.getReceivedAt().atOffset(java.time.ZoneOffset.UTC) : null);
+        return jpaEntity;
+    }
+
+    /**
+     * Repairs the PostgreSQL projection for one order from its current MongoDB state — MongoDB
+     * is the system of record (D08); Postgres is a projection fed by the outbox below. Called by
+     * {@code OrderPostgresOutboxProjector} to drain {@link OrderPostgresOutbox} entries recorded
+     * when the in-request best-effort write (createOrder/syncToPostgres) failed.
+     *
+     * Always re-derives the projection from the CURRENT Mongo order rather than replaying a
+     * stale outbox payload, so out-of-order or duplicate outbox entries are naturally idempotent.
+     *
+     * @throws IllegalStateException if the Mongo order no longer exists (nothing to project)
+     */
+    @Transactional
+    public void reprojectToPostgres(String orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Mongo order " + orderId + " no longer exists; cannot reproject to Postgres"));
+        boolean synced = orderItemSyncService.syncOrderByMongoId(order.getId(), order);
+        if (!synced) {
+            orderJpaRepository.save(buildJpaEntity(order));
+        }
     }
 
     public Order getOrderById(String orderId) {
@@ -838,6 +861,24 @@ public class OrderService {
         }
 
         return updatedOrder;
+    }
+
+    /**
+     * Applies a payment status from payment-service. Idempotent and safe for out-of-order delivery:
+     * REFUNDED is final, and a late FAILED never overrides PAID.
+     */
+    public void applyPaymentStatusEvent(String orderId, String paymentStatus, String transactionId) {
+        Order.PaymentStatus target = Order.PaymentStatus.valueOf(paymentStatus);
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AmqpRejectAndDontRequeueException("Order not found: " + orderId));
+        Order.PaymentStatus current = order.getPaymentStatus();
+        if (current == target
+                || current == Order.PaymentStatus.REFUNDED
+                || (current == Order.PaymentStatus.PAID && target == Order.PaymentStatus.FAILED)) {
+            log.info("Order {} payment status stays {} (event wanted {})", orderId, current, target);
+            return;
+        }
+        updatePaymentStatus(orderId, target, transactionId);
     }
 
     @Transactional
@@ -1457,6 +1498,7 @@ public class OrderService {
     @Transactional
     public Order markOrderDelivered(String orderId, LocalDateTime deliveredAt, String proofType) {
         Order order = getOrderById(orderId);
+        OrderStatus previousStatus = order.getStatus();
 
         // Update status to delivered
         order.setStatus(OrderStatus.DELIVERED);
@@ -1469,9 +1511,18 @@ public class OrderService {
         log.info("Order {} marked as delivered at {} using {} verification", orderId, deliveredAt, proofType);
 
         // Send delivery confirmation notification
-        customerNotificationService.sendOrderStatusNotification(savedOrder, OrderStatus.DELIVERED);
+        customerNotificationService.sendOrderStatusNotification(savedOrder, previousStatus);
 
-        // Same terminal-status signing as updateOrderStatus. Notification already publishes the status event.
+        // Publish directly, as updateOrderStatus does: sendOrderStatusNotification skips entirely
+        // for walk-in orders with no customerId, so the AMQP event can't depend on it (#131).
+        try {
+            orderEventPublisher.publishOrderStatusChanged(
+                    buildStatusChangedEvent(savedOrder, previousStatus.toString(), OrderStatus.DELIVERED.toString()));
+        } catch (Exception e) {
+            log.warn("Failed to publish status changed event for {}: {}", savedOrder.getOrderNumber(), e.getMessage());
+        }
+
+        // Same terminal-status signing as updateOrderStatus.
         fiscalSigningService.signOrder(savedOrder);
 
         // Broadcast WebSocket update

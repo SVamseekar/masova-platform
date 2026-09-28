@@ -298,6 +298,22 @@ class NotificationServiceTest {
         }
 
         @Test
+        @DisplayName("sets an errorMessage when the channel returns false, not just when it throws (silent-failure review)")
+        void setsErrorMessageOnPlainFailure() {
+            Notification n = buildNotification("n1", "user-1",
+                    Notification.NotificationType.ORDER_STATUS_UPDATE, Notification.NotificationChannel.SMS);
+            when(notificationRepository.findById("n1")).thenReturn(Optional.of(n));
+            when(userPreferencesRepository.findByUserId("user-1")).thenReturn(Optional.empty());
+            when(smsService.sendSms(any())).thenReturn(false);
+            when(notificationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            notificationService.sendNotification("n1");
+
+            verify(notificationRepository).save(argThat(notif ->
+                    notif.getErrorMessage() != null && !notif.getErrorMessage().isBlank()));
+        }
+
+        @Test
         @DisplayName("does not throw when notification not found")
         void doesNotThrowWhenNotFound() {
             when(notificationRepository.findById("missing")).thenReturn(Optional.empty());

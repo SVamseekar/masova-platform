@@ -1,11 +1,13 @@
 package com.MaSoVa.payment.service;
 
 import com.MaSoVa.payment.dto.RefundRequest;
+import com.MaSoVa.payment.entity.OrderPaymentSync;
 import com.MaSoVa.payment.entity.Refund;
 import com.MaSoVa.payment.entity.Transaction;
 import com.MaSoVa.payment.gateway.PaymentGateway;
 import com.MaSoVa.payment.gateway.PaymentGatewayResolver;
 import com.MaSoVa.payment.repository.RefundRepository;
+import com.MaSoVa.payment.messaging.OrderPaymentSyncRelay;
 import com.MaSoVa.payment.repository.TransactionRepository;
 import org.bson.Document;
 import org.bson.types.Decimal128;
@@ -35,18 +37,18 @@ public class RefundService {
     private final RefundRepository refundRepository;
     private final TransactionRepository transactionRepository;
     private final PaymentGatewayResolver paymentGatewayResolver;
-    private final OrderServiceClient orderServiceClient;
+    private final OrderPaymentSyncRelay orderPaymentSyncRelay;
     private final MongoTemplate mongoTemplate;
 
     public RefundService(RefundRepository refundRepository,
                          TransactionRepository transactionRepository,
                          PaymentGatewayResolver paymentGatewayResolver,
-                         OrderServiceClient orderServiceClient,
+                         OrderPaymentSyncRelay orderPaymentSyncRelay,
                          MongoTemplate mongoTemplate) {
         this.refundRepository = refundRepository;
         this.transactionRepository = transactionRepository;
         this.paymentGatewayResolver = paymentGatewayResolver;
-        this.orderServiceClient = orderServiceClient;
+        this.orderPaymentSyncRelay = orderPaymentSyncRelay;
         this.mongoTemplate = mongoTemplate;
     }
 
@@ -105,7 +107,12 @@ public class RefundService {
                 .build();
         ensureIdempotencyKey(refund);
 
-        refund = Objects.requireNonNull(refundRepository.save(refund));
+        try {
+            refund = Objects.requireNonNull(refundRepository.save(refund));
+        } catch (RuntimeException e) {
+            releaseRefundCapacityQuietly(transaction.getId(), request.getAmount(), e);
+            throw e;
+        }
         log.info("Refund recorded as PENDING_APPROVAL. Refund ID: {} (no money moved)", refund.getId());
         return refund;
     }
@@ -183,20 +190,24 @@ public class RefundService {
         if (pending.getStatus() != Refund.RefundStatus.PENDING_APPROVAL) {
             throw new RuntimeException("Refund is not pending approval (status: " + pending.getStatus() + ")");
         }
-        pending.setStatus(Refund.RefundStatus.REJECTED);
-        if (pending.getTransactionId() != null && pending.getAmount() != null) {
-            mongoTemplate.updateFirst(
-                    Query.query(Criteria.where("_id").is(pending.getTransactionId())),
-                    new Update().inc("refundClaimedAmount", pending.getAmount().negate()),
-                    Transaction.class);
-        }
+        Update reject = new Update().set("status", Refund.RefundStatus.REJECTED);
         if (rejectionReason != null && !rejectionReason.isBlank()) {
-            pending.setNotes((pending.getNotes() != null ? pending.getNotes() + " | " : "")
+            reject.set("notes", (pending.getNotes() != null ? pending.getNotes() + " | " : "")
                     + "Rejected by " + rejectedBy + ": " + rejectionReason);
         }
-        Refund saved = refundRepository.save(pending);
-        log.info("Refund {} rejected by {} (no money moved)", saved.getId(), rejectedBy);
-        return saved;
+        // Guarded transition: a concurrent approve may already have claimed this row.
+        Refund rejected = mongoTemplate.findAndModify(
+                Query.query(Criteria.where("_id").is(refundId)
+                        .and("status").is(Refund.RefundStatus.PENDING_APPROVAL.name())),
+                reject, FindAndModifyOptions.options().returnNew(true), Refund.class);
+        if (rejected == null) {
+            throw new RuntimeException("Refund is no longer pending approval: " + refundId);
+        }
+        if (pending.getTransactionId() != null && pending.getAmount() != null) {
+            releaseRefundCapacity(pending.getTransactionId(), pending.getAmount());
+        }
+        log.info("Refund {} rejected by {} (no money moved)", refundId, rejectedBy);
+        return rejected;
     }
 
     private Transaction loadAndValidateRefundable(RefundRequest request) {
@@ -263,10 +274,34 @@ public class RefundService {
                     .build();
         }
         String idempotencyKey = ensureIdempotencyKey(refund);
-        refund = Objects.requireNonNull(refundRepository.save(refund));
+        try {
+            refund = Objects.requireNonNull(refundRepository.save(refund));
+        } catch (RuntimeException e) {
+            releaseRefundCapacityQuietly(transaction.getId(), request.getAmount(), e);
+            throw e;
+        }
 
-        GatewayRefundOutcome outcome = performGatewayRefund(
-                transaction, paymentId, request.getAmount(), speed, idempotencyKey);
+        GatewayRefundOutcome outcome;
+        try {
+            outcome = performGatewayRefund(transaction, paymentId, request.getAmount(), speed, idempotencyKey);
+        } catch (Exception e) {
+            if (isDefinitiveGatewayRejection(e)) {
+                // The PSP refused the refund, so no money moved: free the claim.
+                releaseRefundCapacityQuietly(transaction.getId(), request.getAmount(), e);
+                markRefundQuietly(refund, Refund.RefundStatus.FAILED, "Gateway refund rejected: " + e.getMessage(), e);
+            } else {
+                // Timeout, network or 5xx: the PSP may have refunded. Keep the claim so a retry
+                // cannot refund twice, and leave the row for reconciliation by idempotency key.
+                log.error("Refund {} outcome unknown after gateway error; claim kept. idempotencyKey={}",
+                        refund.getId(), idempotencyKey, e);
+                markRefundQuietly(refund, Refund.RefundStatus.PROCESSING,
+                        "Gateway outcome unknown, reconcile with idempotency key " + idempotencyKey + ": "
+                                + e.getMessage(), e);
+            }
+            throw e;
+        }
+        log.info("Gateway refund {} accepted for refund {} (transaction {})",
+                outcome.gatewayRefundId(), refund.getId(), transaction.getId());
 
         refund.setRazorpayRefundId(outcome.gatewayRefundId());
         refund.setStatus(outcome.status());
@@ -280,11 +315,15 @@ public class RefundService {
             refund.setRazorpayPaymentId(paymentId);
         }
 
-        refund = Objects.requireNonNull(refundRepository.save(refund));
+        try {
+            refund = Objects.requireNonNull(refundRepository.save(refund));
+        } catch (RuntimeException e) {
+            log.error("Money moved but refund {} could not be saved. gatewayRefundId={}, transaction={}",
+                    refund.getId(), outcome.gatewayRefundId(), transaction.getId(), e);
+            throw e;
+        }
 
         updateTransactionStatusAfterRefund(transaction, request.getAmount());
-        orderServiceClient.updateOrderPaymentStatus(transaction.getOrderId(), "REFUNDED", transaction.getId());
-
         log.info("Refund executed. Refund ID: {}, gatewayRefundId: {}, gateway: {}, status: {}",
                 refund.getId(), outcome.gatewayRefundId(), outcome.gatewayName(), refund.getStatus());
         return refund;
@@ -313,7 +352,8 @@ public class RefundService {
         return new GatewayRefundOutcome(gatewayRefundId, status, gateway.getGatewayName());
     }
 
-    private static String resolveGatewayName(Transaction transaction) {
+    /** Package-visible for RefundReconciliationRelay, which needs the same routing rule to look up a stuck refund's gateway. */
+    static String resolveGatewayName(Transaction transaction) {
         if (transaction.getPaymentGateway() != null && !transaction.getPaymentGateway().isBlank()) {
             return transaction.getPaymentGateway();
         }
@@ -386,9 +426,13 @@ public class RefundService {
     /**
      * Update refund status (called by webhook or scheduled job).
      * {@code gatewayRefundId} is stored in {@code razorpayRefundId} for both PSPs.
+     *
+     * @return true if {@code status} was a recognized value and applied; false if it was not
+     *         recognized, in which case the refund is left as-is and the caller must not treat
+     *         this as a successful reconciliation (see RefundReconciliationRelay).
      */
     @Transactional
-    public void updateRefundStatus(String gatewayRefundId, String status) {
+    public boolean updateRefundStatus(String gatewayRefundId, String status) {
         Refund refund = refundRepository.findByRazorpayRefundId(gatewayRefundId)
                 .orElseThrow(() -> new RuntimeException("Refund not found: " + gatewayRefundId));
 
@@ -398,16 +442,31 @@ public class RefundService {
             refund.setProcessedAt(LocalDateTime.now());
         } else if ("processing".equalsIgnoreCase(status) || "pending".equalsIgnoreCase(status)) {
             newStatus = Refund.RefundStatus.PROCESSING;
-        } else if ("failed".equalsIgnoreCase(status)) {
-            newStatus = Refund.RefundStatus.FAILED;
+        } else if ("failed".equalsIgnoreCase(status)
+                || "canceled".equalsIgnoreCase(status) || "cancelled".equalsIgnoreCase(status)) {
+            // Only the first move from an in-flight state to FAILED releases the claim.
+            Refund failed = mongoTemplate.findAndModify(
+                    Query.query(Criteria.where("_id").is(refund.getId()).and("status").in(
+                            Refund.RefundStatus.INITIATED.name(), Refund.RefundStatus.PROCESSING.name())),
+                    new Update().set("status", Refund.RefundStatus.FAILED),
+                    FindAndModifyOptions.options().returnNew(true), Refund.class);
+            if (failed != null && refund.getTransactionId() != null && refund.getAmount() != null) {
+                releaseRefundCapacity(refund.getTransactionId(), refund.getAmount());
+            }
+            log.info("Refund status updated. Refund ID: {}, Status: FAILED", refund.getId());
+            return true;
         } else {
             log.warn("Unknown refund status: {}", status);
-            return;
+            // Still touch updatedAt (via save) so a reconciliation poll backs off instead of
+            // re-querying this refund on every cycle for a status string it will never recognize.
+            refundRepository.save(refund);
+            return false;
         }
 
         refund.setStatus(newStatus);
         refundRepository.save(refund);
         log.info("Refund status updated. Refund ID: {}, Status: {}", refund.getId(), newStatus);
+        return true;
     }
 
     /**
@@ -435,7 +494,14 @@ public class RefundService {
             transaction.setStatus(Transaction.PaymentStatus.PARTIAL_REFUND);
         }
 
-        transactionRepository.save(transaction);
+        // Targeted update: a full save of this entity would overwrite refundClaimedAmount,
+        // which claimRefundCapacity changed after the entity was loaded.
+        mongoTemplate.updateFirst(
+                Query.query(Criteria.where("_id").is(transaction.getId())),
+                new Update().set("status", transaction.getStatus())
+                        // Outbox: queued in the same write as the refund status.
+                        .set("orderSync", OrderPaymentSync.pending("REFUNDED")),
+                Transaction.class);
         log.info("Transaction status updated after refund. Transaction ID: {}, Status: {}, totalRefunded: {}",
                 transaction.getId(), transaction.getStatus(), totalRefunded);
     }
@@ -463,6 +529,53 @@ public class RefundService {
             throw new RuntimeException("Refund amount exceeds available amount. Available claim rejected for "
                     + transaction.getId());
         }
+    }
+
+    private void releaseRefundCapacity(String transactionId, BigDecimal amount) {
+        var result = mongoTemplate.updateFirst(
+                Query.query(Criteria.where("_id").is(transactionId)),
+                new Update().inc("refundClaimedAmount", amount.negate()),
+                Transaction.class);
+        if (result != null && result.getMatchedCount() == 0) {
+            log.error("Refund claim release matched no transaction. transactionId={}, amount={}", transactionId, amount);
+        }
+    }
+
+    /** Release without letting a second failure hide the original one. */
+    private void releaseRefundCapacityQuietly(String transactionId, BigDecimal amount, Exception original) {
+        try {
+            releaseRefundCapacity(transactionId, amount);
+        } catch (RuntimeException releaseError) {
+            log.error("Could not release refund claim. transactionId={}, amount={}", transactionId, amount, releaseError);
+            original.addSuppressed(releaseError);
+        }
+    }
+
+    private void markRefundQuietly(Refund refund, Refund.RefundStatus status, String note, Exception original) {
+        refund.setStatus(status);
+        refund.setNotes((refund.getNotes() != null ? refund.getNotes() + " | " : "") + note);
+        try {
+            refundRepository.save(refund);
+        } catch (RuntimeException saveError) {
+            log.error("Could not mark refund {} {} after gateway error", refund.getId(), status, saveError);
+            original.addSuppressed(saveError);
+        }
+    }
+
+    /**
+     * True only when the PSP definitely refused the refund (a 4xx other than 409 conflict or 429 rate limit).
+     * Timeouts, network errors and 5xx are ambiguous: the refund may have gone through.
+     */
+    static boolean isDefinitiveGatewayRejection(Exception e) {
+        if (e instanceof com.stripe.exception.StripeException stripe) {
+            Integer code = stripe.getStatusCode();
+            return code != null && code >= 400 && code < 500 && code != 409 && code != 429;
+        }
+        if (e instanceof com.razorpay.RazorpayException) {
+            String message = e.getMessage();
+            return message != null && message.contains("BAD_REQUEST_ERROR");
+        }
+        return e instanceof IllegalArgumentException;
     }
 
     /** Same key for every attempt of this refund row. A new row gets a new key. */

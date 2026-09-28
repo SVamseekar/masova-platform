@@ -144,13 +144,39 @@ class OrderServiceDeliveryProofTest {
     }
 
     @Test
-    void markOrderDelivered_sends_status_notification() {
+    void markOrderDelivered_sends_status_notification_with_the_real_previous_status() {
         Order order = buildDeliveryOrder("o1");
         when(orderRepository.findById("o1")).thenReturn(Optional.of(order));
 
         orderService.markOrderDelivered("o1", LocalDateTime.now(), "PHOTO");
 
-        verify(customerNotificationService).sendOrderStatusNotification(any(Order.class), eq(OrderStatus.DELIVERED));
+        // buildDeliveryOrder starts at DISPATCHED — previousStatus must be the real prior status, not DELIVERED (#131)
+        verify(customerNotificationService).sendOrderStatusNotification(any(Order.class), eq(OrderStatus.DISPATCHED));
+    }
+
+    @Test
+    void markOrderDelivered_publishes_status_changed_event_directly() {
+        Order order = buildDeliveryOrder("o1");
+        when(orderRepository.findById("o1")).thenReturn(Optional.of(order));
+
+        orderService.markOrderDelivered("o1", LocalDateTime.now(), "OTP");
+
+        verify(orderEventPublisher).publishOrderStatusChanged(argThat(event ->
+                "DISPATCHED".equals(event.getPreviousStatus()) && "DELIVERED".equals(event.getNewStatus())));
+    }
+
+    @Test
+    void markOrderDelivered_publishes_status_changed_event_for_a_walk_in_order_with_no_customerId() {
+        Order order = buildDeliveryOrder("o1");
+        order.setCustomerId(null);
+        when(orderRepository.findById("o1")).thenReturn(Optional.of(order));
+
+        orderService.markOrderDelivered("o1", LocalDateTime.now(), "OTP");
+
+        // sendOrderStatusNotification skips entirely for walk-ins with no customerId (#131) —
+        // the AMQP event must not depend on that path
+        verify(orderEventPublisher).publishOrderStatusChanged(argThat(event ->
+                "DISPATCHED".equals(event.getPreviousStatus()) && "DELIVERED".equals(event.getNewStatus())));
     }
 
     @Test

@@ -53,7 +53,7 @@ public class TransactionJpaEntity {
     @Column(name = "customer_email")
     private String customerEmail;
 
-    @Column(name = "customer_phone", length = 20)
+    @Column(name = "customer_phone", length = 255)
     private String customerPhone;
 
     @Column(name = "store_id", nullable = false, length = 36)

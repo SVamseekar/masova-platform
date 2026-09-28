@@ -66,20 +66,11 @@ class RatingTokenControllerTest extends BaseServiceTest {
     }
 
     @Test
-    @DisplayName("POST /api/orders/rating-token/{token}/mark-used requires internal header")
-    void markTokenAsUsed_requiresInternalHeader() throws Exception {
-        mockMvc.perform(post("/api/orders/rating-token/valid-token/mark-used")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @DisplayName("POST /api/orders/rating-token/{token}/mark-used succeeds for internal caller")
+    @DisplayName("POST /api/orders/rating-token/{token}/mark-used marks the token (auth tested in InternalEndpointSecurityTest)")
     void markTokenAsUsed_returns200() throws Exception {
         doNothing().when(ratingTokenService).markTokenAsUsed("valid-token");
 
-        mockMvc.perform(post("/api/orders/rating-token/valid-token/mark-used")
-                        .header("X-Internal-Service", "core-service"))
+        mockMvc.perform(post("/api/orders/rating-token/valid-token/mark-used"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 

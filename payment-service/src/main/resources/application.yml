@@ -91,11 +91,6 @@ stripe:
   webhook-secret: ${STRIPE_WEBHOOK_SECRET:whsec_placeholder_replace_in_env}
   publishable-key: ${STRIPE_PUBLISHABLE_KEY:pk_test_placeholder_replace_in_env}
 
-
-internal:
-  payment-callback:
-    secret: ${INTERNAL_PAYMENT_CALLBACK_SECRET:}
-
 # Service URLs
 services:
   order-service:
@@ -163,6 +158,12 @@ resilience4j:
     instances:
       orderService:
         base-config: default
+
+
+# Service-to-service auth: trust core-service tokens (base64 X.509 EC public keys, comma-separated for rotation).
+service-auth:
+  trusted:
+    core-service: ${SERVICE_AUTH_TRUSTED_CORE:}
 
 ---
 # Production Profile

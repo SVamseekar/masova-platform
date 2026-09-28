@@ -6,12 +6,14 @@ import com.MaSoVa.logistics.delivery.dto.AddressDTO;
 import com.MaSoVa.logistics.delivery.dto.AutoDispatchRequest;
 import com.MaSoVa.logistics.delivery.dto.AutoDispatchResponse;
 import com.MaSoVa.logistics.delivery.repository.DeliveryTrackingRepository;
+import com.MaSoVa.logistics.delivery.entity.DeliveryTracking;
 import com.MaSoVa.logistics.delivery.service.AutoDispatchService;
 import com.MaSoVa.logistics.delivery.service.FreeRoutingService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -28,6 +30,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -202,6 +205,82 @@ class AutoDispatchServiceTest {
             AutoDispatchResponse result = autoDispatchService.autoDispatch(req);
 
             assertThat(result.getDriverId()).isEqualTo("driver-1");
+        }
+
+        @Test
+        @DisplayName("resolves customerId from the order, not from the client request (#118)")
+        void resolvesCustomerIdFromOrderNotClient() {
+            AutoDispatchRequest req = buildRequest("order-1", "store-1");
+
+            Map<String, Object> driver = buildDriver("driver-1", 4.5);
+            when(userServiceClient.getAvailableDrivers("store-1")).thenReturn(List.of(driver));
+            when(userServiceClient.getDriverLastLocation("driver-1"))
+                .thenReturn(Map.of("latitude", 19.076, "longitude", 72.877));
+            when(deliveryTrackingRepository.findByDriverIdAndStatus(anyString(), anyString()))
+                .thenReturn(List.of());
+            when(orderServiceClient.getOrderDetails("order-1"))
+                .thenReturn(Map.of("customerId", "cust-from-order"));
+            ArgumentCaptor<DeliveryTracking> captor = ArgumentCaptor.forClass(DeliveryTracking.class);
+            when(deliveryTrackingRepository.save(captor.capture())).thenAnswer(inv -> inv.getArgument(0));
+            doNothing().when(orderServiceClient).assignDriverToOrder(anyString(), anyString());
+
+            FreeRoutingService.RouteResult route = new FreeRoutingService.RouteResult(2500.0, 480.0, List.of(), List.of());
+            when(freeRoutingService.getRoute(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
+                .thenReturn(route);
+
+            autoDispatchService.autoDispatch(req);
+
+            assertThat(captor.getValue().getCustomerId()).isEqualTo("cust-from-order");
+        }
+
+        @Test
+        @DisplayName("resolves customerId from the order for a preferred-driver (manual) dispatch too")
+        void resolvesCustomerIdFromOrderForManualDispatch() {
+            AutoDispatchRequest req = buildRequest("order-1", "store-1");
+            req.setPreferredDriverId("driver-preferred");
+
+            Map<String, Object> driver = buildDriver("driver-preferred", 4.8);
+            when(userServiceClient.getDriverDetails("driver-preferred")).thenReturn(driver);
+            when(userServiceClient.getDriverLastLocation("driver-preferred"))
+                .thenReturn(Map.of("latitude", 19.076, "longitude", 72.877));
+            when(orderServiceClient.getOrderDetails("order-1"))
+                .thenReturn(Map.of("customerId", "cust-from-order"));
+            ArgumentCaptor<DeliveryTracking> captor = ArgumentCaptor.forClass(DeliveryTracking.class);
+            when(deliveryTrackingRepository.save(captor.capture())).thenAnswer(inv -> inv.getArgument(0));
+            doNothing().when(orderServiceClient).assignDriverToOrder(anyString(), anyString());
+
+            FreeRoutingService.RouteResult route = new FreeRoutingService.RouteResult(3000.0, 600.0, List.of(), List.of());
+            when(freeRoutingService.getRoute(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
+                .thenReturn(route);
+
+            autoDispatchService.autoDispatch(req);
+
+            assertThat(captor.getValue().getCustomerId()).isEqualTo("cust-from-order");
+        }
+
+        @Test
+        @DisplayName("dispatch still succeeds with no customerId when the order lookup returns nothing")
+        void dispatchSucceedsWhenOrderLookupEmpty() {
+            AutoDispatchRequest req = buildRequest("order-1", "store-1");
+
+            Map<String, Object> driver = buildDriver("driver-1", 4.5);
+            when(userServiceClient.getAvailableDrivers("store-1")).thenReturn(List.of(driver));
+            when(userServiceClient.getDriverLastLocation("driver-1"))
+                .thenReturn(Map.of("latitude", 19.076, "longitude", 72.877));
+            when(deliveryTrackingRepository.findByDriverIdAndStatus(anyString(), anyString()))
+                .thenReturn(List.of());
+            when(orderServiceClient.getOrderDetails("order-1")).thenReturn(Map.of());
+            ArgumentCaptor<DeliveryTracking> captor = ArgumentCaptor.forClass(DeliveryTracking.class);
+            when(deliveryTrackingRepository.save(captor.capture())).thenAnswer(inv -> inv.getArgument(0));
+            doNothing().when(orderServiceClient).assignDriverToOrder(anyString(), anyString());
+
+            FreeRoutingService.RouteResult route = new FreeRoutingService.RouteResult(2500.0, 480.0, List.of(), List.of());
+            when(freeRoutingService.getRoute(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
+                .thenReturn(route);
+
+            autoDispatchService.autoDispatch(req);
+
+            assertThat(captor.getValue().getCustomerId()).isNull();
         }
     }
 }

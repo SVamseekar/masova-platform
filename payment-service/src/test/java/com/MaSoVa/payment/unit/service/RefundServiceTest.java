@@ -1,7 +1,7 @@
 package com.MaSoVa.payment.unit.service;
 
 import com.MaSoVa.payment.service.RefundService;
-import com.MaSoVa.payment.service.OrderServiceClient;
+import com.MaSoVa.payment.messaging.OrderPaymentSyncRelay;
 import com.MaSoVa.payment.dto.RefundRequest;
 import com.MaSoVa.payment.entity.Refund;
 import com.MaSoVa.payment.entity.Transaction;
@@ -47,7 +47,7 @@ class RefundServiceTest {
     @Mock private TransactionRepository transactionRepository;
     @Mock private PaymentGatewayResolver paymentGatewayResolver;
     @Mock private PaymentGateway paymentGateway;
-    @Mock private OrderServiceClient orderServiceClient;
+    @Mock private OrderPaymentSyncRelay orderPaymentSyncRelay;
     @Mock private MongoTemplate mongoTemplate;
 
     @InjectMocks
@@ -87,6 +87,148 @@ class RefundServiceTest {
     }
 
     @Nested
+    @DisplayName("claim release")
+    class ClaimReleaseTests {
+
+        private boolean releases(Update update) {
+            Object inc = update.getUpdateObject().get("$inc");
+            return inc instanceof org.bson.Document doc
+                    && BigDecimal.valueOf(-200.00).compareTo((BigDecimal) doc.get("refundClaimedAmount")) == 0;
+        }
+
+        @Test
+        @DisplayName("releases the claim when the refund row cannot be saved")
+        void releasesClaimWhenRefundRowSaveFails() {
+            when(transactionRepository.findById("txn-001")).thenReturn(Optional.of(successTransaction));
+            when(refundRepository.findByTransactionId("txn-001")).thenReturn(Collections.emptyList());
+            when(refundRepository.save(any(Refund.class))).thenThrow(new RuntimeException("mongo write failed"));
+
+            assertThatThrownBy(() -> refundService.initiateRefund(refundRequest))
+                    .hasMessageContaining("mongo write failed");
+
+            verify(mongoTemplate).updateFirst(any(Query.class),
+                    org.mockito.ArgumentMatchers.argThat(this::releases), eq(Transaction.class));
+        }
+
+        @Test
+        @DisplayName("releases the claim and keeps the gateway error when marking FAILED also fails")
+        void releasesClaimWhenFailedMarkerCannotBeSaved() throws Exception {
+            when(transactionRepository.findById("txn-001")).thenReturn(Optional.of(successTransaction));
+            when(refundRepository.findByTransactionId("txn-001")).thenReturn(Collections.emptyList());
+            when(paymentGatewayResolver.resolveByGatewayName("RAZORPAY")).thenReturn(paymentGateway);
+            when(paymentGateway.refund(anyString(), any(BigDecimal.class), anyString(), anyString()))
+                    .thenThrow(new com.stripe.exception.InvalidRequestException(
+                            "charge already refunded", "charge", "req_1", "charge_already_refunded", 400, null));
+            when(refundRepository.save(any(Refund.class)))
+                    .thenAnswer(inv -> inv.getArgument(0))
+                    .thenThrow(new RuntimeException("mongo write failed"));
+
+            assertThatThrownBy(() -> refundService.initiateRefund(refundRequest))
+                    .hasMessageContaining("charge already refunded");
+
+            verify(mongoTemplate).updateFirst(any(Query.class),
+                    org.mockito.ArgumentMatchers.argThat(this::releases), eq(Transaction.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("gateway outcome")
+    class GatewayOutcomeTests {
+
+        private boolean releases(Update update) {
+            Object inc = update.getUpdateObject().get("$inc");
+            return inc instanceof org.bson.Document doc && doc.get("refundClaimedAmount") instanceof BigDecimal amount
+                    && amount.signum() < 0;
+        }
+
+        @BeforeEach
+        void razorpayTransaction() {
+            lenient().when(transactionRepository.findById("txn-001")).thenReturn(Optional.of(successTransaction));
+            lenient().when(refundRepository.findByTransactionId("txn-001")).thenReturn(Collections.emptyList());
+            lenient().when(paymentGatewayResolver.resolveByGatewayName("RAZORPAY")).thenReturn(paymentGateway);
+            lenient().when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
+        }
+
+        @Test
+        @DisplayName("a timeout keeps the claim and leaves the refund PROCESSING for reconciliation")
+        void ambiguousGatewayErrorKeepsClaim() throws Exception {
+            when(paymentGateway.refund(anyString(), any(BigDecimal.class), anyString(), anyString()))
+                    .thenThrow(new com.stripe.exception.ApiConnectionException("read timed out"));
+            org.mockito.ArgumentCaptor<Refund> saved = org.mockito.ArgumentCaptor.forClass(Refund.class);
+
+            assertThatThrownBy(() -> refundService.initiateRefund(refundRequest))
+                    .hasMessageContaining("read timed out");
+
+            verify(mongoTemplate, org.mockito.Mockito.never()).updateFirst(any(Query.class),
+                    org.mockito.ArgumentMatchers.argThat(this::releases), eq(Transaction.class));
+            verify(refundRepository, org.mockito.Mockito.atLeastOnce()).save(saved.capture());
+            assertThat(saved.getValue().getStatus()).isEqualTo(Refund.RefundStatus.PROCESSING);
+        }
+
+        @Test
+        @DisplayName("a failing release does not hide the gateway error")
+        void releaseFailureKeepsGatewayError() throws Exception {
+            when(paymentGateway.refund(anyString(), any(BigDecimal.class), anyString(), anyString()))
+                    .thenThrow(new com.stripe.exception.InvalidRequestException(
+                            "amount too large", "amount", "req_2", "amount_too_large", 400, null));
+            when(mongoTemplate.updateFirst(any(Query.class), any(Update.class), eq(Transaction.class)))
+                    .thenThrow(new RuntimeException("mongo down"));
+
+            assertThatThrownBy(() -> refundService.initiateRefund(refundRequest))
+                    .hasMessageContaining("amount too large");
+        }
+
+        @Test
+        @DisplayName("reject releases nothing when approve already moved the refund out of PENDING_APPROVAL")
+        void rejectLosingRaceWithApproveDoesNotRelease() {
+            Refund pending = Refund.builder().transactionId("txn-001").amount(BigDecimal.valueOf(200.00))
+                    .status(Refund.RefundStatus.PENDING_APPROVAL).build();
+            pending.setId("refund-race");
+            when(refundRepository.findById("refund-race")).thenReturn(Optional.of(pending));
+            when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
+                    eq(Refund.class))).thenReturn(null);
+
+            assertThatThrownBy(() -> refundService.rejectRefund("refund-race", "manager-1", "no"))
+                    .isInstanceOf(RuntimeException.class);
+
+            verify(mongoTemplate, org.mockito.Mockito.never()).updateFirst(any(Query.class),
+                    org.mockito.ArgumentMatchers.argThat(this::releases), eq(Transaction.class));
+        }
+
+        @Test
+        @DisplayName("a failed-refund webhook releases the claim of a refund still in flight")
+        void failedWebhookReleasesClaim() {
+            Refund inFlight = Refund.builder().transactionId("txn-001").amount(BigDecimal.valueOf(200.00))
+                    .razorpayRefundId("rfnd_async").status(Refund.RefundStatus.PROCESSING).build();
+            inFlight.setId("refund-async");
+            when(refundRepository.findByRazorpayRefundId("rfnd_async")).thenReturn(Optional.of(inFlight));
+            when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
+                    eq(Refund.class))).thenReturn(inFlight);
+
+            refundService.updateRefundStatus("rfnd_async", "failed");
+
+            verify(mongoTemplate).updateFirst(any(Query.class),
+                    org.mockito.ArgumentMatchers.argThat(this::releases), eq(Transaction.class));
+        }
+
+        @Test
+        @DisplayName("a canceled-refund status (Stripe) releases the claim like a failure would")
+        void canceledStatusReleasesClaimLikeFailure() {
+            Refund inFlight = Refund.builder().transactionId("txn-001").amount(BigDecimal.valueOf(200.00))
+                    .razorpayRefundId("re_canceled").status(Refund.RefundStatus.PROCESSING).build();
+            inFlight.setId("refund-canceled");
+            when(refundRepository.findByRazorpayRefundId("re_canceled")).thenReturn(Optional.of(inFlight));
+            when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
+                    eq(Refund.class))).thenReturn(inFlight);
+
+            refundService.updateRefundStatus("re_canceled", "canceled");
+
+            verify(mongoTemplate).updateFirst(any(Query.class),
+                    org.mockito.ArgumentMatchers.argThat(this::releases), eq(Transaction.class));
+        }
+    }
+
+    @Nested
     @DisplayName("initiateRefund")
     class InitiateRefundTests {
 
@@ -104,7 +246,6 @@ class RefundServiceTest {
                 r.setId("refund-001");
                 return r;
             });
-            when(transactionRepository.save(any(Transaction.class))).thenReturn(successTransaction);
 
             Refund result = refundService.initiateRefund(refundRequest);
 
@@ -112,7 +253,12 @@ class RefundServiceTest {
             assertThat(result.getRazorpayRefundId()).isEqualTo("rfnd_razorpay_001");
             assertThat(result.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(200.00));
             assertThat(result.getStatus()).isEqualTo(Refund.RefundStatus.PROCESSING);
-            verify(orderServiceClient).updateOrderPaymentStatus("order-123", "REFUNDED", "txn-001");
+            verify(mongoTemplate).updateFirst(any(Query.class),
+                    org.mockito.ArgumentMatchers.<Update>argThat(u -> {
+                        org.bson.Document set = (org.bson.Document) u.getUpdateObject().get("$set");
+                        return set != null && set.containsKey("status") && set.containsKey("orderSync");
+                    }), eq(Transaction.class));
+            verify(orderPaymentSyncRelay, org.mockito.Mockito.never()).requestOrderPaymentStatus(anyString(), anyString());
         }
 
         @Test
@@ -148,7 +294,6 @@ class RefundServiceTest {
             when(paymentGateway.refund(eq("pi_test_de"), eq(BigDecimal.valueOf(42.50)), eq("normal"), anyString()))
                     .thenReturn("re_stripe_001");
             when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(transactionRepository.save(any(Transaction.class))).thenReturn(stripeTxn);
 
             Refund result = refundService.initiateRefund(req);
 
@@ -186,7 +331,6 @@ class RefundServiceTest {
             when(transactionRepository.findById("txn-cash")).thenReturn(Optional.of(cash));
             when(refundRepository.findByTransactionId("txn-cash")).thenReturn(Collections.emptyList());
             when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(transactionRepository.save(any(Transaction.class))).thenReturn(cash);
 
             Refund result = refundService.initiateRefund(req);
 
@@ -276,7 +420,6 @@ class RefundServiceTest {
             when(paymentGateway.getGatewayName()).thenReturn("RAZORPAY");
             when(paymentGateway.refund(anyString(), any(), anyString(), anyString())).thenReturn("rfnd_one");
             when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(transactionRepository.save(any(Transaction.class))).thenReturn(successTransaction);
             when(mongoTemplate.findAndModify(
                     any(Query.class), any(Update.class), any(FindAndModifyOptions.class), eq(Transaction.class)))
                     .thenReturn(successTransaction, (Transaction) null);
@@ -298,7 +441,6 @@ class RefundServiceTest {
             when(paymentGateway.getGatewayName()).thenReturn("RAZORPAY");
             when(paymentGateway.refund(anyString(), any(), anyString(), anyString())).thenReturn("rfnd_a", "rfnd_b");
             when(refundRepository.save(any(Refund.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(transactionRepository.save(any(Transaction.class))).thenReturn(successTransaction);
 
             Refund first = refundService.initiateRefund(refundRequest);
             RefundRequest later = RefundRequest.builder()
@@ -383,8 +525,9 @@ class RefundServiceTest {
                     .thenReturn(Optional.of(refund));
             when(refundRepository.save(any(Refund.class))).thenReturn(refund);
 
-            refundService.updateRefundStatus("rfnd_razorpay_001", "processed");
+            boolean applied = refundService.updateRefundStatus("rfnd_razorpay_001", "processed");
 
+            assertThat(applied).isTrue();
             assertThat(refund.getStatus()).isEqualTo(Refund.RefundStatus.PROCESSED);
             assertThat(refund.getProcessedAt()).isNotNull();
             verify(refundRepository).save(refund);
@@ -397,9 +540,26 @@ class RefundServiceTest {
             when(refundRepository.findByRazorpayRefundId("re_1")).thenReturn(Optional.of(refund));
             when(refundRepository.save(any(Refund.class))).thenReturn(refund);
 
-            refundService.updateRefundStatus("re_1", "succeeded");
+            boolean applied = refundService.updateRefundStatus("re_1", "succeeded");
 
+            assertThat(applied).isTrue();
             assertThat(refund.getStatus()).isEqualTo(Refund.RefundStatus.PROCESSED);
+        }
+
+        @Test
+        @DisplayName("an unrecognized gateway status returns false and leaves the refund's status unchanged (B2c review)")
+        void unrecognizedStatusReturnsFalseAndDoesNotChangeStatus() {
+            Refund refund = Refund.builder().status(Refund.RefundStatus.PROCESSING).build();
+            when(refundRepository.findByRazorpayRefundId("rfnd_weird")).thenReturn(Optional.of(refund));
+            when(refundRepository.save(any(Refund.class))).thenReturn(refund);
+
+            boolean applied = refundService.updateRefundStatus("rfnd_weird", "some_new_status_we_dont_know");
+
+            assertThat(applied).isFalse();
+            assertThat(refund.getStatus()).isEqualTo(Refund.RefundStatus.PROCESSING);
+            // Still saved (bumping updatedAt) so a reconciliation poll backs off instead of
+            // re-querying this refund on every cycle for a status it will never recognize.
+            verify(refundRepository).save(refund);
         }
     }
 }
