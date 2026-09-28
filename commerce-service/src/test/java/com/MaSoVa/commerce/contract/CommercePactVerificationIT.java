@@ -12,10 +12,12 @@ import au.com.dius.pact.provider.junitsupport.State;
 import au.com.dius.pact.provider.junitsupport.StateChangeAction;
 import au.com.dius.pact.provider.junitsupport.loader.PactFolder;
 import au.com.dius.pact.provider.spring.spring6.PactVerificationSpring6Provider;
+import com.MaSoVa.commerce.order.client.StoreServiceClient;
 import com.MaSoVa.commerce.order.entity.Order;
 import com.MaSoVa.commerce.order.entity.OrderItem;
 import com.MaSoVa.commerce.order.repository.OrderRepository;
 import com.MaSoVa.shared.entity.MenuItem;
+import com.MaSoVa.shared.entity.Store;
 import com.MaSoVa.shared.enums.Cuisine;
 import com.MaSoVa.shared.enums.MenuCategory;
 import com.MaSoVa.shared.test.BaseFullIntegrationTest;
@@ -30,7 +32,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import com.MaSoVa.commerce.menu.repository.MenuItemRepository;
+
+import static org.mockito.Mockito.when;
 
 import javax.crypto.SecretKey;
 import java.math.BigDecimal;
@@ -62,11 +67,24 @@ class CommercePactVerificationIT extends BaseFullIntegrationTest {
     @Autowired
     private OrderRepository orderRepository;
 
+    @MockitoBean
+    private StoreServiceClient storeServiceClient;
+
     @BeforeEach
     void before(PactVerificationContext context) {
         if (context != null) {
             context.setTarget(new AuthInjectingTestTarget("localhost", port));
         }
+        // core-service isn't running in this isolated Pact JVM, so the real HTTP call in
+        // StoreServiceClient.getStore always fails and returns null. createOrder used to
+        // tolerate that with a silent INR/GST fallback; it now rejects the order outright
+        // (see OrderService.createOrder, B8/fix-no-silent-inr). Stub a valid store for every
+        // interaction so pact verification exercises the real success path, not that rejection.
+        Store store = new Store();
+        store.setId("STORE-PACT-1");
+        store.setCountryCode("IN");
+        store.setCurrency("INR");
+        when(storeServiceClient.getStore(org.mockito.ArgumentMatchers.anyString())).thenReturn(store);
     }
 
     @TestTemplate
@@ -143,8 +161,8 @@ class CommercePactVerificationIT extends BaseFullIntegrationTest {
 
     @State("store exists with id store-1")
     void storeExistsWithIdStore1() {
-        // Store lookup in OrderService falls back gracefully (WARN-logged Feign failure) -
-        // no seeding required, this state only needs to exist to satisfy Pact's state-change hook.
+        // storeServiceClient is stubbed unconditionally in before() for every interaction in
+        // this class, so no per-state seeding is needed - this only satisfies Pact's state-change hook.
     }
 
     @State("order exists with id ORDER-PACT-1")

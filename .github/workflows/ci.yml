@@ -96,6 +96,37 @@ jobs:
             --no-transfer-progress
 
   # ============================================================
+  # Job 1b: Backend integration tests (Failsafe, *IT.java, all 6 services)
+  # Testcontainers spins up its own Mongo/Postgres/Redis/RabbitMQ per
+  # BaseIntegrationTest/BaseFullIntegrationTest — no services: block needed,
+  # just a Docker daemon (ubuntu-latest ships one by default).
+  # ============================================================
+  backend-integration-tests:
+    name: Backend Integration Tests
+    runs-on: ubuntu-latest
+    needs: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v6
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run backend integration tests (6 services)
+        env:
+          JWT_SECRET: ci-test-secret-key-at-least-64-chars-long-for-hs512-algorithm-security
+        run: |
+          mvn verify \
+            -pl api-gateway,core-service,commerce-service,payment-service,logistics-service,intelligence-service \
+            -am \
+            -Dsurefire.skip=true \
+            -Djacoco.haltOnFailure=false \
+            --no-transfer-progress
+
+  # ============================================================
   # Job 2: Frontend tests + type check
   # ============================================================
   frontend:

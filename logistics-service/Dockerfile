@@ -16,9 +16,10 @@ RUN mvn dependency:go-offline -pl logistics-service -am -q 2>/dev/null || true
 COPY shared-models/src shared-models/src
 COPY shared-security/src shared-security/src
 COPY logistics-service/src logistics-service/src
-# Build executable fat jar; exclude *-plain.jar (no Main-Class)
+# Build executable fat jar; repackage uses classifier "exec" so the plain (non-executable) jar
+# stays the module's main artifact and can't be picked up by mistake.
 RUN mvn -pl logistics-service -am package -DskipTests -q \
-    && JAR=$(ls logistics-service/target/logistics-service-*.jar | grep -v plain | head -n1) \
+    && JAR=$(ls logistics-service/target/logistics-service-*-exec.jar | head -n1) \
     && echo "Using $JAR" \
     && cp "$JAR" /build/app.jar
 
