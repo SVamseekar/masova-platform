@@ -60,6 +60,9 @@ class CorePactVerificationIT extends BaseFullIntegrationTest {
     @Autowired
     private StoreRepository storeRepository;
 
+    @Autowired
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
     @BeforeEach
     void before(PactVerificationContext context) {
         if (context != null) {
@@ -109,6 +112,27 @@ class CorePactVerificationIT extends BaseFullIntegrationTest {
                 .expiration(new Date(now.getTime() + Duration.ofMinutes(5).toMillis()))
                 .signWith(key)
                 .compact();
+    }
+
+    @State("a user exists with email pact-login@masova.com and password Pact-Password123")
+    void loginUserExists() {
+        User user = new User();
+        user.setId("USER-PACT-LOGIN-1");
+        user.setType(UserType.CUSTOMER);
+        User.PersonalInfo personalInfo = new User.PersonalInfo();
+        personalInfo.setName("Pact Login User");
+        personalInfo.setEmail("pact-login@masova.com");
+        personalInfo.setPhone("9876500000");
+        personalInfo.setPasswordHash(passwordEncoder.encode("Pact-Password123"));
+        user.setPersonalInfo(personalInfo);
+        user.setActive(true);
+        userRepository.save(user);
+    }
+
+    @State(value = "a user exists with email pact-login@masova.com and password Pact-Password123",
+            action = StateChangeAction.TEARDOWN)
+    void cleanupLoginUser() {
+        userRepository.deleteById("USER-PACT-LOGIN-1");
     }
 
     @State("user exists with id USER-PACT-1")
