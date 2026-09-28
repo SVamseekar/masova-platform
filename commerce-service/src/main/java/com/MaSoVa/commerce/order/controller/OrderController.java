@@ -516,6 +516,15 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
     }
 
+    @ExceptionHandler(com.MaSoVa.commerce.fiscal.FiscalNotConfiguredException.class)
+    public ResponseEntity<Map<String, String>> handleFiscalNotConfigured(
+            com.MaSoVa.commerce.fiscal.FiscalNotConfiguredException ex) {
+        log.warn("[{}] {}", com.MaSoVa.commerce.fiscal.FiscalNotConfiguredException.ERROR_CODE, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("code", com.MaSoVa.commerce.fiscal.FiscalNotConfiguredException.ERROR_CODE,
+                        "error", ex.getMessage()));
+    }
+
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<Map<String, String>> handleBusinessException(BusinessException ex) {
         log.warn("[{}] {}", ex.getErrorCode(), ex.getMessage());

@@ -122,6 +122,7 @@ services:
     environment:
       - SERVICE_AUTH_TRUSTED_CORE=${SERVICE_AUTH_CORE_PUBLIC_KEY:-}
       - SPRING_PROFILES_ACTIVE=dev
+      - FISCAL_SIGNING_MODE=LAB_STUB
       - MENU_MONGODB_URI=mongodb://masova-mongodb:27017/masova_commerce
       - ORDERS_MONGODB_URI=mongodb://masova-mongodb:27017/masova_commerce
       - SPRING_DATA_MONGODB_URI=mongodb://masova-mongodb:27017/masova_commerce

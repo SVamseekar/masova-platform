@@ -460,3 +460,11 @@ eu-vat:
 service-auth:
   trusted:
     core-service: ${SERVICE_AUTH_TRUSTED_CORE:}
+
+# CERTIFIED (the default): DE/FR/IT/BE/HU orders are rejected unless a certified fiscal
+# provider is configured (none exist yet — real integrations are a separate epic). Only
+# LAB_STUB opts out, and only dev/lab compose sets it — never the default, so a Cloud Run
+# deploy with no override is safe by default (#126).
+fiscal:
+  signing:
+    mode: ${FISCAL_SIGNING_MODE:CERTIFIED}

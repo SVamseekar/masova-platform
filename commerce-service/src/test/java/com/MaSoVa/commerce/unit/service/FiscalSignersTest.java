@@ -164,7 +164,7 @@ class FiscalSignersTest {
                 new BelgiumFdmFiscalSigner(),
                 new HungaryNtcaFiscalSigner(),
                 new UkMtdFiscalSigner(),
-                failClosedInProd
+                failClosedInProd ? "CERTIFIED" : "LAB_STUB"
         );
     }
 }

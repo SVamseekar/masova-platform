@@ -37,10 +37,12 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -222,5 +224,19 @@ class OrderServiceEuVatTest {
 
         assertThat(result.getVatCountryCode()).isNull();
         assertThat(result.getTax().doubleValue()).isCloseTo(10.0, within(0.01));
+    }
+
+    @Test
+    void EU_store_order_is_rejected_when_fiscal_signing_is_not_configured_for_its_country() {
+        // fiscal.signing.mode=CERTIFIED (the default) with no certified DE provider — orders
+        // must not go live in a regulated country with only a lab stub signer (#126).
+        when(storeServiceClient.getStore("store-de-001")).thenReturn(buildDeStore());
+        when(fiscalSigningService.blocksLiveTrading("DE")).thenReturn(true);
+
+        assertThatThrownBy(() -> orderService.createOrder(buildDineInRequest()))
+                .isInstanceOf(com.MaSoVa.commerce.fiscal.FiscalNotConfiguredException.class)
+                .hasMessageContaining("store-de-001");
+
+        verify(orderRepository, never()).save(any());
     }
 }
