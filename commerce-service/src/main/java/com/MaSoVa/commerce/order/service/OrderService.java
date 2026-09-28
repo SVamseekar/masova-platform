@@ -12,6 +12,7 @@ import com.MaSoVa.commerce.order.repository.OrderRepository;
 import com.MaSoVa.commerce.order.repository.OrderJpaRepository;
 import com.MaSoVa.commerce.order.repository.OrderPostgresOutboxRepository;
 import com.MaSoVa.shared.entity.Store;
+import com.MaSoVa.shared.exception.BusinessException;
 import com.MaSoVa.shared.model.VatBreakdown;
 import com.MaSoVa.commerce.order.websocket.OrderWebSocketController;
 import com.MaSoVa.commerce.order.client.MenuServiceClient;
@@ -190,15 +191,18 @@ public class OrderService {
             }
         }
 
-        // Global-2: Route to EU VAT engine for non-India stores, GST for India stores
-        Store store = null;
-        try {
-            store = storeServiceClient.getStore(request.getStoreId());
-        } catch (Exception e) {
-            log.warn("Could not fetch store for tax routing storeId={}: {}", request.getStoreId(), e.getMessage());
+        // Global-2: Route to EU VAT engine for non-India stores, GST for India stores.
+        // getStore() never throws (it catches its own errors and returns null), so a null result
+        // is the only failure signal here.
+        Store store = storeServiceClient.getStore(request.getStoreId());
+        if (store == null) {
+            // Can't tell an EU store from an India one when the lookup fails — defaulting to
+            // INR/GST here would silently mis-tax and mis-bill a real EU store's order (#125).
+            throw new BusinessException("STORE_LOOKUP_FAILED",
+                    "Could not verify store " + request.getStoreId() + " for tax and currency routing; order rejected");
         }
 
-        String countryCode = (store != null) ? store.getCountryCode() : null;
+        String countryCode = store.getCountryCode();
         double tax;
         double total;
         VatBreakdown vatBreakdown = null;
@@ -274,11 +278,8 @@ public class OrderService {
         // Initialize quality checkpoints for the order
         initializeQualityCheckpoints(order);
 
-        // Global-3: propagate store currency (null = India/INR legacy)
-        if (store == null) {
-            log.warn("Could not fetch store {} for currency propagation, defaulting to INR", request.getStoreId());
-            order.setCurrency("INR");
-        } else if (store.getCurrency() != null) {
+        // Global-3: propagate store currency (store is guaranteed non-null above; null currency = India/INR legacy)
+        if (store.getCurrency() != null) {
             order.setCurrency(store.getCurrency());
         }
 

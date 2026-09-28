@@ -8,6 +8,7 @@ import com.MaSoVa.commerce.order.entity.OrderItem;
 import com.MaSoVa.commerce.order.entity.QualityCheckpoint;
 import com.MaSoVa.commerce.order.service.OrderService;
 import com.MaSoVa.commerce.order.service.OrderSummaryService;
+import com.MaSoVa.shared.exception.BusinessException;
 import com.MaSoVa.shared.util.StoreAccessValidator;
 import com.MaSoVa.shared.util.StoreContextUtil;
 
@@ -513,6 +514,13 @@ public class OrderController {
     public ResponseEntity<Map<String, String>> handleAccessDenied(AccessDeniedException ex) {
         log.warn("Access denied on order request: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<Map<String, String>> handleBusinessException(BusinessException ex) {
+        log.warn("[{}] {}", ex.getErrorCode(), ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("code", ex.getErrorCode(), "error", ex.getMessage()));
     }
 
     @ExceptionHandler(RuntimeException.class)
