@@ -33,6 +33,15 @@ import org.testcontainers.containers.MongoDBContainer;
  * }
  * }
  * </pre>
+ *
+ * <p><b>Container lifecycle:</b> {@code mongoDBContainer} is a JVM-static singleton, started
+ * once and shared across every IT class in the module (a per-class {@code @Container} gets
+ * stopped after each class while Spring's cached context still points at it, breaking the next
+ * class with "Connection refused" - see git history for the incident this avoided). This means
+ * data one IT class writes is visible to every other IT class that runs afterward in the same
+ * module. Each subclass is responsible for cleaning up any collection it writes to, typically
+ * with a {@code @BeforeEach} that calls {@code someRepository.deleteAll()} - do not assume a
+ * collection starts empty just because this class doesn't write to it.
  */
 @SpringBootTest
 @AutoConfigureMockMvc

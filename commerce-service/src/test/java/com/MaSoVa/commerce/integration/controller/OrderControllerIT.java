@@ -18,12 +18,15 @@ class OrderControllerIT extends BaseMessagingIntegrationTest {
 
     @Test
     @WithMockUser(roles = "MANAGER")
-    @DisplayName("GET /api/orders returns 200 with empty list initially")
+    @DisplayName("GET /api/orders returns 200 with an empty page initially")
     void getOrders_returnsEmptyList() throws Exception {
+        // GET /api/orders returns a PageableResponse ({content, page, size, ...}), not a bare array.
         mockMvc.perform(get("/api/orders")
                 .header("X-User-Type", "MANAGER"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$").isArray());
+            .andExpect(jsonPath("$.content").isArray())
+            .andExpect(jsonPath("$.content").isEmpty())
+            .andExpect(jsonPath("$.totalElements").value(0));
     }
 
     @Test

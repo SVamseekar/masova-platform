@@ -146,7 +146,9 @@ class StripePaymentFlowIT extends BaseFullIntegrationTest {
         when(stripeGateway.initiatePayment(any())).thenReturn(
                 new GatewayPaymentResult("STRIPE", "pi_refund_de", "pi_refund_de_secret", "pk_test_de"));
         when(stripeGateway.getGatewayName()).thenReturn("STRIPE");
-        when(stripeGateway.refund(anyString(), any(), anyString())).thenReturn("re_test_de_1");
+        // RefundService.performGatewayRefund always calls the 4-arg overload (with an
+        // idempotency key) — stubbing the 3-arg one leaves this unstubbed and null.
+        when(stripeGateway.refund(anyString(), any(), anyString(), anyString())).thenReturn("re_test_de_1");
 
         String initiateBody = """
                 {
