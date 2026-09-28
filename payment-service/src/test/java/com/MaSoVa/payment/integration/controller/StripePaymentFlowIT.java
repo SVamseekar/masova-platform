@@ -8,9 +8,9 @@ import com.MaSoVa.shared.test.BaseFullIntegrationTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -33,10 +33,10 @@ class StripePaymentFlowIT extends BaseFullIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private StripeGateway stripeGateway;
 
-    @MockBean
+    @MockitoBean
     private RazorpayService razorpayService;
 
     @Test
@@ -146,7 +146,9 @@ class StripePaymentFlowIT extends BaseFullIntegrationTest {
         when(stripeGateway.initiatePayment(any())).thenReturn(
                 new GatewayPaymentResult("STRIPE", "pi_refund_de", "pi_refund_de_secret", "pk_test_de"));
         when(stripeGateway.getGatewayName()).thenReturn("STRIPE");
-        when(stripeGateway.refund(anyString(), any(), anyString())).thenReturn("re_test_de_1");
+        // RefundService.performGatewayRefund always calls the 4-arg overload (with an
+        // idempotency key) — stubbing the 3-arg one leaves this unstubbed and null.
+        when(stripeGateway.refund(anyString(), any(), anyString(), anyString())).thenReturn("re_test_de_1");
 
         String initiateBody = """
                 {

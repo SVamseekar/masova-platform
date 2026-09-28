@@ -51,7 +51,7 @@
         <dependency>
             <groupId>com.stripe</groupId>
             <artifactId>stripe-java</artifactId>
-            <version>26.3.0</version>
+            <version>33.4.2</version>
         </dependency>
 
         <!-- Spring Boot Starter Actuator (for health checks) -->
@@ -194,6 +194,9 @@
                         <goals>
                             <goal>repackage</goal>
                         </goals>
+                        <configuration>
+                            <classifier>exec</classifier>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

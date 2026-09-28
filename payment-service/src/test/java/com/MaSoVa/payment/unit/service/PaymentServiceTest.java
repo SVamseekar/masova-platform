@@ -1,7 +1,6 @@
 package com.MaSoVa.payment.unit.service;
 
 import com.MaSoVa.payment.service.PaymentService;
-import com.MaSoVa.payment.service.OrderServiceClient;
 import com.MaSoVa.payment.service.RazorpayService;
 import com.MaSoVa.payment.service.PiiEncryptionService;
 import com.MaSoVa.payment.service.PaymentNotificationService;
@@ -57,9 +56,6 @@ class PaymentServiceTest {
 
     @Mock
     private RazorpayService razorpayService;
-
-    @Mock
-    private OrderServiceClient orderServiceClient;
 
     @Mock
     private RazorpayConfig razorpayConfig;
@@ -405,14 +401,13 @@ class PaymentServiceTest {
             when(transactionRepository.save(any(Transaction.class))).thenReturn(initiatedTransaction);
             when(encryptionService.decrypt("encrypted-email")).thenReturn("customer@real.com");
             when(encryptionService.decrypt("encrypted-phone")).thenReturn("+31612345678");
-            doNothing().when(orderServiceClient).updateOrderPaymentStatus(anyString(), anyString(), anyString());
 
             // When
             PaymentResponse response = paymentService.verifyPayment(callbackRequest);
 
             // Then
             assertThat(response).isNotNull();
-            verify(orderServiceClient).updateOrderPaymentStatus(eq("order-123"), eq("PAID"), anyString());
+            verify(transactionRepository).save(org.mockito.ArgumentMatchers.<Transaction>argThat(t -> t.getOrderSync() != null && "PAID".equals(t.getOrderSync().getPaymentStatus())));
             verify(paymentNotificationService).sendPaymentSuccessNotification(
                     any(Transaction.class), eq("customer@real.com"), eq("+31612345678"));
         }
@@ -722,7 +717,7 @@ class PaymentServiceTest {
         }
 
         @Test
-        @DisplayName("Should handle orderServiceClient failure gracefully for cash payment")
+        @DisplayName("Should queue the PAID order status in the cash transaction save")
         void shouldHandleOrderClientFailureGracefully() {
             // Given
             InitiatePaymentRequest cashRequest = InitiatePaymentRequest.builder()
@@ -755,16 +750,13 @@ class PaymentServiceTest {
             when(transactionRepository.save(any(Transaction.class))).thenReturn(cashTxn);
             when(encryptionService.decrypt(anyString())).thenReturn("decrypted");
             doNothing().when(paymentEventPublisher).publishPaymentCompleted(any());
-            // orderServiceClient throws — should be caught and logged, not propagated
-            org.mockito.Mockito.doThrow(new RuntimeException("Order service down"))
-                    .when(orderServiceClient).updateOrderPaymentStatus(anyString(), anyString(), anyString());
-
-            // When — should NOT throw
+            // When
             PaymentResponse response = paymentService.recordCashPayment(cashRequest);
 
-            // Then
+            // Then — the PAID order status is queued in the same save, with no call to commerce
             assertThat(response).isNotNull();
             assertThat(response.getStatus()).isEqualTo(Transaction.PaymentStatus.SUCCESS);
+            verify(transactionRepository).save(org.mockito.ArgumentMatchers.<Transaction>argThat(t -> t.getOrderSync() != null && "PAID".equals(t.getOrderSync().getPaymentStatus())));
         }
     }
 
@@ -852,7 +844,6 @@ class PaymentServiceTest {
             when(transactionRepository.save(any(Transaction.class))).thenReturn(initiatedTransaction);
             when(encryptionService.decrypt("encrypted-email")).thenReturn("customer@real.com");
             when(encryptionService.decrypt("encrypted-phone")).thenReturn("+31612345678");
-            doNothing().when(orderServiceClient).updateOrderPaymentStatus(anyString(), anyString(), anyString());
 
             // When
             PaymentResponse response = paymentService.verifyPayment(callbackRequest);
@@ -883,7 +874,6 @@ class PaymentServiceTest {
             when(razorpayService.fetchPayment("pay_razorpay_001")).thenReturn(razorpayPayment);
             when(transactionRepository.save(any(Transaction.class))).thenReturn(initiatedTransaction);
             when(encryptionService.decrypt(anyString())).thenReturn("decrypted");
-            doNothing().when(orderServiceClient).updateOrderPaymentStatus(anyString(), anyString(), anyString());
 
             // When
             PaymentResponse response = paymentService.verifyPayment(callbackRequest);
@@ -913,7 +903,6 @@ class PaymentServiceTest {
             when(razorpayService.fetchPayment("pay_razorpay_001")).thenReturn(razorpayPayment);
             when(transactionRepository.save(any(Transaction.class))).thenReturn(initiatedTransaction);
             when(encryptionService.decrypt(anyString())).thenReturn("decrypted");
-            doNothing().when(orderServiceClient).updateOrderPaymentStatus(anyString(), anyString(), anyString());
 
             // When
             PaymentResponse response = paymentService.verifyPayment(callbackRequest);
@@ -943,7 +932,6 @@ class PaymentServiceTest {
             when(razorpayService.fetchPayment("pay_razorpay_001")).thenReturn(razorpayPayment);
             when(transactionRepository.save(any(Transaction.class))).thenReturn(initiatedTransaction);
             when(encryptionService.decrypt(anyString())).thenReturn("decrypted");
-            doNothing().when(orderServiceClient).updateOrderPaymentStatus(anyString(), anyString(), anyString());
 
             // When — should not throw
             PaymentResponse response = paymentService.verifyPayment(callbackRequest);
@@ -1056,7 +1044,7 @@ class PaymentServiceTest {
             assertThat(stripeTxn.getStripeFeeMinorUnits()).isEqualTo(150L);
             assertThat(stripeTxn.getPaymentMethodType()).isEqualTo("ideal");
             assertThat(stripeTxn.getPaymentMethod()).isEqualTo(Transaction.PaymentMethod.OTHER);
-            verify(orderServiceClient).updateOrderPaymentStatus("order-de-001", "PAID", "txn-de-001");
+            verify(transactionRepository).save(org.mockito.ArgumentMatchers.<Transaction>argThat(t -> t.getOrderSync() != null && "PAID".equals(t.getOrderSync().getPaymentStatus())));
             verify(paymentEventPublisher).publishPaymentCompleted(any());
         }
 
@@ -1076,7 +1064,6 @@ class PaymentServiceTest {
 
             // Then — no save, no order update, no duplicate notification/event
             verify(transactionRepository, never()).save(any(Transaction.class));
-            verify(orderServiceClient, never()).updateOrderPaymentStatus(anyString(), anyString(), anyString());
             verify(paymentEventPublisher, never()).publishPaymentCompleted(any());
         }
 

@@ -89,7 +89,7 @@ class WebhookControllerTest extends BaseServiceTest {
     void handleWebhook_refundProcessed_returns200() throws Exception {
         when(razorpayConfig.getWebhookSecret()).thenReturn("secret");
         when(razorpayService.verifyWebhookSignature(anyString(), anyString(), anyString())).thenReturn(true);
-        org.mockito.Mockito.doNothing().when(refundService).updateRefundStatus(anyString(), anyString());
+        org.mockito.Mockito.when(refundService.updateRefundStatus(anyString(), anyString())).thenReturn(true);
 
         String payload = "{\"event\":\"refund.processed\",\"payload\":{\"refund\":{\"entity\":{\"id\":\"rfnd_123\",\"payment_id\":\"pay_123\",\"status\":\"processed\"}}}}";
 
@@ -105,7 +105,7 @@ class WebhookControllerTest extends BaseServiceTest {
     void handleWebhook_refundFailed_returns200() throws Exception {
         when(razorpayConfig.getWebhookSecret()).thenReturn("secret");
         when(razorpayService.verifyWebhookSignature(anyString(), anyString(), anyString())).thenReturn(true);
-        org.mockito.Mockito.doNothing().when(refundService).updateRefundStatus(anyString(), anyString());
+        org.mockito.Mockito.when(refundService.updateRefundStatus(anyString(), anyString())).thenReturn(true);
 
         String payload = "{\"event\":\"refund.failed\",\"payload\":{\"refund\":{\"entity\":{\"id\":\"rfnd_456\",\"payment_id\":\"pay_123\",\"status\":\"failed\"}}}}";
 

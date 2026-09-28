@@ -63,8 +63,10 @@
       "request": {
         "body": {
           "amount": 450,
+          "customerId": "CUSTOMER-PACT-1",
           "orderId": "ORDER-PACT-1",
-          "paymentMethod": "CARD"
+          "paymentMethod": "CARD",
+          "storeId": "STORE-PACT-1"
         },
         "headers": {
           "Authorization": "Bearer test-token",
@@ -73,6 +75,14 @@
         "matchingRules": {
           "body": {
             "$.amount": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.customerId": {
               "combine": "AND",
               "matchers": [
                 {
@@ -89,6 +99,14 @@
               ]
             },
             "$.paymentMethod": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.storeId": {
               "combine": "AND",
               "matchers": [
                 {
@@ -381,11 +399,11 @@
   ],
   "metadata": {
     "pact-js": {
-      "version": "16.0.4"
+      "version": "16.5.0"
     },
     "pactRust": {
-      "ffi": "0.4.28",
-      "models": "1.3.5"
+      "ffi": "0.5.4",
+      "models": "1.3.11"
     },
     "pactSpecification": {
       "version": "3.0.0"

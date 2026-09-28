@@ -59,6 +59,13 @@ jobs:
 
   # ============================================================
   # Job 2: Deploy backend services to Cloud Run
+  #
+  # Inter-service URLs (CORE_SERVICE_URL, SUPPORT_SERVICE_URL, etc.) are NOT
+  # set here — a real Cloud Run URL (https://<svc>-<hash>-<region>.a.run.app,
+  # or a custom domain mapping) isn't known until the service has actually
+  # been deployed once, and this matrix deploys all 6 services in parallel.
+  # The wire-service-urls job below runs after every service is up, resolves
+  # each real URL with `gcloud run services describe`, and patches them in.
   # ============================================================
   deploy-backend:
     name: Deploy ${{ matrix.service.name }}
@@ -104,12 +111,7 @@ jobs:
           RABBITMQ_USERNAME=${{ secrets.CLOUDAMQP_USERNAME }},\
           RABBITMQ_PASSWORD=${{ secrets.CLOUDAMQP_PASSWORD }},\
           RABBITMQ_VHOST=${{ secrets.CLOUDAMQP_VHOST }},\
-          CORE_SERVICE_URL=https://core-service-${{ env.PROJECT_ID }}.run.app,\
-          COMMERCE_SERVICE_URL=https://commerce-service-${{ env.PROJECT_ID }}.run.app,\
-          LOGISTICS_SERVICE_URL=https://logistics-service-${{ env.PROJECT_ID }}.run.app,\
-          INTELLIGENCE_SERVICE_URL=https://intelligence-service-${{ env.PROJECT_ID }}.run.app,\
-          PAYMENT_SERVICE_URL=https://payment-service-${{ env.PROJECT_ID }}.run.app,\
-          FRONTEND_URL=https://masova-app.web.app,\
+          FRONTEND_URL=https://masova.souravamseekar.com,\
           SPRING_DATASOURCE_URL=jdbc:postgresql://${{ secrets.POSTGRES_HOST }}:5432/masova_db,\
           SPRING_DATASOURCE_USERNAME=${{ secrets.POSTGRES_USERNAME }},\
           SPRING_DATASOURCE_PASSWORD=${{ secrets.POSTGRES_PASSWORD }},\
@@ -124,7 +126,31 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT_JSON=${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }},\
           GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }},\
           BREVO_API_KEY=${{ secrets.BREVO_API_KEY }},\
-          GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}"
+          GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID }},\
+          FISCAL_SIGNING_MODE=CERTIFIED,\
+          SUPPORT_AGENT_API_KEY=${{ secrets.SUPPORT_AGENT_API_KEY }}"
+
+      - name: Set service-auth key material (core signs, others only verify)
+        # SERVICE_AUTH_TRUSTED_CORE can hold multiple comma-separated rotation keys (see
+        # commerce/payment/logistics application.yml), which would corrupt the plain
+        # comma-joined --set-env-vars string above - gcloud's "^<delim>^" syntax below picks a
+        # different separator so a comma inside the value is safe. Also: only core-service signs
+        # (needs the private key), only commerce/payment/logistics verify (need the public
+        # key(s)) - api-gateway and intelligence-service need neither, and no service should hold
+        # a signing key it has no legitimate use for.
+        run: |
+          case "${{ matrix.service.name }}" in
+            core-service)
+              gcloud run services update core-service \
+                --region ${{ env.REGION }} --platform managed \
+                --update-env-vars "^@^SERVICE_AUTH_PRIVATE_KEY=${{ secrets.SERVICE_AUTH_PRIVATE_KEY }}"
+              ;;
+            commerce-service|payment-service|logistics-service)
+              gcloud run services update ${{ matrix.service.name }} \
+                --region ${{ env.REGION }} --platform managed \
+                --update-env-vars "^@^SERVICE_AUTH_TRUSTED_CORE=${{ secrets.SERVICE_AUTH_TRUSTED_CORE }}"
+              ;;
+          esac
 
   # ============================================================
   # Job 3: Deploy masova-support AI agent to Cloud Run
@@ -170,12 +196,79 @@ jobs:
             --max-instances 2 \
             --timeout 60 \
             --set-env-vars "\
-          GOOGLE_GENAI_API_KEY=${{ secrets.GOOGLE_GENAI_API_KEY }},\
-          REDIS_URL=${{ secrets.UPSTASH_REDIS_URL }},\
-          BACKEND_BASE_URL=https://api-gateway-${{ env.PROJECT_ID }}.run.app"
+          LLM_API_KEY=${{ secrets.LLM_API_KEY }},\
+          LLM_MODEL=${{ secrets.LLM_MODEL }},\
+          REDIS_URL=${{ secrets.UPSTASH_REDIS_URL }}"
+          # BACKEND_BASE_URL is patched to the real api-gateway URL by wire-service-urls below.
 
   # ============================================================
-  # Job 4: Build and deploy frontend to Firebase Hosting
+  # Job 4: Patch real inter-service URLs into every service's env
+  #
+  # A Cloud Run URL (https://<svc>-<hash>-<region>.a.run.app) isn't known
+  # until the service has been deployed once, so deploy-backend/deploy-agent
+  # deploy without it. This job runs once all 6 services are up, resolves
+  # each real URL with `gcloud run services describe`, then patches them
+  # into the services that call each other.
+  #
+  # Idempotent and safe to re-run on its own (Actions -> re-run failed jobs)
+  # if it fails partway through - it always re-resolves every URL fresh and
+  # re-patches every service, it does not depend on what a previous partial
+  # run left in place.
+  # ============================================================
+  wire-service-urls:
+    name: Wire inter-service URLs
+    needs: [deploy-backend, deploy-agent]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Resolve real URLs and patch dependent services
+        run: |
+          # `gcloud run services describe` can exit 0 with an EMPTY status.url if it hasn't
+          # propagated yet - this runs right after each service's first-ever deploy, the single
+          # likeliest moment for that lag. Retry a few times, then fail loud (not just non-zero
+          # exit) rather than silently patching every service with an empty/malformed URL.
+          get_url() {
+            local svc="$1" url=""
+            for attempt in 1 2 3 4 5; do
+              url=$(gcloud run services describe "$svc" --region ${{ env.REGION }} --platform managed --format='value(status.url)')
+              if [[ "$url" =~ ^https:// ]]; then
+                echo "$url"
+                return 0
+              fi
+              echo "::warning::Attempt $attempt: no valid URL yet for '$svc' (got: '$url'), retrying..." >&2
+              sleep 5
+            done
+            echo "::error::Could not resolve a valid URL for service '$svc' after 5 attempts (got: '$url')" >&2
+            exit 1
+          }
+
+          API_GATEWAY_URL=$(get_url api-gateway)
+          CORE_URL=$(get_url core-service)
+          COMMERCE_URL=$(get_url commerce-service)
+          LOGISTICS_URL=$(get_url logistics-service)
+          INTELLIGENCE_URL=$(get_url intelligence-service)
+          PAYMENT_URL=$(get_url payment-service)
+          SUPPORT_URL=$(get_url masova-support)
+
+          for svc in api-gateway core-service commerce-service payment-service logistics-service intelligence-service; do
+            gcloud run services update "$svc" \
+              --region ${{ env.REGION }} \
+              --platform managed \
+              --update-env-vars "CORE_SERVICE_URL=${CORE_URL},COMMERCE_SERVICE_URL=${COMMERCE_URL},LOGISTICS_SERVICE_URL=${LOGISTICS_URL},INTELLIGENCE_SERVICE_URL=${INTELLIGENCE_URL},PAYMENT_SERVICE_URL=${PAYMENT_URL},SUPPORT_SERVICE_URL=${SUPPORT_URL}"
+          done
+
+          gcloud run services update masova-support \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --update-env-vars "BACKEND_BASE_URL=${API_GATEWAY_URL}"
+
+  # ============================================================
+  # Job 5: Build and deploy frontend to Firebase Hosting
   # ============================================================
   deploy-frontend:
     name: Deploy Frontend to Firebase

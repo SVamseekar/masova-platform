@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import com.MaSoVa.shared.security.service.ServiceTokenIssuer;
+import com.MaSoVa.shared.security.service.ServiceTokenAuthenticationFilter;
 
 import java.util.Collections;
 import java.util.List;
@@ -27,9 +29,11 @@ public class DeliveryServiceClient {
     private String deliveryServiceUrl;
 
     private final RestTemplate restTemplate;
+    private final ServiceTokenIssuer serviceTokenIssuer;
 
-    public DeliveryServiceClient(RestTemplate restTemplate) {
+    public DeliveryServiceClient(RestTemplate restTemplate, ServiceTokenIssuer serviceTokenIssuer) {
         this.restTemplate = restTemplate;
+        this.serviceTokenIssuer = serviceTokenIssuer;
     }
 
     /**
@@ -48,18 +52,22 @@ public class DeliveryServiceClient {
 
     /**
      * Anonymize customer data in delivery tracking records (for GDPR erasure).
-     * Phase 1: POST /api/delivery/gdpr/anonymize?customerId= (internal-only, X-Internal-Service required).
-     * DeliveryTracking stores no customer PII — endpoint is a confirmed no-op.
+     * POST /api/delivery/gdpr/anonymize?customerId=&orderIds= (internal-only, core-service token required).
+     * orderIds is a fallback for rows written before customerId was resolved server-side (#118 backfill).
      */
-    public boolean anonymizeCustomerData(String customerId, String authToken) {
+    public boolean anonymizeCustomerData(String customerId, List<String> orderIds, String authToken) {
         try {
-            String url = deliveryServiceUrl + "/api/delivery/gdpr/anonymize?customerId=" + customerId;
+            StringBuilder url = new StringBuilder(deliveryServiceUrl)
+                    .append("/api/delivery/gdpr/anonymize?customerId=").append(customerId);
+            for (String orderId : orderIds) {
+                url.append("&orderIds=").append(orderId);
+            }
 
-            HttpHeaders headers = createHttpHeaders(authToken);
+            HttpHeaders headers = internalHeaders("delivery:gdpr-anonymize");
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
             ResponseEntity<Void> response = restTemplate.exchange(
-                url,
+                url.toString(),
                 HttpMethods.POST,
                 entity,
                 Void.class
@@ -77,13 +85,20 @@ public class DeliveryServiceClient {
         return Collections.emptyList();
     }
 
+    /** Headers for an internal endpoint: a short-lived logistics-service service token, no end-user JWT. */
+    private HttpHeaders internalHeaders(String scope) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set(ServiceTokenAuthenticationFilter.HEADER, serviceTokenIssuer.bearer("logistics-service", scope));
+        return headers;
+    }
+
     private HttpHeaders createHttpHeaders(String authToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         if (authToken != null && !authToken.isEmpty()) {
             headers.set("Authorization", "Bearer " + authToken);
         }
-        headers.set("X-Internal-Service", "user-service");
         return headers;
     }
 }

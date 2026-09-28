@@ -107,10 +107,6 @@ vi.mock('./components/CustomerPanel', () => ({
   default: () => <div data-testid="customer-panel">CustomerPanel</div>,
 }));
 
-vi.mock('./components/MetricsTiles', () => ({
-  default: () => <div data-testid="metrics-tiles">MetricsTiles</div>,
-}));
-
 vi.mock('./components/ClockInModal', () => ({
   default: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="clock-in-modal">ClockInModal</div> : null,
@@ -269,7 +265,7 @@ describe('POSDashboard', () => {
 
       await user.click(screen.getByTestId('pos-tab-reports'));
 
-      // Reports tab content should appear (MetricsTiles)
+      // Reports tab content should appear (PosReportsPanel's KPI tiles)
       expect(screen.getByTestId('metrics-tiles')).toBeInTheDocument();
       // Menu panel should no longer be visible
       expect(screen.queryByTestId('menu-panel')).not.toBeInTheDocument();

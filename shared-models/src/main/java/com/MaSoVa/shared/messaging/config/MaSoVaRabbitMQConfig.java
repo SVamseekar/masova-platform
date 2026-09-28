@@ -29,6 +29,8 @@ public class MaSoVaRabbitMQConfig {
     // Routing keys — payments
     public static final String PAYMENT_COMPLETED_KEY = "payment.completed";
     public static final String PAYMENT_FAILED_KEY = "payment.failed";
+    // Deliberately outside "payment.#" so the analytics payment queue does not receive it.
+    public static final String ORDER_PAYMENT_STATUS_KEY = "order-payment.status";
 
     // Routing keys — delivery
     public static final String DELIVERY_ASSIGNED_KEY = "delivery.assigned";
@@ -46,6 +48,7 @@ public class MaSoVaRabbitMQConfig {
     public static final String ANALYTICS_ORDER_QUEUE = "masova.analytics.order-events";
     public static final String ANALYTICS_AGGREGATOR_QUEUE = "masova.analytics.aggregator-events";
     public static final String COMPLIANCE_ORDER_QUEUE = "masova.compliance.order-events";
+    public static final String COMMERCE_PAYMENT_STATUS_QUEUE = "masova.commerce.payment-status";
     public static final String DLQ = "masova.dlq";
 
     @Bean
@@ -136,6 +139,19 @@ public class MaSoVaRabbitMQConfig {
     @Bean
     public Binding complianceOrderBinding(Queue complianceOrderQueue, TopicExchange ordersExchange) {
         return BindingBuilder.bind(complianceOrderQueue).to(ordersExchange).with("order.receipt.#");
+    }
+
+    @Bean
+    public Queue commercePaymentStatusQueue() {
+        return QueueBuilder.durable(COMMERCE_PAYMENT_STATUS_QUEUE)
+                .withArgument("x-dead-letter-exchange", DLX)
+                .withArgument("x-dead-letter-routing-key", "dlq")
+                .build();
+    }
+
+    @Bean
+    public Binding commercePaymentStatusBinding(Queue commercePaymentStatusQueue, TopicExchange paymentsExchange) {
+        return BindingBuilder.bind(commercePaymentStatusQueue).to(paymentsExchange).with(ORDER_PAYMENT_STATUS_KEY);
     }
 
     @Bean
