@@ -143,7 +143,7 @@ jobs:
       - name: Run container and verify it becomes healthy
         run: |
           docker run -d --name frontend-ci -p 8080:80 masova-frontend:ci
-          for i in $(seq 1 10); do
+          for _ in $(seq 1 10); do
             status=$(docker inspect --format='{{.State.Health.Status}}' frontend-ci)
             if [ "$status" = "healthy" ]; then
               exit 0
