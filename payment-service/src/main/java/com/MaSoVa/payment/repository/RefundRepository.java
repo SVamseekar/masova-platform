@@ -22,6 +22,10 @@ public interface RefundRepository extends MongoRepository<Refund, String> {
 
     List<Refund> findByStatus(Refund.RefundStatus status);
 
+    List<Refund> findByStatusAndUpdatedAtBefore(Refund.RefundStatus status, LocalDateTime cutoff);
+
+    long countByStatusAndUpdatedAtBefore(Refund.RefundStatus status, LocalDateTime cutoff);
+
     List<Refund> findByInitiatedBy(String userId);
 
     // Week 4: Store-aware queries for proper data isolation

@@ -352,7 +352,8 @@ public class RefundService {
         return new GatewayRefundOutcome(gatewayRefundId, status, gateway.getGatewayName());
     }
 
-    private static String resolveGatewayName(Transaction transaction) {
+    /** Package-visible for RefundReconciliationRelay, which needs the same routing rule to look up a stuck refund's gateway. */
+    static String resolveGatewayName(Transaction transaction) {
         if (transaction.getPaymentGateway() != null && !transaction.getPaymentGateway().isBlank()) {
             return transaction.getPaymentGateway();
         }
@@ -425,9 +426,13 @@ public class RefundService {
     /**
      * Update refund status (called by webhook or scheduled job).
      * {@code gatewayRefundId} is stored in {@code razorpayRefundId} for both PSPs.
+     *
+     * @return true if {@code status} was a recognized value and applied; false if it was not
+     *         recognized, in which case the refund is left as-is and the caller must not treat
+     *         this as a successful reconciliation (see RefundReconciliationRelay).
      */
     @Transactional
-    public void updateRefundStatus(String gatewayRefundId, String status) {
+    public boolean updateRefundStatus(String gatewayRefundId, String status) {
         Refund refund = refundRepository.findByRazorpayRefundId(gatewayRefundId)
                 .orElseThrow(() -> new RuntimeException("Refund not found: " + gatewayRefundId));
 
@@ -437,7 +442,8 @@ public class RefundService {
             refund.setProcessedAt(LocalDateTime.now());
         } else if ("processing".equalsIgnoreCase(status) || "pending".equalsIgnoreCase(status)) {
             newStatus = Refund.RefundStatus.PROCESSING;
-        } else if ("failed".equalsIgnoreCase(status)) {
+        } else if ("failed".equalsIgnoreCase(status)
+                || "canceled".equalsIgnoreCase(status) || "cancelled".equalsIgnoreCase(status)) {
             // Only the first move from an in-flight state to FAILED releases the claim.
             Refund failed = mongoTemplate.findAndModify(
                     Query.query(Criteria.where("_id").is(refund.getId()).and("status").in(
@@ -448,15 +454,19 @@ public class RefundService {
                 releaseRefundCapacity(refund.getTransactionId(), refund.getAmount());
             }
             log.info("Refund status updated. Refund ID: {}, Status: FAILED", refund.getId());
-            return;
+            return true;
         } else {
             log.warn("Unknown refund status: {}", status);
-            return;
+            // Still touch updatedAt (via save) so a reconciliation poll backs off instead of
+            // re-querying this refund on every cycle for a status string it will never recognize.
+            refundRepository.save(refund);
+            return false;
         }
 
         refund.setStatus(newStatus);
         refundRepository.save(refund);
         log.info("Refund status updated. Refund ID: {}, Status: {}", refund.getId(), newStatus);
+        return true;
     }
 
     /**

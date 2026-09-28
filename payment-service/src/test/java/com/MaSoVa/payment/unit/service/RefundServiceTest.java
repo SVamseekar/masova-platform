@@ -210,6 +210,22 @@ class RefundServiceTest {
             verify(mongoTemplate).updateFirst(any(Query.class),
                     org.mockito.ArgumentMatchers.argThat(this::releases), eq(Transaction.class));
         }
+
+        @Test
+        @DisplayName("a canceled-refund status (Stripe) releases the claim like a failure would")
+        void canceledStatusReleasesClaimLikeFailure() {
+            Refund inFlight = Refund.builder().transactionId("txn-001").amount(BigDecimal.valueOf(200.00))
+                    .razorpayRefundId("re_canceled").status(Refund.RefundStatus.PROCESSING).build();
+            inFlight.setId("refund-canceled");
+            when(refundRepository.findByRazorpayRefundId("re_canceled")).thenReturn(Optional.of(inFlight));
+            when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
+                    eq(Refund.class))).thenReturn(inFlight);
+
+            refundService.updateRefundStatus("re_canceled", "canceled");
+
+            verify(mongoTemplate).updateFirst(any(Query.class),
+                    org.mockito.ArgumentMatchers.argThat(this::releases), eq(Transaction.class));
+        }
     }
 
     @Nested
@@ -509,8 +525,9 @@ class RefundServiceTest {
                     .thenReturn(Optional.of(refund));
             when(refundRepository.save(any(Refund.class))).thenReturn(refund);
 
-            refundService.updateRefundStatus("rfnd_razorpay_001", "processed");
+            boolean applied = refundService.updateRefundStatus("rfnd_razorpay_001", "processed");
 
+            assertThat(applied).isTrue();
             assertThat(refund.getStatus()).isEqualTo(Refund.RefundStatus.PROCESSED);
             assertThat(refund.getProcessedAt()).isNotNull();
             verify(refundRepository).save(refund);
@@ -523,9 +540,26 @@ class RefundServiceTest {
             when(refundRepository.findByRazorpayRefundId("re_1")).thenReturn(Optional.of(refund));
             when(refundRepository.save(any(Refund.class))).thenReturn(refund);
 
-            refundService.updateRefundStatus("re_1", "succeeded");
+            boolean applied = refundService.updateRefundStatus("re_1", "succeeded");
 
+            assertThat(applied).isTrue();
             assertThat(refund.getStatus()).isEqualTo(Refund.RefundStatus.PROCESSED);
+        }
+
+        @Test
+        @DisplayName("an unrecognized gateway status returns false and leaves the refund's status unchanged (B2c review)")
+        void unrecognizedStatusReturnsFalseAndDoesNotChangeStatus() {
+            Refund refund = Refund.builder().status(Refund.RefundStatus.PROCESSING).build();
+            when(refundRepository.findByRazorpayRefundId("rfnd_weird")).thenReturn(Optional.of(refund));
+            when(refundRepository.save(any(Refund.class))).thenReturn(refund);
+
+            boolean applied = refundService.updateRefundStatus("rfnd_weird", "some_new_status_we_dont_know");
+
+            assertThat(applied).isFalse();
+            assertThat(refund.getStatus()).isEqualTo(Refund.RefundStatus.PROCESSING);
+            // Still saved (bumping updatedAt) so a reconciliation poll backs off instead of
+            // re-querying this refund on every cycle for a status it will never recognize.
+            verify(refundRepository).save(refund);
         }
     }
 }
