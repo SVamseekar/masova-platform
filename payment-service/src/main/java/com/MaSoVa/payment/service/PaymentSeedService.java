@@ -1,5 +1,6 @@
 package com.MaSoVa.payment.service;
 
+import com.MaSoVa.payment.messaging.OrderPaymentSyncRelay;
 import com.MaSoVa.payment.entity.Refund;
 import com.MaSoVa.payment.entity.Transaction;
 import com.MaSoVa.payment.repository.RefundRepository;
@@ -36,16 +37,16 @@ public class PaymentSeedService {
 
     private final TransactionRepository transactionRepository;
     private final RefundRepository refundRepository;
-    private final OrderServiceClient orderServiceClient;
+    private final OrderPaymentSyncRelay orderPaymentSyncRelay;
     private final Environment environment;
 
     public PaymentSeedService(TransactionRepository transactionRepository,
                               RefundRepository refundRepository,
-                              OrderServiceClient orderServiceClient,
+                              OrderPaymentSyncRelay orderPaymentSyncRelay,
                               Environment environment) {
         this.transactionRepository = transactionRepository;
         this.refundRepository = refundRepository;
-        this.orderServiceClient = orderServiceClient;
+        this.orderPaymentSyncRelay = orderPaymentSyncRelay;
         this.environment = environment;
     }
 
@@ -145,13 +146,9 @@ public class PaymentSeedService {
     }
 
     private void syncOrderPayment(Transaction tx, String status, List<String> synced) {
-        try {
-            orderServiceClient.updateOrderPaymentStatus(tx.getOrderId(), status, tx.getId());
-            synced.add(tx.getOrderId());
-        } catch (Exception e) {
-            log.warn("Could not sync payment status to commerce for order {}: {}",
-                    tx.getOrderId(), e.getMessage());
-        }
+        // Queued in the transaction outbox; the relay delivers it to commerce.
+        orderPaymentSyncRelay.requestOrderPaymentStatus(tx.getId(), status);
+        synced.add(tx.getOrderId());
     }
 
     /**

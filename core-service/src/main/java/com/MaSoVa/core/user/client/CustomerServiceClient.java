@@ -182,7 +182,6 @@ public class CustomerServiceClient {
         if (authToken != null && !authToken.isEmpty()) {
             headers.set("Authorization", "Bearer " + authToken);
         }
-        headers.set("X-Internal-Service", "user-service");
         return headers;
     }
 

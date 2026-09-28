@@ -2,6 +2,8 @@ package com.MaSoVa.commerce.unit.service;
 
 import com.MaSoVa.commerce.fiscal.*;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -74,5 +76,55 @@ class FiscalSignerRegistryTest {
     @Test
     void case_insensitive_de_resolves() {
         assertThat(registry.resolve("de")).isInstanceOf(GermanyTseFiscalSigner.class);
+    }
+
+    @Nested
+    @DisplayName("fiscal.signing.mode")
+    class SigningMode {
+
+        private FiscalSignerRegistry registryFor(String mode) {
+            return new FiscalSignerRegistry(
+                    new PassthroughFiscalSigner(), new GermanyTseFiscalSigner(),
+                    new FranceNf525FiscalSigner(), new ItalyRtFiscalSigner(),
+                    new BelgiumFdmFiscalSigner(), new HungaryNtcaFiscalSigner(),
+                    new UkMtdFiscalSigner(), mode);
+        }
+
+        @Test
+        @DisplayName("CERTIFIED (the default) blocks a regulated country with no real provider (#126)")
+        void certifiedModeBlocksRegulatedCountry() {
+            FiscalSignerRegistry certified = registryFor("CERTIFIED");
+
+            assertThat(certified.blocksLiveTrading("DE")).isTrue();
+            assertThat(certified.resolve("DE").sign(null, null).isSigningFailed()).isTrue();
+        }
+
+        @Test
+        @DisplayName("CERTIFIED does not block a passthrough country")
+        void certifiedModeDoesNotBlockPassthroughCountry() {
+            assertThat(registryFor("CERTIFIED").blocksLiveTrading("NL")).isFalse();
+            assertThat(registryFor("CERTIFIED").blocksLiveTrading(null)).isFalse();
+        }
+
+        @Test
+        @DisplayName("LAB_STUB lets a regulated country through with a stub signature")
+        void labStubModeDoesNotBlock() {
+            FiscalSignerRegistry lab = registryFor("LAB_STUB");
+
+            assertThat(lab.blocksLiveTrading("DE")).isFalse();
+            assertThat(lab.resolve("DE")).isInstanceOf(GermanyTseFiscalSigner.class);
+        }
+
+        @Test
+        @DisplayName("mode is case-insensitive")
+        void modeIsCaseInsensitive() {
+            assertThat(registryFor("lab_stub").blocksLiveTrading("DE")).isFalse();
+        }
+
+        @Test
+        @DisplayName("the 7-arg test constructor defaults to LAB_STUB, never blocking")
+        void sevenArgConstructorDefaultsToLabStub() {
+            assertThat(registry.blocksLiveTrading("DE")).isFalse();
+        }
     }
 }

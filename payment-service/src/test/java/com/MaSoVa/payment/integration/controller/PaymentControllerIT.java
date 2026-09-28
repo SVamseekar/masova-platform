@@ -1,6 +1,8 @@
 package com.MaSoVa.payment.integration.controller;
 
+import com.MaSoVa.payment.repository.TransactionRepository;
 import com.MaSoVa.shared.test.BaseFullIntegrationTest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,14 +18,29 @@ class PaymentControllerIT extends BaseFullIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private TransactionRepository transactionRepository;
+
+    @BeforeEach
+    void clean() {
+        // The Testcontainers Mongo instance is a module-wide singleton (shared across every
+        // IT class) — don't assume a clean collection just because no other test in THIS
+        // class wrote anything.
+        transactionRepository.deleteAll();
+    }
+
     @Test
     @WithMockUser(roles = "MANAGER")
-    @DisplayName("GET /api/payments returns 200 with empty list")
+    @DisplayName("GET /api/payments returns 200 with an empty page")
     void getPayments_returnsEmptyList() throws Exception {
+        // No orderId/customerId query param -> falls through to the store-paginated branch,
+        // which returns a PageableResponse ({content, page, size, ...}), not a bare array.
         mockMvc.perform(get("/api/payments")
                 .header("X-User-Type", "MANAGER"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$").isArray());
+            .andExpect(jsonPath("$.content").isArray())
+            .andExpect(jsonPath("$.content").isEmpty())
+            .andExpect(jsonPath("$.totalElements").value(0));
     }
 
     @Test

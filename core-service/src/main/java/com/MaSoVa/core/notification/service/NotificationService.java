@@ -84,6 +84,12 @@ public class NotificationService {
                 notification.setSentAt(LocalDateTime.now());
                 logger.info("Notification sent successfully: {}", notificationId);
             } else {
+                // The channel services return a plain boolean, not a reason, so this can't
+                // distinguish e.g. a malformed phone number from a gateway outage — but leaving
+                // errorMessage null here (as before) made every non-throwing failure
+                // indistinguishable from success in the persisted record. See the channel
+                // service's own logs (grep by notificationId/userId) for the specific cause.
+                notification.setErrorMessage("Failed to send via " + notification.getChannel() + " channel");
                 handleFailedNotification(notification);
             }
 

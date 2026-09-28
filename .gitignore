@@ -70,6 +70,7 @@ backups/
 docs/
 scripts/*
 !scripts/reseed/
+!scripts/dev/
 specs/
 scratch/
 logs/

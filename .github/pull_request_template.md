@@ -31,3 +31,8 @@
 - [ ] No `.env` secrets committed
 - [ ] Branch is up to date with `main`
 - [ ] CI passes (or no CI-affecting changes)
+- [ ] If a frontend↔backend request/response shape changed, the matching Pact consumer
+      test (`frontend/src/pact/consumers/`) and provider `@State` (`*PactVerificationIT`)
+      were both updated, not just one side
+- [ ] If this PR will trigger a Vercel deployment on merge, it's accounted for in today's
+      deploy budget — check with a maintainer if unsure how many deploys are left today

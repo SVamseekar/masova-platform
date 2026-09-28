@@ -50,8 +50,9 @@ spring:
         retry:
           enabled: true
           initial-interval: 1000ms
-          max-attempts: 3
+          max-attempts: 5
           multiplier: 2.0
+          max-interval: 30000ms
 
   # PostgreSQL — dual-write for orders (Phase 2)
   datasource:
@@ -111,9 +112,6 @@ mongo:
     maintenance-initial-delay-ms: 0
     maintenance-frequency-ms: 10000
 
-internal:
-  payment-callback:
-    secret: ${INTERNAL_PAYMENT_CALLBACK_SECRET:}
 
 jwt:
   secret: ${JWT_SECRET}
@@ -457,3 +455,16 @@ eu-vat:
           FOOD: 0.0
           ALCOHOL: 0.0
           BEVERAGE: 0.0
+
+# Service-to-service auth: trust core-service tokens (base64 X.509 EC public keys, comma-separated for rotation).
+service-auth:
+  trusted:
+    core-service: ${SERVICE_AUTH_TRUSTED_CORE:}
+
+# CERTIFIED (the default): DE/FR/IT/BE/HU orders are rejected unless a certified fiscal
+# provider is configured (none exist yet — real integrations are a separate epic). Only
+# LAB_STUB opts out, and only dev/lab compose sets it — never the default, so a Cloud Run
+# deploy with no override is safe by default (#126).
+fiscal:
+  signing:
+    mode: ${FISCAL_SIGNING_MODE:CERTIFIED}

@@ -221,14 +221,6 @@ const App: React.FC = () => {
                     }
                   />
                   <Route
-                    path="/kitchen/*"
-                    element={
-                      <ProtectedRoute allowedRoles={['STAFF', 'MANAGER', 'ASSISTANT_MANAGER']}>
-                        <KitchenDisplayPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
                     path="/driver/*"
                     element={
                       <ProtectedRoute allowedRoles={['DRIVER']}>

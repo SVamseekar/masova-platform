@@ -10,6 +10,8 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import com.MaSoVa.shared.security.service.ServiceTokenIssuer;
+import com.MaSoVa.shared.security.service.ServiceTokenAuthenticationFilter;
 
 import java.util.Collections;
 import java.util.List;
@@ -28,9 +30,11 @@ public class PaymentServiceClient {
     private String paymentServiceUrl;
 
     private final RestTemplate restTemplate;
+    private final ServiceTokenIssuer serviceTokenIssuer;
 
-    public PaymentServiceClient(RestTemplate restTemplate) {
+    public PaymentServiceClient(RestTemplate restTemplate, ServiceTokenIssuer serviceTokenIssuer) {
         this.restTemplate = restTemplate;
+        this.serviceTokenIssuer = serviceTokenIssuer;
     }
 
     /**
@@ -73,13 +77,13 @@ public class PaymentServiceClient {
 
     /**
      * Anonymize customer data in payments (for GDPR erasure).
-     * Phase 1: POST /api/payments/gdpr/anonymize?customerId= (internal-only, X-Internal-Service required).
+     * Phase 1: POST /api/payments/gdpr/anonymize?customerId= (internal-only, core-service token required).
      */
     public boolean anonymizeCustomerData(String customerId, String authToken) {
         try {
             String url = paymentServiceUrl + "/api/payments/gdpr/anonymize?customerId=" + customerId;
 
-            HttpHeaders headers = createHttpHeaders(authToken);
+            HttpHeaders headers = internalHeaders("payments:gdpr-anonymize");
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
             ResponseEntity<Void> response = restTemplate.exchange(
@@ -101,13 +105,20 @@ public class PaymentServiceClient {
         return Collections.emptyList();
     }
 
+    /** Headers for an internal endpoint: a short-lived payment-service service token, no end-user JWT. */
+    private HttpHeaders internalHeaders(String scope) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set(ServiceTokenAuthenticationFilter.HEADER, serviceTokenIssuer.bearer("payment-service", scope));
+        return headers;
+    }
+
     private HttpHeaders createHttpHeaders(String authToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         if (authToken != null && !authToken.isEmpty()) {
             headers.set("Authorization", "Bearer " + authToken);
         }
-        headers.set("X-Internal-Service", "user-service");
         return headers;
     }
 }

@@ -229,8 +229,9 @@ class OrderServiceDeliveryOrderTest {
     // Currency propagation
 
     @Test
-    void createOrder_handles_store_fetch_failure_gracefully() {
+    void createOrder_rejects_order_when_store_lookup_fails_instead_of_silently_defaulting_to_india(){
         // StoreServiceClient.getStore() catches its own errors and returns null — never throws.
+        // Silently defaulting to INR/GST here would mis-tax and mis-bill a real EU store's order (#125).
         when(storeServiceClient.getStore("store-1")).thenReturn(null);
 
         CreateOrderRequest req = new CreateOrderRequest();
@@ -239,11 +240,11 @@ class OrderServiceDeliveryOrderTest {
         req.setOrderType(Order.OrderType.TAKEAWAY);
         req.setItems(List.of(buildItem()));
 
-        Order result = orderService.createOrder(req);
+        assertThatThrownBy(() -> orderService.createOrder(req))
+                .isInstanceOf(com.MaSoVa.shared.exception.BusinessException.class)
+                .hasMessageContaining("store-1");
 
-        assertThat(result).isNotNull();
-        assertThat(result.getStatus()).isEqualTo(Order.OrderStatus.RECEIVED);
-        assertThat(result.getCurrency()).isEqualTo("INR");
+        verify(orderRepository, never()).save(any(Order.class));
     }
 
     // Quality checkpoints initialization

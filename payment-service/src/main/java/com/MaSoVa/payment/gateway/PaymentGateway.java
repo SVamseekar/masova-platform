@@ -42,6 +42,16 @@ public interface PaymentGateway {
     }
 
     /**
+     * Look up a refund's current status directly at the gateway — used by reconciliation to
+     * resolve a refund left PROCESSING because a status webhook was never delivered.
+     * @param gatewayPaymentId The payment / charge ID the refund was made against (some gateways ignore this)
+     * @param gatewayRefundId The gateway's own refund ID (never a locally-generated placeholder)
+     * @return gateway-native status string, in the same vocabulary {@code RefundService.updateRefundStatus} expects
+     *         (e.g. Razorpay: "processed"/"pending"/"failed"; Stripe: "succeeded"/"pending"/"failed"/"canceled")
+     */
+    String fetchRefundStatus(String gatewayPaymentId, String gatewayRefundId) throws Exception;
+
+    /**
      * Parse an inbound webhook payload.
      * Implementations must verify the signature themselves.
      * @param rawPayload Raw request body as String

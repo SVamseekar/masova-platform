@@ -157,6 +157,9 @@ Event-driven communication via RabbitMQ (`masova.orders.exchange`, `masova.notif
 **Prerequisites:** Java 21, Node 20+, Docker, Maven 3.9+
 
 ```bash
+# 0. Service-to-service signing keys (once; writes to the gitignored .env)
+scripts/dev/service-keys.sh
+
 # 1. Infrastructure
 docker compose up -d mongodb redis rabbitmq postgres
 
@@ -172,6 +175,11 @@ cd intelligence-service && mvn spring-boot:run "-Dmaven.test.skip=true" # :8087
 cd frontend && npm install && npm run dev   # :3000
 
 ```
+
+When you run services with `mvn spring-boot:run`, export the keys first so GDPR erasure can reach
+commerce, logistics and payment: `export $(grep ^SERVICE_AUTH .env | xargs)`, then set
+`SERVICE_AUTH_PRIVATE_KEY=$SERVICE_AUTH_CORE_PRIVATE_KEY` for core and
+`SERVICE_AUTH_TRUSTED_CORE=$SERVICE_AUTH_CORE_PUBLIC_KEY` for the others.
 
 ```bash
 # Verify

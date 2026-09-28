@@ -389,23 +389,30 @@ public class DeliveryController {
     // ── GDPR (internal-only, called by core-service GDPR service) ─────────────────
 
     /**
-     * POST /api/delivery/gdpr/anonymize?customerId= — no-op for delivery tracking.
-     * DeliveryTracking stores no customer PII (only orderId + driverId).
-     * Internal-only: requires X-Internal-Service header.
+     * POST /api/delivery/gdpr/anonymize?customerId=&orderIds= — clears delivery address/feedback for the customer.
+     * orderIds is an optional fallback for rows created before customerId was resolved server-side (#118 backfill).
+     * Internal-only: requires a core-service token with scope delivery:gdpr-anonymize.
      */
     @PostMapping("/gdpr/anonymize")
-    @Operation(summary = "GDPR anonymise delivery data for customer (internal only — delivery tracking has no customer PII)")
-    public ResponseEntity<Void> gdprAnonymize(
-            @RequestParam String customerId,
-            jakarta.servlet.http.HttpServletRequest request) {
-        String internalCaller = request.getHeader("X-Internal-Service");
-        if (internalCaller == null || internalCaller.isBlank()) {
-            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
-        }
+    @PreAuthorize("hasAuthority('SCOPE_delivery:gdpr-anonymize')")
+    @Operation(summary = "GDPR anonymise delivery data for customer, with an orderId fallback for pre-fix rows")
+    public ResponseEntity<Void> gdprAnonymize(@RequestParam String customerId,
+                                              @RequestParam(required = false) List<String> orderIds) {
         if (deliveryTrackingRepository == null) {
             return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+        // Dedupe by id: the same document can come back from both queries as two distinct,
+        // separately-versioned instances, and saving both would optimistic-lock-fail the second (#118).
+        java.util.Map<Object, DeliveryTracking> toAnonymize = new java.util.LinkedHashMap<>();
         for (DeliveryTracking tracking : deliveryTrackingRepository.findByCustomerId(customerId)) {
+            toAnonymize.put(tracking.getId() != null ? tracking.getId() : tracking, tracking);
+        }
+        if (orderIds != null && !orderIds.isEmpty()) {
+            for (DeliveryTracking tracking : deliveryTrackingRepository.findByOrderIdIn(orderIds)) {
+                toAnonymize.put(tracking.getId() != null ? tracking.getId() : tracking, tracking);
+            }
+        }
+        for (DeliveryTracking tracking : toAnonymize.values()) {
             tracking.setDeliveryAddress(null);
             tracking.setCustomerFeedback(null);
             deliveryTrackingRepository.save(tracking);

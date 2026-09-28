@@ -5,8 +5,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -46,14 +46,9 @@ public class RatingTokenController {
     }
 
     @PostMapping("/{token}/mark-used")
-    @Operation(summary = "Mark rating token as used (internal service call)")
-    public ResponseEntity<?> markTokenAsUsed(
-            @PathVariable("token") String token,
-            jakarta.servlet.http.HttpServletRequest request) {
-        String internalCaller = request.getHeader("X-Internal-Service");
-        if (internalCaller == null || internalCaller.isBlank()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+    @PreAuthorize("hasAuthority('SCOPE_ratings:mark-used')")
+    @Operation(summary = "Mark rating token as used (internal: core-service token)")
+    public ResponseEntity<?> markTokenAsUsed(@PathVariable("token") String token) {
         try {
             ratingTokenService.markTokenAsUsed(token);
             return ResponseEntity.ok(Map.of("success", true));
