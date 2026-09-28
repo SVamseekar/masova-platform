@@ -639,33 +639,12 @@ class DeliveryControllerTest extends BaseServiceTest {
             when(repository.findByCustomerId("customer-1")).thenReturn(List.of(tracking));
 
             mockMvc.perform(post("/api/delivery/gdpr/anonymize")
-                    .param("customerId", "customer-1")
-                    .header("X-Internal-Service", "core-service"))
+                    .param("customerId", "customer-1"))
                 .andExpect(status().isOk());
 
             assertThat(tracking.getDeliveryAddress()).isNull();
             verify(repository).save(tracking);
         }
 
-        @Test
-        @DisplayName("returns 200 when called with X-Internal-Service header")
-        void returns200WithInternalHeader() throws Exception {
-            DeliveryTrackingRepository repository = mock(DeliveryTrackingRepository.class);
-            ReflectionTestUtils.setField(deliveryController, "deliveryTrackingRepository", repository);
-            when(repository.findByCustomerId("customer-1")).thenReturn(List.of());
-
-            mockMvc.perform(post("/api/delivery/gdpr/anonymize")
-                    .param("customerId", "customer-1")
-                    .header("X-Internal-Service", "core-service"))
-                .andExpect(status().isOk());
-        }
-
-        @Test
-        @DisplayName("returns 403 when X-Internal-Service header is missing")
-        void returns403WithoutInternalHeader() throws Exception {
-            mockMvc.perform(post("/api/delivery/gdpr/anonymize")
-                    .param("customerId", "customer-1"))
-                .andExpect(status().isForbidden());
-        }
     }
 }

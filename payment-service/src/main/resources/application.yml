@@ -159,6 +159,12 @@ resilience4j:
       orderService:
         base-config: default
 
+
+# Service-to-service auth: trust core-service tokens (base64 X.509 EC public keys, comma-separated for rotation).
+service-auth:
+  trusted:
+    core-service: ${SERVICE_AUTH_TRUSTED_CORE:}
+
 ---
 # Production Profile
 spring:

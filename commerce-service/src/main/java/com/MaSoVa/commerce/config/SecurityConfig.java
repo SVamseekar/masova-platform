@@ -2,8 +2,8 @@ package com.MaSoVa.commerce.config;
 
 import com.MaSoVa.shared.security.config.SecurityConfigurationBase;
 import com.MaSoVa.shared.security.util.JwtTokenProvider;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -18,9 +18,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 public class SecurityConfig extends SecurityConfigurationBase {
 
-    @Value("${internal.payment-callback.secret:}")
-    private String paymentCallbackSecret;
-
     public SecurityConfig(JwtTokenProvider tokenProvider) {
         super(tokenProvider);
     }
@@ -33,15 +30,16 @@ public class SecurityConfig extends SecurityConfigurationBase {
             .cors(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> {
+                // Rating links in SMS/email only read the token; marking it used is internal (service token).
+                auth.requestMatchers(HttpMethod.GET, "/api/orders/rating-token/*").permitAll();
                 String[] publicEndpoints = getPublicEndpoints();
                 if (publicEndpoints != null && publicEndpoints.length > 0) {
                     auth.requestMatchers(publicEndpoints).permitAll();
                 }
                 auth.anyRequest().authenticated();
             })
-            .addFilterBefore(new InternalPaymentCredentialFilter(paymentCallbackSecret),
-                    UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+        addServiceTokenFilter(http);
 
         return http.build();
     }
@@ -75,11 +73,8 @@ public class SecurityConfig extends SecurityConfigurationBase {
             "/api/orders/track/**",
             "/orders/track/**",
 
-            // Public rating token validation (SMS/email links)
-            "/api/orders/rating-token/**",
-
-            // Payment callback is authenticated: shared secret or staff JWT.
-            // See InternalPaymentCredentialFilter.
+            // Payment status arrives as an event from payment-service (masova.commerce.payment-status);
+            // PATCH /api/orders/{id}/payment is staff-only manual correction.
 
             // ── Infrastructure ─────────────────────────────────────────────
             "/actuator/health",
