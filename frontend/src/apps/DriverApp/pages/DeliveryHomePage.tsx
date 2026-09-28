@@ -13,7 +13,7 @@ import {
   LocationOn as LocationIcon,
   Timer as TimerIcon,
   LocalShipping as DeliveryIcon,
-  CheckCircleOutline as CompleteIcon,
+  CheckCircleOutlined as CompleteIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../store/store';

@@ -57,7 +57,7 @@ const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, onOrderNow }) 
           position: 'relative'
         }}
       >
-        <Typography variant="h3" color="white" fontWeight="bold" sx={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
+        <Typography variant="h3" color="white" sx={{ fontWeight: 'bold', textShadow: '2px 2px 4px rgba(0,0,0,0.3)'}}>
           {promotion.discount}
         </Typography>
         <Chip
@@ -74,14 +74,14 @@ const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, onOrderNow }) 
       </Box>
 
       <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-        <Typography variant="h6" fontWeight="bold" gutterBottom>
+        <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
           {promotion.title}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flexGrow: 1 }}>
           {promotion.description}
         </Typography>
 
-        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+        <Stack direction="row"  spacing={1} sx={{ alignItems: 'center', mb: 2}}>
           <AccessTimeIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
           <Typography variant="caption" color="text.secondary">
             {promotion.validUntil}

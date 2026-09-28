@@ -12,7 +12,7 @@ import {
 import { computePreCheckoutTotals, formatTaxDisplay } from '../../../utils/orderTax';
 import { usePosMarket } from '../usePosMarket';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import TableRestaurantIcon from '@mui/icons-material/TableRestaurant';

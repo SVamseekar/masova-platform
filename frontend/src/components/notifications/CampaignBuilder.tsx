@@ -394,9 +394,9 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ campaign, onClose }) 
                 onChange={(e) => setScheduledFor(e.target.value)}
                 error={!!errors.scheduledFor}
                 helperText={errors.scheduledFor}
-                InputLabelProps={{ shrink: true }}
-                inputProps={{
-                  min: new Date().toISOString().slice(0, 16),
+                slotProps={{
+                  inputLabel: { shrink: true },
+                  htmlInput: { min: new Date().toISOString().slice(0, 16) },
                 }}
                 sx={{
                   mt: 2,
@@ -414,7 +414,7 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ campaign, onClose }) 
                 Campaign Summary
               </Typography>
               <Grid container spacing={2}>
-                <Grid item xs={6}>
+                <Grid size={{ xs: 6 }}>
                   <Typography variant="caption" color="text.secondary">
                     Name:
                   </Typography>
@@ -422,7 +422,7 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ campaign, onClose }) 
                     {name}
                   </Typography>
                 </Grid>
-                <Grid item xs={6}>
+                <Grid size={{ xs: 6 }}>
                   <Typography variant="caption" color="text.secondary">
                     Channel:
                   </Typography>
@@ -436,7 +436,7 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ campaign, onClose }) 
                     }}
                   />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <Typography variant="caption" color="text.secondary">
                     Audience:
                   </Typography>
