@@ -1476,6 +1476,7 @@ public class OrderService {
     @Transactional
     public Order markOrderDelivered(String orderId, LocalDateTime deliveredAt, String proofType) {
         Order order = getOrderById(orderId);
+        OrderStatus previousStatus = order.getStatus();
 
         // Update status to delivered
         order.setStatus(OrderStatus.DELIVERED);
@@ -1488,9 +1489,18 @@ public class OrderService {
         log.info("Order {} marked as delivered at {} using {} verification", orderId, deliveredAt, proofType);
 
         // Send delivery confirmation notification
-        customerNotificationService.sendOrderStatusNotification(savedOrder, OrderStatus.DELIVERED);
+        customerNotificationService.sendOrderStatusNotification(savedOrder, previousStatus);
 
-        // Same terminal-status signing as updateOrderStatus. Notification already publishes the status event.
+        // Publish directly, as updateOrderStatus does: sendOrderStatusNotification skips entirely
+        // for walk-in orders with no customerId, so the AMQP event can't depend on it (#131).
+        try {
+            orderEventPublisher.publishOrderStatusChanged(
+                    buildStatusChangedEvent(savedOrder, previousStatus.toString(), OrderStatus.DELIVERED.toString()));
+        } catch (Exception e) {
+            log.warn("Failed to publish status changed event for {}: {}", savedOrder.getOrderNumber(), e.getMessage());
+        }
+
+        // Same terminal-status signing as updateOrderStatus.
         fiscalSigningService.signOrder(savedOrder);
 
         // Broadcast WebSocket update
