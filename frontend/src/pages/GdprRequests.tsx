@@ -167,10 +167,10 @@ export const GdprRequests: React.FC = () => {
 
   return (
     <Container maxWidth="lg" sx={{ py: 6 }}>
-      <Typography variant="h3" fontWeight={700} gutterBottom>
+      <Typography variant="h3" gutterBottom sx={{ fontWeight: 700 }}>
         Your Data Rights (GDPR)
       </Typography>
-      <Typography variant="body1" color="text.secondary" paragraph>
+      <Typography variant="body1" color="text.secondary"  sx={{ mb: 2 }}>
         Under GDPR, you have full control over your personal data. Submit a request below
         to exercise your rights. We will respond within 30 days.
       </Typography>
@@ -185,8 +185,8 @@ export const GdprRequests: React.FC = () => {
         </Alert>
       )}
 
-      <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2} mt={4} mb={2}>
-        <Typography variant="h5" fontWeight={600}>
+      <Box        sx={{ gap: 2, flexWrap: 'wrap', justifyContent: 'space-between', mt: 4, mb: 2, alignItems: 'center', display: 'flex'}}>
+        <Typography variant="h5" sx={{ fontWeight: 600 }}>
           Submit a New Request
         </Typography>
         <Button
@@ -200,9 +200,9 @@ export const GdprRequests: React.FC = () => {
         </Button>
       </Box>
 
-      <Grid container spacing={3} mb={6}>
+      <Grid container spacing={3}  sx={{ mb: 6 }}>
         {requestTypes.map((item) => (
-          <Grid item xs={12} md={6} lg={4} key={item.type}>
+          <Grid key={item.type} size={{ xs: 12, md: 6, lg: 4 }}>
             <Card
               sx={{
                 height: '100%',
@@ -217,7 +217,7 @@ export const GdprRequests: React.FC = () => {
               }}
             >
               <CardContent sx={{ flexGrow: 1 }}>
-                <Box display="flex" alignItems="center" mb={2}>
+                <Box    sx={{ mb: 2, alignItems: 'center', display: 'flex'}}>
                   <Box
                     sx={{
                       color: item.color,
@@ -230,7 +230,7 @@ export const GdprRequests: React.FC = () => {
                     {item.icon}
                   </Box>
                 </Box>
-                <Typography variant="h6" fontWeight={600} gutterBottom>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
                   {item.title}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -260,7 +260,7 @@ export const GdprRequests: React.FC = () => {
         ))}
       </Grid>
 
-      <Typography variant="h5" fontWeight={600} gutterBottom mt={6}>
+      <Typography variant="h5" gutterBottom  sx={{ mt: 6, fontWeight: 600}}>
         My Request History
       </Typography>
 
@@ -274,23 +274,23 @@ export const GdprRequests: React.FC = () => {
         <List>
           {requests.map((request) => (
             <Paper key={request.id} sx={{ mb: 2, p: 3, borderRadius: 3 }}>
-              <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} md={3}>
+              <Grid container spacing={2}  sx={{ alignItems: 'center' }}>
+                <Grid size={{ xs: 12, md: 3 }}>
                   <Typography variant="body2" color="text.secondary">
                     Request Type
                   </Typography>
-                  <Typography variant="body1" fontWeight={600}>
+                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
                     {request.requestType.replace('_', ' ')}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} md={2}>
+                <Grid size={{ xs: 12, md: 2 }}>
                   <Chip
                     label={request.status}
                     color={getStatusColor(request.status)}
                     size="small"
                   />
                 </Grid>
-                <Grid item xs={12} md={3}>
+                <Grid size={{ xs: 12, md: 3 }}>
                   <Typography variant="body2" color="text.secondary">
                     Submitted
                   </Typography>
@@ -298,7 +298,7 @@ export const GdprRequests: React.FC = () => {
                     {new Date(request.requestedAt).toLocaleDateString()}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} md={2}>
+                <Grid size={{ xs: 12, md: 2 }}>
                   <Typography variant="body2" color="text.secondary">
                     Due Date
                   </Typography>
@@ -306,7 +306,7 @@ export const GdprRequests: React.FC = () => {
                     {new Date(request.dueDate).toLocaleDateString()}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} md={2}>
+                <Grid size={{ xs: 12, md: 2 }}>
                   {request.completedAt && (
                     <>
                       <Typography variant="body2" color="text.secondary">
@@ -341,7 +341,7 @@ export const GdprRequests: React.FC = () => {
           {selectedType && requestTypes.find((t) => t.type === selectedType)?.title}
         </DialogTitle>
         <DialogContent>
-          <Typography variant="body2" color="text.secondary" paragraph>
+          <Typography variant="body2" color="text.secondary"  sx={{ mb: 2 }}>
             Please provide a reason for your request (optional but helpful for processing):
           </Typography>
           <TextField

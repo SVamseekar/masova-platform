@@ -45,10 +45,12 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({ open, onClose, loca
       onClose={onClose}
       maxWidth="md"
       fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: borderRadius.lg,
-          maxHeight: '90vh',
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: borderRadius.lg,
+            maxHeight: '90vh',
+          },
         },
       }}
     >

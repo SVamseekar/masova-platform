@@ -238,7 +238,7 @@ const StaffProfilePage: React.FC = () => {
       {/* Profile Header */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Stack direction="row" spacing={3} alignItems="center">
+          <Stack direction="row" spacing={3}  sx={{ alignItems: 'center' }}>
             <Avatar
               sx={{
                 width: 80,
@@ -250,11 +250,11 @@ const StaffProfilePage: React.FC = () => {
             >
               {initials}
             </Avatar>
-            <Box flexGrow={1}>
-              <Typography variant="h5" fontWeight="bold" gutterBottom>
+            <Box  sx={{ flexGrow: 1 }}>
+              <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
                 {staffProfile.name || 'Staff Member'}
               </Typography>
-              <Stack direction="row" spacing={1} alignItems="center" mb={1}>
+              <Stack direction="row" spacing={1}   sx={{ mb: 1, alignItems: 'center'}}>
                 <Chip
                   label={staffProfile.type || 'STAFF'}
                   color="primary"
@@ -305,7 +305,7 @@ const StaffProfilePage: React.FC = () => {
           {/* Personal Information */}
           <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
             Personal Information
           </Typography>
           <Divider sx={{ my: 2 }} />
@@ -362,16 +362,16 @@ const StaffProfilePage: React.FC = () => {
       {/* Performance Stats */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
             Working Hours Statistics (Last 3 Months)
           </Typography>
           <Divider sx={{ my: 2 }} />
 
           <Grid container spacing={2}>
-            <Grid item xs={6} sm={3}>
+            <Grid size={{ xs: 6, sm: 3 }}>
               <Box sx={{ textAlign: 'center' }}>
                 <AccessTimeIcon sx={{ fontSize: 32, color: 'primary.main', mb: 1 }} />
-                <Typography variant="h5" fontWeight="bold">
+                <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
                   {stats.totalHours}h
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -380,10 +380,10 @@ const StaffProfilePage: React.FC = () => {
               </Box>
             </Grid>
 
-            <Grid item xs={6} sm={3}>
+            <Grid size={{ xs: 6, sm: 3 }}>
               <Box sx={{ textAlign: 'center' }}>
                 <CalendarMonthIcon sx={{ fontSize: 32, color: 'info.main', mb: 1 }} />
-                <Typography variant="h5" fontWeight="bold">
+                <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
                   {sessions.filter(s => !s.isActive).length}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -392,10 +392,10 @@ const StaffProfilePage: React.FC = () => {
               </Box>
             </Grid>
 
-            <Grid item xs={6} sm={3}>
+            <Grid size={{ xs: 6, sm: 3 }}>
               <Box sx={{ textAlign: 'center' }}>
                 <AccessTimeIcon sx={{ fontSize: 32, color: 'success.main', mb: 1 }} />
-                <Typography variant="h5" fontWeight="bold">
+                <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
                   {stats.avgHoursPerShift}h
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -404,10 +404,10 @@ const StaffProfilePage: React.FC = () => {
               </Box>
             </Grid>
 
-            <Grid item xs={6} sm={3}>
+            <Grid size={{ xs: 6, sm: 3 }}>
               <Box sx={{ textAlign: 'center' }}>
                 <AccessTimeIcon sx={{ fontSize: 32, color: 'warning.main', mb: 1 }} />
-                <Typography variant="h5" fontWeight="bold">
+                <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
                   {stats.totalBreaks}m
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -429,16 +429,16 @@ const StaffProfilePage: React.FC = () => {
       {posPerformance && posPerformance.totalOrders > 0 && (
         <Card sx={{ mb: 3 }}>
           <CardContent>
-            <Typography variant="h6" fontWeight="bold" gutterBottom>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
               POS Performance (Last 3 Months)
             </Typography>
             <Divider sx={{ my: 2 }} />
 
             <Grid container spacing={2}>
-              <Grid item xs={6} sm={3}>
+              <Grid size={{ xs: 6, sm: 3 }}>
                 <Box sx={{ textAlign: 'center' }}>
                   <ShoppingCartIcon sx={{ fontSize: 32, color: 'primary.main', mb: 1 }} />
-                  <Typography variant="h5" fontWeight="bold">
+                  <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
                     {posPerformance.totalOrders}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -447,10 +447,10 @@ const StaffProfilePage: React.FC = () => {
                 </Box>
               </Grid>
 
-              <Grid item xs={6} sm={3}>
+              <Grid size={{ xs: 6, sm: 3 }}>
                 <Box sx={{ textAlign: 'center' }}>
                   <AttachMoneyIcon sx={{ fontSize: 32, color: 'success.main', mb: 1 }} />
-                  <Typography variant="h5" fontWeight="bold">
+                  <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
                     {fmt(posPerformance.totalRevenue)}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -459,10 +459,10 @@ const StaffProfilePage: React.FC = () => {
                 </Box>
               </Grid>
 
-              <Grid item xs={6} sm={3}>
+              <Grid size={{ xs: 6, sm: 3 }}>
                 <Box sx={{ textAlign: 'center' }}>
                   <ShoppingCartIcon sx={{ fontSize: 32, color: 'info.main', mb: 1 }} />
-                  <Typography variant="h5" fontWeight="bold">
+                  <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
                     {fmt(posPerformance.averageOrderValue)}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -471,10 +471,10 @@ const StaffProfilePage: React.FC = () => {
                 </Box>
               </Grid>
 
-              <Grid item xs={6} sm={3}>
+              <Grid size={{ xs: 6, sm: 3 }}>
                 <Box sx={{ textAlign: 'center' }}>
                   <ShoppingCartIcon sx={{ fontSize: 32, color: 'warning.main', mb: 1 }} />
-                  <Typography variant="h5" fontWeight="bold">
+                  <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
                     {posPerformance.completedOrders}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -491,15 +491,15 @@ const StaffProfilePage: React.FC = () => {
       {staffRating && staffRating.totalReviews > 0 && (
         <Card sx={{ mb: 3 }}>
           <CardContent>
-            <Typography variant="h6" fontWeight="bold" gutterBottom>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
               Customer Ratings
             </Typography>
             <Divider sx={{ my: 2 }} />
 
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} sm={6}>
+            <Grid container spacing={2}  sx={{ alignItems: 'center' }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                  <Typography variant="h3" fontWeight="bold" color="primary.main">
+                  <Typography variant="h3" color="primary.main" sx={{ fontWeight: 'bold' }}>
                     {staffRating.averageRating.toFixed(1)}
                   </Typography>
                   <Box>
@@ -521,10 +521,10 @@ const StaffProfilePage: React.FC = () => {
                 </Box>
               </Grid>
 
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Box sx={{ textAlign: 'center' }}>
                   <RateReviewIcon sx={{ fontSize: 32, color: 'info.main', mb: 1 }} />
-                  <Typography variant="h5" fontWeight="bold">
+                  <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
                     {staffRating.totalReviews}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -540,7 +540,7 @@ const StaffProfilePage: React.FC = () => {
       {/* Working Session History */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
             Working Session History
           </Typography>
           <Divider sx={{ my: 2 }} />
@@ -622,7 +622,7 @@ const StaffProfilePage: React.FC = () => {
       {activeTab === 1 && (
         <Card sx={{ mb: 3 }}>
           <CardContent>
-            <Typography variant="h6" fontWeight="bold" gutterBottom>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
               Upcoming Schedule (Next 30 Days)
             </Typography>
             <Divider sx={{ my: 2 }} />
@@ -732,7 +732,7 @@ const StaffProfilePage: React.FC = () => {
 
             {upcomingShifts.some(s => s.notes) && (
               <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
                   Shift Notes:
                 </Typography>
                 {upcomingShifts.filter(s => s.notes).map(shift => (
