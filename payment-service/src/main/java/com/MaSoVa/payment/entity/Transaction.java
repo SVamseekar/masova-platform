@@ -31,7 +31,8 @@ public class Transaction {
     @Indexed(unique = true)
     private String orderId;
 
-    @Indexed(unique = true)
+    // Unique only when present: TransactionIndexMigration owns a partial index,
+    // because Stripe transactions have no razorpayOrderId.
     private String razorpayOrderId;
 
     @Indexed
