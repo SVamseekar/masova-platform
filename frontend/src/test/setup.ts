@@ -65,7 +65,11 @@ const localStorageMock = {
   removeItem: vi.fn(),
   clear: vi.fn(),
 };
-global.localStorage = localStorageMock as unknown as Storage;
+Object.defineProperty(global, 'localStorage', {
+  writable: true,
+  configurable: true,
+  value: localStorageMock as unknown as Storage,
+});
 
 // Mock sessionStorage
 const sessionStorageMock = {
@@ -74,7 +78,11 @@ const sessionStorageMock = {
   removeItem: vi.fn(),
   clear: vi.fn(),
 };
-global.sessionStorage = sessionStorageMock as unknown as Storage;
+Object.defineProperty(global, 'sessionStorage', {
+  writable: true,
+  configurable: true,
+  value: sessionStorageMock as unknown as Storage,
+});
 
 // Suppress console errors/warnings in tests (optional - can remove if you want to see them)
 const originalError = console.error;
