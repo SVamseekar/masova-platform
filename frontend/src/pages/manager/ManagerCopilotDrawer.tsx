@@ -114,13 +114,15 @@ export function ManagerCopilotDrawer({ storeId }: { storeId?: string }) {
         anchor="right"
         open={open}
         onClose={() => setOpen(false)}
-        PaperProps={{
-          sx: {
-            width: { xs: '100%', sm: 400 },
-            maxWidth: '100%',
-            fontFamily: t.font,
-            display: 'flex',
-            flexDirection: 'column',
+        slotProps={{
+          paper: {
+            sx: {
+              width: { xs: '100%', sm: 400 },
+              maxWidth: '100%',
+              fontFamily: t.font,
+              display: 'flex',
+              flexDirection: 'column',
+            },
           },
         }}
       >

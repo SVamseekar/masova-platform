@@ -59,16 +59,13 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onOrderNow, onBrowseMenu }) =
       </Box>
 
       <Container maxWidth="lg">
-        <Grid container spacing={4} alignItems="center">
-          <Grid item xs={12} md={7}>
+        <Grid container spacing={4}  sx={{ alignItems: 'center' }}>
+          <Grid size={{ xs: 12, md: 7 }}>
             <Stack spacing={3}>
               <Typography
                 variant="h2"
-                fontWeight="bold"
-                sx={{
-                  fontSize: { xs: '2.5rem', md: '3.5rem' },
-                  textShadow: '2px 2px 4px rgba(0,0,0,0.2)'
-                }}
+                sx={{ fontWeight: 'bold', fontSize: { xs: '2.5rem', md: '3.5rem' },
+                  textShadow: '2px 2px 4px rgba(0,0,0,0.2)'}}
               >
                 Delicious Food, Delivered Fast
               </Typography>
@@ -123,7 +120,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onOrderNow, onBrowseMenu }) =
                 sx={{ mt: 4, pt: 4, borderTop: '1px solid rgba(255,255,255,0.3)' }}
               >
                 <Box>
-                  <Typography variant="h4" fontWeight="bold">
+                  <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                     100+
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>
@@ -131,7 +128,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onOrderNow, onBrowseMenu }) =
                   </Typography>
                 </Box>
                 <Box>
-                  <Typography variant="h4" fontWeight="bold">
+                  <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                     30min
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>
@@ -139,7 +136,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onOrderNow, onBrowseMenu }) =
                   </Typography>
                 </Box>
                 <Box>
-                  <Typography variant="h4" fontWeight="bold">
+                  <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                     10K+
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>
@@ -150,7 +147,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onOrderNow, onBrowseMenu }) =
             </Stack>
           </Grid>
 
-          <Grid item xs={12} md={5}>
+          <Grid size={{ xs: 12, md: 5 }}>
             <Box
               sx={{
                 position: 'relative',

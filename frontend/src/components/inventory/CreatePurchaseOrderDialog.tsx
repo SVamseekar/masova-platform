@@ -99,7 +99,7 @@ const CreatePurchaseOrderDialog: React.FC<CreatePurchaseOrderDialogProps> = ({ o
             onChange={(e) => setExpectedDeliveryDate(e.target.value)}
             fullWidth
             variant="outlined"
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
           />
         </div>
         <div style={{ marginBottom: spacing[4] }}>
