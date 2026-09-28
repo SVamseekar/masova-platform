@@ -52,18 +52,22 @@ public class DeliveryServiceClient {
 
     /**
      * Anonymize customer data in delivery tracking records (for GDPR erasure).
-     * Phase 1: POST /api/delivery/gdpr/anonymize?customerId= (internal-only, core-service token required).
-     * DeliveryTracking stores no customer PII — endpoint is a confirmed no-op.
+     * POST /api/delivery/gdpr/anonymize?customerId=&orderIds= (internal-only, core-service token required).
+     * orderIds is a fallback for rows written before customerId was resolved server-side (#118 backfill).
      */
-    public boolean anonymizeCustomerData(String customerId, String authToken) {
+    public boolean anonymizeCustomerData(String customerId, List<String> orderIds, String authToken) {
         try {
-            String url = deliveryServiceUrl + "/api/delivery/gdpr/anonymize?customerId=" + customerId;
+            StringBuilder url = new StringBuilder(deliveryServiceUrl)
+                    .append("/api/delivery/gdpr/anonymize?customerId=").append(customerId);
+            for (String orderId : orderIds) {
+                url.append("&orderIds=").append(orderId);
+            }
 
             HttpHeaders headers = internalHeaders("delivery:gdpr-anonymize");
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
             ResponseEntity<Void> response = restTemplate.exchange(
-                url,
+                url.toString(),
                 HttpMethods.POST,
                 entity,
                 Void.class
