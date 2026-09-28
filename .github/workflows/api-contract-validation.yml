@@ -116,13 +116,13 @@ jobs:
             port=${PORTS[$svc]}
             path=${HEALTH_PATHS[$svc]}
             for i in $(seq 1 45); do
-              if curl -sf --max-time 5 http://localhost:$port$path > /dev/null 2>&1; then
+              if curl -sf --max-time 5 "http://localhost:$port$path" > /dev/null 2>&1; then
                 echo "OK $svc ready on :$port"
                 break
               fi
-              if [ $i -eq 45 ]; then
+              if [ "$i" -eq 45 ]; then
                 echo "FAIL $svc timed out after 225s"
-                tail -50 /tmp/$svc.log
+                tail -50 "/tmp/$svc.log"
                 exit 1
               fi
               sleep 5

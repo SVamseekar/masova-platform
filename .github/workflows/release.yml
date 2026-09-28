@@ -36,7 +36,7 @@ jobs:
         id: version
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Build all modules (skip tests — tests run in CI job)
         run: mvn clean install -DskipTests
@@ -121,7 +121,7 @@ jobs:
         id: version
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Download JARs
         uses: actions/download-artifact@v4
