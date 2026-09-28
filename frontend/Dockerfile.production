@@ -31,8 +31,12 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 
 # Health check
+# 127.0.0.1, not localhost: the container resolves "localhost" to ::1 (IPv6) first,
+# but nginx.conf only has "listen 80" (IPv4) - the image's own ipv6-listen auto-patch
+# entrypoint script skips customized configs, so wget to localhost gets connection
+# refused even though nginx is up and serving on IPv4.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --quiet --tries=1 --spider http://localhost:80/ || exit 1
+    CMD wget --quiet --tries=1 --spider http://127.0.0.1:80/ || exit 1
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]
