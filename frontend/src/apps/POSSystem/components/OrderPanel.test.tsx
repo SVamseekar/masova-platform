@@ -202,7 +202,7 @@ describe('OrderPanel', () => {
 
       const removeButtons = screen
         .getAllByRole('button')
-        .filter((button) => button.querySelector('[data-testid="DeleteOutlineIcon"]'));
+        .filter((button) => button.querySelector('[data-testid="DeleteOutlinedIcon"]'));
       await user.click(removeButtons[0]);
 
       expect(defaultProps.onRemoveItem).toHaveBeenCalledWith('item-1');

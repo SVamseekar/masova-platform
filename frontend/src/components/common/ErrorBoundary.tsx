@@ -29,18 +29,13 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <Box
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          minHeight="100vh"
-          p={4}
-        >
+         sx={{ p: 4, minHeight: '100vh', justifyContent: 'center', alignItems: 'center', display: 'flex'}}>
           <Paper sx={{ p: 4, textAlign: 'center', maxWidth: 400 }}>
             <ErrorIcon color="error" sx={{ fontSize: 48, mb: 2 }} />
             <Typography variant="h5" gutterBottom>
               Something went wrong
             </Typography>
-            <Typography variant="body1" color="text.secondary" paragraph>
+            <Typography variant="body1" color="text.secondary"  sx={{ mb: 2 }}>
               We apologize for the inconvenience. Please refresh the page or try again later.
             </Typography>
             <Button

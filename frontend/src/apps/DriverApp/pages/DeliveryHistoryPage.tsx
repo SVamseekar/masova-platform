@@ -182,12 +182,14 @@ const DeliveryHistoryPage: React.FC = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             size="small"
             fullWidth
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ color: colors.text.tertiary, fontSize: '20px' }} />
-                </InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: colors.text.tertiary, fontSize: '20px' }} />
+                  </InputAdornment>
+                ),
+              },
             }}
             sx={{
               '& .MuiOutlinedInput-root': {

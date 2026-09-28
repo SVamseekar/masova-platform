@@ -6,9 +6,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
 import MoneyOffIcon from '@mui/icons-material/MoneyOff';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import PrintIcon from '@mui/icons-material/Print';

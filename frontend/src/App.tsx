@@ -55,12 +55,7 @@ import { useKioskMode } from './hooks/useKioskMode';
 // Loading component
 const AppLoader = () => (
   <Box
-    display="flex"
-    justifyContent="center"
-    alignItems="center"
-    minHeight="100vh"
-    bgcolor="transparent"
-  >
+   sx={{ bgcolor: 'transparent', minHeight: '100vh', justifyContent: 'center', alignItems: 'center', display: 'flex'}}>
     <CircularProgress color="primary" size={60} />
   </Box>
 );
