@@ -10,7 +10,7 @@ import {
   HomeOutlined as HomeOutlinedIcon,
   LocalShippingOutlined as ActiveOutlinedIcon,
   HistoryOutlined as HistoryOutlinedIcon,
-  PersonOutline as PersonOutlinedIcon,
+  PersonOutlined as PersonOutlinedIcon,
 } from '@mui/icons-material';
 import { RootState } from '../../store/store';
 

@@ -121,12 +121,6 @@ const MaSoVaThemeOptions: ThemeOptions = {
             boxShadow: '0 4px 12px rgba(229, 62, 62, 0.3)',
           },
         },
-        containedPrimary: {
-          background: 'linear-gradient(135deg, #e53e3e 0%, #ff6b6b 100%)',
-          '&:hover': {
-            background: 'linear-gradient(135deg, #c0392b 0%, #e53e3e 100%)',
-          },
-        },
         outlined: {
           borderWidth: 2,
           '&:hover': {
@@ -134,6 +128,17 @@ const MaSoVaThemeOptions: ThemeOptions = {
           },
         },
       },
+      variants: [
+        {
+          props: { variant: 'contained', color: 'primary' },
+          style: {
+            background: 'linear-gradient(135deg, #e53e3e 0%, #ff6b6b 100%)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #c0392b 0%, #e53e3e 100%)',
+            },
+          },
+        },
+      ],
     },
     MuiCard: {
       styleOverrides: {
