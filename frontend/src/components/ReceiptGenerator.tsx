@@ -63,11 +63,13 @@ export default function ReceiptGenerator({ open, onClose, receiptData }: Receipt
       onClose={onClose}
       maxWidth="sm"
       fullWidth
-      PaperProps={{
-        sx: {
-          ...createCard('lg', 'xl'),
-          backgroundColor: colors.surface.background,
-        }
+      slotProps={{
+        paper: {
+          sx: {
+            ...createCard('lg', 'xl'),
+            backgroundColor: colors.surface.background,
+          },
+        },
       }}
     >
       <DialogTitle>
@@ -114,7 +116,7 @@ export default function ReceiptGenerator({ open, onClose, receiptData }: Receipt
         >
           {/* Store Header */}
           <Box sx={{ textAlign: 'center', mb: 2, pb: 2, borderBottom: '2px dashed #000' }}>
-            <Typography variant="h5" fontWeight="bold">
+            <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
               {storeName}
             </Typography>
             <Typography variant="body2">{storeAddress}</Typography>
@@ -162,7 +164,7 @@ export default function ReceiptGenerator({ open, onClose, receiptData }: Receipt
 
           {/* Items */}
           <Box sx={{ mb: 2 }}>
-            <Typography variant="body1" fontWeight="bold" gutterBottom>
+            <Typography variant="body1" gutterBottom sx={{ fontWeight: 'bold' }}>
               ITEMS:
             </Typography>
             {items.map((item, index) => (
@@ -171,7 +173,7 @@ export default function ReceiptGenerator({ open, onClose, receiptData }: Receipt
                   <Typography variant="body2">
                     {item.quantity} × {item.itemName}
                   </Typography>
-                  <Typography variant="body2" fontWeight="medium">
+                  <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
                     {fmt(item.quantity * item.price)}
                   </Typography>
                 </Box>
@@ -214,10 +216,10 @@ export default function ReceiptGenerator({ open, onClose, receiptData }: Receipt
             )}
             <Divider sx={{ my: 1 }} />
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Typography variant="h6" fontWeight="bold">
+              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                 TOTAL:
               </Typography>
-              <Typography variant="h6" fontWeight="bold">
+              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                 {fmt(total)}
               </Typography>
             </Box>

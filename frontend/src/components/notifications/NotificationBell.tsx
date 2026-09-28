@@ -96,13 +96,15 @@ const NotificationBell: React.FC = () => {
           vertical: 'top',
           horizontal: 'right',
         }}
-        PaperProps={{
-          sx: {
-            ...createNeumorphicSurface('raised', 'md', 'xl'),
-            width: 420,
-            maxHeight: 600,
-            mt: 1,
-            overflow: 'hidden',
+        slotProps={{
+          paper: {
+            sx: {
+              ...createNeumorphicSurface('raised', 'md', 'xl'),
+              width: 420,
+              maxHeight: 600,
+              mt: 1,
+              overflow: 'hidden',
+            },
           },
         }}
       >

@@ -217,7 +217,7 @@ const NotificationSettingsPage: React.FC = () => {
       {/* Channel Preferences */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {channelSections.map((section, index) => (
-          <Grid item xs={12} sm={6} key={index}>
+          <Grid key={index} size={{ xs: 12, sm: 6 }}>
             <Card
               sx={{
                 ...createNeumorphicSurface('flat', 'sm', 'xl'),
