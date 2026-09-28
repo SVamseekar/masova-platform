@@ -90,7 +90,18 @@ public class OrderItemSyncService {
         orderJpaRepository.save(pgOrder);
     }
 
-    private void updateFields(OrderJpaEntity pgOrder, Order order) {
+    /**
+     * Applies every field {@link #updateFields} covers, plus items, to a PG entity in place —
+     * no transaction or repository call of its own, safe to use inside a caller's own
+     * transaction (e.g. OrderService.buildJpaEntity backfilling a freshly-built row so a
+     * delayed outbox replay isn't limited to create-time fields).
+     */
+    public void applyFullState(OrderJpaEntity pgOrder, Order order) {
+        updateFields(pgOrder, order);
+        pgOrder.setItems(buildItemEntities(order.getItems(), pgOrder));
+    }
+
+    void updateFields(OrderJpaEntity pgOrder, Order order) {
         pgOrder.setCustomerName(order.getCustomerName());
         pgOrder.setCustomerPhone(order.getCustomerPhone());
         pgOrder.setCustomerEmail(order.getCustomerEmail());
