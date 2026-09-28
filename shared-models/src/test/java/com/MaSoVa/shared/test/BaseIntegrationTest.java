@@ -9,8 +9,6 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.MongoDBContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Base class for integration tests that require a real MongoDB instance.
@@ -37,12 +35,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * </pre>
  */
 @SpringBootTest
-@Testcontainers
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 public abstract class BaseIntegrationTest {
 
-    @Container
     @SuppressWarnings("resource")
     protected static final MongoDBContainer mongoDBContainer =
             new MongoDBContainer("mongo:7.0").withExposedPorts(27017).withReuse(true);
@@ -53,9 +49,18 @@ public abstract class BaseIntegrationTest {
     @Autowired
     protected ObjectMapper objectMapper;
 
+    // Singleton container: started once per JVM and stopped by Ryuk at exit.
+    // A per-class @Container is stopped after each test class while Spring's cached
+    // context still points at it, which breaks the next class with "Connection refused".
+    static {
+        mongoDBContainer.start();
+    }
+
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.data.mongodb.uri", mongoDBContainer::getReplicaSetUrl);
+        // commerce keeps orders in a second Mongo client; without this it falls back to localhost:27017.
+        registry.add("orders.mongodb.uri", mongoDBContainer::getReplicaSetUrl);
     }
 
     /**

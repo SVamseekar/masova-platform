@@ -4,21 +4,27 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.junit.jupiter.Container;
 
 public abstract class BaseMessagingIntegrationTest extends BaseFullIntegrationTest {
 
-    // withAdminPassword sets RABBITMQ_DEFAULT_PASS via configure(); withEnv sets the username.
+    // withAdminUser/withAdminPassword set RABBITMQ_DEFAULT_USER/PASS in configure();
+    // a plain withEnv for the user is overwritten there and login fails.
     // No rabbitmqadmin / management plugin needed — works on plain alpine image.
     // waitingFor ensures the Mnesia DB and default user are ready before the first AMQP connection.
-    @Container
     @SuppressWarnings("resource")
     protected static final RabbitMQContainer rabbitContainer =
             new RabbitMQContainer("rabbitmq:3.12-alpine")
+                    .withAdminUser("masova")
                     .withAdminPassword("masova_secret")
-                    .withEnv("RABBITMQ_DEFAULT_USER", "masova")
                     .waitingFor(Wait.forLogMessage(".*Server startup complete.*", 1))
                     .withReuse(true);
+
+    // Singleton container: started once per JVM and stopped by Ryuk at exit.
+    // A per-class @Container is stopped after each test class while Spring's cached
+    // context still points at it, which breaks the next class with "Connection refused".
+    static {
+        rabbitContainer.start();
+    }
 
     @DynamicPropertySource
     static void configureRabbitProperties(DynamicPropertyRegistry registry) {

@@ -50,8 +50,9 @@ spring:
         retry:
           enabled: true
           initial-interval: 1000ms
-          max-attempts: 3
+          max-attempts: 5
           multiplier: 2.0
+          max-interval: 30000ms
 
   # PostgreSQL — dual-write for orders (Phase 2)
   datasource:

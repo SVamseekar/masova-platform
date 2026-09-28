@@ -7,7 +7,7 @@ import com.MaSoVa.payment.gateway.PaymentGateway;
 import com.MaSoVa.payment.gateway.PaymentGatewayResolver;
 import com.MaSoVa.payment.repository.RefundRepository;
 import com.MaSoVa.payment.repository.TransactionRepository;
-import com.MaSoVa.payment.service.OrderServiceClient;
+import com.MaSoVa.payment.messaging.OrderPaymentSyncRelay;
 import com.MaSoVa.payment.service.RefundService;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -49,7 +49,7 @@ class RefundServiceApprovalTest {
     @Mock private TransactionRepository transactionRepository;
     @Mock private PaymentGatewayResolver paymentGatewayResolver;
     @Mock private PaymentGateway paymentGateway;
-    @Mock private OrderServiceClient orderServiceClient;
+    @Mock private OrderPaymentSyncRelay orderPaymentSyncRelay;
     @Mock private MongoTemplate mongoTemplate;
 
     @InjectMocks private RefundService refundService;
@@ -99,7 +99,7 @@ class RefundServiceApprovalTest {
         assertThat(result.getInitiatedBy()).isEqualTo("AGENT");
         assertThat(result.getStoreId()).isEqualTo("DOM001");
         verifyNoInteractions(paymentGatewayResolver);
-        verify(orderServiceClient, never()).updateOrderPaymentStatus(anyString(), anyString(), anyString());
+        verify(orderPaymentSyncRelay, never()).requestOrderPaymentStatus(anyString(), anyString());
     }
 
     @Test
@@ -131,7 +131,7 @@ class RefundServiceApprovalTest {
 
         assertThat(result.getStatus()).isEqualTo(Refund.RefundStatus.PROCESSING);
         assertThat(result.getRazorpayRefundId()).isEqualTo("rfnd_001");
-        verify(orderServiceClient).updateOrderPaymentStatus("order-123", "REFUNDED", "txn-001");
+        verify(orderPaymentSyncRelay, never()).requestOrderPaymentStatus(anyString(), anyString());
     }
 
     @Test
@@ -161,7 +161,7 @@ class RefundServiceApprovalTest {
         assertThat(result.getStatus()).isEqualTo(Refund.RefundStatus.PROCESSING);
         assertThat(result.getRazorpayRefundId()).isEqualTo("rfnd_approved");
         assertThat(result.getInitiatedBy()).isEqualTo("manager-001");
-        verify(orderServiceClient).updateOrderPaymentStatus("order-123", "REFUNDED", "txn-001");
+        verify(orderPaymentSyncRelay, never()).requestOrderPaymentStatus(anyString(), anyString());
     }
 
     @Test
@@ -225,7 +225,7 @@ class RefundServiceApprovalTest {
 
         assertThat(result.getStatus()).isEqualTo(Refund.RefundStatus.REJECTED);
         verifyNoInteractions(paymentGatewayResolver);
-        verify(orderServiceClient, never()).updateOrderPaymentStatus(anyString(), anyString(), anyString());
+        verify(orderPaymentSyncRelay, never()).requestOrderPaymentStatus(anyString(), anyString());
     }
 
     @Test

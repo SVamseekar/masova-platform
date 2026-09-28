@@ -7,16 +7,12 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest
-@Testcontainers
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 public abstract class BaseFullIntegrationTest extends BaseIntegrationTest {
 
-    @Container
     @SuppressWarnings("resource")
     protected static final PostgreSQLContainer<?> postgresContainer =
             new PostgreSQLContainer<>("postgres:16-alpine")
@@ -25,12 +21,19 @@ public abstract class BaseFullIntegrationTest extends BaseIntegrationTest {
                     .withPassword("masova_test")
                     .withReuse(true);
 
-    @Container
     @SuppressWarnings("resource")
     protected static final GenericContainer<?> redisContainer =
             new GenericContainer<>("redis:7-alpine")
                     .withExposedPorts(6379)
                     .withReuse(true);
+
+    // Singleton container: started once per JVM and stopped by Ryuk at exit.
+    // A per-class @Container is stopped after each test class while Spring's cached
+    // context still points at it, which breaks the next class with "Connection refused".
+    static {
+        postgresContainer.start();
+        redisContainer.start();
+    }
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {

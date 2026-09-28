@@ -1,7 +1,7 @@
 package com.MaSoVa.payment.unit.service;
 
 import com.MaSoVa.payment.service.RefundService;
-import com.MaSoVa.payment.service.OrderServiceClient;
+import com.MaSoVa.payment.messaging.OrderPaymentSyncRelay;
 import com.MaSoVa.payment.dto.RefundRequest;
 import com.MaSoVa.payment.entity.Refund;
 import com.MaSoVa.payment.entity.Transaction;
@@ -47,7 +47,7 @@ class RefundServiceTest {
     @Mock private TransactionRepository transactionRepository;
     @Mock private PaymentGatewayResolver paymentGatewayResolver;
     @Mock private PaymentGateway paymentGateway;
-    @Mock private OrderServiceClient orderServiceClient;
+    @Mock private OrderPaymentSyncRelay orderPaymentSyncRelay;
     @Mock private MongoTemplate mongoTemplate;
 
     @InjectMocks
@@ -237,7 +237,12 @@ class RefundServiceTest {
             assertThat(result.getRazorpayRefundId()).isEqualTo("rfnd_razorpay_001");
             assertThat(result.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(200.00));
             assertThat(result.getStatus()).isEqualTo(Refund.RefundStatus.PROCESSING);
-            verify(orderServiceClient).updateOrderPaymentStatus("order-123", "REFUNDED", "txn-001");
+            verify(mongoTemplate).updateFirst(any(Query.class),
+                    org.mockito.ArgumentMatchers.<Update>argThat(u -> {
+                        org.bson.Document set = (org.bson.Document) u.getUpdateObject().get("$set");
+                        return set != null && set.containsKey("status") && set.containsKey("orderSync");
+                    }), eq(Transaction.class));
+            verify(orderPaymentSyncRelay, org.mockito.Mockito.never()).requestOrderPaymentStatus(anyString(), anyString());
         }
 
         @Test

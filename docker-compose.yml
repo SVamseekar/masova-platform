@@ -177,7 +177,6 @@ services:
       - RABBITMQ_USERNAME=masova
       - RABBITMQ_PASSWORD=masova_secret
       - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
-      - INTERNAL_PAYMENT_CALLBACK_SECRET=dev-internal-payment-callback-secret-lab-only
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-sk_test_placeholder}
       - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY:-pk_test_placeholder}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-whsec_placeholder}

@@ -6,7 +6,6 @@ import com.MaSoVa.payment.entity.Transaction;
 import com.MaSoVa.payment.gateway.StripeGateway;
 import com.MaSoVa.payment.repository.RefundRepository;
 import com.MaSoVa.payment.repository.TransactionRepository;
-import com.MaSoVa.payment.service.OrderServiceClient;
 import com.MaSoVa.payment.service.RefundService;
 import com.MaSoVa.shared.test.BaseFullIntegrationTest;
 import org.bson.Document;
@@ -61,8 +60,6 @@ class RefundClaimIT extends BaseFullIntegrationTest {
     @MockitoBean
     private StripeGateway stripeGateway;
 
-    @MockitoBean
-    private OrderServiceClient orderServiceClient;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -153,6 +150,7 @@ class RefundClaimIT extends BaseFullIntegrationTest {
         Transaction after = transactionRepository.findById(tx.getId()).orElseThrow();
         assertThat(after.getRefundClaimedAmount()).isEqualByComparingTo("8.00");
         assertThat(after.getStatus()).isEqualTo(Transaction.PaymentStatus.PARTIAL_REFUND);
+        assertThat(after.getOrderSync().getPaymentStatus()).isEqualTo("REFUNDED");
     }
 
     @Test
