@@ -5,7 +5,7 @@ interface SupportEmailLinkProps {
   className?: string
 }
 
-export default function SupportEmailLink({ className = 'text-gray-400 hover:text-white transition-colors underline-offset-2 hover:underline' }: SupportEmailLinkProps) {
+export default function SupportEmailLink({ className }: SupportEmailLinkProps) {
   return (
     <a href={`mailto:${SUPPORT_EMAIL}`} className={className}>
       {SUPPORT_EMAIL}

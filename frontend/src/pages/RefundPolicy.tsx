@@ -1,13 +1,12 @@
 import React from 'react'
 import LegalPageLayout from '../apps/ProductSite/components/LegalPageLayout'
 import SupportEmailLink from '../apps/ProductSite/components/SupportEmailLink'
-import { colors } from '../apps/ProductSite/tokens'
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-3">
-      <h2 className="text-white font-semibold text-base">{title}</h2>
-      <div className="text-sm text-gray-400 leading-relaxed space-y-3">{children}</div>
+    <section>
+      <h2>{title}</h2>
+      {children}
     </section>
   )
 }
@@ -15,7 +14,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export const RefundPolicy: React.FC = () => {
   return (
     <LegalPageLayout title="Refund Policy" updated="July 10, 2026">
-      <div className="space-y-10">
+      <div>
         <Section title="1. Scope">
           <p>
             This policy covers payments processed through MaSoVa for restaurant orders (customer app /
@@ -33,7 +32,7 @@ export const RefundPolicy: React.FC = () => {
         </Section>
 
         <Section title="3. Timing">
-          <ul className="list-disc pl-5 space-y-1">
+          <ul>
             <li>Approved card refunds typically appear in 5–10 business days depending on the bank.</li>
             <li>Cash / COD orders are settled at the store — not via card networks.</li>
             <li>Aggregator (Wolt, Deliveroo, etc.) refunds follow that platform&apos;s process.</li>
@@ -48,10 +47,7 @@ export const RefundPolicy: React.FC = () => {
         </Section>
 
         <Section title="5. Contact">
-          <div
-            className="rounded-xl p-4 text-xs space-y-1"
-            style={{ background: colors.bgElevated, border: `1px solid ${colors.border}` }}
-          >
+          <div className="msite-legal-note">
             <p>
               For a specific order, contact the restaurant first. Platform issues:{' '}
               <SupportEmailLink />

@@ -12,9 +12,9 @@ declare global {
 }
 
 function hasAnalyticsConsent(): boolean {
-  const consentStr = localStorage.getItem('cookie_consent')
-  if (!consentStr) return false
   try {
+    const consentStr = localStorage.getItem('cookie_consent')
+    if (!consentStr) return false
     const consent = JSON.parse(consentStr) as { analytics?: boolean }
     return Boolean(consent.analytics)
   } catch {
@@ -53,9 +53,9 @@ function ensureGtag() {
   })
 }
 
+/** Applies the stored choice, including a later withdrawal. */
 function grantAnalyticsIfConsented() {
-  if (!hasAnalyticsConsent()) return
-  window.gtag?.('consent', 'update', { analytics_storage: 'granted' })
+  window.gtag?.('consent', 'update', { analytics_storage: hasAnalyticsConsent() ? 'granted' : 'denied' })
 }
 
 export function GoogleAnalytics() {

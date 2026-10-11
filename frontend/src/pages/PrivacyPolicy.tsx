@@ -2,13 +2,12 @@ import React from 'react'
 import LegalPageLayout from '../apps/ProductSite/components/LegalPageLayout'
 import SupportEmailLink from '../apps/ProductSite/components/SupportEmailLink'
 import { openContactForm } from '../apps/ProductSite/constants'
-import { colors } from '../apps/ProductSite/tokens'
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-3">
-      <h2 className="text-white font-semibold text-base">{title}</h2>
-      <div className="text-sm text-gray-400 leading-relaxed space-y-3">{children}</div>
+    <section>
+      <h2>{title}</h2>
+      {children}
     </section>
   )
 }
@@ -16,7 +15,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export const PrivacyPolicy: React.FC = () => {
   return (
     <LegalPageLayout title="Privacy Policy" updated="July 1, 2026">
-      <div className="space-y-10">
+      <div>
         <Section title="1. Who we are">
           <p>
             MaSoVa provides restaurant management software to business customers (restaurant owners,
@@ -26,17 +25,14 @@ export const PrivacyPolicy: React.FC = () => {
             For end-customer data (diners who order through a restaurant&apos;s MaSoVa-powered app or site),
             the restaurant is the data controller and MaSoVa acts as a data processor.
           </p>
-          <div
-            className="rounded-xl p-4 text-xs space-y-1"
-            style={{ background: colors.bgElevated, border: `1px solid ${colors.border}` }}
-          >
-            <p><span className="text-white font-medium">Contact:</span> <SupportEmailLink /></p>
-            <p><span className="text-white font-medium">Data protection enquiries:</span> <SupportEmailLink /></p>
+          <div className="msite-legal-note">
+            <p><strong>Contact:</strong> <SupportEmailLink /></p>
+            <p><strong>Data protection enquiries:</strong> <SupportEmailLink /></p>
           </div>
         </Section>
 
         <Section title="2. What we collect">
-          <ul className="list-disc pl-5 space-y-1">
+          <ul>
             <li>Account details — name, work email, phone, role</li>
             <li>Business details — restaurant name, locations, billing address</li>
             <li>Usage data — IP address, device type, access logs (security and support)</li>
@@ -46,11 +42,11 @@ export const PrivacyPolicy: React.FC = () => {
         </Section>
 
         <Section title="3. Legal basis (GDPR Article 6)">
-          <ul className="list-disc pl-5 space-y-1">
-            <li><span className="text-gray-300">Contract</span> — providing the platform you subscribed to</li>
-            <li><span className="text-gray-300">Legitimate interest</span> — security monitoring, product improvement</li>
-            <li><span className="text-gray-300">Legal obligation</span> — tax records, financial compliance</li>
-            <li><span className="text-gray-300">Consent</span> — optional analytics and marketing cookies</li>
+          <ul>
+            <li><strong>Contract</strong> — providing the platform you subscribed to</li>
+            <li><strong>Legitimate interest</strong> — security monitoring, product improvement</li>
+            <li><strong>Legal obligation</strong> — tax records, financial compliance</li>
+            <li><strong>Consent</strong> — optional analytics and marketing cookies</li>
           </ul>
         </Section>
 
@@ -63,7 +59,7 @@ export const PrivacyPolicy: React.FC = () => {
 
         <Section title="5. Sub-processors">
           <p>We share data only with processors under Data Processing Agreements, including:</p>
-          <ul className="list-disc pl-5 space-y-1">
+          <ul>
             <li>Payment processing (Stripe — PSD2 / SCA compliant)</li>
             <li>Cloud infrastructure (EU-hosted)</li>
             <li>Email delivery for transactional notifications</li>
@@ -81,12 +77,11 @@ export const PrivacyPolicy: React.FC = () => {
             for diner data requests. MaSoVa&apos;s in-app data rights tools are available to signed-in customers
             within their restaurant&apos;s live ordering experience.
           </p>
-          <div className="flex flex-wrap gap-3 pt-1">
+          <div className="msite-legal-actions">
             <button
               type="button"
               onClick={() => openContactForm()}
-              className="px-4 py-2 rounded-lg text-white text-xs font-semibold cursor-pointer"
-              style={{ background: colors.red }}
+              className="msite-btn msite-btn-primary msite-btn-sm"
             >
               Contact us
             </button>

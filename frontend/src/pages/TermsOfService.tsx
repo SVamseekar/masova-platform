@@ -1,13 +1,12 @@
 import React from 'react'
 import LegalPageLayout from '../apps/ProductSite/components/LegalPageLayout'
 import SupportEmailLink from '../apps/ProductSite/components/SupportEmailLink'
-import { colors } from '../apps/ProductSite/tokens'
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-3">
-      <h2 className="text-white font-semibold text-base">{title}</h2>
-      <div className="text-sm text-gray-400 leading-relaxed space-y-3">{children}</div>
+    <section>
+      <h2>{title}</h2>
+      {children}
     </section>
   )
 }
@@ -15,7 +14,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export const TermsOfService: React.FC = () => {
   return (
     <LegalPageLayout title="Terms of Service" updated="July 10, 2026">
-      <div className="space-y-10">
+      <div>
         <Section title="1. Agreement">
           <p>
             These Terms govern access to MaSoVa restaurant management software (the &quot;Platform&quot;)
@@ -33,7 +32,7 @@ export const TermsOfService: React.FC = () => {
         </Section>
 
         <Section title="3. Accounts and security">
-          <ul className="list-disc pl-5 space-y-1">
+          <ul>
             <li>You must provide accurate business contact information.</li>
             <li>You are responsible for staff accounts, PINs, and device access at your stores.</li>
             <li>Do not share admin credentials; revoke access when staff leave.</li>
@@ -58,18 +57,15 @@ export const TermsOfService: React.FC = () => {
 
         <Section title="6. Data">
           <p>
-            Our <a href="/privacy" className="underline text-gray-300 hover:text-white">Privacy Policy</a>{' '}
+            Our <a href="/privacy">Privacy Policy</a>{' '}
             describes how we process personal data. Where you use MaSoVa to serve diners, you are the
             controller for diner data and MaSoVa acts as processor under a DPA on request.
           </p>
         </Section>
 
         <Section title="7. Contact">
-          <div
-            className="rounded-xl p-4 text-xs space-y-1"
-            style={{ background: colors.bgElevated, border: `1px solid ${colors.border}` }}
-          >
-            <p><span className="text-white font-medium">Legal / support:</span> <SupportEmailLink /></p>
+          <div className="msite-legal-note">
+            <p><strong>Legal / support:</strong> <SupportEmailLink /></p>
           </div>
         </Section>
       </div>

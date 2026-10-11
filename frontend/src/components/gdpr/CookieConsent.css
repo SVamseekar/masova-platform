@@ -1,0 +1,41 @@
+/* Board 03 cookie preferences dialog. */
+.cookie-prefs { position: fixed; inset: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(24, 34, 31, 0.6); color: var(--masova-text); font-size: 15px; line-height: 1.5; }
+.cookie-prefs *, .cookie-prefs *::before { box-sizing: border-box; }
+.cookie-prefs-dialog { width: 100%; max-width: 640px; max-height: calc(100vh - 32px); overflow-y: auto; background: var(--masova-surface); border-radius: 16px; padding: 28px; box-shadow: 0 24px 64px rgba(24, 34, 31, 0.28); animation: cookie-prefs-in 220ms cubic-bezier(0.16, 1, 0.3, 1); }
+.cookie-prefs-dialog:focus { outline: none; }
+.cookie-prefs-head { display: flex; gap: 20px; align-items: flex-start; margin-bottom: 24px; }
+.cookie-prefs-head svg { flex-shrink: 0; margin-top: 4px; }
+.cookie-prefs h2 { margin: 0 0 10px; font-size: 24px; line-height: 1.15; font-weight: 700; color: var(--masova-text); }
+.cookie-prefs p { margin: 0; color: var(--masova-textSecondary); font-size: 14px; }
+.cookie-prefs ul { list-style: none; margin: 0; padding: 0 20px; border: 1px solid var(--masova-borderSubtle); border-radius: 12px; }
+.cookie-prefs li { display: flex; align-items: center; gap: 20px; padding: 18px 0; border-top: 1px solid var(--masova-borderSubtle); }
+.cookie-prefs li:first-child { border-top: 0; }
+.cookie-prefs li > svg { flex-shrink: 0; }
+.cookie-prefs li > div { flex: 1; min-width: 0; }
+.cookie-prefs li b { display: block; font-weight: 600; }
+.cookie-prefs li > .cookie-prefs-required { text-align: center; flex: none; }
+.cookie-prefs-required span { display: block; background: var(--masova-successSurface); color: var(--masova-successText); font-weight: 600; border-radius: 6px; padding: 2px 20px; }
+.cookie-prefs-required small { color: var(--masova-textSecondary); font-size: 13px; }
+.cookie-prefs-switch { display: inline-flex; align-items: center; gap: 12px; min-height: 48px; padding: 0; border: 0; background: none; font: inherit; color: var(--masova-text); cursor: pointer; flex-shrink: 0; }
+.cookie-prefs-switch i { position: relative; width: 44px; height: 24px; border-radius: 12px; background: var(--masova-surface); border: 1px solid var(--masova-borderControl); transition: background-color 150ms; }
+.cookie-prefs-switch i::before { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--masova-borderControl); transition: transform 150ms; }
+.cookie-prefs-switch[aria-checked="true"] i { background: var(--masova-forest); border-color: var(--masova-forest); }
+.cookie-prefs-switch[aria-checked="true"] i::before { background: var(--masova-surface); transform: translateX(20px); }
+.cookie-prefs-switch span { width: 24px; text-align: left; }
+.cookie-prefs-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 24px; }
+.cookie-prefs-foot a { margin-right: auto; color: var(--masova-text); text-decoration: underline; display: inline-flex; align-items: center; gap: 8px; min-height: 48px; font-size: 14px; }
+.cookie-prefs-foot button { min-height: 48px; padding: 10px 20px; border-radius: 8px; border: 1px solid var(--masova-borderControl); background: var(--masova-surface); color: var(--masova-text); font: inherit; font-weight: 600; cursor: pointer; }
+.cookie-prefs-foot button:hover { background: var(--masova-selectionSurface); }
+.cookie-prefs-foot button.cookie-prefs-save { background: var(--masova-primary); border-color: var(--masova-primary); color: var(--masova-onPrimary); }
+.cookie-prefs-foot button.cookie-prefs-save:hover { background: var(--masova-primaryHover); }
+.cookie-prefs :focus-visible { outline: 3px solid var(--masova-focus); outline-offset: 3px; border-radius: 4px; }
+@keyframes cookie-prefs-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@media (max-width: 560px) {
+  .cookie-prefs-dialog { padding: 20px; }
+  .cookie-prefs-head > svg, .cookie-prefs li > svg { display: none; }
+  .cookie-prefs-foot a { width: 100%; }
+  .cookie-prefs-foot button { flex: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cookie-prefs-dialog, .cookie-prefs-switch i, .cookie-prefs-switch i::before { animation: none; transition: none; }
+}

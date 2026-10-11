@@ -1,13 +1,13 @@
 import React from 'react'
+import { OPEN_COOKIE_PREFERENCES_EVENT } from '../components/gdpr/CookieConsent'
 import LegalPageLayout from '../apps/ProductSite/components/LegalPageLayout'
 import SupportEmailLink from '../apps/ProductSite/components/SupportEmailLink'
-import { colors } from '../apps/ProductSite/tokens'
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-3">
-      <h2 className="text-white font-semibold text-base">{title}</h2>
-      <div className="text-sm text-gray-400 leading-relaxed space-y-3">{children}</div>
+    <section>
+      <h2>{title}</h2>
+      {children}
     </section>
   )
 }
@@ -15,7 +15,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export const CookiePolicy: React.FC = () => {
   return (
     <LegalPageLayout title="Cookie Policy" updated="July 10, 2026">
-      <div className="space-y-10">
+      <div>
         <Section title="1. What we use">
           <p>
             MaSoVa uses cookies and similar storage on the marketing site and web applications to keep
@@ -24,17 +24,17 @@ export const CookiePolicy: React.FC = () => {
         </Section>
 
         <Section title="2. Categories">
-          <ul className="list-disc pl-5 space-y-1">
+          <ul>
             <li>
-              <span className="text-gray-300">Essential</span> — authentication session, security,
+              <strong>Essential</strong> — authentication session, security,
               load balancing. Always on; required for the product to work.
             </li>
             <li>
-              <span className="text-gray-300">Analytics</span> — optional, off by default until you
+              <strong>Analytics</strong> — optional, off by default until you
               accept via the cookie banner.
             </li>
             <li>
-              <span className="text-gray-300">Marketing</span> — optional, off by default.
+              <strong>Marketing</strong> — optional, off by default.
             </li>
           </ul>
         </Section>
@@ -44,18 +44,24 @@ export const CookiePolicy: React.FC = () => {
             Use the on-site cookie banner to accept or reject optional cookies. You can also clear
             site data in your browser. Essential cookies cannot be disabled while you use the Platform.
           </p>
+          <div className="msite-legal-actions">
+            <button
+              type="button"
+              className="msite-btn msite-btn-sm"
+              onClick={() => window.dispatchEvent(new Event(OPEN_COOKIE_PREFERENCES_EVENT))}
+            >
+              Change cookie preferences
+            </button>
+          </div>
         </Section>
 
         <Section title="4. More information">
           <p>
-            See our <a href="/privacy" className="underline text-gray-300 hover:text-white">Privacy Policy</a>{' '}
+            See our <a href="/privacy">Privacy Policy</a>{' '}
             for full data processing details. Questions: <SupportEmailLink />.
           </p>
-          <div
-            className="rounded-xl p-4 text-xs"
-            style={{ background: colors.bgElevated, border: `1px solid ${colors.border}` }}
-          >
-            <p className="text-gray-400">
+          <div className="msite-legal-note">
+            <p>
               This page describes cookie use for masova.souravamseekar.com and related app hosts.
             </p>
           </div>
