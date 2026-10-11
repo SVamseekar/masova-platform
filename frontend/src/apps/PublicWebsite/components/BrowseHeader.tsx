@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { ShoppingBag } from 'lucide-react';
+import { Search, ShoppingBag } from 'lucide-react';
 import MaSoVaBrand from '../../../components/common/MaSoVaBrand';
 import { useAppSelector } from '../../../store/hooks';
 import { selectCartItemCount } from '../../../store/slices/cartSlice';
@@ -18,6 +18,7 @@ export default function BrowseHeader({ onCartClick }: { onCartClick: () => void 
       {authenticated && <NavLink to="/customer/orders">Orders</NavLink>}
       <NavLink to={authenticated ? '/customer/profile' : '/customer-login'}>{authenticated ? 'Account' : 'Sign in'}</NavLink>
     </nav>
+    <NavLink to="/menu" className="browse-header-search" aria-label="Search the menu"><Search size={20} aria-hidden="true" /></NavLink>
     <button type="button" className="browse-primary browse-cart-button" onClick={onCartClick} aria-label={`Open cart, ${count} ${count === 1 ? 'item' : 'items'}`}><ShoppingBag size={20} aria-hidden="true" /><span>{count}</span></button>
   </header>;
 }

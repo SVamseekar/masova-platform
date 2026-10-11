@@ -26,7 +26,8 @@
 .browse-header { min-height: 80px; padding: 16px 32px; display: flex; align-items: center; gap: 24px; background: var(--masova-surface); border-bottom: 1px solid var(--masova-borderSubtle); }
 .browse-brand .masova-brand { display: flex; align-items: center; gap: 5px; font-size: 22px; font-weight: 700; }
 .browse-brand svg { width: 28px; height: 28px; }
-.browse-header nav { margin-left: auto; display: flex; align-items: center; gap: 24px; }
+.browse-header nav { margin-left: 16px; margin-right: auto; display: flex; align-items: center; gap: 24px; }
+.browse-header-search { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 1px solid var(--masova-borderSubtle); border-radius: 8px; }
 .browse-header nav a { padding: 10px 0; border-bottom: 2px solid transparent; }
 .browse-header nav a.active { color: var(--masova-primary); border-bottom-color: var(--masova-primary); }
 .browse-store { display: flex; align-items: center; gap: 6px; min-width: 0; }
@@ -60,7 +61,8 @@
 .browse-menu { display: grid; grid-template-columns: 190px minmax(0, 1fr); max-width: 1600px; margin: auto; }
 .browse-sidebar { padding: 24px 16px; border-right: 1px solid var(--masova-borderSubtle); }
 .browse-sidebar nav { display: flex; flex-direction: column; gap: 6px; }
-.browse-sidebar button { text-align: left; text-transform: capitalize; border-color: transparent; background: transparent; }
+.browse-sidebar button { display: flex; align-items: center; gap: 12px; text-align: left; text-transform: capitalize; border-color: transparent; background: transparent; }
+.browse-sidebar button svg { flex-shrink: 0; }
 .customer-browse button[aria-pressed=true] { background: var(--masova-selectionSurface); color: var(--masova-selectionText); font-weight: 600; }
 .browse-results { padding: 24px; min-width: 0; }
 .browse-search-row { display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: 12px; }
