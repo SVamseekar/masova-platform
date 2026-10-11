@@ -1,214 +1,158 @@
-import React, { useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ArrowRight, CircleAlert, CircleCheck, Clock } from 'lucide-react';
+import BrowseShell from '../../apps/PublicWebsite/components/BrowseShell';
 import { useVerifyPaymentMutation } from '../../store/api/paymentApi';
-import { useAppDispatch } from '../../store/hooks';
-import { clearCart } from '../../store/slices/cartSlice';
-import CustomerPageHeader from '../../components/common/CustomerPageHeader';
+import { useGetOrderQuery, useTrackOrderQuery, type Order } from '../../store/api/orderApi';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { clearCart, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMajorAmount } from '../../utils/currency';
+import '../checkout/components/Checkout.css';
+
+const STATUS_LABELS: Record<string, string> = {
+  RECEIVED: 'Received', PREPARING: 'Preparing', OVEN: 'In oven', BAKED: 'Ready', READY: 'Ready',
+  DISPATCHED: 'Awaiting pickup', OUT_FOR_DELIVERY: 'Out for delivery', DELIVERED: 'Delivered',
+  SERVED: 'Served', COMPLETED: 'Completed', CANCELLED: 'Cancelled',
+};
 
 /**
- * Payment success — dark-premium only. Supports Stripe (order_id query) and
- * legacy Razorpay verify params when present.
+ * Payment result. Supports Stripe (order_id + redirect_status query) and
+ * legacy Razorpay verify params when present. "Successful" is only shown once
+ * the store reports the order as paid.
  */
 const PaymentSuccessPage: React.FC = () => {
-  const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const locale = useAppSelector(selectCartLocale);
   const [searchParams] = useSearchParams();
-  const [verifyPayment, { isLoading, isError }] = useVerifyPaymentMutation();
+  const [verifyPayment, { isLoading: isVerifying, isError: verifyFailed, isSuccess: verified }] = useVerifyPaymentMutation();
+  const [timedOut, setTimedOut] = useState(false);
 
   const razorpayPaymentId = searchParams.get('razorpay_payment_id');
   const razorpayOrderId = searchParams.get('razorpay_order_id');
   const razorpaySignature = searchParams.get('razorpay_signature');
   const orderId = searchParams.get('order_id');
+  const redirectStatus = searchParams.get('redirect_status');
+
+  // Signed-in customers get the full order with amounts and payment state. The public tracking
+  // view carries neither, so it is only used when the full order is not available to this visitor.
+  const signedIn = useAppSelector(state => state.auth.isAuthenticated);
+  const fullOrderQuery = useGetOrderQuery(orderId || '', { skip: !orderId || !signedIn });
+  const fullOrderDenied = fullOrderQuery.isError && [401, 403].includes((fullOrderQuery.error as { status?: number })?.status ?? 0);
+  const limitedView = !!orderId && (!signedIn || fullOrderDenied);
+  const trackQuery = useTrackOrderQuery(orderId || '', { skip: !limitedView });
+  const orderQuery = limitedView ? trackQuery : fullOrderQuery;
+  const order = orderQuery.data;
+  const paid = order?.paymentStatus === 'PAID' || verified;
+  const providerDeclined = (!!redirectStatus && redirectStatus !== 'succeeded' && redirectStatus !== 'processing') || order?.paymentStatus === 'FAILED';
+  const failed = verifyFailed || providerDeclined;
+  const waiting = !!orderId && !limitedView && !paid && !failed;
+  const { refetch } = orderQuery;
+
+  // Keep the cart when the payment did not go through, so the customer can retry
+  useEffect(() => {
+    if (!failed) dispatch(clearCart());
+  }, [dispatch, failed]);
 
   useEffect(() => {
-    dispatch(clearCart());
-  }, [dispatch]);
-
-  useEffect(() => {
-    if (orderId) {
-      sessionStorage.setItem('activeOrderId', orderId);
-    }
+    if (orderId) sessionStorage.setItem('activeOrderId', orderId);
   }, [orderId]);
 
   useEffect(() => {
     if (razorpayPaymentId && razorpayOrderId && razorpaySignature) {
-      verifyPayment({
-        razorpayPaymentId,
-        razorpayOrderId,
-        razorpaySignature,
-      });
+      verifyPayment({ razorpayPaymentId, razorpayOrderId, razorpaySignature });
     }
   }, [razorpayPaymentId, razorpayOrderId, razorpaySignature, verifyPayment]);
 
-  const shell = (children: React.ReactNode) => (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: 'var(--bg)',
-        fontFamily: 'var(--font-body)',
-        color: 'var(--text-1)',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      <CustomerPageHeader onBack={() => navigate('/menu')} breadcrumb="Payment" />
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '40px 20px 64px',
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  );
+  // The store marks the order paid from a payment-provider event, which can arrive after the redirect
+  useEffect(() => {
+    if (!waiting || timedOut) return;
+    const timer = window.setInterval(() => refetch(), 5000);
+    const stop = window.setTimeout(() => setTimedOut(true), 60000);
+    return () => { window.clearInterval(timer); window.clearTimeout(stop); };
+  }, [waiting, timedOut, refetch]);
 
-  const card: React.CSSProperties = {
-    maxWidth: 520,
-    width: '100%',
-    textAlign: 'center',
-    background: 'var(--surface)',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius-card)',
-    boxShadow: 'var(--shadow-card)',
-    padding: '40px 32px',
-  };
-
-  if (isLoading) {
-    return shell(
-      <div style={card}>
-        <div style={{ fontSize: 64, marginBottom: 16 }}>⏳</div>
-        <h1 style={titleStyle}>Verifying payment…</h1>
-        <p style={bodyStyle}>Please wait while we confirm your payment with the payment provider.</p>
-      </div>
-    );
+  let Icon = Clock;
+  let tone = 'pending';
+  let title = 'Confirming your payment';
+  let message = 'Your payment was submitted. The store has not confirmed it yet; this page updates automatically.';
+  if (failed) {
+    Icon = CircleAlert; tone = 'error'; title = 'Payment not confirmed';
+    message = 'We could not confirm this payment. If money was charged, contact the store with your order number.';
+  } else if (paid) {
+    Icon = CircleCheck; tone = 'success'; title = 'Payment successful!';
+    message = 'Your order has been received.';
+  } else if (!orderId) {
+    title = 'Payment submitted';
+    message = 'We could not identify the order for this payment on this page. Check your orders for its status.';
+  } else if (limitedView) {
+    title = 'Payment submitted';
+    message = 'Payment status cannot be shown on this page. Track your order for updates.';
+  } else if (isVerifying) {
+    message = 'Please wait while we confirm your payment with the payment provider.';
+  } else if (timedOut) {
+    message = 'The store has not confirmed your payment yet. This can take a few minutes; check again or track your order.';
   }
 
-  if (isError) {
-    return shell(
-      <div style={card}>
-        <div style={{ fontSize: 64, marginBottom: 16 }}>⚠️</div>
-        <h1 style={titleStyle}>Payment verification failed</h1>
-        <p style={bodyStyle}>
-          We couldn&apos;t verify your payment. If money was charged, contact support with your order
-          reference — we&apos;ll resolve it quickly.
-        </p>
-        <div style={actionsStyle}>
-          <PrimaryButton onClick={() => navigate('/customer/orders')}>View My Orders</PrimaryButton>
-          <SecondaryButton onClick={() => navigate('/menu')}>Back to Menu</SecondaryButton>
+  return (
+    <BrowseShell>
+      <main className="checkout-page">
+        <div className="checkout-columns checkout-columns-even">
+          <section className="checkout-form checkout-result" aria-labelledby="payment-result-title">
+            <Icon size={44} aria-hidden="true" className={`checkout-result-icon checkout-result-${tone}`} />
+            <h1 id="payment-result-title">{title}</h1>
+            <p role="status">{message}</p>
+            {orderId && (
+              <dl className="checkout-result-reference">
+                <div><dt>Order number</dt><dd>{order?.orderNumber ? `#${order.orderNumber}` : orderId}</dd></div>
+                {order?.createdAt && <div><dt>Placed</dt><dd>{new Date(order.createdAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</dd></div>}
+              </dl>
+            )}
+            <div className="checkout-result-actions">
+              <Link className="browse-primary" to={orderId ? `/tracking/${encodeURIComponent(orderId)}` : '/customer/orders'}>Track order <ArrowRight size={18} aria-hidden="true" /></Link>
+              <Link className="browse-secondary" to="/customer/orders">View orders</Link>
+            </div>
+            {waiting && timedOut && <button type="button" className="checkout-check-again" onClick={() => { setTimedOut(false); refetch(); }}>Check again</button>}
+            {paid && order && Number.isFinite(order.total) && order.currency && (
+              <p className="checkout-secure-note">You paid {formatMajorAmount(order.total, order.currency, locale)}.</p>
+            )}
+          </section>
+
+          {orderId && <ResultOrderSummary order={order} loading={orderQuery.isLoading} failed={orderQuery.isError} onRetry={refetch} paid={paid} locale={locale} />}
         </div>
-      </div>
+      </main>
+    </BrowseShell>
+  );
+};
+
+function ResultOrderSummary({ order, loading, failed, onRetry, paid, locale }: { order?: Order; loading: boolean; failed: boolean; onRetry: () => void; paid: boolean; locale: string }) {
+  if (loading) return <aside className="checkout-summary" aria-label="Order summary"><p role="status">Loading order details…</p></aside>;
+  if (failed || !order) {
+    return (
+      <aside className="checkout-summary" aria-label="Order summary">
+        <h2>Order summary</h2>
+        <div className="checkout-error" role="alert"><p>Order details could not be loaded.</p><button type="button" onClick={onRetry}>Retry</button></div>
+      </aside>
     );
   }
-
-  return shell(
-    <div style={card}>
-      <div style={{ fontSize: 64, marginBottom: 16 }}>✅</div>
-      <h1 style={titleStyle}>Payment successful</h1>
-      <p style={bodyStyle}>
-        Thank you! Your payment is confirmed and the kitchen is preparing your order.
-      </p>
-
-      {orderId && (
-        <div
-          style={{
-            background: 'var(--surface-2)',
-            border: '1px solid var(--border)',
-            borderRadius: 12,
-            padding: '16px 18px',
-            marginBottom: 20,
-          }}
-        >
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-3)', marginBottom: 6 }}>Order ID</div>
-          <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--gold)', wordBreak: 'break-all' }}>
-            {orderId}
-          </div>
-        </div>
-      )}
-
-      <p style={{ ...bodyStyle, fontSize: '0.9rem' }}>
-        You&apos;ll get a confirmation email shortly. Track status anytime from Orders.
-      </p>
-
-      <div style={actionsStyle}>
-        <PrimaryButton
-          onClick={() => navigate(orderId ? `/tracking/${orderId}` : '/customer/orders')}
-        >
-          Track Order
-        </PrimaryButton>
-        <SecondaryButton onClick={() => navigate('/menu')}>Continue Shopping</SecondaryButton>
-      </div>
-    </div>
-  );
-};
-
-const titleStyle: React.CSSProperties = {
-  fontFamily: 'var(--font-display)',
-  fontSize: '1.75rem',
-  fontWeight: 800,
-  color: 'var(--text-1)',
-  margin: '0 0 12px',
-};
-
-const bodyStyle: React.CSSProperties = {
-  color: 'var(--text-2)',
-  fontSize: '1rem',
-  lineHeight: 1.55,
-  margin: '0 0 20px',
-};
-
-const actionsStyle: React.CSSProperties = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: 12,
-  justifyContent: 'center',
-  marginTop: 8,
-};
-
-function PrimaryButton({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+  const money = (value: number | undefined) => order.currency && typeof value === 'number' && Number.isFinite(value) ? formatMajorAmount(value, order.currency, locale) : '—';
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        background: 'var(--red)',
-        color: 'var(--text-1)',
-        border: 'none',
-        borderRadius: 'var(--radius-pill)',
-        padding: '12px 22px',
-        fontFamily: 'var(--font-body)',
-        fontWeight: 700,
-        fontSize: '0.9rem',
-        cursor: 'pointer',
-      }}
-    >
-      {children}
-    </button>
-  );
-}
-
-function SecondaryButton({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        background: 'transparent',
-        color: 'var(--text-2)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-pill)',
-        padding: '12px 22px',
-        fontFamily: 'var(--font-body)',
-        fontWeight: 600,
-        fontSize: '0.9rem',
-        cursor: 'pointer',
-      }}
-    >
-      {children}
-    </button>
+    <aside className="checkout-summary" aria-label="Order summary">
+      <div className="checkout-summary-title"><h2>Order summary</h2><span className="checkout-status-chip">{STATUS_LABELS[order.status] || order.status}</span></div>
+      <ul className="checkout-lines">
+        {(order.items || []).map((item, index) => (
+          <li key={`${item.menuItemId}-${index}`}>
+            <div><strong>{item.quantity} × {item.name}</strong>{item.variant && <span>{item.variant}</span>}{!!item.customizations?.length && <span>{item.customizations.join(', ')}</span>}</div>
+            <strong>{money(item.price * item.quantity)}</strong>
+          </li>
+        ))}
+      </ul>
+      <dl className="checkout-breakdown">
+        <div><dt>Subtotal</dt><dd>{money(order.subtotal)}</dd></div>
+        {order.orderType === 'DELIVERY' && <div><dt>Delivery fee</dt><dd>{money(order.deliveryFee)}</dd></div>}
+        <div><dt>{order.vatCountryCode ? 'VAT' : 'Tax'}</dt><dd>{money(order.totalVatAmount ?? order.tax)}</dd></div>
+        <div><dt>{paid ? 'Total paid' : 'Total'}</dt><dd>{money(order.total)}</dd></div>
+      </dl>
+    </aside>
   );
 }
 
