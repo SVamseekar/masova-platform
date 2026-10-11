@@ -28,6 +28,42 @@ public class CustomerServiceClient {
     }
 
     /**
+     * Customer profile ids belonging to a user account. Orders reference the customer profile id,
+     * while the authenticated caller is identified by user id. Core only answers this for the
+     * caller's own account (the JWT is forwarded). A refusal from core yields no ids; an outage is
+     * reported as 503 so it is not mistaken for an ownership violation.
+     */
+    public java.util.Set<String> findCustomerIdsForUser(String userId) {
+        if (userId == null || userId.isBlank()) {
+            return java.util.Set.of();
+        }
+        try {
+            String url = org.springframework.web.util.UriComponentsBuilder.fromHttpUrl(customerServiceUrl)
+                    .path("/api/customers").queryParam("userId", userId).toUriString();
+            java.util.List<Map<String, Object>> customers = restTemplate.exchange(url, HttpMethods.GET, null,
+                    new org.springframework.core.ParameterizedTypeReference<java.util.List<Map<String, Object>>>() {}).getBody();
+            java.util.Set<String> ids = new java.util.HashSet<>();
+            if (customers != null) {
+                for (Map<String, Object> customer : customers) {
+                    if (customer.get("id") instanceof String id && userId.equals(customer.get("userId"))) {
+                        ids.add(id);
+                    }
+                }
+            }
+            return ids;
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            // Core refused the lookup for this caller: no profiles, so ownership stays denied
+            log.warn("Customer profile lookup refused for user {}: {}", userId, e.getStatusCode());
+            return java.util.Set.of();
+        } catch (org.springframework.web.client.RestClientException e) {
+            log.error("Customer profile lookup failed for user {}", userId, e);
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE,
+                    "Order ownership could not be verified right now. Try again shortly.");
+        }
+    }
+
+    /**
      * Update customer email address
      * Called when customer provides real email during order creation
      *

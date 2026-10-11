@@ -477,11 +477,21 @@ public class OrderService {
      * Security remediation Task 6 — throws 403 when {@code customerId} does not match
      * {@code order.customerId}.
      */
+    /**
+     * Whether the authenticated user may act for the given order customer id: either the id is the
+     * user's own id, or it is one of the user's customer profiles (what the ordering clients send).
+     */
+    public boolean callerOwnsCustomerId(String callerUserId, String orderCustomerId) {
+        if (callerUserId == null || callerUserId.isBlank() || orderCustomerId == null) {
+            return false;
+        }
+        return orderCustomerId.equals(callerUserId)
+                || customerServiceClient.findCustomerIdsForUser(callerUserId).contains(orderCustomerId);
+    }
+
     public Order assertCustomerOwnsOrder(String orderId, String customerId) {
         Order order = getOrderById(orderId);
-        if (customerId == null || customerId.isBlank()
-                || order.getCustomerId() == null
-                || !order.getCustomerId().equals(customerId)) {
+        if (!callerOwnsCustomerId(customerId, order.getCustomerId())) {
             log.warn("Ownership violation: caller {} attempted to access order {} (owner={})",
                     customerId, orderId, order.getCustomerId());
             throw new AccessDeniedException("Cannot access an order you do not own");

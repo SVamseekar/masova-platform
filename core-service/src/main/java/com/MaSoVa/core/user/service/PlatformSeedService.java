@@ -198,9 +198,9 @@ public class PlatformSeedService {
         serviceArea.setCenterLatitude(lat);
         serviceArea.setCenterLongitude(lng);
         serviceArea.setZones(java.util.List.of(
-                new Store.DeliveryZone("A", 0.0, 3.0, 1.9, 15),
-                new Store.DeliveryZone("B", 3.0, 6.0, 2.9, 25),
-                new Store.DeliveryZone("C", 6.0, 10.0, 3.9, 35)));
+                new Store.DeliveryZone("A", 0.0, 3.0, 1.99, 15),
+                new Store.DeliveryZone("B", 3.0, 6.0, 2.99, 25),
+                new Store.DeliveryZone("C", 6.0, 10.0, 3.99, 35)));
         config.setServiceArea(serviceArea);
         store.setConfiguration(config);
 

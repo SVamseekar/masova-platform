@@ -256,11 +256,9 @@ async function main() {
               centerLongitude: s.lng,
               usesPolygon: false,
               acceptsDelivery: true,
-              zones: [
-                { zoneName: 'A', minDistanceKm: 0, maxDistanceKm: 3, deliveryFeeINR: 1.9, estimatedDeliveryMinutes: 15, minimumOrderValueINR: 0, active: true },
-                { zoneName: 'B', minDistanceKm: 3, maxDistanceKm: 6, deliveryFeeINR: 2.9, estimatedDeliveryMinutes: 25, minimumOrderValueINR: 0, active: true },
-                { zoneName: 'C', minDistanceKm: 6, maxDistanceKm: 10, deliveryFeeINR: 3.9, estimatedDeliveryMinutes: 35, minimumOrderValueINR: 0, active: true },
-              ],
+              zones: (s.currency === 'GBP' ? [2.49, 3.49, 4.99] : [1.99, 2.99, 3.99]).map((fee, i) => (
+                { zoneName: 'ABC'[i], minDistanceKm: [0, 3, 6][i], maxDistanceKm: [3, 6, 10][i], deliveryFeeINR: fee, estimatedDeliveryMinutes: [15, 25, 35][i], minimumOrderValueINR: 0, active: true }
+              )),
             },
           },
           lastModified: t0,
