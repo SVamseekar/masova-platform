@@ -869,7 +869,7 @@ public class UserService {
     public String refreshAccessToken(String refreshToken) {
         String userId = jwtService.extractUserId(refreshToken);
         if (jwtService.isTokenExpired(refreshToken)) {
-            throw new RuntimeException("Refresh token expired");
+            throw new io.jsonwebtoken.JwtException("Refresh token expired");
         }
         
         User user = getUserById(userId);

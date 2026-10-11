@@ -2,6 +2,7 @@ package com.MaSoVa.core.user.controller;
 
 import com.MaSoVa.core.user.dto.*;
 import com.MaSoVa.core.user.service.UserService;
+import io.jsonwebtoken.JwtException;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -77,8 +78,18 @@ public class AuthController {
     @PostMapping("/refresh")
     @Operation(summary = "Refresh access token")
     public ResponseEntity<Map<String, String>> refresh(@RequestBody Map<String, String> request) {
-        String newAccessToken = userService.refreshAccessToken(request.get("refreshToken"));
-        return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
+        String refreshToken = request.get("refreshToken");
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "refreshToken is required"));
+        }
+        try {
+            String newAccessToken = userService.refreshAccessToken(refreshToken);
+            return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
+        } catch (JwtException ex) {
+            // Token failures are authentication failures; infrastructure exceptions still propagate.
+            return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Refresh token is invalid or expired"));
+        }
     }
 
     @PostMapping("/google")
