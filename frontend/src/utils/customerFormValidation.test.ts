@@ -36,6 +36,15 @@ describe('customerFormValidation', () => {
   });
 
   describe('isValidCustomerPostal', () => {
+    it('requires documented five numeric digits for Germany while preserving generic callers', () => {
+      expect(isValidCustomerPostal(' 10115 ', 'DE')).toBe(true);
+      expect(isValidCustomerPostal('not-a-code', 'DE')).toBe(false);
+      expect(isValidCustomerPostal('1012', 'DE')).toBe(false);
+      expect(isValidCustomerPostal('500001', 'de')).toBe(false);
+      expect(isValidCustomerPostal('1012 AB', 'NL')).toBe(true);
+      expect(isValidCustomerPostal('1012 AB')).toBe(true);
+      expect(isValidCustomerPostal('500001')).toBe(true);
+    });
     it('accepts DE PLZ and India PIN', () => {
       expect(isValidCustomerPostal('10115')).toBe(true);
       expect(isValidCustomerPostal('500001')).toBe(true);

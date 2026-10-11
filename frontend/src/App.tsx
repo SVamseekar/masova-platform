@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider, CssBaseline, CircularProgress, Box } from '@mui/material';
 import { Provider } from 'react-redux';
 import { SnackbarProvider } from 'notistack';
@@ -69,6 +69,14 @@ const KioskModeInitializer: React.FC = () => {
   }
 
   return null;
+};
+
+// Customer support belongs to public/customer journeys; staff use their own operations tools.
+const CustomerChatEntry = () => {
+  const { pathname } = useLocation();
+  const staffPaths = ['/staff-login', '/staff', '/manager', '/kitchen', '/pos', '/driver', '/kiosk'];
+  if (staffPaths.some(path => pathname === path || pathname.startsWith(path + '/'))) return null;
+  return <ChatWidget />;
 };
 
 const App: React.FC = () => {
@@ -232,7 +240,7 @@ const App: React.FC = () => {
                   </Routes>
                 </Suspense>
                 <NotificationSystem />
-                <ChatWidget />
+                <CustomerChatEntry />
 
                 <CookieConsent />
                 <GoogleAnalytics />

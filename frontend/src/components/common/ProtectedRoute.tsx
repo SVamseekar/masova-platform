@@ -1,7 +1,10 @@
 // src/components/common/ProtectedRoute.tsx
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
+import { LockKeyhole } from 'lucide-react';
 import { useAppSelector } from '../../store/hooks';
+import { getDefaultDashboard, saveReturnUrl } from '../../utils/security';
+import StaffAccessLayout from './StaffAccessLayout';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,49 +13,37 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
-  children,
-  allowedRoles = [],
-  requireAuth = true,
+  children, allowedRoles = [], requireAuth = true,
 }) => {
   const { isAuthenticated, user } = useAppSelector(state => state.auth);
   const location = useLocation();
 
-  // Check if kiosk mode is enabled
-  const isKioskMode = localStorage.getItem('masova_kioskMode') === 'true';
-
-  // Kiosk mode: Allow access if user is authenticated as KIOSK type
-  if (isKioskMode && isAuthenticated && user?.type === 'KIOSK') {
-    // Kiosk users can only access POS routes
-    if (!location.pathname.startsWith('/pos')) {
+  // Kiosk users can only access POS routes, independently of editable browser flags.
+  if (isAuthenticated && user?.type === 'KIOSK') {
+    if (location.pathname !== '/pos' && !location.pathname.startsWith('/pos/')) {
       return <Navigate to="/pos" replace />;
     }
     return <>{children}</>;
   }
 
-  if (requireAuth && !isAuthenticated) {
-    // Save current URL for return after login
-    const returnUrl = location.pathname + location.search;
-    if (returnUrl !== '/staff-login' && returnUrl !== '/customer-login' && returnUrl !== '/login') {
-      sessionStorage.setItem('returnUrl', returnUrl);
-    }
-
-    // Redirect to customer login for customer routes, staff login for others
+  if (requireAuth && (!isAuthenticated || !user)) {
+    // Save current URL for return after login.
+    saveReturnUrl(location.pathname + location.search + location.hash);
     const isCustomerRoute = location.pathname.startsWith('/customer');
     const redirectTo = isCustomerRoute ? '/customer-login' : '/staff-login';
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
   if (allowedRoles.length > 0 && user && !allowedRoles.includes(user.type)) {
-    // Kiosk users are treated like staff for role checking
-    if (user.type === 'KIOSK' && (allowedRoles.includes('STAFF') ||
-        allowedRoles.includes('MANAGER') || allowedRoles.includes('ASSISTANT_MANAGER'))) {
-      return <>{children}</>;
-    }
-
-    // Redirect based on required role
-    const isCustomerRole = allowedRoles.includes('CUSTOMER');
-    const redirectTo = isCustomerRole ? '/customer-login' : '/staff-login';
-    return <Navigate to={redirectTo} replace />;
+    // An authenticated but refused role needs a persistent explanation, not a login loop.
+    return <StaffAccessLayout compact>
+      <div className="staff-access__denied">
+        <LockKeyhole size={24} aria-hidden="true" />
+        <h1>Access not available</h1>
+        <p>Your account does not have access to this area of MaSoVa. Please contact your manager if this looks wrong.</p>
+        <Link className="staff-access__submit" to={getDefaultDashboard(user.type, user.role)}>Go to my workspace</Link>
+      </div>
+    </StaffAccessLayout>;
   }
 
   return <>{children}</>;

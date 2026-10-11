@@ -14,7 +14,7 @@ import {
   selectCartLocale,
   selectStoreCountryCode,
 } from '../../store/slices/cartSlice';
-import {formatMoney, formatMajorAmount} from '../../utils/currency';
+import {formatMajorAmount} from '../../utils/currency';
 import { computePreCheckoutTotals, formatTaxDisplay } from '../../utils/orderTax';
 
 interface CartDrawerProps {
@@ -40,10 +40,6 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) =>
     itemCount > 0 ? deliveryFee : 0,
     storeCountryCode
   );
-
-  const handleIncreaseQuantity = (itemId: string, itemName: string, itemPrice: number) => {
-    dispatch(addToCart({ id: itemId, name: itemName, price: itemPrice }));
-  };
 
   const handleDecreaseQuantity = (itemId: string) => {
     dispatch(removeFromCart(itemId));
@@ -220,7 +216,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) =>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {cartItems.map((item) => (
                 <div
-                  key={item.id}
+                  key={item.lineId || item.id}
                   style={{
                     display: 'flex',
                     gap: '12px',
@@ -273,7 +269,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) =>
                     </p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <button
-                        onClick={() => item.quantity <= 1 ? handleRemoveItem(item.id) : handleDecreaseQuantity(item.id)}
+                        onClick={() => item.quantity <= 1 ? handleRemoveItem(item.lineId || item.id) : handleDecreaseQuantity(item.lineId || item.id)}
                         style={{
                           width: '26px', height: '26px',
                           borderRadius: '50%',
@@ -303,7 +299,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose, onCheckout }) =>
                         {item.quantity}
                       </span>
                       <button
-                        onClick={() => handleIncreaseQuantity(item.id, item.name, item.price)}
+                        onClick={() => dispatch(addToCart({ ...item, quantity: 1 }))}
                         style={{
                           width: '26px', height: '26px',
                           borderRadius: '50%',

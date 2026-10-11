@@ -1,6 +1,8 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-interface CartItem {
+export interface CartItem {
+  /** UI identity; id remains the authoritative menu item ID for order requests. */
+  lineId?: string;
   id: string;
   name: string;
   price: number;
@@ -12,6 +14,14 @@ interface CartItem {
   variant?: string;
   customizations?: string[];
 }
+
+/** Stable identity for a dish configuration, including its current unit price. */
+export const cartConfigurationKey = (item: Omit<CartItem, 'quantity'>) => JSON.stringify([
+  item.id, item.variant || item.size || '', [...(item.customizations || item.toppings || [])].sort(), item.price,
+]);
+
+export const cartLineKey = (item: CartItem) => item.lineId || item.id;
+const matchesLine = (item: CartItem, key: string) => cartLineKey(item) === key;
 
 interface CartState {
   items: CartItem[];
@@ -37,8 +47,15 @@ const loadCartFromStorage = (): CartState => {
     const cartStr = localStorage.getItem('cart');
     if (cartStr) {
       const savedCart = JSON.parse(cartStr);
+      const items: CartItem[] = savedCart.items || [];
+      // Repair persisted bare keys created before price/configuration isolation.
+      items.forEach(item => {
+        if (items.some(other => other !== item && other.id === item.id)) {
+          item.lineId = cartConfigurationKey(item);
+        }
+      });
       return {
-        items: savedCart.items || [],
+        items,
         total: savedCart.total || 0,
         itemCount: savedCart.itemCount || 0,
         deliveryFee: 0, // Set dynamically when delivery address is entered
@@ -96,12 +113,16 @@ const cartSlice = createSlice({
   reducers: {
     addToCart: (state, action: PayloadAction<Omit<CartItem, 'quantity'> & { quantity?: number }>) => {
       const { quantity = 1, ...item } = action.payload;
-      const existingItem = state.items.find(i => i.id === item.id);
+      const existingItem = state.items.find(i => cartConfigurationKey(i) === cartConfigurationKey(item));
 
       if (existingItem) {
         existingItem.quantity += quantity;
       } else {
-        state.items.push({ ...item, quantity });
+        const sameDish = state.items.filter(line => line.id === item.id);
+        // Changed base prices also need distinct keys for quantity/remove actions.
+        sameDish.forEach(line => { line.lineId = cartConfigurationKey(line); });
+        state.items.push({ ...item, lineId: sameDish.length || item.variant || item.size || item.customizations?.length || item.toppings?.length
+          ? cartConfigurationKey(item) : item.lineId, quantity });
       }
 
       cartSlice.caseReducers.calculateTotals(state);
@@ -110,13 +131,13 @@ const cartSlice = createSlice({
 
     removeFromCart: (state, action: PayloadAction<string>) => {
       const itemId = action.payload;
-      const existingItem = state.items.find(i => i.id === itemId);
+      const existingItem = state.items.find(i => matchesLine(i, itemId));
 
       if (existingItem) {
         if (existingItem.quantity > 1) {
           existingItem.quantity -= 1;
         } else {
-          state.items = state.items.filter(i => i.id !== itemId);
+          state.items = state.items.filter(i => !matchesLine(i, itemId));
         }
       }
 
@@ -125,18 +146,18 @@ const cartSlice = createSlice({
     },
 
     removeItemCompletely: (state, action: PayloadAction<string>) => {
-      state.items = state.items.filter(i => i.id !== action.payload);
+      state.items = state.items.filter(i => !matchesLine(i, action.payload));
       cartSlice.caseReducers.calculateTotals(state);
       saveCartToStorage(state);
     },
 
     updateItemQuantity: (state, action: PayloadAction<{ id: string; quantity: number }>) => {
       const { id, quantity } = action.payload;
-      const existingItem = state.items.find(i => i.id === id);
+      const existingItem = state.items.find(i => matchesLine(i, id));
 
       if (existingItem) {
         if (quantity <= 0) {
-          state.items = state.items.filter(i => i.id !== id);
+          state.items = state.items.filter(i => !matchesLine(i, id));
         } else {
           existingItem.quantity = quantity;
         }
@@ -170,6 +191,10 @@ const cartSlice = createSlice({
 
     setSelectedStore: (state, action: PayloadAction<{ storeId: string; storeName: string }>) => {
       if (state.selectedStoreId !== action.payload.storeId) {
+        state.items = [];
+        state.total = 0;
+        state.itemCount = 0;
+        state.deliveryFee = 0;
         state.storeMarketSynced = false;
       }
       state.selectedStoreId = action.payload.storeId;

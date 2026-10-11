@@ -10,7 +10,7 @@ import {
   selectCartLocale,
   selectStoreCountryCode,
 } from '../../store/slices/cartSlice';
-import {formatMoney, formatMajorAmount} from '../../utils/currency';
+import {formatMajorAmount} from '../../utils/currency';
 import { computePreCheckoutTotals, formatTaxDisplay } from '../../utils/orderTax';
 
 interface CartPageProps {
@@ -113,7 +113,7 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
           {/* Items list */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {cartItems.map((item) => (
-              <div key={item.id} style={{
+              <div key={item.lineId || item.id} style={{
                 background: 'var(--surface)',
                 borderRadius: 'var(--radius-card)',
                 border: '1px solid var(--border)',
@@ -152,7 +152,7 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
                 {/* Qty controls */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                   <button
-                    onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                    onClick={() => handleUpdateQuantity(item.lineId || item.id, item.quantity - 1)}
                     disabled={item.quantity <= 1}
                     style={{
                       width: '28px', height: '28px', borderRadius: '50%',
@@ -168,7 +168,7 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
                     {item.quantity}
                   </span>
                   <button
-                    onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                    onClick={() => handleUpdateQuantity(item.lineId || item.id, item.quantity + 1)}
                     style={{
                       width: '28px', height: '28px', borderRadius: '50%',
                       background: 'var(--red)', border: 'none',
@@ -189,7 +189,7 @@ const CartPage: React.FC<CartPageProps> = ({ onContinueShopping, onProceedToPaym
 
                 {/* Delete */}
                 <button
-                  onClick={() => handleRemove(item.id)}
+                  onClick={() => handleRemove(item.lineId || item.id)}
                   style={{
                     background: 'none', border: 'none', color: 'var(--text-3)',
                     cursor: 'pointer', fontSize: '1.1rem', padding: '4px', flexShrink: 0,

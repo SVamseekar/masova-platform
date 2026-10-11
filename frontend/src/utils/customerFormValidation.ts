@@ -30,9 +30,10 @@ export function isValidCustomerPhone(phone: string): boolean {
  * Required postal / ZIP when present on forms.
  * EU formats vary (DE 5-digit, NL `1234 AB`, UK mixed). India PIN is 6 digits.
  */
-export function isValidCustomerPostal(code: string): boolean {
+export function isValidCustomerPostal(code: string, countryCode?: string | null): boolean {
   const trimmed = code.trim();
   if (!trimmed) return false;
+  if (countryCode?.trim().toUpperCase() === 'DE') return /^\d{5}$/.test(trimmed);
   if (trimmed.length < 3 || trimmed.length > 12) return false;
   return /^[A-Za-z0-9][A-Za-z0-9\s-]{1,11}$/.test(trimmed);
 }

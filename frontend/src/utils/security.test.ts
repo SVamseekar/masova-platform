@@ -357,6 +357,13 @@ describe('saveReturnUrl', () => {
 });
 
 describe('getDefaultDashboard', () => {
+  it('routes a cashier to POS using the backend staff role', () => {
+    expect(getDefaultDashboard('STAFF', 'CASHIER')).toBe('/pos');
+  });
+
+  it('restricts kiosk sessions to POS', () => {
+    expect(getDefaultDashboard('KIOSK')).toBe('/pos');
+  });
   it('returns /manager for MANAGER', () => {
     expect(getDefaultDashboard('MANAGER')).toBe('/manager');
   });

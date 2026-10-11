@@ -1,8 +1,9 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector, useStore } from 'react-redux';
 import { RootState } from '../store/store';
 import { refreshTokenSuccess, logout } from '../store/slices/authSlice';
 import API_CONFIG from '../config/api.config';
+import { authSessionIdentity, isCurrentAuthSession, redirectToSignIn } from '../utils/security';
 
 /**
  * Hook for proactive token refresh (like Google, Amazon, etc.)
@@ -17,6 +18,7 @@ import API_CONFIG from '../config/api.config';
  */
 export const useTokenRefresh = () => {
   const dispatch = useDispatch();
+  const store = useStore<RootState>();
   const { accessToken, refreshToken, isAuthenticated } = useSelector(
     (state: RootState) => state.auth
   );
@@ -52,6 +54,9 @@ export const useTokenRefresh = () => {
       // Don't logout here - let the baseQueryWithAuth handle it on actual 401
       return;
     }
+    const auth = store.getState().auth;
+    if (auth.refreshToken !== refreshToken) return;
+    const session = authSessionIdentity(auth);
 
     try {
       console.log('[TokenRefresh] Proactively refreshing token...');
@@ -63,8 +68,11 @@ export const useTokenRefresh = () => {
         body: JSON.stringify({ refreshToken }),
       });
 
+      if (!isCurrentAuthSession(session, store.getState().auth)) return;
+
       if (response.ok) {
         const data = await response.json();
+        if (!isCurrentAuthSession(session, store.getState().auth)) return;
         console.log('[TokenRefresh] Token refreshed successfully');
         dispatch(refreshTokenSuccess(data.accessToken));
       } else if (response.status === 401 || response.status === 403) {
@@ -74,11 +82,7 @@ export const useTokenRefresh = () => {
 
         // Redirect to login with return URL
         if (typeof window !== 'undefined') {
-          const currentPath = window.location.pathname + window.location.search;
-          if (currentPath !== '/login' && currentPath !== '/staff-login' && currentPath !== '/customer-login') {
-            sessionStorage.setItem('returnUrl', currentPath);
-          }
-          window.location.href = '/customer-login';
+          redirectToSignIn();
         }
       } else {
         // For network/server errors, don't logout - just reschedule
@@ -90,7 +94,7 @@ export const useTokenRefresh = () => {
       console.warn('[TokenRefresh] Token refresh network error:', error);
       // The token will be refreshed on the next API call via baseQueryWithAuth
     }
-  }, [refreshToken, dispatch]);
+  }, [refreshToken, dispatch, store]);
 
   /**
    * Schedule token refresh based on expiration time

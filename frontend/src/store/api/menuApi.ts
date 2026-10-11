@@ -72,6 +72,8 @@ export enum DietaryType {
 export interface MenuVariant {
   name: string;
   priceModifier: number; // in paise
+  isAvailable?: boolean | null;
+  description?: string;
 }
 
 export interface MenuCustomization {

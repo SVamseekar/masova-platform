@@ -17,7 +17,7 @@ import {
   selectCartLocale,
   selectStoreCountryCode,
 } from '../../store/slices/cartSlice';
-import {formatMoney, formatMajorAmount} from '../../utils/currency';
+import {formatMajorAmount} from '../../utils/currency';
 import { computePreCheckoutTotals, formatTaxDisplay } from '../../utils/orderTax';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { loadStripe, type StripeElementLocale } from '@stripe/stripe-js';
@@ -32,6 +32,7 @@ import {
   resolvePreferredPaymentMethod,
   type PaymentMethodCode,
 } from '../../utils/paymentMethods';
+import { checkoutCartConfiguration, type CheckoutHandoff } from '../checkout/components/checkoutContext';
 
 // Razorpay is declared in types/razorpay.d.ts - no need to redeclare
 
@@ -44,6 +45,8 @@ interface GuestInfo {
   state: string;
   pincode: string;
   deliveryInstructions?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 const PaymentPage: React.FC = () => {
@@ -65,7 +68,11 @@ const PaymentPage: React.FC = () => {
   const fmt = (v: number) => formatMajorAmount(v , currency, locale);
 
   // Get guest info from navigation state (passed from GuestCheckoutPage)
-  const guestInfo = location.state?.guestInfo as GuestInfo | undefined;
+  const handoff = location.state as Partial<CheckoutHandoff> | null;
+  const checkoutContextChanged = (handoff?.checkoutStoreId !== undefined && handoff.checkoutStoreId !== selectedStoreId)
+    || (handoff?.checkoutUserId !== undefined && handoff.checkoutUserId !== (currentUser?.id || null))
+    || (handoff?.cartConfiguration !== undefined && handoff.cartConfiguration !== checkoutCartConfiguration(cartItems));
+  const guestInfo = checkoutContextChanged ? undefined : handoff?.guestInfo as GuestInfo | undefined;
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodCode>('CARD');
   const [stripeData, setStripeData] = React.useState<{
@@ -73,7 +80,7 @@ const PaymentPage: React.FC = () => {
     publishableKey: string;
     orderId: string;
   } | null>(null);
-  const [orderType, setOrderType] = useState<'DELIVERY' | 'TAKEAWAY' | 'DINE_IN'>('DELIVERY');
+  const [orderType, setOrderType] = useState<'DELIVERY' | 'TAKEAWAY' | 'DINE_IN'>(() => handoff?.orderType === 'TAKEAWAY' ? 'TAKEAWAY' : 'DELIVERY');
   const [tableNumber, setTableNumber] = useState('');
   const [guestCount, setGuestCount] = useState('');
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -112,6 +119,7 @@ const PaymentPage: React.FC = () => {
     {
       skip:
         orderType !== 'DELIVERY' ||
+        !!guestInfo ||
         !selectedStoreId ||
         selectedLat === null ||
         selectedLng === null,
@@ -120,6 +128,7 @@ const PaymentPage: React.FC = () => {
 
   const isOutsideDeliveryRadius =
     orderType === 'DELIVERY' &&
+    !guestInfo &&
     selectedLat !== null &&
     selectedLng !== null &&
     radiusCheck !== undefined &&
@@ -156,6 +165,7 @@ const PaymentPage: React.FC = () => {
   const { tax, taxLabel, total } = computePreCheckoutTotals(subtotal, deliveryFee, storeCountryCode);
 
   const handlePlaceOrder = async () => {
+    if (checkoutContextChanged) return;
     try {
       let customerId = customerProfile?.id;
       if (currentUser && !customerId) {
@@ -193,6 +203,8 @@ const PaymentPage: React.FC = () => {
             state: guestInfo.state,
             pincode: guestInfo.pincode,
             landmark: guestInfo.deliveryInstructions || '',
+            latitude: guestInfo.latitude,
+            longitude: guestInfo.longitude,
           };
           specialInstructions = guestInfo.deliveryInstructions;
         } else if (customerProfile && selectedAddressId) {
@@ -337,7 +349,8 @@ const PaymentPage: React.FC = () => {
     razorpay.open();
   };
 
-  const isPlaceOrderDisabled = isLoading || (orderType === 'DELIVERY' && !guestInfo && (!customerProfile || !selectedAddressId)) || isOutsideDeliveryRadius || (orderType === 'DINE_IN' && !tableNumber);
+  const carriedAddressMissing = orderType === 'DELIVERY' && !!guestInfo && !guestInfo.street.trim();
+  const isPlaceOrderDisabled = checkoutContextChanged || carriedAddressMissing || isLoading || (orderType === 'DELIVERY' && !guestInfo && (!customerProfile || !selectedAddressId)) || isOutsideDeliveryRadius || (orderType === 'DINE_IN' && !tableNumber);
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', fontFamily: 'var(--font-body)' }}>
@@ -356,15 +369,20 @@ const PaymentPage: React.FC = () => {
             <div style={{ height: '2px', width: '60px', background: 'var(--gold)', marginTop: '10px', borderRadius: '2px' }} />
           </div>
 
+          {(checkoutContextChanged || carriedAddressMissing) && <div role="alert" style={cardStyle}>
+            <p>{checkoutContextChanged ? 'Your store, cart or account changed. Review checkout details before placing an order.' : 'Enter a delivery address before switching this pickup order to delivery.'}</p>
+            <button type="button" onClick={() => navigate('/guest-checkout')}>Review checkout details</button>
+          </div>}
+
           {/* Guest delivery info */}
           {guestInfo && (
             <div style={cardStyle}>
-              <SectionLabel>Delivery Information</SectionLabel>
+              <SectionLabel>{orderType === 'DELIVERY' ? 'Delivery Information' : 'Contact Information'}</SectionLabel>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <InfoRow label="Name" value={guestInfo.name} />
                 <InfoRow label="Email" value={guestInfo.email} />
                 <InfoRow label="Phone" value={guestInfo.phone} />
-                <InfoRow label="Address" value={`${guestInfo.street}, ${guestInfo.city}, ${guestInfo.state} — ${guestInfo.pincode}`} />
+                {orderType === 'DELIVERY' && <InfoRow label="Address" value={`${guestInfo.street}, ${guestInfo.city}, ${guestInfo.state} — ${guestInfo.pincode}`} />}
                 {guestInfo.deliveryInstructions && (
                   <InfoRow label="Instructions" value={guestInfo.deliveryInstructions} />
                 )}
@@ -373,7 +391,7 @@ const PaymentPage: React.FC = () => {
           )}
 
           {/* Logged-in customer info + address */}
-          {currentUser && !guestInfo && customerProfile && (
+          {!checkoutContextChanged && currentUser && !guestInfo && customerProfile && (
             <div style={cardStyle}>
               <SectionLabel>Customer Information</SectionLabel>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: orderType === 'DELIVERY' ? '20px' : '0' }}>
@@ -622,7 +640,7 @@ const PaymentPage: React.FC = () => {
             {/* Items list */}
             <div style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {cartItems.map((item) => (
-                <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div key={item.lineId || item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>
                     <span style={{ color: 'var(--gold)', fontWeight: 600, marginRight: '6px' }}>{item.quantity}×</span>
                     {item.name}

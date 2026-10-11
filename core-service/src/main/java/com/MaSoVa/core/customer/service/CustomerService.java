@@ -451,6 +451,13 @@ public class CustomerService {
         address.setLongitude(request.getLongitude());
         address.setLandmark(request.getLandmark());
 
+        if (request.isDefault()) {
+            markDefaultAddress(customer, address);
+        } else if (request.isDefaultSpecified() && address.isDefault()) {
+            CustomerAddress replacement = customer.getAddresses().stream()
+                    .filter(saved -> saved != address).findFirst().orElse(address);
+            markDefaultAddress(customer, replacement);
+        }
         return customerRepository.save(customer);
     }
 
@@ -461,34 +468,13 @@ public class CustomerService {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new NoSuchElementException("Customer not found with id: " + customerId));
 
-        int beforeSize = customer.getAddresses().size();
-        logger.info("Customer has {} addresses before removal", beforeSize);
-
-        // Log all address IDs for debugging
-        customer.getAddresses().forEach(addr ->
-            logger.info("Address: id={}, label={}, line1={}", addr.getId(), addr.getLabel(), addr.getAddressLine1())
-        );
-
-        boolean removed = customer.getAddresses().removeIf(addr -> {
-            boolean matches = addressId != null && addressId.equals(addr.getId());
-            if (matches) {
-                logger.info("Found matching address to remove: {}", addr.getId());
-            }
-            return matches;
-        });
-
-        int afterSize = customer.getAddresses().size();
-        logger.info("Customer has {} addresses after removal. Removed: {}", afterSize, removed);
+        boolean removed = customer.getAddresses().removeIf(addr -> addressId != null && addressId.equals(addr.getId()));
+        if (!removed) throw new NoSuchElementException("Address not found with id: " + addressId);
 
         // If removed address was default, set first address as default
         if (addressId.equals(customer.getDefaultAddressId()) && !customer.getAddresses().isEmpty()) {
             CustomerAddress firstAddr = customer.getAddresses().get(0);
-            // Ensure first address has an ID
-            if (firstAddr.getId() == null) {
-                firstAddr.setId(UUID.randomUUID().toString());
-            }
-            firstAddr.setDefault(true);
-            customer.setDefaultAddressId(firstAddr.getId());
+            markDefaultAddress(customer, firstAddr);
         } else if (customer.getAddresses().isEmpty()) {
             customer.setDefaultAddressId(null);
         }
@@ -505,26 +491,17 @@ public class CustomerService {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new NoSuchElementException("Customer not found with id: " + customerId));
 
-        boolean addressFound = false;
-        for (CustomerAddress address : customer.getAddresses()) {
-            // Handle null IDs by generating one if needed
-            if (address.getId() == null) {
-                address.setId(UUID.randomUUID().toString());
-            }
-            if (addressId != null && addressId.equals(address.getId())) {
-                address.setDefault(true);
-                customer.setDefaultAddressId(addressId);
-                addressFound = true;
-            } else {
-                address.setDefault(false);
-            }
-        }
-
-        if (!addressFound) {
-            throw new NoSuchElementException("Address not found with id: " + addressId);
-        }
-
+        CustomerAddress address = customer.getAddresses().stream()
+                .filter(saved -> addressId != null && addressId.equals(saved.getId()))
+                .findFirst().orElseThrow(() -> new NoSuchElementException("Address not found with id: " + addressId));
+        markDefaultAddress(customer, address);
         return customerRepository.save(customer);
+    }
+
+    private void markDefaultAddress(Customer customer, CustomerAddress selected) {
+        if (selected.getId() == null) selected.setId(UUID.randomUUID().toString());
+        customer.getAddresses().forEach(address -> address.setDefault(address == selected));
+        customer.setDefaultAddressId(selected.getId());
     }
 
     // ===========================

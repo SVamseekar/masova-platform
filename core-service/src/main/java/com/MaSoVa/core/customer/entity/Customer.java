@@ -1,6 +1,8 @@
 package com.MaSoVa.core.customer.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
@@ -208,7 +210,10 @@ public class Customer implements Serializable {
         public String getLandmark() { return landmark; }
         public void setLandmark(String landmark) { this.landmark = landmark; }
 
+        @JsonProperty("isDefault")
         public boolean isDefault() { return isDefault; }
+        @JsonProperty("isDefault")
+        @JsonAlias("default")
         public void setDefault(boolean aDefault) { isDefault = aDefault; }
 
         public LocalDateTime getCreatedAt() { return createdAt; }
