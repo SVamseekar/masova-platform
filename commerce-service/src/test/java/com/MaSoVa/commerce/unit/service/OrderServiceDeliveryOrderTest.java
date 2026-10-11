@@ -143,6 +143,49 @@ class OrderServiceDeliveryOrderTest {
         assertThat(result.getOrderType()).isEqualTo(Order.OrderType.DELIVERY);
     }
 
+    // Non-INR stores never receive the INR default fee
+
+    private com.MaSoVa.shared.entity.Store euroStore() {
+        com.MaSoVa.shared.entity.Store store = new com.MaSoVa.shared.entity.Store();
+        store.setCurrency("EUR");
+        return store;
+    }
+
+    @Test
+    void createOrder_euro_store_rejects_default_fee_instead_of_billing_inr_amount() {
+        when(storeServiceClient.getStore(anyString())).thenReturn(euroStore());
+        when(storeServiceClient.isWithinDeliveryRadius(eq("store-1"), anyDouble(), anyDouble())).thenReturn(true);
+        when(deliveryServiceClient.calculateDeliveryFee(eq("store-1"), anyDouble(), anyDouble()))
+                .thenReturn(DeliveryServiceClient.DeliveryFeeResult.defaultFee("Service unavailable"));
+
+        assertThatThrownBy(() -> orderService.createOrder(buildDeliveryRequest(52.52, 13.40)))
+                .isInstanceOf(com.MaSoVa.shared.exception.BusinessException.class)
+                .hasMessageContaining("Delivery fee could not be calculated");
+        verify(orderRepository, never()).save(any(Order.class));
+    }
+
+    @Test
+    void createOrder_euro_store_rejects_unlocated_address_instead_of_base_fee() {
+        when(storeServiceClient.getStore(anyString())).thenReturn(euroStore());
+
+        assertThatThrownBy(() -> orderService.createOrder(buildDeliveryRequest(null, null)))
+                .isInstanceOf(com.MaSoVa.shared.exception.BusinessException.class)
+                .hasMessageContaining("could not be located");
+        verify(orderRepository, never()).save(any(Order.class));
+    }
+
+    @Test
+    void createOrder_rejects_failed_fee_lookup_instead_of_free_delivery() {
+        when(storeServiceClient.isWithinDeliveryRadius(eq("store-1"), anyDouble(), anyDouble())).thenReturn(true);
+        when(deliveryServiceClient.calculateDeliveryFee(eq("store-1"), anyDouble(), anyDouble()))
+                .thenReturn(DeliveryServiceClient.DeliveryFeeResult.error("Address is outside delivery area"));
+
+        assertThatThrownBy(() -> orderService.createOrder(buildDeliveryRequest(19.0760, 72.8777)))
+                .isInstanceOf(com.MaSoVa.shared.exception.BusinessException.class)
+                .hasMessageContaining("outside delivery area");
+        verify(orderRepository, never()).save(any(Order.class));
+    }
+
     // MenuItem validation errors
 
     @Test

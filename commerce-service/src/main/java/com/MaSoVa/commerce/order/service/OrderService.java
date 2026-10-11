@@ -121,6 +121,17 @@ public class OrderService {
         this.orderPostgresOutboxRepository = orderPostgresOutboxRepository;
     }
 
+    /**
+     * The built-in delivery fee defaults are INR amounts. They only apply to stores that bill in INR
+     * (or legacy stores with no currency/country configured).
+     */
+    private static boolean usesLegacyInrDeliveryDefaults(Store store) {
+        if (store.getCurrency() != null) {
+            return "INR".equalsIgnoreCase(store.getCurrency());
+        }
+        return store.getCountryCode() == null || "IN".equalsIgnoreCase(store.getCountryCode());
+    }
+
     @Transactional
     @CacheEvict(value = "salesMetrics", allEntries = true)
     public Order createOrder(CreateOrderRequest request) {
@@ -186,19 +197,35 @@ public class OrderService {
                     request.getDeliveryAddress().getLongitude()
                 );
 
+                if (!feeResult.isSuccess()) {
+                    // Logistics refused to price this address (e.g. outside every zone) — never treat that as free delivery.
+                    throw new BusinessException("DELIVERY_FEE_UNAVAILABLE",
+                            "Delivery cannot be priced for this address: " + feeResult.getError());
+                }
+                if (feeResult.isUsedDefault() && !usesLegacyInrDeliveryDefaults(store)) {
+                    // The built-in default fee is an INR amount; charging it in another currency mis-bills the order.
+                    throw new BusinessException("DELIVERY_FEE_UNAVAILABLE",
+                            "Delivery fee could not be calculated for store " + request.getStoreId()
+                                    + "; order rejected. Try again or choose pickup.");
+                }
+
                 deliveryFee = feeResult.getDeliveryFee();
                 estimatedDeliveryMinutes = feeResult.getEstimatedMinutes();
 
                 if (feeResult.isUsedDefault()) {
                     log.warn("Using default delivery fee for order - {}", feeResult.getError());
                 } else {
-                    log.info("Delivery fee calculated: ₹{} (Zone: {}, Distance: {} km)",
+                    log.info("Delivery fee calculated: {} (Zone: {}, Distance: {} km)",
                             deliveryFee, feeResult.getZoneName(), feeResult.getDistanceKm());
                 }
-            } else {
+            } else if (usesLegacyInrDeliveryDefaults(store)) {
                 // Fallback if address coordinates are missing - use base fee from configuration
                 deliveryFee = deliveryFeeConfiguration.getBaseFee();
                 log.warn("Delivery address coordinates missing, using fallback base fee: ₹{}", deliveryFee);
+            } else {
+                // Zone pricing needs a located address; the INR base fee must not be billed in another currency.
+                throw new BusinessException("DELIVERY_ADDRESS_NOT_LOCATED",
+                        "Delivery address could not be located to price delivery. Select the address from the suggestions or choose pickup.");
             }
         }
 

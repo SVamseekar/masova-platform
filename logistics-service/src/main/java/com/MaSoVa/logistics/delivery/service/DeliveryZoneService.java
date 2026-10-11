@@ -153,6 +153,25 @@ public class DeliveryZoneService {
                         .build();
             }
 
+            String currency = storeData.get("currency") instanceof String value ? value : null;
+
+            // Store-configured zones are priced in the store's own currency
+            DeliveryFeeResponse customFee = getCustomZoneFee(storeData, distance);
+            // INR stores keep the built-in zones as a fallback; other currencies never do
+            if (customFee != null && (customFee.isSuccess() || !usesLegacyInrDefaults(storeData))) {
+                customFee.setCurrency(currency);
+                return customFee;
+            }
+
+            if (!usesLegacyInrDefaults(storeData)) {
+                // Built-in zone fees are INR amounts and must not be billed in another currency
+                return DeliveryFeeResponse.builder()
+                        .success(false)
+                        .error("Delivery pricing is not configured for this store")
+                        .distanceKm(distance)
+                        .build();
+            }
+
             // Determine zone and calculate fee
             String zoneName;
             double deliveryFee;
@@ -172,16 +191,11 @@ public class DeliveryZoneService {
                 estimatedMinutes = ZONE_C_DELIVERY_MINUTES;
             }
 
-            // Check for custom zone pricing in store config
-            DeliveryFeeResponse customFee = getCustomZoneFee(storeData, distance);
-            if (customFee != null && customFee.isSuccess()) {
-                return customFee;
-            }
-
             return DeliveryFeeResponse.builder()
                     .success(true)
                     .zoneName(zoneName)
                     .deliveryFeeINR(deliveryFee)
+                    .currency(currency)
                     .distanceKm(Math.round(distance * 100.0) / 100.0)
                     .estimatedDeliveryMinutes(estimatedMinutes)
                     .build();
@@ -200,14 +214,9 @@ public class DeliveryZoneService {
             Map<String, Object> storeData = getStoreDetails(storeId);
             if (storeData == null) return getDefaultZones();
 
-            Map<String, Object> config = asStringObjectMap(storeData.get("configuration"));
-            if (config == null) return getDefaultZones();
-
-            Map<String, Object> serviceArea = asStringObjectMap(config.get("serviceArea"));
-            if (serviceArea == null) return getDefaultZones();
-
-            List<Map<String, Object>> zones = asMapList(serviceArea.get("zones"));
-            return zones != null ? zones : getDefaultZones();
+            List<Map<String, Object>> zones = configuredZones(storeData);
+            if (zones != null && !zones.isEmpty()) return zones;
+            return usesLegacyInrDefaults(storeData) ? getDefaultZones() : List.of();
 
         } catch (Exception e) {
             log.error("Error getting delivery zones for store {}: {}", storeId, e.getMessage());
@@ -270,7 +279,7 @@ public class DeliveryZoneService {
 
     private double getMaxDeliveryRadius(Map<String, Object> storeData) {
         try {
-            Map<String, Object> config = asStringObjectMap(storeData.get("configuration"));
+            Map<String, Object> config = storeConfiguration(storeData);
             if (config != null && config.get("deliveryRadiusKm") != null) {
                 return ((Number) config.get("deliveryRadiusKm")).doubleValue();
             }
@@ -280,17 +289,15 @@ public class DeliveryZoneService {
         return ZONE_C_MAX_KM;  // Default 10km
     }
 
+    /**
+     * Fee from the store's own zones. Returns null when the store has no zones configured and an
+     * error result when configured zones cannot price this distance.
+     */
     private DeliveryFeeResponse getCustomZoneFee(Map<String, Object> storeData, double distance) {
+        List<Map<String, Object>> zones = configuredZones(storeData);
+        if (zones == null || zones.isEmpty()) return null;
+
         try {
-            Map<String, Object> config = asStringObjectMap(storeData.get("configuration"));
-            if (config == null) return null;
-
-            Map<String, Object> serviceArea = asStringObjectMap(config.get("serviceArea"));
-            if (serviceArea == null) return null;
-
-            List<Map<String, Object>> zones = asMapList(serviceArea.get("zones"));
-            if (zones == null || zones.isEmpty()) return null;
-
             for (Map<String, Object> zone : zones) {
                 double minDist = ((Number) zone.get("minDistanceKm")).doubleValue();
                 double maxDist = ((Number) zone.get("maxDistanceKm")).doubleValue();
@@ -308,10 +315,39 @@ public class DeliveryZoneService {
                             .build();
                 }
             }
-        } catch (Exception e) {
-            log.debug("Error parsing custom zones: {}", e.getMessage());
+        } catch (RuntimeException e) {
+            log.error("Delivery zones for store {} are malformed: {}", storeData.get("id"), e.toString());
+            return DeliveryFeeResponse.error("Delivery pricing is misconfigured for this store");
         }
-        return null;
+        return DeliveryFeeResponse.builder()
+                .success(false)
+                .error("No active delivery zone covers this address")
+                .distanceKm(distance)
+                .build();
+    }
+
+    /**
+     * Store settings as served by core: the public store payload exposes them under
+     * {@code operatingConfig}; {@code configuration} is the persisted shape.
+     */
+    private static Map<String, Object> storeConfiguration(Map<String, Object> storeData) {
+        Map<String, Object> config = asStringObjectMap(storeData.get("configuration"));
+        return config != null ? config : asStringObjectMap(storeData.get("operatingConfig"));
+    }
+
+    private static List<Map<String, Object>> configuredZones(Map<String, Object> storeData) {
+        Map<String, Object> config = storeConfiguration(storeData);
+        if (config == null) return null;
+        Map<String, Object> serviceArea = asStringObjectMap(config.get("serviceArea"));
+        return asMapList(serviceArea != null ? serviceArea.get("zones") : config.get("deliveryZones"));
+    }
+
+    /** Built-in zone fees are INR amounts: valid only for INR (or legacy unconfigured) stores. */
+    private static boolean usesLegacyInrDefaults(Map<String, Object> storeData) {
+        if (storeData.get("currency") instanceof String currency) {
+            return "INR".equalsIgnoreCase(currency);
+        }
+        return !(storeData.get("countryCode") instanceof String country) || "IN".equalsIgnoreCase(country);
     }
 
     private static Map<String, Object> asStringObjectMap(Object value) {

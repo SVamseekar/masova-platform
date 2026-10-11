@@ -13,6 +13,8 @@ public class DeliveryFeeResponse {
     private double distanceKm;
     private int estimatedDeliveryMinutes;
     private double minimumOrderValueINR;
+    /** Store billing currency of the fee amount; the *INR field names are legacy. */
+    private String currency;
 
     public DeliveryFeeResponse() {}
 
@@ -48,6 +50,9 @@ public class DeliveryFeeResponse {
     public double getMinimumOrderValueINR() { return minimumOrderValueINR; }
     public void setMinimumOrderValueINR(double minimumOrderValueINR) { this.minimumOrderValueINR = minimumOrderValueINR; }
 
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
+
     public static class Builder {
         private boolean success;
         private String error;
@@ -56,6 +61,7 @@ public class DeliveryFeeResponse {
         private double distanceKm;
         private int estimatedDeliveryMinutes;
         private double minimumOrderValueINR;
+        private String currency;
 
         public Builder success(boolean success) {
             this.success = success;
@@ -92,6 +98,11 @@ public class DeliveryFeeResponse {
             return this;
         }
 
+        public Builder currency(String currency) {
+            this.currency = currency;
+            return this;
+        }
+
         public DeliveryFeeResponse build() {
             DeliveryFeeResponse response = new DeliveryFeeResponse();
             response.success = this.success;
@@ -101,6 +112,7 @@ public class DeliveryFeeResponse {
             response.distanceKm = this.distanceKm;
             response.estimatedDeliveryMinutes = this.estimatedDeliveryMinutes;
             response.minimumOrderValueINR = this.minimumOrderValueINR;
+            response.currency = this.currency;
             return response;
         }
     }

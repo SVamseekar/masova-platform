@@ -193,6 +193,15 @@ public class PlatformSeedService {
         config.setAcceptsCashPayments(true);
         config.setMaxDeliveryTimeMinutes(35);
         config.setMinimumOrderValueINR(9.0);
+        // Demo zone fees in the store's own currency (EUR); the built-in defaults are INR amounts
+        Store.ServiceArea serviceArea = new Store.ServiceArea();
+        serviceArea.setCenterLatitude(lat);
+        serviceArea.setCenterLongitude(lng);
+        serviceArea.setZones(java.util.List.of(
+                new Store.DeliveryZone("A", 0.0, 3.0, 1.9, 15),
+                new Store.DeliveryZone("B", 3.0, 6.0, 2.9, 25),
+                new Store.DeliveryZone("C", 6.0, 10.0, 3.9, 35)));
+        config.setServiceArea(serviceArea);
         store.setConfiguration(config);
 
         storeService.saveStore(store);

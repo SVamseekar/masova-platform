@@ -250,6 +250,18 @@ async function main() {
             acceptsCashPayments: true,
             maxDeliveryTimeMinutes: 35,
             minimumOrderValueINR: 15,
+            // Demo zone fees in the store's own currency (field name is legacy)
+            serviceArea: {
+              centerLatitude: s.lat,
+              centerLongitude: s.lng,
+              usesPolygon: false,
+              acceptsDelivery: true,
+              zones: [
+                { zoneName: 'A', minDistanceKm: 0, maxDistanceKm: 3, deliveryFeeINR: 1.9, estimatedDeliveryMinutes: 15, minimumOrderValueINR: 0, active: true },
+                { zoneName: 'B', minDistanceKm: 3, maxDistanceKm: 6, deliveryFeeINR: 2.9, estimatedDeliveryMinutes: 25, minimumOrderValueINR: 0, active: true },
+                { zoneName: 'C', minDistanceKm: 6, maxDistanceKm: 10, deliveryFeeINR: 3.9, estimatedDeliveryMinutes: 35, minimumOrderValueINR: 0, active: true },
+              ],
+            },
           },
           lastModified: t0,
         },
