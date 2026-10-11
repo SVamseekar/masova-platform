@@ -1,3 +1,4 @@
+import { readOrderTypePreference } from '../../utils/orderTypePreference';
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Dialog, useMediaQuery } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
@@ -54,7 +55,7 @@ function CheckoutDetails({ checkout, user }: { checkout: ReturnType<typeof useCh
   const defaultAddress = addresses.find(address => address.isDefault) || addresses[0];
   const selectedId = addressChoice === null ? defaultAddress?.id || 'new' : addresses.some(address => address.id === addressChoice) ? addressChoice : 'new';
   const savedAddress = addresses.find(address => address.id === selectedId);
-  const [orderType, setOrderType] = useState<CheckoutOrderType>('DELIVERY');
+  const [orderType, setOrderType] = useState<CheckoutOrderType>(readOrderTypePreference);
   const [saveAddress, setSaveAddress] = useState(true);
   const [formData, setFormData] = useState<FormData>(() => ({ firstName: user?.name.split(' ')[0] || '', lastName: user?.name.split(' ').slice(1).join(' ') || '', email: user?.email || '', phone: user?.phone || '', addressLine1: '', addressLine2: '', city: '', state: '', zipCode: '', specialInstructions: '', addressLabel: 'HOME' }));
   const [coordinates, setCoordinates] = useState<{ latitude: number; longitude: number }>();

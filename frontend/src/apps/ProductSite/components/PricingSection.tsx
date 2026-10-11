@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowRight, BarChart3, Building2, Check, Store } from 'lucide-react';
+import { ArrowRight, Building2, ChartNoAxesColumnIncreasing, Check, Store } from 'lucide-react';
 import { PRICING_TIERS, openContactForm } from '../constants';
 import { revampCssVariables } from '../../../styles/design-tokens';
 import './PricingSection.css';
@@ -7,7 +7,7 @@ import './PricingSection.css';
 // Approved plan comparison; purchasing and annual terms are confirmed in a walkthrough.
 const planDetails = {
   Starter: { icon: Store, features: ['Up to 1 restaurant', 'Orders from website and aggregators', 'Kitchen and delivery management', 'Stripe and Razorpay payments', 'Basic analytics', 'Email support'] },
-  Growth: { icon: BarChart3, features: ['Up to 3 locations', 'All Starter features', 'Advanced analytics and reporting', 'Customer chat and manager insights', 'Delivery zones and dynamic pricing', 'Priority support'] },
+  Growth: { icon: ChartNoAxesColumnIncreasing, features: ['Up to 3 locations', 'All Starter features', 'Advanced analytics and reporting', 'Customer chat and manager insights', 'Delivery zones and dynamic pricing', 'Priority support'] },
   Enterprise: { icon: Building2, features: ['Multi-location groups with custom requirements', 'All Growth features', 'Custom integrations (API)', 'Dedicated account manager', 'Custom training and onboarding', 'Dedicated support'] },
 };
 

@@ -254,6 +254,7 @@ const PaymentPage: React.FC = () => {
           price: item.price,
           variant: item.variant,
           customizations: item.customizations,
+          notes: item.notes,
         })),
         orderType,
         paymentMethod,

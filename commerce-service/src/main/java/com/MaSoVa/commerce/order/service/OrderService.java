@@ -161,6 +161,7 @@ public class OrderService {
                         .variant(item.getVariant())
                         .customizations(item.getCustomizations())
                         .category(item.getCategory())
+                        .notes(item.getNotes() == null || item.getNotes().isBlank() ? null : item.getNotes().trim())
                         .build())
                 .collect(Collectors.toList());
 

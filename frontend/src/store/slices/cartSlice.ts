@@ -13,11 +13,14 @@ export interface CartItem {
   imageUrl?: string;
   variant?: string;
   customizations?: string[];
+  /** Customer preparation note for the kitchen, e.g. spice level. Never affects price. */
+  notes?: string;
 }
 
 /** Stable identity for a dish configuration, including its current unit price. */
 export const cartConfigurationKey = (item: Omit<CartItem, 'quantity'>) => JSON.stringify([
   item.id, item.variant || item.size || '', [...(item.customizations || item.toppings || [])].sort(), item.price,
+  ...(item.notes ? [item.notes] : []),
 ]);
 
 export const cartLineKey = (item: CartItem) => item.lineId || item.id;
@@ -121,7 +124,7 @@ const cartSlice = createSlice({
         const sameDish = state.items.filter(line => line.id === item.id);
         // Changed base prices also need distinct keys for quantity/remove actions.
         sameDish.forEach(line => { line.lineId = cartConfigurationKey(line); });
-        state.items.push({ ...item, lineId: sameDish.length || item.variant || item.size || item.customizations?.length || item.toppings?.length
+        state.items.push({ ...item, lineId: sameDish.length || item.variant || item.size || item.customizations?.length || item.toppings?.length || item.notes
           ? cartConfigurationKey(item) : item.lineId, quantity });
       }
 

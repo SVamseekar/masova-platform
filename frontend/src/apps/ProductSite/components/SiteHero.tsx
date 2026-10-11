@@ -1,4 +1,4 @@
-import { ArrowRight, BarChart3, Check, ChefHat, ChevronRight, CircleCheck, Plus, Printer, Search, ShoppingBasket, Store, Truck } from 'lucide-react';
+import { ArrowRight, ChartColumnIncreasing, Check, ChefHat, ChevronRight, CircleCheck, Plus, Printer, Search, ShoppingBasket, Store, Truck } from 'lucide-react';
 import { useState } from 'react';
 import { openContactForm } from '../constants';
 import { moveTabFocus } from '../../../hooks/useFocusTrap';
@@ -10,12 +10,14 @@ const CAPABILITIES = [
   { icon: Printer, title: 'POS', text: 'In-store orders and payments' },
   { icon: ChefHat, title: 'Kitchen', text: 'Real-time preparation and kitchen display' },
   { icon: Truck, title: 'Delivery', text: 'In-house and marketplace delivery, with live tracking' },
-  { icon: BarChart3, title: 'Insights', text: 'Sales, operations and customers' },
+  { icon: ChartColumnIncreasing, title: 'Insights', text: 'Sales, operations and customers' },
 ];
 
 /** Board 00 hero, with the board 03 compact layout below 720px. */
 export function SiteHero() {
   return <section className="msite-hero" aria-labelledby="site-hero-title">
+    <div className="msite-hero-stage">
+    <img className="msite-hero-food" src="/images/brand/hero-food-v1.jpg" alt="" />
     <div className="msite-wrap msite-hero-grid">
       <div className="msite-hero-copy">
         <p className="msite-eyebrow">The restaurant operating system</p>
@@ -31,7 +33,6 @@ export function SiteHero() {
           <li><CircleCheck size={18} aria-hidden="true" />AI assistants for daily operations</li>
           <li><CircleCheck size={18} aria-hidden="true" />Built for multi-location restaurants</li>
         </ul>
-        <img className="msite-hero-food" src="/images/menu/butter-chicken.jpg" alt="" />
         <div className="msite-hero-compact"><CompactOverview /></div>
       </div>
       <div className="msite-hero-art">
@@ -39,9 +40,10 @@ export function SiteHero() {
         <div className="msite-hero-phone"><FitPreview width={260} height={500} label="Illustrative driver delivery screen with a live map"><DeliveryPhone /></FitPreview></div>
       </div>
     </div>
+    </div>
     <div className="msite-strip">
       <div className="msite-wrap">
-        <ul>{CAPABILITIES.map(({ icon: Icon, title, text }) => <li key={title}><Icon size={36} strokeWidth={1.6} aria-hidden="true" /><div><h3>{title}</h3><p>{text}</p></div></li>)}</ul>
+        <ul>{CAPABILITIES.map(({ icon: Icon, title, text }) => <li key={title}><Icon size={36} strokeWidth={1.9} aria-hidden="true" /><div><h3>{title}</h3><p>{text}</p></div></li>)}</ul>
         <p className="msite-sample msite-strip-note">Design concept · illustrative data</p>
       </div>
     </div>

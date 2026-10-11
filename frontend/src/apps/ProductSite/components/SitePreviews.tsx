@@ -55,7 +55,7 @@ function StatusRing() {
   }));
   return <svg viewBox="0 0 96 96" width="96" height="96">
     {arcs.map(({ label, color, length, offset }) => <circle key={label} cx="48" cy="48" r={r} fill="none" stroke={color} strokeWidth="11" strokeDasharray={`${length} ${c - length}`} strokeDashoffset={-offset} transform="rotate(-90 48 48)" />)}
-    <text x="48" y="48" textAnchor="middle" fontSize="18" fontWeight="600" fill="#18221F">{total}</text>
+    <text x="48" y="48" textAnchor="middle" fontSize="18" fontWeight="600" fill="#121614">{total}</text>
     <text x="48" y="61" textAnchor="middle" fontSize="9" fill="#55635A">active</text>
   </svg>;
 }
@@ -129,8 +129,8 @@ function RouteMap() {
     <rect x="128" y="20" width="52" height="38" rx="6" fill="#D5E3CF" />
     <path d="M52 120 C70 150 80 168 92 186" stroke="#2F6FB7" strokeWidth="3" fill="none" strokeLinecap="round" />
     <path d="M92 186 C130 170 160 150 196 122" stroke="#E08A1E" strokeWidth="3" fill="none" strokeLinecap="round" />
-    <circle cx="52" cy="118" r="9" fill="#C63F19" /><circle cx="196" cy="122" r="9" fill="#E08A1E" /><circle cx="150" cy="40" r="9" fill="#1F6F4A" /><circle cx="94" cy="188" r="9" fill="#1F6F4A" />
-    <text x="110" y="100" fontSize="11" fontWeight="600" fill="#18221F">Berlin Mitte</text>
+    <circle cx="52" cy="118" r="9" fill="#DE4212" /><circle cx="196" cy="122" r="9" fill="#E08A1E" /><circle cx="150" cy="40" r="9" fill="#1F6F4A" /><circle cx="94" cy="188" r="9" fill="#1F6F4A" />
+    <text x="110" y="100" fontSize="11" fontWeight="600" fill="#121614">Berlin Mitte</text>
   </svg></div>;
 }
 

@@ -38,13 +38,23 @@ describe('customer web browse workflow', () => {
   it('combines cuisine, diet and ingredient search; clears filters', async () => {
     const user = userEvent.setup(); render();
     await user.selectOptions(screen.getByRole('combobox', { name: 'Cuisine' }), 'ITALIAN');
-    await user.click(screen.getByRole('button', { name: 'vegetarian' }));
+    await user.click(screen.getByRole('button', { name: 'Vegetarian' }));
     await user.type(screen.getByRole('searchbox', { name: 'Search dishes' }), 'basil');
     expect(screen.getByText('Margherita Pizza')).toBeInTheDocument();
     expect(screen.queryByText('Chicken Curry')).not.toBeInTheDocument();
     expect(screen.getByText('1 dish found')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Clear all' }));
     expect(screen.getByText('Chicken Curry')).toBeInTheDocument();
+  });
+  it('saves a kitchen note with the dish without changing its price', async () => {
+    const user = userEvent.setup(); render();
+    await user.click(screen.getByRole('button', { name: 'Customise Margherita Pizza' }));
+    await user.click(screen.getByRole('radio', { name: /Regular/ }));
+    await user.type(screen.getByRole('textbox', { name: /Notes/ }), 'No basil');
+    expect(screen.getByText('8/100')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Add to cart' }));
+    const saved = JSON.parse(vi.mocked(localStorage.setItem).mock.calls.slice(-1)[0][1]);
+    expect(saved.items[0]).toMatchObject({ id: 'pizza', price: 12, variant: 'Regular', notes: 'No basil' });
   });
   it('requires current required variant and saves selected modifiers with backend ID', async () => {
     const user = userEvent.setup(); render();
@@ -94,8 +104,18 @@ describe('customer web browse workflow', () => {
     render(<HomePage />, '/order');
     expect(screen.getByRole('heading', { name: /Good food/ })).toBeInTheDocument();
     expect(screen.getByText('Margherita Pizza')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'italian' })).toHaveAttribute('href', '/menu?cuisine=ITALIAN');
+    expect(screen.getByRole('link', { name: /italian/ })).toHaveAttribute('href', '/menu?cuisine=ITALIAN');
     expect(screen.queryByText('30-Min Delivery')).not.toBeInTheDocument();
+  });
+  it('keeps the delivery or pickup choice for checkout', async () => {
+    const user = userEvent.setup();
+    render(<HomePage />, '/order');
+    expect(screen.getByRole('button', { name: 'Delivery' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('Delivery fee calculated by distance at checkout')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Pickup' }));
+    expect(screen.getByRole('button', { name: 'Pickup' })).toHaveAttribute('aria-pressed', 'true');
+    expect(sessionStorage.setItem).toHaveBeenCalledWith('masova.orderTypePreference', 'TAKEAWAY');
+    expect(screen.getByText('No delivery fee for pickup orders')).toBeInTheDocument();
   });
   it('shows truthful offers limitation without synthetic codes or countdown', () => {
     render(<PromotionsPage />, '/promotions');
@@ -140,7 +160,7 @@ describe('customer web browse workflow', () => {
   it('preserves guest active-order tracking navigation', () => {
     vi.mocked(sessionStorage.getItem).mockImplementation(key => key === 'activeOrderId' ? 'guest-order' : null);
     render();
-    expect(screen.getByRole('link', { name: 'Track Order' })).toHaveAttribute('href', '/tracking/guest-order');
+    expect(screen.getByRole('link', { name: 'Orders' })).toHaveAttribute('href', '/tracking/guest-order');
   });
 
 });

@@ -16,7 +16,7 @@ export default function CheckoutSummary({ checkout, orderType, order, placesOrde
     <p>{count} {count === 1 ? 'item' : 'items'}{checkout.store ? ` · ${checkout.store.name}` : ''}</p>
     <ul className="checkout-lines">{checkout.items.map(item => <li key={cartLineKey(item)}>
       {item.imageUrl && <img src={item.imageUrl} alt="" loading="lazy" />}
-      <div><strong>{item.name}</strong><span>Quantity {item.quantity}</span>{item.variant && <span>{item.variant}</span>}{!!item.customizations?.length && <span>{item.customizations.join(', ')}</span>}</div>
+      <div><strong>{item.name}</strong><span>Quantity {item.quantity}</span>{item.variant && <span>{item.variant}</span>}{!!item.customizations?.length && <span>{item.customizations.join(', ')}</span>}{item.notes && <span>Note: {item.notes}</span>}</div>
       <strong>{checkout.market.resolved ? fmt(item.price * item.quantity) : '—'}</strong>
     </li>)}</ul>
     {order ? <>

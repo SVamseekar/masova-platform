@@ -51,7 +51,7 @@ export default function LegalPageLayout({ children, title, updated }: LegalPageL
           <nav aria-label="Legal documents">
             {LEGAL_PAGES.map(({ label, to, icon: Icon }) => (
               <Link key={to} to={to} aria-current={current === to ? 'page' : undefined}>
-                <Icon size={20} strokeWidth={1.6} aria-hidden="true" />
+                <Icon size={20} strokeWidth={1.9} aria-hidden="true" />
                 {label}
               </Link>
             ))}

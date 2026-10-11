@@ -108,6 +108,7 @@ export interface CreateOrderRequest {
     variant?: string;
     customizations?: string[];
     category?: string;
+    notes?: string;
   }>;
   orderType: 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY';
   paymentMethod?: 'CASH' | 'CARD' | 'UPI' | 'WALLET' | 'AGGREGATOR_COLLECTED';

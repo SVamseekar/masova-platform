@@ -130,7 +130,7 @@ export const CookieConsent: React.FC = () => {
         tabIndex={-1}
       >
         <div className="cookie-prefs-head">
-          <Cookie size={40} strokeWidth={1.5} aria-hidden="true" />
+          <Cookie size={40} strokeWidth={1.8} aria-hidden="true" />
           <div>
             <h2 id="cookie-consent-title">Cookie preferences</h2>
             <p id="cookie-consent-text">
@@ -141,7 +141,7 @@ export const CookieConsent: React.FC = () => {
         </div>
         <ul>
           <li>
-            <Lock size={26} strokeWidth={1.6} aria-hidden="true" />
+            <Lock size={26} strokeWidth={1.9} aria-hidden="true" />
             <div>
               <b>Essential cookies</b>
               <p>Required for the website to function. These cannot be turned off.</p>
@@ -150,7 +150,7 @@ export const CookieConsent: React.FC = () => {
           </li>
           {OPTIONAL.map(({ key, title, text, icon: Icon }) => (
             <li key={key}>
-              <Icon size={26} strokeWidth={1.6} aria-hidden="true" />
+              <Icon size={26} strokeWidth={1.9} aria-hidden="true" />
               <div>
                 <b id={'cookie-' + key}>{title}</b>
                 <p>{text}</p>

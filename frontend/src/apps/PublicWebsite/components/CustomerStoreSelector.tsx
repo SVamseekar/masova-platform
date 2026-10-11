@@ -8,6 +8,9 @@ import { resolveStoreMarket, storeCurrencyPayload } from '../../../utils/storeCu
 import { revampCssVariables } from '../../../styles/design-tokens';
 import { browseStoreId } from './useBrowseMenu';
 
+/** Short store label for the header, without the brand prefix every store shares. */
+export const storeDisplayName = (name: string) => name.replace(/^MaSoVa\s+/i, '');
+
 export default function CustomerStoreSelector() {
   const dispatch = useAppDispatch();
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
@@ -34,7 +37,7 @@ export default function CustomerStoreSelector() {
       else selectStore(store);
     }}>
       <option value="">{isLoading ? 'Loading stores…' : isError ? 'Stores unavailable' : 'Choose your store'}</option>
-      {stores.map(store => <option key={store.id} value={browseStoreId(store)}>{store.name}{store.address?.city ? ` · ${store.address.city}` : ''}</option>)}
+      {stores.map(store => <option key={store.id} value={browseStoreId(store)}>{storeDisplayName(store.name)}</option>)}
     </select>
     {isError && <button type="button" onClick={() => refetch()}>Retry stores</button>}
     {!isLoading && !isError && stores.length === 0 && <span role="status">No stores available</span>}

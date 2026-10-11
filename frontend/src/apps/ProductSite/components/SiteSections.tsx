@@ -1,21 +1,22 @@
 import { useEffect, useState } from 'react';
 import {
-  ArrowRight, BarChart3, Box, ChefHat, ChevronRight, ChevronUp, ClipboardCheck, CreditCard, FileText, Gift, HelpCircle, MapPin, MessageSquare,
+  ArrowRight, BarChart3, Box, ChartNoAxesColumnIncreasing, ChefHat, ChevronRight, ChevronUp, CircleCheck, CreditCard, MessageSquareMore, PackageCheck, FileText, Gift, HelpCircle, MapPin, MessageSquare,
   MessageSquareText, Monitor, Package, Send, Settings, ShieldCheck, ShoppingCart, Truck, User, UserCheck, Users, Wrench,
 } from 'lucide-react';
 import MaSoVaBrand from '../../../components/common/MaSoVaBrand';
 import { OPEN_CONTACT_EVENT, openContactForm } from '../constants';
 import { moveTabFocus } from '../../../hooks/useFocusTrap';
+import { ChannelMark, ProviderMark } from './ChannelMarks';
 import DemoRequestForm from './DemoRequestForm';
 import { FitPreview, SIGN_IN_PATH } from './SiteChrome';
 import { Chip, ROLE_PHONES } from './SitePreviews';
 
 // All figures in these sections are illustrative samples, labelled as such on the page.
 const ASSISTANTS = [
-  { id: 'support', icon: MessageSquareText, name: 'Customer support', text: 'Answer guest questions about orders and the menu.', timing: 'Always on, inside your ordering site and app',
+  { id: 'support', icon: MessageSquareMore, name: 'Customer support', text: 'Answer guest questions about orders and the menu.', timing: 'Always on, inside your ordering site and app',
     chat: ['Where is my order #2041?', 'Your order is preparing. Open Orders to track its progress.'],
     task: { title: 'Refund request', subject: 'Order #2038 · cold delivery', rows: [['Requested:', '€12.00'], ['Order total:', '€24.50']] } },
-  { id: 'forecast', icon: BarChart3, name: 'Demand forecast', text: 'Predict busy periods and help you prepare.', timing: 'Runs every night',
+  { id: 'forecast', icon: ChartNoAxesColumnIncreasing, name: 'Demand forecast', text: 'Predict busy periods and help you prepare.', timing: 'Runs every night',
     chat: ['What should we expect on Saturday evening?', 'Sample forecast: Butter Chicken demand is higher than a usual Saturday between 18:00 and 21:00.'],
     task: { title: 'Suggested prep plan', subject: 'Saturday dinner service', rows: [['Usual batch:', '40 portions'], ['Proposed:', '52 portions']] } },
   { id: 'inventory', icon: Box, name: 'Inventory reorder', text: 'Suggest items to order and quantities.', timing: 'Checks stock through the day',
@@ -24,7 +25,7 @@ const ASSISTANTS = [
   { id: 'churn', icon: User, name: 'Churn prevention', text: 'Identify at-risk customers and win them back.', timing: 'Runs every morning',
     chat: ['Which regulars have stopped ordering?', 'Twelve regular customers ordered less this month. A draft offer is ready for review.'],
     task: { title: 'Draft win-back offer', subject: '12 regular customers', rows: [['Channel:', 'Email'], ['Offer:', 'Free dessert']] } },
-  { id: 'reviews', icon: MessageSquare, name: 'Review response', text: 'Draft on-brand replies to customer reviews.', timing: 'Runs when a review arrives',
+  { id: 'reviews', icon: MessageSquareText, name: 'Review response', text: 'Draft on-brand replies to customer reviews.', timing: 'Runs when a review arrives',
     chat: ['Draft a reply to the 2-star review about cold food.', 'A reply with an apology and a contact option is drafted. It is not posted until a manager approves it.'],
     task: { title: 'Draft review reply', subject: '2-star review · delivery', rows: [['Rating:', '2 of 5'], ['Tone:', 'Apology']] } },
   { id: 'shifts', icon: Users, name: 'Shift optimisation', text: 'Suggest fair and efficient staffing plans.', timing: 'Runs weekly',
@@ -33,7 +34,7 @@ const ASSISTANTS = [
   { id: 'kitchen', icon: ChefHat, name: 'Kitchen coach', text: 'Highlight kitchen performance and coaching tips.', timing: 'Runs at the end of each day',
     chat: ['What slowed the kitchen tonight?', 'Sample summary: oven queue was the longest stage between 19:00 and 20:00.'],
     task: { title: 'Kitchen summary', subject: 'Evening service', rows: [['Average prep:', '14 min'], ['Longest stage:', 'Oven']] } },
-  { id: 'pricing', icon: BarChart3, name: 'Dynamic pricing', text: 'Suggest menu price changes based on demand.', timing: 'Runs during service',
+  { id: 'pricing', icon: ChartNoAxesColumnIncreasing, name: 'Dynamic pricing', text: 'Suggest menu price changes based on demand.', timing: 'Runs during service',
     chat: ['Should any prices change this weekend?', 'One price change is suggested. Nothing changes until a manager approves it.'],
     task: { title: 'Suggested menu price change', subject: 'Margherita Pizza', rows: [['Current:', '€12.00'], ['Proposed:', '€12.50']] } },
 ];
@@ -53,13 +54,13 @@ export function AssistantsSection() {
         </div>
         <div>
           <div className="msite-ai-cards" role="group" aria-label="Choose an assistant">
-            {ASSISTANTS.map(item => <button key={item.id} type="button" className="msite-ai-card" aria-pressed={item.id === selected} onClick={() => setSelected(item.id)}><item.icon size={28} strokeWidth={1.6} aria-hidden="true" /><b>{item.name}</b><span>{item.text}</span></button>)}
+            {ASSISTANTS.map(item => <button key={item.id} type="button" className="msite-ai-card" aria-pressed={item.id === selected} onClick={() => setSelected(item.id)}><item.icon size={28} strokeWidth={1.9} aria-hidden="true" /><b>{item.name}</b><span>{item.text}</span></button>)}
           </div>
         </div>
       </div>
       <div className="msite-ai-detail" aria-live="polite">
         <div className="msite-panel">
-          <div className="msite-panel-head"><Icon size={24} strokeWidth={1.6} aria-hidden="true" /><h3>{assistant.name} <small>(chat demo)</small></h3><Chip tone="warning">Demo</Chip></div>
+          <div className="msite-panel-head"><Icon size={24} strokeWidth={1.9} aria-hidden="true" /><h3>{assistant.name} <small>(chat demo)</small></h3><Chip tone="warning">Demo</Chip></div>
           <p className="msite-timing">{assistant.timing}</p>
           <div className="msite-chat">
             <div className="msite-chat-line" data-from="guest"><p>{assistant.chat[0]}</p><User size={22} aria-hidden="true" /></div>
@@ -70,7 +71,7 @@ export function AssistantsSection() {
         <div className="msite-panel">
           <div className="msite-panel-head"><h3>Tasks for your review</h3><Chip tone="warning">1 pending</Chip></div>
           <div className="msite-task">
-            <div className="msite-task-title"><FileText size={24} strokeWidth={1.6} aria-hidden="true" /><div><b>{assistant.task.title}</b><div className="msite-sample">{assistant.task.subject}</div></div></div>
+            <div className="msite-task-title"><FileText size={24} strokeWidth={1.9} aria-hidden="true" /><div><b>{assistant.task.title}</b><div className="msite-sample">{assistant.task.subject}</div></div></div>
             <dl>{assistant.task.rows.map(([term, value]) => <div key={term} style={{ display: 'contents' }}><dt>{term}</dt><dd>{value}</dd></div>)}</dl>
             <span className="msite-task-status">Awaiting manager review</span>
             <p className="msite-task-note">Illustrative example. Approval happens in the manager console.</p>
@@ -82,7 +83,7 @@ export function AssistantsSection() {
   </section>;
 }
 
-const CHANNELS = [['Direct', 12, 'M'], ['Wolt', 8, 'W'], ['Deliveroo', 6, 'D'], ['Just Eat', 5, 'JE'], ['Uber Eats', 9, 'UE']] as const;
+const CHANNELS = [['Direct', 12], ['Wolt', 8], ['Deliveroo', 6], ['Just Eat', 5], ['Uber Eats', 9]] as const;
 const QUEUE_TABS = [['Kitchen queue', 40], ['Preparing', 8], ['In oven', 6], ['Baked', 4], ['Ready', 6], ['Dispatched', 5]] as const;
 const QUEUE_ROWS = [
   ['1042', '12:28', 'Wolt', 'Aisha Khan', '1 × Chicken Tikka Masala, 1 × Naan', 'Preparing', '13 min', '€24.50'],
@@ -96,11 +97,11 @@ const FLOW = [
   { icon: ShoppingCart, title: 'Customer orders', text: 'Direct / Wolt / Deliveroo / Just Eat / Uber Eats' },
   { icon: CreditCard, title: 'Payment / VAT', text: 'Card or cash. Stripe or Razorpay. VAT calculated.' },
   { icon: ChefHat, title: 'Kitchen', text: 'Received → Preparing → In oven → Baked → Ready' },
-  { icon: ClipboardCheck, title: 'Driver pickup', text: 'Marked Dispatched (not delivered yet)' },
+  { icon: PackageCheck, title: 'Driver pickup', text: 'Marked Dispatched (not delivered yet)' },
   { icon: Truck, title: 'Out for delivery', text: 'Live tracking. ETA to customer.' },
-  { icon: UserCheck, title: 'Delivery / OTP', text: 'Customer receives with OTP. Delivered → Completed.' },
+  { icon: CircleCheck, title: 'Delivery / OTP', text: 'Customer receives with OTP. Delivered → Completed.' },
 ];
-const QUEUE_TONE: Record<string, string> = { Preparing: 'warning', 'In oven': 'warning', Received: 'info', Dispatched: 'info', Ready: 'success', Baked: 'success' };
+const QUEUE_TONE: Record<string, string> = { Preparing: 'warning', 'In oven': 'amber', Received: 'info', Dispatched: 'info', Ready: 'success', Baked: 'success' };
 
 /** Board 02 panel 1. */
 export function ChannelsSection() {
@@ -113,7 +114,7 @@ export function ChannelsSection() {
         <span className="msite-sample">Concept · sample data</span>
       </div>
       <ul className="msite-channels">
-        {CHANNELS.map(([name, orders, mark]) => <li key={name} className="msite-channel"><span className="msite-channel-mark" aria-hidden="true">{mark}</span><div><b>{name}</b><small>{orders} orders</small></div><i aria-hidden="true" /><span className="msite-hidden">Connected</span></li>)}
+        {CHANNELS.map(([name, orders]) => <li key={name} className="msite-channel"><span className="msite-channel-mark"><ChannelMark channel={name} /></span><div><b>{name}</b><small>{orders} orders</small></div><i aria-hidden="true" /><span className="msite-hidden">Connected</span></li>)}
       </ul>
       <div className="msite-panel msite-queue">
         <div className="msite-queue-tabs" role="tablist" aria-label="Kitchen queue stage" onKeyDown={moveTabFocus}>
@@ -122,12 +123,12 @@ export function ChannelsSection() {
         <div id="queue-panel" className="msite-queue-scroll" role="tabpanel" aria-label={filter + ' sample orders'}>
           {rows.length === 0 ? <p className="msite-empty">No sample orders in this stage.</p> : <table className="msite-tbl msite-num">
             <thead><tr>{['#', 'Time', 'Channel', 'Customer', 'Items', 'Status', 'ETA', 'Total'].map(head => <th key={head} scope="col">{head}</th>)}</tr></thead>
-            <tbody>{rows.map(([id, time, channel, customer, items, status, eta, total]) => <tr key={id}><td>{id}</td><td>{time}</td><td>{channel}</td><td>{customer}</td><td>{items}</td><td><span className="msite-status" data-tone={QUEUE_TONE[status]}>{status}</span></td><td>{eta}</td><td>{total}</td></tr>)}</tbody>
+            <tbody>{rows.map(([id, time, channel, customer, items, status, eta, total]) => <tr key={id}><td>{id}</td><td>{time}</td><td><span className="msite-channel-cell"><ChannelMark channel={channel} size={16} />{channel}</span></td><td>{customer}</td><td>{items}</td><td><span className="msite-status" data-tone={QUEUE_TONE[status]}>{status}</span></td><td>{eta}</td><td>{total}</td></tr>)}</tbody>
           </table>}
         </div>
       </div>
       <h3 className="msite-h3">From order to delivery</h3>
-      <ol className="msite-flow">{FLOW.map(({ icon: Icon, title, text }) => <li key={title}><Icon size={26} strokeWidth={1.6} aria-hidden="true" /><b>{title}</b><span>{text}</span></li>)}</ol>
+      <ol className="msite-flow">{FLOW.map(({ icon: Icon, title, text }) => <li key={title}><Icon size={26} strokeWidth={1.9} aria-hidden="true" /><b>{title}</b><span>{text}</span></li>)}</ol>
     </div>
   </section>;
 }
@@ -189,14 +190,14 @@ export function OperationsSection() {
       </div>
       <div className="msite-ops">
         {OPERATIONS.map(({ icon: Icon, title, text, link, href, photo, art }) => <article key={title} className="msite-op">
-          <Icon size={30} strokeWidth={1.6} aria-hidden="true" />
+          <Icon size={30} strokeWidth={1.9} aria-hidden="true" />
           <div><h3>{title}</h3><p>{text}</p><a className="msite-link" href={href}>{link}<ArrowRight size={16} aria-hidden="true" /></a></div>
-          <div className="msite-op-art" data-photo={!!photo} aria-hidden="true">{photo ? <img src={photo} alt="" loading="lazy" /> : <div><b>{art?.[0]}</b>{art?.[1]}</div>}</div>
+          <div className="msite-op-art" data-photo={!!photo} aria-hidden="true">{photo ? <img src={photo} alt="" loading="lazy" /> : title === 'Payments' ? <div className="msite-op-providers"><span><ProviderMark provider="stripe" />Stripe</span><span><ProviderMark provider="razorpay" />Razorpay</span></div> : <div><b>{art?.[0]}</b>{art?.[1]}</div>}</div>
         </article>)}
         <article className="msite-op msite-op-ai">
           <h3>AI assistants for operations</h3>
           <p>Specialised assistants read your data, compute options and propose actions for manager approval.</p>
-          <ul>{OPS_ASSISTANTS.map(([name, Icon]) => <li key={name}><Icon size={20} strokeWidth={1.6} aria-hidden="true" />{name}</li>)}</ul>
+          <ul>{OPS_ASSISTANTS.map(([name, Icon]) => <li key={name}><Icon size={20} strokeWidth={1.9} aria-hidden="true" />{name}</li>)}</ul>
         </article>
       </div>
     </div>
@@ -241,7 +242,7 @@ export function GettingStartedSection() {
       </div>
       <div className="msite-faq">
         <div className="msite-panel msite-faq-open" aria-live="polite">
-          <h4><HelpCircle size={20} strokeWidth={1.6} aria-hidden="true" />{current.q}<ChevronUp size={18} aria-hidden="true" style={{ marginLeft: 'auto' }} /></h4>
+          <h4><HelpCircle size={20} strokeWidth={1.9} aria-hidden="true" />{current.q}<ChevronUp size={18} aria-hidden="true" style={{ marginLeft: 'auto' }} /></h4>
           <p>{current.a}</p>
         </div>
         <ul className="msite-panel msite-faq-list">
@@ -276,7 +277,7 @@ export function WalkthroughSection() {
       <div>
         <h2 id="site-walk-title" className="msite-h2">Book a walkthrough and see MaSoVa in action</h2>
         <p className="msite-lead">Get a personalised demo of MaSoVa and see how it can work for your restaurant.</p>
-        <ul className="msite-walk-points">{WALK_POINTS.map(({ icon: Icon, title, text }) => <li key={title}><Icon size={30} strokeWidth={1.6} aria-hidden="true" /><div><b>{title}</b><span>{text}</span></div></li>)}</ul>
+        <ul className="msite-walk-points">{WALK_POINTS.map(({ icon: Icon, title, text }) => <li key={title}><Icon size={30} strokeWidth={1.9} aria-hidden="true" /><div><b>{title}</b><span>{text}</span></div></li>)}</ul>
       </div>
       <div className="msite-panel" style={{ padding: 28 }}><DemoRequestForm /></div>
     </div>
