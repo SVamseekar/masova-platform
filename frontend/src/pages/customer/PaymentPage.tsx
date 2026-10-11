@@ -1,24 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Banknote, CreditCard, Smartphone, Store, Truck, Utensils } from 'lucide-react';
 import { useAppSelector } from '../../store/hooks';
-import CustomerPageHeader from '../../components/common/CustomerPageHeader';
-import { useCreateOrderMutation } from '../../store/api/orderApi';
+import BrowseShell from '../../apps/PublicWebsite/components/BrowseShell';
+import { useCreateOrderMutation, type Order } from '../../store/api/orderApi';
 import { useInitiatePaymentMutation, type PaymentResponse } from '../../store/api/paymentApi';
 import { getApiErrorMessage } from '../utils/apiError';
+import { useGeocoding } from '../../hooks/useGeocoding';
+import { defaultAddressCountry } from '../../utils/customerFormValidation';
 import { useGetCustomerByUserIdQuery, useGetOrCreateCustomerMutation, useUpdatePreferencesMutation } from '../../store/api/customerApi';
 import { useCheckDeliveryRadiusQuery } from '../../store/api/storeApi';
 import {
   selectCartItems,
-  selectCartSubtotal,
-  selectDeliveryFee,
   selectSelectedStoreId,
   selectCartCurrency,
   selectCartLocale,
   selectStoreCountryCode,
 } from '../../store/slices/cartSlice';
 import {formatMajorAmount} from '../../utils/currency';
-import { computePreCheckoutTotals, formatTaxDisplay } from '../../utils/orderTax';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { loadStripe, type StripeElementLocale } from '@stripe/stripe-js';
 import {
@@ -32,7 +31,9 @@ import {
   resolvePreferredPaymentMethod,
   type PaymentMethodCode,
 } from '../../utils/paymentMethods';
-import { checkoutCartConfiguration, type CheckoutHandoff } from '../checkout/components/checkoutContext';
+import { checkoutCartConfiguration, useCheckoutStore, type CheckoutHandoff } from '../checkout/components/checkoutContext';
+import CheckoutSummary from '../checkout/components/CheckoutSummary';
+import '../checkout/components/Checkout.css';
 
 // Razorpay is declared in types/razorpay.d.ts - no need to redeclare
 
@@ -50,13 +51,10 @@ interface GuestInfo {
 }
 
 const PaymentPage: React.FC = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
 
   const cartItems = useAppSelector(selectCartItems);
-  const subtotal = useAppSelector(selectCartSubtotal);
-  const baseDeliveryFee = useAppSelector(selectDeliveryFee);
   const currentUser = useAppSelector(selectCurrentUser);
   const selectedStoreId = useAppSelector(selectSelectedStoreId);
   const currency = useAppSelector(selectCartCurrency);
@@ -65,7 +63,10 @@ const PaymentPage: React.FC = () => {
   // Country only from cart after store profile hydration — never invent DE
   const paymentCountry = storeCountryCode;
   const showUpi = isUpiAvailable(paymentCountry);
+  // Gateway shown to the customer follows the same store-country rule as the offered methods
+  const gatewayName = showUpi ? 'Razorpay' : 'Stripe';
   const fmt = (v: number) => formatMajorAmount(v , currency, locale);
+  const checkout = useCheckoutStore();
 
   // Get guest info from navigation state (passed from GuestCheckoutPage)
   const handoff = location.state as Partial<CheckoutHandoff> | null;
@@ -84,6 +85,11 @@ const PaymentPage: React.FC = () => {
   const [tableNumber, setTableNumber] = useState('');
   const [guestCount, setGuestCount] = useState('');
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  // Order already created for this visit; reused on payment retry so a retry never creates a second order
+  const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
+  const submitting = useRef(false);
+  const { geocode } = useGeocoding();
 
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
   const [initiatePayment, { isLoading: isInitiatingPayment }] = useInitiatePaymentMutation();
@@ -152,20 +158,21 @@ const PaymentPage: React.FC = () => {
 
   useEffect(() => {
     const preferred = customerProfile?.preferences?.preferredPaymentMethod;
-    if (!preferred) return;
+    // A late profile load must not change the method of an order that already exists
+    if (!preferred || createdOrder) return;
     const resolved = resolvePreferredPaymentMethod(preferred, paymentCountry, 'CARD');
     if (resolved === 'CASH' && orderType === 'DELIVERY') {
       setPaymentMethod('CARD');
     } else {
       setPaymentMethod(resolved);
     }
-  }, [customerProfile?.preferences?.preferredPaymentMethod, orderType, paymentCountry]);
-
-  const deliveryFee = orderType === 'DELIVERY' ? baseDeliveryFee : 0;
-  const { tax, taxLabel, total } = computePreCheckoutTotals(subtotal, deliveryFee, storeCountryCode);
+  }, [customerProfile?.preferences?.preferredPaymentMethod, orderType, paymentCountry, createdOrder]);
 
   const handlePlaceOrder = async () => {
-    if (checkoutContextChanged) return;
+    if (checkoutContextChanged || submitting.current) return;
+    submitting.current = true;
+    setError('');
+    let orderForPayment = createdOrder;
     try {
       let customerId = customerProfile?.id;
       if (currentUser && !customerId) {
@@ -182,13 +189,13 @@ const PaymentPage: React.FC = () => {
           customerId = customer.id;
         } catch (err: unknown) {
           const errorMessage = getApiErrorMessage(err, 'Unable to retrieve customer profile');
-          alert(`Unable to retrieve your customer profile. Please try again or contact support.\n\nError: ${errorMessage}`);
+          setError(`Your customer profile could not be loaded. Try again or contact the store. ${errorMessage}`);
           return;
         }
       }
 
       if (currentUser && !customerId) {
-        alert('Unable to retrieve your customer information. Please refresh the page and try again.');
+        setError('Your customer profile could not be loaded. Refresh the page and try again.');
         return;
       }
 
@@ -216,9 +223,22 @@ const PaymentPage: React.FC = () => {
               state: selectedAddress.state,
               pincode: selectedAddress.postalCode,
               landmark: selectedAddress.landmark || '',
+              latitude: selectedAddress.latitude,
+              longitude: selectedAddress.longitude,
             };
           }
         }
+      }
+
+      // The store prices delivery by distance, so the address needs coordinates
+      if (!orderForPayment && deliveryAddress && (deliveryAddress.latitude == null || deliveryAddress.longitude == null)) {
+        const country = storeCountryCode ? defaultAddressCountry(storeCountryCode) : '';
+        const located = await geocode([deliveryAddress.street, deliveryAddress.pincode, deliveryAddress.city, country].filter(Boolean).join(', ')).catch(() => null);
+        if (!located) {
+          setError('This delivery address could not be located, so delivery cannot be priced. Go back and check the address, or choose pickup.');
+          return;
+        }
+        deliveryAddress = { ...deliveryAddress, latitude: located.latitude, longitude: located.longitude };
       }
 
       const orderData = {
@@ -243,7 +263,9 @@ const PaymentPage: React.FC = () => {
         ...(orderType === "DINE_IN" && guestCount ? { guestCount: parseInt(guestCount, 10) } : {}),
       };
 
-      const orderResult = await createOrder(orderData).unwrap();
+      const orderResult = orderForPayment ?? await createOrder(orderData).unwrap();
+      orderForPayment = orderResult;
+      setCreatedOrder(orderResult);
       const orderId = orderResult.id;
 
       if (paymentMethod === 'CASH') {
@@ -283,12 +305,19 @@ const PaymentPage: React.FC = () => {
         });
         return;
       }
+      if (paymentResult.paymentGateway === 'STRIPE') {
+        setError('Your order was created but the card form could not be prepared. Try again; no second order will be created.');
+        return;
+      }
 
       await openRazorpayCheckout(paymentResult, orderId);
 
     } catch (err: unknown) {
-      const errorMessage = getApiErrorMessage(err, 'Failed to create order. Please try again.');
-      alert(errorMessage);
+      setError(orderForPayment
+        ? `Your order was created but payment could not be started (${getApiErrorMessage(err, 'payment service error')}). Try again; no second order will be created.`
+        : getApiErrorMessage(err, 'Your order could not be created. Try again.'));
+    } finally {
+      submitting.current = false;
     }
   };
 
@@ -300,14 +329,16 @@ const PaymentPage: React.FC = () => {
       document.body.appendChild(script);
       await new Promise((resolve) => {
         script.onload = resolve;
+        // Resolve on failure too; the missing SDK is reported just below
+        script.onerror = resolve;
       });
     }
     if (!window.Razorpay) {
-      alert('Razorpay SDK not loaded. Please refresh the page.');
+      setError('Razorpay could not be loaded. Refresh the page and try again.');
       return;
     }
     if (!paymentData.razorpayKeyId || !paymentData.razorpayOrderId) {
-      alert('Payment configuration is incomplete. Please try again.');
+      setError('Payment configuration is incomplete. Try again.');
       return;
     }
 
@@ -334,7 +365,7 @@ const PaymentPage: React.FC = () => {
         contact: guestInfo?.phone || currentUser?.phone || '',
       },
       notes: { order_id: orderId },
-      theme: { color: '#C62A09' /* dark-premium --red; Razorpay needs a hex */ },
+      theme: { color: '#C62A09' /* Razorpay needs a hex */ },
       modal: {
         ondismiss: function() {
           navigate(`/payment/failed?order_id=${orderId}&error=Payment cancelled by user`);
@@ -351,493 +382,171 @@ const PaymentPage: React.FC = () => {
 
   const carriedAddressMissing = orderType === 'DELIVERY' && !!guestInfo && !guestInfo.street.trim();
   const isPlaceOrderDisabled = checkoutContextChanged || carriedAddressMissing || isLoading || (orderType === 'DELIVERY' && !guestInfo && (!customerProfile || !selectedAddressId)) || isOutsideDeliveryRadius || (orderType === 'DINE_IN' && !tableNumber);
+  // Order type and method are fixed once the store has created the order
+  const locked = isLoading || !!createdOrder;
+  const noSavedAddress = orderType === 'DELIVERY' && !guestInfo && !!customerProfile && customerProfile.addresses.length === 0;
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh', fontFamily: 'var(--font-body)' }}>
-      <CustomerPageHeader onBack={() => navigate('/checkout')} breadcrumb="Checkout" />
+    <BrowseShell>
+      <main className="checkout-page">
+        <Link to="/guest-checkout">Back to details</Link>
+        <div className="checkout-heading">
+          <h1>Payment</h1>
+          <p>Review your details and choose how to pay.</p>
+        </div>
 
-      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '32px 24px', display: 'grid', gridTemplateColumns: '1fr 380px', gap: '28px', alignItems: 'start' }}>
+        <div className="checkout-columns">
+          <section className="checkout-form" aria-label="Payment details">
+            {(checkoutContextChanged || carriedAddressMissing) && (
+              <div className="checkout-error" role="alert">
+                <p>{checkoutContextChanged ? 'Your store, cart or account changed. Review checkout details before placing an order.' : 'Enter a delivery address before switching this pickup order to delivery.'}</p>
+                <button type="button" onClick={() => navigate('/guest-checkout')}>Review checkout details</button>
+              </div>
+            )}
+            {error && <div className="checkout-error" role="alert">{error}</div>}
 
-        {/* LEFT COLUMN */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {guestInfo && (
+              <section className="checkout-review" aria-labelledby="payment-details-title">
+                <div className="checkout-summary-title">
+                  <h2 id="payment-details-title">{orderType === 'DELIVERY' ? 'Delivery details' : 'Contact details'}</h2>
+                  {!createdOrder && <Link to="/guest-checkout">Edit details</Link>}
+                </div>
+                <dl>
+                  <InfoRow label="Name" value={guestInfo.name} />
+                  <InfoRow label="Email" value={guestInfo.email} />
+                  <InfoRow label="Phone" value={guestInfo.phone} />
+                  {orderType === 'DELIVERY' && <InfoRow label="Address" value={[guestInfo.street, guestInfo.pincode, guestInfo.city, guestInfo.state].filter(Boolean).join(', ')} />}
+                  {guestInfo.deliveryInstructions && <InfoRow label="Instructions" value={guestInfo.deliveryInstructions} />}
+                </dl>
+              </section>
+            )}
 
-          {/* Page title */}
-          <div>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-1)', margin: 0 }}>
-              Complete Your Order
-            </h1>
-            <div style={{ height: '2px', width: '60px', background: 'var(--gold)', marginTop: '10px', borderRadius: '2px' }} />
-          </div>
-
-          {(checkoutContextChanged || carriedAddressMissing) && <div role="alert" style={cardStyle}>
-            <p>{checkoutContextChanged ? 'Your store, cart or account changed. Review checkout details before placing an order.' : 'Enter a delivery address before switching this pickup order to delivery.'}</p>
-            <button type="button" onClick={() => navigate('/guest-checkout')}>Review checkout details</button>
-          </div>}
-
-          {/* Guest delivery info */}
-          {guestInfo && (
-            <div style={cardStyle}>
-              <SectionLabel>{orderType === 'DELIVERY' ? 'Delivery Information' : 'Contact Information'}</SectionLabel>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <InfoRow label="Name" value={guestInfo.name} />
-                <InfoRow label="Email" value={guestInfo.email} />
-                <InfoRow label="Phone" value={guestInfo.phone} />
-                {orderType === 'DELIVERY' && <InfoRow label="Address" value={`${guestInfo.street}, ${guestInfo.city}, ${guestInfo.state} — ${guestInfo.pincode}`} />}
-                {guestInfo.deliveryInstructions && (
-                  <InfoRow label="Instructions" value={guestInfo.deliveryInstructions} />
+            {!checkoutContextChanged && currentUser && !guestInfo && customerProfile && (
+              <>
+                <section className="checkout-review" aria-labelledby="payment-customer-title">
+                  <h2 id="payment-customer-title">Your details</h2>
+                  <dl>
+                    <InfoRow label="Name" value={currentUser.name} />
+                    <InfoRow label="Email" value={currentUser.email || ''} />
+                    <InfoRow label="Phone" value={currentUser.phone || ''} />
+                  </dl>
+                </section>
+                {orderType === 'DELIVERY' && (
+                  <fieldset disabled={locked}>
+                    <legend>Delivery address</legend>
+                    {customerProfile.addresses.map(address => (
+                      <label className="checkout-choice" key={address.id}>
+                        <span>
+                          <strong>{address.label}{address.isDefault ? ' · Default' : ''}</strong>
+                          <small>{[address.addressLine1, address.addressLine2, address.postalCode, address.city, address.state].filter(Boolean).join(', ')}{address.landmark ? ` · Landmark: ${address.landmark}` : ''}</small>
+                        </span>
+                        <input type="radio" name="paymentAddress" value={address.id} checked={selectedAddressId === address.id} onChange={() => setSelectedAddressId(address.id)} />
+                      </label>
+                    ))}
+                    {noSavedAddress && <p className="checkout-note" role="status">You have no saved addresses. <Link to="/guest-checkout">Add a delivery address</Link> to continue.</p>}
+                    {isOutsideDeliveryRadius && (
+                      <div className="checkout-error" role="alert">
+                        Your delivery address is outside this store's delivery area ({radiusCheck?.deliveryRadiusKm} km radius). Choose a closer address or switch to pickup.
+                      </div>
+                    )}
+                  </fieldset>
                 )}
-              </div>
-            </div>
-          )}
-
-          {/* Logged-in customer info + address */}
-          {!checkoutContextChanged && currentUser && !guestInfo && customerProfile && (
-            <div style={cardStyle}>
-              <SectionLabel>Customer Information</SectionLabel>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: orderType === 'DELIVERY' ? '20px' : '0' }}>
-                <InfoRow label="Name" value={currentUser.name} />
-                <InfoRow label="Email" value={currentUser.email || ''} />
-                <InfoRow label="Phone" value={currentUser.phone || ''} />
-              </div>
-
-              {orderType === 'DELIVERY' && (
-                <>
-                  <div style={{ height: '1px', background: 'var(--border)', marginBottom: '16px' }} />
-                  <SectionLabel>Delivery Address</SectionLabel>
-                  {customerProfile.addresses.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {customerProfile.addresses.map((address) => {
-                        const isSelected = selectedAddressId === address.id;
-                        return (
-                          <div
-                            key={address.id}
-                            onClick={() => setSelectedAddressId(address.id)}
-                            style={{
-                              padding: '14px 16px',
-                              borderRadius: '10px',
-                              border: isSelected ? '1.5px solid var(--gold)' : '1px solid var(--border)',
-                              background: isSelected ? 'rgba(212,175,55,0.07)' : 'var(--surface-2)',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s',
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                              <div style={{
-                                width: '16px', height: '16px', borderRadius: '50%',
-                                border: isSelected ? '4px solid var(--gold)' : '2px solid var(--text-3)',
-                                flexShrink: 0,
-                              }} />
-                              <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-1)' }}>
-                                {address.label}
-                              </span>
-                              {address.isDefault && (
-                                <span style={{ fontSize: '0.7rem', color: 'var(--gold)', border: '1px solid var(--gold)', padding: '1px 6px', borderRadius: '20px' }}>
-                                  Default
-                                </span>
-                              )}
-                            </div>
-                            <div style={{ fontSize: '0.82rem', color: 'var(--text-2)', paddingLeft: '24px', lineHeight: 1.6 }}>
-                              {address.addressLine1}{address.addressLine2 && `, ${address.addressLine2}`}<br />
-                              {address.city}, {address.state} — {address.postalCode}
-                              {address.landmark && <><br />Landmark: {address.landmark}</>}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div style={{ padding: '16px', background: 'var(--surface-2)', borderRadius: '10px', textAlign: 'center', color: 'var(--text-3)', fontSize: '0.85rem' }}>
-                      No saved addresses. Add one from your profile page.
-                    </div>
-                  )}
-                  {isOutsideDeliveryRadius && (
-                    <div style={{
-                      backgroundColor: 'rgba(var(--warning-rgb), 0.15)',
-                      border: '1px solid #ffc107',
-                      borderRadius: '8px',
-                      padding: '12px 16px',
-                      color: 'var(--warning)',
-                      fontSize: '14px',
-                      marginTop: '8px',
-                    }}>
-                      &#9888; Your delivery address is outside this store's delivery area ({radiusCheck?.deliveryRadiusKm} km radius).
-                      Please choose a closer address or switch to Takeaway.
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Order Type */}
-          <div style={cardStyle}>
-            <SectionLabel>Order Type</SectionLabel>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-              <OrderTypeCard
-                active={orderType === 'DELIVERY'}
-                onClick={() => setOrderType('DELIVERY')}
-                icon={
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3" />
-                    <rect x="9" y="11" width="14" height="10" rx="2" />
-                    <circle cx="12" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
-                  </svg>
-                }
-                title="Delivery"
-                sub={`+${formatMajorAmount(baseDeliveryFee , currency, locale)} delivery`}
-              />
-              <OrderTypeCard
-                active={orderType === 'TAKEAWAY'}
-                onClick={() => setOrderType('TAKEAWAY')}
-                icon={
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                    <line x1="3" y1="6" x2="21" y2="6" />
-                    <path d="M16 10a4 4 0 0 1-8 0" />
-                  </svg>
-                }
-                title="Takeaway"
-                sub="No delivery fee"
-              />
-              <OrderTypeCard
-                active={orderType === 'DINE_IN'}
-                onClick={() => setOrderType('DINE_IN')}
-                icon={
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 11l19-9-9 19-2-8-8-2z" />
-                  </svg>
-                }
-                title="Dine In"
-                sub="Eat at restaurant"
-              />
-            </div>
-          </div>
-
-
-          {/* Table Number and Guest Count for DINE_IN */}
-          {orderType === 'DINE_IN' && (
-            <div style={cardStyle}>
-              <SectionLabel>Table Details</SectionLabel>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label style={{ fontSize: '12px', color: 'var(--text-3)', display: 'block', marginBottom: '6px' }}>Table Number *</label>
-                  <input
-                    type="number"
-                    value={tableNumber}
-                    onChange={e => setTableNumber(e.target.value)}
-                    placeholder="e.g. 5"
-                    required
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-1)', fontSize: '16px', boxSizing: 'border-box' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', color: 'var(--text-3)', display: 'block', marginBottom: '6px' }}>Number of Guests</label>
-                  <input
-                    type="number"
-                    value={guestCount}
-                    onChange={e => setGuestCount(e.target.value)}
-                    placeholder="e.g. 2"
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-1)', fontSize: '16px', boxSizing: 'border-box' }}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-          {/* Stripe Payment Element — shown after payment is initiated for EU stores */}
-          {stripeData && (
-            <div style={cardStyle}>
-              <SectionLabel>Complete Payment</SectionLabel>
-              <StripePaymentForm
-                clientSecret={stripeData.clientSecret}
-                publishableKey={stripeData.publishableKey}
-                orderId={stripeData.orderId}
-                locale={locale}
-                onSuccess={() => {
-                  setOrderPlaced(true);
-                  navigate(`/payment/success?order_id=${stripeData!.orderId}`);
-                }}
-                onError={(msg: string) => alert(msg)}
-              />
-            </div>
-          )}
-
-          {/* Payment Method */}
-          <div style={cardStyle}>
-            <SectionLabel>Payment Method</SectionLabel>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {orderType === 'TAKEAWAY' && (
-                <PaymentOption
-                  active={paymentMethod === 'CASH'}
-                  onClick={() => setPaymentMethod('CASH')}
-                  icon={
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="2" y="6" width="20" height="12" rx="2" />
-                      <circle cx="12" cy="12" r="2" />
-                      <path d="M6 12h.01M18 12h.01" />
-                    </svg>
-                  }
-                  title="Cash on Pickup"
-                  desc="Pay with cash when you collect your order"
-                />
-              )}
-              <PaymentOption
-                active={paymentMethod === 'CARD'}
-                onClick={() => setPaymentMethod('CARD')}
-                icon={
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="1" y="4" width="22" height="16" rx="2" />
-                    <line x1="1" y1="10" x2="23" y2="10" />
-                  </svg>
-                }
-                title="Credit / Debit Card"
-                desc={showUpi ? 'Pay securely via Razorpay' : 'Pay securely via Stripe'}
-              />
-              {showUpi && (
-                <PaymentOption
-                  active={paymentMethod === 'UPI'}
-                  onClick={() => setPaymentMethod('UPI')}
-                  icon={
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="5" y="2" width="14" height="20" rx="2" />
-                      <line x1="12" y1="18" x2="12.01" y2="18" />
-                    </svg>
-                  }
-                  title="UPI Payment"
-                  desc="Google Pay, PhonePe, Paytm & more"
-                />
-              )}
-            </div>
-
-            {(paymentMethod === 'CARD' || paymentMethod === 'UPI') && (
-              <div style={{
-                marginTop: '14px',
-                padding: '12px 14px',
-                background: 'rgba(212,175,55,0.06)',
-                border: '1px solid rgba(212,175,55,0.2)',
-                borderRadius: '10px',
-                fontSize: '0.8rem',
-                color: 'var(--text-3)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                  <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-                {showUpi
-                  ? "You'll complete payment on Razorpay's secure gateway."
-                  : "You'll complete card payment on Stripe's secure checkout."}
-              </div>
+              </>
             )}
-          </div>
-        </div>
 
-        {/* RIGHT COLUMN — Order Summary */}
-        <div style={{ position: 'sticky', top: '84px' }}>
-          <div style={{ ...cardStyle, padding: '24px' }}>
-            <SectionLabel>{t('cart.order_summary')}</SectionLabel>
+            <fieldset disabled={locked}>
+              <legend>Order type</legend>
+              <div className="checkout-radio-row checkout-radio-row-3">
+                <ChoiceRadio name="paymentOrderType" checked={orderType === 'DELIVERY'} onChange={() => setOrderType('DELIVERY')} icon={<Truck size={24} aria-hidden="true" />} title="Delivery" description="Fee confirmed with order" />
+                <ChoiceRadio name="paymentOrderType" checked={orderType === 'TAKEAWAY'} onChange={() => setOrderType('TAKEAWAY')} icon={<Store size={24} aria-hidden="true" />} title="Pickup" description="Collect at the selected store" />
+                <ChoiceRadio name="paymentOrderType" checked={orderType === 'DINE_IN'} onChange={() => setOrderType('DINE_IN')} icon={<Utensils size={24} aria-hidden="true" />} title="Dine in" description="Eat at the restaurant" />
+              </div>
+            </fieldset>
 
-            {/* Items list */}
-            <div style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {cartItems.map((item) => (
-                <div key={item.lineId || item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>
-                    <span style={{ color: 'var(--gold)', fontWeight: 600, marginRight: '6px' }}>{item.quantity}×</span>
-                    {item.name}
+            {orderType === 'DINE_IN' && (
+              <fieldset disabled={locked}>
+                <legend>Table details</legend>
+                <div className="checkout-fields">
+                  <div className="checkout-field">
+                    <label htmlFor="payment-tableNumber">Table number</label>
+                    <input id="payment-tableNumber" type="number" inputMode="numeric" min={1} value={tableNumber} onChange={e => setTableNumber(e.target.value)} required />
                   </div>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-1)' }}>
-                    {formatMajorAmount(item.price * item.quantity , currency, locale)}
-                  </span>
+                  <div className="checkout-field">
+                    <label htmlFor="payment-guestCount">Number of guests (optional)</label>
+                    <input id="payment-guestCount" type="number" inputMode="numeric" min={1} value={guestCount} onChange={e => setGuestCount(e.target.value)} />
+                  </div>
                 </div>
-              ))}
-            </div>
+              </fieldset>
+            )}
 
-            <div style={{ height: '1px', background: 'var(--border)', marginBottom: '16px' }} />
-
-            {/* Breakdown */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
-              <SummaryRow label={t('cart.subtotal_with_count', { count: cartItems.length })} value={formatMajorAmount(subtotal , currency, locale)} />
-              {orderType === 'DELIVERY' && (
-                <SummaryRow label={t('cart.delivery_fee')} value={formatMajorAmount(deliveryFee , currency, locale)} />
+            <fieldset disabled={locked}>
+              <legend>Payment method</legend>
+              {orderType === 'TAKEAWAY' && (
+                <ChoiceRadio name="paymentMethod" checked={paymentMethod === 'CASH'} onChange={() => setPaymentMethod('CASH')} icon={<Banknote size={24} aria-hidden="true" />} title="Cash on Pickup" description="Pay with cash when you collect your order" />
               )}
-              <SummaryRow label={taxLabel} value={formatTaxDisplay(tax, fmt)} />
-            </div>
+              <ChoiceRadio name="paymentMethod" checked={paymentMethod === 'CARD'} onChange={() => setPaymentMethod('CARD')} icon={<CreditCard size={24} aria-hidden="true" />} title="Credit / Debit Card" description={`Processed by ${gatewayName}`} />
+              {showUpi && (
+                <ChoiceRadio name="paymentMethod" checked={paymentMethod === 'UPI'} onChange={() => setPaymentMethod('UPI')} icon={<Smartphone size={24} aria-hidden="true" />} title="UPI Payment" description="Google Pay, PhonePe, Paytm & more" />
+              )}
+            </fieldset>
 
-            <div style={{ height: '1px', background: 'var(--border)', marginBottom: '16px' }} />
-
-            {/* Total */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-1)' }}>{t('cart.total')}</span>
-              <span style={{ fontWeight: 800, fontSize: '1.4rem', color: 'var(--gold)' }}>{formatMajorAmount(total , currency, locale)}</span>
-            </div>
-            <p style={{ fontSize: '0.72rem', color: 'var(--text-3)', marginBottom: '20px', lineHeight: 1.4 }}>
-              Delivery charges may vary based on distance.
-            </p>
-
-            {/* Warning: no addresses */}
-            {orderType === 'DELIVERY' && !guestInfo && customerProfile && customerProfile.addresses.length === 0 && (
-              <div style={{
-                padding: '12px 14px',
-                background: 'rgba(234,179,8,0.08)',
-                border: '1px solid rgba(234,179,8,0.35)',
-                borderRadius: '10px',
-                fontSize: '0.8rem',
-                color: 'var(--gold-light)',
-                marginBottom: '16px',
-                display: 'flex',
-                gap: '8px',
-                alignItems: 'flex-start',
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '1px' }}>
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                  <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-                Please add a delivery address in your profile to continue.
-              </div>
+            {stripeData && createdOrder ? (
+              <section aria-labelledby="payment-card-title">
+                <h2 id="payment-card-title" className="checkout-section-title">Card details</h2>
+                <p className="checkout-note" role="status">Your order is created and awaiting payment. Card details are entered with Stripe.</p>
+                <StripePaymentForm
+                  clientSecret={stripeData.clientSecret}
+                  publishableKey={stripeData.publishableKey}
+                  orderId={stripeData.orderId}
+                  locale={locale}
+                  payLabel={Number.isFinite(createdOrder.total) ? `Pay ${fmt(createdOrder.total)}` : 'Pay now'}
+                  onSuccess={() => {
+                    setOrderPlaced(true);
+                    navigate(`/payment/success?order_id=${stripeData.orderId}`);
+                  }}
+                  onError={setError}
+                />
+              </section>
+            ) : (
+              <>
+                <button type="button" className="browse-primary browse-full" onClick={handlePlaceOrder} disabled={isPlaceOrderDisabled}>
+                  {isLoading ? 'Processing…' : paymentMethod === 'CASH' ? 'Place order' : createdOrder ? 'Retry payment' : 'Place order and pay'}
+                </button>
+                {paymentMethod !== 'CASH' && (
+                  <p className="checkout-secure-note">The store confirms your total first. Payment is then completed with {gatewayName}.</p>
+                )}
+              </>
             )}
+          </section>
 
-            {/* CTA */}
-            <button
-              onClick={handlePlaceOrder}
-              disabled={isPlaceOrderDisabled}
-              style={{
-                width: '100%',
-                padding: '15px',
-                borderRadius: '10px',
-                border: 'none',
-                background: isPlaceOrderDisabled ? 'var(--border)' : 'linear-gradient(135deg, var(--red), var(--red-light))',
-                color: isPlaceOrderDisabled ? 'var(--text-3)' : '#fff',
-                fontSize: '0.95rem',
-                fontWeight: 700,
-                cursor: isPlaceOrderDisabled ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s',
-                letterSpacing: '0.02em',
-                marginBottom: '10px',
-              }}
-            >
-              {isLoading
-                ? 'Processing...'
-                : paymentMethod === 'CASH'
-                  ? t('payment.place_order', { total: formatMajorAmount(total, currency, locale) })
-                  : t('payment.pay_razorpay', { total: formatMajorAmount(total, currency, locale) })}
-            </button>
-
-            <button
-              onClick={() => navigate('/checkout')}
-              disabled={isLoading}
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: '10px',
-                border: '1px solid var(--border)',
-                background: 'transparent',
-                color: 'var(--text-2)',
-                fontSize: '0.85rem',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-            >
-              Back to Checkout
-            </button>
-
-            {paymentMethod !== 'CASH' && (
-              <div style={{ marginTop: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.72rem', color: 'var(--text-3)' }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-                Secured by Razorpay · 256-bit SSL Encrypted
-              </div>
-            )}
-          </div>
+          <CheckoutSummary checkout={checkout} orderType={orderType} order={createdOrder ?? undefined} placesOrder />
         </div>
-      </div>
-    </div>
+      </main>
+    </BrowseShell>
   );
 };
 
 // ─── Small helper components ─────────────────────────────────────────────────
 
-const cardStyle: React.CSSProperties = {
-  background: 'var(--surface)',
-  border: '1px solid var(--border)',
-  borderRadius: '14px',
-  padding: '22px 24px',
-};
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: '14px' }}>
-      {children}
-    </p>
-  );
-}
-
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: 'flex', gap: '8px', fontSize: '0.85rem' }}>
-      <span style={{ color: 'var(--text-3)', minWidth: '80px' }}>{label}:</span>
-      <span style={{ color: 'var(--text-1)', fontWeight: 500 }}>{value}</span>
+    <div>
+      <dt>{label}</dt>
+      <dd>{value}</dd>
     </div>
   );
 }
 
-function SummaryRow({ label, value }: { label: string; value: string }) {
+function ChoiceRadio({ name, checked, onChange, icon, title, description }: { name: string; checked: boolean; onChange: () => void; icon: React.ReactNode; title: string; description: string }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <span style={{ fontSize: '0.83rem', color: 'var(--text-2)' }}>{label}</span>
-      <span style={{ fontSize: '0.83rem', fontWeight: 600, color: 'var(--text-1)' }}>{value}</span>
-    </div>
-  );
-}
-
-function OrderTypeCard({ active, onClick, icon, title, sub }: { active: boolean; onClick: () => void; icon: React.ReactNode; title: string; sub: string }) {
-  return (
-    <div
-      onClick={onClick}
-      style={{
-        padding: '18px 14px',
-        borderRadius: '12px',
-        border: active ? '1.5px solid var(--gold)' : '1px solid var(--border)',
-        background: active ? 'rgba(212,175,55,0.07)' : 'var(--surface-2)',
-        cursor: 'pointer',
-        textAlign: 'center',
-        transition: 'all 0.2s',
-      }}
-    >
-      <div style={{ color: active ? 'var(--gold)' : 'var(--text-2)', marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>{icon}</div>
-      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: active ? 'var(--text-1)' : 'var(--text-2)', marginBottom: '4px' }}>{title}</div>
-      <div style={{ fontSize: '0.72rem', color: 'var(--text-3)' }}>{sub}</div>
-    </div>
-  );
-}
-
-function PaymentOption({ active, onClick, icon, title, desc }: { active: boolean; onClick: () => void; icon: React.ReactNode; title: string; desc: string }) {
-  return (
-    <div
-      onClick={onClick}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '14px',
-        padding: '14px 16px',
-        borderRadius: '10px',
-        border: active ? '1.5px solid var(--gold)' : '1px solid var(--border)',
-        background: active ? 'rgba(212,175,55,0.07)' : 'var(--surface-2)',
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-      }}
-    >
-      <div style={{
-        width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0,
-        border: active ? '5px solid var(--gold)' : '2px solid var(--text-3)',
-      }} />
-      <div style={{ color: active ? 'var(--gold)' : 'var(--text-2)', display: 'flex', alignItems: 'center' }}>{icon}</div>
-      <div>
-        <div style={{ fontWeight: 600, fontSize: '0.88rem', color: active ? 'var(--text-1)' : 'var(--text-2)' }}>{title}</div>
-        <div style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>{desc}</div>
-      </div>
-    </div>
+    <label className="checkout-choice">
+      {icon}
+      <span>
+        <strong>{title}</strong>
+        <small>{description}</small>
+      </span>
+      <input type="radio" name={name} checked={checked} onChange={onChange} />
+    </label>
   );
 }
 
@@ -847,56 +556,54 @@ interface StripePaymentFormProps {
   clientSecret: string;
   publishableKey: string;
   orderId: string;
+  locale: string;
+  payLabel: string;
   onSuccess: () => void;
   onError: (msg: string) => void;
 }
 
-function StripePaymentForm({ clientSecret, publishableKey, orderId, onSuccess, onError, locale }: StripePaymentFormProps & { locale: string }) {
-  const stripePromise = loadStripe(publishableKey);
+function StripePaymentForm({ clientSecret, publishableKey, orderId, onSuccess, onError, locale, payLabel }: StripePaymentFormProps) {
+  const stripePromise = useMemo(() => loadStripe(publishableKey), [publishableKey]);
   const stripeLocale = locale.split('-')[0];
   return (
     <Elements stripe={stripePromise} options={{ clientSecret, locale: stripeLocale as StripeElementLocale }}>
-      <StripeCheckoutInner orderId={orderId} onSuccess={onSuccess} onError={onError} />
+      <StripeCheckoutInner orderId={orderId} onSuccess={onSuccess} onError={onError} payLabel={payLabel} />
     </Elements>
   );
 }
 
-function StripeCheckoutInner({ orderId, onSuccess, onError }: { orderId: string; onSuccess: () => void; onError: (msg: string) => void }) {
-  const { t } = useTranslation();
+function StripeCheckoutInner({ orderId, onSuccess, onError, payLabel }: Pick<StripePaymentFormProps, 'orderId' | 'onSuccess' | 'onError' | 'payLabel'>) {
   const stripe = useStripe();
   const elements = useElements();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const handleConfirm = async () => {
-    if (!stripe || !elements) return;
+    if (!stripe || !elements || isSubmitting) return;
     setIsSubmitting(true);
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/payment/success?order_id=${orderId}`,
-      },
-    });
-    if (error) {
-      onError(error.message ?? 'Payment failed');
+    try {
+      const { error } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/payment/success?order_id=${orderId}`,
+        },
+      });
+      if (error) {
+        onError(error.message ?? 'Payment failed');
+        setIsSubmitting(false);
+      } else {
+        onSuccess();
+      }
+    } catch {
+      onError('Payment could not be submitted. Check your connection and try again.');
       setIsSubmitting(false);
-    } else {
-      onSuccess();
     }
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div className="checkout-stripe">
       <PaymentElement />
-      <button
-        onClick={handleConfirm}
-        disabled={isSubmitting || !stripe}
-        style={{
-          width: '100%', padding: '15px', borderRadius: '10px', border: 'none',
-          background: isSubmitting ? 'var(--border)' : 'linear-gradient(135deg, var(--info), var(--info-light))',
-          color: 'var(--text-1)', fontSize: '0.95rem', fontWeight: 700, cursor: isSubmitting ? 'not-allowed' : 'pointer',
-        }}
-      >
-        {isSubmitting ? t('payment.processing') : t('payment.pay_stripe')}
+      <button type="button" className="browse-primary browse-full" onClick={handleConfirm} disabled={isSubmitting || !stripe}>
+        {isSubmitting ? 'Processing…' : payLabel}
       </button>
     </div>
   );

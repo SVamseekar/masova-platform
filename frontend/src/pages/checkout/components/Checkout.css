@@ -26,23 +26,34 @@
 .checkout-choice small { color: var(--masova-textSecondary); margin-top: 4px; }
 .customer-browse .checkout-choice input, .customer-browse .checkout-checkbox input { width: 18px; height: 18px; min-height: 18px; flex-shrink: 0; accent-color: var(--masova-primary); }
 .checkout-radio-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.checkout-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.checkout-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+.checkout-fields-3 { grid-template-columns: 1fr 1fr 1fr; }
+.checkout-radio-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+.checkout-review { margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--masova-borderSubtle); }
+.checkout-review h2, .checkout-section-title { font-size: 18px; font-weight: 600; margin: 0 0 12px; }
+.checkout-review dl { margin: 0; }
+.checkout-review dl div { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 12px; padding: 4px 0; }
+.checkout-review dt { color: var(--masova-textSecondary); font-size: 13px; }
+.checkout-review dd { margin: 0; overflow-wrap: anywhere; }
+.customer-browse .checkout-secure-note { margin: 12px 0 0; font-size: 13px; color: var(--masova-textSecondary); text-align: center; }
+.checkout-stripe { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+.checkout-radio-row .checkout-choice { min-height: 72px; }
 .checkout-field { margin-bottom: 16px; }
 .checkout-field label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
 .checkout-field input, .checkout-field select, .checkout-field textarea { width: 100%; min-height: 48px; border: 1px solid var(--masova-borderControl); border-radius: 8px; padding: 10px 12px; font: inherit; background: var(--masova-surface); color: var(--masova-text); }
-.checkout-field textarea { min-height: 96px; resize: vertical; }
+.checkout-field textarea { min-height: 72px; resize: vertical; }
 .checkout-field input[aria-invalid=true] { border-color: var(--masova-errorText); }
 .customer-browse .checkout-field #checkout-addressLine1 { background: var(--masova-surface) !important; color: var(--masova-text) !important; border: 1px solid var(--masova-borderControl) !important; box-shadow: none !important; font: inherit !important; }
 .customer-browse .checkout-field #checkout-addressLine1[aria-invalid=true] { border-color: var(--masova-errorText) !important; }
 .customer-browse .checkout-field input:focus-visible { outline: 3px solid var(--masova-focus) !important; outline-offset: 3px; }
 .customer-browse .checkout-field-error, .customer-browse .checkout-error { color: var(--masova-errorText); }
 .checkout-error { padding: 12px; border: 1px solid var(--masova-errorText); background: var(--masova-errorSurface); border-radius: 8px; margin-bottom: 16px; }
-.checkout-field-error { font-size: 13px; margin: 6px 0 0; }
+.checkout-field-error { font-size: 13px; margin: 8px 0 0; }
 .checkout-checkbox { display: flex; align-items: center; min-height: 48px; gap: 12px; margin-bottom: 16px; }
 .checkout-address-row { border-bottom: 1px solid var(--masova-borderSubtle); padding-bottom: 16px; margin-bottom: 16px; }
 .checkout-address-row .checkout-choice { margin-bottom: 8px; }
 .checkout-address-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .checkout-dialog-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 @media (max-width: 850px) { .checkout-columns { grid-template-columns: 1fr; } .checkout-summary { position: static; } }
-@media (max-width: 540px) { .checkout-page { padding: 20px 16px; } .checkout-form, .checkout-summary { padding: 20px 16px; } .checkout-fields { grid-template-columns: 1fr; gap: 0; } .checkout-radio-row { grid-template-columns: 1fr; gap: 0; } }
+@media (max-width: 540px) { .checkout-page { padding: 20px 16px; } .checkout-form, .checkout-summary { padding: 20px 16px; } .checkout-fields, .checkout-fields-3 { grid-template-columns: 1fr; gap: 0; } .checkout-radio-row, .checkout-radio-row-3 { grid-template-columns: 1fr; gap: 0; } .checkout-review dl div { grid-template-columns: 1fr; gap: 0; } }
 @media (prefers-reduced-motion: reduce) { .checkout-page *, .checkout-dialog * { animation: none !important; transition: none !important; } }
