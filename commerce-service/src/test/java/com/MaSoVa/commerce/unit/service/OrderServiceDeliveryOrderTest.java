@@ -62,7 +62,7 @@ class OrderServiceDeliveryOrderTest {
         );
 
         when(menuServiceClient.isMenuItemAvailable(anyString())).thenReturn(true);
-        when(menuServiceClient.validatePrice(anyString(), anyDouble())).thenReturn(true);
+        when(menuServiceClient.validatePrice(anyString(), anyDouble(), nullable(String.class), nullable(java.util.List.class), any(com.MaSoVa.shared.entity.Store.class))).thenReturn(true);
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
         when(orderJpaRepository.save(any(OrderJpaEntity.class))).thenAnswer(inv -> inv.getArgument(0));
         when(storeServiceClient.getStore(anyString())).thenReturn(new com.MaSoVa.shared.entity.Store());
@@ -162,7 +162,7 @@ class OrderServiceDeliveryOrderTest {
 
     @Test
     void createOrder_invalid_price_throws() {
-        when(menuServiceClient.validatePrice("menu-001", 100.0)).thenReturn(false);
+        when(menuServiceClient.validatePrice(eq("menu-001"), eq(100.0), isNull(), isNull(), any(com.MaSoVa.shared.entity.Store.class))).thenReturn(false);
 
         CreateOrderRequest req = new CreateOrderRequest();
         req.setCustomerName("Test");

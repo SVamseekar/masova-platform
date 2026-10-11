@@ -126,8 +126,19 @@ public class OrderService {
     public Order createOrder(CreateOrderRequest request) {
         log.info("Creating new order for customer: {}", request.getCustomerName());
 
+        // Global-2: Route to EU VAT engine for non-India stores, GST for India stores.
+        // getStore() never throws (it catches its own errors and returns null), so a null result
+        // is the only failure signal here.
+        Store store = storeServiceClient.getStore(request.getStoreId());
+        if (store == null) {
+            // Can't tell an EU store from an India one when the lookup fails — defaulting to
+            // INR/GST here would silently mis-tax and mis-bill a real EU store's order (#125).
+            throw new BusinessException("STORE_LOOKUP_FAILED",
+                    "Could not verify store " + request.getStoreId() + " for tax and currency routing; order rejected");
+        }
+
         // Validate stock availability and pricing
-        validateOrderItems(request.getItems());
+        validateOrderItems(request.getItems(), store);
 
         // Convert request items to order items
         List<OrderItem> orderItems = request.getItems().stream()
@@ -189,17 +200,6 @@ public class OrderService {
                 deliveryFee = deliveryFeeConfiguration.getBaseFee();
                 log.warn("Delivery address coordinates missing, using fallback base fee: ₹{}", deliveryFee);
             }
-        }
-
-        // Global-2: Route to EU VAT engine for non-India stores, GST for India stores.
-        // getStore() never throws (it catches its own errors and returns null), so a null result
-        // is the only failure signal here.
-        Store store = storeServiceClient.getStore(request.getStoreId());
-        if (store == null) {
-            // Can't tell an EU store from an India one when the lookup fails — defaulting to
-            // INR/GST here would silently mis-tax and mis-bill a real EU store's order (#125).
-            throw new BusinessException("STORE_LOOKUP_FAILED",
-                    "Could not verify store " + request.getStoreId() + " for tax and currency routing; order rejected");
         }
 
         String countryCode = store.getCountryCode();
@@ -1067,7 +1067,7 @@ public class OrderService {
         }
     }
 
-    private void validateOrderItems(List<CreateOrderRequest.OrderItemRequest> items) {
+    private void validateOrderItems(List<CreateOrderRequest.OrderItemRequest> items, Store store) {
         for (CreateOrderRequest.OrderItemRequest item : items) {
             // Validate menuItemId is present
             if (item.getMenuItemId() == null || item.getMenuItemId().trim().isEmpty()) {
@@ -1085,7 +1085,8 @@ public class OrderService {
             }
 
             // Validate pricing
-            if (!menuServiceClient.validatePrice(item.getMenuItemId(), item.getPrice())) {
+            if (!menuServiceClient.validatePrice(item.getMenuItemId(), item.getPrice(),
+                    item.getVariant(), item.getCustomizations(), store)) {
                 throw new RuntimeException(
                     String.format("Invalid price for menu item '%s'", item.getName())
                 );

@@ -32,6 +32,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
@@ -82,7 +83,7 @@ class OrderServiceCurrencyTest {
         );
 
         when(menuServiceClient.isMenuItemAvailable(anyString())).thenReturn(true);
-        when(menuServiceClient.validatePrice(anyString(), anyDouble())).thenReturn(true);
+        when(menuServiceClient.validatePrice(anyString(), anyDouble(), nullable(String.class), nullable(java.util.List.class), any(com.MaSoVa.shared.entity.Store.class))).thenReturn(true);
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
         when(orderJpaRepository.save(any(OrderJpaEntity.class))).thenAnswer(inv -> inv.getArgument(0));
     }
