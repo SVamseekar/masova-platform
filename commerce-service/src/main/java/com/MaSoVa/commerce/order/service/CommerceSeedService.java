@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -66,6 +67,7 @@ public class CommerceSeedService {
      * @param customerId JWT userId (sub) — ownership invariant for customer order APIs
      * @param driverId   optional driver userId for OFD/DELIVERED seed orders
      */
+    @CacheEvict(value = "menuItems", allEntries = true)
     public Map<String, Object> seedDemo(String storeId, String customerId, String driverId) {
         if (!isSeedAllowed()) {
             throw new IllegalStateException("Commerce seed is only available under dev/demo profiles");
@@ -92,10 +94,12 @@ public class CommerceSeedService {
     }
 
     /** Back-compat overload. */
+    @CacheEvict(value = "menuItems", allEntries = true)
     public Map<String, Object> seedDemo(String storeId, String customerId) {
         return seedDemo(storeId, customerId, null);
     }
 
+    @CacheEvict(value = "menuItems", allEntries = true)
     public Map<String, Object> seedMenuOnly(String storeId) {
         if (!isSeedAllowed()) {
             throw new IllegalStateException("Commerce seed is only available under dev/demo profiles");

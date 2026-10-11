@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
+import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
 import org.springframework.data.mongodb.core.mapping.MongoMappingContext;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
@@ -48,7 +49,10 @@ public class MongoConfig {
 
     @Bean(name = "mongoMappingContext")
     public MongoMappingContext mongoMappingContext() {
-        return new MongoMappingContext();
+        MongoMappingContext context = new MongoMappingContext();
+        // Auditing must treat converted JDK values as simple types, as MongoTemplate does.
+        context.setSimpleTypeHolder(MongoCustomConversions.create(adapter -> {}).getSimpleTypeHolder());
+        return context;
     }
 
     @Primary
