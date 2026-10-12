@@ -4,9 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { renderAsCustomer, screen, within } from '@/test/utils/testUtils';
 import ReviewOrderPage from './ReviewOrderPage';
 
-const mocks = vi.hoisted(() => ({ order: vi.fn(), existing: vi.fn(), createReview: vi.fn(), createState: { isLoading: false, isSuccess: false } }));
+const mocks = vi.hoisted(() => ({ order: vi.fn(), createReview: vi.fn(), createState: { isLoading: false, isSuccess: false } }));
 vi.mock('@/store/api/orderApi', async () => ({ ...(await vi.importActual('@/store/api/orderApi')), useGetOrderQuery: () => mocks.order() }));
-vi.mock('@/store/api/reviewApi', async () => ({ ...(await vi.importActual('@/store/api/reviewApi')), useGetReviewsByOrderIdQuery: () => mocks.existing(), useCreateReviewMutation: () => [mocks.createReview, mocks.createState] }));
+vi.mock('@/store/api/reviewApi', async () => ({ ...(await vi.importActual('@/store/api/reviewApi')), useCreateReviewMutation: () => [mocks.createReview, mocks.createState] }));
 vi.mock('@/store/api/menuApi', async () => ({ ...(await vi.importActual('@/store/api/menuApi')), useGetAvailableMenuQuery: () => ({ currentData: [] }) }));
 vi.mock('@/store/api/storeApi', async () => ({ ...(await vi.importActual('@/store/api/storeApi')), useGetActiveStoresQuery: () => ({ data: [{ id: 's1', storeCode: 'DOM001', name: 'MaSoVa Berlin Mitte', address: { city: 'Berlin' } }] }) }));
 vi.mock('@/apps/PublicWebsite/components/BrowseShell', () => ({ default: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
@@ -19,7 +19,6 @@ describe('ReviewOrderPage', () => {
     vi.clearAllMocks();
     mocks.createState = { isLoading: false, isSuccess: false };
     mocks.order.mockReturnValue({ data: order(), isLoading: false });
-    mocks.existing.mockReturnValue({ data: [], isLoading: false, isError: false });
     mocks.createReview.mockReturnValue({ unwrap: () => Promise.resolve({}) });
   });
 
@@ -70,12 +69,7 @@ describe('ReviewOrderPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('You have already reviewed this order');
   });
 
-  it('does not offer the form for an order already reviewed, not finished, or not readable', () => {
-    mocks.existing.mockReturnValue({ data: [{ id: 'r1' }], isLoading: false, isError: false });
-    const reviewed = renderAsCustomer(<ReviewOrderPage />);
-    expect(screen.getByRole('heading', { name: 'You already reviewed this order' })).toBeInTheDocument();
-    reviewed.unmount();
-    mocks.existing.mockReturnValue({ data: [], isLoading: false, isError: false });
+  it('does not offer the form for an order that is not finished or not readable', () => {
     mocks.order.mockReturnValue({ data: order({ status: 'PREPARING' }), isLoading: false });
     const early = renderAsCustomer(<ReviewOrderPage />);
     expect(screen.getByRole('heading', { name: 'This order cannot be reviewed yet' })).toBeInTheDocument();

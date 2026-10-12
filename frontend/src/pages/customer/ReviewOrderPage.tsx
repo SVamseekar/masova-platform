@@ -7,7 +7,7 @@ import { storeDisplayName } from '../../apps/PublicWebsite/components/CustomerSt
 import { useGetOrderQuery } from '../../store/api/orderApi';
 import { useGetAvailableMenuQuery } from '../../store/api/menuApi';
 import { useGetActiveStoresQuery } from '../../store/api/storeApi';
-import { useCreateReviewMutation, useGetReviewsByOrderIdQuery } from '../../store/api/reviewApi';
+import { useCreateReviewMutation } from '../../store/api/reviewApi';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartLocale } from '../../store/slices/cartSlice';
 import { formatMajorAmount } from '../../utils/currency';
@@ -34,12 +34,14 @@ function Stars({ id, label, value, onChange, large }: { id: string; label: strin
   </fieldset>;
 }
 
-/** Board 08 panel 4. */
+/**
+ * Board 08 panel 4. Customers cannot list reviews, so a second review of one order is refused by
+ * the server on submit and reported in the form.
+ */
 const ReviewOrderPage: React.FC = () => {
   const { orderId = '' } = useParams<{ orderId: string }>();
   const locale = useAppSelector(selectCartLocale);
   const order = useGetOrderQuery(orderId, { skip: !orderId });
-  const existing = useGetReviewsByOrderIdQuery(orderId, { skip: !orderId });
   const stores = useGetActiveStoresQuery();
   const menu = useGetAvailableMenuQuery(order.data?.storeId, { skip: !order.data?.storeId });
   const [createReview, create] = useCreateReviewMutation();
@@ -53,11 +55,9 @@ const ReviewOrderPage: React.FC = () => {
   const back = <Link className="track-back" to={orderId ? `/tracking/${encodeURIComponent(orderId)}` : '/customer/orders'}><ArrowLeft size={16} aria-hidden="true" />Back to order</Link>;
   const state = (title: string, text: string, action?: React.ReactNode, ok = false) => <BrowseShell><main className="track-page">{back}<div className="track-state" role={ok ? 'status' : 'alert'}>{ok ? <CircleCheck size={36} aria-hidden="true" /> : <CircleAlert size={36} aria-hidden="true" />}<h1>{title}</h1><p>{text}</p>{action}</div></main></BrowseShell>;
 
-  if (order.isLoading || existing.isLoading) return <BrowseShell><main className="track-page">{back}<p role="status">Loading your order…</p></main></BrowseShell>;
+  if (order.isLoading) return <BrowseShell><main className="track-page">{back}<p role="status">Loading your order…</p></main></BrowseShell>;
   if (!order.data) return state('This order could not be loaded', 'Only the customer who placed an order can review it. Check your connection and try again.', <button type="button" className="browse-primary" onClick={() => order.refetch()}>Try again</button>);
   if (create.isSuccess) return state('Thank you for your review', 'Your feedback helps the kitchen and other customers.', <Link className="browse-primary" to="/customer/orders">Back to your orders</Link>, true);
-  if (existing.isError) return state('Your review could not be checked', 'We could not check whether this order already has a review.', <button type="button" className="browse-primary" onClick={() => existing.refetch()}>Try again</button>);
-  if (existing.data?.length) return state('You already reviewed this order', 'Each order can be reviewed once.', <Link className="browse-primary" to="/customer/orders">Back to your orders</Link>, true);
   if (!TERMINAL_STATUSES.includes(order.data.status) || order.data.status === 'CANCELLED') return state('This order cannot be reviewed yet', 'You can review an order after it is delivered, collected or served.');
 
   const data = order.data;
