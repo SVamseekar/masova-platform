@@ -69,6 +69,8 @@ export interface Order {
   createdByStaffName?: string;
   assignedKitchenStaffName?: string;
   assignedToKitchenAt?: string;
+  /** Code the customer gives the driver; only in the owner's or staff's view of the order. */
+  deliveryOtp?: string;
   cancellationRequested?: boolean;
   cancellationRequestReason?: string;
   cancellationRequestedBy?: string;
@@ -255,7 +257,7 @@ export const orderApi = createApi({
 
     // Get customer orders
     getCustomerOrders: builder.query<Order[], string>({
-      query: (customerId) => `/orders/customer/${customerId}`,
+      query: (customerId) => `/orders?customerId=${encodeURIComponent(customerId)}`,
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Order' as const, id })), { type: 'Orders', id: 'LIST' }]

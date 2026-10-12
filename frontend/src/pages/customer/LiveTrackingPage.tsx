@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, ChevronRight, CircleAlert, Clock, MapPin, MessageCircle, Phone, Store as StoreIcon } from 'lucide-react';
+import { ArrowLeft, ChevronRight, CircleAlert, Clock, MapPin, MessageCircle, Store as StoreIcon } from 'lucide-react';
 import BrowseShell from '../../apps/PublicWebsite/components/BrowseShell';
 import { storeDisplayName } from '../../apps/PublicWebsite/components/CustomerStoreSelector';
 import { useTrackOrderQuery } from '../../store/api/deliveryApi';
@@ -47,7 +47,7 @@ const LiveTrackingPage: React.FC = () => {
     return () => window.clearInterval(timer);
   }, []);
   const tracking = useTrackOrderQuery(orderId || '', { skip: !orderId, pollingInterval: isConnected ? 30000 : 10000 });
-  const { order } = useCustomerOrder(orderId, 30000);
+  const { order, limited } = useCustomerOrder(orderId, 30000);
   const stores = useGetActiveStoresQuery();
 
   const back = <Link className="track-back" to={orderId ? `/tracking/${encodeURIComponent(orderId)}` : '/menu'}><ArrowLeft size={16} aria-hidden="true" />Back to order</Link>;
@@ -58,7 +58,8 @@ const LiveTrackingPage: React.FC = () => {
     const waiting = !tracking.error || (tracking.error as { status?: number | string }).status === 404;
     return <BrowseShell><main className="track-page">{back}<div className="track-state" role="alert"><CircleAlert size={36} aria-hidden="true" /><h1>{waiting ? 'Tracking not available' : 'Tracking could not be loaded'}</h1><p>{waiting ? 'Live tracking starts when a driver is assigned to your order.' : 'Check your connection and try again.'}</p><button type="button" className="browse-primary" onClick={() => tracking.refetch()}>Check again</button></div></main></BrowseShell>;
   }
-  if (data.orderType && data.orderType !== 'DELIVERY') return <BrowseShell><main className="track-page">{back}<div className="track-state" role="status"><CircleAlert size={36} aria-hidden="true" /><h1>Live tracking unavailable</h1><p>{data.orderType === 'PICKUP' ? 'Live tracking is not available for pickup orders.' : 'Live tracking is not available for dine-in orders.'}</p></div></main></BrowseShell>;
+  const orderType = order?.orderType ?? data.orderType;
+  if (orderType && orderType !== 'DELIVERY') return <BrowseShell><main className="track-page">{back}<div className="track-state" role="status"><CircleAlert size={36} aria-hidden="true" /><h1>Live tracking unavailable</h1><p>{orderType === 'DINE_IN' ? 'Live tracking is not available for dine-in orders.' : 'Live tracking is not available for pickup orders.'}</p></div></main></BrowseShell>;
 
   // A socket status can go stale when the socket drops; the order's own final state wins.
   const cancelled = [order?.status, data.status, liveStatus].some(value => (value || '').toUpperCase() === 'CANCELLED');
@@ -66,7 +67,8 @@ const LiveTrackingPage: React.FC = () => {
   const stage = stageIndex(status);
   const delivered = stage === 2;
   const driver = liveLocation ?? toLatLng(data.currentLocation);
-  const destinationPoint = toLatLng(data.destination);
+  // The delivery address belongs to the customer: it comes from their own order when tracking does not carry it.
+  const destinationPoint = toLatLng(data.destination) ?? (limited ? null : toLatLng(order?.deliveryAddress));
   const destination = destinationPoint ? [destinationPoint.latitude, destinationPoint.longitude] as [number, number] : null;
   const store = stores.data?.find(candidate => candidate.id === order?.storeId || candidate.storeCode === order?.storeId);
   const storePosition = store?.address?.latitude != null && store.address.longitude != null ? [store.address.latitude, store.address.longitude] as [number, number] : null;
@@ -105,13 +107,12 @@ const LiveTrackingPage: React.FC = () => {
             <div className="track-driver">
               <span className="track-avatar" aria-hidden="true">{data.driverName ? initials(data.driverName) : '–'}</span>
               <div><strong>{data.driverName || 'Driver being assigned'}</strong><span>{cancelled ? 'Order cancelled' : delivered ? 'Delivery complete' : 'Delivering your order'}</span></div>
-              {data.driverPhone && !delivered && !cancelled && <a className="track-call" href={`tel:${data.driverPhone}`} aria-label={`Call driver ${data.driverName || ''}`.trim()}><Phone size={20} aria-hidden="true" /></a>}
             </div>
             {!delivered && !cancelled && <p className="track-eta"><small>Estimated arrival</small><strong>{etaMinutes !== null ? (etaMinutes <= 1 ? 'Arriving now' : `${etaMinutes} minutes`) : 'Calculating…'}</strong></p>}
             <ol className="track-timeline" aria-label="Delivery progress">
               {STAGES.map((label, index) => <li key={label} data-state={index < stage || (delivered && index === stage) ? 'done' : index === stage ? 'current' : 'todo'} aria-current={index === stage ? 'step' : undefined}>{label}</li>)}
             </ol>
-            {data.deliveryOtp && !delivered && !cancelled && <div className="track-banner" data-tone="info" style={{ margin: '16px 0 0' }}><div><strong>Delivery code</strong><span>Give this code to your driver.</span></div><span className="track-otp">{data.deliveryOtp}</span></div>}
+            {!limited && order?.deliveryOtp && !delivered && !cancelled && <div className="track-banner" data-tone="info" style={{ margin: '16px 0 0' }}><div><strong>Delivery code</strong><span>Give this code to your driver.</span></div><span className="track-otp">{order.deliveryOtp}</span></div>}
           </section>
           <a className="track-card track-help" href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Help with delivery' + (order ? ' for order ' + order.orderNumber : ''))}`}>
             <MessageCircle size={22} aria-hidden="true" />

@@ -16,7 +16,7 @@ export default function BrowseHeader({ onCartClick }: { onCartClick: () => void 
       <NavLink to="/menu">Menu</NavLink><NavLink to="/promotions">Offers</NavLink>
       {/* Guests have no order history, so their only order link is the active order. */}
       {authenticated ? <NavLink to="/customer/orders">Orders</NavLink> : activeOrderId ? <NavLink to={`/tracking/${encodeURIComponent(activeOrderId)}`}>Orders</NavLink> : <NavLink to="/customer-login" state={{ from: '/customer/orders' }} className={() => ''}>Orders</NavLink>}
-      <NavLink to={authenticated ? '/customer/profile' : '/customer-login'}>Account</NavLink>
+      <NavLink to={authenticated ? '/customer-dashboard' : '/customer-login'}>Account</NavLink>
     </nav>
     <NavLink to="/menu" className="browse-header-search" aria-label="Search the menu"><Search size={20} aria-hidden="true" /></NavLink>
     <button type="button" className="browse-primary browse-cart-button" onClick={onCartClick} aria-label={`Open cart, ${count} ${count === 1 ? 'item' : 'items'}`}><ShoppingCart size={20} aria-hidden="true" /><span>{count}</span></button>

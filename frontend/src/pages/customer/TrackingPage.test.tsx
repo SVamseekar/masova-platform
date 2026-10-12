@@ -3,10 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { renderAsCustomer, renderWithProviders, screen, within } from '@/test/utils/testUtils';
 import TrackingPage from './TrackingPage';
 
-const mocks = vi.hoisted(() => ({ order: vi.fn(), delivery: vi.fn(), createReview: vi.fn() }));
+const mocks = vi.hoisted(() => ({ order: vi.fn(), createReview: vi.fn() }));
 
 vi.mock('./useCustomerOrder', async () => ({ ...(await vi.importActual('./useCustomerOrder')), useCustomerOrder: () => mocks.order() }));
-vi.mock('@/store/api/deliveryApi', async () => ({ ...(await vi.importActual('@/store/api/deliveryApi')), useTrackOrderQuery: (...args: unknown[]) => mocks.delivery(...args) }));
 vi.mock('@/store/api/reviewApi', async () => ({ ...(await vi.importActual('@/store/api/reviewApi')), useCreateReviewMutation: () => [mocks.createReview] }));
 vi.mock('@/store/api/storeApi', async () => ({ ...(await vi.importActual('@/store/api/storeApi')), useGetActiveStoresQuery: () => ({ data: [{ id: 's1', storeCode: 'DOM001', name: 'MaSoVa Berlin Mitte', address: { street: 'Torstraße 72', city: 'Berlin' } }] }) }));
 vi.mock('@/apps/PublicWebsite/components/BrowseShell', () => ({ default: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
@@ -23,7 +22,6 @@ const show = (overrides = {}, extra = {}) => mocks.order.mockReturnValue({ order
 describe('Order tracking', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.delivery.mockReturnValue({ data: undefined });
     mocks.createReview.mockReturnValue({ unwrap: () => Promise.resolve({}) });
   });
 
@@ -53,11 +51,14 @@ describe('Order tracking', () => {
   });
 
   it('links to the live map and shows the delivery code while the driver is on the way', () => {
-    show({ status: 'OUT_FOR_DELIVERY' });
-    mocks.delivery.mockReturnValue({ data: { deliveryOtp: '4821', driverName: 'Jonas K.' } });
-    renderAsCustomer(<TrackingPage />);
+    show({ status: 'OUT_FOR_DELIVERY', deliveryOtp: '4821' });
+    const owner = renderAsCustomer(<TrackingPage />);
     expect(screen.getByRole('link', { name: 'Track live delivery' })).toHaveAttribute('href', '/live-tracking/order-1');
     expect(screen.getByLabelText('Delivery code 4 8 2 1')).toBeInTheDocument();
+    owner.unmount();
+    show({ status: 'OUT_FOR_DELIVERY', deliveryOtp: '4821' }, { limited: true });
+    renderAsCustomer(<TrackingPage />);
+    expect(screen.queryByLabelText(/Delivery code/)).not.toBeInTheDocument();
   });
 
   it('hides amounts in the limited public view', () => {
@@ -75,17 +76,6 @@ describe('Order tracking', () => {
     const steps = within(screen.getByRole('list', { name: 'Order steps' })).getAllByRole('listitem');
     expect(steps.map(step => step.querySelector('b')?.textContent)).toEqual(['Received', 'Preparing', 'In oven', 'Ready', 'Completed']);
     expect(screen.queryByRole('button', { name: 'Rate your order' })).not.toBeInTheDocument();
-  });
-
-  it('reports a delivery code that could not be loaded', () => {
-    const refetch = vi.fn();
-    show({ status: 'OUT_FOR_DELIVERY' });
-    mocks.delivery.mockReturnValue({ data: undefined, isError: true, refetch });
-    renderAsCustomer(<TrackingPage />);
-    const alert = screen.getByRole('alert');
-    expect(alert).toHaveTextContent('Your delivery code could not be loaded.');
-    within(alert).getByRole('button', { name: 'Try again' }).click();
-    expect(refetch).toHaveBeenCalled();
   });
 
   it('shows a cancelled order without progress steps', () => {

@@ -3,7 +3,6 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Check, CircleAlert, CircleHelp, Clock, Copy, CreditCard, MapPin, PackageCheck, Star, Store as StoreIcon, Truck } from 'lucide-react';
 import BrowseShell from '../../apps/PublicWebsite/components/BrowseShell';
 import { storeDisplayName } from '../../apps/PublicWebsite/components/CustomerStoreSelector';
-import { useTrackOrderQuery as useDeliveryTrackQuery } from '../../store/api/deliveryApi';
 import { useCreateReviewMutation } from '../../store/api/reviewApi';
 import { useGetActiveStoresQuery } from '../../store/api/storeApi';
 import { useAppSelector } from '../../store/hooks';
@@ -13,40 +12,8 @@ import RatingDialog from '../../components/delivery/RatingDialog';
 import { SUPPORT_EMAIL } from '../../apps/ProductSite/constants';
 import { getApiErrorMessage } from '../utils/apiError';
 import { displayOrderNumber, TERMINAL_STATUSES, useCustomerOrder } from './useCustomerOrder';
+import { statusCopy, stepsFor } from './orderStatus';
 import './Tracking.css';
-
-type Tone = 'warning' | 'info' | 'success' | 'error';
-interface Step { label: string; statuses: string[]; note?: string }
-
-const KITCHEN: Step[] = [
-  { label: 'Received', statuses: ['RECEIVED'] },
-  { label: 'Preparing', statuses: ['PREPARING'] },
-  { label: 'In oven', statuses: ['OVEN', 'BAKED'] },
-  { label: 'Ready', statuses: ['READY'] },
-];
-const STEPS: Record<string, Step[]> = {
-  DELIVERY: [...KITCHEN, { label: 'Dispatched', statuses: ['DISPATCHED'], note: 'Awaiting pickup' }, { label: 'Out for delivery', statuses: ['OUT_FOR_DELIVERY'] }, { label: 'Delivered', statuses: ['DELIVERED', 'COMPLETED'] }],
-  TAKEAWAY: [...KITCHEN, { label: 'Collected', statuses: ['COMPLETED', 'DELIVERED'] }],
-  DINE_IN: [...KITCHEN, { label: 'Served', statuses: ['SERVED', 'COMPLETED'] }],
-};
-/** Used when the public tracking view does not say how the order is fulfilled. */
-const NEUTRAL_STEPS: Step[] = [...KITCHEN, { label: 'Completed', statuses: ['DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'SERVED', 'COMPLETED'] }];
-
-const STATUS_COPY: Record<string, { chip: string; tone: Tone; title: string; text: string }> = {
-  RECEIVED: { chip: 'Received', tone: 'info', title: 'Your order has been received', text: 'The kitchen will start on it shortly.' },
-  PREPARING: { chip: 'Preparing', tone: 'warning', title: 'Your food is being prepared', text: 'The kitchen is working on your order.' },
-  OVEN: { chip: 'In oven', tone: 'warning', title: 'Your food is in the oven', text: 'It will be ready soon.' },
-  BAKED: { chip: 'In oven', tone: 'warning', title: 'Your food is out of the oven', text: 'It is being finished and packed.' },
-  READY: { chip: 'Ready', tone: 'success', title: 'Your order is ready', text: 'It is packed and waiting.' },
-  DISPATCHED: { chip: 'Dispatched', tone: 'info', title: 'A driver has been assigned', text: 'Your driver is collecting the order from the store.' },
-  OUT_FOR_DELIVERY: { chip: 'Out for delivery', tone: 'success', title: 'Your order is on its way', text: 'Follow the driver on the live map.' },
-  DELIVERED: { chip: 'Delivered', tone: 'success', title: 'Your order was delivered', text: 'Enjoy your meal.' },
-  SERVED: { chip: 'Served', tone: 'success', title: 'Your order was served', text: 'Enjoy your meal.' },
-  COMPLETED: { chip: 'Completed', tone: 'success', title: 'Your order is complete', text: 'Thank you for ordering with MaSoVa.' },
-  CANCELLED: { chip: 'Cancelled', tone: 'error', title: 'This order was cancelled', text: 'Contact the store if you did not expect this.' },
-};
-
-const stepsFor = (type?: string) => !type ? NEUTRAL_STEPS : type === 'DINE_IN' ? STEPS.DINE_IN : type === 'DELIVERY' ? STEPS.DELIVERY : STEPS.TAKEAWAY;
 
 /** Board 06 panel 3. */
 const TrackingPage: React.FC = () => {
@@ -63,7 +30,6 @@ const TrackingPage: React.FC = () => {
 
   const status = order?.status ?? '';
   const enRoute = status === 'DISPATCHED' || status === 'OUT_FOR_DELIVERY';
-  const delivery = useDeliveryTrackQuery(orderId || '', { skip: !orderId || !enRoute || limited, pollingInterval: 10000 });
 
   // The header's order link follows the active order until it reaches a final state.
   useEffect(() => {
@@ -84,14 +50,15 @@ const TrackingPage: React.FC = () => {
   const stepIndex = steps.findIndex(step => step.statuses.includes(status));
   const cancelled = status === 'CANCELLED';
   const finished = TERMINAL_STATUSES.includes(status) && !cancelled;
-  const copy = STATUS_COPY[status] ?? { chip: status.toLowerCase().replace(/_/g, ' '), tone: 'info' as Tone, title: 'Order status updated', text: '' };
+  const copy = statusCopy(status);
   const store = stores.data?.find(candidate => candidate.id === order.storeId || candidate.storeCode === order.storeId);
   const currency = order.currency || 'EUR';
   const money = (value: number) => formatMajorAmount(value, currency, locale);
   const placed = new Date(order.createdAt);
   const placedText = Number.isNaN(placed.getTime()) ? '' : `${placed.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} · ${placed.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
   const vat = order.totalVatAmount ?? order.tax;
-  const otp = delivery.data?.deliveryOtp;
+  // The delivery code is part of the customer's own order; the public view never carries it.
+  const otp = limited ? undefined : order.deliveryOtp;
 
   const copyNumber = async () => {
     try {
@@ -152,7 +119,6 @@ const TrackingPage: React.FC = () => {
         {ratingState === 'sent' && <p role="status">Thank you. Your rating was saved.</p>}
         {ratingState === 'failed' && <p role="alert">{ratingError} <button type="button" onClick={() => { setRatingState('idle'); setRatingOpen(true); }}>Try again</button></p>}
 
-        {enRoute && !limited && delivery.isError && <p role="alert">Your delivery code could not be loaded. <button type="button" onClick={() => delivery.refetch()}>Try again</button></p>}
         {otp && enRoute && !limited && <div className="track-banner" data-tone="info">
           <PackageCheck size={22} aria-hidden="true" />
           <div><strong>Delivery code</strong><span>Give this code to your driver when the order arrives.</span></div>
@@ -183,7 +149,7 @@ const TrackingPage: React.FC = () => {
         </div>
       </section>
 
-      {ratingOpen && <RatingDialog open onClose={() => setRatingOpen(false)} driverName={delivery.data?.driverName || 'your order'} orderId={orderId} onSubmit={submitRating} />}
+      {ratingOpen && <RatingDialog open onClose={() => setRatingOpen(false)} driverName={order.driverName || 'your order'} orderId={orderId} onSubmit={submitRating} />}
     </main>
   </BrowseShell>;
 };

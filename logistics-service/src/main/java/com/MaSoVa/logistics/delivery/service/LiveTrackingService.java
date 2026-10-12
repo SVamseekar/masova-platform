@@ -1,5 +1,6 @@
 package com.MaSoVa.logistics.delivery.service;
 
+import com.MaSoVa.shared.exception.ResourceNotFoundException;
 import com.MaSoVa.logistics.delivery.dto.ETAResponse;
 import com.MaSoVa.logistics.delivery.dto.LocationUpdateRequest;
 import com.MaSoVa.logistics.delivery.dto.TrackingResponse;
@@ -74,7 +75,7 @@ public class LiveTrackingService {
         Optional<DeliveryTracking> trackingOpt = deliveryTrackingRepository.findByOrderId(orderId);
 
         if (trackingOpt.isEmpty()) {
-            throw new RuntimeException("Tracking not found for order: " + orderId);
+            throw new ResourceNotFoundException("Tracking not found for order: " + orderId);
         }
 
         DeliveryTracking tracking = trackingOpt.get();

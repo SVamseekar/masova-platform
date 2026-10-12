@@ -192,11 +192,28 @@ public class DeliveryController {
     }
 
     /**
-     * GET /api/delivery/track/{orderId} — customer tracks order (public, no auth)
+     * GET /api/delivery/track/{orderId} — customer tracks order (public, no auth).
+     * Anyone holding an order id can call this, so the driver's phone number and id are not returned.
      */
     @GetMapping("/track/{orderId}")
     @Operation(summary = "Track delivery by order ID (public, no auth)")
     public ResponseEntity<TrackingResponse> trackOrder(@PathVariable String orderId) {
+        TrackingResponse tracking = liveTrackingService.getOrderTracking(orderId);
+        if (tracking.getDriver() != null) {
+            tracking.getDriver().setDriverPhone(null);
+            tracking.getDriver().setDriverId(null);
+        }
+        return ResponseEntity.ok(tracking);
+    }
+
+    /**
+     * GET /api/delivery/orders/{orderId}/tracking — store staff view of a delivery, with the
+     * driver's contact details that the public tracking route leaves out.
+     */
+    @GetMapping("/orders/{orderId}/tracking")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
+    @Operation(summary = "Track delivery by order ID with driver contact (store staff)")
+    public ResponseEntity<TrackingResponse> trackOrderForStaff(@PathVariable String orderId) {
         return ResponseEntity.ok(liveTrackingService.getOrderTracking(orderId));
     }
 

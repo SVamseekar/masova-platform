@@ -1,432 +1,136 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import AppHeader from '../../components/common/AppHeader';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ChevronRight, CircleAlert, Crown } from 'lucide-react';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
-import { formatOrderAmount } from '../../utils/orderMoney';
+import { selectCartLocale } from '../../store/slices/cartSlice';
 import { useGetCustomerByUserIdQuery } from '../../store/api/customerApi';
-import { useGetCustomerOrdersQuery } from '../../store/api/orderApi';
+import { useGetCustomerOrdersQuery, type Order } from '../../store/api/orderApi';
+import { formatMajorAmount } from '../../utils/currency';
+import { useBrowseMenu } from '../../apps/PublicWebsite/components/useBrowseMenu';
+import { DishImage } from '../../apps/PublicWebsite/components/DishCard';
+import DishCustomization from '../../apps/PublicWebsite/components/DishCustomization';
+import AccountLayout from './AccountLayout';
+import { KITCHEN, statusCopy } from './orderStatus';
+import { displayOrderNumber, TERMINAL_STATUSES } from './useCustomerOrder';
+import './Tracking.css';
 
-/**
- * CustomerDashboard — authenticated customer home (dark-premium tokens only).
- * States: loading · error · empty (no orders) · data.
- */
+const TIER_LABEL: Record<string, string> = { BRONZE: 'Bronze tier', SILVER: 'Silver tier', GOLD: 'Gold tier', PLATINUM: 'Platinum tier' };
+
+const greeting = (hour: number) => hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+const shortDate = (value: string | Date) => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+/** "Today, 14:12" or "08 Oct 2026"; with `withTime`, "08 Oct 2026 at 19:24". */
+export const orderDate = (value: string, now = new Date(), withTime = false) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const time = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const today = date.toDateString() === now.toDateString();
+  if (withTime) return `${today ? 'Today, ' : ''}${shortDate(date)} at ${time}`;
+  return today ? `Today, ${time}` : shortDate(date);
+};
+const newestFirst = (a: Order, b: Order) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+
+/** Board 07 panel 3. */
 const CustomerDashboard: React.FC = () => {
-  const navigate = useNavigate();
-  const currentUser = useAppSelector(selectCurrentUser);
-  const currency = useAppSelector(selectCartCurrency);
+  const user = useAppSelector(selectCurrentUser);
   const locale = useAppSelector(selectCartLocale);
+  const customer = useGetCustomerByUserIdQuery(user?.id || '', { skip: !user?.id });
+  const orderList = useGetCustomerOrdersQuery(customer.data?.id || '', { skip: !customer.data?.id, pollingInterval: 30000 });
+  const browse = useBrowseMenu();
+  const [dishId, setDishId] = useState<string | null>(null);
+  const [today] = useState(() => new Date());
 
-  const {
-    data: customer,
-    isLoading: customerLoading,
-    isError: customerError,
-    refetch: refetchCustomer,
-  } = useGetCustomerByUserIdQuery(currentUser?.id || '', {
-    skip: !currentUser?.id,
-  });
+  if (customer.isLoading || (!!customer.data?.id && orderList.isLoading)) return <AccountLayout><p role="status">Loading your account…</p></AccountLayout>;
+  // A signed-in visitor without a customer profile yet has an empty account, not a failed one.
+  const noProfile = customer.isError && (customer.error as { status?: number | string } | undefined)?.status === 404;
+  if (customer.isError && !noProfile) return <AccountLayout><div className="track-state" role="alert"><CircleAlert size={36} aria-hidden="true" /><h1>Your account could not be loaded</h1><p>Check your connection and try again.</p><button type="button" className="browse-primary" onClick={() => customer.refetch()}>Try again</button></div></AccountLayout>;
 
-  const {
-    data: orders = [],
-    isLoading: ordersLoading,
-    isError: ordersError,
-    refetch: refetchOrders,
-  } = useGetCustomerOrdersQuery(customer?.id || '', {
-    skip: !customer?.id,
-  });
+  const profile = noProfile ? undefined : customer.data;
+  const orders = [...(orderList.data ?? [])].map(order => ({ ...order, items: order.items ?? [] })).sort(newestFirst);
+  const active = orders.find(order => !TERMINAL_STATUSES.includes(order.status));
+  const money = (order: Order, value: number) => formatMajorAmount(value, order.currency || 'EUR', locale);
+  const givenName = (profile?.name || user?.name || '').trim().split(/\s+/)[0] ?? '';
+  const firstName = givenName.charAt(0).toUpperCase() + givenName.slice(1);
+  const loyalty = profile?.loyaltyInfo;
 
-  const isLoading = customerLoading || (!!customer?.id && ordersLoading);
-  const recentOrders = orders.slice(0, 3);
-  const activeOrder = orders.find(
-    (order) => !['DELIVERED', 'CANCELLED', 'COMPLETED'].includes(order.status)
-  );
+  // Saved favourites first; without any, the dishes ordered most often.
+  const saved = profile?.preferences?.favoriteMenuItems ?? [];
+  const counts = new Map<string, number>();
+  orders.forEach(order => order.items.forEach(item => counts.set(item.menuItemId, (counts.get(item.menuItemId) ?? 0) + item.quantity)));
+  const favouriteIds = [...new Set([...saved, ...[...counts.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => id)])];
+  const favourites = favouriteIds.map(id => browse.items.find(item => item.id === id)).filter(item => !!item).slice(0, 3);
+  const dish = browse.items.find(item => item.id === dishId);
+  const canAdd = browse.online && browse.canOrder && !browse.menu.isFetching;
 
-  const handleCartClick = () => {
-    navigate('/menu');
-  };
+  const activeStep = active ? KITCHEN.findIndex(step => step.statuses.includes(active.status)) : -1;
+  const activeCopy = active ? statusCopy(active.status) : null;
+  const activeItem = active?.items[0];
+  const activeDish = activeItem ? browse.items.find(item => item.id === activeItem.menuItemId) : undefined;
 
-  const shell = (children: React.ReactNode) => (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: 'var(--bg)',
-        fontFamily: 'var(--font-body)',
-        color: 'var(--text-1)',
-      }}
-    >
-      <AppHeader showPublicNav onCartClick={handleCartClick} />
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px 64px' }}>{children}</div>
+  return <AccountLayout>
+    <div className="account-head">
+      <div><h1>{greeting(today.getHours())}{firstName ? `, ${firstName}` : ''}</h1><p>Great to see you again!</p></div>
+      <p className="account-today"><span>Today</span>{shortDate(today)}</p>
     </div>
-  );
 
-  if (!currentUser?.id) {
-    return shell(
-      <StateCard
-        icon="🔐"
-        title="Sign in required"
-        subtitle="Log in to see your dashboard, orders, and loyalty."
-        actionLabel="Customer Login"
-        onAction={() => navigate('/customer-login')}
-      />
-    );
-  }
-
-  if (isLoading) {
-    return shell(
-      <div style={{ textAlign: 'center', padding: '100px 0', color: 'var(--text-3)' }}>
-        <div
-          style={{
-            width: 44,
-            height: 44,
-            border: '3px solid var(--border)',
-            borderTopColor: 'var(--gold)',
-            borderRadius: '50%',
-            animation: 'spin 0.8s linear infinite',
-            margin: '0 auto 16px',
-          }}
-        />
-        Loading your dashboard…
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    {active && activeCopy && <section className="account-card account-active" aria-label="Your active order">
+      <Link className="account-active-top" to={`/tracking/${encodeURIComponent(active.id)}`}>
+        <strong>Your active order</strong>
+        <span className="track-chip" data-tone={activeCopy.tone}>{activeCopy.chip}</span>
+        {active.preparationTime ? <span className="account-muted">Estimated {active.preparationTime} min</span> : <span />}
+        <b>#{displayOrderNumber(active.orderNumber)}</b>
+        <ChevronRight size={20} aria-hidden="true" />
+      </Link>
+      <div className="account-active-body">
+        {activeItem && <div className="account-dish">
+          <span className="account-thumb">{activeDish && <DishImage item={activeDish} />}</span>
+          <div><strong>{activeItem.name}</strong>{active.items.length > 1 && <span>+ {active.items.length - 1} more {active.items.length === 2 ? 'item' : 'items'}</span>}<span>{activeItem.quantity} × {money(active, activeItem.price)}</span></div>
+        </div>}
+        {activeStep >= 0
+          ? <ol className="track-steps" aria-label="Kitchen progress">{KITCHEN.map((step, index) => <li key={step.label} data-state={index < activeStep ? 'done' : index === activeStep ? 'current' : 'todo'} aria-current={index === activeStep ? 'step' : undefined}><span className="track-dot" /><b>{step.label}</b></li>)}</ol>
+          : <p className="account-muted">{activeCopy.title}</p>}
       </div>
-    );
-  }
+    </section>}
 
-  if (customerError) {
-    return shell(
-      <StateCard
-        icon="⚠️"
-        title="Couldn’t load profile"
-        subtitle="We couldn’t reach your customer profile. Check your connection and try again."
-        actionLabel="Retry"
-        onAction={() => refetchCustomer()}
-      />
-    );
-  }
+    {loyalty && <section className="account-card account-rewards" aria-label="MaSoVa Rewards">
+      <Crown size={26} aria-hidden="true" />
+      <div><strong>MaSoVa Rewards</strong><span>{TIER_LABEL[loyalty.tier] ?? loyalty.tier}{loyalty.pointsEarned > 0 ? ` · ${loyalty.pointsEarned} points earned in total` : ''}</span></div>
+      <p className="account-points"><b>{loyalty.totalPoints ?? 0}</b>points</p>
+    </section>}
 
-  const quickActions = [
-    {
-      icon: '📦',
-      title: 'Order History',
-      description:
-        orders.length === 0
-          ? 'No orders yet — start with the menu'
-          : `View your ${orders.length} order${orders.length === 1 ? '' : 's'}`,
-      action: () => navigate('/customer/orders'),
-    },
-    {
-      icon: '👤',
-      title: 'Profile',
-      description: 'Addresses, preferences & notifications',
-      action: () => navigate('/customer/profile'),
-    },
-    {
-      icon: '🎁',
-      title: 'Promotions',
-      description: 'Current offers at your store',
-      action: () => navigate('/promotions'),
-    },
-  ];
-
-  return shell(
-    <>
-      {/* Welcome */}
-      <div
-        style={{
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-card)',
-          boxShadow: 'var(--shadow-card)',
-          padding: '36px 32px',
-          textAlign: 'center',
-          marginBottom: 32,
-        }}
-      >
-        <div style={{ fontSize: 48, marginBottom: 12 }}>👋</div>
-        <h1
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: '2rem',
-            fontWeight: 800,
-            color: 'var(--text-1)',
-            margin: '0 0 10px',
-          }}
-        >
-          Welcome back{customer?.name ? `, ${customer.name}` : ''}!
-        </h1>
-        <p style={{ color: 'var(--text-2)', fontSize: '1rem', margin: '0 0 24px' }}>
-          {customer?.loyaltyInfo
-            ? `You have ${customer.loyaltyInfo.totalPoints} loyalty points`
-            : 'What would you like to order today?'}
-        </p>
-        <button
-          type="button"
-          onClick={() => navigate('/menu')}
-          style={{
-            background: 'var(--red)',
-            color: 'var(--text-1)',
-            border: 'none',
-            borderRadius: 'var(--radius-pill)',
-            padding: '12px 28px',
-            fontFamily: 'var(--font-body)',
-            fontWeight: 700,
-            fontSize: '0.95rem',
-            cursor: 'pointer',
-          }}
-        >
-          Order Now
-        </button>
-      </div>
-
-      {/* Active order */}
-      {activeOrder && (
-        <section style={{ marginBottom: 32 }}>
-          <h2
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: '1.35rem',
-              fontWeight: 700,
-              color: 'var(--text-1)',
-              margin: '0 0 14px',
-            }}
-          >
-            Active Order
-          </h2>
-          <OrderRow
-            orderNumber={activeOrder.orderNumber}
-            createdAt={activeOrder.createdAt}
-            status={activeOrder.status}
-            itemCount={activeOrder.items.length}
-            totalLabel={formatOrderAmount(activeOrder.total, activeOrder, currency, locale)}
-            onClick={() => navigate(`/tracking/${activeOrder.id}`)}
-            highlight
-          />
-        </section>
-      )}
-
-      {/* Recent orders */}
-      <section style={{ marginBottom: 32 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
-          <h2
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: '1.35rem',
-              fontWeight: 700,
-              color: 'var(--text-1)',
-              margin: 0,
-            }}
-          >
-            Recent Orders
-          </h2>
-          {orders.length > 0 && (
-            <button
-              type="button"
-              onClick={() => navigate('/customer/orders')}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--gold)',
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                textDecoration: 'underline',
-              }}
-            >
-              View all
-            </button>
-          )}
-        </div>
-
-        {ordersError ? (
-          <StateCard
-            icon="⚠️"
-            title="Couldn’t load orders"
-            subtitle="Your profile loaded, but order history failed. Try again."
-            actionLabel="Retry"
-            onAction={() => refetchOrders()}
-            compact
-          />
-        ) : recentOrders.length === 0 ? (
-          <StateCard
-            icon="📦"
-            title="No orders yet"
-            subtitle="Browse the menu and place your first order — it’ll show up here."
-            actionLabel="Browse Menu"
-            onAction={() => navigate('/menu')}
-            compact
-          />
-        ) : (
-          recentOrders.map((order) => (
-            <OrderRow
-              key={order.id}
-              orderNumber={order.orderNumber}
-              createdAt={order.createdAt}
-              status={order.status}
-              itemCount={order.items.length}
-              totalLabel={formatOrderAmount(order.total, order, currency, locale)}
-              onClick={() => navigate(`/tracking/${order.id}`)}
-            />
-          ))
-        )}
+    <div className="account-columns">
+      <section className="account-card" aria-labelledby="account-favourites">
+        <div className="account-card-head"><h2 id="account-favourites">{saved.length ? 'Your favourites' : 'Order again'}</h2><Link to="/menu">View all</Link></div>
+        {favourites.length === 0
+          ? <p className="account-muted">{browse.menu.isLoading ? 'Loading dishes…' : 'Dishes you order appear here.'}</p>
+          : <ul className="account-list">{favourites.map(item => <li key={item.id}>
+            <span className="account-thumb"><DishImage item={item} /></span>
+            <div><strong>{item.name}</strong><span>{formatMajorAmount(item.basePrice / 100, browse.market.currency, browse.market.locale)}</span></div>
+            <button type="button" className="browse-primary" disabled={!canAdd} aria-label={`Add ${item.name}`} onClick={() => setDishId(item.id)}>Add</button>
+          </li>)}</ul>}
       </section>
 
-      {/* Quick actions */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: 16,
-        }}
-      >
-        {quickActions.map((action) => (
-          <button
-            key={action.title}
-            type="button"
-            onClick={action.action}
-            style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-card)',
-              padding: '24px 20px',
-              textAlign: 'center',
-              cursor: 'pointer',
-              color: 'inherit',
-              fontFamily: 'var(--font-body)',
-              transition: 'var(--transition)',
-            }}
-          >
-            <div style={{ fontSize: 36, marginBottom: 10 }}>{action.icon}</div>
-            <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-1)', marginBottom: 6 }}>
-              {action.title}
-            </div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-3)' }}>{action.description}</div>
-          </button>
-        ))}
-      </div>
-    </>
-  );
-};
-
-function OrderRow({
-  orderNumber,
-  createdAt,
-  status,
-  itemCount,
-  totalLabel,
-  onClick,
-  highlight,
-}: {
-  orderNumber: string;
-  createdAt: string;
-  status: string;
-  itemCount: number;
-  totalLabel: string;
-  onClick: () => void;
-  highlight?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        display: 'block',
-        width: '100%',
-        textAlign: 'left',
-        background: highlight ? 'rgba(212,168,67,0.06)' : 'var(--surface)',
-        border: `1px solid ${highlight ? 'var(--gold)' : 'var(--border)'}`,
-        borderRadius: 14,
-        padding: '16px 18px',
-        marginBottom: 10,
-        cursor: 'pointer',
-        color: 'inherit',
-        fontFamily: 'var(--font-body)',
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-        <div style={{ fontWeight: 700, color: 'var(--text-1)' }}>Order #{orderNumber}</div>
-        <span
-          style={{
-            fontSize: '0.72rem',
-            fontWeight: 700,
-            padding: '4px 10px',
-            borderRadius: 'var(--radius-pill)',
-            background: 'rgba(212,168,67,0.12)',
-            color: 'var(--gold)',
-            border: '1px solid var(--border)',
-          }}
-        >
-          {status}
-        </span>
-      </div>
-      <div style={{ fontSize: '0.85rem', color: 'var(--text-3)' }}>
-        {new Date(createdAt).toLocaleString()} · {itemCount} item{itemCount === 1 ? '' : 's'} · {totalLabel}
-      </div>
-      {highlight && (
-        <div style={{ marginTop: 8, color: 'var(--gold)', fontWeight: 600, fontSize: '0.85rem' }}>
-          Track order →
-        </div>
-      )}
-    </button>
-  );
-}
-
-function StateCard({
-  icon,
-  title,
-  subtitle,
-  actionLabel,
-  onAction,
-  compact,
-}: {
-  icon: string;
-  title: string;
-  subtitle: string;
-  actionLabel: string;
-  onAction: () => void;
-  compact?: boolean;
-}) {
-  return (
-    <div
-      style={{
-        textAlign: 'center',
-        padding: compact ? '40px 24px' : '64px 28px',
-        background: 'var(--surface)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-card)',
-      }}
-    >
-      <div style={{ fontSize: compact ? '2.5rem' : '3rem', marginBottom: 12, opacity: 0.7 }}>{icon}</div>
-      <h3
-        style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: '1.25rem',
-          fontWeight: 700,
-          color: 'var(--text-1)',
-          margin: '0 0 8px',
-        }}
-      >
-        {title}
-      </h3>
-      <p style={{ color: 'var(--text-3)', fontSize: '0.9rem', margin: '0 0 20px' }}>{subtitle}</p>
-      <button
-        type="button"
-        onClick={onAction}
-        style={{
-          background: 'var(--red)',
-          color: 'var(--text-1)',
-          border: 'none',
-          borderRadius: 'var(--radius-pill)',
-          padding: '10px 22px',
-          fontFamily: 'var(--font-body)',
-          fontWeight: 700,
-          fontSize: '0.875rem',
-          cursor: 'pointer',
-        }}
-      >
-        {actionLabel}
-      </button>
+      <section className="account-card" aria-labelledby="account-recent">
+        <div className="account-card-head"><h2 id="account-recent">Recent orders</h2><Link to="/customer/orders">View all</Link></div>
+        {orderList.isError ? <p role="alert">Your orders could not be loaded. <button type="button" onClick={() => orderList.refetch()}>Try again</button></p>
+          : orders.length === 0 ? <p className="account-muted">You have no orders yet. <Link to="/menu">Browse the menu</Link></p>
+          : <ul className="account-recent">{orders.slice(0, 4).map(order => {
+            const copy = statusCopy(order.status);
+            return <li key={order.id}>
+              <Link to={`/tracking/${encodeURIComponent(order.id)}`}>#{displayOrderNumber(order.orderNumber)}</Link>
+              <span className="track-chip" data-tone={copy.tone}>{copy.chip}</span>
+              <span>{money(order, order.total)}</span>
+              <span className="account-muted">{orderDate(order.createdAt, today)}</span>
+            </li>;
+          })}</ul>}
+      </section>
     </div>
-  );
-}
+
+    {dish && <DishCustomization key={`${browse.selectedStoreId}:${dish.id}`} item={dish} currency={browse.market.currency} locale={browse.market.locale} canAdd={canAdd} onClose={() => setDishId(null)} />}
+  </AccountLayout>;
+};
 
 export default CustomerDashboard;

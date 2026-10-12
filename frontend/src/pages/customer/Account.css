@@ -1,0 +1,87 @@
+/* Customer account area (board 07, panels 3 and 4). Uses the chips, steps and totals from Tracking.css. */
+.account { display: grid; grid-template-columns: 220px minmax(0, 1fr); max-width: 1440px; margin: 0 auto; min-height: calc(100vh - 72px); }
+.account-side { display: flex; flex-direction: column; justify-content: space-between; gap: 24px; padding: 28px 12px 24px; border-right: 1px solid var(--masova-borderSubtle); background: var(--masova-canvas); }
+.account-side nav { display: grid; gap: 4px; }
+.account-side nav a { display: flex; align-items: center; gap: 14px; min-height: 44px; padding: 0 14px; border-radius: 8px; color: var(--masova-text); text-decoration: none; font-size: 15px; }
+.account-side nav a:hover { background: var(--masova-selectionSurface); }
+.account-side nav a.active { background: var(--masova-selectionSurface); font-weight: 600; }
+.account-help { display: grid; gap: 6px; padding: 16px; border-radius: 10px; background: var(--masova-surface); border: 1px solid var(--masova-borderSubtle); font-size: 14px; color: var(--masova-textSecondary); }
+.account-help strong { color: var(--masova-text); font-size: 15px; }
+.account-help a { display: grid; place-items: center; min-height: 44px; margin-top: 8px; border: 1px solid var(--masova-primary); border-radius: 8px; color: var(--masova-primary); font-weight: 600; text-decoration: none; }
+.account-main { padding: 28px 28px 48px; min-width: 0; }
+.account-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 20px; }
+.account-head h1, .account-title { margin: 0 0 4px; font-size: 28px; line-height: 1.2; font-weight: 700; letter-spacing: -0.01em; }
+.account-head p { margin: 0; color: var(--masova-textSecondary); }
+.account-today { display: grid; justify-items: end; font-size: 14px; }
+.account-muted { color: var(--masova-textSecondary); font-size: 14px; }
+.account-card { padding: 16px 18px; border: 1px solid var(--masova-borderSubtle); border-radius: 12px; background: var(--masova-surface); margin-bottom: 16px; }
+.account-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.account-card-head h2 { margin: 0; font-size: 16px; font-weight: 600; }
+.account-card-head a { color: var(--masova-primary); font-size: 14px; font-weight: 500; text-decoration: none; }
+.account-thumb { flex: none; width: 56px; height: 44px; border-radius: 8px; overflow: hidden; background: var(--masova-selectionSurface); display: block; }
+.account-thumb img, .account-thumb > * { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.account-active { padding: 0; overflow: hidden; }
+.account-active-top { display: grid; grid-template-columns: auto auto 1fr auto auto; align-items: center; gap: 14px; padding: 14px 18px; background: var(--masova-successSurface); color: var(--masova-text); text-decoration: none; }
+.account-active-top .track-chip { background: transparent; padding: 0; }
+.account-active-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); align-items: center; gap: 16px; padding: 14px 18px; }
+.account-active-body .track-steps { margin: 0; }
+.account-dish { display: flex; align-items: center; gap: 14px; }
+.account-dish .account-thumb { width: 72px; height: 56px; }
+.account-dish div, .account-list div { display: grid; gap: 2px; font-size: 14px; color: var(--masova-textSecondary); min-width: 0; }
+.account-dish strong, .account-list strong { color: var(--masova-text); font-size: 15px; font-weight: 600; }
+
+.account-rewards { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px; }
+.account-rewards > div { display: grid; gap: 2px; font-size: 14px; color: var(--masova-textSecondary); }
+.account-rewards strong { color: var(--masova-text); font-size: 16px; }
+.account-points { display: grid; justify-items: center; margin: 0; padding: 8px 22px; border-radius: 10px; background: var(--masova-warningSurface); font-size: 13px; }
+.account-points b { font-size: 24px; line-height: 1.1; }
+
+.account-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 16px; align-items: start; }
+.account-list, .account-recent, .account-orders, .account-lines { margin: 0; padding: 0; list-style: none; }
+.account-list li { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px; padding: 8px 0; }
+.customer-browse .account-list button { min-height: 44px; padding: 0 22px; }
+.account-recent li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; white-space: nowrap; align-items: center; gap: 12px; min-height: 48px; border-top: 1px solid var(--masova-borderSubtle); font-size: 14px; }
+.account-recent li:first-child { border-top: 0; }
+.account-recent a { color: var(--masova-text); font-weight: 600; text-decoration: none; }
+.account-recent .track-chip, .account-order-row .track-chip { padding: 4px 12px; font-size: 13px; }
+.account-recent .account-muted { text-align: right; }
+
+.account-tabs { display: flex; gap: 8px; margin: 12px 0 20px; border-bottom: 1px solid var(--masova-borderSubtle); }
+.customer-browse .account-tabs button { min-height: 44px; padding: 0 12px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: var(--masova-text); font-size: 15px; cursor: pointer; margin-bottom: -1px; }
+.customer-browse .account-tabs button[aria-selected="true"] { border-bottom-color: var(--masova-primary); color: var(--masova-primary); font-weight: 600; }
+.account-orders { display: grid; gap: 10px; }
+.account-order { border: 1px solid var(--masova-borderSubtle); border-radius: 12px; background: var(--masova-surface); }
+.account-order-row { display: grid; grid-template-columns: auto auto 1fr auto 96px auto auto; white-space: nowrap; align-items: center; gap: 14px; padding: 10px 12px; }
+.account-order-row b { text-align: right; font-size: 16px; }
+.account-view { display: grid; place-items: center; min-height: 40px; padding: 0 16px; border: 1px solid var(--masova-primary); border-radius: 8px; color: var(--masova-primary); font-weight: 600; font-size: 14px; text-decoration: none; }
+.customer-browse .account-toggle { display: grid; place-items: center; width: 44px; min-height: 44px; padding: 0; border: 0; background: none; color: var(--masova-text); cursor: pointer; }
+.account-order-details[hidden] { display: none; }
+.account-order-details { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 24px; padding: 14px 18px 18px; border-top: 1px solid var(--masova-borderSubtle); }
+.account-lines li { display: grid; grid-template-columns: auto 1fr auto 72px; align-items: center; gap: 12px; padding: 6px 0; font-size: 14px; }
+.account-lines li > span:last-child { text-align: right; }
+.account-lines small { display: block; color: var(--masova-textSecondary); }
+.account-order-side { display: grid; align-content: start; gap: 14px; padding-left: 24px; border-left: 1px solid var(--masova-borderSubtle); font-size: 14px; }
+.account-order-side p { display: flex; gap: 12px; margin: 0; color: var(--masova-textSecondary); }
+.account-order-side p strong { display: block; color: var(--masova-text); font-weight: 600; }
+.customer-browse .account-cancel { min-height: 44px; border: 1px solid var(--masova-primary); border-radius: 8px; background: var(--masova-surface); color: var(--masova-primary); font-weight: 600; cursor: pointer; }
+.account-order-side .account-note { display: block; font-size: 13px; }
+
+@media (max-width: 1023px) {
+  .account { grid-template-columns: 1fr; }
+  .account-side { border-right: 0; border-bottom: 1px solid var(--masova-borderSubtle); padding: 12px 16px; }
+  .account-side nav { display: flex; overflow-x: auto; }
+  .account-side nav a { flex: none; }
+  .account-help { display: none; }
+}
+@media (max-width: 720px) {
+  .account-main { padding: 20px 16px 40px; }
+  .account-columns, .account-active-body, .account-order-details { grid-template-columns: 1fr; }
+  .account-active-top { grid-template-columns: 1fr auto; }
+  .account-active-top > span:not(.track-chip), .account-active-top > svg { display: none; }
+  .account-order-row { grid-template-columns: auto 1fr auto auto; }
+  .account-order-row > .account-muted, .account-order-row > .account-view { display: none; }
+  .account-order-side { padding-left: 0; border-left: 0; }
+  .account-recent li { grid-template-columns: 1fr auto auto; }
+  .account-recent .account-muted { display: none; }
+}

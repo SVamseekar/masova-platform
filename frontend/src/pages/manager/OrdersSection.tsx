@@ -25,7 +25,7 @@ import {
 } from '../../store/api/paymentApi';
 import {
   useAutoDispatchMutation,
-  useTrackOrderQuery,
+  useTrackOrderForStaffQuery as useTrackOrderQuery,
   useGetAvailableDriversQuery,
   type TrackingResponse,
 } from '../../store/api/deliveryApi';

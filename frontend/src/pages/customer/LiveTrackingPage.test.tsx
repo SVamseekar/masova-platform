@@ -24,7 +24,7 @@ vi.mock('@/apps/PublicWebsite/components/BrowseShell', () => ({
 
 vi.mock('./useCustomerOrder', async () => ({
   ...(await vi.importActual('./useCustomerOrder')),
-  useCustomerOrder: () => ({ order: { orderNumber: '2041', storeId: 'DOM001', createdAt: '2026-10-10T14:28:00Z' }, isLoading: false, isError: false, limited: false }),
+  useCustomerOrder: () => ({ order: { orderNumber: '2041', storeId: 'DOM001', createdAt: '2026-10-10T14:28:00Z', deliveryOtp: '4821' }, isLoading: false, isError: false, limited: false, ...orderView.current }),
 }));
 
 vi.mock('@/store/api/storeApi', async () => {
@@ -47,6 +47,7 @@ vi.mock('@/components/ui/neumorphic', () => ({
   ),
 }));
 
+const orderView = vi.hoisted(() => ({ current: {} as Record<string, unknown> }));
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -72,6 +73,7 @@ const mockTrackingData = {
 describe('LiveTrackingPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    orderView.current = {};
   });
 
   it('shows loading state while tracking data is being fetched', () => {
@@ -121,7 +123,6 @@ describe('LiveTrackingPage', () => {
     renderAsCustomer(<LiveTrackingPage />);
     expect(screen.getByRole('heading', { name: 'Order #2041' })).toBeInTheDocument();
     expect(screen.getByText('Rajesh Kumar')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Call driver Rajesh Kumar' })).toHaveAttribute('href', 'tel:+919876543210');
     expect(screen.getByText('Berlin Mitte')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'View order details' })).toHaveAttribute('href', '/tracking/order-abc-123');
     expect(screen.getByTestId('driver-tracking-map')).toBeInTheDocument();
@@ -148,14 +149,21 @@ describe('LiveTrackingPage', () => {
     expect(screen.queryByTestId('driver-tracking-map')).not.toBeInTheDocument();
   });
 
-  it('shows the delivery code and hides calling once delivered', () => {
-    mockUseTrackOrderQuery.mockReturnValue({ data: { ...mockTrackingData, deliveryOtp: '4821' }, isLoading: false, error: null });
+  it('shows the delivery code from the order of the customer until delivered', () => {
+    mockUseTrackOrderQuery.mockReturnValue({ data: mockTrackingData, isLoading: false, error: null });
     const view = renderAsCustomer(<LiveTrackingPage />);
     expect(screen.getByText('4821')).toBeInTheDocument();
     view.unmount();
-    mockUseTrackOrderQuery.mockReturnValue({ data: { ...mockTrackingData, status: 'DELIVERED', deliveryOtp: '4821' }, isLoading: false, error: null });
+    mockUseTrackOrderQuery.mockReturnValue({ data: { ...mockTrackingData, status: 'DELIVERED' }, isLoading: false, error: null });
     renderAsCustomer(<LiveTrackingPage />);
     expect(screen.queryByText('4821')).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /Call driver/ })).not.toBeInTheDocument();
+  });
+
+  it('never shows the delivery code in the public view, whatever the tracking response carries', () => {
+    orderView.current = { limited: true };
+    mockUseTrackOrderQuery.mockReturnValue({ data: { ...mockTrackingData, deliveryOtp: '4821' }, isLoading: false, error: null });
+    renderAsCustomer(<LiveTrackingPage />);
+    expect(screen.queryByText('4821')).not.toBeInTheDocument();
+    expect(screen.queryByText('Delivery code')).not.toBeInTheDocument();
   });
 });

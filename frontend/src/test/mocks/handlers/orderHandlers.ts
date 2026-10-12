@@ -95,10 +95,6 @@ export const orderHandlers = [
     HttpResponse.json(mockOrders),
   ),
 
-  http.get(apiUrl('/orders/customer/:customerId'), () =>
-    HttpResponse.json(mockOrders),
-  ),
-
   http.get(apiUrl('/orders/number/:orderNumber'), () =>
     HttpResponse.json(mockOrder),
   ),

@@ -226,6 +226,41 @@ class DeliveryControllerTest extends BaseServiceTest {
             mockMvc.perform(get("/api/delivery/track/order-1"))
                 .andExpect(status().isOk());
         }
+
+        @Test
+        @DisplayName("does not return the driver's phone number or id")
+        void hidesDriverContact() throws Exception {
+            TrackingResponse tracking = TrackingResponse.builder()
+                .orderId("order-1")
+                .driver(TrackingResponse.DriverInfo.builder().driverId("driver-1").driverName("Jonas K.").driverPhone("+491511000005").build())
+                .build();
+            when(liveTrackingService.getOrderTracking("order-1")).thenReturn(tracking);
+
+            mockMvc.perform(get("/api/delivery/track/order-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.driver.driverName").value("Jonas K."))
+                .andExpect(jsonPath("$.driver.driverPhone").doesNotExist())
+                .andExpect(jsonPath("$.driver.driverId").doesNotExist());
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/delivery/orders/{orderId}/tracking")
+    class TrackOrderForStaff {
+
+        @Test
+        @DisplayName("returns the driver's contact details to store staff")
+        void returnsDriverContact() throws Exception {
+            TrackingResponse tracking = TrackingResponse.builder()
+                .orderId("order-1")
+                .driver(TrackingResponse.DriverInfo.builder().driverId("driver-1").driverName("Jonas K.").driverPhone("+491511000005").build())
+                .build();
+            when(liveTrackingService.getOrderTracking("order-1")).thenReturn(tracking);
+
+            mockMvc.perform(get("/api/delivery/orders/order-1/tracking"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.driver.driverPhone").value("+491511000005"));
+        }
     }
 
     @Nested
