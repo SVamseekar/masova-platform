@@ -1,6 +1,18 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { t, sectionTitleStyle, statusBadge, tableHeaderStyle, tableCellStyle } from './manager-tokens';
+import {
+  ArrowRight,
+  ArrowUp,
+  Building2,
+  ChartColumn,
+  ChevronDown,
+  CircleCheck,
+  ShoppingCart,
+  Sun,
+  TriangleAlert,
+  Users,
+} from 'lucide-react';
+import { t, tableHeaderStyle, tableCellStyle } from './manager-tokens';
 import { ManagerEmptyState, ManagerErrorState, ManagerLoadingBlock } from './components';
 import { formatMajorAmount } from '../../utils/currency';
 import type { Order } from '../../store/api/orderApi';
@@ -37,12 +49,12 @@ interface Props {
   now?: Date;
 }
 
-const SOURCE_LABELS: Record<string, string> = {
-  MASOVA: 'Direct',
-  WOLT: 'Wolt',
-  DELIVEROO: 'Deliveroo',
-  JUST_EAT: 'Just Eat',
-  UBER_EATS: 'Uber Eats',
+const SOURCES: Record<string, { label: string; color: string }> = {
+  MASOVA: { label: 'Direct', color: '#1F8A5B' },
+  WOLT: { label: 'Wolt', color: '#0E9F6E' },
+  DELIVEROO: { label: 'Deliveroo', color: '#2563EB' },
+  JUST_EAT: { label: 'Just Eat', color: '#EA580C' },
+  UBER_EATS: { label: 'Uber Eats', color: '#4F46E5' },
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -52,12 +64,28 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const STATUS_SEGMENTS: Array<{ key: string; label: string; statuses: string[]; color: string }> = [
-  { key: 'received', label: 'Received', statuses: ['RECEIVED'], color: '#17588B' },
-  { key: 'preparing', label: 'Preparing', statuses: ['PREPARING'], color: '#C63F19' },
-  { key: 'oven', label: 'In oven', statuses: ['OVEN'], color: '#8A5A0B' },
-  { key: 'baked', label: 'Baked', statuses: ['BAKED'], color: '#7E8980' },
-  { key: 'out', label: 'Out for delivery', statuses: ['DISPATCHED', 'OUT_FOR_DELIVERY'], color: '#203D32' },
+  { key: 'received', label: 'Received', statuses: ['RECEIVED'], color: '#2E9E6E' },
+  { key: 'preparing', label: 'Preparing', statuses: ['PREPARING'], color: '#E8501A' },
+  { key: 'oven', label: 'In oven', statuses: ['OVEN'], color: '#F5A623' },
+  { key: 'baked', label: 'Baked', statuses: ['BAKED'], color: '#6B7280' },
+  { key: 'ready', label: 'Ready', statuses: ['READY'], color: '#1F6FEB' },
+  { key: 'out', label: 'Out for delivery', statuses: ['DISPATCHED', 'OUT_FOR_DELIVERY'], color: '#38A9E8' },
 ];
+
+const STATUS_BADGES: Record<string, { bg: string; color: string; icon: 'up' | 'check' | null }> = {
+  PREPARING: { bg: '#FFE5DA', color: '#B8400A', icon: 'up' },
+  OVEN: { bg: '#FFEFCC', color: '#8A5A0B', icon: 'up' },
+  BAKED: { bg: '#ECECEA', color: '#55635A', icon: null },
+  READY: { bg: '#DDF3E6', color: '#146342', icon: 'check' },
+  RECEIVED: { bg: '#E8F1FC', color: '#17588B', icon: null },
+  DISPATCHED: { bg: '#E8F1FC', color: '#17588B', icon: null },
+  OUT_FOR_DELIVERY: { bg: '#E8F1FC', color: '#17588B', icon: null },
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  OVEN: 'In oven',
+  OUT_FOR_DELIVERY: 'Out for delivery',
+};
 
 function greetingFor(date: Date): string {
   const hour = date.getHours();
@@ -74,10 +102,10 @@ function minutesUntil(iso: string | undefined, now: Date): string {
   return diff > 0 ? span(diff) : `Overdue ${span(Math.abs(diff))}`;
 }
 
-function formatTime(iso: string | undefined, locale: string): string {
+function formatTime(iso: string | undefined): string {
   const date = iso ? new Date(iso) : null;
   return date && Number.isFinite(date.getTime())
-    ? date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
+    ? date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
     : '—';
 }
 
@@ -86,65 +114,88 @@ const timestamp = (iso: string | undefined): number => {
   return Number.isFinite(value) ? value : 0;
 };
 
-const tile: React.CSSProperties = {
+/** "Priya Sharma" → "Priya S." */
+const shortName = (name: string | undefined): string => {
+  const parts = (name || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '—';
+  return parts.length === 1 ? parts[0] : `${parts[0]} ${parts[parts.length - 1][0]}.`;
+};
+
+const card: React.CSSProperties = {
   background: t.white,
   border: `1px solid ${t.grayLight}`,
   borderRadius: t.radius.lg,
-  padding: 16,
+  boxShadow: '0 1px 2px rgba(24,34,31,0.04)',
   minWidth: 0,
 };
 
+const cardTitle: React.CSSProperties = { margin: 0, fontSize: 17, fontWeight: 600, color: t.black };
+
 const KpiTile: React.FC<{
+  icon: React.ReactNode;
   value: React.ReactNode;
   label: string;
   hint: string;
+  hintColor: string;
   loading?: boolean;
   error?: boolean;
-}> = ({ value, label, hint, loading = false, error = false }) => (
-  <div style={tile}>
-    <div style={{ fontSize: 26, fontWeight: 700, color: t.black, fontVariantNumeric: 'tabular-nums', lineHeight: 1.15 }}>
-      {loading ? '…' : error ? '—' : value}
-    </div>
-    <div style={{ fontSize: 13, color: t.gray, marginTop: 4 }}>{label}</div>
-    <div role={error ? 'alert' : undefined} style={{ fontSize: 12, color: error ? t.red : t.grayMuted, marginTop: 2 }}>
-      {error ? 'Could not load' : hint}
+}> = ({ icon, value, label, hint, hintColor, loading = false, error = false }) => (
+  <div style={{ ...card, padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
+    <span
+      aria-hidden
+      style={{
+        width: 56, height: 56, borderRadius: '50%', background: t.selection, color: t.black,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      }}
+    >
+      {icon}
+    </span>
+    <div style={{ minWidth: 0 }}>
+      <div style={{ fontSize: 26, fontWeight: 700, color: t.black, fontVariantNumeric: 'tabular-nums', lineHeight: 1.15 }}>
+        {loading ? '…' : error ? '—' : value}
+      </div>
+      <div style={{ fontSize: 15, color: t.gray, marginTop: 2 }}>{label}</div>
+      <div role={error ? 'alert' : undefined} style={{ fontSize: 14, color: error ? t.red : hintColor, marginTop: 2, fontWeight: 500 }}>
+        {error ? 'Could not load' : hint}
+      </div>
     </div>
   </div>
 );
 
-const niceMax = (value: number): number => {
-  if (value <= 0) return 100;
-  const magnitude = 10 ** Math.floor(Math.log10(value));
-  const step = [1, 2, 2.5, 5, 10].find((m) => value <= m * magnitude) ?? 10;
-  return step * magnitude;
+/** Step so that four intervals cover `value`, e.g. 920 → 250, giving ticks 0…1,000. */
+const niceStep = (value: number): number => {
+  if (value <= 0) return 25;
+  const raw = value / 4;
+  const magnitude = 10 ** Math.floor(Math.log10(raw));
+  return ([1, 2, 2.5, 5, 10].find((m) => raw <= m * magnitude) ?? 10) * magnitude;
 };
 
 const RevenueChart: React.FC<{
-  currency: string;
-  locale: string;
   hours: HourlyRevenue[];
   loading: boolean;
   error: boolean;
   onRetry: () => void;
   format: (v: number) => string;
-}> = ({ hours, loading, error, onRetry, format, currency, locale }) => {
-  const formatAxis = (value: number) =>
-    new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: 0 }).format(value);
+  locale: string;
+}> = ({ hours, loading, error, onRetry, format, locale }) => {
   if (loading) return <ManagerLoadingBlock rows={3} label="Loading revenue…" />;
   if (error) return <ManagerErrorState title="Could not load today's revenue" onRetry={onRetry} />;
+  const axis = (value: number) => new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value);
   const byHour = new Map(hours.map((h) => [h.hour, h.sales]));
   const activeHours = hours.filter((h) => h.sales > 0).map((h) => h.hour);
   const first = Math.min(8, ...(activeHours.length ? activeHours : [8]));
   const last = Math.max(22, ...(activeHours.length ? activeHours : [22]));
   const range = Array.from({ length: last - first + 1 }, (_, i) => first + i);
-  const max = niceMax(Math.max(0, ...range.map((h) => byHour.get(h) || 0)));
+  const step = niceStep(Math.max(0, ...range.map((h) => byHour.get(h) || 0)));
+  const max = step * 4;
   const total = range.reduce((sum, h) => sum + (byHour.get(h) || 0), 0);
-  const width = 560;
-  const height = 190;
-  const left = 44;
-  const bottom = 24;
-  const plotH = height - bottom - 8;
-  const barW = (width - left) / range.length;
+  const width = 640;
+  const height = 230;
+  const left = 48;
+  const bottom = 28;
+  const top = 8;
+  const plotH = height - bottom - top;
+  const slot = (width - left - 8) / range.length;
 
   return (
     <div>
@@ -153,42 +204,42 @@ const RevenueChart: React.FC<{
         width="100%"
         role="img"
         aria-label={`Revenue by hour today, total ${format(total)}`}
-        style={{ display: 'block', maxHeight: 220 }}
+        style={{ display: 'block' }}
       >
-        {[0, 0.5, 1].map((fraction) => {
-          const y = 8 + plotH - plotH * fraction;
+        {[0, 1, 2, 3, 4].map((i) => {
+          const y = top + plotH - (plotH * i) / 4;
           return (
-            <g key={fraction}>
-              <line x1={left} x2={width} y1={y} y2={y} stroke={t.grayLight} strokeWidth={1} />
-              <text x={left - 8} y={y + 4} textAnchor="end" fontSize={11} fill={t.grayMuted}>
-                {formatAxis(Math.round(max * fraction))}
+            <g key={i}>
+              <line x1={left} x2={width - 8} y1={y} y2={y} stroke="#E7E8E3" strokeWidth={1} />
+              <text x={left - 10} y={y + 4} textAnchor="end" fontSize={12} fill={t.gray}>
+                {axis(step * i)}
               </text>
             </g>
           );
         })}
         {range.map((hour, index) => {
+          const x = left + index * slot;
           const value = byHour.get(hour) || 0;
-          const barH = max > 0 ? (value / max) * plotH : 0;
-          const x = left + index * barW;
+          const barH = (value / max) * plotH;
           return (
             <g key={hour}>
+              <line x1={x} x2={x} y1={top} y2={top + plotH} stroke="#EEEFEA" strokeWidth={1} />
               {value > 0 && (
-                <rect x={x + barW * 0.18} y={8 + plotH - barH} width={barW * 0.64} height={barH} rx={2} fill={t.forest}>
+                <rect x={x + slot * 0.2} y={top + plotH - barH} width={slot * 0.6} height={barH} rx={2} fill="#2FA383">
                   <title>{`${String(hour).padStart(2, '0')}:00 · ${format(value)}`}</title>
                 </rect>
               )}
               {index % 2 === 0 && (
-                <text x={x + barW / 2} y={height - 6} textAnchor="middle" fontSize={11} fill={t.grayMuted}>
+                <text x={x} y={height - 6} textAnchor="middle" fontSize={12} fill={t.gray}>
                   {String(hour).padStart(2, '0')}:00
                 </text>
               )}
             </g>
           );
         })}
+        <line x1={left + range.length * slot} x2={left + range.length * slot} y1={top} y2={top + plotH} stroke="#EEEFEA" strokeWidth={1} />
       </svg>
-      {total === 0 && (
-        <p style={{ margin: '4px 0 0', fontSize: 12, color: t.grayMuted }}>No completed sales yet today.</p>
-      )}
+      {total === 0 && <p style={{ margin: '4px 0 0', fontSize: 13, color: t.grayMuted }}>No completed sales yet today.</p>}
     </div>
   );
 };
@@ -198,15 +249,16 @@ const StatusDonut: React.FC<{ orders: Order[] }> = ({ orders }) => {
     ...segment,
     count: orders.filter((o) => segment.statuses.includes(String(o.status).toUpperCase())).length,
   }));
-  const total = orders.length;
-  const radius = 54;
+  const total = counts.reduce((sum, c) => sum + c.count, 0);
+  const radius = 72;
+  const stroke = 26;
   const circumference = 2 * Math.PI * radius;
   let offset = 0;
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
-      <svg width={150} height={150} viewBox="0 0 150 150" role="img" aria-label={`${total} active orders by status`}>
-        <circle cx={75} cy={75} r={radius} fill="none" stroke={t.selection} strokeWidth={16} />
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
+      <svg width={200} height={200} viewBox="0 0 200 200" role="img" aria-label={`${total} active orders by status`}>
+        <circle cx={100} cy={100} r={radius} fill="none" stroke={t.selection} strokeWidth={stroke} />
         {total > 0 &&
           counts
             .filter((c) => c.count > 0)
@@ -215,37 +267,72 @@ const StatusDonut: React.FC<{ orders: Order[] }> = ({ orders }) => {
               const circle = (
                 <circle
                   key={segment.key}
-                  cx={75}
-                  cy={75}
+                  cx={100}
+                  cy={100}
                   r={radius}
                   fill="none"
                   stroke={segment.color}
-                  strokeWidth={16}
+                  strokeWidth={stroke}
                   strokeDasharray={`${length} ${circumference - length}`}
                   strokeDashoffset={-offset}
-                  transform="rotate(-90 75 75)"
+                  transform="rotate(-90 100 100)"
                 />
               );
               offset += length;
               return circle;
             })}
-        <text x={75} y={78} textAnchor="middle" fontSize={28} fontWeight={700} fill={t.black}>
+        <text x={100} y={104} textAnchor="middle" fontSize={34} fontWeight={700} fill={t.black}>
           {total}
         </text>
-        <text x={75} y={96} textAnchor="middle" fontSize={11} fill={t.gray}>
+        <text x={100} y={126} textAnchor="middle" fontSize={14} fill={t.gray}>
           active orders
         </text>
       </svg>
-      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 8, minWidth: 150, flex: 1 }}>
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 14, minWidth: 190, flex: 1, maxWidth: 260 }}>
         {counts.map((segment) => (
-          <li key={segment.key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: t.black }}>
-            <span aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', background: segment.color }} />
+          <li key={segment.key} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: t.black }}>
+            <span aria-hidden style={{ width: 10, height: 10, borderRadius: '50%', background: segment.color }} />
             <span style={{ flex: 1 }}>{segment.label}</span>
-            <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{segment.count}</span>
+            <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>{segment.count}</span>
           </li>
         ))}
       </ul>
     </div>
+  );
+};
+
+const SourceCell: React.FC<{ source: string | undefined }> = ({ source }) => {
+  const info = SOURCES[source || 'MASOVA'] || { label: source || 'Direct', color: t.gray };
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+      <span
+        aria-hidden
+        style={{
+          width: 18, height: 18, borderRadius: 5, background: info.color, display: 'inline-flex',
+          alignItems: 'center', justifyContent: 'center',
+        }}
+      >
+        <span style={{ width: 7, height: 7, borderRadius: '50%', border: '1.5px solid #fff' }} />
+      </span>
+      {info.label}
+    </span>
+  );
+};
+
+const StatusCell: React.FC<{ status: string }> = ({ status }) => {
+  const key = status.toUpperCase();
+  const badge = STATUS_BADGES[key] || { bg: t.selection, color: t.gray, icon: null };
+  return (
+    <span
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 128, padding: '7px 12px', borderRadius: 8,
+        background: badge.bg, color: badge.color, fontSize: 14, fontWeight: 500, boxSizing: 'border-box',
+      }}
+    >
+      {badge.icon === 'up' && <ArrowUp size={15} strokeWidth={2} aria-hidden />}
+      {badge.icon === 'check' && <CircleCheck size={15} strokeWidth={2} aria-hidden />}
+      {STATUS_LABELS[key] || key.charAt(0) + key.slice(1).toLowerCase().replace(/_/g, ' ')}
+    </span>
   );
 };
 
@@ -280,7 +367,7 @@ const DashboardOverview: React.FC<Props> = ({
   const preparing = activeOrders.filter((o) => String(o.status).toUpperCase() === 'PREPARING').length;
   const liveOrders = [...activeOrders]
     .sort((a, b) => timestamp(b.createdAt) - timestamp(a.createdAt))
-    .slice(0, 8);
+    .slice(0, 4);
 
   const openOrders = () => {
     const params = new URLSearchParams(searchParams);
@@ -290,44 +377,110 @@ const DashboardOverview: React.FC<Props> = ({
   };
 
   return (
-    <div style={{ display: 'grid', gap: 16, marginBottom: 24 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+    <div style={{ display: 'grid', gap: 20, marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: 28, fontWeight: 600, color: t.black, lineHeight: 1.15 }}>
             {greetingFor(now)}, {greetingName}
           </h2>
-          <p style={{ margin: '6px 0 0', fontSize: 15, color: t.gray }}>
+          <p style={{ margin: '6px 0 0', fontSize: 16, color: t.gray }}>
             Here&apos;s what&apos;s happening at {storeName || 'your store'} today.
           </p>
         </div>
-        <div style={{ ...tile, padding: '10px 16px', textAlign: 'right' }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: t.black }}>{storeName || 'Select a store'}</div>
-          <div style={{ fontSize: 12, color: t.gray }}>
-            {now.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })} · {currency}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: t.gray }}>
+            <Sun size={24} strokeWidth={1.5} aria-hidden />
+            <div style={{ fontSize: 14, lineHeight: 1.35 }}>
+              <div>Today</div>
+              <div>{now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+            </div>
+          </div>
+          <div style={{ ...card, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, minWidth: 250 }}>
+            <Building2 size={22} strokeWidth={1.5} color={t.black} aria-hidden />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 600, color: t.black, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {storeName || 'Select a store'}
+              </div>
+              <div style={{ fontSize: 13, color: t.gray }}>Restaurant · {currency}</div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12 }}>
-        <KpiTile value={format(revenueToday)} label="Revenue today" hint={revenueHint} />
-        <KpiTile value={activeOrders.length} label="Active orders" hint={`${preparing} preparing`} loading={ordersLoading} error={ordersError} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 16 }}>
         <KpiTile
+          icon={<ChartColumn size={24} strokeWidth={1.75} />}
+          value={format(revenueToday)}
+          label="Revenue"
+          hint={revenueHint}
+          hintColor={t.greenDark}
+        />
+        <KpiTile
+          icon={<ShoppingCart size={24} strokeWidth={1.75} />}
+          value={activeOrders.length}
+          label="Active orders"
+          hint={`${preparing} preparing`}
+          hintColor={t.gray}
+          loading={ordersLoading}
+          error={ordersError}
+        />
+        <KpiTile
+          icon={<Users size={24} strokeWidth={1.75} />}
           value={`${staffOnShift}${staffRoster > 0 ? ` / ${staffRoster}` : ''}`}
           label="Staff on shift"
           hint={`${driversClockedIn} drivers clocked in`}
+          hintColor={t.blue}
           loading={staffLoading}
           error={staffError}
         />
-        <KpiTile value={needsAttention} label="Needs attention" hint={needsAttentionHint} loading={attentionLoading} error={attentionError} />
+        <KpiTile
+          icon={<TriangleAlert size={24} strokeWidth={1.75} />}
+          value={needsAttention}
+          label="Needs attention"
+          hint={needsAttentionHint}
+          hintColor={t.red}
+          loading={attentionLoading}
+          error={attentionError}
+        />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
-        <section style={tile} aria-labelledby="revenue-today-title">
-          <h3 id="revenue-today-title" style={{ ...sectionTitleStyle, marginBottom: 12 }}>Revenue today</h3>
-          <RevenueChart hours={hourlyRevenue} loading={hourlyLoading} error={hourlyError} onRetry={onRetryHourly} format={format} currency={currency} locale={locale} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.55fr) minmax(0, 1fr)', gap: 16 }}>
+        <section style={{ ...card, padding: 20 }} aria-labelledby="revenue-today-title">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+            <div>
+              <h3 id="revenue-today-title" style={cardTitle}>Revenue today</h3>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginTop: 6 }}>
+                <span style={{ fontSize: 28, fontWeight: 700, color: t.black, fontVariantNumeric: 'tabular-nums' }}>{format(revenueToday)}</span>
+                <span style={{ fontSize: 14, fontWeight: 500, color: t.greenDark }}>{revenueHint}</span>
+              </div>
+            </div>
+            <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+              <span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>Payment method</span>
+              <select
+                defaultValue="all"
+                style={{
+                  appearance: 'none', height: 36, padding: '0 34px 0 12px', borderRadius: 8, border: `1px solid ${t.grayLight}`,
+                  background: t.white, color: t.black, fontSize: 14, fontFamily: t.font,
+                }}
+              >
+                <option value="all">All payment methods</option>
+              </select>
+              <ChevronDown size={14} aria-hidden style={{ position: 'absolute', right: 10, pointerEvents: 'none', color: t.gray }} />
+            </label>
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <RevenueChart
+              hours={hourlyRevenue}
+              loading={hourlyLoading}
+              error={hourlyError}
+              onRetry={onRetryHourly}
+              format={format}
+              locale={locale}
+            />
+          </div>
         </section>
-        <section style={tile} aria-labelledby="order-status-title">
-          <h3 id="order-status-title" style={{ ...sectionTitleStyle, marginBottom: 12 }}>Order status</h3>
+        <section style={{ ...card, padding: 20 }} aria-labelledby="order-status-title">
+          <h3 id="order-status-title" style={{ ...cardTitle, marginBottom: 16 }}>Order status</h3>
           {ordersError ? (
             <ManagerErrorState title="Could not load order status" onRetry={onRetryOrders} />
           ) : (
@@ -336,15 +489,18 @@ const DashboardOverview: React.FC<Props> = ({
         </section>
       </div>
 
-      <section style={tile} aria-labelledby="live-orders-title">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <h3 id="live-orders-title" style={sectionTitleStyle}>Live orders</h3>
+      <section style={{ ...card, padding: 20 }} aria-labelledby="live-orders-title">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <h3 id="live-orders-title" style={cardTitle}>Live orders</h3>
           <button
             type="button"
             onClick={openOrders}
-            style={{ border: 'none', background: 'transparent', color: t.orange, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: t.font }}
+            style={{
+              border: 'none', background: 'transparent', color: '#D9381E', fontWeight: 500, fontSize: 15, cursor: 'pointer',
+              fontFamily: t.font, display: 'inline-flex', alignItems: 'center', gap: 8,
+            }}
           >
-            View all orders
+            View all orders <ArrowRight size={16} aria-hidden />
           </button>
         </div>
         {ordersLoading ? (
@@ -355,35 +511,32 @@ const DashboardOverview: React.FC<Props> = ({
           <ManagerEmptyState compact title="No active orders" description="The queue is clear right now." />
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 760 }}>
               <thead>
-                <tr>
-                  {['Time', 'Order', 'Customer', 'Source', 'Type', 'Total', 'Status', 'ETA'].map((heading) => (
-                    <th key={heading} scope="col" style={tableHeaderStyle}>{heading}</th>
+                <tr style={{ background: '#F3F4F2' }}>
+                  {['Time', '#', 'Customer', 'Source', 'Type', 'Total', 'Status', 'ETA'].map((heading) => (
+                    <th key={heading} scope="col" style={{ ...tableHeaderStyle, borderBottom: 'none', padding: '10px 12px', fontWeight: 500, fontSize: 13 }}>
+                      {heading}
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {liveOrders.map((order) => (
-                  <tr key={order.id}>
-                    <td style={{ ...tableCellStyle, fontVariantNumeric: 'tabular-nums' }}>
-                      {formatTime(order.createdAt, locale)}
-                    </td>
-                    <td style={tableCellStyle}>{order.orderNumber ? `#${order.orderNumber}` : '—'}</td>
-                    <td style={tableCellStyle}>{order.customerName || '—'}</td>
-                    <td style={tableCellStyle}>{SOURCE_LABELS[order.orderSource || 'MASOVA'] || order.orderSource}</td>
-                    <td style={tableCellStyle}>{TYPE_LABELS[order.orderType] || order.orderType}</td>
-                    <td style={{ ...tableCellStyle, fontVariantNumeric: 'tabular-nums' }}>
-                      {format(Number(order.totalAmount ?? order.total ?? 0))}
-                    </td>
-                    <td style={tableCellStyle}>
-                      <span style={statusBadge(String(order.status))}>{String(order.status).replace(/_/g, ' ')}</span>
-                    </td>
-                    <td style={{ ...tableCellStyle, fontVariantNumeric: 'tabular-nums' }}>
-                      {minutesUntil(order.estimatedDeliveryTime, now)}
-                    </td>
-                  </tr>
-                ))}
+                {liveOrders.map((order) => {
+                  const cell = { ...tableCellStyle, padding: '8px 12px', height: 48, fontSize: 15, borderBottom: 'none' };
+                  return (
+                    <tr key={order.id}>
+                      <td style={{ ...cell, fontVariantNumeric: 'tabular-nums' }}>{formatTime(order.createdAt)}</td>
+                      <td style={cell}>{order.orderNumber ? `#${order.orderNumber}` : '—'}</td>
+                      <td style={{ ...cell, color: '#1D5FD0' }}>{shortName(order.customerName)}</td>
+                      <td style={cell}><SourceCell source={order.orderSource} /></td>
+                      <td style={cell}>{TYPE_LABELS[order.orderType] || order.orderType}</td>
+                      <td style={{ ...cell, fontVariantNumeric: 'tabular-nums' }}>{format(Number(order.totalAmount ?? order.total ?? 0))}</td>
+                      <td style={cell}><StatusCell status={String(order.status)} /></td>
+                      <td style={{ ...cell, fontVariantNumeric: 'tabular-nums' }}>{minutesUntil(order.estimatedDeliveryTime, now)}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

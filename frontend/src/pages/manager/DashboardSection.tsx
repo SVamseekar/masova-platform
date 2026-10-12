@@ -24,7 +24,7 @@ import {
   useRejectSessionMutation,
 } from '../../store/api/sessionApi';
 import { useGetStoreEmployeesQuery } from '../../store/api/userApi';
-import { useGetKitchenQueueQuery, useGetStoreOrderSummaryQuery } from '../../store/api/orderApi';
+import { useGetKitchenQueueQuery, useGetOrdersQuery, useGetStoreOrderSummaryQuery } from '../../store/api/orderApi';
 import {
   useGetTodaySalesMetricsQuery,
   useGetSalesTrendsQuery,
@@ -76,6 +76,14 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
     isError: queueError,
     refetch: refetchQueue,
   } = useGetKitchenQueueQuery(storeId, { skip: !storeId, pollingInterval: 15000 });
+  // READY orders are not part of the kitchen queue but are still active on the board.
+  const {
+    data: readyOrders = [],
+    isLoading: loadingReady,
+    isError: readyError,
+    refetch: refetchReady,
+  } = useGetOrdersQuery({ storeId, status: 'READY' }, { skip: !storeId, pollingInterval: 15000 });
+  const activeOrders = useMemo(() => [...kitchenQueue, ...readyOrders], [kitchenQueue, readyOrders]);
   const {
     data: todaySalesMetrics,
     isError: salesError,
@@ -242,10 +250,13 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
         hourlyLoading={loadingTodaySummary}
         hourlyError={todaySummaryError}
         onRetryHourly={() => void refetchTodaySummary()}
-        activeOrders={kitchenQueue}
-        ordersLoading={loadingQueue}
-        ordersError={queueError}
-        onRetryOrders={() => void refetchQueue()}
+        activeOrders={activeOrders}
+        ordersLoading={loadingQueue || loadingReady}
+        ordersError={queueError || readyError}
+        onRetryOrders={() => {
+          void refetchQueue();
+          void refetchReady();
+        }}
         staffLoading={loadingSessions}
         staffError={!!sessionsError}
         attentionLoading={loadingOrders || loadingPendingSessions}
@@ -254,7 +265,7 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
         staffRoster={storeEmployees.length}
         driversClockedIn={clockedInDrivers}
         needsAttention={derived.pendingPaymentCount + storePendingSessions.length}
-        needsAttentionHint={`${derived.pendingPaymentCount} unpaid · ${storePendingSessions.length} session approvals`}
+        needsAttentionHint={`${derived.pendingPaymentCount} unpaid · ${storePendingSessions.length} approvals`}
       />
 
       {salesError && derived.todaySales === 0 && (

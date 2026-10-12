@@ -5,7 +5,9 @@ import { selectCurrentUser, logout } from '../../store/slices/authSlice';
 import { usePageStore } from '../../hooks/usePageStore';
 import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import { clearReturnUrl } from '../../utils/security';
-import { t, Icons } from './manager-tokens';
+import { Bell, CalendarDays, ChartLine, ChevronDown, CircleHelp, ClipboardCheck, FileText, Gem, House, Rows3, Settings, ShoppingBag, UserPlus } from 'lucide-react';
+import { t } from './manager-tokens';
+import { SUPPORT_EMAIL } from '../../apps/ProductSite/constants';
 import { useGetActiveStoresQuery, type Store } from '../../store/api/storeApi';
 import { setSelectedStore, setStoreCurrency, selectSelectedStoreId, selectSelectedStoreName } from '../../store/slices/cartSlice';
 import { storeCurrencyPayload, resolveStoreMarket } from '../../utils/storeCurrency';
@@ -36,19 +38,37 @@ const keyboardActivate = (action: () => void) => ({
   tabIndex: 0,
 });
 
+const NAV_ICON = { size: 20, strokeWidth: 1.75, 'aria-hidden': true } as const;
+
 const sections = [
-  { id: 'dashboard', label: 'Dashboard', icon: Icons.Grid },
-  { id: 'orders', label: 'Orders & Payments', icon: Icons.File },
-  { id: 'inventory', label: 'Inventory & Supply', icon: Icons.Box },
-  { id: 'operations', label: 'Operations', icon: Icons.Settings },
-  { id: 'people', label: 'People & Marketing', icon: Icons.Users },
-  { id: 'analytics', label: 'Analytics & Reports', icon: Icons.BarChart },
-  { id: 'ai', label: 'AI Agents', icon: Icons.Sparkle },
-  { id: 'compliance', label: 'Fiscal Compliance', icon: Icons.Shield },
+  { id: 'dashboard', label: 'Dashboard', icon: House },
+  { id: 'orders', label: 'Orders & Payments', icon: ClipboardCheck },
+  { id: 'inventory', label: 'Inventory & Supply', icon: ShoppingBag },
+  { id: 'operations', label: 'Operations', icon: Rows3 },
+  { id: 'people', label: 'People & Marketing', icon: UserPlus },
+  { id: 'analytics', label: 'Analytics & Reports', icon: ChartLine },
+  { id: 'ai', label: 'AI Agents', icon: Gem },
+  { id: 'compliance', label: 'Fiscal Compliance', icon: FileText },
 ];
 
-const SIDEBAR_EXPANDED = 240;
-const SIDEBAR_COLLAPSED = 72;
+const SIDEBAR_WIDTH = 240;
+
+const navButton = (active: boolean): React.CSSProperties => ({
+  display: 'flex', alignItems: 'center', gap: 14, width: '100%', border: 'none',
+  padding: '11px 14px', borderRadius: 8, fontFamily: t.font, textAlign: 'left',
+  background: active ? t.selection : 'transparent',
+  color: t.black, fontWeight: active ? 600 : 400, fontSize: 15, cursor: 'pointer',
+});
+
+const headerControl: React.CSSProperties = {
+  height: 40, borderRadius: 8, border: `1px solid ${t.grayLight}`, background: t.white,
+  display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.black, cursor: 'pointer',
+};
+
+const menuSurface: React.CSSProperties = {
+  position: 'absolute', background: t.white, borderRadius: 12, border: `1px solid ${t.grayLight}`,
+  boxShadow: '0 8px 24px rgba(24,34,31,0.12)', zIndex: 100, overflow: 'hidden',
+};
 
 // eslint-disable-next-line react-refresh/only-export-components -- page component with HOC export
 function ManagerShell() {
@@ -62,11 +82,9 @@ function ManagerShell() {
   const activeSection = searchParams.get('section') || 'dashboard';
   const activeTab = searchParams.get('tab') || '';
 
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [storeDropOpen, setStoreDropOpen] = useState(false);
-  const [headerSearch, setHeaderSearch] = useState(searchParams.get('q') || '');
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const storeRef = useRef<HTMLDivElement>(null);
@@ -139,297 +157,183 @@ function ManagerShell() {
     navigate('/staff-login');
   };
 
-  const sidebarWidth = sidebarOpen ? SIDEBAR_EXPANDED : SIDEBAR_COLLAPSED;
+  const menuItem: React.CSSProperties = {
+    padding: '10px 16px', fontSize: 13, color: t.black, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10,
+  };
 
   return (
     <div className="manager-shell" style={{
       display: 'flex', height: '100vh', width: '100vw', position: 'fixed', top: 0, left: 0,
-      fontFamily: t.font,
-      background: t.bgMain,
+      fontFamily: t.font, background: t.bgMain,
     }}>
       <style>{FOCUS_RING_CSS}</style>
 
       {/* LEFT SIDEBAR */}
-      <div style={{
-        width: sidebarWidth,
-        background: t.white,
-        borderRight: `1px solid ${t.grayLight}`,
-        display: 'flex', flexDirection: 'column', flexShrink: 0,
-        padding: sidebarOpen ? '24px 14px' : '24px 10px',
-        overflowY: 'auto', overflowX: 'hidden',
-        transition: 'width 220ms cubic-bezier(0.2, 0, 0, 1), padding 220ms cubic-bezier(0.2, 0, 0, 1)',
-      }}>
-
-        {/* Logo + Collapse toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: sidebarOpen ? 'space-between' : 'center', marginBottom: 32, minHeight: 36, paddingLeft: sidebarOpen ? 4 : 0 }}>
-          <MaSoVaBrand size={sidebarOpen ? 32 : 36} wordmark={sidebarOpen} />
-          <button
-            type="button"
-            aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            style={{
-              width: 28, height: 28, borderRadius: 8, border: 'none',
-              display: sidebarOpen ? 'flex' : 'none', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', color: t.grayMuted,
-              background: 'transparent',
-              transition: 'transform 220ms ease',
-              transform: sidebarOpen ? 'rotate(0deg)' : 'rotate(180deg)',
-              flexShrink: 0,
-              marginLeft: sidebarOpen ? 0 : 0,
-            }}
-            title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-          >
-            <Icons.ChevronLeft />
-          </button>
+      <nav
+        aria-label="Manager sections"
+        style={{
+          width: SIDEBAR_WIDTH, background: t.bgMain, borderRight: `1px solid ${t.grayLight}`,
+          display: 'flex', flexDirection: 'column', flexShrink: 0, padding: '20px 14px', overflowY: 'auto',
+        }}
+      >
+        <div style={{ padding: '0 6px', marginBottom: 28 }}>
+          <MaSoVaBrand size={32} />
         </div>
 
-        {/* Nav items */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {sections.map(s => {
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {sections.map((s) => {
             const isActive = activeSection === s.id;
             return (
               <button
                 key={s.id}
                 type="button"
                 onClick={() => setSection(s.id)}
-                title={!sidebarOpen ? s.label : undefined}
-                aria-label={s.label}
                 aria-current={isActive ? 'page' : undefined}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 12, width: '100%', border: 'none',
-                  padding: sidebarOpen ? '11px 14px' : '11px 0',
-                  justifyContent: sidebarOpen ? 'flex-start' : 'center',
-                  borderRadius: 8, fontFamily: t.font, textAlign: 'left',
-                  background: isActive ? t.selection : 'transparent',
-                  color: isActive ? t.black : t.gray,
-                  fontWeight: isActive ? 600 : 500, fontSize: 14, cursor: 'pointer',
-                }}
+                style={navButton(isActive)}
               >
-                <s.icon />
-                {sidebarOpen && <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.label}</span>}
+                <s.icon {...NAV_ICON} />
+                <span style={{ whiteSpace: 'nowrap' }}>{s.label}</span>
               </button>
             );
           })}
         </div>
 
-        {/* Version + logout at bottom */}
-        <div style={{ marginTop: 'auto', paddingTop: 20 }}>
-          {sidebarOpen && versionInfo && (
-            <div style={{ padding: '0 14px 12px', fontSize: 11, color: t.grayMuted }}>
-              v{versionInfo.version}
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={handleLogout}
-            title={!sidebarOpen ? 'Logout' : undefined}
-            aria-label="Logout"
-            style={{
-              display: 'flex', alignItems: 'center', gap: 12, width: '100%', border: 'none', background: 'transparent',
-              padding: sidebarOpen ? '11px 14px' : '11px 0',
-              justifyContent: sidebarOpen ? 'flex-start' : 'center',
-              borderRadius: 8, color: t.gray, fontWeight: 500, fontSize: 14, cursor: 'pointer', fontFamily: t.font,
-            }}
-          >
-            <Icons.Logout />
-            {sidebarOpen && <span>Logout</span>}
+        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 20 }}>
+          <button type="button" onClick={() => setSearchParams({ section: 'operations', tab: 'stores' })} style={navButton(false)}>
+            <Settings {...NAV_ICON} />
+            <span>Settings</span>
           </button>
+          <a href={`mailto:${SUPPORT_EMAIL}`} style={{ ...navButton(false), textDecoration: 'none', boxSizing: 'border-box' }}>
+            <CircleHelp {...NAV_ICON} />
+            <span>Help &amp; Support</span>
+          </a>
         </div>
-      </div>
+      </nav>
 
-      {/* MIDDLE + RIGHT */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* MAIN */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
 
         {/* HEADER */}
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          padding: '14px 28px',
-          background: t.white,
-          borderBottom: `1px solid ${t.grayLight}`,
-          flexShrink: 0, height: t.headerHeight,
-          position: 'relative', zIndex: 50,
+        <header style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16,
+          padding: '14px 28px', background: t.bgMain, flexShrink: 0, height: t.headerHeight,
+          borderBottom: `1px solid ${t.grayLight}`, position: 'relative', zIndex: 50,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            {/* Hamburger for collapsed sidebar on small or when collapsed */}
-            {!sidebarOpen && (
-              <button
-                type="button"
-                aria-label="Expand sidebar"
-                onClick={() => setSidebarOpen(true)}
-                style={{ width: 36, height: 36, borderRadius: 8, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: t.gray, background: t.selection }}
-              >
-                <Icons.Menu />
-              </button>
+          {/* Store selector */}
+          <div ref={storeRef} style={{ position: 'relative' }}>
+            <button
+              type="button"
+              aria-haspopup="listbox"
+              aria-expanded={storeDropOpen}
+              aria-label="Select store"
+              onClick={() => { setStoreDropOpen(!storeDropOpen); setProfileOpen(false); setNotifOpen(false); }}
+              style={{
+                ...headerControl, width: 250, padding: '0 14px', justifyContent: 'space-between',
+                fontSize: 15, fontWeight: 400, fontFamily: t.font,
+                borderColor: storeDropOpen ? t.focus : t.grayLight,
+              }}
+            >
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {storesLoading ? 'Loading...' : reduxStoreName || 'Select Store'}
+              </span>
+              <ChevronDown size={16} aria-hidden />
+            </button>
+            {storeDropOpen && (
+              <div role="listbox" aria-label="Stores" style={{ ...menuSurface, top: 46, left: 0, minWidth: 280, maxHeight: 320, overflowY: 'auto' }}>
+                {stores.length === 0 ? (
+                  <div style={{ padding: 16, textAlign: 'center', color: t.grayMuted, fontSize: 13 }}>No stores available</div>
+                ) : stores.map((store) => {
+                  const isSel = reduxStoreId === store.storeCode;
+                  return (
+                    <div
+                      key={store.id}
+                      {...keyboardActivate(() => handleStoreSelect(store.storeCode, store.name))}
+                      role="option"
+                      aria-selected={isSel}
+                      style={{
+                        padding: '10px 16px', cursor: 'pointer',
+                        background: isSel ? t.selection : 'transparent', borderBottom: `1px solid ${t.grayLight}`,
+                      }}
+                    >
+                      <div style={{ fontSize: 13, fontWeight: isSel ? 600 : 500, color: t.black }}>{store.name}</div>
+                      <div style={{ fontSize: 11, color: t.grayMuted }}>{store.address?.city}, {store.address?.state}</div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {/* Store Selector */}
-            <div ref={storeRef} style={{ position: 'relative' }}>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <ManagerCopilotDrawer storeId={storeId} />
+            <span style={{ fontSize: 14, color: t.black }}>Today</span>
+            <span aria-hidden style={{ ...headerControl, width: 40, cursor: 'default' }}><CalendarDays size={18} strokeWidth={1.75} /></span>
+
+            {/* Notifications */}
+            <div ref={notifRef} style={{ position: 'relative' }}>
               <button
                 type="button"
-                aria-haspopup="listbox"
-                aria-expanded={storeDropOpen}
-                aria-label="Select store"
-                onClick={() => { setStoreDropOpen(!storeDropOpen); setProfileOpen(false); setNotifOpen(false); }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '7px 14px', borderRadius: 8,
-                  border: `1px solid ${storeDropOpen ? t.focus : t.borderControl}`,
-                  background: t.white,
-                  cursor: 'pointer', fontSize: 13, fontWeight: 600, color: t.black, fontFamily: t.font,
-                  minWidth: 160, justifyContent: 'space-between',
-                }}
+                aria-label="Notifications"
+                aria-expanded={notifOpen}
+                onClick={() => { setNotifOpen(!notifOpen); setProfileOpen(false); }}
+                style={{ ...headerControl, width: 40, border: 'none', background: 'transparent' }}
               >
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {storesLoading ? 'Loading...' : reduxStoreName || 'Select Store'}
-                </span>
-                <Icons.Down />
-              </button>
-              {storeDropOpen && (
-                <div style={{
-                  position: 'absolute', top: 44, left: 0, minWidth: 280, maxHeight: 320, overflowY: 'auto',
-                  background: t.white, borderRadius: 12, boxShadow: '0 8px 24px rgba(24,34,31,0.12)',
-                  border: `1px solid ${t.grayLight}`, zIndex: 100,
-                }}>
-                  {stores.length === 0 ? (
-                    <div style={{ padding: 16, textAlign: 'center', color: t.grayMuted, fontSize: 13 }}>No stores available</div>
-                  ) : stores.map(store => {
-                    const isSel = reduxStoreId === store.storeCode;
-                    return (
-                      <div
-                        key={store.id}
-                        {...keyboardActivate(() => handleStoreSelect(store.storeCode, store.name))}
-                        style={{
-                          padding: '10px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          background: isSel ? t.selection : 'transparent',
-                          borderBottom: '1px solid rgba(0,0,0,0.04)',
-                        }}
-                        onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = 'rgba(0,0,0,0.03)'; }}
-                        onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = 'transparent'; }}
-                      >
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: isSel ? 600 : 500, color: t.black }}>{store.name}</div>
-                          <div style={{ fontSize: 11, color: t.grayMuted }}>{store.address?.city}, {store.address?.state}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-            {/* Search — jumps to Orders with ?q= (list filters client-side) */}
-            <div style={{ position: 'relative' }}>
-              <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: t.gray }}><Icons.Search /></div>
-              <input
-                aria-label="Search orders"
-                placeholder="Search orders…"
-                value={headerSearch}
-                onChange={(e) => setHeaderSearch(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key !== 'Enter') return;
-                  const q = headerSearch.trim();
-                  const params = new URLSearchParams(searchParams);
-                  params.set('section', 'orders');
-                  params.set('tab', 'orders');
-                  if (q) params.set('q', q);
-                  else params.delete('q');
-                  setSearchParams(params);
-                }}
-                title="Press Enter to search orders by number, customer, phone, or email"
-                style={{
-                  padding: '9px 16px 9px 36px', border: `1px solid ${t.borderControl}`, borderRadius: 8, fontSize: 14, width: 220,
-                  background: t.white, outline: 'none', fontFamily: t.font,
-                }}
-              />
-            </div>
-            <ManagerCopilotDrawer storeId={storeId} />
-            {/* Bell / Notifications */}
-            <div ref={notifRef} style={{ position: 'relative' }}>
-              <button type="button" aria-label="Notifications" aria-expanded={notifOpen} onClick={() => { setNotifOpen(!notifOpen); setProfileOpen(false); }} style={{ width: 38, height: 38, borderRadius: 8, border: `1px solid ${notifOpen ? t.focus : t.grayLight}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: notifOpen ? t.orange : t.gray, background: t.white }}>
-                <Icons.Bell />
+                <Bell size={20} strokeWidth={1.75} aria-hidden />
               </button>
               {notifOpen && (
-                <div style={{ position: 'absolute', top: 46, right: 0, width: 300, background: t.white, borderRadius: 12, boxShadow: '0 8px 24px rgba(24,34,31,0.12)', border: `1px solid ${t.grayLight}`, zIndex: 100, overflow: 'hidden' }}>
-                  <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(0,0,0,0.06)', fontWeight: 600, fontSize: 14, color: t.black }}>Notifications</div>
+                <div style={{ ...menuSurface, top: 46, right: 0, width: 300 }}>
+                  <div style={{ padding: '14px 16px', borderBottom: `1px solid ${t.grayLight}`, fontWeight: 600, fontSize: 14, color: t.black }}>Notifications</div>
                   <div style={{ padding: 20, textAlign: 'center', color: t.grayMuted, fontSize: 13 }}>No new notifications</div>
                 </div>
               )}
             </div>
-            {/* Settings */}
-            <button
-              type="button"
-              aria-label="Store settings"
-              onClick={() => { setSearchParams({ section: 'operations', tab: 'stores' }); }}
-              style={{ width: 38, height: 38, borderRadius: 8, border: `1px solid ${t.grayLight}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: t.gray, background: t.white }}
-              title="Store Settings"
-            >
-              <Icons.Settings />
-            </button>
-            {/* Profile Dropdown */}
+
+            {/* Account */}
             <div ref={profileRef} style={{ position: 'relative' }}>
-              <button type="button" aria-haspopup="menu" aria-expanded={profileOpen} aria-label="Account menu" onClick={() => { setProfileOpen(!profileOpen); setNotifOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 12px 5px 5px', border: `1px solid ${profileOpen ? t.focus : t.grayLight}`, borderRadius: 8, cursor: 'pointer', background: t.white, fontFamily: t.font, textAlign: 'left' }}>
-                <div style={{ width: 30, height: 30, borderRadius: 8, background: t.forest, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.white, fontWeight: 700, fontSize: 11 }}>{initials}</div>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: t.black, lineHeight: 1.2 }}>{userName}</div>
-                  <div style={{ fontSize: 11, color: t.gray, fontWeight: 500, lineHeight: 1.2 }}>{currentUser?.type || 'Manager'}</div>
-                </div>
-                <Icons.Down />
+              <button
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={profileOpen}
+                aria-label={`Account menu, ${userName}`}
+                onClick={() => { setProfileOpen(!profileOpen); setNotifOpen(false); }}
+                style={{
+                  width: 40, height: 40, borderRadius: '50%', border: 'none', background: t.selection,
+                  color: t.black, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: t.font,
+                }}
+              >
+                {initials}
               </button>
               {profileOpen && (
-                <div style={{ position: 'absolute', top: 50, right: 0, width: 220, background: t.white, borderRadius: 12, boxShadow: '0 8px 24px rgba(24,34,31,0.12)', border: `1px solid ${t.grayLight}`, zIndex: 100, overflow: 'hidden' }}>
-                  <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+                <div role="menu" style={{ ...menuSurface, top: 48, right: 0, width: 230 }}>
+                  <div style={{ padding: '14px 16px', borderBottom: `1px solid ${t.grayLight}` }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: t.black }}>{userName}</div>
                     <div style={{ fontSize: 12, color: t.grayMuted }}>{currentUser?.email || ''}</div>
+                    <div style={{ fontSize: 11, color: t.grayMuted, marginTop: 2 }}>{currentUser?.type || 'Manager'}{versionInfo ? ` · v${versionInfo.version}` : ''}</div>
                   </div>
-                  <div
-                    {...keyboardActivate(() => { setProfileOpen(false); navigate('/staff/profile'); })}
-                    style={{ padding: '10px 16px', fontSize: 13, color: t.black, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.04)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                  >
-                    <Icons.Users /> My Profile
-                  </div>
-                  <div
-                    {...keyboardActivate(() => { setProfileOpen(false); setSearchParams({ section: 'people', tab: 'staff' }); })}
-                    style={{ padding: '10px 16px', fontSize: 13, color: t.black, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.04)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                  >
-                    <Icons.Settings /> Staff Settings
-                  </div>
-                  <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-                    <div
-                      {...keyboardActivate(() => { setProfileOpen(false); handleLogout(); })}
-                      style={{ padding: '10px 16px', fontSize: 13, color: t.red, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.06)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                    >
-                      <Icons.Logout /> Logout
-                    </div>
+                  <div {...keyboardActivate(() => { setProfileOpen(false); navigate('/staff/profile'); })} style={menuItem}>My Profile</div>
+                  <div {...keyboardActivate(() => { setProfileOpen(false); setSearchParams({ section: 'people', tab: 'staff' }); })} style={menuItem}>Staff Settings</div>
+                  <div style={{ borderTop: `1px solid ${t.grayLight}` }}>
+                    <div {...keyboardActivate(() => { setProfileOpen(false); handleLogout(); })} style={{ ...menuItem, color: t.red }}>Logout</div>
                   </div>
                 </div>
               )}
             </div>
           </div>
-        </div>
+        </header>
 
         {/* CONTENT */}
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-
-          
-          <div style={{ flex: 1, padding: 24, overflowY: 'auto' }}>
-            <React.Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: 40, color: t.gray }}>Loading...</div>}>
-              {activeSection === 'dashboard' && <DashboardSection storeId={storeId} />}
-              {activeSection === 'orders' && <OrdersSection storeId={storeId} activeTab={activeTab} onTabChange={setTab} />}
-              {activeSection === 'inventory' && <InventorySection storeId={storeId} activeTab={activeTab} onTabChange={setTab} />}
-              {activeSection === 'operations' && <OperationsSection storeId={storeId} activeTab={activeTab} onTabChange={setTab} />}
-              {activeSection === 'people' && <PeopleSection storeId={storeId} activeTab={activeTab} onTabChange={setTab} />}
-              {activeSection === 'analytics' && <AnalyticsSection storeId={storeId} activeTab={activeTab} onTabChange={setTab} />}
-              {activeSection === 'ai' && <AIAgentsSection storeId={storeId} />}
-              {activeSection === 'compliance' && <FiscalCompliancePage storeId={storeId} />}
-            </React.Suspense>
-          </div>
-        </div>
+        <main style={{ flex: 1, padding: '24px 28px', overflowY: 'auto' }}>
+          <React.Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: 40, color: t.gray }}>Loading...</div>}>
+            {activeSection === 'dashboard' && <DashboardSection storeId={storeId} />}
+            {activeSection === 'orders' && <OrdersSection storeId={storeId} activeTab={activeTab} onTabChange={setTab} />}
+            {activeSection === 'inventory' && <InventorySection storeId={storeId} activeTab={activeTab} onTabChange={setTab} />}
+            {activeSection === 'operations' && <OperationsSection storeId={storeId} activeTab={activeTab} onTabChange={setTab} />}
+            {activeSection === 'people' && <PeopleSection storeId={storeId} activeTab={activeTab} onTabChange={setTab} />}
+            {activeSection === 'analytics' && <AnalyticsSection storeId={storeId} activeTab={activeTab} onTabChange={setTab} />}
+            {activeSection === 'ai' && <AIAgentsSection storeId={storeId} />}
+            {activeSection === 'compliance' && <FiscalCompliancePage storeId={storeId} />}
+          </React.Suspense>
+        </main>
       </div>
     </div>
   );

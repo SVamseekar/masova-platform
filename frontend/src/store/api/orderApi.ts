@@ -176,6 +176,16 @@ export const orderApi = createApi({
         const queryString = params.toString();
         return queryString ? `/orders?${queryString}` : '/orders';
       },
+      transformResponse: (raw: unknown): Order[] => {
+        if (Array.isArray(raw)) return raw as Order[];
+        if (raw && typeof raw === 'object') {
+          const o = raw as Record<string, unknown>;
+          if (Array.isArray(o.content)) return o.content as Order[];
+          if (Array.isArray(o.orders)) return o.orders as Order[];
+          if (Array.isArray(o.data)) return o.data as Order[];
+        }
+        return [];
+      },
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Order' as const, id })), { type: 'Orders', id: 'LIST' }]
