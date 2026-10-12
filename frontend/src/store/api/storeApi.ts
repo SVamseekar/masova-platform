@@ -93,7 +93,8 @@ export interface StoreMetrics {
 export interface DeliveryRadiusCheckResult {
   withinRadius: boolean;
   storeId: string;
-  deliveryRadiusKm: number;
+  /** Known only when the store is in range; the server does not return out-of-range stores. */
+  deliveryRadiusKm?: number;
   latitude: number;
   longitude: number;
 }
@@ -183,11 +184,13 @@ export const storeApi = createApi({
     checkDeliveryRadius: builder.query<DeliveryRadiusCheckResult, { storeId: string; latitude: number; longitude: number }>({
       query: ({ latitude, longitude }) => `/stores?lat=${latitude}&lng=${longitude}`,
       transformResponse: (stores: Store[], _meta, { storeId, latitude, longitude }) => {
-        const store = stores.find((s) => s.id === storeId);
+        // The server answers with the stores that deliver to this point, so a store is in range
+        // when it is in the list. Customer pages identify the store by its code; staff pages by its id.
+        const store = stores.find((s) => s.id === storeId || s.storeCode === storeId);
         return {
-          withinRadius: store?.withinDeliveryRadius ?? false,
+          withinRadius: !!store,
           storeId,
-          deliveryRadiusKm: store?.operatingConfig?.deliveryRadiusKm ?? 0,
+          deliveryRadiusKm: store?.operatingConfig?.deliveryRadiusKm,
           latitude,
           longitude,
         };

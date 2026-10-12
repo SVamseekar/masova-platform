@@ -447,7 +447,7 @@ const PaymentPage: React.FC = () => {
                     {noSavedAddress && <p className="checkout-note" role="status">You have no saved addresses. <Link to="/guest-checkout">Add a delivery address</Link> to continue.</p>}
                     {isOutsideDeliveryRadius && (
                       <div className="checkout-error" role="alert">
-                        Your delivery address is outside this store's delivery area ({radiusCheck?.deliveryRadiusKm} km radius). Choose a closer address or switch to pickup.
+                        Your delivery address is outside this store's delivery area{radiusCheck?.deliveryRadiusKm ? ` (${radiusCheck.deliveryRadiusKm} km radius)` : ''}. Choose a closer address or switch to pickup.
                       </div>
                     )}
                   </fieldset>
