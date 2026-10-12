@@ -12,7 +12,8 @@ const errorStatus = (error: unknown) => (error as { status?: number | string } |
 /**
  * Order for the current visitor. Signed-in customers get the full order with amounts and payment
  * state; guests, and customers the full order is denied to, get the public tracking view, which
- * carries status, order type and item names only. Polling stops when the order reaches a final state.
+ * carries status, order type and item names only. The public view is what anyone holding the
+ * order link sees, so pages must not add owner-only details or actions to it. Polling stops when the order reaches a final state.
  */
 export function useCustomerOrder(orderId: string | undefined, pollingInterval = 10000) {
   const signedIn = useAppSelector(state => state.auth.isAuthenticated);

@@ -63,7 +63,7 @@ const TrackingPage: React.FC = () => {
 
   const status = order?.status ?? '';
   const enRoute = status === 'DISPATCHED' || status === 'OUT_FOR_DELIVERY';
-  const delivery = useDeliveryTrackQuery(orderId || '', { skip: !orderId || !enRoute, pollingInterval: 10000 });
+  const delivery = useDeliveryTrackQuery(orderId || '', { skip: !orderId || !enRoute || limited, pollingInterval: 10000 });
 
   // The header's order link follows the active order until it reaches a final state.
   useEffect(() => {
@@ -147,13 +147,13 @@ const TrackingPage: React.FC = () => {
           {cancelled ? <CircleAlert size={22} aria-hidden="true" /> : enRoute ? <Truck size={22} aria-hidden="true" /> : finished ? <PackageCheck size={22} aria-hidden="true" /> : <Clock size={22} aria-hidden="true" />}
           <div><strong>{copy.title}</strong><span>{copy.text}</span></div>
           {enRoute && order.orderType === 'DELIVERY' && <Link className="track-action" to={`/live-tracking/${encodeURIComponent(orderId)}`}><MapPin size={18} aria-hidden="true" />Track live delivery</Link>}
-          {finished && signedIn && ratingState === 'idle' && <button type="button" className="track-action" onClick={() => setRatingOpen(true)}><Star size={18} aria-hidden="true" />Rate your order</button>}
+          {finished && signedIn && !limited && ratingState === 'idle' && <button type="button" className="track-action" onClick={() => setRatingOpen(true)}><Star size={18} aria-hidden="true" />Rate your order</button>}
         </div>
         {ratingState === 'sent' && <p role="status">Thank you. Your rating was saved.</p>}
         {ratingState === 'failed' && <p role="alert">{ratingError} <button type="button" onClick={() => { setRatingState('idle'); setRatingOpen(true); }}>Try again</button></p>}
 
-        {enRoute && delivery.isError && <p role="alert">Your delivery code could not be loaded. <button type="button" onClick={() => delivery.refetch()}>Try again</button></p>}
-        {otp && enRoute && <div className="track-banner" data-tone="info">
+        {enRoute && !limited && delivery.isError && <p role="alert">Your delivery code could not be loaded. <button type="button" onClick={() => delivery.refetch()}>Try again</button></p>}
+        {otp && enRoute && !limited && <div className="track-banner" data-tone="info">
           <PackageCheck size={22} aria-hidden="true" />
           <div><strong>Delivery code</strong><span>Give this code to your driver when the order arrives.</span></div>
           <span className="track-otp" aria-label={`Delivery code ${otp.split('').join(' ')}`}>{otp}</span>
